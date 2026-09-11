@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { getCheapModel } from '@goodboy/core';
 import type { Workflow, WorkflowId } from '@goodboy/types';
 
+type SavedTemplate = { readonly steps: ReadonlyArray<Record<string, unknown>> };
+
 const { formatWorkflowFromNLMock } = vi.hoisted(() => ({
   formatWorkflowFromNLMock: vi.fn(),
 }));
@@ -218,5 +220,127 @@ describe('startWorkflowGeneration', () => {
         }),
       }),
     );
+  });
+  it('leaves a generated step unrouted while the metadata flag is off', async () => {
+    formatWorkflowFromNLMock.mockResolvedValue({
+      name: 'Review and ship',
+      description: 'Review the change, then ship it.',
+      steps: [
+        {
+          role: 'reviewer',
+          name: 'Review',
+          promptPrefix: 'Review the change',
+          expectedOutput: 'Review findings',
+          routing: { provider: 'anthropic', model: 'opus-5', effort: 'high' },
+        },
+      ],
+    });
+    const savePhaseTemplate = vi.fn(async (template: SavedTemplate) => {
+      expect(template.steps.length).toBeGreaterThan(0);
+      return { id: 'wf-5' as WorkflowId };
+    });
+    const state = {
+      workflowGenerations: {},
+      providers: [{ id: 'anthropic', connection: 'connected' }],
+      providerCooldowns: {},
+      budgetAlerts: [],
+      workspaceOverrides: {},
+      savePhaseTemplate,
+      clearWorkflowStudioDraft: vi.fn(),
+    };
+    const set = vi.fn((updater: (current: typeof state) => Partial<typeof state>) => {
+      Object.assign(state, updater(state));
+    });
+    const generate = startWorkflowGeneration(set as never, (() => state) as never);
+
+    await generate({
+      workspaceId: 'ws-1' as never,
+      description: 'Review and ship this change',
+      workflow: null,
+      form: null,
+    });
+
+    const args = savePhaseTemplate.mock.calls[0]![0];
+    expect(args.steps[0]).toEqual({
+      role: 'reviewer',
+      ordinal: 0,
+      name: 'Review',
+      promptPrefix: 'Review the change',
+      expectedOutput: 'Review findings',
+    });
+    expect(formatWorkflowFromNLMock.mock.calls.at(-1)?.[0].input).not.toHaveProperty('modelMenu');
+  });
+
+  it('carries the emitted pick and profile onto a generated step when the flag is on', async () => {
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'true');
+    formatWorkflowFromNLMock.mockResolvedValue({
+      name: 'Review and ship',
+      description: 'Review the change, then ship it.',
+      steps: [
+        {
+          role: 'reviewer',
+          name: 'Review',
+          promptPrefix: 'Review the change',
+          expectedOutput: 'Review findings',
+          routing: {
+            provider: 'anthropic',
+            model: 'opus-5',
+            effort: 'high',
+            taskType: 'review',
+            difficulty: 'standard',
+            modelReason: 'The review spans the whole migration runner.',
+          },
+        },
+        {
+          role: 'implementer',
+          name: 'Build',
+          promptPrefix: 'Build it',
+          expectedOutput: 'Code',
+        },
+      ],
+    });
+    const savePhaseTemplate = vi.fn(async (template: SavedTemplate) => {
+      expect(template.steps.length).toBeGreaterThan(0);
+      return { id: 'wf-6' as WorkflowId };
+    });
+    const state = {
+      workflowGenerations: {},
+      providers: [{ id: 'anthropic', connection: 'connected' }],
+      providerCooldowns: {},
+      budgetAlerts: [],
+      workspaceOverrides: {},
+      savePhaseTemplate,
+      clearWorkflowStudioDraft: vi.fn(),
+    };
+    const set = vi.fn((updater: (current: typeof state) => Partial<typeof state>) => {
+      Object.assign(state, updater(state));
+    });
+    const generate = startWorkflowGeneration(set as never, (() => state) as never);
+
+    await generate({
+      workspaceId: 'ws-1' as never,
+      description: 'Review and ship this change',
+      workflow: null,
+      form: null,
+    });
+
+    const args = savePhaseTemplate.mock.calls[0]![0];
+    expect(args.steps[0]).toMatchObject({
+      providerOverride: 'anthropic',
+      modelOverride: 'opus-5',
+      effort: 'high',
+      taskProfile: { taskType: 'review', difficulty: 'standard', basis: 'agent' },
+    });
+    expect(args.steps[0]?.['routingDecision']).toMatchObject({
+      version: 1,
+      source: 'agent',
+      selected: { provider: 'anthropic', model: 'opus-5', effort: 'high' },
+    });
+    expect(args.steps[1]?.['routingDecision']).toMatchObject({ source: 'heuristic' });
+    expect(args.steps[1]?.['modelOverride']).toBeDefined();
+    expect(formatWorkflowFromNLMock.mock.calls.at(-1)?.[0].input.modelMenu.length).toBeGreaterThan(
+      0,
+    );
+    vi.unstubAllEnvs();
   });
 });

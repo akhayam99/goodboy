@@ -10,7 +10,9 @@ export {
   type WorkflowModelCandidate,
   type WorkflowModelRecommendation,
 } from './recommendWorkflowModel';
+export { recommendWorkflowRoutingDecision } from './recommendWorkflowRoutingDecision';
 export { resolveWorkflowRouting, type WorkflowRoutingResolution } from './resolveWorkflowRouting';
+export { hintedRoutingOutcome } from './workflowTaskProfileHint';
 export {
   workflowRoutingAvailability,
   type WorkflowRoutingAvailability,

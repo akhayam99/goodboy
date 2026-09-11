@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { buildOrchestratorUserPrompt, ORCHESTRATOR_SYSTEM_PROMPT } from './prompt';
-import type { OrchestratorInput } from './types';
+import type { OrchestratorInput, OrchestratorModelOption } from './types';
+
+const option = (overrides: Partial<OrchestratorModelOption> = {}): OrchestratorModelOption => ({
+  provider: 'anthropic',
+  model: 'sonnet-5',
+  label: 'Sonnet 5',
+  efforts: ['low', 'medium'],
+  taskTypes: [],
+  preferredDifficulty: [],
+  contextWindow: 200000,
+  price: null,
+  ...overrides,
+});
 
 const input = (overrides: Partial<OrchestratorInput> = {}): OrchestratorInput => ({
   goal: 'Ship the change',
@@ -51,12 +63,12 @@ describe('buildOrchestratorUserPrompt', () => {
     const prompt = buildOrchestratorUserPrompt(
       input({
         modelMenu: [
-          {
+          option({
             provider: 'codex',
             model: 'gpt-5.6',
             label: 'GPT-5.6',
             efforts: ['low', 'medium', 'high'],
-          },
+          }),
         ],
       }),
     );
@@ -68,11 +80,66 @@ describe('buildOrchestratorUserPrompt', () => {
   it('says a model with no effort control has none instead of inventing a ladder', () => {
     const prompt = buildOrchestratorUserPrompt(
       input({
-        modelMenu: [{ provider: 'cursor', model: 'auto', label: 'Auto', efforts: [] }],
+        modelMenu: [option({ provider: 'cursor', model: 'auto', label: 'Auto', efforts: [] })],
       }),
     );
 
     expect(prompt).toContain('cursor/auto - Auto - efforts: no effort control');
+  });
+
+  it('asks for a provider qualified choice and separate task and routing reasons', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({
+        isModelMetadataEnabled: true,
+        modelMenu: [
+          option({
+            provider: 'codex',
+            model: 'gpt-5.6',
+            efforts: ['low', 'high'],
+            taskTypes: ['implementation'],
+            preferredDifficulty: ['standard'],
+            price: { inputPerMtok: 1.25, outputPerMtok: 10 },
+          }),
+        ],
+      }),
+    );
+
+    expect(prompt).toContain('codex/gpt-5.6 efforts low,high imp|st ctx 200k $1.25/$10');
+    expect(prompt).toContain('Name taskType and difficulty for the work itself');
+    expect(prompt).toContain('never replaces reason, which stays about the work the step does');
+    expect(prompt).toContain('exp=exploration');
+  });
+
+  it('keeps the metadata menu out of the prompt while the flag is off', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({
+        modelMenu: [
+          option({
+            provider: 'codex',
+            model: 'gpt-5.6',
+            label: 'GPT-5.6',
+            efforts: ['low', 'high'],
+            price: { inputPerMtok: 1.25, outputPerMtok: 10 },
+          }),
+        ],
+      }),
+    );
+
+    expect(prompt).toContain('codex/gpt-5.6 - GPT-5.6 - efforts: low, high');
+    expect(prompt).not.toContain('exp=exploration');
+    expect(prompt).not.toContain('$1.25');
+  });
+
+  it('marks a model with no reviewed profile as unassessed in the metadata menu', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({
+        isModelMetadataEnabled: true,
+        modelMenu: [option({ provider: 'moonshot', model: 'kimi-k3', efforts: [] })],
+      }),
+    );
+
+    expect(prompt).toContain('moonshot/kimi-k3 efforts no effort control unassessed');
+    expect(prompt).toContain('price unknown');
   });
 
   it('presents the role defaults as the fallback for an unrouted step', () => {

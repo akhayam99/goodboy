@@ -103,6 +103,9 @@ const recommendationReason = ({ candidate, profile }: ReasonParams): string => {
     candidate.price === null
       ? 'Its published price is unknown.'
       : `Its published price is ${candidate.price.inputPerMtok} in and ${candidate.price.outputPerMtok} out per Mtok.`;
+  if (profile !== null && profile.basis === 'heuristic') {
+    return `${intent} That difficulty is a heuristic estimate read off the step text, not something the agent stated. ${fit} ${price}`;
+  }
   return `${intent} ${fit} ${price}`;
 };
 

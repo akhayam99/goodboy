@@ -29,7 +29,16 @@ describe('OrchestratorClient', () => {
       openQuestionCount: 0,
       providerId: 'anthropic',
       modelMenu: [
-        { provider: 'anthropic', model: 'haiku-4.5', label: 'Haiku 4.5', efforts: ['low'] },
+        {
+          provider: 'anthropic',
+          model: 'haiku-4.5',
+          label: 'Haiku 4.5',
+          efforts: ['low'],
+          taskTypes: [],
+          preferredDifficulty: [],
+          contextWindow: 200000,
+          price: null,
+        },
       ],
       roleDefaults: [
         { role: 'implementer', provider: 'anthropic', model: 'sonnet-5', effort: 'medium' },
@@ -69,7 +78,16 @@ describe('OrchestratorClient', () => {
       openQuestionCount: 0,
       providerId: 'anthropic',
       modelMenu: [
-        { provider: 'anthropic', model: 'haiku-4.5', label: 'Haiku 4.5', efforts: ['low'] },
+        {
+          provider: 'anthropic',
+          model: 'haiku-4.5',
+          label: 'Haiku 4.5',
+          efforts: ['low'],
+          taskTypes: [],
+          preferredDifficulty: [],
+          contextWindow: 200000,
+          price: null,
+        },
       ],
       roleDefaults: [
         { role: 'implementer', provider: 'anthropic', model: 'sonnet-5', effort: 'medium' },

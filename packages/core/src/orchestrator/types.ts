@@ -5,6 +5,7 @@ import type {
   WorkflowTaskDifficulty,
   WorkflowTaskType,
 } from '@goodboy/types';
+import type { ModelPriceSummary } from '../providers/model-price';
 
 export type OrchestratorStep = {
   readonly name: string;
@@ -58,6 +59,10 @@ export type OrchestratorModelOption = {
   readonly model: string;
   readonly label: string;
   readonly efforts: ReadonlyArray<ModelEffort>;
+  readonly taskTypes: ReadonlyArray<WorkflowTaskType>;
+  readonly preferredDifficulty: ReadonlyArray<WorkflowTaskDifficulty>;
+  readonly contextWindow: number;
+  readonly price: ModelPriceSummary | null;
 };
 
 export type OrchestratorRoleDefault = {
@@ -77,6 +82,7 @@ export type OrchestratorInput = {
   readonly modelMenu: ReadonlyArray<OrchestratorModelOption>;
   readonly roleDefaults: ReadonlyArray<OrchestratorRoleDefault>;
   readonly stepsUsed: number;
+  readonly isModelMetadataEnabled?: boolean;
   readonly spendLimitUsd?: number;
   readonly spentUsd?: number;
 };

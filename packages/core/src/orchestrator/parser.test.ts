@@ -95,6 +95,23 @@ describe('parseOrchestratorDecision', () => {
     });
   });
 
+  it('leaves legacy fields optional and turns a malformed profile into unknown', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Fix it","role":"implementer","promptPrefix":"Fix the bug.","taskType":"vibes","difficulty":"extreme","modelReason":"   "}}<</orchestrator>>',
+    });
+
+    expect(parsed).toEqual({
+      action: 'next',
+      reason: 'x',
+      step: {
+        name: 'Fix it',
+        role: 'implementer',
+        promptPrefix: 'Fix the bug.',
+      },
+    });
+  });
+
   it('keeps a model and effort the provider catalog supports', () => {
     const parsed = parseOrchestratorDecision({
       provider: 'anthropic',

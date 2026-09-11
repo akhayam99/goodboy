@@ -668,6 +668,103 @@ describe('orchestrateNextStep', () => {
     expect(state['emitNotification']).not.toHaveBeenCalled();
   });
 
+  it('stores the task profile the orchestrator emitted', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'fable-5',
+          effort: 'max',
+          taskType: 'implementation',
+          difficulty: 'heavy',
+          modelReason: 'The refactor spans the whole router.',
+        },
+      },
+    });
+    const { set, get } = harness(baseState());
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(savedStep().taskProfile).toEqual({
+      taskType: 'implementation',
+      difficulty: 'heavy',
+      basis: 'agent',
+    });
+    expect(savedStep().routingDecision).toMatchObject({
+      reason: 'The refactor spans the whole router.',
+    });
+    expect(savedStep().orchestratorReason).toBe('This one is hard.');
+  });
+
+  it('never invents a difficulty for an unprofiled step while the metadata flag is off', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: [
+            'Rework the migration runner so every segment is transactional.',
+            '```ts',
+            'const run = () => {};',
+            '```',
+          ].join('\n'),
+          model: 'fable-5',
+        },
+      },
+    });
+    const { set, get } = harness(baseState());
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(savedStep().taskProfile).toEqual({
+      taskType: 'general',
+      difficulty: 'unknown',
+      basis: 'unknown',
+    });
+    expect(decideSpy.mock.calls[0]![0].isModelMetadataEnabled).toBeUndefined();
+  });
+
+  it('labels a difficulty it read off the step text as heuristic when the flag is on', async () => {
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'true');
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: [
+            'Rework the migration runner so every segment is transactional.',
+            '```ts',
+            'const run = () => {};',
+            '```',
+          ].join('\n'),
+          model: 'fable-5',
+        },
+      },
+    });
+    const { set, get } = harness(baseState());
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(savedStep().taskProfile).toEqual({
+      taskType: 'general',
+      difficulty: 'heavy',
+      basis: 'heuristic',
+    });
+    expect(decideSpy.mock.calls[0]![0].isModelMetadataEnabled).toBe(true);
+    vi.unstubAllEnvs();
+  });
+
   it('runs a pick from another connected provider than the one deciding', async () => {
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,

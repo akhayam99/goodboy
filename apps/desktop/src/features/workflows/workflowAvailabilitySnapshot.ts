@@ -8,7 +8,7 @@ type Params = {
   readonly providers: ReadonlyArray<ProviderInfo>;
   readonly cooldowns: ProviderCooldowns;
   readonly alerts: ReadonlyArray<BudgetAlert>;
-  readonly sessionId: SessionId;
+  readonly sessionId: SessionId | null;
   readonly isRunBudgetBlocked: boolean;
   readonly nowMs: number;
 };
@@ -39,9 +39,10 @@ export const workflowAvailabilitySnapshot = ({
       .map((provider) => provider.id),
     coolingDownProviders: providersCoolingDown({ cooldowns, nowMs }),
     budgetBlockedProviders,
-    isSessionBudgetBlocked: live.some(
-      (alert) => alert.kind === 'session-exceeded' && alert.sessionId === sessionId,
-    ),
+    isSessionBudgetBlocked:
+      sessionId === null
+        ? false
+        : live.some((alert) => alert.kind === 'session-exceeded' && alert.sessionId === sessionId),
     isRunBudgetBlocked,
     nowMs,
   };

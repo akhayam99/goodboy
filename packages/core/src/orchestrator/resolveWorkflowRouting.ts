@@ -6,17 +6,13 @@ import type {
   WorkflowRoutingProposal,
   WorkflowTaskProfile,
 } from '@goodboy/types';
-import { PROVIDER_IDS } from '@goodboy/types';
-import { MODEL_CATALOGS } from '../providers/catalogs';
-import { getProviderModelPrice } from '../providers/model-price';
 import { resolveModelArgs } from '../providers/resolveModelArgs';
 import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
-import { workflowModelProfile } from '../providers/workflowModelProfiles';
 import { defaultModelEffort, supportedModelEfforts } from './workflowModelEfforts';
 import type { WorkflowRoutingProposalParseOutcome } from './parseWorkflowRoutingProposal';
 import { cappedRoutingReason } from './parseWorkflowRoutingProposal';
-import type { WorkflowModelCandidate } from './recommendWorkflowModel';
 import { recommendWorkflowModel } from './recommendWorkflowModel';
+import { workflowModelCandidates } from './workflowModelCandidates';
 import type {
   WorkflowRoutingAvailabilitySnapshot,
   WorkflowRoutingUnavailableCause,
@@ -95,33 +91,6 @@ const normalizeLockedEffort = ({ pick }: PickParams): ModelEffort | null | 'reje
 
 type AvailabilityParams = {
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
-};
-
-const availableCandidates = ({
-  availability,
-}: AvailabilityParams): ReadonlyArray<WorkflowModelCandidate> => {
-  const candidates: Array<WorkflowModelCandidate> = [];
-  for (const provider of PROVIDER_IDS) {
-    for (const model of MODEL_CATALOGS[provider]) {
-      const effort = defaultModelEffort({ provider, model: model.key });
-      const status = workflowRoutingAvailability({
-        pick: { provider, model: model.key, effort },
-        snapshot: availability,
-      });
-      if (status.kind !== 'available') {
-        continue;
-      }
-      candidates.push({
-        provider,
-        model: model.key,
-        effort,
-        contextWindow: model.contextWindow,
-        profile: workflowModelProfile({ provider, model: model.key }),
-        price: getProviderModelPrice({ provider, model: model.key }),
-      });
-    }
-  }
-  return candidates;
 };
 
 const budgetCause = ({ availability }: AvailabilityParams): 'budget' | 'no_available_model' => {
@@ -225,7 +194,7 @@ const resolveRecovery = ({
   contextEstimate,
 }: RecoveryParams): WorkflowRoutingResolution => {
   const recommendation = recommendWorkflowModel({
-    candidates: availableCandidates({ availability }),
+    candidates: workflowModelCandidates({ availability }),
     profile,
     contextEstimate,
   });

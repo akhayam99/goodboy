@@ -1,4 +1,5 @@
 import { sessionLanguageRule } from '../language/sessionLanguage';
+import { formatWorkflowModelMenu } from './formatWorkflowModelMenu';
 import type { OrchestratorInput } from './types';
 
 const OLDER_SUMMARY_PREVIEW_LENGTH = 280;
@@ -57,6 +58,7 @@ export const buildOrchestratorUserPrompt = ({
   modelMenu,
   roleDefaults,
   stepsUsed,
+  isModelMetadataEnabled,
   spendLimitUsd,
   spentUsd,
 }: OrchestratorInput): string => {
@@ -82,6 +84,12 @@ export const buildOrchestratorUserPrompt = ({
   );
   if (modelMenu.length === 0) {
     lines.push('(none, omit provider, model and effort)');
+  } else if (isModelMetadataEnabled === true) {
+    lines.push(
+      formatWorkflowModelMenu({ options: modelMenu }),
+      '',
+      'Name taskType and difficulty for the work itself, not for the model you want. modelReason justifies the routing pick in one clause and never replaces reason, which stays about the work the step does.',
+    );
   } else {
     modelMenu.forEach((option) => {
       const efforts = option.efforts.length === 0 ? 'no effort control' : option.efforts.join(', ');

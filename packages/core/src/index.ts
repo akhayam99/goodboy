@@ -367,9 +367,11 @@ export {
 } from './planner';
 
 export {
+  hintedRoutingOutcome,
   parseOrchestratorDecision,
   parseWorkflowRoutingProposal,
   recommendWorkflowModel,
+  recommendWorkflowRoutingDecision,
   resolveWorkflowRouting,
   workflowRoutingAvailability,
   buildOrchestratorUserPrompt,

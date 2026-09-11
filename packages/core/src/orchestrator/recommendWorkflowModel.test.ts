@@ -231,6 +231,22 @@ describe('recommendWorkflowModel', () => {
     expect(result?.reason).toContain('standard');
   });
 
+  it('says the difficulty is a heuristic estimate when nobody stated it', () => {
+    const result = recommendWorkflowModel({
+      candidates: [candidate({ provider: 'codex', model: 'any' })],
+      profile: { taskType: 'implementation', difficulty: 'heavy', basis: 'heuristic' },
+      contextEstimate: null,
+    });
+
+    expect(result?.reason).toContain('heuristic estimate');
+  });
+
+  it('does not call an agent stated profile heuristic', () => {
+    const result = recommend([candidate({ provider: 'codex', model: 'any' })]);
+
+    expect(result?.reason).not.toContain('heuristic');
+  });
+
   it('says so when it has no task profile at all', () => {
     const result = recommendWorkflowModel({
       candidates: [candidate({ provider: 'codex', model: 'any' })],

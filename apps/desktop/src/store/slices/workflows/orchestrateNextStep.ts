@@ -16,13 +16,16 @@ import type {
   WorkflowModelPick,
   WorkflowOrchestrationOutcome,
   WorkflowOrchestrationStop,
+  WorkflowRoutingDecision,
   WorkflowRunId,
+  WorkflowTaskProfile,
 } from '@goodboy/types';
 import {
   OrchestratorClient,
   OrchestratorProviderError,
   ROLE_DEFAULTS,
   defaultsForRole,
+  hintedRoutingOutcome,
   orchestratorModelPool,
   parseWorkflowRoutingProposal,
   recommendedModelForRole,
@@ -34,6 +37,7 @@ import {
   type OrchestratorRoleDefault,
   type RunSummary,
   type WorkflowRoutingAvailabilitySnapshot,
+  type WorkflowRoutingProposalParseOutcome,
 } from '@goodboy/core';
 import {
   listOpenQuestionsForSession,
@@ -43,6 +47,7 @@ import {
 } from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { tauriDatabase } from '../../../shared/lib/db';
 import {
   BUDGET_BLOCK_MESSAGE,
@@ -140,6 +145,28 @@ const roleDefaultsFor = ({
       effort: routing.effort,
     };
   });
+
+type TaskProfileParams = {
+  readonly decision: WorkflowRoutingDecision;
+  readonly proposal: WorkflowRoutingProposalParseOutcome;
+};
+
+const emittedTaskProfile = ({
+  decision,
+  proposal,
+}: TaskProfileParams): WorkflowTaskProfile | null => {
+  const emitted = decision.proposal?.profile ?? null;
+  if (emitted !== null) {
+    return emitted;
+  }
+  if (proposal.kind === 'valid') {
+    return proposal.proposal.profile;
+  }
+  if (proposal.profile.basis === 'unknown') {
+    return null;
+  }
+  return proposal.profile;
+};
 
 type EmitParams = {
   readonly get: GetFn;
@@ -604,6 +631,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         nowMs: Date.now(),
       });
       const modelMenu = orchestratorModelPool({ availability });
+      const isModelMetadataEnabled = workflowRoutingFlags().isModelMetadataEnabled;
       const client = new OrchestratorClient({
         ...routing,
         invokeFn: invoke,
@@ -621,6 +649,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           modelMenu,
           roleDefaults,
           stepsUsed: workflow.steps.length,
+          ...(isModelMetadataEnabled && { isModelMetadataEnabled }),
           ...(run.spendLimitUsd != null && {
             spendLimitUsd: run.spendLimitUsd,
             spentUsd: spentUsdForRun({ get, sessionId, run }),
@@ -713,6 +742,13 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       if (decision.action === 'next') {
         const proposed = decision.step;
         const compiled = defaultsForRole(proposed.role);
+        const parsedProposal = parseWorkflowRoutingProposal({
+          fields: proposed,
+          emittingProvider: routing.providerId,
+        });
+        const routingProposal = isModelMetadataEnabled
+          ? hintedRoutingOutcome({ outcome: parsedProposal, promptText: proposed.promptPrefix })
+          : parsedProposal;
         const resolution = resolveWorkflowRouting({
           agentLock: null,
           stepLock: null,
@@ -720,10 +756,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
             role: proposed.role,
             roleModels: run.roleModelOverrides,
           }),
-          proposal: parseWorkflowRoutingProposal({
-            fields: proposed,
-            emittingProvider: routing.providerId,
-          }),
+          proposal: routingProposal,
           roleDefault: configuredRolePick({
             role: proposed.role,
             roleModels: workspaceRoleModels,
@@ -797,7 +830,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
             ...(selected.effort != null && { effort: selected.effort }),
             ...(reason !== '' && { orchestratorReason: reason }),
             routingDecision,
-            taskProfile: routingDecision.proposal?.profile ?? null,
+            taskProfile: emittedTaskProfile({
+              decision: routingDecision,
+              proposal: routingProposal,
+            }),
           },
         });
         emitDecision({
