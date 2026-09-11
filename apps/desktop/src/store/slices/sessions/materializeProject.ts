@@ -124,6 +124,7 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
         baseBranch: project.baseBranch ?? null,
         parallelIndex: persistedRow.parallelIndex,
         isAttached: true,
+        revision: persistedRow.revision,
       };
       set((state) => ({
         sessionProjectMounts: {
@@ -227,6 +228,7 @@ export const materializeProject = (set: SetFn, get: GetFn) => {
       parallelIndex: nextParallelIndex,
       projectId,
       mountName: project.name,
+      revision: 0,
       createdAt: Date.now(),
     };
     await insertSessionWorktree(tauriDatabase, record);

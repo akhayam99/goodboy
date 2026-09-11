@@ -1652,6 +1652,13 @@ describe('store contract', () => {
       ).toEqual([WEB_PROJECT_ID, API_PROJECT_ID]);
       expect(store.getState().sessionActiveProject[session.id]).toBe(WEB_PROJECT_ID);
       expect(mount.worktreePath).toBe(mountPath);
+      expect(mount.revision).toBe(0);
+      expect(
+        store
+          .getState()
+          .sessionWorktreeRecords?.[session.id]?.find((row) => row.worktreePath === mountPath)
+          ?.revision,
+      ).toBe(0);
       const materialized = vi
         .mocked(db.insertSessionEvent)
         .mock.calls.map(([{ event }]) => event)
@@ -1719,6 +1726,7 @@ describe('store contract', () => {
           branch: 'goodboy/persisted',
           parallelIndex: 2,
           mountName: 'api',
+          revision: 6,
           createdAt: Date.now(),
         },
       ]);
@@ -1731,6 +1739,13 @@ describe('store contract', () => {
 
       expect(createWorktreeSpy).not.toHaveBeenCalled();
       expect(mount.worktreePath).toBe('/tmp/api/.goodboy/worktrees/persisted');
+      expect(mount.revision).toBe(6);
+      expect(
+        store
+          .getState()
+          .sessionProjectMounts[session.id]?.find((entry) => entry.projectId === API_PROJECT_ID)
+          ?.revision,
+      ).toBe(6);
       expect(vi.mocked(db.insertSessionEvent)).not.toHaveBeenCalled();
     });
 
