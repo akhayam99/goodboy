@@ -26,6 +26,7 @@ const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   auto: 4,
   'gemini-3.1-pro': 20,
   'gemini-3.5-flash': 5,
+  'gemini-3.6-flash': 5,
   'kimi-k3': 12,
 };
 

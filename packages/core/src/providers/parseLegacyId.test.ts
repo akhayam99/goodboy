@@ -37,7 +37,7 @@ describe('parseLegacyId', () => {
       variant: 'default',
     });
     expect(parseLegacyId({ provider: 'opencode', id: 'opencode/minimax-m3-free' })).toEqual({
-      key: 'minimax-m2.5',
+      key: 'big-pickle',
     });
   });
 

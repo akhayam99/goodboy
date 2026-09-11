@@ -35,4 +35,21 @@ export const GEMINI_CATALOG = [
     efforts: ['low', 'medium', 'high'],
     defaultEffort: 'medium',
   },
+  {
+    key: 'gemini-3.6-flash',
+    label: '3.6 Flash',
+    tier: 'cheap',
+    contextWindow: 1_000_000,
+    presentation: {
+      family: 'gemini',
+      group: 'Flash',
+      version: '3.6',
+      order: 11,
+      costTier: 'cheap',
+    },
+    provider: 'gemini',
+    cliId: 'gemini-3.6-flash',
+    efforts: ['low', 'medium', 'high'],
+    defaultEffort: 'medium',
+  },
 ] satisfies ReadonlyArray<GeminiModel>;
