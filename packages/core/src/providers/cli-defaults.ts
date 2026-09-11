@@ -1,10 +1,14 @@
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
+import { CODEX_CHEAP_MODEL } from './codex/constants';
 import { CURSOR_AUTO_MODEL } from './cursor/models';
 
 export const getCheapModel = (providerId: ProviderId): string => {
   if (providerId === 'cursor') {
     return CURSOR_AUTO_MODEL;
+  }
+  if (providerId === 'codex') {
+    return CODEX_CHEAP_MODEL;
   }
   const caps = PROVIDER_CAPABILITIES[providerId];
   return caps.models.find((model) => model.tier === 'cheap')?.id ?? caps.models[0]!.id;

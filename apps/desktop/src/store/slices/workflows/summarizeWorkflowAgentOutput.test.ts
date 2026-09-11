@@ -147,7 +147,7 @@ describe('summarizeWorkflowAgentOutput', () => {
     await call();
 
     expect(summarizeStepOutputSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ providerId: 'codex', model: 'gpt-5.4-mini' }),
+      expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6-luna' }),
     );
   });
 

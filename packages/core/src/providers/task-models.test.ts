@@ -78,7 +78,7 @@ describe('resolveTaskModel', () => {
       }),
     ).toEqual({
       providerId: 'codex',
-      model: 'gpt-5.4-mini',
+      model: 'gpt-5.6-luna',
     });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('invalid plan_generation model'));
     warn.mockRestore();
@@ -156,7 +156,7 @@ describe('resolveTaskModel', () => {
         workspaceDefaultProviderId: 'codex',
         sessionDefaultProviderId: 'anthropic',
       }),
-    ).toEqual({ providerId: 'codex', model: 'gpt-5.4-mini' });
+    ).toEqual({ providerId: 'codex', model: 'gpt-5.6-luna' });
   });
 
   it('preserves an explicit codex model variant', () => {
