@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolveQueueItem, ResolveThread, SessionId } from '@goodboy/types';
 import type { ResolveQueueStatus } from '../../store/slices/resolve/deriveResolveQueueStatus';
-import { groupResolveQueue, groupSharedRuns } from './groupResolveQueue';
+import { groupResolveQueue, groupSharedRuns, rowsForResolveFilter } from './groupResolveQueue';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
 
 const sessionId = 'session' as SessionId;
@@ -79,10 +79,38 @@ const row = ({
   delivery: null,
 });
 
+describe('the retryable bucket', () => {
+  const rows = [
+    row({ threadId: 'failed', status: 'run_failed', reviewerCreatedAtMs: 1 }),
+    row({ threadId: 'stopped', status: 'run_stopped', reviewerCreatedAtMs: 2 }),
+    row({ threadId: 'undelivered', status: 'delivery_failed', reviewerCreatedAtMs: 3 }),
+    row({ threadId: 'waiting', status: 'fix_ready', reviewerCreatedAtMs: 4 }),
+    row({ threadId: 'unsure', status: 'confirm_delivery', reviewerCreatedAtMs: 5 }),
+  ];
+
+  it('holds only what a second attempt can move', () => {
+    expect(groupResolveQueue({ rows }).retryable.map((entry) => entry.thread.threadId)).toEqual([
+      'failed',
+      'stopped',
+      'undelivered',
+    ]);
+  });
+
+  it('serves the retryable filter its own rows, never the whole active list', () => {
+    const groups = groupResolveQueue({ rows });
+
+    expect(
+      rowsForResolveFilter({ groups, filter: 'retryable' }).map((entry) => entry.thread.threadId),
+    ).toEqual(['failed', 'stopped', 'undelivered']);
+    expect(rowsForResolveFilter({ groups, filter: 'needs_review' })).toEqual(groups.needsReview);
+    expect(rowsForResolveFilter({ groups, filter: 'everything' })).toEqual(groups.active);
+  });
+});
+
 describe('groupResolveQueue', () => {
-  it('buckets for_you, agent_asked and changed_since_accepted together, ordered oldest first', () => {
+  it('buckets fix_ready, agent_asked and changed_since_accepted together, ordered oldest first', () => {
     const rows = [
-      row({ threadId: 'newest', status: 'for_you', reviewerCreatedAtMs: 300 }),
+      row({ threadId: 'newest', status: 'fix_ready', reviewerCreatedAtMs: 300 }),
       row({ threadId: 'oldest', status: 'agent_asked', reviewerCreatedAtMs: 100 }),
       row({
         threadId: 'middle',
@@ -144,9 +172,9 @@ describe('groupResolveQueue', () => {
 describe('groupSharedRuns', () => {
   it('gathers the members of one attempt under a single named group, keeping list order', () => {
     const rows = [
-      row({ threadId: 'a', status: 'for_you', reviewerCreatedAtMs: 1, activeAttemptId: 'run-1' }),
-      row({ threadId: 'b', status: 'for_you', reviewerCreatedAtMs: 2 }),
-      row({ threadId: 'c', status: 'for_you', reviewerCreatedAtMs: 3, activeAttemptId: 'run-1' }),
+      row({ threadId: 'a', status: 'fix_ready', reviewerCreatedAtMs: 1, activeAttemptId: 'run-1' }),
+      row({ threadId: 'b', status: 'fix_ready', reviewerCreatedAtMs: 2 }),
+      row({ threadId: 'c', status: 'fix_ready', reviewerCreatedAtMs: 3, activeAttemptId: 'run-1' }),
     ];
     const groups = groupSharedRuns({ rows });
     expect(groups.map((group) => group.attemptId)).toEqual(['run-1', null]);
@@ -156,7 +184,7 @@ describe('groupSharedRuns', () => {
 
   it('gives a lone member of an attempt no shared-run heading', () => {
     const rows = [
-      row({ threadId: 'a', status: 'for_you', reviewerCreatedAtMs: 1, activeAttemptId: 'run-1' }),
+      row({ threadId: 'a', status: 'fix_ready', reviewerCreatedAtMs: 1, activeAttemptId: 'run-1' }),
     ];
     expect(groupSharedRuns({ rows }).map((group) => group.attemptId)).toEqual([null]);
   });

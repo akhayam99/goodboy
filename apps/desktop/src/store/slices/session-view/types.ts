@@ -81,7 +81,7 @@ export type ReviewLensIntent = {
   readonly mode?: ReviewMode;
 };
 
-export type ResolveQueueFilter = 'for_you' | 'everything';
+export type ResolveQueueFilter = 'needs_review' | 'everything' | 'retryable';
 
 export type ResolveQueueView = {
   readonly filter: ResolveQueueFilter;
@@ -97,7 +97,7 @@ export type ResolveDiffReturn = {
 };
 
 export const EMPTY_RESOLVE_QUEUE_VIEW: ResolveQueueView = {
-  filter: 'for_you',
+  filter: 'needs_review',
   expandedThreadId: null,
   order: [],
   scrollTop: 0,

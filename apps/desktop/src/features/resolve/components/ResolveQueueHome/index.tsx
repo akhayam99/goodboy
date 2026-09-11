@@ -37,7 +37,8 @@ import {
   buildResolveQueueRows,
   type ResolveQueueRow as QueueRow,
 } from '../../buildResolveQueueRows';
-import { groupResolveQueue, groupSharedRuns } from '../../groupResolveQueue';
+import { groupResolveQueue, groupSharedRuns, rowsForResolveFilter } from '../../groupResolveQueue';
+import { resolveQueueCounts } from '../../resolveQueueCounts';
 import { orderResolveQueueRows } from '../../orderResolveQueueRows';
 import { resolveQueueErrorPlacement } from '../../resolveQueueErrorPlacement';
 import {
@@ -49,11 +50,13 @@ import {
 } from '../../resolveQueueCopy';
 import { ResolveSpawnSheet } from '../ResolveSpawnSheet';
 import { ResolveItemContainer } from '../ResolveItemView/ResolveItemContainer';
+import { QueueCountsLine } from './QueueCountsLine';
 import { QueueFilterChips } from './QueueFilterChips';
 import { ResolveQueueRow } from './ResolveQueueRow';
 import { ResolveQueueFooter } from './ResolveQueueFooter';
 import {
   NoResolveTargetState,
+  NothingToRetryState,
   NothingWaitingState,
   ResolveQueueErrorState,
 } from './ResolveQueueEmptyState';
@@ -128,13 +131,14 @@ export const ResolveQueueHome = ({ session }: Props) => {
   );
 
   const groups = useMemo(() => groupResolveQueue({ rows }), [rows]);
+  const counts = useMemo(() => resolveQueueCounts({ rows }), [rows]);
   const listed = useMemo(
     () =>
       orderResolveQueueRows({
-        rows: view.filter === 'for_you' ? groups.needsReview : groups.active,
+        rows: rowsForResolveFilter({ groups, filter: view.filter }),
         pinned: view.order,
       }),
-    [groups.active, groups.needsReview, view.filter, view.order],
+    [groups, view.filter, view.order],
   );
   const listGroups = useMemo(() => groupSharedRuns({ rows: listed }), [listed]);
   const selectedRow = useMemo(
@@ -374,8 +378,10 @@ export const ResolveQueueHome = ({ session }: Props) => {
               filter={view.filter}
               needsReviewCount={groups.needsReview.length}
               activeCount={groups.active.length}
+              retryableCount={groups.retryable.length}
               onChange={(filter) => setResolveQueueView({ sessionId, patch: { filter } })}
             />
+            <QueueCountsLine counts={counts} />
             {isLoading && (
               <div className="flex flex-col gap-4">
                 {SKELETON_ROWS.map((key) => (
@@ -388,7 +394,10 @@ export const ResolveQueueHome = ({ session }: Props) => {
                 ))}
               </div>
             )}
-            {!isLoading && listed.length === 0 && (
+            {!isLoading && listed.length === 0 && view.filter === 'retryable' && (
+              <NothingToRetryState />
+            )}
+            {!isLoading && listed.length === 0 && view.filter !== 'retryable' && (
               <NothingWaitingState hasOtherActiveWork={groups.active.length > 0} />
             )}
             {!isLoading && listed.length > 0 && (
