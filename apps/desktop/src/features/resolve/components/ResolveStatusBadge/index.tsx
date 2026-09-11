@@ -31,6 +31,7 @@ export const ResolveStatusBadge = ({ status, bordered = false, width = 'auto' }:
       icon={<Icon className="size-3 shrink-0" aria-hidden />}
       label={RESOLVE_QUEUE_STATUS_LABEL[status]}
       title={name}
+      ariaLabel={name}
     />
   );
 };

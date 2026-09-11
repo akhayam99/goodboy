@@ -3,6 +3,7 @@ import type {
   ResolvePublicationDrift,
   ResolvePublicationPreview,
 } from '@goodboy/types';
+import { closingThreadCount } from './closingThreadCount';
 import type { ResolvePublishIntent } from './publishIntent';
 
 export type PublishCounts = Readonly<{
@@ -43,7 +44,7 @@ export const publishIntentSummary = ({
 }: {
   readonly preview: ResolvePublicationPreview;
 }): string => {
-  const closing = preview.replies.filter((reply) => reply.closes).length;
+  const closing = closingThreadCount({ preview });
   const counts = publicationCountsLine({ preview });
   const scope = `${plural({ count: closing, one: 'thread', many: 'threads' })} on #${preview.prNumber}`;
   return counts === null ? scope : `${counts}. ${scope}`;
@@ -54,7 +55,7 @@ export const publicationCountsLine = ({
 }: {
   readonly preview: ResolvePublicationPreview;
 }): string | null => {
-  const resolutions = preview.replies.filter((reply) => reply.closes).length + preview.notes.length;
+  const resolutions = closingThreadCount({ preview });
   const parts = [
     preview.commits.length === 0
       ? null

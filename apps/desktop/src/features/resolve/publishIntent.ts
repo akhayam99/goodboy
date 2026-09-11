@@ -1,4 +1,5 @@
 import type { ResolvePublicationPreview } from '@goodboy/types';
+import { closingThreadCount } from './closingThreadCount';
 
 export type ResolvePublishIntent = 'publish_fix' | 'close_without_fix' | 'post_replies';
 
@@ -10,8 +11,7 @@ export const publishIntent = ({
   if (preview.requiresPush) {
     return 'publish_fix';
   }
-  const closes = preview.replies.some((reply) => reply.closes);
-  return closes ? 'close_without_fix' : 'post_replies';
+  return closingThreadCount({ preview }) > 0 ? 'close_without_fix' : 'post_replies';
 };
 
 export const isPublishIntentGuarded = ({

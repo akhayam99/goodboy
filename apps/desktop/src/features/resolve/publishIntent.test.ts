@@ -53,6 +53,25 @@ describe('publishIntent', () => {
     ).toBe('post_replies');
   });
 
+  it('reads a batch whose only closures are notes as a closure with no fix', () => {
+    expect(
+      publishIntent({
+        preview: previewOf({ notes: [{ threadId: 't-1', revision: 1 }] }),
+      }),
+    ).toBe('close_without_fix');
+  });
+
+  it('guards a mixed batch whose closing threads all sit in the notes', () => {
+    expect(
+      publishIntent({
+        preview: previewOf({
+          replies: [{ threadId: 't-1', body: 'Still thinking.', revision: 1, closes: false }],
+          notes: [{ threadId: 't-2', revision: 1 }],
+        }),
+      }),
+    ).toBe('close_without_fix');
+  });
+
   it('guards only the closure that ships no code', () => {
     expect(isPublishIntentGuarded({ intent: 'close_without_fix' })).toBe(true);
     expect(isPublishIntentGuarded({ intent: 'publish_fix' })).toBe(false);

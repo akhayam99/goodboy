@@ -34,6 +34,13 @@ describe('the resolve status badge', () => {
     expect(badge.querySelector('svg')).not.toBeNull();
   });
 
+  it('hands the next step to assistive technology, not to the tooltip alone', () => {
+    render(<ResolveStatusBadge status="fix_ready" />);
+
+    const badge = screen.getByLabelText(resolveStatusAccessibleName({ status: 'fix_ready' }));
+    expect(badge.textContent).toBe(RESOLVE_QUEUE_STATUS_LABEL.fix_ready);
+  });
+
   it('drops the next step from a state that asks nothing of you', () => {
     expect(RESOLVE_QUEUE_NEXT_STEP.pushed).toBeNull();
     expect(resolveStatusAccessibleName({ status: 'pushed' })).toBe(
