@@ -116,9 +116,6 @@ export const selectActiveMount = ({ state, sessionId }: ActiveParams): SessionPr
 export const selectActiveMountId = ({ state, sessionId }: ActiveParams): MountId | null =>
   selectActiveMount({ state, sessionId })?.mountId ?? null;
 
-export const selectActiveProjectId = ({ state, sessionId }: ActiveParams): ProjectId | null =>
-  selectActiveMount({ state, sessionId })?.projectId ?? null;
-
 export const selectProjectMounts = ({
   state,
   sessionId,

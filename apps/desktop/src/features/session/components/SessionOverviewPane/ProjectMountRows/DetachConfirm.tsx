@@ -49,7 +49,23 @@ export const DetachConfirm = ({
 
   const action = detachActionFor({ plan });
   if (action === null) {
-    return null;
+    return (
+      <div className="flex flex-col gap-2 p-3">
+        <span className="text-xs font-medium">{title}</span>
+        <div className="flex min-w-0 flex-col gap-1 text-2xs text-muted-foreground">
+          {plan.lines.map((line) => (
+            <p key={line} className="break-words">
+              {line}
+            </p>
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
   }
   const isRisky = plan.kind === 'risky';
   const details =

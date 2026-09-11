@@ -1,19 +1,23 @@
 import type {
-  IsoDateTime,
   MountCleanupDecision,
+  MountDiskState,
+  MountId,
   ProjectId,
   SessionId,
-  SessionProjectMount,
+  SessionMountView,
 } from '@goodboy/types';
 import {
-  getSessionMount,
-  markSessionMountRemoved,
-  markSessionMountRemovedByPath,
+  deleteSessionMount,
+  updateSessionActiveMount,
   updateSessionActiveProject,
-  updateSessionMountLifecycle,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cleanupMountDirectory } from '../mount-cleanup';
+import { MOUNT_CLEANUP_BLOCKER_REASON, mountCleanupBlockers } from '../mount-cleanup/cleanupPolicy';
+import { pickActiveMount } from './activeMount';
+import { clearMountBranchObservation } from './mountBranchObservations';
+import { loadMountViews } from './mountViews';
+import { settleMountCleanupProposals } from './settleMountProposals';
 import type { GetFn, SetFn } from './types';
 
 export type DetachDisposition = 'keep-files' | 'remove-clean' | 'delete-files';
@@ -50,27 +54,78 @@ const selectCleanup = ({
   }
 };
 
+type DetachTarget = {
+  readonly mountId: MountId;
+  readonly mountName: string;
+  readonly branch: string;
+  readonly repoRoot: string;
+  readonly diskState: MountDiskState;
+  readonly directory: string | null;
+  readonly worktreePath: string | null;
+  readonly path: string;
+};
+
+const isGone = ({ diskState }: { readonly diskState: MountDiskState }): boolean =>
+  diskState === 'missing' || diskState === 'removed';
+
+const directoryOf = ({ view }: { readonly view: SessionMountView }): string | null => {
+  if (view.worktreePath !== null) {
+    return view.worktreePath;
+  }
+  return isGone({ diskState: view.diskState }) ? null : view.lastWorktreePath;
+};
+
+type TargetParams = {
+  readonly views: ReadonlyArray<SessionMountView>;
+  readonly projectId: ProjectId;
+};
+
+const detachTargets = ({ views, projectId }: TargetParams): ReadonlyArray<DetachTarget> =>
+  views
+    .filter((view) => view.projectId === projectId)
+    .map((view) => ({
+      mountId: view.id,
+      mountName: view.mountName,
+      branch: view.branch,
+      repoRoot: view.repoRoot,
+      diskState: view.diskState,
+      directory: directoryOf({ view }),
+      worktreePath: view.worktreePath,
+      path: view.worktreePath ?? view.lastWorktreePath ?? '',
+    }));
+
 type DropParams = {
   readonly set: SetFn;
   readonly sessionId: SessionId;
-  readonly mount: SessionProjectMount;
+  readonly target: DetachTarget;
 };
 
-const dropMountFromSession = ({ set, sessionId, mount }: DropParams): void => {
-  set((state) => ({
-    sessionProjectMounts: {
-      ...state.sessionProjectMounts,
-      [sessionId]: (state.sessionProjectMounts[sessionId] ?? []).filter(
-        (candidate) => candidate !== mount,
-      ),
-    },
-    sessionWorktrees: {
-      ...state.sessionWorktrees,
-      [sessionId]: (state.sessionWorktrees[sessionId] ?? []).filter(
-        (path) => path !== mount.worktreePath,
-      ),
-    },
-  }));
+const dropMountFromSession = ({ set, sessionId, target }: DropParams): void => {
+  set((state) => {
+    const views = state.sessionMounts[sessionId];
+    return {
+      ...(views === undefined
+        ? {}
+        : {
+            sessionMounts: {
+              ...state.sessionMounts,
+              [sessionId]: views.filter((view) => view.id !== target.mountId),
+            },
+          }),
+      sessionProjectMounts: {
+        ...state.sessionProjectMounts,
+        [sessionId]: (state.sessionProjectMounts[sessionId] ?? []).filter(
+          (candidate) => candidate.mountId !== target.mountId,
+        ),
+      },
+      sessionWorktrees: {
+        ...state.sessionWorktrees,
+        [sessionId]: (state.sessionWorktrees[sessionId] ?? []).filter(
+          (path) => target.worktreePath === null || path !== target.worktreePath,
+        ),
+      },
+    };
+  });
 };
 
 export const detachProject = (set: SetFn, get: GetFn) => {
@@ -79,9 +134,9 @@ export const detachProject = (set: SetFn, get: GetFn) => {
     projectId,
     disposition = 'remove-clean',
   }: DetachProjectInput): Promise<ReadonlyArray<DetachProjectOutcome>> => {
-    const mounts = get().sessionProjectMounts[sessionId] ?? [];
-    const detached = mounts.filter((candidate) => candidate.projectId === projectId);
-    const first = detached[0];
+    const views = await loadMountViews({ get, sessionId });
+    const targets = detachTargets({ views, projectId });
+    const first = targets[0];
     if (first === undefined) {
       throw new Error(`project not mounted in this session: ${projectId}`);
     }
@@ -89,87 +144,74 @@ export const detachProject = (set: SetFn, get: GetFn) => {
     const projectName = project?.name ?? first.mountName;
     const selection = selectCleanup({ disposition });
     const outcomes: Array<DetachProjectOutcome> = [];
-    for (const mount of detached) {
-      const result = await cleanupMountDirectory({
-        get,
-        keepDirectory: selection.keepDirectory,
-        mode: selection.mode,
-        target: {
-          sessionId,
-          mountId: mount.mountId ?? null,
-          projectId,
-          repoRoot: mount.repoRoot,
-          worktreePath: mount.worktreePath,
-          branch: mount.branch,
-          diskState: mount.diskState ?? 'unchecked',
-          isRepoProject: project?.kind === 'repo',
-        },
+    const released: Array<MountId> = [];
+    for (const target of targets) {
+      const blockers = mountCleanupBlockers({
+        state: get(),
+        sessionId,
+        mountId: target.mountId,
+        worktreePath: target.path,
       });
-      const decision = result.decision;
-      let kept: boolean;
-      let reason: string | null;
-      switch (decision.kind) {
-        case 'failed':
-          outcomes.push({
-            worktreePath: mount.worktreePath,
-            kind: decision.kind,
-            reason: decision.reason,
-          });
-          continue;
-        case 'kept':
-          kept = true;
-          reason = decision.reason;
-          break;
-        case 'removed':
-        case 'missing':
-          kept = false;
-          reason = null;
-          break;
-        default: {
-          const exhaustive: never = decision;
-          throw exhaustive;
-        }
-      }
-      const mountId = mount.mountId;
-      if (kept && mountId !== undefined) {
-        const revision =
-          mount.revision ??
-          (await getSessionMount({ db: tauriDatabase, sessionId, mountId }).catch(() => null))
-            ?.revision ??
-          null;
-        if (revision !== null) {
-          await updateSessionMountLifecycle({
-            db: tauriDatabase,
-            sessionId,
-            mountId,
-            worktreePath: mount.worktreePath,
-            isAttached: false,
-            diskState: result.diskState,
-            expectedRevision: revision,
-            updatedAt: new Date().toISOString() as IsoDateTime,
-          });
-        }
-      }
-      if (!kept && mountId !== undefined) {
-        await markSessionMountRemoved({ db: tauriDatabase, sessionId, mountId });
-      }
-      if (!kept && mountId === undefined) {
-        await markSessionMountRemovedByPath({
-          db: tauriDatabase,
-          sessionId,
-          worktreePath: mount.worktreePath,
+      if (blockers.length > 0) {
+        outcomes.push({
+          worktreePath: target.path,
+          kind: 'failed',
+          reason: blockers.map((blocker) => MOUNT_CLEANUP_BLOCKER_REASON[blocker]).join(', '),
         });
+        continue;
       }
-      dropMountFromSession({ set, sessionId, mount });
-      outcomes.push({ worktreePath: mount.worktreePath, kind: decision.kind, reason });
+      const directory = target.directory;
+      const result =
+        directory === null
+          ? null
+          : await cleanupMountDirectory({
+              get,
+              keepDirectory: selection.keepDirectory,
+              mode: selection.mode,
+              target: {
+                sessionId,
+                mountId: target.mountId,
+                projectId,
+                repoRoot: target.repoRoot,
+                worktreePath: directory,
+                branch: target.branch,
+                diskState: target.diskState,
+                isRepoProject: project?.kind === 'repo',
+              },
+            });
+      const decision: MountCleanupDecision = result?.decision ?? {
+        kind: 'missing',
+        path: target.path,
+      };
+      if (decision.kind === 'failed') {
+        outcomes.push({
+          worktreePath: target.path,
+          kind: decision.kind,
+          reason: decision.reason,
+        });
+        continue;
+      }
+      const kept = decision.kind === 'kept';
+      const reason = decision.kind === 'kept' ? decision.reason : null;
+      await settleMountCleanupProposals({
+        set,
+        sessionId,
+        mountId: target.mountId,
+        outcome: kept ? 'kept' : 'removed',
+      });
+      await deleteSessionMount({ db: tauriDatabase, sessionId, mountId: target.mountId });
+      released.push(target.mountId);
+      dropMountFromSession({ set, sessionId, target });
+      clearMountBranchObservation({ set, sessionId, mountId: target.mountId });
+      outcomes.push({ worktreePath: target.path, kind: decision.kind, reason });
       await get().recordSessionEvent({
         sessionId,
         kind: 'project_detached',
         payload: {
           projectId,
           projectName,
-          branch: mount.branch,
-          worktreePath: mount.worktreePath,
+          branch: target.branch,
+          worktreePath: target.path,
           kept,
           ...(reason != null ? { reason } : {}),
         },
@@ -177,7 +219,9 @@ export const detachProject = (set: SetFn, get: GetFn) => {
     }
     const remaining = get().sessionProjectMounts[sessionId] ?? [];
     const activeId = get().sessionActiveProject[sessionId] ?? null;
-    const isDetached = remaining.every((candidate) => candidate.projectId !== projectId);
+    const hasFailure = outcomes.some((outcome) => outcome.kind === 'failed');
+    const isDetached =
+      !hasFailure && remaining.every((candidate) => candidate.projectId !== projectId);
     const nextActiveId =
       activeId === projectId && isDetached ? (remaining[0]?.projectId ?? null) : (activeId ?? null);
     if (activeId === projectId && isDetached) {
@@ -187,8 +231,40 @@ export const detachProject = (set: SetFn, get: GetFn) => {
         projectId: nextActiveId,
       }).catch(() => undefined);
     }
+    const deleted = new Set<MountId>(released);
+    const selectedMountId = get().sessionActiveMount?.[sessionId] ?? null;
+    const storedMountId =
+      get().sessions.find((candidate) => candidate.id === sessionId)?.activeMountId ?? null;
+    const keepsSelected = selectedMountId !== null && !deleted.has(selectedMountId);
+    const keepsStored = storedMountId !== null && !deleted.has(storedMountId);
+    const holdsActiveMount =
+      (selectedMountId === null || keepsSelected) && (storedMountId === null || keepsStored);
+    const nextActiveMount = holdsActiveMount
+      ? null
+      : pickActiveMount({
+          mounts: remaining,
+          selectedMountId: keepsSelected ? selectedMountId : null,
+          storedMountId: keepsStored ? storedMountId : null,
+          activeProjectId: nextActiveId,
+        });
+    const nextActiveMountId = nextActiveMount?.mountId ?? null;
+    if (!holdsActiveMount) {
+      await updateSessionActiveMount({
+        db: tauriDatabase,
+        sessionId,
+        mountId: nextActiveMountId,
+      }).catch(() => undefined);
+    }
     set((state) => {
       const worktreeRecords = isDetached ? state.sessionWorktreeRecords?.[sessionId] : undefined;
+      const sessionBranches = { ...state.sessionBranches };
+      if (!holdsActiveMount) {
+        if (nextActiveMount === null) {
+          delete sessionBranches[sessionId];
+        } else {
+          sessionBranches[sessionId] = nextActiveMount.branch;
+        }
+      }
       return {
         ...(worktreeRecords !== undefined
           ? {
@@ -198,6 +274,12 @@ export const detachProject = (set: SetFn, get: GetFn) => {
               },
             }
           : {}),
+        ...(holdsActiveMount
+          ? {}
+          : {
+              sessionBranches,
+              sessionActiveMount: { ...state.sessionActiveMount, [sessionId]: nextActiveMountId },
+            }),
         ...(activeId === projectId && isDetached
           ? {
               sessionActiveProject: Object.fromEntries(
@@ -205,20 +287,36 @@ export const detachProject = (set: SetFn, get: GetFn) => {
                   .filter(([key]) => key !== sessionId)
                   .concat(nextActiveId === null ? [] : [[sessionId, nextActiveId]]),
               ),
+            }
+          : {}),
+        ...(holdsActiveMount && !(activeId === projectId && isDetached)
+          ? {}
+          : {
               sessions: state.sessions.map((candidate) => {
                 if (candidate.id !== sessionId) {
                   return candidate;
                 }
-                if (nextActiveId === null) {
-                  const { activeProjectId, ...rest } = candidate;
-                  return rest;
-                }
-                return { ...candidate, activeProjectId: nextActiveId };
+                const { activeMountId: _mount, activeProjectId: _project, ...rest } = candidate;
+                const keptProjectId =
+                  activeId === projectId && isDetached
+                    ? nextActiveId
+                    : (candidate.activeProjectId ?? null);
+                const currentMountId = candidate.activeMountId ?? null;
+                const keptMountId = holdsActiveMount ? currentMountId : nextActiveMountId;
+                return {
+                  ...rest,
+                  ...(keptMountId === null ? {} : { activeMountId: keptMountId }),
+                  ...(keptProjectId === null ? {} : { activeProjectId: keptProjectId }),
+                };
               }),
-            }
-          : {}),
+            }),
       };
     });
+    if (outcomes.some((outcome) => outcome.kind === 'kept')) {
+      void get()
+        .reconcileOrphanWorktrees()
+        .catch(() => undefined);
+    }
     return outcomes;
   };
 };

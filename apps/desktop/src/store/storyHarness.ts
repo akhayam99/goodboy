@@ -66,8 +66,8 @@ export const storySpies = {
     async (_params: { readonly event: { readonly kind: string } }) => undefined,
   ),
   insertSessionWorktree: vi.fn(async () => undefined),
-  markSessionMountRemoved: vi.fn(async () => true),
-  markSessionMountRemovedByPath: vi.fn(async () => true),
+  deleteSessionMount: vi.fn(async (_args: { readonly mountId: string }) => true),
+  listSessionMounts: vi.fn(async () => [] as ReadonlyArray<Record<string, unknown>>),
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
   updateSessionActiveProject: vi.fn(async () => undefined),
   updateSessionActiveMount: vi.fn(async () => true),
@@ -105,6 +105,8 @@ export const resetStorySpies = () => {
   storySpies.gitCommonDirectory.mockImplementation(
     async ({ repoPath }: { readonly repoPath: string }) => `${repoPath}/.git`,
   );
+  storySpies.deleteSessionMount.mockImplementation(async () => true);
+  storySpies.listSessionMounts.mockImplementation(async () => []);
 };
 
 export const dbModuleMock = () => ({
@@ -127,11 +129,13 @@ export const dbModuleMock = () => ({
   insertSession: storySpies.insertSession,
   insertSessionWorktree: storySpies.insertSessionWorktree,
   insertSessionEvent: storySpies.insertSessionEvent,
-  markSessionMountRemoved: storySpies.markSessionMountRemoved,
-  markSessionMountRemovedByPath: storySpies.markSessionMountRemovedByPath,
+  deleteSessionMount: storySpies.deleteSessionMount,
   updateSessionMountLifecycle: vi.fn(async () => true),
   detachSessionMounts: vi.fn(async () => undefined),
-  listSessionMounts: vi.fn(async () => []),
+  listSessionMounts: storySpies.listSessionMounts,
+  listMountOperations: vi.fn(async () => []),
+  getMountOperation: vi.fn(async () => null),
+  upsertMountOperation: vi.fn(async () => undefined),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),
   listContextSlotsForSession: vi.fn(async () => []),

@@ -1,7 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AnchoredPopover, Button, IconButton, cn, formatError, useDropdown } from '@goodboy/ui';
-import type { MountId, ProjectId, SessionId, WorktreeStatus, WorkspaceId } from '@goodboy/types';
+import type {
+  MountId,
+  ProjectId,
+  SessionId,
+  SessionMountView,
+  WorktreeStatus,
+  WorkspaceId,
+} from '@goodboy/types';
 import { useToast } from '../../../../../app/components/Toast';
 import { useAppStore } from '../../../../../store';
 import { isWorkingTreeClean } from '../../../../../shared/lib/gitStatus';
@@ -33,9 +40,32 @@ type Props = {
   readonly branch?: string;
   readonly menuLabel?: string;
   readonly canDetachProject?: boolean;
+  readonly isMountAttached?: boolean;
 };
 
-type Confirming = 'detach' | 'unmount' | null;
+type Confirming = 'detach' | 'forget' | 'unmount' | null;
+
+type DetachTarget = {
+  readonly mountId: MountId | null;
+  readonly path: string;
+  readonly branch: string;
+  readonly isOnDisk: boolean;
+};
+
+type KeptPathParams = {
+  readonly view: SessionMountView | null;
+  readonly fallback: string;
+};
+
+const keptPathOf = ({ view, fallback }: KeptPathParams): string | null => {
+  if (view === null) {
+    return fallback === '' ? null : fallback;
+  }
+  if (view.diskState === 'missing' || view.diskState === 'removed') {
+    return null;
+  }
+  return view.lastWorktreePath;
+};
 
 const BLOCKER_CODES = [
   'agent-running',
@@ -54,6 +84,7 @@ export const ProjectDetachMenu = ({
   branch = '',
   menuLabel,
   canDetachProject = true,
+  isMountAttached,
 }: Props) => {
   const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 190 });
   const detachProject = useAppStore((state) => state.detachProject);
@@ -62,13 +93,41 @@ export const ProjectDetachMenu = ({
   const isRepoProject = useAppStore(
     (state) => state.projects.find((candidate) => candidate.id === projectId)?.kind === 'repo',
   );
-  const detachTargets = useAppStore(
+  const forgetMount = useAppStore((state) => state.forgetMount);
+  const mountViews = useAppStore(
     useShallow((state) =>
-      (state.sessionProjectMounts[sessionId] ?? []).filter(
+      (state.sessionMounts?.[sessionId] ?? []).filter((view) => view.projectId === projectId),
+    ),
+  );
+  const projectMounts = useAppStore(
+    useShallow((state) =>
+      (state.sessionProjectMounts?.[sessionId] ?? []).filter(
         (candidate) => candidate.projectId === projectId,
       ),
     ),
   );
+  const detachTargets = useMemo<ReadonlyArray<DetachTarget>>(
+    () =>
+      mountViews.length > 0
+        ? mountViews.map((view) => ({
+            mountId: view.id,
+            path: view.worktreePath ?? view.lastWorktreePath ?? '',
+            branch: view.branch,
+            isOnDisk: view.diskState !== 'missing' && view.diskState !== 'removed',
+          }))
+        : projectMounts.map((mount) => ({
+            mountId: mount.mountId ?? null,
+            path: mount.worktreePath,
+            branch: mount.branch,
+            isOnDisk: true,
+          })),
+    [mountViews, projectMounts],
+  );
+  const mountView = mountViews.find((view) => view.id === mountId) ?? null;
+  const isAttached =
+    isMountAttached ??
+    (mountView === null ? true : mountView.isAttached && mountView.worktreePath !== null);
+  const keptPath = keptPathOf({ view: mountView, fallback: worktreePath });
   const blockerKey = useAppStore((state) =>
     [
       ...new Set(
@@ -76,8 +135,8 @@ export const ProjectDetachMenu = ({
           mountCleanupBlockers({
             state,
             sessionId,
-            mountId: target.mountId ?? null,
-            worktreePath: target.worktreePath,
+            mountId: target.mountId,
+            worktreePath: target.path,
           }),
         ),
       ),
@@ -97,6 +156,7 @@ export const ProjectDetachMenu = ({
   const label = menuLabel ?? `${projectName} actions`;
 
   const fail = (title: string, error: unknown) => {
+    showToast('error', `${title}: ${formatError(error)}`);
     void emitNotification('error', 'warning', title, formatError(error), {
       sessionId,
       workspaceId,
@@ -110,10 +170,10 @@ export const ProjectDetachMenu = ({
     if (!isRepoProject || blockers.length > 0) {
       return;
     }
-    const targets =
+    const targets: ReadonlyArray<DetachTarget> =
       detachTargets.length > 0
-        ? detachTargets.map((target) => ({ path: target.worktreePath, branch: target.branch }))
-        : [{ path: worktreePath, branch }];
+        ? detachTargets
+        : [{ mountId: mountId ?? null, path: worktreePath, branch, isOnDisk: true }];
     void Promise.all(
       targets.map(async (target): Promise<MountAssessment> => {
         const unavailable = {
@@ -121,8 +181,12 @@ export const ProjectDetachMenu = ({
           branch: target.branch,
           assessment: { kind: 'unavailable', path: target.path, branch: null },
         } satisfies MountAssessment;
-        if (target.path === '') {
-          return unavailable;
+        if (target.path === '' || !target.isOnDisk) {
+          return {
+            worktreePath: target.path,
+            branch: target.branch,
+            assessment: { kind: 'missing', path: target.path },
+          };
         }
         try {
           return {
@@ -165,9 +229,14 @@ export const ProjectDetachMenu = ({
     try {
       const outcomes = await detachProject({ sessionId, projectId, disposition });
       const summary = summarizeDetachOutcomes({ outcomes });
+      const summarized = outcomes.find((outcome) => outcome.kind === summary);
       showToast(
         summary === 'failed' ? 'error' : 'info',
-        detachOutcomeMessage({ kind: summary, projectName, worktreePath }),
+        detachOutcomeMessage({
+          kind: summary,
+          projectName,
+          worktreePath: summarized?.worktreePath ?? worktreePath,
+        }),
       );
       if (summary === 'failed') {
         assess();
@@ -180,6 +249,28 @@ export const ProjectDetachMenu = ({
     } finally {
       setIsBusy(false);
       setStage(null);
+    }
+  };
+
+  const forget = async () => {
+    if (mountId === undefined) {
+      return;
+    }
+    setIsBusy(true);
+    try {
+      const result = await forgetMount({ sessionId, mountId });
+      dropdown.close();
+      setConfirming(null);
+      showToast(
+        'info',
+        result.keptPath === null
+          ? `Removed ${branch === '' ? 'the mount' : branch} from this session.`
+          : `Removed ${branch === '' ? 'the mount' : branch} from this session. Files remain at ${result.keptPath}.`,
+      );
+    } catch (error) {
+      fail('could not remove the mount', error);
+    } finally {
+      setIsBusy(false);
     }
   };
 
@@ -257,6 +348,31 @@ export const ProjectDetachMenu = ({
           </div>
         </div>
       ) : null}
+      {confirming === 'forget' ? (
+        <div className="flex flex-col gap-2 p-3">
+          <span className="text-xs font-medium">
+            {branch === '' ? 'Remove this mount?' : `Remove ${branch}?`}
+          </span>
+          {keptPath === null ? (
+            <span className="text-2xs text-muted-foreground">
+              This branch leaves the session. The branch and any pull request stay.
+            </span>
+          ) : (
+            <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
+              <span className="text-2xs">Its files stay on disk at</span>
+              <span className="truncate font-mono text-2xs">{keptPath}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1">
+            <Button size="sm" variant="ghost" disabled={isBusy} onClick={() => void forget()}>
+              Remove
+            </Button>
+            <Button size="sm" variant="ghost" disabled={isBusy} onClick={() => setConfirming(null)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : null}
       {confirming === 'detach' ? (
         <DetachConfirm
           projectName={projectName}
@@ -276,7 +392,7 @@ export const ProjectDetachMenu = ({
       ) : null}
       {confirming === null ? (
         <div className="flex flex-col">
-          {mountId === undefined ? null : (
+          {mountId === undefined ? null : isAttached ? (
             <button
               type="button"
               role="menuitem"
@@ -284,6 +400,15 @@ export const ProjectDetachMenu = ({
               className="flex w-full items-center px-2.5 py-1.5 text-left motion-safe:transition-colors hover:bg-muted/40"
             >
               Unmount branch
+            </button>
+          ) : (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => setConfirming('forget')}
+              className="flex w-full items-center px-2.5 py-1.5 text-left motion-safe:transition-colors hover:bg-muted/40"
+            >
+              Remove from session
             </button>
           )}
           {canDetachProject ? (

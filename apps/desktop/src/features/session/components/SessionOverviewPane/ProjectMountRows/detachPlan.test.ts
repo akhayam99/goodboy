@@ -62,13 +62,28 @@ describe('buildDetachPlan', () => {
     expect(detachActionFor({ plan: { kind: 'checking' } })).toBeNull();
   });
 
-  it('keeps a folder project ahead of every other row', () => {
+  it('keeps a folder project ahead of any assessment', () => {
     expect(plan({ assessments: null, isRepoProject: false })).toEqual({
       kind: 'keep',
       reason: 'folder',
       lines: ['Detach api from this session; its folder at /worktrees/api will stay on disk.'],
       details: { totals: [], worktrees: [] },
     });
+  });
+
+  it('names the blocker of a folder project instead of promising its files stay', () => {
+    const result = plan({
+      assessments: null,
+      isRepoProject: false,
+      blockers: ['agent-running'],
+    });
+
+    expect(result).toMatchObject({
+      kind: 'keep',
+      reason: 'blocked',
+      lines: ['Work is still running in api; stop it before removing this worktree.'],
+    });
+    expect(detachActionFor({ plan: result })).toBeNull();
   });
 
   it('names each distinct blocker it found', () => {
@@ -82,6 +97,15 @@ describe('buildDetachPlan', () => {
         ],
       },
     );
+  });
+
+  it('offers no disposition at all while a blocker stands', () => {
+    expect(
+      detachActionFor({ plan: plan({ assessments: null, blockers: ['agent-running'] }) }),
+    ).toBeNull();
+    expect(
+      detachActionFor({ plan: plan({ assessments: null, blockers: ['terminal-open'] }) }),
+    ).toBeNull();
   });
 
   it('states the loss once, without repeating the path', () => {
