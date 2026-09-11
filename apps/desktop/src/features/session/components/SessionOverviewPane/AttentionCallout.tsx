@@ -38,11 +38,7 @@ export const AttentionCallout = ({ session, onSelectLens }: Props) => {
     return null;
   }
 
-  const presentation = describeSessionStage({
-    stage: stage.stage,
-    reason: stage.reason,
-    attention: stage.attention,
-  });
+  const presentation = describeSessionStage(stage);
   const tint = tintClasses(presentation.tone);
   const Icon = presentation.icon;
 
