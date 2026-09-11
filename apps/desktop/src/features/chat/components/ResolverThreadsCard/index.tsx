@@ -9,6 +9,7 @@ import {
 import type { AgentId, PrComment, ResolveThread, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
+import { openReviewThread } from '../../../review/openReviewThread';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { ResolverThreadVerdictRow } from './ResolverThreadVerdictRow';
@@ -68,8 +69,6 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
     (state) => state.sessionGithub[sessionId]?.detail?.comments ?? EMPTY_COMMENTS,
   );
   const resolveRows = useAppStore((state) => state.sessionResolveThreads[sessionId] ?? EMPTY_ROWS);
-  const setReviewLensIntent = useAppStore((state) => state.setReviewLensIntent);
-  const setActiveLens = useAppStore((state) => state.setActiveLens);
   const openDiffLens = useAppStore((state) => state.openDiffLens);
 
   const resolvedOnGithub = useMemo(
@@ -110,8 +109,7 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
   const [open, setOpen] = useState(false);
 
   const onOpen = (threadId: string) => {
-    setReviewLensIntent({ intent: { sessionId, threadId } });
-    setActiveLens(sessionId, 'review');
+    void openReviewThread({ sessionId, threadId });
   };
 
   const onOpenCommit = (sha: string) => {

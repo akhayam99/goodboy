@@ -21,13 +21,18 @@ const h = vi.hoisted(() => {
     activePublicationPreview: {} as Record<string, unknown>,
     reviewDrafts: {} as Record<string, ReadonlyArray<unknown>>,
     diffComments: {} as Record<string, ReadonlyArray<unknown>>,
-    reviewLensIntent: null as {
-      sessionId: string;
-      threadId?: string;
-      mode?: string;
-    } | null,
-    setReviewLensIntent: vi.fn(),
-    setResolveQueueView: vi.fn(),
+    reviewTargets: {} as Record<
+      string,
+      {
+        requestId: string;
+        status: string;
+        destination: Record<string, unknown>;
+        mode: string | null;
+        reason: string | null;
+        error: string | null;
+      } | null
+    >,
+    consumeReviewTarget: vi.fn(),
     loadResolveSession: vi.fn(async () => undefined),
     refreshSessionPr: vi.fn(async () => undefined),
     refreshSessionPrDetail: vi.fn(async () => undefined),
@@ -218,7 +223,7 @@ const seed = () => {
   h.state.sessionResolvePublications = {};
   h.state.reviewDrafts = { [SESSION_ID]: [] };
   h.state.diffComments = { [SESSION_ID]: [] };
-  h.state.reviewLensIntent = null;
+  h.state.reviewTargets = {};
   h.state.sessionSelectedPrNumber = {};
   h.state.sessionExternalTasks = {};
   h.state.branchPrs = [];
@@ -253,23 +258,86 @@ describe('ReviewPane', () => {
     expect(screen.getByTestId('resolve-queue')).toBeDefined();
   });
 
-  it('points the queue at the thread an intent carries', () => {
-    h.state.reviewLensIntent = { sessionId: SESSION_ID, threadId: 't-ready' };
+  it('leaves a thread target for the queue to consume', () => {
+    h.state.reviewTargets = {
+      [SESSION_ID]: {
+        requestId: 'req-1',
+        status: 'ready',
+        destination: { kind: 'thread', mountId: null, prNumber: 248, threadId: 't-ready' },
+        mode: null,
+        reason: null,
+        error: null,
+      },
+    };
     render(<ReviewPane session={SESSION} />);
 
-    expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      patch: { expandedThreadId: 't-ready' },
-    });
-    expect(h.state.setReviewLensIntent).toHaveBeenCalledWith({ intent: null });
+    expect(h.state.consumeReviewTarget).not.toHaveBeenCalled();
   });
 
-  it('opens the mode an intent names', () => {
-    h.state.reviewLensIntent = { sessionId: SESSION_ID, mode: 'checks' };
+  it('opens the mode a target names and then releases it', () => {
+    h.state.reviewTargets = {
+      [SESSION_ID]: {
+        requestId: 'req-2',
+        status: 'ready',
+        destination: { kind: 'home' },
+        mode: 'checks',
+        reason: null,
+        error: null,
+      },
+    };
     render(<ReviewPane session={SESSION} />);
 
     expect(screen.getByRole('button', { name: 'Checks' }).getAttribute('aria-pressed')).toBe(
       'true',
+    );
+    expect(h.state.consumeReviewTarget).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      requestId: 'req-2',
+    });
+  });
+
+  it('holds the queue on a pending target instead of switching mode early', () => {
+    h.state.reviewTargets = {
+      [SESSION_ID]: {
+        requestId: 'req-3',
+        status: 'pending',
+        destination: { kind: 'home' },
+        mode: 'checks',
+        reason: null,
+        error: null,
+      },
+    };
+    render(<ReviewPane session={SESSION} />);
+
+    expect(screen.getByTestId('resolve-queue')).toBeDefined();
+    expect(h.state.consumeReviewTarget).not.toHaveBeenCalled();
+  });
+
+  it('keeps a failed pull request navigation instead of forgetting it', () => {
+    h.state.reviewTargets = {
+      [SESSION_ID]: {
+        requestId: 'req-4',
+        status: 'unavailable',
+        destination: { kind: 'pull_request', mountId: null, prNumber: 9108 },
+        mode: null,
+        reason: 'no_pull_request',
+        error: null,
+      },
+    };
+    render(<ReviewPane session={SESSION} />);
+
+    expect(h.state.consumeReviewTarget).not.toHaveBeenCalled();
+  });
+
+  it('names the action on a pull request lifecycle failure', async () => {
+    h.state.markPrReady.mockRejectedValueOnce(new Error('branch is protected'));
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Mark ready/ }));
+
+    await waitFor(() =>
+      expect(h.showToast).toHaveBeenCalledWith('error', 'Mark ready failed: branch is protected'),
     );
   });
 

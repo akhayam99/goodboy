@@ -7,6 +7,11 @@ const h = vi.hoisted(() => ({
   comments: [] as ReadonlyArray<PrComment>,
   detail: null as { comments: ReadonlyArray<PrComment> } | null,
   openUrl: vi.fn(async () => undefined),
+  openReviewThread: vi.fn(async () => ({ kind: 'opened' as const })),
+}));
+
+vi.mock('../../../review/openReviewThread', () => ({
+  openReviewThread: h.openReviewThread,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -56,6 +61,7 @@ describe('ThreadCard', () => {
     h.comments = [];
     h.detail = null;
     h.openUrl.mockClear();
+    h.openReviewThread.mockClear();
   });
 
   afterEach(cleanup);
@@ -137,5 +143,23 @@ describe('ThreadCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /Open on GitHub/ }));
 
     expect(h.openUrl).toHaveBeenCalledWith('https://github.com/o/r/pull/9108#discussion_r1');
+  });
+
+  it('hands a resolvable thread to Review with the pull request it came from', () => {
+    render(<ThreadCard thread={kickoffThread()} sessionId={SESSION_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Open in Review/ }));
+
+    expect(h.openReviewThread).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      threadId: 'PRRT_1',
+      prUrl: 'https://github.com/o/r/pull/9108#discussion_r1',
+    });
+  });
+
+  it('offers no review entry on an archived card with no session', () => {
+    render(<ThreadCard thread={kickoffThread()} sessionId={null} />);
+
+    expect(screen.queryByRole('button', { name: /Open in Review/ })).toBeNull();
   });
 });

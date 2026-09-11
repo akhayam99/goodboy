@@ -6,7 +6,7 @@ import type {
   ResolveQueueItemWithThread,
   ResolveThread,
 } from '@goodboy/types';
-import { groupThreads } from '../github/comment-threads';
+import { groupThreads, type CommentThread } from '../github/comment-threads';
 import { prCommentLocation } from '../session/pr-comment-location';
 import {
   deriveResolveQueueStatus,
@@ -40,6 +40,7 @@ export type ResolveQueueDelivery = {
 export type ResolveQueueRow = {
   readonly item: ResolveQueueItem;
   readonly thread: ResolveThread;
+  readonly commentThread: CommentThread | null;
   readonly status: ResolveQueueStatus;
   readonly attempt: ResolveAttempt | null;
   readonly reviewerNote: ResolveQueueReviewerNote | null;
@@ -56,29 +57,38 @@ type Params = {
   readonly comments: ReadonlyArray<PrComment>;
 };
 
-const reviewerNoteByThreadId = ({
+const commentThreadByThreadId = ({
   comments,
 }: {
   readonly comments: ReadonlyArray<PrComment>;
-}): ReadonlyMap<string, ResolveQueueReviewerNote> => {
-  const map = new Map<string, ResolveQueueReviewerNote>();
+}): ReadonlyMap<string, CommentThread> => {
+  const map = new Map<string, CommentThread>();
   const threads = groupThreads(comments.filter((comment) => comment.source === 'review'));
   for (const thread of threads) {
     const threadId = thread.head.threadId;
     if (threadId == null || threadId === '') {
       continue;
     }
-    map.set(threadId, {
-      body: thread.head.body,
-      author: thread.head.author,
-      createdAtMs: Date.parse(thread.head.createdAt),
-      location: prCommentLocation({ comment: thread.head }),
-      path: thread.head.path ?? null,
-      line: thread.head.line ?? null,
-    });
+    map.set(threadId, thread);
   }
   return map;
 };
+
+const reviewerNoteOf = ({
+  thread,
+}: {
+  readonly thread: CommentThread | null;
+}): ResolveQueueReviewerNote | null =>
+  thread === null
+    ? null
+    : {
+        body: thread.head.body,
+        author: thread.head.author,
+        createdAtMs: Date.parse(thread.head.createdAt),
+        location: prCommentLocation({ comment: thread.head }),
+        path: thread.head.path ?? null,
+        line: thread.head.line ?? null,
+      };
 
 const coveredThreadIdsFor = ({
   thread,
@@ -135,8 +145,9 @@ export const buildResolveQueueRows = ({
   deliveryReceipts,
   comments,
 }: Params): ReadonlyArray<ResolveQueueRow> => {
-  const notes = reviewerNoteByThreadId({ comments });
+  const commentThreads = commentThreadByThreadId({ comments });
   return entries.map(({ item, thread }) => {
+    const commentThread = commentThreads.get(thread.threadId) ?? null;
     const attempt =
       thread.activeAttemptId === null
         ? null
@@ -150,9 +161,10 @@ export const buildResolveQueueRows = ({
     return {
       item,
       thread,
+      commentThread,
       status,
       attempt,
-      reviewerNote: notes.get(thread.threadId) ?? null,
+      reviewerNote: reviewerNoteOf({ thread: commentThread }),
       proposal: thread.replyDraft,
       proposalKind: resolveProposalKind({ item, thread }),
       coveredThreadIds: coveredThreadIdsFor({ thread, entries }),

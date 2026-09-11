@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { FileDiff } from '@goodboy/types';
 import type { ResolveChecksSummary } from '../../checkReceipts';
+import type { CommentThread } from '../../../github/comment-threads';
 import type { ResolveQueueRow, ResolveQueueReviewerNote } from '../../buildResolveQueueRows';
 import { ResolveItemView } from './index';
 
@@ -24,6 +25,29 @@ const noteOf = ({
   line,
 });
 
+const commentThreadOf = ({
+  threadId,
+  note,
+}: {
+  readonly threadId: string;
+  readonly note: ResolveQueueReviewerNote;
+}): CommentThread => ({
+  head: {
+    id: `comment-${threadId}`,
+    author: note.author,
+    authorAvatarUrl: null,
+    body: note.body,
+    createdAt: '2026-01-05T09:00:00.000Z',
+    url: `https://github.com/example/repo/pull/12#discussion_r${threadId}`,
+    source: 'review',
+    resolved: false,
+    ...(note.path !== null && { path: note.path }),
+    ...(note.line !== null && { line: note.line }),
+    threadId,
+  },
+  replies: [],
+});
+
 const rowOf = ({
   threadId,
   note,
@@ -40,6 +64,7 @@ const rowOf = ({
   ({
     item: { id: `item-${threadId}`, integratedSha },
     thread: { threadId, revision: 1, stateReason: null, commitShas: null, question: null },
+    commentThread: commentThreadOf({ threadId, note }),
     status: 'fix_ready',
     attempt: null,
     reviewerNote: note,
@@ -137,6 +162,7 @@ const renderView = (overrides: Partial<Parameters<typeof ResolveItemView>[0]> = 
       onStopRun={vi.fn()}
       onViewWork={vi.fn()}
       onSelectRelated={vi.fn()}
+      onOpenUrl={vi.fn()}
       {...overrides}
     />,
   );

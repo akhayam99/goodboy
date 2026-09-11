@@ -15,7 +15,6 @@ import type {
   SessionViewPrefs,
   WorkspaceId,
 } from '@goodboy/types';
-import type { ReviewMode } from '../../../features/review/reviewMode';
 import type { ResolveItemDraft } from '../../../features/resolve/resolveItemDraft';
 
 export type { SetFn, GetFn } from '../../slice-types';
@@ -71,14 +70,6 @@ export type FocusedExternalTask = {
   readonly provider: SessionExternalTaskProvider;
   readonly externalId: string;
   readonly projectId: ProjectId | null;
-};
-
-export type ReviewLensIntent = {
-  readonly sessionId: SessionId;
-  readonly threadId?: string;
-  readonly attemptId?: string;
-  readonly prNumber?: number;
-  readonly mode?: ReviewMode;
 };
 
 export type ResolveQueueFilter = 'needs_review' | 'everything' | 'retryable';
@@ -155,7 +146,6 @@ export type SessionCreation = {
 
 type SessionViewSliceState = {
   readonly scriptsLensScope: { readonly projectId: ProjectId } | null;
-  readonly reviewLensIntent: ReviewLensIntent | null;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
@@ -178,7 +168,6 @@ type SessionViewSliceState = {
 
 type SessionViewSliceActions = {
   setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;
-  setReviewLensIntent(params: { readonly intent: ReviewLensIntent | null }): void;
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;

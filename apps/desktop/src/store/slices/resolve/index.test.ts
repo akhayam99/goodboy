@@ -4,6 +4,7 @@ import {
   hasResolveImport,
   insertMessage,
   insertOpenQuestion,
+  listResolveQueueItems,
   listResolveThreads,
   migrate,
   upsertResolveThread,
@@ -48,6 +49,7 @@ const createHarness = () => {
     ...resolveInitialState,
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
     agentKindOverride: {},
+    sessions: [{ id: SESSION_ID }],
     sessionActiveProject: {},
     sessionGithub: {},
   };
@@ -886,5 +888,187 @@ describe('durable resolve store', () => {
         (row) => row.state === 'working',
       ),
     ).toBe(true);
+  });
+});
+
+type RemoteThreadParams = {
+  readonly threadId: string;
+  readonly prNumber: number;
+  readonly resolved?: boolean;
+};
+
+const githubWithThread = ({ threadId, prNumber, resolved = false }: RemoteThreadParams) => ({
+  [SESSION_ID]: {
+    pr: { number: prNumber },
+    detail: {
+      prNumber,
+      comments: [
+        {
+          id: 'comment-1',
+          author: 'dhh',
+          authorAvatarUrl: null,
+          body: 'This retries forever on a 500.',
+          createdAt: NOW,
+          url: `https://github.com/example/repo/pull/${prNumber}#discussion_r1`,
+          source: 'review',
+          resolved,
+          threadId,
+        },
+      ],
+      reviews: [],
+      reviewRequests: [],
+      checks: [],
+    },
+  },
+});
+
+const queuedThreadIds = async (): Promise<ReadonlyArray<string>> =>
+  (await listResolveQueueItems({ db, sessionId: SESSION_ID })).map(({ item }) => item.threadId);
+
+describe('materializing a review thread the queue has never seen', () => {
+  it('creates the thread and its first queue item, once', async () => {
+    const live = createHarness();
+    live.store.setState({
+      sessionGithub: githubWithThread({ threadId: 'PRRT_9', prNumber: 12 }),
+    } as never);
+
+    const first = await live.actions.ensureReviewThread({
+      sessionId: SESSION_ID,
+      threadId: 'PRRT_9',
+      prNumber: 12,
+    });
+    const second = await live.actions.ensureReviewThread({
+      sessionId: SESSION_ID,
+      threadId: 'PRRT_9',
+      prNumber: 12,
+    });
+
+    expect(first).toBe('created');
+    expect(second).toBe('existing');
+    expect(await queuedThreadIds()).toEqual(['PRRT_9']);
+    expect(
+      (await listResolveThreads({ db, sessionId: SESSION_ID })).find(
+        (row) => row.threadId === 'PRRT_9',
+      ),
+    ).toMatchObject({ prNumber: 12, state: 'open', revision: 0 });
+  });
+
+  it('projects the new row so the queue can select it', async () => {
+    const live = createHarness();
+    live.store.setState({
+      sessionGithub: githubWithThread({ threadId: 'PRRT_9', prNumber: 12 }),
+    } as never);
+
+    await live.actions.ensureReviewThread({
+      sessionId: SESSION_ID,
+      threadId: 'PRRT_9',
+      prNumber: 12,
+    });
+
+    expect(
+      (live.get().sessionResolveQueueItems[SESSION_ID] ?? []).map(({ item }) => item.threadId),
+    ).toEqual(['PRRT_9']);
+  });
+
+  it('refuses a thread the selected pull request does not carry', async () => {
+    const live = createHarness();
+
+    expect(
+      await live.actions.ensureReviewThread({
+        sessionId: SESSION_ID,
+        threadId: 'PRRT_9',
+        prNumber: 12,
+      }),
+    ).toBe('missing');
+    expect(await queuedThreadIds()).toEqual([]);
+  });
+
+  it('refuses a thread already recorded against another pull request', async () => {
+    const live = createHarness();
+    live.store.setState({
+      sessionGithub: githubWithThread({ threadId: 'PRRT_9', prNumber: 12 }),
+    } as never);
+    await upsertResolveThread({
+      db,
+      row: { ...createResolveThread({ sessionId: SESSION_ID, threadId: 'PRRT_9' }), prNumber: 41 },
+      expectedRevision: null,
+    });
+
+    expect(
+      await live.actions.ensureReviewThread({
+        sessionId: SESSION_ID,
+        threadId: 'PRRT_9',
+        prNumber: 12,
+      }),
+    ).toBe('missing');
+    expect(await queuedThreadIds()).toEqual([]);
+  });
+
+  it('keeps a closed thread closed instead of queueing it again', async () => {
+    const live = createHarness();
+    live.store.setState({
+      sessionGithub: githubWithThread({ threadId: 'PRRT_9', prNumber: 12 }),
+    } as never);
+    await upsertResolveThread({
+      db,
+      row: {
+        ...createResolveThread({ sessionId: SESSION_ID, threadId: 'PRRT_9', prNumber: 12 }),
+        state: 'closed',
+        githubResolved: true,
+        closedSource: 'github',
+        closedAt: 1,
+      },
+      expectedRevision: null,
+    });
+
+    expect(
+      await live.actions.ensureReviewThread({
+        sessionId: SESSION_ID,
+        threadId: 'PRRT_9',
+        prNumber: 12,
+      }),
+    ).toBe('closed');
+    expect(await queuedThreadIds()).toEqual([]);
+    expect(
+      (await listResolveThreads({ db, sessionId: SESSION_ID })).find(
+        (row) => row.threadId === 'PRRT_9',
+      )?.state,
+    ).toBe('closed');
+  });
+
+  it('leaves a thread github already resolved out of the queue', async () => {
+    const live = createHarness();
+    live.store.setState({
+      sessionGithub: githubWithThread({ threadId: 'PRRT_9', prNumber: 12, resolved: true }),
+    } as never);
+
+    expect(
+      await live.actions.ensureReviewThread({
+        sessionId: SESSION_ID,
+        threadId: 'PRRT_9',
+        prNumber: 12,
+      }),
+    ).toBe('closed');
+    expect(await queuedThreadIds()).toEqual([]);
+    expect(await listResolveThreads({ db, sessionId: SESSION_ID })).toEqual([]);
+  });
+
+  it('writes nothing once the navigation that asked for it is superseded', async () => {
+    const live = createHarness();
+    live.store.setState({
+      sessionGithub: githubWithThread({ threadId: 'PRRT_9', prNumber: 12 }),
+    } as never);
+
+    expect(
+      await live.actions.ensureReviewThread({
+        sessionId: SESSION_ID,
+        threadId: 'PRRT_9',
+        prNumber: 12,
+        isCancelled: () => true,
+      }),
+    ).toBe('cancelled');
+    expect(await queuedThreadIds()).toEqual([]);
+    expect(await listResolveThreads({ db, sessionId: SESSION_ID })).toEqual([]);
+    expect(live.get().sessionResolveQueueItems[SESSION_ID] ?? []).toEqual([]);
   });
 });

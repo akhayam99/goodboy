@@ -73,7 +73,7 @@ export const useBoardNavigation = (): BoardNavigation => {
     const openGithub = (session: Session): void => {
       const id = session.id as SessionId;
       void setCurrentSession(id).then(() => {
-        openReview({ sessionId: id });
+        void openReview({ sessionId: id });
       });
     };
 

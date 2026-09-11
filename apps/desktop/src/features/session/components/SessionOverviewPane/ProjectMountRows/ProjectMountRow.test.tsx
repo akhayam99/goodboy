@@ -23,7 +23,7 @@ const { store, remoteKind } = vi.hoisted(() => ({
     setScriptsLensScope: vi.fn(),
     openMountDiff: vi.fn(async () => undefined),
     openMountTerminal: vi.fn(),
-    openMountRequest: vi.fn(async () => undefined),
+    openMountRequest: vi.fn(async () => ({ kind: 'opened' as const })),
     attachMount: vi.fn(async () => undefined),
     projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null }>,
     emitNotification: vi.fn(),

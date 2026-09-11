@@ -1,4 +1,6 @@
 import { createResolveSlice } from './slices/resolve';
+import { createReviewNavigationSlice } from './slices/review-navigation';
+import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
 import { type SlotKey } from '@goodboy/core';
@@ -139,7 +141,6 @@ import type {
   DiffFocus,
   LensKind,
   ResolveQueueView,
-  ReviewLensIntent,
   SessionCreationId,
   SessionCreationKind,
   SessionStudio,
@@ -211,6 +212,7 @@ import type {
   UnmountMountResult,
 } from './slices/project-mounts/types';
 import type { OpenMountRequestInput } from './slices/project-mounts/openMountRequest';
+import type { ReviewTargetOutcome } from './slices/review-navigation';
 import type {
   DetachProjectInput,
   DetachProjectOutcome,
@@ -451,7 +453,7 @@ type AppActions = {
   inspectMount(input: MountKeyInput): Promise<InspectMountResult>;
   resolveMountBranchMismatch(input: ResolveMountBranchInput): Promise<SessionMountView>;
   setSessionActiveMount(input: MountKeyInput): Promise<void>;
-  openMountRequest(input: OpenMountRequestInput): Promise<void>;
+  openMountRequest(input: OpenMountRequestInput): Promise<ReviewTargetOutcome>;
   cleanupSessionMounts(
     input: CleanupSessionMountsInput,
   ): Promise<ReadonlyArray<SessionCleanupOutcome>>;
@@ -895,7 +897,6 @@ type AppActions = {
   dismissSessionNudge(sessionId: SessionId, outcome?: 'accepted' | 'dismissed'): Promise<void>;
   acceptSessionNudgeHandoff(sessionId: SessionId): Promise<AgentId | null>;
   setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;
-  setReviewLensIntent(params: { readonly intent: ReviewLensIntent | null }): void;
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
@@ -950,7 +951,10 @@ type AppActions = {
   }): Promise<void>;
 };
 
-export type AppStore = AppState & AppActions & ReturnType<typeof createResolveSlice>;
+export type AppStore = AppState &
+  AppActions &
+  ReturnType<typeof createResolveSlice> &
+  ReturnType<typeof createReviewNavigationSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1059,6 +1063,7 @@ export const initialState: AppState = {
   agentEffortOverride: {},
   agentKindOverride: {},
   ...resolveInitialState,
+  ...reviewNavigationInitialState,
   agentDraft: {},
   workflowDrafts: {},
   ...initialWorkflowStudioState,
@@ -1118,6 +1123,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createProvidersSlice(set, get),
   ...createAgentsSlice(set, get),
   ...createResolveSlice({ set, get }),
+  ...createReviewNavigationSlice({ set, get }),
   ...createWorkflowDraftsSlice(set, get),
   ...createWorkflowStudioSlice(set, get),
   ...createSlotsSlice(set, get),

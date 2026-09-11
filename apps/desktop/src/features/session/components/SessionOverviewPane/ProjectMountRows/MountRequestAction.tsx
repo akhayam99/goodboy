@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { cn } from '@goodboy/ui';
 import type { MountPullRequestProvider, SessionId } from '@goodboy/types';
 import type { RemoteHostKind } from '../../../../../shared/lib/remoteHost';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 import { usePrDraftAgentRunning } from '../../../../github/usePrDraftAgentRunning';
+import { REVIEW_TARGET_REASON_COPY } from '../../../../review/reviewTargetCopy';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -20,6 +22,7 @@ const CREATABLE: Readonly<Record<string, MountPullRequestProvider>> = {
 
 export const MountRequestAction = ({ sessionId, row, label, hasChanges, remoteKind }: Props) => {
   const openMountRequest = useAppStore((state) => state.openMountRequest);
+  const [error, setError] = useState<string | null>(null);
   const isDraftAgentRunning = usePrDraftAgentRunning({ sessionId });
   const request = row.request;
 
@@ -36,17 +39,37 @@ export const MountRequestAction = ({ sessionId, row, label, hasChanges, remoteKi
   const idleLabel = provider === 'gitlab' ? 'Create MR' : 'Create PR';
 
   return (
-    <button
-      type="button"
-      disabled={isBlocked}
-      aria-label={isBlocked ? `An agent is opening a PR for ${label}` : `Create a PR for ${label}`}
-      onClick={() => void openMountRequest({ sessionId, mountId: row.mountId, provider })}
-      className={cn(
-        'shrink-0 rounded-md px-1.5 py-1 text-xs text-muted-foreground/70 hover:bg-muted/40 hover:text-foreground',
-        'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent',
+    <span className="flex min-w-0 shrink-0 items-center gap-1">
+      <button
+        type="button"
+        disabled={isBlocked}
+        aria-label={
+          isBlocked ? `An agent is opening a PR for ${label}` : `Create a PR for ${label}`
+        }
+        onClick={() => {
+          setError(null);
+          void openMountRequest({ sessionId, mountId: row.mountId, provider }).then((outcome) => {
+            if (outcome.kind === 'unavailable' && outcome.reason !== 'superseded') {
+              setError(REVIEW_TARGET_REASON_COPY[outcome.reason]);
+              return;
+            }
+            if (outcome.kind === 'failed') {
+              setError(outcome.error);
+            }
+          });
+        }}
+        className={cn(
+          'shrink-0 rounded-md px-1.5 py-1 text-xs text-muted-foreground/70 hover:bg-muted/40 hover:text-foreground',
+          'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent',
+        )}
+      >
+        {isBlocked ? 'Opening PR…' : idleLabel}
+      </button>
+      {error !== null && (
+        <span role="status" className="min-w-0 truncate text-2xs text-danger">
+          {error}
+        </span>
       )}
-    >
-      {isBlocked ? 'Opening PR…' : idleLabel}
-    </button>
+    </span>
   );
 };
