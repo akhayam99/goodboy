@@ -23,8 +23,10 @@ import {
 } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isSessionAttributionEnabled } from '../../sessionAttribution';
+import { selectActiveMount } from '../project-mounts/selectors';
 import { buildResolutionReplyBody } from '../github/buildResolutionReplyBody';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
+import { mountTargetOf } from './mountTarget';
 import { UNKNOWN_PUBLICATION_REPO, isPublicationTargetBusy } from './publicationLock';
 import { publicationTarget } from './publicationTarget';
 import { loadPublicationsInto } from './publicationState';
@@ -204,7 +206,8 @@ export const preparePublication = async ({
 }: Params): Promise<ResolvePublicationPreview> => {
   const target = publicationTarget({ get, sessionId });
   const uncaptured = await recoverUncapturedResolveWork({ set, get, sessionId }).catch(() => null);
-  const repo = getSessionRepo({ get, sessionId });
+  const mount = selectActiveMount({ state: get(), sessionId });
+  const repo = mount === null ? null : getSessionRepo({ get, sessionId, mountId: mount.mountId });
   const rows = await listResolveThreads({ db: tauriDatabase, sessionId });
   const scope = await approvedPublicationScope({ sessionId });
   const selection = selectPublishableThreads({
@@ -336,7 +339,7 @@ export const preparePublication = async ({
     candidateIds: scope.candidateIds,
     approvedItemIds: scope.itemIds,
     requiresPush,
-    mountTarget: null,
+    mountTarget: mount === null ? null : mountTargetOf({ mount }),
     phase: 'previewed',
     pushedHead: null,
     confirmedAt: null,

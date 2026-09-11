@@ -11,7 +11,15 @@ import {
   type Database,
 } from '@goodboy/db';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
-import type { Agent, AgentId, IsoDateTime, MessageId, SessionId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  IsoDateTime,
+  MessageId,
+  MountId,
+  ProjectId,
+  SessionId,
+} from '@goodboy/types';
 import type { GetFn, SetFn } from './types';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
@@ -29,6 +37,10 @@ vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: h }));
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
+const MOUNT_ID = 'mount-1' as MountId;
+const PROJECT_ID = 'project-1' as ProjectId;
+const WORKTREE_PATH = '/repos/api/.goodboy/worktrees/one';
+const MOUNT_TARGET = { mountId: MOUNT_ID, mountRevision: 2, worktreePath: WORKTREE_PATH };
 const NOW = '2026-08-05T00:00:00.000Z' as IsoDateTime;
 const agent: Agent = {
   id: AGENT_ID,
@@ -49,8 +61,28 @@ const createHarness = () => {
     ...resolveInitialState,
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
     agentKindOverride: {},
-    sessions: [{ id: SESSION_ID }],
-    sessionActiveProject: {},
+    sessions: [{ id: SESSION_ID, activeMountId: MOUNT_ID }],
+    sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
+    sessionActiveMount: { [SESSION_ID]: MOUNT_ID },
+    sessionProjectMounts: {
+      [SESSION_ID]: [
+        {
+          mountId: MOUNT_ID,
+          sessionId: SESSION_ID,
+          projectId: PROJECT_ID,
+          mountName: 'api',
+          worktreePath: WORKTREE_PATH,
+          lastWorktreePath: null,
+          repoRoot: '/repos/api',
+          branch: 'ak/one',
+          baseBranch: null,
+          parallelIndex: 0,
+          isAttached: true,
+          diskState: 'present',
+          revision: 2,
+        },
+      ],
+    },
     sessionGithub: {},
   };
   const store = createStore(() => initial);
@@ -240,6 +272,7 @@ describe('durable resolve store', () => {
         effort: null,
         instructions: null,
         phase: 'running',
+        mountTarget: MOUNT_TARGET,
       });
       await live.actions.persistResolveTurn({
         sessionId: SESSION_ID,
@@ -276,6 +309,7 @@ describe('durable resolve store', () => {
       effort: null,
       instructions: null,
       phase: 'running',
+      mountTarget: MOUNT_TARGET,
     });
     await live.actions.persistResolveTurn({
       sessionId: SESSION_ID,
@@ -313,6 +347,7 @@ describe('durable resolve store', () => {
       effort: null,
       instructions: null,
       phase: 'running',
+      mountTarget: MOUNT_TARGET,
     });
     await live.actions.persistResolveTurn({
       sessionId: SESSION_ID,
@@ -426,6 +461,7 @@ describe('durable resolve store', () => {
       effort: 'high',
       instructions: 'Fix the comments',
       phase: 'running',
+      mountTarget: MOUNT_TARGET,
     });
     const assistantText =
       '<<comment-analysis threadId="PRRT_1" verdict="fix" summary="Add a guard">>';
@@ -531,6 +567,7 @@ describe('durable resolve store', () => {
       effort: null,
       instructions: 'Reword the reply',
       phase: 'running',
+      mountTarget: MOUNT_TARGET,
     });
     const assistantText =
       '<<comment-reply id="PRRT_1">>The guard already handles this.<</comment-reply>>';
@@ -573,6 +610,7 @@ describe('durable resolve store', () => {
       effort: null,
       instructions: null,
       phase: 'running',
+      mountTarget: MOUNT_TARGET,
     } satisfies Parameters<typeof live.actions.recordResolveAttempt>[0];
     const oldAttemptId = await live.actions.recordResolveAttempt(params);
     await live.actions.recordResolvePhase({
@@ -689,6 +727,7 @@ describe('durable resolve store', () => {
       effort: null,
       instructions: null,
       phase: 'running',
+      mountTarget: MOUNT_TARGET,
     });
     await harness.actions.persistResolveTurn({
       sessionId: SESSION_ID,
@@ -794,6 +833,7 @@ describe('durable resolve store', () => {
       effort: null,
       instructions: null,
       phase: 'running',
+      mountTarget: MOUNT_TARGET,
       threadIds: [],
     });
     await live.actions.persistResolveTurn({
@@ -826,6 +866,7 @@ describe('durable resolve store', () => {
       effort: null,
       instructions: null,
       phase: 'running',
+      mountTarget: MOUNT_TARGET,
       threadIds: ['PRRT_2'],
     });
 
@@ -850,6 +891,7 @@ describe('durable resolve store', () => {
       effort: null,
       instructions: 'retry both',
       phase: 'queued',
+      mountTarget: MOUNT_TARGET,
     });
 
     expect(
@@ -879,6 +921,7 @@ describe('durable resolve store', () => {
       effort: null,
       instructions: null,
       phase: 'running',
+      mountTarget: MOUNT_TARGET,
     });
 
     await live.actions.cancelResolveAttempt({ sessionId: SESSION_ID, attemptId });

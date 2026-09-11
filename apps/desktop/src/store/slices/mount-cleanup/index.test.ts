@@ -91,10 +91,13 @@ vi.mock('@goodboy/db', () => ({
 }));
 
 import { createMountCleanupSlice } from './index';
+import { mountCleanupBlockers } from './cleanupPolicy';
 
 const SESSION_ID = 'session-1' as SessionId;
 const PROJECT_ID = 'project-1' as ProjectId;
 const MOUNT_ID = 'mount-1' as MountId;
+const SIBLING_MOUNT_ID = 'mount-2' as MountId;
+const SIBLING_PATH = '/repos/goodboy/.goodboy/worktrees/gb-two';
 const REPO_ROOT = '/repos/goodboy';
 const WORKTREE_PATH = '/repos/goodboy/.goodboy/worktrees/gb-one';
 
@@ -406,5 +409,72 @@ describe('cleaning the mounts of a session', () => {
       kind: 'kept',
       reason: 'an agent is still writing to this mount',
     });
+  });
+});
+
+describe('what a running fix holds', () => {
+  type AttemptFixture = {
+    readonly phase: string;
+    readonly mountTarget: { readonly mountId: MountId; readonly worktreePath: string } | null;
+  };
+
+  const blockersFor = ({
+    mountId,
+    worktreePath,
+    attempt,
+  }: {
+    readonly mountId: MountId;
+    readonly worktreePath: string;
+    readonly attempt: AttemptFixture;
+  }) => {
+    const state = makeState();
+    state['sessionResolveAttempts'] = { [SESSION_ID]: [attempt] };
+    return mountCleanupBlockers({
+      state: state as never,
+      sessionId: SESSION_ID,
+      mountId,
+      worktreePath,
+    });
+  };
+
+  const runningOn = ({
+    mountId,
+    worktreePath,
+  }: {
+    readonly mountId: MountId;
+    readonly worktreePath: string;
+  }): AttemptFixture => ({
+    phase: 'running',
+    mountTarget: { mountId, worktreePath },
+  });
+
+  it('holds the mount the fix is writing to', () => {
+    expect(
+      blockersFor({
+        mountId: MOUNT_ID,
+        worktreePath: WORKTREE_PATH,
+        attempt: runningOn({ mountId: MOUNT_ID, worktreePath: WORKTREE_PATH }),
+      }),
+    ).toEqual(['agent-running']);
+  });
+
+  it('lets a sibling of the mount the fix is writing to go', () => {
+    expect(
+      blockersFor({
+        mountId: SIBLING_MOUNT_ID,
+        worktreePath: SIBLING_PATH,
+        attempt: runningOn({ mountId: MOUNT_ID, worktreePath: WORKTREE_PATH }),
+      }),
+    ).toEqual([]);
+  });
+
+  it('still holds every mount for a legacy fix that never recorded one', () => {
+    expect(
+      blockersFor({
+        mountId: SIBLING_MOUNT_ID,
+        worktreePath: SIBLING_PATH,
+        attempt: { phase: 'running', mountTarget: null },
+      }),
+    ).toEqual(['agent-running']);
   });
 });

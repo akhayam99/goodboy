@@ -11,7 +11,7 @@ import {
   listResolveThreads,
   setResolveQueueItemApproval,
 } from '@goodboy/db';
-import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
@@ -38,6 +38,7 @@ const git = (cwd: string, args: ReadonlyArray<string>): string =>
 const h = vi.hoisted(() => ({
   run: vi.fn<GhRun>(),
   leases: new Map<string, string>(),
+  pushedFrom: [] as Array<string>,
   failOnPhase: null as string | null,
   isRemoteHeadUnreadable: false,
   hidesRemoteHeadAfterPush: false,
@@ -67,6 +68,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 vi.mock('../../../features/github/github', () => ({
   tauriGhRunner: { run: h.run },
   gitPush: vi.fn(async (cwd: string, branch: string | null) => {
+    h.pushedFrom.push(cwd);
     try {
       const stdout = git(cwd, ['push', 'origin', branch ?? 'HEAD']);
       if (h.hidesRemoteHeadAfterPush) {
@@ -207,6 +209,9 @@ const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 const PROJECT_ID = 'project-1' as ProjectId;
 const SESSION_ID = 'session-1' as SessionId;
 const OTHER_SESSION_ID = 'session-2' as SessionId;
+const MOUNT_ID = 'mount-1' as MountId;
+const SIBLING_MOUNT_ID = 'mount-2' as MountId;
+const SIBLING_PATH = '/repo/sibling';
 const PR_URL = 'https://github.com/acme/web/pull/248';
 
 const replyOk = JSON.stringify({
@@ -241,6 +246,29 @@ const commit = ({ text, message }: { readonly text: string; readonly message: st
   return git(worktreePath, ['rev-parse', 'HEAD']);
 };
 
+type MountFixture = {
+  readonly mountId: MountId;
+  readonly sessionId: SessionId;
+  readonly path: string;
+  readonly revision: number;
+};
+
+const mountRow = ({ mountId, sessionId, path, revision }: MountFixture) => ({
+  mountId,
+  sessionId,
+  projectId: PROJECT_ID,
+  mountName: 'repo',
+  worktreePath: path,
+  lastWorktreePath: null,
+  repoRoot,
+  branch: 'feature/retry',
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present' as const,
+  revision,
+});
+
 const makeStore = ({ sessionId = SESSION_ID }: { readonly sessionId?: SessionId } = {}) => {
   const store = createStore(() => ({
     ...resolveInitialState,
@@ -253,24 +281,24 @@ const makeStore = ({ sessionId = SESSION_ID }: { readonly sessionId?: SessionId 
     projects: [{ id: PROJECT_ID, kind: 'repo' }],
     sessionProjectMounts: {
       [SESSION_ID]: [
-        {
-          projectId: PROJECT_ID,
-          mountName: 'repo',
-          worktreePath,
-          repoRoot,
-          branch: 'feature/retry',
-        },
+        mountRow({ mountId: MOUNT_ID, sessionId: SESSION_ID, path: worktreePath, revision: 3 }),
+        mountRow({
+          mountId: SIBLING_MOUNT_ID,
+          sessionId: SESSION_ID,
+          path: SIBLING_PATH,
+          revision: 1,
+        }),
       ],
       [OTHER_SESSION_ID]: [
-        {
-          projectId: PROJECT_ID,
-          mountName: 'repo',
-          worktreePath,
-          repoRoot,
-          branch: 'feature/retry',
-        },
+        mountRow({
+          mountId: MOUNT_ID,
+          sessionId: OTHER_SESSION_ID,
+          path: worktreePath,
+          revision: 3,
+        }),
       ],
     },
+    sessionActiveMount: { [SESSION_ID]: MOUNT_ID, [OTHER_SESSION_ID]: MOUNT_ID },
     sessionActiveProject: { [SESSION_ID]: PROJECT_ID, [OTHER_SESSION_ID]: PROJECT_ID },
     sessionGithub: {
       [SESSION_ID]: {
@@ -435,6 +463,7 @@ beforeEach(async () => {
   db.resetResolveQueryMocks();
   vi.clearAllMocks();
   h.leases.clear();
+  h.pushedFrom.length = 0;
   h.failOnPhase = null;
   h.isRemoteHeadUnreadable = false;
   h.hidesRemoteHeadAfterPush = false;
@@ -485,6 +514,168 @@ describe('publishConversations over a real git repository', () => {
       closedSource: 'goodboy',
       githubResolved: false,
     });
+  });
+
+  it('pushes from the mount the preview froze after the selection moved to a sibling', async () => {
+    const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
+    const { actions, store } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+    store.setState({ sessionActiveMount: { [SESSION_ID]: SIBLING_MOUNT_ID } } as never);
+
+    const result = await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(result).toMatchObject({ kind: 'done', pushed: true, failed: 0 });
+    const pushed = h.pushedFrom.at(-1);
+    expect(pushed).toBe(worktreePath);
+    expect(git(worktreePath, ['rev-parse', 'origin/feature/retry'])).toBe(
+      git(worktreePath, ['rev-parse', 'HEAD']),
+    );
+  });
+
+  it('goes stale when the mount it was built against changed under it', async () => {
+    const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
+    const { actions, store } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+    store.setState({
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          mountRow({ mountId: MOUNT_ID, sessionId: SESSION_ID, path: worktreePath, revision: 4 }),
+        ],
+      },
+    } as never);
+
+    const result = await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(result.kind).toBe('stale');
+    expect(git(worktreePath, ['rev-parse', 'origin/feature/retry'])).not.toBe(
+      git(worktreePath, ['rev-parse', 'HEAD']),
+    );
+  });
+
+  it('sees a mount that moves while the publication lock is being taken', async () => {
+    const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
+    const { actions, store } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+    const db = await import('@goodboy/db');
+    const listActive = vi.mocked(db.listActiveResolvePublications);
+    const behind = listActive.getMockImplementation();
+    listActive.mockImplementationOnce(async (params) => {
+      store.setState({
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            mountRow({ mountId: MOUNT_ID, sessionId: SESSION_ID, path: worktreePath, revision: 9 }),
+          ],
+        },
+      } as never);
+      return behind === undefined ? [] : behind(params);
+    });
+
+    const result = await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(result.kind).toBe('stale');
+    expect(h.pushedFrom).toEqual([]);
+  });
+
+  it('asks for a new preview when the mount it froze has gone', async () => {
+    const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
+    const { actions, store } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+    store.setState({
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          mountRow({
+            mountId: SIBLING_MOUNT_ID,
+            sessionId: SESSION_ID,
+            path: SIBLING_PATH,
+            revision: 1,
+          }),
+        ],
+      },
+      sessionActiveMount: { [SESSION_ID]: SIBLING_MOUNT_ID },
+    } as never);
+
+    const result = await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(result.kind).toBe('stale');
+    expect(h.pushedFrom).toEqual([]);
+  });
+
+  it('revalidates the frozen mount when a half pushed publication is resumed', async () => {
+    const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
+    const { actions, store } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+    const db = await import('@goodboy/db');
+    await db.setResolvePublicationPhase({
+      db: tauriDatabase,
+      id: preview.publicationId ?? '',
+      phase: 'pushing',
+    });
+    store.setState({
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          mountRow({ mountId: MOUNT_ID, sessionId: SESSION_ID, path: worktreePath, revision: 8 }),
+        ],
+      },
+    } as never);
+
+    const result = await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(result.kind).toBe('stale');
+    expect(h.pushedFrom).toEqual([]);
+  });
+
+  it('pushes nothing when the frozen mount moves between the check and the push', async () => {
+    const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
+    const { actions, store } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+    const worktreeMod = await import('../../../features/worktree/worktree');
+    const remoteHead = vi.mocked(worktreeMod.worktreeRemoteHead);
+    const behind = remoteHead.getMockImplementation();
+    remoteHead.mockImplementationOnce(async (params) => {
+      store.setState({
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            mountRow({ mountId: MOUNT_ID, sessionId: SESSION_ID, path: SIBLING_PATH, revision: 3 }),
+          ],
+        },
+      } as never);
+      return behind === undefined ? null : behind(params);
+    });
+
+    const result = await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(result).toMatchObject({ kind: 'push_failed' });
+    expect(h.pushedFrom).toEqual([]);
   });
 
   it('refuses to publish while the branch carries a commit no approval covers', async () => {

@@ -28,6 +28,7 @@ import {
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../../kickoff';
+import { requireMountTarget } from '../resolve/mountTarget';
 import { fanOutClusters, selectFanOutPlan } from '../workflows/clusterImplementation';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import type { SpawnFocus } from '../session-view/spawnFocus';
@@ -232,6 +233,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       effort: resolvedEffort,
       instructions: kickoff,
       phase: 'queued',
+      mountTarget: requireMountTarget({ get, sessionId }),
     });
     if (kickoff.length > 0) {
       void get().drainResolveQueue({ sessionId });

@@ -1,14 +1,12 @@
 import type { ResolvePublication, SessionId } from '@goodboy/types';
 import { worktreeIsAncestor, worktreeRemoteHead } from '../../../features/worktree/worktree';
 import { pushSessionBranch } from '../github/pushSessionBranch';
-import { selectMountForPath } from '../project-mounts/selectors';
 import type { GetFn } from './types';
 
 type Params = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly publication: ResolvePublication;
-  readonly worktreePath: string;
 };
 
 const shortOf = ({ sha }: { readonly sha: string | null }): string =>
@@ -18,8 +16,12 @@ export const verifiedPush = async ({
   get,
   sessionId,
   publication,
-  worktreePath,
 }: Params): Promise<string | null> => {
+  const target = publication.mountTarget;
+  if (target === null) {
+    return 'the branch mount this publication was built against is unknown, so nothing was pushed';
+  }
+  const worktreePath = target.worktreePath;
   const branch = publication.branch;
   const before = await worktreeRemoteHead({ worktreePath, branch }).catch(() => null);
   const isReadable = before !== null || publication.remoteHead === null;
@@ -37,11 +39,12 @@ export const verifiedPush = async ({
   if (!isFastForward) {
     return `${branch} on the remote carries work that ${shortOf({ sha: publication.localHead })} does not contain, so nothing was pushed`;
   }
-  const mount = selectMountForPath({ state: get(), sessionId, path: worktreePath });
-  if (mount === null) {
-    return `the worktree at ${worktreePath} is no longer mounted, so nothing was pushed`;
-  }
-  const push = await pushSessionBranch({ get, sessionId, mountId: mount.mountId });
+  const push = await pushSessionBranch({
+    get,
+    sessionId,
+    mountId: target.mountId,
+    expectedWorktreePath: target.worktreePath,
+  });
   if (!push.ok) {
     return push.error;
   }

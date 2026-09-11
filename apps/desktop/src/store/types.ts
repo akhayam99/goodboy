@@ -209,6 +209,7 @@ export type SummarizerSessionStatus = {
   readonly lastAttempt: {
     readonly turnInput: string;
     readonly turnOutput: string;
+    readonly workingDir: string | null;
   } | null;
 };
 

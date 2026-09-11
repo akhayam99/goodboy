@@ -14,7 +14,7 @@ import {
   type Database,
 } from '@goodboy/db';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
-import type { ProjectId, ResolveThread, SessionId, WorkspaceId } from '@goodboy/types';
+import type { MountId, ProjectId, ResolveThread, SessionId, WorkspaceId } from '@goodboy/types';
 import { summariseResolveChecks } from '../../../features/resolve/checkReceipts';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
@@ -168,6 +168,7 @@ vi.mock('../../../features/worktree/worktree', () => {
 });
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
+const MOUNT_ID = 'mount-1' as MountId;
 const PROJECT_ID = 'project-1' as ProjectId;
 const SESSION_ID = 'session-1' as SessionId;
 const CHECK_COMMAND = 'the new test';
@@ -175,6 +176,8 @@ const CHECK_COMMAND = 'the new test';
 let db: Database;
 let repoRoot = '';
 let worktreePath = '';
+
+const mountTarget = () => ({ mountId: MOUNT_ID, mountRevision: 4, worktreePath });
 let rootSha = '';
 
 const makeThread = ({ threadId }: { readonly threadId: string }): ResolveThread => ({
@@ -211,7 +214,18 @@ const makeHarness = () => {
     sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
     sessionProjectMounts: {
       [SESSION_ID]: [
-        { projectId: PROJECT_ID, mountName: 'repo', worktreePath, repoRoot, branch: 'feature/fix' },
+        {
+          mountId: MOUNT_ID,
+          sessionId: SESSION_ID,
+          projectId: PROJECT_ID,
+          mountName: 'repo',
+          worktreePath,
+          repoRoot,
+          branch: 'feature/fix',
+          isAttached: true,
+          diskState: 'present',
+          revision: 4,
+        },
       ],
     },
     sessionGithub: {},
@@ -296,7 +310,11 @@ afterEach(() => {
 });
 
 const captureCandidate = async (live: ReturnType<typeof makeHarness>): Promise<void> => {
-  await live.actions.beginResolveCandidate({ sessionId: SESSION_ID, attemptId: 'attempt-1' });
+  await live.actions.beginResolveCandidate({
+    sessionId: SESSION_ID,
+    attemptId: 'attempt-1',
+    mountTarget: mountTarget(),
+  });
   writeFileSync(join(worktreePath, 'fix.txt'), 'fixed\n');
   git(worktreePath, ['add', '--all']);
   git(worktreePath, ['commit', '--no-verify', '-m', 'add the failing test and the fix']);

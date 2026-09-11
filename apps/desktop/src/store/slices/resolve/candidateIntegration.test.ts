@@ -13,7 +13,7 @@ import {
   type Database,
 } from '@goodboy/db';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
-import type { ProjectId, ResolveThread, SessionId, WorkspaceId } from '@goodboy/types';
+import type { MountId, ProjectId, ResolveThread, SessionId, WorkspaceId } from '@goodboy/types';
 import { acceptResolveQueueItem } from './acceptResolveQueueItem';
 import { deriveResolveQueueStatus } from './deriveResolveQueueStatus';
 import { createResolveSlice } from './index';
@@ -200,12 +200,15 @@ vi.mock('../../../features/worktree/worktree', () => {
 });
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
+const MOUNT_ID = 'mount-1' as MountId;
 const PROJECT_ID = 'project-1' as ProjectId;
 const SESSION_ID = 'session-1' as SessionId;
 
 let db: Database;
 let repoRoot = '';
 let worktreePath = '';
+
+const mountTarget = () => ({ mountId: MOUNT_ID, mountRevision: 4, worktreePath });
 let rootSha = '';
 
 const makeThread = ({ threadId }: { readonly threadId: string }): ResolveThread => ({
@@ -242,7 +245,18 @@ const makeHarness = () => {
     sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
     sessionProjectMounts: {
       [SESSION_ID]: [
-        { projectId: PROJECT_ID, mountName: 'repo', worktreePath, repoRoot, branch: 'feature/fix' },
+        {
+          mountId: MOUNT_ID,
+          sessionId: SESSION_ID,
+          projectId: PROJECT_ID,
+          mountName: 'repo',
+          worktreePath,
+          repoRoot,
+          branch: 'feature/fix',
+          isAttached: true,
+          diskState: 'present',
+          revision: 4,
+        },
       ],
     },
     sessionGithub: {},
@@ -361,7 +375,11 @@ describe('resolve candidates keep the branch tip approved', () => {
     const live = makeHarness();
     const itemA = await seedItem({ threadId: 'thread-a' });
     const itemB = await seedItem({ threadId: 'thread-b' });
-    await live.actions.beginResolveCandidate({ sessionId: SESSION_ID, attemptId: 'attempt-1' });
+    await live.actions.beginResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'attempt-1',
+      mountTarget: mountTarget(),
+    });
     agentWrites({
       files: [
         ['a.txt', 'a\n'],
@@ -397,7 +415,11 @@ describe('resolve candidates keep the branch tip approved', () => {
     const live = makeHarness();
     const itemA = await seedItem({ threadId: 'thread-a' });
     const itemB = await seedItem({ threadId: 'thread-b' });
-    await live.actions.beginResolveCandidate({ sessionId: SESSION_ID, attemptId: 'attempt-1' });
+    await live.actions.beginResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'attempt-1',
+      mountTarget: mountTarget(),
+    });
     agentWrites({
       files: [
         ['a.txt', 'a\n'],
@@ -434,7 +456,11 @@ describe('resolve candidates keep the branch tip approved', () => {
   it('refuses to defer work that is already on the branch', async () => {
     const live = makeHarness();
     const itemA = await seedItem({ threadId: 'thread-a' });
-    await live.actions.beginResolveCandidate({ sessionId: SESSION_ID, attemptId: 'attempt-1' });
+    await live.actions.beginResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'attempt-1',
+      mountTarget: mountTarget(),
+    });
     agentWrites({ files: [['a.txt', 'a\n']], message: 'fix a' });
     await live.actions.captureResolveCandidate({
       sessionId: SESSION_ID,
@@ -458,14 +484,22 @@ describe('resolve candidates keep the branch tip approved', () => {
     const live = makeHarness();
     const itemA = await seedItem({ threadId: 'thread-a' });
     const itemB = await seedItem({ threadId: 'thread-b' });
-    await live.actions.beginResolveCandidate({ sessionId: SESSION_ID, attemptId: 'attempt-a' });
+    await live.actions.beginResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'attempt-a',
+      mountTarget: mountTarget(),
+    });
     agentWrites({ files: [['a.txt', 'a\n']], message: 'fix a' });
     await live.actions.captureResolveCandidate({
       sessionId: SESSION_ID,
       attemptId: 'attempt-a',
       threadIds: ['thread-a'],
     });
-    await live.actions.beginResolveCandidate({ sessionId: SESSION_ID, attemptId: 'attempt-b' });
+    await live.actions.beginResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'attempt-b',
+      mountTarget: mountTarget(),
+    });
     agentWrites({ files: [['b.txt', 'b\n']], message: 'fix b' });
     await live.actions.captureResolveCandidate({
       sessionId: SESSION_ID,
@@ -504,7 +538,11 @@ describe('resolve candidates keep the branch tip approved', () => {
   it('refuses to integrate when an external commit moved the head', async () => {
     const live = makeHarness();
     const itemA = await seedItem({ threadId: 'thread-a' });
-    await live.actions.beginResolveCandidate({ sessionId: SESSION_ID, attemptId: 'attempt-1' });
+    await live.actions.beginResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'attempt-1',
+      mountTarget: mountTarget(),
+    });
     agentWrites({ files: [['a.txt', 'a\n']], message: 'fix a' });
     const candidateSha = await live.actions.captureResolveCandidate({
       sessionId: SESSION_ID,
@@ -536,7 +574,11 @@ describe('resolve candidates keep the branch tip approved', () => {
   it('recovers from a crash between the git operation and the database write', async () => {
     const live = makeHarness();
     const itemA = await seedItem({ threadId: 'thread-a' });
-    await live.actions.beginResolveCandidate({ sessionId: SESSION_ID, attemptId: 'attempt-1' });
+    await live.actions.beginResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'attempt-1',
+      mountTarget: mountTarget(),
+    });
     agentWrites({ files: [['a.txt', 'a\n']], message: 'fix a' });
     const candidateSha = await live.actions.captureResolveCandidate({
       sessionId: SESSION_ID,
@@ -581,7 +623,11 @@ describe('resolve candidates keep the branch tip approved', () => {
   it('marks an approval as changed when the comment moves under an accepted candidate', async () => {
     const live = makeHarness();
     const itemA = await seedItem({ threadId: 'thread-a' });
-    await live.actions.beginResolveCandidate({ sessionId: SESSION_ID, attemptId: 'attempt-1' });
+    await live.actions.beginResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'attempt-1',
+      mountTarget: mountTarget(),
+    });
     agentWrites({ files: [['a.txt', 'a\n']], message: 'fix a' });
     await live.actions.captureResolveCandidate({
       sessionId: SESSION_ID,
@@ -631,7 +677,11 @@ describe('resolve candidates keep the branch tip approved', () => {
   it('parks work the crash left on the branch when the run is loaded again', async () => {
     const crashed = makeHarness();
     const itemA = await seedItem({ threadId: 'thread-a' });
-    await crashed.actions.beginResolveCandidate({ sessionId: SESSION_ID, attemptId: 'attempt-1' });
+    await crashed.actions.beginResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'attempt-1',
+      mountTarget: mountTarget(),
+    });
     agentWrites({ files: [['a.txt', 'a\n']], message: 'fix a' });
     const uncaptured = git(worktreePath, ['rev-parse', 'HEAD']);
     expect(uncaptured).not.toBe(rootSha);
@@ -660,14 +710,22 @@ describe('resolve candidates keep the branch tip approved', () => {
   it('refuses integration and publication while uncaptured work cannot be parked', async () => {
     const live = makeHarness();
     const itemA = await seedItem({ threadId: 'thread-a' });
-    await live.actions.beginResolveCandidate({ sessionId: SESSION_ID, attemptId: 'attempt-1' });
+    await live.actions.beginResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'attempt-1',
+      mountTarget: mountTarget(),
+    });
     agentWrites({ files: [['a.txt', 'a\n']], message: 'fix a' });
     await live.actions.captureResolveCandidate({
       sessionId: SESSION_ID,
       attemptId: 'attempt-1',
       threadIds: ['thread-a'],
     });
-    await live.actions.beginResolveCandidate({ sessionId: SESSION_ID, attemptId: 'attempt-2' });
+    await live.actions.beginResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'attempt-2',
+      mountTarget: mountTarget(),
+    });
     agentWrites({ files: [['b.txt', 'b\n']], message: 'fix b, then the app dies' });
     const stranded = git(worktreePath, ['rev-parse', 'HEAD']);
     h.leases.set(worktreePath, 'someone-else');
@@ -695,7 +753,11 @@ describe('resolve candidates keep the branch tip approved', () => {
   it('invalidates an approval whose integrated work left the branch', async () => {
     const live = makeHarness();
     const itemA = await seedItem({ threadId: 'thread-a' });
-    await live.actions.beginResolveCandidate({ sessionId: SESSION_ID, attemptId: 'attempt-1' });
+    await live.actions.beginResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'attempt-1',
+      mountTarget: mountTarget(),
+    });
     agentWrites({ files: [['a.txt', 'a\n']], message: 'fix a' });
     await live.actions.captureResolveCandidate({
       sessionId: SESSION_ID,

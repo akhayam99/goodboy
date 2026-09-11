@@ -2,6 +2,7 @@ import { listResolveQueueItems, upsertResolveThread } from '@goodboy/db';
 import { worktreeIsAncestor, worktreeStatus } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
+import { requireMountTarget } from './mountTarget';
 import { resolveWorktreePath } from './resolveWorktreePath';
 import type { SessionParams, SliceParams } from './types';
 
@@ -15,7 +16,11 @@ export const invalidateIntegratedApprovals = async ({
   sessionId,
 }: Params): Promise<number> => {
   const db = tauriDatabase;
-  const worktreePath = await resolveWorktreePath({ get, sessionId });
+  const worktreePath = await resolveWorktreePath({
+    get,
+    sessionId,
+    target: requireMountTarget({ get, sessionId }),
+  });
   if (worktreePath === null) {
     return 0;
   }

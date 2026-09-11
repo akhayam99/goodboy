@@ -1,5 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
+  Agent,
+  AgentId,
   IsoDateTime,
   MountId,
   ProjectId,
@@ -7,7 +9,17 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { buildStorySession, resetStorySpies, storySpies } from './storyHarness';
+import {
+  buildStoryAgent,
+  buildStorySession,
+  resetStorySpies,
+  storyResolveQueries,
+  storySpies,
+} from './storyHarness';
+import { mountCleanupBlockers } from './slices/mount-cleanup/cleanupPolicy';
+import { requireMountTarget } from './slices/resolve/mountTarget';
+import { listWriteDestinationCandidates } from './slices/project-mounts/writeDestination';
+import { initialState } from './store';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>
@@ -103,6 +115,14 @@ const OTHER_SESSION: Session = buildStorySession({
   state: { kind: 'idle', lastActivityAt: NOW },
 });
 
+const RESOLVER_ID = 'agent-resolver' as AgentId;
+
+const resolverAgent = (): Agent =>
+  buildStoryAgent({ id: RESOLVER_ID, sessionId: SESSION_ID, name: 'resolver', kind: 'resolver' });
+
+const pathOf = ({ mountId }: { readonly mountId: MountId }): string =>
+  `/repos/app/.goodboy/worktrees/${mountId}`;
+
 type StoreModule = typeof import('./store');
 let useAppStore: StoreModule['useAppStore'];
 
@@ -180,5 +200,157 @@ describe('story: two mounts of one project survive a restart', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_A1,
     });
+  });
+});
+
+describe('story: a queued fix stays on the worktree it named', () => {
+  const mountRow = ({
+    id,
+    projectId,
+    branch,
+    parallelIndex,
+  }: {
+    readonly id: MountId;
+    readonly projectId: ProjectId;
+    readonly branch: string;
+    readonly parallelIndex: number;
+  }) => ({
+    id,
+    sessionId: SESSION_ID,
+    projectId,
+    worktreePath: pathOf({ mountId: id }),
+    lastWorktreePath: pathOf({ mountId: id }),
+    branch,
+    baseBranch: null,
+    parallelIndex,
+    mountName: projectId === PROJECT_A ? 'a' : 'b',
+    repoSlug: null,
+    isAttached: true,
+    diskState: 'present',
+    revision: 3,
+    createdAt: NOW,
+    updatedAt: NOW,
+  });
+
+  const openSession = () => {
+    useAppStore.setState({ sessionPhaseRuns: { [SESSION_ID]: [resolverAgent()] } });
+  };
+
+  const restart = async ({ session }: { readonly session: Session }) => {
+    await seed({ session, rows: ROWS });
+    useAppStore.setState(initialState);
+    await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
+    openSession();
+  };
+
+  it('queues on the chosen mount, drains there after the choice moves, and survives removal', async () => {
+    await seed({ session: sessionWith(MOUNT_A2), rows: ROWS });
+    await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
+    openSession();
+
+    const target = requireMountTarget({
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+    });
+    expect(target).toEqual({
+      mountId: MOUNT_A2,
+      mountRevision: 3,
+      worktreePath: pathOf({ mountId: MOUNT_A2 }),
+    });
+
+    const attemptId = await useAppStore.getState().recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent: resolverAgent(),
+      provider: 'anthropic',
+      model: 'claude-opus-5',
+      effort: null,
+      instructions: 'fix the review comment',
+      phase: 'queued',
+      mountTarget: target,
+    });
+    expect(storyResolveQueries.insertResolveAttempt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attempt: expect.objectContaining({
+          id: attemptId,
+          mountTarget: {
+            mountId: MOUNT_A2,
+            mountRevision: 3,
+            worktreePath: pathOf({ mountId: MOUNT_A2 }),
+          },
+        }),
+      }),
+    );
+
+    await restart({ session: sessionWith(MOUNT_A2) });
+
+    const restored = useAppStore.getState();
+    expect((restored.sessionProjectMounts[SESSION_ID] ?? []).map((mount) => mount.mountId)).toEqual(
+      [MOUNT_A1, MOUNT_A2, MOUNT_B3],
+    );
+    expect(restored.sessionActiveMount[SESSION_ID]).toBe(MOUNT_A2);
+    expect(restored.sessionBranches[SESSION_ID]).toBe('ak/two');
+    const candidates = listWriteDestinationCandidates({
+      mounts: restored.sessionProjectMounts[SESSION_ID] ?? [],
+      projects: restored.projects,
+    });
+    expect(candidates).toHaveLength(3);
+    expect(
+      candidates.filter(
+        (candidate) => candidate.mountId === restored.sessionActiveMount[SESSION_ID],
+      ),
+    ).toHaveLength(1);
+
+    await useAppStore
+      .getState()
+      .setSessionActiveMount({ sessionId: SESSION_ID, mountId: MOUNT_B3 });
+    expect(useAppStore.getState().sessionActiveMount[SESSION_ID]).toBe(MOUNT_B3);
+
+    await useAppStore.getState().drainResolveQueue({ sessionId: SESSION_ID });
+
+    expect(storySpies.acquireWorktreeWriter.mock.calls.map(([args]) => args)).toEqual([
+      { path: pathOf({ mountId: MOUNT_A2 }), holder: RESOLVER_ID },
+    ]);
+    expect(
+      mountCleanupBlockers({
+        state: useAppStore.getState(),
+        sessionId: SESSION_ID,
+        mountId: MOUNT_A1,
+        worktreePath: pathOf({ mountId: MOUNT_A1 }),
+      }),
+    ).toEqual([]);
+
+    storySpies.listSessionMounts.mockResolvedValue(
+      ROWS.map((entry) =>
+        mountRow({
+          id: entry.id,
+          projectId: entry.projectId,
+          branch: entry.branch,
+          parallelIndex: entry.parallelIndex,
+        }),
+      ) as never,
+    );
+    await useAppStore
+      .getState()
+      .removeMountWorktree({ sessionId: SESSION_ID, mountId: MOUNT_A1, mode: 'safe' });
+
+    expect(storySpies.removeWorktreeChecked).toHaveBeenCalledWith(
+      expect.objectContaining({ worktreePath: pathOf({ mountId: MOUNT_A1 }) }),
+    );
+    const afterRemoval = useAppStore.getState();
+    expect((afterRemoval.sessionMounts[SESSION_ID] ?? []).map((view) => view.id)).toEqual([
+      MOUNT_A1,
+      MOUNT_A2,
+      MOUNT_B3,
+    ]);
+    expect(afterRemoval.sessionActiveMount[SESSION_ID]).toBe(MOUNT_B3);
+
+    await restart({ session: sessionWith(MOUNT_B3) });
+
+    const rebooted = useAppStore.getState();
+    expect(rebooted.sessionActiveMount[SESSION_ID]).toBe(MOUNT_B3);
+    expect(rebooted.sessionActiveProject[SESSION_ID]).toBe(PROJECT_B);
+    expect((rebooted.sessionProjectMounts[SESSION_ID] ?? []).map((mount) => mount.mountId)).toEqual(
+      [MOUNT_A1, MOUNT_A2, MOUNT_B3],
+    );
   });
 });
