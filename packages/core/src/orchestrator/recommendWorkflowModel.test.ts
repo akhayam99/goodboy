@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { ModelRoutingProfile, WorkflowTaskProfile } from '@goodboy/types';
+import type { ModelRoutingProfile, ProviderId, WorkflowTaskProfile } from '@goodboy/types';
 import type { WorkflowModelCandidate } from './recommendWorkflowModel';
 import { recommendWorkflowModel } from './recommendWorkflowModel';
+import { workflowModelCandidates } from './workflowModelCandidates';
+import type { WorkflowRoutingAvailabilitySnapshot } from './workflowRoutingAvailability';
 
 const IMPLEMENTATION_STANDARD: ModelRoutingProfile = {
   taskTypes: ['implementation'],
@@ -40,6 +42,35 @@ const candidate = (overrides: CandidateOverrides): WorkflowModelCandidate => ({
 
 const recommend = (candidates: ReadonlyArray<WorkflowModelCandidate>) =>
   recommendWorkflowModel({ candidates, profile: task, contextEstimate: null });
+
+type ConnectedParams = {
+  readonly connectedProviders: ReadonlyArray<ProviderId>;
+};
+
+const connectedSnapshot = ({
+  connectedProviders,
+}: ConnectedParams): WorkflowRoutingAvailabilitySnapshot => ({
+  connectedProviders,
+  coolingDownProviders: [],
+  budgetBlockedProviders: [],
+  isSessionBudgetBlocked: false,
+  isRunBudgetBlocked: false,
+  nowMs: 0,
+});
+
+type CatalogParams = {
+  readonly connectedProviders: ReadonlyArray<ProviderId>;
+  readonly profile: WorkflowTaskProfile;
+};
+
+const recommendFromCatalog = ({ connectedProviders, profile }: CatalogParams) =>
+  recommendWorkflowModel({
+    candidates: workflowModelCandidates({
+      availability: connectedSnapshot({ connectedProviders }),
+    }),
+    profile,
+    contextEstimate: null,
+  });
 
 describe('recommendWorkflowModel', () => {
   it('recommends nothing when no candidate is available', () => {
@@ -129,7 +160,7 @@ describe('recommendWorkflowModel', () => {
     expect(result?.pick.model).toBe('zzz-assessed');
   });
 
-  it('never ranks an unassessed model below an assessed one on profile grounds alone', () => {
+  it('treats a profile curated for another task type as no fit at all', () => {
     const price = { inputPerMtok: 2, outputPerMtok: 6 };
     const result = recommend([
       candidate({ provider: 'anthropic', model: 'aaa-unassessed', price }),
@@ -302,5 +333,25 @@ describe('recommendWorkflowModel', () => {
     });
 
     expect(result?.reason).toContain('no task profile');
+  });
+
+  it('lands recovery on the cheapest connected model when no profile is curated', () => {
+    const result = recommendFromCatalog({
+      connectedProviders: ['codex', 'gemini', 'cursor'],
+      profile: { taskType: 'planning', difficulty: 'heavy', basis: 'agent' },
+    });
+
+    expect(result?.pick).toEqual({ provider: 'cursor', model: 'auto', effort: null });
+    expect(result?.reason).toContain('unassessed');
+  });
+
+  it('no longer steers heavy exploration onto a curated light model', () => {
+    const result = recommendFromCatalog({
+      connectedProviders: ['anthropic', 'codex', 'gemini', 'cursor'],
+      profile: { taskType: 'exploration', difficulty: 'heavy', basis: 'agent' },
+    });
+
+    expect(result?.pick.model).not.toBe('haiku-4.5');
+    expect(result?.pick).toEqual({ provider: 'cursor', model: 'auto', effort: null });
   });
 });
