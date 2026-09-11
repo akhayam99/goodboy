@@ -4,8 +4,10 @@ import {
   buildChainCarryForward,
   autoPopulateContext,
   buildStepPrompt,
+  canonicalModelId,
   findReusableAgent,
   isFallbackStepOutputSummary,
+  modelIdForSelection,
   planTurnFallback,
   resolveModelArgs,
   resolveRoleRouting,
@@ -491,16 +493,30 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       throw new Error(`resolved model args omit ${modelFlag} for ${provider}`);
     }
     const model = spawnModel;
+    const pickedModel =
+      pickedOverride == null
+        ? null
+        : pickedOverride.selection != null
+          ? modelIdForSelection({
+              provider: pickedOverride.providerId,
+              selection: pickedOverride.selection,
+            })
+          : pickedOverride.model != null
+            ? canonicalModelId({
+                provider: pickedOverride.providerId,
+                modelId: pickedOverride.model,
+              })
+            : null;
     if (
       pickedOverride != null &&
       (provider !== pickedOverride.providerId ||
-        (pickedOverride.model != null && modelSelection.key !== pickedOverride.model))
+        (pickedModel != null && pickedModel !== spawnModel))
     ) {
       void get().emitNotification(
         'error',
         'warning',
         'the turn did not run on the model you picked',
-        `you picked ${pickedOverride.providerId}/${pickedOverride.model ?? modelSelection.key}, the turn ran on ${provider}/${modelSelection.key}`,
+        `you picked ${pickedOverride.providerId}/${pickedModel ?? spawnModel}, the turn ran on ${provider}/${spawnModel}`,
         { sessionId },
       );
     }
@@ -1268,7 +1284,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         : planTurnFallback({
             failure: failure.kind,
             provider,
-            model: modelSelection.key,
+            model: spawnModel,
             connectedProviders,
             attempt: retry?.attempt ?? 0,
             ...(preferredFallback != null && {
@@ -1355,7 +1371,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               retry: {
                 attempt: 0,
                 provider,
-                model: modelSelection.key,
+                model: spawnModel,
                 attachmentRefs,
               },
             }).catch(() => undefined);
