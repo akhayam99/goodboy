@@ -148,7 +148,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     isFirstTurnForAgent,
     value,
     attachments,
-    effectiveModel: routing.effectiveModel,
+    effectiveModel: routing.effectiveModelId,
     modelCandidates: routing.modelCandidates,
     allowOverride: routing.allowOverride,
   });
@@ -376,7 +376,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     scopePending: scope.scopePending,
     rightSizePending: rightSize.rightSizePending,
     rightSizeSuggestion: rightSize.rightSizeSuggestion,
-    effectiveModel: routing.effectiveModel,
+    effectiveModel: routing.effectiveModelId,
     onScopeSpawn,
     onScopeSendAnyway,
     onScopeDismiss,
@@ -570,7 +570,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 ariaLabel="Model routing"
                 openEvent="goodboy:open-model-picker"
                 provider={routing.effectiveProvider}
-                model={routing.effectiveModel}
+                model={routing.effectiveModelId}
                 effort={{
                   editable: true,
                   value: routing.effectiveEffort,
@@ -580,10 +580,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 connectedProviders={routing.connectedProviderIds}
                 disabled={!routing.allowOverride}
                 disabledTitle={overrideDisabledTitle}
-                overridden={
-                  routing.effectiveProvider !== routing.referenceProvider ||
-                  routing.effectiveModel !== routing.referenceModel
-                }
+                overridden={routing.isOverridden}
                 defaultSummary={`${PROVIDER_LABEL[routing.referenceProvider]} · ${modelLabel(
                   routing.referenceModel,
                 )}`}

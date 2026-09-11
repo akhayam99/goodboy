@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { modelLabel } from './chat-constants';
+import { modelLabel, suggestHeavierModel } from './chat-constants';
 
 describe('modelLabel', () => {
   it('uses the authored Astra label for its catalog key and cli id', () => {
@@ -21,5 +21,22 @@ describe('modelLabel', () => {
 
   it('keeps the version number intact for an unknown vendor-prefixed id', () => {
     expect(modelLabel('mistral-large-2.1')).toBe('Mistral Large 2.1');
+  });
+});
+
+describe('suggestHeavierModel, price of the model actually running', () => {
+  const CURSOR_CANDIDATES = ['auto', 'composer-2.5', 'sonnet-4.6', 'opus-5', 'gpt-5.6'];
+
+  it('prices the step up from the combo that is running, not from its base', () => {
+    const fromFast = suggestHeavierModel('composer-2.5-fast', CURSOR_CANDIDATES);
+    const fromBase = suggestHeavierModel('composer-2.5', CURSOR_CANDIDATES);
+
+    expect(fromFast?.id).toBe(fromBase?.id);
+    expect(fromFast?.costMultiplier).toBeLessThan(fromBase?.costMultiplier ?? 0);
+    expect(fromFast?.costMultiplier).toBeCloseTo(1.7, 5);
+  });
+
+  it('keeps the composer suggestion strong, so the multiplier stays out of the card', () => {
+    expect(suggestHeavierModel('composer-2.5-fast', CURSOR_CANDIDATES)?.kind).toBe('strong');
   });
 });
