@@ -13,22 +13,22 @@ import {
 } from '../../../integrations/components/TrackerStudioLinks';
 import { CreateAgentPopover } from '../CreateAgentPopover';
 import { KickoffTile } from './KickoffTile';
+import { hasNothingToAdopt, proposeIssueAdoption, type IssueAdoption } from './issueAdoption';
 import { useKickoffIssues } from './useKickoffIssues';
 
 type Props = {
   readonly session: Session;
   readonly onOpenWorkflowBuilder: () => void;
+  readonly onProposeAdoption?: (adoption: IssueAdoption) => void;
 };
 
 type PickIssueParams = {
   readonly candidate: IssueCandidate;
 };
 
-export const SessionKickoff = ({ session, onOpenWorkflowBuilder }: Props) => {
+export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdoption }: Props) => {
   const issues = useKickoffIssues({ workspaceId: session.workspaceId });
   const linkSessionExternalTask = useAppStore((state) => state.linkSessionExternalTask);
-  const autoTitleSession = useAppStore((state) => state.autoTitleSession);
-  const upsertSessionSlot = useAppStore((state) => state.upsertSessionSlot);
   const slots = useSessionSlots(session.id);
   const { showToast } = useToast();
   const [linkingKey, setLinkingKey] = useState<string | null>(null);
@@ -45,11 +45,14 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder }: Props) => {
         url: candidate.url,
         createdAt: new Date().toISOString() as IsoDateTime,
       });
-      const goalSlot = slots.find((slot) => slot.key === 'goal');
-      if (goalSlot == null || goalSlot.value.trim() === '') {
-        await upsertSessionSlot(session.id, 'goal', candidate.goal);
+      const proposed = proposeIssueAdoption({
+        candidate,
+        currentTitle: session.goal,
+        currentGoal: slots.find((slot) => slot.key === 'goal')?.value ?? '',
+      });
+      if (onProposeAdoption != null && !hasNothingToAdopt({ adoption: proposed })) {
+        onProposeAdoption(proposed);
       }
-      await autoTitleSession(session.id, `[${candidate.identifier}] ${candidate.title}`);
       showToast('success', `${candidate.identifier} linked to this session`);
     } catch (cause) {
       showToast('error', formatError(cause));

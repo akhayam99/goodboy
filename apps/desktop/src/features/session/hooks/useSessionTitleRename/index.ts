@@ -11,9 +11,11 @@ type Params = {
 export const useSessionTitleRename = ({ sessionId, currentTitle }: Params) => {
   const renameTask = useAppStore((s) => s.renameTask);
 
-  return useInlineRename({
+  const rename = useInlineRename({
     value: currentTitle,
     maxLength: MAX_SESSION_TITLE_LENGTH,
     onCommit: (next) => renameTask(sessionId, next),
   });
+
+  return { ...rename, maxLength: MAX_SESSION_TITLE_LENGTH };
 };

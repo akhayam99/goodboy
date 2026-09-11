@@ -16,6 +16,7 @@ import { SessionBudgetContent } from '../../../budget/components/spend/SessionBu
 import type { WorkspaceTurn } from '../../../budget/components/spend/lib';
 import { EMPTY_ARRAY, useAppStore, useSessionCost } from '../../../../store';
 import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
+import { sessionTitle } from '../../sessionTitle';
 import { manageDialogFocus } from './manageDialogFocus';
 import { VITAL_CHIP_FOCUS, VITAL_CHIP_FRAME, VITAL_CHIP_HOVER } from './vitalChip';
 
@@ -68,14 +69,15 @@ export const SessionCostChip = ({ sessionId }: Props) => {
     sessionBudget != null
       ? `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} of a ${formatUsdPrecise(sessionBudget)} cap${capNote} (excluding summarizer), click for budget details`
       : `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} (excluding summarizer), click for budget details`;
+  const sessionLabel = sessionTitle({ session });
   const turns = useMemo<ReadonlyArray<WorkspaceTurn>>(
     () =>
       (telemetry ?? EMPTY_ARRAY).map((record) => ({
         record,
         sessionId,
-        sessionGoal: session?.goal ?? 'Untitled session',
+        sessionGoal: sessionLabel,
       })),
-    [session?.goal, sessionId, telemetry],
+    [sessionLabel, sessionId, telemetry],
   );
   const [pulse, setPulse] = useState(false);
   const prevCostRef = useRef(sessionCost);
@@ -159,10 +161,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
     >
       <div className="flex flex-col gap-0.5 px-4 py-3">
         <span className="text-sm font-semibold text-foreground">Session budget</span>
-        <InlineMarkdown
-          text={session?.goal ?? 'Untitled session'}
-          className="truncate text-2xs text-muted-foreground"
-        />
+        <InlineMarkdown text={sessionLabel} className="truncate text-2xs text-muted-foreground" />
       </div>
       <Divider />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="p-4">
