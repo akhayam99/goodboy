@@ -101,6 +101,7 @@ const attempt: ResolveAttempt = {
   effort: 'high',
   instructions: null,
   phase: 'running',
+  mountTarget: null,
   startedAt: 1,
   endedAt: null,
   error: null,

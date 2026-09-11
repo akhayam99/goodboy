@@ -17,6 +17,8 @@ import type {
   ResolveThread,
   ResolveThreadState,
   AgentId,
+  MountId,
+  MountTargetSnapshot,
   Session,
   SessionId,
   Workspace,
@@ -442,6 +444,12 @@ const COMMENTS: ReadonlyArray<PrComment> = [
   }),
 ];
 
+const MOUNT_TARGET: MountTargetSnapshot = {
+  mountId: 'mock-resolve-mount-billing-api' as MountId,
+  mountRevision: 3,
+  worktreePath: '/mock/cascadia/billing-api-webhook-retry',
+};
+
 const ATTEMPT_RETRY: ResolveAttempt = {
   id: ATTEMPT_RETRY_ID,
   sessionId: SESSION_ID,
@@ -453,6 +461,7 @@ const ATTEMPT_RETRY: ResolveAttempt = {
   effort: null,
   instructions: null,
   phase: 'finished',
+  mountTarget: MOUNT_TARGET,
   startedAt: msAgo({ minutes: 70 }),
   endedAt: msAgo({ minutes: 52 }),
   error: null,
@@ -470,6 +479,7 @@ const ATTEMPT_IDEMPOTENCY: ResolveAttempt = {
   effort: 'high',
   instructions: null,
   phase: 'running',
+  mountTarget: MOUNT_TARGET,
   startedAt: msAgo({ minutes: 6 }),
   endedAt: null,
   error: null,
@@ -482,7 +492,8 @@ const CANDIDATE_RETRY: ResolveCandidate = {
   revision: 1,
   baseSha: 'c81f4a20d95e73b6f10c8a4d29e75b3f60c19d84',
   candidateSha: 'e37b92c05a1f8d4e6b27c90a3f5d81e402b7c96a',
-  worktreePath: '/mock/cascadia/billing-api-webhook-retry',
+  worktreePath: MOUNT_TARGET.worktreePath,
+  mountTarget: MOUNT_TARGET,
   state: 'ready',
   integratedSha: null,
   createdAt: msAgo({ minutes: 55 }),
@@ -545,6 +556,7 @@ const PUBLICATION: ResolvePublication = {
   candidateIds: [],
   approvedItemIds: [ITEM6_ID],
   requiresPush: false,
+  mountTarget: MOUNT_TARGET,
   phase: 'finished',
   pushedHead: 'sha-local-head-001',
   confirmedAt: msAgo({ minutes: 200 }),

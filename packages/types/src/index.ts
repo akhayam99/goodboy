@@ -41,6 +41,7 @@ export type {
   MountPullRequestProvider,
   MountPullRequestState,
   MountRecoveryCode,
+  MountTargetSnapshot,
   RetainedWorktreePath,
   RetainedWorktreeReason,
   SessionMount,

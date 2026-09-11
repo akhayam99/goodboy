@@ -15,6 +15,7 @@ const attempt = ({ phase }: { readonly phase: ResolveAttempt['phase'] }): Resolv
   effort: 'high',
   instructions: null,
   phase,
+  mountTarget: null,
   startedAt: 1,
   endedAt: null,
   error: null,

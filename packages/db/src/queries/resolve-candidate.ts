@@ -5,6 +5,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import { fromMountTarget, toMountTarget } from './resolve-mount-target';
 
 type CandidateParams = { readonly db: Database; readonly candidate: ResolveCandidate };
 type CandidateIdParams = { readonly db: Database; readonly candidateId: string };
@@ -22,13 +23,28 @@ type Approval = {
 type FinalizeParams = IntegratedParams & { readonly approvals: ReadonlyArray<Approval> };
 
 const COLUMNS = `id, session_id AS sessionId, revision, base_sha AS baseSha,
-  candidate_sha AS candidateSha, worktree_path AS worktreePath, state,
+  candidate_sha AS candidateSha, worktree_path AS worktreePath, mount_id AS mountId,
+  mount_revision AS mountRevision, state,
   integrated_sha AS integratedSha, created_at AS createdAt, updated_at AS updatedAt`;
 
+type Row = Omit<ResolveCandidate, 'mountTarget'> & {
+  readonly mountId: string | null;
+  readonly mountRevision: number | null;
+};
+
+const hydrate = ({ row }: { readonly row: Row }): ResolveCandidate => {
+  const { mountId, mountRevision, ...candidate } = row;
+  return {
+    ...candidate,
+    mountTarget: toMountTarget({ mountId, mountRevision, worktreePath: row.worktreePath }),
+  };
+};
+
 export const insertResolveCandidate = async ({ db, candidate }: CandidateParams): Promise<void> => {
+  const target = fromMountTarget({ target: candidate.mountTarget });
   await db.execute(
-    `INSERT INTO resolve_candidates (id, session_id, revision, base_sha, candidate_sha, worktree_path, state, integrated_sha, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO resolve_candidates (id, session_id, revision, base_sha, candidate_sha, worktree_path, mount_id, mount_revision, state, integrated_sha, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       candidate.id,
       candidate.sessionId,
@@ -36,6 +52,8 @@ export const insertResolveCandidate = async ({ db, candidate }: CandidateParams)
       candidate.baseSha,
       candidate.candidateSha,
       candidate.worktreePath,
+      target.mountId,
+      target.mountRevision,
       candidate.state,
       candidate.integratedSha,
       candidate.createdAt,
@@ -55,25 +73,26 @@ export const getResolveCandidate = async ({
   db,
   candidateId,
 }: CandidateIdParams): Promise<ResolveCandidate | null> => {
-  const rows = await db.select<ResolveCandidate>(
-    `SELECT ${COLUMNS} FROM resolve_candidates WHERE id = ?`,
-    [candidateId],
-  );
-  return rows[0] ?? null;
+  const rows = await db.select<Row>(`SELECT ${COLUMNS} FROM resolve_candidates WHERE id = ?`, [
+    candidateId,
+  ]);
+  const row = rows[0];
+  return row === undefined ? null : hydrate({ row });
 };
 
 export const getReadyResolveCandidateForItem = async ({
   db,
   queueItemId,
 }: QueueItemParams): Promise<ResolveCandidate | null> => {
-  const rows = await db.select<ResolveCandidate>(
+  const rows = await db.select<Row>(
     `SELECT ${COLUMNS} FROM resolve_candidates
      WHERE state = 'ready'
        AND EXISTS (SELECT 1 FROM resolve_candidate_items i WHERE i.candidate_id = resolve_candidates.id AND i.queue_item_id = ?)
      ORDER BY created_at DESC, id DESC`,
     [queueItemId],
   );
-  return rows[0] ?? null;
+  const row = rows[0];
+  return row === undefined ? null : hydrate({ row });
 };
 
 export const listResolveCandidateItems = async ({
@@ -89,11 +108,13 @@ export const listResolveCandidateItems = async ({
 export const listResolveCandidates = async ({
   db,
   sessionId,
-}: SessionParams): Promise<ReadonlyArray<ResolveCandidate>> =>
-  db.select<ResolveCandidate>(
+}: SessionParams): Promise<ReadonlyArray<ResolveCandidate>> => {
+  const rows = await db.select<Row>(
     `SELECT ${COLUMNS} FROM resolve_candidates WHERE session_id = ? ORDER BY created_at, id`,
     [sessionId],
   );
+  return rows.map((row) => hydrate({ row }));
+};
 
 export const markResolveCandidateReady = async ({
   db,

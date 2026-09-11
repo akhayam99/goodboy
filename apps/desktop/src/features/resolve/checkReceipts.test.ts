@@ -11,6 +11,7 @@ const candidate: ResolveCandidate = {
   baseSha: 'base-sha',
   candidateSha: 'candidate-sha',
   worktreePath: '/tmp/worktree',
+  mountTarget: null,
   state: 'ready',
   integratedSha: null,
   createdAt: 1,

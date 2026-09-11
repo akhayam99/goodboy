@@ -336,6 +336,7 @@ export const preparePublication = async ({
     candidateIds: scope.candidateIds,
     approvedItemIds: scope.itemIds,
     requiresPush,
+    mountTarget: null,
     phase: 'previewed',
     pushedHead: null,
     confirmedAt: null,

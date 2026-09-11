@@ -70,6 +70,7 @@ export {
   updateSessionTitleUserEdited,
   updateSessionActiveProject,
   updateSessionActiveMount,
+  updateSessionWriteDestination,
   getSessionById,
   listSessionsForWorkspace,
   listArchivedSessionsForWorkspace,

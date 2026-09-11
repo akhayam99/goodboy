@@ -1,6 +1,7 @@
 import type { ResolveAttempt, ResolveAttemptPhase, SessionId } from '@goodboy/types';
 import type { Database } from '../client';
 import { resolveStringArray } from './resolve-json';
+import { fromMountTarget, toMountTarget } from './resolve-mount-target';
 
 type ListParams = { readonly db: Database; readonly sessionId: SessionId };
 type InsertParams = { readonly db: Database; readonly attempt: ResolveAttempt };
@@ -10,17 +11,36 @@ type PhaseParams = {
   readonly phase: ResolveAttemptPhase;
   readonly error?: string | null;
 };
-type Row = Omit<ResolveAttempt, 'threadIds'> & { readonly threadIds: string };
+type Row = Omit<ResolveAttempt, 'threadIds' | 'mountTarget'> & {
+  readonly threadIds: string;
+  readonly mountId: string | null;
+  readonly mountRevision: number | null;
+  readonly worktreePath: string | null;
+};
+
+const COLUMNS = `id, session_id AS sessionId, agent_id AS agentId, pr_number AS prNumber,
+  thread_ids_json AS threadIds, provider, model, effort, instructions, phase,
+  mount_id AS mountId, mount_revision AS mountRevision, worktree_path AS worktreePath,
+  started_at AS startedAt, ended_at AS endedAt, error, created_at AS createdAt`;
+
+const hydrate = ({ row }: { readonly row: Row }): ResolveAttempt => {
+  const { mountId, mountRevision, worktreePath, ...attempt } = row;
+  return {
+    ...attempt,
+    threadIds: resolveStringArray({ json: row.threadIds }),
+    mountTarget: toMountTarget({ mountId, mountRevision, worktreePath }),
+  };
+};
 
 export const listResolveAttempts = async ({
   db,
   sessionId,
 }: ListParams): Promise<ReadonlyArray<ResolveAttempt>> => {
   const rows = await db.select<Row>(
-    `SELECT id, session_id AS sessionId, agent_id AS agentId, pr_number AS prNumber, thread_ids_json AS threadIds, provider, model, effort, instructions, phase, started_at AS startedAt, ended_at AS endedAt, error, created_at AS createdAt FROM resolve_attempts WHERE session_id = ? ORDER BY created_at, rowid`,
+    `SELECT ${COLUMNS} FROM resolve_attempts WHERE session_id = ? ORDER BY created_at, rowid`,
     [sessionId],
   );
-  return rows.map((row) => ({ ...row, threadIds: resolveStringArray({ json: row.threadIds }) }));
+  return rows.map((row) => hydrate({ row }));
 };
 
 export const listActiveResolveAttempts = async ({
@@ -29,17 +49,20 @@ export const listActiveResolveAttempts = async ({
   readonly db: Database;
 }): Promise<ReadonlyArray<ResolveAttempt>> => {
   const rows = await db.select<Row>(
-    `SELECT id, session_id AS sessionId, agent_id AS agentId, pr_number AS prNumber, thread_ids_json AS threadIds, provider, model, effort, instructions, phase, started_at AS startedAt, ended_at AS endedAt, error, created_at AS createdAt FROM resolve_attempts WHERE phase IN ('queued', 'running') ORDER BY created_at, rowid`,
+    `SELECT ${COLUMNS} FROM resolve_attempts WHERE phase IN ('queued', 'running') ORDER BY created_at, rowid`,
   );
-  return rows.map((row) => ({ ...row, threadIds: resolveStringArray({ json: row.threadIds }) }));
+  return rows.map((row) => hydrate({ row }));
 };
 
 export const insertResolveAttempt = async ({ db, attempt }: InsertParams): Promise<void> => {
+  const target = fromMountTarget({ target: attempt.mountTarget });
   await db.execute(
-    `INSERT INTO resolve_attempts (id, session_id, agent_id, pr_number, thread_ids_json, provider, model, effort, instructions, phase, started_at, ended_at, error, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO resolve_attempts (id, session_id, agent_id, pr_number, thread_ids_json, provider, model, effort, instructions, phase, mount_id, mount_revision, worktree_path, started_at, ended_at, error, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT (id) DO UPDATE SET provider = excluded.provider, model = excluded.model,
       effort = excluded.effort, instructions = excluded.instructions, phase = excluded.phase,
       thread_ids_json = excluded.thread_ids_json,
+      mount_id = excluded.mount_id, mount_revision = excluded.mount_revision,
+      worktree_path = excluded.worktree_path,
       started_at = COALESCE(resolve_attempts.started_at, excluded.started_at)
     WHERE resolve_attempts.phase IN ('queued', 'running')`,
     [
@@ -53,6 +76,9 @@ export const insertResolveAttempt = async ({ db, attempt }: InsertParams): Promi
       attempt.effort,
       attempt.instructions,
       attempt.phase,
+      target.mountId,
+      target.mountRevision,
+      target.worktreePath,
       attempt.startedAt,
       attempt.endedAt,
       attempt.error,
