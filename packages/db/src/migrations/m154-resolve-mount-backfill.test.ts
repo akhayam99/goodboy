@@ -299,6 +299,30 @@ describe('m154 resolve mount backfill', () => {
     });
   });
 
+  it('refuses a publication whose candidate set is only partly known', async () => {
+    const db = await seed({
+      mounts: [
+        { id: 'mount-0', path: M0, branch: 'ak/other' },
+        { id: 'mount-1', path: M1, branch: 'ak/publish' },
+      ],
+    });
+    await seedCandidate({ db, id: 'candidate-a', path: M1 });
+    await seedPublication({
+      db,
+      id: 'publication-a',
+      branch: 'ak/publish',
+      candidateIds: ['candidate-a', 'candidate-gone'],
+    });
+
+    await migrate(db);
+
+    expect((await publicationTarget({ db, id: 'publication-a' }))[0]).toMatchObject({
+      mount_id: null,
+      phase: 'failed',
+      error: 'target_unresolved',
+    });
+  });
+
   it('refuses a publication when two mounts sit on its branch', async () => {
     const db = await seed({
       mounts: [

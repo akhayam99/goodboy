@@ -156,14 +156,14 @@ WHERE mount_id IS NULL
       AND w.branch = resolve_publications.branch
       AND w.worktree_path IS NOT NULL
   ) = 1
+  AND json_valid(candidate_ids_json)
+  AND (
+    SELECT COUNT(*) FROM resolve_candidates c
+    WHERE c.id IN (SELECT value FROM json_each(resolve_publications.candidate_ids_json))
+  ) = json_array_length(candidate_ids_json)
   AND NOT EXISTS (
     SELECT 1 FROM resolve_candidates c
-    WHERE c.id IN (
-        SELECT value FROM json_each(
-          CASE WHEN json_valid(resolve_publications.candidate_ids_json)
-            THEN resolve_publications.candidate_ids_json ELSE '[]' END
-        )
-      )
+    WHERE c.id IN (SELECT value FROM json_each(resolve_publications.candidate_ids_json))
       AND c.worktree_path != (
         SELECT w.worktree_path FROM session_worktrees w
         WHERE w.session_id = resolve_publications.session_id
