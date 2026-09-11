@@ -1,7 +1,7 @@
 import {
-  updateSessionActiveMount,
   updateSessionActiveProject,
   updateSessionMountLifecycle,
+  updateSessionWriteDestination,
 } from '@goodboy/db';
 import type { IsoDateTime, ProjectId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -16,6 +16,7 @@ import {
 import { applyMountViews, loadMountViews, requireMountView } from './mountViews';
 import { clearMountBranchObservation } from './mountBranchObservations';
 import { requireMountContext } from './requireMountContext';
+import { selectSelectedMountId } from './selectedMountId';
 import type { GetFn, SetFn, UnmountMountInput, UnmountMountResult } from './types';
 
 export const unmountMount = (set: SetFn, get: GetFn) => {
@@ -107,9 +108,10 @@ export const unmountMount = (set: SetFn, get: GetFn) => {
         const remaining = nextViews.filter(
           (candidate) => candidate.isAttached && candidate.worktreePath !== null,
         );
-        const session = get().sessions.find((candidate) => candidate.id === sessionId);
-        if (session?.activeMountId === mountId) {
-          await updateSessionActiveMount({
+        const selectedMountId = selectSelectedMountId({ state: get(), sessionId });
+        const dropsSelection = selectedMountId === mountId;
+        if (dropsSelection) {
+          await updateSessionWriteDestination({
             db: tauriDatabase,
             sessionId,
             mountId: null,
@@ -139,6 +141,9 @@ export const unmountMount = (set: SetFn, get: GetFn) => {
           }
           return {
             sessionActiveProject: activeProjects,
+            ...(dropsSelection
+              ? { sessionActiveMount: { ...state.sessionActiveMount, [sessionId]: null } }
+              : {}),
             sessions: state.sessions.map((candidate) => {
               if (candidate.id !== sessionId) {
                 return candidate;
@@ -146,9 +151,7 @@ export const unmountMount = (set: SetFn, get: GetFn) => {
               const { activeMountId: _mount, activeProjectId: _project, ...rest } = candidate;
               return {
                 ...rest,
-                ...(candidate.activeMountId === mountId
-                  ? {}
-                  : { activeMountId: candidate.activeMountId }),
+                ...(dropsSelection ? {} : { activeMountId: candidate.activeMountId }),
                 ...(nextActiveProjectId === null ? {} : { activeProjectId: nextActiveProjectId }),
               };
             }),

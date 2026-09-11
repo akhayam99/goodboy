@@ -1,7 +1,10 @@
-import { updateSessionActiveMount, updateSessionActiveProject } from '@goodboy/db';
+import { updateSessionWriteDestination } from '@goodboy/db';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { pickActiveMount } from './activeMount';
+import { findMountById } from './findMountById';
+import { recoverSoleMount } from './recoverSoleMount';
+import { selectSelectedMountId } from './selectedMountId';
+import { writeDestinationPatch } from './writeDestinationPatch';
 import type { GetFn, SetFn } from './types';
 
 type ReleaseParams = {
@@ -12,6 +15,30 @@ type ReleaseParams = {
   readonly departedProjectId: ProjectId | null;
 };
 
+type RecordsParams = {
+  readonly set: SetFn;
+  readonly sessionId: SessionId;
+  readonly departedProjectId: ProjectId | null;
+};
+
+const dropWorktreeRecords = ({ set, sessionId, departedProjectId }: RecordsParams): void => {
+  if (departedProjectId === null) {
+    return;
+  }
+  set((state) => {
+    const records = state.sessionWorktreeRecords?.[sessionId];
+    if (records === undefined) {
+      return {};
+    }
+    return {
+      sessionWorktreeRecords: {
+        ...state.sessionWorktreeRecords,
+        [sessionId]: records.filter((record) => record.projectId !== departedProjectId),
+      },
+    };
+  });
+};
+
 export const releaseMountSelection = async ({
   set,
   get,
@@ -19,98 +46,26 @@ export const releaseMountSelection = async ({
   released,
   departedProjectId,
 }: ReleaseParams): Promise<void> => {
-  const remaining = get().sessionProjectMounts[sessionId] ?? [];
-  const activeId = get().sessionActiveProject[sessionId] ?? null;
-  const dropsProject = departedProjectId !== null && activeId === departedProjectId;
-  const nextActiveId = dropsProject ? (remaining[0]?.projectId ?? null) : (activeId ?? null);
-  if (dropsProject) {
-    await updateSessionActiveProject({
-      db: tauriDatabase,
-      id: sessionId,
-      projectId: nextActiveId,
-    }).catch(() => undefined);
+  dropWorktreeRecords({ set, sessionId, departedProjectId });
+  const remaining = (get().sessionProjectMounts[sessionId] ?? []).filter(
+    (mount) => !released.includes(mount.mountId),
+  );
+  const selectedMountId = selectSelectedMountId({ state: get(), sessionId });
+  if (selectedMountId === null) {
+    return;
   }
-  const deleted = new Set<MountId>(released);
-  const selectedMountId = get().sessionActiveMount?.[sessionId] ?? null;
-  const storedMountId =
-    get().sessions.find((candidate) => candidate.id === sessionId)?.activeMountId ?? null;
-  const keepsSelected = selectedMountId !== null && !deleted.has(selectedMountId);
-  const keepsStored = storedMountId !== null && !deleted.has(storedMountId);
-  const holdsActiveMount =
-    (selectedMountId === null || keepsSelected) && (storedMountId === null || keepsStored);
-  const nextActiveMount = holdsActiveMount
-    ? null
-    : pickActiveMount({
-        mounts: remaining,
-        selectedMountId: keepsSelected ? selectedMountId : null,
-        storedMountId: keepsStored ? storedMountId : null,
-        activeProjectId: nextActiveId,
-      });
-  const nextActiveMountId = nextActiveMount?.mountId ?? null;
-  if (!holdsActiveMount) {
-    await updateSessionActiveMount({
-      db: tauriDatabase,
-      sessionId,
-      mountId: nextActiveMountId,
-    }).catch(() => undefined);
-  }
-  set((state) => {
-    const worktreeRecords =
-      departedProjectId === null ? undefined : state.sessionWorktreeRecords?.[sessionId];
-    const sessionBranches = { ...state.sessionBranches };
-    if (!holdsActiveMount) {
-      if (nextActiveMount === null) {
-        delete sessionBranches[sessionId];
-      } else {
-        sessionBranches[sessionId] = nextActiveMount.branch;
-      }
+  if (!released.includes(selectedMountId)) {
+    const held = findMountById({ mounts: remaining, mountId: selectedMountId });
+    if (held !== null) {
+      set((state) => writeDestinationPatch({ state, sessionId, mount: held }));
     }
-    return {
-      ...(worktreeRecords === undefined
-        ? {}
-        : {
-            sessionWorktreeRecords: {
-              ...state.sessionWorktreeRecords,
-              [sessionId]: worktreeRecords.filter(
-                (record) => record.projectId !== departedProjectId,
-              ),
-            },
-          }),
-      ...(holdsActiveMount
-        ? {}
-        : {
-            sessionBranches,
-            sessionActiveMount: { ...state.sessionActiveMount, [sessionId]: nextActiveMountId },
-          }),
-      ...(dropsProject
-        ? {
-            sessionActiveProject: Object.fromEntries(
-              Object.entries(state.sessionActiveProject)
-                .filter(([key]) => key !== sessionId)
-                .concat(nextActiveId === null ? [] : [[sessionId, nextActiveId]]),
-            ),
-          }
-        : {}),
-      ...(holdsActiveMount && !dropsProject
-        ? {}
-        : {
-            sessions: state.sessions.map((candidate) => {
-              if (candidate.id !== sessionId) {
-                return candidate;
-              }
-              const { activeMountId: _mount, activeProjectId: _project, ...rest } = candidate;
-              const keptProjectId = dropsProject
-                ? nextActiveId
-                : (candidate.activeProjectId ?? null);
-              const currentMountId = candidate.activeMountId ?? null;
-              const keptMountId = holdsActiveMount ? currentMountId : nextActiveMountId;
-              return {
-                ...rest,
-                ...(keptMountId === null ? {} : { activeMountId: keptMountId }),
-                ...(keptProjectId === null ? {} : { activeProjectId: keptProjectId }),
-              };
-            }),
-          }),
-    };
-  });
+    return;
+  }
+  const next = recoverSoleMount({ mounts: remaining });
+  await updateSessionWriteDestination({
+    db: tauriDatabase,
+    sessionId,
+    mountId: next?.mountId ?? null,
+  }).catch(() => undefined);
+  set((state) => writeDestinationPatch({ state, sessionId, mount: next }));
 };

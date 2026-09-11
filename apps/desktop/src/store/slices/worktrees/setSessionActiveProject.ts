@@ -1,6 +1,8 @@
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import { updateSessionActiveProject } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { findMountById } from '../project-mounts/findMountById';
+import { recoverSoleMount } from '../project-mounts/recoverSoleMount';
 import { selectActiveMountId, selectProjectMounts } from '../project-mounts/selectors';
 import type { GetFn, SetFn } from './types';
 
@@ -19,15 +21,12 @@ export const setSessionActiveProject = ({ set, get }: Params) => {
   return async ({ sessionId, projectId, mountId: requested }: Input): Promise<void> => {
     const state = get();
     const candidates = selectProjectMounts({ state, sessionId, projectId });
-    const activeMountId = selectActiveMountId({ state, sessionId });
     const target =
-      candidates.find((mount) => mount.mountId === requested) ??
-      candidates.find((mount) => mount.mountId === activeMountId) ??
-      candidates[0] ??
-      null;
-    const mountId = target?.mountId;
-    if (mountId !== undefined) {
-      await get().setSessionActiveMount({ sessionId, mountId });
+      findMountById({ mounts: candidates, mountId: requested }) ??
+      findMountById({ mounts: candidates, mountId: selectActiveMountId({ state, sessionId }) }) ??
+      recoverSoleMount({ mounts: candidates });
+    if (target !== null) {
+      await get().setSessionActiveMount({ sessionId, mountId: target.mountId });
       return;
     }
     set((current) => ({

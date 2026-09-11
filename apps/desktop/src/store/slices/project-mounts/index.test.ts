@@ -170,6 +170,7 @@ vi.mock('@goodboy/db', () => ({
     [...h.operations.values()].filter((operation) => operation['sessionId'] === sessionId),
   ),
   updateSessionActiveMount: vi.fn(async () => true),
+  updateSessionWriteDestination: vi.fn(async () => true),
   updateSessionActiveProject: vi.fn(async () => undefined),
   deleteSessionWorktreeForProject: vi.fn(async () => undefined),
 }));

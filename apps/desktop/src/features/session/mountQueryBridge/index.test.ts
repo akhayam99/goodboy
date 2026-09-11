@@ -7,6 +7,8 @@ const { state, links } = vi.hoisted(() => ({
     sessions: [{ id: 'session-1', workspaceId: 'ws-1', goal: 'split the pull request' }],
     terminalTabs: {} as Record<string, ReadonlyArray<unknown>>,
     sessionActiveMount: {} as Record<string, string | null>,
+    sessionMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     views: [] as Array<Record<string, unknown>>,
     loadSessionMounts: vi.fn(async () => state.views),
     forkMount: vi.fn(async () => state.views[1]),
@@ -103,6 +105,7 @@ beforeEach(() => {
     view({ id: 'mount-1', branch: 'goodboy/one' }) as unknown as Record<string, unknown>,
     view({ id: 'mount-2', branch: 'goodboy/two' }) as unknown as Record<string, unknown>,
   ];
+  state.sessionMounts = { 'session-1': state.views };
   links.length = 0;
   state.sessionActiveMount = {};
   clearMountContinuations();

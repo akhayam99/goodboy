@@ -160,24 +160,14 @@ describe('routing two mounts of one project', () => {
     expect(selectActiveMountId({ state, sessionId: SESSION_ID })).toBe(SECOND);
   });
 
-  it('refuses to guess a mount when the project owns several and none is active', () => {
-    const state = twoMountState({ selected: null });
+  it('leaves the destination unselected when the session never chose between siblings', () => {
+    const state = twoMountState({});
 
-    expect(
-      selectUnambiguousProjectMount({ state, sessionId: SESSION_ID, projectId: PROJECT_ID }),
-    ).toBeNull();
+    expect(selectActiveMountId({ state, sessionId: SESSION_ID })).toBeNull();
+    expect(selectActiveMount({ state, sessionId: SESSION_ID })).toBeNull();
   });
 
-  it('resolves the project mount once the selection names one of them', () => {
-    const state = twoMountState({ selected: SECOND });
-
-    expect(
-      selectUnambiguousProjectMount({ state, sessionId: SESSION_ID, projectId: PROJECT_ID })
-        ?.mountId,
-    ).toBe(SECOND);
-  });
-
-  it('never makes a removed mount the execution root', () => {
+  it('recovers the only sibling left when the selection names a removed mount', () => {
     const state = {
       ...twoMountState({ selected: HISTORICAL }),
       sessionMounts: {
@@ -195,6 +185,23 @@ describe('routing two mounts of one project', () => {
 
     expect(selectActiveMountId({ state, sessionId: SESSION_ID })).toBe(ATTACHED);
     expect(selectMountById({ state, sessionId: SESSION_ID, mountId: HISTORICAL })).toBeNull();
+  });
+
+  it('refuses to guess a mount when the project owns several and none is active', () => {
+    const state = twoMountState({ selected: null });
+
+    expect(
+      selectUnambiguousProjectMount({ state, sessionId: SESSION_ID, projectId: PROJECT_ID }),
+    ).toBeNull();
+  });
+
+  it('resolves the project mount once the selection names one of them', () => {
+    const state = twoMountState({ selected: SECOND });
+
+    expect(
+      selectUnambiguousProjectMount({ state, sessionId: SESSION_ID, projectId: PROJECT_ID })
+        ?.mountId,
+    ).toBe(SECOND);
   });
 
   it('finds the mount that owns a working directory', () => {

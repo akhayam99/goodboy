@@ -23,6 +23,7 @@ import {
   queueMountContinuation,
 } from '../../../store/slices/turn/mountContinuations';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { selectActiveMountId } from '../../../store/slices/project-mounts/selectors';
 import { useAppStore } from '../../../store/store';
 import { isMainWindow } from '../../workspace/window';
 import { executeSeriesRequest, type SeriesBridgeRequest } from './series';
@@ -99,15 +100,8 @@ type Continuation = {
   readonly note?: string;
 };
 
-const boundMountId = ({ sessionId }: { readonly sessionId: SessionId }): MountId | null => {
-  const state = useAppStore.getState();
-  const selected = state.sessionActiveMount?.[sessionId] ?? null;
-  if (selected !== null) {
-    return selected;
-  }
-  const session = state.sessions?.find((candidate) => candidate.id === sessionId);
-  return session?.activeMountId ?? null;
-};
+const boundMountId = ({ sessionId }: { readonly sessionId: SessionId }): MountId | null =>
+  selectActiveMountId({ state: useAppStore.getState(), sessionId });
 
 const requestContinuation = ({ request, mount, origin }: ContinuationParams): Continuation => {
   const operationId = request.requestId ?? `${origin}:${mount.id}:${mount.revision}`;

@@ -7,6 +7,7 @@ const {
   getMountOperation,
   upsertMountOperation,
   updateSessionActiveMount,
+  updateSessionWriteDestination,
   updateSessionActiveProject,
 } = vi.hoisted(() => ({
   deleteSessionMount: vi.fn(async (_args: { mountId: string }) => true),
@@ -15,6 +16,7 @@ const {
   getMountOperation: vi.fn(async () => null as Record<string, unknown> | null),
   upsertMountOperation: vi.fn(async () => undefined),
   updateSessionActiveMount: vi.fn(async () => undefined),
+  updateSessionWriteDestination: vi.fn(async () => true),
   updateSessionActiveProject: vi.fn(async () => undefined),
 }));
 
@@ -25,6 +27,7 @@ vi.mock('@goodboy/db', () => ({
   getMountOperation,
   upsertMountOperation,
   updateSessionActiveMount,
+  updateSessionWriteDestination,
   updateSessionActiveProject,
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -276,7 +279,7 @@ describe('forgetMount', () => {
 
     await run(store);
 
-    expect(updateSessionActiveMount).toHaveBeenCalledWith({
+    expect(updateSessionWriteDestination).toHaveBeenCalledWith({
       db: {},
       sessionId: SESSION_ID,
       mountId: 'mount-web',
@@ -293,7 +296,7 @@ describe('forgetMount', () => {
 
     await run(store);
 
-    expect(updateSessionActiveMount).not.toHaveBeenCalled();
+    expect(updateSessionWriteDestination).not.toHaveBeenCalled();
     expect(store.sessionActiveMount['sess-1']).toBeNull();
     expect(store.sessions[0]?.activeMountId).toBeUndefined();
   });
@@ -301,7 +304,9 @@ describe('forgetMount', () => {
   it('moves the active project on when the last mount of that project leaves', async () => {
     const store = makeStore();
     store.sessionActiveProject = { 'sess-1': 'project-api' };
+    store.sessionActiveMount = { 'sess-1': 'mount-api' };
     store.sessions[0]!.activeProjectId = 'project-api';
+    store.sessions[0]!.activeMountId = 'mount-api';
     store.sessionMounts['sess-1'] = [
       makeView({}),
       makeView({ id: 'mount-web', projectId: 'project-web' }),
@@ -309,10 +314,10 @@ describe('forgetMount', () => {
 
     await run(store);
 
-    expect(updateSessionActiveProject).toHaveBeenCalledWith({
+    expect(updateSessionWriteDestination).toHaveBeenCalledWith({
       db: {},
-      id: SESSION_ID,
-      projectId: 'project-web',
+      sessionId: SESSION_ID,
+      mountId: 'mount-web',
     });
     expect(store.sessionActiveProject['sess-1']).toBe('project-web');
     expect(store.sessions[0]?.activeProjectId).toBe('project-web');
