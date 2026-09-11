@@ -1,8 +1,4 @@
-import {
-  updateSessionActiveProject,
-  updateSessionMountLifecycle,
-  updateSessionWriteDestination,
-} from '@goodboy/db';
+import { updateSessionActiveProject, updateSessionMountLifecycle } from '@goodboy/db';
 import type { IsoDateTime, ProjectId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cleanupMountDirectory } from '../mount-cleanup';
@@ -13,7 +9,10 @@ import {
   markMountOperationUncertain,
   succeedMountOperation,
 } from './mountOperations';
-import { applyMountViews, loadMountViews, requireMountView } from './mountViews';
+import { commitWriteDestination } from './commitWriteDestination';
+import { findMountById } from './findMountById';
+import { applyMountViews, loadMountViews, requireMountView, toProjectMounts } from './mountViews';
+import { recoverSoleMount } from './recoverSoleMount';
 import { clearMountBranchObservation } from './mountBranchObservations';
 import { requireMountContext } from './requireMountContext';
 import { selectSelectedMountId } from './selectedMountId';
@@ -110,53 +109,44 @@ export const unmountMount = (set: SetFn, get: GetFn) => {
         );
         const selectedMountId = selectSelectedMountId({ state: get(), sessionId });
         const dropsSelection = selectedMountId === mountId;
+        const remainingMounts = toProjectMounts(remaining);
+        applyMountViews({ set, sessionId, views: nextViews });
         if (dropsSelection) {
-          await updateSessionWriteDestination({
-            db: tauriDatabase,
+          await commitWriteDestination({
+            set,
             sessionId,
-            mountId: null,
-          }).catch(() => undefined);
+            mount: recoverSoleMount({ mounts: remainingMounts }),
+          });
         }
+        const held = findMountById({ mounts: remainingMounts, mountId: selectedMountId });
         const activeProjectId = get().sessionActiveProject[sessionId] ?? null;
-        const keepsActiveProject = remaining.some(
+        if (held !== null && held.projectId !== activeProjectId) {
+          await commitWriteDestination({ set, sessionId, mount: held });
+        }
+        const keepsActiveProject = remainingMounts.some(
           (candidate) => candidate.projectId === activeProjectId,
         );
-        const nextActiveProjectId: ProjectId | null = keepsActiveProject
-          ? activeProjectId
-          : (remaining[0]?.projectId ?? null);
-        if (nextActiveProjectId !== activeProjectId) {
+        if (activeProjectId !== null && !keepsActiveProject && held === null && !dropsSelection) {
           await updateSessionActiveProject({
             db: tauriDatabase,
             id: sessionId,
-            projectId: nextActiveProjectId,
+            projectId: null,
           }).catch(() => undefined);
-        }
-        applyMountViews({ set, sessionId, views: nextViews });
-        set((state) => {
-          const activeProjects = { ...state.sessionActiveProject };
-          if (nextActiveProjectId === null) {
+          set((state) => {
+            const activeProjects = { ...state.sessionActiveProject };
             delete activeProjects[sessionId];
-          } else {
-            activeProjects[sessionId] = nextActiveProjectId;
-          }
-          return {
-            sessionActiveProject: activeProjects,
-            ...(dropsSelection
-              ? { sessionActiveMount: { ...state.sessionActiveMount, [sessionId]: null } }
-              : {}),
-            sessions: state.sessions.map((candidate) => {
-              if (candidate.id !== sessionId) {
-                return candidate;
-              }
-              const { activeMountId: _mount, activeProjectId: _project, ...rest } = candidate;
-              return {
-                ...rest,
-                ...(dropsSelection ? {} : { activeMountId: candidate.activeMountId }),
-                ...(nextActiveProjectId === null ? {} : { activeProjectId: nextActiveProjectId }),
-              };
-            }),
-          };
-        });
+            return {
+              sessionActiveProject: activeProjects,
+              sessions: state.sessions.map((candidate) => {
+                if (candidate.id !== sessionId) {
+                  return candidate;
+                }
+                const { activeProjectId: _project, ...rest } = candidate;
+                return rest;
+              }),
+            };
+          });
+        }
         await get().recordSessionEvent({
           sessionId,
           kind: 'project_detached',

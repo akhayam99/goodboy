@@ -1,6 +1,5 @@
-import { updateSessionWriteDestination } from '@goodboy/db';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
-import { tauriDatabase } from '../../../shared/lib/db';
+import { commitWriteDestination } from './commitWriteDestination';
 import { findMountById } from './findMountById';
 import { recoverSoleMount } from './recoverSoleMount';
 import { selectSelectedMountId } from './selectedMountId';
@@ -61,11 +60,9 @@ export const releaseMountSelection = async ({
     }
     return;
   }
-  const next = recoverSoleMount({ mounts: remaining });
-  await updateSessionWriteDestination({
-    db: tauriDatabase,
+  await commitWriteDestination({
+    set,
     sessionId,
-    mountId: next?.mountId ?? null,
-  }).catch(() => undefined);
-  set((state) => writeDestinationPatch({ state, sessionId, mount: next }));
+    mount: recoverSoleMount({ mounts: remaining }),
+  });
 };
