@@ -2891,10 +2891,6 @@ fn find_existing(
         .find(|w| Path::new(&w.path) == worktree_path))
 }
 
-/// Best-effort fetch of `origin/<base>`. Returns the failure message instead of
-/// dropping it, so that offline sessions or repos without an `origin` remote
-/// still let the user create a worktree while a later failure can still name
-/// the fetch as the first thing that went wrong.
 fn try_fetch_origin(repo_path: &Path, base: &str) -> Option<String> {
     git(repo_path, &["fetch", "origin", base])
         .err()
