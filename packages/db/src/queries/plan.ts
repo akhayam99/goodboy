@@ -31,16 +31,11 @@ type PlanWithCountRow = PlanRow & {
   consumption_count: number;
 };
 
-const CLUSTER_KEYS: ReadonlyArray<string> = ['title', 'instructions', 'routingProposal'];
-
 const isImplementationCluster = (value: unknown): value is ImplementationCluster => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false;
   }
   const entry = value as Record<string, unknown>;
-  if (Object.keys(entry).every((key) => CLUSTER_KEYS.includes(key)) === false) {
-    return false;
-  }
   if (typeof entry['title'] !== 'string' || typeof entry['instructions'] !== 'string') {
     return false;
   }
