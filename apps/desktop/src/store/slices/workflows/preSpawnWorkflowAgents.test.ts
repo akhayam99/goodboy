@@ -232,7 +232,7 @@ describe('preSpawnWorkflowAgents and agentReferenceRouting agree', () => {
       }),
       defaultProvider: 'codex',
       roleModels: {
-        scout: { providerId: 'cursor', model: 'gpt-5.6', effort: 'medium' },
+        scout: { providerId: 'cursor', model: 'gpt-5.6-sol', effort: 'medium' },
       },
     });
 

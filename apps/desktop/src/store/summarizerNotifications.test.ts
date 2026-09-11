@@ -513,7 +513,7 @@ describe('summarizer provider fallback', () => {
     summarizeSpy.mockRejectedValueOnce(new Error('Claude usage limit reached')).mockResolvedValue({
       delta: { upserts: [] },
       usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
-      model: 'gpt-5.4',
+      model: 'gpt-5.6-terra',
     });
 
     const useAppStore = await seedSummarizerState({ connected: ['anthropic', 'codex'] });
@@ -532,7 +532,7 @@ describe('summarizer provider fallback', () => {
     summarizeSpy.mockRejectedValueOnce(new Error('Claude usage limit reached')).mockResolvedValue({
       delta: { upserts: [] },
       usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
-      model: 'gpt-5.4',
+      model: 'gpt-5.6-terra',
     });
 
     const useAppStore = await seedSummarizerState({ connected: ['anthropic', 'codex'] });
@@ -550,7 +550,7 @@ describe('summarizer provider fallback', () => {
     summarizeSpy.mockRejectedValueOnce(new Error('401 unauthorized')).mockResolvedValue({
       delta: { upserts: [] },
       usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
-      model: 'gpt-5.4',
+      model: 'gpt-5.6-terra',
     });
 
     const useAppStore = await seedSummarizerState({ connected: ['anthropic', 'codex'] });
@@ -568,7 +568,7 @@ describe('summarizer provider fallback', () => {
     summarizeSpy.mockRejectedValueOnce(new Error('401 unauthorized')).mockResolvedValue({
       delta: { upserts: [] },
       usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
-      model: 'gpt-5.4',
+      model: 'gpt-5.6-terra',
     });
 
     const useAppStore = await seedSummarizerState({ connected: ['anthropic', 'codex'] });
@@ -586,7 +586,7 @@ describe('summarizer provider fallback', () => {
     summarizeSpy.mockRejectedValueOnce(new Error('429 too many requests')).mockResolvedValue({
       delta: { upserts: [] },
       usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
-      model: 'gpt-5.4',
+      model: 'gpt-5.6-terra',
     });
 
     const useAppStore = await seedSummarizerState({ connected: ['anthropic', 'codex'] });
@@ -619,7 +619,7 @@ describe('summarizer provider fallback', () => {
     summarizeSpy.mockResolvedValue({
       delta: { upserts: [] },
       usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
-      model: 'gpt-5.4',
+      model: 'gpt-5.6-terra',
     });
 
     const useAppStore = await seedSummarizerState({

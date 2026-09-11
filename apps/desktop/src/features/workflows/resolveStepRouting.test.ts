@@ -62,14 +62,14 @@ describe('resolveStepRouting', () => {
 
   it('reports the provider the agent actually runs on, not one guessed from the model', () => {
     const routing = resolveStepRouting({
-      step: step({ modelOverride: 'gpt-5.6' }),
+      step: step({ modelOverride: 'gpt-5.6-sol' }),
       kind: 'generic',
       roleModels: null,
       agentProvider: 'cursor',
     });
 
     expect(routing.provider).toBe('cursor');
-    expect(routing.model).toBe('gpt-5.6');
+    expect(routing.model).toBe('gpt-5.6-sol');
   });
 
   it('lets the provider pinned on the step win over the one of the agent', () => {
@@ -87,12 +87,12 @@ describe('resolveStepRouting', () => {
     const routing = resolveStepRouting({
       step: step({ role: 'scout' }),
       kind: 'scout',
-      roleModels: { scout: { providerId: 'codex', model: 'gpt-5.6', effort: 'medium' } },
+      roleModels: { scout: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'medium' } },
       sessionProvider: 'cursor',
     });
 
     expect(routing.provider).toBe('codex');
-    expect(routing.model).toBe('gpt-5.6');
+    expect(routing.model).toBe('gpt-5.6-sol');
     expect(routing.effort).toBe('medium');
   });
 
@@ -124,7 +124,7 @@ describe('resolveStepRouting', () => {
     const routing = resolveStepRouting({
       step: step({ role: 'scout' }),
       kind: 'scout',
-      roleModels: { scout: { providerId: 'codex', model: 'gpt-5.6', effort: 'medium' } },
+      roleModels: { scout: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'medium' } },
       agentProvider: 'cursor',
     });
 
@@ -142,7 +142,7 @@ describe('resolveStepRouting', () => {
     const preferred = resolveStepRouting({
       step: step({ role: 'scout' }),
       kind: 'scout',
-      roleModels: { scout: { providerId: 'codex', model: 'gpt-5.6', effort: 'medium' } },
+      roleModels: { scout: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'medium' } },
       sessionEffort: 'high',
     });
 

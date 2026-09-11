@@ -1,9 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { PROVIDER_IDS, type CatalogModel } from '@goodboy/types';
+import { PROVIDER_IDS, type CatalogModel, type ProviderId } from '@goodboy/types';
 import { runAuxOneShot } from './aux-spawn';
 import { cliModelId } from './cliModelId';
 import { getCheapModel } from './cli-defaults';
 import { MODEL_CATALOGS } from './catalogs';
+import { ANTHROPIC_AGENT_MODEL_IDS } from './claude/agent-model-ids';
+import { CODEX_AGENT_MODEL_IDS } from './codex/agent-model-ids';
+import { CURSOR_AGENT_MODEL_IDS } from './cursor/agent-model-ids';
+import { GEMINI_AGENT_MODEL_IDS } from './gemini/agent-model-ids';
+import { MOONSHOT_AGENT_MODEL_IDS } from './moonshot/agent-model-ids';
+import { OPENCODE_AGENT_MODEL_IDS } from './opencode/agent-model-ids';
+import { OPENROUTER_AGENT_MODEL_IDS } from './openrouter/agent-model-ids';
+
+const ACCEPTED_IDS = {
+  anthropic: ANTHROPIC_AGENT_MODEL_IDS,
+  cursor: CURSOR_AGENT_MODEL_IDS,
+  codex: CODEX_AGENT_MODEL_IDS,
+  gemini: GEMINI_AGENT_MODEL_IDS,
+  opencode: OPENCODE_AGENT_MODEL_IDS,
+  openrouter: OPENROUTER_AGENT_MODEL_IDS,
+  moonshot: MOONSHOT_AGENT_MODEL_IDS,
+} satisfies Readonly<Record<ProviderId, ReadonlyArray<string>>>;
 
 const capture = () => {
   const seen: Array<Record<string, unknown>> = [];
@@ -105,15 +122,16 @@ describe('cliModelId', () => {
     expect(cliModelId({ provider: 'anthropic', model: 'haiku-4.5' })).toBe('claude-haiku-4-5');
   });
 
-  it('resolves every provider cheap model to its catalog cli id', () => {
+  it('resolves every provider cheap model to an id that provider cli accepts', () => {
     for (const provider of PROVIDER_IDS) {
       const cheapModel = getCheapModel(provider);
+      const mapped = cliModelId({ provider, model: cheapModel });
+      expect(ACCEPTED_IDS[provider]).toContain(mapped);
       const catalogEntry = MODEL_CATALOGS[provider].find((model) => model.key === cheapModel);
-      expect(catalogEntry).toBeDefined();
       if (catalogEntry == null) {
+        expect(mapped).toBe(cheapModel);
         continue;
       }
-      const mapped = cliModelId({ provider, model: cheapModel });
       const expected = expectedCliId({ model: catalogEntry });
       expect(mapped).toBe(expected);
       if (cheapModel !== expected) {

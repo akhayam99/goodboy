@@ -46,7 +46,7 @@ type MrParams = {
 const h = vi.hoisted(() => ({
   config: {
     provider: 'gemini',
-    model: 'gemini-3.5-flash',
+    model: 'gemini-3.8-flash',
     effort: 'low',
     hint: 'Mention the rollout order.',
   } satisfies AgentSpawnConfigValue,
@@ -240,7 +240,7 @@ describe('MrDetailPanel', () => {
     const args = h.store.spawnAgent.mock.calls[0]![1];
     expect(args).toMatchObject({
       provider: 'gemini',
-      model: 'gemini-3.5-flash',
+      model: 'gemini-3.8-flash',
       effort: 'low',
     });
     expect(args.initialPrompt).toContain(
@@ -271,7 +271,7 @@ describe('MrDetailPanel', () => {
     const { rerender } = render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
     h.store.workspaceOverrides = {
       'workspace-1': {
-        taskModels: { pr_draft: { providerId: 'codex', model: 'gpt-5.4-mini' } },
+        taskModels: { pr_draft: { providerId: 'codex', model: 'gpt-5.6-luna' } },
       },
     };
     rerender(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
@@ -281,7 +281,7 @@ describe('MrDetailPanel', () => {
     await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
     expect(h.store.spawnAgent.mock.calls[0]![1]).toMatchObject({
       provider: 'codex',
-      model: 'gpt-5.4-mini',
+      model: 'gpt-5.6-luna',
     });
   });
 

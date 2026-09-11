@@ -562,7 +562,7 @@ describe('orchestrateNextStep', () => {
     expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         providerOverride: 'codex',
-        modelOverride: 'gpt-5.6',
+        modelOverride: 'gpt-5.6-sol',
         effort: 'high',
       }),
     );
@@ -1307,17 +1307,17 @@ describe('orchestrateNextStep', () => {
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
       usage: NO_USAGE,
-      model: 'gpt-5.6',
+      model: 'gpt-5.6-sol',
     });
     const state = baseState();
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
-      routing: { providerId: 'codex', model: 'gpt-5.6' },
+      routing: { providerId: 'codex', model: 'gpt-5.6-sol' },
     });
 
     expect(OrchestratorClient).toHaveBeenCalledWith(
-      expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6' }),
+      expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6-sol' }),
     );
   });
 
@@ -1325,7 +1325,7 @@ describe('orchestrateNextStep', () => {
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
       usage: NO_USAGE,
-      model: 'gpt-5.6',
+      model: 'gpt-5.6-sol',
     });
     const state = baseState();
     const sessions = state['sessions'] as ReadonlyArray<Session>;
@@ -1335,7 +1335,7 @@ describe('orchestrateNextStep', () => {
         workflowRuns: [
           {
             ...sessions[0]!.workflowRuns[0]!,
-            orchestratorRouting: { providerId: 'codex', model: 'gpt-5.6', effort: 'high' },
+            orchestratorRouting: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
           },
         ],
       },
@@ -1345,7 +1345,7 @@ describe('orchestrateNextStep', () => {
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
     expect(OrchestratorClient).toHaveBeenCalledWith(
-      expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6', effort: 'high' }),
+      expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' }),
     );
   });
 

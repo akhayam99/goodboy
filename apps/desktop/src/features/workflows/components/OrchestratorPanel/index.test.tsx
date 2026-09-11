@@ -624,7 +624,7 @@ describe('OrchestratorPanel strip', () => {
     renderPanel({
       runOverride: run({
         roleModelOverrides: {
-          implementer: { providerId: 'codex', model: 'gpt-5.6', effort: 'high' },
+          implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
         },
       }),
     });
@@ -646,8 +646,8 @@ describe('OrchestratorPanel strip', () => {
     renderPanel({
       runOverride: run({
         roleModelOverrides: {
-          implementer: { providerId: 'codex', model: 'gpt-5.6', effort: 'high' },
-          scout: { providerId: 'codex', model: 'gpt-5.6', effort: 'low' },
+          implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+          scout: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'low' },
         },
       }),
     });
@@ -657,7 +657,7 @@ describe('OrchestratorPanel strip', () => {
     fireEvent.click(within(implementer).getByRole('button', { name: /reset routing override/i }));
 
     expect(storeState['setWorkflowRoleModelOverrides']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
-      scout: { providerId: 'codex', model: 'gpt-5.6', effort: 'low' },
+      scout: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'low' },
     });
   });
 

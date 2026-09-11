@@ -43,10 +43,10 @@ describe('resolveModelArgs', () => {
     expect(
       resolveModelArgs({
         provider: 'gemini',
-        selection: { key: 'gemini-3.5-flash', effort: 'low' },
+        selection: { key: 'gemini-3.8-flash', effort: 'low' },
       }),
     ).toEqual({
-      args: ['--model', 'gemini-3.5-flash', '--effort', 'low'],
+      args: ['--model', 'gemini-3.8-flash', '--effort', 'low'],
     });
   });
 

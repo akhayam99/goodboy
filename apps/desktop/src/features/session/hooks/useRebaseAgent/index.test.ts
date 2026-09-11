@@ -21,7 +21,7 @@ const { showToast, state } = vi.hoisted(() => ({
     workspaceOverrides: {
       'workspace-1': {
         taskModels: {
-          rebase: { providerId: 'codex', model: 'gpt-5.4' },
+          rebase: { providerId: 'codex', model: 'gpt-5.6-terra' },
         },
       },
     },
@@ -59,7 +59,7 @@ vi.mock('../../../../app/components/Toast', () => ({
 vi.mock('../../components/AgentSpawnConfig/taskModelAgentSpawnConfig', () => ({
   taskModelAgentSpawnConfig: () => ({
     provider: 'codex',
-    model: 'gpt-5.4',
+    model: 'gpt-5.6-terra',
     effort: 'low',
   }),
 }));
@@ -142,7 +142,7 @@ describe('useRebaseAgent', () => {
           '- Push the rebased branch with "$GOODBOY_BIN" query github push --force-with-lease; fall back to git push --force-with-lease only if the bridge is unavailable.',
         ),
         provider: 'codex',
-        model: 'gpt-5.4',
+        model: 'gpt-5.6-terra',
         effort: 'low',
       }),
     );

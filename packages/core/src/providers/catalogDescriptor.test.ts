@@ -8,7 +8,7 @@ const NON_ANTHROPIC_WEIGHT_CEILING = 30;
 describe('catalogDescriptor weights', () => {
   it('ranks Astra one notch above Sol and below Fable 5.1', () => {
     const astra = MODEL_CATALOGS.codex.find((model) => model.key === 'gpt-6');
-    const sol = MODEL_CATALOGS.codex.find((model) => model.key === 'gpt-5.6');
+    const sol = MODEL_CATALOGS.codex.find((model) => model.key === 'gpt-5.6-sol');
     const fable = MODEL_CATALOGS.anthropic.find((model) => model.key === 'fable-5.1');
     if (astra == null || sol == null || fable == null) {
       throw new Error('missing routing weight models');

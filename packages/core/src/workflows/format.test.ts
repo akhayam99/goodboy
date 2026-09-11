@@ -95,7 +95,7 @@ describe('formatWorkflowFromNL', () => {
   function makeDeps(overrides: Partial<WorkflowFormatDeps> = {}): WorkflowFormatDeps {
     return {
       providerId: 'gemini',
-      model: 'gemini-3.5-flash',
+      model: 'gemini-3.8-flash',
       invokeFn: vi.fn().mockResolvedValue({ stdout: validMarker, stderr: '', exitCode: 0 }),
       ...overrides,
     };

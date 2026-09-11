@@ -71,11 +71,11 @@ describe('resolveRoleRouting', () => {
 
   it('takes the top of the ladder when neither the stored nor the role effort fits', () => {
     const prefs: RoleModelPreferences = {
-      planner: { providerId: 'codex', model: 'gpt-5.4-mini', effort: 'max' },
+      planner: { providerId: 'codex', model: 'gpt-5.5', effort: 'max' },
     };
     const resolved = resolveRoleRouting({ role: 'planner', prefs });
 
-    expect(resolved.model).toBe('gpt-5.4-mini');
+    expect(resolved.model).toBe('gpt-5.5');
     expect(resolved.effort).toBe('xhigh');
     expect(resolved.isOverride).toBe(true);
   });
@@ -114,7 +114,7 @@ describe('resolveRoleRouting', () => {
     expect(resolved.model).toBe('opus-5');
     expect(resolved.effort).toBe('high');
     expect(resolved.isOverride).toBe(true);
-    expect(resolved.fallback).toEqual({ provider: 'codex', model: 'gpt-5.6', effort: 'high' });
+    expect(resolved.fallback).toEqual({ provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' });
   });
 
   it('leaves the resolver on its compiled default when only the custom role is pinned', () => {
@@ -151,7 +151,7 @@ describe('resolveRoleRouting', () => {
 
     expect(resolveRoleRouting({ role: 'planner', prefs }).fallback).toEqual({
       provider: 'codex',
-      model: 'gpt-5.6',
+      model: 'gpt-5.6-sol',
       effort: 'high',
     });
   });
@@ -190,13 +190,13 @@ describe('resolveRoleRouting', () => {
         providerId: 'anthropic',
         model: 'claude-opus-5',
         effort: 'high',
-        fallback: { providerId: 'codex', model: 'gpt-5.4-mini', effort: 'max' },
+        fallback: { providerId: 'codex', model: 'gpt-5.5', effort: 'max' },
       },
     };
 
     expect(resolveRoleRouting({ role: 'planner', prefs }).fallback).toEqual({
       provider: 'codex',
-      model: 'gpt-5.4-mini',
+      model: 'gpt-5.5',
       effort: 'xhigh',
     });
   });
@@ -268,7 +268,7 @@ describe('resolveRoleRouting', () => {
 
     expect(resolveRoleRouting({ role: 'emperor', prefs })).toEqual({
       provider: 'codex',
-      model: 'gpt-5.6',
+      model: 'gpt-5.6-sol',
       effort: 'high',
       isOverride: true,
     });
