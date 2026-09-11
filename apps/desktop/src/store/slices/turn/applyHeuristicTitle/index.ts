@@ -94,12 +94,22 @@ export const applyHeuristicTitle = async ({
 
     if (heuristicTitle != null) {
       if (canRenameSession) {
+        const previousGoal = session.goal;
         set((state) => ({
           sessions: state.sessions.map((candidate) =>
             candidate.id === sessionId ? { ...candidate, goal: heuristicTitle } : candidate,
           ),
         }));
-        await renameSessionInDb(tauriDatabase, sessionId, heuristicTitle, titleNow, false);
+        try {
+          await renameSessionInDb(tauriDatabase, sessionId, heuristicTitle, titleNow, false);
+        } catch (err) {
+          console.error('failed to persist heuristic session title', err);
+          set((state) => ({
+            sessions: state.sessions.map((candidate) =>
+              candidate.id === sessionId ? { ...candidate, goal: previousGoal } : candidate,
+            ),
+          }));
+        }
       }
       if (canRenameAgent) {
         await get().renameAgent(sessionId, agentId, heuristicTitle);
@@ -154,15 +164,27 @@ export const applyHeuristicTitle = async ({
     const generatedAt = new Date().toISOString() as IsoDateTime;
 
     if (sessionMatchesPlaceholder) {
+      const previousGoal = currentSession?.goal ?? session.goal;
       set((state) => ({
         sessions: state.sessions.map((candidate) =>
           candidate.id === sessionId ? { ...candidate, goal: generatedTitle } : candidate,
         ),
       }));
-      await renameSessionInDb(tauriDatabase, sessionId, generatedTitle, generatedAt, false);
+      try {
+        await renameSessionInDb(tauriDatabase, sessionId, generatedTitle, generatedAt, false);
+      } catch (err) {
+        console.error('failed to persist generated session title', err);
+        set((state) => ({
+          sessions: state.sessions.map((candidate) =>
+            candidate.id === sessionId ? { ...candidate, goal: previousGoal } : candidate,
+          ),
+        }));
+      }
     }
     if (agentMatchesPlaceholder) {
       await get().renameAgent(sessionId, agentId, generatedTitle);
     }
-  } catch {}
+  } catch (err) {
+    console.error('applyHeuristicTitle failed', err);
+  }
 };

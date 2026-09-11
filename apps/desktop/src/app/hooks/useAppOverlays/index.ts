@@ -345,17 +345,6 @@ export const useAppOverlays = ({
       closeAllStudios();
       setReportIssueStudioOpen(true);
     };
-    const onOpenGithubStudio = (event: Event) => {
-      const issueExternalId = eventValue({ event, key: 'issueExternalId' });
-      closeAllStudios();
-      setInboxStudioFocus({
-        provider: 'github',
-        kind: 'issue',
-        recordKey: typeof issueExternalId === 'string' ? `github:issue:${issueExternalId}` : null,
-        sessionId: null,
-      });
-      setInboxStudioOpen(true);
-    };
     const onOpenPlanStudio = (event: Event) => {
       const sessionId = eventValue({ event, key: 'sessionId' });
       if (!isSessionId(sessionId) || sessionId === '') {
@@ -385,35 +374,13 @@ export const useAppOverlays = ({
       openSettingsEvent({ event, fallbackScope: 'providers' });
     };
     const onOpenImpactStudio = (event: Event) => {
-      const scope =
-        eventValue({ event, key: 'scope' }) ?? eventValue({ event, key: 'budgetScope' });
+      const scope = eventValue({ event, key: 'scope' });
       closeAllStudios();
       setImpactStudioFocus(isImpactScope(scope) ? scope : null);
       setImpactStudioOpen(true);
     };
     const onOpenWorkspaceSettings = (event: Event) => {
       openSettingsEvent({ event, fallbackScope: 'workspace' });
-    };
-    const openLegacyInbox = ({
-      event,
-      provider,
-      kind,
-      keyPrefix,
-    }: {
-      readonly event: Event;
-      readonly provider: InboxProvider;
-      readonly kind: InboxKind;
-      readonly keyPrefix: string;
-    }) => {
-      const issueExternalId = eventValue({ event, key: 'issueExternalId' });
-      closeAllStudios();
-      setInboxStudioFocus({
-        provider,
-        kind,
-        recordKey: typeof issueExternalId === 'string' ? `${keyPrefix}${issueExternalId}` : null,
-        sessionId: null,
-      });
-      setInboxStudioOpen(true);
     };
     const onRevealChat = () => {
       setSettingsOpen(false);
@@ -427,8 +394,6 @@ export const useAppOverlays = ({
       closeAllStudios();
       setNotificationsStudioOpen(true);
     };
-    const onOpenBitbucketWorkspaceStudio = (event: Event) =>
-      openLegacyInbox({ event, provider: 'bitbucket', kind: 'pr', keyPrefix: 'bitbucket:pr:' });
     const onOpenInboxStudio = (event: Event) => {
       const workspaceId = eventValue({ event, key: 'workspaceId' });
       const provider = eventValue({ event, key: 'provider' });
@@ -455,17 +420,11 @@ export const useAppOverlays = ({
     window.addEventListener('goodboy:open-settings', onOpenSettings);
     window.addEventListener('goodboy:open-guide', onOpenGuide);
     window.addEventListener(REPORT_ISSUE_STUDIO_EVENT, onOpenReportIssue);
-    window.addEventListener('goodboy:open-github-studio', onOpenGithubStudio);
     window.addEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
     window.addEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
     window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
     window.addEventListener(IMPACT_STUDIO_EVENT, onOpenImpactStudio);
-    window.addEventListener('goodboy:open-budget-studio', onOpenImpactStudio);
     window.addEventListener('goodboy:open-workspace-settings', onOpenWorkspaceSettings);
-    window.addEventListener(
-      'goodboy:open-bitbucket-workspace-studio',
-      onOpenBitbucketWorkspaceStudio,
-    );
     window.addEventListener('goodboy:open-inbox', onOpenInboxStudio);
     window.addEventListener('goodboy:reveal-chat', onRevealChat);
     window.addEventListener('goodboy:add-workspace', onAddWorkspace);
@@ -475,17 +434,11 @@ export const useAppOverlays = ({
       window.removeEventListener('goodboy:open-settings', onOpenSettings);
       window.removeEventListener('goodboy:open-guide', onOpenGuide);
       window.removeEventListener(REPORT_ISSUE_STUDIO_EVENT, onOpenReportIssue);
-      window.removeEventListener('goodboy:open-github-studio', onOpenGithubStudio);
       window.removeEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
       window.removeEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
       window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
       window.removeEventListener(IMPACT_STUDIO_EVENT, onOpenImpactStudio);
-      window.removeEventListener('goodboy:open-budget-studio', onOpenImpactStudio);
       window.removeEventListener('goodboy:open-workspace-settings', onOpenWorkspaceSettings);
-      window.removeEventListener(
-        'goodboy:open-bitbucket-workspace-studio',
-        onOpenBitbucketWorkspaceStudio,
-      );
       window.removeEventListener('goodboy:open-inbox', onOpenInboxStudio);
       window.removeEventListener('goodboy:reveal-chat', onRevealChat);
       window.removeEventListener('goodboy:add-workspace', onAddWorkspace);

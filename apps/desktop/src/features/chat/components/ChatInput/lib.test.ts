@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import {
   asEffortLevel,
   asProvider,
@@ -106,7 +107,11 @@ describe('CHAT_PREFIX_RE', () => {
     expect(CHAT_PREFIX_RE.test('$build')).toBe(true);
     expect(CHAT_PREFIX_RE.test('~workflow')).toBe(true);
     expect(CHAT_PREFIX_RE.test('@agent')).toBe(true);
-    expect(CHAT_PREFIX_RE.test('/cmd')).toBe(true);
+  });
+
+  it('does not recognise / as a live prefix while WORKSPACE_FEATURES.skills is off', () => {
+    expect(WORKSPACE_FEATURES.skills).toBe(false);
+    expect(CHAT_PREFIX_RE.test('/cmd')).toBe(false);
   });
 
   it('tolerates leading whitespace', () => {

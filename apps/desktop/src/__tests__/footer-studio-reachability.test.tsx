@@ -484,13 +484,13 @@ describe('Spend reachability through the impact studio', () => {
     expect(studio.getAttribute('data-session')).toBe('session-1');
   });
 
-  it('keeps the legacy budget studio event working as an alias', () => {
+  it('opens the impact studio at a provider scope from the impact studio event', () => {
     render(<App />);
 
     act(() =>
       window.dispatchEvent(
-        new CustomEvent('goodboy:open-budget-studio', {
-          detail: { budgetScope: { kind: 'provider', provider: 'anthropic' } },
+        new CustomEvent('goodboy:open-impact-studio', {
+          detail: { scope: { kind: 'provider', provider: 'anthropic' } },
         }),
       ),
     );

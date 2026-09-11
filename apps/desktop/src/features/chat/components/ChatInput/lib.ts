@@ -1,9 +1,12 @@
 import type { AgentId, AttachmentInput, ProviderId, TurnProviderOverride } from '@goodboy/types';
+import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { EFFORT_LEVELS, type EffortLevel } from '../../utils/chat-constants';
 
 export const RUNNING_KINDS = new Set(['starting', 'running']);
 
-export const CHAT_PREFIX_RE = /^\s*[$/~@][^\s]*$/;
+const CHAT_PREFIX_SYMBOLS = WORKSPACE_FEATURES.skills ? '$/~@' : '$~@';
+
+export const CHAT_PREFIX_RE = new RegExp(`^\\s*[${CHAT_PREFIX_SYMBOLS}][^\\s]*$`);
 
 export const CHAT_PLACEHOLDER = 'Message Claude · $ scripts · ~ workflows · @ agents';
 

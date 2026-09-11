@@ -306,6 +306,7 @@ export const DiffViewerContent = ({
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const sendTurn = useAppStore((s) => s.sendTurn);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const emitNotification = useAppStore((s) => s.emitNotification);
   const [spawning, setSpawning] = useState(false);
   const resolverRoleModels = useSessionRoleModels({ sessionId: sessionId ?? null });
   const [resolverRouting, setResolverRouting] = useState<AgentKindRouting>(() =>
@@ -687,9 +688,13 @@ export const DiffViewerContent = ({
       const root = workingDir.replace(/\/$/, '');
       try {
         await openFileInWorkspace(root, `${root}/${filePath}`, editorBinary);
-      } catch {}
+      } catch (err) {
+        void emitNotification('error', 'error', 'Could not open file in editor', formatError(err), {
+          sessionId,
+        });
+      }
     },
-    [workingDir, editorBinary],
+    [workingDir, editorBinary, emitNotification, sessionId],
   );
 
   const handleAddComment = async (filePath: string, anchor: DiffCommentAnchor, body: string) => {
