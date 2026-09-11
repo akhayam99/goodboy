@@ -135,16 +135,18 @@ what a surface promises and what it then does. A screen that reads well and
 lies about its effect is a worse defect than one that reads badly.
 
 - **Show the destination beside anything that writes.** A surface that sends a
-  turn, runs a command or edits a file names the project, worktree and branch
-  it will write to, resolved at send time, not at render time. Where the
-  destination is shared by the whole session, changing it declares that scope.
-  A control that moves the destination as a side effect of consulting
-  something, opening a terminal, a popover or a diff, is a defect.
+  turn, runs a command or edits a file names where it will write, resolved at
+  send time, not at render time. That is the project and its worktree and
+  branch where one exists, and the concrete path where one does not: a
+  branchless folder project, or the scratch folder of a session with no project
+  yet. Where the destination is shared by the whole session, changing it
+  declares that scope. A control that moves the destination as a side effect of
+  consulting something, opening a terminal, a popover or a diff, is a defect.
 - **One term per concept, one canonical home per object.** A concept keeps a
   single name across chat, board, sidebar and docs. An object has one surface
   that manages it; every other surface links there rather than growing a second
   set of actions. Two surfaces with different capabilities over the same object
-  is the defect, not the convenience.
+  are the defect, not the convenience.
 - **The user's name survives.** A title the user typed is never overwritten by
   a link, an import or a heuristic. Automatic naming proposes and waits; it
   does not apply and inform.
