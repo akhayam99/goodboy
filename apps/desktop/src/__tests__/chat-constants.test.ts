@@ -18,7 +18,7 @@ const ANTHROPIC = [
 
 const CODEX = ['gpt-5.4-mini', 'gpt-5.2', 'gpt-5.3-codex', 'gpt-5.4', 'gpt-5.5'];
 
-const GEMINI = ['gemini-3.5-flash', 'gemini-3.1-pro'];
+const GEMINI = ['gemini-3.8-flash', 'gemini-3.1-pro'];
 
 describe('suggestLighterModel', () => {
   it('Opus 4.8 → Sonnet 4.6, strong, about 1.7x cheaper', () => {
@@ -130,7 +130,7 @@ describe('suggestHeavierModel', () => {
   });
 
   it('gemini: Flash → Pro', () => {
-    expect(suggestHeavierModel('gemini-3.5-flash', GEMINI)?.id).toBe('gemini-3.1-pro');
+    expect(suggestHeavierModel('gemini-3.8-flash', GEMINI)?.id).toBe('gemini-3.1-pro');
   });
 
   it('never downgrades the cost tier to gain weight', () => {

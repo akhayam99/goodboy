@@ -73,12 +73,12 @@ describe('RoutingPicker', () => {
       <RoutingPicker
         {...baseProps}
         provider="gemini"
-        model="gemini-3.5-flash"
+        model="gemini-3.8-flash"
         ariaLabel="routing"
       />,
     );
     const trigger = screen.getByRole('button', { name: /^routing:/ });
-    expect(trigger.textContent).toContain('3.5 Flash');
+    expect(trigger.textContent).toContain('3.8 Flash');
     fireEvent.click(trigger);
     const effort = within(screen.getByRole('group', { name: 'Effort' }));
     expect(effort.getAllByRole('button').map((button) => button.textContent)).toEqual([

@@ -64,7 +64,7 @@ const LEGACY_SELECTIONS: Readonly<Record<string, ModelSelection>> = {
   'codex:gpt-5.3-codex-spark': { key: 'gpt-5.4-mini', variant: 'default' },
   'codex:gpt-5.4-mini': { key: 'gpt-5.4-mini', variant: 'default' },
   'gemini:gemini-3.1-pro': { key: 'gemini-3.1-pro' },
-  'gemini:gemini-3.5-flash': { key: 'gemini-3.5-flash' },
+  'gemini:gemini-3.5-flash': { key: 'gemini-3.8-flash' },
   'opencode:opencode/big-pickle': { key: 'big-pickle' },
   'opencode:opencode/deepseek-v4-flash-free': { key: 'big-pickle' },
   'opencode:opencode/minimax-m3-free': { key: 'big-pickle' },

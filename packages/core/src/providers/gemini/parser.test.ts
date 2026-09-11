@@ -40,7 +40,7 @@ describe('parseJsonLine (gemini stream-json)', () => {
         event: 'init',
         conversation_id: 'fe3759b4',
         init: {
-          model: 'gemini-3.5-flash',
+          model: 'gemini-3.8-flash',
           cwd: '/tmp/x',
           tools: ['view_file', 'run_command'],
           permission_mode: 'request-review',

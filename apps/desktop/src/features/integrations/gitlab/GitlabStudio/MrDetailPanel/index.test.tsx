@@ -46,7 +46,7 @@ type MrParams = {
 const h = vi.hoisted(() => ({
   config: {
     provider: 'gemini',
-    model: 'gemini-3.5-flash',
+    model: 'gemini-3.8-flash',
     effort: 'low',
     hint: 'Mention the rollout order.',
   } satisfies AgentSpawnConfigValue,
@@ -240,7 +240,7 @@ describe('MrDetailPanel', () => {
     const args = h.store.spawnAgent.mock.calls[0]![1];
     expect(args).toMatchObject({
       provider: 'gemini',
-      model: 'gemini-3.5-flash',
+      model: 'gemini-3.8-flash',
       effort: 'low',
     });
     expect(args.initialPrompt).toContain(

@@ -115,7 +115,7 @@ describe('getCapabilities', () => {
 
   it('getDefaultTurnModel for gemini returns the cheap default, not the pro turn model', () => {
     expect(getDefaultTurnModel({ id: 'gemini' })).toBe(GEMINI_DEFAULT_MODEL);
-    expect(getDefaultTurnModel({ id: 'gemini' })).toBe('gemini-3.5-flash');
+    expect(getDefaultTurnModel({ id: 'gemini' })).toBe('gemini-3.8-flash');
   });
 
   it('getDefaultTurnModel for anthropic returns the newest opus', () => {

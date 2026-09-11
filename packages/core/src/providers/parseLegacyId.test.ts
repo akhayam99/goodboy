@@ -51,6 +51,22 @@ describe('parseLegacyId', () => {
     }
   });
 
+  it('degrades the retired gemini flash id to the model that replaced it', () => {
+    expect(parseLegacyId({ provider: 'gemini', id: 'gemini-3.5-flash' })).toEqual({
+      key: 'gemini-3.8-flash',
+    });
+    expect(resolveStoredModelSelection({ provider: 'gemini', id: 'gemini-3.5-flash' })).toEqual({
+      selection: { key: 'gemini-3.8-flash' },
+      report: { kind: 'legacy', id: 'gemini-3.5-flash' },
+    });
+    expect(
+      resolveStoredModelSelection({ provider: 'gemini', id: 'gemini-3.5-flash', effort: 'low' }),
+    ).toEqual({
+      selection: { key: 'gemini-3.8-flash', effort: 'low' },
+      report: { kind: 'legacy', id: 'gemini-3.5-flash' },
+    });
+  });
+
   it('returns null for an id that no old registry shipped', () => {
     expect(parseLegacyId({ provider: 'codex', id: 'gpt-99' })).toBeNull();
   });

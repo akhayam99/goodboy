@@ -42,7 +42,7 @@ describe('autoModelForRole', () => {
     it('picks the highest-weight cheap model for a low-tier role', () => {
       expect(autoModelForRole({ role: 'scout', providers: ['gemini'] })).toEqual({
         provider: 'gemini',
-        model: 'gemini-3.5-flash',
+        model: 'gemini-3.8-flash',
       });
     });
 
