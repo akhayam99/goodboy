@@ -1,17 +1,13 @@
 import type { KeyboardEvent, SyntheticEvent } from 'react';
 import { CalendarClock, ChevronRight, RotateCcw } from 'lucide-react';
-import { CardAction, CardActionSlot, Chip, ClampedProse, Tooltip, cn } from '@goodboy/ui';
+import { CardAction, CardActionSlot, ClampedProse, Tooltip, cn } from '@goodboy/ui';
 import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
-import {
-  RESOLVE_COMMENT_UNAVAILABLE,
-  RESOLVE_QUEUE_ACTION_LABEL,
-  RESOLVE_QUEUE_STATUS_LABEL,
-} from '../../resolveQueueCopy';
+import { RESOLVE_COMMENT_UNAVAILABLE, RESOLVE_QUEUE_ACTION_LABEL } from '../../resolveQueueCopy';
 import { deliverySupportLine } from '../../resolveDeliverySupport';
 import { shortSha } from '../../resolveItemCopy';
 import type { ResolveQueueRow as QueueRow } from '../../buildResolveQueueRows';
-import { BADGE_TONE_BY_STATUS } from './statusTone';
+import { ResolveStatusBadge } from '../ResolveStatusBadge';
 
 type Props = {
   readonly row: QueueRow;
@@ -101,13 +97,7 @@ export const ResolveQueueRow = ({
           )}
         </div>
         <div className="col-start-2 row-start-1 self-start">
-          <Chip
-            size="xs"
-            width="lg"
-            bordered={isSelected}
-            tone={BADGE_TONE_BY_STATUS[status]}
-            label={RESOLVE_QUEUE_STATUS_LABEL[status]}
-          />
+          <ResolveStatusBadge status={status} width="lg" bordered={isSelected} />
         </div>
         <CardActionSlot
           label={RESOLVE_QUEUE_ACTION_LABEL.openComment}

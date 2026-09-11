@@ -4,9 +4,12 @@ import type {
   ResolveQueueItem,
   ResolveThread,
 } from '@goodboy/types';
+import { resolveProposalKind } from './resolveProposalKind';
 
 export type ResolveQueueStatus =
-  | 'for_you'
+  | 'fix_ready'
+  | 'reply_ready'
+  | 'no_change'
   | 'agent_asked'
   | 'working'
   | 'ready_to_push'
@@ -16,6 +19,7 @@ export type ResolveQueueStatus =
   | 'delivery_failed'
   | 'confirm_delivery'
   | 'run_failed'
+  | 'run_stopped'
   | 'wont_fix'
   | 'wont_fix_sent';
 
@@ -119,8 +123,15 @@ export const deriveResolveQueueStatus = ({
       undelivered: 'ready_to_push',
     });
   }
-  if (activeAttempt?.phase === 'failed' || activeAttempt?.phase === 'cancelled') {
+  if (activeAttempt?.phase === 'failed') {
     return 'run_failed';
   }
-  return 'for_you';
+  if (activeAttempt?.phase === 'cancelled') {
+    return 'run_stopped';
+  }
+  const proposal = resolveProposalKind({ item, thread });
+  if (proposal === 'fix') {
+    return 'fix_ready';
+  }
+  return proposal === 'reply_only' ? 'reply_ready' : 'no_change';
 };

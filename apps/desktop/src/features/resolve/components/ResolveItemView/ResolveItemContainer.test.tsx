@@ -76,7 +76,7 @@ const rowOf = ({ threadId, body }: { readonly threadId: string; readonly body: s
   ({
     item: { id: `item-${threadId}`, approvalState: 'none', integratedSha: null },
     thread: { threadId, revision: 1, stateReason: null, commitShas: null, question: null },
-    status: 'for_you',
+    status: 'fix_ready',
     attempt: null,
     reviewerNote: {
       body,

@@ -40,7 +40,7 @@ const rowOf = ({
   ({
     item: { id: `item-${threadId}`, integratedSha },
     thread: { threadId, revision: 1, stateReason: null, commitShas: null, question: null },
-    status: 'for_you',
+    status: 'fix_ready',
     attempt: null,
     reviewerNote: note,
     proposal,
