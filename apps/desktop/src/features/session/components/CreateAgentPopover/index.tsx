@@ -94,7 +94,6 @@ export const CreateAgentPopover = ({
       close();
       if (onSpawned != null) {
         onSpawned();
-        return;
       }
       window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
     } catch (err) {
