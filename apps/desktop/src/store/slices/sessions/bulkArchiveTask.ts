@@ -1,5 +1,5 @@
 import type { SessionId } from '@goodboy/types';
-import type { GetFn, SetFn } from './types';
+import type { BulkSessionResult, GetFn, SetFn } from './types';
 
 type FailureParams = {
   readonly failed: number;
@@ -12,21 +12,24 @@ const failureMessage = ({ failed, total }: FailureParams): string =>
     : `failed to archive ${failed} of ${total} sessions`;
 
 export const bulkArchiveTask = (set: SetFn, get: GetFn) => {
-  return async (ids: ReadonlyArray<SessionId>) => {
-    const failures: SessionId[] = [];
+  return async (ids: ReadonlyArray<SessionId>): Promise<BulkSessionResult> => {
+    const succeeded: SessionId[] = [];
+    const failed: SessionId[] = [];
     for (const id of ids) {
       try {
         await get().archiveTask(id);
+        succeeded.push(id);
       } catch {
-        failures.push(id);
+        failed.push(id);
       }
     }
-    if (failures.length > 0) {
+    if (failed.length > 0) {
       void get().emitNotification(
         'error',
         'warning',
-        failureMessage({ failed: failures.length, total: ids.length }),
+        failureMessage({ failed: failed.length, total: ids.length }),
       );
     }
+    return { succeeded, failed };
   };
 };

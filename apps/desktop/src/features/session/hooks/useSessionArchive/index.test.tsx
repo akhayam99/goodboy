@@ -4,10 +4,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Session, SessionEvent, SessionEventKind } from '@goodboy/types';
 
+const allDone = (ids: ReadonlyArray<string>) => ({ succeeded: ids, failed: [] });
+
 const { state, toastMock } = vi.hoisted(() => ({
   state: {
-    bulkArchiveTask: vi.fn(async () => undefined),
-    bulkUnarchiveTask: vi.fn(async () => undefined),
+    bulkArchiveTask: vi.fn(async (ids: ReadonlyArray<string>) => ({
+      succeeded: ids,
+      failed: [] as ReadonlyArray<string>,
+    })),
+    bulkUnarchiveTask: vi.fn(async (ids: ReadonlyArray<string>) => ({
+      succeeded: ids,
+      failed: [] as ReadonlyArray<string>,
+    })),
   },
   toastMock: vi.fn(),
 }));
@@ -44,8 +52,10 @@ const Harness = ({ sessions }: HarnessProps) => {
 };
 
 beforeEach(() => {
-  state.bulkArchiveTask.mockClear();
-  state.bulkUnarchiveTask.mockClear();
+  state.bulkArchiveTask.mockReset();
+  state.bulkUnarchiveTask.mockReset();
+  state.bulkArchiveTask.mockImplementation(async (ids: ReadonlyArray<string>) => allDone(ids));
+  state.bulkUnarchiveTask.mockImplementation(async (ids: ReadonlyArray<string>) => allDone(ids));
   toastMock.mockReset();
 });
 afterEach(cleanup);
@@ -114,5 +124,48 @@ describe('useSessionArchive', () => {
     await waitFor(() => expect(toastMock).toHaveBeenCalled());
 
     expect(toastMock.mock.calls[0]?.[2].title).toBe(titleOf('session_restored'));
+  });
+
+  it('says nothing when the restore brought nothing back', async () => {
+    state.bulkUnarchiveTask.mockImplementation(async (ids: ReadonlyArray<string>) => ({
+      succeeded: [],
+      failed: ids,
+    }));
+    render(<Harness sessions={[session('s-1')]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'restore' }));
+
+    await waitFor(() => expect(state.bulkUnarchiveTask).toHaveBeenCalled());
+    expect(toastMock).not.toHaveBeenCalled();
+  });
+
+  it('says nothing when the archive moved nothing', async () => {
+    state.bulkArchiveTask.mockImplementation(async (ids: ReadonlyArray<string>) => ({
+      succeeded: [],
+      failed: ids,
+    }));
+    render(<Harness sessions={[session('s-1')]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'archive' }));
+
+    await waitFor(() => expect(state.bulkArchiveTask).toHaveBeenCalled());
+    expect(toastMock).not.toHaveBeenCalled();
+  });
+
+  it('counts only what moved, and undoes only that', async () => {
+    state.bulkArchiveTask.mockImplementation(async () => ({
+      succeeded: ['s-1', 's-3'],
+      failed: ['s-2'],
+    }));
+    render(<Harness sessions={[session('s-1'), session('s-2'), session('s-3')]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'archive' }));
+
+    await waitFor(() => expect(toastMock).toHaveBeenCalled());
+    expect(toastMock.mock.calls[0]?.[2].title).toBe('2 sessions archived');
+
+    toastMock.mock.calls[0]?.[2].action.onClick();
+
+    await waitFor(() => expect(state.bulkUnarchiveTask).toHaveBeenCalledWith(['s-1', 's-3']));
   });
 });

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { formatError, InlineConfirm } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { useSessionArchive } from '../../hooks/useSessionArchive';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -13,7 +14,7 @@ type Props = {
 
 export const DeleteSessionConfirm = ({ session, onClose, className }: Props) => {
   const deleteTask = useAppStore((s) => s.deleteTask);
-  const archiveTask = useAppStore((s) => s.archiveTask);
+  const { archive } = useSessionArchive();
   const sessionBranch = useAppStore((s) => s.sessionBranches[session.id as SessionId]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +43,7 @@ export const DeleteSessionConfirm = ({ session, onClose, className }: Props) => 
     setBusy(true);
     setError(null);
     try {
-      await archiveTask(session.id as SessionId);
+      await archive({ sessions: [session] });
       onClose();
     } catch (err) {
       setError(formatError(err));

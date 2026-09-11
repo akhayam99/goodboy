@@ -40,9 +40,14 @@ export const useSessionArchive = (): SessionArchive => {
       if (sessions.length === 0) {
         return;
       }
-      await bulkUnarchiveTask(sessions.map((session) => session.id as SessionId));
+      const { succeeded } = await bulkUnarchiveTask(
+        sessions.map((session) => session.id as SessionId),
+      );
+      if (succeeded.length === 0) {
+        return;
+      }
       showToast('success', RESTORE_KEPT_COPY, {
-        title: restoredTitle({ count: sessions.length }),
+        title: restoredTitle({ count: succeeded.length }),
       });
     },
     [bulkUnarchiveTask, showToast],
@@ -53,10 +58,16 @@ export const useSessionArchive = (): SessionArchive => {
       if (sessions.length === 0) {
         return;
       }
-      await bulkArchiveTask(sessions.map((session) => session.id as SessionId));
+      const { succeeded } = await bulkArchiveTask(
+        sessions.map((session) => session.id as SessionId),
+      );
+      if (succeeded.length === 0) {
+        return;
+      }
+      const archived = sessions.filter((session) => succeeded.includes(session.id as SessionId));
       showToast('info', ARCHIVE_KEPT_COPY, {
-        title: archivedTitle({ count: sessions.length }),
-        action: { label: 'Undo', onClick: () => void restore({ sessions }) },
+        title: archivedTitle({ count: archived.length }),
+        action: { label: 'Undo', onClick: () => void restore({ sessions: archived }) },
       });
     },
     [bulkArchiveTask, restore, showToast],

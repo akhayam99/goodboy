@@ -81,6 +81,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
+vi.mock('../../features/session/hooks/useSessionArchive', () => ({
+  useSessionArchive: () => ({
+    archive: vi.fn(async () => undefined),
+    restore: vi.fn(async () => undefined),
+  }),
+}));
+
 import { DeleteSessionConfirm } from '../../features/session/components/DeleteSessionConfirm';
 import { QuickActionsPopover, type QuickActionItem } from '../../features/quick-actions';
 import { ToastProvider } from '../../app/components/Toast';

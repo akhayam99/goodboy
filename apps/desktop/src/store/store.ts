@@ -176,6 +176,7 @@ import type { ActivateWorkflowAgentParams } from './slices/workflows/activateWor
 import { createSettingsSlice } from './slices/settings';
 import { createTranscriptsSlice } from './slices/transcripts';
 import { createSummariesSlice } from './slices/summaries';
+import type { BulkSessionResult } from './slices/sessions/types';
 import { createSessionsSlice } from './slices/sessions';
 import { createWorkspacesSlice } from './slices/workspaces';
 import { createProjectsSlice } from './slices/projects';
@@ -713,9 +714,9 @@ type AppActions = {
   deleteTask(sessionId: SessionId): Promise<void>;
   bulkDeleteTask(ids: ReadonlyArray<SessionId>): Promise<void>;
   archiveTask(sessionId: SessionId): Promise<void>;
-  bulkArchiveTask(ids: ReadonlyArray<SessionId>): Promise<void>;
+  bulkArchiveTask(ids: ReadonlyArray<SessionId>): Promise<BulkSessionResult>;
   unarchiveTask(sessionId: SessionId): Promise<void>;
-  bulkUnarchiveTask(ids: ReadonlyArray<SessionId>): Promise<void>;
+  bulkUnarchiveTask(ids: ReadonlyArray<SessionId>): Promise<BulkSessionResult>;
   setSessionConfig(sessionId: SessionId, fields: SessionConfigUpdate): Promise<void>;
   setAgentConfig(sessionId: SessionId, agentId: AgentId, fields: AgentConfigUpdate): Promise<void>;
   refreshUnreadWorkspaces(): Promise<void>;
