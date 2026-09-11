@@ -22,6 +22,7 @@ const { store, remoteKind } = vi.hoisted(() => ({
     setSessionActiveMount: vi.fn(async () => undefined),
     setScriptsLensScope: vi.fn(),
     openMountDiff: vi.fn(async () => undefined),
+    openMountTerminal: vi.fn(),
     openMountRequest: vi.fn(async () => undefined),
     attachMount: vi.fn(async () => undefined),
     projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null }>,
@@ -36,6 +37,11 @@ const { store, remoteKind } = vi.hoisted(() => ({
     scriptRuns: {} as Record<string, Record<string, { status: string }>>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<{ name: string; status: string }>>,
     projectScripts: {} as Record<string, ReadonlyArray<{ id: string; projectId: string }>>,
+    sessions: [] as ReadonlyArray<Record<string, unknown>>,
+    sessionActiveMount: {} as Record<string, string | null>,
+    sessionActiveProject: {} as Record<string, string>,
+    sessionMounts: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
   },
 }));
 
@@ -107,6 +113,7 @@ const renderRow = ({
   hasSeriesColumn = false,
   row = baseRow,
   label = 'API',
+  onSelectLens = vi.fn(),
 }: {
   readonly diffStat?: { additions: number; deletions: number } | null;
   readonly worktreeStatus?: WorktreeStatus | null;
@@ -114,6 +121,7 @@ const renderRow = ({
   readonly hasSeriesColumn?: boolean;
   readonly row?: MountRowView;
   readonly label?: string;
+  readonly onSelectLens?: (lens: string) => void;
 }) =>
   render(
     <ul>
@@ -126,7 +134,7 @@ const renderRow = ({
         worktreeStatus={worktreeStatus}
         isStatusPending={isStatusPending}
         hasSeriesColumn={hasSeriesColumn}
-        onSelectLens={vi.fn()}
+        onSelectLens={onSelectLens}
       />
     </ul>,
   );
@@ -145,6 +153,11 @@ beforeEach(() => {
   store.sessionWorktrees = { [sessionId]: ['/session-root'] };
   store.sessionPhaseRuns = {};
   store.detectedEditors = [{ binary: 'code', label: 'VS Code' }];
+  store.sessions = [];
+  store.sessionActiveMount = {};
+  store.sessionActiveProject = {};
+  store.sessionMounts = {};
+  store.sessionProjectMounts = {};
 });
 
 afterEach(cleanup);
@@ -292,6 +305,31 @@ describe('ProjectMountRow availability', () => {
   });
 });
 
+describe('ProjectMountRow write destination', () => {
+  it('marks the row that sendTurn will actually write to next', () => {
+    store.sessionActiveMount = { [sessionId]: 'mount-1' };
+    store.sessionProjectMounts = {
+      [sessionId]: [{ mountId: 'mount-1', projectId: 'api', mountName: 'API', branch: 'feat/api' }],
+    };
+    renderRow({});
+
+    expect(screen.getByText('Next turns')).toBeDefined();
+  });
+
+  it('leaves the badge off a row that is not the resolved destination', () => {
+    store.sessionActiveMount = { [sessionId]: 'mount-2' };
+    store.sessionProjectMounts = {
+      [sessionId]: [
+        { mountId: 'mount-1', projectId: 'api', mountName: 'API', branch: 'feat/api' },
+        { mountId: 'mount-2', projectId: 'web', mountName: 'web', branch: 'feat/web' },
+      ],
+    };
+    renderRow({});
+
+    expect(screen.queryByText('Next turns')).toBeNull();
+  });
+});
+
 const openRequest: MountRowView['request'] = {
   provider: 'github',
   identity: null,
@@ -410,6 +448,30 @@ describe('ProjectMountRow folder action', () => {
     expect(
       terminal.compareDocumentPosition(scripts) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+});
+
+describe('ProjectMountRow lens opening, write destination isolation', () => {
+  it('opens the terminal on this row worktree through its own scope, leaving the write destination alone', () => {
+    const onSelectLens = vi.fn();
+    renderRow({ onSelectLens });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open terminal for API' }));
+
+    expect(store.openMountTerminal).toHaveBeenCalledWith(sessionId, '/api');
+    expect(store.setSessionActiveMount).not.toHaveBeenCalled();
+    expect(onSelectLens).not.toHaveBeenCalled();
+  });
+
+  it('opens scripts scoped to this project, leaving the write destination alone', () => {
+    const onSelectLens = vi.fn();
+    renderRow({ onSelectLens });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open scripts for API' }));
+
+    expect(store.setScriptsLensScope).toHaveBeenCalledWith({ scope: { projectId: 'api' } });
+    expect(onSelectLens).toHaveBeenCalledWith('scripts');
+    expect(store.setSessionActiveMount).not.toHaveBeenCalled();
   });
 });
 

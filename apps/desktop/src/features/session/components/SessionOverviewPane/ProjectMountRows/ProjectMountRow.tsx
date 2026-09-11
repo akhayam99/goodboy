@@ -4,6 +4,7 @@ import type { SessionId, WorkspaceId, WorktreeStatus } from '@goodboy/types';
 import type { LensKind, MountDiffStat } from '../../../../../store';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
+import { selectActiveMountId } from '../../../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { useToast } from '../../../../../app/components/Toast';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
@@ -33,7 +34,7 @@ type Props = {
 const UTILITY_REVEAL =
   'opacity-0 motion-safe:transition-opacity group-hover/mount-row:opacity-100 group-focus-within/mount-row:opacity-100';
 
-const SLOT_BRANCH = 'flex min-w-0 flex-1 items-center';
+const SLOT_BRANCH = 'flex min-w-0 flex-1 items-center gap-1';
 const SLOT_SERIES = 'flex w-14 shrink-0 items-center';
 const SLOT_SYNC = 'flex w-7 shrink-0 items-center justify-center';
 const SLOT_DIFF = 'flex w-24 shrink-0 items-center';
@@ -67,10 +68,11 @@ export const ProjectMountRow = ({
   hasSeriesColumn = false,
   onSelectLens,
 }: Props) => {
-  const setSessionActiveMount = useAppStore((state) => state.setSessionActiveMount);
   const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
   const openMountDiff = useAppStore((state) => state.openMountDiff);
+  const openMountTerminal = useAppStore((state) => state.openMountTerminal);
   const attachMount = useAppStore((state) => state.attachMount);
+  const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
   const { showToast } = useToast();
   const [isAttaching, setIsAttaching] = useState(false);
   const isRepo = row.projectKind === 'repo';
@@ -85,9 +87,15 @@ export const ProjectMountRow = ({
   });
   const observation = row.observation;
   const hasTools = row.isAttached && worktreePath !== null;
+  const isWriteDestination = row.isAttached && row.mountId === activeMountId;
 
-  const openLens = async ({ lens }: OpenLensParams) => {
-    await setSessionActiveMount({ sessionId, mountId: row.mountId }).catch(() => undefined);
+  const openLens = ({ lens }: OpenLensParams) => {
+    if (lens === 'terminal') {
+      if (worktreePath !== null) {
+        openMountTerminal(sessionId, worktreePath);
+      }
+      return;
+    }
     if (lens === 'scripts') {
       setScriptsLensScope({ scope: { projectId: row.projectId } });
     }
@@ -126,6 +134,16 @@ export const ProjectMountRow = ({
               canSwitch={isRepo && row.isAttached}
             />
           )}
+          {isWriteDestination ? (
+            <Chip
+              tone="primary"
+              size="3xs"
+              bordered={false}
+              label="Next turns"
+              title={`Next turns write to ${label} unless changed from the chat header.`}
+              className="shrink-0"
+            />
+          ) : null}
         </div>
         {hasSeriesColumn ? (
           <div className={SLOT_SERIES}>
@@ -246,7 +264,7 @@ export const ProjectMountRow = ({
                   iconSize={ICON_SIZE.row}
                   label={`Open terminal for ${label}`}
                   tooltip={`Open terminal in ${label}${runningSuffix({ count: activity.liveTerminals })}`}
-                  onClick={() => void openLens({ lens: 'terminal' })}
+                  onClick={() => openLens({ lens: 'terminal' })}
                   className="size-7"
                 />
                 {activity.liveTerminals > 0 ? (
@@ -265,7 +283,7 @@ export const ProjectMountRow = ({
                   iconSize={ICON_SIZE.row}
                   label={`Open scripts for ${label}`}
                   tooltip={`Open scripts for ${label}${runningSuffix({ count: activity.runningScripts })}`}
-                  onClick={() => void openLens({ lens: 'scripts' })}
+                  onClick={() => openLens({ lens: 'scripts' })}
                   className="size-7"
                 />
                 {activity.runningScripts > 0 ? (

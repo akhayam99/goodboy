@@ -79,6 +79,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     requestedPath: requestedDiffMountPath,
     fallbackPath: projectWorktreePath,
   });
+  const requestedTerminalMountPath = useAppStore((s) => s.terminalMountPath?.[sessionId] ?? null);
+  const terminalWorkingDir = resolveDiffMount({
+    mounts: sessionMounts,
+    requestedPath: requestedTerminalMountPath,
+    fallbackPath: workingDir,
+  });
   const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const setSessionStudio = useAppStore((s) => s.setSessionStudio);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
@@ -326,7 +332,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             <TerminalDock
               sessionId={sessionId}
               isActive={isActive && lens === 'terminal' && showLens}
-              cwd={workingDir}
+              cwd={terminalWorkingDir}
               eyebrow={sessionEyebrow}
             />
           </div>

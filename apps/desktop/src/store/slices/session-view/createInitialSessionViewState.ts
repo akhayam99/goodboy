@@ -14,6 +14,7 @@ export const createInitialSessionViewState = ({}: Params) => ({
   focusedWorkflowRunId: {},
   diffFocus: {},
   diffMountPath: {},
+  terminalMountPath: {},
   resolveQueueView: {},
   resolveDiffReturn: {},
   resolveItemDrafts: {},

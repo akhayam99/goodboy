@@ -13,6 +13,7 @@ import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { tintClasses } from '@goodboy/ui';
+import { WriteDestinationControl } from '../WriteDestinationControl';
 
 const workflowAccent = tintClasses('primary');
 
@@ -160,6 +161,9 @@ export const ChatBreadcrumb = ({ session }: Props) => {
               </span>
             </>
           ) : null}
+
+          <Separator />
+          <WriteDestinationControl sessionId={session.id} agentId={selectedAgentId} />
         </div>
 
         {parentAgent ? (

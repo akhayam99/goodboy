@@ -68,6 +68,9 @@ const makeStore = ({ isMounted = true }: { readonly isMounted?: boolean } = {}) 
     agentProviderOverride: {},
     agentEffortOverride: {},
     agentKindOverride: {},
+    agentTurnDestination: {
+      [DOOMED]: { kind: 'scratch', path: '/goodboy/scratch/sess-1' },
+    },
     selectedAgentId: {},
     transcripts: {},
     sessionWorktrees: {},
@@ -99,6 +102,15 @@ describe('deleteAgent', () => {
 
     expect(hoisted.cancelTurn).toHaveBeenCalledWith(RUN);
     expect(hoisted.abandonWorktreeWriter).toHaveBeenCalledWith({ path: PATH, holder: DOOMED });
+  });
+
+  it('drops the deleted agent write-destination snapshot', async () => {
+    const { get, set, state } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+
+    await deleteAgent(set, get)(SID, DOOMED);
+
+    expect(state.agentTurnDestination).toEqual({});
   });
 
   it('finds the worktree of a session the loaded workspace never mounted', async () => {

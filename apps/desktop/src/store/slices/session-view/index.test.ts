@@ -953,6 +953,31 @@ describe('store contract', () => {
       expect(store.getState().diffMountPath[SESSION_ID]).toBe('/wt/web');
     });
 
+    it('openMountTerminal records the row worktree and switches to the terminal lens, without touching diff or scripts scope', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().openMountTerminal(SESSION_ID, '/wt/api');
+
+      expect(store.getState().activeLens[SESSION_ID]).toBe('terminal');
+      expect(store.getState().terminalMountPath[SESSION_ID]).toBe('/wt/api');
+    });
+
+    it('opening a different row terminal updates only the terminal scope', async () => {
+      const store = await getStore();
+      store.getState().openMountTerminal(SESSION_ID, '/wt/api');
+      store.getState().openMountTerminal(SESSION_ID, '/wt/web');
+
+      expect(store.getState().terminalMountPath[SESSION_ID]).toBe('/wt/web');
+    });
+
+    it('leaving the terminal lens clears the row scope it was opened with', async () => {
+      const store = await getStore();
+      store.getState().openMountTerminal(SESSION_ID, '/wt/api');
+      store.getState().setActiveLens(SESSION_ID, 'files');
+
+      expect(store.getState().terminalMountPath[SESSION_ID]).toBeNull();
+    });
+
     it('setSessionStudio(non-null) clears the selected agent', async () => {
       const store = await getStore();
       store.setState({ selectedAgentId: { [SESSION_ID]: AGENT_ID } } as never);

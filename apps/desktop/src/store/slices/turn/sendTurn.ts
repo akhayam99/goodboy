@@ -110,6 +110,7 @@ import {
   selectMountById,
   selectWritableMounts,
 } from '../project-mounts/selectors';
+import { resolveWriteDestination } from '../project-mounts/writeDestination';
 import {
   mountContinuationPrompt,
   resetMountContinuationChain,
@@ -232,6 +233,21 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (activeAgent?.doneAt != null) {
       await get().clearAgentDone(sessionId, activeAgentId);
     }
+
+    const turnDestinationProjectName =
+      activeMount !== undefined
+        ? (before.projects.find((project) => project.id === activeMount.projectId)?.name ?? null)
+        : null;
+    set((state) => ({
+      agentTurnDestination: {
+        ...state.agentTurnDestination,
+        [activeAgentId]: resolveWriteDestination({
+          mount: activeMount ?? null,
+          projectName: turnDestinationProjectName,
+          scratchPath: activeMount === undefined ? workingDir : null,
+        }),
+      },
+    }));
 
     const userTurnText = content;
 

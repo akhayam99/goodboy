@@ -172,6 +172,7 @@ type SessionViewSliceState = {
     Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
   >;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
+  readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
 };
 
@@ -211,6 +212,7 @@ type SessionViewSliceActions = {
   }): void;
   openDiffLens(sessionId: SessionId, focus: DiffFocus | null): void;
   openMountDiff(sessionId: SessionId, worktreePath: string): void;
+  openMountTerminal(sessionId: SessionId, worktreePath: string): void;
   beginSessionCreation(
     sessionId: SessionId,
     creation: { readonly kind: SessionCreationKind; readonly label?: string | null },

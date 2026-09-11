@@ -87,6 +87,7 @@ import type { ChangelogState } from './slices/changelog/state';
 import type { ProviderConnectMap, ProviderLifecycleMap } from './slices/providers';
 import type { ReviewPrsState } from './slices/review-prs/types';
 import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
+import type { WriteDestination } from './slices/project-mounts/writeDestination';
 import type {
   DiffFocus,
   FocusedExternalTask,
@@ -264,6 +265,7 @@ export type AppState = AppSliceState & {
   readonly sessionMounts: Readonly<Record<string, ReadonlyArray<SessionMountView>>>;
   readonly mountBranchObservations: Readonly<Record<string, ReadonlyArray<MountBranchObservation>>>;
   readonly sessionActiveMount: Readonly<Record<string, MountId | null>>;
+  readonly agentTurnDestination: Readonly<Record<AgentId, WriteDestination>>;
   readonly mountCleanupProposals: MountCleanupState['mountCleanupProposals'];
   readonly retainedWorktreePaths: MountCleanupState['retainedWorktreePaths'];
   readonly prSeries: PrSeriesState['prSeries'];
@@ -373,6 +375,7 @@ export type AppState = AppSliceState & {
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
+  readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
   readonly resolveDiffReturn: Readonly<Record<SessionId, ResolveDiffReturn | null>>;
   readonly resolveItemDrafts: Readonly<
