@@ -69,7 +69,6 @@ export {
   updateSessionAutoRun,
   updateSessionTitleUserEdited,
   updateSessionActiveProject,
-  updateSessionActiveMount,
   updateSessionWriteDestination,
   getSessionById,
   listSessionsForWorkspace,
