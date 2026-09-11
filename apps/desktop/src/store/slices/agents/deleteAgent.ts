@@ -60,6 +60,8 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
       delete nextEffortOverride[agentId];
       const nextKindOverride = { ...s.agentKindOverride };
       delete nextKindOverride[agentId];
+      const nextTurnDestination = { ...s.agentTurnDestination };
+      delete nextTurnDestination[agentId];
       const survivorStates = refreshed
         .map((a) => nextTurnState[a.id])
         .filter((st): st is NonNullable<typeof st> => st !== undefined);
@@ -77,6 +79,7 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
         agentProviderOverride: nextProviderOverride,
         agentEffortOverride: nextEffortOverride,
         agentKindOverride: nextKindOverride,
+        agentTurnDestination: nextTurnDestination,
         sessions: s.sessions.map((sess) =>
           sess.id === sessionId ? { ...sess, state: derived! } : sess,
         ),
