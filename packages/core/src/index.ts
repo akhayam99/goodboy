@@ -124,6 +124,8 @@ export {
 } from './providers/auto-model';
 
 export { resolveModelForProvider } from './providers/model-map';
+export { resolveModelIdForProvider } from './providers/resolveModelIdForProvider';
+export { canonicalModelId } from './providers/canonicalModelId';
 export { MODEL_CATALOGS } from './providers/catalogs';
 export { ANTHROPIC_CATALOG } from './providers/claude/catalog';
 export { CODEX_CATALOG } from './providers/codex/catalog';
@@ -139,6 +141,7 @@ export { resolveCursorCombo } from './providers/cursorCombo';
 export { modelAxes } from './providers/modelAxes';
 export { resolveModelArgs } from './providers/resolveModelArgs';
 export { resolveStoredModelSelection } from './providers/resolveStoredModelSelection';
+export { resolvedStoredModelId } from './providers/resolvedStoredModelId';
 export { selectionRequiresMaxMode } from './providers/selectionRequiresMaxMode';
 export type {
   EffortAxis,
