@@ -56,6 +56,16 @@ const proposalDecision: WorkflowRoutingDecision = {
   executed: null,
 };
 
+const heuristicDecision: WorkflowRoutingDecision = {
+  version: 1,
+  proposal: null,
+  selected: { provider: 'codex', model: 'gpt-5.6-luna', effort: 'medium' },
+  source: 'heuristic',
+  reason: 'Deterministic selection for implementation work at standard difficulty.',
+  adjustment: 'cooldown',
+  executed: null,
+};
+
 const legacyLock: WorkflowRoutingLock = {
   version: 1,
   pick: { provider: 'anthropic', model: 'sonnet-5', effort: 'medium' },
@@ -246,6 +256,17 @@ describe('workflowRouting slice', () => {
     expect(state.workflowNodeRoutingErrors).toEqual({ [AGENT_KEY]: null });
   });
 
+  it('does not label a deterministic recovery a choice made on fit', () => {
+    const view = selectWorkflowNodeRouting({
+      agent: buildAgent({ routingDecision: heuristicDecision }),
+      step: buildStep(),
+      isPending: false,
+      error: null,
+    });
+
+    expect(view.sourceLabel).toBe('Chosen from what is available');
+  });
+
   it('reset restores proposal without editing the template', async () => {
     const lockedAgent = buildAgent({
       routingDecision: proposalDecision,
@@ -417,6 +438,7 @@ describe('fan-out child routing precedence', () => {
       childLock: null,
       proposal: null,
       promptText: 'apply the change',
+      missingProposal: 'deterministic_pick',
     });
 
     expect(resolution.kind).toBe('ready');
@@ -447,6 +469,7 @@ describe('fan-out child routing precedence', () => {
       childLock: null,
       proposal: null,
       promptText: 'apply the change',
+      missingProposal: 'deterministic_pick',
     });
 
     expect(resolution.kind).toBe('ready');
@@ -454,7 +477,7 @@ describe('fan-out child routing precedence', () => {
       return;
     }
     expect(resolution.decision.selected.model).not.toBe('gpt-5.6-sol');
-    expect(resolution.decision.source).toBe('kind_default');
+    expect(resolution.decision.source).toBe('heuristic');
   });
 
   it('explicit child lock beats its run role lock', () => {
@@ -472,6 +495,7 @@ describe('fan-out child routing precedence', () => {
       },
       proposal: null,
       promptText: 'apply the change',
+      missingProposal: 'deterministic_pick',
     });
 
     expect(resolution.kind).toBe('ready');
@@ -505,5 +529,45 @@ describe('fan-out child routing precedence', () => {
     });
 
     expect(batch.kind).toBe('blocked');
+  });
+  it('gives a legacy child with no proposal a pick read off its own text', () => {
+    const { get } = buildHarness({ hasRunRoleLock: false });
+
+    const { resolution, taskProfile } = resolveWorkflowChildRouting({
+      state: get(),
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      role: 'implementer',
+      childLock: null,
+      proposal: null,
+      promptText: 'redesign the workflow routing store and migrate database rows across the app',
+      missingProposal: 'deterministic_pick',
+    });
+
+    expect(resolution.kind).toBe('ready');
+    if (resolution.kind !== 'ready') {
+      return;
+    }
+    expect(resolution.decision.source).toBe('heuristic');
+    expect(resolution.decision.reason).toContain('heuristic estimate');
+    expect(taskProfile?.difficulty).toBe('heavy');
+    expect(taskProfile?.basis).toBe('heuristic');
+  });
+
+  it('keeps a root manual node with no proposal on its configured default', async () => {
+    const { get, set } = buildHarness({ hasRunRoleLock: false });
+
+    await resetWorkflowNodeRoutingLock(
+      set,
+      get,
+    )({ sessionId: SESSION_ID, nodeKind: 'step', id: STEP_ID });
+
+    const persisted = persistedArgs();
+    expect(persisted.routingDecision.source).toBe('kind_default');
+    expect(persisted.routingDecision.selected).toEqual({
+      provider: 'anthropic',
+      model: 'sonnet-5',
+      effort: 'medium',
+    });
   });
 });

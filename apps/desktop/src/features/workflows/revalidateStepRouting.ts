@@ -70,6 +70,7 @@ export const revalidateStepRouting = ({
     kindDefault: null,
     availability,
     contextEstimate: null,
+    missingProposal: 'configured_default',
   });
   if (resolution.kind === 'blocked') {
     return { kind: 'blocked', reason: resolution.reason };

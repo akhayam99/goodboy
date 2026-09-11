@@ -9,6 +9,7 @@ import type {
   WorkflowRunId,
   WorkflowTaskProfile,
 } from '@goodboy/types';
+import type { WorkflowMissingProposalPolicy } from '@goodboy/core';
 import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { resolveWorkflowChildRouting } from '../workflowRouting/resolveWorkflowChildRouting';
 import type { AppStore } from '../../store';
@@ -55,6 +56,19 @@ export type ChildRoutingOutcome =
   | Readonly<{ kind: 'legacy' }>
   | Readonly<{ kind: 'blocked'; reason: string }>;
 
+type PolicyParams = {
+  readonly isChildSelectionEnabled: boolean;
+};
+
+const childMissingProposalPolicy = ({
+  isChildSelectionEnabled,
+}: PolicyParams): WorkflowMissingProposalPolicy => {
+  if (isChildSelectionEnabled === false) {
+    return 'configured_default';
+  }
+  return 'deterministic_pick';
+};
+
 export const resolveOneChildRouting = ({
   state,
   sessionId,
@@ -71,6 +85,7 @@ export const resolveOneChildRouting = ({
     childLock: request.childLock,
     proposal: isChildSelectionEnabled === true ? request.proposal : null,
     promptText: request.promptText,
+    missingProposal: childMissingProposalPolicy({ isChildSelectionEnabled }),
   });
   if (resolution.kind === 'blocked') {
     if (isChildSelectionEnabled === false && request.childLock === null) {

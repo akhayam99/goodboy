@@ -783,6 +783,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           },
           availability,
           contextEstimate: null,
+          missingProposal: 'configured_default',
         });
         if (resolution.kind === 'blocked') {
           await persistOrchestrationStop({

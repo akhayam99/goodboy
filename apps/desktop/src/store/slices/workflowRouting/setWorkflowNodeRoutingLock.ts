@@ -34,6 +34,7 @@ export const setWorkflowNodeRoutingLock = (set: SetFn, get: GetFn) => {
       kindDefault: context.kindDefault,
       availability: context.availability,
       contextEstimate: null,
+      missingProposal: 'configured_default',
     });
     if (resolution.kind === 'blocked') {
       setWorkflowNodeRoutingError({ set, key, message: resolution.reason });

@@ -61,6 +61,7 @@ export const resolveGeneratedStepRouting = ({
       kindDefault: null,
       availability,
       contextEstimate: null,
+      missingProposal: 'deterministic_pick',
     });
     if (resolution.kind === 'ready') {
       return {

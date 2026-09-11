@@ -58,6 +58,7 @@ const resolve = (overrides: Partial<ResolveParams> = {}): WorkflowRoutingResolut
     kindDefault: null,
     availability: snapshot(),
     contextEstimate: null,
+    missingProposal: 'configured_default',
     ...overrides,
   });
 
@@ -360,5 +361,41 @@ describe('resolveWorkflowRouting effort', () => {
 
     expect(decision.selected.effort).toBe('high');
     expect(decision.adjustment).toBe('unsupported_effort');
+  });
+  it('gives a node under the deterministic rule a pick of its own, not a configured default', () => {
+    const decision = ready(
+      resolve({
+        missingProposal: 'deterministic_pick',
+        roleDefault: pick('anthropic', 'opus-5', 'high'),
+        kindDefault: pick('anthropic', 'sonnet-5', 'medium'),
+      }),
+    );
+
+    expect(decision.source).toBe('heuristic');
+    expect(decision.selected.model).not.toBe('opus-5');
+    expect(decision.proposal).toBeNull();
+  });
+
+  it('keeps a lock above the deterministic rule', () => {
+    const decision = ready(
+      resolve({
+        missingProposal: 'deterministic_pick',
+        agentLock: lock(pick('codex', 'gpt-5.6-sol', 'high')),
+      }),
+    );
+
+    expect(decision.source).toBe('step_lock');
+    expect(decision.selected.model).toBe('gpt-5.6-sol');
+  });
+
+  it('blocks the deterministic rule when nothing is available', () => {
+    const result = blocked(
+      resolve({
+        missingProposal: 'deterministic_pick',
+        availability: snapshot({ connectedProviders: [] }),
+      }),
+    );
+
+    expect(result.cause).toBe('no_available_model');
   });
 });

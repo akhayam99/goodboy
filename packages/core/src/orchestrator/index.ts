@@ -12,7 +12,11 @@ export {
   type WorkflowModelRecommendation,
 } from './recommendWorkflowModel';
 export { recommendWorkflowRoutingDecision } from './recommendWorkflowRoutingDecision';
-export { resolveWorkflowRouting, type WorkflowRoutingResolution } from './resolveWorkflowRouting';
+export {
+  resolveWorkflowRouting,
+  type WorkflowMissingProposalPolicy,
+  type WorkflowRoutingResolution,
+} from './resolveWorkflowRouting';
 export { hintedRoutingOutcome } from './workflowTaskProfileHint';
 export {
   workflowRoutingAvailability,

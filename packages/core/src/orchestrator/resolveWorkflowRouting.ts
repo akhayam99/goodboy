@@ -19,6 +19,8 @@ import type {
 } from './workflowRoutingAvailability';
 import { workflowRoutingAvailability } from './workflowRoutingAvailability';
 
+export type WorkflowMissingProposalPolicy = 'configured_default' | 'deterministic_pick';
+
 export type WorkflowRoutingResolution =
   | Readonly<{ kind: 'ready'; decision: WorkflowRoutingDecision }>
   | Readonly<{
@@ -37,6 +39,7 @@ type Params = {
   readonly kindDefault: WorkflowModelPick | null;
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
   readonly contextEstimate: number | null;
+  readonly missingProposal: WorkflowMissingProposalPolicy;
 };
 
 type PickParams = {
@@ -214,6 +217,38 @@ const resolveRecovery = ({
   });
 };
 
+type DeterministicParams = {
+  readonly profile: WorkflowTaskProfile;
+  readonly availability: WorkflowRoutingAvailabilitySnapshot;
+  readonly contextEstimate: number | null;
+};
+
+const resolveDeterministic = ({
+  profile,
+  availability,
+  contextEstimate,
+}: DeterministicParams): WorkflowRoutingResolution => {
+  const recommendation = recommendWorkflowModel({
+    candidates: workflowModelCandidates({ availability }),
+    profile,
+    contextEstimate,
+  });
+  if (recommendation === null) {
+    return {
+      kind: 'blocked',
+      cause: budgetCause({ availability }),
+      reason: 'No available catalog model can run this node.',
+    };
+  }
+  return readyDecision({
+    pick: recommendation.pick,
+    source: 'heuristic',
+    reason: recommendation.reason,
+    proposal: null,
+    adjustment: 'none',
+  });
+};
+
 type FallbackParams = {
   readonly roleDefault: WorkflowModelPick | null;
   readonly sessionDefault: WorkflowModelPick | null;
@@ -282,6 +317,7 @@ export const resolveWorkflowRouting = ({
   kindDefault,
   availability,
   contextEstimate,
+  missingProposal,
 }: Params): WorkflowRoutingResolution => {
   const emitted = proposal.kind === 'valid' ? proposal.proposal : null;
   const profile = proposal.kind === 'valid' ? proposal.proposal.profile : proposal.profile;
@@ -333,6 +369,9 @@ export const resolveWorkflowRouting = ({
       availability,
       contextEstimate,
     });
+  }
+  if (missingProposal === 'deterministic_pick') {
+    return resolveDeterministic({ profile, availability, contextEstimate });
   }
   return resolveFallback({ roleDefault, sessionDefault, kindDefault, availability });
 };

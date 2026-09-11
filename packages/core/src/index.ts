@@ -392,6 +392,7 @@ export {
   type OrchestratorRoleDefault,
   type OrchestratorStep,
   type OrchestratorUsage,
+  type WorkflowMissingProposalPolicy,
   type WorkflowModelCandidate,
   type WorkflowModelRecommendation,
   type WorkflowRoutingAvailability,

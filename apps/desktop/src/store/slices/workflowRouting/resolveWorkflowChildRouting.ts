@@ -14,6 +14,7 @@ import {
   hintedRoutingOutcome,
   resolveRoleRouting,
   resolveWorkflowRouting,
+  type WorkflowMissingProposalPolicy,
   type WorkflowRoutingProposalParseOutcome,
   type WorkflowRoutingResolution,
 } from '@goodboy/core';
@@ -74,6 +75,7 @@ type Params = {
   readonly childLock: WorkflowRoutingLock | null;
   readonly proposal: WorkflowRoutingProposal | null;
   readonly promptText: string;
+  readonly missingProposal: WorkflowMissingProposalPolicy;
 };
 
 export const resolveWorkflowChildRouting = ({
@@ -84,6 +86,7 @@ export const resolveWorkflowChildRouting = ({
   childLock,
   proposal,
   promptText,
+  missingProposal,
 }: Params): WorkflowChildRouting => {
   const session = (state.sessions ?? []).find((candidate) => candidate.id === sessionId);
   const run =
@@ -117,6 +120,7 @@ export const resolveWorkflowChildRouting = ({
             effort: session.effort ?? null,
           },
     kindDefault: { provider: compiled.provider, model: compiled.model, effort: compiled.effort },
+    missingProposal,
     availability: workflowAvailabilitySnapshot({
       providers: state.providers ?? [],
       cooldowns: state.providerCooldowns ?? {},
