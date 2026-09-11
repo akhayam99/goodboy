@@ -27,11 +27,18 @@ vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 import { dismissOpenQuestion } from './dismissOpenQuestion';
 import { restoreDismissedOpenQuestion } from './restoreDismissedOpenQuestion';
 
+type RecordedEvent = {
+  sessionId: SessionId;
+  kind: string;
+  payload?: Record<string, unknown>;
+};
+
 type TestState = {
   sessionOpenQuestions: Record<string, ReadonlyArray<OpenQuestion>>;
   loadSessionSlots: (sessionId: SessionId) => Promise<void>;
   loadSessionDismissedQuestions: (sessionId: SessionId) => Promise<void>;
   maybeAutoAdvanceWorkflow: (sessionId: SessionId) => Promise<void>;
+  recordSessionEvent: (event: RecordedEvent) => Promise<void>;
 };
 
 const sessionId = 'sess-1' as SessionId;
@@ -56,6 +63,7 @@ describe('dismissed open question restoration', () => {
       loadSessionSlots: vi.fn(async () => undefined),
       loadSessionDismissedQuestions: vi.fn(async () => undefined),
       maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
+      recordSessionEvent: vi.fn(async () => undefined),
     }));
     const dismiss = dismissOpenQuestion(store.setState as never, store.getState as never);
     const restore = restoreDismissedOpenQuestion(store.setState as never, store.getState as never);
@@ -70,5 +78,31 @@ describe('dismissed open question restoration', () => {
     expect(restoreOpenQuestion).toHaveBeenCalledWith(expect.anything(), question.id);
     expect(store.getState().loadSessionDismissedQuestions).toHaveBeenCalledTimes(2);
     expect(store.getState().maybeAutoAdvanceWorkflow).toHaveBeenCalledWith(sessionId);
+  });
+
+  it('writes the discard and the recovery to the session timeline', async () => {
+    const store = createStore<TestState>(() => ({
+      sessionOpenQuestions: { [sessionId]: [question] },
+      loadSessionSlots: vi.fn(async () => undefined),
+      loadSessionDismissedQuestions: vi.fn(async () => undefined),
+      maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
+      recordSessionEvent: vi.fn(async () => undefined),
+    }));
+    const dismiss = dismissOpenQuestion(store.setState as never, store.getState as never);
+    const restore = restoreDismissedOpenQuestion(store.setState as never, store.getState as never);
+
+    await dismiss(sessionId, question);
+    await restore(sessionId, question);
+
+    expect(store.getState().recordSessionEvent).toHaveBeenNthCalledWith(1, {
+      sessionId,
+      kind: 'question_dismissed',
+      payload: { questionId: question.id, title: question.text },
+    });
+    expect(store.getState().recordSessionEvent).toHaveBeenNthCalledWith(2, {
+      sessionId,
+      kind: 'question_restored',
+      payload: { questionId: question.id, title: question.text },
+    });
   });
 });

@@ -386,3 +386,44 @@ describe('sessionEventProjectRunLabel', () => {
     ).toBe('Detached api, app-web, infra, db and edge');
   });
 });
+
+describe('durable state change events', () => {
+  it('names an archive and a restore without decoration', () => {
+    expect(sessionEventTitle({ event: event({ kind: 'session_archived' }) })).toBe(
+      'Session archived',
+    );
+    expect(sessionEventTitle({ event: event({ kind: 'session_restored' }) })).toBe(
+      'Session restored',
+    );
+  });
+
+  it('names the project and branch writes go to', () => {
+    expect(
+      sessionEventTitle({
+        event: event({
+          kind: 'write_destination_changed',
+          payload: { projectName: 'app-web', branch: 'ak/feat-x' },
+        }),
+      }),
+    ).toBe('Writes now go to app-web on ak/feat-x');
+  });
+
+  it('falls back when the destination payload carries no project', () => {
+    expect(sessionEventTitle({ event: event({ kind: 'write_destination_changed' }) })).toBe(
+      'Write destination changed',
+    );
+  });
+
+  it('quotes the discarded question and the one brought back', () => {
+    expect(
+      sessionEventTitle({
+        event: event({ kind: 'question_dismissed', payload: { title: 'Which base branch?' } }),
+      }),
+    ).toBe('Question discarded: Which base branch?');
+    expect(
+      sessionEventTitle({
+        event: event({ kind: 'question_restored', payload: { title: 'Which base branch?' } }),
+      }),
+    ).toBe('Question brought back: Which base branch?');
+  });
+});

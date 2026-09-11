@@ -14,6 +14,7 @@ import { NotificationToastBridge } from './features/notifications/components/Not
 import { WorkflowFollowToastBridge } from './features/workflows/components/WorkflowFollowToastBridge';
 import { SessionNavSidebar } from './features/session/components/SessionNavSidebar';
 import { NewSessionBridge } from './features/session/components/NewSessionBridge';
+import { SessionArchiveBridge } from './features/session/components/SessionArchiveBridge';
 import { CollapsedRail } from './features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
@@ -105,7 +106,6 @@ export const App = () => {
   const isWorkspaceLauncherBranch = hasWorkspaces && currentWorkspace === null && isMainWindow();
   const {
     activeStudio,
-    armArchiveConfirm,
     armDeleteConfirm,
     openAddWorkspace,
     openBitbucket,
@@ -241,7 +241,6 @@ export const App = () => {
   }, [currentSession?.id]);
 
   useAppShortcuts({
-    armArchiveConfirm,
     armDeleteConfirm,
     openPalette,
     openSettings,
@@ -295,6 +294,7 @@ export const App = () => {
       <NotificationToastBridge />
       <WorkflowFollowToastBridge />
       <NewSessionBridge />
+      <SessionArchiveBridge />
       <ReleaseToast onOpenChangelog={openChangelog} />
       <AppShell
         topBar={<AppTopBar onOpenSpend={openSpend} />}

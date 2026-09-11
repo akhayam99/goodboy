@@ -134,7 +134,10 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
     setBusy(true);
     try {
       await removeProject({ projectId });
-      showToast('success', `disconnected ${name}`);
+      showToast(
+        'success',
+        `disconnected ${name}. The folder stays on disk, link it again any time.`,
+      );
     } catch (unlinkError) {
       showToast('error', formatError(unlinkError));
     } finally {

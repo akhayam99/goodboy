@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   PrComment,
   ResolvePublicationPreview,
@@ -335,10 +335,84 @@ describe('ReviewPane', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /^Mark ready/ }));
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Mark #248 ready for review?' })).getByRole(
+        'button',
+        { name: 'Mark ready' },
+      ),
+    );
 
     await waitFor(() =>
       expect(h.showToast).toHaveBeenCalledWith('error', 'Mark ready failed: branch is protected'),
     );
+  });
+
+  it('says what marking a draft ready sends before it sends it', () => {
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Mark ready/ }));
+
+    expect(h.state.markPrReady).not.toHaveBeenCalled();
+    const confirm = screen.getByRole('group', { name: 'Mark #248 ready for review?' });
+    expect(within(confirm).getByText(/cannot be unsent/)).toBeDefined();
+
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Mark ready' }));
+
+    expect(h.state.markPrReady).toHaveBeenCalledWith(SESSION.id, 248);
+  });
+
+  it('names what closing sends to GitHub, and what survives it', () => {
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Close/ }));
+
+    expect(h.state.closePr).not.toHaveBeenCalled();
+    const confirm = screen.getByRole('group', { name: 'Close #248 without merging?' });
+    expect(within(confirm).getByText(/The branch and its commits stay/)).toBeDefined();
+
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Close it' }));
+
+    expect(h.state.closePr).toHaveBeenCalledWith(SESSION.id, 248);
+  });
+
+  it('names the branch pair the merge squashes, and what it leaves alone', () => {
+    const github = h.state.sessionGithub[SESSION_ID] as {
+      readonly pr: Record<string, unknown>;
+    };
+    h.state.sessionGithub = {
+      ...h.state.sessionGithub,
+      [SESSION_ID]: { ...github, pr: { ...github.pr, isDraft: false } },
+    };
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Merge/ }));
+
+    expect(h.state.mergePr).not.toHaveBeenCalled();
+    const confirm = screen.getByRole('group', { name: 'Squash merge #248?' });
+    expect(
+      within(confirm).getByText(
+        /Every commit on feature\/retry lands on main as one.*The branch is not deleted\./,
+      ),
+    ).toBeDefined();
+  });
+
+  it('backs out of a confirm without touching GitHub', () => {
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Close/ }));
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Close #248 without merging?' })).getByRole(
+        'button',
+        { name: 'Cancel' },
+      ),
+    );
+
+    expect(h.state.closePr).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'PR actions' })).toBeDefined();
   });
 
   it('offers one publication review anchor for work approved but not sent', () => {

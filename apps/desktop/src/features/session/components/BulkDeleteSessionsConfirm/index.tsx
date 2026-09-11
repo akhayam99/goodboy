@@ -38,7 +38,7 @@ export const BulkDeleteSessionsConfirm = ({ sessions, onClose, onConfirmed, clas
       role="danger"
       icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
       title={`Delete ${count} session${count === 1 ? '' : 's'}?`}
-      description="Permanently removes the worktrees and transcripts for these sessions from this device. Branches are preserved for manual merge."
+      description="Removes these sessions and their transcripts from this device. Branches and their commits stay in the repository, and any worktree still holding uncommitted work is kept and listed under Settings, Storage."
       confirmLabel={`Delete (${count})`}
       onConfirm={onConfirm}
       onCancel={onClose}

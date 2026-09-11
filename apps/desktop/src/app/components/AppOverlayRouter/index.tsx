@@ -2,7 +2,6 @@ import { Suspense, lazy } from 'react';
 import type { Session, SessionId, Workspace } from '@goodboy/types';
 import type { InboxKind, InboxProvider } from '../../../features/inbox/types';
 import type { ImpactScope } from '../../../features/impact/lib';
-import { ArchiveSessionConfirm } from '../../../features/session/components/ArchiveSessionConfirm';
 import { CommandPalette } from '../../../features/session/components/CommandPalette';
 import { DeleteSessionConfirm } from '../../../features/session/components/DeleteSessionConfirm';
 import { ConvertWorkspaceDialog } from '../../../features/workspace/components/ConvertWorkspaceDialog';
@@ -78,8 +77,6 @@ type Props = {
   readonly reportIssueStudioOpen: boolean;
   readonly deleteOpen: boolean;
   readonly deleteTargetSession: Session | null;
-  readonly archiveOpen: boolean;
-  readonly archiveTargetSession: Session | null;
   readonly paletteOpen: boolean;
   readonly palettePrefix: string;
   readonly addWorkspaceOpen: boolean;
@@ -116,7 +113,6 @@ type Props = {
   readonly closeInboxStudio: () => void;
   readonly closeCommitDiff: () => void;
   readonly closeDeleteConfirm: () => void;
-  readonly closeArchiveConfirm: () => void;
   readonly closeCompanion: () => void;
 };
 
@@ -131,8 +127,6 @@ export const AppOverlayRouter = ({
   reportIssueStudioOpen,
   deleteOpen,
   deleteTargetSession,
-  archiveOpen,
-  archiveTargetSession,
   paletteOpen,
   palettePrefix,
   addWorkspaceOpen,
@@ -164,7 +158,6 @@ export const AppOverlayRouter = ({
   closeInboxStudio,
   closeCommitDiff,
   closeDeleteConfirm,
-  closeArchiveConfirm,
   closeCompanion,
 }: Props) => {
   const addWorkspaceSurface = addWorkspaceOpen ? (
@@ -251,11 +244,6 @@ export const AppOverlayRouter = ({
       {deleteTargetSession !== null && deleteOpen ? (
         <div className="fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
           <DeleteSessionConfirm session={deleteTargetSession} onClose={closeDeleteConfirm} />
-        </div>
-      ) : null}
-      {archiveTargetSession !== null && archiveOpen ? (
-        <div className="fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
-          <ArchiveSessionConfirm session={archiveTargetSession} onClose={closeArchiveConfirm} />
         </div>
       ) : null}
       {companionOpen ? <CompanionStudio onClose={closeCompanion} /> : null}

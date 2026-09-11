@@ -13,14 +13,12 @@ export type BoardNavigation = {
   readonly openQuestions: (session: Session) => void;
   readonly openWorkflows: (session: Session) => void;
   readonly openGithub: (session: Session) => void;
-  readonly restore: (session: Session) => void;
 };
 
 export const useBoardNavigation = (): BoardNavigation => {
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const selectAgent = useAppStore((s) => s.selectAgent);
-  const unarchiveTask = useAppStore((s) => s.unarchiveTask);
 
   return useMemo<BoardNavigation>(() => {
     const selectCard = (session: Session): void => {
@@ -77,10 +75,6 @@ export const useBoardNavigation = (): BoardNavigation => {
       });
     };
 
-    const restore = (session: Session): void => {
-      void unarchiveTask(session.id as SessionId);
-    };
-
     return {
       selectCard,
       openAgent,
@@ -89,7 +83,6 @@ export const useBoardNavigation = (): BoardNavigation => {
       openQuestions,
       openWorkflows,
       openGithub,
-      restore,
     };
-  }, [setCurrentSession, setActiveLens, selectAgent, unarchiveTask]);
+  }, [setCurrentSession, setActiveLens, selectAgent]);
 };

@@ -51,6 +51,8 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
       throw err;
     }
 
+    await get().recordSessionEvent({ sessionId, kind: 'session_restored' });
+
     if (get().currentWorkspaceId !== workspaceId) {
       return;
     }

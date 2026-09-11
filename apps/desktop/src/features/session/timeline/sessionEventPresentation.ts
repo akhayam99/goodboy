@@ -10,6 +10,10 @@ import {
 
 export type SessionEventEmphasis = 'plain' | 'muted' | 'success' | 'merged' | 'danger';
 
+export const SESSION_ARCHIVED_TITLE = 'Session archived';
+
+export const SESSION_RESTORED_TITLE = 'Session restored';
+
 type PullRequestEventKind = Extract<SessionEventKind, `pr_${string}`>;
 
 const PR_EVENT_STATE = {
@@ -45,6 +49,11 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   project_detached: 'muted',
   external_task_created: 'plain',
   rebase_requested: 'muted',
+  session_archived: 'muted',
+  session_restored: 'plain',
+  write_destination_changed: 'plain',
+  question_dismissed: 'muted',
+  question_restored: 'plain',
 };
 
 export type SessionEventGlyph = {
@@ -92,6 +101,19 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   project_detached: { icon: FolderMinus, tone: 'neutral', label: 'Project' },
   external_task_created: { icon: Link2, tone: 'neutral', label: 'Issue' },
   rebase_requested: { icon: GitBranch, tone: 'info', label: 'Branch' },
+  session_archived: { icon: CONCEPT_ICONS.archive, tone: 'neutral', label: 'Session' },
+  session_restored: { icon: CONCEPT_ICONS.restore, tone: 'accent', label: 'Session' },
+  write_destination_changed: {
+    icon: CONCEPT_ICONS.worktree,
+    tone: CONCEPT_TONE.worktree,
+    label: 'Write destination',
+  },
+  question_dismissed: { icon: CONCEPT_ICONS.questions, tone: 'neutral', label: 'Question' },
+  question_restored: {
+    icon: CONCEPT_ICONS.questions,
+    tone: CONCEPT_TONE.questions,
+    label: 'Question',
+  },
 };
 
 type TimelineValueVariant = 'project' | 'branch' | 'path' | 'pull-request' | 'issue' | 'workflow';
@@ -280,6 +302,36 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
         ...onBase,
       ];
     }
+    case 'session_archived':
+      return [{ kind: 'text', text: SESSION_ARCHIVED_TITLE }];
+    case 'session_restored':
+      return [{ kind: 'text', text: SESSION_RESTORED_TITLE }];
+    case 'write_destination_changed': {
+      const branch = payload?.branch ?? '';
+      const onBranch: ReadonlyArray<TimelineLabelSegment> =
+        branch === ''
+          ? []
+          : [
+              { kind: 'text', text: ' on ' },
+              { kind: 'value', text: branch, variant: 'branch' },
+            ];
+      if (payload?.projectName == null) {
+        return [{ kind: 'text', text: 'Write destination changed' }, ...onBranch];
+      }
+      return [
+        { kind: 'text', text: 'Writes now go to ' },
+        { kind: 'value', text: payload.projectName, variant: 'project' },
+        ...onBranch,
+      ];
+    }
+    case 'question_dismissed':
+      return payload?.title == null
+        ? [{ kind: 'text', text: 'Question discarded' }]
+        : [{ kind: 'text', text: `Question discarded: ${payload.title}` }];
+    case 'question_restored':
+      return payload?.title == null
+        ? [{ kind: 'text', text: 'Question brought back' }]
+        : [{ kind: 'text', text: `Question brought back: ${payload.title}` }];
     default: {
       const exhaustive: never = event.kind;
       return exhaustive;

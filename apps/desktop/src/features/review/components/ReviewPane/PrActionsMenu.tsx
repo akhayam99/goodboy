@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   ChevronDown,
   GitMerge,
@@ -8,10 +8,22 @@ import {
   Send,
   XCircle,
 } from 'lucide-react';
-import { InlineConfirm, OverflowMenu, type OverflowMenuItem } from '@goodboy/ui';
+import { InlineConfirm, OverflowMenu, type ConfirmRole, type OverflowMenuItem } from '@goodboy/ui';
 import type { PullRequestState } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { PrLifecycleBusy } from '../../prLifecycle';
+
+type PendingAction = 'merge' | 'ready' | 'close';
+
+type ConfirmSpec = {
+  readonly role: ConfirmRole;
+  readonly icon: ReactNode;
+  readonly title: string;
+  readonly description: string;
+  readonly confirmLabel: string;
+  readonly isConfirmDisabled: boolean;
+  readonly onConfirm: () => void | Promise<void>;
+};
 
 type Props = {
   readonly pr: PullRequestState;
@@ -40,28 +52,67 @@ export const PrActionsMenu = ({
   onMerge,
   onCreateNew,
 }: Props) => {
-  const [isMergeConfirmOpen, setIsMergeConfirmOpen] = useState(false);
+  const [pending, setPending] = useState<PendingAction | null>(null);
   const isTerminal = pr.state === 'merged' || pr.state === 'closed';
   const isClosed = pr.state === 'closed';
   const isQueued = pr.state === 'queued';
   const isBusy = busy !== null;
 
-  if (isMergeConfirmOpen) {
+  const confirms: Record<PendingAction, ConfirmSpec> = {
+    merge: {
+      role: 'danger',
+      icon: <GitMerge size={ICON_SIZE.row} aria-hidden />,
+      title: `Squash merge #${pr.number}?`,
+      description: `Every commit on ${pr.headBranch} lands on ${pr.baseBranch} as one, and GitHub closes the pull request. The branch is not deleted.`,
+      confirmLabel: busy === 'merge' ? 'Merging' : 'Confirm merge',
+      isConfirmDisabled: canMerge === false || isBusy,
+      onConfirm: async () => {
+        await onMerge();
+        setPending(null);
+      },
+    },
+    ready: {
+      role: 'alert',
+      icon: <Send size={ICON_SIZE.row} aria-hidden />,
+      title: `Mark #${pr.number} ready for review?`,
+      description:
+        'GitHub takes the pull request out of draft and asks the reviewers the repository assigns. That request cannot be unsent.',
+      confirmLabel: busy === 'ready' ? 'Sending' : 'Mark ready',
+      isConfirmDisabled: isBusy,
+      onConfirm: () => {
+        onMarkReady();
+        setPending(null);
+      },
+    },
+    close: {
+      role: 'danger',
+      icon: <XCircle size={ICON_SIZE.row} aria-hidden />,
+      title: `Close #${pr.number} without merging?`,
+      description:
+        'GitHub closes the pull request and drops the review in progress. The branch and its commits stay, and Reopen brings it back.',
+      confirmLabel: busy === 'close' ? 'Closing' : 'Close it',
+      isConfirmDisabled: isBusy,
+      onConfirm: () => {
+        onClosePr();
+        setPending(null);
+      },
+    },
+  };
+
+  if (pending !== null) {
+    const spec = confirms[pending];
     return (
       <InlineConfirm
-        role="danger"
-        icon={<GitMerge size={ICON_SIZE.row} aria-hidden />}
-        title="Squash merge this pull request?"
-        description="This action cannot be undone."
-        confirmLabel={busy === 'merge' ? 'Merging' : 'Confirm merge'}
-        onConfirm={async () => {
-          await onMerge();
-          setIsMergeConfirmOpen(false);
-        }}
-        onCancel={() => setIsMergeConfirmOpen(false)}
-        isBusy={busy === 'merge'}
-        isConfirmDisabled={canMerge === false || isBusy}
-        className="w-64"
+        role={spec.role}
+        icon={spec.icon}
+        title={spec.title}
+        description={spec.description}
+        confirmLabel={spec.confirmLabel}
+        onConfirm={spec.onConfirm}
+        onCancel={() => setPending(null)}
+        isBusy={busy === pending}
+        isConfirmDisabled={spec.isConfirmDisabled}
+        className="w-72"
       />
     );
   }
@@ -75,7 +126,7 @@ export const PrActionsMenu = ({
       icon: GitMerge,
       disabled: canMerge === false || isBusy,
       hint: mergeReason,
-      onClick: () => setIsMergeConfirmOpen(true),
+      onClick: () => setPending('merge'),
     });
   }
   if (!isTerminal && pr.isDraft) {
@@ -85,7 +136,7 @@ export const PrActionsMenu = ({
       label: 'Mark ready',
       icon: Send,
       disabled: isBusy,
-      onClick: onMarkReady,
+      onClick: () => setPending('ready'),
     });
   }
   if (!isTerminal && !pr.isDraft) {
@@ -106,7 +157,7 @@ export const PrActionsMenu = ({
       icon: XCircle,
       destructive: true,
       disabled: isBusy,
-      onClick: onClosePr,
+      onClick: () => setPending('close'),
     });
   }
   if (isClosed) {

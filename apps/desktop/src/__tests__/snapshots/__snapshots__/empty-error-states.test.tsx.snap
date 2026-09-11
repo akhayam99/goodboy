@@ -518,7 +518,7 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
       <p
         class="text-muted-foreground"
       >
-        Permanently removes the worktree and transcripts for this session from this device. The branch is preserved for manual merge.
+        Removes this session and its transcripts from this device. The branch and its commits stay in the repository, and a worktree still holding uncommitted work is kept and listed under Settings, Storage.
       </p>
     </div>
   </div>

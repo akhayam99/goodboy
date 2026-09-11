@@ -11,8 +11,8 @@ const { state, viewPrefs, stageInfo } = vi.hoisted(() => ({
     sessionExternalTasks: {} as Record<string, unknown>,
     sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
     projects: [] as ReadonlyArray<unknown>,
-    bulkUnarchiveTask: vi.fn(async () => undefined),
-    bulkArchiveTask: vi.fn(async () => undefined),
+    bulkUnarchiveTask: vi.fn(async (_ids: ReadonlyArray<string>) => undefined),
+    bulkArchiveTask: vi.fn(async (_ids: ReadonlyArray<string>) => undefined),
     bulkDeleteTask: vi.fn(async () => undefined),
   },
   viewPrefs: {
@@ -26,6 +26,15 @@ const { state, viewPrefs, stageInfo } = vi.hoisted(() => ({
       prState: null,
     } as SessionStageInfo,
   },
+}));
+
+vi.mock('../../../session/hooks/useSessionArchive', () => ({
+  useSessionArchive: () => ({
+    archive: async ({ sessions }: { sessions: ReadonlyArray<Session> }) =>
+      state.bulkArchiveTask(sessions.map((session) => session.id)),
+    restore: async ({ sessions }: { sessions: ReadonlyArray<Session> }) =>
+      state.bulkUnarchiveTask(sessions.map((session) => session.id)),
+  }),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -233,14 +242,12 @@ describe('SessionActivityBar, bulk selection', () => {
     expect(screen.queryByRole('button', { name: /^Restore/ })).toBeNull();
   });
 
-  it('arms an inline confirmation on Archive and calls bulkArchiveTask once confirmed', async () => {
+  it('archives from the bulk bar in one gesture and clears the selection', async () => {
     renderBar([], [makeSession('a-1', 'active one')]);
     selectRow(0);
     fireEvent.click(screen.getByRole('button', { name: /^Archive \(1\)$/ }));
-    const panel = screen.getByRole('group', { name: 'Archive 1 sessions?' });
-    expect(state.bulkArchiveTask).not.toHaveBeenCalled();
-    fireEvent.click(within(panel).getByRole('button', { name: /^Archive \(1\)$/ }));
     await waitFor(() => expect(state.bulkArchiveTask).toHaveBeenCalledWith(['a-1']));
+    await waitFor(() => expect(screen.queryByText(/selected/)).toBeNull());
   });
 
   it('selects from the row body when a modifier key is held instead of opening the session', () => {

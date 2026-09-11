@@ -969,7 +969,24 @@ describe('store contract', () => {
       );
     });
 
-    it('archiveTask keeps the worktrees unless the user asks to clean them', async () => {
+    it('writes the archive and the restore to the session timeline', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      vi.mocked(db.insertSessionEvent).mockClear();
+      store.setState({
+        workspaces: [buildWorkspace()],
+        currentWorkspaceId: WS_ID,
+        sessions: [buildSession()],
+      });
+
+      await store.getState().archiveTask(SESSION_ID);
+      await store.getState().unarchiveTask(SESSION_ID);
+
+      const kinds = vi.mocked(db.insertSessionEvent).mock.calls.map(([{ event }]) => event.kind);
+      expect(kinds).toEqual(['session_archived', 'session_restored']);
+    });
+
+    it('archiveTask keeps every worktree directory on disk', async () => {
       const store = await getStore();
       const cleanupSessionMounts = vi.fn(async () => []);
       store.setState({
@@ -980,9 +997,8 @@ describe('store contract', () => {
       } as never);
 
       await store.getState().archiveTask(SESSION_ID);
-      await store.getState().archiveTask(SESSION_ID, { cleanWorktrees: true });
 
-      expect(cleanupSessionMounts).toHaveBeenNthCalledWith(1, {
+      expect(cleanupSessionMounts).toHaveBeenCalledWith({
         sessionId: SESSION_ID,
         reason: 'archive',
         keepDirectories: true,

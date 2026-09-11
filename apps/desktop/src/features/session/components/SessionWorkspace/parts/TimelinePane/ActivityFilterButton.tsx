@@ -27,6 +27,7 @@ const ACTIVITY_CATEGORY_CONCEPT = {
   questions: 'questions',
   resolver: 'resolve',
   decisions: 'decisions',
+  session: 'archive',
 } satisfies Record<ActivityCategory, keyof typeof CONCEPT_ICONS>;
 
 const SUBAGENT_ROW_LABEL: Record<ActivitySubagentToggle, string> = {

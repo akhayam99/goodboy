@@ -63,9 +63,6 @@ vi.mock('../../features/workspace/components/StageBoard', () => ({ StageBoard: (
 vi.mock('../../features/session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: () => null,
 }));
-vi.mock('../../features/session/components/ArchiveSessionConfirm', () => ({
-  ArchiveSessionConfirm: () => null,
-}));
 vi.mock('../../features/settings/components/SettingsStudio', () => ({
   SettingsStudio: () => null,
 }));

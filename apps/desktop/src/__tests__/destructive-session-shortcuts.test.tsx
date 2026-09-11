@@ -37,7 +37,7 @@ const { state } = vi.hoisted(() => {
 });
 
 const deleteConfirmCalls: Array<{ sessionId: string }> = [];
-const archiveConfirmCalls: Array<{ sessionId: string }> = [];
+const archiveCalls: Array<{ sessionId: string }> = [];
 
 vi.mock('../shared/platform', () => ({ currentPlatform: () => 'darwin' }));
 
@@ -65,11 +65,15 @@ vi.mock('../features/session/components/DeleteSessionConfirm', () => ({
     return <div data-testid="delete-confirm">{session.id}</div>;
   },
 }));
-vi.mock('../features/session/components/ArchiveSessionConfirm', () => ({
-  ArchiveSessionConfirm: ({ session }: { session: { id: string } }) => {
-    archiveConfirmCalls.push({ sessionId: session.id });
-    return <div data-testid="archive-confirm">{session.id}</div>;
-  },
+vi.mock('../features/session/hooks/useSessionArchive', () => ({
+  useSessionArchive: () => ({
+    archive: async ({ sessions }: { sessions: ReadonlyArray<{ id: string }> }) => {
+      for (const session of sessions) {
+        archiveCalls.push({ sessionId: session.id });
+      }
+    },
+    restore: async () => undefined,
+  }),
 }));
 vi.mock('../features/settings/components/SettingsStudio', () => ({ SettingsStudio: () => null }));
 vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
@@ -156,7 +160,7 @@ const openDelete = (): void => pressCombo('Backspace');
 beforeEach(() => {
   state.currentSessionId = 'session-1';
   deleteConfirmCalls.length = 0;
-  archiveConfirmCalls.length = 0;
+  archiveCalls.length = 0;
 });
 
 afterEach(() => {
@@ -165,26 +169,24 @@ afterEach(() => {
 });
 
 describe('archive/delete session shortcuts', () => {
-  it('opens the archive confirm, not the delete confirm, on the archive shortcut', () => {
+  it('archives straight away on the archive shortcut, with no confirm in the way', () => {
     const { container } = render(<App />);
 
     openArchive();
 
-    expect(container.querySelector('[data-testid="archive-confirm"]')).not.toBeNull();
+    expect(archiveCalls).toEqual([{ sessionId: 'session-1' }]);
     expect(container.querySelector('[data-testid="delete-confirm"]')).toBeNull();
-    expect(archiveConfirmCalls).toEqual([{ sessionId: 'session-1' }]);
     expect(deleteConfirmCalls).toEqual([]);
   });
 
-  it('opens the delete confirm, not the archive confirm, on the delete shortcut', () => {
+  it('opens the delete confirm, and archives nothing, on the delete shortcut', () => {
     const { container } = render(<App />);
 
     openDelete();
 
     expect(container.querySelector('[data-testid="delete-confirm"]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="archive-confirm"]')).toBeNull();
     expect(deleteConfirmCalls).toEqual([{ sessionId: 'session-1' }]);
-    expect(archiveConfirmCalls).toEqual([]);
+    expect(archiveCalls).toEqual([]);
   });
 
   it('no longer listens for the removed open-session events', () => {
@@ -199,19 +201,6 @@ describe('archive/delete session shortcuts', () => {
     expect(openEventAdds).toEqual([]);
 
     addSpy.mockRestore();
-  });
-
-  it('dismisses the armed archive confirm on Escape', () => {
-    const { container } = render(<App />);
-
-    openArchive();
-    expect(container.querySelector('[data-testid="archive-confirm"]')).not.toBeNull();
-
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    });
-
-    expect(container.querySelector('[data-testid="archive-confirm"]')).toBeNull();
   });
 
   it('dismisses the armed delete confirm on Escape', () => {
@@ -240,7 +229,7 @@ describe('shortcut target session', () => {
     expect(deleteConfirmCalls).toEqual([{ sessionId: 'session-2' }]);
   });
 
-  it('opens nothing when there is no current session', () => {
+  it('does nothing when there is no current session', () => {
     state.currentSessionId = null;
     const { container } = render(<App />);
 
@@ -248,8 +237,7 @@ describe('shortcut target session', () => {
     openArchive();
 
     expect(container.querySelector('[data-testid="delete-confirm"]')).toBeNull();
-    expect(container.querySelector('[data-testid="archive-confirm"]')).toBeNull();
     expect(deleteConfirmCalls).toEqual([]);
-    expect(archiveConfirmCalls).toEqual([]);
+    expect(archiveCalls).toEqual([]);
   });
 });

@@ -176,6 +176,13 @@ import { NoWorkspaceScreen } from '../../app/components/AppEmptyState';
 import { ChatEmptyState } from '../../features/chat/components/ChatView/ChatEmptyState';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
+vi.mock('../../features/session/hooks/useSessionArchive', () => ({
+  useSessionArchive: () => ({
+    archive: vi.fn(async () => undefined),
+    restore: vi.fn(async () => undefined),
+  }),
+}));
+
 import { DeleteSessionConfirm } from '../../features/session/components/DeleteSessionConfirm';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';

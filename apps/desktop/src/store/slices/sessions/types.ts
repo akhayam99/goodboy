@@ -1,5 +1,8 @@
+import type { SessionId } from '@goodboy/types';
+
 export type { SetFn, GetFn } from '../../slice-types';
 
-export type ArchiveTaskOptions = {
-  readonly cleanWorktrees?: boolean;
+export type BulkSessionResult = {
+  readonly succeeded: ReadonlyArray<SessionId>;
+  readonly failed: ReadonlyArray<SessionId>;
 };

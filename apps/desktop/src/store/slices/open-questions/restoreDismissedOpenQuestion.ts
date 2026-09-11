@@ -20,6 +20,11 @@ export const restoreDismissedOpenQuestion = (set: SetFn, get: GetFn) => {
       };
     });
     await get().loadSessionDismissedQuestions(sessionId);
+    await get().recordSessionEvent({
+      sessionId,
+      kind: 'question_restored',
+      payload: { questionId: question.id, title: question.text },
+    });
     const slotChanged = await addQuestionsToSlot(tauriDatabase, sessionId, [question.text]);
     if (slotChanged) {
       await get().loadSessionSlots(sessionId);

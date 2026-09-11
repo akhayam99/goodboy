@@ -25,6 +25,13 @@ vi.mock('../../../../store', () => ({
   useProjectFilteredSessions: ({ sessions }: { sessions: ReadonlyArray<Session> }) => sessions,
 }));
 
+vi.mock('../../../session/hooks/useSessionArchive', () => ({
+  useSessionArchive: () => ({
+    archive: vi.fn(async () => undefined),
+    restore: vi.fn(async () => undefined),
+  }),
+}));
+
 vi.mock('../../hooks/useProjectGitStatuses', () => ({
   useProjectGitStatuses: () =>
     state.projects
@@ -91,9 +98,6 @@ vi.mock('./StageColumn', () => ({
   ),
 }));
 
-vi.mock('../../../session/components/ArchiveSessionConfirm', () => ({
-  ArchiveSessionConfirm: () => null,
-}));
 vi.mock('../../../session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: () => null,
 }));
