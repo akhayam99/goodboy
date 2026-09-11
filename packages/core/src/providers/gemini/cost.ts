@@ -17,6 +17,11 @@ export const GEMINI_PRICES: Readonly<Record<string, GeminiModelPriceOverride>> =
     outputPerMtok: 9,
     cachedInputPerMtok: 0.15,
   },
+  'gemini-3.6-flash': {
+    inputPerMtok: 1.5,
+    outputPerMtok: 9,
+    cachedInputPerMtok: 0.15,
+  },
 };
 
 type Params = {
