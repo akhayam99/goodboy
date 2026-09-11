@@ -26,6 +26,7 @@ import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
 import { listenMountCommands } from './features/session/mountQueryBridge';
 import { startWorktreeWriterBridge } from './features/session/resolve/worktreeWriterBridge';
+import { startPrWriteBridge } from './features/review/prWriteBridge';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import { useZoomShortcuts } from './shared/hooks/useZoomShortcuts';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
@@ -209,6 +210,22 @@ export const App = () => {
     let off: (() => void) | undefined;
     let cancelled = false;
     void startWorktreeWriterBridge().then((fn) => {
+      if (cancelled) {
+        fn();
+        return;
+      }
+      off = fn;
+    });
+    return () => {
+      cancelled = true;
+      off?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    let off: (() => void) | undefined;
+    let cancelled = false;
+    void startPrWriteBridge().then((fn) => {
       if (cancelled) {
         fn();
         return;

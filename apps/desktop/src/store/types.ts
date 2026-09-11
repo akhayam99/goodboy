@@ -4,6 +4,7 @@ import type { OrphanWorktree } from '../features/worktree/worktree';
 import type { StorageStats } from './slices/storage';
 import type { MountCleanupState } from './slices/mount-cleanup/state';
 import type { PrSeriesState } from './slices/pr-series/state';
+import type { PrWritesState } from './slices/pr-writes/state';
 import type { Notification, NotificationCounts, TelemetrySummary } from '@goodboy/db';
 import type {
   Agent,
@@ -220,6 +221,7 @@ export type PendingOrchestration = {
 
 type AppSliceState = ResolveState &
   ReviewNavigationState &
+  PrWritesState &
   UpdaterState &
   ChangelogState &
   SlackThreadsSliceState &

@@ -12,6 +12,8 @@ import { InlineConfirm, OverflowMenu, type ConfirmRole, type OverflowMenuItem } 
 import type { PullRequestState } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { PrLifecycleBusy } from '../../prLifecycle';
+import type { PrMergeReadiness } from '../../prMergeReadiness';
+import { MergeReadinessNote } from './MergeReadinessNote';
 
 type PendingAction = 'merge' | 'ready' | 'close';
 
@@ -20,6 +22,7 @@ type ConfirmSpec = {
   readonly icon: ReactNode;
   readonly title: string;
   readonly description: string;
+  readonly note?: ReactNode;
   readonly confirmLabel: string;
   readonly isConfirmDisabled: boolean;
   readonly onConfirm: () => void | Promise<void>;
@@ -28,8 +31,8 @@ type ConfirmSpec = {
 type Props = {
   readonly pr: PullRequestState;
   readonly busy: PrLifecycleBusy;
-  readonly canMerge: boolean;
-  readonly mergeReason: string;
+  readonly mergeReadiness: PrMergeReadiness;
+  readonly writeInFlight: string | null;
   readonly canCreateNew: boolean;
   readonly onMarkReady: () => void;
   readonly onConvertDraft: () => void;
@@ -42,8 +45,8 @@ type Props = {
 export const PrActionsMenu = ({
   pr,
   busy,
-  canMerge,
-  mergeReason,
+  mergeReadiness,
+  writeInFlight,
   canCreateNew,
   onMarkReady,
   onConvertDraft,
@@ -56,7 +59,8 @@ export const PrActionsMenu = ({
   const isTerminal = pr.state === 'merged' || pr.state === 'closed';
   const isClosed = pr.state === 'closed';
   const isQueued = pr.state === 'queued';
-  const isBusy = busy !== null;
+  const isBusy = busy !== null || writeInFlight !== null;
+  const isMergeBlocked = mergeReadiness.status === 'blocked';
 
   const confirms: Record<PendingAction, ConfirmSpec> = {
     merge: {
@@ -64,8 +68,9 @@ export const PrActionsMenu = ({
       icon: <GitMerge size={ICON_SIZE.row} aria-hidden />,
       title: `Squash merge #${pr.number}?`,
       description: `Every commit on ${pr.headBranch} lands on ${pr.baseBranch} as one, and GitHub closes the pull request. The branch is not deleted.`,
+      note: <MergeReadinessNote readiness={mergeReadiness} />,
       confirmLabel: busy === 'merge' ? 'Merging' : 'Confirm merge',
-      isConfirmDisabled: canMerge === false || isBusy,
+      isConfirmDisabled: isMergeBlocked || isBusy,
       onConfirm: async () => {
         await onMerge();
         setPending(null);
@@ -107,6 +112,7 @@ export const PrActionsMenu = ({
         icon={spec.icon}
         title={spec.title}
         description={spec.description}
+        note={spec.note}
         confirmLabel={spec.confirmLabel}
         onConfirm={spec.onConfirm}
         onCancel={() => setPending(null)}
@@ -124,8 +130,8 @@ export const PrActionsMenu = ({
       key: 'merge',
       label: 'Merge',
       icon: GitMerge,
-      disabled: canMerge === false || isBusy,
-      hint: mergeReason,
+      disabled: isMergeBlocked || isBusy,
+      hint: writeInFlight ?? mergeReadiness.reason,
       onClick: () => setPending('merge'),
     });
   }
@@ -136,6 +142,7 @@ export const PrActionsMenu = ({
       label: 'Mark ready',
       icon: Send,
       disabled: isBusy,
+      ...(writeInFlight !== null && { hint: writeInFlight }),
       onClick: () => setPending('ready'),
     });
   }
@@ -146,6 +153,7 @@ export const PrActionsMenu = ({
       label: 'Convert to draft',
       icon: GitPullRequestDraft,
       disabled: isBusy,
+      ...(writeInFlight !== null && { hint: writeInFlight }),
       onClick: onConvertDraft,
     });
   }
@@ -157,6 +165,7 @@ export const PrActionsMenu = ({
       icon: XCircle,
       destructive: true,
       disabled: isBusy,
+      ...(writeInFlight !== null && { hint: writeInFlight }),
       onClick: () => setPending('close'),
     });
   }
@@ -167,6 +176,7 @@ export const PrActionsMenu = ({
       label: 'Reopen',
       icon: RotateCcw,
       disabled: isBusy,
+      ...(writeInFlight !== null && { hint: writeInFlight }),
       onClick: onReopen,
     });
   }
