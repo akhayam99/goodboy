@@ -8,7 +8,7 @@ import type {
   VerbosityLevel,
   WorkflowRunId,
 } from '@goodboy/types';
-import { resolveModelForProvider } from '@goodboy/core';
+import { resolveModelIdForProvider } from '@goodboy/core';
 import { ROLE_TO_KIND, inferAgentKindFromName } from '../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../../features/workflows/resolveStepRouting';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
@@ -59,7 +59,7 @@ export const preSpawnWorkflowAgents = async ({
       sessionEffort: sessionEffort ?? null,
     });
     const provider = routing.provider;
-    const model = resolveModelForProvider({ provider, modelId: routing.model });
+    const model = resolveModelIdForProvider({ provider, modelId: routing.model });
     const agent = await invokeAgentInsert({
       sessionId,
       stepId: step.id,
