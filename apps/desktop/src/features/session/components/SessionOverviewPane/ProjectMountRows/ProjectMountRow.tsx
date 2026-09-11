@@ -34,7 +34,7 @@ type Props = {
 const UTILITY_REVEAL =
   'opacity-0 motion-safe:transition-opacity group-hover/mount-row:opacity-100 group-focus-within/mount-row:opacity-100';
 
-const SLOT_BRANCH = 'flex min-w-0 flex-1 items-center';
+const SLOT_BRANCH = 'flex min-w-0 flex-1 items-center gap-1';
 const SLOT_SERIES = 'flex w-14 shrink-0 items-center';
 const SLOT_SYNC = 'flex w-7 shrink-0 items-center justify-center';
 const SLOT_DIFF = 'flex w-24 shrink-0 items-center';
@@ -141,7 +141,7 @@ export const ProjectMountRow = ({
               bordered={false}
               label="Next turns"
               title={`Next turns write to ${label} unless changed from the chat header.`}
-              className="ml-1 shrink-0"
+              className="shrink-0"
             />
           ) : null}
         </div>
