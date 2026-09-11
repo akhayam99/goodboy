@@ -17,6 +17,9 @@ import { MOONSHOT_AGENT_MODEL_IDS } from './moonshot/agent-model-ids';
 import { OPENCODE_AGENT_MODEL_IDS } from './opencode/agent-model-ids';
 import { OPENROUTER_AGENT_MODEL_IDS } from './openrouter/agent-model-ids';
 import { resolveModelArgs } from './resolveModelArgs';
+import { resolveModelForProvider } from './model-map';
+import { resolveStoredModelSelection } from './resolveStoredModelSelection';
+import { getCheapModel } from './cli-defaults';
 
 const ACCEPTED_IDS = {
   anthropic: ANTHROPIC_AGENT_MODEL_IDS,
@@ -180,6 +183,29 @@ describe('model catalogs', () => {
       ).toEqual({ args: ['-m', 'gpt-6-astra', '-c', `model_reasoning_effort="${effort}"`] });
     },
   );
+
+  it('routes every spawnable id back to the model that owns it', () => {
+    for (const provider of PROVIDER_IDS) {
+      for (const model of MODEL_CATALOGS[provider]) {
+        for (const selection of selectionsFor({ provider, model })) {
+          const emitted = emittedModel({ provider, selection });
+          expect(resolveModelForProvider({ provider, modelId: emitted })).toBe(model.key);
+        }
+      }
+    }
+  });
+
+  it('keeps every provider cheap model spawnable as itself', () => {
+    for (const provider of PROVIDER_IDS) {
+      const cheap = getCheapModel(provider);
+      const direct = resolveStoredModelSelection({ provider, id: cheap }).selection;
+      const routed = resolveModelForProvider({ provider, modelId: cheap });
+      const restored = resolveStoredModelSelection({ provider, id: routed }).selection;
+      expect(emittedModel({ provider, selection: restored })).toBe(
+        emittedModel({ provider, selection: direct }),
+      );
+    }
+  });
 
   it('throws when a provider cannot recognize a model key', () => {
     expect(() =>

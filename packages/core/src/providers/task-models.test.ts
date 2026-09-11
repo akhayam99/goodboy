@@ -108,7 +108,7 @@ describe('resolveTaskModel', () => {
       }),
     ).toEqual({
       providerId: 'codex',
-      model: 'gpt-5.6',
+      model: 'gpt-5.6-sol',
     });
   });
 
@@ -127,7 +127,7 @@ describe('resolveTaskModel', () => {
     });
 
     expect(anthropic).toEqual({ providerId: 'anthropic', model: 'sonnet-5' });
-    expect(codex).toEqual({ providerId: 'codex', model: 'gpt-5.4' });
+    expect(codex).toEqual({ providerId: 'codex', model: 'gpt-5.6-terra' });
     expect(anthropic.model).not.toBe(getCheapModel('anthropic'));
     expect(codex.model).not.toBe(getCheapModel('codex'));
   });

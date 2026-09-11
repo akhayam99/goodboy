@@ -16,7 +16,7 @@ const ANTHROPIC = [
   'claude-fable-5',
 ];
 
-const CODEX = ['gpt-5.4-mini', 'gpt-5.2', 'gpt-5.3-codex', 'gpt-5.4', 'gpt-5.5'];
+const CODEX = ['gpt-5.6-luna', 'gpt-5.2', 'gpt-5.3-codex', 'gpt-5.6-terra', 'gpt-5.5'];
 
 const GEMINI = ['gemini-3.8-flash', 'gemini-3.1-pro'];
 
@@ -56,12 +56,12 @@ describe('suggestLighterModel', () => {
   });
 
   it('codex: GPT-5.5 → GPT-5.4 (small weight gaps no longer block tier drops)', () => {
-    expect(suggestLighterModel('gpt-5.5', CODEX)?.id).toBe('gpt-5.4');
+    expect(suggestLighterModel('gpt-5.5', CODEX)?.id).toBe('gpt-5.6-terra');
   });
 
   it('codex: GPT-5.5 costs about 2x GPT-5.4', () => {
     expect(suggestLighterModel('gpt-5.5', CODEX)).toEqual({
-      id: 'gpt-5.4',
+      id: 'gpt-5.6-terra',
       kind: 'strong',
       costMultiplier: 2,
     });
@@ -100,11 +100,11 @@ describe('suggestHeavierModel', () => {
   });
 
   it('codex: GPT-5.4 → GPT-5.5', () => {
-    expect(suggestHeavierModel('gpt-5.4', CODEX)?.id).toBe('gpt-5.5');
+    expect(suggestHeavierModel('gpt-5.6-terra', CODEX)?.id).toBe('gpt-5.5');
   });
 
   it('codex: GPT-5.5 costs about 2x GPT-5.4', () => {
-    expect(suggestHeavierModel('gpt-5.4', CODEX)).toEqual({
+    expect(suggestHeavierModel('gpt-5.6-terra', CODEX)).toEqual({
       id: 'gpt-5.5',
       kind: 'strong',
       costMultiplier: 2,
@@ -233,11 +233,11 @@ describe('parseModelId', () => {
     });
   });
 
-  it('codex turn-tier models cluster under gpt-5 / mini subfamilies', () => {
-    expect(parseModelId('gpt-5.4-mini')).toEqual({
+  it('codex models cluster under the gpt subfamily, one chip per checkpoint', () => {
+    expect(parseModelId('gpt-5.6-luna')).toEqual({
       family: 'gpt',
-      subfamily: 'Mini',
-      variantLabel: '5.4',
+      subfamily: 'GPT',
+      variantLabel: '5.6 Luna',
     });
     expect(parseModelId('gpt-5.5')).toEqual({
       family: 'gpt',

@@ -51,7 +51,7 @@ describe('useResolverSpawner', () => {
   it('routes an empty choice through the resolver role default', async () => {
     withOverrides({
       roleModels: {
-        resolver: { providerId: 'codex', model: 'gpt-5.6', effort: 'high' },
+        resolver: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
       },
     });
     const { result } = renderHook(() => useResolverSpawner({ sessionId: SESSION_ID }));
@@ -62,11 +62,11 @@ describe('useResolverSpawner', () => {
 
     expect(state.spawnAgent).toHaveBeenCalledWith(
       SESSION_ID,
-      expect.objectContaining({ provider: 'codex', model: 'gpt-5.6', effort: 'high' }),
+      expect.objectContaining({ provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' }),
     );
     expect(state.setAgentConfig).toHaveBeenCalledWith(SESSION_ID, 'agent-1', {
       providerOverride: 'codex',
-      modelOverride: 'gpt-5.6',
+      modelOverride: 'gpt-5.6-sol',
       effort: 'high',
     });
   });
@@ -74,7 +74,7 @@ describe('useResolverSpawner', () => {
   it('lets an explicit popover choice win over the role default', async () => {
     withOverrides({
       roleModels: {
-        resolver: { providerId: 'codex', model: 'gpt-5.6', effort: 'high' },
+        resolver: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
       },
     });
     const { result } = renderHook(() => useResolverSpawner({ sessionId: SESSION_ID }));
@@ -104,7 +104,7 @@ describe('useResolverSpawner', () => {
   it('ignores a preference stored for another role', async () => {
     withOverrides({
       roleModels: {
-        custom: { providerId: 'codex', model: 'gpt-5.6', effort: 'high' },
+        custom: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
       },
     });
     const { result } = renderHook(() => useResolverSpawner({ sessionId: SESSION_ID }));

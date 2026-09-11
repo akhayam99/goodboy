@@ -244,7 +244,7 @@ describe('useTurnRouting, agent reference', () => {
                 promptPrefix: '',
                 role: 'scout',
                 providerOverride: 'codex',
-                modelOverride: 'gpt-5.6',
+                modelOverride: 'gpt-5.6-sol',
                 effort: 'high',
               },
             ],
@@ -270,7 +270,7 @@ describe('useTurnRouting, agent reference', () => {
     const { result } = renderHook(() => useTurnRouting({ session }));
 
     expect(result.current.referenceProvider).toBe('codex');
-    expect(result.current.referenceModel).toBe('gpt-5.6');
+    expect(result.current.referenceModel).toBe('gpt-5.6-sol');
     expect(result.current.referenceEffort).toBe('high');
   });
 });

@@ -56,6 +56,13 @@ An absent axis is `null` in `modelAxes` and renders no row. A model whose
 has no variant axis, and a model or provider with no effort control has no
 effort axis. Opus 5 therefore renders no Variant row.
 
+No shipped model has variants today. Codex was the last provider that did, and
+its Sol, Terra and Luna checkpoints became separate catalog keys once it turned
+out that one key covering three prices let a routing slot spawn the wrong one.
+The axis stays in the shape for the next provider that ships a real variant
+list, which is a tuning choice within one billable model, never a set of
+models that bill differently.
+
 A present axis remains mounted when the current selection makes some or all of
 its authored choices unreachable. Those choices render disabled. A partially
 reachable effort ladder keeps every authored level visible and disables only

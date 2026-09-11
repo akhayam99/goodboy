@@ -715,7 +715,7 @@ describe('sendTurn, agent routing', () => {
 
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
       selectedProvider: 'codex',
-      selectedModel: 'gpt-5.4',
+      selectedModel: 'gpt-5.6-terra',
       reason: 'preference',
       fallbackUsed: false,
     });

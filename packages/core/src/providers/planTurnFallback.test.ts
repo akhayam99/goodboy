@@ -49,7 +49,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'haiku-4.5',
     attempt: 0,
     connectedProviders: CONNECTED,
-    expected: { provider: 'codex', model: 'gpt-5.4-mini' },
+    expected: { provider: 'codex', model: 'gpt-5.6-luna' },
   },
   {
     name: 'rate limit on the second attempt crosses to another provider',
@@ -112,7 +112,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'gpt-6',
     attempt: 0,
     connectedProviders: CONNECTED,
-    expected: { provider: 'codex', model: 'gpt-5.6' },
+    expected: { provider: 'codex', model: 'gpt-5.6-sol' },
   },
   {
     name: 'model not available crosses providers on the second attempt',
@@ -148,7 +148,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'not-a-catalog-key',
     attempt: 0,
     connectedProviders: CONNECTED,
-    expected: { provider: 'codex', model: 'gpt-5.4' },
+    expected: { provider: 'codex', model: 'gpt-5.6-terra' },
   },
 ];
 
@@ -165,9 +165,9 @@ describe('planTurnFallback', () => {
         model: 'opus-5',
         attempt: 0,
         connectedProviders: CONNECTED,
-        preferred: { provider: 'codex', model: 'gpt-5.4-mini' },
+        preferred: { provider: 'codex', model: 'gpt-5.6-luna' },
       }),
-    ).toEqual({ provider: 'codex', model: 'gpt-5.4-mini' });
+    ).toEqual({ provider: 'codex', model: 'gpt-5.6-luna' });
   });
 
   it('prefers the role fallback for every classified failure, including unreachable', () => {
@@ -184,11 +184,11 @@ describe('planTurnFallback', () => {
         model: 'opus-5',
         attempt: 0,
         connectedProviders: CONNECTED,
-        preferred: { provider: 'codex', model: 'gpt-5.4' },
+        preferred: { provider: 'codex', model: 'gpt-5.6-terra' },
       }),
     );
 
-    expect(plans).toEqual(failures.map(() => ({ provider: 'codex', model: 'gpt-5.4' })));
+    expect(plans).toEqual(failures.map(() => ({ provider: 'codex', model: 'gpt-5.6-terra' })));
   });
 
   it('leaves the heuristic in charge once the role fallback has been tried', () => {
@@ -199,7 +199,7 @@ describe('planTurnFallback', () => {
         model: 'opus-5',
         attempt: 1,
         connectedProviders: CONNECTED,
-        preferred: { provider: 'codex', model: 'gpt-5.4-mini' },
+        preferred: { provider: 'codex', model: 'gpt-5.6-luna' },
       }),
     ).toEqual({ provider: 'codex', model: 'gpt-6' });
   });
@@ -264,9 +264,9 @@ describe('planTurnFallback', () => {
         model: 'opus-5',
         attempt: 0,
         connectedProviders: CONNECTED,
-        preferred: { provider: 'codex', model: 'gpt-5.4-mini' },
+        preferred: { provider: 'codex', model: 'gpt-5.6-luna' },
       }),
-    ).toEqual({ provider: 'codex', model: 'gpt-5.4-mini' });
+    ).toEqual({ provider: 'codex', model: 'gpt-5.6-luna' });
   });
 
   it('never returns a role fallback for an unclassified failure', () => {

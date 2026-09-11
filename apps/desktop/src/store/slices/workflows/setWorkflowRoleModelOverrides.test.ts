@@ -26,7 +26,7 @@ const OTHER_RUN_ID = 'run-2' as WorkflowRunId;
 const NOW = '2026-08-01T00:00:00.000Z' as IsoDateTime;
 
 const IMPLEMENTER_ON_CODEX = {
-  implementer: { providerId: 'codex', model: 'gpt-5.6', effort: 'high' },
+  implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
 } satisfies RoleModelPreferences;
 
 type State = Record<string, unknown>;

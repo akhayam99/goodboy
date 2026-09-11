@@ -29,12 +29,10 @@ describe('parseLegacyId', () => {
       toggles: { thinking: false, fast: true },
     });
     expect(parseLegacyId({ provider: 'codex', id: 'gpt-5.6' })).toEqual({
-      key: 'gpt-5.6',
-      variant: 'sol',
+      key: 'gpt-5.6-sol',
     });
     expect(parseLegacyId({ provider: 'codex', id: 'gpt-5.3-codex-spark' })).toEqual({
-      key: 'gpt-5.4-mini',
-      variant: 'default',
+      key: 'gpt-5.6-luna',
     });
     expect(parseLegacyId({ provider: 'opencode', id: 'opencode/minimax-m3-free' })).toEqual({
       key: 'big-pickle',
@@ -67,13 +65,30 @@ describe('parseLegacyId', () => {
     });
   });
 
+  it('degrades the codex ids the cli now rejects onto their live price peers', () => {
+    for (const id of ['gpt-5.4', 'gpt-5.2', 'gpt-5.3-codex']) {
+      expect(parseLegacyId({ provider: 'codex', id })).toEqual({ key: 'gpt-5.6-terra' });
+      expect(resolveStoredModelSelection({ provider: 'codex', id })).toEqual({
+        selection: { key: 'gpt-5.6-terra' },
+        report: { kind: 'legacy', id },
+      });
+    }
+    for (const id of ['gpt-5.4-mini', 'gpt-5.3-codex-spark']) {
+      expect(parseLegacyId({ provider: 'codex', id })).toEqual({ key: 'gpt-5.6-luna' });
+      expect(resolveStoredModelSelection({ provider: 'codex', id })).toEqual({
+        selection: { key: 'gpt-5.6-luna' },
+        report: { kind: 'legacy', id },
+      });
+    }
+  });
+
   it('returns null for an id that no old registry shipped', () => {
     expect(parseLegacyId({ provider: 'codex', id: 'gpt-99' })).toBeNull();
   });
 
   it('defaults and reports an unknown stored id', () => {
     expect(resolveStoredModelSelection({ provider: 'codex', id: 'gpt-99' })).toEqual({
-      selection: { key: 'gpt-5.6', effort: 'low', variant: 'sol' },
+      selection: { key: 'gpt-5.6-sol', effort: 'low', variant: 'default' },
       report: { kind: 'unknown', id: 'gpt-99' },
     });
   });

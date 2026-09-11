@@ -90,12 +90,12 @@ describe('AgentMetrics', () => {
   it('does not double-count cached tokens for inclusive codex input', () => {
     render(
       <AgentMetrics
-        telemetry={telemetry({ provider: 'codex', model: 'gpt-5.4-mini' })}
+        telemetry={telemetry({ provider: 'codex', model: 'gpt-5.5' })}
         aggregate={null}
         contextUsage={[
           {
             provider: 'codex',
-            model: 'gpt-5.4-mini',
+            model: 'gpt-5.5',
             inputTokens: 100_000,
             outputTokens: 20_000,
             cachedInputTokens: 50_000,

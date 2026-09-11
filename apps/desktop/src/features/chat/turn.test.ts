@@ -201,7 +201,7 @@ describe('runTurn', () => {
     const iterator = runTurn({
       runId,
       provider: 'codex',
-      model: 'gpt-5.6',
+      model: 'gpt-5.6-sol',
       workingDir: '/tmp/worktree',
       writableRoots: [],
       prompt: 'hello',
@@ -228,7 +228,7 @@ describe('runTurn', () => {
     const iterator = runTurn({
       runId,
       provider: 'codex',
-      model: 'gpt-5.6',
+      model: 'gpt-5.6-sol',
       workingDir: '/tmp/worktree',
       writableRoots: [],
       prompt: 'hello',

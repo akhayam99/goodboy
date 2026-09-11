@@ -138,15 +138,18 @@ What the catalogs do not tell you:
   `packages/core/src/providers/cursor/agent-model-ids.test.ts`. Cursor bakes
   effort into the slug, so it never receives an effort flag and its reachable
   levels depend on the Thinking and Fast toggles.
-- `getCheapModel` reads the first cheap-tier catalog entry for most providers,
-  but two are pinned by hand in
-  `packages/core/src/providers/cli-defaults.ts`: cursor returns `auto`, and
-  codex returns `CODEX_CHEAP_MODEL`. Codex needs the override because its cost
-  spread lives on the variants, not the key: Sol, Terra and Luna share the one
-  `gpt-5.6` entry and its single `expensive` cost tier, while `codex/cost.ts`
-  prices them 5/30, 2.5/15 and 1/6 per Mtok. The cheap model is therefore a
-  variant cli id rather than a catalog key, which `resolveStoredModelSelection`
-  and `cliModelId` both accept.
+- One codex catalog key is one billable model. Sol, Terra and Luna used to
+  share a single `gpt-5.6` entry carrying one `expensive` cost tier, while
+  `codex/cost.ts` priced them 5/30, 2.5/15 and 1/6 per Mtok. Anything holding
+  only the key then resolved back through `variants[0]`, so a routing slot
+  naming Luna spawned Sol and billed five times the rate. They are now
+  `gpt-5.6-sol`, `gpt-5.6-terra` and `gpt-5.6-luna`, each its own key, tier and
+  price, and the picker offers them as version chips rather than a variant row.
+- The rule that keeps this from coming back: a catalog key must name exactly
+  one spawnable model. `catalog.test.ts` pins it by routing every emittable cli
+  id back through `resolveModelForProvider` and asserting it lands on the key
+  that owns it. Cursor is the one provider whose `getCheapModel` is still
+  pinned by hand, to `auto`, in `packages/core/src/providers/cli-defaults.ts`.
 - Retired codex ids still resolve through `parseLegacyId.ts`, so an id absent
   from the catalog is not necessarily dead.
 - An unsupported effort level clamps to the top of what the model supports

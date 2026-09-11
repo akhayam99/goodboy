@@ -78,7 +78,7 @@ describe('resolveSpawnRouting', () => {
     const routing = resolveSpawnRouting({
       kind: 'generic',
       roleModels: null,
-      session: makeSession({ modelOverride: 'gpt-5.6' }),
+      session: makeSession({ modelOverride: 'gpt-5.6-sol' }),
     });
 
     expect(routing.provider).toBe('codex');

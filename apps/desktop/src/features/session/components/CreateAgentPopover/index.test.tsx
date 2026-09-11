@@ -274,7 +274,7 @@ describe('CreateAgentPopover', () => {
     expect(screen.getByRole('dialog', { name: 'Create agent' })).toBeDefined();
   });
 
-  it('renders codex variants as chips without a native select', () => {
+  it('renders codex checkpoints as chips without a native select', () => {
     h.providers = [
       { id: 'anthropic' as ProviderId, connection: 'connected' },
       { id: 'codex' as ProviderId, connection: 'connected' },
@@ -282,7 +282,7 @@ describe('CreateAgentPopover', () => {
     h.sessions = [
       makeSession({
         providerOverride: 'codex',
-        modelOverride: 'gpt-5.6',
+        modelOverride: 'gpt-5.6-sol',
         effort: 'high',
       }),
     ];
@@ -291,11 +291,11 @@ describe('CreateAgentPopover', () => {
     expandRouting();
 
     expect(container.querySelector('select')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Sol' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Terra' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Luna' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '5.6 Sol' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '5.6 Terra' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '5.6 Luna' })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Terra' }));
+    fireEvent.click(screen.getByRole('button', { name: '5.6 Terra' }));
     confirm();
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
       kindOverride: 'generic',

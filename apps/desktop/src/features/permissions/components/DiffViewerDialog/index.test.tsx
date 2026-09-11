@@ -382,7 +382,7 @@ describe('DiffViewerPane', () => {
     state.workspaceOverrides = {
       'workspace-1': {
         taskModels: {
-          rebase: { providerId: 'codex', model: 'gpt-5.4' },
+          rebase: { providerId: 'codex', model: 'gpt-5.6-terra' },
         },
       },
     };
@@ -396,7 +396,7 @@ describe('DiffViewerPane', () => {
       expect.objectContaining({
         name: 'Rebase on main',
         provider: 'codex',
-        model: 'gpt-5.4',
+        model: 'gpt-5.6-terra',
         effort: 'low',
         focus: 'none',
       }),

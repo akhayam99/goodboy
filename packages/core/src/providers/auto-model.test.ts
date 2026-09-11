@@ -64,7 +64,7 @@ describe('autoModelForRole', () => {
       const result = autoModelForRole({ role: 'scout', providers: ['codex'] });
       expect(result?.provider).toBe('codex');
       const model = result?.model ?? '';
-      expect(['gpt-5.4-mini', 'gpt-4.1-mini', 'gpt-4.1-nano'].some((m) => model === m)).toBe(true);
+      expect(model).toBe('gpt-5.6-luna');
     });
 
     it('weight tie-break: picks highest-weight model when two providers share cost tier', () => {

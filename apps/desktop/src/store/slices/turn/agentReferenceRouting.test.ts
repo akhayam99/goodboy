@@ -74,14 +74,14 @@ describe('agentReferenceRouting', () => {
       stepConfig: makeStep({
         role: 'scout',
         providerOverride: 'codex',
-        modelOverride: 'gpt-5.6',
+        modelOverride: 'gpt-5.6-sol',
         effort: 'high',
       }),
       roleModels: null,
       session: makeSession(),
     });
 
-    expect(result).toEqual({ provider: 'codex', model: 'gpt-5.6', effort: 'high' });
+    expect(result).toEqual({ provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' });
   });
 
   it('honors the Provider studio role preference for the agent kind', () => {

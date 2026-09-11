@@ -34,8 +34,8 @@ describe('QueuedMessages', () => {
             attachments: [],
             override: {
               providerId: 'codex',
-              model: 'gpt-5.4',
-              selection: { key: 'gpt-5.4-mini', effort: 'xhigh' },
+              model: 'gpt-5.6-terra',
+              selection: { key: 'gpt-5.6-luna', effort: 'xhigh' },
             },
           },
         ]}
@@ -49,7 +49,7 @@ describe('QueuedMessages', () => {
     expect(routingBadgeSpy.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({
         provider: 'codex',
-        model: 'gpt-5.4',
+        model: 'gpt-5.6-terra',
         effort: 'xhigh',
       }),
     );

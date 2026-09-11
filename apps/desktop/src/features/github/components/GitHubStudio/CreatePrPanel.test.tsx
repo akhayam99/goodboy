@@ -56,7 +56,7 @@ const h = vi.hoisted(() => ({
   showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
   config: {
     provider: 'codex',
-    model: 'gpt-5.4-mini',
+    model: 'gpt-5.6-luna',
     effort: 'medium',
     hint: 'Keep the public API stable.',
   } satisfies AgentSpawnConfigValue,
@@ -256,7 +256,7 @@ describe('CreatePrPanel', () => {
     const args = h.store.spawnAgent.mock.calls[0]![1];
     expect(args).toMatchObject({
       provider: 'codex',
-      model: 'gpt-5.4-mini',
+      model: 'gpt-5.6-luna',
       effort: 'medium',
     });
     expect(args.initialPrompt).toContain(
@@ -329,7 +329,7 @@ describe('CreatePrPanel', () => {
     );
     h.store.workspaceOverrides = {
       'workspace-1': {
-        taskModels: { pr_draft: { providerId: 'codex', model: 'gpt-5.4-mini' } },
+        taskModels: { pr_draft: { providerId: 'codex', model: 'gpt-5.6-luna' } },
       },
     };
     rerender(
@@ -341,7 +341,7 @@ describe('CreatePrPanel', () => {
     await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
     expect(h.store.spawnAgent.mock.calls[0]![1]).toMatchObject({
       provider: 'codex',
-      model: 'gpt-5.4-mini',
+      model: 'gpt-5.6-luna',
     });
   });
 

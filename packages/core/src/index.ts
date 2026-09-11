@@ -198,7 +198,7 @@ export {
   type SkillScriptRunner,
 } from './skills';
 
-export { CODEX_CHEAP_MODEL, CODEX_DEFAULT_MODEL, CODEX_MODELS } from './providers/codex/constants';
+export { CODEX_DEFAULT_MODEL, CODEX_MODELS } from './providers/codex/constants';
 export { computeCodexCostUsd, type CodexModelPriceOverride } from './providers/codex/cost';
 export {
   parseJsonLine as parseCodexJsonLine,

@@ -68,24 +68,26 @@ describe('modelAxes', () => {
     ).toEqual([{ id: 'thinking', label: 'Thinking', active: false, canToggle: true }]);
   });
 
-  it('exposes codex variants and honors the selected variant', () => {
-    const model = CODEX_CATALOG.find((candidate) => candidate.key === 'gpt-5.6');
-    if (model == null) {
-      throw new Error('missing codex gpt-5.6');
+  it('renders no variant row for codex, where one key is one spawnable model', () => {
+    for (const model of CODEX_CATALOG) {
+      expect(modelAxes({ model, selection: { key: model.key } }).variant).toBeNull();
     }
-    const axes = modelAxes({
-      model,
-      selection: { key: model.key, variant: 'terra' },
-    });
-    expect(axes.variant).toEqual({
-      label: 'Variant',
-      options: [
-        { id: 'sol', label: 'Sol' },
-        { id: 'terra', label: 'Terra' },
-        { id: 'luna', label: 'Luna' },
-      ],
-      activeId: 'terra',
-    });
+  });
+
+  it('gives each gpt-5.6 model its own version chip, so cost is selectable', () => {
+    const model = CODEX_CATALOG.find((candidate) => candidate.key === 'gpt-5.6-luna');
+    if (model == null) {
+      throw new Error('missing codex gpt-5.6-luna');
+    }
+    const axes = modelAxes({ model, selection: { key: model.key } });
+    expect(axes.version?.options.map((option) => option.id)).toEqual([
+      'gpt-5.5',
+      'gpt-5.6-luna',
+      'gpt-5.6-terra',
+      'gpt-5.6-sol',
+      'gpt-6',
+    ]);
+    expect(axes.version?.activeId).toBe('gpt-5.6-luna');
   });
 
   it('marks unsupported anthropic effort levels as unavailable instead of hiding them', () => {

@@ -147,6 +147,6 @@ describe('getCapabilities', () => {
     expect(anthropic.models.find((model) => model.id === 'sonnet-4.6')?.contextWindow).toBe(
       1_000_000,
     );
-    expect(codex.models.find((model) => model.id === 'gpt-5.4')?.contextWindow).toBe(400_000);
+    expect(codex.models.find((model) => model.id === 'gpt-5.5')?.contextWindow).toBe(400_000);
   });
 });
