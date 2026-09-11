@@ -1,6 +1,5 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { archiveTask } from './archiveTask';
-import { autoTitleSession } from './autoTitleSession';
 import { bulkArchiveTask } from './bulkArchiveTask';
 import { bulkDeleteTask } from './bulkDeleteTask';
 import { bulkUnarchiveTask } from './bulkUnarchiveTask';
@@ -24,7 +23,6 @@ export const createSessionsSlice = (set: SetFn, get: GetFn) => {
   return {
     evictSession: evictSession({ set, get }),
     renameTask: renameTask(set, get),
-    autoTitleSession: autoTitleSession(set, get),
     setSessionConfig: setSessionConfig(set, get),
     setAgentConfig: setAgentConfig(set, get),
     setSessionPermissionMode: setSessionPermissionMode(set),

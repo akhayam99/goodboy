@@ -794,20 +794,6 @@ describe('store contract', () => {
       await expect(store.getState().renameTask(SESSION_ID, '   ')).rejects.toThrow();
     });
 
-    it('autoTitleSession is a no-op when titleUserEdited is true', async () => {
-      const store = await getStore();
-      store.setState({ sessions: [buildSession({ titleUserEdited: true, goal: 'kept' })] });
-      await store.getState().autoTitleSession(SESSION_ID, 'auto');
-      expect(store.getState().sessions[0]?.goal).toBe('kept');
-    });
-
-    it('autoTitleSession sets goal when the user has not edited the title', async () => {
-      const store = await getStore();
-      store.setState({ sessions: [buildSession({ titleUserEdited: false, goal: 'old' })] });
-      await store.getState().autoTitleSession(SESSION_ID, 'auto');
-      expect(store.getState().sessions[0]?.goal).toBe('auto');
-    });
-
     it('setSessionPermissionMode mutates the session row', async () => {
       const store = await getStore();
       store.setState({ sessions: [buildSession()] });

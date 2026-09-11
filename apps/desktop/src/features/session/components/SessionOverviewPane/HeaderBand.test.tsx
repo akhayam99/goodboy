@@ -23,7 +23,7 @@ vi.mock('../../hooks/useSessionTitleRename', () => ({
   useSessionTitleRename: () => ({
     editing: false,
     draft: '',
-    maxLength: 120,
+    maxLength: 60,
     error: null,
     start: vi.fn(),
     setDraft: vi.fn(),
@@ -41,6 +41,9 @@ vi.mock('./SessionDestructiveActions', () => ({
   ),
 }));
 vi.mock('./ContextChip', () => ({ ContextChip: () => <span>Context</span> }));
+vi.mock('./ContextDigest', () => ({
+  ContextDigest: () => <section aria-label="Context digest" />,
+}));
 vi.mock('./SessionCostChip', () => ({
   SessionCostChip: () => <span data-testid="session-cost-chip" />,
 }));
@@ -106,6 +109,21 @@ describe('HeaderBand', () => {
     const title = screen.getByRole('button', { name: /run/ });
     expect(title.querySelector('code')?.textContent).toBe('/explore');
     expect(title.textContent).not.toContain('`');
+  });
+
+  it('puts the decisions and summary digest after the goal', () => {
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+
+    const goal = screen.getByText('Goal');
+    const digest = screen.getByRole('region', { name: 'Context digest' });
+    expect(goal.compareDocumentPosition(digest) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('falls back to one untitled label when the session carries no title', () => {
+    const untitled = { ...session, goal: '   ' } as Session;
+    render(<HeaderBand session={untitled} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+
+    expect(screen.getByRole('button', { name: 'Untitled session' })).toBeDefined();
   });
 
   it('renders the session cost at the right edge of the context row', () => {

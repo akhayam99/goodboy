@@ -713,7 +713,6 @@ type AppActions = {
   renameCredential(id: CredentialId, label: string): Promise<void>;
   setAgentVerbosity(sessionId: SessionId, agentId: AgentId, level: VerbosityLevel): Promise<void>;
   renameTask(sessionId: SessionId, goal: string): Promise<void>;
-  autoTitleSession(sessionId: SessionId, title: string): Promise<void>;
   deleteTask(sessionId: SessionId): Promise<void>;
   bulkDeleteTask(ids: ReadonlyArray<SessionId>): Promise<void>;
   archiveTask(sessionId: SessionId, options?: ArchiveTaskOptions): Promise<void>;

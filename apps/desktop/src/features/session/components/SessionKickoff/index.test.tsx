@@ -14,7 +14,6 @@ const { store, hooks, spies } = vi.hoisted(() => ({
       ReadonlyArray<{ provider: string; externalId: string }>
     >,
     linkSessionExternalTask: vi.fn(async () => undefined),
-    autoTitleSession: vi.fn(async () => undefined),
     upsertSessionSlot: vi.fn(async () => undefined),
   },
   hooks: {
@@ -26,6 +25,7 @@ const { store, hooks, spies } = vi.hoisted(() => ({
       async (_params: unknown): Promise<ReadonlyArray<IssueCandidate>> => [],
     ),
     showToast: vi.fn(),
+    onProposeAdoption: vi.fn(),
   },
 }));
 
@@ -69,7 +69,11 @@ vi.mock('../../../../app/components/Toast', () => ({
 import { SessionKickoff } from './index';
 
 const SESSION_ID = 'sess-kickoff' as SessionId;
-const session = { id: SESSION_ID, workspaceId: 'ws-1' } as unknown as Session;
+const session = {
+  id: SESSION_ID,
+  workspaceId: 'ws-1',
+  goal: 'Untitled session',
+} as unknown as Session;
 
 const candidate = (overrides: Partial<IssueCandidate>): IssueCandidate => ({
   provider: 'linear',
@@ -87,13 +91,13 @@ beforeEach(() => {
   store.projects = [];
   store.sessionExternalTasks = {};
   store.linkSessionExternalTask.mockClear();
-  store.autoTitleSession.mockClear();
   store.upsertSessionSlot.mockClear();
   hooks.isGithubAuthenticated.current = false;
   hooks.slots.current = [];
   spies.fetchIssueCandidates.mockReset();
   spies.fetchIssueCandidates.mockResolvedValue([]);
   spies.showToast.mockClear();
+  spies.onProposeAdoption.mockClear();
 });
 
 afterEach(cleanup);
@@ -206,11 +210,17 @@ describe('SessionKickoff', () => {
     expect(screen.queryByText('ENG-5')).toBeNull();
   });
 
-  it('links a picked issue, seeds the empty goal, and titles the session after it', async () => {
+  it('links a picked issue and proposes its title and goal instead of applying them', async () => {
     store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
     spies.fetchIssueCandidates.mockResolvedValue([candidate({})]);
 
-    render(<SessionKickoff session={session} onOpenWorkflowBuilder={vi.fn()} />);
+    render(
+      <SessionKickoff
+        session={session}
+        onOpenWorkflowBuilder={vi.fn()}
+        onProposeAdoption={spies.onProposeAdoption}
+      />,
+    );
     await waitFor(() => {
       expect(screen.getByText('ENG-1')).toBeDefined();
     });
@@ -230,24 +240,27 @@ describe('SessionKickoff', () => {
         url: 'https://linear.app/acme/issue/ENG-1',
       }),
     );
-    expect(store.upsertSessionSlot).toHaveBeenCalledWith(
-      SESSION_ID,
-      'goal',
-      '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
-    );
-    expect(store.autoTitleSession).toHaveBeenCalledWith(
-      SESSION_ID,
-      '[ENG-1] Fix the login redirect',
-    );
+    expect(store.upsertSessionSlot).not.toHaveBeenCalled();
+    expect(spies.onProposeAdoption).toHaveBeenCalledWith({
+      identifier: 'ENG-1',
+      title: '[ENG-1] Fix the login redirect',
+      goal: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
+    });
     expect(spies.showToast).toHaveBeenCalledWith('success', 'ENG-1 linked to this session');
   });
 
-  it('keeps a goal the session already has', async () => {
+  it('leaves a goal the session already has out of the proposal', async () => {
     store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
     hooks.slots.current = [{ key: 'goal', value: 'Ship the redesign' }];
     spies.fetchIssueCandidates.mockResolvedValue([candidate({})]);
 
-    render(<SessionKickoff session={session} onOpenWorkflowBuilder={vi.fn()} />);
+    render(
+      <SessionKickoff
+        session={session}
+        onOpenWorkflowBuilder={vi.fn()}
+        onProposeAdoption={spies.onProposeAdoption}
+      />,
+    );
     await waitFor(() => {
       expect(screen.getByText('ENG-1')).toBeDefined();
     });
@@ -258,5 +271,32 @@ describe('SessionKickoff', () => {
       expect(store.linkSessionExternalTask).toHaveBeenCalledTimes(1);
     });
     expect(store.upsertSessionSlot).not.toHaveBeenCalled();
+    expect(spies.onProposeAdoption).toHaveBeenCalledWith(
+      expect.objectContaining({ goal: null, title: '[ENG-1] Fix the login redirect' }),
+    );
+  });
+
+  it('proposes nothing when the session already carries the issue title', async () => {
+    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
+    hooks.slots.current = [{ key: 'goal', value: 'Ship the redesign' }];
+    spies.fetchIssueCandidates.mockResolvedValue([candidate({})]);
+
+    render(
+      <SessionKickoff
+        session={{ ...session, goal: '[ENG-1] Fix the login redirect' } as Session}
+        onOpenWorkflowBuilder={vi.fn()}
+        onProposeAdoption={spies.onProposeAdoption}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('ENG-1')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /ENG-1/ }));
+
+    await waitFor(() => {
+      expect(store.linkSessionExternalTask).toHaveBeenCalledTimes(1);
+    });
+    expect(spies.onProposeAdoption).not.toHaveBeenCalled();
   });
 });

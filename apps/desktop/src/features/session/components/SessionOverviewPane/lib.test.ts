@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { OpenQuestion, SessionStageInfo } from '@goodboy/types';
-import { resolveAttentionLens, selectOpenQuestions } from './lib';
+import type { Agent, AgentId, OpenQuestion, SessionStageInfo } from '@goodboy/types';
+import { attentionAgentId, resolveAttentionTarget, selectOpenQuestions } from './lib';
 
 const stage = (over: Partial<SessionStageInfo>): SessionStageInfo =>
   ({
@@ -14,83 +14,105 @@ const stage = (over: Partial<SessionStageInfo>): SessionStageInfo =>
 const question = (over: Partial<OpenQuestion>): OpenQuestion =>
   ({ status: 'open', text: 'q', ...over }) as unknown as OpenQuestion;
 
-describe('resolveAttentionLens', () => {
-  const ctx = {
-    hasNonResolverStandalone: false,
-    hasWorkflow: false,
-    hasResolver: false,
-    unreadLens: null,
-  };
+const agentWith = (over: Partial<Agent> & Pick<Agent, 'id'>): Agent =>
+  ({ status: 'completed', ...over }) as unknown as Agent;
 
-  it('returns null when not in the attention stage', () => {
-    expect(resolveAttentionLens(stage({ stage: 'running' }), ctx)).toBeNull();
+describe('resolveAttentionTarget', () => {
+  it('returns nothing while the session does not need anyone', () => {
+    expect(resolveAttentionTarget({ stage: stage({}), agent: null })).toBeNull();
   });
 
-  it('routes a PR reason to the pr lens', () => {
+  it('sends an open question to the questions lens', () => {
     expect(
-      resolveAttentionLens(stage({ stage: 'attention', reason: 'PR needs review' }), ctx),
-    ).toBe('pr');
-  });
-
-  it('routes a question reason to the questions lens', () => {
-    expect(
-      resolveAttentionLens(stage({ stage: 'attention', reason: 'an open question' }), ctx),
-    ).toBe('questions');
-  });
-
-  it('routes an unread resolver reply to resolve when standalone agents are present', () => {
-    expect(
-      resolveAttentionLens(stage({ stage: 'attention', reason: 'unread agent reply' }), {
-        hasNonResolverStandalone: true,
-        hasWorkflow: false,
-        hasResolver: true,
-        unreadLens: 'review',
+      resolveAttentionTarget({
+        stage: stage({ stage: 'attention', attention: 'open-question' }),
+        agent: null,
       }),
-    ).toBe('review');
+    ).toEqual({ kind: 'lens', lens: 'questions', label: 'Answer it' });
   });
 
-  const lensFor = (
-    hasNonResolverStandalone: boolean,
-    hasWorkflow: boolean,
-    hasResolver: boolean,
-  ) => {
-    if (hasNonResolverStandalone) return 'agents';
-    if (hasResolver) return 'review';
-    if (hasWorkflow) return 'workflows';
-    return null;
-  };
+  it.each(['ci-failed', 'changes-requested', 'pr-approved'] as const)(
+    'sends %s to the pull request',
+    (attention) => {
+      expect(
+        resolveAttentionTarget({ stage: stage({ stage: 'attention', attention }), agent: null }),
+      ).toEqual({ kind: 'lens', lens: 'pr', label: 'Open the pull request' });
+    },
+  );
 
-  for (const hasNonResolverStandalone of [false, true]) {
-    for (const hasWorkflow of [false, true]) {
-      for (const hasResolver of [false, true]) {
-        const expected = lensFor(hasNonResolverStandalone, hasWorkflow, hasResolver);
-        it(`routes nonResolver=${hasNonResolverStandalone} workflow=${hasWorkflow} resolver=${hasResolver} to ${expected}`, () => {
-          expect(
-            resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), {
-              hasNonResolverStandalone,
-              hasWorkflow,
-              hasResolver,
-              unreadLens: null,
-            }),
-          ).toBe(expected);
-        });
-      }
-    }
-  }
-
-  it('routes a workflow-only attention session to workflows, never null', () => {
+  it('opens the failed agent itself, not the agents lens', () => {
     expect(
-      resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), {
-        hasNonResolverStandalone: false,
-        hasWorkflow: true,
-        hasResolver: false,
-        unreadLens: null,
+      resolveAttentionTarget({
+        stage: stage({ stage: 'attention', attention: 'agent-error' }),
+        agent: { agentId: 'agent-9' as AgentId, home: 'workflows' },
       }),
-    ).toBe('workflows');
+    ).toEqual({
+      kind: 'agent',
+      agentId: 'agent-9',
+      home: 'workflows',
+      label: 'Open the failed turn',
+    });
   });
 
-  it('returns null when no agent, resolver or workflow is present', () => {
-    expect(resolveAttentionLens(stage({ stage: 'attention', reason: 'idle' }), ctx)).toBeNull();
+  it('opens the agent that replied, not the agents lens', () => {
+    expect(
+      resolveAttentionTarget({
+        stage: stage({ stage: 'attention', attention: 'unread-reply' }),
+        agent: { agentId: 'agent-3' as AgentId, home: 'review' },
+      }),
+    ).toEqual({ kind: 'agent', agentId: 'agent-3', home: 'review', label: 'Read the reply' });
+  });
+
+  it('falls back to the agents lens when no agent carries the signal', () => {
+    expect(
+      resolveAttentionTarget({
+        stage: stage({ stage: 'attention', attention: 'agent-error' }),
+        agent: null,
+      }),
+    ).toEqual({ kind: 'lens', lens: 'agents', label: 'Open the agents' });
+  });
+});
+
+describe('attentionAgentId', () => {
+  it('picks the latest failed agent for an agent error', () => {
+    const agents = [
+      agentWith({ id: 'a1' as AgentId, status: 'failed' }),
+      agentWith({ id: 'a2' as AgentId, status: 'completed' }),
+      agentWith({ id: 'a3' as AgentId, status: 'failed' }),
+    ];
+
+    expect(
+      attentionAgentId({ stage: stage({ stage: 'attention', attention: 'agent-error' }), agents }),
+    ).toBe('a3');
+  });
+
+  it('picks the latest unread agent for an unread reply', () => {
+    const agents = [
+      agentWith({ id: 'a1' as AgentId, lastFinishedAt: '2026-01-01T00:00:00.000Z' } as never),
+      agentWith({ id: 'a2' as AgentId }),
+    ];
+
+    expect(
+      attentionAgentId({ stage: stage({ stage: 'attention', attention: 'unread-reply' }), agents }),
+    ).toBe('a1');
+  });
+
+  it('picks nobody for a reason no agent owns', () => {
+    expect(
+      attentionAgentId({
+        stage: stage({ stage: 'attention', attention: 'ci-failed' }),
+        agents: [agentWith({ id: 'a1' as AgentId, status: 'failed' })],
+      }),
+    ).toBeNull();
+  });
+
+  it('picks nobody when no agent matches', () => {
+    expect(
+      attentionAgentId({
+        stage: stage({ stage: 'attention', attention: 'agent-error' }),
+        agents: [agentWith({ id: 'a1' as AgentId, status: 'completed' })],
+      }),
+    ).toBeNull();
   });
 });
 
