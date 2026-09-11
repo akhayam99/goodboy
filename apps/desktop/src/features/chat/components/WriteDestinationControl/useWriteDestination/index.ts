@@ -10,7 +10,7 @@ import {
   resolveWriteDestination,
   writeDestinationsMatch,
   type WriteDestination,
-  type WriteDestinationMount,
+  type WriteDestinationCandidate,
 } from '../../../../../store/slices/project-mounts/writeDestination';
 import { scratchDirPrepare } from '../../../../../features/worktree/worktree';
 
@@ -21,15 +21,17 @@ type Params = {
 
 export type WriteDestinationView = Readonly<{
   next: WriteDestination;
-  candidates: ReadonlyArray<WriteDestinationMount>;
+  candidates: ReadonlyArray<WriteDestinationCandidate>;
   running: WriteDestination | null;
   diverges: boolean;
 }>;
 
 export const useWriteDestination = ({ sessionId, agentId }: Params): WriteDestinationView => {
-  const sessions = useAppStore((state) => state.sessions);
-  const sessionActiveMount = useAppStore((state) => state.sessionActiveMount);
-  const sessionActiveProject = useAppStore((state) => state.sessionActiveProject);
+  const session = useAppStore((state) =>
+    state.sessions.find((candidate) => candidate.id === sessionId),
+  );
+  const sessionActiveMountId = useAppStore((state) => state.sessionActiveMount[sessionId]);
+  const sessionActiveProjectId = useAppStore((state) => state.sessionActiveProject[sessionId]);
   const sessionMounts = useAppStore((state) => state.sessionMounts[sessionId]);
   const sessionProjectMounts = useAppStore((state) => state.sessionProjectMounts[sessionId]);
   const projects = useAppStore((state) => state.projects);
@@ -42,17 +44,19 @@ export const useWriteDestination = ({ sessionId, agentId }: Params): WriteDestin
 
   const mountState = useMemo(
     () => ({
-      sessions,
-      sessionActiveMount,
-      sessionActiveProject,
+      sessions: session === undefined ? [] : [session],
+      sessionActiveMount:
+        sessionActiveMountId === undefined ? {} : { [sessionId]: sessionActiveMountId },
+      sessionActiveProject:
+        sessionActiveProjectId === undefined ? {} : { [sessionId]: sessionActiveProjectId },
       sessionMounts: sessionMounts === undefined ? {} : { [sessionId]: sessionMounts },
       sessionProjectMounts:
         sessionProjectMounts === undefined ? {} : { [sessionId]: sessionProjectMounts },
     }),
     [
-      sessions,
-      sessionActiveMount,
-      sessionActiveProject,
+      session,
+      sessionActiveMountId,
+      sessionActiveProjectId,
       sessionMounts,
       sessionProjectMounts,
       sessionId,
