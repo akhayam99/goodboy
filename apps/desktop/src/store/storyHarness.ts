@@ -1,4 +1,5 @@
 import { vi } from 'vitest';
+import { createResolveQueryMocks } from './slices/resolve/testing/createResolveQueryMocks';
 import type {
   Agent,
   AgentId,
@@ -84,7 +85,22 @@ export const storySpies = {
   upsertSessionExternalTask: vi.fn(async () => undefined),
   upsertContextSlot: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),
+  acquireWorktreeWriter: vi.fn(async ({ path }: { readonly path: string }) =>
+    freeWriterLease({ path }),
+  ),
+  releaseWorktreeWriter: vi.fn(async ({ path }: { readonly path: string }) =>
+    freeWriterLease({ path }),
+  ),
+  cancelWorktreeWriter: vi.fn(async ({ path }: { readonly path: string }) =>
+    freeWriterLease({ path }),
+  ),
+  abandonWorktreeWriter: vi.fn(async ({ path }: { readonly path: string }) =>
+    freeWriterLease({ path }),
+  ),
+  listActiveResolveAttempts: vi.fn(async () => [] as ReadonlyArray<never>),
 };
+
+export const storyResolveQueries = createResolveQueryMocks();
 
 const freeWriterLease = ({ path }: { readonly path: string }) => ({
   path,
@@ -100,6 +116,23 @@ export const resetStorySpies = () => {
   for (const spy of Object.values(storySpies)) {
     spy.mockReset();
   }
+  storyResolveQueries.resetResolveQueryMocks();
+  for (const [name, value] of Object.entries(storyResolveQueries)) {
+    if (name !== 'resetResolveQueryMocks') {
+      (value as { readonly mockClear: () => void }).mockClear();
+    }
+  }
+  for (const spy of [
+    storySpies.acquireWorktreeWriter,
+    storySpies.releaseWorktreeWriter,
+    storySpies.cancelWorktreeWriter,
+    storySpies.abandonWorktreeWriter,
+  ]) {
+    spy.mockImplementation(async ({ path }: { readonly path: string }) =>
+      freeWriterLease({ path }),
+    );
+  }
+  storySpies.listActiveResolveAttempts.mockImplementation(async () => []);
   storySpies.removeWorktreeChecked.mockImplementation(
     async ({ worktreePath }: { worktreePath: string }) => ({
       kind: 'removed',
@@ -126,6 +159,8 @@ export const resetStorySpies = () => {
 };
 
 export const dbModuleMock = () => ({
+  ...storyResolveQueries,
+  listActiveResolveAttempts: storySpies.listActiveResolveAttempts,
   getSetting: vi.fn(),
   setSetting: vi.fn(),
   getWorkspaceById: storySpies.getWorkspaceById,
@@ -317,6 +352,14 @@ export const worktreeModuleMock = () => ({
   worktreeChangedFiles: (path: string) => storySpies.worktreeChangedFiles(path),
   worktreeStatus: (path: string) => storySpies.worktreeStatus(path),
   gitCommonDirectory: (args: { readonly repoPath: string }) => storySpies.gitCommonDirectory(args),
+  acquireWorktreeWriter: (args: { readonly path: string }) =>
+    storySpies.acquireWorktreeWriter(args),
+  releaseWorktreeWriter: (args: { readonly path: string }) =>
+    storySpies.releaseWorktreeWriter(args),
+  cancelWorktreeWriter: (args: { readonly path: string }) => storySpies.cancelWorktreeWriter(args),
+  abandonWorktreeWriter: (args: { readonly path: string }) =>
+    storySpies.abandonWorktreeWriter(args),
+  holdsWorktreeWriter: vi.fn(() => false),
   changeWorktreeBranch: vi.fn(async () => undefined),
   inspectWorktree: (args: { readonly worktreePath: string }) => storySpies.inspectWorktree(args),
   invalidateLocalBranchesCache: vi.fn(),
