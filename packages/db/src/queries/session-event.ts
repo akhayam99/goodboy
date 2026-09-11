@@ -92,6 +92,7 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
   const removed = numberAt({ source, key: 'removed' });
   const behind = numberAt({ source, key: 'behind' });
   const turnRunId = stringAt({ source, key: 'turnRunId' });
+  const questionId = stringAt({ source, key: 'questionId' });
   const deferralCause = deferralCauseAt({ source, key: 'deferralCause' });
   return {
     ...(worktreePath != null ? { worktreePath } : {}),
@@ -118,6 +119,7 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
     ...(removed != null ? { removed } : {}),
     ...(behind != null ? { behind } : {}),
     ...(turnRunId != null ? { turnRunId } : {}),
+    ...(questionId != null ? { questionId } : {}),
     ...(deferralCause != null ? { deferralCause } : {}),
   };
 };

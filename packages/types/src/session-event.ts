@@ -24,6 +24,11 @@ export const SESSION_EVENT_KINDS = [
   'project_detached',
   'external_task_created',
   'rebase_requested',
+  'session_archived',
+  'session_restored',
+  'write_destination_changed',
+  'question_dismissed',
+  'question_restored',
 ] as const;
 
 export type SessionEventKind = (typeof SESSION_EVENT_KINDS)[number];
@@ -58,6 +63,7 @@ export type SessionEventPayload = Readonly<{
   behind?: number;
   turnRunId?: string;
   deferralCause?: MaterializationDeferralCause;
+  questionId?: string;
 }>;
 
 export type SessionEvent = Readonly<{
