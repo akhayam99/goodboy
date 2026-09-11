@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
-import { Button, GhostActionButton, formatError } from '@goodboy/ui';
-import { Activity, GitCommit, RefreshCw, RotateCw } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Button, GhostActionButton, InlineConfirm, formatError } from '@goodboy/ui';
+import { Activity, AlertTriangle, GitCommit, RefreshCw, RotateCw } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type {
   ResolveAttempt,
@@ -11,15 +11,18 @@ import type {
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { acceptedPublishCounts, previewPublishCounts } from '../../publishCounts';
+import { isPublishIntentGuarded, publishIntent } from '../../publishIntent';
 import {
   CHECK_AND_RETRY,
+  CLOSE_WITHOUT_FIX_CONFIRM,
   PUBLICATION_COMPLETE,
-  PUBLISH,
+  PUBLISH_INTENT_LABEL,
   REVIEW_PUBLICATION,
   UPDATE_AND_REVIEW,
   blockerCopy,
   driftSentence,
   frozenAtLabel,
+  publishIntentSummary,
 } from '../../resolvePublishCopy';
 import { PublishLines } from './PublishLines';
 
@@ -63,6 +66,7 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
   const openDiffLens = useAppStore((s) => s.openDiffLens);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const [isBusy, setIsBusy] = useState(false);
+  const [isArmed, setIsArmed] = useState(false);
 
   const counts =
     preview === null
@@ -79,6 +83,14 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
     preview !== null &&
     (preview.blocker !== null || preview.drift.some((entry) => entry.threadId === null));
   const total = counts.commits + counts.replies + counts.notes;
+  const intent = preview === null ? null : publishIntent({ preview });
+  const isGuarded = intent !== null && isPublishIntentGuarded({ intent });
+
+  useEffect(() => {
+    if (preview === null) {
+      setIsArmed(false);
+    }
+  }, [preview]);
 
   const run = useCallback(
     async (work: () => Promise<void>): Promise<void> => {
@@ -109,6 +121,7 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
     if (publicationId === null) {
       return;
     }
+    setIsArmed(false);
     void run(async () => {
       const result = await publishConversations({ sessionId, publicationId });
       if (result.kind === 'push_failed') {
@@ -131,6 +144,7 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
   }, [preview, publishConversations, run, sessionId, showToast]);
 
   const onCancel = useCallback(() => {
+    setIsArmed(false);
     void run(async () => {
       await cancelPublication({ sessionId, publicationId: preview?.publicationId ?? '' });
     });
@@ -170,14 +184,17 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
     ? CHECK_AND_RETRY
     : needsRenewal
       ? UPDATE_AND_REVIEW
-      : preview === null
+      : intent === null
         ? REVIEW_PUBLICATION
-        : PUBLISH;
+        : PUBLISH_INTENT_LABEL[intent];
+  const isConfirmNeeded = !isStuck && !needsRenewal && preview !== null && isGuarded;
   const onPress = isStuck
     ? onCheckAndRetry
     : preview === null || needsRenewal
       ? onPrepare
-      : onConfirm;
+      : isConfirmNeeded
+        ? () => setIsArmed(true)
+        : onConfirm;
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -195,6 +212,24 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
           )}
         </div>
       )}
+      {isArmed && preview !== null && (
+        <InlineConfirm
+          role="alert"
+          icon={<AlertTriangle className="size-3.5" aria-hidden />}
+          title={CLOSE_WITHOUT_FIX_CONFIRM.title}
+          description={CLOSE_WITHOUT_FIX_CONFIRM.description}
+          confirmLabel={CLOSE_WITHOUT_FIX_CONFIRM.confirmLabel}
+          cancelLabel={CLOSE_WITHOUT_FIX_CONFIRM.cancelLabel}
+          isBusy={isBusy}
+          onConfirm={onConfirm}
+          onCancel={() => setIsArmed(false)}
+          note={
+            <p className="tabular-nums text-muted-foreground">
+              {publishIntentSummary({ preview })}
+            </p>
+          }
+        />
+      )}
       <div className="flex items-center gap-4">
         {preview !== null && (
           <span className="text-2xs tabular-nums text-muted-foreground">
@@ -210,7 +245,7 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
           size="sm"
           variant="primary"
           isBusy={isBusy}
-          disabled={total === 0 && !isStuck}
+          disabled={(total === 0 && !isStuck) || isArmed}
           onClick={onPress}
         >
           {label}
