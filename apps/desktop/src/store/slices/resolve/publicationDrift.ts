@@ -31,7 +31,7 @@ type TargetParams = {
   readonly liveTarget: MountTargetSnapshot | null;
 };
 
-const targetDrift = ({
+export const mountTargetDrift = ({
   frozenTarget,
   liveTarget,
 }: TargetParams): ResolvePublicationDrift | null => {
@@ -71,7 +71,7 @@ export const publicationDrift = async ({
 }: Params): Promise<ReadonlyArray<ResolvePublicationDrift>> => {
   const byThread = new Map(rows.map((row) => [row.threadId, row]));
   const found: Array<ResolvePublicationDrift> = [];
-  const moved = targetDrift({ frozenTarget: publication.mountTarget, liveTarget });
+  const moved = mountTargetDrift({ frozenTarget: publication.mountTarget, liveTarget });
   if (moved !== null) {
     found.push(moved);
   }
