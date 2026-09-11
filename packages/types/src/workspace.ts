@@ -16,7 +16,6 @@ import type { ModelEffort, ProviderId } from './provider-registry';
 import type { ClaudePermissionMode } from './permission';
 import type { OverrideSettings, RoleModelPreferences } from './settings';
 import type { GitDistance, GitOperation, GitWorkingTree } from './worktree';
-import type { MountDiskState } from './mount';
 
 export type WorkspaceGitState = 'missing' | 'absent' | 'unborn' | 'ready';
 
@@ -46,22 +45,6 @@ export type Project = Readonly<{
   updatedAt: IsoDateTime;
   disconnectedAt?: IsoDateTime;
   lastAccessedAt?: IsoDateTime;
-}>;
-
-export type SessionProjectMount = Readonly<{
-  mountId?: MountId;
-  sessionId?: SessionId;
-  projectId: ProjectId;
-  mountName: string;
-  worktreePath: string;
-  lastWorktreePath?: string | null;
-  repoRoot: string;
-  branch: string;
-  baseBranch?: string | null;
-  parallelIndex?: number;
-  isAttached?: boolean;
-  diskState?: MountDiskState;
-  revision?: number;
 }>;
 
 export type Workspace = Readonly<{

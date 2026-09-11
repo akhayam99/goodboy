@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ProjectId, SessionProjectMount } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
 
 vi.mock('../../../features/worktree/worktree', () => ({
   gitCommonDirectory: vi.fn(async () => null),
@@ -8,11 +8,19 @@ vi.mock('../../../features/worktree/worktree', () => ({
 import { buildTurnWritableRoots, repoRootsForTurn } from './turnWritableRoots';
 
 const mount = (overrides: Partial<SessionProjectMount> = {}): SessionProjectMount => ({
+  mountId: 'mount-api' as MountId,
+  sessionId: 'session-roots' as SessionId,
   projectId: 'project-api' as ProjectId,
   mountName: 'api',
   worktreePath: '/repo/api/.goodboy/worktrees/first',
+  lastWorktreePath: null,
   repoRoot: '/repo/api',
   branch: 'goodboy/first',
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
   ...overrides,
 });
 

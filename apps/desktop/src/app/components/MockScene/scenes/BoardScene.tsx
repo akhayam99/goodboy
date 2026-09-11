@@ -3,6 +3,7 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  MountId,
   OpenQuestion,
   OpenQuestionId,
   Project,
@@ -15,8 +16,8 @@ import type {
   SessionProjectMount,
   TelemetryRecord,
   TelemetryRecordId,
-  WorkflowRunId,
   WorkflowId,
+  WorkflowRunId,
   Workspace,
   WorkspaceGitStatus,
   WorkspaceId,
@@ -137,6 +138,14 @@ const mount = (params: {
   worktreePath: params.repoRoot,
   repoRoot: params.repoRoot,
   branch: params.branch,
+  mountId: 'mount-fixture-1' as MountId,
+  sessionId: 'session-fixture' as SessionId,
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
 });
 
 const CORE_MOUNT = mount({

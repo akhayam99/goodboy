@@ -3,6 +3,7 @@ import type {
   AgentId,
   ContextSlot,
   IsoDateTime,
+  MountId,
   OpenQuestion,
   OpenQuestionId,
   Project,
@@ -10,9 +11,9 @@ import type {
   ProviderRunId,
   PullRequestState,
   Session,
-  SessionExternalTask,
   SessionEvent,
   SessionEventId,
+  SessionExternalTask,
   SessionId,
   SessionProjectMount,
   StepId,
@@ -105,6 +106,14 @@ const API_MOUNT: SessionProjectMount = {
   worktreePath: '/mock/northwind/workflow/api',
   repoRoot: '/mock/northwind/workflow/api-source',
   branch: 'feat/create-orders-endpoint',
+  mountId: 'mount-fixture-2' as MountId,
+  sessionId: SESSION_ID,
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
 };
 
 const APP_WEB_MOUNT: SessionProjectMount = {
@@ -113,6 +122,14 @@ const APP_WEB_MOUNT: SessionProjectMount = {
   worktreePath: '/mock/northwind/workflow/app-web',
   repoRoot: '/mock/northwind/workflow/app-web-source',
   branch: 'feat/checkout-orders-api',
+  mountId: 'mount-fixture-1' as MountId,
+  sessionId: SESSION_ID,
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
 };
 
 const MOUNTS = [API_MOUNT, APP_WEB_MOUNT];

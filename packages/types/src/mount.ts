@@ -20,6 +20,22 @@ export type SessionMount = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
+export type SessionProjectMount = Readonly<{
+  mountId: MountId;
+  sessionId: SessionId;
+  projectId: ProjectId;
+  mountName: string;
+  worktreePath: string;
+  lastWorktreePath: string | null;
+  repoRoot: string;
+  branch: string;
+  baseBranch: string | null;
+  parallelIndex: number;
+  isAttached: boolean;
+  diskState: MountDiskState;
+  revision: number;
+}>;
+
 export type MountTargetSnapshot = Readonly<{
   mountId: MountId;
   mountRevision: number;

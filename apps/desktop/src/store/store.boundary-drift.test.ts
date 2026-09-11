@@ -1,5 +1,12 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, IsoDateTime, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  AgentId,
+  IsoDateTime,
+  MountId,
+  ProjectId,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import {
   assistantTurnStream,
   buildStoryAgent,
@@ -86,6 +93,14 @@ describe('sendTurn boundary drift', () => {
             worktreePath: '/tmp/wt',
             repoRoot: '/tmp/repo',
             branch: 'goodboy/drift',
+            mountId: 'mount-fixture-1' as MountId,
+            sessionId: SESSION_ID,
+            lastWorktreePath: null,
+            baseBranch: null,
+            parallelIndex: 0,
+            isAttached: true,
+            diskState: 'present',
+            revision: 0,
           },
         ],
       },

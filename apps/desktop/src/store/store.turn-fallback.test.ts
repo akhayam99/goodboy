@@ -1,5 +1,12 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, ProjectId, IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  AgentId,
+  IsoDateTime,
+  MountId,
+  ProjectId,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { parseUsageLimitResetAt } from '../features/chat/parseUsageLimitResetAt';
 import {
   buildStoryAgent,
@@ -96,6 +103,14 @@ describe('sendTurn, provider failure fallback', () => {
             worktreePath: '/tmp/wt',
             repoRoot: '/tmp/repo',
             branch: 'goodboy/turn',
+            mountId: 'mount-fixture-1' as MountId,
+            sessionId: SESSION_ID,
+            lastWorktreePath: null,
+            baseBranch: null,
+            parallelIndex: 0,
+            isAttached: true,
+            diskState: 'present',
+            revision: 0,
           },
         ],
       },

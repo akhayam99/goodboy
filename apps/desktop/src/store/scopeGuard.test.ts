@@ -4,6 +4,7 @@ import type {
   MountId,
   Project,
   ProjectId,
+  SessionId,
   SessionProjectMount,
   WorkspaceId,
 } from '@goodboy/types';
@@ -46,6 +47,13 @@ const appMount: SessionProjectMount = {
   worktreePath: '/tmp/app/.goodboy/worktrees/goal',
   repoRoot: '/tmp/app',
   branch: 'goodboy/goal',
+  sessionId: 'session-fixture' as SessionId,
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
 };
 
 const appFork: SessionProjectMount = {
@@ -63,6 +71,13 @@ const webMount: SessionProjectMount = {
   worktreePath: '/tmp/web/.goodboy/worktrees/goal',
   repoRoot: '/tmp/web',
   branch: 'goodboy/goal-web',
+  sessionId: 'session-fixture' as SessionId,
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
 };
 
 const base = {
@@ -310,6 +325,14 @@ describe('buildScopeGuard', () => {
       worktreePath: '/tmp/notes/sessions/goal',
       repoRoot: '/tmp/notes',
       branch: '',
+      mountId: 'mount-fixture-1' as MountId,
+      sessionId: 'session-fixture' as SessionId,
+      lastWorktreePath: null,
+      baseBranch: null,
+      parallelIndex: 0,
+      isAttached: true,
+      diskState: 'present',
+      revision: 0,
     };
     const guard = buildScopeGuard({
       ...base,
