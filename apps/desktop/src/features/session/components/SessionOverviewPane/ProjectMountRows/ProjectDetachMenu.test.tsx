@@ -2,12 +2,13 @@
 
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProjectId, SessionId, WorktreeDetachAssessment } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId, WorktreeDetachAssessment } from '@goodboy/types';
 
 const { state, showToast, worktreeDetachAssessment } = vi.hoisted(() => ({
   state: {
     detachProject: vi.fn(async () => [{ worktreePath: '/worktrees/api', kind: 'removed' }]),
     unmountMount: vi.fn(async () => ({ kept: false })),
+    forgetMount: vi.fn(async () => ({ keptPath: null as string | null })),
     emitNotification: vi.fn(),
     projects: [{ id: 'project-1', kind: 'repo' }],
     sessions: [{ id: 'session-1', state: { kind: 'idle' } }],
@@ -19,6 +20,19 @@ const { state, showToast, worktreeDetachAssessment } = vi.hoisted(() => ({
           projectId: 'project-1',
           worktreePath: '/worktrees/api',
           branch: 'ak/feat',
+        },
+      ],
+    },
+    sessionMounts: {
+      'session-1': [
+        {
+          id: 'mount-1',
+          projectId: 'project-1',
+          worktreePath: '/worktrees/api' as string | null,
+          lastWorktreePath: null as string | null,
+          branch: 'ak/feat',
+          isAttached: true,
+          diskState: 'present' as string,
         },
       ],
     },
@@ -81,6 +95,23 @@ const renderMenu = () =>
     />,
   );
 
+const renderRowMenu = () =>
+  render(
+    <ProjectDetachMenu
+      sessionId={typedString<SessionId>({ value: 'session-1' })}
+      projectId={typedString<ProjectId>({ value: 'project-1' })}
+      workspaceId={undefined}
+      projectName="api"
+      menuLabel="api on ak/feat actions"
+      worktreePath="/worktrees/api"
+      worktreeStatus={null}
+      branch="ak/feat"
+      mountId={typedString<MountId>({ value: 'mount-1' })}
+      isMountAttached={false}
+      canDetachProject={false}
+    />,
+  );
+
 const openConfirm = () => {
   fireEvent.click(screen.getByRole('button', { name: 'api actions' }));
   fireEvent.click(screen.getByRole('menuitem', { name: 'Detach project' }));
@@ -102,7 +133,21 @@ beforeEach(() => {
       },
     ],
   };
+  state.sessionMounts = {
+    'session-1': [
+      {
+        id: 'mount-1',
+        projectId: 'project-1',
+        worktreePath: '/worktrees/api',
+        lastWorktreePath: null,
+        branch: 'ak/feat',
+        isAttached: true,
+        diskState: 'present',
+      },
+    ],
+  };
   state.detachProject.mockResolvedValue([{ worktreePath: '/worktrees/api', kind: 'removed' }]);
+  state.forgetMount.mockResolvedValue({ keptPath: null });
   worktreeDetachAssessment.mockResolvedValue(
     assessed({ affectedFiles: 0, localOnlyCommits: 0, hasUpstream: true }),
   );
@@ -176,6 +221,37 @@ describe('ProjectDetachMenu', () => {
   });
 
   it('assesses every mount of the project and speaks for all of them', async () => {
+    state.sessionMounts = {
+      'session-1': [
+        {
+          id: 'mount-1',
+          projectId: 'project-1',
+          worktreePath: '/worktrees/api-one',
+          lastWorktreePath: null,
+          branch: 'ak/one',
+          isAttached: true,
+          diskState: 'present',
+        },
+        {
+          id: 'mount-2',
+          projectId: 'project-1',
+          worktreePath: '/worktrees/api-two',
+          lastWorktreePath: null,
+          branch: 'ak/two',
+          isAttached: true,
+          diskState: 'present',
+        },
+        {
+          id: 'mount-3',
+          projectId: 'project-other',
+          worktreePath: '/worktrees/web',
+          lastWorktreePath: null,
+          branch: 'ak/web',
+          isAttached: true,
+          diskState: 'present',
+        },
+      ],
+    };
     state.sessionProjectMounts = {
       'session-1': [
         {
@@ -339,7 +415,8 @@ describe('ProjectDetachMenu', () => {
     expect(
       screen.getByText('Work is still running in api; stop it before removing this worktree.'),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Detach and keep files' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Detach and keep files' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
   });
 
   it('names an open terminal as the blocker it actually is', () => {
@@ -354,6 +431,18 @@ describe('ProjectDetachMenu', () => {
       screen.getByText('A terminal is open in api; close it before removing this worktree.'),
     ).toBeDefined();
     expect(screen.queryByText(/Work is still running/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Detach and keep files' })).toBeNull();
+  });
+
+  it('leaves a way out of a blocked confirmation instead of an empty popover', () => {
+    state.sessions = [{ id: 'session-1', state: { kind: 'running' } }];
+    renderMenu();
+    openConfirm();
+
+    expect(screen.getByText('Detach api?')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.getByRole('menuitem', { name: 'Detach project' })).toBeDefined();
   });
 
   it('keeps the confirmation open and reports a removal failure', async () => {
@@ -371,6 +460,122 @@ describe('ProjectDetachMenu', () => {
       ),
     );
     expect(screen.getByText('Detach api?')).toBeDefined();
+  });
+
+  it('offers a removal from the session for a mount whose files are gone', async () => {
+    state.sessionMounts = {
+      'session-1': [
+        {
+          id: 'mount-1',
+          projectId: 'project-1',
+          worktreePath: null,
+          lastWorktreePath: '/worktrees/api',
+          branch: 'ak/feat',
+          isAttached: false,
+          diskState: 'removed',
+        },
+      ],
+    };
+    renderRowMenu();
+
+    fireEvent.click(screen.getByRole('button', { name: 'api on ak/feat actions' }));
+    expect(screen.queryByRole('menuitem', { name: 'Unmount branch' })).toBeNull();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Remove from session' }));
+    expect(screen.getByText('Remove ak/feat?')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+
+    await waitFor(() =>
+      expect(state.forgetMount).toHaveBeenCalledWith({
+        sessionId: 'session-1',
+        mountId: 'mount-1',
+      }),
+    );
+  });
+
+  it('names the directory a removed mount leaves behind', async () => {
+    state.sessionMounts = {
+      'session-1': [
+        {
+          id: 'mount-1',
+          projectId: 'project-1',
+          worktreePath: null,
+          lastWorktreePath: '/worktrees/api',
+          branch: 'ak/feat',
+          isAttached: false,
+          diskState: 'present',
+        },
+      ],
+    };
+    state.forgetMount.mockResolvedValue({ keptPath: '/worktrees/api' });
+    renderRowMenu();
+
+    fireEvent.click(screen.getByRole('button', { name: 'api on ak/feat actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Remove from session' }));
+    expect(screen.getByText('Its files stay on disk at')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+
+    await waitFor(() =>
+      expect(showToast).toHaveBeenCalledWith(
+        'info',
+        'Removed ak/feat from this session. Files remain at /worktrees/api.',
+      ),
+    );
+  });
+
+  it('offers no removal from the session while a terminal holds the mount', () => {
+    state.sessionMounts = {
+      'session-1': [
+        {
+          id: 'mount-1',
+          projectId: 'project-1',
+          worktreePath: null,
+          lastWorktreePath: '/worktrees/api',
+          branch: 'ak/feat',
+          isAttached: false,
+          diskState: 'present',
+        },
+      ],
+    };
+    state.terminalTabs = {
+      'session-1': [{ id: 'tab-1', sessionId: 'session-1', cwd: '/worktrees/api' }],
+    };
+    renderRowMenu();
+
+    fireEvent.click(screen.getByRole('button', { name: 'api on ak/feat actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Remove from session' }));
+
+    expect(
+      screen.getByText('A terminal is open in api; close it before removing this worktree.'),
+    ).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
+  });
+
+  it('offers no removal from the session while an agent is still running', () => {
+    state.sessions = [{ id: 'session-1', state: { kind: 'running' } }];
+    state.sessionMounts = {
+      'session-1': [
+        {
+          id: 'mount-1',
+          projectId: 'project-1',
+          worktreePath: null,
+          lastWorktreePath: '/worktrees/api',
+          branch: 'ak/feat',
+          isAttached: false,
+          diskState: 'removed',
+        },
+      ],
+    };
+    renderRowMenu();
+
+    fireEvent.click(screen.getByRole('button', { name: 'api on ak/feat actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Remove from session' }));
+
+    expect(
+      screen.getByText('Work is still running in api; stop it before removing this worktree.'),
+    ).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+    expect(state.forgetMount).not.toHaveBeenCalled();
   });
 
   it('returns to the item list on cancel', async () => {

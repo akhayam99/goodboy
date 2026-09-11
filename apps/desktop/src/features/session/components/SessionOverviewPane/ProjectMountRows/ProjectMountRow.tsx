@@ -301,7 +301,8 @@ export const ProjectMountRow = ({
             worktreePath={worktreePath ?? row.lastWorktreePath ?? ''}
             worktreeStatus={worktreeStatus}
             triggerClassName={UTILITY_REVEAL}
-            {...(row.isAttached ? { mountId: row.mountId } : {})}
+            mountId={row.mountId}
+            isMountAttached={row.isAttached}
             branch={row.branch}
             canDetachProject={false}
           />

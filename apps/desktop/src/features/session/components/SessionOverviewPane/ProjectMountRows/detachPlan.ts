@@ -282,6 +282,14 @@ export const buildDetachPlan = ({
   blockers,
   assessments,
 }: BuildDetachPlanParams): DetachPlan => {
+  if (blockers.length > 0) {
+    return {
+      kind: 'keep',
+      reason: 'blocked',
+      lines: blockers.map((blocker) => BLOCKER_SENTENCE[blocker]({ projectName })),
+      details: NO_DETAILS,
+    };
+  }
   if (!isRepoProject) {
     return {
       kind: 'keep',
@@ -289,14 +297,6 @@ export const buildDetachPlan = ({
       lines: [
         `Detach ${projectName} from this session; its folder at ${worktreePath} will stay on disk.`,
       ],
-      details: NO_DETAILS,
-    };
-  }
-  if (blockers.length > 0) {
-    return {
-      kind: 'keep',
-      reason: 'blocked',
-      lines: blockers.map((blocker) => BLOCKER_SENTENCE[blocker]({ projectName })),
       details: NO_DETAILS,
     };
   }
@@ -362,7 +362,9 @@ export const detachActionFor = ({ plan }: { readonly plan: DetachPlan }): Detach
     case 'checking':
       return null;
     case 'keep':
-      return { label: 'Detach and keep files', disposition: 'keep-files', role: 'primary' };
+      return plan.reason === 'blocked'
+        ? null
+        : { label: 'Detach and keep files', disposition: 'keep-files', role: 'primary' };
     case 'missing':
       return { label: 'Detach and remove', disposition: 'remove-clean', role: 'primary' };
     case 'safe':

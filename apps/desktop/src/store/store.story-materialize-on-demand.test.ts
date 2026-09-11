@@ -13,6 +13,7 @@ import {
   recordedEventKinds,
   resetStorySpies,
   storySpies,
+  STORY_NOW,
 } from './storyHarness';
 import {
   clearMountContinuations,
@@ -60,6 +61,8 @@ const SECOND_MOUNT_PATH = '/tmp/app/.goodboy/worktrees/goal-12345678-second';
 const APP_BRANCH = 'goodboy/goal-12345678';
 const WEB_MOUNT_PATH = '/tmp/web/.goodboy/worktrees/goal-12345678';
 const WEB_BRANCH = 'goodboy/goal-12345678-web';
+const APP_MOUNT_ID = 'mount-app';
+const WEB_MOUNT_ID = 'mount-web';
 
 const workspace = buildStoryWorkspace({ id: WORKSPACE_ID });
 const appProject = buildStoryProject({ id: APP_PROJECT_ID, workspaceId: WORKSPACE_ID });
@@ -76,6 +79,7 @@ type StoreModule = typeof import('./store');
 let useAppStore: StoreModule['useAppStore'];
 
 const appMount = {
+  mountId: APP_MOUNT_ID,
   projectId: APP_PROJECT_ID,
   mountName: 'app',
   repoRoot: '/tmp/app',
@@ -84,6 +88,7 @@ const appMount = {
 };
 
 const webMount = {
+  mountId: WEB_MOUNT_ID,
   projectId: WEB_PROJECT_ID,
   mountName: 'web',
   repoRoot: '/tmp/web',
@@ -123,12 +128,54 @@ const seedSessionNamingWeb = () => {
   } as never);
 };
 
+type MountRowInput = {
+  readonly id: string;
+  readonly projectId: ProjectId;
+  readonly mountName: string;
+  readonly worktreePath: string;
+  readonly branch: string;
+};
+
+const mountRow = ({ id, projectId, mountName, worktreePath, branch }: MountRowInput) => ({
+  id,
+  sessionId: SESSION_ID,
+  projectId,
+  mountName,
+  worktreePath,
+  lastWorktreePath: null,
+  branch,
+  baseBranch: null,
+  parallelIndex: 0,
+  repoSlug: null,
+  isAttached: true,
+  diskState: 'present',
+  revision: 1,
+  createdAt: STORY_NOW,
+  updatedAt: STORY_NOW,
+});
+
 const seedMountedWeb = () => {
   seedSession([appProject, webProject]);
   useAppStore.setState({
     sessionProjectMounts: { [SESSION_ID]: [appMount, webMount] },
     sessionWorktrees: { [SESSION_ID]: [APP_MOUNT_PATH, WEB_MOUNT_PATH] },
   } as never);
+  storySpies.listSessionMounts.mockImplementation(async () => [
+    mountRow({
+      id: APP_MOUNT_ID,
+      projectId: APP_PROJECT_ID,
+      mountName: 'app',
+      worktreePath: APP_MOUNT_PATH,
+      branch: APP_BRANCH,
+    }),
+    mountRow({
+      id: WEB_MOUNT_ID,
+      projectId: WEB_PROJECT_ID,
+      mountName: 'web',
+      worktreePath: WEB_MOUNT_PATH,
+      branch: WEB_BRANCH,
+    }),
+  ]);
 };
 
 const spawnedArgs = (): Record<string, unknown> =>
@@ -538,8 +585,11 @@ describe('story: the user detaches a project from the mounted strip', () => {
       worktreePath: WEB_MOUNT_PATH,
       mode: 'safe',
     });
-    expect(storySpies.markSessionMountRemovedByPath).toHaveBeenCalledWith(
-      expect.objectContaining({ sessionId: SESSION_ID, worktreePath: WEB_MOUNT_PATH }),
+    expect(storySpies.deleteSessionMount).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: SESSION_ID, mountId: WEB_MOUNT_ID }),
+    );
+    expect(storySpies.deleteSessionMount).not.toHaveBeenCalledWith(
+      expect.objectContaining({ mountId: APP_MOUNT_ID }),
     );
     expect(useAppStore.getState().sessionProjectMounts[SESSION_ID]).toEqual([appMount]);
     expect(useAppStore.getState().sessionWorktrees[SESSION_ID]).toEqual([APP_MOUNT_PATH]);

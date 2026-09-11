@@ -218,6 +218,7 @@ import type {
   RemoveMountWorktreeInput,
   RemoveMountWorktreeResult,
 } from './slices/project-mounts/removeMountWorktree';
+import type { ForgetMountResult } from './slices/project-mounts/forgetMount';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
@@ -446,6 +447,7 @@ type AppActions = {
   detachProject(input: DetachProjectInput): Promise<ReadonlyArray<DetachProjectOutcome>>;
   loadSessionMounts(input: SessionKeyInput): Promise<ReadonlyArray<SessionMountView>>;
   forkMount(input: ForkMountInput): Promise<SessionMountView>;
+  forgetMount(input: MountKeyInput): Promise<ForgetMountResult>;
   switchMount(input: SwitchMountInput): Promise<SessionMountView>;
   attachMount(input: AttachMountInput): Promise<SessionMountView>;
   unmountMount(input: UnmountMountInput): Promise<UnmountMountResult>;
