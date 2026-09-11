@@ -20,6 +20,12 @@ export type SessionMount = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
+export type MountTargetSnapshot = Readonly<{
+  mountId: MountId;
+  mountRevision: number;
+  worktreePath: string;
+}>;
+
 export type MountPullRequestProvider = 'github' | 'gitlab' | 'bitbucket';
 
 export type MountPullRequestIdentity = Readonly<{

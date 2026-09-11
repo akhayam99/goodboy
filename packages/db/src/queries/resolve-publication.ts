@@ -6,18 +6,22 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { resolveStringArray } from './resolve-json';
+import { fromMountTarget, toMountTarget } from './resolve-mount-target';
 
 type PublicationRow = Omit<
   ResolvePublication,
-  'commitShas' | 'candidateIds' | 'approvedItemIds' | 'requiresPush'
+  'commitShas' | 'candidateIds' | 'approvedItemIds' | 'requiresPush' | 'mountTarget'
 > & {
   readonly commitShas: string;
   readonly candidateIds: string;
   readonly approvedItemIds: string;
   readonly requiresPush: number;
+  readonly mountId: string | null;
+  readonly mountRevision: number | null;
+  readonly worktreePath: string | null;
 };
 
-const PUBLICATION_COLUMNS = `id, session_id AS sessionId, repo, pr_number AS prNumber, branch, target_ref AS targetRef, local_head AS localHead, remote_head AS remoteHead, commit_shas_json AS commitShas, candidate_ids_json AS candidateIds, approved_item_ids_json AS approvedItemIds, requires_push AS requiresPush, phase, pushed_head AS pushedHead, confirmed_at AS confirmedAt, completed_at AS completedAt, error, created_at AS createdAt`;
+const PUBLICATION_COLUMNS = `id, session_id AS sessionId, repo, pr_number AS prNumber, branch, target_ref AS targetRef, local_head AS localHead, remote_head AS remoteHead, commit_shas_json AS commitShas, candidate_ids_json AS candidateIds, approved_item_ids_json AS approvedItemIds, requires_push AS requiresPush, mount_id AS mountId, mount_revision AS mountRevision, worktree_path AS worktreePath, phase, pushed_head AS pushedHead, confirmed_at AS confirmedAt, completed_at AS completedAt, error, created_at AS createdAt`;
 
 const THREAD_COLUMNS = `publication_id AS publicationId, thread_id AS threadId, revision, prior_state AS priorState, source_fingerprint AS sourceFingerprint, operation_id AS operationId, reply_body AS replyBody, reply_phase AS replyPhase, reply_id AS replyId, reply_attempted_at AS replyAttemptedAt, reply_posted_at AS replyPostedAt, resolve_phase AS resolvePhase, resolved_at AS resolvedAt, error`;
 
@@ -28,13 +32,17 @@ const ACTIVE_PHASES: ReadonlyArray<ResolvePublicationPhase> = [
   'posting',
 ];
 
-const hydrate = (row: PublicationRow): ResolvePublication => ({
-  ...row,
-  commitShas: resolveStringArray({ json: row.commitShas }),
-  candidateIds: resolveStringArray({ json: row.candidateIds }),
-  approvedItemIds: resolveStringArray({ json: row.approvedItemIds }),
-  requiresPush: row.requiresPush === 1,
-});
+const hydrate = (row: PublicationRow): ResolvePublication => {
+  const { mountId, mountRevision, worktreePath, ...publication } = row;
+  return {
+    ...publication,
+    commitShas: resolveStringArray({ json: row.commitShas }),
+    candidateIds: resolveStringArray({ json: row.candidateIds }),
+    approvedItemIds: resolveStringArray({ json: row.approvedItemIds }),
+    requiresPush: row.requiresPush === 1,
+    mountTarget: toMountTarget({ mountId, mountRevision, worktreePath }),
+  };
+};
 
 export const insertResolvePublication = async ({
   db,
@@ -43,9 +51,10 @@ export const insertResolvePublication = async ({
   readonly db: Database;
   readonly publication: ResolvePublication;
 }): Promise<void> => {
+  const target = fromMountTarget({ target: publication.mountTarget });
   await db.execute(
-    `INSERT INTO resolve_publications (id, session_id, repo, pr_number, branch, target_ref, local_head, remote_head, commit_shas_json, candidate_ids_json, approved_item_ids_json, requires_push, phase, pushed_head, confirmed_at, completed_at, error, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO resolve_publications (id, session_id, repo, pr_number, branch, target_ref, local_head, remote_head, commit_shas_json, candidate_ids_json, approved_item_ids_json, requires_push, mount_id, mount_revision, worktree_path, phase, pushed_head, confirmed_at, completed_at, error, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       publication.id,
       publication.sessionId,
@@ -59,6 +68,9 @@ export const insertResolvePublication = async ({
       JSON.stringify(publication.candidateIds),
       JSON.stringify(publication.approvedItemIds),
       Number(publication.requiresPush),
+      target.mountId,
+      target.mountRevision,
+      target.worktreePath,
       publication.phase,
       publication.pushedHead,
       publication.confirmedAt,

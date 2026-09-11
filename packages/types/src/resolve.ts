@@ -1,4 +1,5 @@
 import type { AgentId, ProjectId, SessionId } from './ids';
+import type { MountTargetSnapshot } from './mount';
 import type { AgentSourceKind } from './workflow';
 import type { BranchCommit } from './worktree';
 
@@ -41,6 +42,7 @@ export type ResolveAttempt = Readonly<{
   effort: string | null;
   instructions: string | null;
   phase: ResolveAttemptPhase;
+  mountTarget: MountTargetSnapshot | null;
   startedAt: number | null;
   endedAt: number | null;
   error: string | null;
@@ -81,6 +83,7 @@ export type ResolveCandidate = Readonly<{
   baseSha: string;
   candidateSha: string;
   worktreePath: string;
+  mountTarget: MountTargetSnapshot | null;
   state: ResolveCandidateState;
   integratedSha: string | null;
   createdAt: number;
@@ -152,6 +155,7 @@ export type ResolvePublication = Readonly<{
   candidateIds: ReadonlyArray<string>;
   approvedItemIds: ReadonlyArray<string>;
   requiresPush: boolean;
+  mountTarget: MountTargetSnapshot | null;
   phase: ResolvePublicationPhase;
   pushedHead: string | null;
   confirmedAt: number | null;

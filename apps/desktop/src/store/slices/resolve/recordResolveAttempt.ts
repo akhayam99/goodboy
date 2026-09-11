@@ -50,6 +50,7 @@ export const recordResolveAttempt = async ({
     effort,
     instructions,
     phase,
+    mountTarget: null,
     startedAt: phase === 'running' ? now : null,
     endedAt: null,
     error: null,

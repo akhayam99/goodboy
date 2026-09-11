@@ -35,6 +35,7 @@ export const beginResolveCandidate = async ({
       baseSha: head,
       candidateSha: head,
       worktreePath,
+      mountTarget: null,
       state: 'building',
       integratedSha: null,
       createdAt: now,

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type {
+  AgentId,
+  MountId,
+  ResolveAttempt,
+  ResolveCandidate,
   ResolvePublication,
   ResolvePublicationThread,
   ResolveThread,
@@ -16,6 +20,11 @@ import {
   setResolveAttemptPhase,
 } from '../resolve-attempt';
 import { commitResolveImport, hasResolveImport } from '../resolve-import';
+import {
+  getResolveCandidate,
+  insertResolveCandidate,
+  listResolveCandidates,
+} from '../resolve-candidate';
 import {
   insertResolvePublication,
   listActiveResolvePublications,
@@ -256,7 +265,7 @@ describe('durable resolve rows', () => {
       attempt: {
         id: 'attempt',
         sessionId: SESSION,
-        agentId: 'agent' as import('@goodboy/types').AgentId,
+        agentId: 'agent' as AgentId,
         prNumber: 12,
         threadIds: [row.threadId],
         provider: 'anthropic',
@@ -264,6 +273,7 @@ describe('durable resolve rows', () => {
         effort: null,
         instructions: null,
         phase: 'finished',
+        mountTarget: null,
         startedAt: 1,
         endedAt: 2,
         error: null,
@@ -327,6 +337,7 @@ describe('resolve publications', () => {
     candidateIds: ['cand-1'],
     approvedItemIds: ['item-1'],
     requiresPush: true,
+    mountTarget: null,
     phase: 'previewed',
     pushedHead: null,
     confirmedAt: null,
@@ -438,5 +449,114 @@ describe('resolve publications', () => {
     await db.execute('DELETE FROM sessions WHERE id = ?', [SESSION]);
     expect(await listResolvePublicationsForSession({ db, sessionId: SESSION })).toEqual([]);
     expect(await listResolvePublicationThreads({ db, publicationId: 'pub-1' })).toEqual([]);
+  });
+});
+
+describe('resolve mount target', () => {
+  const target = {
+    mountId: 'mount-2' as MountId,
+    mountRevision: 7,
+    worktreePath: '/container/api-2',
+  };
+  const attempt: ResolveAttempt = {
+    id: 'attempt-target',
+    sessionId: SESSION,
+    agentId: 'agent' as AgentId,
+    prNumber: 12,
+    threadIds: ['PRRT_1'],
+    provider: 'anthropic',
+    model: 'recorded-model',
+    effort: null,
+    instructions: null,
+    phase: 'queued',
+    mountTarget: target,
+    startedAt: null,
+    endedAt: null,
+    error: null,
+    createdAt: 1,
+  };
+  const publication: ResolvePublication = {
+    id: 'pub-target',
+    sessionId: SESSION,
+    repo: 'acme/web',
+    prNumber: 248,
+    branch: 'feature/retry',
+    targetRef: 'refs/heads/feature/retry',
+    localHead: 'aaaa111',
+    remoteHead: null,
+    commitShas: ['aaaa111'],
+    candidateIds: ['candidate-target'],
+    approvedItemIds: ['item-1'],
+    requiresPush: true,
+    mountTarget: target,
+    phase: 'previewed',
+    pushedHead: null,
+    confirmedAt: null,
+    completedAt: null,
+    error: null,
+    createdAt: 10,
+  };
+  const candidate: ResolveCandidate = {
+    id: 'candidate-target',
+    sessionId: SESSION,
+    revision: 1,
+    baseSha: 'base',
+    candidateSha: 'cand',
+    worktreePath: target.worktreePath,
+    mountTarget: target,
+    state: 'ready',
+    integratedSha: null,
+    createdAt: 1,
+    updatedAt: 1,
+  };
+
+  it('keeps the queued attempt on the mount it was enqueued against', async () => {
+    const db = await seed();
+    await migrate(db);
+    await insertResolveAttempt({ db, attempt });
+    expect((await listResolveAttempts({ db, sessionId: SESSION }))[0]?.mountTarget).toEqual(target);
+    expect((await listActiveResolveAttempts({ db }))[0]?.mountTarget).toEqual(target);
+  });
+
+  it('rewrites the target when an unfinished attempt is resubmitted', async () => {
+    const db = await seed();
+    await migrate(db);
+    await insertResolveAttempt({ db, attempt });
+    await insertResolveAttempt({ db, attempt: { ...attempt, mountTarget: null } });
+    expect((await listResolveAttempts({ db, sessionId: SESSION }))[0]?.mountTarget).toBeNull();
+  });
+
+  it('keeps the candidate and the publication on their own mount', async () => {
+    const db = await seed();
+    await migrate(db);
+    await insertResolveCandidate({ db, candidate });
+    expect((await getResolveCandidate({ db, candidateId: candidate.id }))?.mountTarget).toEqual(
+      target,
+    );
+    expect((await listResolveCandidates({ db, sessionId: SESSION }))[0]?.mountTarget).toEqual(
+      target,
+    );
+    await insertResolvePublication({ db, publication });
+    expect(
+      (await listResolvePublicationsForSession({ db, sessionId: SESSION }))[0]?.mountTarget,
+    ).toEqual(target);
+  });
+
+  it('reads a legacy row and a half written target as no target at all', async () => {
+    const db = await seed();
+    await migrate(db);
+    await insertResolveAttempt({ db, attempt: { ...attempt, mountTarget: null } });
+    await insertResolveCandidate({ db, candidate: { ...candidate, mountTarget: null } });
+    expect((await listResolveAttempts({ db, sessionId: SESSION }))[0]?.mountTarget).toBeNull();
+    expect((await listResolveCandidates({ db, sessionId: SESSION }))[0]?.mountTarget).toBeNull();
+    await db.execute(
+      "UPDATE resolve_attempts SET mount_id = 'mount-2', worktree_path = '/container/api-2' WHERE id = ?",
+      [attempt.id],
+    );
+    await db.execute("UPDATE resolve_candidates SET mount_id = 'mount-2' WHERE id = ?", [
+      candidate.id,
+    ]);
+    expect((await listResolveAttempts({ db, sessionId: SESSION }))[0]?.mountTarget).toBeNull();
+    expect((await listResolveCandidates({ db, sessionId: SESSION }))[0]?.mountTarget).toBeNull();
   });
 });
