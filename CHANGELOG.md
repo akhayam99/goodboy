@@ -7,6 +7,26 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.29
+
+A workflow that works across more than one repository keeps running instead of
+stopping to ask which one it writes in.
+
+### [#1754] Workflow steps pick their own repository
+
+A session that mounts two repositories used to stop every step it started, with
+the turn refused until you chose which mount to write in. Steps now pick one on
+their own: the mount you chose if you chose one, otherwise the first the session
+took. The pick lasts for that turn only and never replaces a choice you made.
+
+The workflow now says which mount its steps are writing in, and the same control
+lets you pin a different one for every turn after it. A retry that waits out a
+provider limit comes back to the mount it started on rather than wherever the
+session points by then.
+
+Follow-up: a step that fails before it starts still shows as waiting rather than
+as blocked. Making those steps retryable from the workflow is the next release.
+
 ## Goodboy v0.2.28
 
 Every step of a workflow now runs on a model picked for that step, shown on the
