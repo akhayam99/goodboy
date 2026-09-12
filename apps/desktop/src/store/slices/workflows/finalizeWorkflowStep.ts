@@ -35,7 +35,7 @@ const startStep = (
       [agentId]: { kind: 'idle' as const, lastActivityAt: nowIso() },
     },
   }));
-  void get().sendTurn({ sessionId, agentId, content });
+  void get().sendTurn({ sessionId, agentId, content, origin: 'workflow' });
 };
 
 export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {

@@ -202,7 +202,7 @@ function startChild({
     clusterStartAttempts: { ...s.clusterStartAttempts, [childId]: attempt },
   }));
   void get()
-    .sendTurn({ sessionId, agentId: childId, content })
+    .sendTurn({ sessionId, agentId: childId, content, origin: 'workflow' })
     .catch((error: unknown) => {
       void handleChildStartFailure({
         set,
