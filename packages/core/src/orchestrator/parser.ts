@@ -186,24 +186,29 @@ const parseStep = ({ value, provider }: StepParams): OrchestratorStep | null => 
   const role = nonEmptyString(step['role']);
   const promptPrefix = nonEmptyString(step['promptPrefix']);
   const expectedOutput = nonEmptyString(step['expectedOutput']);
+  const requestedProvider = nonEmptyString(step['provider']);
   const selectedProvider = providerId(step['provider']);
+  const unknownProvider = requestedProvider !== null && selectedProvider === null;
   const selectedTaskType = taskType(step['taskType']);
   const selectedDifficulty = difficulty(step['difficulty']);
   const modelReason = nonEmptyString(step['modelReason']);
   if (name === null || promptPrefix === null) {
     return null;
   }
-  const model = requestedModel({
-    provider: selectedProvider ?? provider,
-    id: nonEmptyString(step['model']),
-  });
+  const emittedModel = nonEmptyString(step['model']);
+  const model = unknownProvider
+    ? emittedModel
+    : requestedModel({
+        provider: selectedProvider ?? provider,
+        id: emittedModel,
+      });
   const effort = requestedEffort(nonEmptyString(step['effort']));
   return {
     name,
     role: role !== null && isAgentRole(role) ? role : 'custom',
     promptPrefix,
     ...(expectedOutput !== null && { expectedOutput }),
-    ...(selectedProvider !== null && { provider: selectedProvider }),
+    ...(requestedProvider !== null && { provider: selectedProvider ?? requestedProvider }),
     ...(model !== null && { model }),
     ...(effort !== null && { effort }),
     ...(selectedTaskType !== null && { taskType: selectedTaskType }),

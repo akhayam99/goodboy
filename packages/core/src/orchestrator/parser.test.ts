@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseOrchestratorDecision } from './parser';
+import { parseWorkflowRoutingProposal } from './parseWorkflowRoutingProposal';
 
 describe('parseOrchestratorDecision', () => {
   it('parses a next decision surrounded by prose', () => {
@@ -351,6 +352,53 @@ describe('parseOrchestratorDecision, effort beside a combo', () => {
       promptPrefix: 'Plan it.',
       model: 'claude-opus-5-thinking-high',
       effort: 'high',
+    });
+  });
+});
+
+describe('parseOrchestratorDecision, unrecognised provider', () => {
+  it('keeps an unknown provider so the routing parse can reject the pair', () => {
+    const decision = parseOrchestratorDecision({
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Plan","role":"planner","promptPrefix":"Plan it.","provider":"not-a-provider","model":"composer-2.5"}}<</orchestrator>>',
+      provider: 'cursor',
+    });
+
+    expect(decision?.action === 'next' && decision.step).toEqual({
+      name: 'Plan',
+      role: 'planner',
+      promptPrefix: 'Plan it.',
+      provider: 'not-a-provider',
+      model: 'composer-2.5',
+    });
+    expect(
+      decision?.action === 'next' &&
+        parseWorkflowRoutingProposal({
+          fields: decision.step,
+          emittingProvider: 'cursor',
+        }),
+    ).toEqual({
+      kind: 'invalid',
+      requested: { provider: 'not-a-provider', model: 'composer-2.5', effort: null },
+      reason: 'Unknown routing provider: not-a-provider.',
+      profile: { taskType: 'general', difficulty: 'unknown', basis: 'unknown' },
+    });
+  });
+
+  it('still reads a missing provider as the emitting provider', () => {
+    const decision = parseOrchestratorDecision({
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Plan","role":"planner","promptPrefix":"Plan it.","model":"composer-2.5"}}<</orchestrator>>',
+      provider: 'cursor',
+    });
+
+    expect(
+      decision?.action === 'next' &&
+        parseWorkflowRoutingProposal({
+          fields: decision.step,
+          emittingProvider: 'cursor',
+        }),
+    ).toMatchObject({
+      kind: 'valid',
+      proposal: { pick: { provider: 'cursor', model: 'composer-2.5' } },
     });
   });
 });

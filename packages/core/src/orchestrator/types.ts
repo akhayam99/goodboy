@@ -12,7 +12,7 @@ export type OrchestratorStep = {
   readonly role: AgentRole;
   readonly promptPrefix: string;
   readonly expectedOutput?: string;
-  readonly provider?: ProviderId;
+  readonly provider?: string;
   readonly model?: string;
   readonly effort?: ModelEffort;
   readonly taskType?: WorkflowTaskType;
