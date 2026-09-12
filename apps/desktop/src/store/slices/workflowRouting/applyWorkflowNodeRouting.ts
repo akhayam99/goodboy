@@ -1,5 +1,7 @@
 import type {
   SessionId,
+  Step,
+  Workflow,
   WorkflowRoutingDecision,
   WorkflowRoutingLock,
   WorkflowTaskProfile,
@@ -87,6 +89,22 @@ export const applyWorkflowNodeRouting = async ({
     return false;
   }
   const agentEffort = effort === null ? {} : { effort };
+  const patchStep = (step: Step): Step => {
+    if (step.id !== id) {
+      return step;
+    }
+    return {
+      ...step,
+      routingLock: lock,
+      routingDecision: decision,
+      taskProfile,
+      providerOverride: provider,
+      modelOverride: pick.model,
+      ...agentEffort,
+    };
+  };
+  const patchWorkflows = (workflows: ReadonlyArray<Workflow>): ReadonlyArray<Workflow> =>
+    workflows.map((workflow) => ({ ...workflow, steps: workflow.steps.map(patchStep) }));
   set((state) => ({
     workflowNodeRoutingPending: { ...state.workflowNodeRoutingPending, [key]: false },
     ...(nodeKind === 'agent' && {
@@ -115,23 +133,14 @@ export const applyWorkflowNodeRouting = async ({
     ...(nodeKind === 'step' && {
       sessionWorkflows: {
         ...state.sessionWorkflows,
-        [sessionId]: (state.sessionWorkflows[sessionId] ?? []).map((workflow) => ({
-          ...workflow,
-          steps: workflow.steps.map((step) =>
-            step.id === id
-              ? {
-                  ...step,
-                  routingLock: lock,
-                  routingDecision: decision,
-                  taskProfile,
-                  providerOverride: provider,
-                  modelOverride: pick.model,
-                  ...agentEffort,
-                }
-              : step,
-          ),
-        })),
+        [sessionId]: patchWorkflows(state.sessionWorkflows[sessionId] ?? []),
       },
+      phaseTemplates: Object.fromEntries(
+        Object.entries(state.phaseTemplates).map(([workspaceId, workflows]) => [
+          workspaceId,
+          patchWorkflows(workflows),
+        ]),
+      ),
     }),
   }));
   return true;

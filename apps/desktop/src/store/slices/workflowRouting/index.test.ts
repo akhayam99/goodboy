@@ -181,6 +181,7 @@ const buildHarness = ({
     sessions: [buildSession({ hasRunRoleLock })],
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
     sessionWorkflows: { [SESSION_ID]: [buildWorkflow(step)] },
+    phaseTemplates: { [WORKSPACE_ID]: [buildWorkflow(step)] },
     agentKindOverride: {},
     agentModelOverride: {},
     agentProviderOverride: {},
@@ -334,6 +335,30 @@ describe('workflowRouting slice', () => {
     });
 
     expect(view.sourceLabel).toBe('Chosen from what is available');
+  });
+
+  it('a step lock lands on the template the turn reads, not only the session copy', async () => {
+    const { state, set, get } = buildHarness();
+
+    await setWorkflowNodeRoutingLock(
+      set,
+      get,
+    )({
+      sessionId: SESSION_ID,
+      nodeKind: 'step',
+      id: STEP_ID,
+      pick: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+    });
+
+    const templates = state.phaseTemplates as Record<string, ReadonlyArray<Workflow>>;
+    expect(templates[WORKSPACE_ID]?.[0]?.steps[0]?.routingLock?.pick).toEqual({
+      provider: 'codex',
+      model: 'gpt-5.6-sol',
+      effort: 'high',
+    });
+    expect(templates[WORKSPACE_ID]?.[0]?.steps[0]?.modelOverride).toBe('gpt-5.6-sol');
+    const workflows = state.sessionWorkflows as Record<string, ReadonlyArray<Workflow>>;
+    expect(workflows[SESSION_ID]?.[0]?.steps[0]?.routingLock?.pick.model).toBe('gpt-5.6-sol');
   });
 
   it('reset restores proposal without editing the template', async () => {
