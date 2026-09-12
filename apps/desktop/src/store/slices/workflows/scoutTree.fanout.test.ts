@@ -105,6 +105,7 @@ afterEach(() => {
 
 describe('fanOutScouts workflowRunId propagation', () => {
   it('propagates the container workflowRunId to every spawned sub-scout', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
     const { get, set } = makeStore(c);
 
@@ -117,6 +118,7 @@ describe('fanOutScouts workflowRunId propagation', () => {
   });
 
   it('omits workflowRunId for an ad-hoc scout container that has none', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container();
     const { get, set } = makeStore(c);
 
@@ -129,6 +131,7 @@ describe('fanOutScouts workflowRunId propagation', () => {
   });
 
   it('materializes every sub-scout through one parent-scoped batch', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
     const { get, set } = makeStore(c);
 
@@ -141,6 +144,7 @@ describe('fanOutScouts workflowRunId propagation', () => {
   });
 
   it('leaves no children and starts nothing when the batch fails', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
     const { get, set, sendTurn, state } = makeStore(c);
     hoisted.invokeAgentInsertBatch.mockRejectedValueOnce(new Error('database is locked'));
@@ -155,6 +159,7 @@ describe('fanOutScouts workflowRunId propagation', () => {
   });
 
   it('does not start a second batch for a parent the backend already materialized', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
     const { get, set, sendTurn } = makeStore(c);
     hoisted.invokeAgentInsertBatch.mockResolvedValueOnce({ inserted: false, agents: [] });
@@ -167,6 +172,7 @@ describe('fanOutScouts workflowRunId propagation', () => {
   });
 
   it('spawns children as scouts parented to the container in this session', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
     const { get, set } = makeStore(c);
 
@@ -180,6 +186,7 @@ describe('fanOutScouts workflowRunId propagation', () => {
   });
 
   it('kicks off a turn for each spawned sub-scout', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
     const { get, set, sendTurn } = makeStore(c);
 
@@ -203,6 +210,7 @@ describe('fanOutScouts workflowRunId propagation', () => {
   });
 
   it('caps fan-out at FAN_OUT_MAX_CHILDREN, still propagating workflowRunId, and notifies on drop', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container({ workflowRunId: 'wf-9' as WorkflowRunId });
     const { get, set, emitNotification } = makeStore(c);
 
@@ -265,6 +273,7 @@ const splitText = (n: number) =>
 
 describe('advanceScoutTree split decision', () => {
   it('fans out into sub-scouts when the domain is too large and fan-out is enabled', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const root = scoutAgent({ id: 'root-on' as AgentId });
     const { get, set } = makeAdvanceStore([root], true);
 
@@ -540,6 +549,7 @@ describe('scout child routing lifecycle', () => {
   });
 
   it('flag-off children keep the configured default for the same two texts', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const root = scoutAgent({ id: 'legacy-off-root' as AgentId });
     const { get, set } = makeRoutedStore([root]);
 

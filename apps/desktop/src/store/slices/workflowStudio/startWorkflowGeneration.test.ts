@@ -244,6 +244,7 @@ describe('startWorkflowGeneration', () => {
     );
   });
   it('leaves a generated step unrouted while the metadata flag is off', async () => {
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'false');
     formatWorkflowFromNLMock.mockResolvedValue({
       name: 'Review and ship',
       description: 'Review the change, then ship it.',
@@ -477,6 +478,7 @@ describe('startWorkflowGeneration model metadata', () => {
   });
 
   it('leaves catalog metadata out of the provider request while the flag is off', async () => {
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'false');
     generationTransport.stdout = generationReply([
       {
         role: 'reviewer',

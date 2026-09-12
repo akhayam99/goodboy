@@ -709,6 +709,7 @@ describe('orchestrateNextStep', () => {
   });
 
   it('leaves catalog metadata out of the provider request while the flag is off', async () => {
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'false');
     orchestratorTransport.stdout = anthropicReply(
       [
         '<<orchestrator>>',
@@ -725,6 +726,7 @@ describe('orchestrateNextStep', () => {
     expect(prompt).not.toContain('unassessed');
     expect(prompt).not.toMatch(/ ctx \d+k /);
     expect(prompt).not.toMatch(/\$[\d.]+\/\$[\d.]+/);
+    vi.unstubAllEnvs();
   });
 
   it('drops a cooling provider out of the menu it offers', async () => {
@@ -811,6 +813,7 @@ describe('orchestrateNextStep', () => {
   });
 
   it('never invents a difficulty for an unprofiled step while the metadata flag is off', async () => {
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'false');
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,
       decision: {
@@ -839,6 +842,7 @@ describe('orchestrateNextStep', () => {
       basis: 'unknown',
     });
     expect(decideSpy.mock.calls[0]![0].isModelMetadataEnabled).toBeUndefined();
+    vi.unstubAllEnvs();
   });
 
   it('labels a difficulty it read off the step text as heuristic when the flag is on', async () => {

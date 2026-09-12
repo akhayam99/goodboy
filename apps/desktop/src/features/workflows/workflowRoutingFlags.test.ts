@@ -6,37 +6,37 @@ afterEach(() => {
 });
 
 describe('workflowRoutingFlags', () => {
-  it('keeps model metadata off when nothing set the flag', () => {
-    expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(false);
-  });
-
-  it('turns model metadata on only for an explicit true', () => {
-    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'true');
-    expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(true);
-
-    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'TRUE');
+  it('keeps model metadata on when nothing set the flag', () => {
     expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(true);
   });
 
-  it('reads any other value as off', () => {
-    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', '1');
-    expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(false);
-
+  it('turns model metadata off only for an explicit false', () => {
     vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'false');
     expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(false);
 
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'FALSE');
+    expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(false);
+  });
+
+  it('reads any other value as on', () => {
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', '1');
+    expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(true);
+
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'true');
+    expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(true);
+
     vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', '');
-    expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(false);
+    expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(true);
   });
 
-  it('reads the child model selection flag independently, defaulting to off', () => {
-    expect(workflowRoutingFlags().isChildModelSelectionEnabled).toBe(false);
-
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+  it('reads the child model selection flag independently, defaulting to on', () => {
     expect(workflowRoutingFlags().isChildModelSelectionEnabled).toBe(true);
-    expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(false);
+
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
+    expect(workflowRoutingFlags().isChildModelSelectionEnabled).toBe(false);
+    expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(true);
   });
-  it('explicit false stays off in all four combinations, and an unset flag is still off', () => {
+  it('explicit false stays off in all four combinations, and an unset flag is on', () => {
     const combinations = [
       { metadata: 'true', children: 'true', isMetadataOn: true, isChildrenOn: true },
       { metadata: 'true', children: 'false', isMetadataOn: true, isChildrenOn: false },
@@ -64,12 +64,12 @@ describe('workflowRoutingFlags', () => {
     vi.unstubAllEnvs();
     const unset = workflowRoutingFlags();
     expect(unset).toEqual({
-      isModelMetadataEnabled: false,
-      isChildModelSelectionEnabled: false,
+      isModelMetadataEnabled: true,
+      isChildModelSelectionEnabled: true,
     });
 
-    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'false');
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'true');
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
     expect(workflowRoutingFlags()).toEqual(unset);
   });
 });
