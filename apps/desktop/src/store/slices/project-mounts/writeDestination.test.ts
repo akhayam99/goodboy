@@ -80,7 +80,6 @@ describe('resolveWriteDestination', () => {
       mount: repoMount,
       projectName: 'web',
       scratchPath: null,
-      mountCount: 1,
     });
     expect(destination).toEqual({
       kind: 'mount',
@@ -100,7 +99,6 @@ describe('resolveWriteDestination', () => {
       mount: folderMount,
       projectName: 'notes',
       scratchPath: null,
-      mountCount: 1,
     });
     expect(destination.kind === 'mount' && destination.hasGit).toBe(false);
     expect(writeDestinationLabel(destination)).toBe('notes / working folder / no git');
@@ -111,21 +109,9 @@ describe('resolveWriteDestination', () => {
       mount: null,
       projectName: null,
       scratchPath: '/goodboy/scratch/session-1',
-      mountCount: 0,
     });
     expect(destination).toEqual({ kind: 'scratch', path: '/goodboy/scratch/session-1' });
     expect(writeDestinationLabel(destination)).toBe('session scratch folder');
-  });
-
-  it('refuses the scratch folder when the session holds mounts but chose none', () => {
-    const destination = resolveWriteDestination({
-      mount: null,
-      projectName: null,
-      scratchPath: '/goodboy/scratch/session-1',
-      mountCount: 2,
-    });
-    expect(destination).toEqual({ kind: 'unselected', mountCount: 2 });
-    expect(writeDestinationLabel(destination)).toBe('no destination chosen');
   });
 });
 
@@ -141,13 +127,11 @@ describe('writeDestinationsMatch', () => {
       mount: repoMount,
       projectName: 'web',
       scratchPath: null,
-      mountCount: 1,
     });
     const b = resolveWriteDestination({
       mount: { ...repoMount, branch: 'ak/other' },
       projectName: 'web',
       scratchPath: null,
-      mountCount: 1,
     });
     expect(writeDestinationsMatch(a, b)).toBe(true);
   });
@@ -157,13 +141,11 @@ describe('writeDestinationsMatch', () => {
       mount: repoMount,
       projectName: 'web',
       scratchPath: null,
-      mountCount: 1,
     });
     const scratch = resolveWriteDestination({
       mount: null,
       projectName: null,
       scratchPath: null,
-      mountCount: 0,
     });
     expect(writeDestinationsMatch(mount, scratch)).toBe(false);
   });
@@ -173,25 +155,13 @@ describe('writeDestinationsMatch', () => {
       mount: repoMount,
       projectName: 'web',
       scratchPath: null,
-      mountCount: 2,
     });
     const sibling = resolveWriteDestination({
       mount: { ...repoMount, mountId: 'mount-web-second' as MountId },
       projectName: 'web',
       scratchPath: null,
-      mountCount: 2,
     });
     expect(writeDestinationsMatch(a, sibling)).toBe(false);
-  });
-
-  it('never matches an unselected destination, not even with itself', () => {
-    const unselected = resolveWriteDestination({
-      mount: null,
-      projectName: null,
-      scratchPath: '/goodboy/scratch/session-1',
-      mountCount: 2,
-    });
-    expect(writeDestinationsMatch(unselected, unselected)).toBe(false);
   });
 });
 

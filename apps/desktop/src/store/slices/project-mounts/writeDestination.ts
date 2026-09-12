@@ -16,10 +16,7 @@ export type WriteDestinationCandidate = WriteDestinationMount;
 
 export type WriteDestinationScratch = Readonly<{ kind: 'scratch'; path: string | null }>;
 
-export type WriteDestinationUnselected = Readonly<{ kind: 'unselected'; mountCount: number }>;
-
-export type WriteDestination =
-  WriteDestinationMount | WriteDestinationScratch | WriteDestinationUnselected;
+export type WriteDestination = WriteDestinationMount | WriteDestinationScratch;
 
 type DescribeMountParams = {
   readonly mount: SessionProjectMount;
@@ -41,20 +38,15 @@ type ResolveParams = {
   readonly mount: SessionProjectMount | null;
   readonly projectName: string | null;
   readonly scratchPath: string | null;
-  readonly mountCount: number;
 };
 
 export const resolveWriteDestination = ({
   mount,
   projectName,
   scratchPath,
-  mountCount,
 }: ResolveParams): WriteDestination => {
   if (mount !== null) {
     return describeMount({ mount, projectName: projectName ?? mount.mountName });
-  }
-  if (mountCount > 0) {
-    return { kind: 'unselected', mountCount };
   }
   return { kind: 'scratch', path: scratchPath };
 };
@@ -62,9 +54,6 @@ export const resolveWriteDestination = ({
 export const writeDestinationLabel = (destination: WriteDestination): string => {
   if (destination.kind === 'scratch') {
     return 'session scratch folder';
-  }
-  if (destination.kind === 'unselected') {
-    return 'no destination chosen';
   }
   if (!destination.hasGit) {
     return `${destination.projectName} / working folder / no git`;
@@ -74,17 +63,11 @@ export const writeDestinationLabel = (destination: WriteDestination): string => 
 
 export const writeDestinationDetail = (destination: WriteDestination): string => {
   const label = writeDestinationLabel(destination);
-  if (destination.kind === 'unselected') {
-    return `${label}. This session has ${destination.mountCount} branch mounts, choose the one the next turns write to.`;
-  }
   const path = destination.kind === 'scratch' ? destination.path : destination.worktreePath;
   return path === null ? label : `${label} (${path})`;
 };
 
 export const writeDestinationsMatch = (a: WriteDestination, b: WriteDestination): boolean => {
-  if (a.kind === 'unselected' || b.kind === 'unselected') {
-    return false;
-  }
   if (a.kind === 'scratch' && b.kind === 'scratch') {
     return true;
   }

@@ -32,7 +32,7 @@ export type WriteDestinationView = Readonly<{
 export const useWriteDestination = ({
   sessionId,
   agentId,
-  fallback,
+  fallback = 'automatic',
 }: Params): WriteDestinationView => {
   const session = useAppStore((state) =>
     state.sessions.find((candidate) => candidate.id === sessionId),
@@ -123,7 +123,6 @@ export const useWriteDestination = ({
         mount: nextMount,
         projectName: activeProjectName,
         scratchPath,
-        mountCount: writableMounts.length,
       }),
     [nextMount, activeProjectName, scratchPath, writableMounts],
   );
