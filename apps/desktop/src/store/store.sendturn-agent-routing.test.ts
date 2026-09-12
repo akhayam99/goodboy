@@ -353,6 +353,64 @@ function buildAgent(id: AgentId, ordinal: number): Agent {
   };
 }
 
+type WorkflowSessionParams = {
+  readonly workflowRunId: WorkflowRunId;
+  readonly workflowId: WorkflowId;
+};
+
+function buildWorkflowSession({ workflowRunId, workflowId }: WorkflowSessionParams): Session {
+  return {
+    ...buildSession(),
+    workflowRuns: [
+      {
+        id: workflowRunId,
+        workflowId,
+        ordinal: 0,
+        currentStep: 0,
+        autoRun: false,
+        triggerMode: 'immediate',
+        executionMode: 'static',
+      },
+    ],
+  };
+}
+
+type WorkflowTemplateParams = {
+  readonly workflowId: WorkflowId;
+  readonly stepId: StepId;
+};
+
+function buildWorkflowTemplate({ workflowId, stepId }: WorkflowTemplateParams): Workflow {
+  return {
+    id: workflowId,
+    workspaceId: WORKSPACE_ID,
+    name: 'workflow',
+    description: '',
+    steps: [
+      {
+        id: stepId,
+        workflowId,
+        ordinal: 0,
+        name: 'step',
+        promptPrefix: '',
+        providerOverride: 'anthropic',
+        modelOverride: 'claude-sonnet-4-6',
+        routingDecision: {
+          version: 1,
+          proposal: null,
+          selected: { provider: 'anthropic', model: 'claude-sonnet-4-6', effort: null },
+          source: 'agent',
+          reason: 'The agent emitted this routing selection.',
+          adjustment: 'none',
+          executed: null,
+        },
+      },
+    ],
+    createdAt: NOW,
+    updatedAt: NOW,
+  };
+}
+
 async function* emptyStream(): AsyncIterable<TurnEvent> {}
 
 async function importStore() {
@@ -2004,6 +2062,106 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       (event) => event.kind === 'user_text',
     );
     expect(userEvent?.model).toBe('claude-4.6-sonnet-medium');
+  });
+
+  it('runs the agent lock, not the step selection the template still carries', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    const workflowRunId = 'workflow-run-lock' as WorkflowRunId;
+    const workflowId = 'workflow-lock' as WorkflowId;
+    const stepId = 'step-lock' as StepId;
+    const agent: Agent = {
+      ...buildAgent(AGENT_A, 0),
+      stepId,
+      workflowRunId,
+      routingLock: {
+        version: 1,
+        pick: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+        origin: 'user',
+      },
+    };
+    useAppStore.setState({
+      sessions: [buildWorkflowSession({ workflowRunId, workflowId })],
+      sessionPhaseRuns: { [SESSION_ID]: [agent] },
+      phaseTemplates: {
+        [WORKSPACE_ID]: [buildWorkflowTemplate({ workflowId, stepId })],
+      },
+    });
+    const workflowsMod = await import('../features/workflows/workflows');
+    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([agent]);
+    (workflowsMod.invokeAgentUpdateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(agent);
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'codex',
+      selectedModel: 'gpt-5.6-sol',
+      reason: 'override',
+      fallbackUsed: false,
+    });
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: AGENT_A,
+      content: 'go',
+    });
+
+    expect(
+      (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]
+        ?.turnOverride,
+    ).toEqual({ providerId: 'codex', model: 'gpt-5.6-sol' });
+    expect(runTurnSpy.mock.calls[0]?.[0]?.provider).toBe('codex');
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('gpt-5.6-sol');
+  });
+
+  it('runs the revalidated agent decision, not the unavailable step selection', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    const workflowRunId = 'workflow-run-revalidated' as WorkflowRunId;
+    const workflowId = 'workflow-revalidated' as WorkflowId;
+    const stepId = 'step-revalidated' as StepId;
+    const agent: Agent = {
+      ...buildAgent(AGENT_A, 0),
+      stepId,
+      workflowRunId,
+      routingDecision: {
+        version: 1,
+        proposal: null,
+        selected: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+        source: 'heuristic',
+        reason: 'The emitted model is not available.',
+        adjustment: 'unknown_model',
+        executed: null,
+      },
+    };
+    useAppStore.setState({
+      sessions: [buildWorkflowSession({ workflowRunId, workflowId })],
+      sessionPhaseRuns: { [SESSION_ID]: [agent] },
+      phaseTemplates: {
+        [WORKSPACE_ID]: [buildWorkflowTemplate({ workflowId, stepId })],
+      },
+    });
+    const workflowsMod = await import('../features/workflows/workflows');
+    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([agent]);
+    (workflowsMod.invokeAgentUpdateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(agent);
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'codex',
+      selectedModel: 'gpt-5.6-sol',
+      reason: 'override',
+      fallbackUsed: false,
+    });
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: AGENT_A,
+      content: 'go',
+    });
+
+    expect(
+      (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]
+        ?.turnOverride,
+    ).toEqual({ providerId: 'codex', model: 'gpt-5.6-sol' });
+    expect(runTurnSpy.mock.calls[0]?.[0]?.provider).toBe('codex');
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('gpt-5.6-sol');
   });
 
   it('remaps a composer selection to the role-aware model on the fallback provider', async () => {
