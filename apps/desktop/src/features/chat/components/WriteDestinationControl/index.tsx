@@ -57,9 +57,9 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
         : `In progress and next turns: ${nextLabel}`;
 
   const primaryTitle = isAutomatic
-    ? `Nobody chose a folder, so turns run in ${nextDetail}. They can still write in every mounted project.`
+    ? `Nobody chose a folder, so turns run in ${nextDetail}. They can still write in every repository this session mounts.`
     : running === null
-      ? `Turns run in ${nextDetail}. They can still write in every mounted project.`
+      ? `Turns run in ${nextDetail}. They can still write in every repository this session mounts.`
       : diverges
         ? `This turn started in ${runningDetail}. Next turns run in ${nextDetail} unless changed.`
         : `This turn and the next ones run in ${nextDetail}.`;
@@ -124,7 +124,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
           <div className="flex flex-col gap-1">
             <span className="text-sm font-semibold text-foreground">Working folder</span>
             <span className="text-2xs text-muted-foreground">
-              Commands and git run here. A turn can write in every project this session mounts.
+              Commands and git run here. A turn can write in every repository this session mounts.
             </span>
           </div>
 

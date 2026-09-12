@@ -103,7 +103,7 @@ describe('WriteDestinationControl', () => {
     expect(screen.getByText('Runs in: web / main / ak/feat-thing')).toBeDefined();
     expect(
       screen.getByTitle(
-        'Turns run in web / main / ak/feat-thing (/sessions/one/main). They can still write in every mounted project.',
+        'Turns run in web / main / ak/feat-thing (/sessions/one/main). They can still write in every repository this session mounts.',
       ),
     ).toBeDefined();
   });
@@ -118,7 +118,7 @@ describe('WriteDestinationControl', () => {
     await waitFor(() => {
       expect(
         screen.getByTitle(
-          'Turns run in session scratch folder (/goodboy/scratch/session-1). They can still write in every mounted project.',
+          'Turns run in session scratch folder (/goodboy/scratch/session-1). They can still write in every repository this session mounts.',
         ),
       ).toBeDefined();
     });
@@ -186,7 +186,7 @@ describe('WriteDestinationControl', () => {
     expect(screen.getByText('Working folder')).toBeDefined();
     expect(
       screen.getByText(
-        'Commands and git run here. A turn can write in every project this session mounts.',
+        'Commands and git run here. A turn can write in every repository this session mounts.',
       ),
     ).toBeDefined();
     fireEvent.click(screen.getByText('web / feature'));
@@ -273,7 +273,7 @@ describe('WriteDestinationControl with siblings and no choice', () => {
     expect(screen.getByText('Auto: web / feature / ak/two')).toBeDefined();
     expect(
       screen.getByTitle(
-        'Nobody chose a folder, so turns run in web / feature / ak/two (/sessions/one/feature). They can still write in every mounted project.',
+        'Nobody chose a folder, so turns run in web / feature / ak/two (/sessions/one/feature). They can still write in every repository this session mounts.',
       ),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: /Working folder/ })).toBeDefined();
