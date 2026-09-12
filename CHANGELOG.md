@@ -7,6 +7,118 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.27
+
+A project can hold several worktrees in one session and every command, fix and
+push lands in the one you chose. Review comments lead to the same place from
+everywhere, and archiving is something you can take back.
+
+### [#1745, #1747, #1749, #1750] Several worktrees on one project, each doing its own work
+
+A session could always mount a second worktree on the same project. What it
+could not do is keep track of which one you meant. The destination, the branch
+switch, the sync, the rebase, the queued fix and the push all fell back to
+whichever worktree happened to be selected, so work aimed at one could run in
+another.
+
+Each worktree is now a destination you pick by name. Every row control acts on
+its own row: switching a branch, pushing, rebasing and opening a terminal stay
+where you pressed them and leave the session destination alone. A fix runs in
+the worktree it was queued against even if you move the destination while it
+waits, and a publication pushes from the worktree its preview was built on, or
+asks for a new preview if that worktree has moved.
+
+When a session holds more than one and you have not chosen, it says so and
+waits. It does not pick for you, and a turn will not start until you do. With
+exactly one, that one is the destination.
+
+Existing sessions keep their selection. Fixes and previews saved before this
+release are matched to a worktree only when there is exactly one possible
+answer; the rest stay readable and ask to be run again.
+
+### [#1735] Worktree rows say what they know
+
+A worktree nobody had read looked identical to one with nothing in it: both
+said "No changes". Unknown now says unknown, and carries the reason. A merge,
+rebase, cherry-pick or bisect left half done is named on the row it belongs to,
+and the main checkout no longer wears the same mark as a worktree.
+
+### [#1736] One route from a review comment to the work
+
+Opening a comment could land on the wrong pull request, or on the right one in
+the wrong project, and a comment that could not be found was forgotten without
+a word. Every entry point now carries the pull request and the project it came
+from, retrying keeps them, and a comment that is gone says so with a way to try
+again. A thread GitHub has already resolved no longer reappears as open work.
+
+### [#1741] Archive without a prompt, delete with the facts
+
+Archiving is reversible, so it happens on the first press and offers an undo,
+from every place that offers it. Deleting states what stays: the branch and its
+commits remain in the repository, and a worktree still holding uncommitted work
+is kept and listed in Settings. Closing a pull request or marking it ready
+confirms first, and the merge confirmation names the branches and says the
+branch is not deleted.
+
+Reclaiming the disk space of archived worktrees lives in Settings, Storage,
+where it says what it removes.
+
+The session timeline now records the durable changes: archive and restore, a
+change of destination, a dismissed question, the outcome of a publication.
+
+### [#1744] A merge says why it cannot happen
+
+The merge control used to let you press it and find out afterwards. It now
+says merged, closed, still a draft, already queued with GitHub, or in conflict
+with the base branch, and names the branch. A failing check or a requested
+review does not block it, because GitHub decides what its protection rules
+require; both are stated in the confirmation instead. While GitHub is still
+working out whether the branch merges, that is what it says.
+
+Two windows can no longer start the same merge, close or ready at once, and
+neither can a window and the companion app.
+
+### [#1743] Clean is not the same as merged
+
+Removing a worktree checked for uncommitted files and unpushed commits and then
+described a clean one in a way that read like the work had landed. It now
+checks whether the branch is merged into the base that project actually uses,
+and says which base. When it cannot tell, it says so and keeps the files: the
+remove button is not offered on an answer nobody has.
+
+### [#1746] The model you picked is the model that runs
+
+Composer's Fast toggle drew itself off after you reopened the routing picker,
+while the turn still ran Fast at six times the base rate, and "using default"
+appeared next to an override. Thinking had the same problem on Sonnet and Opus,
+where it also moved the effort. The variant you choose now survives to the
+command line, through retries, resets and workflow steps, and the picker shows
+the one that will run.
+
+### [#1742] Codex routes to models that exist
+
+Automatic work on Codex asked for a model a ChatGPT account cannot use, so
+summaries, task models and workflow steps failed outright. Sol, Terra and Luna
+are now separate entries priced apart, which gives Codex a working cheap tier
+and a working mid tier, and the rate-limit step-down something to step down to.
+
+Gemini gains 3.8 Flash and 3.7 Flash and moves its defaults there; 3.5 Flash is
+retired and a stored selection lands on its replacement. Cursor's accepted
+models are back in step with the CLI. Where a published rate does not exist,
+spend is marked approximate rather than counted as measured.
+
+### Smaller fixes
+
+- Detaching the worktree you were writing into leaves the session with a
+  correct destination, or none, instead of one that no longer exists. [#1747]
+- A failed removal keeps the path, the cause and a way to try again instead of
+  disappearing until the next sweep. [#1749]
+- An agent spawned on a specific worktree runs its first turn there. [#1749]
+- Deleting an agent releases every worktree it was holding, not just one.
+  [#1750]
+- A summary runs in the worktree its turn wrote to. [#1750]
+- Past spend keeps its prices when a model is retired. [#1742]
+
 ## Goodboy v0.2.26
 
 The resolve queue splits the outcomes it used to lump together, pull request
