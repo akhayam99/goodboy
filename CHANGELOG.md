@@ -7,6 +7,49 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.28
+
+Every step of a workflow now runs on a model picked for that step, shown on the
+node and yours to override.
+
+### [#1752] The orchestrator chooses the model for each step
+
+A step used to fall back on the role defaults however the plan was written.
+Each one now gets its own provider and model, taken from the models you have
+connected that are neither cooling down nor blocked, and your configured
+defaults are what happens when nobody chose.
+
+The choice sits on the node with a short reason for it. Open it and you get the
+models within reach, the efforts each supports and the published price, and you
+can pin a step to one model or hand it back. A pin you set wins over anything
+the plan asked for. When a step fans out, each child resolves its own model from
+its own work instead of inheriting the parent's.
+
+If the model a step was running on goes away, Goodboy replaces it with one in
+the same price tier, which matches what it costs rather than what it can do. No
+model in the catalog carries a hand-graded score for ability, so every one of
+them is a full candidate. The step menu and the per-child choice both ship on,
+and `VITE_WORKFLOW_MODEL_METADATA=false` and
+`VITE_WORKFLOW_CHILD_MODEL_SELECTION=false` turn them off one at a time.
+
+### Fixes
+
+- The Custom tab in the workflow builder can be written by hand, without running
+  the planner first. [#1752]
+- Re-planning threw away hand-written steps before it knew the new plan had
+  worked. It keeps them until it does. [#1752]
+- A refusal could name a model that never ran. It names the one it turned down.
+  [#1752]
+- A model pinned for a run was dropped without a word when its provider went
+  cold. The run now says so and stops. [#1752]
+- Preset workflows and new sessions started on models that were out of reach.
+  They check first. [#1752]
+- A fan-out child could lose the model pinned for the run. [#1752]
+- A plan carrying a single unfamiliar field was discarded whole, and in silence.
+  [#1752]
+- A model still inside budget was swapped out as soon as a spend warning
+  appeared. [#1752]
+
 ## Goodboy v0.2.27
 
 A project can hold several worktrees in one session and every command, fix and
