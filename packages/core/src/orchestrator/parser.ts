@@ -1,8 +1,14 @@
-import type { ModelEffort, ModelSelection, ProviderId } from '@goodboy/types';
-import { providerEffortLevels } from '../providers/providerEffortLevels';
+import type {
+  ModelEffort,
+  ProviderId,
+  WorkflowTaskDifficulty,
+  WorkflowTaskType,
+} from '@goodboy/types';
+import { PROVIDER_IDS } from '@goodboy/types';
 import { resolvedStoredModelId } from '../providers/resolvedStoredModelId';
 import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
 import { isAgentRole } from '../roles';
+import { MODEL_EFFORTS } from './parseWorkflowRoutingProposal';
 import { structuredRunSummary } from './runSummary';
 import type { OrchestratorDecision, OrchestratorStep, RunSummary } from './types';
 
@@ -23,6 +29,44 @@ const nonEmptyString = (value: unknown): string | null => {
     return null;
   }
   return value.trim();
+};
+
+const providerId = (value: unknown): ProviderId | null => {
+  const candidate = nonEmptyString(value);
+  if (candidate === null) {
+    return null;
+  }
+  return PROVIDER_IDS.find((provider) => provider === candidate) ?? null;
+};
+
+const taskType = (value: unknown): WorkflowTaskType | null => {
+  const candidate = nonEmptyString(value);
+  if (
+    candidate === 'exploration' ||
+    candidate === 'planning' ||
+    candidate === 'implementation' ||
+    candidate === 'debugging' ||
+    candidate === 'review' ||
+    candidate === 'testing' ||
+    candidate === 'writing' ||
+    candidate === 'general'
+  ) {
+    return candidate;
+  }
+  return null;
+};
+
+const difficulty = (value: unknown): WorkflowTaskDifficulty | null => {
+  const candidate = nonEmptyString(value);
+  if (
+    candidate === 'light' ||
+    candidate === 'standard' ||
+    candidate === 'heavy' ||
+    candidate === 'unknown'
+  ) {
+    return candidate;
+  }
+  return null;
 };
 
 const stripCodeFences = (value: string): string =>
@@ -110,29 +154,22 @@ type ModelParams = {
   readonly id: string | null;
 };
 
-const validSelection = ({ provider, id }: ModelParams): ModelSelection | null => {
+const requestedModel = ({ provider, id }: ModelParams): string | null => {
   if (id === null) {
     return null;
   }
   const stored = resolveStoredModelSelection({ provider, id });
   if (stored.report?.kind === 'unknown') {
-    return null;
+    return id;
   }
-  return stored.selection;
+  return resolvedStoredModelId({ provider, selection: stored.selection });
 };
 
-type EffortParams = {
-  readonly provider: ProviderId;
-  readonly model: string | null;
-  readonly level: string | null;
-};
-
-const validEffort = ({ provider, model, level }: EffortParams): ModelEffort | null => {
+const requestedEffort = (level: string | null): ModelEffort | null => {
   if (level === null) {
     return null;
   }
-  const ladder = providerEffortLevels({ provider, ...(model !== null && { model }) });
-  return ladder.find((candidate) => candidate === level) ?? null;
+  return MODEL_EFFORTS.find((candidate) => candidate === level) ?? null;
 };
 
 type StepParams = {
@@ -149,23 +186,34 @@ const parseStep = ({ value, provider }: StepParams): OrchestratorStep | null => 
   const role = nonEmptyString(step['role']);
   const promptPrefix = nonEmptyString(step['promptPrefix']);
   const expectedOutput = nonEmptyString(step['expectedOutput']);
+  const requestedProvider = nonEmptyString(step['provider']);
+  const selectedProvider = providerId(step['provider']);
+  const unknownProvider = requestedProvider !== null && selectedProvider === null;
+  const selectedTaskType = taskType(step['taskType']);
+  const selectedDifficulty = difficulty(step['difficulty']);
+  const modelReason = nonEmptyString(step['modelReason']);
   if (name === null || promptPrefix === null) {
     return null;
   }
-  const selection = validSelection({ provider, id: nonEmptyString(step['model']) });
-  const model = selection === null ? null : resolvedStoredModelId({ provider, selection });
-  const effort = validEffort({
-    provider,
-    model: selection?.key ?? null,
-    level: nonEmptyString(step['effort']),
-  });
+  const emittedModel = nonEmptyString(step['model']);
+  const model = unknownProvider
+    ? emittedModel
+    : requestedModel({
+        provider: selectedProvider ?? provider,
+        id: emittedModel,
+      });
+  const effort = requestedEffort(nonEmptyString(step['effort']));
   return {
     name,
     role: role !== null && isAgentRole(role) ? role : 'custom',
     promptPrefix,
     ...(expectedOutput !== null && { expectedOutput }),
+    ...(requestedProvider !== null && { provider: selectedProvider ?? requestedProvider }),
     ...(model !== null && { model }),
     ...(effort !== null && { effort }),
+    ...(selectedTaskType !== null && { taskType: selectedTaskType }),
+    ...(selectedDifficulty !== null && { difficulty: selectedDifficulty }),
+    ...(modelReason !== null && { modelReason }),
   };
 };
 

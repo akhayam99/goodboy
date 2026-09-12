@@ -1,3 +1,5 @@
+import type { ModelRoutingProfile } from './workflow-routing';
+
 export type ProviderId =
   'anthropic' | 'cursor' | 'codex' | 'gemini' | 'opencode' | 'openrouter' | 'moonshot';
 
@@ -40,6 +42,7 @@ export type ModelDescriptor = {
   readonly weight: number;
   readonly effort: ReadonlyArray<ModelEffort> | null;
   readonly thinkerOnly: boolean;
+  readonly routingProfile: ModelRoutingProfile | null;
 };
 
 export type ProviderRegistryCapabilities = {

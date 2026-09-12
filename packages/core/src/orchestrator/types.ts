@@ -1,12 +1,23 @@
-import type { AgentRole, ModelEffort, ProviderId } from '@goodboy/types';
+import type {
+  AgentRole,
+  ModelEffort,
+  ProviderId,
+  WorkflowTaskDifficulty,
+  WorkflowTaskType,
+} from '@goodboy/types';
+import type { ModelPriceSummary } from '../providers/model-price';
 
 export type OrchestratorStep = {
   readonly name: string;
   readonly role: AgentRole;
   readonly promptPrefix: string;
   readonly expectedOutput?: string;
+  readonly provider?: string;
   readonly model?: string;
   readonly effort?: ModelEffort;
+  readonly taskType?: WorkflowTaskType;
+  readonly difficulty?: WorkflowTaskDifficulty;
+  readonly modelReason?: string;
 };
 
 export type RunSummary =
@@ -44,13 +55,19 @@ export type OrchestratorCompletedStep = {
 };
 
 export type OrchestratorModelOption = {
-  readonly id: string;
+  readonly provider: ProviderId;
+  readonly model: string;
   readonly label: string;
-  readonly note: string;
+  readonly efforts: ReadonlyArray<ModelEffort>;
+  readonly taskTypes: ReadonlyArray<WorkflowTaskType>;
+  readonly preferredDifficulty: ReadonlyArray<WorkflowTaskDifficulty>;
+  readonly contextWindow: number;
+  readonly price: ModelPriceSummary | null;
 };
 
 export type OrchestratorRoleDefault = {
   readonly role: AgentRole;
+  readonly provider: ProviderId;
   readonly model: string;
   readonly effort: ModelEffort;
 };
@@ -65,6 +82,7 @@ export type OrchestratorInput = {
   readonly modelMenu: ReadonlyArray<OrchestratorModelOption>;
   readonly roleDefaults: ReadonlyArray<OrchestratorRoleDefault>;
   readonly stepsUsed: number;
+  readonly isModelMetadataEnabled?: boolean;
   readonly spendLimitUsd?: number;
   readonly spentUsd?: number;
 };

@@ -99,6 +99,51 @@ describe('workflow queries', () => {
     expect((await getWorkflow(db, workflowId))!.origin).toBeUndefined();
   });
 
+  it('round-trips validated workflow routing objects', async () => {
+    const workflow = buildWorkflow();
+    await upsertWorkflow(db, {
+      ...workflow,
+      steps: [
+        {
+          ...workflow.steps[0]!,
+          routingLock: {
+            version: 1,
+            pick: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+            origin: 'user',
+          },
+          routingDecision: {
+            version: 1,
+            proposal: null,
+            selected: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+            source: 'step_lock',
+            reason: 'Selected for implementation',
+            adjustment: 'none',
+            executed: null,
+          },
+          taskProfile: {
+            taskType: 'implementation',
+            difficulty: 'heavy',
+            basis: 'agent',
+          },
+        },
+      ],
+    });
+
+    const stored = await getWorkflow(db, workflowId);
+    expect(stored?.steps[0]?.routingLock?.origin).toBe('user');
+    expect(stored?.steps[0]?.routingDecision?.source).toBe('step_lock');
+    expect(stored?.steps[0]?.taskProfile?.taskType).toBe('implementation');
+  });
+
+  it('rejects malformed nested routing objects at the read boundary', async () => {
+    await upsertWorkflow(db, buildWorkflow());
+    await db.execute('UPDATE steps SET routing_lock = ? WHERE id = ?', [
+      '{"version":1,"pick":{},"origin":"user"}',
+      'step-1',
+    ]);
+    await expect(getWorkflow(db, workflowId)).rejects.toThrow('Invalid routing lock');
+  });
+
   it('still rejects a duplicate name among live workflows', async () => {
     await upsertWorkflow(db, buildWorkflow());
 

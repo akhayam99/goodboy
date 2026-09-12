@@ -15,8 +15,8 @@ export const isBudgetBlocked = ({ alerts, sessionId }: Params): boolean => {
   return alerts.some(
     (alert) =>
       alert.dismissedAt === undefined &&
-      ((alert.kind === 'session-exceeded' && alert.sessionId === sessionId) ||
-        alert.kind === 'provider-exceeded'),
+      alert.kind === 'session-exceeded' &&
+      alert.sessionId === sessionId,
   );
 };
 

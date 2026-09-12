@@ -318,6 +318,56 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
   });
 
+  it('cluster children cannot recursively materialize a cluster plan', async () => {
+    const clusters: ReadonlyArray<ImplementationCluster> = [
+      { title: 'a', instructions: 'i1' },
+      { title: 'b', instructions: 'i2' },
+    ];
+    const child: Agent = {
+      ...makeAgent('implementer', 'Implement'),
+      parentAgentId: 'container-1' as AgentId,
+    };
+    const { activate } = buildHarness({
+      agent: child,
+      workflow: makeWorkflow('Implement'),
+      plans: [makePlan({ clusters })],
+      autoRun: true,
+    });
+
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+    expect(fanOutClustersSpy).not.toHaveBeenCalled();
+  });
+
+  it('both container entry paths use the same routing decision contract', async () => {
+    const routingProposal = {
+      pick: { provider: 'anthropic', model: 'haiku-4.5', effort: 'low' },
+      reason: 'a mechanical edit',
+      source: 'agent',
+      profile: { taskType: 'implementation', difficulty: 'light', basis: 'agent' },
+    } satisfies NonNullable<ImplementationCluster['routingProposal']>;
+    const clusters: ReadonlyArray<ImplementationCluster> = [
+      { title: 'a', instructions: 'i1', routingProposal },
+      { title: 'b', instructions: 'i2' },
+    ];
+    const { activate } = buildHarness({
+      agent: makeAgent('implementer', 'Implement'),
+      workflow: makeWorkflow('Implement'),
+      plans: [makePlan({ clusters })],
+      autoRun: true,
+    });
+
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+    const call = fanOutClustersSpy.mock.calls[0] as unknown as ReadonlyArray<unknown>;
+    const container = call[3] as Agent;
+    const passed = call[4] as ReadonlyArray<ImplementationCluster>;
+    expect(container.parentAgentId).toBeUndefined();
+    expect(passed[0]?.routingProposal).toEqual(routingProposal);
+    expect(passed[1]?.routingProposal).toBeUndefined();
+  });
+
   it('an implementer step with multiple clusters fans out even when hands-free is off', async () => {
     const clusters: ReadonlyArray<ImplementationCluster> = [
       { title: 'a', instructions: 'i1' },

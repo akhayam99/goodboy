@@ -1,13 +1,18 @@
-import type { ProviderId } from '@goodboy/types';
+import type { ModelEffort, ProviderId } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core';
-import { PROVIDER_LABEL, modelLabel } from '../../../features/chat/utils/chat-constants';
+import {
+  EFFORT_LABEL,
+  PROVIDER_LABEL,
+  modelLabel,
+} from '../../../features/chat/utils/chat-constants';
 
 type Params = {
   readonly provider: ProviderId;
   readonly model?: string;
+  readonly effort?: ModelEffort | null;
 };
 
-export const recommendationSummary = ({ provider, model }: Params): string => {
+export const recommendationSummary = ({ provider, model, effort }: Params): string => {
   const label = PROVIDER_LABEL[provider];
   if (model == null) {
     return label;
@@ -16,5 +21,9 @@ export const recommendationSummary = ({ provider, model }: Params): string => {
   if (resolved.report?.kind === 'unknown') {
     return label;
   }
-  return `${label} · ${modelLabel(resolved.selection.key)}`;
+  const named = `${label} · ${modelLabel(resolved.selection.key)}`;
+  if (effort == null) {
+    return named;
+  }
+  return `${named} · ${EFFORT_LABEL[effort]}`;
 };

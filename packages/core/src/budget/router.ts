@@ -24,9 +24,10 @@ export type ResolveProviderInput = {
   };
   getDefaultModel: (provider: ProviderId) => string;
   force?: boolean;
+  keepPreferredOverThreshold?: boolean;
 };
 
-const PROVIDER_ID_TO_NAME: Readonly<Record<ProviderId, ProviderName>> = {
+export const PROVIDER_ID_TO_NAME: Readonly<Record<ProviderId, ProviderName>> = {
   anthropic: 'anthropic',
   cursor: 'cursor',
   codex: 'openai',
@@ -84,6 +85,10 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
     preferredConnected && preferredAllowed && !preferredResult.exceeded && !preferredCoolingDown;
 
   if (preferredUsable && !preferredResult.overThreshold) {
+    return keepPreferred;
+  }
+
+  if (preferredUsable && input.keepPreferredOverThreshold === true) {
     return keepPreferred;
   }
 

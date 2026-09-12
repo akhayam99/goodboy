@@ -33,6 +33,8 @@ import { markSessionMobileShared } from '../../../features/companion/mobileConfi
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { clampTitle } from './titleLimit';
 import { preSpawnWorkflowAgents } from '../workflows/preSpawnWorkflowAgents';
+import { persistOrchestrationStop } from '../workflows/orchestrateNextStep';
+import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { discardUncreatedSession } from './discardUncreatedSession';
 import { rememberMaterializationSeed } from './materializationSeeds';
 import { resolveSessionProject } from './resolveSessionProject';
@@ -281,9 +283,27 @@ export const createSession = (set: SetFn, get: GetFn) => {
           baseOrdinal: 0,
           defaultProvider: session.providerPreference.defaultProvider,
           roleModels,
+          sessionModel: session.modelOverride ?? null,
           sessionEffort: session.effort ?? null,
           ...(workspaceVerbositySeed != null && { defaultVerbosity: workspaceVerbositySeed }),
+          availability: workflowAvailabilitySnapshot({
+            providers: get().providers ?? [],
+            cooldowns: get().providerCooldowns ?? {},
+            alerts: get().budgetAlerts ?? [],
+            sessionId: session.id,
+            isRunBudgetBlocked: false,
+            nowMs: Date.now(),
+          }),
         });
+        if (spawned.blocked.length > 0 && workflowRunId !== undefined) {
+          const firstBlocked = spawned.blocked[0]!;
+          await persistOrchestrationStop({
+            set,
+            sessionId: session.id,
+            workflowRunId,
+            stop: { kind: 'failure', message: firstBlocked.reason },
+          });
+        }
         Object.assign(agentModelOverrides, spawned.modelOverrides);
         Object.assign(agentKindOverrides, spawned.kindOverrides);
         Object.assign(agentProviderOverrides, spawned.providerOverrides);

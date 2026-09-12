@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseOrchestratorDecision } from './parser';
+import { parseWorkflowRoutingProposal } from './parseWorkflowRoutingProposal';
 
 describe('parseOrchestratorDecision', () => {
   it('parses a next decision surrounded by prose', () => {
@@ -74,6 +75,44 @@ describe('parseOrchestratorDecision', () => {
     });
   });
 
+  it('parses optional provider-qualified task metadata', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Fix it","role":"implementer","promptPrefix":"Fix the bug.","provider":"codex","taskType":"debugging","difficulty":"heavy","modelReason":"The failure needs deep tracing."}}<</orchestrator>>',
+    });
+
+    expect(parsed).toEqual({
+      action: 'next',
+      reason: 'x',
+      step: {
+        name: 'Fix it',
+        role: 'implementer',
+        promptPrefix: 'Fix the bug.',
+        provider: 'codex',
+        taskType: 'debugging',
+        difficulty: 'heavy',
+        modelReason: 'The failure needs deep tracing.',
+      },
+    });
+  });
+
+  it('leaves legacy fields optional and turns a malformed profile into unknown', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Fix it","role":"implementer","promptPrefix":"Fix the bug.","taskType":"vibes","difficulty":"extreme","modelReason":"   "}}<</orchestrator>>',
+    });
+
+    expect(parsed).toEqual({
+      action: 'next',
+      reason: 'x',
+      step: {
+        name: 'Fix it',
+        role: 'implementer',
+        promptPrefix: 'Fix the bug.',
+      },
+    });
+  });
+
   it('keeps a model and effort the provider catalog supports', () => {
     const parsed = parseOrchestratorDecision({
       provider: 'anthropic',
@@ -93,23 +132,75 @@ describe('parseOrchestratorDecision', () => {
     });
   });
 
-  it('drops a model the provider does not offer', () => {
+  it("keeps another connected provider's model through parsing", () => {
     const parsed = parseOrchestratorDecision({
       provider: 'anthropic',
-      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Plan","role":"planner","promptPrefix":"Draft a plan.","model":"gpt-5.6"}}<</orchestrator>>',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Plan","role":"planner","promptPrefix":"Draft a plan.","provider":"codex","model":"gpt-5.6"}}<</orchestrator>>',
     });
 
     expect(parsed).toEqual({
       action: 'next',
       reason: 'x',
-      step: { name: 'Plan', role: 'planner', promptPrefix: 'Draft a plan.' },
+      step: {
+        name: 'Plan',
+        role: 'planner',
+        promptPrefix: 'Draft a plan.',
+        provider: 'codex',
+        model: 'gpt-5.6-sol',
+      },
     });
   });
 
-  it('drops an effort outside the ladder of the chosen model', () => {
+  it('keeps missing routing apart from routing no catalog can serve', () => {
+    const missing = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Plan","role":"planner","promptPrefix":"Draft a plan."}}<</orchestrator>>',
+    });
+    const invalid = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Plan","role":"planner","promptPrefix":"Draft a plan.","model":"gpt-5.6"}}<</orchestrator>>',
+    });
+
+    expect(missing).toEqual({
+      action: 'next',
+      reason: 'x',
+      step: { name: 'Plan', role: 'planner', promptPrefix: 'Draft a plan.' },
+    });
+    expect(invalid).toEqual({
+      action: 'next',
+      reason: 'x',
+      step: {
+        name: 'Plan',
+        role: 'planner',
+        promptPrefix: 'Draft a plan.',
+        model: 'gpt-5.6',
+      },
+    });
+  });
+
+  it('carries an effort the chosen model does not support for later normalization', () => {
     const parsed = parseOrchestratorDecision({
       provider: 'anthropic',
       raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Fix","role":"implementer","promptPrefix":"Fix it.","model":"sonnet-5","effort":"max"}}<</orchestrator>>',
+    });
+
+    expect(parsed).toEqual({
+      action: 'next',
+      reason: 'x',
+      step: {
+        name: 'Fix',
+        role: 'implementer',
+        promptPrefix: 'Fix it.',
+        model: 'sonnet-5',
+        effort: 'max',
+      },
+    });
+  });
+
+  it('drops an effort level that is not an effort level at all', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Fix","role":"implementer","promptPrefix":"Fix it.","model":"sonnet-5","effort":"turbo"}}<</orchestrator>>',
     });
 
     expect(parsed).toEqual({
@@ -261,6 +352,53 @@ describe('parseOrchestratorDecision, effort beside a combo', () => {
       promptPrefix: 'Plan it.',
       model: 'claude-opus-5-thinking-high',
       effort: 'high',
+    });
+  });
+});
+
+describe('parseOrchestratorDecision, unrecognised provider', () => {
+  it('keeps an unknown provider so the routing parse can reject the pair', () => {
+    const decision = parseOrchestratorDecision({
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Plan","role":"planner","promptPrefix":"Plan it.","provider":"not-a-provider","model":"composer-2.5"}}<</orchestrator>>',
+      provider: 'cursor',
+    });
+
+    expect(decision?.action === 'next' && decision.step).toEqual({
+      name: 'Plan',
+      role: 'planner',
+      promptPrefix: 'Plan it.',
+      provider: 'not-a-provider',
+      model: 'composer-2.5',
+    });
+    expect(
+      decision?.action === 'next' &&
+        parseWorkflowRoutingProposal({
+          fields: decision.step,
+          emittingProvider: 'cursor',
+        }),
+    ).toEqual({
+      kind: 'invalid',
+      requested: { provider: 'not-a-provider', model: 'composer-2.5', effort: null },
+      reason: 'Unknown routing provider: not-a-provider.',
+      profile: { taskType: 'general', difficulty: 'unknown', basis: 'unknown' },
+    });
+  });
+
+  it('still reads a missing provider as the emitting provider', () => {
+    const decision = parseOrchestratorDecision({
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Plan","role":"planner","promptPrefix":"Plan it.","model":"composer-2.5"}}<</orchestrator>>',
+      provider: 'cursor',
+    });
+
+    expect(
+      decision?.action === 'next' &&
+        parseWorkflowRoutingProposal({
+          fields: decision.step,
+          emittingProvider: 'cursor',
+        }),
+    ).toMatchObject({
+      kind: 'valid',
+      proposal: { pick: { provider: 'cursor', model: 'composer-2.5' } },
     });
   });
 });

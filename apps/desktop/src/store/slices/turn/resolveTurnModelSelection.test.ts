@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { resolveModelArgs } from '@goodboy/core';
 import type { RoutingDecision } from '@goodboy/types';
 import { agentPinApplies } from './agentPinApplies';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
@@ -345,5 +346,47 @@ describe('resolveTurnModelSelection', () => {
     });
 
     expect(selection.key).toBe('haiku-4.5');
+  });
+
+  it('hands the workflow selection to the CLI arguments unchanged', () => {
+    const selection = resolveTurnModelSelection({
+      ...BASE_PARAMS,
+      provider: 'codex',
+      routingDecision: {
+        selectedProvider: 'codex',
+        selectedModel: 'gpt-5.6-sol',
+        reason: 'override',
+        fallbackUsed: false,
+      },
+      phaseProviderOverride: 'codex',
+      phaseModelOverride: 'gpt-5.6-sol',
+      requestedEffort: 'xhigh',
+    });
+    const resolved = resolveModelArgs({ provider: 'codex', selection });
+
+    expect(selection.key).toBe('gpt-5.6-sol');
+    expect(selection.effort).toBe('xhigh');
+    expect(resolved.args.join(' ')).toContain('model_reasoning_effort="xhigh"');
+    expect(resolved.args).toContain('gpt-5.6-sol');
+  });
+
+  it('never rewrites a workflow selection back to the provider routing default', () => {
+    const selection = resolveTurnModelSelection({
+      ...BASE_PARAMS,
+      provider: 'anthropic',
+      routingDecision: {
+        selectedProvider: 'anthropic',
+        selectedModel: 'claude-sonnet-4-5',
+        reason: 'preferred',
+        fallbackUsed: false,
+      },
+      phaseProviderOverride: 'anthropic',
+      phaseModelOverride: 'fable-5',
+      requestedEffort: 'max',
+    });
+    const resolved = resolveModelArgs({ provider: 'anthropic', selection });
+
+    expect(selection.key).toBe('fable-5');
+    expect(resolved.args).toContain('--model');
   });
 });

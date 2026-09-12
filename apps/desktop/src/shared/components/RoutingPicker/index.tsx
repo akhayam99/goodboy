@@ -77,6 +77,7 @@ export type Props = {
   readonly verbosity?: VerbosityLevel;
   readonly onVerbosity?: (verbosity: VerbosityLevel) => void;
   readonly onReset?: () => void;
+  readonly resetLabel?: string;
   readonly overridden?: boolean;
   readonly defaultSummary?: string;
   readonly variant?: 'field' | 'pill';
@@ -99,6 +100,7 @@ export const RoutingPicker = ({
   verbosity,
   onVerbosity,
   onReset,
+  resetLabel,
   overridden,
   defaultSummary,
   variant = 'field',
@@ -123,6 +125,10 @@ export const RoutingPicker = ({
   const effortValue = effort.value ?? 'medium';
   const recommendedProvider = recommendation?.provider;
   const recommendedModel = recommendation?.model;
+  const recommendedEffort = recommendation?.effort;
+  const recommendedReason = recommendation?.reason;
+  const resetCopy = resetLabel ?? 'reset to default';
+  const resetAriaLabel = resetLabel ?? 'Reset routing override';
   const routing = resolveRouting({
     providers: ROUTING_PICKER_CONSTANTS.providers,
     provider,
@@ -281,14 +287,12 @@ export const RoutingPicker = ({
         <>
           {onReset != null && isOverridden && !disabled && (
             <Tooltip
-              content={
-                defaultSummary != null ? `reset to default (${defaultSummary})` : 'reset to default'
-              }
+              content={defaultSummary != null ? `${resetCopy} (${defaultSummary})` : resetCopy}
             >
               <button
                 type="button"
                 onClick={onReset}
-                aria-label="Reset routing override"
+                aria-label={resetAriaLabel}
                 className="shrink-0 rounded-full p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
               >
                 <RotateCcw size={10} aria-hidden />
@@ -371,8 +375,10 @@ export const RoutingPicker = ({
             summary={recommendationSummary({
               provider: recommendedProvider,
               model: recommendedModel,
+              effort: recommendedEffort,
             })}
             active={isViewingAuto}
+            {...(recommendedReason != null && { reason: recommendedReason })}
             onSelect={() => onPickProvider({ next: '', viewedProvider: routing.provider })}
           />
           <Divider />

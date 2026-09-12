@@ -1,5 +1,6 @@
-import type { ModelCostTier, ProviderId, RoleModelPreferences } from '@goodboy/types';
+import type { ProviderId, RoleModelPreferences } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
+import { MODEL_COST_RANK } from './modelCostRank';
 import { resolveRoleRouting } from './role-models';
 
 export type AutoModelChoice = {
@@ -19,12 +20,6 @@ type Params = {
   readonly prefs?: RoleModelPreferences | null;
 };
 
-const COST_RANK: Readonly<Record<ModelCostTier, number>> = {
-  cheap: 1,
-  mid: 2,
-  expensive: 3,
-};
-
 const THINKING_ROLES: ReadonlySet<string> = new Set(['planner', 'investigator', 'custom']);
 
 export const autoModelForRole = ({
@@ -42,7 +37,7 @@ export const autoModelForRole = ({
   }
 
   const tier = PROVIDER_CAPABILITIES[def.provider].models.find((m) => m.id === def.model)?.costTier;
-  const target = COST_RANK[tier ?? 'mid'];
+  const target = MODEL_COST_RANK[tier ?? 'mid'];
   const wantsThinker = THINKING_ROLES.has(role);
   let best: { provider: ProviderId; model: string; score: number } | null = null;
   for (const provider of providers) {
@@ -50,7 +45,7 @@ export const autoModelForRole = ({
       if (m.thinkerOnly && !wantsThinker) {
         continue;
       }
-      const score = -Math.abs(COST_RANK[m.costTier] - target) * 1000 + m.weight;
+      const score = -Math.abs(MODEL_COST_RANK[m.costTier] - target) * 1000 + m.weight;
       if (best === null || score > best.score) {
         best = { provider, model: m.id, score };
       }

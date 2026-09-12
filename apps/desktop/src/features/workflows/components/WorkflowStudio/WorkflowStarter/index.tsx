@@ -5,7 +5,8 @@ type Props = {
   readonly prompt: string;
   readonly isWorking: boolean;
   readonly error: string | null;
-  readonly providerReason: string | null;
+  readonly canGenerate: boolean;
+  readonly providerStatusText: string | null;
   readonly onPromptChange: (value: string) => void;
   readonly onExample: (value: string) => void;
   readonly onCreate: () => void;
@@ -31,7 +32,8 @@ export const WorkflowStarter = ({
   prompt,
   isWorking,
   error,
-  providerReason,
+  canGenerate,
+  providerStatusText,
   onPromptChange,
   onExample,
   onCreate,
@@ -96,8 +98,8 @@ export const WorkflowStarter = ({
         ) : null}
 
         {error !== null ? <p className="text-xs text-danger">{error}</p> : null}
-        {providerReason !== null ? (
-          <p className="text-xs text-muted-foreground">{providerReason}</p>
+        {providerStatusText !== null ? (
+          <p className="text-xs text-muted-foreground">{providerStatusText}</p>
         ) : null}
       </ScrollFade>
 
@@ -108,7 +110,7 @@ export const WorkflowStarter = ({
         <Button
           variant="primary"
           onClick={onCreate}
-          disabled={isWorking || providerReason !== null || prompt.trim().length === 0}
+          disabled={isWorking || !canGenerate || prompt.trim().length === 0}
         >
           <CONCEPT_ICONS.enhance size={ICON_SIZE.control} aria-hidden />
           Create with agent

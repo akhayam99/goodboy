@@ -64,6 +64,6 @@ export const agentReferenceRouting = ({
   return {
     provider: routing.provider,
     model: resolveModelIdForProvider({ provider: routing.provider, modelId: routing.model }),
-    effort: routing.effort,
+    effort: routing.effort ?? session.effort ?? 'medium',
   };
 };

@@ -143,6 +143,28 @@ describe('session_plans queries', () => {
     ]);
   });
 
+  it('still loads clusters that carry a field this build does not know', async () => {
+    const db = await seedFixture();
+    await upsertPlan(db, {
+      id: 'p1' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA1,
+      title: 'clustered plan',
+      bodyMd: 'body',
+      clusters: [{ title: 'move files to domain', instructions: 'relocate the files' }],
+    });
+    await db.execute(`UPDATE session_plans SET clusters_json = ? WHERE id = ?`, [
+      JSON.stringify([
+        { title: 'move files to domain', instructions: 'relocate the files', ownerHint: 'ak' },
+      ]),
+      'p1',
+    ]);
+    const plans = await listPlansForSession(db, sessionId);
+
+    expect(plans[0]!.clusters).toHaveLength(1);
+    expect(plans[0]!.clusters![0]!.title).toBe('move files to domain');
+  });
+
   it('omits clusters when none were provided', async () => {
     const db = await seedFixture();
     await upsertPlan(db, {

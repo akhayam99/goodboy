@@ -11,6 +11,11 @@ import type {
 } from './ids';
 import type { ModelEffort, ProviderId } from './provider-registry';
 import type { VerbosityLevel } from './settings';
+import type {
+  WorkflowRoutingDecision,
+  WorkflowRoutingLock,
+  WorkflowTaskProfile,
+} from './workflow-routing';
 
 export type AgentEffort = ModelEffort;
 
@@ -57,6 +62,9 @@ export type Step = Readonly<{
   effort?: AgentEffort;
   verbosity?: VerbosityLevel;
   orchestratorReason?: string;
+  routingLock?: WorkflowRoutingLock | null;
+  routingDecision?: WorkflowRoutingDecision | null;
+  taskProfile?: WorkflowTaskProfile | null;
   deletedAt?: IsoDateTime;
 }>;
 
@@ -112,4 +120,7 @@ export type Agent = Readonly<{
   sourceCommentUrl?: string;
   sourceKind?: AgentSourceKind;
   domains?: ReadonlyArray<string>;
+  routingLock?: WorkflowRoutingLock | null;
+  routingDecision?: WorkflowRoutingDecision | null;
+  taskProfile?: WorkflowTaskProfile | null;
 }>;

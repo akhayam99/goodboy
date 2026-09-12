@@ -170,7 +170,23 @@ export {
   deleteSkill,
   deleteSkillsForWorkspace,
 } from './queries/skill';
-export { listWorkflows, getWorkflow, upsertWorkflow, deleteWorkflow } from './queries/workflow';
+export {
+  listWorkflows,
+  getWorkflow,
+  upsertWorkflow,
+  deleteWorkflow,
+  updateStepRouting,
+  type StepRoutingUpdate,
+} from './queries/workflow';
+export {
+  isWorkflowRoutingDecision,
+  isWorkflowRoutingLock,
+  isWorkflowTaskProfile,
+  legacyAgentRoutingDecision,
+  legacyStepRoutingLock,
+  parseRoutingJson,
+  stringifyRoutingJson,
+} from './queries/workflowRoutingCodec';
 export {
   listAgentsForSession,
   listAgentsForSessions,
@@ -178,6 +194,8 @@ export {
   softDeleteAgent,
   restoreAgent,
   updateAgentConfig,
+  updateAgentRouting,
+  type AgentRoutingUpdate,
   updateAgentDomains,
   getAgentById,
   type AgentConfigUpdate,

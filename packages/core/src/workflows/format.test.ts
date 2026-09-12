@@ -76,6 +76,41 @@ describe('parseFormattedWorkflow', () => {
     expect(parseFormattedWorkflow(json)?.goal).toBe('Ship the gitlab integration.');
   });
 
+  it('carries the routing fields a generated step emitted, and nothing when it emitted none', () => {
+    const text = JSON.stringify({
+      name: 'flow',
+      description: 'd',
+      steps: [
+        {
+          name: 'Build',
+          role: 'implementer',
+          promptPrefix: 'Build it.',
+          expectedOutput: 'Code.',
+          provider: 'codex',
+          model: 'gpt-5.6',
+          effort: 'high',
+          taskType: 'implementation',
+          difficulty: 'standard',
+          modelReason: 'The change spans several files.',
+        },
+        { name: 'Review', role: 'reviewer', promptPrefix: 'Review it.', expectedOutput: 'Notes.' },
+      ],
+      suggestions: [],
+    });
+
+    const result = parseFormattedWorkflow(text);
+
+    expect(result?.steps[0]?.routing).toEqual({
+      provider: 'codex',
+      model: 'gpt-5.6',
+      effort: 'high',
+      taskType: 'implementation',
+      difficulty: 'standard',
+      modelReason: 'The change spans several files.',
+    });
+    expect(result?.steps[1]).not.toHaveProperty('routing');
+  });
+
   it('leaves goal undefined when absent or blank', () => {
     const withoutGoal = JSON.stringify({
       steps: [{ name: 'Do', role: 'custom', promptPrefix: 'x', expectedOutput: 'y' }],
@@ -198,5 +233,34 @@ describe('buildWorkflowFormatUserPrompt', () => {
   it('omits the draft section when there is nothing to refine', () => {
     const prompt = buildWorkflowFormatUserPrompt({ description: 'fresh workflow' });
     expect(prompt).not.toContain('CURRENT DRAFT');
+  });
+
+  it('asks each generated step to carry a provider qualified pick when a menu is supplied', () => {
+    const prompt = buildWorkflowFormatUserPrompt({
+      description: 'fresh workflow',
+      modelMenu: [
+        {
+          provider: 'codex',
+          model: 'gpt-5.6',
+          label: 'GPT-5.6',
+          efforts: ['low', 'high'],
+          taskTypes: ['implementation'],
+          preferredDifficulty: ['standard'],
+          contextWindow: 400000,
+          price: null,
+        },
+      ],
+    });
+
+    expect(prompt).toContain('AVAILABLE MODELS');
+    expect(prompt).toContain('codex/gpt-5.6 efforts low,high imp|st ctx 400k price unknown');
+    expect(prompt).toContain('taskType and difficulty describe the work, not the model');
+  });
+
+  it('leaves the model section out when no menu is supplied', () => {
+    const prompt = buildWorkflowFormatUserPrompt({ description: 'fresh workflow' });
+
+    expect(prompt).not.toContain('AVAILABLE MODELS');
+    expect(prompt).not.toContain('modelReason');
   });
 });

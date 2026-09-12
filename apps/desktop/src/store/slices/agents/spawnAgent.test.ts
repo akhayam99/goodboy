@@ -74,6 +74,20 @@ const TWO_CLUSTERS: ReadonlyArray<ImplementationCluster> = [
   { title: 'b', instructions: 'i2' },
 ];
 
+const ROUTED_CLUSTERS: ReadonlyArray<ImplementationCluster> = [
+  {
+    title: 'a',
+    instructions: 'i1',
+    routingProposal: {
+      pick: { provider: 'anthropic', model: 'haiku-4.5', effort: 'low' },
+      reason: 'a mechanical edit',
+      source: 'agent',
+      profile: { taskType: 'implementation', difficulty: 'light', basis: 'agent' },
+    },
+  },
+  { title: 'b', instructions: 'i2' },
+];
+
 const PR = {
   number: 9108,
   title: 'resolve: foo',
@@ -334,6 +348,40 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
     expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('cluster children cannot recursively materialize a cluster plan', async () => {
+    const { spawn } = buildHarness([makePlan({ clusters: TWO_CLUSTERS })]);
+    invokeAgentInsertSpy.mockResolvedValue({
+      id: INSERTED_ID,
+      sessionId: SESSION_ID,
+      parentAgentId: 'container-1' as AgentId,
+      ordinal: 1,
+      name: 'cluster child',
+      status: 'pending',
+      kind: 'implementer',
+    } as Agent);
+
+    await spawn(SESSION_ID, {
+      kindOverride: 'implementer',
+      parentAgentId: 'container-1' as AgentId,
+    });
+
+    expect(fanOutClustersSpy).not.toHaveBeenCalled();
+  });
+
+  it('both container entry paths use the same routing decision contract', async () => {
+    const { spawn } = buildHarness([makePlan({ clusters: ROUTED_CLUSTERS })]);
+
+    await spawn(SESSION_ID, { kindOverride: 'implementer' });
+
+    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+    const call = fanOutClustersSpy.mock.calls[0] as unknown as ReadonlyArray<unknown>;
+    const container = call[3] as Agent;
+    const passed = call[4] as ReadonlyArray<ImplementationCluster>;
+    expect(container.parentAgentId).toBeUndefined();
+    expect(passed[0]?.routingProposal).toEqual(ROUTED_CLUSTERS[0]?.routingProposal);
+    expect(passed[1]?.routingProposal).toBeUndefined();
   });
 
   it('does not fan out a single-cluster plan (kicks off the implementer directly)', async () => {

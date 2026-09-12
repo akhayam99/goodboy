@@ -1,4 +1,4 @@
-import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import type { Agent, AgentRole, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import {
   extractFanOut,
   fanOutCapabilityForRole,
@@ -6,36 +6,24 @@ import {
   type ExtractedFanOutArea,
 } from '@goodboy/core';
 import {
-  invokeAgentInsert,
+  invokeAgentInsertBatch,
   invokeAgentList,
   invokeAgentUpdateStatus,
+  type AgentInsertArgs,
 } from '../../../features/workflows/workflows';
 import { worktreeChangedFiles } from '../../../features/worktree/worktree';
 import {
   KIND_TO_ROLE,
-  kindRouting,
   inferAgentKindFromName,
   type AgentKind,
 } from '../../../features/session/agent-kind';
-import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
+import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import type { GetFn, SetFn } from './types';
 
 export const SCOUT_DEPTH_CAP = 2;
 const FAN_OUT_DEPTH_CAP = 1;
 export const FAN_OUT_MAX_CHILDREN = 4;
-
-const resolveContainerModel = (get: GetFn, container: Agent): string => {
-  const override = get().agentModelOverride[container.id];
-  if (override) {
-    return override;
-  }
-  if (container.modelOverride) {
-    return container.modelOverride;
-  }
-  const kind = (container.kind as AgentKind | undefined) ?? inferAgentKindFromName(container.name);
-  const roleModels = roleModelsForSession({ state: get(), sessionId: container.sessionId });
-  return kindRouting({ kind, roleModels }).model;
-};
 
 const synthesisStarted = new Set<string>();
 const selfExploreTasked = new Set<string>();
@@ -66,11 +54,11 @@ const resolveAgentKind = (agent: Agent): AgentKind => {
   return persisted ?? inferAgentKindFromName(agent.name);
 };
 
-const resolveAgentRole = (agent: Agent): string => {
+const resolveAgentRole = (agent: Agent): AgentRole => {
   return KIND_TO_ROLE[resolveAgentKind(agent)] ?? 'custom';
 };
 
-const depthCapForRole = (role: string): number => {
+const depthCapForRole = (role: AgentRole): number => {
   if (role === 'scout') {
     return SCOUT_DEPTH_CAP;
   }
@@ -324,7 +312,7 @@ const fanOutAgents = async ({
   readonly sessionId: SessionId;
   readonly container: Agent;
   readonly areas: ReadonlyArray<ExtractedFanOutArea>;
-  readonly role: string;
+  readonly role: AgentRole;
 }): Promise<void> => {
   const clamped = areas.slice(0, FAN_OUT_MAX_CHILDREN);
   const dropped = areas.length - clamped.length;
@@ -340,29 +328,66 @@ const fanOutAgents = async ({
   if (clamped.length < 2) {
     return;
   }
+  const existing = get().sessionPhaseRuns[sessionId] ?? [];
+  if (childrenOf(existing, container.id).length > 0) {
+    return;
+  }
 
-  synthesisStarted.delete(container.id);
-  await invokeAgentUpdateStatus(container.id, { status: 'running' });
+  const batch = childRoutingBatch({
+    state: get(),
+    sessionId,
+    workflowRunId: container.workflowRunId ?? null,
+    role,
+    requests: clamped.map((area) => ({
+      proposal: area.routingProposal ?? null,
+      promptText: `${area.area}\n${area.query}`,
+      childLock: null,
+    })),
+  });
+  if (batch.kind === 'blocked') {
+    void get().emitNotification(
+      'agent-auto-spawn',
+      'warning',
+      `agent fan-out held: ${container.name}`,
+      batch.reason,
+      { sessionId },
+    );
+    return;
+  }
 
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
   const childDepth = scoutDepth(runs, container.id) + 1;
   const childKind = resolveAgentKind(container);
-  const childModel = resolveContainerModel(get, container);
   const baseOrdinal = runs.reduce((m, r) => Math.max(m, r.ordinal), -1) + 1;
 
-  const childIds: AgentId[] = [];
-  for (let i = 0; i < clamped.length; i++) {
-    const inserted = await invokeAgentInsert({
-      sessionId,
-      parentAgentId: container.id,
-      ordinal: baseOrdinal + i,
-      name: clamped[i]!.area,
-      status: 'pending',
-      kind: childKind,
-      ...(container.workflowRunId != null && { workflowRunId: container.workflowRunId }),
-    });
-    childIds.push(inserted.id);
+  const materialized = await invokeAgentInsertBatch({
+    parentAgentId: container.id,
+    children: clamped.map((area, index): AgentInsertArgs => {
+      const fields = batch.entries[index]!;
+      return {
+        sessionId,
+        parentAgentId: container.id,
+        ordinal: baseOrdinal + index,
+        name: area.area,
+        status: 'pending',
+        kind: childKind,
+        ...(container.workflowRunId != null && { workflowRunId: container.workflowRunId }),
+        ...(fields.providerOverride !== null && { providerOverride: fields.providerOverride }),
+        ...(fields.modelOverride !== null && { modelOverride: fields.modelOverride }),
+        ...(fields.effort !== null && { effort: fields.effort }),
+        ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
+        ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
+        ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
+      };
+    }),
+  });
+  if (materialized.inserted === false) {
+    return;
   }
+  const childIds: AgentId[] = materialized.agents.map((agent) => agent.id);
+
+  synthesisStarted.delete(container.id);
+  await invokeAgentUpdateStatus(container.id, { status: 'running' });
 
   const refreshed = await invokeAgentList(sessionId);
   set((s) => {
@@ -370,11 +395,23 @@ const fanOutAgents = async ({
     const agentTurnState = { ...s.agentTurnState };
     const agentKindOverride = { ...s.agentKindOverride };
     const agentModelOverride = { ...s.agentModelOverride };
-    for (const id of childIds) {
+    const agentProviderOverride = { ...s.agentProviderOverride };
+    const agentEffortOverride = { ...s.agentEffortOverride };
+    for (let i = 0; i < childIds.length; i++) {
+      const id = childIds[i]!;
+      const fields: ChildRoutingFields = batch.entries[i]!;
       transcripts[id] = transcripts[id] ?? [];
       agentTurnState[id] = { kind: 'idle', lastActivityAt: nowIso() };
       agentKindOverride[id] = childKind;
-      agentModelOverride[id] = childModel;
+      if (fields.modelOverride !== null) {
+        agentModelOverride[id] = fields.modelOverride;
+      }
+      if (fields.providerOverride !== null) {
+        agentProviderOverride[id] = fields.providerOverride;
+      }
+      if (fields.effort !== null) {
+        agentEffortOverride[id] = fields.effort;
+      }
     }
     return {
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
@@ -382,6 +419,8 @@ const fanOutAgents = async ({
       agentTurnState,
       agentKindOverride,
       agentModelOverride,
+      agentProviderOverride,
+      agentEffortOverride,
     };
   });
 
@@ -499,7 +538,10 @@ export const advanceScoutTree = (set: SetFn, get: GetFn) => {
 
     const role = resolveAgentRole(agent);
     const capability = fanOutCapabilityForRole(role);
-    const split = extractFanOut(assistantText);
+    const split = extractFanOut({
+      assistantText,
+      emittingProvider: agentEmittingProvider({ state: get(), sessionId, agentId }),
+    });
     const roleDepthCap = depthCapForRole(role);
     if (
       split != null &&

@@ -105,10 +105,14 @@ export {
   type SessionLanguageRuleParams,
 } from './language';
 
-export { resolveProvider, type ResolveProviderInput } from './budget/router';
+export { PROVIDER_ID_TO_NAME, resolveProvider, type ResolveProviderInput } from './budget/router';
 
 export { computeCostUsd, priceFor } from './providers/claude/cost';
-export { getModelPrice, type ModelPriceSummary } from './providers/model-price';
+export {
+  getModelPrice,
+  getProviderModelPrice,
+  type ModelPriceSummary,
+} from './providers/model-price';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
 export {
@@ -160,6 +164,7 @@ export {
   type ResolvedRoleFallback,
   type ResolvedRoleRouting,
 } from './providers/role-models';
+export { workflowModelProfile } from './providers/workflowModelProfiles';
 
 export { getCheapModel, getDefaultBinary } from './providers/cli-defaults';
 export {
@@ -365,9 +370,15 @@ export {
 } from './planner';
 
 export {
+  formatWorkflowModelMenu,
+  hintedRoutingOutcome,
   parseOrchestratorDecision,
+  parseWorkflowRoutingProposal,
+  recommendWorkflowModel,
+  recommendWorkflowRoutingDecision,
+  resolveWorkflowRouting,
+  workflowRoutingAvailability,
   buildOrchestratorUserPrompt,
-  enforceOrchestratorModelPool,
   orchestratorModelPool,
   parseRunSummaryText,
   serializeRunSummary,
@@ -375,8 +386,6 @@ export {
   OrchestratorClient,
   OrchestratorClientSpawnError,
   OrchestratorProviderError,
-  type EnforcedOrchestratorStep,
-  type OrchestratorModelRejection,
   type OrchestratorClientDeps,
   type OrchestratorClientResult,
   type OrchestratorCompletedStep,
@@ -386,5 +395,15 @@ export {
   type OrchestratorRoleDefault,
   type OrchestratorStep,
   type OrchestratorUsage,
+  type WorkflowMissingProposalPolicy,
+  type WorkflowModelCandidate,
+  type WorkflowModelRecommendation,
+  type WorkflowRoutingAvailability,
+  type WorkflowRoutingAvailabilitySnapshot,
+  type WorkflowRoutingProposalParseOutcome,
+  type WorkflowRoutingRequestedIdentity,
+  type WorkflowRoutingResolution,
+  type WorkflowRoutingUnavailableCause,
+  type WorkflowRoutingWireFields,
   type RunSummary,
 } from './orchestrator';

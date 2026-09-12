@@ -6,24 +6,37 @@ import { WorkflowStarter } from './index';
 
 afterEach(cleanup);
 
-type Params = { readonly isWorking?: boolean };
+type Params = {
+  readonly isWorking?: boolean;
+  readonly canGenerate?: boolean;
+  readonly providerStatusText?: string | null;
+};
 
-const renderStarter = ({ isWorking = false }: Params = {}) => {
+const renderStarter = ({
+  isWorking = false,
+  canGenerate = true,
+  providerStatusText = null,
+}: Params = {}) => {
   const onExample = vi.fn();
+  const onCreate = vi.fn();
   render(
     <WorkflowStarter
       prompt="Review authentication changes"
       isWorking={isWorking}
       error={null}
-      providerReason={null}
+      canGenerate={canGenerate}
+      providerStatusText={providerStatusText}
       onPromptChange={vi.fn()}
       onExample={onExample}
-      onCreate={vi.fn()}
+      onCreate={onCreate}
       onBlank={vi.fn()}
     />,
   );
-  return { onExample };
+  return { onExample, onCreate };
 };
+
+const createButton = () =>
+  screen.getByRole('button', { name: /create with agent/i }) as HTMLButtonElement;
 
 describe('WorkflowStarter', () => {
   it('fills the full prompt from a short example action', () => {
@@ -34,6 +47,30 @@ describe('WorkflowStarter', () => {
     expect(onExample).toHaveBeenCalledWith(
       'Investigate a bug, fix the root cause, and add regression tests',
     );
+  });
+
+  it('lets nonblocking provider information stand without disabling generation', () => {
+    const { onCreate } = renderStarter({
+      providerStatusText: 'Anthropic is the only connected provider.',
+    });
+
+    expect(screen.getByText('Anthropic is the only connected provider.')).toBeDefined();
+    expect(createButton().disabled).toBe(false);
+
+    fireEvent.click(createButton());
+    expect(onCreate).toHaveBeenCalledOnce();
+  });
+
+  it('blocks generation only when no provider can run it', () => {
+    renderStarter({
+      canGenerate: false,
+      providerStatusText: 'Connect a provider to create a workflow with an agent.',
+    });
+
+    expect(createButton().disabled).toBe(true);
+    expect(
+      (screen.getByRole('button', { name: 'Start blank' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
   });
 
   it('keeps the description visible and read-only while working', () => {

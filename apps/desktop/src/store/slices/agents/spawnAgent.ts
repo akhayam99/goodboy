@@ -29,7 +29,11 @@ import {
 } from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../../kickoff';
 import { requireMountTarget } from '../resolve/mountTarget';
-import { fanOutClusters, selectFanOutPlan } from '../workflows/clusterImplementation';
+import {
+  canFanOutClusters,
+  fanOutClusters,
+  selectFanOutPlan,
+} from '../workflows/clusterImplementation';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { GetFn, SetFn } from './types';
@@ -199,9 +203,10 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     planToConsume = explicitPlan ?? (workflowAutoConsume ? latestPlan : null);
   }
 
-  const fanOutPlan = isImplementer
-    ? selectFanOutPlan(get, sessionId, { workflowRunId: args.workflowRunId, explicitPlan })
-    : null;
+  const fanOutPlan =
+    isImplementer && canFanOutClusters({ container: inserted })
+      ? selectFanOutPlan(get, sessionId, { workflowRunId: args.workflowRunId, explicitPlan })
+      : null;
   const clusters =
     fanOutPlan?.clusters &&
     fanOutPlan.clusters.length >= 2 &&

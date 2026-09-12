@@ -12,6 +12,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import { isWorkflowRoutingProposal } from './workflowRoutingCodec';
 
 type PlanRow = {
   id: string;
@@ -30,6 +31,21 @@ type PlanWithCountRow = PlanRow & {
   consumption_count: number;
 };
 
+const isImplementationCluster = (value: unknown): value is ImplementationCluster => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const entry = value as Record<string, unknown>;
+  if (typeof entry['title'] !== 'string' || typeof entry['instructions'] !== 'string') {
+    return false;
+  }
+  const proposal = entry['routingProposal'];
+  if (proposal === undefined || proposal === null) {
+    return true;
+  }
+  return isWorkflowRoutingProposal(proposal);
+};
+
 function parseClusters(raw: string | null): ReadonlyArray<ImplementationCluster> | undefined {
   if (!raw) {
     return undefined;
@@ -39,13 +55,7 @@ function parseClusters(raw: string | null): ReadonlyArray<ImplementationCluster>
     if (!Array.isArray(parsed)) {
       return undefined;
     }
-    const out = parsed.filter(
-      (c): c is ImplementationCluster =>
-        typeof c === 'object' &&
-        c !== null &&
-        typeof (c as { title?: unknown }).title === 'string' &&
-        typeof (c as { instructions?: unknown }).instructions === 'string',
-    );
+    const out = parsed.filter(isImplementationCluster);
     return out.length > 0 ? out : undefined;
   } catch {
     return undefined;
@@ -53,7 +63,14 @@ function parseClusters(raw: string | null): ReadonlyArray<ImplementationCluster>
 }
 
 function serializeClusters(clusters?: ReadonlyArray<ImplementationCluster>): string | null {
-  return clusters && clusters.length > 0 ? JSON.stringify(clusters) : null;
+  if (!clusters || clusters.length === 0) {
+    return null;
+  }
+  const valid = clusters.filter(isImplementationCluster);
+  if (valid.length !== clusters.length) {
+    throw new Error('Invalid implementation cluster routing proposal');
+  }
+  return JSON.stringify(valid);
 }
 
 function toDomain(row: PlanRow): Plan {

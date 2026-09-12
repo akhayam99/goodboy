@@ -11,6 +11,7 @@ import { WorkflowStepCard } from '../../../../session/components/WorkflowStepCar
 import { StepFlowConnector } from '../StepFlowConnector';
 import { StepLibraryPalette } from '../StepLibraryPalette';
 import { useAppStore } from '../../../../../store';
+import { NoProvidersNotice } from './NoProvidersNotice';
 import { WorkflowHeaderActions } from './WorkflowHeaderActions';
 
 type Props = {
@@ -137,6 +138,12 @@ export const WorkflowComposer = ({
           />
         </div>
 
+        {connectedProviders.length === 0 ? (
+          <div className="flex shrink-0 flex-col px-6 pb-4">
+            <NoProvidersNotice />
+          </div>
+        ) : null}
+
         <Divider />
 
         <div className="flex shrink-0 flex-col gap-5 py-5">
@@ -238,6 +245,8 @@ export const WorkflowComposer = ({
                       )
                     }
                     onEffort={(v) => onUpdateStep(idx, { effort: v })}
+                    isRoutingOverridden={def.provider !== '' || def.model !== ''}
+                    onRoutingReset={() => onUpdateStep(idx, { provider: '', model: '' })}
                     onRole={(v) => onUpdateStep(idx, { role: v })}
                     onVerbosity={(v) => onUpdateStep(idx, { verbosity: v })}
                     onRemove={() => onRemoveStep(idx)}

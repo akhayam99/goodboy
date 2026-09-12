@@ -12,6 +12,7 @@ import {
   KIND_TO_ROLE,
   type AgentKind,
 } from '../../../features/session/agent-kind';
+import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -41,7 +42,14 @@ export const completeResolvedAgent = async ({
     : null;
   const role = ranKind ? KIND_TO_ROLE[ranKind] : 'custom';
   const capability = fanOutCapabilityForRole(role);
-  const extractedFanOut = extractFanOut(assistantText);
+  const extractedFanOut = extractFanOut({
+    assistantText,
+    emittingProvider: agentEmittingProvider({
+      state: get(),
+      sessionId,
+      agentId: resolvedAgentId,
+    }),
+  });
   const isFanOutNode =
     capability.mode !== 'never' &&
     (ranAgent?.parentAgentId != null || (extractedFanOut != null && extractedFanOut.length >= 2));

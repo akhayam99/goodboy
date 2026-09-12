@@ -1,9 +1,22 @@
-import { formatWorkflowFromNL, resolveTaskModel } from '@goodboy/core';
+import {
+  formatWorkflowFromNL,
+  orchestratorModelPool,
+  resolveTaskModel,
+  type FormattedWorkflowStep,
+  type OrchestratorModelOption,
+  type WorkflowRoutingAvailabilitySnapshot,
+} from '@goodboy/core';
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkflowUpsertArgs } from '../../../features/workflows/workflows';
+import type {
+  WorkflowStepUpsertArgs,
+  WorkflowUpsertArgs,
+} from '../../../features/workflows/workflows';
+import { resolveGeneratedStepRouting } from '../../../features/workflows/resolveGeneratedStepRouting';
+import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { formatError } from '@goodboy/ui';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
-import type { TaskModelPreference, WorkspaceId } from '@goodboy/types';
+import type { ProviderId, TaskModelPreference, WorkspaceId } from '@goodboy/types';
 import type { GetFn, SetFn, StartWorkflowGenerationParams } from './types';
 
 type GenerationModelParams = {
@@ -37,6 +50,62 @@ const generationTaskModel = ({
   });
 };
 
+type MenuParams = {
+  readonly state: ReturnType<GetFn>;
+};
+
+const generationAvailability = ({ state }: MenuParams): WorkflowRoutingAvailabilitySnapshot =>
+  workflowAvailabilitySnapshot({
+    providers: state.providers ?? [],
+    cooldowns: state.providerCooldowns ?? {},
+    alerts: state.budgetAlerts ?? [],
+    sessionId: null,
+    isRunBudgetBlocked: false,
+    nowMs: Date.now(),
+  });
+
+type GeneratedStepParams = {
+  readonly step: FormattedWorkflowStep;
+  readonly ordinal: number;
+  readonly emittingProvider: ProviderId;
+  readonly availability: WorkflowRoutingAvailabilitySnapshot | null;
+};
+
+const generatedStepArgs = ({
+  step,
+  ordinal,
+  emittingProvider,
+  availability,
+}: GeneratedStepParams): WorkflowStepUpsertArgs => {
+  const base = {
+    role: step.role,
+    ordinal,
+    name: step.name,
+    promptPrefix: step.promptPrefix,
+    expectedOutput: step.expectedOutput,
+  };
+  if (availability === null) {
+    return base;
+  }
+  const routing = resolveGeneratedStepRouting({
+    routing: step.routing,
+    promptPrefix: step.promptPrefix,
+    emittingProvider,
+    availability,
+  });
+  if (routing === null) {
+    return base;
+  }
+  return {
+    ...base,
+    providerOverride: routing.providerOverride,
+    modelOverride: routing.modelOverride,
+    ...(routing.effort !== null && { effort: routing.effort }),
+    routingDecision: routing.routingDecision,
+    taskProfile: routing.taskProfile,
+  };
+};
+
 export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
   return async ({
     workspaceId,
@@ -58,6 +127,10 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
     }));
     try {
       const taskModel = generationTaskModel({ state: get(), workspaceId });
+      const isModelMetadataEnabled = workflowRoutingFlags().isModelMetadataEnabled;
+      const availability = isModelMetadataEnabled ? generationAvailability({ state: get() }) : null;
+      const modelMenu: ReadonlyArray<OrchestratorModelOption> =
+        availability === null ? [] : orchestratorModelPool({ availability });
       const formatted = await formatWorkflowFromNL({
         deps: {
           ...taskModel,
@@ -66,6 +139,7 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
         },
         input: {
           description: cleanDescription,
+          ...(modelMenu.length > 0 && { modelMenu }),
           ...(form !== null && {
             currentName: form.name,
             currentDescription: form.description,
@@ -86,13 +160,14 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
         name: formatted.name.trim().length > 0 ? formatted.name : 'Generated workflow',
         description: formatted.description,
         ...(formatted.goal !== undefined && { goal: formatted.goal }),
-        steps: formatted.steps.map((step, ordinal) => ({
-          role: step.role,
-          ordinal,
-          name: step.name,
-          promptPrefix: step.promptPrefix,
-          expectedOutput: step.expectedOutput,
-        })),
+        steps: formatted.steps.map((step, ordinal) =>
+          generatedStepArgs({
+            step,
+            ordinal,
+            emittingProvider: taskModel.providerId,
+            availability,
+          }),
+        ),
         isPreset: true,
         origin: 'custom',
       };

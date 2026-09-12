@@ -32,6 +32,7 @@ import type {
   Message,
   MessageAttachment,
   MessageId,
+  ModelEffort,
   MountId,
   MountTargetSnapshot,
   PermissionRule,
@@ -51,6 +52,9 @@ import { isApiProvider } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokePermissionRuleList } from '../../../features/permissions/permissions';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { composeChildRoutingPrompt } from '../../../features/workflows/composeChildRoutingPrompt';
+import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
 import { withProviderCooldown } from '../../../features/providers/taskModelRouting';
 import {
@@ -137,6 +141,7 @@ import { classifyToolCallFailure, toolCallFailureMessage } from './classifyToolC
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
+import { turnNodeRouting } from './turnNodeRouting';
 import type { GetFn, SendTurnResult, SetFn } from './types';
 
 const EFFORT_FLAG_BY_PROVIDER = {
@@ -429,14 +434,27 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       .providers.filter((p) => p.connection === 'connected')
       .map((p) => p.id);
 
-    const phaseOverride: TurnProviderOverride | undefined = phaseDefinition?.providerOverride
-      ? {
-          providerId: phaseDefinition.providerOverride,
-          ...(phaseDefinition.modelOverride !== undefined && {
-            model: phaseDefinition.modelOverride,
-          }),
-        }
-      : undefined;
+    const nodeRouting = turnNodeRouting({
+      agent:
+        (get().sessionPhaseRuns[sessionId] ?? []).find(
+          (candidate) => candidate.id === activeAgentId,
+        ) ?? null,
+      step: phaseDefinition,
+    });
+    const nodeProvider: ProviderId | null =
+      nodeRouting?.provider ?? phaseDefinition?.providerOverride ?? null;
+    const nodeModel: string | null = nodeRouting?.model ?? phaseDefinition?.modelOverride ?? null;
+    const nodeEffort: ModelEffort | null =
+      nodeRouting === null ? (phaseDefinition?.effort ?? null) : nodeRouting.effort;
+    const nodeOverride: TurnProviderOverride | undefined =
+      nodeProvider !== null
+        ? {
+            providerId: nodeProvider,
+            ...(nodeModel !== null && {
+              model: nodeModel,
+            }),
+          }
+        : undefined;
     const turnOverride =
       session.providerPreference.allowTurnOverride && override != null ? override : undefined;
     const agentProvider = get().agentProviderOverride[activeAgentId] ?? null;
@@ -448,10 +466,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       retry != null ? { providerId: retry.provider, model: retry.model } : undefined;
     const pickedOverride = turnOverride?.explicit === true ? turnOverride : undefined;
     const effectiveOverride =
-      retryOverride ?? pickedOverride ?? phaseOverride ?? turnOverride ?? agentOverride;
+      retryOverride ?? pickedOverride ?? nodeOverride ?? turnOverride ?? agentOverride;
 
     const routingPreference =
-      (effectiveOverride === agentOverride && agentOverride !== undefined) || retry != null
+      (effectiveOverride === agentOverride && agentOverride !== undefined) ||
+      (effectiveOverride === nodeOverride && nodeOverride !== undefined) ||
+      retry != null
         ? { ...session.providerPreference, allowTurnOverride: true }
         : session.providerPreference;
 
@@ -461,6 +481,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       connectedProviders,
       cooldowns: get().providerCooldowns,
       ...(force === true ? { force: true } : {}),
+      ...(phaseDefinition != null ? { keepPreferredOverThreshold: true } : {}),
     });
 
     if (routingDecision.reason === 'all-exceeded') {
@@ -501,7 +522,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ? classifyAgent(activeAgent, agentKindOverrideForTurn)
         : (agentKindOverrideForTurn ?? inferAgentKindFromName(''));
     const autoStepModel =
-      phaseDefinition != null && phaseDefinition.modelOverride == null
+      phaseDefinition != null && nodeModel === null
         ? autoModelForRole({
             role: phaseDefinition.role ?? 'custom',
             providers: [provider],
@@ -514,14 +535,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
             })
           : null;
-    const rawEffort = phaseDefinition?.effort ?? get().agentEffortOverride[activeAgentId] ?? null;
+    const rawEffort = nodeEffort ?? get().agentEffortOverride[activeAgentId] ?? null;
     const requestedEffort = EFFORT_LEVELS.find((level) => level === rawEffort);
     const modelSelection = resolveTurnModelSelection({
       provider,
       routingDecision,
       retryModel: retry != null && retry.provider === provider ? retry.model : null,
-      phaseModelOverride: phaseDefinition?.modelOverride ?? null,
-      phaseProviderOverride: phaseDefinition?.providerOverride ?? null,
+      phaseModelOverride: nodeModel,
+      phaseProviderOverride: nodeProvider,
       autoStepModel,
       turnOverride,
       agentModelPin,
@@ -789,6 +810,23 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const contextPreamble = buildContextPreamble(sharedSlots, slotFilter);
     if (contextPreamble.length > 0) {
       resolvedPrompt = `${contextPreamble}\n\n${resolvedPrompt}`;
+    }
+
+    if (workflowRoutingFlags().isChildModelSelectionEnabled === true) {
+      const childRoutingBlock = composeChildRoutingPrompt({
+        role: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
+        availability: workflowAvailabilitySnapshot({
+          providers: get().providers,
+          cooldowns: get().providerCooldowns,
+          alerts: get().budgetAlerts ?? [],
+          sessionId,
+          isRunBudgetBlocked: false,
+          nowMs: Date.now(),
+        }),
+      });
+      if (childRoutingBlock.length > 0) {
+        resolvedPrompt = `${childRoutingBlock}\n\n${resolvedPrompt}`;
+      }
     }
 
     const isClusterChild = !!agentRowEarly?.parentAgentId && earlyAgentKind === 'implementer';
@@ -1489,13 +1527,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         turnOutput: assistantText,
         workingDir,
       });
-      const capturedPlan = await capturePlanFromTurn(
+      const capturedPlan = await capturePlanFromTurn({
         set,
         sessionId,
-        activeAgentId,
+        agentId: activeAgentId,
         assistantText,
-        phaseWorkflowRunId ?? undefined,
-      );
+        emittingProvider: provider,
+        workflowRunId: phaseWorkflowRunId ?? undefined,
+      });
       await captureScoutDomainsFromTurn({
         set,
         sessionId,

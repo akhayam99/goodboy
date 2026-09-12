@@ -339,6 +339,8 @@ pub fn run() {
             workflows::step_def_delete,
             workflows::agent_list_for_session,
             workflows::agent_insert,
+            workflows::agent_insert_batch,
+            workflows::workflow_node_routing_update,
             workflows::agent_update_status,
             workflows::agent_set_provider_session_id,
             workflows::agent_set_kind,

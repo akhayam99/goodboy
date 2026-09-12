@@ -444,9 +444,10 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
               prompt={agentPrompt}
               isWorking={generation?.status === 'running'}
               error={generationError}
-              providerReason={
+              canGenerate={connectedProviders.length > 0}
+              providerStatusText={
                 connectedProviders.length === 0
-                  ? 'Connect a provider to create a workflow with an agent.'
+                  ? 'Connect a provider to create a workflow with an agent. Start blank stays available.'
                   : null
               }
               onPromptChange={setAgentPrompt}

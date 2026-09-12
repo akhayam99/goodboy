@@ -1,4 +1,7 @@
 import type { AgentRole, TaskModelPreference } from '@goodboy/types';
+import { formatWorkflowModelMenu } from '../orchestrator/formatWorkflowModelMenu';
+import type { WorkflowRoutingWireFields } from '../orchestrator/parseWorkflowRoutingProposal';
+import type { OrchestratorModelOption } from '../orchestrator/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
 import { getDefaultBinary } from '../providers/cli-defaults';
@@ -31,6 +34,7 @@ export type FormattedWorkflowStep = {
   readonly role: AgentRole;
   readonly promptPrefix: string;
   readonly expectedOutput: string;
+  readonly routing?: WorkflowRoutingWireFields;
 };
 
 export type FormattedWorkflow = {
@@ -46,6 +50,7 @@ export type WorkflowFormatInput = {
   readonly currentName?: string;
   readonly currentDescription?: string;
   readonly currentStepNames?: ReadonlyArray<string>;
+  readonly modelMenu?: ReadonlyArray<OrchestratorModelOption>;
 };
 
 export type WorkflowFormatDeps = TaskModelPreference & {
@@ -80,6 +85,16 @@ export const buildWorkflowFormatUserPrompt = (input: WorkflowFormatInput): strin
     }
     lines.push('');
   }
+  const modelMenu = input.modelMenu ?? [];
+  if (modelMenu.length > 0) {
+    lines.push(
+      'AVAILABLE MODELS, every identity here is runnable right now. Use provider and model exactly as listed, as a pair, and set effort only to a level that model accepts:',
+      formatWorkflowModelMenu({ options: modelMenu }),
+      '',
+      'Add to every step a provider, model and effort, plus taskType (exploration, planning, implementation, debugging, review, testing, writing, general), difficulty (light, standard, heavy) and modelReason, one clause saying why that work needs that model. taskType and difficulty describe the work, not the model.',
+      '',
+    );
+  }
   lines.push('Produce the cleaned workflow as the single <<workflow>> marker block.');
   return lines.join('\n');
 };
@@ -109,6 +124,35 @@ export const formatWorkflowFromNL = async ({
 
   const text = extractAuxOutput({ providerId: deps.providerId, stdout: result.stdout }).text;
   return parseFormattedWorkflow(text);
+};
+
+const ROUTING_WIRE_KEYS = [
+  'provider',
+  'model',
+  'effort',
+  'taskType',
+  'difficulty',
+  'modelReason',
+] as const;
+
+type RoutingFieldsParams = {
+  readonly entry: Record<string, unknown>;
+};
+
+const stepRoutingFields = ({ entry }: RoutingFieldsParams): WorkflowRoutingWireFields | null => {
+  const fields: Record<string, unknown> = {};
+  let hasField = false;
+  for (const key of ROUTING_WIRE_KEYS) {
+    if (entry[key] === undefined) {
+      continue;
+    }
+    hasField = true;
+    fields[key] = entry[key];
+  }
+  if (hasField === false) {
+    return null;
+  }
+  return fields;
 };
 
 const WORKFLOW_MARKER_OPEN = '<<workflow>>';
@@ -151,7 +195,8 @@ export const parseFormattedWorkflow = (text: string): FormattedWorkflow | null =
     const role = isAgentRole(roleRaw) ? roleRaw : 'custom';
     const promptPrefix = typeof e.promptPrefix === 'string' ? e.promptPrefix.trim() : '';
     const expectedOutput = typeof e.expectedOutput === 'string' ? e.expectedOutput.trim() : '';
-    steps.push({ name, role, promptPrefix, expectedOutput });
+    const routing = stepRoutingFields({ entry: e });
+    steps.push({ name, role, promptPrefix, expectedOutput, ...(routing !== null && { routing }) });
   }
   if (steps.length === 0) {
     return null;

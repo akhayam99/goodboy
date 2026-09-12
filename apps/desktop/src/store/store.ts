@@ -166,6 +166,12 @@ import type {
   StartWorkflowGenerationParams,
   WorkflowStudioDraft,
 } from './slices/workflowStudio/types';
+import { createWorkflowRoutingSlice } from './slices/workflowRouting';
+import { initialWorkflowRoutingState } from './slices/workflowRouting/state';
+import type {
+  ResetWorkflowNodeRoutingLockParams,
+  SetWorkflowNodeRoutingLockParams,
+} from './slices/workflowRouting/types';
 import { createSlotsSlice } from './slices/slots';
 import { createOverridesSlice } from './slices/overrides';
 import { createCredentialsSlice } from './slices/credentials';
@@ -687,6 +693,8 @@ type AppActions = {
   startWorkflowGeneration(params: StartWorkflowGenerationParams): Promise<boolean>;
   consumeWorkflowGeneration(params: { workspaceId: WorkspaceId }): void;
   undoWorkflowGeneration(params: { workspaceId: WorkspaceId }): Promise<void>;
+  setWorkflowNodeRoutingLock(params: SetWorkflowNodeRoutingLockParams): Promise<void>;
+  resetWorkflowNodeRoutingLock(params: ResetWorkflowNodeRoutingLockParams): Promise<void>;
   setAgentAttachments(agentId: AgentId, attachments: ReadonlyArray<DraftAttachment>): void;
   clearAgentAttachments(agentId: AgentId): void;
   setAgentQueue(agentId: AgentId, queue: ReadonlyArray<AgentQueuedTurn>): void;
@@ -1071,6 +1079,7 @@ export const initialState: AppState = {
   agentDraft: {},
   workflowDrafts: {},
   ...initialWorkflowStudioState,
+  ...initialWorkflowRoutingState,
   agentAttachments: {},
   agentQueue: {},
   diffComments: {},
@@ -1130,6 +1139,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createReviewNavigationSlice({ set, get }),
   ...createWorkflowDraftsSlice(set, get),
   ...createWorkflowStudioSlice(set, get),
+  ...createWorkflowRoutingSlice(set, get),
   ...createSlotsSlice(set, get),
   ...createOverridesSlice(set, get),
   ...createCredentialsSlice(set, get),

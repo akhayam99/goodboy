@@ -613,7 +613,12 @@ describe('extractReviewComments', () => {
 
 describe('extractClustersFromMarker', () => {
   it('returns null when no marker present', () => {
-    expect(extractClustersFromMarker('just prose, no clusters')).toBeNull();
+    expect(
+      extractClustersFromMarker({
+        assistantText: 'just prose, no clusters',
+        emittingProvider: null,
+      }),
+    ).toBeNull();
   });
 
   it('parses a JSON array of clusters', () => {
@@ -621,7 +626,7 @@ describe('extractClustersFromMarker', () => {
       {"title":"move files","instructions":"relocate domain files"},
       {"title":"update imports","instructions":"fix import paths"}
     ]<</clusters>>`;
-    expect(extractClustersFromMarker(text)).toEqual([
+    expect(extractClustersFromMarker({ assistantText: text, emittingProvider: null })).toEqual([
       { title: 'move files', instructions: 'relocate domain files' },
       { title: 'update imports', instructions: 'fix import paths' },
     ]);
@@ -629,23 +634,34 @@ describe('extractClustersFromMarker', () => {
 
   it('tolerates a json code fence', () => {
     const text = '<<clusters>>```json\n[{"title":"a","instructions":"b"}]\n```<</clusters>>';
-    expect(extractClustersFromMarker(text)).toEqual([{ title: 'a', instructions: 'b' }]);
+    expect(extractClustersFromMarker({ assistantText: text, emittingProvider: null })).toEqual([
+      { title: 'a', instructions: 'b' },
+    ]);
   });
 
   it('drops entries missing title or instructions', () => {
     const text =
       '<<clusters>>[{"title":"keep","instructions":"x"},{"title":"","instructions":"y"},{"title":"z"}]<</clusters>>';
-    expect(extractClustersFromMarker(text)).toEqual([{ title: 'keep', instructions: 'x' }]);
+    expect(extractClustersFromMarker({ assistantText: text, emittingProvider: null })).toEqual([
+      { title: 'keep', instructions: 'x' },
+    ]);
   });
 
   it('returns null on malformed json', () => {
-    expect(extractClustersFromMarker('<<clusters>>not json<</clusters>>')).toBeNull();
+    expect(
+      extractClustersFromMarker({
+        assistantText: '<<clusters>>not json<</clusters>>',
+        emittingProvider: null,
+      }),
+    ).toBeNull();
   });
 
   it('takes the last block when several appear', () => {
     const text =
       '<<clusters>>[{"title":"old","instructions":"x"}]<</clusters>> later <<clusters>>[{"title":"new","instructions":"y"}]<</clusters>>';
-    expect(extractClustersFromMarker(text)).toEqual([{ title: 'new', instructions: 'y' }]);
+    expect(extractClustersFromMarker({ assistantText: text, emittingProvider: null })).toEqual([
+      { title: 'new', instructions: 'y' },
+    ]);
   });
 });
 
@@ -671,7 +687,9 @@ describe('extractClusterDone', () => {
 
 describe('extractScoutSplit', () => {
   it('returns null when no marker present', () => {
-    expect(extractScoutSplit('just prose, no split')).toBeNull();
+    expect(
+      extractScoutSplit({ assistantText: 'just prose, no split', emittingProvider: null }),
+    ).toBeNull();
   });
 
   it('parses a JSON array of areas', () => {
@@ -679,7 +697,7 @@ describe('extractScoutSplit', () => {
       {"area":"auth domain","query":"how login and session work"},
       {"area":"billing domain","query":"how invoicing is wired"}
     ]<</scout-split>>`;
-    expect(extractScoutSplit(text)).toEqual([
+    expect(extractScoutSplit({ assistantText: text, emittingProvider: null })).toEqual([
       {
         area: 'auth domain',
         query: 'how login and session work',
@@ -701,7 +719,7 @@ describe('extractScoutSplit', () => {
 
   it('tolerates a json code fence', () => {
     const text = '<<scout-split>>```json\n[{"area":"a","query":"b"}]\n```<</scout-split>>';
-    expect(extractScoutSplit(text)).toEqual([
+    expect(extractScoutSplit({ assistantText: text, emittingProvider: null })).toEqual([
       {
         area: 'a',
         query: 'b',
@@ -716,7 +734,7 @@ describe('extractScoutSplit', () => {
   it('drops entries missing area or query', () => {
     const text =
       '<<scout-split>>[{"area":"keep","query":"x"},{"area":"","query":"y"},{"area":"z"}]<</scout-split>>';
-    expect(extractScoutSplit(text)).toEqual([
+    expect(extractScoutSplit({ assistantText: text, emittingProvider: null })).toEqual([
       {
         area: 'keep',
         query: 'x',
@@ -729,13 +747,18 @@ describe('extractScoutSplit', () => {
   });
 
   it('returns null on malformed json', () => {
-    expect(extractScoutSplit('<<scout-split>>not json<</scout-split>>')).toBeNull();
+    expect(
+      extractScoutSplit({
+        assistantText: '<<scout-split>>not json<</scout-split>>',
+        emittingProvider: null,
+      }),
+    ).toBeNull();
   });
 
   it('takes the last block when several appear', () => {
     const text =
       '<<scout-split>>[{"area":"old","query":"x"}]<</scout-split>> later <<scout-split>>[{"area":"new","query":"y"}]<</scout-split>>';
-    expect(extractScoutSplit(text)).toEqual([
+    expect(extractScoutSplit({ assistantText: text, emittingProvider: null })).toEqual([
       {
         area: 'new',
         query: 'y',
@@ -748,9 +771,82 @@ describe('extractScoutSplit', () => {
   });
 });
 
+describe('per-child routing metadata', () => {
+  const body = JSON.stringify([
+    {
+      area: 'auth',
+      query: 'map the session guards',
+      provider: 'anthropic',
+      model: 'opus-5',
+      effort: 'high',
+      taskType: 'exploration',
+      difficulty: 'heavy',
+      modelReason: 'auth spans four packages',
+    },
+    { area: 'ui', query: 'map the settings panes' },
+  ]);
+
+  it('both split marker names preserve per-child routing metadata', () => {
+    const fanOut = extractFanOut({
+      assistantText: `<<fan-out>>${body}<</fan-out>>`,
+      emittingProvider: 'anthropic',
+    });
+    const scoutSplit = extractScoutSplit({
+      assistantText: `<<scout-split>>${body}<</scout-split>>`,
+      emittingProvider: 'anthropic',
+    });
+
+    for (const parsed of [fanOut, scoutSplit]) {
+      expect(parsed?.[0]?.routingProposal).toEqual({
+        pick: { provider: 'anthropic', model: 'opus-5', effort: 'high' },
+        reason: 'auth spans four packages',
+        source: 'agent',
+        profile: { taskType: 'exploration', difficulty: 'heavy', basis: 'agent' },
+      });
+      expect(parsed?.[1]?.routingProposal).toBeUndefined();
+    }
+  });
+
+  it('legacy clusters parse without routing metadata', () => {
+    const text = '<<clusters>>[{"title":"a","instructions":"b"}]<</clusters>>';
+
+    const parsed = extractClustersFromMarker({
+      assistantText: text,
+      emittingProvider: 'anthropic',
+    });
+
+    expect(parsed).toEqual([{ title: 'a', instructions: 'b' }]);
+    expect(parsed?.[0]?.routingProposal).toBeUndefined();
+  });
+
+  it('keeps a provider-qualified cluster pick', () => {
+    const text = `<<clusters>>${JSON.stringify([
+      {
+        title: 'rewrite the resolver',
+        instructions: 'do it',
+        provider: 'codex',
+        model: 'gpt-5.6-sol',
+        taskType: 'implementation',
+        difficulty: 'heavy',
+      },
+    ])}<</clusters>>`;
+
+    const parsed = extractClustersFromMarker({
+      assistantText: text,
+      emittingProvider: 'anthropic',
+    });
+
+    expect(parsed?.[0]?.routingProposal?.pick).toEqual({
+      provider: 'codex',
+      model: 'gpt-5.6-sol',
+      effort: null,
+    });
+  });
+});
+
 describe('extractFanOut', () => {
   it('returns null when no marker is present', () => {
-    expect(extractFanOut('plain text')).toBeNull();
+    expect(extractFanOut({ assistantText: 'plain text', emittingProvider: null })).toBeNull();
   });
 
   it('parses the role-agnostic marker', () => {
@@ -758,7 +854,7 @@ describe('extractFanOut', () => {
       {"area":"correctness lens","query":"scan full diff for behavior regressions"},
       {"area":"security lens","query":"scan full diff for security issues"}
     ]<</fan-out>>`;
-    expect(extractFanOut(text)).toEqual([
+    expect(extractFanOut({ assistantText: text, emittingProvider: null })).toEqual([
       {
         area: 'correctness lens',
         query: 'scan full diff for behavior regressions',
@@ -780,7 +876,7 @@ describe('extractFanOut', () => {
 
   it('accepts scout-split as an alias', () => {
     const text = '<<scout-split>>[{"area":"a","query":"b"}]<</scout-split>>';
-    expect(extractFanOut(text)).toEqual([
+    expect(extractFanOut({ assistantText: text, emittingProvider: null })).toEqual([
       {
         area: 'a',
         query: 'b',
@@ -803,7 +899,7 @@ describe('extractFanOut', () => {
         "sharedFrames":[]
       }
     ]<</fan-out>>`;
-    expect(extractFanOut(text)).toEqual([
+    expect(extractFanOut({ assistantText: text, emittingProvider: null })).toEqual([
       {
         area: 'auth tests',
         query: 'write tests for auth module',
@@ -1069,14 +1165,14 @@ describe('marker parsing, ReDoS hardening', () => {
 
   it('extracts clusters whose json values contain angle brackets', () => {
     const text = '<<clusters>>[{"title":"A < B","instructions":"do <stuff>"}]<</clusters>>';
-    expect(extractClustersFromMarker(text)).toEqual([
+    expect(extractClustersFromMarker({ assistantText: text, emittingProvider: null })).toEqual([
       { title: 'A < B', instructions: 'do <stuff>' },
     ]);
   });
 
   it('strips fenced json inside scout-split content', () => {
     const text = '<<scout-split>>```json\n[{"area":"x<y","query":"q"}]\n```<</scout-split>>';
-    expect(extractScoutSplit(text)).toEqual([
+    expect(extractScoutSplit({ assistantText: text, emittingProvider: null })).toEqual([
       {
         area: 'x<y',
         query: 'q',
@@ -1111,6 +1207,6 @@ describe('marker parsing, ReDoS hardening', () => {
     const dashes = '<<ctx-question ' + '-'.repeat(200_000) + '="x">>body<</ctx-question>>';
     expect(extractMarkers(dashes).questions[0]?.text).toBe('body');
     const fences = '<<clusters>>```' + '\t'.repeat(200_000) + '<</clusters>>';
-    expect(extractClustersFromMarker(fences)).toBeNull();
+    expect(extractClustersFromMarker({ assistantText: fences, emittingProvider: null })).toBeNull();
   });
 });

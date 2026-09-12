@@ -25,6 +25,7 @@ import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate'
 import { openImpactStudio } from '../../../impact/openImpactStudio';
 import { isBudgetBlocked } from '../../../../store/slices/workflows/budgetBlock';
 import { WorkflowAutorunToggle } from '../WorkflowAutorunToggle';
+import { WorkflowNodeRouting } from '../WorkflowNodeRouting';
 import { WorkflowOrchestratorTldr } from '../WorkflowOrchestratorTldr';
 import { RunSpendLimitPopover } from '../RunSpendLimitPopover';
 import { OrchestratorAction } from './OrchestratorAction';
@@ -434,6 +435,8 @@ export const OrchestratorPanel = ({
           </OrchestratorDrawer>
         ) : null}
       </div>
+
+      <WorkflowNodeRouting sessionId={sessionId} workflowRunId={run.id} steps={steps} />
 
       <WorkflowOrchestratorTldr steps={steps} run={run} />
     </section>

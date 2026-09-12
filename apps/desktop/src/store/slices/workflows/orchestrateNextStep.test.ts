@@ -49,12 +49,28 @@ const {
   summarizeWorkspaceSpy: vi.fn(async () => ({ estimatedCostUsd: 0 })),
 }));
 
+const orchestratorTransport = vi.hoisted(() => ({
+  stdout: null as string | null,
+  requests: [] as Array<Record<string, unknown>>,
+}));
+
 vi.mock('@goodboy/core', async (importOriginal) => {
   const original = await importOriginal<typeof import('@goodboy/core')>();
   return {
     ...original,
-    OrchestratorClient: vi.fn(function () {
-      return { decide: decideSpy };
+    OrchestratorClient: vi.fn(function (deps: OrchestratorClientDeps) {
+      const stdout = orchestratorTransport.stdout;
+      if (stdout === null) {
+        return { decide: decideSpy };
+      }
+      const client = new original.OrchestratorClient({
+        ...deps,
+        invokeFn: async (_command: string, args?: Record<string, unknown>) => {
+          orchestratorTransport.requests.push((args?.['args'] ?? {}) as Record<string, unknown>);
+          return { stdout, stderr: '', exitCode: 0 } as never;
+        },
+      });
+      return { decide: (input: OrchestratorInput) => client.decide(input) };
     }),
   };
 });
@@ -78,6 +94,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,
 }));
 
+import type { OrchestratorClientDeps, OrchestratorInput } from '@goodboy/core';
 import { OrchestratorClient, ROLE_DEFAULTS } from '@goodboy/core';
 import { orchestrateNextStep, persistOrchestrationStop } from './orchestrateNextStep';
 import { continueWorkflowRun } from './continueWorkflowRun';
@@ -183,6 +200,12 @@ const baseState = (): State => {
   return {
     sessions: [session()],
     workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
+    providers: [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'codex', connection: 'connected' },
+    ],
+    providerCooldowns: {},
+    budgetAlerts: [],
     phaseTemplates: { [WORKSPACE_ID]: [template] },
     sessionWorkflows: { [SESSION_ID]: [template] },
     sessionPhaseRuns: { [SESSION_ID]: [completedAgent()] },
@@ -236,6 +259,42 @@ const spendState = ({ limitUsd, spentUsd, mode = 'pause' }: SpendParams): State 
   return state;
 };
 
+const stateWithRunRoleLock = (): State => {
+  const state = baseState();
+  const current = session();
+  state['sessions'] = [
+    {
+      ...current,
+      workflowRuns: [
+        {
+          ...current.workflowRuns[0]!,
+          roleModelOverrides: {
+            implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+          },
+        },
+      ],
+    },
+  ];
+  return state;
+};
+
+const savedStep = (): Record<string, unknown> =>
+  invokeWorkflowUpsertSpy.mock.calls[0]![0].steps[1] as Record<string, unknown>;
+
+const modelMenuIdentities = (): ReadonlyArray<string> =>
+  (decideSpy.mock.calls[0]![0].modelMenu as ReadonlyArray<{ provider: string; model: string }>).map(
+    (option) => `${option.provider}/${option.model}`,
+  );
+
+const anthropicReply = (text: string): string =>
+  JSON.stringify({
+    type: 'result',
+    subtype: 'success',
+    is_error: false,
+    result: text,
+    usage: { input_tokens: 1200, output_tokens: 240 },
+  });
+
 const OPERATOR_STOP = {
   kind: 'operator',
   message: 'You stopped this run. The step in flight was skipped.',
@@ -267,6 +326,8 @@ const harness = (state: State) => {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.useRealTimers();
+  orchestratorTransport.stdout = null;
+  orchestratorTransport.requests.length = 0;
   listOpenQuestionsSpy.mockResolvedValue([]);
   updateOutcomeSpy.mockResolvedValue(undefined);
   invokeWorkflowUpsertSpy.mockImplementation(async (input: Record<string, unknown>) => ({
@@ -484,13 +545,10 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        kind: 'scout',
-        modelOverride: ROLE_DEFAULTS.scout.model,
-        effort: ROLE_DEFAULTS.scout.effort,
-      }),
-    );
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(insert['kind']).toBe('scout');
+    expect(insert['modelOverride']).toBe(ROLE_DEFAULTS.scout.model);
+    expect(insert['effort']).toBeUndefined();
   });
 
   it('still spawns a decided step on the model the orchestrator picked for it', async () => {
@@ -566,11 +624,9 @@ describe('orchestrateNextStep', () => {
         effort: 'high',
       }),
     );
-    const menu = decideSpy.mock.calls[0]![0].modelMenu as ReadonlyArray<{ id: string }>;
-    expect(menu.map((option) => option.id)).toEqual(['opus-5', 'sonnet-5', 'haiku-4.5']);
   });
 
-  it('offers the orchestrator the routing pool instead of the whole provider catalog', async () => {
+  it('offers every connected provider catalog, not only what the roles reach', async () => {
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,
       decision: { action: 'done', reason: 'all set' },
@@ -580,11 +636,114 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    const menu = decideSpy.mock.calls[0]![0].modelMenu as ReadonlyArray<{ id: string }>;
-    expect(menu.map((option) => option.id)).toEqual(['opus-5', 'sonnet-5', 'haiku-4.5']);
+    const identities = modelMenuIdentities();
+
+    expect(identities).toContain('anthropic/fable-5');
+    expect(identities.some((identity) => identity.startsWith('codex/'))).toBe(true);
+    expect(identities.some((identity) => identity.startsWith('gemini/'))).toBe(false);
   });
 
-  it('falls back to the role default when the picked model is outside the pool', async () => {
+  it('metadata reaches the provider request', async () => {
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'true');
+    orchestratorTransport.stdout = anthropicReply(
+      [
+        '<<orchestrator>>',
+        JSON.stringify({
+          action: 'next',
+          reason: 'The resolver rewrite still needs an implementer.',
+          step: {
+            name: 'Implement',
+            role: 'implementer',
+            promptPrefix: 'Rewrite the resolver.',
+            provider: 'codex',
+            model: 'gpt-5.6-sol',
+            effort: 'high',
+            taskType: 'implementation',
+            difficulty: 'heavy',
+            modelReason: 'A precedence rewrite needs the deepest model available.',
+          },
+        }),
+        '<</orchestrator>>',
+      ].join('\n'),
+    );
+    const { set, get } = harness(baseState());
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(orchestratorTransport.requests).toHaveLength(1);
+    const request = orchestratorTransport.requests[0]!;
+    expect(request['toolsDisabled']).toBe(true);
+    const prompt = request['userMessage'] as string;
+
+    expect(prompt).toContain(
+      'Codes: exp=exploration, pln=planning, imp=implementation, dbg=debugging, rev=review, tst=testing, wrt=writing, gen=general; lt=light, st=standard, hv=heavy, uk=unknown.',
+    );
+    expect(prompt).toContain(
+      'anthropic/opus-5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25',
+    );
+    expect(prompt).toContain(
+      'codex/gpt-5.6-sol efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$30',
+    );
+    expect(prompt).toContain(
+      'anthropic/haiku-4.5 efforts no effort control unassessed ctx 200k $1/$5',
+    );
+    expect(prompt).not.toContain('gemini/');
+
+    const menuLines = prompt
+      .split('\n')
+      .filter((line) => line.startsWith('anthropic/') || line.startsWith('codex/'));
+    expect(menuLines).toHaveLength(15);
+    for (const line of menuLines) {
+      expect(line).toContain('unassessed');
+      expect(line).toMatch(/ ctx \d+k \$[\d.]+\/\$[\d.]+$/);
+    }
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerOverride: 'codex',
+        modelOverride: 'gpt-5.6-sol',
+        effort: 'high',
+      }),
+    );
+    vi.unstubAllEnvs();
+  });
+
+  it('leaves catalog metadata out of the provider request while the flag is off', async () => {
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'false');
+    orchestratorTransport.stdout = anthropicReply(
+      [
+        '<<orchestrator>>',
+        JSON.stringify({ action: 'done', reason: 'all set' }),
+        '<</orchestrator>>',
+      ].join('\n'),
+    );
+    const { set, get } = harness(baseState());
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const prompt = orchestratorTransport.requests[0]!['userMessage'] as string;
+    expect(prompt).toContain('anthropic/opus-5 - Opus 5 - efforts: low, medium, high, xhigh, max');
+    expect(prompt).not.toContain('unassessed');
+    expect(prompt).not.toMatch(/ ctx \d+k /);
+    expect(prompt).not.toMatch(/\$[\d.]+\/\$[\d.]+/);
+    vi.unstubAllEnvs();
+  });
+
+  it('drops a cooling provider out of the menu it offers', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: { action: 'done', reason: 'all set' },
+    });
+    const state = baseState();
+    state['providerCooldowns'] = { codex: Date.now() + 60_000 };
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(modelMenuIdentities().some((identity) => identity.startsWith('codex/'))).toBe(false);
+  });
+
+  it('runs an available pick no role default reaches, without a rejection notice', async () => {
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,
       decision: {
@@ -596,6 +755,7 @@ describe('orchestrateNextStep', () => {
           promptPrefix: 'Implement the change.',
           model: 'fable-5',
           effort: 'max',
+          modelReason: 'The refactor spans the whole router.',
         },
       },
     });
@@ -606,13 +766,149 @@ describe('orchestrateNextStep', () => {
 
     expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        modelOverride: ROLE_DEFAULTS.implementer.model,
-        effort: ROLE_DEFAULTS.implementer.effort,
+        providerOverride: 'anthropic',
+        modelOverride: 'fable-5',
+        effort: 'max',
+      }),
+    );
+    expect(savedStep().routingDecision).toMatchObject({
+      selected: { provider: 'anthropic', model: 'fable-5', effort: 'max' },
+      source: 'agent',
+      adjustment: 'none',
+    });
+    expect(state['emitNotification']).not.toHaveBeenCalled();
+  });
+
+  it('stores the task profile the orchestrator emitted', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'fable-5',
+          effort: 'max',
+          taskType: 'implementation',
+          difficulty: 'heavy',
+          modelReason: 'The refactor spans the whole router.',
+        },
+      },
+    });
+    const { set, get } = harness(baseState());
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(savedStep().taskProfile).toEqual({
+      taskType: 'implementation',
+      difficulty: 'heavy',
+      basis: 'agent',
+    });
+    expect(savedStep().routingDecision).toMatchObject({
+      reason: 'The refactor spans the whole router.',
+    });
+    expect(savedStep().orchestratorReason).toBe('This one is hard.');
+  });
+
+  it('never invents a difficulty for an unprofiled step while the metadata flag is off', async () => {
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'false');
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: [
+            'Rework the migration runner so every segment is transactional.',
+            '```ts',
+            'const run = () => {};',
+            '```',
+          ].join('\n'),
+          model: 'fable-5',
+        },
+      },
+    });
+    const { set, get } = harness(baseState());
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(savedStep().taskProfile).toEqual({
+      taskType: 'general',
+      difficulty: 'unknown',
+      basis: 'unknown',
+    });
+    expect(decideSpy.mock.calls[0]![0].isModelMetadataEnabled).toBeUndefined();
+    vi.unstubAllEnvs();
+  });
+
+  it('labels a difficulty it read off the step text as heuristic when the flag is on', async () => {
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'true');
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: [
+            'Rework the migration runner so every segment is transactional.',
+            '```ts',
+            'const run = () => {};',
+            '```',
+          ].join('\n'),
+          model: 'fable-5',
+        },
+      },
+    });
+    const { set, get } = harness(baseState());
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(savedStep().taskProfile).toEqual({
+      taskType: 'general',
+      difficulty: 'heavy',
+      basis: 'heuristic',
+    });
+    expect(decideSpy.mock.calls[0]![0].isModelMetadataEnabled).toBe(true);
+    vi.unstubAllEnvs();
+  });
+
+  it('runs a pick from another connected provider than the one deciding', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          provider: 'codex',
+          model: 'gpt-5.6-sol',
+          effort: 'high',
+        },
+      },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerOverride: 'codex',
+        modelOverride: 'gpt-5.6-sol',
+        effort: 'high',
       }),
     );
   });
 
-  it('tells the operator which pick it refused', async () => {
+  it('replaces a model no catalog knows with an available recommendation', async () => {
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,
       decision: {
@@ -622,7 +918,7 @@ describe('orchestrateNextStep', () => {
           name: 'Implement',
           role: 'implementer',
           promptPrefix: 'Implement the change.',
-          model: 'fable-5',
+          model: 'gpt-9-imaginary',
         },
       },
     });
@@ -631,17 +927,87 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    const saved = invokeWorkflowUpsertSpy.mock.calls[0]![0].steps[1];
-    expect(saved.orchestratorReason).toContain('fable-5');
-    expect(saved.orchestratorReason).toContain(ROLE_DEFAULTS.implementer.model);
-    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
-      'agent-2',
-      SESSION_ID,
-      expect.objectContaining({ reason: expect.stringContaining('fable-5') }),
-    );
+    const decision = savedStep().routingDecision as {
+      source: string;
+      adjustment: string;
+      selected: { provider: string; model: string };
+    };
+
+    expect(decision.source).toBe('heuristic');
+    expect(decision.adjustment).toBe('unknown_model');
+    expect(['anthropic', 'codex']).toContain(decision.selected.provider);
+    expect(decision.selected.model).not.toBe('gpt-9-imaginary');
   });
 
-  it('raises a notification naming the refused model and the one that ran', async () => {
+  it('keeps the step reason about the work, not about routing', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'The scout located the failure.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'gpt-9-imaginary',
+        },
+      },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(savedStep().orchestratorReason).toBe('The scout located the failure.');
+    expect(state['emitNotification']).not.toHaveBeenCalled();
+  });
+
+  it('reports only the selected run lock when the automatic pick is unavailable', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          provider: 'gemini',
+          model: 'gemini-3.1-pro',
+          effort: 'high',
+        },
+      },
+    });
+    const { set, get } = harness(stateWithRunRoleLock());
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerOverride: 'codex',
+        modelOverride: 'gpt-5.6-sol',
+        effort: 'high',
+      }),
+    );
+    const decision = savedStep().routingDecision as {
+      source: string;
+      adjustment: string;
+      reason: string;
+      selected: { provider: string; model: string };
+    };
+
+    expect(decision.source).toBe('run_role_lock');
+    expect(decision.adjustment).toBe('none');
+    expect(decision.selected).toEqual({
+      provider: 'codex',
+      model: 'gpt-5.6-sol',
+      effort: 'high',
+    });
+    expect(decision.reason).toContain('codex/gpt-5.6-sol');
+    expect(decision.reason).not.toContain('gemini');
+  });
+
+  it('records the run lock without calling an available pick unavailable', async () => {
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,
       decision: {
@@ -655,24 +1021,82 @@ describe('orchestrateNextStep', () => {
         },
       },
     });
+    const { set, get } = harness(stateWithRunRoleLock());
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const decision = savedStep().routingDecision as {
+      source: string;
+      adjustment: string;
+      proposal: { pick: { provider: string; model: string } } | null;
+    };
+
+    expect(decision.source).toBe('run_role_lock');
+    expect(decision.adjustment).toBe('none');
+    expect(decision.proposal?.pick).toEqual({
+      provider: 'anthropic',
+      model: 'fable-5',
+      effort: null,
+    });
+  });
+
+  it('normalizes an unsupported effort against the model that actually runs', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          provider: 'codex',
+          model: 'gpt-5.6-sol',
+          effort: 'minimal',
+        },
+      },
+    });
     const state = baseState();
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(state['emitNotification']).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'orchestrator model pick refused',
-      expect.stringContaining('fable-5'),
-      { sessionId: SESSION_ID },
-    );
-    expect(state['emitNotification']).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'orchestrator model pick refused',
-      expect.stringContaining(ROLE_DEFAULTS.implementer.model),
-      { sessionId: SESSION_ID },
+    const decision = savedStep().routingDecision as {
+      adjustment: string;
+      selected: { provider: string; effort: string | null };
+    };
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as { effort: string };
+
+    expect(decision.selected.provider).toBe('codex');
+    expect(decision.selected.effort).not.toBe('minimal');
+    expect(insert.effort).toBe(decision.selected.effort);
+  });
+
+  it('stops the run when the only lock it has cannot run', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'fable-5',
+        },
+      },
+    });
+    const state = stateWithRunRoleLock();
+    state['providerCooldowns'] = { codex: Date.now() + 60_000 };
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
+    expect(updateStopSpy).toHaveBeenCalledWith(
+      {},
+      WORKFLOW_RUN_ID,
+      expect.objectContaining({ kind: 'failure', message: expect.stringContaining('cooldown') }),
     );
   });
 

@@ -1,5 +1,6 @@
-import type { TurnEvent } from '@goodboy/types';
+import type { ProviderId, TurnEvent, WorkflowRoutingProposal } from '@goodboy/types';
 import type { AgentKindLabel } from '../first-turn-classifier';
+import { parseWorkflowRoutingProposal } from '../orchestrator/parseWorkflowRoutingProposal';
 
 export const extractFilesTouched = (events: ReadonlyArray<TurnEvent>): ReadonlyArray<string> => {
   const seen = new Set<string>();
@@ -550,11 +551,47 @@ const STEP_DONE_RE = /<<step-done\s([^<>]*)>>/g;
 export type ExtractedCluster = {
   readonly title: string;
   readonly instructions: string;
+  readonly routingProposal?: WorkflowRoutingProposal | null;
 };
 
-export const extractClustersFromMarker = (
-  assistantText: string,
-): ReadonlyArray<ExtractedCluster> | null => {
+type ChildRoutingParams = {
+  readonly entry: Record<string, unknown>;
+  readonly emittingProvider: ProviderId | null;
+};
+
+const childRoutingProposal = ({
+  entry,
+  emittingProvider,
+}: ChildRoutingParams): WorkflowRoutingProposal | null => {
+  if (emittingProvider === null) {
+    return null;
+  }
+  const outcome = parseWorkflowRoutingProposal({
+    fields: {
+      ...(entry.provider !== undefined && { provider: entry.provider }),
+      ...(entry.model !== undefined && { model: entry.model }),
+      ...(entry.effort !== undefined && { effort: entry.effort }),
+      ...(entry.taskType !== undefined && { taskType: entry.taskType }),
+      ...(entry.difficulty !== undefined && { difficulty: entry.difficulty }),
+      ...(entry.modelReason !== undefined && { modelReason: entry.modelReason }),
+    },
+    emittingProvider,
+  });
+  if (outcome.kind !== 'valid') {
+    return null;
+  }
+  return outcome.proposal;
+};
+
+type ExtractClustersParams = {
+  readonly assistantText: string;
+  readonly emittingProvider: ProviderId | null;
+};
+
+export const extractClustersFromMarker = ({
+  assistantText,
+  emittingProvider,
+}: ExtractClustersParams): ReadonlyArray<ExtractedCluster> | null => {
   const blocks = extractBlockContents(assistantText, CLUSTERS_OPEN, CLUSTERS_CLOSE);
   if (blocks.length === 0) {
     return null;
@@ -591,7 +628,8 @@ export const extractClustersFromMarker = (
     if (title.length === 0 || instructions.length === 0) {
       continue;
     }
-    out.push({ title, instructions });
+    const routingProposal = childRoutingProposal({ entry: e, emittingProvider });
+    out.push({ title, instructions, ...(routingProposal !== null && { routingProposal }) });
   }
   return out.length > 0 ? out : null;
 };
@@ -672,11 +710,20 @@ export type ExtractedFanOutArea = {
   readonly fixtures: ReadonlyArray<string>;
   readonly topFrame: string | null;
   readonly sharedFrames: ReadonlyArray<string>;
+  readonly routingProposal?: WorkflowRoutingProposal | null;
 };
 
 export type ExtractedScoutArea = ExtractedFanOutArea;
 
-const parseFanOutAreas = (raw: string): ReadonlyArray<ExtractedFanOutArea> | null => {
+type ParseAreasParams = {
+  readonly raw: string;
+  readonly emittingProvider: ProviderId | null;
+};
+
+const parseFanOutAreas = ({
+  raw,
+  emittingProvider,
+}: ParseAreasParams): ReadonlyArray<ExtractedFanOutArea> | null => {
   const json = stripJsonFences(raw);
   let parsed: unknown;
   try {
@@ -721,6 +768,7 @@ const parseFanOutAreas = (raw: string): ReadonlyArray<ExtractedFanOutArea> | nul
           .map((v) => v.trim())
           .filter((v) => v.length > 0)
       : [];
+    const routingProposal = childRoutingProposal({ entry: e, emittingProvider });
     out.push({
       area,
       query,
@@ -728,6 +776,7 @@ const parseFanOutAreas = (raw: string): ReadonlyArray<ExtractedFanOutArea> | nul
       fixtures,
       topFrame: topFrame.length > 0 ? topFrame : null,
       sharedFrames,
+      ...(routingProposal !== null && { routingProposal }),
     });
   }
   return out.length > 0 ? out : null;
@@ -747,23 +796,32 @@ const extractLatestFanOutBlock = (assistantText: string): string | null => {
   return blocks.length > 0 ? blocks[blocks.length - 1]! : null;
 };
 
-export const extractFanOut = (assistantText: string): ReadonlyArray<ExtractedFanOutArea> | null => {
+type ExtractFanOutParams = {
+  readonly assistantText: string;
+  readonly emittingProvider: ProviderId | null;
+};
+
+export const extractFanOut = ({
+  assistantText,
+  emittingProvider,
+}: ExtractFanOutParams): ReadonlyArray<ExtractedFanOutArea> | null => {
   const latest = extractLatestFanOutBlock(assistantText);
   if (latest === null) {
     return null;
   }
-  return parseFanOutAreas(latest);
+  return parseFanOutAreas({ raw: latest, emittingProvider });
 };
 
-export const extractScoutSplit = (
-  assistantText: string,
-): ReadonlyArray<ExtractedScoutArea> | null => {
+export const extractScoutSplit = ({
+  assistantText,
+  emittingProvider,
+}: ExtractFanOutParams): ReadonlyArray<ExtractedScoutArea> | null => {
   const blocks = extractBlockContents(assistantText, SCOUT_SPLIT_OPEN, SCOUT_SPLIT_CLOSE);
   if (blocks.length === 0) {
-    return extractFanOut(assistantText);
+    return extractFanOut({ assistantText, emittingProvider });
   }
   const raw = blocks[blocks.length - 1]!;
-  return parseFanOutAreas(raw);
+  return parseFanOutAreas({ raw, emittingProvider });
 };
 
 const FENCE_OPEN_RE = /^```(?:json)?/i;

@@ -112,6 +112,8 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
     onReset,
     effort,
     ariaLabel,
+    verbosity,
+    onVerbosity,
   }: {
     connectedProviders: ReadonlyArray<string>;
     provider: string;
@@ -121,6 +123,8 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
     onModel: (v: string) => void;
     onReset?: () => void;
     ariaLabel?: string;
+    verbosity?: string;
+    onVerbosity?: (value: string) => void;
     effort:
       | { readonly editable: false; readonly value?: ModelEffort }
       | {
@@ -147,6 +151,11 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
       {effort.editable ? (
         <button type="button" onClick={() => effort.onChange('xhigh')}>
           effort:{effort.value}
+        </button>
+      ) : null}
+      {onVerbosity != null ? (
+        <button type="button" onClick={() => onVerbosity('verbose')}>
+          verbosity:{verbosity}
         </button>
       ) : null}
       {onReset != null ? (
@@ -255,6 +264,18 @@ const stepToggles = () => screen.getAllByRole('button', { name: /^step \d+:/i })
 
 const expandStep = (index: number) => fireEvent.click(stepToggles()[index]!);
 
+const stepRouting = (ordinal = 1) =>
+  within(screen.getByRole('group', { name: `Routing for step ${ordinal}` }));
+
+const handAuthorOneStep = () => {
+  fireEvent.click(screen.getByRole('button', { name: /^add step$/i }));
+  expandStep(0);
+  fireEvent.change(screen.getByPlaceholderText('step name'), {
+    target: { value: 'read the router' },
+  });
+  fireEvent.click(stepRouting().getByRole('button', { name: /^model:auto$/ }));
+};
+
 describe('uniqueWorkflowName', () => {
   it('keeps the requested name when no live workflow uses it', () => {
     const existing = [presetWorkflow('wf-1', 'Refactor')];
@@ -286,6 +307,55 @@ describe('WorkflowBuilderView (studio chrome)', () => {
 });
 
 describe('WorkflowBuilderView (custom mode, no presets)', () => {
+  it('lets empty Custom add, edit and launch a manual step without the planner', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    expect(startBtn().disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: /^add step$/i }));
+    expandStep(0);
+    fireEvent.change(screen.getByPlaceholderText('step name'), {
+      target: { value: 'read the router' },
+    });
+
+    expect(startBtn().disabled).toBe(false);
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    const saved = mockSavePhaseTemplate.mock.calls[0]![0];
+    expect(saved.name).toBe('Custom workflow');
+    expect(saved.steps.map((step) => step.name)).toEqual(['read the router']);
+    expect(PlannerClient).not.toHaveBeenCalled();
+    expect(mockPlan).not.toHaveBeenCalled();
+  });
+
+  it('names the missing step, not a missing plan, while Custom is empty', () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+
+    expect(screen.getByText('Add a step or generate a plan to start')).toBeDefined();
+  });
+
+  it('carries an edited role and verbosity onto the saved workflow', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+    expandStep(0);
+
+    fireEvent.click(withinSteps().getAllByRole('button', { name: /^verbosity:normal$/i })[0]!);
+    fireEvent.click(withinSteps().getAllByRole('button', { name: /^scout$/i })[0]!);
+    fireEvent.click(
+      within(screen.getByRole('listbox', { name: 'Agent role' })).getByRole('button', {
+        name: /reviewer/i,
+      }),
+    );
+
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    const saved = mockSavePhaseTemplate.mock.calls[0]![0];
+    expect(saved.steps[0]!.verbosity).toBe('verbose');
+    expect(saved.steps[0]!.role).toBe('reviewer');
+  });
+
   it('enables start only after a plan is drafted', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     expect(startBtn().disabled).toBe(true);
@@ -435,6 +505,77 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     expect(screen.getByRole('alert').textContent).toMatch(/model unavailable/i);
     expect(mockSavePhaseTemplate).not.toHaveBeenCalled();
     expect(startBtn().disabled).toBe(true);
+  });
+
+  it('keeps hand-authored steps and their routing when a re-plan is rejected', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    handAuthorOneStep();
+
+    mockPlan.mockRejectedValue(new Error('model unavailable'));
+    fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
+      target: { value: 'rewrite everything' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /generate plan/i }));
+    await waitFor(() => screen.getByRole('alert'));
+
+    expect(screen.getByText('1 step')).toBeDefined();
+    expect((screen.getByPlaceholderText('step name') as HTMLInputElement).value).toBe(
+      'read the router',
+    );
+    expect(stepRouting().getByRole('button', { name: /^model:claude-opus-4-6$/ })).toBeDefined();
+    expect(startBtn().disabled).toBe(false);
+  });
+
+  it('keeps hand-authored steps when the planner returns nothing usable', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    handAuthorOneStep();
+
+    mockPlan.mockResolvedValue({
+      output: { workflowName: 'Empty', reasoning: 'none', steps: [] },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
+      target: { value: 'rewrite everything' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /generate plan/i }));
+    await waitFor(() => screen.getByRole('alert'));
+
+    expect(screen.getByRole('alert').textContent).toMatch(/no usable steps/i);
+    expect(screen.getByText('1 step')).toBeDefined();
+    expect((screen.getByPlaceholderText('step name') as HTMLInputElement).value).toBe(
+      'read the router',
+    );
+    expect(stepRouting().getByRole('button', { name: /^model:claude-opus-4-6$/ })).toBeDefined();
+  });
+
+  it('reads as in flight while a re-plan runs, without dropping the steps', async () => {
+    let settle: (value: { output: typeof PLAN_FIXTURE }) => void = () => {};
+    mockPlan.mockReturnValue(
+      new Promise<{ output: typeof PLAN_FIXTURE }>((resolve) => {
+        settle = resolve;
+      }),
+    );
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    handAuthorOneStep();
+
+    fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
+      target: { value: 'rewrite everything' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /generate plan/i }));
+
+    await waitFor(() => screen.getByRole('status', { name: /drafting plan/i }));
+    expect(screen.getByRole('button', { name: /planning/i })).toBeDefined();
+    expect(screen.getByText('1 step')).toBeDefined();
+    expect((screen.getByPlaceholderText('step name') as HTMLInputElement).value).toBe(
+      'read the router',
+    );
+
+    settle({ output: PLAN_FIXTURE });
+    await waitFor(() => screen.getByText('Ready'));
+    expect(screen.getByText('2 steps')).toBeDefined();
+    expect(screen.queryByRole('status', { name: /drafting plan/i })).toBeNull();
   });
 
   it('leaves the landing to attachWorkflowToSession after starting a custom workflow', async () => {

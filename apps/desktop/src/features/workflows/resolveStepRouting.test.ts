@@ -15,7 +15,99 @@ const step = (patch: Partial<Step>): Step =>
     ...patch,
   }) as Step;
 
+const decidedStep = (): Step =>
+  step({
+    role: 'implementer',
+    providerOverride: 'codex',
+    modelOverride: 'gpt-5.6-sol',
+    effort: 'high',
+    routingDecision: {
+      version: 1,
+      proposal: null,
+      selected: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+      source: 'agent',
+      reason: 'The refactor needs deep reasoning.',
+      adjustment: 'none',
+      executed: null,
+    },
+  });
+
 describe('resolveStepRouting', () => {
+  it('keeps the decided selection above every configured preference', () => {
+    const routing = resolveStepRouting({
+      step: decidedStep(),
+      kind: 'implementer',
+      roleModels: {
+        implementer: { providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' },
+      },
+      sessionProvider: 'anthropic',
+      sessionEffort: 'low',
+    });
+
+    expect(routing).toEqual({ provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' });
+  });
+
+  it('keeps a deliberate null effort instead of refilling it from a fallback', () => {
+    const noEffortControl = step({
+      role: 'implementer',
+      providerOverride: 'anthropic',
+      modelOverride: 'sonnet-5',
+      effort: 'high',
+      routingDecision: {
+        version: 1,
+        proposal: null,
+        selected: { provider: 'anthropic', model: 'sonnet-5', effort: null },
+        source: 'agent',
+        reason: 'This model has no effort control.',
+        adjustment: 'none',
+        executed: null,
+      },
+    });
+
+    const routing = resolveStepRouting({
+      step: noEffortControl,
+      kind: 'implementer',
+      roleModels: { implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'xhigh' } },
+      sessionEffort: 'low',
+    });
+
+    expect(routing.effort).toBe(null);
+  });
+
+  it('lets an explicit lock win over the decision beside it', () => {
+    const locked = {
+      ...decidedStep(),
+      routingLock: {
+        version: 1,
+        pick: { provider: 'anthropic', model: 'opus-5', effort: 'xhigh' },
+        origin: 'user',
+      },
+    } as Step;
+
+    const routing = resolveStepRouting({ step: locked, kind: 'implementer', roleModels: null });
+
+    expect(routing).toEqual({ provider: 'anthropic', model: 'opus-5', effort: 'xhigh' });
+  });
+
+  it('routes a roleless agent on the session model above the kind default', () => {
+    const withSession = resolveStepRouting({
+      step: null,
+      kind: 'generic',
+      roleModels: null,
+      sessionProvider: 'anthropic',
+      sessionModel: 'opus-5',
+    });
+    const withoutSession = resolveStepRouting({
+      step: null,
+      kind: 'generic',
+      roleModels: null,
+      sessionProvider: 'anthropic',
+    });
+
+    expect(withSession.model).toBe('opus-5');
+    expect(withoutSession.model).not.toBe('opus-5');
+  });
+
   it('lets an explicit step model win over the agent pin', () => {
     const routing = resolveStepRouting({
       step: step({ modelOverride: 'opus-5' }),
