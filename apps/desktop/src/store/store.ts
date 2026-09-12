@@ -597,7 +597,7 @@ type AppActions = {
     attachments?: ReadonlyArray<AttachmentInput>;
     override?: TurnProviderOverride;
     force?: boolean;
-    origin?: 'operator';
+    origin?: 'operator' | 'workflow';
   }): Promise<SendTurnResult>;
   cancelCurrentTurn(sessionId: SessionId, agentId?: AgentId): Promise<void>;
   retrySummarizer(sessionId: SessionId, taskModelOverride?: TaskModelPreference): void;

@@ -160,7 +160,9 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
             });
           }
         } else {
-          sessionActiveMount[s.id] = s.activeMountId ?? null;
+          if (s.activeMountId != null) {
+            sessionActiveMount[s.id] = s.activeMountId;
+          }
           if (
             s.activeProjectId != null &&
             mounts.some((mount) => mount.projectId === s.activeProjectId)

@@ -210,7 +210,7 @@ const activateAgent = ({
       [agentId]: { kind: 'idle' as const, lastActivityAt: nowIso() },
     },
   }));
-  void get().sendTurn({ sessionId, agentId, content });
+  void get().sendTurn({ sessionId, agentId, content, origin: 'workflow' });
 };
 
 const areDisjointModules = (modules: ReadonlyArray<string>): boolean => {

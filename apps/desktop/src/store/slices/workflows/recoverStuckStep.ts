@@ -56,6 +56,7 @@ export const recoverStuckStep = (get: GetFn) => {
         sessionId,
         agentId: agent.id,
         content: recoveryPrompt({ agentId: agent.id }),
+        origin: 'workflow',
       });
     } catch (error) {
       void get().emitNotification(

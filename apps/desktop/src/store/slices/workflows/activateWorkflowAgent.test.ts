@@ -67,6 +67,13 @@ const AGENT_ID = 'agent-step' as AgentId;
 const STEP_ID = 's-exec' as StepId;
 const NOW = '2026-05-23T00:00:00.000Z' as IsoDateTime;
 
+type SendTurnInput = {
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly content: string;
+  readonly origin?: 'workflow';
+};
+
 function makePlan(overrides: Partial<PlanWithCount> = {}): PlanWithCount {
   return {
     id: PLAN_ID,
@@ -146,9 +153,7 @@ function buildHarness(opts: {
     createdAt: NOW,
     updatedAt: NOW,
   };
-  const sendTurn = vi.fn(
-    async (_arg: { sessionId: SessionId; agentId: AgentId; content: string }) => undefined,
-  );
+  const sendTurn = vi.fn(async (_arg: SendTurnInput) => undefined);
   const state = {
     sessionPhaseRuns: { [SESSION_ID]: [opts.agent, ...(opts.extraAgents ?? [])] },
     sessions: [session],
@@ -282,6 +287,20 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(payload.content).toContain('do the thing');
     expect(payload.content).toContain('run the step');
     expect(fanOutClustersSpy).not.toHaveBeenCalled();
+  });
+
+  it('awaits the workflow kickoff and identifies its origin', async () => {
+    const { sendTurn, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan()],
+    });
+    sendTurn.mockRejectedValueOnce(new Error('kickoff failed'));
+
+    await expect(activate({ sessionId: SESSION_ID, agentId: AGENT_ID })).rejects.toThrow(
+      'kickoff failed',
+    );
+    expect(sendTurn).toHaveBeenCalledWith(expect.objectContaining({ origin: 'workflow' }));
   });
 
   it('a reviewer step is passthrough: no consumption, no plan body injected', async () => {

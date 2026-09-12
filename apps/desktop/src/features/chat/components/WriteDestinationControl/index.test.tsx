@@ -235,4 +235,31 @@ describe('WriteDestinationControl with siblings and no choice', () => {
       }),
     );
   });
+
+  it('names the automatic mount while leaving the picker available', () => {
+    store.sessionProjectMounts = {
+      [SESSION_ID]: [
+        {
+          ...mount({ mountId: MOUNT_MAIN, mountName: 'main', branch: 'ak/one' }),
+          parallelIndex: 2,
+        },
+        {
+          ...mount({ mountId: MOUNT_FEATURE, mountName: 'feature', branch: 'ak/two' }),
+          parallelIndex: 1,
+        },
+      ],
+    };
+
+    render(
+      <WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} fallback="automatic" />,
+    );
+
+    expect(screen.getByText('Auto: web / feature / ak/two')).toBeDefined();
+    expect(
+      screen.getByTitle(
+        'No mount chosen for this session. Automated turns write to web / feature / ak/two (/sessions/one/feature) until you choose one.',
+      ),
+    ).toBeDefined();
+    expect(screen.getByRole('button', { name: /Write destination/ })).toBeDefined();
+  });
 });

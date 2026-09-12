@@ -21,6 +21,7 @@ import { useWriteDestination } from './useWriteDestination';
 type Props = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId | null;
+  readonly fallback?: 'automatic';
 };
 
 const MAX_LABEL_LENGTH = 46;
@@ -28,8 +29,12 @@ const MAX_LABEL_LENGTH = 46;
 const shorten = (label: string): string =>
   label.length > MAX_LABEL_LENGTH ? `${label.slice(0, MAX_LABEL_LENGTH - 1)}…` : label;
 
-export const WriteDestinationControl = ({ sessionId, agentId }: Props) => {
-  const { next, candidates, running, diverges } = useWriteDestination({ sessionId, agentId });
+export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props) => {
+  const { next, candidates, running, diverges, isAutomatic } = useWriteDestination({
+    sessionId,
+    agentId,
+    fallback,
+  });
   const setSessionActiveMount = useAppStore((state) => state.setSessionActiveMount);
   const { showToast } = useToast();
   const dropdown = useDropdown({ width: 'w-96', expectedHeight: 320 });
@@ -43,21 +48,25 @@ export const WriteDestinationControl = ({ sessionId, agentId }: Props) => {
 
   const isUnselected = next.kind === 'unselected';
 
-  const primaryLabel = isUnselected
-    ? 'Choose destination'
-    : running === null
-      ? `Write to: ${nextLabel}`
-      : diverges
-        ? `In progress: ${runningLabel}`
-        : `In progress and next turns: ${nextLabel}`;
+  const primaryLabel = isAutomatic
+    ? `Auto: ${nextLabel}`
+    : isUnselected
+      ? 'Choose destination'
+      : running === null
+        ? `Write to: ${nextLabel}`
+        : diverges
+          ? `In progress: ${runningLabel}`
+          : `In progress and next turns: ${nextLabel}`;
 
-  const primaryTitle = isUnselected
-    ? nextDetail
-    : running === null
-      ? `Writing to ${nextDetail}`
-      : diverges
-        ? `This turn started on ${runningDetail}. Next turns write to ${nextDetail} unless changed.`
-        : `This turn and the next ones write to ${nextDetail}.`;
+  const primaryTitle = isAutomatic
+    ? `No mount chosen for this session. Automated turns write to ${nextDetail} until you choose one.`
+    : isUnselected
+      ? nextDetail
+      : running === null
+        ? `Writing to ${nextDetail}`
+        : diverges
+          ? `This turn started on ${runningDetail}. Next turns write to ${nextDetail} unless changed.`
+          : `This turn and the next ones write to ${nextDetail}.`;
 
   const Icon = next.kind === 'scratch' ? CONCEPT_ICONS.folderOpen : CONCEPT_ICONS.worktree;
   const hasCandidates = candidates.length > 0;
@@ -85,13 +94,13 @@ export const WriteDestinationControl = ({ sessionId, agentId }: Props) => {
     }
   };
 
-  const currentMountId = next.kind === 'mount' ? next.mountId : null;
+  const currentMountId = isAutomatic || next.kind !== 'mount' ? null : next.mountId;
   const canApply = pendingMountId !== null && pendingMountId !== currentMountId;
 
   const trigger = (
     <Chip
       as="button"
-      tone={diverges || isUnselected ? 'warning' : 'neutral'}
+      tone={isAutomatic || diverges || isUnselected ? 'warning' : 'neutral'}
       size="xs"
       bordered={false}
       icon={<Icon size={ICON_SIZE.row} aria-hidden />}
