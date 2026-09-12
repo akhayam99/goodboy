@@ -12,6 +12,8 @@ import type {
 import {
   buildStoryAgent,
   buildStorySession,
+  connectedAnthropicState,
+  emptyTurnStream,
   resetStorySpies,
   storyResolveQueries,
   storySpies,
@@ -171,18 +173,33 @@ describe('story: two mounts of one project survive a restart', () => {
     expect(state.sessionBranches[SESSION_ID]).toBe('ak/two');
   });
 
-  it('asks for a choice instead of writing into the first mount', async () => {
+  it('runs an unselected turn in the lowest-parallelIndex mount without persisting a choice', async () => {
     await seed({ session: sessionWith(), rows: ROWS });
 
     await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
+    const agent = buildStoryAgent({
+      id: 'agent-operator' as AgentId,
+      sessionId: SESSION_ID,
+      name: 'operator',
+    });
+    useAppStore.setState({
+      sessionPhaseRuns: { [SESSION_ID]: [agent] },
+      selectedAgentId: { [SESSION_ID]: agent.id },
+      ...connectedAnthropicState(),
+    });
+    storySpies.runTurn.mockImplementation(() => emptyTurnStream());
 
-    const state = useAppStore.getState();
-    expect(state.sessionActiveMount[SESSION_ID]).toBeUndefined();
-    expect(state.sessionBranches[SESSION_ID]).toBeUndefined();
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
+
+    expect(storySpies.runTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workingDir: pathOf({ mountId: MOUNT_A1 }),
+        mountId: MOUNT_A1,
+      }),
+    );
+    expect(useAppStore.getState().sessionActiveMount[SESSION_ID]).toBeUndefined();
+    expect(useAppStore.getState().sessionBranches[SESSION_ID]).toBeUndefined();
     expect(storySpies.updateSessionWriteDestination).not.toHaveBeenCalled();
-    await expect(
-      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' }),
-    ).rejects.toThrow(/Choose the branch mount/);
   });
 
   it('lets a workflow turn resolve the mount without a choice', async () => {

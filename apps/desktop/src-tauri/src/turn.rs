@@ -264,6 +264,14 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 "--setting-sources".to_string(),
                 crate::aux_spawn::CLAUDE_SETTING_SOURCES.to_string(),
             ]);
+            for root in args.writable_roots {
+                v.push("--add-dir".to_string());
+                v.push(root.to_string());
+            }
+            if let Some(socket_directory) = args.query_socket_directory {
+                v.push("--add-dir".to_string());
+                v.push(socket_directory.to_string());
+            }
             if let Some(sp) = args.system_prompt {
                 v.push("--append-system-prompt".to_string());
                 v.push(sp.to_string());
@@ -795,13 +803,21 @@ mod tests {
     }
 
     #[test]
-    fn claude_args_ignore_writable_directories() {
+    fn claude_args_add_writable_directories() {
         let empty: Vec<String> = vec![];
-        let roots = vec!["/repo/one/.git".to_string()];
+        let roots = vec!["/repo/one/.git".to_string(), "/repo/two/.git".to_string()];
         let mut args = make_args(None, None, &empty);
         args.writable_roots = &roots;
         let cli = build_provider_cli_args("claude", &args);
-        assert!(!cli.iter().any(|arg| arg == "--add-dir"));
+        let added_directories: Vec<&str> = cli
+            .windows(2)
+            .filter(|pair| pair[0] == "--add-dir")
+            .map(|pair| pair[1].as_str())
+            .collect();
+        assert_eq!(
+            added_directories,
+            vec!["/repo/one/.git", "/repo/two/.git", "/tmp/goodboy-query"]
+        );
     }
 
     #[test]

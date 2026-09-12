@@ -46,27 +46,23 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
   const nextDetail = writeDestinationDetail(next);
   const runningDetail = running === null ? null : writeDestinationDetail(running);
 
-  const isUnselected = next.kind === 'unselected';
-
   const primaryLabel = isAutomatic
     ? `Auto: ${nextLabel}`
-    : isUnselected
-      ? 'Choose destination'
-      : running === null
-        ? `Write to: ${nextLabel}`
-        : diverges
-          ? `In progress: ${runningLabel}`
-          : `In progress and next turns: ${nextLabel}`;
+    : running === null
+      ? next.kind === 'scratch'
+        ? 'Session folder'
+        : `Runs in: ${nextLabel}`
+      : diverges
+        ? `In progress: ${runningLabel}`
+        : `In progress and next turns: ${nextLabel}`;
 
   const primaryTitle = isAutomatic
-    ? `No mount chosen for this session. Automated turns write to ${nextDetail} until you choose one.`
-    : isUnselected
-      ? nextDetail
-      : running === null
-        ? `Writing to ${nextDetail}`
-        : diverges
-          ? `This turn started on ${runningDetail}. Next turns write to ${nextDetail} unless changed.`
-          : `This turn and the next ones write to ${nextDetail}.`;
+    ? `Nobody chose a folder, so turns run in ${nextDetail}. They can still write in every repository this session mounts.`
+    : running === null
+      ? `Turns run in ${nextDetail}. They can still write in every repository this session mounts.`
+      : diverges
+        ? `This turn started in ${runningDetail}. Next turns run in ${nextDetail} unless changed.`
+        : `This turn and the next ones run in ${nextDetail}.`;
 
   const Icon = next.kind === 'scratch' ? CONCEPT_ICONS.folderOpen : CONCEPT_ICONS.worktree;
   const hasCandidates = candidates.length > 0;
@@ -100,13 +96,13 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
   const trigger = (
     <Chip
       as="button"
-      tone={isAutomatic || diverges || isUnselected ? 'warning' : 'neutral'}
+      tone={isAutomatic || diverges ? 'warning' : 'neutral'}
       size="xs"
       bordered={false}
       icon={<Icon size={ICON_SIZE.row} aria-hidden />}
       label={<span className="max-w-[16rem] truncate">{shorten(primaryLabel)}</span>}
       title={primaryTitle}
-      ariaLabel={`Write destination. ${primaryTitle}`}
+      ariaLabel={`Working folder. ${primaryTitle}`}
       hasPopup="dialog"
       expanded={dropdown.open}
       onClick={openPicker}
@@ -120,17 +116,15 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
       <AnchoredPopover
         dropdown={dropdown}
         role="dialog"
-        ariaLabel="Choose write destination"
+        ariaLabel="Choose working folder"
         anchorClassName="shrink-0"
         trigger={trigger}
       >
         <div className="flex flex-col gap-3 p-3">
           <div className="flex flex-col gap-1">
-            <span className="text-sm font-semibold text-foreground">Write destination</span>
+            <span className="text-sm font-semibold text-foreground">Working folder</span>
             <span className="text-2xs text-muted-foreground">
-              {isUnselected
-                ? 'This session has more than one branch mount. Pick the one the next turns write to.'
-                : 'Applies to the next turns of this session, for every agent.'}
+              Commands and git run here. A turn can write in every repository this session mounts.
             </span>
           </div>
 
@@ -179,7 +173,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
           size="3xs"
           bordered={false}
           label={<span className="max-w-[10rem] truncate">{`Next: ${shorten(nextLabel)}`}</span>}
-          title={`Next turns write to ${nextDetail}.`}
+          title={`Next turns run in ${nextDetail}.`}
         />
       ) : null}
     </span>

@@ -127,7 +127,6 @@ describe('useWriteDestination, subscription scope', () => {
       const view = useWriteDestination({
         sessionId: SESSION_ID,
         agentId: AGENT_ID,
-        fallback: 'automatic',
       });
       selectedMountId = view.next.kind === 'mount' ? view.next.mountId : null;
       isAutomatic = view.isAutomatic;
