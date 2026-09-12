@@ -6,6 +6,7 @@ import type {
 import { cappedRoutingReason } from './parseWorkflowRoutingProposal';
 import { recommendWorkflowModel } from './recommendWorkflowModel';
 import { workflowModelCandidates } from './workflowModelCandidates';
+import { workflowRecoveryTier } from './workflowRecoveryTier';
 import type { WorkflowRoutingAvailabilitySnapshot } from './workflowRoutingAvailability';
 
 type Params = {
@@ -25,6 +26,7 @@ export const recommendWorkflowRoutingDecision = ({
     candidates: workflowModelCandidates({ availability }),
     profile,
     contextEstimate,
+    targetTier: workflowRecoveryTier({ pick: null }),
   });
   if (recommendation === null) {
     return null;

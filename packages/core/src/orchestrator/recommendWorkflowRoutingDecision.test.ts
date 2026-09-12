@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { WorkflowTaskProfile } from '@goodboy/types';
+import { WORKFLOW_ROUTING_REASON_LIMIT, cappedRoutingReason } from './parseWorkflowRoutingProposal';
 import { recommendWorkflowRoutingDecision } from './recommendWorkflowRoutingDecision';
 import type { WorkflowRoutingAvailabilitySnapshot } from './workflowRoutingAvailability';
 
@@ -55,7 +56,14 @@ describe('recommendWorkflowRoutingDecision', () => {
       proposal: null,
       contextEstimate: null,
     });
+    if (decision === null) {
+      throw new Error('expected a decision to cap the reason of');
+    }
+    const oversized = 'x'.repeat(WORKFLOW_ROUTING_REASON_LIMIT + 37);
 
-    expect((decision?.reason ?? '').length).toBeLessThanOrEqual(240);
+    expect(decision.reason.length).toBeGreaterThan(0);
+    expect(decision.reason.length).toBeLessThanOrEqual(WORKFLOW_ROUTING_REASON_LIMIT);
+    expect(cappedRoutingReason(oversized)).toBe('x'.repeat(WORKFLOW_ROUTING_REASON_LIMIT));
+    expect(cappedRoutingReason(oversized).length).toBe(WORKFLOW_ROUTING_REASON_LIMIT);
   });
 });

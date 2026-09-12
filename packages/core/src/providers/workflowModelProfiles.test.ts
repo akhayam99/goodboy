@@ -25,6 +25,7 @@ type CandidateOverrides = Partial<WorkflowModelCandidate> &
 const candidate = (overrides: CandidateOverrides): WorkflowModelCandidate => ({
   effort: 'medium',
   contextWindow: 200_000,
+  costTier: 'mid',
   profile: null,
   price: { inputPerMtok: 3, outputPerMtok: 15 },
   ...overrides,
@@ -78,6 +79,7 @@ describe('workflowModelProfile', () => {
       ],
       profile: LIGHT_EXPLORATION,
       contextEstimate: null,
+      targetTier: 'mid',
     });
 
     expect(result?.pick).toMatchObject({ provider: 'anthropic', model: 'curated' });
@@ -100,6 +102,7 @@ describe('workflowModelProfile', () => {
       ],
       profile: LIGHT_EXPLORATION,
       contextEstimate: null,
+      targetTier: 'mid',
     });
 
     expect(result?.pick).toMatchObject({ provider: 'anthropic', model: 'shared-id' });
@@ -116,6 +119,7 @@ describe('workflowModelProfile', () => {
       ],
       profile: LIGHT_EXPLORATION,
       contextEstimate: null,
+      targetTier: 'mid',
     });
 
     expect(result?.pick).toMatchObject({ provider: 'codex', model: 'unassessed' });

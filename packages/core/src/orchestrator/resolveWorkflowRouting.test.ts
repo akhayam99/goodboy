@@ -4,6 +4,10 @@ import type { WorkflowRoutingProposalParseOutcome } from './parseWorkflowRouting
 import { resolveWorkflowRouting } from './resolveWorkflowRouting';
 import type { WorkflowRoutingResolution } from './resolveWorkflowRouting';
 import type { WorkflowRoutingAvailabilitySnapshot } from './workflowRoutingAvailability';
+import {
+  WORKFLOW_RECOVERY_TIER_POLICY_DEFAULT,
+  workflowRecoveryTier,
+} from './workflowRecoveryTier';
 
 type ResolveParams = Parameters<typeof resolveWorkflowRouting>[0];
 
@@ -279,6 +283,60 @@ describe('resolveWorkflowRouting locks and availability', () => {
     );
 
     expect(decision.source).toBe('session_default');
+  });
+
+  it('recovers an expensive pick onto an expensive peer, never onto the catalog floor', () => {
+    const decision = ready(
+      resolve({
+        proposal: emitted(pick('codex', 'gpt-6')),
+        availability: snapshot({ connectedProviders: ['anthropic'] }),
+      }),
+    );
+
+    expect(decision.selected.provider).toBe('anthropic');
+    expect(decision.selected.model).not.toBe('haiku-4.5');
+    expect(workflowRecoveryTier({ pick: decision.selected })).toBe('expensive');
+  });
+
+  it('recovers a mid pick onto a mid peer rather than climbing to the top', () => {
+    const decision = ready(
+      resolve({
+        proposal: emitted(pick('codex', 'gpt-5.6-terra')),
+        availability: snapshot({ connectedProviders: ['anthropic'] }),
+      }),
+    );
+
+    expect(workflowRecoveryTier({ pick: decision.selected })).toBe('mid');
+  });
+
+  it('sends an invalid emitted identity to the mid tier policy default', () => {
+    const decision = ready(
+      resolve({
+        proposal: {
+          kind: 'invalid',
+          requested: { provider: 'acme', model: 'ghost', effort: null },
+          reason: 'Unknown routing provider: acme.',
+          profile: PROFILE,
+        },
+        availability: snapshot({ connectedProviders: ['anthropic'] }),
+      }),
+    );
+
+    expect(workflowRecoveryTier({ pick: decision.selected })).toBe(
+      WORKFLOW_RECOVERY_TIER_POLICY_DEFAULT,
+    );
+  });
+
+  it('never recovers an unavailable lock onto a peer of its tier', () => {
+    const result = blocked(
+      resolve({
+        agentLock: lock(pick('codex', 'gpt-6')),
+        availability: snapshot({ connectedProviders: ['anthropic'] }),
+      }),
+    );
+
+    expect(result.cause).toBe('unavailable_lock');
+    expect(result.reason).toContain('codex/gpt-6');
   });
 
   it('keeps the advisory recommendation out of the no pick fallback path', () => {

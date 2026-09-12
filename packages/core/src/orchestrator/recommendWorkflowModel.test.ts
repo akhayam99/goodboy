@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import type { ModelRoutingProfile, ProviderId, WorkflowTaskProfile } from '@goodboy/types';
+import type {
+  ModelCostTier,
+  ModelRoutingProfile,
+  ProviderId,
+  WorkflowTaskProfile,
+} from '@goodboy/types';
 import type { WorkflowModelCandidate } from './recommendWorkflowModel';
 import { recommendWorkflowModel } from './recommendWorkflowModel';
 import { workflowModelCandidates } from './workflowModelCandidates';
+import { workflowRecoveryTier } from './workflowRecoveryTier';
 import type { WorkflowRoutingAvailabilitySnapshot } from './workflowRoutingAvailability';
 
 const IMPLEMENTATION_STANDARD: ModelRoutingProfile = {
@@ -35,13 +41,14 @@ type CandidateOverrides = Partial<WorkflowModelCandidate> &
 const candidate = (overrides: CandidateOverrides): WorkflowModelCandidate => ({
   effort: 'medium',
   contextWindow: 200_000,
+  costTier: 'mid',
   profile: null,
   price: { inputPerMtok: 3, outputPerMtok: 15 },
   ...overrides,
 });
 
 const recommend = (candidates: ReadonlyArray<WorkflowModelCandidate>) =>
-  recommendWorkflowModel({ candidates, profile: task, contextEstimate: null });
+  recommendWorkflowModel({ candidates, profile: task, contextEstimate: null, targetTier: 'mid' });
 
 type ConnectedParams = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
@@ -61,22 +68,36 @@ const connectedSnapshot = ({
 type CatalogParams = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly profile: WorkflowTaskProfile;
+  readonly targetTier: ModelCostTier;
 };
 
-const recommendFromCatalog = ({ connectedProviders, profile }: CatalogParams) =>
+const catalogCandidates = ({ connectedProviders }: ConnectedParams) =>
+  workflowModelCandidates({ availability: connectedSnapshot({ connectedProviders }) });
+
+const recommendFromCatalog = ({ connectedProviders, profile, targetTier }: CatalogParams) =>
   recommendWorkflowModel({
-    candidates: workflowModelCandidates({
-      availability: connectedSnapshot({ connectedProviders }),
-    }),
+    candidates: catalogCandidates({ connectedProviders }),
     profile,
     contextEstimate: null,
+    targetTier,
   });
+
+const HEAVY_EXPLORATION: WorkflowTaskProfile = {
+  taskType: 'exploration',
+  difficulty: 'heavy',
+  basis: 'agent',
+};
 
 describe('recommendWorkflowModel', () => {
   it('recommends nothing when no candidate is available', () => {
-    expect(recommendWorkflowModel({ candidates: [], profile: task, contextEstimate: null })).toBe(
-      null,
-    );
+    expect(
+      recommendWorkflowModel({
+        candidates: [],
+        profile: task,
+        contextEstimate: null,
+        targetTier: 'mid',
+      }),
+    ).toBe(null);
   });
 
   it('lets a model curated for this work beat a cheaper unassessed one', () => {
@@ -120,6 +141,7 @@ describe('recommendWorkflowModel', () => {
       ],
       profile: { taskType: 'planning', difficulty: 'heavy', basis: 'agent' },
       contextEstimate: null,
+      targetTier: 'mid',
     });
 
     expect(result?.pick.model).toBe('heavy-planner');
@@ -226,6 +248,7 @@ describe('recommendWorkflowModel', () => {
       ],
       profile: task,
       contextEstimate: 400_000,
+      targetTier: 'mid',
     });
 
     expect(result?.pick.model).toBe('large-window');
@@ -314,6 +337,7 @@ describe('recommendWorkflowModel', () => {
       candidates: [candidate({ provider: 'codex', model: 'any' })],
       profile: { taskType: 'implementation', difficulty: 'heavy', basis: 'heuristic' },
       contextEstimate: null,
+      targetTier: 'mid',
     });
 
     expect(result?.reason).toContain('heuristic estimate');
@@ -330,28 +354,164 @@ describe('recommendWorkflowModel', () => {
       candidates: [candidate({ provider: 'codex', model: 'any' })],
       profile: null,
       contextEstimate: null,
+      targetTier: 'mid',
     });
 
     expect(result?.reason).toContain('no task profile');
   });
 
-  it('lands recovery on the cheapest connected model when no profile is curated', () => {
+  it('lands recovery on a peer of the lost tier, not on the cheapest connected model', () => {
     const result = recommendFromCatalog({
       connectedProviders: ['codex', 'gemini', 'cursor'],
       profile: { taskType: 'planning', difficulty: 'heavy', basis: 'agent' },
+      targetTier: 'expensive',
     });
 
-    expect(result?.pick).toEqual({ provider: 'cursor', model: 'auto', effort: null });
+    expect(result).not.toBeNull();
+    expect(result?.pick.model).not.toBe('auto');
+    expect(workflowRecoveryTier({ pick: result?.pick ?? null })).toBe('expensive');
     expect(result?.reason).toContain('unassessed');
   });
 
-  it('no longer steers heavy exploration onto a curated light model', () => {
+  it('no longer steers heavy exploration onto the catalog floor', () => {
     const result = recommendFromCatalog({
       connectedProviders: ['anthropic', 'codex', 'gemini', 'cursor'],
-      profile: { taskType: 'exploration', difficulty: 'heavy', basis: 'agent' },
+      profile: HEAVY_EXPLORATION,
+      targetTier: 'expensive',
     });
 
     expect(result?.pick.model).not.toBe('haiku-4.5');
-    expect(result?.pick).toEqual({ provider: 'cursor', model: 'auto', effort: null });
+    expect(result?.pick.model).not.toBe('auto');
+    expect(workflowRecoveryTier({ pick: result?.pick ?? null })).toBe('expensive');
+  });
+
+  it('keeps an expensive pick on an expensive peer with anthropic alone connected', () => {
+    const result = recommendFromCatalog({
+      connectedProviders: ['anthropic'],
+      profile: HEAVY_EXPLORATION,
+      targetTier: 'expensive',
+    });
+
+    expect(result?.pick.model).not.toBe('haiku-4.5');
+    expect(result?.pick.provider).toBe('anthropic');
+    expect(workflowRecoveryTier({ pick: result?.pick ?? null })).toBe('expensive');
+  });
+
+  it('steps an expensive pick down to sonnet class before haiku class', () => {
+    const withoutExpensive = catalogCandidates({ connectedProviders: ['anthropic'] }).filter(
+      (entry) => entry.costTier !== 'expensive',
+    );
+    const result = recommendWorkflowModel({
+      candidates: withoutExpensive,
+      profile: HEAVY_EXPLORATION,
+      contextEstimate: null,
+      targetTier: 'expensive',
+    });
+
+    expect(result?.pick.model).toBe('sonnet-5');
+    expect(workflowRecoveryTier({ pick: result?.pick ?? null })).toBe('mid');
+  });
+
+  it('sends an unknown lost identity to the mid tier policy default', () => {
+    const result = recommendFromCatalog({
+      connectedProviders: ['anthropic'],
+      profile: HEAVY_EXPLORATION,
+      targetTier: workflowRecoveryTier({
+        pick: { provider: 'anthropic', model: 'not-a-model', effort: null },
+      }),
+    });
+
+    expect(result?.pick.model).toBe('sonnet-5');
+  });
+
+  it('keeps context sufficiency above tier distance', () => {
+    const result = recommendWorkflowModel({
+      candidates: [
+        candidate({
+          provider: 'anthropic',
+          model: 'expensive-small-window',
+          costTier: 'expensive',
+          contextWindow: 200_000,
+        }),
+        candidate({
+          provider: 'codex',
+          model: 'cheap-large-window',
+          costTier: 'cheap',
+          contextWindow: 1_000_000,
+        }),
+      ],
+      profile: task,
+      contextEstimate: 400_000,
+      targetTier: 'expensive',
+    });
+
+    expect(result?.pick.model).toBe('cheap-large-window');
+  });
+
+  it('lets an unpriced peer beat the cheap floor', () => {
+    const result = recommendWorkflowModel({
+      candidates: [
+        candidate({
+          provider: 'openrouter',
+          model: 'unpriced-peer',
+          costTier: 'expensive',
+          price: null,
+        }),
+        candidate({
+          provider: 'codex',
+          model: 'priced-floor',
+          costTier: 'cheap',
+          price: { inputPerMtok: 0.1, outputPerMtok: 0.2 },
+        }),
+      ],
+      profile: task,
+      contextEstimate: null,
+      targetTier: 'expensive',
+    });
+
+    expect(result?.pick.model).toBe('unpriced-peer');
+  });
+
+  it('prefers the higher tier when two candidates sit the same distance away', () => {
+    const result = recommendWorkflowModel({
+      candidates: [
+        candidate({
+          provider: 'anthropic',
+          model: 'aaa-cheap-side',
+          costTier: 'cheap',
+          price: { inputPerMtok: 0.1, outputPerMtok: 0.2 },
+        }),
+        candidate({
+          provider: 'codex',
+          model: 'zzz-expensive-side',
+          costTier: 'expensive',
+          price: { inputPerMtok: 20, outputPerMtok: 80 },
+        }),
+      ],
+      profile: task,
+      contextEstimate: null,
+      targetTier: 'mid',
+    });
+
+    expect(result?.pick.model).toBe('zzz-expensive-side');
+  });
+
+  it('ranks a shuffled catalog the same way it ranks the catalog order', () => {
+    const candidates = catalogCandidates({ connectedProviders: ['anthropic', 'codex', 'cursor'] });
+    const forward = recommendWorkflowModel({
+      candidates,
+      profile: HEAVY_EXPLORATION,
+      contextEstimate: null,
+      targetTier: 'expensive',
+    });
+    const reversed = recommendWorkflowModel({
+      candidates: [...candidates].reverse(),
+      profile: HEAVY_EXPLORATION,
+      contextEstimate: null,
+      targetTier: 'expensive',
+    });
+
+    expect(forward?.pick).toEqual(reversed?.pick);
+    expect(workflowRecoveryTier({ pick: forward?.pick ?? null })).toBe('expensive');
   });
 });

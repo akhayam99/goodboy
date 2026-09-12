@@ -30,6 +30,7 @@ export const workflowModelCandidates = ({
         model: model.key,
         effort,
         contextWindow: model.contextWindow,
+        costTier: model.presentation.costTier,
         profile: workflowModelProfile({ provider, model: model.key }),
         price: getProviderModelPrice({ provider, model: model.key }),
       });

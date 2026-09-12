@@ -13,6 +13,7 @@ import type { WorkflowRoutingProposalParseOutcome } from './parseWorkflowRouting
 import { cappedRoutingReason } from './parseWorkflowRoutingProposal';
 import { recommendWorkflowModel } from './recommendWorkflowModel';
 import { workflowModelCandidates } from './workflowModelCandidates';
+import { workflowRecoveryTier } from './workflowRecoveryTier';
 import type {
   WorkflowRoutingAvailabilitySnapshot,
   WorkflowRoutingUnavailableCause,
@@ -183,6 +184,7 @@ const resolveLock = ({
 
 type RecoveryParams = {
   readonly cause: WorkflowRoutingUnavailableCause;
+  readonly unavailablePick: WorkflowModelPick | null;
   readonly profile: WorkflowTaskProfile;
   readonly proposal: WorkflowRoutingProposal | null;
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
@@ -191,6 +193,7 @@ type RecoveryParams = {
 
 const resolveRecovery = ({
   cause,
+  unavailablePick,
   profile,
   proposal,
   availability,
@@ -200,6 +203,7 @@ const resolveRecovery = ({
     candidates: workflowModelCandidates({ availability }),
     profile,
     contextEstimate,
+    targetTier: workflowRecoveryTier({ pick: unavailablePick }),
   });
   if (recommendation === null) {
     return {
@@ -232,6 +236,7 @@ const resolveDeterministic = ({
     candidates: workflowModelCandidates({ availability }),
     profile,
     contextEstimate,
+    targetTier: workflowRecoveryTier({ pick: null }),
   });
   if (recommendation === null) {
     return {
@@ -355,6 +360,7 @@ export const resolveWorkflowRouting = ({
     }
     return resolveRecovery({
       cause: status.cause,
+      unavailablePick: pick,
       profile,
       proposal: emitted,
       availability,
@@ -364,6 +370,7 @@ export const resolveWorkflowRouting = ({
   if (proposal.kind === 'invalid') {
     return resolveRecovery({
       cause: 'unknown_model',
+      unavailablePick: null,
       profile,
       proposal: null,
       availability,

@@ -1,10 +1,12 @@
 import type {
+  ModelCostTier,
   ModelEffort,
   ModelRoutingProfile,
   ProviderId,
   WorkflowModelPick,
   WorkflowTaskProfile,
 } from '@goodboy/types';
+import { MODEL_COST_RANK } from '../providers/modelCostRank';
 import type { ModelPriceSummary } from '../providers/model-price';
 
 export type WorkflowModelCandidate = Readonly<{
@@ -12,6 +14,7 @@ export type WorkflowModelCandidate = Readonly<{
   model: string;
   effort: ModelEffort | null;
   contextWindow: number;
+  costTier: ModelCostTier;
   profile: ModelRoutingProfile | null;
   price: ModelPriceSummary | null;
 }>;
@@ -41,6 +44,16 @@ const contextRank = ({ candidate, contextEstimate }: ContextParams): number => {
 type CandidateParams = {
   readonly candidate: WorkflowModelCandidate;
 };
+
+type TierParams = {
+  readonly candidate: WorkflowModelCandidate;
+  readonly targetTier: ModelCostTier;
+};
+
+const tierDistance = ({ candidate, targetTier }: TierParams): number =>
+  Math.abs(MODEL_COST_RANK[candidate.costTier] - MODEL_COST_RANK[targetTier]);
+
+const tierHeight = ({ candidate }: CandidateParams): number => MODEL_COST_RANK[candidate.costTier];
 
 const priceRank = ({ candidate }: CandidateParams): number => {
   if (candidate.price === null) {
@@ -113,12 +126,14 @@ type Params = {
   readonly candidates: ReadonlyArray<WorkflowModelCandidate>;
   readonly profile: WorkflowTaskProfile | null;
   readonly contextEstimate: number | null;
+  readonly targetTier: ModelCostTier;
 };
 
 export const recommendWorkflowModel = ({
   candidates,
   profile,
   contextEstimate,
+  targetTier,
 }: Params): WorkflowModelRecommendation | null => {
   const ranked = [...candidates].sort((left, right) => {
     const context =
@@ -126,6 +141,16 @@ export const recommendWorkflowModel = ({
       contextRank({ candidate: right, contextEstimate });
     if (context !== 0) {
       return context;
+    }
+    const distance =
+      tierDistance({ candidate: left, targetTier }) -
+      tierDistance({ candidate: right, targetTier });
+    if (distance !== 0) {
+      return distance;
+    }
+    const height = tierHeight({ candidate: right }) - tierHeight({ candidate: left });
+    if (height !== 0) {
+      return height;
     }
     const fit = fitRank({ candidate: left, profile }) - fitRank({ candidate: right, profile });
     if (fit !== 0) {
