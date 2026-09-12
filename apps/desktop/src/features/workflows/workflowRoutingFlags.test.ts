@@ -36,4 +36,40 @@ describe('workflowRoutingFlags', () => {
     expect(workflowRoutingFlags().isChildModelSelectionEnabled).toBe(true);
     expect(workflowRoutingFlags().isModelMetadataEnabled).toBe(false);
   });
+  it('explicit false stays off in all four combinations, and an unset flag is still off', () => {
+    const combinations = [
+      { metadata: 'true', children: 'true', isMetadataOn: true, isChildrenOn: true },
+      { metadata: 'true', children: 'false', isMetadataOn: true, isChildrenOn: false },
+      { metadata: 'false', children: 'true', isMetadataOn: false, isChildrenOn: true },
+      { metadata: 'false', children: 'false', isMetadataOn: false, isChildrenOn: false },
+    ] as const;
+
+    for (const combination of combinations) {
+      vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', combination.metadata);
+      vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', combination.children);
+      const flags = workflowRoutingFlags();
+      expect({
+        metadata: combination.metadata,
+        children: combination.children,
+        isModelMetadataEnabled: flags.isModelMetadataEnabled,
+        isChildModelSelectionEnabled: flags.isChildModelSelectionEnabled,
+      }).toEqual({
+        metadata: combination.metadata,
+        children: combination.children,
+        isModelMetadataEnabled: combination.isMetadataOn,
+        isChildModelSelectionEnabled: combination.isChildrenOn,
+      });
+    }
+
+    vi.unstubAllEnvs();
+    const unset = workflowRoutingFlags();
+    expect(unset).toEqual({
+      isModelMetadataEnabled: false,
+      isChildModelSelectionEnabled: false,
+    });
+
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'false');
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
+    expect(workflowRoutingFlags()).toEqual(unset);
+  });
 });

@@ -23,6 +23,12 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowNodeRoutingUpdate: invokeWorkflowNodeRoutingUpdateSpy,
 }));
 
+import {
+  isWorkflowRoutingDecision,
+  isWorkflowRoutingLock,
+  parseRoutingJson,
+  stringifyRoutingJson,
+} from '@goodboy/db';
 import { childRoutingBatch } from '../workflows/childRoutingBatch';
 import { resolveWorkflowChildRouting } from './resolveWorkflowChildRouting';
 import { resetWorkflowNodeRoutingLock } from './resetWorkflowNodeRoutingLock';
@@ -215,9 +221,30 @@ describe('workflowRouting slice', () => {
     vi.clearAllMocks();
   });
 
-  it('lock survives reload and beats run role lock', async () => {
+  it('a user lock reloads through the routing codec and still beats the run role lock', async () => {
     const { state, set, get } = buildHarness({
       agent: buildAgent({ routingDecision: proposalDecision }),
+    });
+
+    const unlocked = resolveWorkflowChildRouting({
+      state: get(),
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      role: 'implementer',
+      childLock: null,
+      proposal: null,
+      promptText: 'implement the change',
+      missingProposal: 'configured_default',
+    }).resolution;
+    expect(unlocked.kind).toBe('ready');
+    if (unlocked.kind !== 'ready') {
+      return;
+    }
+    expect(unlocked.decision.source).toBe('run_role_lock');
+    expect(unlocked.decision.selected).toEqual({
+      provider: 'anthropic',
+      model: 'opus-5',
+      effort: 'high',
     });
 
     await setWorkflowNodeRoutingLock(
@@ -237,12 +264,33 @@ describe('workflowRouting slice', () => {
     expect(persisted.routingDecision.selected.model).toBe('gpt-5.6-sol');
     expect(persisted.providerOverride).toBe('codex');
 
+    const storedLock = stringifyRoutingJson({
+      value: persisted.routingLock,
+      isValid: isWorkflowRoutingLock,
+      field: 'routing lock',
+    });
+    const storedDecision = stringifyRoutingJson({
+      value: persisted.routingDecision,
+      isValid: isWorkflowRoutingDecision,
+      field: 'routing decision',
+    });
+    const loadedLock = parseRoutingJson({
+      value: storedLock,
+      isValid: isWorkflowRoutingLock,
+      field: 'routing lock',
+    });
+    const loadedDecision = parseRoutingJson({
+      value: storedDecision,
+      isValid: isWorkflowRoutingDecision,
+      field: 'routing decision',
+    });
+    expect(loadedLock).toEqual(persisted.routingLock);
+    expect(loadedDecision).toEqual(persisted.routingDecision);
+
     const reloaded = {
       ...buildAgent(),
-      routingLock: JSON.parse(JSON.stringify(persisted.routingLock)) as WorkflowRoutingLock,
-      routingDecision: JSON.parse(
-        JSON.stringify(persisted.routingDecision),
-      ) as WorkflowRoutingDecision,
+      routingLock: loadedLock,
+      routingDecision: loadedDecision,
     };
     const view = selectWorkflowNodeRouting({
       agent: reloaded,
@@ -254,6 +302,27 @@ describe('workflowRouting slice', () => {
     expect(view.selected).toEqual({ provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' });
     expect(view.sourceLabel).toBe('Locked by you');
     expect(state.workflowNodeRoutingErrors).toEqual({ [AGENT_KEY]: null });
+
+    const relocked = resolveWorkflowChildRouting({
+      state: get(),
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      role: 'implementer',
+      childLock: loadedLock,
+      proposal: null,
+      promptText: 'implement the change',
+      missingProposal: 'configured_default',
+    }).resolution;
+    expect(relocked.kind).toBe('ready');
+    if (relocked.kind !== 'ready') {
+      return;
+    }
+    expect(relocked.decision.source).toBe('step_lock');
+    expect(relocked.decision.selected).toEqual({
+      provider: 'codex',
+      model: 'gpt-5.6-sol',
+      effort: 'high',
+    });
   });
 
   it('does not label a deterministic recovery a choice made on fit', () => {

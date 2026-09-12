@@ -1,5 +1,21 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  ModelEffort,
+  ProviderId,
+  SessionId,
+  WorkflowRoutingDecision,
+  WorkflowRunId,
+  WorkflowTaskProfile,
+} from '@goodboy/types';
+import { ROLE_DEFAULTS, resolveModelArgs, resolveStoredModelSelection } from '@goodboy/core';
+import {
+  isWorkflowRoutingDecision,
+  isWorkflowTaskProfile,
+  parseRoutingJson,
+  stringifyRoutingJson,
+} from '@goodboy/db';
 import type { GetFn, SetFn } from './types';
 
 const hoisted = vi.hoisted(() => {
@@ -392,6 +408,277 @@ function makeRoutedStore(runs: ReadonlyArray<Agent>) {
   }) as unknown as SetFn;
   return { state, get, set, sendTurn, emitNotification };
 }
+
+const legacySplitText = [
+  '<<fan-out>>',
+  JSON.stringify([
+    { area: 'rename the symbol', query: 'rename the helper in one file' },
+    {
+      area: 'rewrite the resolver',
+      query: [
+        'Redesign the routing resolver so precedence is one pass, then migrate database rows,',
+        'then rewrite the callers across packages/core and apps/desktop.',
+        '1. map the callers',
+        '2. rewrite the resolver',
+        '3. migrate the rows',
+      ].join('\n'),
+    },
+  ]),
+  '<</fan-out>>',
+].join('\n');
+
+type ExecutionRecord = Readonly<{
+  agentId: AgentId;
+  provider: ProviderId | null;
+  model: string | null;
+  effort: ModelEffort | null;
+  args: ReadonlyArray<string>;
+}>;
+
+type CaptureParams = {
+  readonly state: Record<string, unknown>;
+  readonly sendTurn: ReturnType<typeof vi.fn>;
+};
+
+const captureExecutions = ({ state, sendTurn }: CaptureParams): ReadonlyArray<ExecutionRecord> => {
+  const records: Array<ExecutionRecord> = [];
+  sendTurn.mockImplementation(async ({ agentId }: { readonly agentId: AgentId }) => {
+    const runs = (state.sessionPhaseRuns as Record<string, ReadonlyArray<Agent>>)[SID] ?? [];
+    const agent = runs.find((candidate) => candidate.id === agentId) ?? null;
+    const provider = (agent?.providerOverride ?? null) as ProviderId | null;
+    const model = agent?.modelOverride ?? null;
+    const effort = (agent?.effort ?? null) as ModelEffort | null;
+    if (provider === null || model === null) {
+      records.push({ agentId, provider, model, effort, args: [] });
+      return undefined;
+    }
+    const stored = resolveStoredModelSelection({
+      provider,
+      id: model,
+      ...(effort !== null && { effort }),
+    });
+    records.push({
+      agentId,
+      provider,
+      model,
+      effort,
+      args: resolveModelArgs({ provider, selection: stored.selection }).args,
+    });
+    return undefined;
+  });
+  return records;
+};
+
+const reloadedScout = ({
+  id,
+  args,
+}: {
+  readonly id: string;
+  readonly args: Record<string, unknown>;
+}): Agent => {
+  const decision = parseRoutingJson({
+    value: stringifyRoutingJson({
+      value: (args.routingDecision ?? null) as WorkflowRoutingDecision | null,
+      isValid: isWorkflowRoutingDecision,
+      field: 'routing decision',
+    }),
+    isValid: isWorkflowRoutingDecision,
+    field: 'routing decision',
+  });
+  const profile = parseRoutingJson({
+    value: stringifyRoutingJson({
+      value: (args.taskProfile ?? null) as WorkflowTaskProfile | null,
+      isValid: isWorkflowTaskProfile,
+      field: 'task profile',
+    }),
+    isValid: isWorkflowTaskProfile,
+    field: 'task profile',
+  });
+  return {
+    id: id as AgentId,
+    sessionId: SID,
+    parentAgentId: args.parentAgentId as AgentId,
+    ordinal: args.ordinal as number,
+    name: args.name as string,
+    status: 'pending',
+    kind: 'scout',
+    ...(args.providerOverride !== undefined && {
+      providerOverride: args.providerOverride as ProviderId,
+    }),
+    ...(args.modelOverride !== undefined && { modelOverride: args.modelOverride as string }),
+    ...(args.effort !== undefined && { effort: args.effort as ModelEffort }),
+    ...(decision !== null && { routingDecision: decision }),
+    ...(profile !== null && { taskProfile: profile }),
+  } as Agent;
+};
+
+describe('scout child routing lifecycle', () => {
+  it('legacy children use their own profile', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    const root = scoutAgent({ id: 'legacy-root' as AgentId });
+    const { get, set } = makeRoutedStore([root]);
+
+    await advanceScoutTree(set, get)(SID, root.id, legacySplitText);
+
+    expect(hoisted.insertArgs).toHaveLength(2);
+    expect(hoisted.insertArgs[0]?.taskProfile).toEqual({
+      taskType: 'general',
+      difficulty: 'light',
+      basis: 'heuristic',
+    });
+    expect(hoisted.insertArgs[1]?.taskProfile).toEqual({
+      taskType: 'general',
+      difficulty: 'heavy',
+      basis: 'heuristic',
+    });
+    for (const args of hoisted.insertArgs) {
+      const decision = args.routingDecision as WorkflowRoutingDecision;
+      expect(decision.source).toBe('heuristic');
+      expect(decision.proposal).toBeNull();
+      expect(args.routingLock).toBeUndefined();
+    }
+  });
+
+  it('flag-off children keep the configured default for the same two texts', async () => {
+    const root = scoutAgent({ id: 'legacy-off-root' as AgentId });
+    const { get, set } = makeRoutedStore([root]);
+
+    await advanceScoutTree(set, get)(SID, root.id, legacySplitText);
+
+    expect(hoisted.insertArgs).toHaveLength(2);
+    for (const args of hoisted.insertArgs) {
+      expect(args.providerOverride).toBe(ROLE_DEFAULTS.scout.provider);
+      expect(args.modelOverride).toBe(ROLE_DEFAULTS.scout.model);
+      expect(args.effort).toBeUndefined();
+      expect((args.routingDecision as WorkflowRoutingDecision).source).toBe('kind_default');
+    }
+    expect(hoisted.insertArgs[0]?.modelOverride).toBe(hoisted.insertArgs[1]?.modelOverride);
+  });
+
+  it('routing survives database reopen and reaches execution', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    const root = scoutAgent({ id: 'reopen-root' as AgentId });
+    const { state, get, set, sendTurn } = makeRoutedStore([root]);
+    hoisted.invokeAgentList.mockImplementation(async () => [
+      root,
+      ...hoisted.insertArgs.map((args, index) => reloadedScout({ id: `child-${index + 1}`, args })),
+    ]);
+    const executions = captureExecutions({ state, sendTurn });
+
+    await advanceScoutTree(set, get)(SID, root.id, mixedSplitText);
+
+    expect(hoisted.insertArgs).toHaveLength(2);
+    expect(executions).toEqual([
+      {
+        agentId: 'child-1',
+        provider: 'anthropic',
+        model: 'opus-5',
+        effort: 'high',
+        args: ['--model', 'claude-opus-5', '--effort', 'high'],
+      },
+      {
+        agentId: 'child-2',
+        provider: 'anthropic',
+        model: 'haiku-4.5',
+        effort: null,
+        args: ['--model', 'claude-haiku-4-5'],
+      },
+    ]);
+  });
+
+  it('availability changes before activation: an automatic child recovers', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    const root = scoutAgent({ id: 'cooldown-root' as AgentId });
+    const { state, get, set, sendTurn } = makeRoutedStore([root]);
+    state.providerCooldowns = { anthropic: Date.now() + 60_000 };
+    hoisted.invokeAgentList.mockImplementation(async () => [
+      root,
+      ...hoisted.insertArgs.map((args, index) => reloadedScout({ id: `child-${index + 1}`, args })),
+    ]);
+    const executions = captureExecutions({ state, sendTurn });
+
+    await advanceScoutTree(set, get)(SID, root.id, mixedSplitText);
+
+    expect(hoisted.insertArgs).toHaveLength(2);
+    for (const args of hoisted.insertArgs) {
+      const decision = args.routingDecision as WorkflowRoutingDecision;
+      expect(decision.source).toBe('heuristic');
+      expect(decision.adjustment).toBe('cooldown');
+      expect(args.providerOverride).toBe('codex');
+    }
+    expect(executions).toHaveLength(2);
+    for (const execution of executions) {
+      expect(execution.provider).toBe('codex');
+      expect(execution.args.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('availability changes before activation: a locked role blocks', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    const root = scoutAgent({
+      id: 'locked-root' as AgentId,
+      workflowRunId: 'wf-lock' as WorkflowRunId,
+    });
+    const { state, get, set, sendTurn, emitNotification } = makeRoutedStore([root]);
+    state.sessions = [
+      {
+        ...ROUTED_SESSION,
+        workflowRuns: [
+          {
+            id: 'wf-lock',
+            roleModelOverrides: {
+              scout: { providerId: 'gemini', model: 'gemini-3.1-pro', effort: 'medium' },
+            },
+          },
+        ],
+      },
+    ];
+    const executions = captureExecutions({ state, sendTurn });
+
+    await advanceScoutTree(set, get)(SID, root.id, mixedSplitText);
+
+    expect(hoisted.insertArgs).toHaveLength(0);
+    expect(hoisted.invokeAgentInsertBatch).not.toHaveBeenCalled();
+    expect(executions).toHaveLength(0);
+    expect(emitNotification).toHaveBeenCalledWith(
+      'agent-auto-spawn',
+      'warning',
+      `agent fan-out held: ${root.name}`,
+      expect.stringContaining('gemini/gemini-3.1-pro'),
+      { sessionId: SID },
+    );
+  });
+
+  it('availability changes before activation: a hard budget spawns nothing', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    const root = scoutAgent({ id: 'budget-root' as AgentId });
+    const { state, get, set, sendTurn, emitNotification } = makeRoutedStore([root]);
+    state.budgetAlerts = [
+      {
+        id: 'alert-1',
+        kind: 'session-exceeded',
+        sessionId: SID,
+        currentUsd: 12,
+        capUsd: 10,
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+    ];
+    const executions = captureExecutions({ state, sendTurn });
+
+    await advanceScoutTree(set, get)(SID, root.id, mixedSplitText);
+
+    expect(hoisted.insertArgs).toHaveLength(0);
+    expect(hoisted.invokeAgentInsertBatch).not.toHaveBeenCalled();
+    expect(executions).toHaveLength(0);
+    expect(emitNotification).toHaveBeenCalledWith(
+      'agent-auto-spawn',
+      'warning',
+      `agent fan-out held: ${root.name}`,
+      expect.any(String),
+      { sessionId: SID },
+    );
+  });
+});
 
 describe('per-child fan-out routing', () => {
   it('siblings with different difficulty persist distinct provider-qualified picks', async () => {

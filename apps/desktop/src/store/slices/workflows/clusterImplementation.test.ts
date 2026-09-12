@@ -2,14 +2,25 @@ import type {
   Agent,
   AgentId,
   ImplementationCluster,
+  ModelEffort,
   PlanConsumption,
   PlanWithCount,
+  ProviderId,
   SessionId,
   StepId,
+  WorkflowRoutingDecision,
+  WorkflowRoutingLock,
   WorkflowRunId,
+  WorkflowTaskProfile,
 } from '@goodboy/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ROLE_DEFAULTS } from '@goodboy/core';
+import { ROLE_DEFAULTS, resolveModelArgs, resolveStoredModelSelection } from '@goodboy/core';
+import {
+  isWorkflowRoutingDecision,
+  isWorkflowTaskProfile,
+  parseRoutingJson,
+  stringifyRoutingJson,
+} from '@goodboy/db';
 import type { GetFn, SetFn } from './types';
 
 const hoisted = vi.hoisted(() => {
@@ -234,6 +245,161 @@ const mixedClusters: ReadonlyArray<ImplementationCluster> = [
     },
   },
 ];
+
+const storedClusters: ReadonlyArray<ImplementationCluster> = [
+  {
+    title: 'light rename',
+    instructions: 'rename the symbol',
+    routingProposal: {
+      pick: { provider: 'anthropic', model: 'sonnet-5', effort: 'low' },
+      reason: 'A mechanical rename does not need a frontier model.',
+      source: 'agent',
+      profile: { taskType: 'implementation', difficulty: 'light', basis: 'agent' },
+    },
+  },
+  {
+    title: 'heavy rewrite',
+    instructions: 'rewrite the resolver',
+    routingProposal: {
+      pick: { provider: 'anthropic', model: 'opus-5', effort: 'high' },
+      reason: 'A resolver rewrite touches the precedence contract.',
+      source: 'agent',
+      profile: { taskType: 'implementation', difficulty: 'heavy', basis: 'agent' },
+    },
+  },
+];
+
+type ExecutionRecord = Readonly<{
+  agentId: AgentId;
+  provider: ProviderId | null;
+  model: string | null;
+  effort: ModelEffort | null;
+  args: ReadonlyArray<string>;
+}>;
+
+type CaptureParams = {
+  readonly state: Record<string, unknown>;
+  readonly sendTurn: ReturnType<typeof vi.fn>;
+};
+
+const captureExecutions = ({ state, sendTurn }: CaptureParams): ReadonlyArray<ExecutionRecord> => {
+  const records: Array<ExecutionRecord> = [];
+  sendTurn.mockImplementation(async ({ agentId }: { readonly agentId: AgentId }) => {
+    const runs = (state.sessionPhaseRuns as Record<string, ReadonlyArray<Agent>>)[SID] ?? [];
+    const agent = runs.find((candidate) => candidate.id === agentId) ?? null;
+    const provider = (agent?.providerOverride ?? null) as ProviderId | null;
+    const model = agent?.modelOverride ?? null;
+    const effort = (agent?.effort ?? null) as ModelEffort | null;
+    if (provider === null || model === null) {
+      records.push({ agentId, provider, model, effort, args: [] });
+      return undefined;
+    }
+    const stored = resolveStoredModelSelection({
+      provider,
+      id: model,
+      ...(effort !== null && { effort }),
+    });
+    records.push({
+      agentId,
+      provider,
+      model,
+      effort,
+      args: resolveModelArgs({ provider, selection: stored.selection }).args,
+    });
+    return undefined;
+  });
+  return records;
+};
+
+const legacyClusters: ReadonlyArray<ImplementationCluster> = [
+  { title: 'rename the symbol', instructions: 'rename the helper in one file' },
+  {
+    title: 'rewrite the resolver',
+    instructions: [
+      'Redesign the routing resolver so precedence is one pass, then migrate database rows,',
+      'then rewrite the callers across packages/core and apps/desktop.',
+      '1. map the callers',
+      '2. rewrite the resolver',
+      '3. migrate the rows',
+    ].join('\n'),
+  },
+];
+
+type RoutingUpdate = Readonly<{
+  id: string;
+  routingLock: WorkflowRoutingLock | null;
+  routingDecision: WorkflowRoutingDecision;
+  taskProfile: WorkflowTaskProfile | null;
+  providerOverride: ProviderId;
+  modelOverride: string;
+  effort: ModelEffort | null;
+}>;
+
+const routingUpdates = (): ReadonlyArray<RoutingUpdate> =>
+  hoisted.invokeWorkflowNodeRoutingUpdate.mock.calls.map(
+    (call) => (call as ReadonlyArray<unknown>)[0] as RoutingUpdate,
+  );
+
+const backendRows =
+  ({ base }: { readonly base: ReadonlyArray<Agent> }) =>
+  async (): Promise<Array<Agent>> =>
+    base.map((agent) => {
+      const update = [...routingUpdates()].reverse().find((candidate) => candidate.id === agent.id);
+      if (update === undefined) {
+        return agent;
+      }
+      return {
+        ...agent,
+        routingLock: update.routingLock ?? undefined,
+        routingDecision: update.routingDecision,
+        taskProfile: update.taskProfile ?? undefined,
+        providerOverride: update.providerOverride,
+        modelOverride: update.modelOverride,
+        ...(update.effort !== null && { effort: update.effort }),
+      } as Agent;
+    });
+
+const reloadedChild = ({
+  id,
+  ordinal,
+  args,
+}: {
+  readonly id: string;
+  readonly ordinal: number;
+  readonly args: Record<string, unknown>;
+}): Agent => {
+  const decision = parseRoutingJson({
+    value: stringifyRoutingJson({
+      value: (args.routingDecision ?? null) as WorkflowRoutingDecision | null,
+      isValid: isWorkflowRoutingDecision,
+      field: 'routing decision',
+    }),
+    isValid: isWorkflowRoutingDecision,
+    field: 'routing decision',
+  });
+  const profile = parseRoutingJson({
+    value: stringifyRoutingJson({
+      value: (args.taskProfile ?? null) as WorkflowTaskProfile | null,
+      isValid: isWorkflowTaskProfile,
+      field: 'task profile',
+    }),
+    isValid: isWorkflowTaskProfile,
+    field: 'task profile',
+  });
+  return childAgent({
+    id,
+    ordinal,
+    status: 'pending',
+    name: args.name as string,
+    ...(args.providerOverride !== undefined && {
+      providerOverride: args.providerOverride as ProviderId,
+    }),
+    ...(args.modelOverride !== undefined && { modelOverride: args.modelOverride as string }),
+    ...(args.effort !== undefined && { effort: args.effort as ModelEffort }),
+    ...(decision !== null && { routingDecision: decision }),
+    ...(profile !== null && { taskProfile: profile }),
+  });
+};
 
 const container = (over: Partial<Agent> = {}): Agent =>
   ({
@@ -494,31 +660,39 @@ describe('fanOutClusters', () => {
       ordinal: 1,
       status: 'pending',
       providerOverride: 'anthropic',
-      modelOverride: 'haiku-4.5',
+      modelOverride: 'sonnet-5',
       effort: 'low',
       routingDecision: {
         version: 1,
-        proposal: mixedClusters[0]!.routingProposal ?? null,
-        selected: { provider: 'anthropic', model: 'haiku-4.5', effort: 'low' },
+        proposal: storedClusters[0]!.routingProposal ?? null,
+        selected: { provider: 'anthropic', model: 'sonnet-5', effort: 'low' },
         source: 'agent',
         reason: 'A mechanical rename does not need a frontier model.',
         adjustment: 'none',
         executed: null,
       },
     });
-    const { get, set } = makeStore({
+    const { get, set, state, sendTurn } = makeStore({
       sessionPhaseRuns: { [SID]: [c, child] },
-      sessionPlans: { [SID]: [plan({ clusters: mixedClusters, status: 'active' })] },
+      sessionPlans: { [SID]: [plan({ clusters: storedClusters, status: 'active' })] },
       providers: CONNECTED_PROVIDERS,
     });
+    hoisted.invokeAgentList.mockResolvedValue([c, child]);
+    const executions = captureExecutions({ state, sendTurn });
 
     const resumed = await resumeClusterChildren({ set, get, sessionId: SID, container: c });
 
     expect(resumed).toBe(true);
-    for (const call of hoisted.invokeWorkflowNodeRoutingUpdate.mock.calls) {
-      const update = (call as ReadonlyArray<unknown>)[0] as { readonly modelOverride: string };
-      expect(update.modelOverride).toBe('haiku-4.5');
-    }
+    expect(executions).toEqual([
+      {
+        agentId: 'child-1',
+        provider: 'anthropic',
+        model: 'sonnet-5',
+        effort: 'low',
+        args: ['--model', 'claude-sonnet-5', '--effort', 'low'],
+      },
+    ]);
+    expect(hoisted.invokeWorkflowNodeRoutingUpdate).not.toHaveBeenCalled();
   });
 
   it('kicks off only the first child and seeds its turn state to idle', async () => {
@@ -545,6 +719,264 @@ describe('fanOutClusters', () => {
     await fanOutClusters(set, get, SID, c, clusters, 'goal');
 
     expect(state.selectedAgentId).toBe(PARENT);
+  });
+});
+
+describe('cluster child routing lifecycle', () => {
+  it('legacy children use their own profile', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    const c = container({
+      providerOverride: 'anthropic',
+      modelOverride: 'opus-5',
+      effort: 'high',
+      routingLock: {
+        version: 1,
+        pick: { provider: 'anthropic', model: 'opus-5', effort: 'high' },
+        origin: 'user',
+      },
+    });
+    const { get, set } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      providers: CONNECTED_PROVIDERS,
+    });
+
+    await fanOutClusters(set, get, SID, c, legacyClusters, 'goal');
+
+    expect(hoisted.insertArgs).toHaveLength(2);
+    const light = hoisted.insertArgs[0]!;
+    const heavy = hoisted.insertArgs[1]!;
+    expect(light.taskProfile).toEqual({
+      taskType: 'general',
+      difficulty: 'light',
+      basis: 'heuristic',
+    });
+    expect(heavy.taskProfile).toEqual({
+      taskType: 'general',
+      difficulty: 'heavy',
+      basis: 'heuristic',
+    });
+    for (const args of [light, heavy]) {
+      const decision = args.routingDecision as WorkflowRoutingDecision;
+      expect(decision.source).toBe('heuristic');
+      expect(decision.proposal).toBeNull();
+      expect(args.routingLock).toBeUndefined();
+    }
+  });
+
+  it('flag-off children keep the configured default for the same two texts', async () => {
+    const c = container({
+      providerOverride: 'anthropic',
+      modelOverride: 'opus-5',
+      effort: 'high',
+    });
+    const { get, set } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      providers: CONNECTED_PROVIDERS,
+    });
+
+    await fanOutClusters(set, get, SID, c, legacyClusters, 'goal');
+
+    expect(hoisted.insertArgs).toHaveLength(2);
+    for (const args of hoisted.insertArgs) {
+      expect(args.modelOverride).toBe(ROLE_DEFAULTS.implementer.model);
+      expect(args.effort).toBe(ROLE_DEFAULTS.implementer.effort);
+      expect((args.routingDecision as WorkflowRoutingDecision).source).toBe('kind_default');
+      expect(args.routingLock).toBeUndefined();
+    }
+    expect(hoisted.insertArgs[0]?.taskProfile).toEqual({
+      taskType: 'general',
+      difficulty: 'light',
+      basis: 'heuristic',
+    });
+    expect(hoisted.insertArgs[1]?.taskProfile).toEqual({
+      taskType: 'general',
+      difficulty: 'heavy',
+      basis: 'heuristic',
+    });
+    expect(hoisted.insertArgs[0]?.modelOverride).toBe(hoisted.insertArgs[1]?.modelOverride);
+  });
+
+  it('routing survives database reopen and reaches execution', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    const c = container();
+    const first = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      providers: CONNECTED_PROVIDERS,
+    });
+
+    await fanOutClusters(first.set, first.get, SID, c, storedClusters, 'goal');
+
+    expect(hoisted.insertArgs).toHaveLength(2);
+    expect(hoisted.insertArgs[0]?.modelOverride).toBe('sonnet-5');
+    expect(hoisted.insertArgs[1]?.modelOverride).toBe('opus-5');
+
+    const reopened = [
+      reloadedChild({ id: 'child-1', ordinal: 1, args: hoisted.insertArgs[0]! }),
+      reloadedChild({ id: 'child-2', ordinal: 2, args: hoisted.insertArgs[1]! }),
+    ];
+    expect(reopened[0]?.routingDecision?.selected).toEqual({
+      provider: 'anthropic',
+      model: 'sonnet-5',
+      effort: 'low',
+    });
+    expect(reopened[1]?.routingDecision?.selected).toEqual({
+      provider: 'anthropic',
+      model: 'opus-5',
+      effort: 'high',
+    });
+
+    hoisted.invokeWorkflowNodeRoutingUpdate.mockClear();
+    const running = container({ status: 'running' });
+    const second = makeStore({
+      sessionPhaseRuns: { [SID]: [running, ...reopened] },
+      sessionPlans: { [SID]: [plan({ clusters: storedClusters, status: 'active' })] },
+      providers: CONNECTED_PROVIDERS,
+    });
+    hoisted.invokeAgentList.mockImplementation(backendRows({ base: [running, ...reopened] }));
+    const executions = captureExecutions({ state: second.state, sendTurn: second.sendTurn });
+
+    const resumed = await resumeClusterChildren({
+      set: second.set,
+      get: second.get,
+      sessionId: SID,
+      container: running,
+    });
+
+    expect(resumed).toBe(true);
+    expect(executions).toEqual([
+      {
+        agentId: 'child-1',
+        provider: 'anthropic',
+        model: 'sonnet-5',
+        effort: 'low',
+        args: ['--model', 'claude-sonnet-5', '--effort', 'low'],
+      },
+    ]);
+    expect(routingUpdates()).toHaveLength(0);
+  });
+
+  it('availability changes before activation: an automatic child recovers', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    const running = container({ status: 'running' });
+    const child = childAgent({
+      id: 'child-1',
+      ordinal: 1,
+      status: 'pending',
+      name: 'heavy rewrite',
+      providerOverride: 'codex',
+      modelOverride: 'gpt-5.6-sol',
+      effort: 'high',
+      routingDecision: {
+        version: 1,
+        proposal: {
+          pick: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+          reason: 'A resolver rewrite touches the precedence contract.',
+          source: 'agent',
+          profile: { taskType: 'implementation', difficulty: 'heavy', basis: 'agent' },
+        },
+        selected: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+        source: 'agent',
+        reason: 'A resolver rewrite touches the precedence contract.',
+        adjustment: 'none',
+        executed: null,
+      },
+    });
+    const { state, set, get, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [running, child] },
+      sessionPlans: { [SID]: [plan({ clusters: storedClusters, status: 'active' })] },
+      providers: [{ id: 'anthropic', connection: 'connected' }],
+    });
+    hoisted.invokeAgentList.mockImplementation(backendRows({ base: [running, child] }));
+    const executions = captureExecutions({ state, sendTurn });
+
+    const resumed = await resumeClusterChildren({ set, get, sessionId: SID, container: running });
+
+    expect(resumed).toBe(true);
+    const updates = routingUpdates();
+    expect(updates).toHaveLength(1);
+    expect(updates[0]?.id).toBe('child-1');
+    expect(updates[0]?.routingDecision.source).toBe('heuristic');
+    expect(updates[0]?.routingDecision.adjustment).toBe('disconnected');
+    expect(updates[0]?.providerOverride).toBe('anthropic');
+    expect(updates[0]?.routingLock).toBeNull();
+    expect(executions).toHaveLength(1);
+    expect(executions[0]?.agentId).toBe('child-1');
+    expect(executions[0]?.provider).toBe('anthropic');
+    expect(executions[0]?.model).toBe(updates[0]?.modelOverride);
+    expect(executions[0]?.args.length).toBeGreaterThan(0);
+  });
+
+  it('availability changes before activation: a locked child blocks', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    const running = container({ status: 'running' });
+    const child = childAgent({
+      id: 'child-1',
+      ordinal: 1,
+      status: 'pending',
+      name: 'heavy rewrite',
+      providerOverride: 'codex',
+      modelOverride: 'gpt-5.6-sol',
+      effort: 'high',
+      routingLock: {
+        version: 1,
+        pick: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+        origin: 'user',
+      },
+    });
+    const { state, set, get, sendTurn, emitNotification } = makeStore({
+      sessionPhaseRuns: { [SID]: [running, child] },
+      sessionPlans: { [SID]: [plan({ clusters: storedClusters, status: 'active' })] },
+      providers: [{ id: 'anthropic', connection: 'connected' }],
+    });
+    hoisted.invokeAgentList.mockImplementation(backendRows({ base: [running, child] }));
+    const executions = captureExecutions({ state, sendTurn });
+
+    const resumed = await resumeClusterChildren({ set, get, sessionId: SID, container: running });
+
+    expect(resumed).toBe(false);
+    expect(executions).toHaveLength(0);
+    expect(routingUpdates()).toHaveLength(0);
+    expect(emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'cluster blocked: heavy rewrite',
+      expect.stringContaining('codex/gpt-5.6-sol'),
+      { sessionId: SID },
+    );
+  });
+
+  it('availability changes before activation: a hard budget spawns nothing', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
+    const c = container();
+    const { state, get, set, sendTurn, emitNotification } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      providers: CONNECTED_PROVIDERS,
+      budgetAlerts: [
+        {
+          id: 'alert-1',
+          kind: 'session-exceeded',
+          sessionId: SID,
+          currentUsd: 12,
+          capUsd: 10,
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+    const executions = captureExecutions({ state, sendTurn });
+
+    await fanOutClusters(set, get, SID, c, storedClusters, 'goal');
+
+    expect(hoisted.insertArgs).toHaveLength(0);
+    expect(hoisted.invokeAgentInsertBatch).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
+    expect(executions).toHaveLength(0);
+    expect(emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'cluster blocked: container',
+      expect.any(String),
+      { sessionId: SID },
+    );
   });
 });
 

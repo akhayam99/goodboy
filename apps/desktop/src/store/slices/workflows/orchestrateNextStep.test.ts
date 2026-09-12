@@ -49,12 +49,28 @@ const {
   summarizeWorkspaceSpy: vi.fn(async () => ({ estimatedCostUsd: 0 })),
 }));
 
+const orchestratorTransport = vi.hoisted(() => ({
+  stdout: null as string | null,
+  requests: [] as Array<Record<string, unknown>>,
+}));
+
 vi.mock('@goodboy/core', async (importOriginal) => {
   const original = await importOriginal<typeof import('@goodboy/core')>();
   return {
     ...original,
-    OrchestratorClient: vi.fn(function () {
-      return { decide: decideSpy };
+    OrchestratorClient: vi.fn(function (deps: OrchestratorClientDeps) {
+      const stdout = orchestratorTransport.stdout;
+      if (stdout === null) {
+        return { decide: decideSpy };
+      }
+      const client = new original.OrchestratorClient({
+        ...deps,
+        invokeFn: async (_command: string, args?: Record<string, unknown>) => {
+          orchestratorTransport.requests.push((args?.['args'] ?? {}) as Record<string, unknown>);
+          return { stdout, stderr: '', exitCode: 0 } as never;
+        },
+      });
+      return { decide: (input: OrchestratorInput) => client.decide(input) };
     }),
   };
 });
@@ -78,6 +94,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,
 }));
 
+import type { OrchestratorClientDeps, OrchestratorInput } from '@goodboy/core';
 import { OrchestratorClient, ROLE_DEFAULTS } from '@goodboy/core';
 import { orchestrateNextStep, persistOrchestrationStop } from './orchestrateNextStep';
 import { continueWorkflowRun } from './continueWorkflowRun';
@@ -269,6 +286,15 @@ const modelMenuIdentities = (): ReadonlyArray<string> =>
     (option) => `${option.provider}/${option.model}`,
   );
 
+const anthropicReply = (text: string): string =>
+  JSON.stringify({
+    type: 'result',
+    subtype: 'success',
+    is_error: false,
+    result: text,
+    usage: { input_tokens: 1200, output_tokens: 240 },
+  });
+
 const OPERATOR_STOP = {
   kind: 'operator',
   message: 'You stopped this run. The step in flight was skipped.',
@@ -300,6 +326,8 @@ const harness = (state: State) => {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.useRealTimers();
+  orchestratorTransport.stdout = null;
+  orchestratorTransport.requests.length = 0;
   listOpenQuestionsSpy.mockResolvedValue([]);
   updateOutcomeSpy.mockResolvedValue(undefined);
   invokeWorkflowUpsertSpy.mockImplementation(async (input: Record<string, unknown>) => ({
@@ -613,6 +641,90 @@ describe('orchestrateNextStep', () => {
     expect(identities).toContain('anthropic/fable-5');
     expect(identities.some((identity) => identity.startsWith('codex/'))).toBe(true);
     expect(identities.some((identity) => identity.startsWith('gemini/'))).toBe(false);
+  });
+
+  it('metadata reaches the provider request', async () => {
+    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'true');
+    orchestratorTransport.stdout = anthropicReply(
+      [
+        '<<orchestrator>>',
+        JSON.stringify({
+          action: 'next',
+          reason: 'The resolver rewrite still needs an implementer.',
+          step: {
+            name: 'Implement',
+            role: 'implementer',
+            promptPrefix: 'Rewrite the resolver.',
+            provider: 'codex',
+            model: 'gpt-5.6-sol',
+            effort: 'high',
+            taskType: 'implementation',
+            difficulty: 'heavy',
+            modelReason: 'A precedence rewrite needs the deepest model available.',
+          },
+        }),
+        '<</orchestrator>>',
+      ].join('\n'),
+    );
+    const { set, get } = harness(baseState());
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(orchestratorTransport.requests).toHaveLength(1);
+    const request = orchestratorTransport.requests[0]!;
+    expect(request['toolsDisabled']).toBe(true);
+    const prompt = request['userMessage'] as string;
+
+    expect(prompt).toContain(
+      'Codes: exp=exploration, pln=planning, imp=implementation, dbg=debugging, rev=review, tst=testing, wrt=writing, gen=general; lt=light, st=standard, hv=heavy, uk=unknown.',
+    );
+    expect(prompt).toContain(
+      'anthropic/opus-5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25',
+    );
+    expect(prompt).toContain(
+      'codex/gpt-5.6-sol efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$30',
+    );
+    expect(prompt).toContain(
+      'anthropic/haiku-4.5 efforts no effort control unassessed ctx 200k $1/$5',
+    );
+    expect(prompt).not.toContain('gemini/');
+
+    const menuLines = prompt
+      .split('\n')
+      .filter((line) => line.startsWith('anthropic/') || line.startsWith('codex/'));
+    expect(menuLines).toHaveLength(15);
+    for (const line of menuLines) {
+      expect(line).toContain('unassessed');
+      expect(line).toMatch(/ ctx \d+k \$[\d.]+\/\$[\d.]+$/);
+    }
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerOverride: 'codex',
+        modelOverride: 'gpt-5.6-sol',
+        effort: 'high',
+      }),
+    );
+    vi.unstubAllEnvs();
+  });
+
+  it('leaves catalog metadata out of the provider request while the flag is off', async () => {
+    orchestratorTransport.stdout = anthropicReply(
+      [
+        '<<orchestrator>>',
+        JSON.stringify({ action: 'done', reason: 'all set' }),
+        '<</orchestrator>>',
+      ].join('\n'),
+    );
+    const { set, get } = harness(baseState());
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const prompt = orchestratorTransport.requests[0]!['userMessage'] as string;
+    expect(prompt).toContain('anthropic/opus-5 - Opus 5 - efforts: low, medium, high, xhigh, max');
+    expect(prompt).not.toContain('unassessed');
+    expect(prompt).not.toMatch(/ ctx \d+k /);
+    expect(prompt).not.toMatch(/\$[\d.]+\/\$[\d.]+/);
   });
 
   it('drops a cooling provider out of the menu it offers', async () => {
