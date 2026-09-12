@@ -7,6 +7,27 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.30
+
+A turn starts where the session already is, and on Claude it reaches the other
+repositories the session has open.
+
+### [#1756] Turns start without asking which folder
+
+A session holding more than one repository used to refuse every turn until you
+picked the folder it would write in. A turn now starts in one of them and says
+which, and choosing a different one is something you do when you want it rather
+than a step you owe before any work begins.
+
+On Claude a turn can now also work in the session's other repositories, which
+until now only Codex could do. The control that used to ask for a write
+destination says what it actually sets: the folder where commands and git run.
+A project mounted as a plain folder rather than a repository stays outside that
+reach.
+
+Follow-up: which repository a turn touched is still read from that one folder,
+so changes in the others are not yet counted as part of the session.
+
 ## Goodboy v0.2.29
 
 A workflow that works across more than one repository keeps running instead of
