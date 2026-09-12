@@ -107,4 +107,37 @@ describe('useWriteDestination, subscription scope', () => {
     expect(renderCount).toBe(2);
     expect(lastLabel).toBe(MOUNT_B);
   });
+
+  it('resolves the automatic fallback without selecting the session mount', () => {
+    testStore = buildStore();
+    testStore.setState({
+      sessionActiveMount: {},
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          { ...mount({ mountId: MOUNT_A, branch: 'ak/feat-a' }), parallelIndex: 2 },
+          { ...mount({ mountId: MOUNT_B, branch: 'ak/feat-b' }), parallelIndex: 1 },
+        ],
+        [OTHER_SESSION_ID]: [],
+      },
+    });
+    let selectedMountId: MountId | null = null;
+    let isAutomatic = false;
+
+    const Probe = () => {
+      const view = useWriteDestination({
+        sessionId: SESSION_ID,
+        agentId: AGENT_ID,
+        fallback: 'automatic',
+      });
+      selectedMountId = view.next.kind === 'mount' ? view.next.mountId : null;
+      isAutomatic = view.isAutomatic;
+      return null;
+    };
+
+    render(<Probe />);
+
+    expect(selectedMountId).toBe(MOUNT_B);
+    expect(isAutomatic).toBe(true);
+    expect(testStore.getState().sessionActiveMount[SESSION_ID]).toBeUndefined();
+  });
 });

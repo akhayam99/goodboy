@@ -18,10 +18,15 @@ import type {
 import { TERMINAL_DIM } from '@goodboy/ui';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 
+type WriteDestinationProps = {
+  readonly fallback?: 'automatic';
+};
+
 const storeMocks = vi.hoisted(() => ({
   renameWorkflow: vi.fn(async () => undefined),
   orchestratingWorkflowRuns: {} as Record<string, boolean>,
   runSpendUsd: 0,
+  sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
 }));
 
 vi.mock('../../../../../store', () => ({
@@ -33,7 +38,15 @@ vi.mock('../../../../../store', () => ({
       renameWorkflow: storeMocks.renameWorkflow,
       orchestratingWorkflowRuns: storeMocks.orchestratingWorkflowRuns,
       agentEffortOverride: {},
+      sessionMounts: {},
+      sessionProjectMounts: storeMocks.sessionProjectMounts,
     }),
+}));
+
+vi.mock('../../../../chat/components/WriteDestinationControl', () => ({
+  WriteDestinationControl: ({ fallback }: WriteDestinationProps) => (
+    <div data-testid="write-destination-control">{fallback}</div>
+  ),
 }));
 
 vi.mock(
@@ -208,6 +221,7 @@ const renderDetail = ({
 
 beforeEach(() => {
   storeMocks.renameWorkflow.mockClear();
+  storeMocks.sessionProjectMounts = {};
 });
 
 afterEach(() => {
@@ -217,6 +231,30 @@ afterEach(() => {
 });
 
 describe('WorkflowRow detail dashboard', () => {
+  it('shows the automatic write destination when the session has two mounts', () => {
+    storeMocks.sessionProjectMounts = { [SESSION_ID]: [{}, {}] };
+
+    renderDetail();
+
+    expect(screen.getByTestId('write-destination-control').textContent).toBe('automatic');
+  });
+
+  it('hides the write destination when the session has one mount', () => {
+    storeMocks.sessionProjectMounts = { [SESSION_ID]: [{}] };
+
+    renderDetail();
+
+    expect(screen.queryByTestId('write-destination-control')).toBeNull();
+  });
+
+  it('hides the write destination when the run is discarded', () => {
+    storeMocks.sessionProjectMounts = { [SESSION_ID]: [{}, {}] };
+
+    renderDetail({ runOverride: { ...run, discardedAt: NOW } });
+
+    expect(screen.queryByTestId('write-destination-control')).toBeNull();
+  });
+
   it('declares navigation and lifecycle action slots', () => {
     renderDetail();
 

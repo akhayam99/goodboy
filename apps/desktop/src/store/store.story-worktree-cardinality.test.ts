@@ -177,12 +177,24 @@ describe('story: two mounts of one project survive a restart', () => {
     await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
 
     const state = useAppStore.getState();
-    expect(state.sessionActiveMount[SESSION_ID]).toBeNull();
+    expect(state.sessionActiveMount[SESSION_ID]).toBeUndefined();
     expect(state.sessionBranches[SESSION_ID]).toBeUndefined();
     expect(storySpies.updateSessionWriteDestination).not.toHaveBeenCalled();
     await expect(
       useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' }),
     ).rejects.toThrow(/Choose the branch mount/);
+  });
+
+  it('lets a workflow turn resolve the mount without a choice', async () => {
+    await seed({ session: sessionWith(), rows: ROWS });
+
+    await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
+
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go', origin: 'workflow' }),
+    ).rejects.toThrow(/no agent selected/);
+    expect(useAppStore.getState().sessionActiveMount[SESSION_ID]).toBeUndefined();
+    expect(storySpies.updateSessionWriteDestination).not.toHaveBeenCalled();
   });
 
   it('repairs and persists the choice when the session holds a single mount', async () => {

@@ -164,7 +164,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       composeStepBoundary(agentId),
     );
     if (kickoff.length > 0) {
-      void get().sendTurn({ sessionId, agentId, content: kickoff });
+      await get().sendTurn({ sessionId, agentId, content: kickoff, origin: 'workflow' });
     }
   };
 };

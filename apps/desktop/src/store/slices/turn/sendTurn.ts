@@ -116,6 +116,7 @@ import {
   selectMountById,
   selectWritableMounts,
 } from '../project-mounts/selectors';
+import { selectAutomaticTurnMount } from '../project-mounts/selectAutomaticTurnMount';
 import { resolveWriteDestination } from '../project-mounts/writeDestination';
 import {
   mountContinuationPrompt,
@@ -163,7 +164,7 @@ type Input = {
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
   force?: boolean;
-  origin?: 'operator' | 'mount-continuation';
+  origin?: 'operator' | 'workflow' | 'mount-continuation';
   retry?: {
     readonly attempt: number;
     readonly provider: ProviderId;
@@ -243,7 +244,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (!isFrozenTargetHeld) {
       throw new Error('the branch mount this turn was queued on changed before it could start');
     }
-    const activeMount = aimedMount ?? selectActiveMount({ state: before, sessionId }) ?? undefined;
+    const selectedMount = aimedMount ?? selectActiveMount({ state: before, sessionId });
+    const isAutomaticTurn = origin === 'workflow' || origin === 'mount-continuation';
+    const activeMount =
+      selectedMount ??
+      (isAutomaticTurn ? selectAutomaticTurnMount({ state: before, sessionId }) : null) ??
+      undefined;
     if (activeMount === undefined && writableMounts.length > 0) {
       throw new Error('Choose the branch mount this session writes to before sending a turn.');
     }
@@ -1398,6 +1404,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             ...(attachments !== undefined && { attachments }),
             ...(override !== undefined && { override }),
             ...(force === true ? { force: true } : {}),
+            ...(origin !== undefined && { origin }),
+            ...(turnTarget !== null && { mountTarget: turnTarget }),
             retry: {
               attempt: (retry?.attempt ?? 0) + 1,
               provider: fallbackPlan.provider,
@@ -1438,6 +1446,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               content,
               ...(override !== undefined && { override }),
               ...(force === true ? { force: true } : {}),
+              ...(origin !== undefined && { origin }),
+              ...(turnTarget !== null && { mountTarget: turnTarget }),
               retry: {
                 attempt: 0,
                 provider,

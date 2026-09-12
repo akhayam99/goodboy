@@ -5,6 +5,7 @@ import {
   selectActiveMount,
   selectWritableMounts,
 } from '../../../../../store/slices/project-mounts/selectors';
+import { selectAutomaticTurnMount } from '../../../../../store/slices/project-mounts/selectAutomaticTurnMount';
 import {
   listWriteDestinationCandidates,
   resolveWriteDestination,
@@ -17,6 +18,7 @@ import { scratchDirPrepare } from '../../../../../features/worktree/worktree';
 type Params = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId | null;
+  readonly fallback?: 'automatic';
 };
 
 export type WriteDestinationView = Readonly<{
@@ -24,9 +26,14 @@ export type WriteDestinationView = Readonly<{
   candidates: ReadonlyArray<WriteDestinationCandidate>;
   running: WriteDestination | null;
   diverges: boolean;
+  isAutomatic: boolean;
 }>;
 
-export const useWriteDestination = ({ sessionId, agentId }: Params): WriteDestinationView => {
+export const useWriteDestination = ({
+  sessionId,
+  agentId,
+  fallback,
+}: Params): WriteDestinationView => {
   const session = useAppStore((state) =>
     state.sessions.find((candidate) => candidate.id === sessionId),
   );
@@ -71,16 +78,25 @@ export const useWriteDestination = ({ sessionId, agentId }: Params): WriteDestin
     () => selectWritableMounts({ state: mountState, sessionId }),
     [mountState, sessionId],
   );
+  const automaticMount = useMemo(
+    () =>
+      fallback === 'automatic' && activeMount === null && writableMounts.length > 0
+        ? selectAutomaticTurnMount({ state: mountState, sessionId })
+        : null,
+    [activeMount, fallback, mountState, sessionId, writableMounts],
+  );
+  const nextMount = activeMount ?? automaticMount;
+  const isAutomatic = automaticMount !== null;
   const candidates = useMemo(
     () => listWriteDestinationCandidates({ mounts: writableMounts, projects }),
     [writableMounts, projects],
   );
   const activeProjectName = useMemo(
     () =>
-      activeMount === null
+      nextMount === null
         ? null
-        : (projects.find((project) => project.id === activeMount.projectId)?.name ?? null),
-    [activeMount, projects],
+        : (projects.find((project) => project.id === nextMount.projectId)?.name ?? null),
+    [nextMount, projects],
   );
 
   const [scratchPath, setScratchPath] = useState<string | null>(null);
@@ -104,16 +120,16 @@ export const useWriteDestination = ({ sessionId, agentId }: Params): WriteDestin
   const next = useMemo(
     () =>
       resolveWriteDestination({
-        mount: activeMount,
+        mount: nextMount,
         projectName: activeProjectName,
         scratchPath,
         mountCount: writableMounts.length,
       }),
-    [activeMount, activeProjectName, scratchPath, writableMounts],
+    [nextMount, activeProjectName, scratchPath, writableMounts],
   );
 
   const running = turnKind === 'running' ? turnDestination : null;
   const diverges = running !== null && !writeDestinationsMatch(running, next);
 
-  return { next, candidates, running, diverges };
+  return { next, candidates, running, diverges, isAutomatic };
 };

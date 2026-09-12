@@ -23,6 +23,7 @@ import type {
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useRunSpendUsd } from '../../../../../store';
 import type { AppStore } from '../../../../../store/store';
+import { selectWritableMounts } from '../../../../../store/slices/project-mounts/selectors';
 import { inferAgentKindFromName, type AgentKind } from '../../../../../features/session/agent-kind';
 import { agentRoutingOverrides } from '../../../../../features/workflows/agentRoutingOverrides';
 import { resolveStepRouting } from '../../../../../features/workflows/resolveStepRouting';
@@ -36,6 +37,7 @@ import { WorkflowAutorunToggle } from '../../../../../features/workflows/compone
 import { useWorkflowTitleRename } from '../../../../../features/workflows/hooks/useWorkflowTitleRename';
 import { WorkflowStepGraph } from '../../../../../features/workflows/components/WorkflowStepGraph';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
+import { WriteDestinationControl } from '../../../../chat/components/WriteDestinationControl';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { CardAction } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
@@ -148,6 +150,9 @@ export const WorkflowRow = ({
   const sessionEffort = task.effort ?? null;
   const isOrchestrating = useAppStore((s) => s.orchestratingWorkflowRuns?.[run.id] ?? false);
   const restoreWorkflow = useAppStore((s) => s.restoreWorkflow);
+  const writableMountCount = useAppStore(
+    (state) => selectWritableMounts({ state, sessionId: task.id }).length,
+  );
   const workflowRun = run;
   const isDiscarded = run.discardedAt != null;
   const wfAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
@@ -407,6 +412,9 @@ export const WorkflowRow = ({
       </div>
       {expanded ? (
         <div className="col-span-2 row-start-2 flex flex-col gap-2">
+          {isDetail && !isDiscarded && writableMountCount > 1 ? (
+            <WriteDestinationControl sessionId={task.id} agentId={null} fallback="automatic" />
+          ) : null}
           {isDetail && expanded ? (
             <div className="flex flex-col gap-2">
               <WorkflowRunAsk
