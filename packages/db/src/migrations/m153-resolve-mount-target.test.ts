@@ -5,6 +5,7 @@ import { migrations } from './index';
 import { migrate } from './runner';
 
 const before = migrations.filter((migration) => migration.version < 153);
+const through = migrations.filter((migration) => migration.version <= 153);
 
 type MountCount = { readonly mounts: number };
 
@@ -74,7 +75,7 @@ describe('m153 resolve mount target', () => {
   for (const mountCount of MOUNT_COUNTS) {
     it(`adds the target columns and keeps every row with ${mountCount} mounts`, async () => {
       const db = await seed({ mountCount });
-      await migrate(db);
+      await migrate(db, through);
 
       expect(await columnsOf({ db, table: 'resolve_attempts' })).toEqual(
         expect.arrayContaining(['mount_id', 'mount_revision', 'worktree_path']),
@@ -105,7 +106,7 @@ describe('m153 resolve mount target', () => {
 
   it('leaves every migrated row without a target instead of guessing one', async () => {
     const db = await seed({ mountCount: 3 });
-    await migrate(db);
+    await migrate(db, through);
     expect(
       await db.select<{ readonly mount_id: string | null; readonly mount_revision: number | null }>(
         'SELECT mount_id, mount_revision FROM resolve_attempts ORDER BY id',
@@ -128,7 +129,7 @@ describe('m153 resolve mount target', () => {
 
   it('indexes the target on every resolve table', async () => {
     const db = await seed({ mountCount: 1 });
-    await migrate(db);
+    await migrate(db, through);
     expect(
       await db.select<{ readonly name: string }>(
         `SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_resolve_%_mount' ORDER BY name`,
@@ -142,7 +143,7 @@ describe('m153 resolve mount target', () => {
 
   it('keeps the target and the history when the mount it points at is removed', async () => {
     const db = await seed({ mountCount: 2 });
-    await migrate(db);
+    await migrate(db, through);
     await db.execute(
       "UPDATE resolve_attempts SET mount_id = 'mount-1', mount_revision = 1, worktree_path = '/repo/api/.goodboy/worktrees/m1' WHERE id = 'attempt-b'",
     );
@@ -156,7 +157,7 @@ describe('m153 resolve mount target', () => {
 
   it('applies in a single transactional segment', async () => {
     const db = await seed({ mountCount: 1 });
-    await migrate(db);
+    await migrate(db, through);
     expect(
       await db.select<{ readonly segments: number }>(
         'SELECT COUNT(*) AS segments FROM schema_migration_segment WHERE version = 153',

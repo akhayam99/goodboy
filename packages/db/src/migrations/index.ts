@@ -12,7 +12,8 @@ import { m150ResolvePublicationProvenance } from './m150-resolve-publication-pro
 import { m151ResolveQueueItemRefusal } from './m151-resolve-queue-item-refusal';
 import { m152SessionEventDurableChanges } from './m152-session-event-durable-changes';
 import { m153ResolveMountTarget } from './m153-resolve-mount-target';
-import { m154WorkflowRoutingDecisions } from './m154-workflow-routing-decisions';
+import { m154ResolveMountBackfill } from './m154-resolve-mount-backfill';
+import { m155WorkflowRoutingDecisions } from './m155-workflow-routing-decisions';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -312,5 +313,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 151, sql: m151ResolveQueueItemRefusal },
   { version: 152, sql: m152SessionEventDurableChanges },
   { version: 153, sql: m153ResolveMountTarget },
-  { version: 154, sql: m154WorkflowRoutingDecisions },
+  { version: 154, sql: m154ResolveMountBackfill },
+  { version: 155, sql: m155WorkflowRoutingDecisions },
 ];

@@ -2,6 +2,7 @@ import type {
   AgentId,
   AgentSourceKind,
   IsoDateTime,
+  MountId,
   PlanId,
   PlanWithCount,
   ProviderId,
@@ -27,6 +28,7 @@ import {
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../../kickoff';
+import { requireMountTarget } from '../resolve/mountTarget';
 import {
   canFanOutClusters,
   fanOutClusters,
@@ -38,6 +40,7 @@ import type { GetFn, SetFn } from './types';
 
 type SpawnArgs = {
   stepId?: StepId;
+  mountId?: MountId;
   workflowRunId?: WorkflowRunId;
   name?: string;
   model?: string;
@@ -235,12 +238,18 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       effort: resolvedEffort,
       instructions: kickoff,
       phase: 'queued',
+      mountTarget: requireMountTarget({ get, sessionId }),
     });
     if (kickoff.length > 0) {
       void get().drainResolveQueue({ sessionId });
     }
   } else if (kickoff.length > 0) {
-    void get().sendTurn({ sessionId, agentId: inserted.id, content: kickoff });
+    void get().sendTurn({
+      sessionId,
+      agentId: inserted.id,
+      content: kickoff,
+      ...(args.mountId !== undefined && { mountId: args.mountId }),
+    });
   }
 
   if (planToConsume) {

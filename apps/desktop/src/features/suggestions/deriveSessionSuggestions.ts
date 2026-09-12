@@ -24,7 +24,7 @@ export type SuggestionRebaseRequest = {
 
 export type SuggestionProject = {
   readonly id: string;
-  readonly mountId: MountId | null;
+  readonly mountId: MountId;
   readonly projectId: ProjectId;
   readonly projectName: string;
   readonly branch: string;

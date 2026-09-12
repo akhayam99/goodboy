@@ -9,6 +9,7 @@ const {
   getMountOperation,
   upsertMountOperation,
   updateSessionActiveMount,
+  updateSessionWriteDestination,
   updateSessionActiveProject,
 } = vi.hoisted(() => ({
   removeWorktreeChecked: vi.fn(
@@ -34,6 +35,7 @@ const {
   getMountOperation: vi.fn(async () => null as Record<string, unknown> | null),
   upsertMountOperation: vi.fn(async () => undefined),
   updateSessionActiveMount: vi.fn(async () => undefined),
+  updateSessionWriteDestination: vi.fn(async () => true),
   updateSessionActiveProject: vi.fn(async () => undefined),
 }));
 
@@ -44,6 +46,7 @@ vi.mock('@goodboy/db', () => ({
   getMountOperation,
   upsertMountOperation,
   updateSessionActiveMount,
+  updateSessionWriteDestination,
   updateSessionActiveProject,
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -188,6 +191,15 @@ const makeStore = () => ({
     },
   ],
   terminalTabs: {},
+  sessionPhaseRuns: {} as Record<
+    string,
+    ReadonlyArray<{ readonly id: string; readonly status: string }>
+  >,
+  agentTurnDestination: {} as Record<string, { readonly kind: string; readonly mountId?: string }>,
+  sessionResolveAttempts: {} as Record<
+    string,
+    ReadonlyArray<{ readonly phase: string; readonly mountTarget: { mountId: string } | null }>
+  >,
   projects: [
     { id: 'project-api', workspaceId: 'ws-1', rootPath: '/repos/api', kind: 'repo', name: 'api' },
     { id: 'project-web', workspaceId: 'ws-1', rootPath: '/repos/web', kind: 'repo', name: 'web' },
@@ -234,6 +246,19 @@ beforeEach(() => {
 });
 
 describe('detachProject', () => {
+  it('names the mount in every outcome and in the events it records', async () => {
+    const store = makeStore();
+
+    const outcomes = await runDetach(store);
+
+    expect(outcomes.map((outcome) => outcome.mountId)).toEqual(['mount-api', 'mount-api-2']);
+    expect(store.recordSessionEvent).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      kind: 'project_detached',
+      payload: expect.objectContaining({ mountId: 'mount-api-2' }),
+    });
+  });
+
   it('removes every worktree of the project and deletes its mount rows', async () => {
     const store = makeStore();
 
@@ -479,13 +504,30 @@ describe('detachProject', () => {
     const outcomes = await runDetach(store, 'keep-files');
 
     expect(outcomes.map((outcome) => outcome.kind)).toEqual(['failed', 'failed']);
-    expect(outcomes[0]?.reason).toBe('an agent is still running in this session');
+    expect(outcomes[0]?.reason).toBe('an agent is still writing to this mount');
     expect(deleteSessionMount).not.toHaveBeenCalled();
     expect(store.sessionMounts['sess-1'].map((view) => view.id)).toEqual([
       'mount-api',
       'mount-api-2',
       'mount-web',
     ]);
+  });
+
+  it('drops the sibling a running turn is not writing to', async () => {
+    const store = makeStore();
+    store.sessions[0]!.state = { kind: 'running' };
+    store.sessionPhaseRuns = { 'sess-1': [{ id: 'agent-1', status: 'running' }] };
+    store.agentTurnDestination = { 'agent-1': { kind: 'mount', mountId: 'mount-api' } };
+
+    const outcomes = await runDetach(store, 'keep-files');
+
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual(['failed', 'kept']);
+    expect(outcomes[0]?.reason).toBe('an agent is still writing to this mount');
+    expect(deleteSessionMount).toHaveBeenCalledWith({
+      db: {},
+      sessionId: SESSION_ID,
+      mountId: 'mount-api-2',
+    });
   });
 
   it('refuses to drop a mount whose worktree a terminal still holds', async () => {
@@ -500,6 +542,7 @@ describe('detachProject', () => {
       expect.objectContaining({ worktreePath: '/container/api' }),
     );
     expect(outcomes.find((outcome) => outcome.worktreePath === '/container/api')).toEqual({
+      mountId: 'mount-api',
       worktreePath: '/container/api',
       kind: 'failed',
       reason: 'a terminal is open in the worktree',
@@ -582,12 +625,7 @@ describe('detachProject', () => {
 
     await runDetach(store);
 
-    expect(updateSessionActiveProject).toHaveBeenCalledWith({
-      db: {},
-      id: SESSION_ID,
-      projectId: 'project-web',
-    });
-    expect(updateSessionActiveMount).toHaveBeenCalledWith({
+    expect(updateSessionWriteDestination).toHaveBeenCalledWith({
       db: {},
       sessionId: SESSION_ID,
       mountId: 'mount-web',
@@ -598,30 +636,32 @@ describe('detachProject', () => {
     expect(store.sessionBranches['sess-1']).toBe('ak/feat');
   });
 
-  it('strips a deleted mount from the session row when the selection points elsewhere', async () => {
+  it('keeps a selection no removal touched and heals the session row', async () => {
     const store = makeStore();
     store.sessionActiveMount = { 'sess-1': 'mount-web' };
 
     await runDetach(store);
 
     expect(store.sessions[0]?.activeMountId).toBe('mount-web');
-    expect(updateSessionActiveMount).toHaveBeenCalledWith({
-      db: {},
-      sessionId: SESSION_ID,
-      mountId: 'mount-web',
-    });
+    expect(store.sessionActiveProject['sess-1']).toBe('project-web');
+    expect(updateSessionWriteDestination).not.toHaveBeenCalled();
   });
 
-  it('invents no write destination for a session that had none', async () => {
+  it('clears the departed project without naming a new destination', async () => {
     const store = makeStore();
     store.sessionActiveMount = { 'sess-1': null };
     store.sessions[0]!.activeMountId = undefined;
 
     await runDetach(store);
 
-    expect(updateSessionActiveMount).not.toHaveBeenCalled();
+    expect(updateSessionWriteDestination).toHaveBeenCalledWith({
+      db: {},
+      sessionId: SESSION_ID,
+      mountId: null,
+    });
     expect(store.sessionActiveMount['sess-1']).toBeNull();
     expect(store.sessions[0]?.activeMountId).toBeUndefined();
+    expect(store.sessionActiveProject['sess-1']).toBeUndefined();
   });
 
   it('leaves no write destination when the last project is detached', async () => {
@@ -642,7 +682,7 @@ describe('detachProject', () => {
     expect(store.sessionActiveMount['sess-1']).toBeNull();
     expect(store.sessionBranches['sess-1']).toBeUndefined();
     expect(store.sessions[0]).not.toHaveProperty('activeMountId');
-    expect(updateSessionActiveMount).toHaveBeenCalledWith({
+    expect(updateSessionWriteDestination).toHaveBeenCalledWith({
       db: {},
       sessionId: SESSION_ID,
       mountId: null,

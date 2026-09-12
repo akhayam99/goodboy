@@ -198,7 +198,7 @@ export type ResolvePublicationExclusion = Readonly<{
 }>;
 
 export type ResolvePublicationDriftKind =
-  'branch_moved' | 'remote_moved' | 'comment_changed' | 'approval_withdrawn';
+  'mount_changed' | 'branch_moved' | 'remote_moved' | 'comment_changed' | 'approval_withdrawn';
 
 export type ResolvePublicationDrift = Readonly<{
   kind: ResolvePublicationDriftKind;

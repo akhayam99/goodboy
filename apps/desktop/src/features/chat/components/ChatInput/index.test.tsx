@@ -870,3 +870,112 @@ describe('ChatInput, all providers over budget', () => {
     expect(sendTurnMock).toHaveBeenCalledOnce();
   });
 });
+
+describe('ChatInput, cursor combo axes', () => {
+  const cursorSession = (defaultModel?: string): Session =>
+    makeSession({
+      providerPreference: {
+        defaultProvider: 'cursor' as Session['providerPreference']['defaultProvider'],
+        ...(defaultModel != null && { defaultModel }),
+        allowTurnOverride: true,
+      },
+    });
+
+  const togglePicker = async (user: ReturnType<typeof userEvent.setup>) =>
+    user.click(screen.getByRole('button', { name: /^Model routing:/ }));
+
+  const modeChip = (label: string) =>
+    within(
+      within(screen.getByRole('dialog', { name: 'Model routing' })).getByRole('group', {
+        name: 'Modes',
+      }),
+    ).getByRole('button', { name: label });
+
+  it('still reads Fast as on after the picker is closed and reopened', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput session={cursorSession()} />);
+
+    await togglePicker(user);
+    await user.click(modeChip('Fast'));
+    await togglePicker(user);
+    await togglePicker(user);
+
+    expect(modeChip('Fast').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('marks Fast as an override and offers the reset back to the default', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput session={cursorSession()} />);
+
+    await togglePicker(user);
+    await user.click(modeChip('Fast'));
+
+    expect(await screen.findByLabelText('Reset routing override')).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Model routing' }).textContent).toContain(
+      'Overriding default',
+    );
+  });
+
+  it('sends the fast combo the picker shows', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput session={cursorSession()} />);
+
+    await togglePicker(user);
+    await user.click(modeChip('Fast'));
+    await togglePicker(user);
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'go fast');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(sendTurnMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          override: expect.objectContaining({
+            providerId: 'cursor',
+            selection: expect.objectContaining({
+              key: 'composer-2.5',
+              toggles: expect.objectContaining({ fast: true }),
+            }),
+          }),
+        }),
+      );
+    });
+  });
+
+  it('reads a Fast default as the default, not as an override', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput session={cursorSession('composer-2.5-fast')} />);
+
+    expect(screen.queryByLabelText('Reset routing override')).toBeNull();
+
+    await togglePicker(user);
+    expect(modeChip('Fast').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('dialog', { name: 'Model routing' }).textContent).toContain(
+      'Using default',
+    );
+  });
+
+  it('marks the return to base from a Fast default as an override', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput session={cursorSession('composer-2.5-fast')} />);
+
+    await togglePicker(user);
+    await user.click(modeChip('Fast'));
+
+    expect(await screen.findByLabelText('Reset routing override')).toBeTruthy();
+    expect(modeChip('Fast').getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('still reads Thinking as on after the picker is closed and reopened', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput session={cursorSession('claude-4.6-sonnet-medium')} />);
+
+    await togglePicker(user);
+    await user.click(modeChip('Thinking'));
+    await togglePicker(user);
+    await togglePicker(user);
+
+    expect(modeChip('Thinking').getAttribute('aria-pressed')).toBe('true');
+  });
+});

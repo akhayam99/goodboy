@@ -1,11 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ROLE_DEFAULTS } from '@goodboy/core';
+import {
+  ROLE_DEFAULTS,
+  getCheapModel,
+  resolveModelArgs,
+  resolveModelForProvider,
+  resolveStoredModelSelection,
+} from '@goodboy/core';
 import type { WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core';
 import type {
   Agent,
   AgentId,
   IsoDateTime,
   ProviderId,
+  ModelEffort,
   RoleModelPreferences,
   Session,
   SessionId,
@@ -401,7 +408,7 @@ describe('preSpawnWorkflowAgents and agentReferenceRouting agree', () => {
       roleModels,
     });
 
-    expect(persisted.provider).toBe('anthropic');
+    expect(persisted).toEqual({ provider: 'anthropic', model: 'sonnet-5', effort: 'high' });
     expect(reference).toEqual(persisted);
   });
 
@@ -412,7 +419,11 @@ describe('preSpawnWorkflowAgents and agentReferenceRouting agree', () => {
       roleModels: null,
     });
 
-    expect(persisted.provider).toBe('codex');
+    expect(persisted).toEqual({
+      provider: 'codex',
+      model: resolveModelForProvider({ provider: 'codex', modelId: getCheapModel('codex') }),
+      effort: 'low',
+    });
     expect(reference).toEqual(persisted);
   });
 
@@ -433,5 +444,91 @@ describe('preSpawnWorkflowAgents and agentReferenceRouting agree', () => {
 
     expect(persisted).toEqual({ provider: 'anthropic', model: 'opus-5', effort: 'high' });
     expect(reference).toEqual(persisted);
+  });
+});
+
+const executionOf = ({
+  provider,
+  model,
+  effort,
+}: {
+  readonly provider: ProviderId;
+  readonly model: string;
+  readonly effort: ModelEffort | undefined;
+}): ReadonlyArray<string> =>
+  resolveModelArgs({
+    provider,
+    selection: resolveStoredModelSelection({
+      provider,
+      id: model,
+      ...(effort != null && { effort }),
+    }).selection,
+  }).args;
+
+describe('preSpawnWorkflowAgents keeps the combo a step pinned', () => {
+  it('persists the cursor fast combo and runs it', async () => {
+    const { persisted, reference } = await spawnAndReference({
+      spawnStep: step({
+        role: 'implementer',
+        providerOverride: 'cursor',
+        modelOverride: 'composer-2.5-fast',
+      }),
+      defaultProvider: 'cursor',
+      roleModels: null,
+    });
+
+    expect(persisted.model).toBe('composer-2.5-fast');
+    expect(reference).toEqual(persisted);
+    expect(
+      executionOf({
+        provider: 'cursor',
+        model: persisted.model ?? '',
+        effort: persisted.effort,
+      }),
+    ).toContain('composer-2.5-fast');
+  });
+
+  it('persists the cursor thinking combo and runs it', async () => {
+    const { persisted, reference } = await spawnAndReference({
+      spawnStep: step({
+        role: 'implementer',
+        providerOverride: 'cursor',
+        modelOverride: 'claude-4.6-sonnet-medium-thinking',
+      }),
+      defaultProvider: 'cursor',
+      roleModels: null,
+    });
+
+    expect(persisted.model).toBe('claude-4.6-sonnet-medium-thinking');
+    expect(reference).toEqual(persisted);
+    expect(
+      executionOf({
+        provider: 'cursor',
+        model: persisted.model ?? '',
+        effort: persisted.effort,
+      }),
+    ).toContain('claude-4.6-sonnet-medium-thinking');
+  });
+
+  it('leaves a base pin alone on both sides', async () => {
+    const { persisted, reference } = await spawnAndReference({
+      spawnStep: step({
+        role: 'implementer',
+        providerOverride: 'cursor',
+        modelOverride: 'composer-2.5',
+      }),
+      defaultProvider: 'cursor',
+      roleModels: null,
+    });
+
+    expect(persisted.model).toBe('composer-2.5');
+    expect(reference).toEqual(persisted);
+    expect(
+      executionOf({
+        provider: 'cursor',
+        model: persisted.model ?? '',
+        effort: persisted.effort,
+      }),
+    ).toContain('composer-2.5');
   });
 });

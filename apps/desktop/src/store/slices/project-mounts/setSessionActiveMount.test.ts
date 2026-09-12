@@ -1,13 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 
-const { updateSessionActiveMount, updateSessionActiveProject, tauriDatabase } = vi.hoisted(() => ({
-  updateSessionActiveMount: vi.fn(async () => true),
-  updateSessionActiveProject: vi.fn(async () => undefined),
+const { updateSessionWriteDestination, tauriDatabase } = vi.hoisted(() => ({
+  updateSessionWriteDestination: vi.fn(async () => true),
   tauriDatabase: {},
 }));
 
-vi.mock('@goodboy/db', () => ({ updateSessionActiveMount, updateSessionActiveProject }));
+vi.mock('@goodboy/db', () => ({ updateSessionWriteDestination }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase }));
 
 import { setSessionActiveMount } from './setSessionActiveMount';
@@ -76,7 +75,7 @@ describe('setSessionActiveMount', () => {
 
     expect(state.sessionActiveMount[SESSION_ID]).toBe(SECOND_MOUNT);
     expect(state.sessionBranches[SESSION_ID]).toBe('ak/two');
-    expect(updateSessionActiveMount).toHaveBeenCalledWith({
+    expect(updateSessionWriteDestination).toHaveBeenCalledWith({
       db: tauriDatabase,
       sessionId: SESSION_ID,
       mountId: SECOND_MOUNT,

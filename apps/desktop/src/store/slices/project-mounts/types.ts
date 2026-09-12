@@ -9,6 +9,24 @@ import type {
 
 export type { SetFn, GetFn } from '../../slice-types';
 
+export type EnsureProjectMountedInput = {
+  readonly sessionId: SessionId;
+  readonly projectId: ProjectId;
+  readonly reason: string;
+  readonly taskIdentifiers?: ReadonlyArray<string>;
+  readonly mountId?: MountId;
+  readonly requestId?: string;
+  readonly slug?: string;
+};
+
+export type EnsureProjectMountedResult =
+  | Readonly<{
+      status: 'created';
+      createdMountId: MountId;
+      mountIds: ReadonlyArray<MountId>;
+    }>
+  | Readonly<{ status: 'already-mounted'; mountIds: ReadonlyArray<MountId> }>;
+
 export type ForkMountInput = {
   readonly sessionId: SessionId;
   readonly projectId: ProjectId;

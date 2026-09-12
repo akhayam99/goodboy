@@ -46,6 +46,7 @@ export type {
   RetainedWorktreeReason,
   SessionMount,
   SessionMountView,
+  SessionProjectMount,
 } from './mount';
 export type {
   PrSeries,
@@ -84,7 +85,6 @@ export type {
   Session,
   Project,
   ProjectScript,
-  SessionProjectMount,
   SentryIntegrationConfig,
   SessionExternalTask,
   SessionExternalTaskProvider,

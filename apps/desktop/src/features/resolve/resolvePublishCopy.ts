@@ -107,6 +107,10 @@ export const driftSentence = ({
 }: {
   readonly drift: ReadonlyArray<ResolvePublicationDrift>;
 }): string | null => {
+  const mount = drift.find((entry) => entry.kind === 'mount_changed');
+  if (mount !== undefined) {
+    return `The destination moved from ${mount.before} to ${mount.after}`;
+  }
   const branch = drift.find((entry) => entry.kind === 'branch_moved');
   if (branch !== undefined) {
     return `The branch moved from ${branch.before} to ${branch.after}`;

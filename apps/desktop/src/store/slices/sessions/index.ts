@@ -8,7 +8,6 @@ import { createUntitledSession } from './createUntitledSession';
 import { deleteTask } from './deleteTask';
 import { evictSession } from './evictSession';
 import { linkSessionExternalTask } from './linkSessionExternalTask';
-import { materializeProject } from './materializeProject';
 import { renameTask } from './renameTask';
 import { setAgentConfig } from './setAgentConfig';
 import { setAgentVerbosity } from './setAgentVerbosity';
@@ -36,7 +35,6 @@ export const createSessionsSlice = (set: SetFn, get: GetFn) => {
     createSession: createSession(set, get),
     createUntitledSession: createUntitledSession(set, get),
     clearPendingTitleFocus: () => set({ pendingTitleFocusSessionId: null }),
-    materializeProject: materializeProject(set, get),
     linkSessionExternalTask: linkSessionExternalTask({ set, get }),
     unlinkSessionExternalTask: unlinkSessionExternalTask({ set, get }),
     setCurrentSession: setCurrentSession(set, get),

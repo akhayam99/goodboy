@@ -5,6 +5,7 @@ import type {
   WorkflowTaskType,
 } from '@goodboy/types';
 import { PROVIDER_IDS } from '@goodboy/types';
+import { resolvedStoredModelId } from '../providers/resolvedStoredModelId';
 import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
 import { isAgentRole } from '../roles';
 import { MODEL_EFFORTS } from './parseWorkflowRoutingProposal';
@@ -161,7 +162,7 @@ const requestedModel = ({ provider, id }: ModelParams): string | null => {
   if (stored.report?.kind === 'unknown') {
     return id;
   }
-  return stored.selection.key;
+  return resolvedStoredModelId({ provider, selection: stored.selection });
 };
 
 const requestedEffort = (level: string | null): ModelEffort | null => {

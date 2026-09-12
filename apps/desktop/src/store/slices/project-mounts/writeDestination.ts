@@ -3,7 +3,7 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 
 export type WriteDestinationMount = Readonly<{
   kind: 'mount';
-  mountId: MountId | null;
+  mountId: MountId;
   projectId: ProjectId;
   projectName: string;
   mountName: string;
@@ -12,13 +12,14 @@ export type WriteDestinationMount = Readonly<{
   hasGit: boolean;
 }>;
 
-export type WriteDestinationCandidate = Readonly<
-  Omit<WriteDestinationMount, 'mountId'> & { mountId: MountId }
->;
+export type WriteDestinationCandidate = WriteDestinationMount;
 
 export type WriteDestinationScratch = Readonly<{ kind: 'scratch'; path: string | null }>;
 
-export type WriteDestination = WriteDestinationMount | WriteDestinationScratch;
+export type WriteDestinationUnselected = Readonly<{ kind: 'unselected'; mountCount: number }>;
+
+export type WriteDestination =
+  WriteDestinationMount | WriteDestinationScratch | WriteDestinationUnselected;
 
 type DescribeMountParams = {
   readonly mount: SessionProjectMount;
@@ -27,7 +28,7 @@ type DescribeMountParams = {
 
 const describeMount = ({ mount, projectName }: DescribeMountParams): WriteDestinationMount => ({
   kind: 'mount',
-  mountId: mount.mountId ?? null,
+  mountId: mount.mountId,
   projectId: mount.projectId,
   projectName,
   mountName: mount.mountName,
@@ -40,22 +41,30 @@ type ResolveParams = {
   readonly mount: SessionProjectMount | null;
   readonly projectName: string | null;
   readonly scratchPath: string | null;
+  readonly mountCount: number;
 };
 
 export const resolveWriteDestination = ({
   mount,
   projectName,
   scratchPath,
+  mountCount,
 }: ResolveParams): WriteDestination => {
-  if (mount === null) {
-    return { kind: 'scratch', path: scratchPath };
+  if (mount !== null) {
+    return describeMount({ mount, projectName: projectName ?? mount.mountName });
   }
-  return describeMount({ mount, projectName: projectName ?? mount.mountName });
+  if (mountCount > 0) {
+    return { kind: 'unselected', mountCount };
+  }
+  return { kind: 'scratch', path: scratchPath };
 };
 
 export const writeDestinationLabel = (destination: WriteDestination): string => {
   if (destination.kind === 'scratch') {
     return 'session scratch folder';
+  }
+  if (destination.kind === 'unselected') {
+    return 'no destination chosen';
   }
   if (!destination.hasGit) {
     return `${destination.projectName} / working folder / no git`;
@@ -65,21 +74,24 @@ export const writeDestinationLabel = (destination: WriteDestination): string => 
 
 export const writeDestinationDetail = (destination: WriteDestination): string => {
   const label = writeDestinationLabel(destination);
+  if (destination.kind === 'unselected') {
+    return `${label}. This session has ${destination.mountCount} branch mounts, choose the one the next turns write to.`;
+  }
   const path = destination.kind === 'scratch' ? destination.path : destination.worktreePath;
   return path === null ? label : `${label} (${path})`;
 };
 
 export const writeDestinationsMatch = (a: WriteDestination, b: WriteDestination): boolean => {
+  if (a.kind === 'unselected' || b.kind === 'unselected') {
+    return false;
+  }
   if (a.kind === 'scratch' && b.kind === 'scratch') {
     return true;
   }
   if (a.kind !== 'mount' || b.kind !== 'mount') {
     return false;
   }
-  if (a.mountId !== null && b.mountId !== null) {
-    return a.mountId === b.mountId;
-  }
-  return a.worktreePath === b.worktreePath;
+  return a.mountId === b.mountId;
 };
 
 type ListParams = {
@@ -92,10 +104,9 @@ export const listWriteDestinationCandidates = ({
   projects,
 }: ListParams): ReadonlyArray<WriteDestinationCandidate> =>
   mounts.flatMap((mount) => {
-    if (mount.isAttached === false || mount.worktreePath === '' || mount.mountId === undefined) {
+    if (!mount.isAttached || mount.worktreePath === '') {
       return [];
     }
     const project = projects.find((candidate) => candidate.id === mount.projectId);
-    const described = describeMount({ mount, projectName: project?.name ?? mount.mountName });
-    return [{ ...described, mountId: mount.mountId }];
+    return [describeMount({ mount, projectName: project?.name ?? mount.mountName })];
   });

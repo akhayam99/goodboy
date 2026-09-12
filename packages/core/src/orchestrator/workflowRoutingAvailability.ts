@@ -1,5 +1,5 @@
 import type { ProviderId, WorkflowModelPick } from '@goodboy/types';
-import { MODEL_CATALOGS } from '../providers/catalogs';
+import { catalogModelForId } from '../providers/catalogModelForId';
 
 export type WorkflowRoutingAvailabilitySnapshot = Readonly<{
   connectedProviders: ReadonlyArray<ProviderId>;
@@ -26,8 +26,8 @@ export const workflowRoutingAvailability = ({
   pick,
   snapshot,
 }: Params): WorkflowRoutingAvailability => {
-  const model = MODEL_CATALOGS[pick.provider].find((candidate) => candidate.key === pick.model);
-  if (model === undefined) {
+  const model = catalogModelForId({ provider: pick.provider, modelId: pick.model });
+  if (model === null) {
     return { kind: 'unavailable', cause: 'unknown_model' };
   }
   if (snapshot.connectedProviders.includes(pick.provider) === false) {

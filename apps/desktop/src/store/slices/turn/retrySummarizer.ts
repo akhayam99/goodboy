@@ -11,13 +11,14 @@ export const retrySummarizer = (set: SetFn, get: GetFn) => {
     if (!status.lastAttempt) {
       return;
     }
-    enqueueSummarizer(
+    enqueueSummarizer({
       set,
       get,
       sessionId,
-      status.lastAttempt.turnInput,
-      status.lastAttempt.turnOutput,
-      taskModelOverride,
-    );
+      turnInput: status.lastAttempt.turnInput,
+      turnOutput: status.lastAttempt.turnOutput,
+      workingDir: status.lastAttempt.workingDir,
+      ...(taskModelOverride !== undefined && { taskModelOverride }),
+    });
   };
 };

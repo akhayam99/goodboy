@@ -1,6 +1,7 @@
 import type {
   Agent,
   AgentId,
+  MountTargetSnapshot,
   ResolveAttemptPhase,
   ResolveCheckBreadth,
   ResolvePublicationDrift,
@@ -29,6 +30,7 @@ export type TurnParams = SessionParams & {
 };
 export type AttemptParams = SessionParams & {
   readonly agent: Agent;
+  readonly mountTarget: MountTargetSnapshot | null;
   readonly provider: string;
   readonly model: string;
   readonly effort: string | null;
@@ -41,8 +43,10 @@ export type CancelAttemptParams = SessionParams & {
 };
 export type CandidateBeginParams = SessionParams & {
   readonly attemptId: string;
+  readonly mountTarget: MountTargetSnapshot | null;
 };
-export type CandidateCaptureParams = CandidateBeginParams & {
+export type CandidateCaptureParams = SessionParams & {
+  readonly attemptId: string;
   readonly threadIds: ReadonlyArray<string>;
 };
 export type CheckRunParams = SessionParams & {
@@ -61,6 +65,7 @@ export type PhaseParams = SessionParams & {
 };
 export type DrainParams = SessionParams & {
   readonly endedAttemptId?: string;
+  readonly worktreePath?: string;
 };
 export type WorktreeDrainParams = {
   readonly worktreePath: string;

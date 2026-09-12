@@ -94,6 +94,7 @@ vi.mock('@goodboy/db', () => ({
   insertSessionEvent: vi.fn(async () => undefined),
   listSessionEvents: vi.fn(async () => []),
   updateSessionActiveProject: vi.fn(async () => undefined),
+  updateSessionWriteDestination: vi.fn(async () => true),
   updateSessionWorktreeRepoSlug: vi.fn(async () => undefined),
   insertTelemetry: vi.fn(),
   insertWorkspace: vi.fn(),

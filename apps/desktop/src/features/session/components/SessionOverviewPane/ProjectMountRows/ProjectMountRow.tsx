@@ -19,6 +19,7 @@ import { ProjectSyncControl } from './ProjectSyncControl';
 import { ProjectDetachMenu } from './ProjectDetachMenu';
 import { RemoveWorktreeAction } from './RemoveWorktreeAction';
 import { useProjectActivity } from './useProjectActivity';
+import { WriteDestinationAction } from './WriteDestinationAction';
 import { hasDiffCounts, mountOperationView, mountWorktreeState } from './mountRowState';
 
 type Props = {
@@ -139,7 +140,6 @@ export const ProjectMountRow = ({
           ) : (
             <ProjectBranchChip
               sessionId={sessionId}
-              projectId={row.projectId}
               mountId={row.mountId}
               branch={row.branch}
               canSwitch={isRepo && row.isAttached}
@@ -153,6 +153,14 @@ export const ProjectMountRow = ({
               label="Next turns"
               title={`Next turns write to ${label} unless changed from the chat header.`}
               className="shrink-0"
+            />
+          ) : null}
+          {!isWriteDestination && hasTools ? (
+            <WriteDestinationAction
+              sessionId={sessionId}
+              mountId={row.mountId}
+              label={label}
+              className={UTILITY_REVEAL}
             />
           ) : null}
           {operation === null ? null : (

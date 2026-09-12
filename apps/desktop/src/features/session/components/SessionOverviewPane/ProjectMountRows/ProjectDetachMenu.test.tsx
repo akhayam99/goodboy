@@ -19,6 +19,15 @@ const { state, showToast, worktreeDetachAssessment } = vi.hoisted(() => ({
     projects: [{ id: 'project-1', kind: 'repo', baseBranch: 'develop' as string | null }],
     sessions: [{ id: 'session-1', state: { kind: 'idle' } }],
     terminalTabs: {},
+    sessionPhaseRuns: {} as Record<
+      string,
+      ReadonlyArray<{ readonly id: string; readonly status: string }>
+    >,
+    agentTurnDestination: {} as Record<
+      string,
+      { readonly kind: string; readonly mountId?: string }
+    >,
+    sessionResolveAttempts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionProjectMounts: {
       'session-1': [
         {
@@ -135,6 +144,9 @@ beforeEach(() => {
   state.projects = [{ id: 'project-1', kind: 'repo', baseBranch: 'develop' }];
   state.sessions = [{ id: 'session-1', state: { kind: 'idle' } }];
   state.terminalTabs = {};
+  state.sessionPhaseRuns = {};
+  state.agentTurnDestination = {};
+  state.sessionResolveAttempts = {};
   state.sessionProjectMounts = {
     'session-1': [
       {
@@ -686,6 +698,35 @@ describe('ProjectDetachMenu', () => {
     ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
     expect(state.forgetMount).not.toHaveBeenCalled();
+  });
+
+  it('offers the removal of a mount the running turn is not writing to', () => {
+    state.sessions = [{ id: 'session-1', state: { kind: 'running' } }];
+    state.sessionPhaseRuns = { 'session-1': [{ id: 'agent-1', status: 'running' }] };
+    state.agentTurnDestination = { 'agent-1': { kind: 'mount', mountId: 'mount-elsewhere' } };
+    state.sessionMounts = {
+      'session-1': [
+        {
+          id: 'mount-1',
+          projectId: 'project-1',
+          worktreePath: null,
+          lastWorktreePath: '/worktrees/api',
+          branch: 'ak/feat',
+          baseBranch: null,
+          isAttached: false,
+          diskState: 'removed',
+        },
+      ],
+    };
+    renderRowMenu();
+
+    fireEvent.click(screen.getByRole('button', { name: 'api on ak/feat actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Remove from session' }));
+
+    expect(screen.getByRole('button', { name: 'Remove' })).toBeDefined();
+    expect(
+      screen.queryByText('Work is still running in api; stop it before removing this worktree.'),
+    ).toBeNull();
   });
 
   it('returns to the item list on cancel', async () => {

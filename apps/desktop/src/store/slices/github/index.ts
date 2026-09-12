@@ -1,4 +1,4 @@
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { clearGithubToken } from './clearGithubToken';
 import { closePr } from './closePr';
 import { convertPrToDraft } from './convertPrToDraft';
@@ -25,7 +25,8 @@ export const createGithubSlice = (set: SetFn, get: GetFn) => {
     refreshSessionPr: refreshSessionPr(set, get),
     refreshSessionPrDetail: refreshSessionPrDetail(set, get),
     selectSessionPr: selectSessionPr(set, get),
-    pushSessionBranch: (sessionId: SessionId) => pushSessionBranch(get, sessionId),
+    pushSessionBranch: (input: { sessionId: SessionId; mountId: MountId }) =>
+      pushSessionBranch({ get, ...input }),
     createPrForSession: createPrForSession(set, get),
     markPrReady: markPrReady(set, get),
     convertPrToDraft: convertPrToDraft(set, get),

@@ -3,7 +3,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DIFF_CAPPED_COLUMN_CLASS } from '../../../../permissions/components/DiffViewerDialog/lib';
-import type { BranchCommit, ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
+import type {
+  BranchCommit,
+  MountId,
+  ProjectId,
+  SessionId,
+  SessionProjectMount,
+} from '@goodboy/types';
 import {
   openDiffLens,
   setActiveLens,
@@ -37,11 +43,19 @@ const mountOf = ({
   readonly name: string;
   readonly worktreePath: string;
 }): SessionProjectMount => ({
+  mountId: `mount-${name}` as MountId,
+  sessionId: 'session-files' as SessionId,
   projectId: `prj-${name}` as ProjectId,
   mountName: name,
   worktreePath,
+  lastWorktreePath: null,
   repoRoot: `/repos/${name}`,
   branch: 'main',
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
 });
 
 const API_MOUNT = mountOf({ name: 'api', worktreePath: '/wt/api' });

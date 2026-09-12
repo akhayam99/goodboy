@@ -51,7 +51,6 @@ import type {
   SessionExternalTaskProvider,
   SessionExternalTask,
   SessionMountView,
-  SessionProjectMount,
   SessionEventKind,
   SessionEventPayload,
   IntegrationBindingProvider,
@@ -63,6 +62,7 @@ import type {
   WorkspaceIntegrationProvider,
   MountCleanupProposal,
   MountId,
+  MountTargetSnapshot,
   PrSeries,
   PrSeriesMember,
   PrSeriesView,
@@ -200,7 +200,6 @@ import type {
   LoadPrSeriesInput,
   SetPrSeriesMemberInput,
 } from './slices/pr-series';
-import type { MaterializeProjectInput } from './slices/sessions/materializeProject';
 import type {
   CleanupSessionMountsInput,
   ProposeMountCleanupInput,
@@ -210,6 +209,8 @@ import type {
 } from './slices/mount-cleanup';
 import type {
   AttachMountInput,
+  EnsureProjectMountedInput,
+  EnsureProjectMountedResult,
   ForkMountInput,
   InspectMountResult,
   MountKeyInput,
@@ -449,7 +450,7 @@ type AppActions = {
   }): Promise<{ session: Session }>;
   createUntitledSession(input: { workspaceId: WorkspaceId }): Promise<{ session: Session }>;
   clearPendingTitleFocus(): void;
-  materializeProject(input: MaterializeProjectInput): Promise<SessionProjectMount>;
+  ensureProjectMounted(input: EnsureProjectMountedInput): Promise<EnsureProjectMountedResult>;
   detachProject(input: DetachProjectInput): Promise<ReadonlyArray<DetachProjectOutcome>>;
   loadSessionMounts(input: SessionKeyInput): Promise<ReadonlyArray<SessionMountView>>;
   forkMount(input: ForkMountInput): Promise<SessionMountView>;
@@ -485,13 +486,8 @@ type AppActions = {
   ): Promise<void>;
   changeSessionBranch(
     sessionId: SessionId,
-    args: { branch: string; createNew: boolean },
+    args: { mountId: MountId; branch: string; createNew: boolean },
   ): Promise<void>;
-  setSessionActiveProject(input: {
-    sessionId: SessionId;
-    projectId: ProjectId;
-    mountId?: MountId;
-  }): Promise<void>;
   reconcileSessionBranch(input: ReconcileSessionBranchInput): Promise<void>;
   amendSessionCommit(
     sessionId: SessionId,
@@ -595,6 +591,8 @@ type AppActions = {
   sendTurn(input: {
     sessionId: SessionId;
     agentId?: AgentId;
+    mountId?: MountId;
+    mountTarget?: MountTargetSnapshot;
     content: string;
     attachments?: ReadonlyArray<AttachmentInput>;
     override?: TurnProviderOverride;
@@ -664,6 +662,7 @@ type AppActions = {
     sessionId: SessionId,
     args: {
       stepId?: StepId;
+      mountId?: MountId;
       workflowRunId?: WorkflowRunId;
       name?: string;
       model?: string;
@@ -743,9 +742,10 @@ type AppActions = {
   ): Promise<void>;
   selectSessionPr(sessionId: SessionId, prNumber: number, mountId?: MountId): Promise<void>;
   sweepGithub(opts?: { skipUnknownPr?: boolean }): void;
-  pushSessionBranch(
-    sessionId: SessionId,
-  ): Promise<{ readonly ok: true } | { readonly ok: false; readonly error: string }>;
+  pushSessionBranch(input: {
+    sessionId: SessionId;
+    mountId: MountId;
+  }): Promise<{ readonly ok: true } | { readonly ok: false; readonly error: string }>;
   createPrForSession(input: CreatePrInput): Promise<void>;
   markPrReady(sessionId: SessionId, prNumber?: number): Promise<void>;
   convertPrToDraft(sessionId: SessionId, prNumber?: number): Promise<void>;

@@ -1,4 +1,5 @@
 import { vi } from 'vitest';
+import { createResolveQueryMocks } from './slices/resolve/testing/createResolveQueryMocks';
 import type {
   Agent,
   AgentId,
@@ -68,16 +69,38 @@ export const storySpies = {
   insertSessionWorktree: vi.fn(async () => undefined),
   deleteSessionMount: vi.fn(async (_args: { readonly mountId: string }) => true),
   listSessionMounts: vi.fn(async () => [] as ReadonlyArray<Record<string, unknown>>),
+  inspectWorktree: vi.fn(async ({ worktreePath }: { readonly worktreePath: string }) => ({
+    kind: 'registered' as string,
+    path: worktreePath,
+    isMain: false,
+    isLocked: false,
+    lockReason: null as string | null,
+  })),
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
   updateSessionActiveProject: vi.fn(async () => undefined),
-  updateSessionActiveMount: vi.fn(async () => true),
+  updateSessionWriteDestination: vi.fn(async () => true),
   listWorktreesForSession: vi.fn(async () => [] as ReadonlyArray<never>),
   getWorkspaceById: vi.fn(async () => null),
   listProjectsForWorkspace: vi.fn(async () => [] as ReadonlyArray<never>),
   upsertSessionExternalTask: vi.fn(async () => undefined),
   upsertContextSlot: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),
+  acquireWorktreeWriter: vi.fn(async ({ path }: { readonly path: string }) =>
+    freeWriterLease({ path }),
+  ),
+  releaseWorktreeWriter: vi.fn(async ({ path }: { readonly path: string }) =>
+    freeWriterLease({ path }),
+  ),
+  cancelWorktreeWriter: vi.fn(async ({ path }: { readonly path: string }) =>
+    freeWriterLease({ path }),
+  ),
+  abandonWorktreeWriter: vi.fn(async ({ path }: { readonly path: string }) =>
+    freeWriterLease({ path }),
+  ),
+  listActiveResolveAttempts: vi.fn(async () => [] as ReadonlyArray<never>),
 };
+
+export const storyResolveQueries = createResolveQueryMocks();
 
 const freeWriterLease = ({ path }: { readonly path: string }) => ({
   path,
@@ -93,6 +116,23 @@ export const resetStorySpies = () => {
   for (const spy of Object.values(storySpies)) {
     spy.mockReset();
   }
+  storyResolveQueries.resetResolveQueryMocks();
+  for (const [name, value] of Object.entries(storyResolveQueries)) {
+    if (name !== 'resetResolveQueryMocks') {
+      (value as { readonly mockClear: () => void }).mockClear();
+    }
+  }
+  for (const spy of [
+    storySpies.acquireWorktreeWriter,
+    storySpies.releaseWorktreeWriter,
+    storySpies.cancelWorktreeWriter,
+    storySpies.abandonWorktreeWriter,
+  ]) {
+    spy.mockImplementation(async ({ path }: { readonly path: string }) =>
+      freeWriterLease({ path }),
+    );
+  }
+  storySpies.listActiveResolveAttempts.mockImplementation(async () => []);
   storySpies.removeWorktreeChecked.mockImplementation(
     async ({ worktreePath }: { worktreePath: string }) => ({
       kind: 'removed',
@@ -107,9 +147,20 @@ export const resetStorySpies = () => {
   );
   storySpies.deleteSessionMount.mockImplementation(async () => true);
   storySpies.listSessionMounts.mockImplementation(async () => []);
+  storySpies.inspectWorktree.mockImplementation(
+    async ({ worktreePath }: { readonly worktreePath: string }) => ({
+      kind: 'registered',
+      path: worktreePath,
+      isMain: false,
+      isLocked: false,
+      lockReason: null,
+    }),
+  );
 };
 
 export const dbModuleMock = () => ({
+  ...storyResolveQueries,
+  listActiveResolveAttempts: storySpies.listActiveResolveAttempts,
   getSetting: vi.fn(),
   setSetting: vi.fn(),
   getWorkspaceById: storySpies.getWorkspaceById,
@@ -153,7 +204,7 @@ export const dbModuleMock = () => ({
   updateSessionWorktreeBranch: storySpies.updateSessionWorktreeBranch,
   updateSessionWorktreeRepoSlug: vi.fn(async () => undefined),
   updateSessionActiveProject: storySpies.updateSessionActiveProject,
-  updateSessionActiveMount: storySpies.updateSessionActiveMount,
+  updateSessionWriteDestination: storySpies.updateSessionWriteDestination,
   upsertSessionExternalTask: storySpies.upsertSessionExternalTask,
   deleteSessionExternalTask: vi.fn(),
   listExternalTasksForWorkspace: vi.fn(async () => []),
@@ -301,7 +352,16 @@ export const worktreeModuleMock = () => ({
   worktreeChangedFiles: (path: string) => storySpies.worktreeChangedFiles(path),
   worktreeStatus: (path: string) => storySpies.worktreeStatus(path),
   gitCommonDirectory: (args: { readonly repoPath: string }) => storySpies.gitCommonDirectory(args),
+  acquireWorktreeWriter: (args: { readonly path: string }) =>
+    storySpies.acquireWorktreeWriter(args),
+  releaseWorktreeWriter: (args: { readonly path: string }) =>
+    storySpies.releaseWorktreeWriter(args),
+  cancelWorktreeWriter: (args: { readonly path: string }) => storySpies.cancelWorktreeWriter(args),
+  abandonWorktreeWriter: (args: { readonly path: string }) =>
+    storySpies.abandonWorktreeWriter(args),
+  holdsWorktreeWriter: vi.fn(() => false),
   changeWorktreeBranch: vi.fn(async () => undefined),
+  inspectWorktree: (args: { readonly worktreePath: string }) => storySpies.inspectWorktree(args),
   invalidateLocalBranchesCache: vi.fn(),
 });
 

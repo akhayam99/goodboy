@@ -17,11 +17,11 @@ import type {
 import { acquireWorktreeWriter, releaseWorktreeWriter } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { postThreadReply } from '../github/postThreadReply';
-import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { approvedPublicationScope } from './approvedPublicationScope';
+import { liveMountTarget } from './mountTarget';
 import { markThreadDone } from './markThreadDone';
 import { preparePublication } from './preparePublication';
-import { isDriftChecked, publicationDrift } from './publicationDrift';
+import { isDriftChecked, mountTargetDrift, publicationDrift } from './publicationDrift';
 import { loadPublicationsInto } from './publicationState';
 import { withPublicationLock } from './publicationLock';
 import { restoreResolvePublication } from './restoreResolvePublication';
@@ -88,11 +88,10 @@ export const publishConversations = async ({
   if (publication === undefined || publication.phase === 'cancelled') {
     return { kind: 'missing' };
   }
-  const repo = getSessionRepo({ get, sessionId });
-  if (repo === null && publication.requiresPush) {
+  if (publication.requiresPush && publication.mountTarget === null) {
     return { kind: 'missing' };
   }
-  const worktreePath = repo?.worktreePath ?? '';
+  const worktreePath = publication.mountTarget?.worktreePath ?? '';
   const frozen = await listResolvePublicationThreads({ db: tauriDatabase, publicationId });
   const locked = await withPublicationLock<LockedResult>({
     repo: publication.repo,
@@ -110,18 +109,28 @@ export const publishConversations = async ({
       }
       try {
         const rowsBefore = await listResolveThreads({ db: tauriDatabase, sessionId });
-        if (isDriftChecked({ publication })) {
+        const liveTarget = liveMountTarget({ get, sessionId, target: publication.mountTarget });
+        const targetDrift = mountTargetDrift({
+          frozenTarget: publication.mountTarget,
+          liveTarget,
+        });
+        const isDrifted = targetDrift !== null || isDriftChecked({ publication });
+        if (isDrifted) {
           const comments: ReadonlyArray<PrComment> =
             get().sessionGithub[sessionId]?.detail?.comments ?? [];
           const scope = await approvedPublicationScope({ sessionId });
-          const drift = await publicationDrift({
-            publication,
-            frozen,
-            rows: rowsBefore,
-            comments,
-            scope,
-            worktreePath,
-          });
+          const drift =
+            targetDrift === null
+              ? await publicationDrift({
+                  publication,
+                  frozen,
+                  rows: rowsBefore,
+                  comments,
+                  scope,
+                  worktreePath,
+                  liveTarget,
+                })
+              : [targetDrift];
           if (drift.length > 0) {
             await setResolvePublicationPhase({
               db: tauriDatabase,
@@ -157,7 +166,7 @@ export const publishConversations = async ({
             id: publicationId,
             phase: 'pushing',
           });
-          const error = await verifiedPush({ get, sessionId, publication, worktreePath });
+          const error = await verifiedPush({ get, sessionId, publication });
           if (error !== null) {
             await setResolvePublicationPhase({
               db: tauriDatabase,

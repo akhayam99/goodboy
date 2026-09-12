@@ -72,6 +72,7 @@ vi.mock('@goodboy/db', () => ({
   updateSessionMountBranch,
   updateSessionMountLifecycle: vi.fn(async () => true),
   updateSessionActiveMount: vi.fn(async () => true),
+  updateSessionWriteDestination: vi.fn(async () => true),
   updateSessionActiveProject: vi.fn(async () => undefined),
   getMountOperation,
   upsertMountOperation,
@@ -180,6 +181,7 @@ type Store = {
   sessionMounts: Record<string, ReadonlyArray<unknown>>;
   mountBranchObservations: Record<string, ReadonlyArray<unknown>>;
   sessionActiveProject: Record<string, string>;
+  sessionActiveMount: Record<string, string | null>;
   sessionGithub: Record<string, unknown>;
   sessionProjectPrs: Record<string, Readonly<Record<string, ReadonlyArray<unknown>>>>;
   sessionSelectedPrNumber: Record<string, number | null>;
@@ -200,9 +202,16 @@ type MakeStoreParams = {
   readonly mounts: ReadonlyArray<Mount>;
   readonly branch: string;
   readonly activeProjectId?: string;
+  readonly activeMountId?: string;
 };
 
-const makeStore = ({ projects, mounts, branch, activeProjectId }: MakeStoreParams): Store => ({
+const makeStore = ({
+  projects,
+  mounts,
+  branch,
+  activeProjectId,
+  activeMountId,
+}: MakeStoreParams): Store => ({
   sessions: [
     {
       id: SESSION_ID,
@@ -223,6 +232,7 @@ const makeStore = ({ projects, mounts, branch, activeProjectId }: MakeStoreParam
   sessionMounts: {},
   mountBranchObservations: {},
   sessionActiveProject: activeProjectId === undefined ? {} : { [SESSION_ID]: activeProjectId },
+  sessionActiveMount: activeMountId === undefined ? {} : { [SESSION_ID]: activeMountId },
   sessionGithub: {},
   sessionProjectPrs: {},
   sessionSelectedPrNumber: {},
@@ -376,7 +386,12 @@ const twoProjectStore = (activeProjectId?: string) =>
       },
     ],
     branch: API_BRANCH,
-    ...(activeProjectId === undefined ? {} : { activeProjectId }),
+    ...(activeProjectId === undefined
+      ? {}
+      : {
+          activeProjectId,
+          activeMountId: activeProjectId === WEB_PROJECT_ID ? 'mount-web' : 'mount-api',
+        }),
   });
 
 beforeEach(() => {
@@ -424,6 +439,7 @@ describe('story: a branchless folder session lives and dies without git', () => 
     const store = folderStore();
 
     await changeSessionBranch(vi.fn(), (() => store) as never)(SESSION_ID, {
+      mountId: 'mount-project' as never,
       branch: 'main',
       createNew: false,
     });
@@ -466,6 +482,7 @@ describe('story: a repo-backed session keeps its git lifecycle', () => {
     listSessionMounts.mockResolvedValue(mountRowsFor(store.sessionProjectMounts[SESSION_ID]!));
 
     await changeSessionBranch(vi.fn(), (() => store) as never)(SESSION_ID, {
+      mountId: 'mount-api' as never,
       branch: 'main',
       createNew: false,
     });
@@ -508,24 +525,32 @@ describe('story: a repo-backed session keeps its git lifecycle', () => {
 });
 
 describe('story: a two-project session routes git work through the active mount', () => {
-  it('pushes from the first mount when no explicit active mount is set', async () => {
+  it('pushes from the mount it is handed even before the session chose one', async () => {
     const store = twoProjectStore();
 
-    await pushSessionBranch((() => store) as never, SESSION_ID);
+    const result = await pushSessionBranch({
+      get: (() => store) as never,
+      sessionId: SESSION_ID,
+      mountId: 'mount-web' as never,
+    });
 
-    expect(gitPush).toHaveBeenCalledOnce();
+    expect(result.ok).toBe(true);
     expect(gitPush).toHaveBeenCalledWith(
-      API_WORKTREE_PATH,
-      API_BRANCH,
+      WEB_WORKTREE_PATH,
+      WEB_BRANCH,
       WORKSPACE_ID,
-      API_PROJECT_ID,
+      WEB_PROJECT_ID,
     );
   });
 
   it('pushes from the second mount when it is the explicit active mount', async () => {
     const store = twoProjectStore(WEB_PROJECT_ID);
 
-    await pushSessionBranch((() => store) as never, SESSION_ID);
+    await pushSessionBranch({
+      get: (() => store) as never,
+      sessionId: SESSION_ID,
+      mountId: 'mount-web' as never,
+    });
 
     expect(gitPush).toHaveBeenCalledOnce();
     expect(gitPush).toHaveBeenCalledWith(
@@ -554,6 +579,7 @@ describe('story: a two-project session routes git work through the active mount'
     listSessionMounts.mockResolvedValue(mountRowsFor(store.sessionProjectMounts[SESSION_ID]!));
 
     await changeSessionBranch(vi.fn(), (() => store) as never)(SESSION_ID, {
+      mountId: 'mount-web' as never,
       branch: 'gb/web-next',
       createNew: false,
     });

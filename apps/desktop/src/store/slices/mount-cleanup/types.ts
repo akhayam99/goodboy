@@ -12,7 +12,7 @@ export type { SetFn, GetFn } from '../../slice-types';
 
 export type CleanupTarget = {
   readonly sessionId: SessionId;
-  readonly mountId: MountId | null;
+  readonly mountId: MountId;
   readonly projectId: ProjectId | null;
   readonly repoRoot: string;
   readonly worktreePath: string;

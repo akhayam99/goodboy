@@ -41,15 +41,19 @@ export const WriteDestinationControl = ({ sessionId, agentId }: Props) => {
   const nextDetail = writeDestinationDetail(next);
   const runningDetail = running === null ? null : writeDestinationDetail(running);
 
-  const primaryLabel =
-    running === null
+  const isUnselected = next.kind === 'unselected';
+
+  const primaryLabel = isUnselected
+    ? 'Choose destination'
+    : running === null
       ? `Write to: ${nextLabel}`
       : diverges
         ? `In progress: ${runningLabel}`
         : `In progress and next turns: ${nextLabel}`;
 
-  const primaryTitle =
-    running === null
+  const primaryTitle = isUnselected
+    ? nextDetail
+    : running === null
       ? `Writing to ${nextDetail}`
       : diverges
         ? `This turn started on ${runningDetail}. Next turns write to ${nextDetail} unless changed.`
@@ -87,7 +91,7 @@ export const WriteDestinationControl = ({ sessionId, agentId }: Props) => {
   const trigger = (
     <Chip
       as="button"
-      tone={diverges ? 'warning' : 'neutral'}
+      tone={diverges || isUnselected ? 'warning' : 'neutral'}
       size="xs"
       bordered={false}
       icon={<Icon size={ICON_SIZE.row} aria-hidden />}
@@ -115,7 +119,9 @@ export const WriteDestinationControl = ({ sessionId, agentId }: Props) => {
           <div className="flex flex-col gap-1">
             <span className="text-sm font-semibold text-foreground">Write destination</span>
             <span className="text-2xs text-muted-foreground">
-              Applies to the next turns of this session, for every agent.
+              {isUnselected
+                ? 'This session has more than one branch mount. Pick the one the next turns write to.'
+                : 'Applies to the next turns of this session, for every agent.'}
             </span>
           </div>
 

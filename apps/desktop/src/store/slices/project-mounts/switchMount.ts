@@ -160,7 +160,7 @@ export const switchMount = (set: SetFn, get: GetFn) => {
         await get().recordSessionEvent({
           sessionId,
           kind: 'branch_switched',
-          payload: { from: previousBranch, to: target },
+          payload: { mountId, from: previousBranch, to: target },
         });
         return requireMountView({ views: nextViews, mountId });
       },

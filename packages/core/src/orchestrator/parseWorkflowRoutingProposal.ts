@@ -7,7 +7,9 @@ import type {
   WorkflowTaskType,
 } from '@goodboy/types';
 import { PROVIDER_IDS } from '@goodboy/types';
-import { MODEL_CATALOGS } from '../providers/catalogs';
+import { catalogModelForId } from '../providers/catalogModelForId';
+import { resolvedStoredModelId } from '../providers/resolvedStoredModelId';
+import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
 
 export const WORKFLOW_ROUTING_REASON_LIMIT = 240;
 
@@ -142,10 +144,8 @@ export const parseWorkflowRoutingProposal = ({
       profile,
     };
   }
-  const model = MODEL_CATALOGS[selectedProvider].find(
-    (candidate) => candidate.key === requestedModel,
-  );
-  if (model === undefined) {
+  const model = catalogModelForId({ provider: selectedProvider, modelId: requestedModel });
+  if (model === null) {
     return {
       kind: 'invalid',
       requested,
@@ -153,6 +153,11 @@ export const parseWorkflowRoutingProposal = ({
       profile,
     };
   }
+  const stored = resolveStoredModelSelection({ provider: selectedProvider, id: requestedModel });
+  const executedModelId = resolvedStoredModelId({
+    provider: selectedProvider,
+    selection: stored.selection,
+  });
   const effort = MODEL_EFFORTS.find((candidate) => candidate === requestedEffort);
   if (requestedEffort !== null && effort === undefined) {
     return {
@@ -168,7 +173,7 @@ export const parseWorkflowRoutingProposal = ({
     proposal: {
       pick: {
         provider: selectedProvider,
-        model: model.key,
+        model: executedModelId,
         effort: effort ?? null,
       },
       reason: cappedRoutingReason(modelReason ?? 'The agent emitted this routing selection.'),

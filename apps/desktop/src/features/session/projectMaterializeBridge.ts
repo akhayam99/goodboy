@@ -10,6 +10,9 @@ import {
   runMaterializationBatch,
 } from '../../store/materializationGate';
 import { useAppStore } from '../../store/store';
+import { findMountById } from '../../store/slices/project-mounts/findMountById';
+import { recoverSoleMount } from '../../store/slices/project-mounts/recoverSoleMount';
+import { selectWritableMounts } from '../../store/slices/project-mounts/selectors';
 import { isMainWindow } from '../workspace/window';
 
 const MATERIALIZE_EVENT = 'query-bridge://project-materialize';
@@ -69,14 +72,30 @@ export const executeMaterializeRequest = async (
         };
       }
       try {
-        const mount = await get().materializeProject({
+        const outcome = await get().ensureProjectMounted({
           sessionId: request.sessionId,
           projectId: request.projectId,
           reason: request.reason,
         });
+        if (outcome.status === 'already-mounted' && outcome.mountIds.length !== 1) {
+          return {
+            ok: false,
+            error: `${project.name} already has ${outcome.mountIds.length} branch mounts. Run \`mount list\` and work in the one you mean.`,
+          };
+        }
+        const owned = selectWritableMounts({ state: get(), sessionId: request.sessionId }).filter(
+          (candidate) => candidate.projectId === request.projectId,
+        );
+        const mount =
+          outcome.status === 'created'
+            ? findMountById({ mounts: owned, mountId: outcome.createdMountId })
+            : recoverSoleMount({ mounts: owned });
+        if (mount === null) {
+          return { ok: false, error: `the mount of ${project.name} is not available` };
+        }
         return {
           ok: true,
-          ...(mount.mountId === undefined ? {} : { mountId: mount.mountId }),
+          mountId: mount.mountId,
           mountPath: mount.worktreePath,
           branch: mount.branch,
         };

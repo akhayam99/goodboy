@@ -1,18 +1,22 @@
-import { updateSessionActiveMount, updateSessionActiveProject } from '@goodboy/db';
+import { updateSessionWriteDestination } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { deriveBitbucketProjection } from '../bitbucket-pr/mountBitbucketPr';
 import { deriveGithubProjection } from '../github/mountGithub';
 import { deriveGitlabProjection } from '../gitlab-mr/mountGitlabMr';
+import { findMountById } from './findMountById';
 import { mountError } from './mountErrors';
+import { selectSelectedMountId } from './selectedMountId';
 import { selectWritableMounts } from './selectors';
+import { writeDestinationPatch } from './writeDestinationPatch';
 import type { GetFn, MountKeyInput, SetFn } from './types';
 
 export const setSessionActiveMount = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, mountId }: MountKeyInput): Promise<void> => {
-    const mount = selectWritableMounts({ state: get(), sessionId }).find(
-      (candidate) => candidate.mountId === mountId,
-    );
-    if (mount === undefined) {
+    const mount = findMountById({
+      mounts: selectWritableMounts({ state: get(), sessionId }),
+      mountId,
+    });
+    if (mount === null) {
       throw mountError({
         code: 'mount-missing',
         message: `mount is not available in this session: ${mountId}`,
@@ -20,24 +24,26 @@ export const setSessionActiveMount = (set: SetFn, get: GetFn) => {
       });
     }
     const projectId = mount.projectId;
-    const previousMountId = get().sessionActiveMount[sessionId] ?? null;
+    const previousMountId = selectSelectedMountId({ state: get(), sessionId });
     const projectName =
       get().projects.find((candidate) => candidate.id === projectId)?.name ?? mount.mountName;
+    const persisted = await updateSessionWriteDestination({
+      db: tauriDatabase,
+      sessionId,
+      mountId,
+    });
+    if (!persisted) {
+      throw mountError({
+        code: 'mount-missing',
+        message: `mount is no longer writable in this session: ${mountId}`,
+        mountId,
+      });
+    }
     set((state) => {
-      const next = {
-        ...state,
-        sessionActiveMount: { ...state.sessionActiveMount, [sessionId]: mountId },
-        sessionActiveProject: { ...state.sessionActiveProject, [sessionId]: projectId },
-      };
+      const patch = writeDestinationPatch({ state, sessionId, mount });
+      const next = { ...state, ...patch };
       return {
-        sessions: state.sessions.map((session) =>
-          session.id === sessionId
-            ? { ...session, activeProjectId: projectId, activeMountId: mountId }
-            : session,
-        ),
-        sessionActiveMount: next.sessionActiveMount,
-        sessionActiveProject: next.sessionActiveProject,
-        sessionBranches: { ...state.sessionBranches, [sessionId]: mount.branch },
+        ...patch,
         ...deriveGithubProjection({ state: next, sessionId }),
         ...deriveGitlabProjection({ state: next, sessionId }),
         ...deriveBitbucketProjection({ state: next, sessionId }),
@@ -48,8 +54,6 @@ export const setSessionActiveMount = (set: SetFn, get: GetFn) => {
         .refreshSessionPr(sessionId, { force: true, silent: true, retries: 1, mountId })
         .then(() => get().refreshSessionPrDetail(sessionId, { silent: true, mountId }));
     }
-    await updateSessionActiveProject({ db: tauriDatabase, id: sessionId, projectId });
-    await updateSessionActiveMount({ db: tauriDatabase, sessionId, mountId });
     if (previousMountId === mountId) {
       return;
     }

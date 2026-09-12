@@ -297,3 +297,60 @@ describe('parseOrchestratorDecision', () => {
     expect(empty).not.toHaveProperty('runSummary');
   });
 });
+
+describe('parseOrchestratorDecision, combo axes', () => {
+  it('keeps the cursor fast combo the orchestrator asked for', () => {
+    expect(
+      parseOrchestratorDecision({
+        raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Fix","role":"implementer","promptPrefix":"Fix it.","model":"composer-2.5-fast"}}<</orchestrator>>',
+        provider: 'cursor',
+      }),
+    ).toEqual({
+      action: 'next',
+      reason: 'x',
+      step: {
+        name: 'Fix',
+        role: 'implementer',
+        promptPrefix: 'Fix it.',
+        model: 'composer-2.5-fast',
+      },
+    });
+  });
+
+  it('keeps the cursor thinking combo the orchestrator asked for', () => {
+    const decision = parseOrchestratorDecision({
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Plan","role":"planner","promptPrefix":"Plan it.","model":"claude-4.6-sonnet-medium-thinking"}}<</orchestrator>>',
+      provider: 'cursor',
+    });
+
+    expect(decision?.action === 'next' && decision.step.model).toBe(
+      'claude-4.6-sonnet-medium-thinking',
+    );
+  });
+
+  it('leaves a plain key alone', () => {
+    const decision = parseOrchestratorDecision({
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Fix","role":"implementer","promptPrefix":"Fix it.","model":"composer-2.5"}}<</orchestrator>>',
+      provider: 'cursor',
+    });
+
+    expect(decision?.action === 'next' && decision.step.model).toBe('composer-2.5');
+  });
+});
+
+describe('parseOrchestratorDecision, effort beside a combo', () => {
+  it('keeps an effort the combo supports', () => {
+    const decision = parseOrchestratorDecision({
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Plan","role":"planner","promptPrefix":"Plan it.","model":"claude-opus-5-thinking-high","effort":"high"}}<</orchestrator>>',
+      provider: 'cursor',
+    });
+
+    expect(decision?.action === 'next' && decision.step).toEqual({
+      name: 'Plan',
+      role: 'planner',
+      promptPrefix: 'Plan it.',
+      model: 'claude-opus-5-thinking-high',
+      effort: 'high',
+    });
+  });
+});

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,
+  MountId,
   ProjectId,
   Session,
   SessionId,
@@ -42,6 +43,14 @@ const MOUNTS: ReadonlyArray<SessionProjectMount> = [
     worktreePath: '/sessions/one/web',
     repoRoot: '/repo/web',
     branch: 'ak/one',
+    mountId: 'mount-fixture-2' as MountId,
+    sessionId: SESSION_ID,
+    lastWorktreePath: null,
+    baseBranch: null,
+    parallelIndex: 0,
+    isAttached: true,
+    diskState: 'present',
+    revision: 0,
   },
   {
     projectId: API_ID,
@@ -49,16 +58,24 @@ const MOUNTS: ReadonlyArray<SessionProjectMount> = [
     worktreePath: '/sessions/one/api',
     repoRoot: '/repo/api',
     branch: 'ak/one',
+    mountId: 'mount-fixture-1' as MountId,
+    sessionId: SESSION_ID,
+    lastWorktreePath: null,
+    baseBranch: null,
+    parallelIndex: 0,
+    isAttached: true,
+    diskState: 'present',
+    revision: 0,
   },
 ];
 
 describe('resolveActiveMountPath', () => {
-  it('follows the active project rather than the first mount', () => {
+  it('follows the selected mount, not the active project', () => {
     const path = resolveActiveMountPath({
       state: {
         sessions: [SESSION],
         sessionMounts: {},
-        sessionActiveMount: {},
+        sessionActiveMount: { [SESSION_ID]: 'mount-fixture-1' as MountId },
         sessionProjectMounts: { [SESSION_ID]: MOUNTS },
         sessionActiveProject: { [SESSION_ID]: API_ID },
       },
@@ -68,10 +85,10 @@ describe('resolveActiveMountPath', () => {
     expect(path).toBe('/sessions/one/api');
   });
 
-  it('falls back to the session row when the store has no active project yet', () => {
+  it('reads the selection persisted on the session row', () => {
     const path = resolveActiveMountPath({
       state: {
-        sessions: [SESSION],
+        sessions: [{ ...SESSION, activeMountId: 'mount-fixture-1' as MountId }],
         sessionMounts: {},
         sessionActiveMount: {},
         sessionProjectMounts: { [SESSION_ID]: MOUNTS },
@@ -83,7 +100,7 @@ describe('resolveActiveMountPath', () => {
     expect(path).toBe('/sessions/one/api');
   });
 
-  it('falls back to the first mount when no project is active', () => {
+  it('has no path while two mounts wait for a choice', () => {
     const path = resolveActiveMountPath({
       state: {
         sessions: [{ ...SESSION, activeProjectId: undefined }],
@@ -95,10 +112,10 @@ describe('resolveActiveMountPath', () => {
       sessionId: SESSION_ID,
     });
 
-    expect(path).toBe('/sessions/one/web');
+    expect(path).toBeNull();
   });
 
-  it('keeps the first mount when the active project is no longer mounted', () => {
+  it('recovers the only mount left when the active project is no longer mounted', () => {
     const path = resolveActiveMountPath({
       state: {
         sessions: [SESSION],

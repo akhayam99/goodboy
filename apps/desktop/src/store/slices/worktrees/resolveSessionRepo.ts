@@ -1,5 +1,6 @@
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
+import { findMountById } from '../project-mounts/findMountById';
 import { selectActiveMount, selectWritableMounts } from '../project-mounts/selectors';
 
 export type SessionRepo = Readonly<{
@@ -8,8 +9,8 @@ export type SessionRepo = Readonly<{
   branch: string;
   mountName: string | null;
   projectId: ProjectId;
-  mountId: MountId | null;
-  revision: number | null;
+  mountId: MountId;
+  revision: number;
 }>;
 
 type State = Pick<
@@ -40,8 +41,7 @@ export const resolveSessionRepo = ({
   const activeMount =
     mountId === undefined
       ? selectActiveMount({ state, sessionId })
-      : (selectWritableMounts({ state, sessionId }).find((mount) => mount.mountId === mountId) ??
-        null);
+      : findMountById({ mounts: selectWritableMounts({ state, sessionId }), mountId });
   if (activeMount === null) {
     return null;
   }
@@ -55,7 +55,7 @@ export const resolveSessionRepo = ({
     branch: activeMount.branch,
     mountName: activeMount.mountName,
     projectId: activeMount.projectId,
-    mountId: activeMount.mountId ?? null,
-    revision: activeMount.revision ?? null,
+    mountId: activeMount.mountId,
+    revision: activeMount.revision,
   };
 };

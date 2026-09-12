@@ -12,7 +12,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import {
-  resolveModelForProvider,
+  resolveModelIdForProvider,
   resolveRoleRouting,
   type WorkflowRoutingAvailabilitySnapshot,
 } from '@goodboy/core';
@@ -117,7 +117,7 @@ export const preSpawnWorkflowAgents = async ({
       sessionEffort: sessionEffort ?? null,
     });
     const provider = routing.provider;
-    const model = resolveModelForProvider({ provider, modelId: routing.model });
+    const model = resolveModelIdForProvider({ provider, modelId: routing.model });
     const agent = await invokeAgentInsert({
       sessionId,
       stepId: step.id,

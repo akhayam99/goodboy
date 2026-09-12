@@ -151,6 +151,8 @@ const PROJECT_MOUNTS: ReadonlyArray<SessionProjectMount> = MOUNT_SEEDS.map((seed
   parallelIndex: seed.parallelIndex,
   diskState: 'present',
   revision: 4,
+  sessionId: SESSION_ID,
+  isAttached: true,
 }));
 
 const OBSERVATIONS: ReadonlyArray<MountBranchObservation> = [

@@ -2,7 +2,7 @@
 
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SessionId, WorktreeStatus } from '@goodboy/types';
+import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 
 type ToastAction = { readonly label: string; readonly onClick: () => void };
 
@@ -67,6 +67,14 @@ vi.mock('../../components/AgentSpawnConfig/taskModelAgentSpawnConfig', () => ({
 import { rebasePromptFor, useRebaseAgent } from './index';
 
 const sessionId = 'session-1' as SessionId;
+const mountId = 'mount-1' as MountId;
+
+const soleMount = {
+  mountId: 'mount-1',
+  projectId: 'project-1',
+  worktreePath: '/wt/app',
+  mountName: 'app',
+};
 
 const status = (commitsBehindMain: number): WorktreeStatus =>
   ({
@@ -89,8 +97,8 @@ beforeEach(() => {
   state.endSessionCreation.mockReset();
   state.recordSessionEvent.mockReset();
   state.recordSessionEvent.mockResolvedValue(undefined);
-  state.sessionProjectMounts = {};
-  state.projects = [];
+  state.sessionProjectMounts = { [sessionId]: [soleMount] };
+  state.projects = [{ id: 'project-1', baseBranch: 'main', name: 'app' }];
   showToast.mockClear();
 });
 
@@ -113,7 +121,7 @@ describe('useRebaseAgent', () => {
 
     expect(result.current.canRebase).toBe(false);
 
-    await act(() => result.current.run());
+    await act(() => result.current.run({ mountId }));
 
     expect(state.spawnAgent).not.toHaveBeenCalled();
     expect(state.beginSessionCreation).not.toHaveBeenCalled();
@@ -124,7 +132,7 @@ describe('useRebaseAgent', () => {
 
     expect(result.current.canRebase).toBe(false);
 
-    await act(() => result.current.run());
+    await act(() => result.current.run({ mountId }));
 
     expect(state.spawnAgent).not.toHaveBeenCalled();
   });
@@ -132,14 +140,14 @@ describe('useRebaseAgent', () => {
   it('spawns the rebase agent with the resolved task model without selecting it', async () => {
     const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
 
-    await act(() => result.current.run());
+    await act(() => result.current.run({ mountId }));
 
     expect(state.spawnAgent).toHaveBeenCalledWith(
       sessionId,
       expect.objectContaining({
         name: 'Rebase on main',
         initialPrompt: expect.stringContaining(
-          '- Push the rebased branch with "$GOODBOY_BIN" query github push --force-with-lease; fall back to git push --force-with-lease only if the bridge is unavailable.',
+          '- Push the rebased branch with "$GOODBOY_BIN" query github push --mount mount-1 --force-with-lease; fall back to git push --force-with-lease only if the bridge is unavailable.',
         ),
         provider: 'codex',
         model: 'gpt-5.6-terra',
@@ -158,7 +166,7 @@ describe('useRebaseAgent', () => {
   it('spawns without taking the focus and marks the branch action in flight', async () => {
     const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
 
-    await act(() => result.current.run());
+    await act(() => result.current.run({ mountId }));
 
     expect(state.spawnAgent).toHaveBeenCalledWith(
       sessionId,
@@ -175,7 +183,7 @@ describe('useRebaseAgent', () => {
     state.spawnAgent.mockResolvedValueOnce('agent-new');
     const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
 
-    await act(() => result.current.run());
+    await act(() => result.current.run({ mountId }));
     const action = showToast.mock.calls[0]?.[2]?.action;
     expect(action?.label).toBe('Open the rebase agent');
 
@@ -189,7 +197,7 @@ describe('useRebaseAgent', () => {
   it('offers an action that opens the agent once the rebase settles', async () => {
     const { result, rerender } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
 
-    await act(() => result.current.run());
+    await act(() => result.current.run({ mountId }));
     state.sessionPhaseRuns = {
       [sessionId]: [{ id: 'agent-1', name: 'Rebase on main', status: 'failed' }],
     };
@@ -207,21 +215,31 @@ describe('useRebaseAgent', () => {
     expect(state.setActiveLens).toHaveBeenCalledWith(sessionId, 'agents');
   });
 
-  it('records the request for the targeted project so the suggestion is consumed', async () => {
+  it('records the request for the mount it was handed so the suggestion is consumed', async () => {
     state.projects = [
       { id: 'project-web', baseBranch: 'develop', name: 'web' },
       { id: 'project-api', baseBranch: null, name: 'api' },
     ];
     state.sessionProjectMounts = {
       [sessionId]: [
-        { projectId: 'project-api', worktreePath: '/wt/api', mountName: 'api' },
-        { projectId: 'project-web', worktreePath: '/wt/web', mountName: 'web' },
+        {
+          mountId: 'mount-api',
+          projectId: 'project-api',
+          worktreePath: '/wt/api',
+          mountName: 'api',
+        },
+        {
+          mountId: 'mount-web',
+          projectId: 'project-web',
+          worktreePath: '/wt/web',
+          mountName: 'web',
+        },
       ],
     };
     state.spawnAgent.mockResolvedValueOnce('agent-web');
     const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(126) }));
 
-    await act(() => result.current.run({ projectId: 'project-web' as never }));
+    await act(() => result.current.run({ mountId: 'mount-web' as MountId }));
 
     expect(state.spawnAgent).toHaveBeenCalledWith(
       sessionId,
@@ -234,6 +252,7 @@ describe('useRebaseAgent', () => {
       sessionId,
       kind: 'rebase_requested',
       payload: {
+        mountId: 'mount-web',
         projectId: 'project-web',
         projectName: 'web',
         worktreePath: '/wt/web',
@@ -242,6 +261,23 @@ describe('useRebaseAgent', () => {
         agentId: 'agent-web',
       },
     });
+  });
+
+  it('spawns the rebase agent on the mount it names', async () => {
+    const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
+
+    await act(() => result.current.run({ mountId }));
+
+    expect(state.spawnAgent).toHaveBeenCalledWith(sessionId, expect.objectContaining({ mountId }));
+  });
+
+  it('refuses a mount the session no longer holds', async () => {
+    const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
+
+    await act(() => result.current.run({ mountId: 'mount-gone' as MountId }));
+
+    expect(state.spawnAgent).not.toHaveBeenCalled();
+    expect(result.current.error).toBe('this branch mount is no longer in the session');
   });
 
   it('carries the mount into the canned push command and the working instruction', () => {
@@ -288,18 +324,11 @@ describe('useRebaseAgent', () => {
     );
   });
 
-  it('leaves the push command unscoped when the session has no mount to name', () => {
-    const prompt = rebasePromptFor({ baseBranch: 'main', mountId: null, worktreePath: null });
-
-    expect(prompt).toContain('query github push --force-with-lease');
-    expect(prompt).not.toContain('--mount');
-  });
-
   it('records nothing when the spawn fails', async () => {
     state.spawnAgent.mockRejectedValueOnce(new Error('agent launch failed'));
     const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
 
-    await act(() => result.current.run());
+    await act(() => result.current.run({ mountId }));
 
     expect(state.recordSessionEvent).not.toHaveBeenCalled();
   });
@@ -308,7 +337,7 @@ describe('useRebaseAgent', () => {
     state.spawnAgent.mockRejectedValueOnce(new Error('agent launch failed'));
     const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
 
-    await act(() => result.current.run());
+    await act(() => result.current.run({ mountId }));
 
     expect(result.current.error).toBe('agent launch failed');
     expect(state.endSessionCreation).toHaveBeenCalledWith(sessionId, 'creation-1');
@@ -321,7 +350,7 @@ describe('useRebaseAgent', () => {
     const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
 
     expect(result.current.isRunning).toBe(true);
-    await act(() => result.current.run());
+    await act(() => result.current.run({ mountId }));
     await waitFor(() => expect(state.spawnAgent).not.toHaveBeenCalled());
   });
 });

@@ -120,6 +120,7 @@ export const toRelPath = (absPath: string, workingDir: string): string => {
 type SummarizerQueueEntry = {
   readonly turnInput: string;
   readonly turnOutput: string;
+  readonly workingDir: string | null;
   readonly oversizeRetried: boolean;
   readonly parseRetried?: boolean;
   readonly providerAttempt?: number;
@@ -213,14 +214,25 @@ const enqueueSummarizerEntry = ({ set, get, sessionId, entry }: Params): void =>
   });
 };
 
-export const enqueueSummarizer = (
-  set: SetFn,
-  get: GetFn,
-  sessionId: SessionId,
-  turnInput: string,
-  turnOutput: string,
-  taskModelOverride?: TaskModelPreference,
-): void => {
+type EnqueueParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly turnInput: string;
+  readonly turnOutput: string;
+  readonly workingDir: string | null;
+  readonly taskModelOverride?: TaskModelPreference;
+};
+
+export const enqueueSummarizer = ({
+  set,
+  get,
+  sessionId,
+  turnInput,
+  turnOutput,
+  workingDir,
+  taskModelOverride,
+}: EnqueueParams): void => {
   enqueueSummarizerEntry({
     set,
     get,
@@ -228,6 +240,7 @@ export const enqueueSummarizer = (
     entry: {
       turnInput,
       turnOutput,
+      workingDir,
       oversizeRetried: false,
       ...(taskModelOverride && { taskModelOverride }),
     },
@@ -235,7 +248,7 @@ export const enqueueSummarizer = (
 };
 
 const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<void> => {
-  const { turnInput, turnOutput } = entry;
+  const { turnInput, turnOutput, workingDir } = entry;
   const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
   const session = get().sessions.find((s) => s.id === sessionId);
@@ -274,7 +287,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
             lastUpdate: now(),
             error: 'every summarizer provider is cooling down',
             lastUsage: prev?.lastUsage ?? null,
-            lastAttempt: { turnInput, turnOutput },
+            lastAttempt: { turnInput, turnOutput, workingDir },
           },
         },
       };
@@ -303,20 +316,19 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
           lastUpdate: prev?.lastUpdate ?? null,
           error: null,
           lastUsage: prev?.lastUsage ?? null,
-          lastAttempt: { turnInput, turnOutput },
+          lastAttempt: { turnInput, turnOutput, workingDir },
         },
       },
     };
   });
 
   try {
-    const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
     const summarizer = new Summarizer({
       providerId: taskModel.providerId,
       model: taskModel.model,
       ...(taskModel.effort != null && { effort: taskModel.effort }),
       invokeFn: invoke,
-      ...(worktreePath != null && { workingDir: worktreePath }),
+      ...(workingDir !== null && { workingDir }),
     });
     const prevSlots = get().sessionSlots[sessionId] ?? [];
     const slotValueSnapshot = new Map(prevSlots.map((slot) => [slot.key, slot.value]));
@@ -546,7 +558,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
             lastUpdate: now(),
             error: willRetry ? null : message,
             lastUsage: prev?.lastUsage ?? null,
-            lastAttempt: prev?.lastAttempt ?? { turnInput, turnOutput },
+            lastAttempt: prev?.lastAttempt ?? { turnInput, turnOutput, workingDir },
           },
         },
       };
@@ -759,7 +771,7 @@ export const captureMaterializeRequestsFromTurn = async ({
           continue;
         }
         try {
-          await get().materializeProject({
+          await get().ensureProjectMounted({
             sessionId,
             projectId: project.id,
             reason: request.reason,

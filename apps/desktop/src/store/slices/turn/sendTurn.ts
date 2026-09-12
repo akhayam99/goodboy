@@ -32,6 +32,8 @@ import type {
   Message,
   MessageAttachment,
   MessageId,
+  MountId,
+  MountTargetSnapshot,
   PermissionRule,
   ProviderId,
   ProviderRun,
@@ -129,6 +131,7 @@ import { completeResolvedAgent } from './completeResolvedAgent';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
 import { resolveSkillPrompt } from './resolveSkillPrompt';
 import { persistAttachments } from './persistAttachments';
+import { pickedTurnExecution } from './pickedTurnExecution';
 import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { fallbackNoticeMessage } from './fallbackNoticeMessage';
@@ -152,6 +155,8 @@ const EFFORT_FLAG_BY_PROVIDER = {
 type Input = {
   sessionId: SessionId;
   agentId?: AgentId;
+  mountId?: MountId;
+  mountTarget?: MountTargetSnapshot;
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
@@ -188,7 +193,18 @@ type TurnLease = {
 
 export const sendTurn = (set: SetFn, get: GetFn) => {
   const runOnce = async (
-    { sessionId, agentId, content, attachments, override, force, origin, retry }: Input,
+    {
+      sessionId,
+      agentId,
+      mountId,
+      mountTarget,
+      content,
+      attachments,
+      override,
+      force,
+      origin,
+      retry,
+    }: Input,
     lease: TurnLease,
   ): Promise<SendTurnResult> => {
     const before = get();
@@ -208,9 +224,37 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const workspaceProjects = before.projects.filter(
       (project) => project.workspaceId === session.workspaceId,
     );
-    const activeMount = selectActiveMount({ state: before, sessionId }) ?? undefined;
-    const turnMountId = activeMount?.mountId ?? null;
-    const turnMountRevision = activeMount?.revision ?? null;
+    const writableMounts = selectWritableMounts({ state: before, sessionId });
+    const aimedMountId = mountTarget?.mountId ?? mountId;
+    const aimedMount =
+      aimedMountId === undefined
+        ? null
+        : selectMountById({ state: before, sessionId, mountId: aimedMountId });
+    if (aimedMountId !== undefined && aimedMount === null) {
+      throw new Error('The branch mount this turn was aimed at is no longer in the session.');
+    }
+    const isFrozenTargetHeld =
+      mountTarget === undefined ||
+      (aimedMount !== null &&
+        aimedMount.worktreePath === mountTarget.worktreePath &&
+        aimedMount.revision === mountTarget.mountRevision);
+    if (!isFrozenTargetHeld) {
+      throw new Error('the branch mount this turn was queued on changed before it could start');
+    }
+    const activeMount = aimedMount ?? selectActiveMount({ state: before, sessionId }) ?? undefined;
+    if (activeMount === undefined && writableMounts.length > 0) {
+      throw new Error('Choose the branch mount this session writes to before sending a turn.');
+    }
+    const turnTarget =
+      activeMount === undefined
+        ? null
+        : {
+            mountId: activeMount.mountId,
+            mountRevision: activeMount.revision,
+            worktreePath: activeMount.worktreePath,
+          };
+    const turnMountId = turnTarget?.mountId ?? null;
+    const turnMountRevision = turnTarget?.mountRevision ?? null;
     const workingDir =
       activeMount !== undefined ? activeMount.worktreePath : await scratchDirPrepare({ sessionId });
     const isPlainSessionDir =
@@ -248,6 +292,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           mount: activeMount ?? null,
           projectName: turnDestinationProjectName,
           scratchPath: activeMount === undefined ? workingDir : null,
+          mountCount: writableMounts.length,
         }),
       },
     }));
@@ -497,16 +542,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       throw new Error(`resolved model args omit ${modelFlag} for ${provider}`);
     }
     const model = spawnModel;
+    const picked = pickedTurnExecution({ override: pickedOverride });
+    const ranAsPicked = picked.kind === 'unspecified' || picked.id === spawnModel;
     if (
       pickedOverride != null &&
-      (provider !== pickedOverride.providerId ||
-        (pickedOverride.model != null && modelSelection.key !== pickedOverride.model))
+      (provider !== pickedOverride.providerId || picked.kind === 'unresolved' || !ranAsPicked)
     ) {
       void get().emitNotification(
         'error',
         'warning',
         'the turn did not run on the model you picked',
-        `you picked ${pickedOverride.providerId}/${pickedOverride.model ?? modelSelection.key}, the turn ran on ${provider}/${modelSelection.key}`,
+        `you picked ${pickedOverride.providerId}/${picked.kind === 'unspecified' ? spawnModel : picked.id}, the turn ran on ${provider}/${spawnModel}`,
         { sessionId },
       );
     }
@@ -566,7 +612,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         (await getAgentById(tauriDatabase, activeAgentId)))
       : null;
     const writerLeasePath = isResolverTurn
-      ? await resolveWorktreePath({ get, sessionId, mountId: turnMountId })
+      ? await resolveWorktreePath({ get, sessionId, target: turnTarget })
       : null;
     if (isResolverTurn && (writerLeasePath === null || agentRowForLease === null)) {
       throw new Error(
@@ -593,6 +639,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           effort: rawEffort,
           instructions: resolvedPrompt,
           phase: 'queued',
+          mountTarget: turnTarget,
         });
         await cancelWorktreeWriter({ path: writerLeasePath, holder: activeAgentId });
         return { blockedOverBudget: false, isWriterLeaseDenied: true };
@@ -839,6 +886,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             effort: rawEffort,
             instructions: resolvedPrompt,
             phase: 'running',
+            mountTarget: turnTarget,
             threadIds: resumableResolveThreadIds({
               rows: get().sessionResolveThreads[sessionId] ?? [],
               agent: agentRowEarly,
@@ -1291,7 +1339,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         : planTurnFallback({
             failure: failure.kind,
             provider,
-            model: modelSelection.key,
+            model: spawnModel,
             connectedProviders,
             attempt: retry?.attempt ?? 0,
             ...(preferredFallback != null && {
@@ -1378,7 +1426,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               retry: {
                 attempt: 0,
                 provider,
-                model: modelSelection.key,
+                model: spawnModel,
                 attachmentRefs,
               },
             }).catch(() => undefined);
@@ -1456,7 +1504,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
 
     if (!lastError && !turnWasCancelled && assistantText.length > 0) {
-      enqueueSummarizer(set, get, sessionId, resolvedPrompt, assistantText);
+      enqueueSummarizer({
+        set,
+        get,
+        sessionId,
+        turnInput: resolvedPrompt,
+        turnOutput: assistantText,
+        workingDir,
+      });
       const capturedPlan = await capturePlanFromTurn({
         set,
         sessionId,

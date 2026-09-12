@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,
+  MountId,
   OverrideSettings,
   Project,
   ProjectId,
@@ -73,6 +74,14 @@ describe('resolveSessionRepo', () => {
               worktreePath: '/sessions/one/api',
               repoRoot: '/repo/api',
               branch: 'ak/one',
+              mountId: 'mount-fixture-3' as MountId,
+              sessionId: SESSION_ID,
+              lastWorktreePath: null,
+              baseBranch: null,
+              parallelIndex: 0,
+              isAttached: true,
+              diskState: 'present',
+              revision: 0,
             },
           ],
         },
@@ -86,8 +95,8 @@ describe('resolveSessionRepo', () => {
       worktreePath: '/sessions/one/api',
       repoRoot: '/repo/api',
       branch: 'ak/one',
-      mountId: null,
-      revision: null,
+      mountId: 'mount-fixture-3',
+      revision: 0,
     });
   });
 
@@ -106,6 +115,14 @@ describe('resolveSessionRepo', () => {
               worktreePath: '/sessions/one/api',
               repoRoot: '/repo/api',
               branch: '',
+              mountId: 'mount-fixture-1' as MountId,
+              sessionId: SESSION_ID,
+              lastWorktreePath: null,
+              baseBranch: null,
+              parallelIndex: 0,
+              isAttached: true,
+              diskState: 'present',
+              revision: 0,
             },
           ],
         },

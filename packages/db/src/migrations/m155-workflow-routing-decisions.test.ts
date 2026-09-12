@@ -4,7 +4,7 @@ import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrations } from './index';
 import { migrate } from './runner';
 
-const before = migrations.filter((migration) => migration.version < 154);
+const before = migrations.filter((migration) => migration.version < 155);
 
 const seed = async (): Promise<Database> => {
   const db = makeTestDatabase();
@@ -46,7 +46,7 @@ const decision = JSON.stringify({
   executed: null,
 });
 
-describe('m154 workflow routing decisions', () => {
+describe('m155 workflow routing decisions', () => {
   it('upgrades populated m153 storage without changing legacy routing', async () => {
     const db = await seed();
     await migrate(db);
@@ -103,12 +103,12 @@ describe('m154 workflow routing decisions', () => {
     );
     const first = await migrate(db);
     const second = await migrate(db);
-    expect(first.applied).toContain(154);
+    expect(first.applied).toContain(155);
     expect(second.applied).toEqual([]);
     expect(
       await db.select<{ readonly version: number }>(
-        'SELECT version FROM schema_version WHERE version = 154',
+        'SELECT version FROM schema_version WHERE version = 155',
       ),
-    ).toEqual([{ version: 154 }]);
+    ).toEqual([{ version: 155 }]);
   });
 });

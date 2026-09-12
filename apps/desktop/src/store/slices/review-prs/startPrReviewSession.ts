@@ -85,7 +85,6 @@ export const startPrReviewSession = (get: GetFn) => {
         },
       ],
     });
-    await get().setSessionActiveProject({ sessionId: session.id, projectId: project.id });
     return session.id;
   };
 };

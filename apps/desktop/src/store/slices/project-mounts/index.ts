@@ -1,5 +1,6 @@
 import { attachMount } from './attachMount';
 import { detachProject } from './detachProject';
+import { ensureProjectMounted } from './ensureProjectMounted';
 import { forgetMount } from './forgetMount';
 import { forkMount } from './forkMount';
 import { inspectMount } from './inspectMount';
@@ -15,6 +16,7 @@ import type { GetFn, SetFn } from './types';
 export const createProjectMountsSlice = (set: SetFn, get: GetFn) => {
   return {
     detachProject: detachProject(set, get),
+    ensureProjectMounted: ensureProjectMounted(set, get),
     loadSessionMounts: loadSessionMounts(set, get),
     openMountRequest: openMountRequest(set, get),
     forkMount: forkMount(set, get),

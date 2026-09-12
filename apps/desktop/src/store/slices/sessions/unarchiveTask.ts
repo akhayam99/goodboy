@@ -3,12 +3,13 @@ import {
   listWorktreesForSession,
   unarchiveSession as unarchiveSessionInDb,
   updateSessionActiveProject,
+  updateSessionWriteDestination,
 } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeWorkflowsForSession } from '../../../features/workflows/workflows';
 import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMounts';
-import { pickActiveMount } from '../project-mounts/activeMount';
+import { hydrateWriteDestination } from '../project-mounts/hydrateWriteDestination';
 import { verifyAvailableWorktrees } from '../project-mounts/verifyAvailableWorktrees';
 import type { GetFn, SetFn } from './types';
 
@@ -81,13 +82,30 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
         const { activeProjectId: _drop, ...validSession } = restoredSession;
         restoredWithValidActiveMount = validSession;
       }
-      const activeMount = pickActiveMount({
+      const hydration = hydrateWriteDestination({
         mounts,
-        selectedMountId: null,
         storedMountId: restoredSession.activeMountId,
-        activeProjectId: hasStoredActiveProjectId ? storedActiveProjectId : null,
       });
-      const activeMountId = activeMount?.mountId ?? null;
+      const activeMount =
+        hydration.kind === 'restored' || hydration.kind === 'repaired' ? hydration : null;
+      const activeMountId = activeMount?.mountId ?? restoredSession.activeMountId ?? null;
+      const realigns =
+        activeMount !== null &&
+        (hydration.kind === 'repaired' || storedActiveProjectId !== activeMount.projectId);
+      if (activeMount !== null && realigns) {
+        const written = await updateSessionWriteDestination({
+          db: tauriDatabase,
+          sessionId,
+          mountId: activeMount.mountId,
+        }).catch(() => false);
+        if (written) {
+          restoredWithValidActiveMount = {
+            ...restoredWithValidActiveMount,
+            activeMountId: activeMount.mountId,
+            activeProjectId: activeMount.projectId,
+          };
+        }
+      }
       set((state) => {
         const nextWorktrees = { ...state.sessionWorktrees };
         const nextBranches = { ...state.sessionBranches };
@@ -96,6 +114,9 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
           nextActiveProject[sessionId] = storedActiveProjectId;
         } else {
           delete nextActiveProject[sessionId];
+        }
+        if (activeMount !== null) {
+          nextActiveProject[sessionId] = activeMount.projectId;
         }
         if (worktreeRows.length > 0) {
           nextWorktrees[sessionId] = worktreeRows.map((r) => r.worktreePath);
