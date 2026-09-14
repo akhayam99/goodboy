@@ -45,7 +45,7 @@ fn run(argv: &[String]) -> Result<String, String> {
             .to_string(),
         project: project_scope(&parsed.args, argv),
         mount: bound_value(argv, "mount", MOUNT_ENV),
-        run_id: bound_value(argv, "run", RUN_ENV),
+        run_id: optional_bound_value(argv, "run", RUN_ENV),
         provider: parsed.provider,
         verb: parsed.verb,
         args: parsed.args,
@@ -62,11 +62,14 @@ fn run(argv: &[String]) -> Result<String, String> {
 }
 
 fn bound_value(argv: &[String], name: &str, variable: &str) -> String {
+    optional_bound_value(argv, name, variable).unwrap_or_default()
+}
+
+fn optional_bound_value(argv: &[String], name: &str, variable: &str) -> Option<String> {
     named_value(argv, name)
         .or_else(|| std::env::var(variable).ok())
-        .unwrap_or_default()
-        .trim()
-        .to_string()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
 }
 
 fn help_provider(argv: &[String]) -> Option<&str> {
@@ -302,6 +305,25 @@ mod tests {
 
         std::env::remove_var(variable);
         assert_eq!(bound_value(&[], "mount", variable), "");
+    }
+
+    #[test]
+    fn a_missing_or_blank_run_binding_is_absent() {
+        let variable = "GOODBOY_TEST_BOUND_RUN";
+        std::env::remove_var(variable);
+
+        assert_eq!(optional_bound_value(&[], "run", variable), None);
+        assert_eq!(
+            optional_bound_value(&["--run=   ".to_string()], "run", variable),
+            None
+        );
+
+        std::env::set_var(variable, " run-turn ");
+        assert_eq!(
+            optional_bound_value(&[], "run", variable).as_deref(),
+            Some("run-turn")
+        );
+        std::env::remove_var(variable);
     }
 
     #[test]

@@ -78,6 +78,25 @@ describe('mount continuations', () => {
     ).toEqual({ queued: false, refusal: 'chain-exhausted' });
   });
 
+  it('counts continuations already waiting against the chain cap', () => {
+    for (let index = 0; index < MAX_MOUNT_CONTINUATIONS; index += 1) {
+      expect(
+        queueMountContinuation({
+          continuation: continuation({
+            operationId: `req-${index}`,
+            mountId: `mount-${index}` as MountId,
+          }),
+        }).queued,
+      ).toBe(true);
+    }
+
+    expect(
+      queueMountContinuation({
+        continuation: continuation({ operationId: 'req-last', mountId: 'mount-last' as MountId }),
+      }),
+    ).toEqual({ queued: false, refusal: 'chain-exhausted' });
+  });
+
   it('counts the chain per session and forgets it when the operator speaks again', () => {
     for (let index = 0; index < MAX_MOUNT_CONTINUATIONS; index += 1) {
       queueMountContinuation({
@@ -104,12 +123,14 @@ describe('mount continuations', () => {
     ).toBe(true);
   });
 
-  it('hands the session its latest target once and leaves nothing behind', () => {
+  it('hands queued targets out in request order without dropping either one', () => {
     queueMountContinuation({ continuation: continuation() });
     queueMountContinuation({
       continuation: continuation({ operationId: 'req-2', mountId: 'mount-3' as MountId }),
     });
 
+    expect(takeMountContinuation({ sessionId: SESSION })?.mountId).toBe('mount-2');
+    expect(pendingMountContinuations({ sessionId: SESSION })).toHaveLength(1);
     expect(takeMountContinuation({ sessionId: SESSION })?.mountId).toBe('mount-3');
     expect(takeMountContinuation({ sessionId: SESSION })).toBeNull();
   });
@@ -128,5 +149,16 @@ describe('mount continuations', () => {
     expect(prompt).toContain('goodboy/second');
     expect(prompt).toContain('/repo/api/.goodboy/worktrees/second');
     expect(prompt).toContain('Cherry-pick what belongs on this branch');
+  });
+
+  it('tells a materialization continuation to perform the requested work without cherry-picking', () => {
+    const prompt = mountContinuationPrompt({
+      continuation: continuation({ origin: 'materialize' }),
+    });
+
+    expect(prompt).toContain('project mount you requested is ready');
+    expect(prompt).toContain('mount mount-2');
+    expect(prompt).toContain('Do the work declared in the materialization request now.');
+    expect(prompt).not.toContain('Cherry-pick');
   });
 });

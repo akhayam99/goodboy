@@ -56,11 +56,14 @@ const WORKSPACE_ID = 'workspace-story' as WorkspaceId;
 const AGENT_ID = 'agent-story' as AgentId;
 const APP_PROJECT_ID = 'project-app' as ProjectId;
 const WEB_PROJECT_ID = 'project-web' as ProjectId;
+const DOCS_PROJECT_ID = 'project-docs' as ProjectId;
 const APP_MOUNT_PATH = '/tmp/app/.goodboy/worktrees/goal-12345678';
 const SECOND_MOUNT_PATH = '/tmp/app/.goodboy/worktrees/goal-12345678-second';
 const APP_BRANCH = 'goodboy/goal-12345678';
 const WEB_MOUNT_PATH = '/tmp/web/.goodboy/worktrees/goal-12345678';
 const WEB_BRANCH = 'goodboy/goal-12345678-web';
+const DOCS_MOUNT_PATH = '/tmp/docs/.goodboy/worktrees/goal-12345678';
+const DOCS_BRANCH = 'goodboy/goal-12345678-docs';
 const APP_MOUNT_ID = 'mount-app';
 const WEB_MOUNT_ID = 'mount-web';
 
@@ -71,6 +74,12 @@ const webProject = buildStoryProject({
   workspaceId: WORKSPACE_ID,
   name: 'web',
   rootPath: '/tmp/web',
+});
+const docsProject = buildStoryProject({
+  id: DOCS_PROJECT_ID,
+  workspaceId: WORKSPACE_ID,
+  name: 'docs',
+  rootPath: '/tmp/docs',
 });
 const session = buildStorySession({ id: SESSION_ID, workspaceId: WORKSPACE_ID });
 const agent = buildStoryAgent({ id: AGENT_ID, sessionId: SESSION_ID });
@@ -451,11 +460,12 @@ describe('story: a fresh session reads before any project is mounted', () => {
       slug: 'goal-12345678',
       reused: false,
     } as never);
-    storySpies.runTurn.mockImplementation(
+    storySpies.runTurn.mockImplementationOnce(
       assistantTurnStream('<<materialize: web | need to patch the router>>'),
     );
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go write it' });
+    await vi.waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledTimes(2));
 
     expect(spawnedArgs()['workingDir']).toBe(SCRATCH_PATH);
     expect(storySpies.createWorktree).toHaveBeenCalledWith(
@@ -479,9 +489,10 @@ describe('story: an agent asks for write access with the materialize marker', ()
       reused: false,
     } as never);
     const assistantText = 'scanning done\n<<materialize: Web | need to patch the router>>\nnext';
-    storySpies.runTurn.mockImplementation(assistantTurnStream(assistantText));
+    storySpies.runTurn.mockImplementationOnce(assistantTurnStream(assistantText));
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
+    await vi.waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledTimes(2));
 
     expect(spawnedArgs()['workingDir']).toBe(APP_MOUNT_PATH);
     expect(storySpies.createWorktree).toHaveBeenCalledWith(
@@ -497,7 +508,8 @@ describe('story: an agent asks for write access with the materialize marker', ()
       projectName: 'web',
       reason: 'need to patch the router',
     });
-    expect(useAppStore.getState().sessionBranches[SESSION_ID]).toBe(APP_BRANCH);
+    const continued = (storySpies.runTurn.mock.calls[1]?.[0] ?? {}) as Record<string, unknown>;
+    expect(continued['workingDir']).toBe(WEB_MOUNT_PATH);
     expect(stripControlMarkers(assistantText)).not.toContain('<<materialize');
   });
 
@@ -509,7 +521,7 @@ describe('story: an agent asks for write access with the materialize marker', ()
       slug: 'goal-12345678',
       reused: false,
     } as never);
-    storySpies.runTurn.mockImplementation(async function* failedTurn() {
+    storySpies.runTurn.mockImplementationOnce(async function* failedTurn() {
       yield* assistantTurnStream('<<materialize: web | need to patch the router>>')();
       throw new Error('provider failed after responding');
     });
@@ -517,25 +529,115 @@ describe('story: an agent asks for write access with the materialize marker', ()
     await expect(
       useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' }),
     ).rejects.toThrow('provider failed after responding');
+    await vi.waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledTimes(2));
 
     expect(storySpies.createWorktree).toHaveBeenCalledWith(
       expect.objectContaining({ repoPath: '/tmp/web' }),
     );
   });
 
+  it('visits both mounts requested by two markers in the same turn', async () => {
+    seedSession([appProject, webProject, docsProject]);
+    storySpies.createWorktree.mockImplementation(async (input: unknown) => {
+      const repoPath = (input as { readonly repoPath?: string }).repoPath;
+      const isWeb = repoPath === '/tmp/web';
+      return {
+        worktreePath: isWeb ? WEB_MOUNT_PATH : DOCS_MOUNT_PATH,
+        branchName: isWeb ? WEB_BRANCH : DOCS_BRANCH,
+        slug: 'goal-12345678',
+        reused: false,
+      } as never;
+    });
+    storySpies.runTurn.mockImplementationOnce(
+      assistantTurnStream(
+        [
+          '<<materialize: web | patching the router>>',
+          '<<materialize: docs | updating the guide>>',
+        ].join('\n'),
+      ),
+    );
+
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
+    await vi.waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledTimes(3));
+
+    const workingDirs = storySpies.runTurn.mock.calls.map(
+      ([input]) => (input as Record<string, unknown>)['workingDir'],
+    );
+    expect(workingDirs).toEqual([APP_MOUNT_PATH, WEB_MOUNT_PATH, DOCS_MOUNT_PATH]);
+    expect(storySpies.createWorktree).toHaveBeenCalledTimes(2);
+    expect(pendingMountContinuations({ sessionId: SESSION_ID })).toHaveLength(0);
+  });
+
+  it('keeps the provider turn successful when proposal history cannot be loaded', async () => {
+    seedSession([appProject, webProject]);
+    const loadSessionEvents = useAppStore.getState().loadSessionEvents;
+    useAppStore.setState({
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          appMount,
+          otherMount,
+          {
+            ...otherMount,
+            projectId: 'project-another' as ProjectId,
+            mountName: 'another',
+            worktreePath: '/tmp/another/.goodboy/worktrees/goal',
+          },
+        ],
+      },
+      sessionEvents: {},
+      loadSessionEvents: vi.fn(async () => {
+        throw new Error('event read failed');
+      }),
+    } as never);
+    storySpies.runTurn.mockImplementationOnce(
+      assistantTurnStream('<<materialize: web | patching the router>>'),
+    );
+
+    const result = await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, content: 'go' })
+      .finally(() =>
+        useAppStore.setState({
+          loadSessionEvents,
+          sessionEvents: { [SESSION_ID]: [] },
+        }),
+      );
+
+    const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
+    expect(result).toBeDefined();
+    expect(storySpies.createWorktree).not.toHaveBeenCalled();
+    expect(
+      transcript.some(
+        (event) =>
+          event.kind === 'error' &&
+          event.message === 'materialize failed for web: event read failed',
+      ),
+    ).toBe(true);
+  });
+
   it('defers a mount beyond the allowance and hands the owner the proposal', async () => {
     seedSession([appProject, webProject]);
+    const anotherMount = {
+      ...otherMount,
+      projectId: 'project-another' as ProjectId,
+      mountName: 'another',
+      worktreePath: '/tmp/another/.goodboy/worktrees/goal',
+    };
     useAppStore.setState({
-      sessionProjectMounts: { [SESSION_ID]: [appMount, otherMount] },
+      sessionProjectMounts: { [SESSION_ID]: [appMount, otherMount, anotherMount] },
     } as never);
-    storySpies.runTurn.mockImplementation(
+    storySpies.runTurn.mockImplementationOnce(
       assistantTurnStream('<<materialize: web | reading the router>>'),
     );
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
 
     expect(storySpies.createWorktree).not.toHaveBeenCalled();
-    expect(useAppStore.getState().sessionProjectMounts[SESSION_ID]).toEqual([appMount, otherMount]);
+    expect(useAppStore.getState().sessionProjectMounts[SESSION_ID]).toEqual([
+      appMount,
+      otherMount,
+      anotherMount,
+    ]);
     const proposal = recordedEvent('project_materialization_proposed')?.payload;
     expect(proposal).toMatchObject({
       projectName: 'web',

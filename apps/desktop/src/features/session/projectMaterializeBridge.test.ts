@@ -3,10 +3,14 @@ import type { ProjectId, SessionId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
-    sessions: [{ id: 'session-1', workspaceId: 'ws-1', goal: 'ship the api' }],
+    sessions: [
+      { id: 'session-1', workspaceId: 'ws-1', goal: 'ship the api', activeProjectId: 'p-api' },
+    ],
     projects: [
       { id: 'p-api', name: 'api', workspaceId: 'ws-1' },
       { id: 'p-web', name: 'web', workspaceId: 'ws-1' },
+      { id: 'p-data', name: 'data', workspaceId: 'ws-1' },
+      { id: 'p-docs', name: 'docs', workspaceId: 'ws-1' },
     ],
     sessionProjectMounts: {} as Record<
       string,
@@ -24,6 +28,8 @@ const { state } = vi.hoisted(() => ({
     sessionActiveProject: {} as Record<string, string>,
     sessionSlots: {} as Record<string, ReadonlyArray<{ key: string; value: string }>>,
     sessionExternalTasks: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionEvents: { 'session-1': [] } as Record<string, ReadonlyArray<unknown>>,
+    loadSessionEvents: vi.fn(async () => undefined),
     ensureProjectMounted: vi.fn<
       (input: { readonly projectId: string }) => Promise<{
         readonly status: 'created' | 'already-mounted';
@@ -63,9 +69,17 @@ vi.mock('../../store/store', () => ({
 }));
 
 import { executeMaterializeRequest } from './projectMaterializeBridge';
+import { clearMaterializationBatch } from '../../store/materializationGate';
 
-const request = ({ projectId, projectName }: { projectId: string; projectName: string }) => ({
+type RequestParams = {
+  readonly projectId: string;
+  readonly projectName: string;
+  readonly runId?: string | null;
+};
+
+const request = ({ projectId, projectName, runId = 'run-1' }: RequestParams) => ({
   id: 'req-1',
+  runId,
   sessionId: 'session-1' as SessionId,
   projectId: projectId as ProjectId,
   projectName,
@@ -73,8 +87,11 @@ const request = ({ projectId, projectName }: { projectId: string; projectName: s
 });
 
 beforeEach(() => {
+  clearMaterializationBatch({ sessionId: 'session-1' as SessionId, batchId: 'run-1' });
   state.sessionProjectMounts = {};
+  state.sessionEvents = { 'session-1': [] };
   state.ensureProjectMounted.mockClear();
+  state.loadSessionEvents.mockClear();
   state.recordSessionEvent.mockClear();
 });
 
@@ -110,7 +127,7 @@ describe('executeMaterializeRequest', () => {
 
   it('defers a third project the goal does not name and records the proposal', async () => {
     state.sessionProjectMounts = {
-      'session-1': [{ projectId: 'p-api' }, { projectId: 'p-docs' }],
+      'session-1': [{ projectId: 'p-docs' }, { projectId: 'p-other' }],
     };
 
     const result = await executeMaterializeRequest(
@@ -161,6 +178,38 @@ describe('executeMaterializeRequest', () => {
     );
 
     expect(result).toEqual({ ok: false, error: 'unknown project: ghost' });
+  });
+
+  it('shares the immediate cap across sequential bridge commands in one turn', async () => {
+    const first = await executeMaterializeRequest(
+      request({ projectId: 'p-web', projectName: 'web' }),
+    );
+    const second = await executeMaterializeRequest(
+      request({ projectId: 'p-data', projectName: 'data' }),
+    );
+    const third = await executeMaterializeRequest(
+      request({ projectId: 'p-docs', projectName: 'docs' }),
+    );
+
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
+    expect(third.error).toContain('already mounted two projects');
+  });
+
+  it('does not share a budget between bridge invocations with a blank run id', async () => {
+    const first = await executeMaterializeRequest(
+      request({ projectId: 'p-web', projectName: 'web', runId: '' }),
+    );
+    state.sessionProjectMounts = {};
+    const second = await executeMaterializeRequest(
+      request({ projectId: 'p-data', projectName: 'data', runId: '' }),
+    );
+    state.sessionProjectMounts = {};
+    const third = await executeMaterializeRequest(
+      request({ projectId: 'p-docs', projectName: 'docs', runId: '' }),
+    );
+
+    expect([first.ok, second.ok, third.ok]).toEqual([true, true, true]);
   });
 });
 

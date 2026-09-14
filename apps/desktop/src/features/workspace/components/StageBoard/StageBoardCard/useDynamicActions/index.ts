@@ -20,7 +20,7 @@ import {
 } from '../../../../../workflows/workflowAdvanceView';
 import { workflowRunHasOpenQuestions } from '../../../../../context/openQuestionsGate';
 import { eligibleReviewThreadCount } from '../../../../../suggestions/eligibleThreads';
-import { pendingMountProposals } from '../../../../../suggestions/mountProposals';
+import { pendingMountProposals } from '../../../../../../store/materializationProposals';
 import { SUGGESTION_ICONS } from '../../../../../suggestions/suggestionIcons';
 import type { BoardNavigation } from '../../useBoardNavigation';
 

@@ -1,10 +1,14 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AgentId,
+  IsoDateTime,
+  MountId,
   Project,
   ProjectId,
   ProviderRunId,
   Session,
+  SessionEvent,
+  SessionEventId,
   SessionExternalTask,
   SessionId,
   WorkspaceId,
@@ -17,7 +21,13 @@ vi.mock('../shared/lib/db', () => ({
 }));
 
 import { captureMaterializeRequestsFromTurn } from './turn-helpers';
+import { clearMaterializationBatch } from './materializationGate';
 import type { GetFn } from './slice-types';
+import {
+  clearMountContinuations,
+  pendingMountContinuations,
+  takeMountContinuation,
+} from './slices/turn/mountContinuations';
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -35,6 +45,8 @@ const web = project({ id: WEB_ID, name: 'web' });
 const docs = project({ id: DOCS_ID, name: 'docs' });
 
 const mount = ({ projectId, name }: { readonly projectId: ProjectId; readonly name: string }) => ({
+  mountId: `mount-${projectId}` as MountId,
+  sessionId: SESSION_ID,
   projectId,
   mountName: name,
   worktreePath: `/tmp/${name}/.goodboy/worktrees/goal`,
@@ -47,6 +59,9 @@ type HarnessParams = {
   readonly goalSlot?: string;
   readonly mounts?: ReadonlyArray<ReturnType<typeof mount>>;
   readonly externalTasks?: ReadonlyArray<SessionExternalTask>;
+  readonly events?: ReadonlyArray<SessionEvent>;
+  readonly isEventsLoaded?: boolean;
+  readonly loadEventsError?: Error;
 };
 
 type RecordedEvent = {
@@ -59,14 +74,45 @@ const harness = ({
   goalSlot,
   mounts = [],
   externalTasks = [],
+  events = [],
+  isEventsLoaded = true,
+  loadEventsError,
 }: HarnessParams) => {
   const session = { id: SESSION_ID, workspaceId: WORKSPACE_ID, goal } as Session;
-  const ensureProjectMounted = vi.fn(async (_input: { readonly projectId: ProjectId }) => ({
-    status: 'created' as const,
-    createdMountId: 'mount-web',
-    mountIds: ['mount-web'],
-  }));
-  const recordSessionEvent = vi.fn(async (_event: RecordedEvent) => undefined);
+  let currentMounts = mounts;
+  let currentEvents = events;
+  let areEventsLoaded = isEventsLoaded;
+  const ensureProjectMounted = vi.fn(async (input: { readonly projectId: ProjectId }) => {
+    const mountedProject = [app, web, docs].find((candidate) => candidate.id === input.projectId);
+    const created = mount({
+      projectId: input.projectId,
+      name: mountedProject?.name ?? input.projectId,
+    });
+    currentMounts = [...currentMounts, created];
+    return {
+      status: 'created' as const,
+      createdMountId: created.mountId,
+      mountIds: [created.mountId],
+    };
+  });
+  const recordSessionEvent = vi.fn(async (event: RecordedEvent) => {
+    currentEvents = [
+      ...currentEvents,
+      {
+        id: `event-${currentEvents.length + 1}` as SessionEventId,
+        sessionId: SESSION_ID,
+        kind: event.kind,
+        payload: event.payload ?? null,
+        createdAt: '2026-09-14T00:00:00.000Z' as IsoDateTime,
+      } as SessionEvent,
+    ];
+  });
+  const loadSessionEvents = vi.fn(async () => {
+    if (loadEventsError !== undefined) {
+      throw loadEventsError;
+    }
+    areEventsLoaded = true;
+  });
   const appendTurnEvent = vi.fn(
     (
       _agentId: AgentId,
@@ -74,17 +120,19 @@ const harness = ({
       _event: { readonly kind: string; readonly message: string },
     ) => undefined,
   );
-  const state = {
+  const get = (() => ({
     sessions: [session],
     projects: [app, web, docs],
-    sessionProjectMounts: { [SESSION_ID]: mounts },
+    sessionProjectMounts: { [SESSION_ID]: currentMounts },
+    sessionActiveProject: {},
     sessionSlots: goalSlot == null ? {} : { [SESSION_ID]: [{ key: 'goal', value: goalSlot }] },
     sessionExternalTasks: { [SESSION_ID]: externalTasks },
+    sessionEvents: areEventsLoaded ? { [SESSION_ID]: currentEvents } : {},
     ensureProjectMounted,
+    loadSessionEvents,
     recordSessionEvent,
     appendTurnEvent,
-  };
-  const get = (() => state) as unknown as GetFn;
+  })) as unknown as GetFn;
   return { get, ensureProjectMounted, recordSessionEvent, appendTurnEvent };
 };
 
@@ -101,6 +149,7 @@ const capture = async ({
     agentId: AGENT_ID,
     runId: RUN_ID,
     assistantText,
+    boundMountId: null,
   });
 
 type Harness = ReturnType<typeof harness>;
@@ -109,6 +158,11 @@ const proposals = (recordSessionEvent: Harness['recordSessionEvent']) =>
   recordSessionEvent.mock.calls
     .map(([event]) => event)
     .filter((event) => event.kind === 'project_materialization_proposed');
+
+beforeEach(() => {
+  clearMountContinuations();
+  clearMaterializationBatch({ sessionId: SESSION_ID, batchId: RUN_ID });
+});
 
 describe('captureMaterializeRequestsFromTurn', () => {
   it('mounts on the spot while the session holds no mount at all', async () => {
@@ -122,38 +176,57 @@ describe('captureMaterializeRequestsFromTurn', () => {
       reason: 'patching the router',
     });
     expect(proposals(recordSessionEvent)).toHaveLength(0);
+    expect(pendingMountContinuations({ sessionId: SESSION_ID })).toEqual([
+      expect.objectContaining({
+        operationId: `materialize:${RUN_ID}:${WEB_ID}:0`,
+        mountId: `mount-${WEB_ID}`,
+        origin: 'materialize',
+      }),
+    ]);
   });
 
-  it('mounts on the spot when the session title names the project', async () => {
-    const { get, ensureProjectMounted } = harness({
+  it('does not treat a project name in the session title as authorization', async () => {
+    const { get, ensureProjectMounted, recordSessionEvent } = harness({
       goal: 'fix the web router',
-      mounts: [mount({ projectId: APP_ID, name: 'app' })],
+      mounts: [
+        mount({ projectId: APP_ID, name: 'app' }),
+        mount({ projectId: DOCS_ID, name: 'docs' }),
+      ],
     });
 
     await capture({ get, assistantText: '<<materialize: web | patching the router>>' });
 
-    expect(ensureProjectMounted).toHaveBeenCalledTimes(1);
+    expect(ensureProjectMounted).not.toHaveBeenCalled();
+    expect(proposals(recordSessionEvent)).toHaveLength(1);
   });
 
-  it('mounts on the spot when the goal slot names the project', async () => {
-    const { get, ensureProjectMounted } = harness({
+  it('does not treat a project name in the goal slot as authorization', async () => {
+    const { get, ensureProjectMounted, recordSessionEvent } = harness({
       goal: 'untitled session',
       goalSlot: 'Move the WEB router onto the new adapter',
-      mounts: [mount({ projectId: APP_ID, name: 'app' })],
+      mounts: [
+        mount({ projectId: APP_ID, name: 'app' }),
+        mount({ projectId: DOCS_ID, name: 'docs' }),
+      ],
     });
 
     await capture({ get, assistantText: '<<materialize: web | patching the router>>' });
 
-    expect(ensureProjectMounted).toHaveBeenCalledTimes(1);
+    expect(ensureProjectMounted).not.toHaveBeenCalled();
+    expect(proposals(recordSessionEvent)).toHaveLength(1);
   });
 
-  it('mounts on the spot when a linked task names the project', async () => {
+  it('authorizes a linked task by project id', async () => {
     const { get, ensureProjectMounted } = harness({
       goal: 'untitled session',
-      mounts: [mount({ projectId: APP_ID, name: 'app' })],
+      mounts: [
+        mount({ projectId: APP_ID, name: 'app' }),
+        mount({ projectId: DOCS_ID, name: 'docs' }),
+      ],
       externalTasks: [
         {
           sessionId: SESSION_ID,
+          projectId: WEB_ID,
           provider: 'linear',
           externalId: 'ext-1',
           identifier: 'WEB-12',
@@ -228,6 +301,83 @@ describe('captureMaterializeRequestsFromTurn', () => {
     expect(proposals(recordSessionEvent).map((event) => event.payload?.['projectName'])).toEqual([
       'docs',
     ]);
+  });
+
+  it('hands out both mounts requested by two markers in the same turn', async () => {
+    const { get } = harness({});
+
+    await capture({
+      get,
+      assistantText: [
+        '<<materialize: app | writing the store>>',
+        '<<materialize: web | writing the router>>',
+      ].join('\n'),
+    });
+
+    expect(takeMountContinuation({ sessionId: SESSION_ID })?.mountId).toBe(`mount-${APP_ID}`);
+    expect(takeMountContinuation({ sessionId: SESSION_ID })?.mountId).toBe(`mount-${WEB_ID}`);
+    expect(takeMountContinuation({ sessionId: SESSION_ID })).toBeNull();
+  });
+
+  it('deduplicates a pending proposal while still notifying the new requester', async () => {
+    const pending = {
+      id: 'event-pending' as SessionEventId,
+      sessionId: SESSION_ID,
+      kind: 'project_materialization_proposed',
+      payload: {
+        projectId: WEB_ID,
+        projectName: 'web',
+        reason: 'first request',
+        agentId: 'agent-other',
+        turnRunId: 'run-other',
+        deferralCause: 'scope',
+      },
+      createdAt: '2026-09-14T00:00:00.000Z' as IsoDateTime,
+    } satisfies SessionEvent;
+    const { get, recordSessionEvent, appendTurnEvent } = harness({
+      mounts: [
+        mount({ projectId: APP_ID, name: 'app' }),
+        mount({ projectId: DOCS_ID, name: 'docs' }),
+      ],
+      events: [pending],
+    });
+
+    await capture({ get, assistantText: '<<materialize: web | edit the router>>' });
+
+    expect(recordSessionEvent).not.toHaveBeenCalled();
+    expect(appendTurnEvent).toHaveBeenCalledWith(
+      AGENT_ID,
+      SESSION_ID,
+      expect.objectContaining({
+        kind: 'decision_note',
+        message: expect.stringContaining('Do not request it again in this session.'),
+      }),
+    );
+  });
+
+  it('keeps a completed turn successful when loading proposals fails', async () => {
+    const { get, ensureProjectMounted, appendTurnEvent } = harness({
+      mounts: [
+        mount({ projectId: APP_ID, name: 'app' }),
+        mount({ projectId: DOCS_ID, name: 'docs' }),
+      ],
+      isEventsLoaded: false,
+      loadEventsError: new Error('event read failed'),
+    });
+
+    await expect(
+      capture({ get, assistantText: '<<materialize: web | editing the router>>' }),
+    ).resolves.toBeUndefined();
+
+    expect(ensureProjectMounted).not.toHaveBeenCalled();
+    expect(appendTurnEvent).toHaveBeenCalledWith(
+      AGENT_ID,
+      SESSION_ID,
+      expect.objectContaining({
+        kind: 'error',
+        message: 'materialize failed for web: event read failed',
+      }),
+    );
   });
 
   it('still refuses a project this workspace does not have', async () => {

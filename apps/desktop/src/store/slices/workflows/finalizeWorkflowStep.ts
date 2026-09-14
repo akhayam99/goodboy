@@ -8,6 +8,7 @@ import { resumeClusterChildren, unsettledClusterChildren } from './clusterImplem
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
+import { pendingMountContinuations } from '../turn/mountContinuations';
 
 const MAX_CONTINUE = 1;
 
@@ -49,6 +50,9 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
     if (!agent || !agent.stepId || !agent.workflowRunId) {
+      return { shouldAutoAdvance: false };
+    }
+    if (pendingMountContinuations({ sessionId }).length > 0) {
       return { shouldAutoAdvance: false };
     }
 

@@ -14,7 +14,7 @@ import {
   type SuggestionRebaseRequest,
 } from '../deriveSessionSuggestions';
 import { eligibleReviewThreadCount } from '../eligibleThreads';
-import { toMountEvents } from '../mountProposals';
+import { toMountEvents } from '../../../store/materializationProposals';
 
 type Params = {
   readonly session: Session;

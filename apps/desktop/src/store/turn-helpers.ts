@@ -38,6 +38,7 @@ import type {
   GoalAttachment,
   IsoDateTime,
   MessageAttachment,
+  MountId,
   PlanId,
   PlanWithCount,
   ProviderId,
@@ -70,10 +71,11 @@ import { decisionsDelta } from './slices/session-events';
 import {
   deferredMaterializeNote,
   materializationGate,
-  priorMountCount,
   proposeMaterialization,
   runMaterializationBatch,
 } from './materializationGate';
+import { selectMountById } from './slices/project-mounts/selectors';
+import { mountContinuationRefusal, queueMountContinuation } from './slices/turn/mountContinuations';
 
 type AttachmentsBlockParams = {
   readonly scope: string;
@@ -692,6 +694,7 @@ type CaptureMaterializeParams = {
   readonly agentId: AgentId;
   readonly runId: ProviderRunId;
   readonly assistantText: string;
+  readonly boundMountId: MountId | null;
 };
 
 export const captureMaterializeRequestsFromTurn = async ({
@@ -700,6 +703,7 @@ export const captureMaterializeRequestsFromTurn = async ({
   agentId,
   runId,
   assistantText,
+  boundMountId,
 }: CaptureMaterializeParams): Promise<void> => {
   const requests = extractMaterializeRequests(assistantText);
   if (requests.length === 0) {
@@ -728,10 +732,9 @@ export const captureMaterializeRequestsFromTurn = async ({
   };
   await runMaterializationBatch({
     sessionId,
-    run: async () => {
-      const priorMounts = priorMountCount({ get, sessionId });
-      let immediateCount = 0;
-      for (const request of requests) {
+    batchId: runId,
+    run: async ({ budget }) => {
+      for (const [requestIndex, request] of requests.entries()) {
         const project = projects.find(
           (candidate) => candidate.name.toLowerCase() === request.projectName.toLowerCase(),
         );
@@ -754,30 +757,63 @@ export const captureMaterializeRequestsFromTurn = async ({
           get,
           sessionId,
           project,
-          priorMounts,
-          immediateCount,
+          immediateProjectIds: budget.immediateProjectIds,
         });
         if (decision.kind === 'deferred') {
-          await proposeMaterialization({
-            get,
-            sessionId,
-            project,
-            reason: request.reason,
-            cause: decision.cause,
-            agentId,
-            turnRunId: runId,
-          });
-          decisionNote(deferredMaterializeNote({ projectName: project.name }));
+          try {
+            const proposal = await proposeMaterialization({
+              get,
+              sessionId,
+              project,
+              reason: request.reason,
+              cause: decision.cause,
+              agentId,
+              turnRunId: runId,
+            });
+            decisionNote(
+              deferredMaterializeNote({
+                projectName: project.name,
+                isAlreadyPending: proposal === 'already-pending',
+              }),
+            );
+          } catch (error) {
+            note(`materialize failed for ${project.name}: ${formatError(error)}`);
+          }
           continue;
         }
         try {
-          await get().ensureProjectMounted({
+          const outcome = await get().ensureProjectMounted({
             sessionId,
             projectId: project.id,
             reason: request.reason,
           });
-          if (decision.kind === 'allowed') {
-            immediateCount += 1;
+          if (outcome.status !== 'created') {
+            continue;
+          }
+          budget.immediateProjectIds.add(project.id);
+          const mount = selectMountById({
+            state: get(),
+            sessionId,
+            mountId: outcome.createdMountId,
+          });
+          if (mount === null) {
+            note(`materialize failed for ${project.name}: the created mount is not available`);
+            continue;
+          }
+          const continuation = queueMountContinuation({
+            continuation: {
+              operationId: `materialize:${runId}:${project.id}:${requestIndex}`,
+              sessionId,
+              mountId: mount.mountId,
+              mountName: mount.mountName,
+              branch: mount.branch,
+              worktreePath: mount.worktreePath,
+              origin: 'materialize',
+            },
+            boundMountId,
+          });
+          if (!continuation.queued) {
+            decisionNote(mountContinuationRefusal({ refusal: continuation.refusal }));
           }
         } catch (error) {
           note(`materialize failed for ${project.name}: ${formatError(error)}`);

@@ -106,10 +106,10 @@ describe('buildScopeGuard', () => {
       'Reading any project root listed above is free and needs no mount. NEVER materialize a project to read it, to run its tests, or because it looks related to the goal.',
     );
     expect(guard).toContain(
-      'Materialize ONLY a project whose files you must edit to finish this goal. Most goals need exactly one project, and when the goal names a project that project is the one.',
+      'Materialize ONLY a project whose files you must edit. A project name in the goal, plan, or prompt is not write intent or authorization.',
     );
     expect(guard).toContain(
-      'A mount the goal does not name waits for the owner to approve it, so ask for one only when you are about to write.',
+      'The active project, projects linked by external tasks, and existing mounts are authorized. Up to two other projects mount automatically per session; further projects wait for owner approval.',
     );
     expect(guard).not.toContain('materialize every relevant project');
     expect(guard).toContain('<<materialize: <project name> | <why you need it>>>');
@@ -287,7 +287,7 @@ describe('buildScopeGuard', () => {
     expect(guard).toContain('- app (repo) root: /tmp/app | NOT materialized');
     expect(guard).toContain('- web (repo) root: /tmp/web | NOT materialized');
     expect(guard).toContain(
-      'Materialize ONLY a project whose files you must edit to finish this goal.',
+      'Materialize ONLY a project whose files you must edit. A project name in the goal, plan, or prompt is not write intent or authorization.',
     );
     expect(guard).toContain('You may READ the project root paths listed above.');
     expect(guard).toContain(

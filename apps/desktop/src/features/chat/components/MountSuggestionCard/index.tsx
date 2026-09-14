@@ -26,7 +26,7 @@ const consequenceSentence = ({ projectName, agentName, cause }: SentenceParams):
       return `${lead}; this request has already mounted two projects.`;
     case 'scope':
     case null:
-      return `${lead}; this expands the session beyond its two-project allowance for unnamed projects.`;
+      return `${lead}; this expands the session beyond its two-project allowance for unauthorized projects.`;
     default: {
       const exhaustive: never = cause;
       return exhaustive;
