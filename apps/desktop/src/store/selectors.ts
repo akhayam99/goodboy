@@ -10,6 +10,7 @@ import type {
   DiffComment,
   OpenQuestion,
   PlanWithCount,
+  Project,
   ProviderRunId,
   Session,
   SessionId,
@@ -163,6 +164,7 @@ export const useProjectFilteredSessions = ({
 
 const EMPTY_GITHUB_STATE: Readonly<Record<string, never>> = Object.freeze({});
 const EMPTY_WORKSPACES: ReadonlyArray<Workspace> = [];
+const EMPTY_PROJECTS: ReadonlyArray<Project> = [];
 
 type StageInfoState = Pick<
   AppState,
@@ -293,7 +295,7 @@ export const useSortedGroupedSessions = (
   const currentSessionId = useAppStore((s) => (needsStage ? s.currentSessionId : null));
   const githubStatus = useAppStore((s) => (needsStage ? s.githubStatus : null));
   const workspaces = useAppStore((s) => (needsStage ? s.workspaces : EMPTY_WORKSPACES));
-  const projects = useAppStore((s) => (needsStage ? s.projects : []));
+  const projects = useAppStore((s) => (needsStage ? s.projects : EMPTY_PROJECTS));
   const sessionBranches = useAppStore((s) =>
     needsStage ? s.sessionBranches : (EMPTY_GITHUB_STATE as typeof s.sessionBranches),
   );

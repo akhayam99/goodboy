@@ -458,6 +458,27 @@ describe('useSortedGroupedSessions', () => {
 
     expect(result.current).toEqual([{ key: 'building', sessions }]);
   });
+
+  it.each(['pr', 'none'] as const)(
+    'keeps the same array reference across store updates while grouping by %s',
+    (group) => {
+      store.state.workspaces = [createWorkspace()];
+      store.state.projects = [createProject()];
+      store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+      store.state.sessionViewPrefs = { [WORKSPACE_ID]: { sort: 'updatedAt', group } };
+      const sessions = [createSession(SESSION_ID)];
+
+      const { result, rerender } = renderHook(() =>
+        useSortedGroupedSessions(WORKSPACE_ID, sessions),
+      );
+      const first = result.current;
+
+      store.state.currentSessionId = 'unrelated-session' as SessionId;
+      rerender();
+
+      expect(result.current).toBe(first);
+    },
+  );
 });
 
 describe('useStageGroupedSessions', () => {
