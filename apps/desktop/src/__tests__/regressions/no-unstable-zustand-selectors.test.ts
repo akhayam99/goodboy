@@ -51,6 +51,7 @@ function extractCallBody(
 const UNSTABLE_TAIL_PATTERNS: ReadonlyArray<RegExp> = [
   /\.\s*(?:filter|map|sort|concat|slice|flatMap|reduce|reverse)\s*\(([^()]|\([^()]*\))*\)\s*$/,
   /\?\?\s*[[{]\s*[\]}]\s*$/,
+  /[?:]\s*(?:\[\s*\]|\{\s*\})\s*\)*\s*$/,
   /\[\s*\.\.\.[^\]]*\]\s*$/,
   /\{\s*\.\.\.[^}]*\}\s*$/,
 ];
