@@ -6,12 +6,18 @@ import {
   fetchIssueCandidates,
   type IssueCandidate,
 } from '../../../integrations/fetchIssueCandidates';
-import { resolveIssueSources, type IssueSource } from '../../../integrations/issueSources';
+import {
+  resolveIssueSources,
+  type IssueSource,
+  type IssueSourceKind,
+} from '../../../integrations/issueSources';
 import { useToolConnections } from '../../../integrations/useToolConnections';
 import type { TrackerProvider } from '../../../integrations/components/TrackerStudioLinks';
 import { useJiraConfig } from '../../../integrations/jira/useJiraConfig';
 
 const ROWS_PER_SOURCE = 5;
+
+const SOURCE_KINDS: ReadonlyArray<IssueSourceKind> = ['issue'];
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -49,7 +55,8 @@ export const useKickoffIssues = ({ workspaceId }: Params): Result => {
       resolveIssueSources({
         integrations,
         isGithubAuthenticated: github.isAuthenticated,
-      }).filter((source) => source.provider !== 'slack'),
+        kinds: SOURCE_KINDS,
+      }),
     [github.isAuthenticated, integrations],
   );
 

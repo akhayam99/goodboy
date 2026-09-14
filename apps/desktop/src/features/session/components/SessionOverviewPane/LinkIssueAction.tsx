@@ -1,24 +1,25 @@
 import { useState } from 'react';
 import { ChevronLeft, Link2, Plus } from 'lucide-react';
 import { AnchoredPopover, IconButton, Tooltip, cn, useDropdown } from '@goodboy/ui';
-import type { Session, SessionExternalTaskProvider } from '@goodboy/types';
+import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
+import {
+  issueSourcesOfKind,
+  resolveIssueSources,
+  type IssueSource,
+  type IssueSourceKind,
+} from '../../../integrations/issueSources';
 import { LinkIssueForm } from '../SessionWorkspace/parts/IntegrationPane/LinkIssueForm';
 import { VITAL_CHIP } from './vitalChip';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
-type Tracker = {
-  readonly provider: Exclude<SessionExternalTaskProvider, 'sentry' | 'bitbucket' | 'slack'>;
-  readonly label: string;
-};
+const TRACKER_KINDS: ReadonlyArray<IssueSourceKind> = ['issue'];
 
-const INTEGRATION_TRACKERS: ReadonlyArray<Tracker> = [
-  { provider: 'linear', label: 'Linear' },
-  { provider: 'jira', label: 'Jira' },
-  { provider: 'gitlab', label: 'GitLab' },
-];
+const TRACKER_NAMES = new Intl.ListFormat('en', { type: 'disjunction' }).format(
+  issueSourcesOfKind({ kinds: TRACKER_KINDS }).map((source) => source.label),
+);
 
 const CHIP_TRIGGER = cn(VITAL_CHIP, 'border-dashed border-border bg-transparent');
 
@@ -33,7 +34,7 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
     (s) => s.workspaceIntegrations[session.workspaceId] ?? EMPTY_ARRAY,
   );
   const github = useGithubConnection({ workspaceId: session.workspaceId });
-  const [pickedTracker, setPickedTracker] = useState<Tracker | null>(null);
+  const [pickedTracker, setPickedTracker] = useState<IssueSource | null>(null);
   const dropdown = useDropdown({
     align: 'end',
     expectedHeight: 280,
@@ -41,12 +42,11 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
     width: 'w-96 max-w-[calc(100vw-2rem)]',
   });
 
-  const connected: ReadonlyArray<Tracker> = [
-    ...INTEGRATION_TRACKERS.filter(({ provider }) =>
-      integrations.some((integration) => integration.provider === provider),
-    ),
-    ...(github.isAuthenticated ? [{ provider: 'github', label: 'GitHub' } as const] : []),
-  ];
+  const connected = resolveIssueSources({
+    integrations,
+    isGithubAuthenticated: github.isAuthenticated,
+    kinds: TRACKER_KINDS,
+  });
   const tracker = pickedTracker ?? (connected.length === 1 ? (connected[0] ?? null) : null);
 
   const onToggle = () => {
@@ -93,8 +93,7 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
     >
       {connected.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          No tracker connected yet. Connect Linear, Jira, GitLab or GitHub from the integrations
-          studios in the footer, then link issues here.
+          {`No tracker connected yet. Connect ${TRACKER_NAMES} from the integrations studios in the footer, then link issues here.`}
         </p>
       ) : tracker != null ? (
         <div className="flex flex-col gap-2">
