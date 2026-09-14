@@ -25,8 +25,8 @@ pub struct QueryRequest {
     pub project: String,
     #[serde(default)]
     pub mount: String,
-    #[serde(default)]
-    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_id: Option<String>,
     pub provider: String,
     pub verb: String,
     #[serde(default)]

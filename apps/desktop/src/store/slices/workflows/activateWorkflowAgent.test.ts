@@ -8,6 +8,8 @@ import type {
   OpenQuestionId,
   PlanId,
   PlanWithCount,
+  Project,
+  ProjectId,
   Session,
   SessionId,
   StepId,
@@ -123,6 +125,7 @@ function buildHarness(opts: {
   plans: ReadonlyArray<PlanWithCount>;
   autoRun?: boolean;
   extraAgents?: ReadonlyArray<Agent>;
+  projects?: ReadonlyArray<Project>;
 }) {
   listPlansForSessionSpy.mockResolvedValue(opts.plans);
   const handsFree = opts.autoRun ?? false;
@@ -154,10 +157,11 @@ function buildHarness(opts: {
     updatedAt: NOW,
   };
   const sendTurn = vi.fn(async (_arg: SendTurnInput) => undefined);
+  const ensureProjectMounted = vi.fn(async () => undefined);
   const state = {
     sessionPhaseRuns: { [SESSION_ID]: [opts.agent, ...(opts.extraAgents ?? [])] },
     sessions: [session],
-    projects: [],
+    projects: opts.projects ?? [],
     sessionProjectMounts: {},
     phaseTemplates: { [WS_ID]: [opts.workflow] },
     sessionPlans: { [SESSION_ID]: opts.plans },
@@ -165,11 +169,13 @@ function buildHarness(opts: {
     selectedAgentId: {},
     agentTurnState: {},
     sendTurn,
+    ensureProjectMounted,
   };
   const set = vi.fn();
   const get = (() => state) as unknown as Parameters<typeof activateWorkflowAgent>[1];
   return {
     sendTurn,
+    ensureProjectMounted,
     set,
     state,
     activate: activateWorkflowAgent(
@@ -287,6 +293,29 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(payload.content).toContain('do the thing');
     expect(payload.content).toContain('run the step');
     expect(fanOutClustersSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not mount projects merely mentioned by a writing workflow step', async () => {
+    const projects = ['api', 'data', 'app-web'].map(
+      (name, index) =>
+        ({
+          id: `project-${index}` as ProjectId,
+          workspaceId: WS_ID,
+          name,
+          rootPath: `/tmp/${name}`,
+          kind: 'repo',
+        }) as Project,
+    );
+    const { activate, ensureProjectMounted } = buildHarness({
+      agent: makeAgent('implementer', 'Implement'),
+      workflow: makeWorkflow('Implement'),
+      plans: [makePlan({ bodyMd: 'Read api and data, then edit app-web.' })],
+      projects,
+    });
+
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+    expect(ensureProjectMounted).not.toHaveBeenCalled();
   });
 
   it('awaits the workflow kickoff and identifies its origin', async () => {

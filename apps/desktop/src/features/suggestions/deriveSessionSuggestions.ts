@@ -1,5 +1,8 @@
 import type { MountId, PlanId, ProjectId, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
-import { pendingMountEvents, type SuggestionMountEvent } from './mountProposals';
+import {
+  pendingMountEvents,
+  type SuggestionMountEvent,
+} from '../../store/materializationProposals';
 import type { RebaseSuggestionTarget, SessionSuggestion } from './types';
 
 export type SuggestionWorkflowRun = {

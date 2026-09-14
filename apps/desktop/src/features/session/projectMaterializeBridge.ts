@@ -5,7 +5,6 @@ import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import {
   deferredMaterializeMessage,
   materializationGate,
-  priorMountCount,
   proposeMaterialization,
   runMaterializationBatch,
 } from '../../store/materializationGate';
@@ -19,6 +18,7 @@ const MATERIALIZE_EVENT = 'query-bridge://project-materialize';
 
 type MaterializeRequest = {
   readonly id: string;
+  readonly runId?: string | null;
   readonly sessionId: SessionId;
   readonly projectId: ProjectId;
   readonly projectName: string;
@@ -35,30 +35,34 @@ type MaterializeOutcome = {
 
 const inTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
-export const executeMaterializeRequest = async (
-  request: MaterializeRequest,
-): Promise<MaterializeOutcome> => {
+export const executeMaterializeRequest = async ({
+  sessionId,
+  runId,
+  projectId,
+  projectName,
+  reason,
+}: MaterializeRequest): Promise<MaterializeOutcome> => {
   const get = useAppStore.getState;
-  const project = get().projects.find((candidate) => candidate.id === request.projectId) ?? null;
+  const project = get().projects.find((candidate) => candidate.id === projectId) ?? null;
   if (project === null) {
-    return { ok: false, error: `unknown project: ${request.projectName}` };
+    return { ok: false, error: `unknown project: ${projectName}` };
   }
   return runMaterializationBatch({
-    sessionId: request.sessionId,
-    run: async () => {
+    sessionId,
+    ...(runId == null || runId.trim() === '' ? {} : { batchId: runId }),
+    run: async ({ budget }) => {
       const decision = materializationGate({
         get,
-        sessionId: request.sessionId,
+        sessionId,
         project,
-        priorMounts: priorMountCount({ get, sessionId: request.sessionId }),
-        immediateCount: 0,
+        immediateProjectIds: budget.immediateProjectIds,
       });
       if (decision.kind === 'deferred') {
-        await proposeMaterialization({
+        const proposal = await proposeMaterialization({
           get,
-          sessionId: request.sessionId,
+          sessionId,
           project,
-          reason: request.reason,
+          reason,
           cause: decision.cause,
           agentId: null,
           turnRunId: null,
@@ -68,23 +72,27 @@ export const executeMaterializeRequest = async (
           error: deferredMaterializeMessage({
             projectName: project.name,
             cause: decision.cause,
+            isAlreadyPending: proposal === 'already-pending',
           }),
         };
       }
       try {
         const outcome = await get().ensureProjectMounted({
-          sessionId: request.sessionId,
-          projectId: request.projectId,
-          reason: request.reason,
+          sessionId,
+          projectId,
+          reason,
         });
+        if (outcome.status === 'created') {
+          budget.immediateProjectIds.add(project.id);
+        }
         if (outcome.status === 'already-mounted' && outcome.mountIds.length !== 1) {
           return {
             ok: false,
             error: `${project.name} already has ${outcome.mountIds.length} branch mounts. Run \`mount list\` and work in the one you mean.`,
           };
         }
-        const owned = selectWritableMounts({ state: get(), sessionId: request.sessionId }).filter(
-          (candidate) => candidate.projectId === request.projectId,
+        const owned = selectWritableMounts({ state: get(), sessionId }).filter(
+          (candidate) => candidate.projectId === projectId,
         );
         const mount =
           outcome.status === 'created'

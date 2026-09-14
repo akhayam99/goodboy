@@ -91,6 +91,7 @@ import { buildProfileGuard } from '../../profileGuard';
 import { buildScopeGuard } from '../../scopeGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { stepSummaryDegraded } from '../../summarizeAgentOutput';
+import { clearMaterializationBatch } from '../../materializationGate';
 import { decisionsDelta } from '../session-events';
 import { flushTurnEvents } from '../transcripts/buffer';
 import {
@@ -1175,6 +1176,16 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           ? { kind: 'failed', finishedAt: now(), error: 'cancelled by user' }
           : { kind: 'succeeded', finishedAt: now() },
       );
+      if (!wasCancelled && assistantText.length > 0) {
+        await captureMaterializeRequestsFromTurn({
+          get,
+          sessionId,
+          agentId: activeAgentId,
+          runId,
+          assistantText,
+          boundMountId: turnMountId,
+        });
+      }
       if (resolvedAgentId && !wasCancelled) {
         const shouldAutoAdvance = await completeResolvedAgent({
           set,
@@ -1481,6 +1492,25 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         void get().refreshUnreadWorkspaces();
       }
       lastError = createTranscriptOwnedTurnError({ message: rawMessage, cause: err });
+      if (!cancelledBeforeFailure && assistantText.length > 0) {
+        try {
+          await captureMaterializeRequestsFromTurn({
+            get,
+            sessionId,
+            agentId: activeAgentId,
+            runId,
+            assistantText,
+            boundMountId: turnMountId,
+          });
+        } catch (materializationError) {
+          get().appendTurnEvent(activeAgentId, sessionId, {
+            kind: 'error',
+            runId,
+            message: `materialize failed: ${formatError(materializationError)}`,
+            at: now(),
+          });
+        }
+      }
     } finally {
       flushTurnEvents();
       if (turnFileVersionCapture != null) {
@@ -1496,6 +1526,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           await get().loadSessionFileVersions({ sessionId, force: true });
         }
       }
+      clearMaterializationBatch({ sessionId, batchId: runId });
     }
 
     if (assistantText.length > 0) {
@@ -1508,16 +1539,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         createdAt: now(),
       };
       await insertMessage(tauriDatabase, assistantMessage);
-    }
-
-    if (!turnWasCancelled && assistantText.length > 0) {
-      await captureMaterializeRequestsFromTurn({
-        get,
-        sessionId,
-        agentId: activeAgentId,
-        runId,
-        assistantText,
-      });
     }
 
     if (!lastError && !turnWasCancelled && assistantText.length > 0) {

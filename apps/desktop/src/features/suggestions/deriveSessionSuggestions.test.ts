@@ -10,7 +10,10 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { deriveSessionSuggestions } from './deriveSessionSuggestions';
-import type { SuggestionMountEvent, SuggestionMountEventKind } from './mountProposals';
+import type {
+  SuggestionMountEvent,
+  SuggestionMountEventKind,
+} from '../../store/materializationProposals';
 
 const sessionId = 'session-1' as SessionId;
 const planId = 'plan-1' as PlanId;

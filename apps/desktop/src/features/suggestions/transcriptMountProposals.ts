@@ -1,5 +1,8 @@
 import type { AgentId, ProjectId, ProviderRunId, SessionEvent } from '@goodboy/types';
-import { pendingMountProposals, type SuggestionMountEvent } from './mountProposals';
+import {
+  pendingMountProposals,
+  type SuggestionMountEvent,
+} from '../../store/materializationProposals';
 
 export type TranscriptMountProposal = SuggestionMountEvent & {
   readonly agentId: AgentId;

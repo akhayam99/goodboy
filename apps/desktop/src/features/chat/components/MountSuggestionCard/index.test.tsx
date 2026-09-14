@@ -36,7 +36,7 @@ describe('MountSuggestionCard', () => {
 
     expect(
       screen.getByText(
-        'Mount app-web so Scout can use it in this session; this expands the session beyond its two-project allowance for unnamed projects.',
+        'Mount app-web so Scout can use it in this session; this expands the session beyond its two-project allowance for unauthorized projects.',
       ),
     ).toBeTruthy();
     expect(screen.getByTestId('mount-suggestion-mount').textContent).toBe('Mount project');

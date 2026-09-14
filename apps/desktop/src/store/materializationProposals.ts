@@ -27,11 +27,11 @@ const MOUNT_EVENT_KIND: Readonly<Partial<Record<string, SuggestionMountEventKind
   project_materialization_dismissed: 'dismissed',
 };
 
-export const toMountEvents = ({
-  events,
-}: {
+type EventsParams = {
   readonly events: ReadonlyArray<SessionEvent>;
-}): ReadonlyArray<SuggestionMountEvent> =>
+};
+
+export const toMountEvents = ({ events }: EventsParams): ReadonlyArray<SuggestionMountEvent> =>
   events.flatMap((event) => {
     const kind = MOUNT_EVENT_KIND[event.kind];
     const projectId = event.payload?.projectId;
@@ -53,11 +53,13 @@ export const toMountEvents = ({
     ];
   });
 
+type MountEventsParams = {
+  readonly mountEvents: ReadonlyArray<SuggestionMountEvent>;
+};
+
 export const pendingMountEvents = ({
   mountEvents,
-}: {
-  readonly mountEvents: ReadonlyArray<SuggestionMountEvent>;
-}): ReadonlyArray<SuggestionMountEvent> => {
+}: MountEventsParams): ReadonlyArray<SuggestionMountEvent> => {
   const pending = new Map<ProjectId, SuggestionMountEvent>();
   for (const event of mountEvents) {
     if (event.kind === 'proposed') {
@@ -71,7 +73,5 @@ export const pendingMountEvents = ({
 
 export const pendingMountProposals = ({
   events,
-}: {
-  readonly events: ReadonlyArray<SessionEvent>;
-}): ReadonlyArray<SuggestionMountEvent> =>
+}: EventsParams): ReadonlyArray<SuggestionMountEvent> =>
   pendingMountEvents({ mountEvents: toMountEvents({ events }) });

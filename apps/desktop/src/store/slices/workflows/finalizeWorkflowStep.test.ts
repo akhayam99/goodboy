@@ -3,6 +3,7 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  MountId,
   Session,
   SessionId,
   StepId,
@@ -39,6 +40,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 
 import { finalizeWorkflowStep } from './finalizeWorkflowStep';
 import { SUMMARY_TIMEOUT_MS, stepSummaryDegraded } from '../../summarizeAgentOutput';
+import { clearMountContinuations, queueMountContinuation } from '../turn/mountContinuations';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -131,12 +133,14 @@ describe('finalizeWorkflowStep output summary', () => {
     invokeAgentListSpy.mockResolvedValue([{ ...agent, status: 'completed' }]);
     invokeAgentUpdateStatusSpy.mockResolvedValue({ ...agent, status: 'completed' });
     stepSummaryDegraded.clear();
+    clearMountContinuations();
   });
 
   afterEach(() => {
     vi.clearAllMocks();
     vi.restoreAllMocks();
     vi.useRealTimers();
+    clearMountContinuations();
   });
 
   it('stores the LLM summary before allowing auto-advance', async () => {
@@ -165,6 +169,32 @@ describe('finalizeWorkflowStep output summary', () => {
       }),
     );
     expect(result).toEqual({ shouldAutoAdvance: true });
+  });
+
+  it('leaves the workflow step open while a requested mount continuation is pending', async () => {
+    queueMountContinuation({
+      continuation: {
+        operationId: 'materialize:run-1:project-2:0',
+        sessionId: SESSION_ID,
+        mountId: 'mount-2' as MountId,
+        mountName: 'web',
+        branch: 'ak/web',
+        worktreePath: '/tmp/web',
+        origin: 'materialize',
+      },
+    });
+    const finalize = buildHarness();
+
+    const result = await finalize(
+      SESSION_ID,
+      AGENT_ID,
+      `done <<step-done id="${AGENT_ID}">>`,
+      false,
+    );
+
+    expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
+    expect(summarizeStepOutputSpy).not.toHaveBeenCalled();
+    expect(result).toEqual({ shouldAutoAdvance: false });
   });
 
   it('stores deterministic head and tail fallback when summarization fails', async () => {

@@ -7,7 +7,7 @@ export type MountContinuation = Readonly<{
   mountName: string;
   branch: string;
   worktreePath: string;
-  origin: 'fork' | 'attach';
+  origin: 'fork' | 'attach' | 'materialize';
 }>;
 
 export const MAX_MOUNT_CONTINUATIONS = 3;
@@ -37,7 +37,10 @@ export const queueMountContinuation = ({
   if (boundMountId != null && boundMountId === continuation.mountId) {
     return { queued: false, refusal: 'same-mount' };
   }
-  if ((chained.get(continuation.sessionId) ?? 0) >= MAX_MOUNT_CONTINUATIONS) {
+  const continuationCount =
+    (chained.get(continuation.sessionId) ?? 0) +
+    pendingMountContinuations({ sessionId: continuation.sessionId }).length;
+  if (continuationCount >= MAX_MOUNT_CONTINUATIONS) {
     return { queued: false, refusal: 'chain-exhausted' };
   }
   queued.set(continuation.operationId, continuation);
@@ -78,15 +81,13 @@ export const takeMountContinuation = ({
 }: {
   readonly sessionId: SessionId;
 }): MountContinuation | null => {
-  const owned = pendingMountContinuations({ sessionId });
-  for (const entry of owned) {
-    queued.delete(entry.operationId);
-    consumed.add(entry.operationId);
+  const next = pendingMountContinuations({ sessionId })[0] ?? null;
+  if (next === null) {
+    return null;
   }
-  const next = owned[owned.length - 1] ?? null;
-  if (next !== null) {
-    chained.set(sessionId, (chained.get(sessionId) ?? 0) + 1);
-  }
+  queued.delete(next.operationId);
+  consumed.add(next.operationId);
+  chained.set(sessionId, (chained.get(sessionId) ?? 0) + 1);
   return next;
 };
 
@@ -96,15 +97,41 @@ export const clearMountContinuations = (): void => {
   chained.clear();
 };
 
+type PromptLinesParams = {
+  readonly continuation: MountContinuation;
+};
+
+const mountContinuationPromptLines = ({
+  continuation,
+}: PromptLinesParams): ReadonlyArray<string> => {
+  const location = `${continuation.mountName} (mount ${continuation.mountId}) on branch ${continuation.branch} at ${continuation.worktreePath}`;
+  switch (continuation.origin) {
+    case 'fork':
+      return [
+        `This turn starts in the mount you forked: ${location}.`,
+        'The previous turn ran in another directory, so nothing it left uncommitted is here. Cherry-pick what belongs on this branch and resolve conflicts normally.',
+        'Continue the work you declared when you asked for this mount.',
+      ];
+    case 'attach':
+      return [
+        `This turn starts in the mount you attached: ${location}.`,
+        'The previous turn ran in another directory, so nothing it left uncommitted is here. Cherry-pick what belongs on this branch and resolve conflicts normally.',
+        'Continue the work you declared when you asked for this mount.',
+      ];
+    case 'materialize':
+      return [
+        `The project mount you requested is ready: ${location}.`,
+        'The previous turn ran in scratch space or another mount. Do the work declared in the materialization request now.',
+      ];
+    default: {
+      const exhaustive: never = continuation.origin;
+      return exhaustive;
+    }
+  }
+};
+
 export const mountContinuationPrompt = ({
   continuation,
 }: {
   readonly continuation: MountContinuation;
-}): string =>
-  [
-    continuation.origin === 'fork'
-      ? `This turn starts in the mount you forked: ${continuation.mountName} (mount ${continuation.mountId}) on branch ${continuation.branch} at ${continuation.worktreePath}.`
-      : `This turn starts in the mount you attached: ${continuation.mountName} (mount ${continuation.mountId}) on branch ${continuation.branch} at ${continuation.worktreePath}.`,
-    'The previous turn ran in another directory, so nothing it left uncommitted is here. Cherry-pick what belongs on this branch and resolve conflicts normally.',
-    'Continue the work you declared when you asked for this mount.',
-  ].join('\n');
+}): string => mountContinuationPromptLines({ continuation }).join('\n');
