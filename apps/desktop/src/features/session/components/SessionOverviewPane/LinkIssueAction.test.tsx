@@ -118,6 +118,50 @@ describe('LinkIssueAction', () => {
     expect(screen.getByTestId('link-issue-form').textContent).toBe('linear');
   });
 
+  it('offers sentry once the workspace binds it', () => {
+    store.workspaceIntegrations = { 'ws-1': [{ provider: 'sentry' }] };
+
+    render(<LinkIssueAction session={session} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
+
+    expect(screen.getByTestId('link-issue-form').textContent).toBe('sentry');
+    expect(linkIssueFormCalls.at(-1)).toEqual({ provider: 'sentry', providerLabel: 'Sentry' });
+  });
+
+  it('lists sentry beside the other trackers', () => {
+    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }, { provider: 'sentry' }] };
+
+    render(<LinkIssueAction session={session} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
+
+    expect(screen.getByRole('button', { name: 'Sentry' })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sentry' }));
+
+    expect(screen.getByTestId('link-issue-form').textContent).toBe('sentry');
+  });
+
+  it('never offers slack or bitbucket, which link no issues', () => {
+    store.workspaceIntegrations = {
+      'ws-1': [{ provider: 'slack' }, { provider: 'bitbucket' }, { provider: 'linear' }],
+    };
+
+    render(<LinkIssueAction session={session} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
+
+    expect(screen.queryByRole('button', { name: 'Slack' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Bitbucket' })).toBeNull();
+    expect(screen.getByTestId('link-issue-form').textContent).toBe('linear');
+  });
+
+  it('names sentry in the empty state it points people to', () => {
+    render(<LinkIssueAction session={session} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
+
+    expect(screen.getByText(/No tracker connected yet/).textContent).toContain('Sentry');
+  });
+
   it('reopens on the provider list after a tracker was picked', () => {
     store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }, { provider: 'jira' }] };
 
