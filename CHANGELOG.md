@@ -7,6 +7,22 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.32
+
+Agents mount the project they are about to write in, and leave the ones they
+only read alone.
+
+### Fixes
+
+- A workflow step mounted every project its goal or plan happened to name, so
+  read-only dependencies filled the session's automatic slots and the project
+  the agent had to write in waited for your approval. A mount now follows the
+  agent's own request to write, and the agent picks the work back up inside
+  that mount instead of losing the turn. [#1762]
+- A project named only in the goal text no longer counts as approved. The
+  session's own project and anything an issue links mount freely, two more
+  mount automatically, and the rest still ask you. [#1762]
+
 ## Goodboy v0.2.31
 
 The sidebar survives grouping by pull request, and Sentry turns up where you
