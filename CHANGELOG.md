@@ -7,6 +7,20 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.31
+
+The sidebar survives grouping by pull request, and Sentry turns up where you
+link an issue.
+
+### Fixes
+
+- Picking a session while the sidebar was grouped by pull request, or not
+  grouped at all, took the whole app down with it. Both groupings hold now.
+  [#1758]
+- The `Link an issue` picker left Sentry out even with Sentry connected. Sentry
+  is on the list, and the empty state names the trackers actually on offer
+  instead of a fixed four. [#1759]
+
 ## Goodboy v0.2.30
 
 A turn starts where the session already is, and on Claude it reaches the other
