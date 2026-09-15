@@ -244,9 +244,8 @@ describe('WorkflowStepGraph', () => {
     expect(screen.getByTitle('Model: gemini-3-pro')).toBeDefined();
     expect(screen.queryByTitle('Model: claude-sonnet-4-5')).toBeNull();
     const note = screen.getByTestId('routing-divergence');
-    expect(note.textContent).toBe('was Sonnet 4.5');
-    expect(note.getAttribute('title')).toContain('Planned Claude Sonnet 4.5');
-    expect(note.getAttribute('title')).toContain('ran Gemini');
+    expect(note.textContent).toBe('Sonnet 4.5');
+    expect(note.className).toContain('line-through');
   });
 
   it('shows the provider the agent runs on instead of guessing it from the model id', () => {

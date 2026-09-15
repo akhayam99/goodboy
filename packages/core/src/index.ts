@@ -130,6 +130,7 @@ export {
 export { resolveModelForProvider } from './providers/model-map';
 export { resolveModelIdForProvider } from './providers/resolveModelIdForProvider';
 export { canonicalModelId } from './providers/canonicalModelId';
+export { modelCatalogKey } from './providers/modelCatalogKey';
 export { MODEL_CATALOGS } from './providers/catalogs';
 export { ANTHROPIC_CATALOG } from './providers/claude/catalog';
 export { CODEX_CATALOG } from './providers/codex/catalog';

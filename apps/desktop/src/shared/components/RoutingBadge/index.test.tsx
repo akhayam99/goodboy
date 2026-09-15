@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { RoutingBadge } from './index';
 
 afterEach(cleanup);
@@ -106,24 +107,27 @@ describe('RoutingBadge', () => {
     );
 
     const note = screen.getByTestId('routing-divergence');
-    expect(note.textContent).toBe('was Haiku 4.5');
-    expect(note.getAttribute('title')).toContain('Planned Claude Haiku 4.5');
-    expect(note.getAttribute('title')).toContain('ran Codex');
+    expect(note.textContent).toBe('Haiku 4.5');
+    expect(note.className).toContain('line-through');
+    expect(tooltipTextOf({ element: note })).toBe(
+      'Planned Haiku 4.5, routing picked GPT Codex 5.1 instead',
+    );
   });
 
   it('flags a provider move even when only the provider diverged', () => {
     render(
       <RoutingBadge
         provider="cursor"
-        model="claude-sonnet-4-5"
-        planned={{ provider: 'anthropic', model: 'claude-sonnet-4-5' }}
+        model="claude-4.6-sonnet-medium-thinking"
+        planned={{ provider: 'anthropic', model: 'claude-sonnet-4-6' }}
       />,
     );
 
     const note = screen.getByTestId('routing-divergence');
-    expect(note.textContent).toBe('was Claude');
-    expect(note.getAttribute('title')).toContain('Planned Claude');
-    expect(note.getAttribute('title')).toContain('ran Cursor');
+    expect(note.textContent).toBe('Claude');
+    expect(tooltipTextOf({ element: note })).toBe(
+      'Planned on Claude, routing picked Cursor instead',
+    );
   });
 
   it('keeps the plan out of the badge while the step has not run', () => {
@@ -136,7 +140,7 @@ describe('RoutingBadge', () => {
     );
 
     expect(screen.getByText('Haiku 4.5')).toBeDefined();
-    expect(screen.queryByText(/was /)).toBeNull();
+    expect(screen.queryByTestId('routing-divergence')).toBeNull();
   });
 
   it('renders the divergence as its own chip in the full variant', () => {
@@ -149,7 +153,7 @@ describe('RoutingBadge', () => {
       />,
     );
 
-    expect(screen.getByTestId('routing-divergence').textContent).toBe('was Haiku 4.5');
+    expect(screen.getByTestId('routing-divergence').textContent).toBe('Haiku 4.5');
   });
 
   it('leads the compact variant with the provider mark, like the routing trigger does', () => {
@@ -168,5 +172,41 @@ describe('RoutingBadge', () => {
     expect(
       modelSpan.compareDocumentPosition(effortSpan) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it('reads a catalog key and the cli id it executes as the same model', () => {
+    render(
+      <RoutingBadge
+        provider="anthropic"
+        model="claude-sonnet-5"
+        planned={{ provider: 'anthropic', model: 'sonnet-5' }}
+      />,
+    );
+
+    expect(screen.queryByTestId('routing-divergence')).toBeNull();
+  });
+
+  it('reads a cursor combo slug and the catalog key as the same model', () => {
+    render(
+      <RoutingBadge
+        provider="cursor"
+        model="claude-sonnet-5-xhigh"
+        planned={{ provider: 'cursor', model: 'sonnet-5' }}
+      />,
+    );
+
+    expect(screen.queryByTestId('routing-divergence')).toBeNull();
+  });
+
+  it('keeps two cursor efforts of the same model out of the divergence note', () => {
+    render(
+      <RoutingBadge
+        provider="cursor"
+        model="claude-sonnet-5-high"
+        planned={{ provider: 'cursor', model: 'claude-sonnet-5-xhigh' }}
+      />,
+    );
+
+    expect(screen.queryByTestId('routing-divergence')).toBeNull();
   });
 });
