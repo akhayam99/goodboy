@@ -7,6 +7,46 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.33
+
+Cursor offers its whole model line-up, and the action that moves a workflow on
+sits where you are reading.
+
+### [#1765] The Cursor picker carries every model Cursor runs
+
+The Cursor picker listed eight models. It now lists every model the Cursor CLI
+accepts: Kimi K3, GLM 5.2, Grok 4.6, Gemini 3.8 Flash, Muse Spark 1.3, Sonnet 5,
+and the Terra and Luna variants of GPT-5.6. Each arrives with the effort levels
+Cursor publishes for it, so the effort chips match what the model can actually
+do, and with the rate Cursor charges, so a turn is counted against that model's
+price rather than an approximation of it.
+
+Automatic routing uses them too. A cheap role on Cursor runs on GPT-5.6 Luna and
+a budget fallback lands on GPT-5.6 Terra, both cheaper per token than what they
+replaced. Both are Max Mode models, so on a legacy request-based Cursor plan
+automatic routing can now reach Max Mode; on a usage-based plan nothing about
+billing changes.
+
+Two models carry names Moonshot and OpenCode also use. Picking Kimi K3 or Muse
+Spark from those providers still runs them there, not through Cursor.
+
+### [#1766] Workflow actions sit where the conversation ends
+
+Check completion and Skip blocked step were at the top of the session, a screen
+away from the message that made them worth pressing. They now sit between the
+last message and the composer.
+
+They appear only in the chat of the agent working the current step, including
+the agents clustered under it, since Skip rewrites the run and offering it over
+an unrelated conversation is worse than leaving it at the top. When there is
+nothing to advance the row is absent rather than empty, so the composer does not
+move under you.
+
+### Fixes
+
+- Every turn on Gemini failed to start. Gemini turns run again, and the effort
+  you pick reaches the model instead of being dropped on the way. [#1764]
+
 ## Goodboy v0.2.32
 
 Agents mount the project they are about to write in, and leave the ones they
