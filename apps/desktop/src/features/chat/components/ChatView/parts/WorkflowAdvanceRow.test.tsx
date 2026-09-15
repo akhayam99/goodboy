@@ -206,7 +206,7 @@ describe('WorkflowAdvanceRow', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('renders nothing for a cluster child agent working under the current step', () => {
+  it('shows the advance action for a cluster child agent working under the current step', () => {
     const pending = agent({
       id: 'agent-1' as AgentId,
       stepId: 'step-1' as StepId,
@@ -221,8 +221,8 @@ describe('WorkflowAdvanceRow', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [pending, clusterChild] };
     store.selectedAgentId = { [SESSION_ID]: 'agent-1-child' };
 
-    const { container } = render(<WorkflowAdvanceRow session={session} />);
+    render(<WorkflowAdvanceRow session={session} />);
 
-    expect(container.innerHTML).toBe('');
+    expect(screen.getByTestId('workflow-advance-mounted')).toBeDefined();
   });
 });

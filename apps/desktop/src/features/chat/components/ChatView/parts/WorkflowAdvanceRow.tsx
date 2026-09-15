@@ -1,6 +1,7 @@
 import type { Session, SessionId } from '@goodboy/types';
 import { classifyWorkflowChain, findReusableAgent, runsForWorkflowRun } from '@goodboy/core';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { resolveRootAgent } from '../../../../session/agent-kind';
 import { useSelectedWorkflowRun } from '../../../../session/hooks/useSelectedWorkflowRun';
 import { WorkflowAdvance } from '../../../../workflows/components/WorkflowAdvance';
 
@@ -31,7 +32,16 @@ export const WorkflowAdvanceRow = ({ session }: Props) => {
           ) ?? null)
         : null;
 
-  if (actingAgent == null || actingAgent.id !== selectedAgentId) {
+  if (actingAgent == null) {
+    return null;
+  }
+  const selectedRootAgent =
+    selectedAgentId != null
+      ? resolveRootAgent({ agents: phaseRuns, agentId: selectedAgentId })
+      : null;
+  const isActingChat =
+    actingAgent.id === selectedAgentId || actingAgent.id === selectedRootAgent?.id;
+  if (!isActingChat) {
     return null;
   }
 
