@@ -1,4 +1,4 @@
-import { isAgentRole } from '@goodboy/core';
+import { normalizeAgentRole } from '@goodboy/core';
 import type { PlannerOutput } from '@goodboy/core';
 import type { ProviderId, StepDef, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { clampEffort, type EffortLevel } from '../../chat/utils/chat-constants';
@@ -25,7 +25,7 @@ export const draftFromWorkflow = ({ workflow }: DraftFromWorkflowParams): Workfl
       key: nextKey(),
       sourceStepId: step.id,
       libraryStepId: step.libraryStepId ?? null,
-      role: step.role ?? 'custom',
+      role: normalizeAgentRole({ role: step.role ?? 'custom' }),
       name: step.name,
       prompt: step.promptPrefix ?? '',
       expectedOutput: step.expectedOutput ?? '',
@@ -42,7 +42,7 @@ export const draftFromStepDef = ({ def }: DraftFromStepDefParams): StepDraft => 
   key: nextKey(),
   sourceStepId: null,
   libraryStepId: def.id,
-  role: def.role,
+  role: normalizeAgentRole({ role: def.role }),
   name: def.name,
   prompt: def.promptPrefix,
   expectedOutput: '',
@@ -59,7 +59,7 @@ export const draftFromPlannerSteps = ({ steps }: DraftFromPlannerStepsParams): S
     key: nextKey(),
     sourceStepId: null,
     libraryStepId: null,
-    role: isAgentRole(step.role) ? step.role : 'custom',
+    role: normalizeAgentRole({ role: step.role }),
     name: step.name,
     prompt: step.promptPrefix,
     expectedOutput: step.expectedOutput,

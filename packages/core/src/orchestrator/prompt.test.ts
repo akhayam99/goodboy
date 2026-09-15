@@ -189,6 +189,14 @@ describe('ORCHESTRATOR_SYSTEM_PROMPT', () => {
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('planner step');
   });
 
+  it('offers only selection-eligible roles', () => {
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain(
+      'Roles are limited to: scout, investigator, planner, implementer, reviewer, tester, resolver, docs, custom.',
+    );
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).not.toContain('report, wireframe');
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).not.toContain('artifact-only goal');
+  });
+
   it('never gives the orchestrator a count to close on', () => {
     expect(ORCHESTRATOR_SYSTEM_PROMPT).not.toContain('step budget');
     expect(ORCHESTRATOR_SYSTEM_PROMPT).not.toContain('reaches the budget');

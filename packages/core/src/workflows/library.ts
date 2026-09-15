@@ -49,9 +49,9 @@ export const WORKFLOW_LIBRARY: ReadonlyArray<WorkflowLibraryEntry> = [
         name: 'Test',
         role: 'tester',
         promptPrefix:
-          'Run the full test suite and confirm the refactor preserved behavior. Add coverage for any path the refactor exposed. Fix the code when a test fails. Never weaken a test to make it pass.',
+          'Run the full test suite and confirm the refactor preserved behavior. Add coverage for any path the refactor exposed. Do not patch production code. Report production failures for an implementer to fix. Never weaken a test to make it pass.',
         expectedOutput:
-          'A green test suite that proves behavior is unchanged, plus any new coverage the refactor required.',
+          'Test results, any new coverage the refactor required, and production failures for an implementer.',
       },
     ],
   },

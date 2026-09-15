@@ -6,7 +6,7 @@ import type {
 } from '@goodboy/types';
 import { devWarn } from '../dev-log';
 import { PROVIDER_CAPABILITIES } from './capabilities';
-import { defaultsForRole, isAgentRole } from '../roles';
+import { defaultsForRole, normalizeAgentRole } from '../roles';
 import { resolveModelArgs } from './resolveModelArgs';
 import { resolvedStoredModelId } from './resolvedStoredModelId';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
@@ -67,14 +67,15 @@ const resolveRoleFallback = ({ fallback, effort }: FallbackParams): ResolvedRole
 };
 
 export const resolveRoleRouting = ({ role, prefs }: Params): ResolvedRoleRouting => {
-  const defaults = defaultsForRole(role);
+  const normalizedRole = normalizeAgentRole({ role });
+  const defaults = defaultsForRole(normalizedRole);
   const compiled: ResolvedRoleRouting = {
     provider: defaults.provider,
     model: defaults.model,
     effort: defaults.effort,
     isOverride: false,
   };
-  const preference = prefs?.[isAgentRole(role) ? role : 'custom'];
+  const preference = prefs?.[normalizedRole];
   if (preference == null) {
     return compiled;
   }

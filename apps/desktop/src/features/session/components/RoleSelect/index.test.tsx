@@ -11,7 +11,7 @@ afterEach(() => {
 });
 
 describe('RoleSelect', () => {
-  it('offers every role in a workspace', () => {
+  it('offers exactly the selection-eligible roles', () => {
     render(<RoleSelect value={'custom' as AgentRole} onChange={vi.fn()} disabled={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Custom/i }));
@@ -19,29 +19,24 @@ describe('RoleSelect', () => {
 
     expect(options.getAllByRole('button').map((option) => option.textContent)).toEqual([
       'Scout',
+      'Debugger',
       'Planner',
       'Implementer',
       'Reviewer',
       'Tester',
-      'Debugger',
+      'Resolver',
+      'Docs',
       'Custom',
     ]);
   });
 
-  it('offers every role once the workspace becomes a dev project', () => {
+  it('does not offer unreleased artifact roles', () => {
     render(<RoleSelect value={'custom' as AgentRole} onChange={vi.fn()} disabled={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Custom/i }));
     const options = within(screen.getByRole('listbox', { name: 'Agent role' }));
 
-    expect(options.getAllByRole('button').map((option) => option.textContent)).toEqual([
-      'Scout',
-      'Planner',
-      'Implementer',
-      'Reviewer',
-      'Tester',
-      'Debugger',
-      'Custom',
-    ]);
+    expect(options.queryByRole('button', { name: 'Report' })).toBeNull();
+    expect(options.queryByRole('button', { name: 'Wireframe' })).toBeNull();
   });
 });

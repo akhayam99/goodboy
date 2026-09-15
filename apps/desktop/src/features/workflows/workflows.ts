@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { normalizeAgentRole } from '@goodboy/core';
 import {
   isWorkflowRoutingDecision,
   isWorkflowRoutingLock,
@@ -148,7 +149,7 @@ function rowToStep(row: RawWorkflowStepRow): Step {
     ...(row.expectedOutput != null &&
       row.expectedOutput !== '' && { expectedOutput: row.expectedOutput }),
     ...(row.libraryStepId != null && { libraryStepId: row.libraryStepId as StepDefId }),
-    ...(row.role != null && { role: row.role as AgentRole }),
+    ...(row.role != null && { role: normalizeAgentRole({ role: row.role }) }),
     ...(row.providerOverride != null && { providerOverride: row.providerOverride as ProviderId }),
     ...(row.modelOverride != null && { modelOverride: row.modelOverride }),
     ...(row.effort != null && { effort: row.effort as AgentEffort }),
@@ -169,7 +170,7 @@ function rowToStepDef(row: RawStepDefRow): StepDef {
   return {
     id: row.id as StepDefId,
     workspaceId: row.workspaceId as WorkspaceId | null,
-    role: row.role as AgentRole,
+    role: normalizeAgentRole({ role: row.role }),
     name: row.name,
     promptPrefix: row.promptPrefix,
     createdAt: row.createdAt as IsoDateTime,

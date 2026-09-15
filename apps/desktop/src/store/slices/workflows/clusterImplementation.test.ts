@@ -14,7 +14,7 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ROLE_DEFAULTS, resolveModelArgs, resolveStoredModelSelection } from '@goodboy/core';
+import { ROLE_REGISTRY, resolveModelArgs, resolveStoredModelSelection } from '@goodboy/core';
 import {
   isWorkflowRoutingDecision,
   isWorkflowTaskProfile,
@@ -612,7 +612,7 @@ describe('fanOutClusters', () => {
 
     expect(hoisted.insertArgs).toHaveLength(2);
     for (const args of hoisted.insertArgs) {
-      expect(args.modelOverride).toBe(ROLE_DEFAULTS.implementer.model);
+      expect(args.modelOverride).toBe(ROLE_REGISTRY.implementer.model);
       expect(args.routingLock).toBeUndefined();
     }
   });
@@ -627,8 +627,8 @@ describe('fanOutClusters', () => {
 
     await fanOutClusters(set, get, SID, c, clusters, 'goal');
 
-    expect(hoisted.insertArgs[0]?.modelOverride).toBe(ROLE_DEFAULTS.implementer.model);
-    expect(hoisted.insertArgs[0]?.effort).toBe(ROLE_DEFAULTS.implementer.effort);
+    expect(hoisted.insertArgs[0]?.modelOverride).toBe(ROLE_REGISTRY.implementer.model);
+    expect(hoisted.insertArgs[0]?.effort).toBe(ROLE_REGISTRY.implementer.effort);
   });
 
   it('mixed-complexity clusters persist distinct choices and execute sequentially', async () => {
@@ -789,8 +789,8 @@ describe('cluster child routing lifecycle', () => {
 
     expect(hoisted.insertArgs).toHaveLength(2);
     for (const args of hoisted.insertArgs) {
-      expect(args.modelOverride).toBe(ROLE_DEFAULTS.implementer.model);
-      expect(args.effort).toBe(ROLE_DEFAULTS.implementer.effort);
+      expect(args.modelOverride).toBe(ROLE_REGISTRY.implementer.model);
+      expect(args.effort).toBe(ROLE_REGISTRY.implementer.effort);
       expect((args.routingDecision as WorkflowRoutingDecision).source).toBe('kind_default');
       expect(args.routingLock).toBeUndefined();
     }

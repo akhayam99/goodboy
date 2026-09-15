@@ -3,7 +3,7 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId } from '@goodboy/types';
-import { ROLE_DEFAULTS } from '@goodboy/core';
+import { ROLE_REGISTRY } from '@goodboy/core';
 import type { CommentAgentArgs } from '../../../chat/spawn-from-comment';
 
 type Overrides = { readonly roleModels: Record<string, unknown> | null };
@@ -116,9 +116,9 @@ describe('useResolverSpawner', () => {
     expect(state.spawnAgent).toHaveBeenCalledWith(
       SESSION_ID,
       expect.objectContaining({
-        provider: ROLE_DEFAULTS.resolver.provider,
-        model: ROLE_DEFAULTS.resolver.model,
-        effort: ROLE_DEFAULTS.resolver.effort,
+        provider: ROLE_REGISTRY.resolver.provider,
+        model: ROLE_REGISTRY.resolver.model,
+        effort: ROLE_REGISTRY.resolver.effort,
       }),
     );
   });

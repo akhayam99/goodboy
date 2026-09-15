@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PROVIDER_CAPABILITIES, ROLE_DEFAULTS, type WorkflowLibraryStep } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, ROLE_REGISTRY, type WorkflowLibraryStep } from '@goodboy/core';
 import type { Agent, AgentId, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
 import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
 import {
@@ -44,6 +44,8 @@ const ALL_KINDS: ReadonlyArray<AgentKind> = [
   'reviewer',
   'pr-reviewer',
   'docs',
+  'report',
+  'wireframe',
   'resolver',
   'generic',
 ];
@@ -328,6 +330,8 @@ describe('AGENT_KIND_DEFAULTS', () => {
       'pr-reviewer',
       'tester',
       'resolver',
+      'report',
+      'wireframe',
     ] as AgentKind[]) {
       expect(kindRouting({ kind }).effort).toBe('medium');
       expect(kindRouting({ kind }).model).toMatch(/sonnet/i);
@@ -342,7 +346,7 @@ describe('AGENT_KIND_DEFAULTS', () => {
     expect(AGENT_KIND_DEFAULTS['pr-reviewer'].visible).toBe(false);
   });
 
-  it('every other kind is available in the manual spawn menu', () => {
+  it('keeps every released kind available in the manual spawn menu', () => {
     const manualKinds: ReadonlyArray<AgentKind> = [
       'scout',
       'planner',
@@ -384,10 +388,10 @@ describe('AGENT_KIND_DEFAULTS', () => {
     }
   });
 
-  it('tracks ROLE_DEFAULTS as the single source of truth for routing', () => {
-    expect(kindRouting({ kind: 'planner' }).model).toBe(ROLE_DEFAULTS.planner.model);
-    expect(kindRouting({ kind: 'implementer' }).model).toBe(ROLE_DEFAULTS.implementer.model);
-    expect(kindRouting({ kind: 'debugger' }).model).toBe(ROLE_DEFAULTS.investigator.model);
+  it('tracks ROLE_REGISTRY as the single source of truth for routing', () => {
+    expect(kindRouting({ kind: 'planner' }).model).toBe(ROLE_REGISTRY.planner.model);
+    expect(kindRouting({ kind: 'implementer' }).model).toBe(ROLE_REGISTRY.implementer.model);
+    expect(kindRouting({ kind: 'debugger' }).model).toBe(ROLE_REGISTRY.investigator.model);
   });
 });
 
@@ -459,8 +463,8 @@ describe('kindRouting role overrides', () => {
       },
     });
 
-    expect(routing.model).toBe(ROLE_DEFAULTS.reviewer.model);
-    expect(routing.effort).toBe(ROLE_DEFAULTS.reviewer.effort);
+    expect(routing.model).toBe(ROLE_REGISTRY.reviewer.model);
+    expect(routing.effort).toBe(ROLE_REGISTRY.reviewer.effort);
   });
 });
 
@@ -474,6 +478,10 @@ describe('inferAgentKindFromStep', () => {
     ['reviewer', 'reviewer'],
     ['docs', 'docs'],
     ['writer', 'docs'],
+    ['debugger', 'debugger'],
+    ['generic', 'generic'],
+    ['report', 'report'],
+    ['wireframe', 'wireframe'],
   ] as [string, AgentKind][])('role %s → %s', (role, expected) => {
     expect(inferAgentKindFromStep(makeStep(role))).toBe(expected);
   });
@@ -526,10 +534,16 @@ describe('classifyAgent', () => {
     );
   });
 
-  it('falls back to name inference for an invalid persisted kind', () => {
+  it('falls back to generic for an invalid persisted kind', () => {
     expect(classifyAgent(agentOf({ name: 'debug startup', kind: 'unknown' }), null)).toBe(
-      'debugger',
+      'generic',
     );
+  });
+
+  it('normalizes persisted role aliases before presentation', () => {
+    expect(classifyAgent(agentOf({ kind: 'writer' }), null)).toBe('docs');
+    expect(classifyAgent(agentOf({ kind: 'investigator' }), null)).toBe('debugger');
+    expect(classifyAgent(agentOf({ kind: 'custom' }), null)).toBe('generic');
   });
 
   it('returns generic without a persisted kind or meaningful name', () => {
@@ -627,7 +641,7 @@ describe('boundary systemPrompts', () => {
 });
 
 describe('agent visibility', () => {
-  it('exposes every role and visible kind for every workspace', () => {
+  it('exposes only selection-eligible roles and manually spawnable kinds', () => {
     expect(visibleAgentRoles().length).toBeGreaterThan(3);
     expect(visibleAgentKinds()).toEqual([
       'debugger',
@@ -639,5 +653,9 @@ describe('agent visibility', () => {
       'scout',
       'tester',
     ]);
+    expect(visibleAgentRoles()).toContain('docs');
+    expect(visibleAgentRoles()).toContain('resolver');
+    expect(visibleAgentRoles()).not.toContain('report');
+    expect(visibleAgentRoles()).not.toContain('wireframe');
   });
 });

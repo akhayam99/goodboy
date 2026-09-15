@@ -95,7 +95,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import type { OrchestratorClientDeps, OrchestratorInput } from '@goodboy/core';
-import { OrchestratorClient, ROLE_DEFAULTS } from '@goodboy/core';
+import { OrchestratorClient, ROLE_REGISTRY } from '@goodboy/core';
 import { orchestrateNextStep, persistOrchestrationStop } from './orchestrateNextStep';
 import { continueWorkflowRun } from './continueWorkflowRun';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
@@ -547,7 +547,7 @@ describe('orchestrateNextStep', () => {
 
     const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
     expect(insert['kind']).toBe('scout');
-    expect(insert['modelOverride']).toBe(ROLE_DEFAULTS.scout.model);
+    expect(insert['modelOverride']).toBe(ROLE_REGISTRY.scout.model);
     expect(insert['effort']).toBeUndefined();
   });
 

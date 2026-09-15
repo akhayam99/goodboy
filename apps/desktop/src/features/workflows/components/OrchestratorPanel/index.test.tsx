@@ -616,8 +616,9 @@ describe('OrchestratorPanel strip', () => {
 
     const drawer = screen.getByTestId('orchestrator-role-models');
     expect(drawer.textContent).toContain('for the rest of this run');
-    expect(screen.getAllByRole('group', { name: /model$/i })).toHaveLength(7);
-    expect(screen.getByRole('group', { name: /implementer model/i })).toBeDefined();
+    expect(screen.getAllByRole('group', { name: /model$/i })).toHaveLength(9);
+    expect(screen.queryByRole('group', { name: /report model/i })).toBeNull();
+    expect(screen.queryByRole('group', { name: /wireframe model/i })).toBeNull();
   });
 
   it('reads the role models a run already carries', () => {

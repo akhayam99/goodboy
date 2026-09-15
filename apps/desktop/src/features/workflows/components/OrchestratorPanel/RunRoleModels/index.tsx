@@ -1,4 +1,4 @@
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, ROLE_REGISTRY, SELECTABLE_AGENT_ROLES } from '@goodboy/core';
 import type {
   AgentRole,
   ProviderId,
@@ -10,15 +10,9 @@ import { roleModelsForSession } from '../../../../../store/slices/overrides/role
 import { useAppStore } from '../../../../../store/store';
 import { RunRoleModelRow } from './RunRoleModelRow';
 
-const RUN_ROLES = [
-  'scout',
-  'investigator',
-  'planner',
-  'implementer',
-  'reviewer',
-  'tester',
-  'custom',
-] satisfies ReadonlyArray<AgentRole>;
+const RUN_ROLES: ReadonlyArray<AgentRole> = SELECTABLE_AGENT_ROLES.filter(
+  (role) => ROLE_REGISTRY[role].workflowEligible,
+);
 
 type Props = {
   readonly sessionId: SessionId;

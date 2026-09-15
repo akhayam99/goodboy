@@ -57,6 +57,28 @@ const core = vi.hoisted(() => {
     },
   } as Record<string, { models: Array<{ id: string; label: string; tier: string }> }>;
   return {
+    ROLE_REGISTRY: {
+      scout: { presentationKey: 'scout' },
+      investigator: { presentationKey: 'debugger' },
+      planner: { presentationKey: 'planner' },
+      implementer: { presentationKey: 'implementer' },
+      reviewer: { presentationKey: 'reviewer' },
+      tester: { presentationKey: 'tester' },
+      resolver: { presentationKey: 'resolver' },
+      docs: { presentationKey: 'docs' },
+      custom: { presentationKey: 'generic' },
+    },
+    SELECTABLE_AGENT_ROLES: [
+      'scout',
+      'investigator',
+      'planner',
+      'implementer',
+      'reviewer',
+      'tester',
+      'resolver',
+      'docs',
+      'custom',
+    ],
     isSlotKey: (k: string) => SLOT_KEY_SET.has(k),
     PROVIDER_CAPABILITIES,
     getDefaultTurnModel: ({ id }: { id: string }) => {

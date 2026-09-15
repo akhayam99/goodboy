@@ -85,16 +85,23 @@ export {
 } from './context';
 
 export {
-  ROLE_DEFAULTS,
+  ROLE_REGISTRY,
+  SELECTABLE_AGENT_ROLES,
   defaultsForRole,
   fanOutCapabilityForRole,
   isAgentRole,
+  normalizeAgentRole,
+  normalizeSelectableAgentRole,
+  presentationKeyForRole,
   type AgentEffort,
   type AgentRole,
   type RoleFanOutCapability,
   type RoleFanOutMode,
   type RoleFanOutPartitionKey,
   type RoleDefaults,
+  type RoleOutputKind,
+  type RolePresentationKey,
+  type RoleRegistryEntry,
 } from './roles';
 
 export { classifyFirstTurn, type AgentKindLabel } from './first-turn-classifier';
