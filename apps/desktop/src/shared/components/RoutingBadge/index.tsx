@@ -1,6 +1,6 @@
-import { cn } from '@goodboy/ui';
+import { Tooltip, cn } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
-import { getModelProvider } from '@goodboy/core';
+import { getModelProvider, modelCatalogKey } from '@goodboy/core';
 import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
 import {
   EFFORT_LABEL,
@@ -27,16 +27,53 @@ type Props = {
   readonly className?: string;
 };
 
-type SummaryParams = {
-  readonly providerText: string | null;
-  readonly modelText: string | null;
-};
-
-const routingSummary = ({ providerText, modelText }: SummaryParams): string =>
-  [providerText, modelText].filter((part) => part != null && part !== '').join(' ');
-
 const providerDisplayLabel = (value: string | null): string | null =>
   value != null && value in PROVIDER_BRAND ? PROVIDER_LABEL[value as ProviderId] : value;
+
+type ProviderKeyParams = {
+  readonly provider: string | null;
+  readonly model: string | null;
+};
+
+const knownProvider = ({ provider, model }: ProviderKeyParams): ProviderId | null => {
+  const named = provider ?? (model != null ? getModelProvider(model) : null);
+  return named != null && named in PROVIDER_BRAND ? (named as ProviderId) : null;
+};
+
+const comparableModel = ({ provider, model }: ProviderKeyParams): string | null => {
+  if (model == null) {
+    return null;
+  }
+  const resolved = knownProvider({ provider, model });
+  if (resolved == null) {
+    return model;
+  }
+  return modelCatalogKey({ provider: resolved, modelId: model }) ?? model;
+};
+
+type DivergenceCopyParams = {
+  readonly isModelDiverged: boolean;
+  readonly plannedModel: string | null;
+  readonly ranModel: string | null;
+  readonly plannedProviderLabel: string | null;
+  readonly ranProviderLabel: string | null;
+};
+
+const divergenceCopy = ({
+  isModelDiverged,
+  plannedModel,
+  ranModel,
+  plannedProviderLabel,
+  ranProviderLabel,
+}: DivergenceCopyParams): string | null => {
+  if (isModelDiverged && plannedModel != null && ranModel != null) {
+    return `Planned ${modelLabel(plannedModel)}, routing picked ${modelLabel(ranModel)} instead`;
+  }
+  if (plannedProviderLabel != null && ranProviderLabel != null) {
+    return `Planned on ${plannedProviderLabel}, routing picked ${ranProviderLabel} instead`;
+  }
+  return null;
+};
 
 const CHIP_CLASS =
   'inline-flex items-center gap-1 rounded-md bg-muted/50 px-1.5 py-0.5 text-2xs text-muted-foreground';
@@ -61,7 +98,10 @@ export const RoutingBadge = ({
   const glyphSize = variant === 'full' ? 12 : 11;
   const plannedModel = planned?.model ?? null;
   const plannedProvider = planned?.provider ?? null;
-  const isModelDiverged = model != null && plannedModel != null && plannedModel !== model;
+  const ranModelKey = comparableModel({ provider, model });
+  const plannedModelKey = comparableModel({ provider: plannedProvider, model: plannedModel });
+  const isModelDiverged =
+    ranModelKey != null && plannedModelKey != null && plannedModelKey !== ranModelKey;
   const isProviderDiverged = named != null && plannedProvider != null && plannedProvider !== named;
   const isDiverged = model != null && (isModelDiverged || isProviderDiverged);
   const plannedShortLabel =
@@ -69,24 +109,25 @@ export const RoutingBadge = ({
       ? modelLabel(plannedModel)
       : (providerDisplayLabel(plannedProvider) ??
         (plannedModel != null ? modelLabel(plannedModel) : null));
-  const divergenceTitle = isDiverged
-    ? `Planned ${routingSummary({
-        providerText: providerDisplayLabel(plannedProvider),
-        modelText: plannedModel != null ? modelLabel(plannedModel) : null,
-      })}, ran ${routingSummary({
-        providerText: providerLabel ?? null,
-        modelText: model != null ? modelLabel(model) : null,
-      })}`
+  const divergenceTooltip = isDiverged
+    ? divergenceCopy({
+        isModelDiverged,
+        plannedModel,
+        ranModel: model,
+        plannedProviderLabel: providerDisplayLabel(plannedProvider),
+        ranProviderLabel: providerLabel,
+      })
     : null;
   const divergenceNote =
-    isDiverged && plannedShortLabel != null && divergenceTitle != null ? (
-      <span
-        data-testid="routing-divergence"
-        className="min-w-0 truncate text-muted-foreground/60"
-        title={divergenceTitle}
-      >
-        was {plannedShortLabel}
-      </span>
+    isDiverged && plannedShortLabel != null && divergenceTooltip != null ? (
+      <Tooltip content={divergenceTooltip}>
+        <span
+          data-testid="routing-divergence"
+          className="min-w-0 truncate text-muted-foreground/60 line-through"
+        >
+          {plannedShortLabel}
+        </span>
+      </Tooltip>
     ) : null;
 
   if (variant === 'full') {

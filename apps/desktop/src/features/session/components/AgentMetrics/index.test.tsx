@@ -181,8 +181,8 @@ describe('AgentMetrics', () => {
     expect(screen.getByTitle('Model: gpt-5.1-codex')).toBeDefined();
     expect(screen.queryByTitle('Model: claude-haiku-4-5')).toBeNull();
     const note = screen.getByTestId('routing-divergence');
-    expect(note.textContent).toBe('was Haiku 4.5');
-    expect(note.getAttribute('title')).toContain('Planned Claude Haiku 4.5');
+    expect(note.textContent).toBe('Haiku 4.5');
+    expect(note.className).toContain('line-through');
   });
 
   it('keeps the planned routing silent while the plan is what would run', () => {

@@ -151,7 +151,7 @@ describe('AgentDetailPane', () => {
 
     expect(screen.getByTitle('Model: gpt-5.1-codex')).toBeDefined();
     expect(screen.queryByTitle('Model: claude-haiku-4-5')).toBeNull();
-    expect(screen.getByTestId('routing-divergence').textContent).toBe('was Haiku 4.5');
+    expect(screen.getByTestId('routing-divergence').textContent).toBe('Haiku 4.5');
   });
 
   it('reveals the transcript without changing the selected agent', () => {
