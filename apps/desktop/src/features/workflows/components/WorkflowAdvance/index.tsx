@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import type { Agent, SessionId, Step, Workflow, WorkflowRun } from '@goodboy/types';
 import { runsForWorkflowRun } from '@goodboy/core';
+import { cn, PANE_RHYTHM } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../store';
 import { notifyWorkflowGateBlock } from '../../../../store/slices/workflows/notifyWorkflowGateBlock';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
-import { agentRoutingOverrides } from '../../../workflows/agentRoutingOverrides';
-import { resolveWorkflowAdvance } from '../../../workflows/advanceGate';
-import { WorkflowNextStepCta } from '../../../workflows/components/WorkflowNextStepCta';
+import { agentRoutingOverrides } from '../../agentRoutingOverrides';
+import { resolveWorkflowAdvance } from '../../advanceGate';
+import { WorkflowNextStepCta } from '../WorkflowNextStepCta';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 
 type Props = {
@@ -126,7 +127,7 @@ export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
         void skipStuckStepAndAdvance(sessionId, workflowRunId, { onlyWhenBlocked: true })
       }
       onRecover={() => recoverStuckStep({ sessionId, workflowRunId })}
-      className="ml-auto shrink-0"
+      className={cn('shrink-0 px-10 pb-1', PANE_RHYTHM.column, PANE_RHYTHM.measure.chat)}
     />
   );
 };

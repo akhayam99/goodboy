@@ -49,6 +49,7 @@ import { TranscriptRows } from './TranscriptRows';
 import { ChatImageLoaderProvider } from './ChatImageLoaderProvider';
 import { useScrollPin } from './useScrollPin';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
+import { WorkflowAdvanceRow } from './parts/WorkflowAdvanceRow';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { readAttachment } from '../../turn';
 import { dataUrlToBase64 } from '../ChatInput/lib';
@@ -534,6 +535,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
           </Button>
         </div>
       ) : null}
+      {!isEnded && selectedAgentId != null ? <WorkflowAdvanceRow session={session} /> : null}
       {isEnded ? (
         <>
           <Divider />
