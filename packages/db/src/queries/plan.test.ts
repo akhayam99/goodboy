@@ -4,6 +4,7 @@ import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from '../migrations/runner';
 import {
   deletePlan,
+  listConsumptionsForPlan,
   listPlansForSession,
   updatePlanBody,
   updatePlanStatus,
@@ -312,6 +313,24 @@ describe('session_plans queries', () => {
 
     expect(plans[0]!.lastConsumer).toEqual({ agentId: 'a2', name: 'second planner' });
     expect(plans[1]!.lastConsumer).toEqual({ agentId: 'a3', name: 'third implementer' });
+  });
+
+  it('agrees with the consumption history when two consumptions share the same consumed_at', async () => {
+    const db = await seedFixture();
+    await upsertPlan(db, {
+      id: 'p1' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA1,
+      title: 'ran twice at once',
+      bodyMd: 'b',
+    });
+    await seedConsumption(db, { id: 'c1', planId: 'p1', agentId: 'a2', consumedAt: 1_000 });
+    await seedConsumption(db, { id: 'c2', planId: 'p1', agentId: 'a3', consumedAt: 1_000 });
+
+    const plans = await listPlansForSession(db, sessionId);
+    const history = await listConsumptionsForPlan(db, 'p1' as PlanId);
+
+    expect(plans[0]!.lastConsumer?.agentId).toBe(history[0]!.agentId);
   });
 
   it('cascades on task delete', async () => {

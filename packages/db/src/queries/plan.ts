@@ -106,7 +106,7 @@ function toDomainWithCount(row: PlanWithCountRow): PlanWithCount {
 const LAST_CONSUMPTION = `FROM plan_consumptions lc
              LEFT JOIN agents la ON la.id = lc.agent_id
              WHERE lc.plan_id = p.id
-             ORDER BY lc.consumed_at DESC
+             ORDER BY lc.consumed_at DESC, lc.id DESC
              LIMIT 1`;
 
 export const listPlansForSession = async (
@@ -294,7 +294,7 @@ export const listConsumptionsForPlan = async (
      LEFT JOIN workflows w ON w.id = s.workflow_id
      LEFT JOIN session_workflows sw ON sw.workflow_run_id = a.workflow_run_id
      WHERE c.plan_id = ?
-     ORDER BY c.consumed_at DESC`,
+     ORDER BY c.consumed_at DESC, c.id DESC`,
     [planId],
   );
   return rows.map(toConsumption);
