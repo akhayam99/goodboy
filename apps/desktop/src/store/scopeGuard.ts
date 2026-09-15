@@ -30,12 +30,20 @@ const projectLine = ({ project, mounts }: ProjectLineParams): string => {
   return `${identity} | materialized at ${summaries}`;
 };
 
+const READING_LINES: ReadonlyArray<string> = [
+  'You may read and search every project listed in this workspace to answer the current request. This permission is already granted and needs no mount, no activation and no confirmation.',
+  'Your starting directory and your bound mount do not limit which listed projects you may inspect.',
+  'Reading another listed project is ordinary workspace work. Name the source you used, and do not describe the read as a scope exception.',
+  'Stay on the assigned task. Workspace membership does not authorize unrelated exploration or access to locations that are not listed.',
+  'A project root and a session mount can hold different revisions. Use the one the question is about and say which one you used.',
+];
+
 type MaterializeLineParams = {
   readonly isBridgeServing: boolean;
 };
 
 const MOUNT_RULE_LINES: ReadonlyArray<string> = [
-  'Reading any project root listed above is free and needs no mount. NEVER materialize a project to read it, to run its tests, or because it looks related to the goal.',
+  'NEVER materialize a project to read it, to run its tests, or because it looks related to the goal. Reading needs no mount.',
   'Materialize ONLY a project whose files you must edit. A project name in the goal, plan, or prompt is not write intent or authorization.',
   'The active project, projects linked by external tasks, and existing mounts are authorized. Up to two other projects mount automatically per session; further projects wait for owner approval.',
 ];
@@ -72,20 +80,13 @@ const mountCommandLines = ({
   ];
 };
 
-const WRITE_BOUNDARY_LINE =
-  'ALL writes (Write/Edit/Bash file mutations) MUST resolve inside the session directory or a materialized project mount. NEVER write to a project root or any path outside them.';
-
-const STRICT_DIR_LINES: ReadonlyArray<string> = [
-  'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this directory.',
-  'NEVER write to absolute paths that exit this directory.',
-  'Prefer paths relative to your current working directory. If a request implies editing files outside this directory, stop and ask for explicit confirmation before touching them.',
+const WRITE_BOUNDARY_LINES: ReadonlyArray<string> = [
+  'ALL writes (Write/Edit/Bash file mutations) MUST resolve inside the session directory or a materialized project mount. NEVER write to a project root or any path outside them.',
+  'If the request implies editing files outside the session directory and the materialized mounts, stop and ask for explicit confirmation before touching them.',
 ];
 
-const STRICT_WORKTREE_LINES: ReadonlyArray<string> = [
-  'ALL file operations (Read/Write/Edit/Bash file paths) MUST resolve inside this worktree.',
-  'NEVER write to absolute paths that exit this directory, especially not to the parent project checkout.',
-  'Prefer paths relative to your current working directory. If a user request implies editing files outside the worktree, stop and ask for explicit confirmation before touching them.',
-];
+const READ_ONLY_ROLE_LINE =
+  'Your role covers inspection and analysis across the listed workspace projects. It does not cover changing project files or requesting a writable mount.';
 
 type GuardTag = 'worktree-scope' | 'session-directory-scope' | 'projects-scope';
 
@@ -125,7 +126,33 @@ const mountInventoryLine = ({
   return `- ${mount.mountName}${identity} project ${project?.name ?? mount.projectId} ${branch} at ${mount.worktreePath} (${availabilityOf({ mount })})`;
 };
 
-type HeadParams = {
+type WorkspaceParams = {
+  readonly projects: ReadonlyArray<Project>;
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+};
+
+const workspaceLines = ({ projects, mounts }: WorkspaceParams): ReadonlyArray<string> => {
+  if (projects.length === 0) {
+    return [];
+  }
+  return [
+    'This session belongs to a workspace with these projects:',
+    ...projects.map((project) => projectLine({ project, mounts })),
+    ...READING_LINES,
+  ];
+};
+
+type ExecutionLineParams = {
+  readonly workingDir: string;
+  readonly activeMountId: MountId | null;
+};
+
+const executionLine = ({ workingDir, activeMountId }: ExecutionLineParams): string => {
+  const bound = activeMountId === null ? '' : ` and is bound to mount ${activeMountId}`;
+  return `This process starts in ${workingDir}${bound}. That fixes where it runs for this turn. Activating another mount changes where a later turn starts.`;
+};
+
+type ExecutionParams = {
   readonly tag: GuardTag;
   readonly workingDir: string;
   readonly mounts: ReadonlyArray<SessionProjectMount>;
@@ -133,54 +160,34 @@ type HeadParams = {
   readonly activeMountId: MountId | null;
 };
 
-const headLines = ({
+const executionLines = ({
   tag,
   workingDir,
   mounts,
   projects,
   activeMountId,
-}: HeadParams): ReadonlyArray<string> => {
-  const boundLine =
-    activeMountId === null
-      ? []
-      : [
-          `This turn is bound to mount ${activeMountId}. It stays bound for the whole turn: \`mount activate\` and anything the owner clicks change only where the NEXT turn starts.`,
-        ];
+}: ExecutionParams): ReadonlyArray<string> => {
+  const bound = executionLine({ workingDir, activeMountId });
   if (tag === 'worktree-scope') {
-    return [`You are operating inside an isolated git worktree at: ${workingDir}`, ...boundLine];
+    return [`You are operating inside an isolated git worktree at: ${workingDir}`, bound];
   }
   if (tag === 'session-directory-scope') {
-    return [`You are operating inside this session directory: ${workingDir}`, ...boundLine];
+    return [`You are operating inside this session directory: ${workingDir}`, bound];
   }
   if (mounts.length === 0) {
     return [
       `You are operating from an ephemeral scratch directory at: ${workingDir}`,
       'This session has no materialized project mounts yet. Nothing you put in the scratch directory is kept.',
+      bound,
     ];
   }
   return [
     `You are operating inside the active project mount at: ${workingDir}`,
-    ...boundLine,
+    bound,
     `This session has ${mounts.length} materialized project mounts:`,
     ...mounts.map((mount) => mountInventoryLine({ mount, projects })),
     'Two mounts of the same project are worktrees of one repository and share its history and its remotes, they are not separate clones. Run every git command inside the mount you mean.',
   ];
-};
-
-type StrictParams = {
-  readonly tag: GuardTag;
-};
-
-const strictBoundaryLines = ({ tag }: StrictParams): ReadonlyArray<string> => {
-  if (tag === 'worktree-scope') {
-    return STRICT_WORKTREE_LINES;
-  }
-  if (tag === 'projects-scope') {
-    return [
-      'ALL file operations MUST resolve inside one of these mounts. Do NOT create files outside them.',
-    ];
-  }
-  return STRICT_DIR_LINES;
 };
 
 export const buildScopeGuard = ({
@@ -192,31 +199,16 @@ export const buildScopeGuard = ({
   isSessionDirScope,
   canWrite,
 }: ScopeGuardParams): string => {
-  const unmounted = projects.filter(
-    (project) => !mounts.some((mount) => mount.projectId === project.id),
-  );
   const tag = guardTag({ mounts, isSessionDirScope });
-  const mountedLines =
-    tag === 'projects-scope'
-      ? []
-      : projects
-          .filter((project) => mounts.some((mount) => mount.projectId === project.id))
-          .map((project) => projectLine({ project, mounts }));
-  const teachingLines =
-    unmounted.length > 0
-      ? [
-          'This session belongs to a workspace with these projects:',
-          ...projects.map((project) => projectLine({ project, mounts })),
-          'You may READ the project root paths listed above.',
-          WRITE_BOUNDARY_LINE,
-          ...(canWrite ? [...MOUNT_RULE_LINES, materializeLine({ isBridgeServing })] : []),
-        ]
-      : [...mountedLines, ...strictBoundaryLines({ tag })];
+  const boundaryLines = canWrite
+    ? [...WRITE_BOUNDARY_LINES, ...MOUNT_RULE_LINES, materializeLine({ isBridgeServing })]
+    : [READ_ONLY_ROLE_LINE];
   const mountCommands = canWrite ? mountCommandLines({ isBridgeServing, mounts }) : [];
   return [
     `[${tag}]`,
-    ...headLines({ tag, workingDir, mounts, projects, activeMountId }),
-    ...teachingLines,
+    ...workspaceLines({ projects, mounts }),
+    ...executionLines({ tag, workingDir, mounts, projects, activeMountId }),
+    ...boundaryLines,
     ...mountCommands,
     `[/${tag}]`,
   ].join('\n');
