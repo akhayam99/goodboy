@@ -2199,11 +2199,15 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     });
 
     expect(runTurnSpy.mock.calls[0]?.[0]).toEqual(
-      expect.objectContaining({ provider: 'cursor', model: 'claude-4.6-sonnet-medium' }),
+      expect.objectContaining({
+        provider: 'cursor',
+        model: 'gpt-5.6-terra-high',
+        cursorMaxMode: true,
+      }),
     );
     expect(resolveModelArgsSpy).toHaveBeenLastCalledWith({
       provider: 'cursor',
-      selection: expect.objectContaining({ key: 'sonnet-4.6' }),
+      selection: expect.objectContaining({ key: 'gpt-5.6-terra' }),
     });
     expect(resolveModelArgsSpy).not.toHaveBeenCalledWith({
       provider: 'cursor',
@@ -2212,7 +2216,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     const userEvent = (useAppStore.getState().transcripts[AGENT_A] ?? []).find(
       (event) => event.kind === 'user_text',
     );
-    expect(userEvent?.model).toBe('claude-4.6-sonnet-medium');
+    expect(userEvent?.model).toBe('gpt-5.6-terra-high');
   });
 
   it('uses a composer override for both the transcript and spawn args', async () => {

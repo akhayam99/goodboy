@@ -65,7 +65,15 @@ describe('resolveModelForProvider', () => {
   });
 
   it('falls back to the target cheap-tier default when the key is unavailable', () => {
-    expect(resolveModelForProvider({ provider: 'cursor', modelId: 'gpt-5.4-mini' })).toBe('auto');
+    expect(resolveModelForProvider({ provider: 'cursor', modelId: 'claude-haiku-4-5' })).toBe(
+      'auto',
+    );
+  });
+
+  it('remaps a legacy id to the target provider equivalent when the key exists', () => {
+    expect(resolveModelForProvider({ provider: 'cursor', modelId: 'gpt-5.4-mini' })).toBe(
+      'gpt-5.6-luna',
+    );
   });
 
   it('falls back to the default turn model for an unknown id', () => {

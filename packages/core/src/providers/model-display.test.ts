@@ -45,4 +45,11 @@ describe('provider model display', () => {
     expect(getModelProvider('gpt-5.6-sol')).toBe('codex');
     expect(getModelProvider('gpt-5.6-luna')).toBe('codex');
   });
+
+  it('keeps keys shared with cursor attributed to the provider that owns them', () => {
+    expect(getModelProvider('kimi-k3')).toBe('moonshot');
+    expect(getModelProvider('muse-spark-1.3')).toBe('opencode');
+    expect(getModelProvider('grok-4.6')).toBe('cursor');
+    expect(getModelProvider('opus-5')).toBe('anthropic');
+  });
 });

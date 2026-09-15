@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
+import {
+  PROVIDER_CAPABILITIES,
+  modelIdForSelection,
+  resolveStoredModelSelection,
+  resolveTaskModel,
+} from '@goodboy/core';
 import type { ModelEffort, ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
 import { clampEffort, modelEffortLevels } from '../../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
@@ -17,7 +22,19 @@ type ApplyParams = {
   readonly effort?: ModelEffort;
 };
 
+type ProviderModelParams = {
+  readonly provider: ProviderId;
+  readonly model: string;
+};
+
 const DEFAULT_EFFORT: ModelEffort = 'medium';
+
+const providerModelId = ({ provider, model }: ProviderModelParams): string => {
+  const stored = resolveStoredModelSelection({ provider, id: model });
+  return stored.report?.kind === 'unknown'
+    ? model
+    : modelIdForSelection({ provider, selection: stored.selection });
+};
 
 const effortForModel = (model: string, requested: ModelEffort): ModelEffort | null =>
   modelEffortLevels(model) == null ? null : clampEffort(model, requested);
@@ -58,7 +75,11 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
     workspaceDefaultProviderId: providerId,
     sessionDefaultProviderId: defaultProvider,
   }).model;
-  const effortModel = model === '' ? recommendedModel : model;
+  const effortModel = providerModelId({
+    provider: providerId,
+    model: model === '' ? recommendedModel : model,
+  });
+  const pendingModel = useRef<string>(effortModel);
   const effortValue = pinned?.effort ?? automatic.effort ?? DEFAULT_EFFORT;
   const connectedProviders = providers
     .filter((provider) => provider.connection === 'connected')
@@ -70,10 +91,17 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
     pendingProvider.current = preferredProviderId;
   }, [preferredProviderId]);
 
+  useEffect(() => {
+    pendingModel.current = effortModel;
+  }, [effortModel]);
+
   const apply = ({ providerId: nextProvider, model: nextModel, effort }: ApplyParams) => {
+    const resolved = providerModelId({ provider: nextProvider, model: nextModel });
+    pendingProvider.current = nextProvider;
+    pendingModel.current = resolved;
     void setWorkflowOrchestratorRouting(sessionId, run.id, {
       providerId: nextProvider,
-      model: nextModel,
+      model: resolved,
       ...(effort != null && { effort }),
     });
   };
@@ -93,10 +121,11 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
           editable: true,
           value: effortForModel(effortModel, effortValue) ?? effortValue,
           onChange: (effort) => {
-            const applied = effortForModel(effortModel, effort);
+            const nextModel = pendingModel.current;
+            const applied = effortForModel(nextModel, effort);
             apply({
               providerId: pendingProvider.current,
-              model: effortModel,
+              model: nextModel,
               ...(applied != null && { effort: applied }),
             });
           },

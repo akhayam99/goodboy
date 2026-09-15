@@ -1302,7 +1302,7 @@ describe('WorkflowBuilderView (step management in custom mode)', () => {
 
     const model = withinSteps().getAllByRole('button', { name: /^model:auto$/i })[0]!;
     expect(model.dataset['provider']).toBe('cursor');
-    expect(model.dataset['recommendedModel']).toBe('auto');
+    expect(model.dataset['recommendedModel']).toBe('gpt-5.6-luna');
 
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());

@@ -159,6 +159,27 @@ describe('modelAxes', () => {
     }
   });
 
+  it('represents each cursor group by its newest version, GPT led by Sol', () => {
+    const model = CURSOR_CATALOG.find((candidate) => candidate.key === 'sonnet-5');
+    if (model == null) {
+      throw new Error('missing cursor sonnet-5');
+    }
+    const options = modelAxes({ model, selection: { key: model.key } }).model.options;
+    expect(options).toEqual([
+      { id: 'Auto', label: 'Auto', modelKey: 'auto' },
+      { id: 'Composer', label: 'Composer', modelKey: 'composer-2.5' },
+      { id: 'Sonnet', label: 'Sonnet', modelKey: 'sonnet-5' },
+      { id: 'Opus', label: 'Opus', modelKey: 'opus-5' },
+      { id: 'Codex', label: 'Codex', modelKey: 'gpt-5.3-codex' },
+      { id: 'GPT', label: 'GPT', modelKey: 'gpt-5.6' },
+      { id: 'Grok 4.6', label: 'Grok 4.6', modelKey: 'grok-4.6' },
+      { id: 'Gemini 3.8 Flash', label: 'Gemini 3.8 Flash', modelKey: 'gemini-3.8-flash' },
+      { id: 'Muse Spark 1.3', label: 'Muse Spark 1.3', modelKey: 'muse-spark-1.3' },
+      { id: 'Kimi K3', label: 'Kimi K3', modelKey: 'kimi-k3' },
+      { id: 'GLM 5.2', label: 'GLM 5.2', modelKey: 'glm-5.2' },
+    ]);
+  });
+
   it('reports Max Mode from the resolved cursor combo', () => {
     const opus = CURSOR_CATALOG.find((candidate) => candidate.key === 'opus-5');
     const sonnet = CURSOR_CATALOG.find((candidate) => candidate.key === 'sonnet-4.6');
