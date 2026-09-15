@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { tintClasses } from '@goodboy/ui';
-import type { PlanId, PlanWithCount, SessionId } from '@goodboy/types';
+import type { AgentId, PlanId, PlanWithCount, SessionId } from '@goodboy/types';
 import { CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 import { AgentBriefPlans } from './AgentBriefPlans';
@@ -33,10 +33,61 @@ describe('AgentBriefPlans', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('keeps the singular use for a consumption count of one', () => {
-    render(<AgentBriefPlans plans={[makePlan({ consumptionCount: 1 })]} sessionId={sessionId} />);
+  it('falls back to the use count when the plan was never consumed', () => {
+    render(<AgentBriefPlans plans={[makePlan({ consumptionCount: 0 })]} sessionId={sessionId} />);
 
-    expect(screen.getByText('active · 1 use')).toBeDefined();
+    expect(screen.getByText('active · 0 uses')).toBeDefined();
+  });
+
+  it('names the consumer instead of counting the uses', () => {
+    render(
+      <AgentBriefPlans
+        plans={[
+          makePlan({
+            status: 'consumed',
+            consumptionCount: 1,
+            lastConsumer: { agentId: 'agent-9' as AgentId, name: 'implementer' },
+          }),
+        ]}
+        sessionId={sessionId}
+      />,
+    );
+
+    expect(screen.getByText('consumed · Run by implementer')).toBeDefined();
+  });
+
+  it('adds the remainder when the plan ran several times', () => {
+    render(
+      <AgentBriefPlans
+        plans={[
+          makePlan({
+            status: 'consumed',
+            consumptionCount: 3,
+            lastConsumer: { agentId: 'agent-9' as AgentId, name: 'implementer' },
+          }),
+        ]}
+        sessionId={sessionId}
+      />,
+    );
+
+    expect(screen.getByText('consumed · Run by implementer +2 more')).toBeDefined();
+  });
+
+  it('falls back to a truncated id when the consumer agent is gone', () => {
+    render(
+      <AgentBriefPlans
+        plans={[
+          makePlan({
+            status: 'consumed',
+            consumptionCount: 1,
+            lastConsumer: { agentId: 'agent-9f3c2b1a' as AgentId, name: null },
+          }),
+        ]}
+        sessionId={sessionId}
+      />,
+    );
+
+    expect(screen.getByText('consumed · Run by agent-9f')).toBeDefined();
   });
 
   it('renders each plan with the shared plan tone', () => {
@@ -46,11 +97,5 @@ describe('AgentBriefPlans', () => {
     const planTint = tintClasses(CONCEPT_TONE.plans);
     expect(card.className).toContain(planTint.bgSoft);
     expect(card.className).toContain(planTint.borderSoft);
-  });
-
-  it('pluralizes uses for a consumption count above one', () => {
-    render(<AgentBriefPlans plans={[makePlan({ consumptionCount: 3 })]} sessionId={sessionId} />);
-
-    expect(screen.getByText('active · 3 uses')).toBeDefined();
   });
 });
