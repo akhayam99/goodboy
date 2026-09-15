@@ -1401,7 +1401,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBe('xhigh');
   });
 
-  it('omits effort when the resolved provider has no effort axis (gemini)', async () => {
+  it('passes effort to runTurn when the resolved provider is gemini', async () => {
     const useAppStore = await importStore();
     setup(useAppStore);
     const routingMod = await import('../features/providers/routing');
@@ -1417,7 +1417,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       .getState()
       .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
 
-    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBeUndefined();
+    expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBe('high');
   });
 
   it('pins the provider override into routing even when the session forbids turn overrides', async () => {

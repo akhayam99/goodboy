@@ -2,6 +2,7 @@ import type { EffortLevel, ModelSelection, ProviderId, ResolvedModelArgs } from 
 import { MODEL_CATALOGS } from './catalogs';
 import { clampEffort } from './clampEffort';
 import { resolveCursorCombo } from './cursorCombo';
+import { PROVIDER_ARG_FLAGS } from './providerArgFlags';
 
 type Params = {
   readonly provider: ProviderId;
@@ -33,18 +34,20 @@ export const resolveModelArgs = ({ provider, selection }: Params): ResolvedModel
   }
   switch (model.provider) {
     case 'anthropic': {
+      const { modelFlag, effortFlag } = PROVIDER_ARG_FLAGS.anthropic;
       if (model.efforts.length === 0) {
-        return { args: ['--model', model.cliId] };
+        return { args: [modelFlag, model.cliId] };
       }
       const requested = selection.effort ?? model.defaultEffort;
       const applied = clampEffort({ requested, available: model.efforts });
       return withClamp({
-        args: ['--model', model.cliId, '--effort', applied],
+        args: [modelFlag, model.cliId, effortFlag, applied],
         requested,
         applied,
       });
     }
     case 'codex': {
+      const { modelFlag } = PROVIDER_ARG_FLAGS.codex;
       const variant =
         model.variants.find((candidate) => candidate.id === selection.variant) ?? model.variants[0];
       if (variant == null) {
@@ -53,14 +56,15 @@ export const resolveModelArgs = ({ provider, selection }: Params): ResolvedModel
       const requested = selection.effort ?? model.defaultEffort;
       const applied = clampEffort({ requested, available: model.efforts });
       return withClamp({
-        args: ['-m', variant.cliId, '-c', `model_reasoning_effort="${applied}"`],
+        args: [modelFlag, variant.cliId, '-c', `model_reasoning_effort="${applied}"`],
         requested,
         applied,
       });
     }
     case 'cursor': {
+      const { modelFlag } = PROVIDER_ARG_FLAGS.cursor;
       const combo = resolveCursorCombo({ model, selection });
-      const args = ['--model', combo.slug];
+      const args = [modelFlag, combo.slug];
       if (selection.effort == null || combo.effort == null) {
         return { args, ...(combo.maxMode === true && { maxMode: true }) };
       }
@@ -72,10 +76,11 @@ export const resolveModelArgs = ({ provider, selection }: Params): ResolvedModel
       });
     }
     case 'gemini': {
+      const { modelFlag, effortFlag } = PROVIDER_ARG_FLAGS.gemini;
       const requested = selection.effort ?? model.defaultEffort;
       const applied = clampEffort({ requested, available: model.efforts });
       return withClamp({
-        args: ['--model', model.cliId, '--effort', applied],
+        args: [modelFlag, model.cliId, effortFlag, applied],
         requested,
         applied,
       });
@@ -83,10 +88,11 @@ export const resolveModelArgs = ({ provider, selection }: Params): ResolvedModel
     case 'opencode':
     case 'openrouter':
     case 'moonshot': {
+      const { modelFlag, effortFlag } = PROVIDER_ARG_FLAGS[model.provider];
       const requested = selection.effort ?? model.defaultEffort;
       const applied = clampEffort({ requested, available: model.efforts });
       return withClamp({
-        args: ['-m', model.cliId, '--variant', applied],
+        args: [modelFlag, model.cliId, effortFlag, applied],
         requested,
         applied,
       });

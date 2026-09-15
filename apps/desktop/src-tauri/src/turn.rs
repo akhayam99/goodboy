@@ -163,9 +163,13 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
             let mut v = vec![
                 "-p".to_string(),
                 args.prompt.to_string(),
-                "-m".to_string(),
+                "--model".to_string(),
                 args.model.to_string(),
             ];
+            if let Some(eff) = args.effort {
+                v.push("--effort".to_string());
+                v.push(eff.to_string());
+            }
             if args.permission_mode == "bypassPermissions" {
                 v.push("--dangerously-skip-permissions".to_string());
             } else {
@@ -1003,13 +1007,31 @@ mod tests {
     }
 
     #[test]
-    fn gemini_args_use_short_model_flag() {
+    fn gemini_args_use_long_model_flag() {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
         let cli = build_provider_cli_args("agy", &args);
-        let index = cli.iter().position(|arg| arg == "-m").expect("-m");
+        let index = cli.iter().position(|arg| arg == "--model").expect("--model");
         assert_eq!(cli[index + 1], "claude-3");
-        assert!(!cli.iter().any(|arg| arg == "--model"));
+        assert!(!cli.iter().any(|arg| arg == "-m"));
+    }
+
+    #[test]
+    fn gemini_args_include_effort_when_set() {
+        let empty: Vec<String> = vec![];
+        let mut args = make_args(None, None, &empty);
+        args.effort = Some("high");
+        let cli = build_provider_cli_args("agy", &args);
+        let idx = cli.iter().position(|a| a == "--effort").expect("--effort");
+        assert_eq!(cli[idx + 1], "high");
+    }
+
+    #[test]
+    fn gemini_args_omit_effort_when_none() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, None, &empty);
+        let cli = build_provider_cli_args("agy", &args);
+        assert!(!cli.contains(&"--effort".to_string()));
     }
 
     #[test]
