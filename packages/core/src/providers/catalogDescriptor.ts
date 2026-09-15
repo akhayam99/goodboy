@@ -32,6 +32,8 @@ const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   'gemini-3.7-flash': 5,
   'gemini-3.6-flash': 5,
   'kimi-k3': 12,
+  'grok-4.6': 13,
+  'glm-5.2': 11,
 };
 
 const effortFor = ({ model }: Params) => {

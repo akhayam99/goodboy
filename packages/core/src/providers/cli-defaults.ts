@@ -1,6 +1,7 @@
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
 import { CURSOR_AUTO_MODEL } from './cursor/models';
+import { isSpawnableAsItself } from './spawnableAsItself';
 
 export const getCheapModel = (providerId: ProviderId): string => {
   if (providerId === 'cursor') {
@@ -13,6 +14,7 @@ export const getCheapModel = (providerId: ProviderId): string => {
 export const getMidModel = (providerId: ProviderId): string => {
   const strongestMid = PROVIDER_CAPABILITIES[providerId].models
     .filter((model) => model.costTier === 'mid')
+    .filter((model) => isSpawnableAsItself({ providerId, modelId: model.id }))
     .reduce<{
       id: string;
       weight: number;

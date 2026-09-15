@@ -698,7 +698,7 @@ describe('attachWorkflowToSession trigger modes', () => {
     await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, { autoRun: false });
 
     expect(state.agentProviderOverride['agent-1']).toBe('cursor');
-    expect(state.agentModelOverride['agent-1']).toBe('auto');
+    expect(state.agentModelOverride['agent-1']).toBe('gpt-5.6-luna');
   });
 
   it('dynamic attach persists mode, spawns no agents, and orchestrates kickoff', async () => {

@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { getModelProvider } from '@goodboy/core';
+import { getModelProvider, modelIdForSelection, resolveStoredModelSelection } from '@goodboy/core';
 import type {
   OrchestratorRouting,
   Session,
@@ -88,6 +88,27 @@ describe('OrchestratorRoutingRow', () => {
     for (const [, , routing] of setWorkflowOrchestratorRouting.mock.calls) {
       expect(routing?.providerId).toBe('cursor');
       expect(getModelProvider(routing?.model ?? '')).toBe('cursor');
+    }
+  });
+
+  it('emits model and effort with the same provider scoped representation', () => {
+    renderRow(run());
+
+    openPicker();
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+
+    const routings = setWorkflowOrchestratorRouting.mock.calls.map(([, , routing]) => routing);
+    expect(routings.length).toBeGreaterThanOrEqual(2);
+    expect(routings.some((routing) => routing?.effort != null)).toBe(true);
+    expect(new Set(routings.map((routing) => routing?.model)).size).toBe(1);
+    for (const routing of routings) {
+      const provider = routing?.providerId;
+      const model = routing?.model ?? '';
+      expect(provider).toBe('cursor');
+      expect(getModelProvider(model)).toBe(provider);
+      const stored = resolveStoredModelSelection({ provider: 'cursor', id: model });
+      expect(stored.report).toBe(null);
+      expect(modelIdForSelection({ provider: 'cursor', selection: stored.selection })).toBe(model);
     }
   });
 
