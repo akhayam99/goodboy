@@ -1,0 +1,1112 @@
+import {
+  GENERIC_THEME_NAME,
+  WIREFRAME_ALIGNMENTS,
+  WIREFRAME_BUTTON_VARIANTS,
+  WIREFRAME_DIRECTIONS,
+  WIREFRAME_IMAGE_RATIOS,
+  WIREFRAME_INPUT_TYPES,
+  WIREFRAME_JUSTIFICATIONS,
+  WIREFRAME_LIMITS,
+  WIREFRAME_NAVIGATION_VARIANTS,
+  WIREFRAME_NODE_KINDS,
+  WIREFRAME_SCHEMA_VERSION,
+  WIREFRAME_SPACINGS,
+  WIREFRAME_TEXT_VARIANTS,
+  WIREFRAME_THEME_COLOR_TOKENS,
+  WIREFRAME_THEME_FONTS,
+  WIREFRAME_THEME_RADII,
+  WIREFRAME_VIEWPORTS,
+  type WireframeAction,
+  type WireframeDocument,
+  type WireframeIssue,
+  type WireframeNode,
+  type WireframeScreen,
+  type WireframeTheme,
+  type WireframeTransition,
+  type WireframeValidationResult,
+} from './schema';
+
+type Ctx = {
+  readonly issues: WireframeIssue[];
+  nodeCount: number;
+  readonly nodeIds: Set<string>;
+  readonly actionRefs: { readonly screenIds: string[]; readonly stateKeys: string[] };
+};
+
+const MARKUP_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/<\s*\/?\s*[a-zA-Z]/, 'raw html is not allowed'],
+  [/&(?:#\d+|[a-zA-Z]+);/, 'html entities are not allowed'],
+  [/javascript\s*:/i, 'script urls are not allowed'],
+  [/\bdata\s*:/i, 'data urls are not allowed'],
+  [/https?:\/\//i, 'external urls are not allowed'],
+  [/url\s*\(/i, 'css url() is not allowed'],
+  [/\{[^}]*:[^}]*\}/, 'raw css is not allowed'],
+  [/(?:^|[\s;])(?:on[a-z]+|style)\s*=/i, 'inline handlers and styles are not allowed'],
+];
+
+const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+
+const ID_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/;
+
+const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const fail = ({ ctx, path, message }: { ctx: Ctx; path: string; message: string }): null => {
+  ctx.issues.push({ path, message });
+  return null;
+};
+
+const rejectUnknownKeys = ({
+  ctx,
+  path,
+  value,
+  allowed,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: Readonly<Record<string, unknown>>;
+  readonly allowed: ReadonlyArray<string>;
+}): void => {
+  for (const key of Object.keys(value)) {
+    if (!allowed.includes(key)) {
+      ctx.issues.push({ path: `${path}.${key}`, message: 'unknown property' });
+    }
+  }
+};
+
+const safeText = ({
+  ctx,
+  path,
+  value,
+  max,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+  readonly max: number;
+}): string | null => {
+  if (typeof value !== 'string') {
+    return fail({ ctx, path, message: 'expected a string' });
+  }
+  if (value.length > max) {
+    return fail({ ctx, path, message: `longer than the ${max} character limit` });
+  }
+  for (const [pattern, message] of MARKUP_PATTERNS) {
+    if (pattern.test(value)) {
+      return fail({ ctx, path, message });
+    }
+  }
+  return value;
+};
+
+const requiredText = ({
+  ctx,
+  path,
+  value,
+  max,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+  readonly max: number;
+}): string | null => {
+  const text = safeText({ ctx, path, value, max });
+  if (text === null) {
+    return null;
+  }
+  if (text.trim().length === 0) {
+    return fail({ ctx, path, message: 'must not be empty' });
+  }
+  return text;
+};
+
+const identifier = ({
+  ctx,
+  path,
+  value,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+}): string | null => {
+  if (typeof value !== 'string' || !ID_PATTERN.test(value)) {
+    return fail({
+      ctx,
+      path,
+      message: 'expected an id of letters, digits, dashes or underscores starting with a letter',
+    });
+  }
+  return value;
+};
+
+const enumValue = <T extends string>({
+  ctx,
+  path,
+  value,
+  options,
+  fallback,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+  readonly options: ReadonlyArray<T>;
+  readonly fallback: T | null;
+}): T | null => {
+  if (value === undefined && fallback !== null) {
+    return fallback;
+  }
+  if (typeof value === 'string' && (options as ReadonlyArray<string>).includes(value)) {
+    return value as T;
+  }
+  return fail({ ctx, path, message: `expected one of ${options.join(', ')}` });
+};
+
+const parseAction = ({
+  ctx,
+  path,
+  value,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+}): WireframeAction | null => {
+  if (!isRecord(value)) {
+    return fail({ ctx, path, message: 'expected an action object' });
+  }
+  const type = value['type'];
+  if (type === 'navigate') {
+    rejectUnknownKeys({ ctx, path, value, allowed: ['type', 'toScreenId'] });
+    const target = identifier({ ctx, path: `${path}.toScreenId`, value: value['toScreenId'] });
+    if (target === null) {
+      return null;
+    }
+    ctx.actionRefs.screenIds.push(target);
+    return { type: 'navigate', toScreenId: target };
+  }
+  if (type === 'toggle') {
+    rejectUnknownKeys({ ctx, path, value, allowed: ['type', 'stateKey'] });
+    const key = identifier({ ctx, path: `${path}.stateKey`, value: value['stateKey'] });
+    if (key === null) {
+      return null;
+    }
+    ctx.actionRefs.stateKeys.push(key);
+    return { type: 'toggle', stateKey: key };
+  }
+  return fail({ ctx, path: `${path}.type`, message: 'expected navigate or toggle' });
+};
+
+const optionalAction = ({
+  ctx,
+  path,
+  value,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+}): WireframeAction | null => (value === undefined ? null : parseAction({ ctx, path, value }));
+
+const parseChildren = ({
+  ctx,
+  path,
+  value,
+  depth,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+  readonly depth: number;
+}): ReadonlyArray<WireframeNode> => {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    fail({ ctx, path, message: 'expected an array of nodes' });
+    return [];
+  }
+  const out: WireframeNode[] = [];
+  value.forEach((child, index) => {
+    const node = parseNode({ ctx, path: `${path}[${index}]`, value: child, depth: depth + 1 });
+    if (node !== null) {
+      out.push(node);
+    }
+  });
+  return out;
+};
+
+const parseNode = ({
+  ctx,
+  path,
+  value,
+  depth,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+  readonly depth: number;
+}): WireframeNode | null => {
+  if (depth > WIREFRAME_LIMITS.maxDepth) {
+    return fail({
+      ctx,
+      path,
+      message: `nesting deeper than the ${WIREFRAME_LIMITS.maxDepth} level limit`,
+    });
+  }
+  if (!isRecord(value)) {
+    return fail({ ctx, path, message: 'expected a node object' });
+  }
+  ctx.nodeCount += 1;
+  if (ctx.nodeCount > WIREFRAME_LIMITS.maxNodes) {
+    return fail({
+      ctx,
+      path,
+      message: `more than the ${WIREFRAME_LIMITS.maxNodes} node limit`,
+    });
+  }
+  const kind = enumValue({
+    ctx,
+    path: `${path}.kind`,
+    value: value['kind'],
+    options: WIREFRAME_NODE_KINDS,
+    fallback: null,
+  });
+  if (kind === null) {
+    return null;
+  }
+  const id = identifier({ ctx, path: `${path}.id`, value: value['id'] });
+  if (id === null) {
+    return null;
+  }
+  if (ctx.nodeIds.has(id)) {
+    return fail({ ctx, path: `${path}.id`, message: `duplicate node id "${id}"` });
+  }
+  ctx.nodeIds.add(id);
+  const note =
+    value['note'] === undefined
+      ? null
+      : safeText({
+          ctx,
+          path: `${path}.note`,
+          value: value['note'],
+          max: WIREFRAME_LIMITS.maxTextLength,
+        });
+  const noteField = note === null ? {} : { note };
+
+  if (kind === 'stack') {
+    rejectUnknownKeys({
+      ctx,
+      path,
+      value,
+      allowed: [
+        'id',
+        'kind',
+        'note',
+        'direction',
+        'gap',
+        'padding',
+        'align',
+        'justify',
+        'surface',
+        'children',
+      ],
+    });
+    const direction = enumValue({
+      ctx,
+      path: `${path}.direction`,
+      value: value['direction'],
+      options: WIREFRAME_DIRECTIONS,
+      fallback: 'column',
+    });
+    const gap = enumValue({
+      ctx,
+      path: `${path}.gap`,
+      value: value['gap'],
+      options: WIREFRAME_SPACINGS,
+      fallback: 'md',
+    });
+    const padding = enumValue({
+      ctx,
+      path: `${path}.padding`,
+      value: value['padding'],
+      options: WIREFRAME_SPACINGS,
+      fallback: 'none',
+    });
+    const align = enumValue({
+      ctx,
+      path: `${path}.align`,
+      value: value['align'],
+      options: WIREFRAME_ALIGNMENTS,
+      fallback: 'stretch',
+    });
+    const justify = enumValue({
+      ctx,
+      path: `${path}.justify`,
+      value: value['justify'],
+      options: WIREFRAME_JUSTIFICATIONS,
+      fallback: 'start',
+    });
+    const surface = value['surface'];
+    if (surface !== undefined && typeof surface !== 'boolean') {
+      fail({ ctx, path: `${path}.surface`, message: 'expected a boolean' });
+    }
+    const children = parseChildren({
+      ctx,
+      path: `${path}.children`,
+      value: value['children'],
+      depth,
+    });
+    if (
+      direction === null ||
+      gap === null ||
+      padding === null ||
+      align === null ||
+      justify === null
+    ) {
+      return null;
+    }
+    return {
+      id,
+      kind,
+      ...noteField,
+      direction,
+      gap,
+      padding,
+      align,
+      justify,
+      surface: surface === true,
+      children,
+    };
+  }
+
+  if (kind === 'grid') {
+    rejectUnknownKeys({
+      ctx,
+      path,
+      value,
+      allowed: ['id', 'kind', 'note', 'columns', 'gap', 'padding', 'children'],
+    });
+    const columns = value['columns'];
+    const isValidColumns =
+      typeof columns === 'number' &&
+      Number.isInteger(columns) &&
+      columns >= 1 &&
+      columns <= WIREFRAME_LIMITS.maxGridColumns;
+    if (!isValidColumns) {
+      fail({
+        ctx,
+        path: `${path}.columns`,
+        message: `expected an integer from 1 to ${WIREFRAME_LIMITS.maxGridColumns}`,
+      });
+    }
+    const gap = enumValue({
+      ctx,
+      path: `${path}.gap`,
+      value: value['gap'],
+      options: WIREFRAME_SPACINGS,
+      fallback: 'md',
+    });
+    const padding = enumValue({
+      ctx,
+      path: `${path}.padding`,
+      value: value['padding'],
+      options: WIREFRAME_SPACINGS,
+      fallback: 'none',
+    });
+    const children = parseChildren({
+      ctx,
+      path: `${path}.children`,
+      value: value['children'],
+      depth,
+    });
+    if (!isValidColumns || gap === null || padding === null) {
+      return null;
+    }
+    return { id, kind, ...noteField, columns: columns as number, gap, padding, children };
+  }
+
+  if (kind === 'text') {
+    rejectUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'text', 'variant'] });
+    const text = requiredText({
+      ctx,
+      path: `${path}.text`,
+      value: value['text'],
+      max: WIREFRAME_LIMITS.maxTextLength,
+    });
+    const variant = enumValue({
+      ctx,
+      path: `${path}.variant`,
+      value: value['variant'],
+      options: WIREFRAME_TEXT_VARIANTS,
+      fallback: 'body',
+    });
+    if (text === null || variant === null) {
+      return null;
+    }
+    return { id, kind, ...noteField, text, variant };
+  }
+
+  if (kind === 'button') {
+    rejectUnknownKeys({
+      ctx,
+      path,
+      value,
+      allowed: ['id', 'kind', 'note', 'label', 'variant', 'action'],
+    });
+    const label = requiredText({
+      ctx,
+      path: `${path}.label`,
+      value: value['label'],
+      max: WIREFRAME_LIMITS.maxTextLength,
+    });
+    const variant = enumValue({
+      ctx,
+      path: `${path}.variant`,
+      value: value['variant'],
+      options: WIREFRAME_BUTTON_VARIANTS,
+      fallback: 'secondary',
+    });
+    const action = optionalAction({ ctx, path: `${path}.action`, value: value['action'] });
+    if (label === null || variant === null) {
+      return null;
+    }
+    return { id, kind, ...noteField, label, variant, ...(action !== null && { action }) };
+  }
+
+  if (kind === 'input') {
+    rejectUnknownKeys({
+      ctx,
+      path,
+      value,
+      allowed: ['id', 'kind', 'note', 'inputType', 'label', 'placeholder', 'options'],
+    });
+    const inputType = enumValue({
+      ctx,
+      path: `${path}.inputType`,
+      value: value['inputType'],
+      options: WIREFRAME_INPUT_TYPES,
+      fallback: 'text',
+    });
+    const label =
+      value['label'] === undefined
+        ? null
+        : safeText({
+            ctx,
+            path: `${path}.label`,
+            value: value['label'],
+            max: WIREFRAME_LIMITS.maxTextLength,
+          });
+    const placeholder =
+      value['placeholder'] === undefined
+        ? null
+        : safeText({
+            ctx,
+            path: `${path}.placeholder`,
+            value: value['placeholder'],
+            max: WIREFRAME_LIMITS.maxTextLength,
+          });
+    const rawOptions = value['options'];
+    const options: string[] = [];
+    if (rawOptions !== undefined) {
+      if (!Array.isArray(rawOptions)) {
+        fail({ ctx, path: `${path}.options`, message: 'expected an array of strings' });
+      } else if (rawOptions.length > WIREFRAME_LIMITS.maxSelectOptions) {
+        fail({
+          ctx,
+          path: `${path}.options`,
+          message: `more than the ${WIREFRAME_LIMITS.maxSelectOptions} option limit`,
+        });
+      } else {
+        rawOptions.forEach((option, index) => {
+          const parsed = requiredText({
+            ctx,
+            path: `${path}.options[${index}]`,
+            value: option,
+            max: WIREFRAME_LIMITS.maxTextLength,
+          });
+          if (parsed !== null) {
+            options.push(parsed);
+          }
+        });
+      }
+    }
+    if (inputType === null) {
+      return null;
+    }
+    return {
+      id,
+      kind,
+      ...noteField,
+      inputType,
+      ...(label !== null && { label }),
+      ...(placeholder !== null && { placeholder }),
+      ...(rawOptions !== undefined && { options }),
+    };
+  }
+
+  if (kind === 'list') {
+    rejectUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'items'] });
+    const rawItems = value['items'];
+    if (!Array.isArray(rawItems)) {
+      return fail({ ctx, path: `${path}.items`, message: 'expected an array of list items' });
+    }
+    if (rawItems.length > WIREFRAME_LIMITS.maxListItems) {
+      return fail({
+        ctx,
+        path: `${path}.items`,
+        message: `more than the ${WIREFRAME_LIMITS.maxListItems} item limit`,
+      });
+    }
+    const items: Array<{
+      readonly id: string;
+      readonly title: string;
+      readonly subtitle?: string;
+      readonly action?: WireframeAction;
+    }> = [];
+    rawItems.forEach((raw, index) => {
+      const itemPath = `${path}.items[${index}]`;
+      if (!isRecord(raw)) {
+        fail({ ctx, path: itemPath, message: 'expected a list item object' });
+        return;
+      }
+      rejectUnknownKeys({
+        ctx,
+        path: itemPath,
+        value: raw,
+        allowed: ['id', 'title', 'subtitle', 'action'],
+      });
+      const itemId = identifier({ ctx, path: `${itemPath}.id`, value: raw['id'] });
+      const title = requiredText({
+        ctx,
+        path: `${itemPath}.title`,
+        value: raw['title'],
+        max: WIREFRAME_LIMITS.maxTextLength,
+      });
+      const subtitle =
+        raw['subtitle'] === undefined
+          ? null
+          : safeText({
+              ctx,
+              path: `${itemPath}.subtitle`,
+              value: raw['subtitle'],
+              max: WIREFRAME_LIMITS.maxTextLength,
+            });
+      const action = optionalAction({ ctx, path: `${itemPath}.action`, value: raw['action'] });
+      if (itemId === null || title === null) {
+        return;
+      }
+      if (ctx.nodeIds.has(itemId)) {
+        fail({ ctx, path: `${itemPath}.id`, message: `duplicate node id "${itemId}"` });
+        return;
+      }
+      ctx.nodeIds.add(itemId);
+      items.push({
+        id: itemId,
+        title,
+        ...(subtitle !== null && { subtitle }),
+        ...(action !== null && { action }),
+      });
+    });
+    return { id, kind, ...noteField, items };
+  }
+
+  if (kind === 'table') {
+    rejectUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'columns', 'rows'] });
+    const rawColumns = value['columns'];
+    const rawRows = value['rows'];
+    if (!Array.isArray(rawColumns) || rawColumns.length === 0) {
+      return fail({
+        ctx,
+        path: `${path}.columns`,
+        message: 'expected a non-empty array of strings',
+      });
+    }
+    if (rawColumns.length > WIREFRAME_LIMITS.maxTableColumns) {
+      return fail({
+        ctx,
+        path: `${path}.columns`,
+        message: `more than the ${WIREFRAME_LIMITS.maxTableColumns} column limit`,
+      });
+    }
+    if (!Array.isArray(rawRows)) {
+      return fail({ ctx, path: `${path}.rows`, message: 'expected an array of rows' });
+    }
+    if (rawRows.length > WIREFRAME_LIMITS.maxTableRows) {
+      return fail({
+        ctx,
+        path: `${path}.rows`,
+        message: `more than the ${WIREFRAME_LIMITS.maxTableRows} row limit`,
+      });
+    }
+    const columns: string[] = [];
+    rawColumns.forEach((column, index) => {
+      const parsed = requiredText({
+        ctx,
+        path: `${path}.columns[${index}]`,
+        value: column,
+        max: WIREFRAME_LIMITS.maxTextLength,
+      });
+      if (parsed !== null) {
+        columns.push(parsed);
+      }
+    });
+    const rows: Array<ReadonlyArray<string>> = [];
+    rawRows.forEach((row, rowIndex) => {
+      if (!Array.isArray(row)) {
+        fail({ ctx, path: `${path}.rows[${rowIndex}]`, message: 'expected an array of cells' });
+        return;
+      }
+      if (row.length !== rawColumns.length) {
+        fail({
+          ctx,
+          path: `${path}.rows[${rowIndex}]`,
+          message: `expected ${rawColumns.length} cells to match the columns`,
+        });
+        return;
+      }
+      const cells: string[] = [];
+      row.forEach((cell, cellIndex) => {
+        const parsed = safeText({
+          ctx,
+          path: `${path}.rows[${rowIndex}][${cellIndex}]`,
+          value: cell,
+          max: WIREFRAME_LIMITS.maxTextLength,
+        });
+        if (parsed !== null) {
+          cells.push(parsed);
+        }
+      });
+      rows.push(cells);
+    });
+    return { id, kind, ...noteField, columns, rows };
+  }
+
+  if (kind === 'image') {
+    rejectUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'alt', 'ratio'] });
+    const alt = requiredText({
+      ctx,
+      path: `${path}.alt`,
+      value: value['alt'],
+      max: WIREFRAME_LIMITS.maxTextLength,
+    });
+    const ratio = enumValue({
+      ctx,
+      path: `${path}.ratio`,
+      value: value['ratio'],
+      options: WIREFRAME_IMAGE_RATIOS,
+      fallback: 'wide',
+    });
+    if (alt === null || ratio === null) {
+      return null;
+    }
+    return { id, kind, ...noteField, alt, ratio };
+  }
+
+  rejectUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'variant', 'items'] });
+  const variant = enumValue({
+    ctx,
+    path: `${path}.variant`,
+    value: value['variant'],
+    options: WIREFRAME_NAVIGATION_VARIANTS,
+    fallback: 'top',
+  });
+  const rawItems = value['items'];
+  if (!Array.isArray(rawItems)) {
+    return fail({ ctx, path: `${path}.items`, message: 'expected an array of navigation items' });
+  }
+  if (rawItems.length > WIREFRAME_LIMITS.maxNavigationItems) {
+    return fail({
+      ctx,
+      path: `${path}.items`,
+      message: `more than the ${WIREFRAME_LIMITS.maxNavigationItems} item limit`,
+    });
+  }
+  const items: Array<{
+    readonly id: string;
+    readonly label: string;
+    readonly isActive?: boolean;
+    readonly action?: WireframeAction;
+  }> = [];
+  rawItems.forEach((raw, index) => {
+    const itemPath = `${path}.items[${index}]`;
+    if (!isRecord(raw)) {
+      fail({ ctx, path: itemPath, message: 'expected a navigation item object' });
+      return;
+    }
+    rejectUnknownKeys({
+      ctx,
+      path: itemPath,
+      value: raw,
+      allowed: ['id', 'label', 'isActive', 'action'],
+    });
+    const itemId = identifier({ ctx, path: `${itemPath}.id`, value: raw['id'] });
+    const label = requiredText({
+      ctx,
+      path: `${itemPath}.label`,
+      value: raw['label'],
+      max: WIREFRAME_LIMITS.maxTextLength,
+    });
+    const action = optionalAction({ ctx, path: `${itemPath}.action`, value: raw['action'] });
+    if (itemId === null || label === null) {
+      return;
+    }
+    if (ctx.nodeIds.has(itemId)) {
+      fail({ ctx, path: `${itemPath}.id`, message: `duplicate node id "${itemId}"` });
+      return;
+    }
+    ctx.nodeIds.add(itemId);
+    items.push({
+      id: itemId,
+      label,
+      isActive: raw['isActive'] === true,
+      ...(action !== null && { action }),
+    });
+  });
+  if (variant === null) {
+    return null;
+  }
+  return { id, kind, ...noteField, variant, items };
+};
+
+const parseTheme = ({
+  ctx,
+  value,
+}: {
+  readonly ctx: Ctx;
+  readonly value: unknown;
+}): WireframeTheme => {
+  if (value === undefined) {
+    return { name: GENERIC_THEME_NAME };
+  }
+  if (!isRecord(value)) {
+    fail({ ctx, path: 'theme', message: 'expected a theme object' });
+    return { name: GENERIC_THEME_NAME };
+  }
+  rejectUnknownKeys({
+    ctx,
+    path: 'theme',
+    value,
+    allowed: ['name', 'font', 'radius', 'colors', 'sources'],
+  });
+  const name =
+    safeText({ ctx, path: 'theme.name', value: value['name'], max: 80 }) ?? GENERIC_THEME_NAME;
+  const font = enumValue({
+    ctx,
+    path: 'theme.font',
+    value: value['font'],
+    options: WIREFRAME_THEME_FONTS,
+    fallback: 'sans',
+  });
+  const radius = enumValue({
+    ctx,
+    path: 'theme.radius',
+    value: value['radius'],
+    options: WIREFRAME_THEME_RADII,
+    fallback: 'md',
+  });
+  const colors: Record<string, string> = {};
+  const rawColors = value['colors'];
+  if (rawColors !== undefined) {
+    if (!isRecord(rawColors)) {
+      fail({ ctx, path: 'theme.colors', message: 'expected a color token object' });
+    } else {
+      rejectUnknownKeys({
+        ctx,
+        path: 'theme.colors',
+        value: rawColors,
+        allowed: WIREFRAME_THEME_COLOR_TOKENS,
+      });
+      for (const token of WIREFRAME_THEME_COLOR_TOKENS) {
+        const raw = rawColors[token];
+        if (raw === undefined) {
+          continue;
+        }
+        if (typeof raw !== 'string' || !HEX_COLOR.test(raw)) {
+          fail({
+            ctx,
+            path: `theme.colors.${token}`,
+            message: 'expected a hex color like #1a1a1a',
+          });
+          continue;
+        }
+        colors[token] = raw;
+      }
+    }
+  }
+  const sources: string[] = [];
+  const rawSources = value['sources'];
+  if (rawSources !== undefined) {
+    if (!Array.isArray(rawSources)) {
+      fail({ ctx, path: 'theme.sources', message: 'expected an array of file references' });
+    } else {
+      rawSources.slice(0, 20).forEach((source, index) => {
+        const parsed = safeText({ ctx, path: `theme.sources[${index}]`, value: source, max: 200 });
+        if (parsed !== null) {
+          sources.push(parsed);
+        }
+      });
+    }
+  }
+  return {
+    name: name.trim().length === 0 ? GENERIC_THEME_NAME : name,
+    ...(font !== null && { font }),
+    ...(radius !== null && { radius }),
+    ...(Object.keys(colors).length > 0 && { colors }),
+    ...(sources.length > 0 && { sources }),
+  };
+};
+
+const parseScreens = ({
+  ctx,
+  value,
+}: {
+  readonly ctx: Ctx;
+  readonly value: unknown;
+}): ReadonlyArray<WireframeScreen> => {
+  if (!Array.isArray(value) || value.length === 0) {
+    fail({ ctx, path: 'screens', message: 'expected at least one screen' });
+    return [];
+  }
+  if (value.length > WIREFRAME_LIMITS.maxScreens) {
+    fail({
+      ctx,
+      path: 'screens',
+      message: `more than the ${WIREFRAME_LIMITS.maxScreens} screen limit`,
+    });
+    return [];
+  }
+  const seen = new Set<string>();
+  const screens: WireframeScreen[] = [];
+  value.forEach((raw, index) => {
+    const path = `screens[${index}]`;
+    if (!isRecord(raw)) {
+      fail({ ctx, path, message: 'expected a screen object' });
+      return;
+    }
+    rejectUnknownKeys({
+      ctx,
+      path,
+      value: raw,
+      allowed: ['id', 'title', 'viewport', 'root', 'note'],
+    });
+    const id = identifier({ ctx, path: `${path}.id`, value: raw['id'] });
+    const title = requiredText({
+      ctx,
+      path: `${path}.title`,
+      value: raw['title'],
+      max: WIREFRAME_LIMITS.maxTextLength,
+    });
+    const viewport = enumValue({
+      ctx,
+      path: `${path}.viewport`,
+      value: raw['viewport'],
+      options: WIREFRAME_VIEWPORTS,
+      fallback: 'desktop',
+    });
+    const note =
+      raw['note'] === undefined
+        ? null
+        : safeText({
+            ctx,
+            path: `${path}.note`,
+            value: raw['note'],
+            max: WIREFRAME_LIMITS.maxTextLength,
+          });
+    const root = parseNode({ ctx, path: `${path}.root`, value: raw['root'], depth: 1 });
+    if (id === null || title === null || viewport === null || root === null) {
+      return;
+    }
+    if (seen.has(id)) {
+      fail({ ctx, path: `${path}.id`, message: `duplicate screen id "${id}"` });
+      return;
+    }
+    seen.add(id);
+    screens.push({ id, title, viewport, root, ...(note !== null && { note }) });
+  });
+  return screens;
+};
+
+const parseTransitions = ({
+  ctx,
+  value,
+  screenIds,
+  nodeIds,
+}: {
+  readonly ctx: Ctx;
+  readonly value: unknown;
+  readonly screenIds: ReadonlySet<string>;
+  readonly nodeIds: ReadonlySet<string>;
+}): ReadonlyArray<WireframeTransition> => {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    fail({ ctx, path: 'transitions', message: 'expected an array of transitions' });
+    return [];
+  }
+  if (value.length > WIREFRAME_LIMITS.maxTransitions) {
+    fail({
+      ctx,
+      path: 'transitions',
+      message: `more than the ${WIREFRAME_LIMITS.maxTransitions} transition limit`,
+    });
+    return [];
+  }
+  const transitions: WireframeTransition[] = [];
+  value.forEach((raw, index) => {
+    const path = `transitions[${index}]`;
+    if (!isRecord(raw)) {
+      fail({ ctx, path, message: 'expected a transition object' });
+      return;
+    }
+    rejectUnknownKeys({ ctx, path, value: raw, allowed: ['fromNodeId', 'toScreenId', 'label'] });
+    const fromNodeId = identifier({ ctx, path: `${path}.fromNodeId`, value: raw['fromNodeId'] });
+    const toScreenId = identifier({ ctx, path: `${path}.toScreenId`, value: raw['toScreenId'] });
+    const label = requiredText({
+      ctx,
+      path: `${path}.label`,
+      value: raw['label'],
+      max: WIREFRAME_LIMITS.maxTextLength,
+    });
+    if (fromNodeId === null || toScreenId === null || label === null) {
+      return;
+    }
+    if (!nodeIds.has(fromNodeId)) {
+      fail({ ctx, path: `${path}.fromNodeId`, message: `no node with id "${fromNodeId}"` });
+      return;
+    }
+    if (!screenIds.has(toScreenId)) {
+      fail({ ctx, path: `${path}.toScreenId`, message: `no screen with id "${toScreenId}"` });
+      return;
+    }
+    transitions.push({ fromNodeId, toScreenId, label });
+  });
+  return transitions;
+};
+
+const parseMockState = ({
+  ctx,
+  value,
+}: {
+  readonly ctx: Ctx;
+  readonly value: unknown;
+}): Readonly<Record<string, boolean>> => {
+  if (value === undefined) {
+    return {};
+  }
+  if (!isRecord(value)) {
+    fail({ ctx, path: 'mockState', message: 'expected an object of boolean flags' });
+    return {};
+  }
+  const keys = Object.keys(value);
+  if (keys.length > WIREFRAME_LIMITS.maxMockStateKeys) {
+    fail({
+      ctx,
+      path: 'mockState',
+      message: `more than the ${WIREFRAME_LIMITS.maxMockStateKeys} mock state limit`,
+    });
+    return {};
+  }
+  const out: Record<string, boolean> = {};
+  for (const key of keys) {
+    if (identifier({ ctx, path: `mockState.${key}`, value: key }) === null) {
+      continue;
+    }
+    if (typeof value[key] !== 'boolean') {
+      fail({ ctx, path: `mockState.${key}`, message: 'expected a boolean' });
+      continue;
+    }
+    out[key] = value[key] === true;
+  }
+  return out;
+};
+
+export const validateWireframeDocument = ({
+  value,
+}: {
+  readonly value: unknown;
+}): WireframeValidationResult => {
+  const ctx: Ctx = {
+    issues: [],
+    nodeCount: 0,
+    nodeIds: new Set<string>(),
+    actionRefs: { screenIds: [], stateKeys: [] },
+  };
+  if (!isRecord(value)) {
+    return { status: 'invalid', issues: [{ path: '', message: 'expected a wireframe object' }] };
+  }
+  rejectUnknownKeys({
+    ctx,
+    path: '',
+    value,
+    allowed: ['version', 'initialScreenId', 'theme', 'screens', 'transitions', 'mockState'],
+  });
+  const version = value['version'];
+  if (version !== WIREFRAME_SCHEMA_VERSION) {
+    ctx.issues.push({
+      path: 'version',
+      message: `expected version ${WIREFRAME_SCHEMA_VERSION}`,
+    });
+  }
+  const theme = parseTheme({ ctx, value: value['theme'] });
+  const screens = parseScreens({ ctx, value: value['screens'] });
+  const screenIds = new Set(screens.map((screen) => screen.id));
+  const transitions = parseTransitions({
+    ctx,
+    value: value['transitions'],
+    screenIds,
+    nodeIds: ctx.nodeIds,
+  });
+  const mockState = parseMockState({ ctx, value: value['mockState'] });
+  const initialScreenId = identifier({
+    ctx,
+    path: 'initialScreenId',
+    value: value['initialScreenId'],
+  });
+  if (initialScreenId !== null && !screenIds.has(initialScreenId)) {
+    ctx.issues.push({
+      path: 'initialScreenId',
+      message: `no screen with id "${initialScreenId}"`,
+    });
+  }
+  for (const target of ctx.actionRefs.screenIds) {
+    if (!screenIds.has(target)) {
+      ctx.issues.push({
+        path: 'screens',
+        message: `an action navigates to the undeclared screen "${target}"`,
+      });
+    }
+  }
+  for (const key of ctx.actionRefs.stateKeys) {
+    if (!Object.prototype.hasOwnProperty.call(mockState, key)) {
+      ctx.issues.push({
+        path: 'mockState',
+        message: `an action toggles the undeclared mock state "${key}"`,
+      });
+    }
+  }
+  if (ctx.issues.length > 0 || initialScreenId === null) {
+    return { status: 'invalid', issues: ctx.issues };
+  }
+  return {
+    status: 'valid',
+    document: {
+      version: WIREFRAME_SCHEMA_VERSION,
+      initialScreenId,
+      theme,
+      screens,
+      transitions,
+      ...(Object.keys(mockState).length > 0 && { mockState }),
+    },
+  };
+};
+
+export const parseWireframeSource = ({
+  source,
+}: {
+  readonly source: string;
+}): WireframeValidationResult => {
+  try {
+    return validateWireframeDocument({ value: JSON.parse(source) as unknown });
+  } catch {
+    return { status: 'invalid', issues: [{ path: '', message: 'the source is not valid JSON' }] };
+  }
+};

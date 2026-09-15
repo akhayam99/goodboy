@@ -1,17 +1,3 @@
-export { ARTIFACT_MAX_BYTES, ARTIFACT_SCHEMA_VERSION } from './grammar';
-export { parseArtifactEnvelope } from './parseArtifactEnvelope';
-export { captureArtifactFromTurnText, parseLegacyPlanMarkers } from './legacyAdapter';
-export type {
-  ArtifactCaptureError,
-  ArtifactCaptureErrorCode,
-  ArtifactCaptureResult,
-  ArtifactOrigin,
-  ParsedArtifact,
-  ParsedPlanArtifact,
-  ParsedReportArtifact,
-  ParsedWireframeArtifact,
-} from './types';
-
 export {
   GENERIC_THEME_NAME,
   WIREFRAME_BUTTON_VARIANTS,
@@ -20,14 +6,12 @@ export {
   WIREFRAME_LIMITS,
   WIREFRAME_NAVIGATION_VARIANTS,
   WIREFRAME_NODE_KINDS,
-  WIREFRAME_SCHEMA_BRIEF,
   WIREFRAME_SCHEMA_VERSION,
   WIREFRAME_TEXT_VARIANTS,
   WIREFRAME_THEME_COLOR_TOKENS,
   WIREFRAME_VIEWPORTS,
-  parseWireframeSource,
-  validateWireframeDocument,
-} from './wireframe';
+} from './schema';
+
 export type {
   WireframeAction,
   WireframeAlignment,
@@ -62,4 +46,7 @@ export type {
   WireframeTransition,
   WireframeValidationResult,
   WireframeViewport,
-} from './wireframe';
+} from './schema';
+
+export { parseWireframeSource, validateWireframeDocument } from './validateWireframeDocument';
+export { WIREFRAME_SCHEMA_BRIEF } from './wireframeSchemaBrief';

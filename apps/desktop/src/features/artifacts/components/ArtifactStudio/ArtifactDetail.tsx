@@ -13,6 +13,7 @@ import type { Agent, ArtifactId, SessionArtifact, SessionId } from '@goodboy/typ
 import { ArtifactExportActions } from './ArtifactExportActions';
 import { ArtifactStatusChip } from './ArtifactStatusChip';
 import { ReportStudio } from '../../../reports/components/ReportStudio';
+import { WireframeStudio } from '../../../wireframes/components/WireframeStudio';
 import { FocusedPane } from '../../../../shared/components/PaneShell/FocusedPane';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
@@ -25,14 +26,6 @@ type Props = {
   readonly count: number;
   readonly onBack: () => void;
   readonly onSelectArtifact: (artifactId: ArtifactId) => void;
-};
-
-const prettyJson = (source: string): string => {
-  try {
-    return JSON.stringify(JSON.parse(source), null, 2);
-  } catch {
-    return source;
-  }
 };
 
 export const ArtifactDetail = ({
@@ -103,16 +96,11 @@ export const ArtifactDetail = ({
                 onSelectArtifact={onSelectArtifact}
               />
             ) : null}
-            {artifact.kind !== 'report' && artifact.sourceFormat === 'markdown' ? (
-              <Markdown text={artifact.sourceText} className="text-xs" />
+            {artifact.kind === 'wireframe' ? (
+              <WireframeStudio sessionId={sessionId} artifact={artifact} />
             ) : null}
-            {artifact.sourceFormat === 'json' ? (
-              <pre
-                data-testid="artifact-json-source"
-                className="overflow-x-auto rounded-md border border-border-soft bg-elevated p-3 font-mono text-2xs text-foreground/80"
-              >
-                {prettyJson(artifact.sourceText)}
-              </pre>
+            {artifact.kind === 'plan' ? (
+              <Markdown text={artifact.sourceText} className="text-xs" />
             ) : null}
           </div>
         </ScrollFade>
