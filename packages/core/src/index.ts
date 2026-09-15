@@ -144,6 +144,11 @@ export { remapModelSelection } from './providers/remapModelSelection';
 export { resolveCursorCombo } from './providers/cursorCombo';
 export { modelAxes } from './providers/modelAxes';
 export { resolveModelArgs } from './providers/resolveModelArgs';
+export {
+  PROVIDER_ARG_FLAGS,
+  extractSpawnModel,
+  type ProviderArgFlags,
+} from './providers/providerArgFlags';
 export { resolveStoredModelSelection } from './providers/resolveStoredModelSelection';
 export { resolvedStoredModelId } from './providers/resolvedStoredModelId';
 export { selectionRequiresMaxMode } from './providers/selectionRequiresMaxMode';

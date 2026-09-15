@@ -4,9 +4,11 @@ import {
   buildChainCarryForward,
   autoPopulateContext,
   buildStepPrompt,
+  extractSpawnModel,
   findReusableAgent,
   isFallbackStepOutputSummary,
   planTurnFallback,
+  PROVIDER_ARG_FLAGS,
   resolveModelArgs,
   resolveRoleRouting,
   resolveStoredModelSelection,
@@ -145,16 +147,6 @@ import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
 import { turnNodeRouting } from './turnNodeRouting';
 import type { GetFn, SendTurnResult, SetFn } from './types';
-
-const EFFORT_FLAG_BY_PROVIDER = {
-  anthropic: '--effort',
-  cursor: null,
-  codex: null,
-  gemini: null,
-  opencode: '--variant',
-  openrouter: '--variant',
-  moonshot: '--variant',
-} satisfies Readonly<Record<ProviderId, string | null>>;
 
 type Input = {
   sessionId: SessionId;
@@ -549,12 +541,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       requestedEffort,
     });
     const resolvedModel = resolveModelArgs({ provider, selection: modelSelection });
-    const modelFlag = provider === 'anthropic' || provider === 'cursor' ? '--model' : '-m';
-    const modelFlagIndex = resolvedModel.args.indexOf(modelFlag);
-    const spawnModel = resolvedModel.args[modelFlagIndex + 1];
-    if (spawnModel == null) {
-      throw new Error(`resolved model args omit ${modelFlag} for ${provider}`);
-    }
+    const spawnModel = extractSpawnModel({ provider, args: resolvedModel.args });
     const model = spawnModel;
     const picked = pickedTurnExecution({ override: pickedOverride });
     const ranAsPicked = picked.kind === 'unspecified' || picked.id === spawnModel;
@@ -570,7 +557,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         { sessionId },
       );
     }
-    const explicitEffortFlag = EFFORT_FLAG_BY_PROVIDER[provider];
+    const explicitEffortFlag = PROVIDER_ARG_FLAGS[provider].effortFlag;
     const effortFlagIndex =
       explicitEffortFlag == null ? -1 : resolvedModel.args.indexOf(explicitEffortFlag);
     const codexEffort = resolvedModel.args
