@@ -33,6 +33,7 @@ import { WorkflowNextStepCta } from '../../../../../features/workflows/component
 import { OrchestratorPanel } from '../../../../../features/workflows/components/OrchestratorPanel';
 import { RunSpendLimitPopover } from '../../../../../features/workflows/components/RunSpendLimitPopover';
 import { WorkflowRunSummary } from '../../../../../features/workflows/components/WorkflowRunSummary';
+import { CreateReportCta } from '../../../../../features/reports/components/CreateReportCta';
 import { WorkflowAutorunToggle } from '../../../../../features/workflows/components/WorkflowAutorunToggle';
 import { useWorkflowTitleRename } from '../../../../../features/workflows/hooks/useWorkflowTitleRename';
 import { WorkflowStepGraph } from '../../../../../features/workflows/components/WorkflowStepGraph';
@@ -606,6 +607,11 @@ export const WorkflowRow = ({
             )
           ) : null}
           {isDetail ? <WorkflowRunSummary summary={run.orchestratorSummary} /> : null}
+          {isDetail && isCompleted ? (
+            <div className="flex shrink-0 items-center">
+              <CreateReportCta sessionId={task.id} workflowRunId={run.id} />
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

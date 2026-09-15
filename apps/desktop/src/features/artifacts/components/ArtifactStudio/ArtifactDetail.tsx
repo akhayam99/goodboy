@@ -9,15 +9,19 @@ import {
   ScrollFade,
   cn,
 } from '@goodboy/ui';
-import type { Agent, SessionArtifact } from '@goodboy/types';
+import type { Agent, SessionArtifact, SessionId } from '@goodboy/types';
+import { ArtifactExportActions } from './ArtifactExportActions';
 import { ArtifactStatusChip } from './ArtifactStatusChip';
+import { ReportStudio } from '../../../reports/components/ReportStudio';
 import { FocusedPane } from '../../../../shared/components/PaneShell/FocusedPane';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly artifact: SessionArtifact;
   readonly agents: ReadonlyArray<Agent>;
+  readonly artifacts: ReadonlyArray<SessionArtifact>;
   readonly count: number;
   readonly onBack: () => void;
 };
@@ -30,7 +34,14 @@ const prettyJson = (source: string): string => {
   }
 };
 
-export const ArtifactDetail = ({ artifact, agents, count, onBack }: Props) => {
+export const ArtifactDetail = ({
+  sessionId,
+  artifact,
+  agents,
+  artifacts,
+  count,
+  onBack,
+}: Props) => {
   const creator = agents.find((agent) => agent.id === artifact.agentId);
 
   return (
@@ -69,27 +80,31 @@ export const ArtifactDetail = ({ artifact, agents, count, onBack }: Props) => {
                 ]}
               />
             }
-            actions={
-              <span
-                data-testid="artifact-export-slot"
-                className="flex shrink-0 items-center gap-2"
-              />
-            }
+            actions={<ArtifactExportActions artifact={artifact} />}
           />
         </div>
         <Divider />
         <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
           <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}>
-            {artifact.sourceFormat === 'markdown' ? (
+            {artifact.kind === 'report' ? (
+              <ReportStudio
+                sessionId={sessionId}
+                artifact={artifact}
+                agents={agents}
+                artifacts={artifacts}
+              />
+            ) : null}
+            {artifact.kind !== 'report' && artifact.sourceFormat === 'markdown' ? (
               <Markdown text={artifact.sourceText} className="text-xs" />
-            ) : (
+            ) : null}
+            {artifact.sourceFormat === 'json' ? (
               <pre
                 data-testid="artifact-json-source"
                 className="overflow-x-auto rounded-md border border-border-soft bg-elevated p-3 font-mono text-2xs text-foreground/80"
               >
                 {prettyJson(artifact.sourceText)}
               </pre>
-            )}
+            ) : null}
           </div>
         </ScrollFade>
       </div>

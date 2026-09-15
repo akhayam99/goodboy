@@ -32,8 +32,10 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
   if (selected !== null) {
     return (
       <ArtifactDetail
+        sessionId={sessionId}
         artifact={selected}
         agents={agents}
+        artifacts={artifacts}
         count={artifacts.length}
         onBack={() => setFocusedArtifactId(null)}
       />

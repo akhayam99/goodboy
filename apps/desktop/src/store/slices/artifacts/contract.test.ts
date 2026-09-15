@@ -17,7 +17,7 @@ import {
   selectSessionArtifacts,
 } from './index';
 import type { ArtifactsState } from './state';
-import type { SetFn } from './types';
+import type { GetFn, SetFn } from './types';
 
 const listSpy = vi.fn<(sessionId: SessionId) => Promise<ReadonlyArray<SessionArtifact>>>(
   async () => [],
@@ -76,7 +76,9 @@ const set: SetFn = (patch) => {
   state = { ...state, ...next } as ArtifactsState;
 };
 
-const slice = () => createArtifactsSlice(set);
+const get = (() => ({ ...state })) as unknown as GetFn;
+
+const slice = () => createArtifactsSlice(set, get);
 
 describe('artifacts slice', () => {
   beforeEach(() => {

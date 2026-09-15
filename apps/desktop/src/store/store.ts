@@ -1114,7 +1114,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...initialState,
   ...createNotificationsSlice(set, get),
   ...createNudgesSlice(set, get),
-  ...createArtifactsSlice(set),
+  ...createArtifactsSlice(set, get),
   ...createPlansSlice(set, get),
   ...createOpenQuestionsSlice(set, get),
   ...createBudgetSlice(set, get),
