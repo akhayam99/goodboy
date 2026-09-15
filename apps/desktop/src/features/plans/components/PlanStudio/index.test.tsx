@@ -231,6 +231,158 @@ describe('PlanStudio', () => {
   });
 });
 
+describe('PlanStudio consumer provenance', () => {
+  const focusedPlan = {
+    id: 'plan-1',
+    agentId: 'agent-1',
+    sessionId: 'sess-1',
+    title: 'Implement auth module',
+    bodyMd: '## Steps',
+    status: 'consumed',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    consumptionCount: 1,
+  };
+
+  it('leaves the consumer off the subtitle when the plan never ran', () => {
+    state.plans = [{ ...focusedPlan, status: 'active', consumptionCount: 0 }];
+    state.focusedPlanId = { 'sess-1': 'plan-1' };
+    state.sessionPhaseRuns = { 'sess-1': [{ id: 'agent-1', name: 'planner' }] };
+    render(<PlanStudio sessionId={'sess-1' as never} />);
+
+    expect(screen.getByText('planner')).toBeDefined();
+    expect(screen.queryByText(/Run by/)).toBeNull();
+  });
+
+  it('names the consumer at rest for a plan that ran once', () => {
+    state.plans = [focusedPlan];
+    state.focusedPlanId = { 'sess-1': 'plan-1' };
+    state.sessionPhaseRuns = {
+      'sess-1': [
+        { id: 'agent-1', name: 'planner' },
+        { id: 'agent-2', name: 'implementer' },
+      ],
+    };
+    state.planConsumptions = {
+      'plan-1': [
+        {
+          id: 'c1',
+          planId: 'plan-1',
+          agentId: 'agent-2',
+          agentName: 'implementer',
+          consumedAt: '2026-01-02T00:00:00.000Z',
+        },
+      ],
+    };
+    render(<PlanStudio sessionId={'sess-1' as never} />);
+
+    expect(screen.getByRole('button', { name: 'Run by implementer' })).toBeDefined();
+  });
+
+  it('names the most recent consumer plus a remainder for several runs', () => {
+    state.plans = [{ ...focusedPlan, consumptionCount: 3 }];
+    state.focusedPlanId = { 'sess-1': 'plan-1' };
+    state.sessionPhaseRuns = {
+      'sess-1': [
+        { id: 'agent-1', name: 'planner' },
+        { id: 'agent-3', name: 'third runner' },
+      ],
+    };
+    state.planConsumptions = {
+      'plan-1': [
+        {
+          id: 'c3',
+          planId: 'plan-1',
+          agentId: 'agent-3',
+          agentName: 'third runner',
+          consumedAt: '2026-01-04T00:00:00.000Z',
+        },
+        {
+          id: 'c2',
+          planId: 'plan-1',
+          agentId: 'agent-2',
+          agentName: 'implementer',
+          consumedAt: '2026-01-03T00:00:00.000Z',
+        },
+        {
+          id: 'c1',
+          planId: 'plan-1',
+          agentId: 'agent-2',
+          agentName: 'implementer',
+          consumedAt: '2026-01-02T00:00:00.000Z',
+        },
+      ],
+    };
+    render(<PlanStudio sessionId={'sess-1' as never} />);
+
+    const trigger = screen.getByRole('button', { name: 'Run by third runner +2 more' });
+    fireEvent.click(trigger);
+
+    expect(screen.getByText('Ran 3 times')).toBeDefined();
+  });
+
+  it('marks a deleted consumer agent on the trigger', () => {
+    state.plans = [focusedPlan];
+    state.focusedPlanId = { 'sess-1': 'plan-1' };
+    state.sessionPhaseRuns = { 'sess-1': [{ id: 'agent-1', name: 'planner' }] };
+    state.planConsumptions = {
+      'plan-1': [
+        {
+          id: 'c1',
+          planId: 'plan-1',
+          agentId: 'agent-2',
+          agentName: 'implementer',
+          consumedAt: '2026-01-02T00:00:00.000Z',
+        },
+      ],
+    };
+    render(<PlanStudio sessionId={'sess-1' as never} />);
+
+    const trigger = screen.getByRole('button', { name: 'Run by implementer' });
+    expect(trigger.className).toContain('line-through');
+  });
+
+  it('falls back to a truncated id when the deleted consumer has no stored name', () => {
+    state.plans = [focusedPlan];
+    state.focusedPlanId = { 'sess-1': 'plan-1' };
+    state.sessionPhaseRuns = { 'sess-1': [{ id: 'agent-1', name: 'planner' }] };
+    state.planConsumptions = {
+      'plan-1': [
+        {
+          id: 'c1',
+          planId: 'plan-1',
+          agentId: 'agent-9f3c2b1a',
+          agentName: null,
+          consumedAt: '2026-01-02T00:00:00.000Z',
+        },
+      ],
+    };
+    render(<PlanStudio sessionId={'sess-1' as never} />);
+
+    expect(screen.getByRole('button', { name: 'Run by agent-9f' })).toBeDefined();
+  });
+
+  it('names the consumer on the rail card of a finished plan', () => {
+    state.plans = [
+      {
+        ...focusedPlan,
+        consumptionCount: 2,
+        lastConsumer: { agentId: 'agent-2', name: 'implementer' },
+      },
+    ];
+    render(<PlanStudio sessionId={'sess-1' as never} />);
+
+    expect(screen.getByText('Run by implementer +1 more')).toBeDefined();
+  });
+
+  it('leaves the rail card meta on the timestamp alone when nobody ran the plan', () => {
+    state.plans = [{ ...focusedPlan, status: 'active', consumptionCount: 0, lastConsumer: null }];
+    render(<PlanStudio sessionId={'sess-1' as never} />);
+
+    expect(screen.getByText('Implement auth module')).toBeDefined();
+    expect(screen.queryByText(/Run by/)).toBeNull();
+  });
+});
+
 describe('PlanStudio subpage', () => {
   it('fills the pane (not a fixed overlay) when a plan is focused', () => {
     state.plans = [

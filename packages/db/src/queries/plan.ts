@@ -6,6 +6,7 @@ import type {
   PlanConsumption,
   PlanConsumptionId,
   PlanId,
+  PlanLastConsumer,
   PlanStatus,
   PlanWithCount,
   SessionId,
@@ -29,6 +30,8 @@ type PlanRow = {
 
 type PlanWithCountRow = PlanRow & {
   consumption_count: number;
+  last_consumer_agent_id: string | null;
+  last_consumer_agent_name: string | null;
 };
 
 const isImplementationCluster = (value: unknown): value is ImplementationCluster => {
@@ -90,8 +93,21 @@ function toDomain(row: PlanRow): Plan {
 }
 
 function toDomainWithCount(row: PlanWithCountRow): PlanWithCount {
-  return { ...toDomain(row), consumptionCount: row.consumption_count };
+  const lastConsumer: PlanLastConsumer | null =
+    row.last_consumer_agent_id != null
+      ? {
+          agentId: row.last_consumer_agent_id as AgentId,
+          name: row.last_consumer_agent_name,
+        }
+      : null;
+  return { ...toDomain(row), consumptionCount: row.consumption_count, lastConsumer };
 }
+
+const LAST_CONSUMPTION = `FROM plan_consumptions lc
+             LEFT JOIN agents la ON la.id = lc.agent_id
+             WHERE lc.plan_id = p.id
+             ORDER BY lc.consumed_at DESC
+             LIMIT 1`;
 
 export const listPlansForSession = async (
   db: Database,
@@ -100,7 +116,9 @@ export const listPlansForSession = async (
   const rows = await db.select<PlanWithCountRow>(
     `SELECT p.id, p.session_id, p.agent_id, p.workflow_run_id, p.title, p.body_md, p.status,
             p.clusters_json, p.created_at, p.updated_at,
-            COUNT(c.id) AS consumption_count
+            COUNT(c.id) AS consumption_count,
+            (SELECT lc.agent_id ${LAST_CONSUMPTION}) AS last_consumer_agent_id,
+            (SELECT la.name ${LAST_CONSUMPTION}) AS last_consumer_agent_name
      FROM session_plans p
      LEFT JOIN plan_consumptions c ON c.plan_id = p.id
      WHERE p.session_id = ?

@@ -24,7 +24,16 @@ export type Plan = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
-export type PlanWithCount = Plan & Readonly<{ consumptionCount: number }>;
+export type PlanLastConsumer = Readonly<{
+  agentId: AgentId;
+  name: string | null;
+}>;
+
+export type PlanWithCount = Plan &
+  Readonly<{
+    consumptionCount: number;
+    lastConsumer?: PlanLastConsumer | null;
+  }>;
 
 export type PlanConsumptionId = string & { readonly __brand: 'PlanConsumptionId' };
 
