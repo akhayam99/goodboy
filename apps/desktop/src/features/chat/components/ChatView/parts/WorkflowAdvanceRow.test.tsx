@@ -176,4 +176,53 @@ describe('WorkflowAdvanceRow', () => {
 
     expect(container.innerHTML).toBe('');
   });
+
+  it('renders nothing for a discarded run even when the open chat matches the current step agent', () => {
+    const pending = agent({
+      id: 'agent-1' as AgentId,
+      stepId: 'step-1' as StepId,
+      status: 'pending',
+    });
+    store.sessionPhaseRuns = { [SESSION_ID]: [pending] };
+    store.selectedAgentId = { [SESSION_ID]: 'agent-1' };
+    const discardedSession = {
+      ...session,
+      workflowRuns: [
+        {
+          id: RUN_ID,
+          workflowId: WORKFLOW_ID,
+          ordinal: 0,
+          currentStep: 0,
+          autoRun: false,
+          triggerMode: 'immediate',
+          executionMode: 'static',
+          discardedAt: '2026-08-18T00:00:00.000Z' as IsoDateTime,
+        },
+      ],
+    } as unknown as Session;
+
+    const { container } = render(<WorkflowAdvanceRow session={discardedSession} />);
+
+    expect(container.innerHTML).toBe('');
+  });
+
+  it('renders nothing for a cluster child agent working under the current step', () => {
+    const pending = agent({
+      id: 'agent-1' as AgentId,
+      stepId: 'step-1' as StepId,
+      status: 'pending',
+    });
+    const clusterChild = agent({
+      id: 'agent-1-child' as AgentId,
+      stepId: 'step-1' as StepId,
+      status: 'running',
+      parentAgentId: 'agent-1' as AgentId,
+    });
+    store.sessionPhaseRuns = { [SESSION_ID]: [pending, clusterChild] };
+    store.selectedAgentId = { [SESSION_ID]: 'agent-1-child' };
+
+    const { container } = render(<WorkflowAdvanceRow session={session} />);
+
+    expect(container.innerHTML).toBe('');
+  });
 });
