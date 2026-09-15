@@ -143,7 +143,7 @@ vi.mock('../AgentDetailPane', () => ({
   ),
 }));
 vi.mock('../../../terminal/components/TerminalDock', () => ({ TerminalDock: () => null }));
-vi.mock('../../../plans/components/PlanStudio', () => ({ PlanStudio: () => null }));
+vi.mock('../../../artifacts/components/ArtifactStudio', () => ({ ArtifactStudio: () => null }));
 vi.mock('../../../scripts', () => ({ ScriptsPanel: () => null }));
 vi.mock('../../../worktree/worktree', () => ({ worktreeStatus: vi.fn() }));
 vi.mock('../../../worktree/useRemoteHostKind', () => ({

@@ -94,6 +94,13 @@ export type TurnEvent =
       message: string;
       at: IsoDateTime;
     }
+  | {
+      kind: 'artifact_capture_failed';
+      runId: ProviderRunId;
+      code: string;
+      message: string;
+      at: IsoDateTime;
+    }
   | { kind: 'done'; runId: ProviderRunId; at: IsoDateTime }
   | {
       kind: 'provider_session_init';

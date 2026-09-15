@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
 import { TerminalDock } from '../../../terminal/components/TerminalDock';
-import { PlanStudio } from '../../../plans/components/PlanStudio';
+import { ArtifactStudio } from '../../../artifacts/components/ArtifactStudio';
 import { ScriptsPanel } from '../../../scripts';
 import {
   EMPTY_ARRAY,
@@ -196,7 +196,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             )
           ) : null}
           {lens === 'questions' ? <QuestionsPane session={session} /> : null}
-          {lens === 'plans' ? <PlanStudio sessionId={sessionId} /> : null}
+          {lens === 'plans' ? <ArtifactStudio sessionId={sessionId} /> : null}
           {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
           {lens === 'scripts' ? (
             <PaneShell

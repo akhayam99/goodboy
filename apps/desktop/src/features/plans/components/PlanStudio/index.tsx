@@ -34,9 +34,10 @@ import { FinishedRegister } from '../../../../shared/components/FinishedRegister
 type Props = {
   readonly sessionId: SessionId;
   readonly eyebrow?: ReactNode;
+  readonly railFooter?: ReactNode;
 };
 
-export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
+export const PlanStudio = ({ sessionId, eyebrow, railFooter }: Props) => {
   const plans = useSessionPlans(sessionId);
   const openQuestionCount = useSessionOpenQuestions(sessionId).length;
   const agents = useAppStore(
@@ -382,6 +383,7 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
           </ul>
         }
       />
+      {railFooter}
     </PaneShell>
   );
 };

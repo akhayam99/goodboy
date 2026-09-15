@@ -331,6 +331,22 @@ export const getArtifact = async ({
   artifactId,
 }: ArtifactIdParams): Promise<SessionArtifact | null> => selectArtifact({ db, artifactId });
 
+export const getArtifactBySourceTurn = async ({
+  db,
+  agentId,
+  sourceTurnId,
+}: DatabaseParams & {
+  readonly agentId: AgentId;
+  readonly sourceTurnId: string;
+}): Promise<SessionArtifact | null> => {
+  const rows = await db.select<ArtifactRow>(
+    `${ARTIFACT_SELECT} WHERE agent_id = ? AND source_turn_id = ?`,
+    [agentId, sourceTurnId],
+  );
+  const row = rows[0];
+  return row === undefined ? null : toDomain(row);
+};
+
 export const listArtifactsForSession = async ({
   db,
   sessionId,

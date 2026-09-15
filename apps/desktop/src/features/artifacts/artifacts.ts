@@ -1,18 +1,63 @@
 import type {
+  AgentId,
   ArtifactId,
+  ArtifactKind,
   ArtifactSourceFormat,
   ArtifactStatus,
   SessionArtifact,
   SessionId,
+  WorkflowRunId,
 } from '@goodboy/types';
 import {
   deleteArtifact as dbDeleteArtifact,
+  getArtifactBySourceTurn as dbGetArtifactBySourceTurn,
+  insertArtifact as dbInsertArtifact,
   listArtifactsForSession as dbListArtifactsForSession,
   restoreArtifact as dbRestoreArtifact,
   setArtifactStatus as dbSetArtifactStatus,
   updateArtifactSource as dbUpdateArtifactSource,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
+
+export type CreateArtifactArgs = {
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly workflowRunId?: WorkflowRunId | null;
+  readonly kind: ArtifactKind;
+  readonly schemaVersion: number;
+  readonly title: string;
+  readonly sourceFormat: ArtifactSourceFormat;
+  readonly sourceText: string;
+  readonly metadata: SessionArtifact['metadata'];
+  readonly sourceTurnId: string;
+};
+
+export const createArtifact = async (args: CreateArtifactArgs): Promise<SessionArtifact> => {
+  const existing = await dbGetArtifactBySourceTurn({
+    db: tauriDatabase,
+    agentId: args.agentId,
+    sourceTurnId: args.sourceTurnId,
+  });
+  if (existing !== null) {
+    return existing;
+  }
+  return dbInsertArtifact({
+    db: tauriDatabase,
+    input: {
+      id: crypto.randomUUID() as ArtifactId,
+      sessionId: args.sessionId,
+      agentId: args.agentId,
+      workflowRunId: args.workflowRunId ?? null,
+      kind: args.kind,
+      schemaVersion: args.schemaVersion,
+      title: args.title,
+      sourceFormat: args.sourceFormat,
+      sourceText: args.sourceText,
+      metadata: args.metadata,
+      sourceTurnId: args.sourceTurnId,
+    },
+  });
+};
 
 export type UpdateArtifactSourceArgs = {
   readonly artifactId: ArtifactId;

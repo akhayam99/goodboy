@@ -341,6 +341,7 @@ export {
 export {
   insertArtifact,
   getArtifact,
+  getArtifactBySourceTurn,
   listArtifactsForSession,
   listArtifactsForRun,
   updateArtifactSource,

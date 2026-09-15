@@ -74,6 +74,7 @@ const toTruncatedEvent = ({ event }: SerializeTurnEventParams): TurnEvent => {
       };
     case 'error':
     case 'decision_note':
+    case 'artifact_capture_failed':
       return { ...event, message: markTruncated(event.message) };
     case 'done':
       return event;

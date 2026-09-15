@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
+import { ArtifactCaptureNoticeCard } from '../ArtifactCaptureNoticeCard';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { SkillInvocationCard } from '../SkillInvocationCard';
 import { PhaseTransitionCard } from '../PhaseTransitionCard';
@@ -79,6 +80,8 @@ function TranscriptCardImpl({
       );
     case 'decision_note':
       return <DecisionNoteRow message={item.message} />;
+    case 'artifact_capture_failed':
+      return <ArtifactCaptureNoticeCard item={item} sessionId={sessionId} agentId={agentId} />;
     case 'auth_required':
       return (
         <AuthRequiredCallout
