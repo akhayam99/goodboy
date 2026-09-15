@@ -307,7 +307,7 @@ describe('story: an agent works from its own project and reads the others', () =
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
 
     expect(spawnedArgs()['mountId']).toBe('mount-a');
-    expect(String(spawnedArgs()['systemPrompt'])).toContain('This turn is bound to mount mount-a.');
+    expect(String(spawnedArgs()['systemPrompt'])).toContain('and is bound to mount mount-a.');
   });
 
   it('keeps a running turn on its mount when the active selection moves under it', async () => {

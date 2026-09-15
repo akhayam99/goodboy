@@ -87,6 +87,116 @@ const base = {
   canWrite: true,
 };
 
+const READING_ENTITLEMENT =
+  'You may read and search every project listed in this workspace to answer the current request. This permission is already granted and needs no mount, no activation and no confirmation.';
+const READING_NOT_LIMITED =
+  'Your starting directory and your bound mount do not limit which listed projects you may inspect.';
+const READING_IS_ORDINARY =
+  'Reading another listed project is ordinary workspace work. Name the source you used, and do not describe the read as a scope exception.';
+const READING_STAYS_ON_TASK =
+  'Stay on the assigned task. Workspace membership does not authorize unrelated exploration or access to locations that are not listed.';
+const READING_REVISIONS =
+  'A project root and a session mount can hold different revisions. Use the one the question is about and say which one you used.';
+const WRITE_BOUNDARY =
+  'ALL writes (Write/Edit/Bash file mutations) MUST resolve inside the session directory or a materialized project mount.';
+const READ_ONLY_ROLE =
+  'Your role covers inspection and analysis across the listed workspace projects. It does not cover changing project files or requesting a writable mount.';
+
+type MatrixCase = {
+  readonly name: string;
+  readonly projects: ReadonlyArray<Project>;
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+};
+
+const MATRIX: ReadonlyArray<MatrixCase> = [
+  { name: 'no mount and every project unmounted', projects: [app, web], mounts: [] },
+  { name: 'one mount and an unmounted sibling project', projects: [app, web], mounts: [appMount] },
+  { name: 'one mount and every project mounted', projects: [app], mounts: [appMount] },
+  {
+    name: 'two mounts and every project mounted',
+    projects: [app, web],
+    mounts: [appMount, webMount],
+  },
+  {
+    name: 'two mounts of one project and an unmounted sibling',
+    projects: [app, web],
+    mounts: [appMount, appFork],
+  },
+];
+
+const SCRATCH_DIR = '/tmp/goodboy-root/scratch/session-1';
+
+const guardFor = ({
+  entry,
+  canWrite,
+}: {
+  readonly entry: MatrixCase;
+  readonly canWrite: boolean;
+}): string =>
+  buildScopeGuard({
+    ...base,
+    canWrite,
+    workingDir: entry.mounts[0]?.worktreePath ?? SCRATCH_DIR,
+    projects: entry.projects,
+    mounts: entry.mounts,
+  });
+
+describe('buildScopeGuard reading entitlement', () => {
+  for (const entry of MATRIX) {
+    it(`grants reading to a writer kind with ${entry.name}`, () => {
+      const guard = guardFor({ entry, canWrite: true });
+
+      expect(guard).toContain(READING_ENTITLEMENT);
+      expect(guard).toContain(READING_NOT_LIMITED);
+      expect(guard).toContain(READING_IS_ORDINARY);
+      expect(guard).toContain(READING_STAYS_ON_TASK);
+      expect(guard).toContain(READING_REVISIONS);
+      expect(guard).toContain('This session belongs to a workspace with these projects:');
+      for (const project of entry.projects) {
+        expect(guard).toContain(`- ${project.name} (repo) root: ${project.rootPath}`);
+      }
+      expect(guard).not.toContain('ALL file operations');
+    });
+
+    it(`grants the same reading to a read-only kind with ${entry.name}`, () => {
+      const guard = guardFor({ entry, canWrite: false });
+
+      expect(guard).toContain(READING_ENTITLEMENT);
+      expect(guard).toContain(READING_NOT_LIMITED);
+      expect(guard).toContain(READING_IS_ORDINARY);
+      expect(guard).toContain(READING_STAYS_ON_TASK);
+      expect(guard).toContain(READING_REVISIONS);
+      expect(guard).toContain('This session belongs to a workspace with these projects:');
+      expect(guard).not.toContain('ALL file operations');
+    });
+  }
+});
+
+describe('buildScopeGuard write boundary', () => {
+  for (const entry of MATRIX) {
+    it(`keeps the write boundary and the marker for a writer kind with ${entry.name}`, () => {
+      const guard = guardFor({ entry, canWrite: true });
+
+      expect(guard).toContain(WRITE_BOUNDARY);
+      expect(guard).toContain('<<materialize: <project name> | <why you need it>>>');
+      expect(guard).toContain(
+        'Materialize ONLY a project whose files you must edit. A project name in the goal, plan, or prompt is not write intent or authorization.',
+      );
+      expect(guard).not.toContain(READ_ONLY_ROLE);
+    });
+
+    it(`withholds both from a read-only kind with ${entry.name}`, () => {
+      const guard = guardFor({ entry, canWrite: false });
+
+      expect(guard).toContain(READ_ONLY_ROLE);
+      expect(guard).not.toContain(WRITE_BOUNDARY);
+      expect(guard).not.toContain('<<materialize:');
+      expect(guard).not.toContain('Materialize ONLY a project');
+      expect(guard).not.toContain('GOODBOY_BIN');
+    });
+  }
+});
+
 describe('buildScopeGuard', () => {
   it('teaches the inventory and the marker while another project stays unmounted', () => {
     const guard = buildScopeGuard({ ...base, projects: [app, web], mounts: [appMount] });
@@ -101,12 +211,8 @@ describe('buildScopeGuard', () => {
     expect(guard).toContain(
       '- web (repo) root: /tmp/web | NOT materialized: read it freely, mount it only to write',
     );
-    expect(guard).toContain('You may READ the project root paths listed above.');
     expect(guard).toContain(
-      'Reading any project root listed above is free and needs no mount. NEVER materialize a project to read it, to run its tests, or because it looks related to the goal.',
-    );
-    expect(guard).toContain(
-      'Materialize ONLY a project whose files you must edit. A project name in the goal, plan, or prompt is not write intent or authorization.',
+      'NEVER materialize a project to read it, to run its tests, or because it looks related to the goal. Reading needs no mount.',
     );
     expect(guard).toContain(
       'The active project, projects linked by external tasks, and existing mounts are authorized. Up to two other projects mount automatically per session; further projects wait for owner approval.',
@@ -117,6 +223,22 @@ describe('buildScopeGuard', () => {
       'After emitting the marker, end your turn. The mount is ready on the next one.',
     );
     expect(guard).not.toContain('GOODBOY_BIN');
+  });
+
+  it('puts the reading entitlement before the execution context', () => {
+    const guard = buildScopeGuard({ ...base, projects: [app, web], mounts: [appMount] });
+    const lines = guard.split('\n');
+
+    expect(lines.indexOf(READING_ENTITLEMENT)).toBeGreaterThan(-1);
+    expect(lines.indexOf(READING_ENTITLEMENT)).toBeLessThan(
+      lines.findIndex((line) => line.startsWith('You are operating inside')),
+    );
+    expect(lines.indexOf(READING_ENTITLEMENT)).toBeLessThan(
+      lines.findIndex((line) => line.startsWith('This process starts in')),
+    );
+    expect(lines.indexOf(READING_ENTITLEMENT)).toBeLessThan(
+      lines.findIndex((line) => line.startsWith(WRITE_BOUNDARY)),
+    );
   });
 
   it('adds the bridge command variant to the single materialize line when serving', () => {
@@ -155,31 +277,17 @@ describe('buildScopeGuard', () => {
     expect(guard).not.toContain('query mount list');
   });
 
-  it('suppresses the materialize instruction for kinds that cannot write', () => {
-    const guard = buildScopeGuard({
-      ...base,
-      projects: [app, web],
-      mounts: [appMount],
-      canWrite: false,
-    });
-
-    expect(guard).toContain('NOT materialized');
-    expect(guard).not.toContain('<<materialize:');
-    expect(guard).not.toContain('GOODBOY_BIN');
-    expect(guard).not.toContain('Reading any project root listed above is free');
-  });
-
-  it('keeps the mount inventory but drops the teaching once every project is mounted', () => {
+  it('keeps the inventory and the reading entitlement once every project is mounted', () => {
     const guard = buildScopeGuard({ ...base, projects: [app], mounts: [appMount] });
 
     expect(guard).toContain('[worktree-scope]');
     expect(guard).toContain(
       '- app (repo) root: /tmp/app | materialized at /tmp/app/.goodboy/worktrees/goal (branch goodboy/goal)',
     );
-    expect(guard).toContain('ALL file operations (Read/Write/Edit/Bash file paths)');
+    expect(guard).toContain(READING_ENTITLEMENT);
+    expect(guard).toContain(WRITE_BOUNDARY);
+    expect(guard).not.toContain('ALL file operations (Read/Write/Edit/Bash file paths)');
     expect(guard).not.toContain('NOT materialized');
-    expect(guard).not.toContain('<<materialize:');
-    expect(guard.split('\n')).toHaveLength(7);
   });
 
   it('names the active mount as the working directory and lists the others', () => {
@@ -201,7 +309,8 @@ describe('buildScopeGuard', () => {
     expect(guard).toContain(
       '- web [mount mount-web] project web branch goodboy/goal-web at /tmp/web/.goodboy/worktrees/goal (attached)',
     );
-    expect(guard).toContain('ALL file operations MUST resolve inside one of these mounts.');
+    expect(guard).toContain(WRITE_BOUNDARY);
+    expect(guard).not.toContain('ALL file operations MUST resolve inside one of these mounts.');
     expect(guard).not.toContain('NOT materialized');
   });
 
@@ -225,7 +334,7 @@ describe('buildScopeGuard', () => {
     expect(guard).not.toContain('separate git repository');
   });
 
-  it('names the mount this turn is bound to and confines activate to the next one', () => {
+  it('frames the starting directory and the bound mount as execution context', () => {
     const guard = buildScopeGuard({
       ...base,
       projects: [app],
@@ -233,8 +342,18 @@ describe('buildScopeGuard', () => {
       activeMountId: appMount.mountId ?? null,
     });
 
-    expect(guard).toContain('This turn is bound to mount mount-app.');
-    expect(guard).toContain('change only where the NEXT turn starts');
+    expect(guard).toContain(
+      'This process starts in /tmp/app/.goodboy/worktrees/goal and is bound to mount mount-app. That fixes where it runs for this turn. Activating another mount changes where a later turn starts.',
+    );
+  });
+
+  it('drops the mount half of the execution line when no mount is active', () => {
+    const guard = buildScopeGuard({ ...base, projects: [app], mounts: [appMount] });
+
+    expect(guard).toContain(
+      'This process starts in /tmp/app/.goodboy/worktrees/goal. That fixes where it runs for this turn.',
+    );
+    expect(guard).not.toContain('is bound to mount');
   });
 
   it('marks a mount that is no longer attached or no longer on disk', () => {
@@ -274,7 +393,7 @@ describe('buildScopeGuard', () => {
   it('frames a mountless turn as projects-scope with every project unmounted', () => {
     const guard = buildScopeGuard({
       ...base,
-      workingDir: '/tmp/goodboy-root/scratch/session-1',
+      workingDir: SCRATCH_DIR,
       projects: [app, web],
       mounts: [],
     });
@@ -286,30 +405,11 @@ describe('buildScopeGuard', () => {
     expect(guard).toContain('This session has no materialized project mounts yet.');
     expect(guard).toContain('- app (repo) root: /tmp/app | NOT materialized');
     expect(guard).toContain('- web (repo) root: /tmp/web | NOT materialized');
-    expect(guard).toContain(
-      'Materialize ONLY a project whose files you must edit. A project name in the goal, plan, or prompt is not write intent or authorization.',
-    );
-    expect(guard).toContain('You may READ the project root paths listed above.');
-    expect(guard).toContain(
-      'ALL writes (Write/Edit/Bash file mutations) MUST resolve inside the session directory or a materialized project mount.',
-    );
+    expect(guard).toContain(READING_ENTITLEMENT);
+    expect(guard).toContain(WRITE_BOUNDARY);
     expect(guard).toContain('<<materialize: <project name> | <why you need it>>>');
     expect(guard).not.toContain('materialized at');
     expect(guard).not.toContain('isolated git worktree');
-  });
-
-  it('drops the materialize teaching from a mountless turn for kinds that cannot write', () => {
-    const guard = buildScopeGuard({
-      ...base,
-      workingDir: '/tmp/goodboy-root/scratch/session-1',
-      projects: [app, web],
-      mounts: [],
-      canWrite: false,
-    });
-
-    expect(guard).toContain('[projects-scope]');
-    expect(guard).toContain('NOT materialized');
-    expect(guard).not.toContain('<<materialize:');
   });
 
   it('keeps the session-directory grammar for a mounted folder project', () => {
@@ -349,6 +449,6 @@ describe('buildScopeGuard', () => {
     expect(guard).toContain(
       '- notes (folder) root: /tmp/notes | materialized at /tmp/notes/sessions/goal (no branch)',
     );
-    expect(guard).not.toContain('<<materialize:');
+    expect(guard).toContain(READING_ENTITLEMENT);
   });
 });
