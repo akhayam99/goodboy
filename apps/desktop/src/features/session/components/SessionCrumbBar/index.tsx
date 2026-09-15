@@ -11,14 +11,12 @@ import {
 import { describeSessionStage } from '../../session-stage';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
-import { useSelectedWorkflowRun } from '../../hooks/useSelectedWorkflowRun';
 import { agentHomeLens, classifyAgent, resolveRootAgent } from '../../agent-kind';
 import { isAgentFinished } from '../../agent-lifecycle';
 import { settledResolverAgentIds } from '../../../review/settledResolverAgentIds';
 import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';
 import { PlainCrumb } from './PlainCrumb';
 import { AgentSwitcherCrumb } from './AgentSwitcherCrumb';
-import { WorkflowAdvance } from './WorkflowAdvance';
 import { switcherPeers } from './switcherPeers';
 import type { SwitcherEntry } from './switcherEntry';
 
@@ -44,7 +42,6 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   );
   const agentKindOverride = useAppStore((state) => state.agentKindOverride);
   const selectAgent = useAppStore((state) => state.selectAgent);
-  const selectedWorkflowRun = useSelectedWorkflowRun({ session });
   const resolveAttempts = useAppStore(
     (state) => state.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS,
   );
@@ -125,12 +122,6 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   const lastCrumb = crumbs[crumbs.length - 1];
   const isSelectedCrumbAnAgent = selectedAgent != null && lastCrumb?.id === 'selected-child';
   const canSwitchAgent = isSelectedCrumbAnAgent && siblings.length > 1;
-  const isWorkflowStepTrail =
-    isSelectedCrumbAnAgent && crumbs.some((crumb) => crumb.id === 'workflow-run');
-  const canAdvanceRun =
-    isWorkflowStepTrail &&
-    selectedWorkflowRun != null &&
-    selectedWorkflowRun.run.discardedAt == null;
 
   return (
     <nav
@@ -198,13 +189,6 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
           </span>
         );
       })}
-      {canAdvanceRun ? (
-        <WorkflowAdvance
-          sessionId={sessionId}
-          run={selectedWorkflowRun.run}
-          workflow={selectedWorkflowRun.workflow}
-        />
-      ) : null}
     </nav>
   );
 };

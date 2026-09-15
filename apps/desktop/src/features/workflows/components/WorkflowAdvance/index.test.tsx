@@ -56,7 +56,7 @@ vi.mock('../../../context/openQuestionsGate', () => ({
   workflowRunHasOpenQuestions: () => gate.hasOpenQuestions,
 }));
 
-import { WorkflowAdvance } from './WorkflowAdvance';
+import { WorkflowAdvance } from './index';
 import { WorkflowGateError } from '../../../../store/slices/workflows/workflowActivationGate';
 
 const SESSION_ID = 'session-1' as SessionId;

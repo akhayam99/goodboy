@@ -33,12 +33,6 @@ vi.mock('../../hooks/useSessionCrumbs', () => ({
   useSessionCrumbs: () => h.crumbs,
 }));
 
-vi.mock('./WorkflowAdvance', () => ({
-  WorkflowAdvance: ({ run }: { run: { id: string } }) => (
-    <div data-testid="workflow-advance">{run.id}</div>
-  ),
-}));
-
 vi.mock('@goodboy/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/ui')>();
   return {
@@ -324,32 +318,6 @@ describe('SessionCrumbBar on a workflow step', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: /workflow review/ }));
     expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, laterWorkflowStep.id);
   });
-
-  it('keeps the advance action the strip used to carry', () => {
-    openStepSurface();
-    render(<SessionCrumbBar />);
-
-    expect(screen.getByTestId('workflow-advance').textContent).toBe('run-1');
-  });
-
-  it('leaves the advance action off a trail that is not a workflow step', () => {
-    render(<SessionCrumbBar />);
-
-    expect(screen.queryByTestId('workflow-advance')).toBeNull();
-  });
-
-  it('leaves the advance action off a discarded run', () => {
-    openStepSurface();
-    h.currentSession = {
-      ...session,
-      workflowRuns: [
-        { id: 'run-1', workflowId: 'workflow-1', ordinal: 0, discardedAt: '2026-08-18' },
-      ],
-    } as unknown as Session;
-    render(<SessionCrumbBar />);
-
-    expect(screen.queryByTestId('workflow-advance')).toBeNull();
-  });
 });
 
 describe('SessionCrumbBar on a cluster child', () => {
@@ -430,13 +398,6 @@ describe('SessionCrumbBar on a cluster child', () => {
       name: /an even longer cluster child area description name/,
     });
     expect(child.className).toContain('truncate');
-  });
-
-  it('keeps the advance action on a cluster child trail', () => {
-    openClusterSurface();
-    render(<SessionCrumbBar />);
-
-    expect(screen.getByTestId('workflow-advance').textContent).toBe('run-1');
   });
 });
 

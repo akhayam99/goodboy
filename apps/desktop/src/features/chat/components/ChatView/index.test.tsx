@@ -6,6 +6,7 @@ import type { Session } from '@goodboy/types';
 
 const chatBreadcrumbMock = vi.hoisted(() => vi.fn());
 const diffViewerMock = vi.hoisted(() => vi.fn());
+const workflowAdvance = vi.hoisted(() => ({ visible: false }));
 
 const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(() => ({
   openQuestions: { current: [] as ReadonlyArray<unknown> },
@@ -89,6 +90,15 @@ vi.mock('../ChatInput', () => ({
   ChatInput: () => null,
 }));
 
+vi.mock('./parts/WorkflowAdvanceRow', () => ({
+  WorkflowAdvanceRow: () =>
+    workflowAdvance.visible ? (
+      <button type="button" data-testid="workflow-advance-slot">
+        Check completion
+      </button>
+    ) : null,
+}));
+
 vi.mock('../../../../features/permissions/components/DiffViewerDialog', () => ({
   DiffViewerDialog: (props: { loader?: () => Promise<string> }) => {
     diffViewerMock(props);
@@ -148,6 +158,7 @@ beforeEach(() => {
   openQuestions.current = [];
   answeredQuestions.current = [];
   transcriptItems.current = [];
+  workflowAdvance.visible = false;
   (Element.prototype as unknown as { scrollTo: unknown }).scrollTo = vi.fn();
   (Element.prototype as unknown as { scrollIntoView: unknown }).scrollIntoView = vi.fn();
 });
@@ -191,6 +202,20 @@ describe('ChatView', () => {
     render(<ChatView session={session} header={<div data-testid="custom-header" />} />);
     expect(screen.getByTestId('custom-header')).toBeDefined();
     expect(chatBreadcrumbMock).not.toHaveBeenCalled();
+  });
+
+  it('shows the workflow advance action above the composer when one is available', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    workflowAdvance.visible = true;
+    render(<ChatView session={session} />);
+    expect(screen.getByTestId('workflow-advance-slot')).toBeDefined();
+  });
+
+  it('renders nothing above the composer when no workflow action is available', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    workflowAdvance.visible = false;
+    render(<ChatView session={session} />);
+    expect(screen.queryByTestId('workflow-advance-slot')).toBeNull();
   });
 
   it('loads open and answered questions on mount', () => {
