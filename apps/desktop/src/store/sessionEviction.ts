@@ -57,6 +57,7 @@ export const SESSION_EVICTION = [
   { key: 'sessionBitbucketRepo', keyedBy: 'session', evictOn: 'archive' },
   { key: 'reviewDrafts', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionPlans', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'sessionArtifacts', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionAnsweredQuestions', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionDismissedQuestions', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionNudges', keyedBy: 'session', evictOn: 'archive' },

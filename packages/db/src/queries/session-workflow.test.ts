@@ -42,9 +42,10 @@ const insertActivePlan = async ({ db, workflowRunId }: InsertActivePlanParams): 
     ['planner-1', sessionId, 0, 'Planner', 'completed', workflowRunId],
   );
   await db.execute(
-    `INSERT INTO session_plans (
-       id, session_id, agent_id, workflow_run_id, title, body_md, status, created_at, updated_at
-     ) VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+    `INSERT INTO session_artifacts (
+       id, session_id, agent_id, workflow_run_id, kind, schema_version, title, source_format,
+       source_text, metadata_json, status, revision, created_at, updated_at
+     ) VALUES (?, ?, ?, ?, 'plan', 1, ?, 'markdown', ?, '{}', 'active', 1, ?, ?)`,
     [
       'plan-1',
       sessionId,
@@ -64,7 +65,7 @@ type ReadPlanStatusParams = {
 
 const readPlanStatus = async ({ db }: ReadPlanStatusParams): Promise<string> => {
   const rows = await db.select<{ readonly status: string }>(
-    "SELECT status FROM session_plans WHERE id = 'plan-1'",
+    "SELECT status FROM session_artifacts WHERE id = 'plan-1'",
   );
   return rows[0]?.status ?? '';
 };

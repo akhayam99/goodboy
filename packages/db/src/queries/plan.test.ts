@@ -56,7 +56,7 @@ const sessionId = 't1' as SessionId;
 const agentA1 = 'a1' as AgentId;
 const agentA2 = 'a2' as AgentId;
 
-describe('session_plans queries', () => {
+describe('plan artifact queries', () => {
   it('upsertPlan inserts a new plan and listPlansForSession returns it', async () => {
     const db = await seedFixture();
     await upsertPlan(db, {
@@ -172,10 +172,12 @@ describe('session_plans queries', () => {
       bodyMd: 'body',
       clusters: [{ title: 'move files to domain', instructions: 'relocate the files' }],
     });
-    await db.execute(`UPDATE session_plans SET clusters_json = ? WHERE id = ?`, [
-      JSON.stringify([
-        { title: 'move files to domain', instructions: 'relocate the files', ownerHint: 'ak' },
-      ]),
+    await db.execute(`UPDATE session_artifacts SET metadata_json = ? WHERE id = ?`, [
+      JSON.stringify({
+        clusters: [
+          { title: 'move files to domain', instructions: 'relocate the files', ownerHint: 'ak' },
+        ],
+      }),
       'p1',
     ]);
     const plans = await listPlansForSession(db, sessionId);

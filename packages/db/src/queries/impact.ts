@@ -262,7 +262,7 @@ const selectOverview = async ({
            EXISTS (
              SELECT 1
                FROM plan_consumptions pc
-               JOIN session_plans sp ON sp.id = pc.plan_id
+               JOIN session_artifacts sp ON sp.id = pc.plan_id
               WHERE sp.session_id = s.id
            )
            OR EXISTS (

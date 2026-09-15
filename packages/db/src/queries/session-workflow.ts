@@ -399,9 +399,9 @@ export const discardWorkflowInSession = async (
       workflowRunId,
     ]);
     await db.execute(
-      `UPDATE session_plans
+      `UPDATE session_artifacts
        SET status = 'superseded', updated_at = ?
-       WHERE workflow_run_id = ? AND status = 'active'`,
+       WHERE kind = 'plan' AND workflow_run_id = ? AND status = 'active'`,
       [updatedAt, workflowRunId],
     );
     await bumpSessionUpdatedAt(db, sessionId, discardedAt);
@@ -424,9 +424,9 @@ export const restoreWorkflowInSession = async (
       workflowRunId,
     ]);
     await db.execute(
-      `UPDATE session_plans
+      `UPDATE session_artifacts
        SET status = 'active', updated_at = ?
-       WHERE workflow_run_id = ? AND status = 'superseded'`,
+       WHERE kind = 'plan' AND workflow_run_id = ? AND status = 'superseded'`,
       [Date.parse(restoredAt), workflowRunId],
     );
     await bumpSessionUpdatedAt(db, sessionId, restoredAt);
