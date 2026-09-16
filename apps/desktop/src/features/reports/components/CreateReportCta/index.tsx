@@ -38,21 +38,29 @@ export const CreateReportCta = ({ sessionId, workflowRunId = null, className }: 
   const isSummarizerRunning = useAppStore(
     (state) => state.summarizerStatus?.[sessionId]?.status === 'running',
   );
-  const isTurnRunning = useAppStore((state) =>
+  const runAgents = useMemo(
+    () => (workflowRunId === null ? null : runsForWorkflowRun(agents, workflowRunId)),
+    [agents, workflowRunId],
+  );
+  const sourceAgents = runAgents ?? agents;
+  const hasSourceActiveTurn = useAppStore((state) =>
+    sourceAgents.some((agent) => {
+      const turn = state.agentTurnState?.[agent.id];
+      return turn?.kind === 'running' || turn?.kind === 'starting';
+    }),
+  );
+  const hasSessionActiveTurn = useAppStore((state) =>
     agents.some((agent) => {
       const turn = state.agentTurnState?.[agent.id];
       return turn?.kind === 'running' || turn?.kind === 'starting';
     }),
   );
   const spawnReportAgent = useAppStore((state) => state.spawnReportAgent);
-  const runAgents = useMemo(
-    () => (workflowRunId === null ? null : runsForWorkflowRun(agents, workflowRunId)),
-    [agents, workflowRunId],
-  );
   const state = resolveArtifactCtaState({
     agents,
     runAgents,
-    isTurnRunning,
+    hasSourceActiveTurn,
+    hasSessionActiveTurn,
     isSummarizerRunning,
   });
   const isBlocked = state.kind === 'blocked';
