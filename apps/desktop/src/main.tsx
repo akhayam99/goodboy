@@ -10,6 +10,7 @@ import {
 import { App } from './App';
 import { artifactPrintRequest } from './features/reports/artifactPrintRequest';
 import { ArtifactPrintView } from './features/reports/components/ArtifactPrintView';
+import { removeBootShell } from './features/reports/components/ArtifactPrintView/removeBootShell';
 import { bootstrapTheme } from './shared/lib/theme';
 import { loadRemoteImage } from './shared/lib/remoteImage';
 import { openUrl } from './shared/lib/editor';
@@ -40,6 +41,10 @@ if (!container) {
 }
 
 const printRequest = artifactPrintRequest({ hash: globalThis.location?.hash ?? '' });
+
+if (printRequest !== null) {
+  removeBootShell();
+}
 
 createRoot(container).render(
   <StrictMode>

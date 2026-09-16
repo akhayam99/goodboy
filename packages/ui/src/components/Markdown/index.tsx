@@ -4,6 +4,7 @@ import { cn } from '../../cn';
 import { RemoteImage } from '../RemoteImage';
 import { LocalImage } from '../LocalImage';
 import { parseMarkdown, type Block, type CellAlign } from './parseMarkdown';
+import { tokenizeCode, type CodeToken, type CodeTokenKind } from './tokenizeCode';
 
 type CtxTagStyle = {
   readonly icon: LucideIcon;
@@ -106,6 +107,39 @@ const INLINE_CODE_CLASS: Record<MarkdownVariant, string> = {
   document:
     'rounded-md bg-muted/50 px-1 py-0 font-mono text-[0.875em] text-foreground/90 wrap-anywhere',
   preview: 'font-mono text-[0.875em] text-foreground/90 wrap-anywhere',
+};
+
+const CODE_TOKEN_CLASS: Record<CodeTokenKind, string> = {
+  plain: '',
+  comment: 'text-syntax-comment',
+  string: 'text-syntax-string',
+  property: 'text-syntax-property',
+  number: 'text-syntax-number',
+  keyword: 'text-syntax-keyword',
+  added: 'text-success',
+  removed: 'text-danger',
+};
+
+type CodeContentParams = {
+  readonly content: string;
+  readonly lang: string | null;
+  readonly key: string;
+};
+
+const renderCodeContent = ({ content, lang, key }: CodeContentParams): ReactNode => {
+  const tokens = tokenizeCode({ code: content, lang });
+  if (tokens === null) {
+    return content;
+  }
+  return tokens.map((token: CodeToken, index) =>
+    token.kind === 'plain' ? (
+      <Fragment key={`${key}-t${index}`}>{token.text}</Fragment>
+    ) : (
+      <span key={`${key}-t${index}`} className={CODE_TOKEN_CLASS[token.kind]}>
+        {token.text}
+      </span>
+    ),
+  );
 };
 
 type ImageParams = {
@@ -377,7 +411,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
           key={key}
           className="overflow-x-auto rounded-md bg-muted px-3 py-2 font-mono text-xs leading-relaxed text-foreground"
         >
-          <code>{block.content}</code>
+          <code>{renderCodeContent({ content: block.content, lang: block.lang, key })}</code>
         </pre>
       );
     }
