@@ -7,6 +7,35 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.0
+
+A role means the same thing wherever you pick it, and a workflow step can be a
+documentation step.
+
+### [#1773] One meaning per role
+
+The same role name could behave differently depending on where you chose it. A
+`writer` step in a workflow and a `writer` agent picked by hand were not always
+the same agent, and a role name Goodboy did not recognise ran anyway, as
+something you never asked for.
+
+Every role now resolves the same way from a workflow step, a role picker and a
+plan. `writer` is the docs role, `debugger` is the investigator, `generic` is a
+custom agent, and a name that matches nothing falls back to a custom agent
+instead of running as a role of its own choosing.
+
+`docs` is a role in its own right, so a workflow step can be a documentation
+step rather than a coder asked to write prose.
+
+### Fixes
+
+- A review agent no longer runs the test suite itself. It reads the change and
+  leaves running the tests to the agent whose job that is [#1773]
+- A test agent no longer edits production code to make a failing test pass. It
+  writes the tests and runs them, and a failure stays a failure [#1773]
+- The role you pick for the first turn is the role that runs. Goodboy no longer
+  reads the same sentence and starts a different one [#1773]
+
 ## Goodboy v0.2.34
 
 Agents read across the whole workspace without asking, deleting one keeps the
