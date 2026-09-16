@@ -7,6 +7,52 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.2.34
+
+Agents read across the whole workspace without asking, deleting one keeps the
+work it produced, and a plan says who ran it.
+
+### [#1769] An agent reads every project in the workspace
+
+An agent asked about code in a project it did not start in would hesitate,
+announce the question was out of its scope, answer it correctly anyway, and then
+apologise for the source it used. The permission was there; how it was worded
+depended on which projects happened to be checked out at that moment, and the
+roles that exist only to read were the ones told least clearly.
+
+Reading every project listed in the workspace is now stated once, the same way,
+for every kind of agent and whatever is checked out. The directory an agent
+starts in decides where it runs, not which projects it may look at. Writing is
+unchanged: it still lands only in the session directory or a project that has
+been materialized.
+
+### [#1771] Deleting an agent keeps the plans and the history it produced
+
+Deleting an agent deleted the plans it had written, and every record of those
+plans having been run. Deleting an agent that had run a plan was quieter and
+worse: the plan went on naming an older agent as the last one to execute it,
+with nothing to show a run was missing.
+
+An agent's transcript and tool output are still destroyed on delete, and the
+agent still disappears from every list. What it produced stays: its plans, the
+record of which plans ran, its review comments and the questions it raised.
+Deletion cannot be undone.
+
+### [#1770] A plan names the agent that ran it
+
+A plan named the agent that wrote it and reduced the one that ran it to a count,
+`ran once`, with the name a click away. The name now reads at rest wherever a
+plan is summarised, with the number of further runs beside it, and the full
+history stays behind the click.
+
+### Fixes
+
+- Workflow steps no longer report a routing change when the step ran on exactly
+  the model it planned. Steps that really did move show the planned model struck
+  through, with the model that ran in its place named on hover [#1768]
+- A plan run more than once names the same agent as its most recent run wherever
+  that run appears [#1770]
+
 ## Goodboy v0.2.33
 
 Cursor offers its whole model line-up, and the action that moves a workflow on
