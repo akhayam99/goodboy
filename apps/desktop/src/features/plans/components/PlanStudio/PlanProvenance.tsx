@@ -4,6 +4,7 @@ import { AnchoredPopover, cn, Divider, MetaRow, ScrollFade, useDropdown } from '
 import type { Agent, AgentId, PlanConsumption } from '@goodboy/types';
 import { fmtTimestamp } from './fmtTimestamp';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { planConsumerLabel, resolvePlanConsumer } from '../../../../shared/utils/planConsumer';
 
 type Props = {
   readonly creatorName: string;
@@ -34,7 +35,15 @@ export const PlanProvenance = ({
   });
   const { open, toggle } = dropdown;
 
-  const runLabel = consumptions.length === 1 ? 'ran once' : `ran ${consumptions.length} times`;
+  const lastConsumption = consumptions[0];
+  const lastConsumer =
+    lastConsumption != null
+      ? resolvePlanConsumer({
+          agentId: lastConsumption.agentId,
+          agentName: lastConsumption.agentName,
+          agents,
+        })
+      : null;
   const popoverTitle = consumptions.length === 1 ? 'Ran once' : `Ran ${consumptions.length} times`;
 
   return (
@@ -69,7 +78,7 @@ export const PlanProvenance = ({
                 </span>
               ) : null}
             </span>,
-            consumptions.length > 0 ? (
+            lastConsumer != null ? (
               <button
                 key="consumptions"
                 ref={triggerRef}
@@ -77,13 +86,18 @@ export const PlanProvenance = ({
                 onClick={toggle}
                 aria-haspopup="dialog"
                 aria-expanded={open}
-                title="See who consumed this plan"
+                title={
+                  lastConsumer.isDeleted
+                    ? 'Consumer agent deleted, open the full run history'
+                    : 'See who consumed this plan'
+                }
                 className={cn(
-                  'underline-offset-2 hover:text-foreground hover:underline',
+                  'min-w-0 truncate underline-offset-2 hover:text-foreground hover:underline',
+                  lastConsumer.isDeleted && 'text-muted-foreground line-through',
                   open && 'text-foreground underline',
                 )}
               >
-                {runLabel}
+                {planConsumerLabel({ name: lastConsumer.name, count: consumptions.length })}
               </button>
             ) : null,
             <span key="timestamp" className="shrink-0">
@@ -97,9 +111,13 @@ export const PlanProvenance = ({
       <Divider />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="flex flex-col gap-2 px-3 py-2">
         {consumptions.map((c) => {
-          const ag = agents.find((a) => a.id === c.agentId);
-          const isDeleted = !ag;
-          const displayName = ag?.name ?? c.agentName ?? c.agentId.substring(0, 8);
+          const consumer = resolvePlanConsumer({
+            agentId: c.agentId,
+            agentName: c.agentName,
+            agents,
+          });
+          const isDeleted = consumer.isDeleted;
+          const displayName = consumer.name;
           return (
             <div key={c.id} className="flex items-center gap-1.5 text-2xs text-muted-foreground">
               <CheckCircle2 size={11} aria-hidden className="shrink-0 text-info" />
