@@ -1,3 +1,4 @@
+import { parseWireframeSource } from '@goodboy/core';
 import type {
   Agent,
   IsoDateTime,
@@ -17,6 +18,8 @@ import {
   type ArtifactContextInventoryRow,
 } from '../artifacts/artifactContextInventory';
 import type { ScriptRunRecord } from '../scripts/scripts';
+import { buildWireframeIndex } from '../wireframes/wireframeIndex';
+import { buildReportOutline } from './reportOutline';
 import { REPORT_TYPE_HINT, REPORT_TYPE_LABEL, type ReportType } from './reportTypes';
 
 export const REPORT_CONTEXT_LIMITS = {
@@ -24,6 +27,8 @@ export const REPORT_CONTEXT_LIMITS = {
   agentText: 1200,
   artifacts: 10,
   artifactExcerpt: 400,
+  artifactHeadings: 12,
+  artifactTransitions: 20,
   events: 20,
   commits: 20,
   paths: 40,
@@ -185,6 +190,74 @@ const agentSection = ({
   return `## agents\n\n${rows.join('\n\n')}`;
 };
 
+type ArtifactExcerptParams = Readonly<{ artifact: SessionArtifact }>;
+
+type ArtifactExcerpt = Readonly<{
+  text: string;
+  isClipped: boolean;
+  summary: string;
+}>;
+
+const artifactExcerpt = ({ artifact }: ArtifactExcerptParams): ArtifactExcerpt => {
+  if (artifact.kind === 'wireframe') {
+    const parsed = parseWireframeSource({ source: artifact.sourceText });
+    if (parsed.status === 'valid') {
+      const { document } = parsed;
+      const index = buildWireframeIndex({ document });
+      const titles = new Map(document.screens.map((screen) => [screen.id, screen.title]));
+      const transitions = [
+        ...new Set(
+          [...index.actionByNodeId].flatMap(([nodeId, action]) => {
+            if (action.type !== 'navigate') {
+              return [];
+            }
+            const from = index.screenByNodeId.get(nodeId);
+            if (from === undefined) {
+              return [];
+            }
+            return [`${titles.get(from)} to ${titles.get(action.toScreenId)}`];
+          }),
+        ),
+      ];
+      const kept = transitions.slice(0, REPORT_CONTEXT_LIMITS.artifactTransitions);
+      return {
+        text: redactSecrets({
+          text: `screens: ${document.screens.map((screen) => screen.title).join('; ')}.\ntransitions: ${kept.length === 0 ? 'none' : kept.join('; ')}.`,
+        }),
+        isClipped: kept.length < transitions.length,
+        summary: `${document.screens.length} screen titles, ${kept.length} of ${transitions.length} transitions`,
+      };
+    }
+  }
+  if (artifact.kind === 'report') {
+    const headings = buildReportOutline({ markdown: artifact.sourceText });
+    if (headings.length > 0) {
+      const kept = headings.slice(0, REPORT_CONTEXT_LIMITS.artifactHeadings);
+      return {
+        text: redactSecrets({
+          text: `headings: ${kept.map((heading) => heading.title).join('; ')}`,
+        }),
+        isClipped: kept.length < headings.length,
+        summary: `${kept.length} of ${headings.length} headings`,
+      };
+    }
+  }
+  const excerpt = clip({
+    text: redactSecrets({ text: artifact.sourceText }),
+    limit: REPORT_CONTEXT_LIMITS.artifactExcerpt,
+  });
+  const reason =
+    artifact.kind === 'wireframe'
+      ? 'invalid wireframe, '
+      : artifact.kind === 'report'
+        ? 'no headings, '
+        : '';
+  return {
+    ...excerpt,
+    summary: `${reason}source excerpt up to ${REPORT_CONTEXT_LIMITS.artifactExcerpt} characters`,
+  };
+};
+
 const artifactSection = ({
   artifacts,
   truncations,
@@ -212,14 +285,15 @@ const artifactSection = ({
       `artifacts: kept the last ${kept.length} of ${artifacts.length}; earlier artifacts are missing`,
     );
   }
+  const detail: Array<string> = [];
+  let hasClippedExcerpt = false;
   const rows = kept.map((artifact) => {
     sourceIds.push(artifact.id);
-    const excerpt = clip({
-      text: redactSecrets({ text: artifact.sourceText }),
-      limit: REPORT_CONTEXT_LIMITS.artifactExcerpt,
-    });
+    const excerpt = artifactExcerpt({ artifact });
+    detail.push(`${artifact.kind} ${artifact.id}: ${excerpt.summary}`);
     if (excerpt.isClipped) {
-      truncations.push(`artifact ${artifact.id}: source truncated`);
+      hasClippedExcerpt = true;
+      truncations.push(`artifact ${artifact.id}: excerpt truncated`);
     }
     const title = redactSecrets({ text: artifact.title });
     return `- ${artifact.kind} ${artifact.id} rev ${artifact.revision} (${artifact.status}) "${title}"\n  ${excerpt.text.replace(/\n/g, '\n  ')}`;
@@ -227,12 +301,16 @@ const artifactSection = ({
   inventory.push({
     id: 'artifacts',
     label: 'artifacts',
-    summary: `${kept.length} of ${artifacts.length} artifacts, first ${REPORT_CONTEXT_LIMITS.artifactExcerpt} characters of each, discarded ones included`,
-    state: keptRowState({ kept: kept.length, total: artifacts.length }),
-    detail:
-      kept.length < artifacts.length
+    summary: `${kept.length} of ${artifacts.length} artifacts, wireframe screens and transitions, report headings, source excerpts otherwise, discarded ones included`,
+    state: hasClippedExcerpt
+      ? 'partial'
+      : keptRowState({ kept: kept.length, total: artifacts.length }),
+    detail: [
+      ...detail,
+      ...(kept.length < artifacts.length
         ? [`only the last ${REPORT_CONTEXT_LIMITS.artifacts} fit, earlier artifacts are missing`]
-        : [],
+        : []),
+    ],
   });
   return `## artifacts\n\n${rows.join('\n')}`;
 };

@@ -11,6 +11,7 @@ import type {
   SessionId,
   TurnEvent,
   WorkflowRunId,
+  WireframeArtifact,
   WorkspaceId,
 } from '@goodboy/types';
 import { ARTIFACT_BRIEF_CLIP_NOTE, ARTIFACT_BRIEF_LIMITS } from '../artifacts/artifactBrief';
@@ -70,6 +71,48 @@ const reportArtifact = (overrides: Partial<ReportArtifact>): ReportArtifact => (
   createdAt: NOW,
   updatedAt: NOW,
   ...overrides,
+});
+
+type WireframeArtifactParams = Readonly<{ sourceText?: string }>;
+
+const wireframeArtifact = ({ sourceText }: WireframeArtifactParams): WireframeArtifact => ({
+  ...reportArtifact({}),
+  kind: 'wireframe',
+  sourceFormat: 'json',
+  metadata: { fidelity: 'low', designProfile: {} },
+  sourceText:
+    sourceText ??
+    JSON.stringify({
+      version: 1,
+      initialScreenId: 'inbox',
+      theme: { name: 'generic', font: 'sans', radius: 'md' },
+      screens: [
+        {
+          id: 'inbox',
+          title: 'Inbox',
+          viewport: 'desktop',
+          root: { id: 'open', kind: 'button', label: 'Open Detail' },
+        },
+        {
+          id: 'detail',
+          title: 'Session Detail',
+          viewport: 'desktop',
+          root: {
+            id: 'back',
+            kind: 'navigation',
+            variant: 'top',
+            items: [
+              {
+                id: 'back-inbox',
+                label: 'Inbox',
+                action: { type: 'navigate', toScreenId: 'inbox' },
+              },
+            ],
+          },
+        },
+      ],
+      transitions: [{ fromNodeId: 'open', toScreenId: 'detail', label: 'open detail' }],
+    }),
 });
 
 const baseParams = {
@@ -270,6 +313,151 @@ describe('buildReportContext', () => {
     expect(context.text).toContain('artifact-1');
     expect(context.text).not.toContain('artifact-2');
     expect(context.sourceIds).not.toContain('artifact-2');
+  });
+
+  it('describes wireframe screens and both declared and inline navigation without JSON', () => {
+    const context = buildReportContext({ ...baseParams, artifacts: [wireframeArtifact({})] });
+    expect(context.text).toContain('screens: Inbox; Session Detail');
+    expect(context.text).toContain('Inbox to Session Detail');
+    expect(context.text).toContain('Session Detail to Inbox');
+    expect(context.text).not.toContain('"version"');
+    expect(context.inventory.find((row) => row.id === 'artifacts')?.detail).toEqual([
+      'wireframe artifact-1: 2 screen titles, 2 of 2 transitions',
+    ]);
+  });
+
+  it('bounds wireframe transitions by complete routes and reports what was omitted', () => {
+    const screens = Array.from({ length: 6 }, (_, from) => ({
+      id: `screen-${from}`,
+      title: `Screen ${from}`,
+      viewport: 'desktop',
+      root: {
+        id: `root-${from}`,
+        kind: 'stack',
+        direction: 'column',
+        children: Array.from({ length: 6 }, (_, to) => to)
+          .filter((to) => to !== from)
+          .map((to) => ({
+            id: `route-${from}-${to}`,
+            kind: 'button',
+            label: `Open ${to}`,
+            action: { type: 'navigate', toScreenId: `screen-${to}` },
+          })),
+      },
+    }));
+    const sourceText = JSON.stringify({
+      version: 1,
+      initialScreenId: 'screen-0',
+      theme: { name: 'generic', font: 'sans', radius: 'md' },
+      screens,
+      transitions: [],
+    });
+    const context = buildReportContext({
+      ...baseParams,
+      artifacts: [wireframeArtifact({ sourceText })],
+    });
+    expect(context.text).toContain('Screen 3 to Screen 5');
+    expect(context.text).not.toContain('Screen 4 to Screen 0');
+    expect(context.inventory.find((row) => row.id === 'artifacts')).toMatchObject({
+      state: 'partial',
+      detail: ['wireframe artifact-1: 6 screen titles, 20 of 30 transitions'],
+    });
+    expect(context.truncations).toContain('artifact artifact-1: excerpt truncated');
+  });
+
+  it.each(['{"screens":', '{"version":1,"screens":[]}'])(
+    'falls back for a malformed wireframe (%s)',
+    (sourceText) => {
+      const context = buildReportContext({
+        ...baseParams,
+        artifacts: [wireframeArtifact({ sourceText })],
+      });
+      expect(context.text).toContain(sourceText);
+      expect(context.inventory.find((row) => row.id === 'artifacts')?.detail).toEqual([
+        'wireframe artifact-1: invalid wireframe, source excerpt up to 400 characters',
+      ]);
+    },
+  );
+
+  it('clips and redacts the malformed wireframe fallback', () => {
+    const sourceText = 'password: hunter2000xyz\n' + 'x'.repeat(500);
+    const context = buildReportContext({
+      ...baseParams,
+      artifacts: [wireframeArtifact({ sourceText })],
+    });
+    expect(context.text).toContain('password: [redacted]');
+    expect(context.text).not.toContain('hunter2000xyz');
+    expect(context.text).not.toContain('x'.repeat(401));
+    expect(context.truncations).toContain('artifact artifact-1: excerpt truncated');
+    expect(context.inventory.find((row) => row.id === 'artifacts')?.state).toBe('partial');
+  });
+
+  it('includes report headings beyond the old prefix instead of body text', () => {
+    const context = buildReportContext({
+      ...baseParams,
+      artifacts: [
+        reportArtifact({
+          sourceText: `# Outcome\n${'body '.repeat(100)}\n## Risks\npassword: hidden-in-body`,
+        }),
+      ],
+    });
+    expect(context.text).toContain('headings: Outcome; Risks');
+    expect(context.text).not.toContain('body body');
+    expect(context.text).not.toContain('hidden-in-body');
+    expect(context.inventory.find((row) => row.id === 'artifacts')?.detail).toEqual([
+      'report artifact-1: 2 of 2 headings',
+    ]);
+  });
+
+  it('reports omitted headings without cutting a heading in half', () => {
+    const sourceText = Array.from({ length: 13 }, (_, index) => `## Heading ${index}`).join('\n');
+    const context = buildReportContext({
+      ...baseParams,
+      artifacts: [reportArtifact({ sourceText })],
+    });
+    expect(context.text).toContain('Heading 11');
+    expect(context.text).not.toContain('Heading 12');
+    expect(context.inventory.find((row) => row.id === 'artifacts')).toMatchObject({
+      state: 'partial',
+      detail: ['report artifact-1: 12 of 13 headings'],
+    });
+    expect(context.truncations).toContain('artifact artifact-1: excerpt truncated');
+  });
+
+  it('retains source excerpts for plans and reports without headings', () => {
+    const context = buildReportContext({
+      ...baseParams,
+      artifacts: [
+        { ...reportArtifact({ sourceText: 'plan text' }), kind: 'plan', metadata: {} },
+        reportArtifact({ id: 'artifact-2' as ArtifactId, sourceText: 'plain report' }),
+      ],
+    });
+    expect(context.text).toContain('plan text');
+    expect(context.text).toContain('plain report');
+    expect(context.inventory.find((row) => row.id === 'artifacts')?.detail).toEqual([
+      'plan artifact-1: source excerpt up to 400 characters',
+      'report artifact-2: no headings, source excerpt up to 400 characters',
+    ]);
+  });
+
+  it('redacts credentials in structured titles and headings', () => {
+    const wireframe = wireframeArtifact({});
+    const context = buildReportContext({
+      ...baseParams,
+      artifacts: [
+        {
+          ...wireframe,
+          sourceText: wireframe.sourceText.replace('Session Detail', 'password: hunter2000xyz'),
+        },
+        reportArtifact({
+          id: 'artifact-2' as ArtifactId,
+          sourceText: '## api_key=harborline-test-value',
+        }),
+      ],
+    });
+    expect(context.text).not.toContain('hunter2000xyz');
+    expect(context.text).not.toContain('harborline-test-value');
+    expect(context.text).toContain('[redacted]');
   });
 
   it('lists artifact revisions and script outcomes', () => {
