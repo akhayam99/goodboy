@@ -10,6 +10,7 @@ import { ResolveItemScene } from './scenes/ResolveItemScene';
 import { BoardScene } from './scenes/BoardScene';
 import { TranscriptMountScene } from './scenes/TranscriptMountScene';
 import { BoardShellScene } from './scenes/BoardShellScene';
+import { ArtifactReportScene } from './scenes/ArtifactScenes';
 
 const SCENES = {
   workspace: WorkspaceScene,
@@ -22,6 +23,7 @@ const SCENES = {
   board: BoardScene,
   'transcript-mount': TranscriptMountScene,
   'board-shell': BoardShellScene,
+  'artifact-report': ArtifactReportScene,
 };
 
 export const MockScene = () => {
