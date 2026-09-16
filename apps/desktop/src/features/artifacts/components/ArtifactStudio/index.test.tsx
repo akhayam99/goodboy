@@ -386,9 +386,10 @@ describe('ArtifactStudio', () => {
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('Session report'));
     expect(screen.getByRole('heading', { level: 1, name: 'Artifacts' })).toBeDefined();
-    expect(screen.getByText('reporter')).toBeDefined();
+    expect(screen.queryByText('reporter')).toBeNull();
     expect(screen.queryByText('rev 2')).toBeNull();
     fireEvent.click(screen.getByTestId('artifact-details-toggle'));
+    expect(screen.getByTestId('artifact-creator').textContent).toBe('reporter');
     expect(screen.getByText('rev 2')).toBeDefined();
     expect(screen.queryByText('active')).toBeNull();
     expect(screen.getByTestId('artifact-export-slot')).toBeDefined();

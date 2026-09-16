@@ -225,6 +225,15 @@ describe('ArtifactDetail header', () => {
     expect(band?.contains(screen.getByTestId('artifact-details-toggle'))).toBe(true);
   });
 
+  it('spends no resting width on the agent that produced the artifact', () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    expect(screen.queryByTestId('artifact-creator')).toBeNull();
+    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
+    const creator = screen.getByTestId('artifact-creator');
+    expect(creator.textContent).toBe('Session summary');
+    expect(screen.getByTestId('artifact-title').parentElement?.contains(creator)).toBe(false);
+  });
+
   it('folds the rest of the metadata behind a disclosure', () => {
     renderDetail({ artifact: report, agents: [reporter, otherReporter] });
     const toggle = screen.getByTestId('artifact-details-toggle');

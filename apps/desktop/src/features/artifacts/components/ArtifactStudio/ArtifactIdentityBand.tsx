@@ -39,10 +39,6 @@ export const ArtifactIdentityBand = ({
           {artifact.title}
         </h2>
         <ArtifactStatusChip kind={artifact.kind} status={artifact.status} />
-        <span className="flex min-w-0 shrink items-center gap-1.5 text-2xs text-muted-foreground">
-          <CONCEPT_ICONS.agents size={11} aria-hidden className="shrink-0 text-primary" />
-          <span className="truncate">{creatorName}</span>
-        </span>
         <IconButton
           variant="ghost"
           icon={DisclosureIcon}
@@ -69,6 +65,14 @@ export const ArtifactIdentityBand = ({
       {isOpen ? (
         <MetaRow
           items={[
+            <span
+              key="creator"
+              data-testid="artifact-creator"
+              className="flex min-w-0 items-center gap-1.5"
+            >
+              <CONCEPT_ICONS.agents size={11} aria-hidden className="shrink-0 text-primary" />
+              <span className="truncate">{creatorName}</span>
+            </span>,
             <span key="kind">{artifact.kind}</span>,
             artifact.workflowRunId !== null ? (
               <span key="run">workflow run</span>
