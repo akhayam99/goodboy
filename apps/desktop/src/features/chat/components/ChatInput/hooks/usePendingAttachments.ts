@@ -23,9 +23,16 @@ type PersistArgs = {
   readonly dataUrl: string;
 };
 
+export type AttachmentDropNotices = Readonly<{
+  ambiguous: string;
+  disabled: string;
+  unavailable: string;
+}>;
+
 type Params = {
   readonly showToast: (kind: ToastKind, message: string) => void;
   readonly enabled?: boolean;
+  readonly notices?: AttachmentDropNotices;
   readonly persistToDisk?: (att: PersistArgs) => Promise<string | null>;
 };
 
@@ -33,10 +40,21 @@ type DroppedPaths = {
   readonly paths: ReadonlyArray<string>;
 };
 
+const COMPOSER_DROP_NOTICES: AttachmentDropNotices = {
+  ambiguous: 'drop the file on a message box to attach it',
+  disabled: 'connect the provider before attaching files',
+  unavailable: 'file drop is unavailable, use Attach files instead',
+};
+
 const droppedFileName = ({ path }: { readonly path: string }): string =>
   path.split('/').pop() ?? path;
 
-export const usePendingAttachments = ({ showToast, enabled = true, persistToDisk }: Params) => {
+export const usePendingAttachments = ({
+  showToast,
+  enabled = true,
+  notices = COMPOSER_DROP_NOTICES,
+  persistToDisk,
+}: Params) => {
   const [attachments, setAttachments] = useState<ReadonlyArray<PendingAttachment>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
@@ -184,10 +202,9 @@ export const usePendingAttachments = ({ showToast, enabled = true, persistToDisk
     targetRef: composerRef,
     isEnabled: enabled,
     onDropPaths: ({ paths }) => void ingestDroppedPaths({ paths }),
-    onAmbiguousDrop: () => showToast('warning', 'drop the file on a message box to attach it'),
-    onDisabledDrop: () => showToast('warning', 'connect the provider before attaching files'),
-    onUnavailable: () =>
-      showToast('warning', 'file drop is unavailable, use the paperclip instead'),
+    onAmbiguousDrop: () => showToast('warning', notices.ambiguous),
+    onDisabledDrop: () => showToast('warning', notices.disabled),
+    onUnavailable: () => showToast('warning', notices.unavailable),
   });
 
   return {

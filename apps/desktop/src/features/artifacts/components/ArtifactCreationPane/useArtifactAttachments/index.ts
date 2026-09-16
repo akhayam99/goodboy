@@ -2,7 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, RefObject } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { usePendingAttachments } from '../../../../chat/components/ChatInput/hooks/usePendingAttachments';
+import {
+  usePendingAttachments,
+  type AttachmentDropNotices,
+} from '../../../../chat/components/ChatInput/hooks/usePendingAttachments';
 import { dataUrlToBase64 } from '../../../../chat/components/ChatInput/lib';
 import { deleteAttachment, writeAttachment } from '../../../../chat/turn';
 import type { ArtifactAttachment } from '../../../artifactAttachments';
@@ -25,6 +28,12 @@ export type ArtifactAttachmentsHandle = Readonly<{
 }>;
 
 const UNSTORED_NOTE = 'could not store that file, nothing was attached';
+
+const DROP_NOTICES: AttachmentDropNotices = {
+  ambiguous: 'drop the file on the attachments box to attach it',
+  disabled: 'this session has no worktree yet, so nothing can be attached',
+  unavailable: 'file drop is unavailable, use Add files instead',
+};
 
 export const useArtifactAttachments = ({
   sessionId,
@@ -63,6 +72,7 @@ export const useArtifactAttachments = ({
     usePendingAttachments({
       showToast: (_kind, message) => setNote(message),
       enabled: worktree !== null,
+      notices: DROP_NOTICES,
       persistToDisk,
     });
 
