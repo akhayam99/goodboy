@@ -41,10 +41,10 @@ const REPORT_AGENT_ID = 'mock-artifact-agent-report' as AgentId;
 const CHANGE_REPORT_AGENT_ID = 'mock-artifact-agent-change-report' as AgentId;
 const WIREFRAME_AGENT_ID = 'mock-artifact-agent-wireframe' as AgentId;
 
-const REPORT_ARTIFACT_ID = 'mock-artifact-report-summary' as ArtifactId;
+export const REPORT_ARTIFACT_ID = 'mock-artifact-report-summary' as ArtifactId;
 const CHANGE_REPORT_ARTIFACT_ID = 'mock-artifact-report-change' as ArtifactId;
-const WIREFRAME_LOW_ARTIFACT_ID = 'mock-artifact-wireframe-low' as ArtifactId;
-const WIREFRAME_HIGH_ARTIFACT_ID = 'mock-artifact-wireframe-high' as ArtifactId;
+export const WIREFRAME_LOW_ARTIFACT_ID = 'mock-artifact-wireframe-low' as ArtifactId;
+export const WIREFRAME_HIGH_ARTIFACT_ID = 'mock-artifact-wireframe-high' as ArtifactId;
 const PLAN_ARTIFACT_ID = 'mock-artifact-plan-rounding' as ArtifactId;
 const PLAN_ID = 'mock-artifact-plan-rounding' as PlanId;
 const OLD_PLAN_ID = 'mock-artifact-plan-backfill' as PlanId;
@@ -933,7 +933,11 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
   },
 ];
 
-export const seedArtifactScene = () => {
+type SeedParams = Readonly<{
+  focusedArtifactId: ArtifactId | null;
+}>;
+
+export const seedArtifactScene = ({ focusedArtifactId }: SeedParams) => {
   useAppStore.setState({
     workspaces: [WORKSPACE],
     currentWorkspaceId: WORKSPACE_ID,
@@ -994,6 +998,7 @@ export const seedArtifactScene = () => {
     sessionAnsweredQuestions: { [SESSION_ID]: [] },
     planConsumptions: {},
     focusedPlanId: { [SESSION_ID]: null },
+    focusedArtifactId: { [SESSION_ID]: focusedArtifactId },
     sessionWorkflows: { [SESSION_ID]: [] },
     phaseTemplates: { [WORKSPACE_ID]: [] },
     sessionTelemetry: { [SESSION_ID]: [] },
@@ -1016,7 +1021,6 @@ export const seedArtifactScene = () => {
     loadSessionEvents: async () => undefined,
     loadSessionAnsweredQuestions: async () => undefined,
     loadSessionDismissedQuestions: async () => undefined,
-    setFocusedArtifactId: () => undefined,
     setActiveLens: () => undefined,
     loadConsumptionsForPlan: async () => undefined,
     selectAgent: async () => undefined,
