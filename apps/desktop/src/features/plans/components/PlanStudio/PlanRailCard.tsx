@@ -3,6 +3,7 @@ import type { PlanWithCount } from '@goodboy/types';
 import { RailCard } from '@goodboy/ui';
 import { PlanStatusChip } from './PlanStatusChip';
 import { fmtTimestamp } from './fmtTimestamp';
+import { planConsumerLabel, resolvePlanConsumer } from '../../../../shared/utils/planConsumer';
 
 type Props = {
   readonly plan: PlanWithCount;
@@ -11,6 +12,12 @@ type Props = {
 };
 
 export const PlanRailCard = ({ plan, openQuestionCount, onSelect }: Props) => {
+  const lastConsumer = plan.lastConsumer;
+  const consumer =
+    lastConsumer != null
+      ? resolvePlanConsumer({ agentId: lastConsumer.agentId, agentName: lastConsumer.name })
+      : null;
+
   return (
     <RailCard
       title={plan.title}
@@ -22,6 +29,11 @@ export const PlanRailCard = ({ plan, openQuestionCount, onSelect }: Props) => {
             <span key="created" className="tabular-nums">
               {fmtTimestamp(plan.createdAt)}
             </span>,
+            consumer != null ? (
+              <span key="consumer" className="min-w-0 truncate">
+                {planConsumerLabel({ name: consumer.name, count: plan.consumptionCount })}
+              </span>
+            ) : null,
           ]}
         />
       }

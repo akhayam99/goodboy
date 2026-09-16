@@ -301,6 +301,7 @@ export type {
   PlanConsumption,
   PlanConsumptionId,
   PlanId,
+  PlanLastConsumer,
   PlanStatus,
   PlanWithCount,
 } from './plan';

@@ -4,6 +4,7 @@ import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from '../migrations/runner';
 import {
   deletePlan,
+  listConsumptionsForPlan,
   listPlansForSession,
   updatePlanBody,
   updatePlanStatus,
@@ -30,7 +31,25 @@ async function seedFixture() {
     `INSERT INTO agents (id, session_id, ordinal, name, status) VALUES (?, ?, ?, ?, ?)`,
     ['a2', 't1', 1, 'second planner', 'pending'],
   );
+  await db.execute(
+    `INSERT INTO agents (id, session_id, ordinal, name, status) VALUES (?, ?, ?, ?, ?)`,
+    ['a3', 't1', 2, 'third implementer', 'pending'],
+  );
   return db;
+}
+
+type ConsumptionSeed = {
+  readonly id: string;
+  readonly planId: string;
+  readonly agentId: string;
+  readonly consumedAt: number;
+};
+
+async function seedConsumption(db: Awaited<ReturnType<typeof seedFixture>>, seed: ConsumptionSeed) {
+  await db.execute(
+    `INSERT INTO plan_consumptions (id, plan_id, agent_id, consumed_at) VALUES (?, ?, ?, ?)`,
+    [seed.id, seed.planId, seed.agentId, seed.consumedAt],
+  );
 }
 
 const sessionId = 't1' as SessionId;
@@ -219,6 +238,99 @@ describe('session_plans queries', () => {
     await deletePlan(db, plan.id);
     const refreshed = await listPlansForSession(db, sessionId);
     expect(refreshed).toHaveLength(0);
+  });
+
+  it('reports no last consumer for a plan nobody ran', async () => {
+    const db = await seedFixture();
+    await upsertPlan(db, {
+      id: 'p1' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA1,
+      title: 'never run',
+      bodyMd: 'b',
+    });
+    const plans = await listPlansForSession(db, sessionId);
+    expect(plans[0]!.consumptionCount).toBe(0);
+    expect(plans[0]!.lastConsumer).toBeNull();
+  });
+
+  it('names the single consumer of a plan that ran once', async () => {
+    const db = await seedFixture();
+    await upsertPlan(db, {
+      id: 'p1' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA1,
+      title: 'ran once',
+      bodyMd: 'b',
+    });
+    await seedConsumption(db, { id: 'c1', planId: 'p1', agentId: 'a2', consumedAt: 1_000 });
+    const plans = await listPlansForSession(db, sessionId);
+    expect(plans[0]!.consumptionCount).toBe(1);
+    expect(plans[0]!.lastConsumer).toEqual({ agentId: 'a2', name: 'second planner' });
+  });
+
+  it('returns the most recent consumer when a plan ran several times', async () => {
+    const db = await seedFixture();
+    await upsertPlan(db, {
+      id: 'p1' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA1,
+      title: 'ran thrice',
+      bodyMd: 'b',
+    });
+    await seedConsumption(db, { id: 'c-mid', planId: 'p1', agentId: 'a1', consumedAt: 2_000 });
+    await seedConsumption(db, { id: 'c-last', planId: 'p1', agentId: 'a3', consumedAt: 3_000 });
+    await seedConsumption(db, { id: 'c-first', planId: 'p1', agentId: 'a2', consumedAt: 1_000 });
+
+    const plans = await listPlansForSession(db, sessionId);
+
+    expect(plans[0]!.consumptionCount).toBe(3);
+    expect(plans[0]!.lastConsumer).toEqual({ agentId: 'a3', name: 'third implementer' });
+  });
+
+  it('keeps each plan on its own last consumer', async () => {
+    const db = await seedFixture();
+    const first = await upsertPlan(db, {
+      id: 'p1' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA1,
+      title: 'older',
+      bodyMd: '',
+    });
+    await updatePlanStatus(db, first.id, 'consumed');
+    await new Promise((r) => setTimeout(r, 5));
+    await upsertPlan(db, {
+      id: 'p2' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA2,
+      title: 'newer',
+      bodyMd: '',
+    });
+    await seedConsumption(db, { id: 'c1', planId: 'p1', agentId: 'a2', consumedAt: 5_000 });
+    await seedConsumption(db, { id: 'c2', planId: 'p2', agentId: 'a3', consumedAt: 1_000 });
+
+    const plans = await listPlansForSession(db, sessionId);
+
+    expect(plans[0]!.lastConsumer).toEqual({ agentId: 'a2', name: 'second planner' });
+    expect(plans[1]!.lastConsumer).toEqual({ agentId: 'a3', name: 'third implementer' });
+  });
+
+  it('agrees with the consumption history when two consumptions share the same consumed_at', async () => {
+    const db = await seedFixture();
+    await upsertPlan(db, {
+      id: 'p1' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA1,
+      title: 'ran twice at once',
+      bodyMd: 'b',
+    });
+    await seedConsumption(db, { id: 'c1', planId: 'p1', agentId: 'a2', consumedAt: 1_000 });
+    await seedConsumption(db, { id: 'c2', planId: 'p1', agentId: 'a3', consumedAt: 1_000 });
+
+    const plans = await listPlansForSession(db, sessionId);
+    const history = await listConsumptionsForPlan(db, 'p1' as PlanId);
+
+    expect(plans[0]!.lastConsumer?.agentId).toBe(history[0]!.agentId);
   });
 
   it('cascades on task delete', async () => {
