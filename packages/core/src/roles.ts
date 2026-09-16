@@ -36,6 +36,7 @@ export type RoleRegistryEntry = RoleDefaults & {
   readonly workflowEligible: boolean;
   readonly classifierEligible: boolean;
   readonly selectionEligible: boolean;
+  readonly pickerEligible: boolean;
 };
 
 export type RoleFanOutMode = 'natural' | 'conditional' | 'never';
@@ -59,6 +60,7 @@ export const ROLE_REGISTRY = {
     workflowEligible: true,
     classifierEligible: true,
     selectionEligible: true,
+    pickerEligible: true,
     provider: 'anthropic',
     model: 'haiku-4.5',
     effort: 'low',
@@ -78,6 +80,7 @@ export const ROLE_REGISTRY = {
     workflowEligible: true,
     classifierEligible: true,
     selectionEligible: true,
+    pickerEligible: true,
     provider: 'anthropic',
     model: 'sonnet-5',
     effort: 'medium',
@@ -97,6 +100,7 @@ export const ROLE_REGISTRY = {
     workflowEligible: true,
     classifierEligible: true,
     selectionEligible: true,
+    pickerEligible: true,
     provider: 'anthropic',
     model: 'opus-5',
     effort: 'high',
@@ -116,6 +120,7 @@ export const ROLE_REGISTRY = {
     workflowEligible: true,
     classifierEligible: true,
     selectionEligible: true,
+    pickerEligible: true,
     provider: 'anthropic',
     model: 'sonnet-5',
     effort: 'medium',
@@ -135,6 +140,7 @@ export const ROLE_REGISTRY = {
     workflowEligible: true,
     classifierEligible: true,
     selectionEligible: true,
+    pickerEligible: true,
     provider: 'anthropic',
     model: 'sonnet-5',
     effort: 'medium',
@@ -154,6 +160,7 @@ export const ROLE_REGISTRY = {
     workflowEligible: true,
     classifierEligible: true,
     selectionEligible: true,
+    pickerEligible: true,
     provider: 'anthropic',
     model: 'sonnet-5',
     effort: 'medium',
@@ -174,6 +181,7 @@ export const ROLE_REGISTRY = {
     workflowEligible: true,
     classifierEligible: false,
     selectionEligible: true,
+    pickerEligible: true,
     provider: 'anthropic',
     model: 'sonnet-5',
     effort: 'medium',
@@ -193,6 +201,7 @@ export const ROLE_REGISTRY = {
     workflowEligible: true,
     classifierEligible: true,
     selectionEligible: true,
+    pickerEligible: true,
     provider: 'anthropic',
     model: 'haiku-4.5',
     effort: 'low',
@@ -214,6 +223,7 @@ export const ROLE_REGISTRY = {
     workflowEligible: true,
     classifierEligible: false,
     selectionEligible: true,
+    pickerEligible: false,
     provider: 'anthropic',
     model: 'sonnet-5',
     effort: 'medium',
@@ -233,6 +243,7 @@ export const ROLE_REGISTRY = {
     workflowEligible: true,
     classifierEligible: false,
     selectionEligible: true,
+    pickerEligible: false,
     provider: 'anthropic',
     model: 'sonnet-5',
     effort: 'medium',
@@ -252,6 +263,7 @@ export const ROLE_REGISTRY = {
     workflowEligible: true,
     classifierEligible: false,
     selectionEligible: true,
+    pickerEligible: true,
     provider: 'anthropic',
     model: 'sonnet-5',
     effort: 'medium',

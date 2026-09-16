@@ -125,16 +125,18 @@ describe('ROLE_REGISTRY contract', () => {
       workflowEligible: true,
       classifierEligible: false,
       selectionEligible: true,
+      pickerEligible: false,
     });
     expect(ROLE_REGISTRY.wireframe).toMatchObject({
       outputKind: 'wireframe',
       workflowEligible: true,
       classifierEligible: false,
       selectionEligible: true,
+      pickerEligible: false,
     });
   });
 
-  it('exposes exactly the roles a user can select', () => {
+  it('preserves the roles available for defaults and workflow selection', () => {
     expect(SELECTABLE_AGENT_ROLES).toEqual([
       'scout',
       'investigator',
@@ -146,6 +148,24 @@ describe('ROLE_REGISTRY contract', () => {
       'docs',
       'report',
       'wireframe',
+      'custom',
+    ]);
+  });
+
+  it('offers every selectable non-artifact role in the manual picker', () => {
+    expect(
+      Object.values(ROLE_REGISTRY)
+        .filter((entry) => entry.pickerEligible)
+        .map((entry) => entry.id),
+    ).toEqual([
+      'scout',
+      'investigator',
+      'planner',
+      'implementer',
+      'reviewer',
+      'tester',
+      'resolver',
+      'docs',
       'custom',
     ]);
   });
