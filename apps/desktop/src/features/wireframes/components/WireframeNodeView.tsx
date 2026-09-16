@@ -6,7 +6,7 @@ import type {
   WireframeNode,
   WireframeTextVariant,
 } from '@goodboy/core';
-import { SPACING_PX, type WireframePalette } from '../../wireframePalette';
+import { SPACING_PX, type WireframePalette } from '../wireframePalette';
 
 export type WireframeNodeHandlers = Readonly<{
   palette: WireframePalette;

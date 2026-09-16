@@ -1,30 +1,29 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Maximize2,
-  Minus,
-  Plus,
-  RotateCcw,
-  SkipBack,
-  SkipForward,
-} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { RotateCcw } from 'lucide-react';
 import type { WireframeAction, WireframeAdjustment, WireframeDocument } from '@goodboy/core';
-import { Button, Divider, cn } from '@goodboy/ui';
+import { Button, Divider, StudioDetailTabs, cn } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { WIREFRAME_FIDELITY_VARIANT_LABEL, type WireframeFidelity } from '../../wireframeFidelity';
 import { buildWireframeIndex } from '../../wireframeIndex';
 import { VIEWPORT_WIDTH, wireframePalette } from '../../wireframePalette';
+import { WireframeContactSheet } from '../WireframeContactSheet';
 import { WireframeAdjustments } from './WireframeAdjustments';
 import { WireframeCanvas } from './WireframeCanvas';
+import { WireframeCanvasControls } from './WireframeCanvasControls';
 import { WireframeFlowOverview } from './WireframeFlowOverview';
 import { WireframeProvenanceRow } from './WireframeProvenanceRow';
 import { WireframeScreenTabs } from './WireframeScreenTabs';
-import { ZOOM_BOUNDS, useWireframeNavigation } from './useWireframeNavigation';
+import { useWireframeNavigation } from './useWireframeNavigation';
 
 const CANVAS_GUTTER = 40;
-const ZOOM_STEP = 0.1;
+
+type WireframeView = 'screen' | 'sheet';
+
+const VIEW_OPTIONS = [
+  { value: 'screen', label: 'Screen' },
+  { value: 'sheet', label: 'Contact sheet' },
+] satisfies ReadonlyArray<{ readonly value: WireframeView; readonly label: string }>;
 
 type Props = {
   readonly artifact: WireframeArtifact;
@@ -46,6 +45,7 @@ export const WireframeStudioBody = ({
   onRespawn,
 }: Props) => {
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState<WireframeView>('screen');
   const index = useMemo(() => buildWireframeIndex({ document }), [document]);
   const palette = useMemo(
     () => wireframePalette({ theme: document.theme, fidelity }),
@@ -92,7 +92,7 @@ export const WireframeStudioBody = ({
   }, [fitZoom, viewportWidth]);
 
   useEffect(() => {
-    if (isZoomPinned) {
+    if (isZoomPinned || view !== 'screen') {
       return;
     }
     zoomToFit();
@@ -103,7 +103,7 @@ export const WireframeStudioBody = ({
     const observer = new ResizeObserver(() => zoomToFit());
     observer.observe(node);
     return () => observer.disconnect();
-  }, [isZoomPinned, zoomToFit, screen?.id]);
+  }, [isZoomPinned, view, zoomToFit, screen?.id]);
 
   const toggledOn = Object.entries(navigation.mockState).filter(([, value]) => value === true);
 
@@ -115,93 +115,28 @@ export const WireframeStudioBody = ({
         designProfile={artifact.metadata.designProfile}
       />
       <WireframeAdjustments adjustments={adjustments} />
-      <WireframeScreenTabs
-        screens={document.screens}
-        currentScreenId={navigation.currentScreenId}
-        onSelect={navigation.goTo}
-      />
+      {view === 'screen' ? (
+        <WireframeScreenTabs
+          screens={document.screens}
+          currentScreenId={navigation.currentScreenId}
+          onSelect={navigation.goTo}
+        />
+      ) : null}
       <div className="flex flex-wrap items-center gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={navigation.goBack}
-          disabled={!navigation.canGoBack}
-          data-testid="wireframe-back"
-          title="Back in the click history"
-        >
-          <ChevronLeft size={ICON_SIZE.row} aria-hidden />
-          Back
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={navigation.goForward}
-          disabled={!navigation.canGoForward}
-          data-testid="wireframe-forward"
-          title="Forward in the click history"
-        >
-          Forward
-          <ChevronRight size={ICON_SIZE.row} aria-hidden />
-        </Button>
-        <Divider orientation="vertical" className="mx-1 h-4" />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={navigation.goPrevious}
-          disabled={order <= 0}
-          data-testid="wireframe-previous"
-          title="Previous screen in document order"
-        >
-          <SkipBack size={ICON_SIZE.row} aria-hidden />
-          Previous
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={navigation.goNext}
-          disabled={order < 0 || order >= document.screens.length - 1}
-          data-testid="wireframe-next"
-          title="Next screen in document order"
-        >
-          Next
-          <SkipForward size={ICON_SIZE.row} aria-hidden />
-        </Button>
-        <Divider orientation="vertical" className="mx-1 h-4" />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigation.setZoom(navigation.zoom - ZOOM_STEP)}
-          disabled={navigation.zoom <= ZOOM_BOUNDS.min}
-          data-testid="wireframe-zoom-out"
-          title="Zoom out"
-          aria-label="Zoom out"
-        >
-          <Minus size={ICON_SIZE.row} aria-hidden />
-        </Button>
-        <span className="min-w-10 text-center tabular-nums text-2xs text-muted-foreground">
-          {Math.round(navigation.zoom * 100)}%
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigation.setZoom(navigation.zoom + ZOOM_STEP)}
-          disabled={navigation.zoom >= ZOOM_BOUNDS.max}
-          data-testid="wireframe-zoom-in"
-          title="Zoom in"
-          aria-label="Zoom in"
-        >
-          <Plus size={ICON_SIZE.row} aria-hidden />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={zoomToFit}
-          data-testid="wireframe-zoom-fit"
-          title="Fit the screen to the pane and follow it again"
-        >
-          <Maximize2 size={ICON_SIZE.row} aria-hidden />
-          Fit
-        </Button>
+        <StudioDetailTabs
+          ariaLabel="Wireframe view"
+          options={VIEW_OPTIONS}
+          value={view}
+          onChange={setView}
+        />
+        {view === 'screen' ? (
+          <WireframeCanvasControls
+            navigation={navigation}
+            order={order}
+            screenCount={document.screens.length}
+            onZoomToFit={zoomToFit}
+          />
+        ) : null}
         <Button
           variant="secondary"
           size="sm"
@@ -220,12 +155,19 @@ export const WireframeStudioBody = ({
           {error}
         </span>
       )}
-      {toggledOn.length === 0 ? null : (
+      {view === 'sheet' ? (
+        <WireframeContactSheet
+          document={document}
+          palette={palette}
+          isLowFidelity={fidelity === 'low'}
+        />
+      ) : null}
+      {view === 'screen' && toggledOn.length > 0 ? (
         <span data-testid="wireframe-mock-state" className="text-2xs text-muted-foreground">
           mock state on: {toggledOn.map(([key]) => key).join(', ')}
         </span>
-      )}
-      {screen === undefined ? null : (
+      ) : null}
+      {view === 'screen' && screen !== undefined ? (
         <>
           {screen.note === undefined ? null : (
             <span className="text-2xs italic text-muted-foreground">{screen.note}</span>
@@ -242,7 +184,7 @@ export const WireframeStudioBody = ({
             onAction={runAction}
           />
         </>
-      )}
+      ) : null}
       <Divider />
       <div className={cn('flex min-w-0 flex-col gap-2')}>
         <h3 className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">Flow</h3>

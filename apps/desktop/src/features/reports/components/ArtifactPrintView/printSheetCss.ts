@@ -106,6 +106,15 @@ export const PRINT_SHEET_CSS = `
   font-size: 9.5pt;
   margin: 0;
 }
+.print-sheet .print-frame {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.print-sheet .print-frame,
+.print-sheet .print-frame * {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
 .print-sheet .print-body > div,
 .print-sheet .print-body > div > div {
   display: block;
@@ -261,9 +270,28 @@ export const PRINT_SHEET_CSS = `
   body.bg-background {
     background: #ffffff;
   }
+  html,
+  body,
+  #root {
+    height: auto;
+    overflow: visible;
+  }
   .print-sheet {
     max-width: none;
     padding: 0;
+  }
+  .print-sheet .print-screens,
+  .print-sheet .print-frames {
+    display: block;
+  }
+  .print-sheet .print-frames {
+    orphans: 1;
+    widows: 1;
+  }
+  .print-sheet .print-frame {
+    display: inline-flex;
+    margin: 0 1rem 1.4rem 0;
+    vertical-align: top;
   }
 }
 `;

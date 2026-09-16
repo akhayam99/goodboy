@@ -530,4 +530,18 @@ describe('WireframeStudio', () => {
       ]),
     );
   });
+
+  it('swaps the clickable screen for a contact sheet of every screen and back', () => {
+    renderStudio();
+    expect(screen.queryByTestId('wireframe-contact-sheet')).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: 'Contact sheet' }));
+    expect(screen.getAllByTestId('wireframe-sheet-frame')).toHaveLength(3);
+    expect(screen.queryByTestId('wireframe-canvas')).toBeNull();
+    expect(screen.queryByTestId('wireframe-zoom-fit')).toBeNull();
+    expect(screen.queryByTestId('wireframe-screen-tabs')).toBeNull();
+    expect(screen.getByTestId('wireframe-convert-fidelity')).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Screen' }));
+    expect(currentScreen()).toBe('inbox');
+    expect(screen.queryByTestId('wireframe-contact-sheet')).toBeNull();
+  });
 });

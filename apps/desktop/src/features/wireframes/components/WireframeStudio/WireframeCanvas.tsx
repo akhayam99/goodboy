@@ -1,7 +1,7 @@
 import { forwardRef, useLayoutEffect, useRef, useState } from 'react';
 import type { WireframeAction, WireframeScreen } from '@goodboy/core';
 import { VIEWPORT_MIN_HEIGHT, VIEWPORT_WIDTH, type WireframePalette } from '../../wireframePalette';
-import { WireframeNodeView } from './WireframeNodeView';
+import { WireframeNodeView } from '../WireframeNodeView';
 
 type Props = {
   readonly screen: WireframeScreen;
@@ -55,7 +55,7 @@ export const WireframeCanvas = forwardRef<HTMLDivElement, Props>(
       <div
         ref={ref}
         data-testid="wireframe-canvas"
-        className="max-h-[min(32rem,calc(100vh-2rem))] min-h-0 w-full overflow-auto rounded-md border border-border-soft bg-elevated p-4"
+        className="max-h-[calc(100vh-2rem)] min-h-0 w-full overflow-auto rounded-md border border-border-soft bg-elevated p-4"
       >
         <div style={{ width: contentWidth * zoom, height: contentHeight * zoom }}>
           <div

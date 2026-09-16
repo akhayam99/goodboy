@@ -60,6 +60,12 @@ export const VIEWPORT_MIN_HEIGHT: Record<WireframeViewport, number> = {
   desktop: 720,
 };
 
+export const CONTACT_SHEET_PLATE_WIDTH: Record<WireframeViewport, number> = {
+  mobile: 230,
+  tablet: 370,
+  desktop: 520,
+};
+
 export const wireframePalette = ({
   theme,
   fidelity,

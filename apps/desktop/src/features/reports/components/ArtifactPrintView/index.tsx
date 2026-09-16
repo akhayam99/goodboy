@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { parseWireframeSource, type WireframeDocument } from '@goodboy/core';
 import { Markdown, formatError } from '@goodboy/ui';
-import type { SessionArtifact } from '@goodboy/types';
+import type { SessionArtifact, WireframeArtifact } from '@goodboy/types';
 import { listArtifactsForSession } from '../../../artifacts/artifacts';
 import type { ArtifactPrintRequest } from '../../artifactPrintRequest';
 import { artifactMetaFields } from './artifactMetaFields';
@@ -8,6 +9,7 @@ import { CONTENTS_MIN_SECTIONS, documentOutline } from './documentOutline';
 import { dropLeadingTitleHeading } from './dropLeadingTitleHeading';
 import { PrintContents } from './PrintContents';
 import { PrintLetterhead } from './PrintLetterhead';
+import { PrintWireframeSheet } from './PrintWireframeSheet';
 import { PRINT_SHEET_CSS } from './printSheetCss';
 import { removeBootShell } from './removeBootShell';
 
@@ -18,11 +20,23 @@ type Props = {
 type Status =
   | Readonly<{ kind: 'loading' }>
   | Readonly<{ kind: 'ready'; artifact: SessionArtifact }>
+  | Readonly<{ kind: 'wireframe'; artifact: WireframeArtifact; document: WireframeDocument }>
   | Readonly<{ kind: 'unsupported'; artifact: SessionArtifact }>
   | Readonly<{ kind: 'failed'; message: string }>;
 
 const PRINT_UNSUPPORTED_COPY =
-  'the print sheet only lays out markdown, so this artifact has no printable page yet';
+  'this wireframe does not match the schema, so the print sheet has no page to lay out';
+
+const artifactStatus = ({ artifact }: { readonly artifact: SessionArtifact }): Status => {
+  if (artifact.sourceFormat === 'markdown') {
+    return { kind: 'ready', artifact };
+  }
+  const parsed = parseWireframeSource({ source: artifact.sourceText });
+  if (parsed.status === 'invalid') {
+    return { kind: 'unsupported', artifact };
+  }
+  return { kind: 'wireframe', artifact, document: parsed.document };
+};
 
 const PrintDocument = ({ artifact }: { readonly artifact: SessionArtifact }) => {
   const body = dropLeadingTitleHeading({
@@ -63,11 +77,7 @@ export const ArtifactPrintView = ({ request }: Props) => {
           setStatus({ kind: 'failed', message: 'this artifact is no longer in the session' });
           return;
         }
-        if (found.sourceFormat !== 'markdown') {
-          setStatus({ kind: 'unsupported', artifact: found });
-          return;
-        }
-        setStatus({ kind: 'ready', artifact: found });
+        setStatus(artifactStatus({ artifact: found }));
       })
       .catch((cause: unknown) => {
         if (isActive) {
@@ -80,7 +90,7 @@ export const ArtifactPrintView = ({ request }: Props) => {
   }, [request.sessionId, request.artifactId]);
 
   useEffect(() => {
-    if (status.kind !== 'ready' || hasPrinted.current) {
+    if ((status.kind !== 'ready' && status.kind !== 'wireframe') || hasPrinted.current) {
       return;
     }
     hasPrinted.current = true;
@@ -111,7 +121,7 @@ export const ArtifactPrintView = ({ request }: Props) => {
       {status.kind === 'loading' ? <p className="print-note">preparing the document</p> : null}
       {status.kind === 'failed' ? (
         <p role="alert" className="print-note">
-          {status.message}. the markdown source is still available in the app, so nothing was lost.
+          {status.message}. the source is still available in the app, so nothing was lost.
         </p>
       ) : null}
       {status.kind === 'unsupported' ? (
@@ -128,6 +138,9 @@ export const ArtifactPrintView = ({ request }: Props) => {
         </article>
       ) : null}
       {status.kind === 'ready' ? <PrintDocument artifact={status.artifact} /> : null}
+      {status.kind === 'wireframe' ? (
+        <PrintWireframeSheet artifact={status.artifact} document={status.document} />
+      ) : null}
     </div>
   );
 };
