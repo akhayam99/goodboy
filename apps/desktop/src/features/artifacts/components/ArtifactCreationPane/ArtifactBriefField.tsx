@@ -12,6 +12,7 @@ type Props = {
   readonly placeholder: string;
   readonly value: string;
   readonly goal: string;
+  readonly isGoalPending: boolean;
   readonly defaultRequest: string;
   readonly onChange: (value: string) => void;
   readonly onSubmit: () => void;
@@ -24,11 +25,27 @@ const withGoal = ({ value, goal }: { readonly value: string; readonly goal: stri
   return trimmed.length === 0 ? goal : `${trimmed}\n\n${goal}`;
 };
 
+type GoalTitleParams = Readonly<{
+  isPending: boolean;
+  hasGoal: boolean;
+}>;
+
+const goalActionTitle = ({ isPending, hasGoal }: GoalTitleParams): string => {
+  if (isPending) {
+    return 'the session goal is still loading';
+  }
+  if (hasGoal === false) {
+    return 'the session has no goal yet';
+  }
+  return 'add the session goal to the brief';
+};
+
 export const ArtifactBriefField = ({
   label,
   placeholder,
   value,
   goal,
+  isGoalPending,
   defaultRequest,
   onChange,
   onSubmit,
@@ -65,12 +82,11 @@ export const ArtifactBriefField = ({
           <GhostActionButton
             icon={CONCEPT_ICONS.goal}
             label="Use the session goal"
-            disabled={trimmedGoal.length === 0}
-            title={
-              trimmedGoal.length === 0
-                ? 'the session has no goal yet'
-                : 'add the session goal to the brief'
-            }
+            disabled={isGoalPending || trimmedGoal.length === 0}
+            title={goalActionTitle({
+              isPending: isGoalPending,
+              hasGoal: trimmedGoal.length > 0,
+            })}
             onClick={() => {
               setClipNote(null);
               onChange(withGoal({ value, goal: trimmedGoal }).slice(0, LIMIT));

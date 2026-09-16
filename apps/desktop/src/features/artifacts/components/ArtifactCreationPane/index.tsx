@@ -12,7 +12,7 @@ import {
   useEscapeLayer,
 } from '@goodboy/ui';
 import type { Agent, AgentId, ProviderId, Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionSlots } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessionSlots, useSessionSlotsLoad } from '../../../../store';
 import { selectActiveMount } from '../../../../store/slices/project-mounts/selectors';
 import { FocusedPane } from '../../../../shared/components/PaneShell/FocusedPane';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -79,7 +79,14 @@ export const ArtifactCreationPane = ({
   const [error, setError] = useState<string | null>(null);
 
   const slots = useSessionSlots(sessionId);
+  const slotsLoad = useSessionSlotsLoad(sessionId);
+  const ensureSessionSlots = useAppStore((s) => s.ensureSessionSlots);
   const goal = sessionGoalText({ slots, session });
+  const isGoalPending = slotsLoad === null;
+
+  useEffect(() => {
+    void ensureSessionSlots(sessionId);
+  }, [ensureSessionSlots, sessionId]);
 
   const attached = useAttachedWorkflowRuns({ session });
   const runs = useMemo(() => runOptions({ attached }), [attached]);
@@ -244,6 +251,7 @@ export const ArtifactCreationPane = ({
               placeholder={adapter.brief.placeholder}
               value={brief}
               goal={goal.editorText}
+              isGoalPending={isGoalPending}
               defaultRequest={adapter.defaultRequest({ choice })}
               onChange={handle.setBrief}
               onSubmit={generate}
