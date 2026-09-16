@@ -10,7 +10,7 @@ import {
   type ArtifactContextInventoryRow,
 } from '../artifacts/artifactContextInventory';
 import { SESSION_GOAL_CLIP_NOTE, type SessionGoalText } from '../artifacts/sessionGoalText';
-import type { DesignProfile } from './collectDesignProfile';
+import { hasDesignEvidence, type DesignEvidence, type DesignProfile } from './collectDesignProfile';
 import { describeDesignProfile } from './describeDesignProfile';
 import { WIREFRAME_FIDELITY_LABEL, type WireframeFidelity } from './wireframeFidelity';
 import {
@@ -42,7 +42,7 @@ export type WireframeContextParams = Readonly<{
   agents: ReadonlyArray<Agent>;
   transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   artifacts: ReadonlyArray<SessionArtifact>;
-  designProfile: DesignProfile | null;
+  designEvidence: DesignEvidence;
   capturedAt: IsoDateTime;
 }>;
 
@@ -195,20 +195,6 @@ const themeProfileRow = ({
 }: {
   readonly profile: DesignProfile;
 }): ArtifactContextInventoryRow => {
-  const hasEvidence =
-    profile.tailwind !== null ||
-    profile.tokens.length > 0 ||
-    profile.variants.length > 0 ||
-    profile.layoutExamples.length > 0;
-  if (!hasEvidence) {
-    return {
-      id: 'theme',
-      label: 'theme',
-      summary: 'no design evidence at the known paths, the generic theme is used',
-      state: 'missing',
-      detail: profile.notes,
-    };
-  }
   const pin = profile.commitSha === null ? ', head not pinned' : ` at ${profile.commitSha}`;
   return {
     id: 'theme',
@@ -219,13 +205,19 @@ const themeProfileRow = ({
   };
 };
 
+const genericThemeSection = ({ reason }: { readonly reason: string }): string =>
+  [
+    '## theme',
+    `high fidelity was requested but ${reason}. set theme.name to "generic", never invent branding, and say in a node note that the theme is generic.`,
+  ].join('\n\n');
+
 const themeSection = ({
   fidelity,
-  designProfile,
+  designEvidence,
   inventory,
 }: {
   readonly fidelity: WireframeFidelity;
-  readonly designProfile: DesignProfile | null;
+  readonly designEvidence: DesignEvidence;
   readonly inventory: Array<ArtifactContextInventoryRow>;
 }): string => {
   if (fidelity === 'low') {
@@ -241,24 +233,34 @@ const themeSection = ({
       'this is a low fidelity wireframe. set theme.name to "generic", leave theme.colors out, and lean on layout, hierarchy and node notes rather than styling.',
     ].join('\n\n');
   }
-  if (designProfile === null) {
+  if (designEvidence.source === 'none') {
     inventory.push({
       id: 'theme',
       label: 'theme',
-      summary: 'no design profile, the agent is told to use the generic theme',
+      summary: 'no repository is mounted, so no design file was read',
       state: 'missing',
       detail: [],
     });
-    return [
-      '## theme',
-      'high fidelity was requested but the app collected no design profile. set theme.name to "generic", never invent branding, and say in a node note that the theme is generic.',
-    ].join('\n\n');
+    return genericThemeSection({ reason: 'no repository is mounted, so nothing could be read' });
   }
-  inventory.push(themeProfileRow({ profile: designProfile }));
+  const profile = designEvidence.profile;
+  if (!hasDesignEvidence({ profile })) {
+    inventory.push({
+      id: 'theme',
+      label: 'theme',
+      summary: 'the mounted repository was walked and no design file was found',
+      state: 'missing',
+      detail: profile.notes,
+    });
+    return genericThemeSection({
+      reason: 'the mounted repository was walked and it holds no design file the app could read',
+    });
+  }
+  inventory.push(themeProfileRow({ profile }));
   return [
     '## design profile',
     'this profile was read by the app from the mounted repository. use it for theme.name, theme.colors and the component vocabulary, and list the file paths you leaned on in theme.sources. never import or execute anything from the repository.',
-    describeDesignProfile({ profile: designProfile }),
+    describeDesignProfile({ profile }),
   ].join('\n\n');
 };
 
@@ -271,7 +273,7 @@ export const buildWireframeContext = ({
   agents,
   transcripts,
   artifacts,
-  designProfile,
+  designEvidence,
   capturedAt,
 }: WireframeContextParams): WireframeContext => {
   const sourceIds: Array<string> = [session.id];
@@ -318,7 +320,7 @@ export const buildWireframeContext = ({
     ...goalBlock,
     agentSection({ agents, transcripts, truncations, sourceIds, inventory }),
     planSection({ artifacts, truncations, sourceIds, inventory }),
-    themeSection({ fidelity, designProfile, inventory }),
+    themeSection({ fidelity, designEvidence, inventory }),
   ].join('\n\n');
 
   const capped = clip({ text: evidence, limit: WIREFRAME_CONTEXT_LIMITS.total });

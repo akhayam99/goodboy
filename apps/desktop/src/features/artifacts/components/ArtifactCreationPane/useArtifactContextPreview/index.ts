@@ -12,6 +12,7 @@ import {
   buildWireframeContext,
   WIREFRAME_CONTEXT_LIMITS,
 } from '../../../../wireframes/buildWireframeContext';
+import type { DesignEvidence } from '../../../../wireframes/collectDesignProfile';
 import { collectWireframeDesignProfile } from '../../../../wireframes/collectWireframeDesignProfile';
 import { asWireframeFidelity } from '../../../../wireframes/wireframeFidelity';
 import { asWireframeTarget } from '../../../../wireframes/wireframeTarget';
@@ -99,8 +100,10 @@ const collect = async ({
     };
   }
   const fidelity = asWireframeFidelity({ value: choice }) ?? 'low';
-  const designProfile =
-    fidelity === 'high' ? await collectWireframeDesignProfile({ state, sessionId }) : null;
+  const designEvidence: DesignEvidence =
+    fidelity === 'high'
+      ? await collectWireframeDesignProfile({ state, sessionId })
+      : { source: 'none' };
   const context = buildWireframeContext({
     fidelity,
     target: asWireframeTarget({ value: secondChoice }) ?? 'both',
@@ -110,7 +113,7 @@ const collect = async ({
     agents: workflowRunId === null ? agents : runsForWorkflowRun(agents, workflowRunId),
     transcripts,
     artifacts: state.sessionArtifacts?.[sessionId] ?? [],
-    designProfile,
+    designEvidence,
     capturedAt,
   });
   return {

@@ -3,7 +3,11 @@ import { parseWireframeSource } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { SessionId, WireframeArtifact } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { asWireframeFidelity, type WireframeFidelity } from '../../wireframeFidelity';
+import {
+  asWireframeFidelity,
+  requestedWireframeFidelity,
+  type WireframeFidelity,
+} from '../../wireframeFidelity';
 import { deriveWireframeTarget } from '../../wireframeTarget';
 import { WireframeIssues } from './WireframeIssues';
 import { WireframeProvenanceRow } from './WireframeProvenanceRow';
@@ -21,6 +25,13 @@ export const WireframeStudio = ({ sessionId, artifact }: Props) => {
   );
   const fidelity: WireframeFidelity =
     asWireframeFidelity({ value: artifact.metadata.fidelity }) ?? 'low';
+  const requestedFidelity = useAppStore((state) =>
+    requestedWireframeFidelity({
+      agentName:
+        state.sessionPhaseRuns?.[sessionId]?.find((agent) => agent.id === artifact.agentId)?.name ??
+        null,
+    }),
+  );
   const spawnWireframeAgent = useAppStore((state) => state.spawnWireframeAgent);
   const kickoff = useAppStore((state) => {
     const events = state.transcripts?.[artifact.agentId] ?? [];
@@ -60,6 +71,7 @@ export const WireframeStudio = ({ sessionId, artifact }: Props) => {
       <div data-testid="wireframe-studio" className="flex min-w-0 flex-col gap-3">
         <WireframeProvenanceRow
           fidelity={fidelity}
+          requestedFidelity={requestedFidelity}
           theme={{ name: 'generic' }}
           designProfile={artifact.metadata.designProfile}
         />
@@ -82,6 +94,7 @@ export const WireframeStudio = ({ sessionId, artifact }: Props) => {
     <WireframeStudioBody
       artifact={artifact}
       fidelity={fidelity}
+      requestedFidelity={requestedFidelity}
       document={parsed.document}
       adjustments={parsed.adjustments}
       isRespawning={isRespawning}

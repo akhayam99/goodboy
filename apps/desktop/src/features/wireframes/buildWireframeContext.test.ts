@@ -23,7 +23,7 @@ import {
   WIREFRAME_CONTEXT_LIMITS,
   type WireframeContext,
 } from './buildWireframeContext';
-import type { DesignProfile } from './collectDesignProfile';
+import type { DesignEvidence, DesignProfile } from './collectDesignProfile';
 
 const NOW = '2026-09-16T10:00:00.000Z' as IsoDateTime;
 const SESSION_ID = 'session-1' as SessionId;
@@ -104,7 +104,7 @@ type TextForParams = {
   readonly goalSlot?: string | null;
   readonly agentName?: string;
   readonly planTitle?: string;
-  readonly designProfile?: DesignProfile | null;
+  readonly designEvidence?: DesignEvidence;
 };
 
 const contextFor = ({
@@ -113,12 +113,12 @@ const contextFor = ({
   goalSlot = null,
   agentName = 'scout',
   planTitle = 'Ship it',
-  designProfile = null,
+  designEvidence = { source: 'none' },
 }: TextForParams = {}): WireframeContext => {
   const session = sessionWith({ goal });
   return buildWireframeContext({
     brief,
-    fidelity: designProfile === null ? 'low' : 'high',
+    fidelity: designEvidence.source === 'none' ? 'low' : 'high',
     target: 'both',
     session,
     goal: sessionGoalText({
@@ -128,7 +128,7 @@ const contextFor = ({
     agents: [agentWith({ name: agentName })],
     transcripts,
     artifacts: [planWith({ title: planTitle })],
-    designProfile,
+    designEvidence,
     capturedAt: NOW,
   });
 };
@@ -175,7 +175,7 @@ describe('buildWireframeContext', () => {
       agents: [agentWith({ name: 'scout' })],
       transcripts,
       artifacts: [planWith({ title: 'Ship it' })],
-      designProfile: null,
+      designEvidence: { source: 'none' },
       capturedAt: NOW,
     });
     const plans = context.inventory.find((row) => row.id === 'plans');
@@ -204,7 +204,7 @@ describe('buildWireframeContext', () => {
   });
 
   it('redacts secrets read out of the repository design profile', () => {
-    const text = textFor({ designProfile: profileWith() });
+    const text = textFor({ designEvidence: { source: 'mount', profile: profileWith() } });
     expect(text).not.toContain('sk-live-abcdefghijklmnop');
     expect(text).not.toContain('ghp_abcdefghijklmnopqrst');
     expect(text).toContain('--accent: #3355ff');
@@ -223,7 +223,7 @@ describe('buildWireframeContext', () => {
       agents: [agentWith({ name: 'scout' })],
       transcripts,
       artifacts: [planWith({ title: 'Ship it' })],
-      designProfile: null,
+      designEvidence: { source: 'none' },
       capturedAt: NOW,
     });
     expect(context.sourceIds).toContain(SESSION_ID);
@@ -243,7 +243,7 @@ describe('buildWireframeContext', () => {
         agents: [agentWith({ name: 'scout' })],
         transcripts,
         artifacts: [planWith({ title: 'Ship it' })],
-        designProfile: null,
+        designEvidence: { source: 'none' },
         capturedAt: NOW,
       });
     const desktop = forTarget('desktop');
@@ -323,5 +323,72 @@ describe('buildWireframeContext session goal', () => {
     expect(context.truncations).toContain(SESSION_GOAL_CLIP_NOTE);
     expect(context.text).toContain(SESSION_GOAL_CLIP_NOTE);
     expect(context.inventory.find((entry) => entry.id === 'goal')?.state).toBe('partial');
+  });
+});
+
+describe('buildWireframeContext high fidelity theme', () => {
+  const emptyProfile: DesignProfile = {
+    themeName: 'generic',
+    commitSha: 'abc1234',
+    tailwind: null,
+    tokens: [],
+    variants: [],
+    layoutExamples: [],
+    notes: ['the walk found no tailwind config in this repository'],
+  };
+
+  const highFidelity = ({
+    designEvidence,
+  }: {
+    readonly designEvidence: DesignEvidence;
+  }): WireframeContext => {
+    const session = sessionWith({ goal: 'ship the wireframe role' });
+    return buildWireframeContext({
+      brief: null,
+      fidelity: 'high',
+      target: 'both',
+      session,
+      goal: sessionGoalText({ slots: [], session }),
+      agents: [agentWith({ name: 'scout' })],
+      transcripts,
+      artifacts: [planWith({ title: 'Ship it' })],
+      designEvidence,
+      capturedAt: NOW,
+    });
+  };
+
+  it('sends the profile it read when the walk found design files', () => {
+    const context = highFidelity({
+      designEvidence: { source: 'mount', profile: profileWith() },
+    });
+    expect(context.text).toContain('## design profile');
+    expect(context.text).toContain('this profile was read by the app from the mounted repository');
+    const theme = context.inventory.find((row) => row.id === 'theme');
+    expect(theme?.summary).toContain('design profile from goodboy at abc1234');
+    expect(theme?.state).toBe('included');
+  });
+
+  it('says the repository was walked and held nothing, and keeps the theme generic', () => {
+    const context = highFidelity({ designEvidence: { source: 'mount', profile: emptyProfile } });
+    expect(context.text).toContain(
+      'the mounted repository was walked and it holds no design file the app could read',
+    );
+    expect(context.text).toContain('set theme.name to "generic"');
+    expect(context.text).toContain('never invent branding');
+    expect(context.text).not.toContain('## design profile');
+    const theme = context.inventory.find((row) => row.id === 'theme');
+    expect(theme?.summary).toBe('the mounted repository was walked and no design file was found');
+    expect(theme?.state).toBe('missing');
+    expect(theme?.detail).toEqual(emptyProfile.notes);
+  });
+
+  it('says no repository is mounted when there is nothing to read', () => {
+    const context = highFidelity({ designEvidence: { source: 'none' } });
+    expect(context.text).toContain('no repository is mounted, so nothing could be read');
+    expect(context.text).toContain('set theme.name to "generic"');
+    expect(context.text).not.toContain('## design profile');
+    const theme = context.inventory.find((row) => row.id === 'theme');
+    expect(theme?.summary).toBe('no repository is mounted, so no design file was read');
+    expect(theme?.state).toBe('missing');
   });
 });

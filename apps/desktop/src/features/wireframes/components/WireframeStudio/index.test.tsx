@@ -6,6 +6,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 const { state } = vi.hoisted(() => ({
   state: {
     transcripts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
+    sessionPhaseRuns: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     spawnWireframeAgent: vi.fn(async () => 'agent-wireframe'),
   },
 }));
@@ -114,6 +115,7 @@ const PANE_WIDTH = 640;
 
 beforeEach(() => {
   state.transcripts = {};
+  state.sessionPhaseRuns = {};
   state.spawnWireframeAgent.mockClear();
   Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
     configurable: true,
@@ -133,6 +135,7 @@ describe('WireframeStudio', () => {
     expect(screen.getByRole('tab', { name: /Archive/ })).toBeDefined();
     const provenance = screen.getByTestId('wireframe-provenance');
     expect(provenance.textContent).toContain('low fidelity');
+    expect(screen.queryByTestId('wireframe-fidelity-divergence')).toBeNull();
     expect(provenance.textContent).toContain('theme goodboy');
     expect(provenance.textContent).toContain('abcdef1');
     expect(provenance.textContent).toContain('packages/ui/src/styles.css');
@@ -230,6 +233,41 @@ describe('WireframeStudio', () => {
     fireEvent.click(screen.getByText('Filters'));
     expect(currentScreen()).toBe('inbox');
     expect(screen.getByTestId('wireframe-mock-state').textContent).toContain('isFilterOpen');
+  });
+
+  it('says both truths once the document declares a lower fidelity than the one asked for', () => {
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        {
+          id: 'agent-wireframe',
+          sessionId: SESSION_ID,
+          ordinal: 0,
+          name: 'High fidelity',
+          status: 'completed',
+        },
+      ],
+    };
+    renderStudio();
+    const divergence = screen.getByTestId('wireframe-fidelity-divergence');
+    expect(divergence.textContent).toContain('high fidelity asked');
+    expect(divergence.textContent).toContain('low fidelity produced');
+  });
+
+  it('states one fidelity once the document declares the one that was asked for', () => {
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        {
+          id: 'agent-wireframe',
+          sessionId: SESSION_ID,
+          ordinal: 0,
+          name: 'Low fidelity',
+          status: 'completed',
+        },
+      ],
+    };
+    renderStudio();
+    expect(screen.queryByTestId('wireframe-fidelity-divergence')).toBeNull();
+    expect(screen.getByTestId('wireframe-provenance').textContent).toContain('low fidelity');
   });
 
   it('offers the other fidelity as a separate variant and spawns it', async () => {

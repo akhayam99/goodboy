@@ -2,12 +2,13 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import type { DesignEvidence } from '../../../../wireframes/collectDesignProfile';
 
 const { state, collectDesignProfile, slotsBySession } = vi.hoisted(() => {
   const slotsBySession: Record<string, ReadonlyArray<Record<string, unknown>>> = {};
   return {
     slotsBySession,
-    collectDesignProfile: vi.fn(async () => null),
+    collectDesignProfile: vi.fn<() => Promise<DesignEvidence>>(async () => ({ source: 'none' })),
     state: {
       ensureSessionSlots: async (
         sessionId: string,
@@ -165,6 +166,42 @@ describe('useArtifactContextPreview', () => {
       await Promise.resolve();
     });
     expect(collectDesignProfile).toHaveBeenCalled();
+    expect(result.current.inventory.find((row) => row.id === 'theme')?.summary).toBe(
+      'no repository is mounted, so no design file was read',
+    );
+  });
+
+  it('previews the walked repository that yielded nothing exactly as the spawn packs it', async () => {
+    collectDesignProfile.mockResolvedValueOnce({
+      source: 'mount',
+      profile: {
+        themeName: 'generic',
+        commitSha: 'abc1234',
+        tailwind: null,
+        tokens: [],
+        variants: [],
+        layoutExamples: [],
+        notes: ['the walk found no tailwind config in this repository'],
+      },
+    });
+    const { result } = renderHook(() =>
+      useArtifactContextPreview({
+        sessionId: SESSION_ID,
+        kind: 'wireframe',
+        basedOn: { kind: 'session' },
+        choice: 'high',
+        secondChoice: 'both',
+      }),
+    );
+    await waitFor(() => {
+      expect(result.current.status).toBe('ready');
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const theme = result.current.inventory.find((row) => row.id === 'theme');
+    expect(theme?.summary).toBe('the mounted repository was walked and no design file was found');
+    expect(theme?.detail).toEqual(['the walk found no tailwind config in this repository']);
   });
 });
 

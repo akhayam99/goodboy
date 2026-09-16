@@ -5,6 +5,7 @@ import { buildReportContext } from '../reports/buildReportContext';
 import { collectReportDiffEvidence } from '../reports/collectReportDiffEvidence';
 import type { ReportType } from '../reports/reportTypes';
 import { buildWireframeContext } from '../wireframes/buildWireframeContext';
+import type { DesignEvidence } from '../wireframes/collectDesignProfile';
 import { collectWireframeDesignProfile } from '../wireframes/collectWireframeDesignProfile';
 import { describeDesignProfile } from '../wireframes/describeDesignProfile';
 import type { WireframeFidelity } from '../wireframes/wireframeFidelity';
@@ -84,8 +85,10 @@ export const prepareArtifactEvidence = async ({
       },
     };
   }
-  const designProfile =
-    choice.fidelity === 'high' ? await collectWireframeDesignProfile({ state, sessionId }) : null;
+  const designEvidence: DesignEvidence =
+    choice.fidelity === 'high'
+      ? await collectWireframeDesignProfile({ state, sessionId })
+      : { source: 'none' };
   const context = buildWireframeContext({
     fidelity: choice.fidelity,
     target: choice.target,
@@ -95,7 +98,7 @@ export const prepareArtifactEvidence = async ({
     agents: workflowRunId === null ? agents : runsForWorkflowRun(agents, workflowRunId),
     transcripts,
     artifacts,
-    designProfile,
+    designEvidence,
     capturedAt: new Date().toISOString() as IsoDateTime,
   });
   return {
@@ -113,7 +116,9 @@ export const prepareArtifactEvidence = async ({
       }),
       omissions: context.truncations,
       designProfileSummary:
-        designProfile === null ? null : describeDesignProfile({ profile: designProfile }),
+        designEvidence.source === 'none'
+          ? null
+          : describeDesignProfile({ profile: designEvidence.profile }),
       sourceWorkflowRunId: workflowRunId,
     },
   };

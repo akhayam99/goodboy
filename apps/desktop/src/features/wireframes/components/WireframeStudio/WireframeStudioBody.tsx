@@ -28,6 +28,7 @@ const VIEW_OPTIONS = [
 type Props = {
   readonly artifact: WireframeArtifact;
   readonly fidelity: WireframeFidelity;
+  readonly requestedFidelity: WireframeFidelity | null;
   readonly document: WireframeDocument;
   readonly adjustments: ReadonlyArray<WireframeAdjustment>;
   readonly isRespawning: boolean;
@@ -38,6 +39,7 @@ type Props = {
 export const WireframeStudioBody = ({
   artifact,
   fidelity,
+  requestedFidelity,
   document,
   adjustments,
   isRespawning,
@@ -111,6 +113,7 @@ export const WireframeStudioBody = ({
     <div data-testid="wireframe-studio" className="flex min-w-0 flex-col gap-3">
       <WireframeProvenanceRow
         fidelity={fidelity}
+        requestedFidelity={requestedFidelity}
         theme={document.theme}
         designProfile={artifact.metadata.designProfile}
       />

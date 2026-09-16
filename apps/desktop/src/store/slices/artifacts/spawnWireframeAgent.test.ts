@@ -29,7 +29,12 @@ vi.mock('../../../features/worktree/worktree', () => ({
   listBranchCommits: (path: string) => commitsSpy(path as never),
 }));
 
-const listSpy = vi.fn(async (_args: unknown) => []);
+const listSpy = vi.fn(async (args: unknown) => {
+  const relPath = String((args as { readonly relPath?: string } | null)?.relPath ?? '');
+  return relPath === ''
+    ? [{ name: 'tailwind.config.ts', relPath: 'tailwind.config.ts', isDir: false }]
+    : [];
+});
 const readSpy = vi.fn(async ({ relPath }: { readonly relPath: string }) => {
   if (relPath === 'tailwind.config.ts') {
     return { type: 'text' as const, text: 'export default {};', truncated: false };
@@ -270,7 +275,7 @@ describe('spawnWireframeAgent', () => {
     const prompt = String(
       (spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>)['initialPrompt'],
     );
-    expect(prompt).toContain('the app collected no design profile');
+    expect(prompt).toContain('no repository is mounted, so nothing could be read');
   });
 
   it('reuses a supplied evidence pack for a re-spawn', async () => {

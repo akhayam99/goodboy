@@ -119,7 +119,7 @@ describe('prepareArtifactEvidence', () => {
       target: 'both',
       fidelity: 'high',
     });
-    expect(prepared.text).toContain('the app collected no design profile');
+    expect(prepared.text).toContain('no repository is mounted, so nothing could be read');
     expect(prepared.text).toContain('never invent branding');
     expect(prepared.provenance.designProfileSummary).toBeNull();
     expect(prepared.provenance.sourceWorkflowRunId).toBe(RUN_ID);
