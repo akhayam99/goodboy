@@ -20,6 +20,8 @@ const CLUSTERS = JSON.stringify([
   { title: 'wire store', instructions: 'add the slice' },
 ]);
 
+const MALFORMED_CLUSTERS = '[{"title":"half written","instructions":"do the';
+
 const PLANS: ReadonlyArray<PlanSeed> = [
   {
     id: 'plan-active',
@@ -52,6 +54,14 @@ const PLANS: ReadonlyArray<PlanSeed> = [
     workflowRunId: null,
     createdAt: 700,
     updatedAt: 800,
+  },
+  {
+    id: 'plan-broken',
+    status: 'active',
+    clustersJson: MALFORMED_CLUSTERS,
+    workflowRunId: null,
+    createdAt: 900,
+    updatedAt: 1000,
   },
 ];
 
@@ -147,6 +157,24 @@ describe('m157 session artifacts', () => {
     expect(JSON.parse(consumed?.metadata_json ?? 'null')).toEqual({});
   });
 
+  it('keeps unparsable cluster metadata verbatim inside the metadata object', async () => {
+    const db = await seed();
+    await migrate(db, migrations);
+    const rows = await db.select<ArtifactRow>(
+      "SELECT * FROM session_artifacts WHERE id = 'plan-broken'",
+    );
+    const broken = rows[0];
+    expect(JSON.parse(broken?.metadata_json ?? 'null')).toEqual({
+      unparsableClustersJson: MALFORMED_CLUSTERS,
+    });
+    expect(broken?.source_text).toBe('body plan-broken');
+    expect(broken?.status).toBe('active');
+    const objects = await db.select<{ readonly kind: string }>(
+      "SELECT json_type(metadata_json) AS kind FROM session_artifacts WHERE id = 'plan-broken'",
+    );
+    expect(objects).toEqual([{ kind: 'object' }]);
+  });
+
   it('keeps every consumption row and repoints it at the artifact', async () => {
     const db = await seed();
     await migrate(db, migrations);
@@ -205,6 +233,7 @@ describe('m157 session artifacts', () => {
     );
     expect(plans.map((plan) => plan.id)).toEqual([
       'plan-active',
+      'plan-broken',
       'plan-consumed',
       'plan-discarded',
       'plan-orphan',

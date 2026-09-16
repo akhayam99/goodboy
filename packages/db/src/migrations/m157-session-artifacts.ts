@@ -45,9 +45,9 @@ SELECT
   'markdown',
   body_md,
   CASE
-    WHEN clusters_json IS NOT NULL AND json_valid(clusters_json)
-      THEN '{"clusters":' || clusters_json || '}'
-    ELSE '{}'
+    WHEN clusters_json IS NULL THEN '{}'
+    WHEN json_valid(clusters_json) THEN '{"clusters":' || clusters_json || '}'
+    ELSE json_object('unparsableClustersJson', clusters_json)
   END,
   status,
   1,
