@@ -30,7 +30,25 @@ type Ctx = {
   readonly issues: WireframeIssue[];
   nodeCount: number;
   readonly nodeIds: Set<string>;
+  readonly interactiveNodeIds: Set<string>;
+  readonly inlineActions: Map<string, WireframeAction>;
   readonly actionRefs: { readonly screenIds: string[]; readonly stateKeys: string[] };
+};
+
+const describeAction = ({ action }: { readonly action: WireframeAction }): string =>
+  action.type === 'navigate' ? `navigate to "${action.toScreenId}"` : `toggle "${action.stateKey}"`;
+
+const isSameAction = ({
+  left,
+  right,
+}: {
+  readonly left: WireframeAction;
+  readonly right: WireframeAction;
+}): boolean => {
+  if (left.type === 'navigate') {
+    return right.type === 'navigate' && right.toScreenId === left.toScreenId;
+  }
+  return right.type === 'toggle' && right.stateKey === left.stateKey;
 };
 
 const MARKUP_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
@@ -468,6 +486,10 @@ const parseNode = ({
     if (label === null || variant === null) {
       return null;
     }
+    ctx.interactiveNodeIds.add(id);
+    if (action !== null) {
+      ctx.inlineActions.set(id, action);
+    }
     return { id, kind, ...noteField, label, variant, ...(action !== null && { action }) };
   }
 
@@ -598,6 +620,10 @@ const parseNode = ({
         return;
       }
       ctx.nodeIds.add(itemId);
+      ctx.interactiveNodeIds.add(itemId);
+      if (action !== null) {
+        ctx.inlineActions.set(itemId, action);
+      }
       items.push({
         id: itemId,
         title,
@@ -753,6 +779,10 @@ const parseNode = ({
       return;
     }
     ctx.nodeIds.add(itemId);
+    ctx.interactiveNodeIds.add(itemId);
+    if (action !== null) {
+      ctx.inlineActions.set(itemId, action);
+    }
     items.push({
       id: itemId,
       label,
@@ -928,12 +958,10 @@ const parseTransitions = ({
   ctx,
   value,
   screenIds,
-  nodeIds,
 }: {
   readonly ctx: Ctx;
   readonly value: unknown;
   readonly screenIds: ReadonlySet<string>;
-  readonly nodeIds: ReadonlySet<string>;
 }): ReadonlyArray<WireframeTransition> => {
   if (value === undefined) {
     return [];
@@ -969,14 +997,33 @@ const parseTransitions = ({
     if (fromNodeId === null || toScreenId === null || label === null) {
       return;
     }
-    if (!nodeIds.has(fromNodeId)) {
+    if (!ctx.nodeIds.has(fromNodeId)) {
       fail({ ctx, path: `${path}.fromNodeId`, message: `no node with id "${fromNodeId}"` });
+      return;
+    }
+    if (!ctx.interactiveNodeIds.has(fromNodeId)) {
+      fail({
+        ctx,
+        path: `${path}.fromNodeId`,
+        message: `node "${fromNodeId}" is not a button, list item or navigation item, so it cannot start a transition`,
+      });
       return;
     }
     if (!screenIds.has(toScreenId)) {
       fail({ ctx, path: `${path}.toScreenId`, message: `no screen with id "${toScreenId}"` });
       return;
     }
+    const action: WireframeAction = { type: 'navigate', toScreenId };
+    const existing = ctx.inlineActions.get(fromNodeId);
+    if (existing !== undefined && !isSameAction({ left: existing, right: action })) {
+      fail({
+        ctx,
+        path: `${path}.fromNodeId`,
+        message: `node "${fromNodeId}" already has the action ${describeAction({ action: existing })}, so this transition would give it two different actions`,
+      });
+      return;
+    }
+    ctx.inlineActions.set(fromNodeId, action);
     transitions.push({ fromNodeId, toScreenId, label });
   });
   return transitions;
@@ -1028,6 +1075,8 @@ export const validateWireframeDocument = ({
     issues: [],
     nodeCount: 0,
     nodeIds: new Set<string>(),
+    interactiveNodeIds: new Set<string>(),
+    inlineActions: new Map<string, WireframeAction>(),
     actionRefs: { screenIds: [], stateKeys: [] },
   };
   if (!isRecord(value)) {
@@ -1049,12 +1098,7 @@ export const validateWireframeDocument = ({
   const theme = parseTheme({ ctx, value: value['theme'] });
   const screens = parseScreens({ ctx, value: value['screens'] });
   const screenIds = new Set(screens.map((screen) => screen.id));
-  const transitions = parseTransitions({
-    ctx,
-    value: value['transitions'],
-    screenIds,
-    nodeIds: ctx.nodeIds,
-  });
+  const transitions = parseTransitions({ ctx, value: value['transitions'], screenIds });
   const mockState = parseMockState({ ctx, value: value['mockState'] });
   const initialScreenId = identifier({
     ctx,

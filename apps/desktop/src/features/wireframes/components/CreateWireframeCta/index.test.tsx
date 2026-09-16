@@ -53,12 +53,15 @@ describe('CreateWireframeCta', () => {
     expect(screen.getByTestId('create-wireframe-cta').hasAttribute('disabled')).toBe(true);
   });
 
-  it('offers both fidelities and spawns the picked one', async () => {
+  it('names the repository styled option for what it does and spawns it as high', async () => {
     render(<CreateWireframeCta sessionId={SESSION_ID} />);
     fireEvent.click(screen.getByTestId('create-wireframe-cta'));
-    expect(screen.getByText('Low fidelity')).toBeDefined();
-    expect(screen.getByText('High fidelity')).toBeDefined();
-    fireEvent.click(screen.getByText('High fidelity'));
+    expect(screen.getByText('Plain wireframe')).toBeDefined();
+    expect(screen.getByText('Repository styled wireframe')).toBeDefined();
+    expect(
+      screen.getByText(/no style evidence it says so and uses the generic theme/),
+    ).toBeDefined();
+    fireEvent.click(screen.getByText('Repository styled wireframe'));
     await waitFor(() => {
       expect(state.spawnWireframeAgent).toHaveBeenCalledWith({
         sessionId: SESSION_ID,
@@ -72,7 +75,7 @@ describe('CreateWireframeCta', () => {
     state.spawnWireframeAgent.mockRejectedValueOnce(new Error('no provider is connected'));
     render(<CreateWireframeCta sessionId={SESSION_ID} />);
     fireEvent.click(screen.getByTestId('create-wireframe-cta'));
-    fireEvent.click(screen.getByText('Low fidelity'));
+    fireEvent.click(screen.getByText('Plain wireframe'));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toContain('no provider is connected');
     });

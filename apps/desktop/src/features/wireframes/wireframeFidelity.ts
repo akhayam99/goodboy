@@ -7,9 +7,19 @@ export const WIREFRAME_FIDELITY_LABEL: Record<WireframeFidelity, string> = {
   high: 'High fidelity',
 };
 
+export const WIREFRAME_FIDELITY_CHOICE_LABEL: Record<WireframeFidelity, string> = {
+  low: 'Plain wireframe',
+  high: 'Repository styled wireframe',
+};
+
+export const WIREFRAME_FIDELITY_VARIANT_LABEL: Record<WireframeFidelity, string> = {
+  low: 'plain variant',
+  high: 'repository styled variant',
+};
+
 export const WIREFRAME_FIDELITY_HINT: Record<WireframeFidelity, string> = {
   low: 'neutral greys, placeholder media and layout annotations',
-  high: 'the design profile read from the mounted repo, generic theme when there is no evidence',
+  high: 'colors, type and radii read from the design files in the mounted repo. when the app finds no style evidence it says so and uses the generic theme instead',
 };
 
 export const asWireframeFidelity = ({

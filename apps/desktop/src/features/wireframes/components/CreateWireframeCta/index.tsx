@@ -11,8 +11,8 @@ import {
 } from '../../../artifacts/artifactCtaState';
 import {
   WIREFRAME_FIDELITIES,
+  WIREFRAME_FIDELITY_CHOICE_LABEL,
   WIREFRAME_FIDELITY_HINT,
-  WIREFRAME_FIDELITY_LABEL,
   type WireframeFidelity,
 } from '../../wireframeFidelity';
 import { FidelityRow } from './FidelityRow';
@@ -101,7 +101,7 @@ export const CreateWireframeCta = ({ sessionId, workflowRunId = null, className 
         {WIREFRAME_FIDELITIES.map((fidelity) => (
           <FidelityRow
             key={fidelity}
-            label={WIREFRAME_FIDELITY_LABEL[fidelity]}
+            label={WIREFRAME_FIDELITY_CHOICE_LABEL[fidelity]}
             hint={WIREFRAME_FIDELITY_HINT[fidelity]}
             isBusy={pending === fidelity}
             isDisabled={pending !== null}

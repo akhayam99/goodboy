@@ -13,7 +13,7 @@ import type { WireframeAction, WireframeDocument } from '@goodboy/core';
 import { Button, Divider, cn } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import type { WireframeFidelity } from '../../wireframeFidelity';
+import { WIREFRAME_FIDELITY_VARIANT_LABEL, type WireframeFidelity } from '../../wireframeFidelity';
 import { buildWireframeIndex } from '../../wireframeIndex';
 import { VIEWPORT_WIDTH, wireframePalette } from '../../wireframePalette';
 import { WireframeCanvas } from './WireframeCanvas';
@@ -56,19 +56,21 @@ export const WireframeStudioBody = ({
   const otherFidelity: WireframeFidelity = fidelity === 'low' ? 'high' : 'low';
 
   const runAction = ({
+    nodeId,
     action,
   }: {
     readonly nodeId: string;
     readonly action: WireframeAction | null;
   }) => {
-    if (action === null) {
+    const resolved = index.actionByNodeId.get(nodeId) ?? action;
+    if (resolved === null) {
       return;
     }
-    if (action.type === 'navigate') {
-      navigation.goTo(action.toScreenId);
+    if (resolved.type === 'navigate') {
+      navigation.goTo(resolved.toScreenId);
       return;
     }
-    navigation.toggle(action.stateKey);
+    navigation.toggle(resolved.stateKey);
   };
 
   const viewportWidth = screen === undefined ? null : VIEWPORT_WIDTH[screen.viewport];
@@ -203,10 +205,10 @@ export const WireframeStudioBody = ({
           onClick={() => onRespawn(otherFidelity)}
           disabled={isRespawning}
           data-testid="wireframe-convert-fidelity"
-          title="Run the wireframe again at the other fidelity as a new revision"
+          title={`Run the wireframe again as a separate ${WIREFRAME_FIDELITY_VARIANT_LABEL[otherFidelity]}, leaving this one untouched`}
         >
           <RotateCcw size={ICON_SIZE.row} aria-hidden />
-          {isRespawning ? 'Starting' : `Convert to ${otherFidelity}`}
+          {isRespawning ? 'Starting' : `New ${WIREFRAME_FIDELITY_VARIANT_LABEL[otherFidelity]}`}
         </Button>
       </div>
       {error === null ? null : (

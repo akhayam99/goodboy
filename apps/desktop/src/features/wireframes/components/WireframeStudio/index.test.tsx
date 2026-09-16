@@ -49,6 +49,7 @@ const document = {
             action: { type: 'toggle', stateKey: 'isFilterOpen' },
           },
           { id: 'inbox-hero', kind: 'image', alt: 'chart placeholder', ratio: 'wide' },
+          { id: 'inbox-archive', kind: 'button', label: 'Go to archive', variant: 'ghost' },
         ],
       },
     },
@@ -75,7 +76,10 @@ const document = {
       },
     },
   ],
-  transitions: [{ fromNodeId: 'inbox-open', toScreenId: 'message', label: 'open message' }],
+  transitions: [
+    { fromNodeId: 'inbox-open', toScreenId: 'message', label: 'open message' },
+    { fromNodeId: 'inbox-archive', toScreenId: 'archive', label: 'go to archive' },
+  ],
 };
 
 const artifact = {
@@ -150,6 +154,23 @@ describe('WireframeStudio', () => {
     expect(currentScreen()).toBe('message');
   });
 
+  it('navigates from a node whose only action is a declared transition', () => {
+    renderStudio();
+    fireEvent.click(screen.getByText('Go to archive'));
+    expect(currentScreen()).toBe('archive');
+  });
+
+  it('reserves the scroll box from the real height of the screen', () => {
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      value: 1200,
+    });
+    renderStudio();
+    const box = screen.getByTestId('wireframe-screen').parentElement;
+    expect(box?.style.height).toBe(`${1200 * 0.47}px`);
+    Reflect.deleteProperty(HTMLElement.prototype, 'offsetHeight');
+  });
+
   it('walks the screens in document order with previous and next', () => {
     renderStudio();
     expect(screen.getByTestId('wireframe-previous').hasAttribute('disabled')).toBe(true);
@@ -211,9 +232,12 @@ describe('WireframeStudio', () => {
     expect(screen.getByTestId('wireframe-mock-state').textContent).toContain('isFilterOpen');
   });
 
-  it('re-spawns at the other fidelity as a new revision', async () => {
+  it('offers the other fidelity as a separate variant and spawns it', async () => {
     renderStudio();
-    fireEvent.click(screen.getByTestId('wireframe-convert-fidelity'));
+    const convert = screen.getByTestId('wireframe-convert-fidelity');
+    expect(convert.textContent).toContain('New repository styled variant');
+    expect(convert.getAttribute('title')).toContain('leaving this one untouched');
+    fireEvent.click(convert);
     await waitFor(() => {
       expect(state.spawnWireframeAgent).toHaveBeenCalledWith({
         sessionId: SESSION_ID,

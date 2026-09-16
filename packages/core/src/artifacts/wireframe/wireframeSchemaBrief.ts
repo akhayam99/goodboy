@@ -77,7 +77,7 @@ const EXAMPLE = {
       },
     },
   ],
-  transitions: [{ fromNodeId: 'inbox-item-1', toScreenId: 'message', label: 'open message' }],
+  transitions: [{ fromNodeId: 'message-back', toScreenId: 'inbox', label: 'back to the inbox' }],
 };
 
 export const WIREFRAME_SCHEMA_BRIEF = [
@@ -94,7 +94,8 @@ export const WIREFRAME_SCHEMA_BRIEF = [
   `- image: alt, ratio ${WIREFRAME_IMAGE_RATIOS.join('|')}. it is always a placeholder box, never a real asset`,
   `- navigation: variant ${WIREFRAME_NAVIGATION_VARIANTS.join('|')}, items [{ id, label, isActive, action }]`,
   'an action is { "type": "navigate", "toScreenId": "<declared screen id>" } or { "type": "toggle", "stateKey": "<key declared in mockState>" }. nothing else is an action.',
-  'transitions is an array of { fromNodeId, toScreenId, label }; fromNodeId must be a node in the document and toScreenId a declared screen.',
+  'transitions is an array of { fromNodeId, toScreenId, label }; toScreenId must be a declared screen and fromNodeId must be a button node, a list item or a navigation item, never any other kind. a transition is how a clickable node navigates when it carries no inline action.',
+  'one node gets exactly one action. a node must not carry an inline action and a transition that disagree with it, and two transitions must not leave the same node for different screens: either of those rejects the whole document.',
   `theme is { name, font sans|serif|mono, radius none|sm|md|lg|full, colors, sources }. colors only accepts the tokens ${WIREFRAME_THEME_COLOR_TOKENS.join(', ')} with hex values like #1a1a1a. name the theme "generic" whenever you were not handed a real design profile.`,
   'forbidden everywhere: unknown properties, html, css, scripts, inline handlers, external or data urls, component imports, styling strings. any of them rejects the whole document.',
   'a valid example:',

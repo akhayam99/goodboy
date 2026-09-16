@@ -207,6 +207,38 @@ describe('validateWireframeDocument', () => {
     expect(invalidOf(toggle)).toContain('undeclared mock state "isDrawerOpen"');
   });
 
+  it('rejects a transition whose source node cannot be clicked', () => {
+    const doc = validDocument();
+    doc.transitions = [
+      { fromNodeId: 'home-title', toScreenId: 'detail', label: 'open detail' },
+    ] as never;
+    expect(invalidOf(doc)).toContain('cannot start a transition');
+  });
+
+  it('accepts a transition on a clickable node that carries no inline action', () => {
+    const doc = validDocument();
+    doc.transitions = [
+      { fromNodeId: 'nav-home', toScreenId: 'detail', label: 'open detail' },
+    ] as never;
+    const result = validateWireframeDocument({ value: doc });
+    expect(result.status).toBe('valid');
+  });
+
+  it('rejects a node that two definitions would give different actions', () => {
+    const againstInline = validDocument();
+    againstInline.transitions = [
+      { fromNodeId: 'home-cta', toScreenId: 'home', label: 'back home' },
+    ] as never;
+    expect(invalidOf(againstInline)).toContain('two different actions');
+
+    const twoTransitions = validDocument();
+    twoTransitions.transitions = [
+      { fromNodeId: 'nav-home', toScreenId: 'detail', label: 'open detail' },
+      { fromNodeId: 'nav-home', toScreenId: 'home', label: 'back home' },
+    ] as never;
+    expect(invalidOf(twoTransitions)).toContain('two different actions');
+  });
+
   it('rejects an initialScreenId that names no screen', () => {
     expect(invalidOf({ ...validDocument(), initialScreenId: 'ghost' })).toContain(
       'no screen with id "ghost"',
