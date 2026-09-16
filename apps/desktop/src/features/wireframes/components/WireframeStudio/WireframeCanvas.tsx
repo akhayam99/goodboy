@@ -1,5 +1,6 @@
 import { forwardRef, useLayoutEffect, useRef, useState } from 'react';
 import type { WireframeAction, WireframeScreen } from '@goodboy/core';
+import type { WireframeBox } from '../../wireframeFit';
 import { VIEWPORT_MIN_HEIGHT, VIEWPORT_WIDTH, type WireframePalette } from '../../wireframePalette';
 import { WireframeNodeView } from '../WireframeNodeView';
 
@@ -8,21 +9,35 @@ type Props = {
   readonly palette: WireframePalette;
   readonly isLowFidelity: boolean;
   readonly zoom: number;
+  readonly maxHeight: number | null;
   readonly selectedNodeId: string | null;
   readonly hotspots: ReadonlySet<string>;
   readonly onSelect: (nodeId: string) => void;
+  readonly onContentResize: (content: WireframeBox) => void;
   readonly onAction: (params: {
     readonly nodeId: string;
     readonly action: WireframeAction | null;
   }) => void;
 };
 
-type ContentSize = Readonly<{ width: number; height: number }>;
-
 export const WireframeCanvas = forwardRef<HTMLDivElement, Props>(
-  ({ screen, palette, isLowFidelity, zoom, selectedNodeId, hotspots, onSelect, onAction }, ref) => {
+  (
+    {
+      screen,
+      palette,
+      isLowFidelity,
+      zoom,
+      maxHeight,
+      selectedNodeId,
+      hotspots,
+      onSelect,
+      onContentResize,
+      onAction,
+    },
+    ref,
+  ) => {
     const screenRef = useRef<HTMLDivElement>(null);
-    const [content, setContent] = useState<ContentSize | null>(null);
+    const [content, setContent] = useState<WireframeBox | null>(null);
     const width = VIEWPORT_WIDTH[screen.viewport];
     const minHeight = VIEWPORT_MIN_HEIGHT[screen.viewport];
 
@@ -38,6 +53,7 @@ export const WireframeCanvas = forwardRef<HTMLDivElement, Props>(
             ? previous
             : next,
         );
+        onContentResize(next);
       };
       measure();
       if (typeof ResizeObserver === 'undefined') {
@@ -46,7 +62,7 @@ export const WireframeCanvas = forwardRef<HTMLDivElement, Props>(
       const observer = new ResizeObserver(measure);
       observer.observe(node);
       return () => observer.disconnect();
-    }, [screen, palette, isLowFidelity]);
+    }, [screen, palette, isLowFidelity, onContentResize]);
 
     const contentWidth = content === null ? width : Math.max(content.width, width);
     const contentHeight = content === null ? minHeight : Math.max(content.height, minHeight);
@@ -55,6 +71,7 @@ export const WireframeCanvas = forwardRef<HTMLDivElement, Props>(
       <div
         ref={ref}
         data-testid="wireframe-canvas"
+        style={maxHeight === null ? undefined : { maxHeight }}
         className="max-h-[calc(100vh-2rem)] min-h-0 w-full overflow-auto rounded-md border border-border-soft bg-elevated p-4"
       >
         <div style={{ width: contentWidth * zoom, height: contentHeight * zoom }}>

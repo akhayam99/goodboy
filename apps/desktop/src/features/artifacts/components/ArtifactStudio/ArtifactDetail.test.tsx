@@ -168,6 +168,25 @@ describe('ArtifactDetail tabs', () => {
 });
 
 describe('ArtifactDetail header', () => {
+  it('carries identity, sections and exports on one band', () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    const band = screen.getByTestId('artifact-title').parentElement;
+    expect(band?.contains(screen.getByRole('tab', { name: 'Artifact' }))).toBe(true);
+    expect(band?.contains(screen.getByTestId('artifact-export-slot'))).toBe(true);
+    expect(band?.contains(screen.getByTestId('artifact-details-toggle'))).toBe(true);
+  });
+
+  it('folds the rest of the metadata behind a disclosure', () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    const toggle = screen.getByTestId('artifact-details-toggle');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByText('rev 2')).toBeNull();
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('rev 2')).toBeDefined();
+    expect(screen.getByText('standalone')).toBeDefined();
+  });
+
   it('keeps the export status out of the button flow', () => {
     renderDetail({ artifact: report, agents: [reporter, otherReporter] });
     const controls = screen.getByTestId('artifact-export-controls');

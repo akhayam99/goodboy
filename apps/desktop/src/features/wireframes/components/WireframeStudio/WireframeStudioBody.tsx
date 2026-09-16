@@ -5,8 +5,14 @@ import { Button, Divider, StudioDetailTabs, cn } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { WIREFRAME_FIDELITY_VARIANT_LABEL, type WireframeFidelity } from '../../wireframeFidelity';
+import {
+  wireframeCanvasBox,
+  wireframeFitZoom,
+  wireframeScrollBottom,
+  type WireframeBox,
+} from '../../wireframeFit';
 import { buildWireframeIndex } from '../../wireframeIndex';
-import { VIEWPORT_WIDTH, wireframePalette } from '../../wireframePalette';
+import { VIEWPORT_MIN_HEIGHT, VIEWPORT_WIDTH, wireframePalette } from '../../wireframePalette';
 import { WireframeContactSheet } from '../WireframeContactSheet';
 import { WireframeAdjustments } from './WireframeAdjustments';
 import { WireframeCanvas } from './WireframeCanvas';
@@ -15,8 +21,6 @@ import { WireframeFlowOverview } from './WireframeFlowOverview';
 import { WireframeProvenanceRow } from './WireframeProvenanceRow';
 import { WireframeScreenTabs } from './WireframeScreenTabs';
 import { useWireframeNavigation } from './useWireframeNavigation';
-
-const CANVAS_GUTTER = 40;
 
 type WireframeView = 'screen' | 'sheet';
 
@@ -46,6 +50,8 @@ export const WireframeStudioBody = ({
 }: Props) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<WireframeView>('screen');
+  const [canvasHeight, setCanvasHeight] = useState<number | null>(null);
+  const [content, setContent] = useState<WireframeBox | null>(null);
   const index = useMemo(() => buildWireframeIndex({ document }), [document]);
   const palette = useMemo(
     () => wireframePalette({ theme: document.theme, fidelity }),
@@ -76,53 +82,79 @@ export const WireframeStudioBody = ({
     navigation.toggle(resolved.stateKey);
   };
 
-  const viewportWidth = screen === undefined ? null : VIEWPORT_WIDTH[screen.viewport];
+  const viewport = screen?.viewport ?? null;
+  const frame = useMemo<WireframeBox | null>(() => {
+    if (viewport === null) {
+      return null;
+    }
+    return {
+      width: VIEWPORT_WIDTH[viewport],
+      height: Math.max(content === null ? 0 : content.height, VIEWPORT_MIN_HEIGHT[viewport]),
+    };
+  }, [viewport, content]);
   const { fitZoom, isZoomPinned } = navigation;
 
-  const zoomToFit = useCallback(() => {
+  const trackContent = useCallback((next: WireframeBox) => {
+    setContent((previous) =>
+      previous !== null && previous.width === next.width && previous.height === next.height
+        ? previous
+        : next,
+    );
+  }, []);
+
+  const measureCanvas = useCallback(() => {
     const node = canvasRef.current;
-    if (node === null || viewportWidth === null) {
+    if (node === null) {
+      return null;
+    }
+    const rect = node.getBoundingClientRect();
+    const box = wireframeCanvasBox({
+      clientWidth: node.clientWidth,
+      top: rect.top,
+      bottom: wireframeScrollBottom({ node, fallback: window.innerHeight }),
+    });
+    setCanvasHeight(box.maxHeight);
+    return box;
+  }, []);
+
+  const zoomToFit = useCallback(() => {
+    const box = measureCanvas();
+    if (box === null || frame === null) {
       return;
     }
-    const available = node.clientWidth - CANVAS_GUTTER;
-    if (available <= 0) {
+    const next = wireframeFitZoom({ available: box.available, frame });
+    if (next === null) {
       return;
     }
-    fitZoom(available / viewportWidth);
-  }, [fitZoom, viewportWidth]);
+    fitZoom(next);
+  }, [measureCanvas, fitZoom, frame]);
 
   useEffect(() => {
-    if (isZoomPinned || view !== 'screen') {
+    if (view !== 'screen') {
       return;
     }
-    zoomToFit();
+    const refit = () => {
+      if (isZoomPinned) {
+        measureCanvas();
+        return;
+      }
+      zoomToFit();
+    };
+    refit();
     const node = canvasRef.current;
     if (node === null || typeof ResizeObserver === 'undefined') {
       return;
     }
-    const observer = new ResizeObserver(() => zoomToFit());
+    const observer = new ResizeObserver(refit);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [isZoomPinned, view, zoomToFit, screen?.id]);
+  }, [isZoomPinned, view, zoomToFit, measureCanvas, screen?.id]);
 
   const toggledOn = Object.entries(navigation.mockState).filter(([, value]) => value === true);
 
   return (
-    <div data-testid="wireframe-studio" className="flex min-w-0 flex-col gap-3">
-      <WireframeProvenanceRow
-        fidelity={fidelity}
-        theme={document.theme}
-        designProfile={artifact.metadata.designProfile}
-      />
-      <WireframeAdjustments adjustments={adjustments} />
-      {view === 'screen' ? (
-        <WireframeScreenTabs
-          screens={document.screens}
-          currentScreenId={navigation.currentScreenId}
-          onSelect={navigation.goTo}
-        />
-      ) : null}
-      <div className="flex flex-wrap items-center gap-1">
+    <div data-testid="wireframe-studio" className="flex min-w-0 flex-col gap-2">
+      <div data-testid="wireframe-toolbar" className="flex min-w-0 flex-wrap items-center gap-1">
         <StudioDetailTabs
           ariaLabel="Wireframe view"
           options={VIEW_OPTIONS}
@@ -130,17 +162,25 @@ export const WireframeStudioBody = ({
           onChange={setView}
         />
         {view === 'screen' ? (
-          <WireframeCanvasControls
-            navigation={navigation}
-            order={order}
-            screenCount={document.screens.length}
-            onZoomToFit={zoomToFit}
-          />
+          <>
+            <Divider orientation="vertical" className="mx-1 h-4" />
+            <WireframeScreenTabs
+              screens={document.screens}
+              currentScreenId={navigation.currentScreenId}
+              onSelect={navigation.goTo}
+            />
+            <WireframeCanvasControls
+              navigation={navigation}
+              order={order}
+              screenCount={document.screens.length}
+              onZoomToFit={zoomToFit}
+            />
+          </>
         ) : null}
         <Button
           variant="secondary"
           size="sm"
-          className="ml-auto"
+          className="ml-auto shrink-0"
           onClick={() => onRespawn(otherFidelity)}
           disabled={isRespawning}
           data-testid="wireframe-convert-fidelity"
@@ -180,22 +220,30 @@ export const WireframeStudioBody = ({
       ) : null}
       {view === 'screen' && screen !== undefined ? (
         <>
-          {screen.note === undefined ? null : (
-            <span className="text-2xs italic text-muted-foreground">{screen.note}</span>
-          )}
           <WireframeCanvas
             ref={canvasRef}
             screen={screen}
             palette={palette}
             isLowFidelity={fidelity === 'low'}
             zoom={navigation.zoom}
+            maxHeight={canvasHeight}
             selectedNodeId={navigation.selectedNodeId}
             hotspots={index.hotspots}
             onSelect={navigation.select}
+            onContentResize={trackContent}
             onAction={runAction}
           />
+          {screen.note === undefined ? null : (
+            <span className="text-2xs italic text-muted-foreground">{screen.note}</span>
+          )}
         </>
       ) : null}
+      <WireframeProvenanceRow
+        fidelity={fidelity}
+        theme={document.theme}
+        designProfile={artifact.metadata.designProfile}
+      />
+      <WireframeAdjustments adjustments={adjustments} />
       <Divider />
       <div className={cn('flex min-w-0 flex-col gap-2')}>
         <h3 className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">Flow</h3>
