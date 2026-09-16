@@ -15,6 +15,7 @@ export const WIREFRAME_CONTEXT_LIMITS = {
 
 export type WireframeContextParams = Readonly<{
   fidelity: WireframeFidelity;
+  brief?: string | null;
   session: Session;
   agents: ReadonlyArray<Agent>;
   transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
@@ -159,6 +160,7 @@ const themeSection = ({
 
 export const buildWireframeContext = ({
   fidelity,
+  brief = null,
   session,
   agents,
   transcripts,
@@ -193,5 +195,10 @@ export const buildWireframeContext = ({
       : `## truncation\n\n${truncations.map((note) => `- ${note}`).join('\n')}`;
 
   const contract = `## document contract\n\n${WIREFRAME_SCHEMA_BRIEF}`;
-  return { text: `${capped.text}\n\n${notes}\n\n${contract}`, sourceIds, truncations };
+  const request = brief?.trim() ?? '';
+  const sections = [
+    ...(request.length > 0 ? [`# user request\n\n${redactSecrets({ text: request })}`] : []),
+    `${capped.text}\n\n${notes}\n\n${contract}`,
+  ];
+  return { text: sections.join('\n\n'), sourceIds, truncations };
 };

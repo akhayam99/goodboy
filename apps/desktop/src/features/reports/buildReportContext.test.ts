@@ -91,6 +91,44 @@ const baseParams = {
 } as const;
 
 describe('buildReportContext', () => {
+  it('adds the explicit user request separately from the unchanged evidence pack', () => {
+    const baseline = buildReportContext({ ...baseParams });
+    const context = buildReportContext({
+      ...baseParams,
+      brief: '  explain the Harborline rollout risks\ninclude remaining checks  ',
+    });
+    expect(context.text).toBe(
+      `# user request\n\nexplain the Harborline rollout risks\ninclude remaining checks\n\n${baseline.text}`,
+    );
+    expect(context.sourceIds).toEqual(baseline.sourceIds);
+    expect(context.truncations).toEqual(baseline.truncations);
+  });
+
+  it('redacts credentials in the user request', () => {
+    const context = buildReportContext({
+      ...baseParams,
+      brief: 'explain access with api_key=harborline-test-value',
+    });
+    expect(context.text).toContain('# user request\n\nexplain access with api_key=[redacted]');
+    expect(context.text).not.toContain('harborline-test-value');
+  });
+
+  it.each([null, '', ' \n\t '])('keeps the default request for an empty brief (%j)', (brief) => {
+    expect(buildReportContext({ ...baseParams, brief })).toEqual(
+      buildReportContext({ ...baseParams }),
+    );
+  });
+
+  it('does not let a long brief displace the evidence', () => {
+    const baseline = buildReportContext({ ...baseParams });
+    const context = buildReportContext({
+      ...baseParams,
+      brief: 'Harborline '.repeat(REPORT_CONTEXT_LIMITS.total),
+    });
+    expect(context.text.endsWith(baseline.text)).toBe(true);
+    expect(context.truncations).toEqual(baseline.truncations);
+  });
+
   it('keeps only the last assistant message per agent and cites the agent id', () => {
     const context = buildReportContext({ ...baseParams });
     expect(context.text).toContain('landed the change');

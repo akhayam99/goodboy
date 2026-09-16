@@ -33,6 +33,7 @@ export type SpawnWireframeAgentParams = {
   readonly fidelity: WireframeFidelity;
   readonly workflowRunId?: WorkflowRunId | null;
   readonly routing?: WireframeRouting | null;
+  readonly brief?: string | null;
   readonly evidence?: string | null;
 };
 
@@ -121,6 +122,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
     fidelity,
     workflowRunId = null,
     routing = null,
+    brief = null,
     evidence = null,
   }: SpawnWireframeAgentParams): Promise<AgentId> => {
     const state = get();
@@ -148,6 +150,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
       workflowRunId === null ? sessionAgents : runsForWorkflowRun(sessionAgents, workflowRunId);
     const context = buildWireframeContext({
       fidelity,
+      brief,
       session,
       agents: scoped,
       transcripts: state.transcripts ?? {},

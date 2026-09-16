@@ -28,6 +28,7 @@ export type SpawnReportAgentParams = {
   readonly reportType: ReportType;
   readonly workflowRunId?: WorkflowRunId | null;
   readonly routing?: ReportRouting | null;
+  readonly brief?: string | null;
   readonly evidence?: string | null;
 };
 
@@ -113,6 +114,7 @@ export const spawnReportAgent = (get: GetFn) => {
     reportType,
     workflowRunId = null,
     routing = null,
+    brief = null,
     evidence = null,
   }: SpawnReportAgentParams): Promise<AgentId> => {
     const state = get();
@@ -135,6 +137,7 @@ export const spawnReportAgent = (get: GetFn) => {
     const diff = await collectDiffEvidence({ state, sessionId });
     const context = buildReportContext({
       reportType,
+      brief,
       session,
       agents: state.sessionPhaseRuns?.[sessionId] ?? [],
       transcripts: state.transcripts ?? {},

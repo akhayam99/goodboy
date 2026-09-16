@@ -35,6 +35,7 @@ export type ReportDiffEvidence = Readonly<{
 
 export type ReportContextParams = Readonly<{
   reportType: ReportType;
+  brief?: string | null;
   session: Session;
   agents: ReadonlyArray<Agent>;
   transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
@@ -237,6 +238,7 @@ const eventSection = ({
 
 export const buildReportContext = ({
   reportType,
+  brief = null,
   session,
   agents,
   transcripts,
@@ -284,8 +286,13 @@ export const buildReportContext = ({
       ? '## truncation\n\nnothing was truncated.'
       : `## truncation\n\n${truncations.map((note) => `- ${note}`).join('\n')}`;
 
+  const request = brief?.trim() ?? '';
+  const sections = [
+    ...(request.length > 0 ? [`# user request\n\n${redactSecrets({ text: request })}`] : []),
+    `${capped.text}\n\n${notes}`,
+  ];
   return {
-    text: `${capped.text}\n\n${notes}`,
+    text: sections.join('\n\n'),
     sourceIds,
     truncations,
   };

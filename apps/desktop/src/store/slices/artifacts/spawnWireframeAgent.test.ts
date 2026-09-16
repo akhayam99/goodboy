@@ -179,6 +179,20 @@ describe('spawnWireframeAgent', () => {
     expect(prompt).toContain('set theme.name to "generic"');
   });
 
+  it('adds a redacted brief while retaining product evidence, design profile and contract', async () => {
+    await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      fidelity: 'high',
+      brief: 'show the Harborline inbox with api_key=harborline-test-value',
+    });
+    const prompt = String(spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt']);
+    expect(prompt).toContain('# user request\n\nshow the Harborline inbox with api_key=[redacted]');
+    expect(prompt).not.toContain('harborline-test-value');
+    expect(prompt).toContain('the inbox lists sessions');
+    expect(prompt).toContain('commit: abcdef1');
+    expect(prompt).toContain('document contract');
+  });
+
   it('collects a pinned design profile at high fidelity', async () => {
     await spawnWireframeAgent(getWith())({ sessionId: SESSION_ID, fidelity: 'high' });
     expect(readSpy).toHaveBeenCalled();

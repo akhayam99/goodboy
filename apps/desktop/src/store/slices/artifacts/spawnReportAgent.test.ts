@@ -151,6 +151,33 @@ describe('spawnReportAgent', () => {
     expect(String(args['initialPrompt'])).toContain('no mount diff was available');
   });
 
+  it('adds a redacted brief while retaining session output and collected diff evidence', async () => {
+    await spawnReportAgent(getWith())({
+      sessionId: SESSION_ID,
+      reportType: 'change-summary',
+      brief: 'explain the Harborline rollout with api_key=harborline-test-value',
+    });
+    const prompt = String(spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt']);
+    expect(prompt).toContain(
+      '# user request\n\nexplain the Harborline rollout with api_key=[redacted]',
+    );
+    expect(prompt).not.toContain('harborline-test-value');
+    expect(prompt).toContain('work is done');
+    expect(prompt).toContain('abcdef1 feat: reports');
+    expect(prompt).toContain('+4 -1');
+  });
+
+  it('reuses a supplied evidence pack for regeneration without collecting a new diff', async () => {
+    await spawnReportAgent(getWith())({
+      sessionId: SESSION_ID,
+      reportType: 'change-summary',
+      evidence: 'the original kickoff',
+    });
+    expect(spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt']).toBe('the original kickoff');
+    expect(changedFilesSpy).not.toHaveBeenCalled();
+    expect(commitsSpy).not.toHaveBeenCalled();
+  });
+
   it('throws when the session is unknown', async () => {
     await expect(
       spawnReportAgent(getWith({ sessions: [] }))({
