@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Agent, SessionArtifact, SessionId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
@@ -19,6 +19,7 @@ const { state } = vi.hoisted(() => ({
     closeArtifactConversation: vi.fn(),
     selectAgent: vi.fn(async () => undefined),
     spawnReportAgent: vi.fn(async () => 'agent-2'),
+    spawnWireframeAgent: vi.fn(async () => 'agent-3'),
   },
 }));
 
@@ -72,6 +73,53 @@ const otherReporter = {
 
 const stepReporter = { ...reporter, stepId: 'step-7' } as unknown as Agent;
 
+const wireframeDocument = {
+  version: 1,
+  initialScreenId: 'inbox',
+  theme: { name: 'goodboy', font: 'sans', radius: 'md', sources: [] },
+  mockState: {},
+  screens: [
+    {
+      id: 'inbox',
+      title: 'Inbox',
+      viewport: 'desktop',
+      root: {
+        id: 'inbox-root',
+        kind: 'stack',
+        direction: 'column',
+        children: [{ id: 'inbox-heading', kind: 'text', text: 'Inbox', variant: 'title' }],
+      },
+    },
+  ],
+  transitions: [],
+};
+
+const wireframe = {
+  id: 'artifact-wireframe',
+  sessionId: 'sess-1',
+  agentId: 'agent-wireframe-1',
+  workflowRunId: null,
+  kind: 'wireframe',
+  schemaVersion: 1,
+  title: 'Settlement review flow',
+  sourceFormat: 'json',
+  sourceText: JSON.stringify(wireframeDocument),
+  metadata: { fidelity: 'low', designProfile: {} },
+  status: 'active',
+  revision: 1,
+  sourceTurnId: 'run-2',
+  createdAt: '2026-01-02T03:04:05.000Z',
+  updatedAt: '2026-01-02T03:04:05.000Z',
+} as unknown as SessionArtifact;
+
+const wireframer = {
+  id: 'agent-wireframe-1',
+  sessionId: 'sess-1',
+  ordinal: 2,
+  name: 'Low fidelity',
+  status: 'completed',
+} as unknown as Agent;
+
 const SESSION_ID = 'sess-1' as SessionId;
 
 const renderDetail = ({
@@ -100,6 +148,7 @@ beforeEach(() => {
   state.agentDraft = {};
   state.openArtifactConversation.mockClear();
   state.closeArtifactConversation.mockClear();
+  state.spawnWireframeAgent.mockClear();
 });
 afterEach(cleanup);
 
@@ -212,5 +261,42 @@ describe('ArtifactDetail header', () => {
     const recipient = screen.getByTestId('artifact-conversation-recipient');
     expect(note.parentElement).toBe(recipient.parentElement);
     expect(note.className).toContain('truncate');
+  });
+});
+
+describe('ArtifactDetail wireframe actions', () => {
+  it('carries the variant action in the identity band, not in the canvas toolbar', () => {
+    renderDetail({ artifact: wireframe, agents: [wireframer] });
+    const band = screen.getByTestId('artifact-title').parentElement;
+    const convert = screen.getByTestId('wireframe-convert-fidelity');
+    expect(band?.contains(convert)).toBe(true);
+    expect(screen.getByTestId('wireframe-toolbar').contains(convert)).toBe(false);
+  });
+
+  it('keeps a label on the variant action and names the variant in its tooltip', () => {
+    renderDetail({ artifact: wireframe, agents: [wireframer] });
+    const convert = screen.getByTestId('wireframe-convert-fidelity');
+    expect(convert.textContent).toContain('New variant');
+    expect(convert.getAttribute('title')).toContain('repository styled variant');
+    expect(convert.getAttribute('title')).toContain('leaving this one untouched');
+  });
+
+  it('spawns the other fidelity as a separate artifact', async () => {
+    renderDetail({ artifact: wireframe, agents: [wireframer] });
+    fireEvent.click(screen.getByTestId('wireframe-convert-fidelity'));
+    await waitFor(() => {
+      expect(state.spawnWireframeAgent).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        fidelity: 'high',
+        target: 'desktop',
+        workflowRunId: null,
+        attachments: [],
+      });
+    });
+  });
+
+  it('leaves a report without a variant action', () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    expect(screen.queryByTestId('wireframe-convert-fidelity')).toBeNull();
   });
 });

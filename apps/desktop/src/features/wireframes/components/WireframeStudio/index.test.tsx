@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -227,7 +227,11 @@ describe('WireframeStudio', () => {
     const toolbar = screen.getByTestId('wireframe-toolbar');
     expect(toolbar.contains(screen.getByTestId('wireframe-screen-tabs'))).toBe(true);
     expect(toolbar.contains(screen.getByTestId('wireframe-zoom-fit'))).toBe(true);
-    expect(toolbar.contains(screen.getByTestId('wireframe-convert-fidelity'))).toBe(true);
+  });
+
+  it('leaves the variant action to the identity band instead of the canvas controls', () => {
+    renderStudio();
+    expect(screen.queryByTestId('wireframe-convert-fidelity')).toBeNull();
   });
 
   it('reads the provenance before the document, not after it', () => {
@@ -333,23 +337,6 @@ describe('WireframeStudio', () => {
     renderStudio();
     expect(screen.queryByTestId('wireframe-fidelity-divergence')).toBeNull();
     expect(screen.getByTestId('wireframe-provenance').textContent).toContain('low fidelity');
-  });
-
-  it('offers the other fidelity as a separate variant and spawns it', async () => {
-    renderStudio();
-    const convert = screen.getByTestId('wireframe-convert-fidelity');
-    expect(convert.textContent).toContain('New repository styled variant');
-    expect(convert.getAttribute('title')).toContain('leaving this one untouched');
-    fireEvent.click(convert);
-    await waitFor(() => {
-      expect(state.spawnWireframeAgent).toHaveBeenCalledWith({
-        sessionId: SESSION_ID,
-        fidelity: 'high',
-        target: 'both',
-        workflowRunId: null,
-        attachments: [],
-      });
-    });
   });
 
   it('shows the validation issues and the raw json for a hostile payload', () => {
@@ -670,7 +657,6 @@ describe('WireframeStudio', () => {
     expect(screen.queryByTestId('wireframe-canvas')).toBeNull();
     expect(screen.queryByTestId('wireframe-zoom-fit')).toBeNull();
     expect(screen.queryByTestId('wireframe-screen-tabs')).toBeNull();
-    expect(screen.getByTestId('wireframe-convert-fidelity')).toBeDefined();
     fireEvent.click(screen.getByRole('tab', { name: 'Screen' }));
     expect(currentScreen()).toBe('inbox');
     expect(screen.queryByTestId('wireframe-contact-sheet')).toBeNull();

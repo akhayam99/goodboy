@@ -7,6 +7,7 @@ import { ArtifactConversation } from './ArtifactConversation';
 import { ArtifactIdentityBand, type ArtifactDetailTab } from './ArtifactIdentityBand';
 import { ReportStudio } from '../../../reports/components/ReportStudio';
 import { WireframeStudio } from '../../../wireframes/components/WireframeStudio';
+import { WireframeVariantAction } from '../../../wireframes/components/WireframeVariantAction';
 import { FocusedPane } from '../../../../shared/components/PaneShell/FocusedPane';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -66,6 +67,11 @@ export const ArtifactDetail = ({
               tabs={tabs}
               tab={tab}
               onTabChange={setTab}
+              actions={
+                artifact.kind === 'wireframe' ? (
+                  <WireframeVariantAction sessionId={sessionId} artifact={artifact} />
+                ) : null
+              }
             />
           </div>
         </div>

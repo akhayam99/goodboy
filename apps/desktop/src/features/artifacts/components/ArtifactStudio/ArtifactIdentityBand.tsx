@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Divider, IconButton, MetaRow, StudioDetailTabs } from '@goodboy/ui';
 import type { SessionArtifact } from '@goodboy/types';
@@ -15,9 +15,17 @@ type Props = {
   readonly tabs: ReadonlyArray<{ readonly value: ArtifactDetailTab; readonly label: string }>;
   readonly tab: ArtifactDetailTab;
   readonly onTabChange: (next: ArtifactDetailTab) => void;
+  readonly actions: ReactNode;
 };
 
-export const ArtifactIdentityBand = ({ artifact, creatorName, tabs, tab, onTabChange }: Props) => {
+export const ArtifactIdentityBand = ({
+  artifact,
+  creatorName,
+  tabs,
+  tab,
+  onTabChange,
+  actions,
+}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const DisclosureIcon = isOpen ? ChevronUp : ChevronDown;
 
@@ -54,6 +62,7 @@ export const ArtifactIdentityBand = ({ artifact, creatorName, tabs, tab, onTabCh
             onChange={onTabChange}
           />
           <Divider orientation="vertical" className="h-4" />
+          {actions}
           <ArtifactExportActions artifact={artifact} />
         </div>
       </div>

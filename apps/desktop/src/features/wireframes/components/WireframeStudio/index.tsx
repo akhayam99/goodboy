@@ -1,6 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { parseWireframeSource } from '@goodboy/core';
-import { formatError } from '@goodboy/ui';
 import type { SessionId, WireframeArtifact } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import {
@@ -8,7 +7,7 @@ import {
   requestedWireframeFidelity,
   type WireframeFidelity,
 } from '../../wireframeFidelity';
-import { deriveWireframeTarget } from '../../wireframeTarget';
+import { useWireframeRespawn } from '../../useWireframeRespawn';
 import { WireframeIssues } from './WireframeIssues';
 import { WireframeProvenanceRow } from './WireframeProvenanceRow';
 import { WireframeStudioBody } from './WireframeStudioBody';
@@ -32,40 +31,7 @@ export const WireframeStudio = ({ sessionId, artifact }: Props) => {
         null,
     }),
   );
-  const spawnWireframeAgent = useAppStore((state) => state.spawnWireframeAgent);
-  const kickoff = useAppStore((state) => {
-    const events = state.transcripts?.[artifact.agentId] ?? [];
-    const first = events.find((event) => event.kind === 'user_text');
-    return first?.kind === 'user_text' ? first.text : null;
-  });
-  const [isRespawning, setIsRespawning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const respawn = async (next: WireframeFidelity) => {
-    if (isRespawning) {
-      return;
-    }
-    setIsRespawning(true);
-    setError(null);
-    try {
-      await spawnWireframeAgent({
-        sessionId,
-        fidelity: next,
-        target:
-          parsed.status === 'valid'
-            ? (deriveWireframeTarget({ screens: parsed.document.screens }) ?? 'both')
-            : 'both',
-        workflowRunId: artifact.workflowRunId,
-        attachments: [],
-        ...(next === fidelity && kickoff !== null ? { evidence: kickoff } : {}),
-      });
-      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-    } catch (cause) {
-      setError(formatError(cause));
-    } finally {
-      setIsRespawning(false);
-    }
-  };
+  const { isRespawning, error, respawn } = useWireframeRespawn({ sessionId, artifact });
 
   if (parsed.status === 'invalid') {
     return (
@@ -80,7 +46,7 @@ export const WireframeStudio = ({ sessionId, artifact }: Props) => {
           issues={parsed.issues}
           sourceText={artifact.sourceText}
           isRepairing={isRespawning}
-          onRepair={() => void respawn(fidelity)}
+          onRepair={() => respawn({ fidelity })}
         />
         {error === null ? null : (
           <span role="alert" className="text-2xs text-danger">
@@ -98,9 +64,6 @@ export const WireframeStudio = ({ sessionId, artifact }: Props) => {
       requestedFidelity={requestedFidelity}
       document={parsed.document}
       adjustments={parsed.adjustments}
-      isRespawning={isRespawning}
-      error={error}
-      onRespawn={(next) => void respawn(next)}
     />
   );
 };
