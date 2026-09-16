@@ -242,6 +242,22 @@ describe('spawnReportAgent', () => {
     expect(recordProvenanceSpy.mock.calls[0]?.[0]['brief']).toBeNull();
   });
 
+  it('collects fresh evidence and provenance when the supplied pack is whitespace', async () => {
+    await spawnReportAgent(getWith())({
+      sessionId: SESSION_ID,
+      reportType: 'session-summary',
+      evidence: ' \n ',
+    });
+    expect(changedFilesSpy).toHaveBeenCalled();
+    expect(spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt']).toContain('evidence pack');
+    expect(recordProvenanceSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentId: AGENT_ID,
+        executingWorkflowRunId: null,
+      }),
+    );
+  });
+
   it('throws when the session is unknown', async () => {
     await expect(
       spawnReportAgent(getWith({ sessions: [] }))({

@@ -1,7 +1,11 @@
+import { invoke } from '@tauri-apps/api/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
   AgentId,
+  ArtifactId,
+  SessionArtifact,
+  TurnEvent,
   ImplementationCluster,
   IsoDateTime,
   OpenQuestion,
@@ -29,7 +33,9 @@ const {
   fanOutClustersSpy,
   resumeClusterChildrenSpy,
   listOpenQuestionsSpy,
+  putArtifactProvenanceSpy,
 } = vi.hoisted(() => ({
+  putArtifactProvenanceSpy: vi.fn(async (_args: unknown) => undefined),
   addPlanConsumptionSpy: vi.fn(async () => undefined),
   listConsumptionsForPlanSpy: vi.fn(async () => []),
   listPlansForSessionSpy: vi.fn(async () => [] as ReadonlyArray<PlanWithCount>),
@@ -38,7 +44,10 @@ const {
   listOpenQuestionsSpy: vi.fn(async () => [] as ReadonlyArray<OpenQuestion>),
 }));
 
-vi.mock('@goodboy/db', () => ({ listOpenQuestionsForSession: listOpenQuestionsSpy }));
+vi.mock('@goodboy/db', () => ({
+  listOpenQuestionsForSession: listOpenQuestionsSpy,
+  putArtifactProvenance: putArtifactProvenanceSpy,
+}));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 vi.mock('../../../features/plans/plans', () => ({
@@ -732,5 +741,227 @@ describe('activateWorkflowAgent, cluster container re-activation', () => {
 
     expect(resumeClusterChildrenSpy).not.toHaveBeenCalled();
     expect(sendTurn).toHaveBeenCalledTimes(1);
+  });
+});
+
+type EvidenceArtifactParams = Readonly<{ workflowRunId: WorkflowRunId | null }>;
+
+const evidenceArtifact = ({ workflowRunId }: EvidenceArtifactParams): SessionArtifact => ({
+  id: `artifact-${workflowRunId ?? 'session'}` as ArtifactId,
+  sessionId: SESSION_ID,
+  agentId: 'earlier-agent' as AgentId,
+  workflowRunId,
+  kind: 'plan',
+  schemaVersion: 1,
+  title: workflowRunId === RUN_ID ? 'run plan' : 'session plan',
+  sourceFormat: 'markdown',
+  sourceText: workflowRunId === RUN_ID ? 'scoped plan evidence' : 'session plan evidence',
+  metadata: {},
+  status: 'active',
+  revision: 1,
+  sourceTurnId: null,
+  createdAt: NOW,
+  updatedAt: NOW,
+});
+
+describe('activateWorkflowAgent, artifact evidence', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    listOpenQuestionsSpy.mockResolvedValue([]);
+  });
+
+  it.each(['report', 'wireframe'])(
+    'gives a %s step evidence from its run and records its executing run',
+    async (kind) => {
+      const earlier = { ...makeAgent('scout', 'in-run scout'), id: 'earlier-agent' as AgentId };
+      const unrelated = {
+        ...makeAgent('scout', 'unrelated scout'),
+        id: 'other-agent' as AgentId,
+        workflowRunId: 'other-run' as WorkflowRunId,
+      };
+      const { state, sendTurn, activate } = buildHarness({
+        agent: makeAgent(kind, kind),
+        workflow: makeWorkflow(kind),
+        plans: [],
+        extraAgents: [earlier, unrelated],
+      });
+      Object.assign(state, {
+        transcripts: {
+          [earlier.id]: [
+            {
+              kind: 'assistant_text',
+              runId: 'turn-1' as TurnEvent['runId'],
+              at: NOW,
+              delta: 'the run discovered a session inbox',
+            },
+          ],
+          [unrelated.id]: [
+            {
+              kind: 'assistant_text',
+              runId: 'turn-2' as TurnEvent['runId'],
+              at: NOW,
+              delta: 'unrelated output',
+            },
+          ],
+        } satisfies Record<string, ReadonlyArray<TurnEvent>>,
+        sessionArtifacts: {
+          [SESSION_ID]: [
+            evidenceArtifact({ workflowRunId: RUN_ID }),
+            evidenceArtifact({ workflowRunId: null }),
+          ],
+        },
+      });
+      await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+      const prompt = sendTurn.mock.calls[0]?.[0].content;
+      expect(prompt).toContain('the run discovered a session inbox');
+      expect(prompt).not.toContain('unrelated output');
+      expect(prompt).toContain('scoped plan evidence');
+      expect(prompt).toContain('<<step-done id="agent-step">>');
+      expect(putArtifactProvenanceSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          input: expect.objectContaining({
+            agentId: AGENT_ID,
+            kind,
+            sourceWorkflowRunId: RUN_ID,
+            executingWorkflowRunId: RUN_ID,
+            evidence: expect.arrayContaining([
+              { kind: 'agent', id: earlier.id, label: earlier.name },
+            ]),
+          }),
+        }),
+      );
+    },
+  );
+
+  it('keeps report artifacts run scoped and retains the workflow goal and brief', async () => {
+    const workflow = { ...makeWorkflow('Report'), goal: 'explain the release' };
+    const { state, sendTurn, activate } = buildHarness({
+      agent: makeAgent('report', 'Report'),
+      workflow,
+      plans: [],
+    });
+    Object.assign(state, {
+      sessionArtifacts: {
+        [SESSION_ID]: [
+          evidenceArtifact({ workflowRunId: RUN_ID }),
+          evidenceArtifact({ workflowRunId: null }),
+        ],
+      },
+    });
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+    const prompt = sendTurn.mock.calls[0]?.[0].content;
+    expect(prompt).toContain('# evidence pack: Session summary');
+    expect(prompt).toContain('**Goal** explain the release');
+    expect(prompt).toContain('# user request\n\nrun the step');
+    expect(prompt).not.toContain('session plan evidence');
+    expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
+  });
+
+  it('keeps session plans and the document contract for a run scoped wireframe', async () => {
+    const { state, sendTurn, activate } = buildHarness({
+      agent: makeAgent('wireframe', 'Wireframe'),
+      workflow: makeWorkflow('Wireframe'),
+      plans: [],
+    });
+    Object.assign(state, {
+      sessionArtifacts: { [SESSION_ID]: [evidenceArtifact({ workflowRunId: null })] },
+    });
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+    const prompt = sendTurn.mock.calls[0]?.[0].content;
+    expect(prompt).toContain('session plan evidence');
+    expect(prompt).toContain('# low fidelity wireframe request');
+    expect(prompt).toContain('## document contract');
+    expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
+  });
+
+  it.each(['report', 'wireframe'])(
+    'falls back to session evidence when a %s step has no run',
+    async (kind) => {
+      const agent = { ...makeAgent(kind, kind), workflowRunId: undefined };
+      const { state, sendTurn, activate } = buildHarness({
+        agent,
+        workflow: makeWorkflow(kind),
+        plans: [],
+        extraAgents: [{ ...makeAgent('scout', 'session scout'), id: 'scout-1' as AgentId }],
+      });
+      Object.assign(state, {
+        sessionArtifacts: { [SESSION_ID]: [evidenceArtifact({ workflowRunId: null })] },
+      });
+      await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+      expect(sendTurn.mock.calls[0]?.[0].content).toContain('session scout');
+      expect(sendTurn.mock.calls[0]?.[0].content).toContain('session plan evidence');
+      expect(putArtifactProvenanceSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          input: expect.objectContaining({
+            sourceWorkflowRunId: null,
+            executingWorkflowRunId: null,
+          }),
+        }),
+      );
+    },
+  );
+
+  it('collects a mounted diff instead of treating the step prefix as supplied evidence', async () => {
+    vi.mocked(invoke)
+      .mockResolvedValueOnce({ paths: ['src/inbox.ts'], additions: 8, deletions: 2, numstat: '' })
+      .mockResolvedValueOnce([
+        {
+          sha: 'abc1234',
+          shortSha: 'abc1234',
+          subject: 'add inbox',
+          author: 'dev',
+          timestamp: 0,
+          pushed: false,
+          parentSha: null,
+        },
+      ]);
+    const { state, sendTurn, activate } = buildHarness({
+      agent: makeAgent('report', 'Report'),
+      workflow: makeWorkflow('Report'),
+      plans: [],
+    });
+    Object.assign(state, {
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            mountId: 'mount-1',
+            mountName: 'app',
+            worktreePath: '/tmp/worktree',
+            baseBranch: 'main',
+          },
+        ],
+      },
+    });
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+    const prompt = sendTurn.mock.calls[0]?.[0].content;
+    expect(prompt).toContain('abc1234 add inbox');
+    expect(prompt).toContain('+8 -2');
+    expect(prompt).toContain('src/inbox.ts');
+  });
+
+  it('still starts the step if provenance storage fails', async () => {
+    putArtifactProvenanceSpy.mockRejectedValueOnce(new Error('database is locked'));
+    const { sendTurn, activate } = buildHarness({
+      agent: makeAgent('report', 'Report'),
+      workflow: makeWorkflow('Report'),
+      plans: [],
+    });
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(sendTurn.mock.calls[0]?.[0].content).toContain('# evidence pack');
+  });
+
+  it('leaves the plan-consuming kickoff unchanged', async () => {
+    const { sendTurn, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute'),
+      workflow: makeWorkflow('Execute'),
+      plans: [makePlan()],
+    });
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+    expect(sendTurn.mock.calls[0]?.[0].content).toBe(
+      '**Plan**\ndo the thing\n\nrun the step\n\n**Scope** this step only, never a later one. Emit `<<step-done id="agent-step">>` on its own line once it is truly done.',
+    );
+    expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, AGENT_ID);
+    expect(putArtifactProvenanceSpy).not.toHaveBeenCalled();
   });
 });

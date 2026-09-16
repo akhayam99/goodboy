@@ -1,4 +1,7 @@
+import { formatError } from '@goodboy/ui';
 import type { AgentId, IsoDateTime, PlanId, SessionId } from '@goodboy/types';
+import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
+import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
 import {
   addPlanConsumption as invokeAddPlanConsumption,
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
@@ -142,10 +145,32 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       return;
     }
 
+    const evidence =
+      effectiveKind === 'report' || effectiveKind === 'wireframe'
+        ? await prepareArtifactEvidence({
+            state: get(),
+            session,
+            workflowRunId: agent.workflowRunId ?? null,
+            brief: promptPrefix,
+            ...(effectiveKind === 'report'
+              ? { kind: 'report', reportType: 'session-summary' }
+              : { kind: 'wireframe', fidelity: 'low' }),
+          })
+        : null;
+    if (evidence !== null) {
+      await recordArtifactProvenance({
+        ...evidence.provenance,
+        agentId,
+        executingWorkflowRunId: agent.workflowRunId ?? null,
+      }).catch((error: unknown) => {
+        console.warn(`[artifact-provenance] ${effectiveKind} ${agentId}: ${formatError(error)}`);
+      });
+    }
+
     const kickoff = composeKickoff(
       goalSection,
       planSection,
-      promptPrefix,
+      evidence?.text ?? promptPrefix,
       composeStepBoundary(agentId),
     );
     if (kickoff.length > 0) {
