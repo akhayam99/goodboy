@@ -11,7 +11,10 @@ const { upsertPlan, listPlansForSession, createArtifact, listArtifactsForSession
   () => ({
     upsertPlan: vi.fn(async () => undefined),
     listPlansForSession: vi.fn(async () => [] as ReadonlyArray<unknown>),
-    createArtifact: vi.fn(async () => ({ id: 'artifact-1' })),
+    createArtifact: vi.fn(async (args: { readonly sourceTurnId: string }) => ({
+      id: 'artifact-1',
+      sourceTurnId: args.sourceTurnId,
+    })),
     listArtifactsForSession: vi.fn(async () => [] as ReadonlyArray<unknown>),
   }),
 );
@@ -51,7 +54,11 @@ const run = async (assistantText: string) => {
 beforeEach(() => {
   upsertPlan.mockClear();
   listPlansForSession.mockClear();
-  createArtifact.mockClear();
+  createArtifact.mockReset();
+  createArtifact.mockImplementation(async (args: { readonly sourceTurnId: string }) => ({
+    id: 'artifact-1',
+    sourceTurnId: args.sourceTurnId,
+  }));
   listArtifactsForSession.mockClear();
   listPlansForSession.mockResolvedValue([]);
   listArtifactsForSession.mockResolvedValue([]);
@@ -151,16 +158,29 @@ describe('captureArtifactsFromTurn', () => {
     expect(result).toEqual({ plan: null, artifact: null, error: null });
   });
 
-  it('passes the same source turn id on replay so the write can dedupe', async () => {
+  it('stores one artifact when the same turn is captured twice', async () => {
+    const stored = new Map<string, { readonly id: string; readonly sourceTurnId: string }>();
+    createArtifact.mockImplementation(async (args: { readonly sourceTurnId: string }) => {
+      const existing = stored.get(args.sourceTurnId);
+      if (existing !== undefined) {
+        return existing;
+      }
+      const created = { id: `artifact-${stored.size + 1}`, sourceTurnId: args.sourceTurnId };
+      stored.set(args.sourceTurnId, created);
+      return created;
+    });
     const body = JSON.stringify({ title: 'Session report', content: '## Outcome' });
     const text = `<<artifact v=1 kind=report>>\n${body}\n<</artifact>>`;
-    await run(text);
-    await run(text);
-    expect(createArtifact).toHaveBeenCalledTimes(2);
-    const calls = createArtifact.mock.calls as ReadonlyArray<
-      ReadonlyArray<{ sourceTurnId: string }>
-    >;
-    expect(calls[0]?.[0]?.sourceTurnId).toBe(RUN_ID);
-    expect(calls[1]?.[0]?.sourceTurnId).toBe(RUN_ID);
+
+    const first = await run(text);
+    const second = await run(text);
+
+    expect(stored.size).toBe(1);
+    expect(second.result.artifact).toEqual(first.result.artifact);
+  });
+
+  it('gives the plan path the same replay key as the artifact path', async () => {
+    await run('<<plan>>\nShip it\nstep one\n<</plan>>');
+    expect(upsertPlan).toHaveBeenCalledWith(expect.objectContaining({ sourceTurnId: RUN_ID }));
   });
 });

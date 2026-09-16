@@ -645,6 +645,7 @@ export const captureArtifactsFromTurn = async ({
         title: parsed.title,
         bodyMd: parsed.sourceText,
         ...(parsed.metadata.clusters && { clusters: parsed.metadata.clusters }),
+        sourceTurnId,
       });
       const refreshed = await invokeListPlansForSession(sessionId);
       set((state) => ({

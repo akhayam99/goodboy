@@ -33,30 +33,35 @@ export type CreateArtifactArgs = {
 };
 
 export const createArtifact = async (args: CreateArtifactArgs): Promise<SessionArtifact> => {
-  const existing = await dbGetArtifactBySourceTurn({
-    db: tauriDatabase,
-    agentId: args.agentId,
-    sourceTurnId: args.sourceTurnId,
-  });
+  const replayKey = { agentId: args.agentId, sourceTurnId: args.sourceTurnId };
+  const existing = await dbGetArtifactBySourceTurn({ db: tauriDatabase, ...replayKey });
   if (existing !== null) {
     return existing;
   }
-  return dbInsertArtifact({
-    db: tauriDatabase,
-    input: {
-      id: crypto.randomUUID() as ArtifactId,
-      sessionId: args.sessionId,
-      agentId: args.agentId,
-      workflowRunId: args.workflowRunId ?? null,
-      kind: args.kind,
-      schemaVersion: args.schemaVersion,
-      title: args.title,
-      sourceFormat: args.sourceFormat,
-      sourceText: args.sourceText,
-      metadata: args.metadata,
-      sourceTurnId: args.sourceTurnId,
-    },
-  });
+  try {
+    return await dbInsertArtifact({
+      db: tauriDatabase,
+      input: {
+        id: crypto.randomUUID() as ArtifactId,
+        sessionId: args.sessionId,
+        agentId: args.agentId,
+        workflowRunId: args.workflowRunId ?? null,
+        kind: args.kind,
+        schemaVersion: args.schemaVersion,
+        title: args.title,
+        sourceFormat: args.sourceFormat,
+        sourceText: args.sourceText,
+        metadata: args.metadata,
+        sourceTurnId: args.sourceTurnId,
+      },
+    });
+  } catch (error) {
+    const winner = await dbGetArtifactBySourceTurn({ db: tauriDatabase, ...replayKey });
+    if (winner === null) {
+      throw error;
+    }
+    return winner;
+  }
 };
 
 export type UpdateArtifactSourceArgs = {

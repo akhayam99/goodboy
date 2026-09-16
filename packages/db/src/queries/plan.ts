@@ -110,6 +110,32 @@ export type UpsertPlanInput = {
   readonly title: string;
   readonly bodyMd: string;
   readonly clusters?: ReadonlyArray<ImplementationCluster>;
+  readonly sourceTurnId?: string | null;
+};
+
+const replayKey = (input: UpsertPlanInput): string | null => {
+  const sourceTurnId = input.sourceTurnId ?? null;
+  if (sourceTurnId === null || sourceTurnId.length === 0) {
+    return null;
+  }
+  return sourceTurnId;
+};
+
+const planIdForSourceTurn = async (
+  db: Database,
+  input: UpsertPlanInput,
+): Promise<string | undefined> => {
+  const sourceTurnId = replayKey(input);
+  if (sourceTurnId === null) {
+    return undefined;
+  }
+  const rows = await db.select<{ id: string }>(
+    `SELECT id FROM session_artifacts
+     WHERE kind = 'plan' AND agent_id = ? AND source_turn_id = ?
+     LIMIT 1`,
+    [input.agentId, sourceTurnId],
+  );
+  return rows[0]?.id;
 };
 
 const activePlanIdInScope = async (
@@ -133,6 +159,13 @@ const activePlanIdInScope = async (
 };
 
 export const upsertPlan = async (db: Database, input: UpsertPlanInput): Promise<Plan> => {
+  const replayedId = await planIdForSourceTurn(db, input);
+  if (replayedId !== undefined) {
+    const replayed = await loadPlan(db, replayedId as PlanId);
+    if (replayed !== null) {
+      return toDomain(replayed);
+    }
+  }
   const metadata = input.clusters && input.clusters.length > 0 ? { clusters: input.clusters } : {};
   const activeId = await activePlanIdInScope(db, input);
   if (activeId) {
@@ -148,6 +181,14 @@ export const upsertPlan = async (db: Database, input: UpsertPlanInput): Promise<
     });
     if (!isPlanArtifact(updated)) {
       throw new Error(`plan update failed: ${activeId}`);
+    }
+    const sourceTurnId = replayKey(input);
+    if (sourceTurnId !== null) {
+      await db.execute(
+        `UPDATE session_artifacts SET source_turn_id = ?
+         WHERE id = ? AND kind = 'plan' AND agent_id = ?`,
+        [sourceTurnId, activeId, input.agentId],
+      );
     }
     return toDomain(updated);
   }
@@ -165,6 +206,7 @@ export const upsertPlan = async (db: Database, input: UpsertPlanInput): Promise<
       sourceText: input.bodyMd,
       metadata,
       status: 'active',
+      sourceTurnId: replayKey(input),
     },
   });
   if (!isPlanArtifact(created)) {
@@ -178,7 +220,7 @@ export const updatePlanStatus = async (
   id: PlanId,
   status: PlanStatus,
 ): Promise<void> => {
-  await setArtifactStatus({ db, artifactId: id, status });
+  await setArtifactStatus({ db, artifactId: id, status, kind: 'plan' });
 };
 
 export const updatePlanBody = async (
@@ -204,7 +246,7 @@ export const updatePlanBody = async (
 };
 
 export const deletePlan = async (db: Database, id: PlanId): Promise<void> => {
-  await removeArtifact({ db, artifactId: id });
+  await removeArtifact({ db, artifactId: id, kind: 'plan' });
 };
 
 type PlanConsumptionRow = {

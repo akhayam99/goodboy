@@ -125,6 +125,21 @@ describe('parseArtifactEnvelope', () => {
     expect(result).toMatchObject({ status: 'error', code: 'unsupported_version' });
   });
 
+  it('rejects a version attribute that only starts with a supported number', () => {
+    const result = parseArtifactEnvelope(
+      envelope('v=1garbage kind=report', JSON.stringify({ title: 'T', content: 'c' })),
+    );
+    expect(result).toMatchObject({ status: 'error', code: 'unsupported_version' });
+  });
+
+  it('rejects a version attribute with a sign, a decimal point or a trailing suffix', () => {
+    const body = JSON.stringify({ title: 'T', content: 'c' });
+    const results = ['v=+1', 'v=1.0', 'v=1e0', 'v=01x'].map((attr) =>
+      parseArtifactEnvelope(envelope(`${attr} kind=report`, body)),
+    );
+    expect(results.every((result) => result.status === 'error')).toBe(true);
+  });
+
   it('rejects a format that does not match the kind', () => {
     const result = parseArtifactEnvelope(
       envelope('v=1 kind=report', JSON.stringify({ title: 'T', format: 'json', content: 'c' })),

@@ -12,6 +12,8 @@ const KINDS: ReadonlySet<string> = new Set<ArtifactKind>(['plan', 'report', 'wir
 
 const MAX_TITLE_LENGTH = 300;
 
+const STRICT_VERSION_RE = /^[0-9]{1,9}$/;
+
 const DEFAULT_REPORT_TYPE = 'session-summary';
 
 const fail = (code: ArtifactCaptureError['code'], message: string): ArtifactCaptureError => ({
@@ -24,6 +26,13 @@ const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const byteLength = (value: string): number => new TextEncoder().encode(value).byteLength;
+
+const envelopeVersion = (raw: string | undefined): number | null => {
+  if (raw === undefined || !STRICT_VERSION_RE.test(raw)) {
+    return null;
+  }
+  return Number.parseInt(raw, 10);
+};
 
 const isCluster = (value: unknown): value is ImplementationCluster =>
   isRecord(value) &&
@@ -98,8 +107,8 @@ export const parseArtifactEnvelope = (assistantText: string): ArtifactCaptureRes
   if (byteLength(block.body) > ARTIFACT_MAX_BYTES) {
     return fail('too_large', `the artifact body is over the ${ARTIFACT_MAX_BYTES} byte limit`);
   }
-  const version = Number.parseInt(block.attrs['v'] ?? '', 10);
-  if (!Number.isFinite(version) || version !== ARTIFACT_SCHEMA_VERSION) {
+  const version = envelopeVersion(block.attrs['v']);
+  if (version !== ARTIFACT_SCHEMA_VERSION) {
     return fail(
       'unsupported_version',
       `artifact contract v=${block.attrs['v'] ?? 'missing'} is not supported, use v=${ARTIFACT_SCHEMA_VERSION}`,

@@ -90,9 +90,18 @@ type ArtifactIdParams = DatabaseParams & {
   readonly artifactId: ArtifactId;
 };
 
-type ArtifactStatusParams = ArtifactIdParams & {
+type KindScopedParams = ArtifactIdParams & {
+  readonly kind?: ArtifactKind;
+};
+
+type ArtifactStatusParams = KindScopedParams & {
   readonly status: ArtifactStatus;
 };
+
+const kindScope = (
+  kind: ArtifactKind | undefined,
+): { readonly clause: string; readonly params: ReadonlyArray<string> } =>
+  kind === undefined ? { clause: '', params: [] } : { clause: ' AND kind = ?', params: [kind] };
 
 type SessionParams = DatabaseParams & {
   readonly sessionId: SessionId;
@@ -405,24 +414,43 @@ export const setArtifactStatus = async ({
   db,
   artifactId,
   status,
+  kind,
 }: ArtifactStatusParams): Promise<void> => {
-  await db.execute('UPDATE session_artifacts SET status = ?, updated_at = ? WHERE id = ?', [
-    status,
-    Date.now(),
+  const scope = kindScope(kind);
+  await db.execute(
+    `UPDATE session_artifacts SET status = ?, updated_at = ? WHERE id = ?${scope.clause}`,
+    [status, Date.now(), artifactId, ...scope.params],
+  );
+};
+
+export const deleteArtifact = async ({ db, artifactId, kind }: KindScopedParams): Promise<void> => {
+  await setArtifactStatus({
+    db,
     artifactId,
+    status: 'discarded',
+    ...(kind !== undefined && { kind }),
+  });
+};
+
+export const restoreArtifact = async ({
+  db,
+  artifactId,
+  kind,
+}: KindScopedParams): Promise<void> => {
+  await setArtifactStatus({
+    db,
+    artifactId,
+    status: 'active',
+    ...(kind !== undefined && { kind }),
+  });
+};
+
+export const removeArtifact = async ({ db, artifactId, kind }: KindScopedParams): Promise<void> => {
+  const scope = kindScope(kind);
+  await db.execute(`DELETE FROM session_artifacts WHERE id = ?${scope.clause}`, [
+    artifactId,
+    ...scope.params,
   ]);
-};
-
-export const deleteArtifact = async ({ db, artifactId }: ArtifactIdParams): Promise<void> => {
-  await setArtifactStatus({ db, artifactId, status: 'discarded' });
-};
-
-export const restoreArtifact = async ({ db, artifactId }: ArtifactIdParams): Promise<void> => {
-  await setArtifactStatus({ db, artifactId, status: 'active' });
-};
-
-export const removeArtifact = async ({ db, artifactId }: ArtifactIdParams): Promise<void> => {
-  await db.execute('DELETE FROM session_artifacts WHERE id = ?', [artifactId]);
 };
 
 const renditionBytes = (value: unknown): Uint8Array => {
