@@ -296,8 +296,11 @@ export type {
   DiffCommentStatus,
 } from './diff-comment';
 export type {
+  ArtifactEvidenceKind,
+  ArtifactEvidenceSource,
   ArtifactId,
   ArtifactKind,
+  ArtifactProvenance,
   ArtifactRendition,
   ArtifactSourceFormat,
   ArtifactStatus,

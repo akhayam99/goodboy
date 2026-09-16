@@ -35,6 +35,18 @@ vi.mock('../../../features/worktree/worktree', () => ({
   listBranchCommits: (path: string) => commitsSpy(path as never),
 }));
 
+const recordProvenanceSpy = vi.fn(async (_args: Record<string, unknown>) => undefined);
+
+vi.mock('../../../features/artifacts/artifactProvenance', async () => {
+  const actual = await vi.importActual<
+    typeof import('../../../features/artifacts/artifactProvenance')
+  >('../../../features/artifacts/artifactProvenance');
+  return {
+    artifactEvidenceInventory: actual.artifactEvidenceInventory,
+    recordArtifactProvenance: (args: Record<string, unknown>) => recordProvenanceSpy(args),
+  };
+});
+
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
 const RUN_ID = 'run-1' as WorkflowRunId;
@@ -176,6 +188,48 @@ describe('spawnReportAgent', () => {
     expect(spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt']).toBe('the original kickoff');
     expect(changedFilesSpy).not.toHaveBeenCalled();
     expect(commitsSpy).not.toHaveBeenCalled();
+  });
+
+  it('records what the report was built from, keeping the source run out of the executing run', async () => {
+    await spawnReportAgent(getWith())({
+      sessionId: SESSION_ID,
+      reportType: 'change-summary',
+      workflowRunId: RUN_ID,
+      brief: 'explain the Harborline rollout with api_key=harborline-test-value',
+    });
+    const recorded = recordProvenanceSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(recorded['agentId']).toBe(AGENT_ID);
+    expect(recorded['kind']).toBe('report');
+    expect(recorded['brief']).toBe(
+      'explain the Harborline rollout with api_key=harborline-test-value',
+    );
+    expect(recorded['sourceWorkflowRunId']).toBe(RUN_ID);
+    expect(recorded['executingWorkflowRunId']).toBeNull();
+    expect(recorded['designProfileSummary']).toBeNull();
+    expect(recorded['evidence']).toEqual([
+      { kind: 'session', id: SESSION_ID, label: 'ship the report role' },
+      { kind: 'workflow-run', id: RUN_ID, label: 'workflow run' },
+    ]);
+  });
+
+  it('names every session agent the pack carried when no run scopes it', async () => {
+    await spawnReportAgent(getWith())({ sessionId: SESSION_ID, reportType: 'session-summary' });
+    const recorded = recordProvenanceSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(recorded['evidence']).toEqual([
+      { kind: 'session', id: SESSION_ID, label: 'ship the report role' },
+      { kind: 'agent', id: AGENT_ID, label: 'implementer' },
+    ]);
+    expect(recorded['sourceWorkflowRunId']).toBeNull();
+  });
+
+  it('records no brief when none was given and still spawns when provenance cannot be written', async () => {
+    recordProvenanceSpy.mockRejectedValueOnce(new Error('database is locked'));
+    const agentId = await spawnReportAgent(getWith())({
+      sessionId: SESSION_ID,
+      reportType: 'session-summary',
+    });
+    expect(agentId).toBe(AGENT_ID);
+    expect(recordProvenanceSpy.mock.calls[0]?.[0]['brief']).toBeNull();
   });
 
   it('throws when the session is unknown', async () => {

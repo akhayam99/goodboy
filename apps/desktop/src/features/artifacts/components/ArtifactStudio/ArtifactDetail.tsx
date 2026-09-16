@@ -10,6 +10,7 @@ import {
   cn,
 } from '@goodboy/ui';
 import type { Agent, ArtifactId, SessionArtifact, SessionId } from '@goodboy/types';
+import { ArtifactBuiltFrom } from './ArtifactBuiltFrom';
 import { ArtifactExportActions } from './ArtifactExportActions';
 import { ArtifactStatusChip } from './ArtifactStatusChip';
 import { ReportStudio } from '../../../reports/components/ReportStudio';
@@ -102,6 +103,7 @@ export const ArtifactDetail = ({
             {artifact.kind === 'plan' ? (
               <Markdown text={artifact.sourceText} className="text-xs" />
             ) : null}
+            <ArtifactBuiltFrom artifact={artifact} />
           </div>
         </ScrollFade>
       </div>

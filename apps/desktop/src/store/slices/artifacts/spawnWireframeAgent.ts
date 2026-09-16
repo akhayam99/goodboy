@@ -1,4 +1,5 @@
 import { autoModelForRole, resolveRoleRouting, runsForWorkflowRun } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import type {
   AgentEffort,
   AgentId,
@@ -7,12 +8,17 @@ import type {
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
+import {
+  artifactEvidenceInventory,
+  recordArtifactProvenance,
+} from '../../../features/artifacts/artifactProvenance';
 import { exploreList, exploreRead } from '../../../features/explore/explore';
 import { buildWireframeContext } from '../../../features/wireframes/buildWireframeContext';
 import {
   collectDesignProfile,
   type DesignProfile,
 } from '../../../features/wireframes/collectDesignProfile';
+import { describeDesignProfile } from '../../../features/wireframes/describeDesignProfile';
 import {
   WIREFRAME_FIDELITY_LABEL,
   type WireframeFidelity,
@@ -158,7 +164,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
       designProfile,
       capturedAt: new Date().toISOString() as IsoDateTime,
     });
-    return get().spawnAgent(sessionId, {
+    const agentId = await get().spawnAgent(sessionId, {
       kindOverride: 'wireframe',
       name,
       ...(workflowRunId !== null && { workflowRunId }),
@@ -168,5 +174,26 @@ export const spawnWireframeAgent = (get: GetFn) => {
       initialPrompt: context.text,
       focus: 'agent',
     });
+    await recordArtifactProvenance({
+      agentId,
+      sessionId,
+      kind: 'wireframe',
+      brief,
+      evidence: artifactEvidenceInventory({
+        sourceIds: context.sourceIds,
+        session,
+        agents: sessionAgents,
+        artifacts: state.sessionArtifacts?.[sessionId] ?? [],
+        sourceWorkflowRunId: workflowRunId,
+      }),
+      omissions: context.truncations,
+      designProfileSummary:
+        designProfile === null ? null : describeDesignProfile({ profile: designProfile }),
+      sourceWorkflowRunId: workflowRunId,
+      executingWorkflowRunId: workflowRunId,
+    }).catch((error: unknown) => {
+      console.warn(`[artifact-provenance] wireframe ${agentId}: ${formatError(error)}`);
+    });
+    return agentId;
   };
 };

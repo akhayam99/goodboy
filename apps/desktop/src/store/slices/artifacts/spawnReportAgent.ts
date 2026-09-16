@@ -1,4 +1,5 @@
 import { getCheapModel, resolveRoleRouting } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import type {
   AgentEffort,
   AgentId,
@@ -7,6 +8,10 @@ import type {
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
+import {
+  artifactEvidenceInventory,
+  recordArtifactProvenance,
+} from '../../../features/artifacts/artifactProvenance';
 import {
   buildReportContext,
   type ReportDiffEvidence,
@@ -156,6 +161,25 @@ export const spawnReportAgent = (get: GetFn) => {
       effort: resolved.effort,
       initialPrompt: context.text,
       focus: 'agent',
+    });
+    await recordArtifactProvenance({
+      agentId,
+      sessionId,
+      kind: 'report',
+      brief,
+      evidence: artifactEvidenceInventory({
+        sourceIds: context.sourceIds,
+        session,
+        agents: state.sessionPhaseRuns?.[sessionId] ?? [],
+        artifacts: state.sessionArtifacts?.[sessionId] ?? [],
+        sourceWorkflowRunId: workflowRunId,
+      }),
+      omissions: context.truncations,
+      designProfileSummary: null,
+      sourceWorkflowRunId: workflowRunId,
+      executingWorkflowRunId: null,
+    }).catch((error: unknown) => {
+      console.warn(`[artifact-provenance] report ${agentId}: ${formatError(error)}`);
     });
     return agentId;
   };

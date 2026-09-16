@@ -58,6 +58,27 @@ export type WireframeArtifact = SessionArtifactBase<'wireframe', 'json', Wirefra
 
 export type SessionArtifact = PlanArtifact | ReportArtifact | WireframeArtifact;
 
+export type ArtifactEvidenceKind = 'session' | 'agent' | 'artifact' | 'workflow-run' | 'unknown';
+
+export type ArtifactEvidenceSource = Readonly<{
+  kind: ArtifactEvidenceKind;
+  id: string;
+  label: string;
+}>;
+
+export type ArtifactProvenance = Readonly<{
+  agentId: AgentId;
+  sessionId: SessionId;
+  kind: ArtifactKind;
+  brief: string | null;
+  evidence: ReadonlyArray<ArtifactEvidenceSource>;
+  omissions: ReadonlyArray<string>;
+  designProfileSummary: string | null;
+  sourceWorkflowRunId: WorkflowRunId | null;
+  executingWorkflowRunId: WorkflowRunId | null;
+  createdAt: IsoDateTime;
+}>;
+
 export type ArtifactRendition = Readonly<{
   artifactId: ArtifactId;
   revision: number;
