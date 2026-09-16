@@ -63,6 +63,29 @@ const wireframe = {
   sourceText: '{"screens":[]}',
 } as unknown as ReportArtifact;
 
+const readableWireframe = {
+  ...wireframe,
+  sourceText: JSON.stringify({
+    version: 1,
+    initialScreenId: 'sign-in',
+    theme: { name: 'harborline' },
+    screens: [
+      {
+        id: 'sign-in',
+        title: 'Sign in',
+        viewport: 'mobile',
+        root: {
+          id: 'sign-in-root',
+          kind: 'stack',
+          direction: 'column',
+          children: [{ id: 'sign-in-heading', kind: 'text', text: 'Harborline' }],
+        },
+      },
+    ],
+    transitions: [],
+  }),
+} as unknown as ReportArtifact;
+
 const writeText = vi.fn(async () => undefined);
 
 afterEach(cleanup);
@@ -140,13 +163,13 @@ describe('useArtifactExport', () => {
     expect(result.current.pdfHint).toBe(PDF_READY_HINT);
   });
 
-  it('refuses PDF for a json artifact and explains why', () => {
+  it('refuses PDF for a wireframe it cannot read and explains why', () => {
     const { result } = renderHook(() => useArtifactExport({ artifact: wireframe }));
     expect(result.current.canSavePdf).toBe(false);
     expect(result.current.pdfHint).toBe(PDF_BLOCKED_HINT);
   });
 
-  it('opens no print window when a json artifact asks for a PDF', async () => {
+  it('opens no print window when an unreadable wireframe asks for a PDF', async () => {
     const { result } = renderHook(() => useArtifactExport({ artifact: wireframe }));
     await act(async () => {
       await result.current.savePdf();
@@ -186,5 +209,19 @@ describe('useArtifactExport', () => {
       await result.current.copySource();
     });
     expect(writeText).toHaveBeenCalledWith('{screens');
+  });
+
+  it('offers PDF for a wireframe the print sheet can read', async () => {
+    const { result } = renderHook(() => useArtifactExport({ artifact: readableWireframe }));
+    expect(result.current.canSavePdf).toBe(true);
+    expect(result.current.pdfHint).toBe(PDF_READY_HINT);
+    await act(async () => {
+      await result.current.savePdf();
+    });
+    const call = windowSpy.mock.calls[0]?.[0] as { readonly options: { readonly url: string } };
+    expect(call.options.url).toBe(
+      'index.html#print=artifact&session=session-1&artifact=wireframe-1',
+    );
+    expect(result.current.status).toEqual({ kind: 'printing' });
   });
 });

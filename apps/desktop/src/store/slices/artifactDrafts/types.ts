@@ -8,6 +8,7 @@ import type {
 import type { GeneratedArtifactKind } from '../../../features/artifacts/artifactCollection';
 import type { ReportType } from '../../../features/reports/reportTypes';
 import type { WireframeFidelity } from '../../../features/wireframes/wireframeFidelity';
+import type { WireframeTarget } from '../../../features/wireframes/wireframeTarget';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
@@ -30,7 +31,7 @@ type DraftBase = Readonly<{
 export type ArtifactReportDraft = DraftBase & Readonly<{ kind: 'report'; reportType: ReportType }>;
 
 export type ArtifactWireframeDraft = DraftBase &
-  Readonly<{ kind: 'wireframe'; fidelity: WireframeFidelity }>;
+  Readonly<{ kind: 'wireframe'; fidelity: WireframeFidelity; target: WireframeTarget }>;
 
 export type ArtifactCreationDraft = ArtifactReportDraft | ArtifactWireframeDraft;
 

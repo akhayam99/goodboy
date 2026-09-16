@@ -6,6 +6,8 @@ export const DEFAULT_REPORT_TYPE = 'session-summary';
 
 export const DEFAULT_WIREFRAME_FIDELITY = 'low';
 
+export const DEFAULT_WIREFRAME_TARGET = 'both';
+
 type Params = Readonly<{
   kind: GeneratedArtifactKind;
   now: IsoDateTime;
@@ -25,6 +27,7 @@ export const defaultArtifactDraft = ({ kind, now }: Params): ArtifactCreationDra
   return {
     kind: 'wireframe',
     fidelity: DEFAULT_WIREFRAME_FIDELITY,
+    target: DEFAULT_WIREFRAME_TARGET,
     brief: '',
     basedOn: { kind: 'session' },
     routing: null,
@@ -46,5 +49,5 @@ export const isArtifactDraftEmpty = ({
   if (draft.kind === 'report') {
     return draft.reportType === DEFAULT_REPORT_TYPE;
   }
-  return draft.fidelity === DEFAULT_WIREFRAME_FIDELITY;
+  return draft.fidelity === DEFAULT_WIREFRAME_FIDELITY && draft.target === DEFAULT_WIREFRAME_TARGET;
 };

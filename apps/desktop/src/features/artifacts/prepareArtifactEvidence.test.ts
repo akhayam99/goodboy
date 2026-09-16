@@ -109,6 +109,7 @@ describe('prepareArtifactEvidence', () => {
       brief: null,
       executingAgentId: null,
       kind: 'wireframe',
+      target: 'both',
       fidelity: 'high',
     });
     expect(prepared.text).toContain('the app collected no design profile');
@@ -128,7 +129,7 @@ describe('prepareArtifactEvidence', () => {
         executingAgentId: EXECUTING_ID,
         ...(kind === 'report'
           ? { kind: 'report' as const, reportType: 'session-summary' as const }
-          : { kind: 'wireframe' as const, fidelity: 'low' as const }),
+          : { kind: 'wireframe' as const, fidelity: 'low' as const, target: 'both' as const }),
       });
       expect(prepared.text).not.toContain(EXECUTING_ID);
       expect(prepared.text).not.toContain('a discarded first try');

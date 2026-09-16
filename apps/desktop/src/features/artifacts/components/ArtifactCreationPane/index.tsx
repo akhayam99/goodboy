@@ -71,7 +71,7 @@ export const ArtifactCreationPane = ({
 }: Props) => {
   const adapter = ARTIFACT_CREATION_ADAPTERS[kind];
   const handle = useArtifactCreationDraft({ sessionId, kind });
-  const { draft, brief, choice, basedOn, routing, isEmpty } = handle;
+  const { draft, brief, choice, secondChoice, basedOn, routing, isEmpty } = handle;
   const [isStarting, setIsStarting] = useState(false);
   const [isDiscardArmed, setIsDiscardArmed] = useState(false);
   const [isContextOpen, setIsContextOpen] = useState(false);
@@ -154,7 +154,13 @@ export const ArtifactCreationPane = ({
     }
   }, [basedOn, runs, setBasedOn]);
 
-  const preview = useArtifactContextPreview({ sessionId, kind, basedOn, choice });
+  const preview = useArtifactContextPreview({
+    sessionId,
+    kind,
+    basedOn,
+    choice,
+    secondChoice,
+  });
   const inventory = useMemo(
     () => replaceInventoryRow({ rows: preview.inventory, row: briefInventoryRow({ brief }) }),
     [preview.inventory, brief],
@@ -247,6 +253,17 @@ export const ArtifactCreationPane = ({
                 onChange={handle.setChoice}
               />
             </section>
+            {adapter.secondChoice === undefined ? null : (
+              <section className="flex min-w-0 flex-col gap-2">
+                <SectionHeader label={adapter.secondChoice.label} />
+                <ArtifactChoiceRows
+                  ariaLabel={adapter.secondChoice.ariaLabel}
+                  options={adapter.secondChoice.options}
+                  value={secondChoice}
+                  onChange={handle.setSecondChoice}
+                />
+              </section>
+            )}
             <ArtifactBasedOnField
               runs={runs}
               value={basedOn}

@@ -242,6 +242,7 @@ describe('WireframeStudio', () => {
       expect(state.spawnWireframeAgent).toHaveBeenCalledWith({
         sessionId: SESSION_ID,
         fidelity: 'high',
+        target: 'both',
         workflowRunId: null,
       });
     });
@@ -529,5 +530,45 @@ describe('WireframeStudio', () => {
         'navigation note',
       ]),
     );
+  });
+
+  it('follows a hotspot inside the sheet without leaving the sheet', () => {
+    renderStudio();
+    fireEvent.click(screen.getByRole('tab', { name: 'Contact sheet' }));
+    const frames = () =>
+      screen
+        .getAllByTestId('wireframe-sheet-frame')
+        .filter((frame) => frame.getAttribute('data-current') === 'true')
+        .map((frame) => frame.getAttribute('data-screen-id'));
+    expect(frames()).toEqual(['inbox']);
+    fireEvent.click(screen.getByText('Open message'));
+    expect(frames()).toEqual(['message']);
+    expect(screen.getByTestId('wireframe-contact-sheet')).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Screen' }));
+    expect(currentScreen()).toBe('message');
+    expect(screen.getByTestId('wireframe-back').hasAttribute('disabled')).toBe(false);
+  });
+
+  it('opens one frame on its own from the sheet', () => {
+    renderStudio();
+    fireEvent.click(screen.getByRole('tab', { name: 'Contact sheet' }));
+    const opens = screen.getAllByTestId('wireframe-sheet-open');
+    fireEvent.click(opens[2] as HTMLElement);
+    expect(currentScreen()).toBe('archive');
+    expect(screen.queryByTestId('wireframe-contact-sheet')).toBeNull();
+  });
+
+  it('swaps the clickable screen for a contact sheet of every screen and back', () => {
+    renderStudio();
+    expect(screen.queryByTestId('wireframe-contact-sheet')).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: 'Contact sheet' }));
+    expect(screen.getAllByTestId('wireframe-sheet-frame')).toHaveLength(3);
+    expect(screen.queryByTestId('wireframe-canvas')).toBeNull();
+    expect(screen.queryByTestId('wireframe-zoom-fit')).toBeNull();
+    expect(screen.queryByTestId('wireframe-screen-tabs')).toBeNull();
+    expect(screen.getByTestId('wireframe-convert-fidelity')).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Screen' }));
+    expect(currentScreen()).toBe('inbox');
+    expect(screen.queryByTestId('wireframe-contact-sheet')).toBeNull();
   });
 });

@@ -47,7 +47,7 @@ const draftFor = ({
   } as const;
   return kind === 'report'
     ? { ...base, kind: 'report', reportType: 'session-summary' }
-    : { ...base, kind: 'wireframe', fidelity: 'high' };
+    : { ...base, kind: 'wireframe', fidelity: 'high', target: 'both' };
 };
 
 const ArtifactCreationScene = ({

@@ -1,6 +1,7 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { save } from '@tauri-apps/plugin-dialog';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { parseWireframeSource } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { SessionArtifact } from '@goodboy/types';
 import { exportArtifactToFile } from '../../artifactFile';
@@ -13,7 +14,7 @@ export type ArtifactExportAction = 'copy' | 'source' | 'pdf';
 export const PDF_READY_HINT = 'Open a print window and save as PDF';
 
 export const PDF_BLOCKED_HINT =
-  'The print sheet only lays out markdown, so a JSON artifact has no printable page yet';
+  'This wireframe does not match the schema, so the print sheet has no page to lay out';
 
 export type ArtifactExportStatus =
   | Readonly<{ kind: 'idle' }>
@@ -46,7 +47,12 @@ const printWindowLabel = (): string => {
 export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
   const [status, setStatus] = useState<ArtifactExportStatus>({ kind: 'idle' });
   const isBusy = useRef(false);
-  const canSavePdf = artifact.sourceFormat === 'markdown';
+  const canSavePdf = useMemo(
+    () =>
+      artifact.sourceFormat === 'markdown' ||
+      parseWireframeSource({ source: artifact.sourceText }).status === 'valid',
+    [artifact.sourceFormat, artifact.sourceText],
+  );
   const descriptor = artifactSourceExport({ sourceFormat: artifact.sourceFormat });
   const contents = artifactExportContents({
     sourceFormat: artifact.sourceFormat,

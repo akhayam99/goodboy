@@ -107,6 +107,7 @@ const textFor = ({
   buildWireframeContext({
     brief,
     fidelity: designProfile === null ? 'low' : 'high',
+    target: 'both',
     session: sessionWith({ goal }),
     agents: [agentWith({ name: agentName })],
     transcripts,
@@ -146,6 +147,7 @@ describe('buildWireframeContext', () => {
     const context = buildWireframeContext({
       brief: null,
       fidelity: 'low',
+      target: 'both',
       session: sessionWith({ goal: 'ship the wireframe role' }),
       agents: [agentWith({ name: 'scout' })],
       transcripts,
@@ -189,6 +191,7 @@ describe('buildWireframeContext', () => {
     const context = buildWireframeContext({
       brief: null,
       fidelity: 'low',
+      target: 'both',
       session: sessionWith({ goal: 'ship the wireframe role' }),
       agents: [agentWith({ name: 'scout' })],
       transcripts,
@@ -197,5 +200,30 @@ describe('buildWireframeContext', () => {
       capturedAt: NOW,
     });
     expect(context.sourceIds).toContain(SESSION_ID);
+  });
+
+  it('states the target the user picked and names it in the inventory', () => {
+    const contextFor = (target: 'mobile' | 'desktop' | 'both') =>
+      buildWireframeContext({
+        brief: null,
+        fidelity: 'low',
+        target,
+        session: sessionWith({ goal: 'ship the wireframe role' }),
+        agents: [agentWith({ name: 'scout' })],
+        transcripts,
+        artifacts: [planWith({ title: 'Ship it' })],
+        designProfile: null,
+        capturedAt: NOW,
+      });
+    const desktop = contextFor('desktop');
+    expect(desktop.text).toContain('target: desktop.');
+    expect(desktop.text).toContain('set viewport to "desktop" on every screen');
+    expect(desktop.inventory.find((row) => row.id === 'target')?.summary).toBe('drawn for desktop');
+    const phone = contextFor('mobile');
+    expect(phone.text).toContain('target: phone.');
+    expect(phone.text).not.toContain('set viewport to "desktop" on every screen');
+    expect(contextFor('both').inventory.find((row) => row.id === 'target')?.summary).toBe(
+      'drawn for phone and desktop',
+    );
   });
 });

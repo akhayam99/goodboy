@@ -406,7 +406,7 @@ describe('ArtifactStudio', () => {
     expect(screen.getByText('superseded')).toBeDefined();
   });
 
-  it('offers markdown export on a report and json export on a wireframe', () => {
+  it('offers markdown export on a report and json export on a wireframe, both printable', () => {
     state.sessionArtifacts = { 'sess-1': [report, wireframe] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('Session report'));
@@ -415,7 +415,7 @@ describe('ArtifactStudio', () => {
     fireEvent.click(screen.getByRole('button', { name: /all artifacts/i }));
     fireEvent.click(screen.getByText('Onboarding flow'));
     expect(screen.getByTestId('artifact-save-source').textContent).toContain('Save JSON');
-    expect(screen.getByTestId('artifact-save-pdf').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('artifact-save-pdf').hasAttribute('disabled')).toBe(false);
   });
 
   it('opens a wireframe in the native renderer instead of the markdown reader', () => {

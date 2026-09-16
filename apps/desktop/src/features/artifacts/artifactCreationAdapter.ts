@@ -25,6 +25,17 @@ export type ArtifactSpawnActions = Readonly<{
   spawnWireframeAgent: (params: SpawnWireframeAgentParams) => Promise<AgentId>;
 }>;
 
+export type ArtifactSecondChoice = Readonly<{
+  label: string;
+  ariaLabel: string;
+  options: ReadonlyArray<ArtifactChoiceOption>;
+  choiceOf: (params: { readonly draft: ArtifactCreationDraft }) => string;
+  withChoice: (params: {
+    readonly draft: ArtifactCreationDraft;
+    readonly choice: string;
+  }) => ArtifactCreationDraft;
+}>;
+
 export type ArtifactCreationAdapter = Readonly<{
   kind: GeneratedArtifactKind;
   crumbLabel: string;
@@ -36,6 +47,7 @@ export type ArtifactCreationAdapter = Readonly<{
     ariaLabel: string;
     options: ReadonlyArray<ArtifactChoiceOption>;
   }>;
+  secondChoice?: ArtifactSecondChoice;
   scopeCopy: Readonly<{ session: string; run: string }>;
   defaultRequest: (params: { readonly choice: string }) => string;
   repoLine: (params: {

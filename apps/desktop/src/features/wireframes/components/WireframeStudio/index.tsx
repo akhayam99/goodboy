@@ -4,6 +4,7 @@ import { formatError } from '@goodboy/ui';
 import type { SessionId, WireframeArtifact } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { asWireframeFidelity, type WireframeFidelity } from '../../wireframeFidelity';
+import { deriveWireframeTarget } from '../../wireframeTarget';
 import { WireframeIssues } from './WireframeIssues';
 import { WireframeProvenanceRow } from './WireframeProvenanceRow';
 import { WireframeStudioBody } from './WireframeStudioBody';
@@ -39,6 +40,10 @@ export const WireframeStudio = ({ sessionId, artifact }: Props) => {
       await spawnWireframeAgent({
         sessionId,
         fidelity: next,
+        target:
+          parsed.status === 'valid'
+            ? (deriveWireframeTarget({ screens: parsed.document.screens }) ?? 'both')
+            : 'both',
         workflowRunId: artifact.workflowRunId,
         ...(next === fidelity && kickoff !== null ? { evidence: kickoff } : {}),
       });

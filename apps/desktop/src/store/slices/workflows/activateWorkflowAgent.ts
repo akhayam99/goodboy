@@ -155,7 +155,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
             executingAgentId: agentId,
             ...(effectiveKind === 'report'
               ? { kind: 'report', reportType: 'session-summary' }
-              : { kind: 'wireframe', fidelity: 'low' }),
+              : { kind: 'wireframe', fidelity: 'low', target: 'both' }),
           })
         : null;
     if (evidence !== null) {

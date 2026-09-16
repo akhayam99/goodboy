@@ -3,6 +3,7 @@ import { formatBriefCount } from './artifactBrief';
 const ARTIFACT_CONTEXT_ROW_IDS = [
   'brief',
   'goal',
+  'target',
   'agents',
   'artifacts',
   'plans',

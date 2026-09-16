@@ -12,6 +12,11 @@ import {
 import type { DesignProfile } from './collectDesignProfile';
 import { describeDesignProfile } from './describeDesignProfile';
 import { WIREFRAME_FIDELITY_LABEL, type WireframeFidelity } from './wireframeFidelity';
+import {
+  WIREFRAME_TARGET_BRIEF,
+  WIREFRAME_TARGET_LABEL,
+  type WireframeTarget,
+} from './wireframeTarget';
 
 export const WIREFRAME_CONTEXT_LIMITS = {
   agents: 8,
@@ -29,6 +34,7 @@ export const WIREFRAME_EXCLUDED_COPY =
 
 export type WireframeContextParams = Readonly<{
   fidelity: WireframeFidelity;
+  target: WireframeTarget;
   brief?: string | null;
   session: Session;
   agents: ReadonlyArray<Agent>;
@@ -256,6 +262,7 @@ const themeSection = ({
 
 export const buildWireframeContext = ({
   fidelity,
+  target,
   brief = null,
   session,
   agents,
@@ -275,6 +282,7 @@ export const buildWireframeContext = ({
     `# ${WIREFRAME_FIDELITY_LABEL[fidelity].toLowerCase()} wireframe request`,
     `session goal: ${redactSecrets({ text: session.goal })}`,
     `captured at: ${capturedAt}`,
+    `target: ${WIREFRAME_TARGET_LABEL[target]}. ${WIREFRAME_TARGET_BRIEF[target]}`,
     WIREFRAME_DEFAULT_REQUEST,
     'this pack is the only evidence you have. it carries final agent messages, not tool calls or tool output. never invent a product fact that is not here; put what is missing in a node note.',
   ].join('\n');
@@ -286,6 +294,13 @@ export const buildWireframeContext = ({
     summary: 'the session goal and the fidelity',
     state: 'included',
     detail: [],
+  });
+  inventory.push({
+    id: 'target',
+    label: 'target',
+    summary: `drawn for ${WIREFRAME_TARGET_LABEL[target]}`,
+    state: 'included',
+    detail: [WIREFRAME_TARGET_BRIEF[target]],
   });
 
   const evidence = [
