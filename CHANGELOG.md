@@ -7,6 +7,67 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.4
+
+An artifact is something you author, not an agent you hire. A report or a
+wireframe now starts from a setup pane that shows what will be sent before
+anything runs.
+
+### [#1781] Create report and Create wireframe open a setup pane
+
+Both used to start an agent from a popover that asked you nothing. They open a
+pane now: you say what you want, pick the type or the fidelity, choose whether
+it is based on the whole session or one workflow run, and see exactly what will
+be sent, before anything starts. Opening the pane costs nothing and starts
+nothing. A draft survives navigating away and survives a restart.
+
+Your brief goes to the model alongside the evidence, never in place of it,
+redacted like the rest and clipped at 2000 characters with the clip declared.
+
+### [#1781] Included context lists what goes out
+
+The disclosure under the brief is generated from the evidence pack itself, so
+it cannot drift from what is sent. It says what was collected, what was missing
+and what was cut short.
+
+It also corrects three things the old copy implied. Based on a run does not
+restrict the evidence to that run: session events, checks and the local change
+stay session wide for a report, and session plans stay session wide for a
+wireframe. The change report never sees file contents, only paths, counts and
+commit subjects. Checks means script runs from this session, never CI.
+
+### [#1781] One collection of plans, reports and wireframes
+
+The artifact lens used to be a rail of plans with reports hanging off it. It is
+one filtered list now, with plans, reports and wireframes side by side. A
+generation that produced nothing is visible and says so, with a stop control
+while it runs and try again once it has failed, rather than vanishing.
+
+### [#1781] Read the artifact and talk to its agent in one place
+
+Artifact and Conversation tabs: the artifact on one, the transcript and composer
+of the agent that produced it on the other, so there is one message history and
+one draft. Attaching the artifact to the conversation is explicit and includes
+your edits, because the agent does not remember them. A follow up produces
+another output, not a new version of the one you are reading.
+
+### [#1781] Goodboy records what an artifact was built from
+
+Each generation keeps your brief, a sanitized inventory of the evidence that was
+actually sent, what was omitted, and the source run kept apart from the run that
+executed it. An artifact made before this release has no record and says so.
+
+### [#1781] Report and wireframe leave the manual agent picker
+
+The two roles sat next to implementer as if you were staffing a team. They are
+gone from the picker; workflow steps still route to both.
+
+### Fixes
+
+- Create report and Create wireframe could stay greyed out for the life of a
+  session after a restart, a finished report on screen included. They enable
+  again whenever nothing is running [#1781]
+
 ## Goodboy v0.3.3
 
 An agent can hand back a wireframe now: screens you click through, drawn in the
