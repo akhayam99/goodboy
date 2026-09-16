@@ -771,6 +771,10 @@ const parseNode = ({
       max: WIREFRAME_LIMITS.maxTextLength,
     });
     const action = optionalAction({ ctx, path: `${itemPath}.action`, value: raw['action'] });
+    const isActive = raw['isActive'];
+    if (isActive !== undefined && typeof isActive !== 'boolean') {
+      fail({ ctx, path: `${itemPath}.isActive`, message: 'expected a boolean' });
+    }
     if (itemId === null || label === null) {
       return;
     }
@@ -786,7 +790,7 @@ const parseNode = ({
     items.push({
       id: itemId,
       label,
-      isActive: raw['isActive'] === true,
+      isActive: isActive === true,
       ...(action !== null && { action }),
     });
   });

@@ -1,4 +1,6 @@
+import { redactSecrets } from '../../shared/utils/redactSecrets';
 import type { DesignProfile } from './collectDesignProfile';
+
 export const describeDesignProfile = ({ profile }: { readonly profile: DesignProfile }): string => {
   const lines = [`theme name: ${profile.themeName}`, `commit: ${profile.commitSha ?? 'unknown'}`];
   if (profile.tailwind !== null) {
@@ -24,5 +26,5 @@ export const describeDesignProfile = ({ profile }: { readonly profile: DesignPro
   if (profile.notes.length > 0) {
     lines.push('missing evidence:', ...profile.notes.map((note) => `  ${note}`));
   }
-  return lines.join('\n');
+  return redactSecrets({ text: lines.join('\n') });
 };

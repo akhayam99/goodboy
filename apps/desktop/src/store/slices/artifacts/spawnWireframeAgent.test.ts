@@ -6,6 +6,7 @@ import type {
   ProjectId,
   Session,
   SessionId,
+  WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
 import { resolveWireframeRouting, spawnWireframeAgent } from './spawnWireframeAgent';
@@ -43,6 +44,7 @@ vi.mock('../../../features/explore/explore', () => ({
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
 const NOW = '2026-09-15T10:00:00.000Z' as IsoDateTime;
+const RUN_ID = 'run-1' as WorkflowRunId;
 
 const session: Session = {
   id: SESSION_ID,
@@ -132,6 +134,28 @@ describe('spawnWireframeAgent', () => {
     expect(args['stepId']).toBeUndefined();
     expect(args['workflowRunId']).toBeUndefined();
     expect(args['parentAgentId']).toBeUndefined();
+  });
+
+  it('keeps the agent inside the workflow run it was asked for', async () => {
+    await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      fidelity: 'low',
+      workflowRunId: RUN_ID,
+    });
+    const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(args['workflowRunId']).toBe(RUN_ID);
+  });
+
+  it('keeps a re-spawn from a supplied evidence pack inside its workflow run', async () => {
+    await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      fidelity: 'low',
+      workflowRunId: RUN_ID,
+      evidence: 'the original kickoff',
+    });
+    const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(args['workflowRunId']).toBe(RUN_ID);
+    expect(args['initialPrompt']).toBe('the original kickoff');
   });
 
   it('carries the product evidence and the document contract in the kickoff', async () => {

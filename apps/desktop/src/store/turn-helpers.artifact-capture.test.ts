@@ -28,6 +28,20 @@ const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
 const RUN_ID = 'run-1' as ProviderRunId;
 
+const WIREFRAME_DOCUMENT = {
+  version: 1,
+  initialScreenId: 'home',
+  theme: { name: 'generic' },
+  screens: [
+    {
+      id: 'home',
+      title: 'Home',
+      viewport: 'desktop',
+      root: { id: 'home-root', kind: 'text', text: 'Sessions' },
+    },
+  ],
+};
+
 type StatePatch = Readonly<Record<string, unknown>>;
 
 const harness = () => {
@@ -122,7 +136,7 @@ describe('captureArtifactsFromTurn', () => {
     const body = JSON.stringify({
       title: 'Onboarding',
       format: 'json',
-      content: { screens: [] },
+      content: WIREFRAME_DOCUMENT,
       metadata: { fidelity: 'high', designProfile: { tokens: 1 } },
     });
     await run(`<<artifact v=1 kind=wireframe>>\n${body}\n<</artifact>>`);
@@ -130,10 +144,22 @@ describe('captureArtifactsFromTurn', () => {
       expect.objectContaining({
         kind: 'wireframe',
         sourceFormat: 'json',
-        sourceText: '{"screens":[]}',
+        sourceText: JSON.stringify(WIREFRAME_DOCUMENT),
         metadata: { fidelity: 'high', designProfile: { tokens: 1 } },
       }),
     );
+  });
+
+  it('rejects a malformed wireframe document instead of storing it', async () => {
+    const body = JSON.stringify({
+      title: 'Onboarding',
+      format: 'json',
+      content: { screens: [] },
+    });
+    const { result } = await run(`<<artifact v=1 kind=wireframe>>\n${body}\n<</artifact>>`);
+    expect(result.error).toMatchObject({ code: 'invalid_payload' });
+    expect(result.artifact).toBeNull();
+    expect(createArtifact).not.toHaveBeenCalled();
   });
 
   it('returns a structured error for a malformed block and writes nothing', async () => {

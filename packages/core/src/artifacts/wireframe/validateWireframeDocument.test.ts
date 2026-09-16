@@ -133,6 +133,20 @@ describe('validateWireframeDocument', () => {
     expect(invalidOf(nested)).toContain('unknown property');
   });
 
+  it('rejects a navigation item whose isActive is not a boolean', () => {
+    const doc = validDocument();
+    doc.screens[1] = {
+      ...doc.screens[1],
+      root: {
+        id: 'detail-nav',
+        kind: 'navigation',
+        variant: 'top',
+        items: [{ id: 'detail-nav-home', label: 'Home', isActive: 'yes' }],
+      },
+    } as never;
+    expect(invalidOf(doc)).toContain('isActive: expected a boolean');
+  });
+
   it('rejects an unknown node kind', () => {
     const doc = validDocument();
     doc.screens[1] = {

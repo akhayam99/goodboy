@@ -134,6 +134,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
       return get().spawnAgent(sessionId, {
         kindOverride: 'wireframe',
         name,
+        ...(workflowRunId !== null && { workflowRunId }),
         provider: resolved.provider,
         model: resolved.model,
         effort: resolved.effort,
@@ -157,6 +158,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
     return get().spawnAgent(sessionId, {
       kindOverride: 'wireframe',
       name,
+      ...(workflowRunId !== null && { workflowRunId }),
       provider: resolved.provider,
       model: resolved.model,
       effort: resolved.effort,

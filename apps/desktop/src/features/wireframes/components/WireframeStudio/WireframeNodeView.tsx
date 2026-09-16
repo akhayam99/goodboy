@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import type {
   WireframeAction,
   WireframeAlignment,
@@ -20,6 +20,11 @@ export type WireframeNodeHandlers = Readonly<{
 type Props = WireframeNodeHandlers & {
   readonly node: WireframeNode;
 };
+
+type NodeElementParams = Readonly<{
+  node: WireframeNode;
+  handlers: WireframeNodeHandlers;
+}>;
 
 const ALIGN: Record<WireframeAlignment, string> = {
   start: 'flex-start',
@@ -56,13 +61,12 @@ const Annotation = ({ note, color }: { readonly note: string; readonly color: st
   </span>
 );
 
-export const WireframeNodeView = ({ node, ...handlers }: Props) => {
+const nodeElement = ({ node, handlers }: NodeElementParams): ReactElement => {
   const { palette, isLowFidelity, selectedNodeId, hotspots, onSelect, onAction } = handlers;
   const isSelected = selectedNodeId === node.id;
   const outline: CSSProperties = isSelected
     ? { outline: `2px solid ${palette.accent}`, outlineOffset: 2 }
     : {};
-  const note = node.note ?? null;
   const select = () => onSelect(node.id);
 
   if (node.kind === 'stack') {
@@ -91,7 +95,6 @@ export const WireframeNodeView = ({ node, ...handlers }: Props) => {
           ...outline,
         }}
       >
-        {note === null ? null : <Annotation note={note} color={palette.muted} />}
         {node.children.map((child) => (
           <WireframeNodeView key={child.id} node={child} {...handlers} />
         ))}
@@ -117,7 +120,6 @@ export const WireframeNodeView = ({ node, ...handlers }: Props) => {
           ...outline,
         }}
       >
-        {note === null ? null : <Annotation note={note} color={palette.muted} />}
         {node.children.map((child) => (
           <WireframeNodeView key={child.id} node={child} {...handlers} />
         ))}
@@ -221,7 +223,6 @@ export const WireframeNodeView = ({ node, ...handlers }: Props) => {
         {node.options === undefined || node.options.length === 0 ? null : (
           <span style={{ fontSize: 10, color: palette.muted }}>{node.options.join(' / ')}</span>
         )}
-        {note === null ? null : <Annotation note={note} color={palette.muted} />}
       </div>
     );
   }
@@ -445,5 +446,19 @@ export const WireframeNodeView = ({ node, ...handlers }: Props) => {
         );
       })}
     </nav>
+  );
+};
+
+export const WireframeNodeView = ({ node, ...handlers }: Props) => {
+  const element = nodeElement({ node, handlers });
+  const note = node.note ?? null;
+  if (note === null) {
+    return element;
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {element}
+      <Annotation note={note} color={handlers.palette.muted} />
+    </div>
   );
 };

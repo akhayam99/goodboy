@@ -1,6 +1,6 @@
 import { WIREFRAME_SCHEMA_BRIEF } from '@goodboy/core';
 import type { Agent, IsoDateTime, Session, SessionArtifact, TurnEvent } from '@goodboy/types';
-import { redactSecrets } from '../reports/redactSecrets';
+import { redactSecrets } from '../../shared/utils/redactSecrets';
 import type { DesignProfile } from './collectDesignProfile';
 import { describeDesignProfile } from './describeDesignProfile';
 import { WIREFRAME_FIDELITY_LABEL, type WireframeFidelity } from './wireframeFidelity';
@@ -83,15 +83,16 @@ const agentSection = ({
   }
   const rows = kept.map((agent) => {
     sourceIds.push(agent.id);
+    const name = redactSecrets({ text: agent.name });
     const text = lastAssistantText({ events: transcripts[agent.id] ?? [] });
     if (text === null) {
-      return `### ${agent.name} (${agent.id})\n\nno final message was recorded.`;
+      return `### ${name} (${agent.id})\n\nno final message was recorded.`;
     }
     const clipped = clip({ text, limit: WIREFRAME_CONTEXT_LIMITS.agentText });
     if (clipped.isClipped) {
       truncations.push(`agent ${agent.id}: final message clipped`);
     }
-    return `### ${agent.name} (${agent.id})\n\n${redactSecrets({ text: clipped.text })}`;
+    return `### ${name} (${agent.id})\n\n${redactSecrets({ text: clipped.text })}`;
   });
   return `## product evidence\n\n${rows.join('\n\n')}`;
 };
@@ -124,7 +125,8 @@ const planSection = ({
     if (clipped.isClipped) {
       truncations.push(`plan ${plan.id}: excerpt clipped`);
     }
-    return `### ${plan.title} (${plan.id})\n\n${redactSecrets({ text: clipped.text })}`;
+    const title = redactSecrets({ text: plan.title });
+    return `### ${title} (${plan.id})\n\n${redactSecrets({ text: clipped.text })}`;
   });
   return `## plans\n\n${rows.join('\n\n')}`;
 };
@@ -168,7 +170,7 @@ export const buildWireframeContext = ({
   const truncations: Array<string> = [];
   const header = [
     `# ${WIREFRAME_FIDELITY_LABEL[fidelity].toLowerCase()} wireframe request`,
-    `session goal: ${session.goal}`,
+    `session goal: ${redactSecrets({ text: session.goal })}`,
     `captured at: ${capturedAt}`,
     'produce one wireframe document for this product from the evidence below. cover the screens the goal actually needs, and wire the transitions a user would take between them.',
     'this pack is the only evidence you have. it carries final agent messages, not tool calls or tool output. never invent a product fact that is not here; put what is missing in a node note.',

@@ -281,4 +281,81 @@ describe('WireframeStudio', () => {
       'the source is not valid JSON',
     );
   });
+
+  it('renders the node note for every node kind, not just the containers', () => {
+    const annotated = {
+      version: 1,
+      initialScreenId: 'notes',
+      theme: { name: 'generic' },
+      screens: [
+        {
+          id: 'notes',
+          title: 'Notes',
+          viewport: 'desktop',
+          root: {
+            id: 'notes-root',
+            kind: 'stack',
+            direction: 'column',
+            note: 'stack note',
+            children: [
+              { id: 'notes-text', kind: 'text', text: 'Inbox', note: 'text note' },
+              { id: 'notes-button', kind: 'button', label: 'Open', note: 'button note' },
+              {
+                id: 'notes-input',
+                kind: 'input',
+                inputType: 'text',
+                note: 'input note',
+              },
+              {
+                id: 'notes-list',
+                kind: 'list',
+                note: 'list note',
+                items: [{ id: 'notes-list-1', title: 'A session' }],
+              },
+              {
+                id: 'notes-table',
+                kind: 'table',
+                note: 'table note',
+                columns: ['state'],
+                rows: [['done']],
+              },
+              { id: 'notes-image', kind: 'image', alt: 'chart', note: 'image note' },
+              {
+                id: 'notes-nav',
+                kind: 'navigation',
+                variant: 'top',
+                note: 'navigation note',
+                items: [{ id: 'notes-nav-home', label: 'Home' }],
+              },
+              {
+                id: 'notes-grid',
+                kind: 'grid',
+                columns: 2,
+                note: 'grid note',
+                children: [{ id: 'notes-grid-text', kind: 'text', text: 'Cell' }],
+              },
+            ],
+          },
+        },
+      ],
+      transitions: [],
+    };
+    renderStudio({ sourceText: JSON.stringify(annotated) });
+    const notes = screen
+      .getAllByTestId('wireframe-annotation')
+      .map((element) => element.textContent);
+    expect(notes).toEqual(
+      expect.arrayContaining([
+        'stack note',
+        'grid note',
+        'text note',
+        'button note',
+        'input note',
+        'list note',
+        'table note',
+        'image note',
+        'navigation note',
+      ]),
+    );
+  });
 });
