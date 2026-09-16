@@ -57,31 +57,37 @@ export const ArtifactDetail = ({
     >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className={cn('flex shrink-0 flex-col gap-2', PANE_RHYTHM.body)}>
-          <HeaderBand
-            title={artifact.title}
-            meta={<ArtifactStatusChip status={artifact.status} />}
-            subtitle={
-              <MetaRow
-                items={[
-                  <span key="agent" className="inline-flex min-w-0 items-center gap-1.5">
-                    <CONCEPT_ICONS.agents size={11} aria-hidden className="shrink-0 text-primary" />
-                    <span className="truncate">{creator?.name ?? 'unknown agent'}</span>
-                  </span>,
-                  <span key="kind">{artifact.kind}</span>,
-                  artifact.workflowRunId !== null ? (
-                    <span key="run">workflow run</span>
-                  ) : (
-                    <span key="run">standalone</span>
-                  ),
-                  <span key="revision">rev {artifact.revision}</span>,
-                  <span key="created" className="tabular-nums">
-                    {formatCompactDateTime({ iso: artifact.createdAt })}
-                  </span>,
-                ]}
-              />
-            }
-            actions={<ArtifactExportActions artifact={artifact} />}
-          />
+          <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}>
+            <HeaderBand
+              title={artifact.title}
+              meta={<ArtifactStatusChip kind={artifact.kind} status={artifact.status} />}
+              subtitle={
+                <MetaRow
+                  items={[
+                    <span key="agent" className="inline-flex min-w-0 items-center gap-1.5">
+                      <CONCEPT_ICONS.agents
+                        size={11}
+                        aria-hidden
+                        className="shrink-0 text-primary"
+                      />
+                      <span className="truncate">{creator?.name ?? 'unknown agent'}</span>
+                    </span>,
+                    <span key="kind">{artifact.kind}</span>,
+                    artifact.workflowRunId !== null ? (
+                      <span key="run">workflow run</span>
+                    ) : (
+                      <span key="run">standalone</span>
+                    ),
+                    <span key="revision">rev {artifact.revision}</span>,
+                    <span key="created" className="tabular-nums">
+                      {formatCompactDateTime({ iso: artifact.createdAt })}
+                    </span>,
+                  ]}
+                />
+              }
+              actions={<ArtifactExportActions artifact={artifact} />}
+            />
+          </div>
         </div>
         <Divider />
         <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>

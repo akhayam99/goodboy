@@ -25,9 +25,8 @@ const statusNote = ({ status }: { readonly status: ArtifactExportStatus }): stri
 };
 
 export const ArtifactExportActions = ({ artifact }: Props) => {
-  const { status, canSavePdf, copyMarkdown, saveMarkdown, savePdf } = useArtifactExport({
-    artifact,
-  });
+  const { status, sourceActionLabel, canSavePdf, pdfHint, copySource, saveSource, savePdf } =
+    useArtifactExport({ artifact });
   const note = statusNote({ status });
 
   return (
@@ -49,9 +48,9 @@ export const ArtifactExportActions = ({ artifact }: Props) => {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => void copyMarkdown()}
+        onClick={() => void copySource()}
         disabled={status.kind === 'busy'}
-        data-testid="artifact-copy-markdown"
+        data-testid="artifact-copy-source"
       >
         <Copy size={ICON_SIZE.row} aria-hidden />
         Copy
@@ -59,24 +58,25 @@ export const ArtifactExportActions = ({ artifact }: Props) => {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => void saveMarkdown()}
+        onClick={() => void saveSource()}
         disabled={status.kind === 'busy'}
-        data-testid="artifact-save-markdown"
+        data-testid="artifact-save-source"
       >
         <FileDown size={ICON_SIZE.row} aria-hidden />
-        Save markdown
+        {sourceActionLabel}
       </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => void savePdf()}
-        disabled={status.kind === 'busy' || !canSavePdf}
-        data-testid="artifact-save-pdf"
-        title={canSavePdf ? 'Open a print window and save as PDF' : 'Only markdown artifacts print'}
-      >
-        <Printer size={ICON_SIZE.row} aria-hidden />
-        Save PDF
-      </Button>
+      <span title={pdfHint} className="inline-flex">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => void savePdf()}
+          disabled={status.kind === 'busy' || !canSavePdf}
+          data-testid="artifact-save-pdf"
+        >
+          <Printer size={ICON_SIZE.row} aria-hidden />
+          Save PDF
+        </Button>
+      </span>
     </span>
   );
 };

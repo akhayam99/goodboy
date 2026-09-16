@@ -5,13 +5,15 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { ReportArtifact } from '@goodboy/types';
 
 const { saveSpy, exportSpy, windowSpy, onceSpy } = vi.hoisted(() => ({
-  saveSpy: vi.fn(async (): Promise<string | null> => '/tmp/report.md'),
+  saveSpy: vi.fn(async (_options: unknown): Promise<string | null> => '/tmp/report.md'),
   exportSpy: vi.fn(async (_args: unknown) => '/tmp/report.md'),
   windowSpy: vi.fn((_args: unknown) => undefined),
   onceSpy: vi.fn((_event: string) => undefined),
 }));
 
-vi.mock('@tauri-apps/plugin-dialog', () => ({ save: () => saveSpy() }));
+vi.mock('@tauri-apps/plugin-dialog', () => ({
+  save: (options: unknown) => saveSpy(options as never),
+}));
 vi.mock('../../artifactFile', () => ({
   exportArtifactToFile: (args: unknown) => exportSpy(args as never),
 }));
@@ -30,7 +32,7 @@ vi.mock('@tauri-apps/api/webviewWindow', () => ({
   },
 }));
 
-import { useArtifactExport } from './index';
+import { PDF_BLOCKED_HINT, PDF_READY_HINT, useArtifactExport } from './index';
 
 const artifact = JSON.parse(
   JSON.stringify({
@@ -52,6 +54,15 @@ const artifact = JSON.parse(
   }),
 ) as ReportArtifact;
 
+const wireframe = {
+  ...artifact,
+  id: 'wireframe-1',
+  kind: 'wireframe',
+  title: 'Onboarding flow',
+  sourceFormat: 'json',
+  sourceText: '{"screens":[]}',
+} as unknown as ReportArtifact;
+
 const writeText = vi.fn(async () => undefined);
 
 afterEach(cleanup);
@@ -68,7 +79,7 @@ describe('useArtifactExport', () => {
   it('copies the markdown source to the clipboard', async () => {
     const { result } = renderHook(() => useArtifactExport({ artifact }));
     await act(async () => {
-      await result.current.copyMarkdown();
+      await result.current.copySource();
     });
     expect(writeText).toHaveBeenCalledWith('# Outcome');
     expect(result.current.status).toEqual({ kind: 'copied' });
@@ -77,7 +88,7 @@ describe('useArtifactExport', () => {
   it('saves the markdown through the narrow writer with a slugged default name', async () => {
     const { result } = renderHook(() => useArtifactExport({ artifact }));
     await act(async () => {
-      await result.current.saveMarkdown();
+      await result.current.saveSource();
     });
     expect(exportSpy).toHaveBeenCalledWith({ path: '/tmp/report.md', contents: '# Outcome' });
     expect(result.current.status).toEqual({ kind: 'saved', path: '/tmp/report.md' });
@@ -87,7 +98,7 @@ describe('useArtifactExport', () => {
     saveSpy.mockResolvedValueOnce(null);
     const { result } = renderHook(() => useArtifactExport({ artifact }));
     await act(async () => {
-      await result.current.saveMarkdown();
+      await result.current.saveSource();
     });
     expect(exportSpy).not.toHaveBeenCalled();
     expect(result.current.status).toEqual({ kind: 'cancelled' });
@@ -97,12 +108,12 @@ describe('useArtifactExport', () => {
     exportSpy.mockRejectedValueOnce(new Error('the destination folder does not exist'));
     const { result } = renderHook(() => useArtifactExport({ artifact }));
     await act(async () => {
-      await result.current.saveMarkdown();
+      await result.current.saveSource();
     });
     await waitFor(() => {
       expect(result.current.status).toEqual({
         kind: 'failed',
-        action: 'markdown',
+        action: 'source',
         message: 'the destination folder does not exist',
       });
     });
@@ -122,9 +133,45 @@ describe('useArtifactExport', () => {
     expect(result.current.status).toEqual({ kind: 'printing' });
   });
 
-  it('refuses PDF for a non markdown artifact', () => {
-    const wireframe = { ...artifact, sourceFormat: 'json' } as unknown as ReportArtifact;
+  it('offers markdown affordances for a markdown artifact', () => {
+    const { result } = renderHook(() => useArtifactExport({ artifact }));
+    expect(result.current.sourceActionLabel).toBe('Save markdown');
+    expect(result.current.canSavePdf).toBe(true);
+    expect(result.current.pdfHint).toBe(PDF_READY_HINT);
+  });
+
+  it('refuses PDF for a json artifact and explains why', () => {
     const { result } = renderHook(() => useArtifactExport({ artifact: wireframe }));
     expect(result.current.canSavePdf).toBe(false);
+    expect(result.current.pdfHint).toBe(PDF_BLOCKED_HINT);
+  });
+
+  it('labels the json source save as JSON and filters on the json extension', async () => {
+    const { result } = renderHook(() => useArtifactExport({ artifact: wireframe }));
+    expect(result.current.sourceActionLabel).toBe('Save JSON');
+    await act(async () => {
+      await result.current.saveSource();
+    });
+    expect(saveSpy).toHaveBeenCalledWith({
+      defaultPath: 'onboarding-flow.json',
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    });
+  });
+
+  it('copies pretty printed json for a json artifact', async () => {
+    const { result } = renderHook(() => useArtifactExport({ artifact: wireframe }));
+    await act(async () => {
+      await result.current.copySource();
+    });
+    expect(writeText).toHaveBeenCalledWith('{\n  "screens": []\n}');
+  });
+
+  it('falls back to the raw source when the json does not parse', async () => {
+    const broken = { ...wireframe, sourceText: '{screens' } as unknown as ReportArtifact;
+    const { result } = renderHook(() => useArtifactExport({ artifact: broken }));
+    await act(async () => {
+      await result.current.copySource();
+    });
+    expect(writeText).toHaveBeenCalledWith('{screens');
   });
 });

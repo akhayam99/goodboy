@@ -29,11 +29,20 @@ export const ARTIFACT_STATUS_PRESENTATION = {
   },
 } satisfies Record<ArtifactStatus, StatePresentation>;
 
+const PLAN_LIFECYCLE_STATUSES: ReadonlyArray<ArtifactStatus> = ['active', 'consumed'];
+
 export const describeArtifactStatus = ({
+  kind,
   status,
 }: {
+  readonly kind: ArtifactKind;
   readonly status: ArtifactStatus;
-}): StatePresentation => ARTIFACT_STATUS_PRESENTATION[status];
+}): StatePresentation | null => {
+  if (kind === 'plan') {
+    return ARTIFACT_STATUS_PRESENTATION[status];
+  }
+  return PLAN_LIFECYCLE_STATUSES.includes(status) ? null : ARTIFACT_STATUS_PRESENTATION[status];
+};
 
 export const ARTIFACT_KIND_LABEL: Record<ArtifactKind, string> = {
   plan: 'Plans',

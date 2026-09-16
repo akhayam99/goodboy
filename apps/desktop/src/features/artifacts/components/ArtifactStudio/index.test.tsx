@@ -120,9 +120,34 @@ describe('ArtifactStudio', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Artifacts' })).toBeDefined();
     expect(screen.getByText('reporter')).toBeDefined();
     expect(screen.getByText('rev 2')).toBeDefined();
-    expect(screen.getByText('active')).toBeDefined();
+    expect(screen.queryByText('active')).toBeNull();
     expect(screen.getByTestId('artifact-export-slot')).toBeDefined();
     expect(screen.getByText('shipped it')).toBeDefined();
+  });
+
+  it('keeps the plan lifecycle vocabulary off reports and wireframes', () => {
+    state.sessionArtifacts = { 'sess-1': [report, wireframe] };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    expect(screen.queryByText('active')).toBeNull();
+    expect(screen.queryByText('consumed')).toBeNull();
+  });
+
+  it('still surfaces superseded on a report because a newer revision replaced it', () => {
+    state.sessionArtifacts = { 'sess-1': [{ ...report, status: 'superseded' }] };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    expect(screen.getByText('superseded')).toBeDefined();
+  });
+
+  it('offers markdown export on a report and json export on a wireframe', () => {
+    state.sessionArtifacts = { 'sess-1': [report, wireframe] };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('Session report'));
+    expect(screen.getByTestId('artifact-save-source').textContent).toContain('Save markdown');
+    expect(screen.getByTestId('artifact-save-pdf').hasAttribute('disabled')).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: /all artifacts/i }));
+    fireEvent.click(screen.getByText('Onboarding flow'));
+    expect(screen.getByTestId('artifact-save-source').textContent).toContain('Save JSON');
+    expect(screen.getByTestId('artifact-save-pdf').hasAttribute('disabled')).toBe(true);
   });
 
   it('renders a wireframe as pretty printed json', () => {

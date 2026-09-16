@@ -6,8 +6,14 @@ import type { SessionArtifact } from '@goodboy/types';
 import { exportArtifactToFile } from '../../artifactFile';
 import { artifactPrintHash } from '../../../reports/artifactPrintRequest';
 import { artifactFileSlug } from './artifactFileSlug';
+import { artifactExportContents, artifactSourceExport } from './artifactSourceExport';
 
-export type ArtifactExportAction = 'copy' | 'markdown' | 'pdf';
+export type ArtifactExportAction = 'copy' | 'source' | 'pdf';
+
+export const PDF_READY_HINT = 'Open a print window and save as PDF';
+
+export const PDF_BLOCKED_HINT =
+  'The print sheet only lays out markdown, so a JSON artifact has no printable page yet';
 
 export type ArtifactExportStatus =
   | Readonly<{ kind: 'idle' }>
@@ -20,9 +26,11 @@ export type ArtifactExportStatus =
 
 export type ArtifactExport = Readonly<{
   status: ArtifactExportStatus;
+  sourceActionLabel: string;
   canSavePdf: boolean;
-  copyMarkdown: () => Promise<void>;
-  saveMarkdown: () => Promise<void>;
+  pdfHint: string;
+  copySource: () => Promise<void>;
+  saveSource: () => Promise<void>;
   savePdf: () => Promise<void>;
 }>;
 
@@ -39,6 +47,11 @@ export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
   const [status, setStatus] = useState<ArtifactExportStatus>({ kind: 'idle' });
   const isBusy = useRef(false);
   const canSavePdf = artifact.sourceFormat === 'markdown';
+  const descriptor = artifactSourceExport({ sourceFormat: artifact.sourceFormat });
+  const contents = artifactExportContents({
+    sourceFormat: artifact.sourceFormat,
+    sourceText: artifact.sourceText,
+  });
 
   const run = useCallback(
     async (action: ArtifactExportAction, task: () => Promise<ArtifactExportStatus>) => {
@@ -58,31 +71,37 @@ export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
     [],
   );
 
-  const copyMarkdown = useCallback(async () => {
+  const copySource = useCallback(async () => {
     await run('copy', async () => {
       const clipboard = globalThis.navigator?.clipboard ?? null;
       if (clipboard === null) {
         throw new Error('this system has no clipboard available');
       }
-      await clipboard.writeText(artifact.sourceText);
+      await clipboard.writeText(contents);
       return { kind: 'copied' };
     });
-  }, [artifact.sourceText, run]);
+  }, [contents, run]);
 
-  const saveMarkdown = useCallback(async () => {
-    await run('markdown', async () => {
-      const extension = artifact.sourceFormat === 'markdown' ? 'md' : 'txt';
+  const saveSource = useCallback(async () => {
+    await run('source', async () => {
       const target = await save({
-        defaultPath: `${artifactFileSlug({ title: artifact.title })}.${extension}`,
-        filters: [{ name: 'Markdown', extensions: ['md', 'markdown', 'txt'] }],
+        defaultPath: `${artifactFileSlug({ title: artifact.title })}.${descriptor.fileExtension}`,
+        filters: [{ name: descriptor.filterName, extensions: [...descriptor.filterExtensions] }],
       });
       if (target === null || target === '') {
         return { kind: 'cancelled' };
       }
-      const path = await exportArtifactToFile({ path: target, contents: artifact.sourceText });
+      const path = await exportArtifactToFile({ path: target, contents });
       return { kind: 'saved', path };
     });
-  }, [artifact.sourceFormat, artifact.sourceText, artifact.title, run]);
+  }, [
+    artifact.title,
+    contents,
+    descriptor.fileExtension,
+    descriptor.filterExtensions,
+    descriptor.filterName,
+    run,
+  ]);
 
   const savePdf = useCallback(async () => {
     await run('pdf', async () => {
@@ -104,5 +123,13 @@ export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
     });
   }, [artifact.id, artifact.sessionId, artifact.title, run]);
 
-  return { status, canSavePdf, copyMarkdown, saveMarkdown, savePdf };
+  return {
+    status,
+    sourceActionLabel: descriptor.actionLabel,
+    canSavePdf,
+    pdfHint: canSavePdf ? PDF_READY_HINT : PDF_BLOCKED_HINT,
+    copySource,
+    saveSource,
+    savePdf,
+  };
 };
