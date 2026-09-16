@@ -1,4 +1,11 @@
-import type { Agent, AgentId, ArtifactKind, IsoDateTime, SessionArtifact } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  ArtifactKind,
+  IsoDateTime,
+  ProviderId,
+  SessionArtifact,
+} from '@goodboy/types';
 import { ARTIFACT_KIND_LABEL } from './artifact-status';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import type { StatePresentation } from '../../shared/utils/statePresentation';
@@ -27,6 +34,9 @@ export type ArtifactGeneration = Readonly<{
   title: string;
   state: ArtifactGenerationState;
   startedAt: IsoDateTime | null;
+  provider: ProviderId | null;
+  model: string | null;
+  isTurnRunning: boolean;
 }>;
 
 const GENERATING: StatePresentation = {
@@ -81,12 +91,14 @@ export type ArtifactGenerationsParams = Readonly<{
   agents: ReadonlyArray<Agent>;
   artifacts: ReadonlyArray<SessionArtifact>;
   activeAgentIds: ReadonlySet<AgentId>;
+  runningAgentIds: ReadonlySet<AgentId>;
 }>;
 
 export const resolveArtifactGenerations = ({
   agents,
   artifacts,
   activeAgentIds,
+  runningAgentIds,
 }: ArtifactGenerationsParams): ReadonlyArray<ArtifactGeneration> => {
   const produced = new Set(artifacts.map((artifact) => artifact.agentId));
   const rows: Array<ArtifactGeneration> = [];
@@ -101,6 +113,9 @@ export const resolveArtifactGenerations = ({
       title: agent.name,
       state: isGenerating({ agent, activeAgentIds }) ? 'generating' : 'unproduced',
       startedAt: agent.startedAt ?? null,
+      provider: agent.providerOverride ?? null,
+      model: agent.modelOverride ?? null,
+      isTurnRunning: runningAgentIds.has(agent.id),
     });
   }
   return rows;

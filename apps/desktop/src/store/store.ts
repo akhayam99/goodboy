@@ -147,6 +147,10 @@ import type {
   SessionCreationKind,
   SessionStudio,
 } from './slices/session-view';
+import type {
+  CloseArtifactCreationParams,
+  OpenArtifactCreationParams,
+} from './slices/session-view/types';
 import type { SpawnFocus } from './slices/session-view/spawnFocus';
 import { createTerminalSlice } from './slices/terminal';
 import { createScriptsSlice } from './slices/scripts';
@@ -160,8 +164,14 @@ import {
 import { createAgentsSlice } from './slices/agents';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
 import type { AgentQueuedTurn } from './slices/agents/setAgentQueue';
+import { createArtifactDraftsSlice } from './slices/artifactDrafts';
 import { createWorkflowDraftsSlice } from './slices/workflowDrafts';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
+import type {
+  ClearArtifactDraftParams,
+  HydrateArtifactDraftsParams,
+  SetArtifactDraftParams,
+} from './slices/artifactDrafts/types';
 import { createWorkflowStudioSlice } from './slices/workflowStudio';
 import { initialWorkflowStudioState } from './slices/workflowStudio/state';
 import type {
@@ -687,6 +697,9 @@ type AppActions = {
   setAgentEffortOverride(agentId: AgentId, effort: string): void;
   setAgentDraft(agentId: AgentId, value: string): void;
   clearAgentDraft(agentId: AgentId): void;
+  setArtifactDraft(params: SetArtifactDraftParams): void;
+  clearArtifactDraft(params: ClearArtifactDraftParams): void;
+  hydrateArtifactDrafts(params: HydrateArtifactDraftsParams): void;
   setWorkflowDraft(sessionId: SessionId, draft: WorkflowBuilderDraft): void;
   clearWorkflowDraft(sessionId: SessionId): void;
   setWorkflowStudioDraft(params: { workspaceId: WorkspaceId; draft: WorkflowStudioDraft }): void;
@@ -930,6 +943,8 @@ type AppActions = {
     readonly sessionId: SessionId;
     readonly agentId: AgentId;
   }): void;
+  openArtifactCreation(params: OpenArtifactCreationParams): void;
+  closeArtifactCreation(params: CloseArtifactCreationParams): void;
   setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
   openDiffLens(sessionId: SessionId, focus: DiffFocus | null): void;
@@ -1094,6 +1109,7 @@ export const initialState: AppState = {
   ...artifactsInitialState,
   agentDraft: {},
   workflowDrafts: {},
+  artifactDrafts: {},
   ...initialWorkflowStudioState,
   ...initialWorkflowRoutingState,
   agentAttachments: {},
@@ -1155,6 +1171,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createResolveSlice({ set, get }),
   ...createReviewNavigationSlice({ set, get }),
   ...createWorkflowDraftsSlice(set, get),
+  ...createArtifactDraftsSlice(set, get),
   ...createWorkflowStudioSlice(set, get),
   ...createWorkflowRoutingSlice(set, get),
   ...createSlotsSlice(set, get),

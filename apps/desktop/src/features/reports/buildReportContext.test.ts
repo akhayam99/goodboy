@@ -13,6 +13,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import { ARTIFACT_BRIEF_CLIP_NOTE, ARTIFACT_BRIEF_LIMITS } from '../artifacts/artifactBrief';
 import { buildReportContext, REPORT_CONTEXT_LIMITS } from './buildReportContext';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -119,14 +120,26 @@ describe('buildReportContext', () => {
     );
   });
 
-  it('does not let a long brief displace the evidence', () => {
-    const baseline = buildReportContext({ ...baseParams });
+  it('notes a clipped brief in the truncation section', () => {
     const context = buildReportContext({
       ...baseParams,
       brief: 'Harborline '.repeat(REPORT_CONTEXT_LIMITS.total),
     });
-    expect(context.text.endsWith(baseline.text)).toBe(true);
-    expect(context.truncations).toEqual(baseline.truncations);
+    expect(context.truncations).toContain(ARTIFACT_BRIEF_CLIP_NOTE);
+    expect(context.text).toContain(ARTIFACT_BRIEF_CLIP_NOTE);
+    expect(
+      context.text.split('# user request\n\n')[1]?.split('\n\n# evidence pack')[0],
+    ).toHaveLength(ARTIFACT_BRIEF_LIMITS.chars);
+  });
+
+  it('reports its inventory with the same counts it wrote into the pack', () => {
+    const context = buildReportContext({ ...baseParams });
+    const agents = context.inventory.find((row) => row.id === 'agents');
+    const excluded = context.inventory.find((row) => row.id === 'excluded');
+    const size = context.inventory.find((row) => row.id === 'size');
+    expect(agents?.summary).toContain('agents, last message of each up to 1200 characters');
+    expect(excluded?.summary).toContain('tool calls');
+    expect(size?.state).toBe('included');
   });
 
   it('keeps only the last assistant message per agent and cites the agent id', () => {

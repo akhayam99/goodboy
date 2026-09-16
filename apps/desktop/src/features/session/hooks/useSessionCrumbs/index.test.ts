@@ -106,6 +106,7 @@ beforeEach(() => {
     sessionStudio: {},
     focusedWorkflowRunId: {},
     focusedPlanId: {},
+    artifactCreation: {},
     selectedAgentId: {},
     sessionPhaseRuns: { [SESSION_ID]: [stepAgent, adHocAgent, resolverAgent, clusterChild] },
     agentKindOverride: {},

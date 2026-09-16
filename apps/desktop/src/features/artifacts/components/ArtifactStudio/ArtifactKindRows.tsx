@@ -8,6 +8,8 @@ type Props = {
   readonly generations: ReadonlyArray<ArtifactGeneration>;
   readonly onSelectArtifact: (artifactId: ArtifactId) => void;
   readonly onSelectGeneration: (agentId: AgentId) => void;
+  readonly onStopGeneration: (generation: ArtifactGeneration) => void;
+  readonly onRetryGeneration: (generation: ArtifactGeneration) => void;
 };
 
 export const ArtifactKindRows = ({
@@ -15,6 +17,8 @@ export const ArtifactKindRows = ({
   generations,
   onSelectArtifact,
   onSelectGeneration,
+  onStopGeneration,
+  onRetryGeneration,
 }: Props) => (
   <ul className="flex flex-col gap-2">
     {generations.map((generation) => (
@@ -22,6 +26,8 @@ export const ArtifactKindRows = ({
         <ArtifactGenerationRow
           generation={generation}
           onSelect={() => onSelectGeneration(generation.agentId)}
+          onStop={() => onStopGeneration(generation)}
+          onRetry={() => onRetryGeneration(generation)}
         />
       </li>
     ))}

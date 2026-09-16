@@ -12,14 +12,11 @@ import {
   artifactEvidenceInventory,
   recordArtifactProvenance,
 } from '../../../features/artifacts/artifactProvenance';
-import {
-  buildReportContext,
-  type ReportDiffEvidence,
-} from '../../../features/reports/buildReportContext';
+import { buildReportContext } from '../../../features/reports/buildReportContext';
+import { collectReportDiffEvidence } from '../../../features/reports/collectReportDiffEvidence';
 import { REPORT_TYPE_LABEL, type ReportType } from '../../../features/reports/reportTypes';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
-import { listBranchCommits, worktreeChangedFiles } from '../../../features/worktree/worktree';
-import { selectActiveMount } from '../project-mounts/selectors';
+import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { GetFn } from './types';
 
 export type ReportRouting = {
@@ -35,6 +32,7 @@ export type SpawnReportAgentParams = {
   readonly routing?: ReportRouting | null;
   readonly brief?: string | null;
   readonly evidence?: string | null;
+  readonly focus?: SpawnFocus;
 };
 
 type State = ReturnType<GetFn>;
@@ -80,39 +78,6 @@ export const resolveReportRouting = ({
   return { provider, model: getCheapModel(provider), effort: 'low' };
 };
 
-type DiffParams = {
-  readonly state: State;
-  readonly sessionId: SessionId;
-};
-
-const collectDiffEvidence = async ({
-  state,
-  sessionId,
-}: DiffParams): Promise<ReportDiffEvidence | null> => {
-  const mount = selectActiveMount({ state, sessionId });
-  if (mount === null || mount.worktreePath.length === 0) {
-    return null;
-  }
-  const baseBranch = mount.baseBranch ?? 'main';
-  try {
-    const [changed, commits] = await Promise.all([
-      worktreeChangedFiles({ worktreePath: mount.worktreePath, baseBranch }),
-      listBranchCommits(mount.worktreePath).catch(() => []),
-    ]);
-    return {
-      mountName: mount.mountName,
-      baseBranch,
-      headSha: commits[0]?.sha ?? null,
-      commits: commits.map((commit) => ({ sha: commit.shortSha, subject: commit.subject })),
-      additions: changed.additions,
-      deletions: changed.deletions,
-      paths: changed.paths,
-    };
-  } catch {
-    return null;
-  }
-};
-
 export const spawnReportAgent = (get: GetFn) => {
   return async ({
     sessionId,
@@ -121,6 +86,7 @@ export const spawnReportAgent = (get: GetFn) => {
     routing = null,
     brief = null,
     evidence = null,
+    focus = 'agent',
   }: SpawnReportAgentParams): Promise<AgentId> => {
     const state = get();
     const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
@@ -136,10 +102,10 @@ export const spawnReportAgent = (get: GetFn) => {
         model: resolved.model,
         effort: resolved.effort,
         initialPrompt: evidence,
-        focus: 'agent',
+        focus,
       });
     }
-    const diff = await collectDiffEvidence({ state, sessionId });
+    const diff = await collectReportDiffEvidence({ state, sessionId });
     const context = buildReportContext({
       reportType,
       brief,
@@ -149,7 +115,8 @@ export const spawnReportAgent = (get: GetFn) => {
       artifacts: state.sessionArtifacts?.[sessionId] ?? [],
       events: state.sessionEvents?.[sessionId] ?? [],
       scriptRuns: state.scriptRuns?.[sessionId] ?? {},
-      diff,
+      diff: diff.evidence,
+      diffUnavailableReason: diff.reason,
       workflowRunId,
       capturedAt: new Date().toISOString() as IsoDateTime,
     });
@@ -160,7 +127,7 @@ export const spawnReportAgent = (get: GetFn) => {
       model: resolved.model,
       effort: resolved.effort,
       initialPrompt: context.text,
-      focus: 'agent',
+      focus,
     });
     await recordArtifactProvenance({
       agentId,

@@ -128,6 +128,16 @@ const getWith = (overrides: Record<string, unknown> = {}): GetFn =>
   (() => ({ ...baseState, ...overrides })) as unknown as GetFn;
 
 describe('spawnReportAgent', () => {
+  it('spawns without taking focus when asked', async () => {
+    await spawnReportAgent(getWith())({
+      sessionId: SESSION_ID,
+      reportType: 'session-summary',
+      focus: 'none',
+    });
+    const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(args['focus']).toBe('none');
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
   });

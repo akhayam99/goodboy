@@ -24,6 +24,7 @@ const base = (
   focusedWorkflowName: null,
   selectedChildWorkflowName: null,
   focusedPlanTitle: null,
+  artifactCreationLabel: null,
   selectedChildLabel: null,
   selectedChildHome: null,
   selectedParentLabel: null,
@@ -360,5 +361,17 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
     expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'Create']);
+  });
+
+  it('renders Overview > Artifacts > Create report while creation is open', () => {
+    const handlers = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        { lens: 'plans', artifactCreationLabel: 'Create report', focusedPlanTitle: 'Round once' },
+        handlers,
+      ),
+    );
+    expect(labels(crumbs)).toEqual(['Overview', 'Artifacts', 'Create report']);
+    expect(last(crumbs)?.onClick).toBeUndefined();
   });
 });

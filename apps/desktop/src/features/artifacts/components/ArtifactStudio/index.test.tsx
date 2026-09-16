@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const { state, showToast } = vi.hoisted(() => ({
   showToast: vi.fn(),
@@ -23,6 +23,17 @@ const { state, showToast } = vi.hoisted(() => ({
     setFocusedPlanId: vi.fn(),
     artifactFilter: {} as Record<string, string>,
     setArtifactFilter: vi.fn(),
+    sessions: [] as ReadonlyArray<Record<string, unknown>>,
+    selectedAgentId: {} as Record<string, string | null>,
+    sessionStudio: {} as Record<string, unknown>,
+    artifactCreation: {} as Record<
+      string,
+      { readonly kind: string; readonly note: string | null } | null
+    >,
+    openArtifactCreation: vi.fn(),
+    closeArtifactCreation: vi.fn(),
+    setArtifactDraft: vi.fn(),
+    cancelCurrentTurn: vi.fn(async () => undefined),
     lensHistory: {} as Record<string, { readonly index: number }>,
     lensGo: vi.fn(),
     plans: [] as ReadonlyArray<unknown>,
@@ -39,6 +50,30 @@ vi.mock('../../../../store', () => ({
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast }),
+}));
+
+vi.mock('../ArtifactCreationPane', () => ({
+  ArtifactCreationPane: ({
+    kind,
+    note,
+    onStarted,
+  }: {
+    readonly kind: string;
+    readonly note: string | null;
+    readonly onStarted: (agentId: string) => void;
+  }) => (
+    <div data-testid="artifact-creation-pane-stub">
+      {kind}
+      {note}
+      <button type="button" onClick={() => onStarted('agent-report-2')}>
+        stub generate
+      </button>
+    </div>
+  ),
+}));
+
+vi.mock('../../artifactProvenance', () => ({
+  loadArtifactProvenance: vi.fn(async () => null),
 }));
 
 const report = {
@@ -125,7 +160,15 @@ beforeEach(() => {
   state.plans = [];
   state.focusedPlanId = {};
   state.artifactFilter = {};
+  state.sessions = [{ id: 'sess-1', goal: 'fix the rounding drift' }];
+  state.selectedAgentId = {};
+  state.sessionStudio = {};
+  state.artifactCreation = {};
   state.loadSessionArtifacts.mockClear();
+  state.openArtifactCreation.mockClear();
+  state.closeArtifactCreation.mockClear();
+  state.setArtifactDraft.mockClear();
+  state.cancelCurrentTurn.mockClear();
   state.setFocusedPlanId.mockClear();
   state.setArtifactFilter.mockClear();
   state.selectAgent.mockClear();
@@ -233,6 +276,69 @@ describe('ArtifactStudio', () => {
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     expect(screen.queryByText('no report produced')).toBeNull();
     expect(screen.getByText('Session report')).toBeDefined();
+  });
+
+  it('renders the creation pane over the collection when creation is open', () => {
+    state.artifactCreation = { 'sess-1': { kind: 'wireframe', note: null } };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    expect(screen.getByTestId('artifact-creation-pane-stub').textContent).toContain('wireframe');
+    expect(screen.queryByRole('heading', { level: 2, name: 'Reports' })).toBeNull();
+  });
+
+  it('shows the model and a stop control on a running generation', () => {
+    state.sessionPhaseRuns = {
+      'sess-1': [
+        {
+          ...reportAgent,
+          status: 'running',
+          lastFinishedAt: undefined,
+          providerOverride: 'anthropic',
+          modelOverride: 'claude-sonnet-5',
+        },
+      ],
+    };
+    state.agentTurnState = { 'agent-report-2': { kind: 'running' } };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    expect(screen.getByText(/Claude/)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    expect(state.cancelCurrentTurn).toHaveBeenCalledWith('sess-1', 'agent-report-2');
+  });
+
+  it('offers try again on a generation that produced nothing', async () => {
+    state.sessionPhaseRuns = { 'sess-1': [reportAgent] };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(state.openArtifactCreation).toHaveBeenCalledWith({
+        sessionId: 'sess-1',
+        kind: 'report',
+        workflowRunId: null,
+        note: 'the brief of this generation was not recorded',
+      });
+    });
+    expect(state.setArtifactDraft).toHaveBeenCalled();
+  });
+
+  it('opens the reader when the awaited artifact arrives on the collection', () => {
+    state.artifactCreation = { 'sess-1': { kind: 'report', note: null } };
+    const { rerender } = render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('stub generate'));
+    state.artifactCreation = {};
+    state.sessionArtifacts = { 'sess-1': [{ ...report, agentId: 'agent-report-2' }] };
+    rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
+    expect(screen.getByTestId('artifact-export-slot')).toBeDefined();
+  });
+
+  it('records completion without stealing focus once the user opened something else', () => {
+    state.artifactCreation = { 'sess-1': { kind: 'report', note: null } };
+    const { rerender } = render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('stub generate'));
+    state.artifactCreation = {};
+    state.selectedAgentId = { 'sess-1': 'agent-report-2' };
+    state.sessionArtifacts = { 'sess-1': [{ ...report, agentId: 'agent-report-2' }] };
+    rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
+    expect(screen.queryByTestId('artifact-export-slot')).toBeNull();
+    expect(screen.getByRole('heading', { level: 2, name: 'Reports' })).toBeDefined();
   });
 
   it('opens the agent behind a generation that produced nothing', () => {

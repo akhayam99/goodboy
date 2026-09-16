@@ -25,6 +25,7 @@ import type {
   TurnEvent,
   Workflow,
   WorkflowId,
+  WorkflowRunId,
   Workspace,
   WorkspaceId,
   IntegrationBinding,
@@ -588,6 +589,43 @@ describe('store contract', () => {
       store.getState().setActiveLens(SESSION_ID, null);
       expect(store.getState().activeLens[SESSION_ID]).toBeNull();
       expect(readPersistedLens(SESSION_ID)).toBeNull();
+    });
+
+    it('opening artifact creation clears the studio, the selected agent and the focused plan', async () => {
+      const store = await getStore();
+      store.getState().setSessionStudio(SESSION_ID, { kind: 'workflow' });
+      store.getState().setFocusedPlanId(SESSION_ID, PLAN_ID);
+      store.getState().openArtifactCreation({ sessionId: SESSION_ID, kind: 'report' });
+      expect(store.getState().artifactCreation[SESSION_ID]).toEqual({ kind: 'report', note: null });
+      expect(store.getState().activeLens[SESSION_ID]).toBe('plans');
+      expect(store.getState().sessionStudio[SESSION_ID]).toBeNull();
+      expect(store.getState().selectedAgentId[SESSION_ID]).toBeNull();
+      expect(store.getState().focusedPlanId[SESSION_ID]).toBeNull();
+      store.getState().closeArtifactCreation({ sessionId: SESSION_ID });
+      expect(store.getState().artifactCreation[SESSION_ID]).toBeNull();
+    });
+
+    it('opening from a run rewrites the drafted scope to that run', async () => {
+      const store = await getStore();
+      store.getState().setArtifactDraft({
+        sessionId: SESSION_ID,
+        draft: {
+          kind: 'report',
+          reportType: 'change-summary',
+          brief: 'the residual convention',
+          basedOn: { kind: 'session' },
+          routing: null,
+          updatedAt: NOW,
+        },
+      });
+      store.getState().openArtifactCreation({
+        sessionId: SESSION_ID,
+        kind: 'report',
+        workflowRunId: 'run-ledger-1' as WorkflowRunId,
+      });
+      const draft = store.getState().artifactDrafts[SESSION_ID]?.report;
+      expect(draft?.basedOn).toEqual({ kind: 'workflow-run', workflowRunId: 'run-ledger-1' });
+      expect(draft?.brief).toBe('the residual convention');
     });
 
     it('migrates a legacy "dashboard" persisted value to null (Overview)', async () => {

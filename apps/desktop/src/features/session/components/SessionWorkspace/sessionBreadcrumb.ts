@@ -20,6 +20,7 @@ export type SessionBreadcrumbInput = {
   focusedWorkflowName: string | null;
   selectedChildWorkflowName: string | null;
   focusedPlanTitle: string | null;
+  artifactCreationLabel: string | null;
   selectedChildLabel: string | null;
   selectedChildHome: AgentHomeLens | null;
   selectedParentLabel: string | null;
@@ -42,6 +43,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     focusedWorkflowName,
     selectedChildWorkflowName,
     focusedPlanTitle,
+    artifactCreationLabel,
     selectedChildLabel,
     selectedChildHome,
     selectedParentLabel,
@@ -148,6 +150,10 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
 
   if (lens === 'workflows' && focusedWorkflowName != null) {
     return sealLast([overview, workflowsList, { id: 'workflow-run', label: focusedWorkflowName }]);
+  }
+
+  if (lens === 'plans' && artifactCreationLabel != null) {
+    return sealLast([overview, plansList, { id: 'artifact-create', label: artifactCreationLabel }]);
   }
 
   if (lens === 'plans' && focusedPlanTitle != null) {

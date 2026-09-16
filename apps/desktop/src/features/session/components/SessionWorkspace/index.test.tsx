@@ -25,6 +25,7 @@ type Store = {
   phaseTemplates: Record<string, ReadonlyArray<unknown>>;
   sessionWorkflows: Record<string, ReadonlyArray<unknown>>;
   focusedPlanId: Record<string, string | null>;
+  artifactCreation: Record<string, { readonly kind: string } | null>;
   focusedGithubIssueNumber: Record<string, number | null>;
   sessionExternalTasks: Record<string, ReadonlyArray<unknown>>;
   sessionGithub: Record<string, unknown>;
@@ -71,6 +72,7 @@ const { store, hooks } = vi.hoisted(() => ({
     phaseTemplates: {},
     sessionWorkflows: {},
     focusedPlanId: {},
+    artifactCreation: {},
     focusedGithubIssueNumber: {},
     sessionExternalTasks: {},
     sessionGithub: {},
@@ -273,6 +275,7 @@ beforeEach(() => {
   store.phaseTemplates = {};
   store.sessionWorkflows = {};
   store.focusedPlanId = {};
+  store.artifactCreation = {};
   store.focusedGithubIssueNumber = {};
   store.sessionExternalTasks = {};
   store.sessionGithub = {};

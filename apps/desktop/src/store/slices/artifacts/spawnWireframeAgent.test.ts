@@ -148,17 +148,17 @@ describe('spawnWireframeAgent', () => {
     expect(args['parentAgentId']).toBeUndefined();
   });
 
-  it('keeps the agent inside the workflow run it was asked for', async () => {
+  it('scopes the evidence to a run without joining the agent to it', async () => {
     await spawnWireframeAgent(getWith())({
       sessionId: SESSION_ID,
       fidelity: 'low',
       workflowRunId: RUN_ID,
     });
     const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
-    expect(args['workflowRunId']).toBe(RUN_ID);
+    expect(args['workflowRunId']).toBeUndefined();
   });
 
-  it('keeps a re-spawn from a supplied evidence pack inside its workflow run', async () => {
+  it('keeps a re-spawn from a supplied evidence pack standalone', async () => {
     await spawnWireframeAgent(getWith())({
       sessionId: SESSION_ID,
       fidelity: 'low',
@@ -166,8 +166,18 @@ describe('spawnWireframeAgent', () => {
       evidence: 'the original kickoff',
     });
     const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
-    expect(args['workflowRunId']).toBe(RUN_ID);
+    expect(args['workflowRunId']).toBeUndefined();
     expect(args['initialPrompt']).toBe('the original kickoff');
+  });
+
+  it('spawns without taking focus when asked', async () => {
+    await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      fidelity: 'low',
+      focus: 'none',
+    });
+    const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(args['focus']).toBe('none');
   });
 
   it('carries the product evidence and the document contract in the kickoff', async () => {
@@ -236,7 +246,7 @@ describe('spawnWireframeAgent', () => {
     expect(readSpy).not.toHaveBeenCalled();
   });
 
-  it('records the design profile summary and both runs for a run scoped wireframe', async () => {
+  it('records the source run without an executing run for a run scoped wireframe', async () => {
     await spawnWireframeAgent(getWith())({
       sessionId: SESSION_ID,
       fidelity: 'high',
@@ -248,7 +258,7 @@ describe('spawnWireframeAgent', () => {
     expect(recorded['kind']).toBe('wireframe');
     expect(recorded['brief']).toBe('show the Harborline inbox');
     expect(recorded['sourceWorkflowRunId']).toBe(RUN_ID);
-    expect(recorded['executingWorkflowRunId']).toBe(RUN_ID);
+    expect(recorded['executingWorkflowRunId']).toBeNull();
     expect(String(recorded['designProfileSummary'])).toContain('commit: abcdef1');
   });
 

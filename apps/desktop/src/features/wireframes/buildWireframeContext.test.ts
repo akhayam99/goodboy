@@ -11,6 +11,7 @@ import type {
   TurnEvent,
   WorkspaceId,
 } from '@goodboy/types';
+import { ARTIFACT_BRIEF_CLIP_NOTE, ARTIFACT_BRIEF_LIMITS } from '../artifacts/artifactBrief';
 import { REDACTED } from '../../shared/utils/redactSecrets';
 import { buildWireframeContext, WIREFRAME_CONTEXT_LIMITS } from './buildWireframeContext';
 import type { DesignProfile } from './collectDesignProfile';
@@ -133,9 +134,30 @@ describe('buildWireframeContext', () => {
     expect(textFor({ brief })).toBe(textFor());
   });
 
-  it('does not let a long brief displace the evidence or document contract', () => {
+  it('notes a clipped brief in the truncation section', () => {
     const text = textFor({ brief: 'Harborline '.repeat(WIREFRAME_CONTEXT_LIMITS.total) });
-    expect(text.endsWith(textFor())).toBe(true);
+    expect(text).toContain(ARTIFACT_BRIEF_CLIP_NOTE);
+    expect(text.split('# user request\n\n')[1]?.split('\n\n# low fidelity')[0]).toHaveLength(
+      ARTIFACT_BRIEF_LIMITS.chars,
+    );
+  });
+
+  it('reports its inventory with the plans it kept session wide', () => {
+    const context = buildWireframeContext({
+      brief: null,
+      fidelity: 'low',
+      session: sessionWith({ goal: 'ship the wireframe role' }),
+      agents: [agentWith({ name: 'scout' })],
+      transcripts,
+      artifacts: [planWith({ title: 'Ship it' })],
+      designProfile: null,
+      capturedAt: NOW,
+    });
+    const plans = context.inventory.find((row) => row.id === 'plans');
+    const theme = context.inventory.find((row) => row.id === 'theme');
+    expect(plans?.summary).toContain('1 of 1 session plans');
+    expect(plans?.detail).toContain('session plans, not scoped to a run');
+    expect(theme?.summary).toBe('plain wireframe, no design files read');
   });
 
   it('redacts a secret carried in an agent name', () => {

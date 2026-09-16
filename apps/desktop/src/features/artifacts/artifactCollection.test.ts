@@ -41,6 +41,7 @@ describe('resolveArtifactGenerations', () => {
       agents: [agent({ kind: 'implementer' })],
       artifacts: [],
       activeAgentIds: noneActive,
+      runningAgentIds: noneActive,
     });
     expect(rows).toEqual([]);
   });
@@ -50,6 +51,7 @@ describe('resolveArtifactGenerations', () => {
       agents: [agent({})],
       artifacts: [artifactOf({})],
       activeAgentIds: noneActive,
+      runningAgentIds: noneActive,
     });
     expect(rows).toEqual([]);
   });
@@ -59,6 +61,7 @@ describe('resolveArtifactGenerations', () => {
       agents: [agent({ status: 'running' })],
       artifacts: [],
       activeAgentIds: noneActive,
+      runningAgentIds: noneActive,
     });
     expect(rows[0]?.state).toBe('generating');
   });
@@ -68,6 +71,7 @@ describe('resolveArtifactGenerations', () => {
       agents: [agent({ status: 'pending' })],
       artifacts: [],
       activeAgentIds: new Set(['agent-1' as AgentId]),
+      runningAgentIds: noneActive,
     });
     expect(rows[0]?.state).toBe('generating');
   });
@@ -77,6 +81,7 @@ describe('resolveArtifactGenerations', () => {
       agents: [agent({ status: 'pending' })],
       artifacts: [],
       activeAgentIds: noneActive,
+      runningAgentIds: noneActive,
     });
     expect(rows[0]?.state).toBe('generating');
   });
@@ -91,6 +96,7 @@ describe('resolveArtifactGenerations', () => {
       ],
       artifacts: [],
       activeAgentIds: noneActive,
+      runningAgentIds: noneActive,
     });
     expect(rows[0]?.state).toBe('unproduced');
   });
@@ -100,6 +106,7 @@ describe('resolveArtifactGenerations', () => {
       agents: [agent({ id: 'agent-9' as AgentId, name: 'Session summary' })],
       artifacts: [],
       activeAgentIds: noneActive,
+      runningAgentIds: noneActive,
     });
     expect(rows).toEqual([
       {
@@ -108,6 +115,9 @@ describe('resolveArtifactGenerations', () => {
         title: 'Session summary',
         state: 'unproduced',
         startedAt: null,
+        provider: null,
+        model: null,
+        isTurnRunning: false,
       },
     ]);
   });
@@ -117,6 +127,7 @@ describe('resolveArtifactGenerations', () => {
       agents: [agent({ kind: 'wireframe', status: 'failed', name: 'Low fidelity' })],
       artifacts: [],
       activeAgentIds: noneActive,
+      runningAgentIds: noneActive,
     });
     expect(rows[0]?.kind).toBe('wireframe');
     expect(rows[0]?.state).toBe('unproduced');
@@ -127,6 +138,7 @@ describe('resolveArtifactGenerations', () => {
       agents: [agent({ deletedAt: '2026-01-02T03:04:05.000Z' as Agent['deletedAt'] })],
       artifacts: [],
       activeAgentIds: noneActive,
+      runningAgentIds: noneActive,
     });
     expect(rows).toEqual([]);
   });

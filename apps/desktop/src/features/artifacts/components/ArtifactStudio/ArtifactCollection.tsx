@@ -28,6 +28,8 @@ type Props = {
   readonly onSelectPlan: (planId: PlanId) => void;
   readonly onSelectArtifact: (artifactId: ArtifactId) => void;
   readonly onSelectGeneration: (agentId: AgentId) => void;
+  readonly onStopGeneration: (generation: ArtifactGeneration) => void;
+  readonly onRetryGeneration: (generation: ArtifactGeneration) => void;
 };
 
 type EmptyCopy = {
@@ -76,6 +78,8 @@ export const ArtifactCollection = ({
   onSelectPlan,
   onSelectArtifact,
   onSelectGeneration,
+  onStopGeneration,
+  onRetryGeneration,
 }: Props) => {
   const byKind = GENERATED_ARTIFACT_KINDS.map((kind) => ({
     kind,
@@ -125,6 +129,8 @@ export const ArtifactCollection = ({
               generations={group.generations}
               onSelectArtifact={onSelectArtifact}
               onSelectGeneration={onSelectGeneration}
+              onStopGeneration={onStopGeneration}
+              onRetryGeneration={onRetryGeneration}
             />
           </ArtifactSection>
         ) : null,

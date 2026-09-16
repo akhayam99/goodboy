@@ -12,20 +12,15 @@ import {
   artifactEvidenceInventory,
   recordArtifactProvenance,
 } from '../../../features/artifacts/artifactProvenance';
-import { exploreList, exploreRead } from '../../../features/explore/explore';
 import { buildWireframeContext } from '../../../features/wireframes/buildWireframeContext';
-import {
-  collectDesignProfile,
-  type DesignProfile,
-} from '../../../features/wireframes/collectDesignProfile';
+import { collectWireframeDesignProfile } from '../../../features/wireframes/collectWireframeDesignProfile';
 import { describeDesignProfile } from '../../../features/wireframes/describeDesignProfile';
 import {
   WIREFRAME_FIDELITY_LABEL,
   type WireframeFidelity,
 } from '../../../features/wireframes/wireframeFidelity';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
-import { listBranchCommits } from '../../../features/worktree/worktree';
-import { selectActiveMount } from '../project-mounts/selectors';
+import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { GetFn } from './types';
 
 export type WireframeRouting = {
@@ -41,6 +36,7 @@ export type SpawnWireframeAgentParams = {
   readonly routing?: WireframeRouting | null;
   readonly brief?: string | null;
   readonly evidence?: string | null;
+  readonly focus?: SpawnFocus;
 };
 
 type State = ReturnType<GetFn>;
@@ -93,35 +89,6 @@ export const resolveWireframeRouting = ({
   return { provider: choice.provider, model: choice.model, effort };
 };
 
-type ProfileParams = {
-  readonly state: State;
-  readonly sessionId: SessionId;
-};
-
-const collectProfile = async ({
-  state,
-  sessionId,
-}: ProfileParams): Promise<DesignProfile | null> => {
-  const mount = selectActiveMount({ state, sessionId });
-  if (mount === null || mount.worktreePath.length === 0) {
-    return null;
-  }
-  const commitSha = await listBranchCommits(mount.worktreePath)
-    .then((commits) => commits[0]?.shortSha ?? null)
-    .catch(() => null);
-  try {
-    return await collectDesignProfile({
-      rootPath: mount.worktreePath,
-      commitSha,
-      projectName: mount.mountName,
-      list: exploreList,
-      read: exploreRead,
-    });
-  } catch {
-    return null;
-  }
-};
-
 export const spawnWireframeAgent = (get: GetFn) => {
   return async ({
     sessionId,
@@ -130,6 +97,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
     routing = null,
     brief = null,
     evidence = null,
+    focus = 'agent',
   }: SpawnWireframeAgentParams): Promise<AgentId> => {
     const state = get();
     const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
@@ -142,15 +110,15 @@ export const spawnWireframeAgent = (get: GetFn) => {
       return get().spawnAgent(sessionId, {
         kindOverride: 'wireframe',
         name,
-        ...(workflowRunId !== null && { workflowRunId }),
         provider: resolved.provider,
         model: resolved.model,
         effort: resolved.effort,
         initialPrompt: evidence,
-        focus: 'agent',
+        focus,
       });
     }
-    const designProfile = fidelity === 'high' ? await collectProfile({ state, sessionId }) : null;
+    const designProfile =
+      fidelity === 'high' ? await collectWireframeDesignProfile({ state, sessionId }) : null;
     const sessionAgents = state.sessionPhaseRuns?.[sessionId] ?? [];
     const scoped =
       workflowRunId === null ? sessionAgents : runsForWorkflowRun(sessionAgents, workflowRunId);
@@ -167,12 +135,11 @@ export const spawnWireframeAgent = (get: GetFn) => {
     const agentId = await get().spawnAgent(sessionId, {
       kindOverride: 'wireframe',
       name,
-      ...(workflowRunId !== null && { workflowRunId }),
       provider: resolved.provider,
       model: resolved.model,
       effort: resolved.effort,
       initialPrompt: context.text,
-      focus: 'agent',
+      focus,
     });
     await recordArtifactProvenance({
       agentId,
@@ -190,7 +157,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
       designProfileSummary:
         designProfile === null ? null : describeDesignProfile({ profile: designProfile }),
       sourceWorkflowRunId: workflowRunId,
-      executingWorkflowRunId: workflowRunId,
+      executingWorkflowRunId: null,
     }).catch((error: unknown) => {
       console.warn(`[artifact-provenance] wireframe ${agentId}: ${formatError(error)}`);
     });
