@@ -1,5 +1,5 @@
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
-import { updateSessionState } from '@goodboy/db';
+import { purgeAgentForDelete, updateSessionState } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn, deleteAttachment } from '../../../features/chat/turn';
 import { abandonWorktreeWriter } from '../../../features/worktree/worktree';
@@ -7,7 +7,8 @@ import { invokeAgentList } from '../../../features/workflows/workflows';
 import { agentDestinationPath, agentWritePaths } from '../resolve/agentWritePath';
 import { recoverSoleMount } from '../project-mounts/recoverSoleMount';
 import { selectWritableMounts } from '../project-mounts/selectors';
-import { cancelledRunIds, deriveSessionState } from '../../session-mutators';
+import { cancelledRunIds, deriveSessionState, purgedAgentIds } from '../../session-mutators';
+import { awaitRunStopped } from '../../awaitRunStopped';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 
@@ -15,9 +16,12 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId) => {
     const agentTurn = get().agentTurnState[agentId];
     const agentRunId = agentTurn?.kind === 'running' ? agentTurn.runId : null;
+    const workspaceId = get().sessions.find((sess) => sess.id === sessionId)?.workspaceId;
+    let runStopped = true;
     if (agentRunId !== null) {
       cancelledRunIds.add(agentRunId);
       await cancelTurn(agentRunId).catch(() => undefined);
+      runStopped = await awaitRunStopped({ runId: agentRunId }).catch(() => false);
     }
 
     for (const path of await agentWritePaths({ get, sessionId, agentId })) {
@@ -32,7 +36,27 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
       }
     }
 
-    await tauriDatabase.execute('DELETE FROM agents WHERE id = ?', [agentId]);
+    purgedAgentIds.add(agentId);
+    try {
+      await purgeAgentForDelete({ db: tauriDatabase, id: agentId });
+    } catch (error) {
+      purgedAgentIds.delete(agentId);
+      throw error;
+    }
+    if (!runStopped) {
+      void get()
+        .emitNotification(
+          'error',
+          'warning',
+          'Deleted agent is still running',
+          'The transcript is gone, but the provider process did not stop. Anything it writes from here is discarded. Quit it yourself if it keeps holding the worktree.',
+          {
+            sessionId,
+            ...(workspaceId !== undefined && { workspaceId }),
+          },
+        )
+        .catch(() => undefined);
+    }
     const refreshed = await invokeAgentList(sessionId);
     let derived: ReturnType<typeof deriveSessionState> | null = null;
     dropPendingTurnEvents({ agentIds: [agentId] });

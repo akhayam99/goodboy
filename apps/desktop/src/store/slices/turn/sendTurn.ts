@@ -86,7 +86,7 @@ import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
-import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
+import { applyAgentTurnState, cancelledRunIds, purgedAgentIds } from '../../session-mutators';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from '../../integrationsGuard';
 import { buildProfileGuard } from '../../profileGuard';
@@ -1516,7 +1516,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       clearMaterializationBatch({ sessionId, batchId: runId });
     }
 
-    if (assistantText.length > 0) {
+    if (assistantText.length > 0 && !purgedAgentIds.has(activeAgentId)) {
       const assistantMessage: Message = {
         id: crypto.randomUUID() as MessageId,
         sessionId,

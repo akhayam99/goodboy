@@ -193,6 +193,7 @@ export {
   updateAgentStatus,
   softDeleteAgent,
   restoreAgent,
+  purgeAgentForDelete,
   updateAgentConfig,
   updateAgentRouting,
   type AgentRoutingUpdate,
