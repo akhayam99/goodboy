@@ -151,7 +151,32 @@ describe('WireframeStudio', () => {
     expect(screen.queryByTestId('wireframe-fidelity-divergence')).toBeNull();
     expect(provenance.textContent).toContain('theme goodboy');
     expect(provenance.textContent).toContain('abcdef1');
-    expect(provenance.textContent).toContain('packages/ui/src/styles.css');
+    const chip = screen.getByTestId('wireframe-source-chip');
+    expect(chip.textContent).toBe('styles.css');
+    expect(chip.getAttribute('title')).toBe('packages/ui/src/styles.css');
+  });
+
+  it('keeps every design source on one row and reveals the rest on demand', () => {
+    const many = {
+      ...document,
+      theme: {
+        ...document.theme,
+        sources: [
+          'packages/ui/src/styles.css',
+          'packages/ui/src/tokens.css',
+          'apps/desktop/src/app/theme.ts',
+          'apps/desktop/tailwind.config.ts',
+          'packages/ui/src/Button.tsx',
+        ],
+      },
+    };
+    renderStudio({ sourceText: JSON.stringify(many) });
+    expect(screen.getAllByTestId('wireframe-source-chip')).toHaveLength(4);
+    const more = screen.getByTestId('wireframe-sources-more');
+    expect(more.textContent).toBe('+1 more');
+    fireEvent.click(more);
+    expect(screen.getAllByTestId('wireframe-source-chip')).toHaveLength(5);
+    expect(screen.getByTestId('wireframe-sources-less')).toBeDefined();
   });
 
   it('renders an image node as a labelled placeholder, never a remote asset', () => {

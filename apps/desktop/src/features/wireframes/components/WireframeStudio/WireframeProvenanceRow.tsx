@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { cn } from '@goodboy/ui';
 import type { WireframeTheme } from '@goodboy/core';
 import type { WireframeFidelity } from '../../wireframeFidelity';
 
@@ -7,6 +9,17 @@ type Props = {
   readonly theme: WireframeTheme;
   readonly designProfile: Readonly<Record<string, unknown>>;
 };
+
+const COLLAPSED_LIMIT = 4;
+
+const chipClass =
+  'inline-flex min-w-0 max-w-[13rem] items-center rounded-full border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground';
+
+const refLeaf = ({ ref }: { readonly ref: string }): string =>
+  ref
+    .split('/')
+    .filter((segment) => segment.length > 0)
+    .pop() ?? ref;
 
 const asString = (value: unknown): string | null =>
   typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
@@ -32,9 +45,12 @@ export const WireframeProvenanceRow = ({
   theme,
   designProfile,
 }: Props) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const commit = asString(designProfile['commitSha']);
   const refs = [...new Set([...(theme.sources ?? []), ...profileRefs({ designProfile })])];
   const isDiverged = requestedFidelity !== null && requestedFidelity !== fidelity;
+  const overflow = refs.length - COLLAPSED_LIMIT;
+  const visible = isExpanded || overflow <= 0 ? refs : refs.slice(0, COLLAPSED_LIMIT);
 
   return (
     <div
@@ -58,14 +74,41 @@ export const WireframeProvenanceRow = ({
       {refs.length === 0 ? (
         <span className="shrink-0">no design evidence was pinned to this wireframe</span>
       ) : (
-        <>
-          <span className="shrink-0">from</span>
-          {refs.map((ref) => (
-            <span key={ref} className="truncate font-mono">
-              {ref}
-            </span>
-          ))}
-        </>
+        <span className="shrink-0">from</span>
+      )}
+      {visible.map((ref) => (
+        <span
+          key={ref}
+          data-testid="wireframe-source-chip"
+          title={ref}
+          aria-label={ref}
+          className={cn(chipClass, 'font-mono')}
+        >
+          <span className="truncate">{refLeaf({ ref })}</span>
+        </span>
+      ))}
+      {overflow > 0 && !isExpanded && (
+        <button
+          type="button"
+          className={cn(
+            chipClass,
+            'shrink-0 tabular-nums hover:border-border hover:text-foreground',
+          )}
+          data-testid="wireframe-sources-more"
+          onClick={() => setIsExpanded(true)}
+        >
+          +{overflow} more
+        </button>
+      )}
+      {overflow > 0 && isExpanded && (
+        <button
+          type="button"
+          className={cn(chipClass, 'shrink-0 hover:border-border hover:text-foreground')}
+          data-testid="wireframe-sources-less"
+          onClick={() => setIsExpanded(false)}
+        >
+          show fewer
+        </button>
       )}
     </div>
   );
