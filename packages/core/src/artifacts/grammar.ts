@@ -4,8 +4,7 @@ export const ARTIFACT_MAX_BYTES = 512 * 1024;
 
 const OPEN_MARKER = '<<artifact';
 const MARKER_END = '>>';
-const CLOSE_STICKY_RE = /[ \t]*<<\/artifact>>[ \t]*/y;
-const FENCE_STICKY_RE = /[ \t]*(`{3,}|~{3,})/y;
+const CLOSE_MARKER = '<</artifact>>';
 const WHITESPACE_CHAR_RE = /\s/;
 const NAME_CHAR_RE = /[a-zA-Z-]/;
 
@@ -171,14 +170,22 @@ type LineParams = {
 };
 
 const fenceRunAt = ({ text, from }: ScanParams): string | null => {
-  FENCE_STICKY_RE.lastIndex = from;
-  const match = FENCE_STICKY_RE.exec(text);
-  return match === null ? null : match[1]!;
+  const start = scanWhile({ text, from, accepts: isIndent });
+  if (!text.startsWith('```', start) && !text.startsWith('~~~', start)) {
+    return null;
+  }
+  const fenceChar = text[start];
+  const end = scanWhile({ text, from: start + 3, accepts: (char) => char === fenceChar });
+  return text.slice(start, end);
 };
 
 const isCloseLine = ({ text, lineStart, lineEnd }: LineParams): boolean => {
-  CLOSE_STICKY_RE.lastIndex = lineStart;
-  return CLOSE_STICKY_RE.test(text) && CLOSE_STICKY_RE.lastIndex === lineEnd;
+  const start = scanWhile({ text, from: lineStart, accepts: isIndent });
+  if (!text.startsWith(CLOSE_MARKER, start)) {
+    return false;
+  }
+  const end = scanWhile({ text, from: start + CLOSE_MARKER.length, accepts: isIndent });
+  return end === lineEnd;
 };
 
 const openMarkerAttrsAt = ({ text, lineStart, lineEnd }: LineParams): string | null => {
