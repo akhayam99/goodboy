@@ -264,7 +264,7 @@ export const buildWireframeContext = ({
   designProfile,
   capturedAt,
 }: WireframeContextParams): WireframeContext => {
-  const sourceIds: Array<string> = [];
+  const sourceIds: Array<string> = [session.id];
   const truncations: Array<string> = [];
   const inventory: Array<ArtifactContextInventoryRow> = [];
   const request = clipBrief({ text: brief ?? '' });

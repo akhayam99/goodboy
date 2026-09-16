@@ -184,4 +184,18 @@ describe('buildWireframeContext', () => {
     expect(text).not.toContain('ghp_abcdefghijklmnopqrst');
     expect(text).toContain('--accent: #3355ff');
   });
+
+  it('records the session as a source', () => {
+    const context = buildWireframeContext({
+      brief: null,
+      fidelity: 'low',
+      session: sessionWith({ goal: 'ship the wireframe role' }),
+      agents: [agentWith({ name: 'scout' })],
+      transcripts,
+      artifacts: [planWith({ title: 'Ship it' })],
+      designProfile: null,
+      capturedAt: NOW,
+    });
+    expect(context.sourceIds).toContain(SESSION_ID);
+  });
 });

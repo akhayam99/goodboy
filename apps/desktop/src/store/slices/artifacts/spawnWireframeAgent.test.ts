@@ -268,7 +268,10 @@ describe('spawnWireframeAgent', () => {
     expect(recorded['designProfileSummary']).toBeNull();
     expect(recorded['sourceWorkflowRunId']).toBeNull();
     expect(recorded['executingWorkflowRunId']).toBeNull();
-    expect(recorded['evidence']).toEqual([{ kind: 'agent', id: AGENT_ID, label: 'scout' }]);
+    expect(recorded['evidence']).toEqual([
+      { kind: 'session', id: SESSION_ID, label: 'ship the wireframe role' },
+      { kind: 'agent', id: AGENT_ID, label: 'scout' },
+    ]);
   });
 
   it('still spawns when provenance cannot be written', async () => {
