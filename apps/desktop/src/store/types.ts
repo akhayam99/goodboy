@@ -393,6 +393,7 @@ export type AppState = AppSliceState & {
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
   readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
+  readonly artifactConversationAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;

@@ -26,6 +26,7 @@ import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useSelectedAgentHome } from '../../hooks/useSelectedAgentHome';
 import { useSessionBranchSync } from '../../hooks/useSessionBranchSync';
 import { resolveOverlayHome } from './resolveOverlayHome';
+import { resolveSessionSurfaceLayer } from './resolveSessionSurfaceLayer';
 import { resolveDiffMount } from './parts/resolveDiffMount';
 import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';
@@ -85,6 +86,9 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     fallbackPath: workingDir,
   });
   const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
+  const artifactConversationAgentId = useAppStore(
+    (s) => s.artifactConversationAgentId[sessionId] ?? null,
+  );
   const setSessionStudio = useAppStore((s) => s.setSessionStudio);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const phaseRuns = useAppStore(
@@ -130,9 +134,15 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const onSelectOverview = () => {
     setActiveLens(sessionId, null);
   };
-  const showStudio = studio != null;
-  const showAgentOverlay = selectedAgentId != null && !showStudio;
-  const showLens = selectedAgentId == null && !showStudio;
+  const surfaceLayer = resolveSessionSurfaceLayer({
+    lens,
+    hasStudio: studio != null,
+    selectedAgentId,
+    artifactConversationAgentId,
+  });
+  const showStudio = surfaceLayer === 'studio';
+  const showAgentOverlay = surfaceLayer === 'agent';
+  const showLens = surfaceLayer === 'lens';
   const resolverAgentIds = useMemo(
     () => selectResolverAgentIds({ agents: phaseRuns, kindOverride: agentKindOverride }),
     [phaseRuns, agentKindOverride],

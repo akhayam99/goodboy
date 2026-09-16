@@ -7,6 +7,7 @@ export const createInitialSessionViewState = ({}: Params) => ({
   lensHistory: {},
   focusedPlanId: {},
   artifactFilter: {},
+  artifactConversationAgentId: {},
   focusedGithubIssueNumber: {},
   focusedExternalTask: {},
   sessionStudio: {},

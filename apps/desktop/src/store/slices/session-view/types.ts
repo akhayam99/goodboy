@@ -152,6 +152,7 @@ type SessionViewSliceState = {
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
   readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
+  readonly artifactConversationAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
@@ -181,6 +182,14 @@ type SessionViewSliceActions = {
   setArtifactFilter(params: {
     readonly sessionId: SessionId;
     readonly filter: ArtifactFilter;
+  }): void;
+  openArtifactConversation(params: {
+    readonly sessionId: SessionId;
+    readonly agentId: AgentId;
+  }): void;
+  closeArtifactConversation(params: {
+    readonly sessionId: SessionId;
+    readonly agentId: AgentId;
   }): void;
   setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;

@@ -922,6 +922,14 @@ type AppActions = {
     readonly sessionId: SessionId;
     readonly filter: ArtifactFilter;
   }): void;
+  openArtifactConversation(params: {
+    readonly sessionId: SessionId;
+    readonly agentId: AgentId;
+  }): void;
+  closeArtifactConversation(params: {
+    readonly sessionId: SessionId;
+    readonly agentId: AgentId;
+  }): void;
   setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
   openDiffLens(sessionId: SessionId, focus: DiffFocus | null): void;
