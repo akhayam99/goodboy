@@ -165,6 +165,33 @@ describe('ArtifactStudio', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Plans' })).toBeDefined();
   });
 
+  it('opens a cited report in place of the one being read', () => {
+    const earlier = {
+      ...report,
+      id: 'artifact-report-2',
+      title: 'Earlier report',
+      sourceText: 'this supersedes artifact-report',
+    };
+    state.sessionArtifacts = { 'sess-1': [report, earlier] };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('Earlier report'));
+    fireEvent.click(screen.getByTestId('report-source-chip'));
+    expect(screen.getByText('shipped it')).toBeDefined();
+    expect(state.setFocusedPlanId).toHaveBeenCalledWith('sess-1', null);
+  });
+
+  it('focuses a cited plan as a plan and leaves the artifact detail', () => {
+    const cited = { ...plan, sourceText: 'step one', kind: 'plan', schemaVersion: 1 };
+    state.sessionArtifacts = {
+      'sess-1': [{ ...report, sourceText: 'built from plan-1' }, cited],
+    };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('Session report'));
+    fireEvent.click(screen.getByTestId('report-source-chip'));
+    expect(state.setFocusedPlanId).toHaveBeenCalledWith('sess-1', 'plan-1');
+    expect(screen.getByRole('heading', { level: 1, name: 'Plans' })).toBeDefined();
+  });
+
   it('keeps the plan-only controls on a focused plan', () => {
     state.plans = [plan];
     state.focusedPlanId = { 'sess-1': 'plan-1' };

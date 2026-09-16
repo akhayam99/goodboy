@@ -104,6 +104,10 @@ export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
   ]);
 
   const savePdf = useCallback(async () => {
+    if (!canSavePdf) {
+      setStatus({ kind: 'failed', action: 'pdf', message: PDF_BLOCKED_HINT });
+      return;
+    }
     await run('pdf', async () => {
       const hash = artifactPrintHash({
         sessionId: artifact.sessionId,
@@ -121,7 +125,7 @@ export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
       });
       return { kind: 'printing' };
     });
-  }, [artifact.id, artifact.sessionId, artifact.title, run]);
+  }, [artifact.id, artifact.sessionId, artifact.title, canSavePdf, run]);
 
   return {
     status,

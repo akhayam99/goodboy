@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, Eye, Pencil, RotateCcw } from 'lucide-react';
 import { Button, Divider, Markdown, SegmentedTabs, Textarea, cn, formatError } from '@goodboy/ui';
 import type {
@@ -23,11 +23,23 @@ type Props = {
   readonly artifact: ReportArtifact;
   readonly agents: ReadonlyArray<Agent>;
   readonly artifacts: ReadonlyArray<SessionArtifact>;
+  readonly onSelectArtifact: (artifactId: ArtifactId) => void;
 };
 
 type Mode = 'preview' | 'edit';
 
-export const ReportStudio = ({ sessionId, artifact, agents, artifacts }: Props) => {
+const REGENERATE_READY_HINT = 'Run the report again on the same evidence pack';
+
+const REGENERATE_BLOCKED_HINT =
+  'the evidence pack this report was built from is no longer in memory, so regenerating would build a different report';
+
+export const ReportStudio = ({
+  sessionId,
+  artifact,
+  agents,
+  artifacts,
+  onSelectArtifact,
+}: Props) => {
   const [mode, setMode] = useState<Mode>('preview');
   const [draft, setDraft] = useState(artifact.sourceText);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +52,6 @@ export const ReportStudio = ({ sessionId, artifact, agents, artifacts }: Props) 
   const updateArtifactSource = useAppStore((state) => state.updateArtifactSource);
   const spawnReportAgent = useAppStore((state) => state.spawnReportAgent);
   const selectAgent = useAppStore((state) => state.selectAgent);
-  const setFocusedPlanId = useAppStore((state) => state.setFocusedPlanId);
   const kickoff = useAppStore((state) => {
     const events = state.transcripts?.[artifact.agentId] ?? [];
     const first = events.find((event) => event.kind === 'user_text');
@@ -63,6 +74,15 @@ export const ReportStudio = ({ sessionId, artifact, agents, artifacts }: Props) 
   const reportType = asReportType({ value: artifact.metadata.reportType });
   const typeLabel =
     reportType === null ? artifact.metadata.reportType : REPORT_TYPE_LABEL[reportType];
+  const canRegenerate = kickoff !== null && kickoff.trim().length > 0;
+
+  useEffect(() => {
+    setMode('preview');
+    setDraft(artifact.sourceText);
+    setError(null);
+    setActiveHeadingId(null);
+    setIsOutlineOpen(false);
+  }, [artifact.id, artifact.sourceText]);
 
   const commitEdit = async () => {
     if (draft === artifact.sourceText) {
@@ -84,7 +104,7 @@ export const ReportStudio = ({ sessionId, artifact, agents, artifacts }: Props) 
   };
 
   const regenerate = async () => {
-    if (isRegenerating) {
+    if (isRegenerating || !canRegenerate) {
       return;
     }
     setIsRegenerating(true);
@@ -106,13 +126,12 @@ export const ReportStudio = ({ sessionId, artifact, agents, artifacts }: Props) 
 
   const scrollToHeading = (id: string) => {
     setActiveHeadingId(id);
-    const entry = outline.find((candidate) => candidate.id === id);
-    if (entry === undefined || bodyRef.current === null) {
+    const position = outline.findIndex((candidate) => candidate.id === id);
+    if (position < 0 || bodyRef.current === null) {
       return;
     }
-    const headings = bodyRef.current.querySelectorAll('h1, h2, h3');
-    const match = [...headings].find((node) => node.textContent?.trim() === entry.title.trim());
-    match?.scrollIntoView({ block: 'start' });
+    const heading = bodyRef.current.querySelectorAll('h1, h2, h3').item(position);
+    heading?.scrollIntoView({ block: 'start' });
   };
 
   return (
@@ -121,7 +140,7 @@ export const ReportStudio = ({ sessionId, artifact, agents, artifacts }: Props) 
         reportType={typeLabel}
         links={links}
         onOpenAgent={(agentId: AgentId) => void selectAgent(sessionId, agentId)}
-        onOpenArtifact={(artifactId: ArtifactId) => setFocusedPlanId(sessionId, artifactId)}
+        onOpenArtifact={(artifactId: ArtifactId) => onSelectArtifact(artifactId)}
       />
       <div className="flex shrink-0 flex-wrap items-center gap-2">
         <SegmentedTabs
@@ -143,13 +162,18 @@ export const ReportStudio = ({ sessionId, artifact, agents, artifacts }: Props) 
           variant="secondary"
           size="sm"
           onClick={() => void regenerate()}
-          disabled={isRegenerating}
+          disabled={isRegenerating || !canRegenerate}
           data-testid="report-regenerate"
-          title="Run the report again on the same evidence pack"
+          title={canRegenerate ? REGENERATE_READY_HINT : REGENERATE_BLOCKED_HINT}
         >
           <RotateCcw size={11} aria-hidden />
           {isRegenerating ? 'Starting' : 'Regenerate'}
         </Button>
+        {canRegenerate ? null : (
+          <span data-testid="report-regenerate-blocked" className="text-2xs text-muted-foreground">
+            {REGENERATE_BLOCKED_HINT}
+          </span>
+        )}
       </div>
       {error === null ? null : (
         <span role="alert" className="text-2xs text-danger">

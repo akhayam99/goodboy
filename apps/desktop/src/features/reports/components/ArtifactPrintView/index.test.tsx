@@ -72,6 +72,18 @@ describe('ArtifactPrintView', () => {
     expect(screen.getByRole('alert').textContent).toContain('nothing was lost');
   });
 
+  it('refuses to print a json artifact instead of dumping its source', async () => {
+    listSpy.mockResolvedValueOnce([
+      { ...report, kind: 'wireframe', sourceFormat: 'json', sourceText: '{"screens":[]}' },
+    ]);
+    render(<ArtifactPrintView request={request} />);
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toContain('only lays out markdown');
+    });
+    expect(screen.queryByText('{"screens":[]}')).toBeNull();
+    expect(window.print).not.toHaveBeenCalled();
+  });
+
   it('reports a missing artifact instead of printing an empty page', async () => {
     listSpy.mockResolvedValueOnce([]);
     render(<ArtifactPrintView request={request} />);

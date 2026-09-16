@@ -133,7 +133,7 @@ describe('spawnReportAgent', () => {
   it('carries the evidence pack as the kickoff prompt', async () => {
     await spawnReportAgent(getWith())({
       sessionId: SESSION_ID,
-      reportType: 'pr-report',
+      reportType: 'change-summary',
       workflowRunId: RUN_ID,
     });
     const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;

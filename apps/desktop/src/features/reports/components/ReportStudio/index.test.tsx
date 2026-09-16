@@ -9,9 +9,10 @@ const { state } = vi.hoisted(() => ({
     updateArtifactSource: vi.fn(async () => undefined),
     spawnReportAgent: vi.fn(async () => 'agent-report'),
     selectAgent: vi.fn(async () => undefined),
-    setFocusedPlanId: vi.fn(),
   },
 }));
+
+const selectArtifact = vi.fn();
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
@@ -45,6 +46,14 @@ const agents = [
   { id: 'agent-1', sessionId: SESSION_ID, ordinal: 0, name: 'implementer', status: 'completed' },
 ];
 
+const plan = {
+  ...report,
+  id: 'plan-1',
+  kind: 'plan',
+  title: 'Ship the thing',
+  sourceText: 'step one',
+};
+
 const renderStudio = () =>
   render(
     <ReportStudio
@@ -52,6 +61,7 @@ const renderStudio = () =>
       artifact={JSON.parse(JSON.stringify(report))}
       agents={JSON.parse(JSON.stringify(agents))}
       artifacts={[JSON.parse(JSON.stringify(report))]}
+      onSelectArtifact={selectArtifact}
     />,
   );
 
@@ -102,6 +112,7 @@ describe('ReportStudio', () => {
         )}
         agents={JSON.parse(JSON.stringify(many))}
         artifacts={[]}
+        onSelectArtifact={selectArtifact}
       />,
     );
     expect(screen.getAllByTestId('report-source-chip')).toHaveLength(4);
@@ -149,5 +160,78 @@ describe('ReportStudio', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toContain('no provider connected');
     });
+  });
+  it('sends a cited artifact to the studio selection, not to the plan focus', () => {
+    render(
+      <ReportStudio
+        sessionId={SESSION_ID}
+        artifact={JSON.parse(
+          JSON.stringify({ ...report, sourceText: 'built on plan-1 and nothing else' }),
+        )}
+        agents={[]}
+        artifacts={JSON.parse(JSON.stringify([report, plan]))}
+        onSelectArtifact={selectArtifact}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('report-source-chip'));
+    expect(selectArtifact).toHaveBeenCalledWith('plan-1');
+  });
+
+  it('scrolls to the repeated heading the reader picked, not to the first of its name', () => {
+    const scrolled: Array<Element> = [];
+    Element.prototype.scrollIntoView = function scrollIntoView(this: Element) {
+      scrolled.push(this);
+    };
+    render(
+      <ReportStudio
+        sessionId={SESSION_ID}
+        artifact={JSON.parse(
+          JSON.stringify({
+            ...report,
+            sourceText: '# Outcome\n\n## Risks\n\nfirst.\n\n## Risks\n\nsecond.',
+          }),
+        )}
+        agents={[]}
+        artifacts={[]}
+        onSelectArtifact={selectArtifact}
+      />,
+    );
+    const outline = screen.getByRole('navigation', { name: 'Report outline' });
+    const entries = [...outline.querySelectorAll('button')];
+    fireEvent.click(entries[2]!);
+    expect(scrolled).toHaveLength(1);
+    expect(scrolled[0]).toBe(screen.getAllByRole('heading', { name: 'Risks' })[1]);
+  });
+
+  it('drops the draft of the previous report when another one is shown', () => {
+    const { rerender } = renderStudio();
+    fireEvent.click(screen.getByRole('tab', { name: /Edit/ }));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '# Leaked edit' } });
+    rerender(
+      <ReportStudio
+        sessionId={SESSION_ID}
+        artifact={JSON.parse(
+          JSON.stringify({ ...report, id: 'report-2', sourceText: '# Second report' }),
+        )}
+        agents={JSON.parse(JSON.stringify(agents))}
+        artifacts={[]}
+        onSelectArtifact={selectArtifact}
+      />,
+    );
+    fireEvent.click(screen.getByRole('tab', { name: /Edit/ }));
+    expect(screen.getByRole('textbox')).toHaveProperty('value', '# Second report');
+    expect(state.updateArtifactSource).not.toHaveBeenCalled();
+  });
+
+  it('refuses to regenerate once the evidence pack has left memory', () => {
+    state.transcripts = {};
+    renderStudio();
+    const button = screen.getByTestId('report-regenerate');
+    expect(button.hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('report-regenerate-blocked').textContent).toContain(
+      'no longer in memory',
+    );
+    fireEvent.click(button);
+    expect(state.spawnReportAgent).not.toHaveBeenCalled();
   });
 });

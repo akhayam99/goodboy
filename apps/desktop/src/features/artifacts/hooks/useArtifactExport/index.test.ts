@@ -146,6 +146,19 @@ describe('useArtifactExport', () => {
     expect(result.current.pdfHint).toBe(PDF_BLOCKED_HINT);
   });
 
+  it('opens no print window when a json artifact asks for a PDF', async () => {
+    const { result } = renderHook(() => useArtifactExport({ artifact: wireframe }));
+    await act(async () => {
+      await result.current.savePdf();
+    });
+    expect(windowSpy).not.toHaveBeenCalled();
+    expect(result.current.status).toEqual({
+      kind: 'failed',
+      action: 'pdf',
+      message: PDF_BLOCKED_HINT,
+    });
+  });
+
   it('labels the json source save as JSON and filters on the json extension', async () => {
     const { result } = renderHook(() => useArtifactExport({ artifact: wireframe }));
     expect(result.current.sourceActionLabel).toBe('Save JSON');

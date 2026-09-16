@@ -12,7 +12,11 @@ type Props = {
 type Status =
   | Readonly<{ kind: 'loading' }>
   | Readonly<{ kind: 'ready'; artifact: SessionArtifact }>
+  | Readonly<{ kind: 'unsupported'; artifact: SessionArtifact }>
   | Readonly<{ kind: 'failed'; message: string }>;
+
+const PRINT_UNSUPPORTED_COPY =
+  'the print sheet only lays out markdown, so this artifact has no printable page yet';
 
 export const ArtifactPrintView = ({ request }: Props) => {
   const [status, setStatus] = useState<Status>({ kind: 'loading' });
@@ -29,6 +33,10 @@ export const ArtifactPrintView = ({ request }: Props) => {
         const found = artifacts.find((entry) => entry.id === request.artifactId) ?? null;
         if (found === null) {
           setStatus({ kind: 'failed', message: 'this artifact is no longer in the session' });
+          return;
+        }
+        if (found.sourceFormat !== 'markdown') {
+          setStatus({ kind: 'unsupported', artifact: found });
           return;
         }
         setStatus({ kind: 'ready', artifact: found });
@@ -78,6 +86,15 @@ export const ArtifactPrintView = ({ request }: Props) => {
           {status.message}. the markdown source is still available in the app, so nothing was lost.
         </p>
       ) : null}
+      {status.kind === 'unsupported' ? (
+        <article>
+          <h1 className="print-title">{status.artifact.title}</h1>
+          <p role="alert" className="print-note">
+            {PRINT_UNSUPPORTED_COPY}. the {status.artifact.sourceFormat} source is still available
+            in the app, so nothing was lost.
+          </p>
+        </article>
+      ) : null}
       {status.kind === 'ready' ? (
         <article>
           <h1 className="print-title">{status.artifact.title}</h1>
@@ -85,11 +102,7 @@ export const ArtifactPrintView = ({ request }: Props) => {
             {status.artifact.kind} revision {status.artifact.revision}, captured{' '}
             {status.artifact.createdAt}
           </p>
-          {status.artifact.sourceFormat === 'markdown' ? (
-            <Markdown text={status.artifact.sourceText} />
-          ) : (
-            <pre className="print-source">{status.artifact.sourceText}</pre>
-          )}
+          <Markdown text={status.artifact.sourceText} />
         </article>
       ) : null}
     </div>

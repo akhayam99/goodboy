@@ -81,11 +81,11 @@ describe('CreateReportCta', () => {
     const trigger = screen.getByTestId('create-report-cta');
     expect(trigger.hasAttribute('disabled')).toBe(false);
     fireEvent.click(trigger);
-    fireEvent.click(screen.getByText('PR report'));
+    fireEvent.click(screen.getByText('Local change report'));
     await waitFor(() => {
       expect(state.spawnReportAgent).toHaveBeenCalledWith({
         sessionId: SESSION_ID,
-        reportType: 'pr-report',
+        reportType: 'change-summary',
         workflowRunId: null,
       });
     });

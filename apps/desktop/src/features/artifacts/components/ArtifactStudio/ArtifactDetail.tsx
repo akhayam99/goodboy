@@ -9,7 +9,7 @@ import {
   ScrollFade,
   cn,
 } from '@goodboy/ui';
-import type { Agent, SessionArtifact, SessionId } from '@goodboy/types';
+import type { Agent, ArtifactId, SessionArtifact, SessionId } from '@goodboy/types';
 import { ArtifactExportActions } from './ArtifactExportActions';
 import { ArtifactStatusChip } from './ArtifactStatusChip';
 import { ReportStudio } from '../../../reports/components/ReportStudio';
@@ -24,6 +24,7 @@ type Props = {
   readonly artifacts: ReadonlyArray<SessionArtifact>;
   readonly count: number;
   readonly onBack: () => void;
+  readonly onSelectArtifact: (artifactId: ArtifactId) => void;
 };
 
 const prettyJson = (source: string): string => {
@@ -41,6 +42,7 @@ export const ArtifactDetail = ({
   artifacts,
   count,
   onBack,
+  onSelectArtifact,
 }: Props) => {
   const creator = agents.find((agent) => agent.id === artifact.agentId);
 
@@ -98,6 +100,7 @@ export const ArtifactDetail = ({
                 artifact={artifact}
                 agents={agents}
                 artifacts={artifacts}
+                onSelectArtifact={onSelectArtifact}
               />
             ) : null}
             {artifact.kind !== 'report' && artifact.sourceFormat === 'markdown' ? (

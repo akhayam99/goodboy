@@ -18,12 +18,6 @@ export const PRINT_SHEET_CSS = `
   color: #5a5f68;
   font-size: 0.75rem;
 }
-.print-sheet .print-source {
-  font-family: ui-monospace, monospace;
-  font-size: 0.75rem;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
 .print-sheet pre,
 .print-sheet table {
   break-inside: avoid;

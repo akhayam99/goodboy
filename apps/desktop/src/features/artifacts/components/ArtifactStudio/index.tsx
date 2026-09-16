@@ -16,6 +16,7 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
+  const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
   const [focusedArtifactId, setFocusedArtifactId] = useState<ArtifactId | null>(null);
 
   useEffect(() => {
@@ -29,6 +30,20 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
   const standalone = artifacts.filter((artifact) => artifact.kind !== 'plan');
   const selected = standalone.find((artifact) => artifact.id === focusedArtifactId) ?? null;
 
+  const selectArtifact = (artifactId: ArtifactId) => {
+    const target = artifacts.find((artifact) => artifact.id === artifactId) ?? null;
+    if (target === null) {
+      return;
+    }
+    if (target.kind === 'plan') {
+      setFocusedArtifactId(null);
+      setFocusedPlanId(sessionId, target.id);
+      return;
+    }
+    setFocusedPlanId(sessionId, null);
+    setFocusedArtifactId(target.id);
+  };
+
   if (selected !== null) {
     return (
       <ArtifactDetail
@@ -38,6 +53,7 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
         artifacts={artifacts}
         count={artifacts.length}
         onBack={() => setFocusedArtifactId(null)}
+        onSelectArtifact={selectArtifact}
       />
     );
   }
@@ -48,7 +64,7 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
       eyebrow={eyebrow}
       railFooter={
         standalone.length > 0 ? (
-          <ArtifactRail artifacts={standalone} onSelect={setFocusedArtifactId} />
+          <ArtifactRail artifacts={standalone} onSelect={selectArtifact} />
         ) : null
       }
     />
