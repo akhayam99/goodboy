@@ -41,6 +41,7 @@ export type {
   WireframeInputNode,
   WireframeInputType,
   WireframeAdjustment,
+  WireframeAdjustmentChange,
   WireframeIssue,
   WireframeJustification,
   WireframeListItem,

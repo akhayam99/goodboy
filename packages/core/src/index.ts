@@ -147,6 +147,7 @@ export {
   type WireframeInputNode,
   type WireframeInputType,
   type WireframeAdjustment,
+  type WireframeAdjustmentChange,
   type WireframeIssue,
   type WireframeJustification,
   type WireframeListItem,

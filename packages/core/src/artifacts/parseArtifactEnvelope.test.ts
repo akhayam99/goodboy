@@ -136,6 +136,29 @@ describe('parseArtifactEnvelope', () => {
     expect(result.status).toBe('captured');
   });
 
+  it('captures a wireframe whose paragraph runs past the text limit', () => {
+    const document = wireframeDocument();
+    const result = parseArtifactEnvelope(
+      envelope(
+        'v=1 kind=wireframe',
+        JSON.stringify({
+          title: 'Onboarding',
+          format: 'json',
+          content: {
+            ...document,
+            screens: [
+              {
+                ...document.screens[0],
+                root: { id: 'home-root', kind: 'text', text: 'a'.repeat(900) },
+              },
+            ],
+          },
+        }),
+      ),
+    );
+    expect(result.status).toBe('captured');
+  });
+
   it('rejects a wireframe whose node kind does not exist', () => {
     const document = wireframeDocument();
     const result = parseArtifactEnvelope(

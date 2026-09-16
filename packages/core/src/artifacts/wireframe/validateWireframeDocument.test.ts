@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_WIREFRAME_ADJUSTMENTS, WIREFRAME_LIMITS } from './schema';
+import { MAX_WIREFRAME_ADJUSTMENTS, WIREFRAME_LIMITS, type WireframeAdjustment } from './schema';
 import { parseWireframeSource, validateWireframeDocument } from './validateWireframeDocument';
 import { WIREFRAME_SCHEMA_BRIEF } from './wireframeSchemaBrief';
 
@@ -106,9 +106,32 @@ const validOf = (value: unknown) => {
   return result;
 };
 
-const adjustmentsOf = (result: {
-  readonly adjustments: ReadonlyArray<{ readonly path: string; readonly message: string }>;
-}) => result.adjustments.map((entry) => `${entry.path}: ${entry.message}`).join(' | ');
+const adjustmentsOf = (result: { readonly adjustments: ReadonlyArray<WireframeAdjustment> }) =>
+  result.adjustments
+    .map((entry) =>
+      entry.change === 'hidden'
+        ? `hidden: ${entry.moved} moved, ${entry.dropped} dropped`
+        : `${entry.path}: ${entry.message}`,
+    )
+    .join(' | ');
+
+type ValidResult = { readonly adjustments: ReadonlyArray<WireframeAdjustment> };
+
+const listedAt = ({ result, index }: { readonly result: ValidResult; readonly index: number }) => {
+  const entry = result.adjustments[index];
+  if (entry === undefined || entry.change === 'hidden') {
+    throw new Error(`expected a listed adjustment at ${index}`);
+  }
+  return entry;
+};
+
+const hiddenOf = ({ result }: { readonly result: ValidResult }) => {
+  const entry = result.adjustments[result.adjustments.length - 1];
+  if (entry === undefined || entry.change !== 'hidden') {
+    throw new Error('expected a hidden summary row');
+  }
+  return entry;
+};
 
 describe('validateWireframeDocument', () => {
   it('accepts a complete document and normalizes defaults', () => {
@@ -478,11 +501,13 @@ describe('validateWireframeDocument', () => {
     }
     const result = validOf(doc);
     expect(result.adjustments).toHaveLength(2);
-    const dropped = result.adjustments[0]!;
+    const dropped = listedAt({ result, index: 0 });
+    expect(dropped.change).toBe('dropped');
     expect(dropped.path).toBe('screens[0].root.children[7].width');
     expect(dropped.message).toContain('so it was dropped');
     expect(dropped.count).toBe(14);
-    const moved = result.adjustments[1]!;
+    const moved = listedAt({ result, index: 1 });
+    expect(moved.change).toBe('moved');
     expect(moved.path).toBe('screens[0].root.children[7].gap');
     expect(moved.message).toContain('so it was drawn as lg');
     expect(moved.count).toBe(14);
@@ -497,7 +522,8 @@ describe('validateWireframeDocument', () => {
     children.push({ id: 'tight-row', kind: 'stack', direction: 'column', gap: 'xs', children: [] });
     const result = validOf(doc);
     expect(result.adjustments).toHaveLength(2);
-    expect(result.adjustments.every((entry) => entry.count === 1)).toBe(true);
+    expect(listedAt({ result, index: 0 }).count).toBe(1);
+    expect(listedAt({ result, index: 1 }).count).toBe(1);
     expect(adjustmentsOf(result)).toContain('so it was drawn as lg');
     expect(adjustmentsOf(result)).toContain('so it was drawn as sm');
   });
@@ -518,10 +544,102 @@ describe('validateWireframeDocument', () => {
     }
     const result = validOf(doc);
     expect(result.adjustments).toHaveLength(MAX_WIREFRAME_ADJUSTMENTS + 1);
-    const last = result.adjustments[MAX_WIREFRAME_ADJUSTMENTS]!;
-    expect(last.path).toBe('');
-    expect(last.message).toBe('and 4 more keys dropped');
-    expect(last.count).toBe(4);
+    const last = hiddenOf({ result });
+    expect(last.moved).toBe(0);
+    expect(last.dropped).toBe(4);
+  });
+
+  it('shortens a paragraph past the text limit and reports it instead of losing the document', () => {
+    const paragraph = 'a'.repeat(900);
+    const doc = validDocument();
+    doc.screens[1] = {
+      ...doc.screens[1],
+      root: text({ id: 'detail-title', value: paragraph }),
+    } as never;
+    const result = validOf(doc);
+    const root = result.document.screens[1]?.root;
+    expect(root?.kind === 'text' && root.text.length).toBe(WIREFRAME_LIMITS.maxTextLength);
+    expect(root?.kind === 'text' && root.text.endsWith('\u2026')).toBe(true);
+    const clipped = listedAt({ result, index: 0 });
+    expect(clipped.change).toBe('clipped');
+    expect(clipped.path).toBe('screens[1].root.text');
+    expect(clipped.message).toBe(
+      `was longer than the ${WIREFRAME_LIMITS.maxTextLength} character limit, so it was shortened to fit`,
+    );
+  });
+
+  it('cuts at a word boundary when one is near, and mid word when none is', () => {
+    const prose = `${'word '.repeat(90)}tail`;
+    const doc = validDocument();
+    doc.screens[1] = {
+      ...doc.screens[1],
+      root: text({ id: 'detail-title', value: prose }),
+    } as never;
+    const root = validOf(doc).document.screens[1]?.root;
+    const clipped = root?.kind === 'text' ? root.text : '';
+    expect(clipped.length).toBeLessThanOrEqual(WIREFRAME_LIMITS.maxTextLength);
+    expect(clipped.endsWith('word\u2026')).toBe(true);
+    expect(prose.startsWith(clipped.slice(0, -1))).toBe(true);
+
+    const unbroken = validDocument();
+    unbroken.screens[1] = {
+      ...unbroken.screens[1],
+      root: text({ id: 'detail-title', value: 'a'.repeat(900) }),
+    } as never;
+    const solid = validOf(unbroken).document.screens[1]?.root;
+    const solidText = solid?.kind === 'text' ? solid.text : '';
+    expect(solidText).toBe(`${'a'.repeat(WIREFRAME_LIMITS.maxTextLength - 1)}\u2026`);
+  });
+
+  it('keeps markup fatal when it sits past the text limit', () => {
+    const doc = validDocument();
+    doc.screens[1] = {
+      ...doc.screens[1],
+      root: text({ id: 'detail-title', value: `${'a'.repeat(600)}<script>alert(1)</script>` }),
+    } as never;
+    expect(invalidOf(doc)).toContain('raw html is not allowed');
+  });
+
+  it('still rejects a collection past its limit', () => {
+    const items = validDocument();
+    items.screens[1] = {
+      ...items.screens[1],
+      root: {
+        id: 'detail-list',
+        kind: 'list',
+        items: Array.from({ length: WIREFRAME_LIMITS.maxListItems + 1 }, (_unused, index) => ({
+          id: `row-${index}`,
+          title: 'A session',
+        })),
+      },
+    } as never;
+    expect(invalidOf(items)).toContain(`more than the ${WIREFRAME_LIMITS.maxListItems} item limit`);
+
+    const columns = validDocument();
+    columns.screens[1] = {
+      ...columns.screens[1],
+      root: {
+        id: 'detail-table',
+        kind: 'table',
+        columns: Array.from(
+          { length: WIREFRAME_LIMITS.maxTableColumns + 1 },
+          (_unused, index) => `c${index}`,
+        ),
+        rows: [],
+      },
+    } as never;
+    expect(invalidOf(columns)).toContain(
+      `more than the ${WIREFRAME_LIMITS.maxTableColumns} column limit`,
+    );
+  });
+
+  it('still rejects an id past its length limit', () => {
+    const doc = validDocument();
+    doc.screens[1] = {
+      ...doc.screens[1],
+      root: text({ id: `d${'x'.repeat(WIREFRAME_LIMITS.maxIdLength)}`, value: 'Detail' }),
+    } as never;
+    expect(invalidOf(doc)).toContain('expected an id of letters, digits, dashes or underscores');
   });
 
   it('reports nothing when the document already matches the contract', () => {
@@ -551,6 +669,42 @@ describe('parseWireframeSource', () => {
 });
 
 describe('WIREFRAME_SCHEMA_BRIEF', () => {
+  it('states every limit that is fatal, straight from the constants', () => {
+    const stated = [
+      `at most ${WIREFRAME_LIMITS.maxIdLength} letters, digits, dashes or underscores`,
+      `at most ${WIREFRAME_LIMITS.maxSelectOptions} options`,
+      `at most ${WIREFRAME_LIMITS.maxListItems} items`,
+      `at most ${WIREFRAME_LIMITS.maxTableColumns} columns and ${WIREFRAME_LIMITS.maxTableRows} rows`,
+      `at most ${WIREFRAME_LIMITS.maxTransitions} of them`,
+      'every key follows the same id rule as a node id',
+      `is at most ${WIREFRAME_LIMITS.maxTextLength} characters`,
+    ];
+    for (const line of stated) {
+      expect(WIREFRAME_SCHEMA_BRIEF).toContain(line);
+    }
+  });
+
+  it('never forbids the fields that are a number or a boolean', () => {
+    expect(WIREFRAME_SCHEMA_BRIEF).not.toContain('never a number');
+    expect(WIREFRAME_SCHEMA_BRIEF).toContain(
+      `columns is an integer from 1 to ${WIREFRAME_LIMITS.maxGridColumns}`,
+    );
+    expect(WIREFRAME_SCHEMA_BRIEF).toContain('surface and isActive are true or false');
+    expect(WIREFRAME_SCHEMA_BRIEF).toContain('every mockState flag is true or false');
+  });
+
+  it('accepts a document that takes the numeric and boolean fields literally', () => {
+    const doc = validDocument();
+    const root = doc.screens[0]?.root as Record<string, unknown>;
+    root['surface'] = true;
+    const children = root['children'] as Array<Record<string, unknown>>;
+    children[2]!['columns'] = WIREFRAME_LIMITS.maxGridColumns;
+    const navItems = children[0]?.['items'] as Array<Record<string, unknown>>;
+    navItems[0]!['isActive'] = false;
+    doc.mockState = { isDrawerOpen: true } as never;
+    expect(validOf(doc).adjustments).toEqual([]);
+  });
+
   it('embeds an example the validator accepts', () => {
     const marker = 'a valid example:\n';
     const start = WIREFRAME_SCHEMA_BRIEF.indexOf(marker) + marker.length;

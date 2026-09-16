@@ -19,6 +19,7 @@ import {
   WIREFRAME_VIEWPORTS,
   type WireframeAction,
   type WireframeAdjustment,
+  type WireframeAdjustmentChange,
   type WireframeAlignment,
   type WireframeButtonVariant,
   type WireframeDirection,
@@ -41,7 +42,7 @@ import {
 } from './schema';
 
 type RawAdjustment = Readonly<{
-  change: 'moved' | 'dropped';
+  change: WireframeAdjustmentChange;
   path: string;
   message: string;
 }>;
@@ -85,7 +86,19 @@ const MARKUP_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
 
 const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
-const ID_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/;
+const ID_PATTERN = new RegExp(`^[a-zA-Z][a-zA-Z0-9_-]{0,${WIREFRAME_LIMITS.maxIdLength - 1}}$`);
+
+const CLIP_MARK = '\u2026';
+
+const CLIP_WORD_REACH = 24;
+
+const clipText = ({ value, max }: { readonly value: string; readonly max: number }): string => {
+  const head = value.slice(0, max - CLIP_MARK.length);
+  const lastSpace = head.lastIndexOf(' ');
+  const reachedBack = head.length - lastSpace <= CLIP_WORD_REACH;
+  const cut = lastSpace > 0 && reachedBack ? lastSpace : head.length;
+  return `${head.slice(0, cut).trimEnd()}${CLIP_MARK}`;
+};
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -131,15 +144,20 @@ const safeText = ({
   if (typeof value !== 'string') {
     return fail({ ctx, path, message: 'expected a string' });
   }
-  if (value.length > max) {
-    return fail({ ctx, path, message: `longer than the ${max} character limit` });
-  }
   for (const [pattern, message] of MARKUP_PATTERNS) {
     if (pattern.test(value)) {
       return fail({ ctx, path, message });
     }
   }
-  return value;
+  if (value.length <= max) {
+    return value;
+  }
+  ctx.adjustments.push({
+    change: 'clipped',
+    path,
+    message: `was longer than the ${max} character limit, so it was shortened to fit`,
+  });
+  return clipText({ value, max });
 };
 
 const requiredText = ({
@@ -1445,7 +1463,7 @@ const fieldOf = ({ path }: { readonly path: string }): string => {
 };
 
 type AdjustmentGroup = {
-  readonly change: 'moved' | 'dropped';
+  readonly change: WireframeAdjustmentChange;
   readonly path: string;
   readonly message: string;
   count: number;
@@ -1474,23 +1492,6 @@ const groupAdjustments = ({
   return [...groups.values()];
 };
 
-const describeHidden = ({
-  hidden,
-}: {
-  readonly hidden: ReadonlyArray<AdjustmentGroup>;
-}): string => {
-  const moved = hidden.filter((group) => group.change === 'moved').length;
-  const dropped = hidden.length - moved;
-  const parts: string[] = [];
-  if (moved > 0) {
-    parts.push(`${moved} more ${moved === 1 ? 'value' : 'values'} moved`);
-  }
-  if (dropped > 0) {
-    parts.push(`${dropped} more ${dropped === 1 ? 'key' : 'keys'} dropped`);
-  }
-  return `and ${parts.join(' and ')}`;
-};
-
 const reportedAdjustments = ({
   adjustments,
 }: {
@@ -1499,12 +1500,22 @@ const reportedAdjustments = ({
   const groups = groupAdjustments({ adjustments });
   const shown = groups
     .slice(0, MAX_WIREFRAME_ADJUSTMENTS)
-    .map(({ path, message, count }) => ({ path, message, count }));
+    .map(({ change, path, message, count }) => ({ change, path, message, count }));
   const hidden = groups.slice(MAX_WIREFRAME_ADJUSTMENTS);
   if (hidden.length === 0) {
     return shown;
   }
-  return [...shown, { path: '', message: describeHidden({ hidden }), count: hidden.length }];
+  const countHidden = ({ change }: { readonly change: WireframeAdjustmentChange }): number =>
+    hidden.filter((group) => group.change === change).length;
+  return [
+    ...shown,
+    {
+      change: 'hidden',
+      moved: countHidden({ change: 'moved' }),
+      clipped: countHidden({ change: 'clipped' }),
+      dropped: countHidden({ change: 'dropped' }),
+    },
+  ];
 };
 
 export const validateWireframeDocument = ({

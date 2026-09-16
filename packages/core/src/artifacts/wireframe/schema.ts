@@ -6,6 +6,7 @@ export const WIREFRAME_LIMITS = {
   maxDepth: 12,
   maxTransitions: 120,
   maxTextLength: 400,
+  maxIdLength: 64,
   maxListItems: 40,
   maxTableColumns: 8,
   maxTableRows: 40,
@@ -235,11 +236,16 @@ export type WireframeIssue = Readonly<{
 
 export const MAX_WIREFRAME_ADJUSTMENTS = 24;
 
-export type WireframeAdjustment = Readonly<{
-  path: string;
-  message: string;
-  count: number;
-}>;
+export type WireframeAdjustmentChange = 'moved' | 'clipped' | 'dropped';
+
+export type WireframeAdjustment =
+  | Readonly<{
+      change: WireframeAdjustmentChange;
+      path: string;
+      message: string;
+      count: number;
+    }>
+  | Readonly<{ change: 'hidden'; moved: number; clipped: number; dropped: number }>;
 
 export type WireframeValidationResult =
   | Readonly<{

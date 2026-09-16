@@ -308,7 +308,9 @@ describe('WireframeStudio', () => {
     expect(screen.getByTestId('wireframe-canvas')).toBeDefined();
     expect(screen.queryByTestId('wireframe-issues')).toBeNull();
     const adjustments = screen.getByTestId('wireframe-adjustments');
-    expect(adjustments.textContent).toContain('adjusted to draw this wireframe');
+    expect(adjustments.textContent).toContain(
+      'some values were moved and some properties were dropped to draw this wireframe',
+    );
     fireEvent.click(screen.getByRole('button', { expanded: false }));
     expect(adjustments.textContent).toContain('screens[0].root.gap');
     expect(adjustments.textContent).toContain('so it was drawn as lg');
@@ -348,6 +350,96 @@ describe('WireframeStudio', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.textContent).toContain('screens[0].root.children[0].gap');
     expect(rows[0]?.textContent).toContain('(6 places)');
+  });
+
+  it('does not claim a value was moved when the only adjustment is a dropped key', () => {
+    const droppedOnly = {
+      ...document,
+      screens: [
+        {
+          ...document.screens[0],
+          root: {
+            id: 'inbox-root',
+            kind: 'stack',
+            direction: 'column',
+            width: 320,
+            children: [{ id: 'inbox-note', kind: 'text', text: 'Nothing new' }],
+          },
+        },
+        document.screens[1],
+        document.screens[2],
+      ],
+      transitions: [],
+    };
+    renderStudio({ sourceText: JSON.stringify(droppedOnly) });
+    const adjustments = screen.getByTestId('wireframe-adjustments');
+    expect(adjustments.textContent).toContain(
+      'some properties were dropped to draw this wireframe',
+    );
+    expect(adjustments.textContent).not.toContain('moved');
+  });
+
+  it('counts places on a listed row and never on the aggregate row', () => {
+    const rogue = Object.fromEntries(
+      Array.from({ length: 26 }, (_unused, index) => [`rogue${index}`, 1]),
+    );
+    const noisy = {
+      ...document,
+      screens: [
+        {
+          ...document.screens[0],
+          root: {
+            id: 'inbox-root',
+            kind: 'stack',
+            direction: 'column',
+            ...rogue,
+            children: [
+              { id: 'inbox-a', kind: 'stack', direction: 'column', gap: 'xl', children: [] },
+              { id: 'inbox-b', kind: 'stack', direction: 'column', gap: 'xl', children: [] },
+            ],
+          },
+        },
+        document.screens[1],
+        document.screens[2],
+      ],
+      transitions: [],
+    };
+    renderStudio({ sourceText: JSON.stringify(noisy) });
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    const rows = [...screen.getByTestId('wireframe-adjustments').querySelectorAll('li')];
+    const last = rows[rows.length - 1];
+    expect(last?.textContent).toBe('and 1 more value moved and 2 more keys dropped');
+    expect(last?.textContent).not.toContain('places');
+    expect(rows.some((row) => row.textContent?.includes('rogue0'))).toBe(true);
+  });
+
+  it('names all three kinds in the trigger when all three happened', () => {
+    const everything = {
+      ...document,
+      screens: [
+        {
+          ...document.screens[0],
+          root: {
+            id: 'inbox-root',
+            kind: 'stack',
+            direction: 'column',
+            gap: 'xl',
+            width: 320,
+            children: [{ id: 'inbox-note', kind: 'text', text: 'a'.repeat(900) }],
+          },
+        },
+        document.screens[1],
+        document.screens[2],
+      ],
+      transitions: [],
+    };
+    renderStudio({ sourceText: JSON.stringify(everything) });
+    const adjustments = screen.getByTestId('wireframe-adjustments');
+    expect(adjustments.textContent).toContain(
+      'some values were moved, some text was shortened and some properties were dropped to draw this wireframe',
+    );
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    expect(adjustments.textContent).toContain('so it was shortened to fit');
   });
 
   it('says nothing about adjustments when the document already matches the contract', () => {
