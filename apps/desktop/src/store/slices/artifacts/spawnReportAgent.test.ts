@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AgentId,
+  ContextSlot,
   IsoDateTime,
   MountId,
   ProjectId,
@@ -121,11 +122,30 @@ const baseState = {
   sessionActiveMount: { [SESSION_ID]: mount.mountId },
   sessionActiveProject: {},
   mountBranchObservations: {},
+  sessionSlots: {} as Record<string, ReadonlyArray<ContextSlot>>,
   spawnAgent: spawnAgentSpy,
 };
 
-const getWith = (overrides: Record<string, unknown> = {}): GetFn =>
-  (() => ({ ...baseState, ...overrides })) as unknown as GetFn;
+const getWith = (overrides: Record<string, unknown> = {}): GetFn => {
+  const state: Record<string, unknown> = { ...baseState, ...overrides };
+  state['ensureSessionSlots'] = async (
+    sessionId: SessionId,
+  ): Promise<ReadonlyArray<ContextSlot>> => {
+    const slots = state['sessionSlots'] as Record<string, ReadonlyArray<ContextSlot>>;
+    return slots[sessionId] ?? [];
+  };
+  return (() => state) as unknown as GetFn;
+};
+
+const LONG_GOAL = [
+  'Northwind settles ledger-core postings twice a day and the second pass rounds the residual away.',
+  'Walk the notify-relay receipts against the ledger and show where the cent goes missing.',
+].join('\n\n');
+
+const withGoalSlot = (): GetFn =>
+  getWith({
+    sessionSlots: { [SESSION_ID]: [{ key: 'goal', value: LONG_GOAL, enabled: true }] },
+  });
 
 describe('spawnReportAgent', () => {
   it('spawns without taking focus when asked', async () => {
@@ -164,6 +184,22 @@ describe('spawnReportAgent', () => {
     expect(prompt).toContain(`workflow run ${RUN_ID}`);
     expect(prompt).toContain('abcdef1 feat: reports');
     expect(prompt).toContain('+4 -1');
+  });
+
+  it('carries the goal the user wrote into the kickoff pack, not the clamped title', async () => {
+    await spawnReportAgent(withGoalSlot())({
+      sessionId: SESSION_ID,
+      reportType: 'session-summary',
+    });
+    const prompt = String(spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt']);
+    expect(prompt).toContain(`## goal\n\n${LONG_GOAL}`);
+    expect(prompt).toContain(`session ${SESSION_ID}: ${session.goal}`);
+  });
+
+  it('sends the title alone when no goal slot says more', async () => {
+    await spawnReportAgent(getWith())({ sessionId: SESSION_ID, reportType: 'session-summary' });
+    const prompt = String(spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt']);
+    expect(prompt).not.toContain('## goal');
   });
 
   it('still spawns when the diff collection fails', async () => {

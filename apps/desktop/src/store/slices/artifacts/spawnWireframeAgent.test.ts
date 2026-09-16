@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AgentId,
+  ContextSlot,
   IsoDateTime,
   MountId,
   ProjectId,
@@ -127,11 +128,30 @@ const baseState = {
   sessionActiveMount: { [SESSION_ID]: mount.mountId },
   sessionActiveProject: {},
   mountBranchObservations: {},
+  sessionSlots: {} as Record<string, ReadonlyArray<ContextSlot>>,
   spawnAgent: spawnAgentSpy,
 };
 
-const getWith = (overrides: Record<string, unknown> = {}): GetFn =>
-  (() => ({ ...baseState, ...overrides })) as unknown as GetFn;
+const getWith = (overrides: Record<string, unknown> = {}): GetFn => {
+  const state: Record<string, unknown> = { ...baseState, ...overrides };
+  state['ensureSessionSlots'] = async (
+    sessionId: SessionId,
+  ): Promise<ReadonlyArray<ContextSlot>> => {
+    const slots = state['sessionSlots'] as Record<string, ReadonlyArray<ContextSlot>>;
+    return slots[sessionId] ?? [];
+  };
+  return (() => state) as unknown as GetFn;
+};
+
+const LONG_GOAL = [
+  'Northwind settles ledger-core postings twice a day and the second pass rounds the residual away.',
+  'Walk the notify-relay receipts against the ledger and show where the cent goes missing.',
+].join('\n\n');
+
+const withGoalSlot = (): GetFn =>
+  getWith({
+    sessionSlots: { [SESSION_ID]: [{ key: 'goal', value: LONG_GOAL, enabled: true }] },
+  });
 
 describe('spawnWireframeAgent', () => {
   beforeEach(() => {
@@ -189,6 +209,24 @@ describe('spawnWireframeAgent', () => {
     expect(prompt).toContain('the inbox lists sessions');
     expect(prompt).toContain('document contract');
     expect(prompt).toContain('"initialScreenId"');
+  });
+
+  it('carries the goal the user wrote into the kickoff pack, not the clamped title', async () => {
+    await spawnWireframeAgent(withGoalSlot())({ sessionId: SESSION_ID, fidelity: 'low' });
+    const prompt = String(
+      (spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>)['initialPrompt'],
+    );
+    expect(prompt).toContain(`## goal\n\n${LONG_GOAL}`);
+    expect(prompt).toContain(`session title: ${session.goal}`);
+  });
+
+  it('sends the title alone as the goal when no goal slot says more', async () => {
+    await spawnWireframeAgent(getWith())({ sessionId: SESSION_ID, fidelity: 'low' });
+    const prompt = String(
+      (spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>)['initialPrompt'],
+    );
+    expect(prompt).not.toContain('## goal');
+    expect(prompt).toContain(`session goal: ${session.goal}`);
   });
 
   it('skips the design profile at low fidelity', async () => {

@@ -1,7 +1,7 @@
 import { WIREFRAME_SCHEMA_BRIEF } from '@goodboy/core';
 import type { Agent, IsoDateTime, Session, SessionArtifact, TurnEvent } from '@goodboy/types';
 import { redactSecrets } from '../../shared/utils/redactSecrets';
-import { ARTIFACT_BRIEF_CLIP_NOTE, clipBrief } from '../artifacts/artifactBrief';
+import { ARTIFACT_BRIEF_CLIP_NOTE, clipBrief, formatBriefCount } from '../artifacts/artifactBrief';
 import {
   briefInventoryRow,
   excludedInventoryRow,
@@ -9,6 +9,7 @@ import {
   sizeInventoryRow,
   type ArtifactContextInventoryRow,
 } from '../artifacts/artifactContextInventory';
+import { SESSION_GOAL_CLIP_NOTE, type SessionGoalText } from '../artifacts/sessionGoalText';
 import type { DesignProfile } from './collectDesignProfile';
 import { describeDesignProfile } from './describeDesignProfile';
 import { WIREFRAME_FIDELITY_LABEL, type WireframeFidelity } from './wireframeFidelity';
@@ -37,6 +38,7 @@ export type WireframeContextParams = Readonly<{
   target: WireframeTarget;
   brief?: string | null;
   session: Session;
+  goal: SessionGoalText;
   agents: ReadonlyArray<Agent>;
   transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   artifacts: ReadonlyArray<SessionArtifact>;
@@ -265,6 +267,7 @@ export const buildWireframeContext = ({
   target,
   brief = null,
   session,
+  goal,
   agents,
   transcripts,
   artifacts,
@@ -278,22 +281,29 @@ export const buildWireframeContext = ({
   if (request.isClipped) {
     truncations.push(ARTIFACT_BRIEF_CLIP_NOTE);
   }
+  if (goal.isClipped) {
+    truncations.push(SESSION_GOAL_CLIP_NOTE);
+  }
   const header = [
     `# ${WIREFRAME_FIDELITY_LABEL[fidelity].toLowerCase()} wireframe request`,
-    `session goal: ${redactSecrets({ text: session.goal })}`,
+    `session ${goal.isDetailed ? 'title' : 'goal'}: ${redactSecrets({ text: session.goal })}`,
     `captured at: ${capturedAt}`,
     `target: ${WIREFRAME_TARGET_LABEL[target]}. ${WIREFRAME_TARGET_BRIEF[target]}`,
     WIREFRAME_DEFAULT_REQUEST,
     'this pack is the only evidence you have. it carries final agent messages, not tool calls or tool output. never invent a product fact that is not here; put what is missing in a node note.',
   ].join('\n');
 
+  const goalBlock = goal.isDetailed ? [`## goal\n\n${redactSecrets({ text: goal.text })}`] : [];
+
   inventory.push(briefInventoryRow({ brief: request.text }));
   inventory.push({
     id: 'goal',
     label: 'goal',
     summary: 'the session goal and the fidelity',
-    state: 'included',
-    detail: [],
+    state: goal.isClipped ? 'partial' : 'included',
+    detail: goal.isDetailed
+      ? [`the goal you wrote, ${formatBriefCount({ value: goal.text.length })} characters`]
+      : [],
   });
   inventory.push({
     id: 'target',
@@ -305,6 +315,7 @@ export const buildWireframeContext = ({
 
   const evidence = [
     header,
+    ...goalBlock,
     agentSection({ agents, transcripts, truncations, sourceIds, inventory }),
     planSection({ artifacts, truncations, sourceIds, inventory }),
     themeSection({ fidelity, designProfile, inventory }),

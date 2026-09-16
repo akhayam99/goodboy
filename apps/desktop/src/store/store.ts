@@ -18,6 +18,7 @@ import type {
   BudgetAlert,
   BudgetRule,
   ClaudePermissionMode,
+  ContextSlot,
   AttachmentInput,
   GoalAttachmentOwner,
   OverrideSettings,
@@ -617,7 +618,7 @@ type AppActions = {
   refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;
   loadSessionTelemetry(sessionId: SessionId): Promise<void>;
   loadSessionSlots(sessionId: SessionId): Promise<void>;
-  ensureSessionSlots(sessionId: SessionId): Promise<void>;
+  ensureSessionSlots(sessionId: SessionId): Promise<ReadonlyArray<ContextSlot>>;
   upsertSessionSlot(sessionId: SessionId, key: SlotKey, value: string): Promise<void>;
   loadSlotHistory(sessionId: SessionId, key: SlotKey): Promise<void>;
   toggleSessionSlot(sessionId: SessionId, key: SlotKey, enabled: boolean): Promise<void>;

@@ -17,6 +17,7 @@ import { asWireframeFidelity } from '../../../../wireframes/wireframeFidelity';
 import { asWireframeTarget } from '../../../../wireframes/wireframeTarget';
 import type { ArtifactContextInventoryRow } from '../../../artifactContextInventory';
 import { artifactEvidenceAgents } from '../../../artifactEvidenceAgents';
+import { sessionGoalText } from '../../../sessionGoalText';
 import type { GeneratedArtifactKind } from '../../../artifactCollection';
 
 export type ArtifactContextPreview = Readonly<{
@@ -70,12 +71,15 @@ const collect = async ({
     transcripts,
     executingAgentId: null,
   });
+  const slots = await state.ensureSessionSlots(sessionId);
+  const goal = sessionGoalText({ slots, session });
   if (kind === 'report') {
     const diff = await collectReportDiffEvidence({ state, sessionId });
     const context = buildReportContext({
       reportType: asReportType({ value: choice }) ?? 'session-summary',
       brief: null,
       session,
+      goal,
       agents,
       transcripts,
       artifacts: state.sessionArtifacts?.[sessionId] ?? [],
@@ -102,6 +106,7 @@ const collect = async ({
     target: asWireframeTarget({ value: secondChoice }) ?? 'both',
     brief: null,
     session,
+    goal,
     agents: workflowRunId === null ? agents : runsForWorkflowRun(agents, workflowRunId),
     transcripts,
     artifacts: state.sessionArtifacts?.[sessionId] ?? [],

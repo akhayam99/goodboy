@@ -3,43 +3,54 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-const { state, onClose, onStarted } = vi.hoisted(() => ({
-  onClose: vi.fn(),
-  onStarted: vi.fn(),
-  state: {
-    artifactDrafts: {} as Record<string, Record<string, unknown>>,
-    sessions: [] as ReadonlyArray<Record<string, unknown>>,
-    sessionPhaseRuns: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
-    sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
-    scriptRuns: {} as Record<string, Record<string, unknown>>,
-    transcripts: {} as Record<string, ReadonlyArray<unknown>>,
-    summarizerStatus: {} as Record<string, { readonly status: string }>,
-    agentTurnState: {} as Record<string, { readonly kind: string }>,
-    providers: [{ id: 'anthropic', connection: 'connected' }] as ReadonlyArray<
-      Record<string, unknown>
-    >,
-    providerCooldowns: {},
-    budgetAlerts: [] as ReadonlyArray<unknown>,
-    workspaceOverrides: {},
-    sessionMounts: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionActiveMount: {},
-    sessionActiveProject: {},
-    phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
-    setArtifactDraft: vi.fn(),
-    clearArtifactDraft: vi.fn(),
-    setArtifactFilter: vi.fn(),
-    spawnReportAgent: vi.fn(async () => 'agent-report'),
-    spawnWireframeAgent: vi.fn(async () => 'agent-wireframe'),
-  },
-}));
+const { state, onClose, onStarted, slotsBySession } = vi.hoisted(() => {
+  const slotsBySession: Record<string, ReadonlyArray<Record<string, unknown>>> = {};
+  return {
+    slotsBySession,
+    onClose: vi.fn(),
+    onStarted: vi.fn(),
+    state: {
+      ensureSessionSlots: async (
+        sessionId: string,
+      ): Promise<ReadonlyArray<Record<string, unknown>>> => slotsBySession[sessionId] ?? [],
+      artifactDrafts: {} as Record<string, Record<string, unknown>>,
+      sessions: [] as ReadonlyArray<Record<string, unknown>>,
+      sessionPhaseRuns: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
+      sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
+      scriptRuns: {} as Record<string, Record<string, unknown>>,
+      transcripts: {} as Record<string, ReadonlyArray<unknown>>,
+      summarizerStatus: {} as Record<string, { readonly status: string }>,
+      agentTurnState: {} as Record<string, { readonly kind: string }>,
+      providers: [{ id: 'anthropic', connection: 'connected' }] as ReadonlyArray<
+        Record<string, unknown>
+      >,
+      providerCooldowns: {},
+      budgetAlerts: [] as ReadonlyArray<unknown>,
+      workspaceOverrides: {},
+      sessionMounts: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionActiveMount: {},
+      sessionActiveProject: {},
+      phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
+      setArtifactDraft: vi.fn(),
+      clearArtifactDraft: vi.fn(),
+      setArtifactFilter: vi.fn(),
+      spawnReportAgent: vi.fn(async () => 'agent-report'),
+      spawnWireframeAgent: vi.fn(async () => 'agent-wireframe'),
+    },
+  };
+});
 
 vi.mock('../../../../store', () => {
   const useAppStore = <T,>(selector: (s: typeof state) => T) => selector(state);
   useAppStore.getState = () => state;
-  return { EMPTY_ARRAY: [] as readonly never[], useAppStore };
+  return {
+    EMPTY_ARRAY: [] as readonly never[],
+    useAppStore,
+    useSessionSlots: (sessionId: string) => slotsBySession[sessionId] ?? [],
+  };
 });
 
 vi.mock('../../../../shared/components/RoutingPicker', () => ({
@@ -120,6 +131,7 @@ beforeEach(() => {
   state.sessionProjectMounts = {};
   state.phaseTemplates = {};
   state.sessionWorkflows = {};
+  slotsBySession[SESSION_ID] = [];
 });
 
 afterEach(() => {
@@ -151,6 +163,30 @@ describe('ArtifactCreationPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Use the session goal' }));
     expect((brief as HTMLTextAreaElement).value).toBe(
       'focus on the settled batches\n\nFix the rounding drift in ledger-core postings',
+    );
+  });
+
+  it('inserts the goal the user wrote, not the clamped title', () => {
+    const longGoal = [
+      'Northwind settles ledger-core postings twice a day and the second pass rounds the residual away.',
+      'Walk the notify-relay receipts against the ledger and show where the cent goes missing.',
+    ].join('\n\n');
+    slotsBySession[SESSION_ID] = [{ key: 'goal', value: longGoal, enabled: true }];
+    renderPane();
+    const brief = screen.getByTestId('artifact-brief');
+    fireEvent.click(screen.getByRole('button', { name: 'Use the session goal' }));
+    expect((brief as HTMLTextAreaElement).value).toBe(longGoal);
+  });
+
+  it('inserts the title when the user disabled the goal slot', () => {
+    slotsBySession[SESSION_ID] = [
+      { key: 'goal', value: 'a much longer goal nobody asked to send', enabled: false },
+    ];
+    renderPane();
+    const brief = screen.getByTestId('artifact-brief');
+    fireEvent.click(screen.getByRole('button', { name: 'Use the session goal' }));
+    expect((brief as HTMLTextAreaElement).value).toBe(
+      'Fix the rounding drift in ledger-core postings',
     );
   });
 

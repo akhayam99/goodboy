@@ -4,6 +4,7 @@ import type {
   Agent,
   AgentId,
   ArtifactId,
+  ContextSlot,
   SessionArtifact,
   TurnEvent,
   ImplementationCluster,
@@ -167,7 +168,11 @@ function buildHarness(opts: {
   };
   const sendTurn = vi.fn(async (_arg: SendTurnInput) => undefined);
   const ensureProjectMounted = vi.fn(async () => undefined);
+  const sessionSlots: Record<string, ReadonlyArray<ContextSlot>> = {};
   const state = {
+    sessionSlots,
+    ensureSessionSlots: async (sessionId: SessionId): Promise<ReadonlyArray<ContextSlot>> =>
+      sessionSlots[sessionId] ?? [],
     sessionPhaseRuns: { [SESSION_ID]: [opts.agent, ...(opts.extraAgents ?? [])] },
     sessions: [session],
     projects: opts.projects ?? [],
@@ -185,6 +190,7 @@ function buildHarness(opts: {
   return {
     sendTurn,
     ensureProjectMounted,
+    sessionSlots,
     set,
     state,
     activate: activateWorkflowAgent(
@@ -856,6 +862,37 @@ describe('activateWorkflowAgent, artifact evidence', () => {
     expect(prompt).not.toContain('session plan evidence');
     expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
   });
+
+  it.each(['report', 'wireframe'])(
+    'carries the goal the user wrote into the %s kickoff pack',
+    async (kind) => {
+      const longGoal = [
+        'Northwind settles ledger-core postings twice a day and the second pass rounds the residual away.',
+        'Walk the notify-relay receipts against the ledger and show where the cent goes missing.',
+      ].join('\n\n');
+      const { sessionSlots, sendTurn, activate } = buildHarness({
+        agent: makeAgent(kind, kind),
+        workflow: makeWorkflow(kind),
+        plans: [],
+      });
+      sessionSlots[SESSION_ID] = [{ key: 'goal', value: longGoal, enabled: true }];
+      await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+      expect(sendTurn.mock.calls[0]?.[0].content).toContain(`## goal\n\n${longGoal}`);
+    },
+  );
+
+  it.each(['report', 'wireframe'])(
+    'leaves the %s kickoff pack without a goal block when no slot says more',
+    async (kind) => {
+      const { sendTurn, activate } = buildHarness({
+        agent: makeAgent(kind, kind),
+        workflow: makeWorkflow(kind),
+        plans: [],
+      });
+      await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+      expect(sendTurn.mock.calls[0]?.[0].content).not.toContain('## goal');
+    },
+  );
 
   it('keeps session plans and the document contract for a run scoped wireframe', async () => {
     const { state, sendTurn, activate } = buildHarness({

@@ -12,8 +12,17 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { ARTIFACT_BRIEF_CLIP_NOTE, ARTIFACT_BRIEF_LIMITS } from '../artifacts/artifactBrief';
+import {
+  SESSION_GOAL_CLIP_NOTE,
+  SESSION_GOAL_LIMITS,
+  sessionGoalText,
+} from '../artifacts/sessionGoalText';
 import { REDACTED } from '../../shared/utils/redactSecrets';
-import { buildWireframeContext, WIREFRAME_CONTEXT_LIMITS } from './buildWireframeContext';
+import {
+  buildWireframeContext,
+  WIREFRAME_CONTEXT_LIMITS,
+  type WireframeContext,
+} from './buildWireframeContext';
 import type { DesignProfile } from './collectDesignProfile';
 
 const NOW = '2026-09-16T10:00:00.000Z' as IsoDateTime;
@@ -92,29 +101,39 @@ const profileWith = (): DesignProfile => ({
 type TextForParams = {
   readonly brief?: string | null;
   readonly goal?: string;
+  readonly goalSlot?: string | null;
   readonly agentName?: string;
   readonly planTitle?: string;
   readonly designProfile?: DesignProfile | null;
 };
 
-const textFor = ({
+const contextFor = ({
   brief = null,
   goal = 'ship the wireframe role',
+  goalSlot = null,
   agentName = 'scout',
   planTitle = 'Ship it',
   designProfile = null,
-}: TextForParams = {}): string =>
-  buildWireframeContext({
+}: TextForParams = {}): WireframeContext => {
+  const session = sessionWith({ goal });
+  return buildWireframeContext({
     brief,
     fidelity: designProfile === null ? 'low' : 'high',
     target: 'both',
-    session: sessionWith({ goal }),
+    session,
+    goal: sessionGoalText({
+      slots: goalSlot === null ? [] : [{ key: 'goal', value: goalSlot, enabled: true }],
+      session,
+    }),
     agents: [agentWith({ name: agentName })],
     transcripts,
     artifacts: [planWith({ title: planTitle })],
     designProfile,
     capturedAt: NOW,
-  }).text;
+  });
+};
+
+const textFor = (params: TextForParams = {}): string => contextFor(params).text;
 
 describe('buildWireframeContext', () => {
   it('adds the explicit user request separately from the unchanged evidence and contract', () => {
@@ -149,6 +168,10 @@ describe('buildWireframeContext', () => {
       fidelity: 'low',
       target: 'both',
       session: sessionWith({ goal: 'ship the wireframe role' }),
+      goal: sessionGoalText({
+        slots: [],
+        session: sessionWith({ goal: 'ship the wireframe role' }),
+      }),
       agents: [agentWith({ name: 'scout' })],
       transcripts,
       artifacts: [planWith({ title: 'Ship it' })],
@@ -193,6 +216,10 @@ describe('buildWireframeContext', () => {
       fidelity: 'low',
       target: 'both',
       session: sessionWith({ goal: 'ship the wireframe role' }),
+      goal: sessionGoalText({
+        slots: [],
+        session: sessionWith({ goal: 'ship the wireframe role' }),
+      }),
       agents: [agentWith({ name: 'scout' })],
       transcripts,
       artifacts: [planWith({ title: 'Ship it' })],
@@ -203,27 +230,87 @@ describe('buildWireframeContext', () => {
   });
 
   it('states the target the user picked and names it in the inventory', () => {
-    const contextFor = (target: 'mobile' | 'desktop' | 'both') =>
+    const forTarget = (target: 'mobile' | 'desktop' | 'both') =>
       buildWireframeContext({
         brief: null,
         fidelity: 'low',
         target,
         session: sessionWith({ goal: 'ship the wireframe role' }),
+        goal: sessionGoalText({
+          slots: [],
+          session: sessionWith({ goal: 'ship the wireframe role' }),
+        }),
         agents: [agentWith({ name: 'scout' })],
         transcripts,
         artifacts: [planWith({ title: 'Ship it' })],
         designProfile: null,
         capturedAt: NOW,
       });
-    const desktop = contextFor('desktop');
+    const desktop = forTarget('desktop');
     expect(desktop.text).toContain('target: desktop.');
     expect(desktop.text).toContain('set viewport to "desktop" on every screen');
     expect(desktop.inventory.find((row) => row.id === 'target')?.summary).toBe('drawn for desktop');
-    const phone = contextFor('mobile');
+    const phone = forTarget('mobile');
     expect(phone.text).toContain('target: phone.');
     expect(phone.text).not.toContain('set viewport to "desktop" on every screen');
-    expect(contextFor('both').inventory.find((row) => row.id === 'target')?.summary).toBe(
+    expect(forTarget('both').inventory.find((row) => row.id === 'target')?.summary).toBe(
       'drawn for phone and desktop',
     );
+  });
+});
+
+describe('buildWireframeContext session goal', () => {
+  const LONG_GOAL = [
+    'Northwind settles ledger-core postings twice a day and the second pass rounds the residual away.',
+    'Walk the notify-relay receipts against the ledger and show where the cent goes missing.',
+  ].join('\n\n');
+
+  it('leaves out the goal block when the slot says no more than the title', () => {
+    expect(textFor()).not.toContain('## goal');
+  });
+
+  it('carries the goal the user wrote in its own block after the header', () => {
+    const text = textFor({ goalSlot: LONG_GOAL });
+    expect(text).toContain(`## goal\n\n${LONG_GOAL}`);
+    expect(text.indexOf('## goal')).toBeLessThan(text.indexOf('## product evidence'));
+  });
+
+  it('calls the header line the title once a fuller goal follows it', () => {
+    const text = textFor({ goalSlot: LONG_GOAL });
+    expect(text).toContain('session title: ship the wireframe role');
+    expect(text).not.toContain('session goal: ');
+  });
+
+  it('keeps the header line the goal when nothing fuller follows it', () => {
+    const text = textFor();
+    expect(text).toContain('session goal: ship the wireframe role');
+    expect(text).not.toContain('session title: ');
+  });
+
+  it('redacts a secret carried in the goal the user wrote', () => {
+    const text = textFor({ goalSlot: `${LONG_GOAL}\n\nuse api_key=harborline-test-value` });
+    expect(text).not.toContain('harborline-test-value');
+    expect(text).toContain(REDACTED);
+  });
+
+  it('reports the goal the user wrote in the inventory', () => {
+    const row = contextFor({ goalSlot: LONG_GOAL }).inventory.find((entry) => entry.id === 'goal');
+    expect(row?.state).toBe('included');
+    expect(row?.detail).toEqual([`the goal you wrote, ${LONG_GOAL.length} characters`]);
+  });
+
+  it('keeps the goal inventory row bare when only the title is sent', () => {
+    const row = contextFor().inventory.find((entry) => entry.id === 'goal');
+    expect(row?.state).toBe('included');
+    expect(row?.detail).toEqual([]);
+  });
+
+  it('notes a clipped goal in the truncation section and the inventory', () => {
+    const context = contextFor({
+      goalSlot: 'Harborline '.repeat(SESSION_GOAL_LIMITS.chars),
+    });
+    expect(context.truncations).toContain(SESSION_GOAL_CLIP_NOTE);
+    expect(context.text).toContain(SESSION_GOAL_CLIP_NOTE);
+    expect(context.inventory.find((entry) => entry.id === 'goal')?.state).toBe('partial');
   });
 });
