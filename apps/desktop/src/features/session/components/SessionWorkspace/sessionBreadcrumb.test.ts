@@ -337,12 +337,12 @@ describe('buildSessionBreadcrumb', () => {
     expect(crumbs[0]?.label).toBe('Overview');
   });
 
-  it('renders Overview > Plans > {title} for a focused plan', () => {
+  it('renders Overview > Artifacts > {title} for a focused plan', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(
       base({ lens: 'plans', focusedPlanTitle: 'migration plan' }, h),
     );
-    expect(labels(crumbs)).toEqual(['Overview', 'Plans', 'migration plan']);
+    expect(labels(crumbs)).toEqual(['Overview', 'Artifacts', 'migration plan']);
     crumbs[1]!.onClick!();
     expect(h.toPlansList).toHaveBeenCalledOnce();
   });

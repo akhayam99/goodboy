@@ -64,7 +64,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
   };
   const plansList: BreadcrumbCrumb = {
     id: 'plans',
-    label: 'Plans',
+    label: 'Artifacts',
     icon: LENS_ICON.plans,
     onClick: handlers.toPlansList,
   };

@@ -15,6 +15,7 @@ import type {
   SessionViewPrefs,
   WorkspaceId,
 } from '@goodboy/types';
+import type { ArtifactFilter } from '../../../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../../../features/resolve/resolveItemDraft';
 
 export type { SetFn, GetFn } from '../../slice-types';
@@ -150,6 +151,7 @@ type SessionViewSliceState = {
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
+  readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
@@ -176,6 +178,10 @@ type SessionViewSliceActions = {
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
+  setArtifactFilter(params: {
+    readonly sessionId: SessionId;
+    readonly filter: ArtifactFilter;
+  }): void;
   setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;

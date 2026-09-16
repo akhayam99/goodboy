@@ -1,5 +1,6 @@
 import { getSessionViewPrefs } from './getSessionViewPrefs';
 import { createInitialSessionViewState } from './createInitialSessionViewState';
+import { setArtifactFilter } from './artifactFilter';
 import { setSessionGroup } from './setSessionGroup';
 import { setSessionSort } from './setSessionSort';
 import {
@@ -54,6 +55,7 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     toggleWorkflowExpand: toggleWorkflowExpand(set),
     setFocusedWorkflowRun: setFocusedWorkflowRun(set),
     setFocusedPlanId: setFocusedPlanId(set),
+    setArtifactFilter: setArtifactFilter(set),
     setFocusedGithubIssueNumber: setFocusedGithubIssueNumber(set),
     setSessionStudio: setSessionStudio(set),
     setDiffFocus: setDiffFocus(set),

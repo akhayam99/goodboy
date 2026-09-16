@@ -82,6 +82,7 @@ import { buildProviderList, type ProviderStatus } from '../features/providers/pr
 import { type RewrittenHead } from '../features/worktree/worktree';
 import { type SkillUpsertArgs } from '../features/skills/skills';
 import type { ScriptRunResult } from '../features/scripts/scripts';
+import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
 import { type WorkflowUpsertArgs, type StepDefUpsertArgs } from '../features/workflows/workflows';
 import { type AgentKind } from '../features/session/agent-kind';
@@ -917,6 +918,10 @@ type AppActions = {
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
+  setArtifactFilter(params: {
+    readonly sessionId: SessionId;
+    readonly filter: ArtifactFilter;
+  }): void;
   setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
   openDiffLens(sessionId: SessionId, focus: DiffFocus | null): void;

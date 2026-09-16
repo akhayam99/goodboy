@@ -54,7 +54,7 @@ export const SHORTCUTS = {
   'lens.questions': { combo: 'cmd+alt+KeyQ', label: 'Questions', plane: 'lens' },
   'lens.files': { combo: 'cmd+alt+KeyF', label: 'Diff', plane: 'lens' },
   'lens.explore': { combo: 'cmd+alt+KeyX', label: 'Explore', plane: 'lens' },
-  'lens.plans': { combo: 'cmd+alt+KeyP', label: 'Plans', plane: 'lens' },
+  'lens.plans': { combo: 'cmd+alt+KeyP', label: 'Artifacts', plane: 'lens' },
   'lens.scripts': { combo: 'cmd+alt+KeyS', label: 'Scripts', plane: 'lens' },
   'lens.terminal': { combo: 'cmd+alt+KeyT', label: 'Terminal', plane: 'lens' },
   'lens.pr': { combo: 'cmd+alt+Digit1', label: 'Code host', plane: 'lens' },
