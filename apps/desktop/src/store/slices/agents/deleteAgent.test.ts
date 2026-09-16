@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
   AgentId,
@@ -6,6 +6,7 @@ import type {
   ProviderRunId,
   ResolveAttempt,
   SessionId,
+  WorkspaceId,
 } from '@goodboy/types';
 import type { GetFn, SetFn } from './types';
 
@@ -26,11 +27,14 @@ const hoisted = vi.hoisted(() => ({
   })),
   execute: vi.fn(async () => undefined),
   purgeAgentForDelete: vi.fn(async () => undefined),
+  listLiveRunIds: vi.fn(async () => new Set<string>()),
+  emitNotification: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../features/chat/turn', () => ({
   cancelTurn: hoisted.cancelTurn,
   deleteAttachment: hoisted.deleteAttachment,
+  listLiveRunIds: hoisted.listLiveRunIds,
 }));
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentList: hoisted.invokeAgentList,
@@ -46,10 +50,12 @@ vi.mock('../../../features/worktree/worktree', () => ({
 }));
 
 import { deleteAgent } from './deleteAgent';
+import { purgedAgentIds } from '../../session-mutators';
 
 const SID = 'sess-1' as SessionId;
 const DOOMED = 'resolver-1' as AgentId;
 const RUN = 'run-1' as ProviderRunId;
+const WID = 'ws-1' as WorkspaceId;
 const MOUNT_TWO = 'mount-two' as MountId;
 const MOUNT_THREE = 'mount-three' as MountId;
 const PATH_TWO = '/repo/two';
@@ -141,7 +147,10 @@ const makeStore = ({ isMounted = true }: { readonly isMounted?: boolean } = {}) 
       : {},
     sessionActiveMount: isMounted ? { [SID]: MOUNT_THREE } : {},
     sessionActiveProject: isMounted ? { [SID]: 'project-1' } : {},
-    sessions: [{ id: SID, activeProjectId: 'project-1', state: { kind: 'idle' } }],
+    sessions: [
+      { id: SID, workspaceId: WID, activeProjectId: 'project-1', state: { kind: 'idle' } },
+    ],
+    emitNotification: hoisted.emitNotification,
   };
   const get = (() => state) as unknown as GetFn;
   const set = ((u: unknown) => {
@@ -154,7 +163,17 @@ const makeStore = ({ isMounted = true }: { readonly isMounted?: boolean } = {}) 
   return { state, get, set };
 };
 
-afterEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  hoisted.listLiveRunIds.mockReset();
+  hoisted.listLiveRunIds.mockResolvedValue(new Set<string>());
+  hoisted.purgeAgentForDelete.mockReset();
+  hoisted.purgeAgentForDelete.mockResolvedValue(undefined);
+});
+
+afterEach(() => {
+  vi.clearAllMocks();
+  purgedAgentIds.clear();
+});
 
 describe('deleteAgent', () => {
   it('gives back the worktree the agent was writing, not the selected one', async () => {
@@ -238,5 +257,79 @@ describe('deleteAgent', () => {
       id: DOOMED,
     });
     expect(hoisted.execute).not.toHaveBeenCalled();
+  });
+  it('waits for the run to stop before it purges the transcript', async () => {
+    const { get, set } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([]);
+    const order: string[] = [];
+    let polls = 0;
+    hoisted.listLiveRunIds.mockImplementation(async () => {
+      polls += 1;
+      order.push(`poll-${polls}`);
+      return polls < 3 ? new Set<string>([RUN]) : new Set<string>();
+    });
+    hoisted.purgeAgentForDelete.mockImplementation(async () => {
+      order.push('purge');
+    });
+
+    await deleteAgent(set, get)(SID, DOOMED);
+
+    expect(order).toEqual(['poll-1', 'poll-2', 'poll-3', 'purge']);
+    expect(hoisted.emitNotification).not.toHaveBeenCalled();
+  });
+
+  it('purges anyway and tells the user when the run refuses to stop', async () => {
+    const { get, set } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([]);
+    hoisted.listLiveRunIds.mockResolvedValue(new Set<string>([RUN]));
+
+    vi.useFakeTimers();
+    try {
+      const pending = deleteAgent(set, get)(SID, DOOMED);
+      await vi.advanceTimersByTimeAsync(10_000);
+      await pending;
+    } finally {
+      vi.useRealTimers();
+    }
+
+    expect(hoisted.purgeAgentForDelete).toHaveBeenCalledWith({
+      db: expect.anything(),
+      id: DOOMED,
+    });
+    expect(hoisted.emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'Deleted agent is still running',
+      expect.stringContaining('discarded'),
+      { sessionId: SID, workspaceId: WID },
+    );
+  });
+
+  it('gags the agent before the purge so a late write cannot repopulate it', async () => {
+    const { get, set } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([]);
+    let gaggedDuringPurge = false;
+    hoisted.purgeAgentForDelete.mockImplementation(async () => {
+      gaggedDuringPurge = purgedAgentIds.has(DOOMED);
+    });
+
+    await deleteAgent(set, get)(SID, DOOMED);
+
+    expect(gaggedDuringPurge).toBe(true);
+    expect(purgedAgentIds.has(DOOMED)).toBe(true);
+  });
+
+  it('lets the agent write again when the purge itself fails', async () => {
+    const { get, set } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([]);
+    hoisted.purgeAgentForDelete.mockRejectedValue(new Error('database is locked'));
+
+    await expect(deleteAgent(set, get)(SID, DOOMED)).rejects.toThrow('database is locked');
+
+    expect(purgedAgentIds.has(DOOMED)).toBe(false);
   });
 });

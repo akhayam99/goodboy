@@ -1,12 +1,16 @@
 import type { AgentId, SessionId, TurnEvent } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { invokeAgentSetProviderSessionId } from '../../../features/workflows/workflows';
+import { purgedAgentIds } from '../../session-mutators';
 import { bufferTurnEvent } from './buffer';
 import { queueTurnEventInsert } from './queue';
 import type { SetFn } from './types';
 
 export const appendTurnEvent = (set: SetFn) => {
   return (agentId: AgentId, sessionId: SessionId, event: TurnEvent) => {
+    if (purgedAgentIds.has(agentId)) {
+      return;
+    }
     bufferTurnEvent({ set, agentId, sessionId, event });
 
     queueTurnEventInsert({

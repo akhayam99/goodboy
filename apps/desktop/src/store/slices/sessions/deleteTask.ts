@@ -16,21 +16,19 @@ import {
   type MountDetachment,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
+import { cancelTurn } from '../../../features/chat/turn';
 import {
   removeSessionDirectory,
   scratchDirRemove,
   tidyRepoGoodboyDir,
 } from '../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
+import { awaitRunStopped } from '../../awaitRunStopped';
 import { purgeSessionFileVersions } from '../file-versions/persistFinalizedFileVersions';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
 import { cleanupMountDirectory } from '../mount-cleanup';
 import { forgetMaterializationSeed } from './materializationSeeds';
 import type { GetFn, SetFn } from './types';
-
-const RUN_STOP_ATTEMPTS = 20;
-const RUN_STOP_INTERVAL_MS = 100;
 
 const removePersistedDirectory = async (path: string): Promise<void> => {
   const parent = path.slice(0, path.lastIndexOf('/'));
@@ -38,18 +36,6 @@ const removePersistedDirectory = async (path: string): Promise<void> => {
     throw new Error(`session path has no parent: ${path}`);
   }
   await removeSessionDirectory({ basePath: parent, path });
-};
-
-const awaitRunStopped = async (runId: ProviderRunId): Promise<boolean> => {
-  for (let attempt = 0; attempt < RUN_STOP_ATTEMPTS; attempt += 1) {
-    const live = await listLiveRunIds();
-    if (!live.has(runId)) {
-      return true;
-    }
-    await new Promise((resolve) => setTimeout(resolve, RUN_STOP_INTERVAL_MS));
-  }
-  const live = await listLiveRunIds();
-  return !live.has(runId);
 };
 
 type RetainParams = {
@@ -113,7 +99,7 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
     if (session.state.kind === 'running') {
       const runId = (session.state as { kind: 'running'; runId: ProviderRunId }).runId;
       await cancelTurn(runId).catch(() => undefined);
-      runStopped = await awaitRunStopped(runId).catch(() => false);
+      runStopped = await awaitRunStopped({ runId }).catch(() => false);
     }
     const mounts = await listSessionMounts({ db: tauriDatabase, sessionId });
     const isBranchless = isBranchlessSession({

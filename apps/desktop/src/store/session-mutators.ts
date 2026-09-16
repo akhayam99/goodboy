@@ -63,3 +63,5 @@ export const applyAgentTurnState = (
 };
 
 export const cancelledRunIds = new Set<ProviderRunId>();
+
+export const purgedAgentIds = new Set<AgentId>();

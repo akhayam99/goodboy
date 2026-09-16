@@ -31,6 +31,8 @@ import type {
   ProjectScript,
   ProjectScriptId,
 } from '@goodboy/types';
+import { purgedAgentIds } from '../../session-mutators';
+import { flushTurnEvents } from './buffer';
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(async () => null),
@@ -531,6 +533,7 @@ describe('store contract', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    purgedAgentIds.clear();
   });
 
   describe('transcripts', () => {
@@ -608,6 +611,24 @@ describe('store contract', () => {
       } finally {
         vi.useRealTimers();
       }
+      expect(store.getState().transcripts[AGENT_ID]).toBeUndefined();
+    });
+
+    it('a deleted agent does not come back when a late event arrives after the purge', async () => {
+      const store = await getStore();
+      store.setState({
+        sessions: [buildSession()],
+        sessionPhaseRuns: { [SESSION_ID]: [buildAgent({ id: AGENT_ID })] },
+      });
+      await store.getState().deleteAgent(SESSION_ID, AGENT_ID);
+      const late: TurnEvent = {
+        kind: 'assistant_text',
+        runId: RUN_ID,
+        delta: 'late',
+        at: NOW,
+      } as TurnEvent;
+      store.getState().appendTurnEvent(AGENT_ID, SESSION_ID, late);
+      flushTurnEvents();
       expect(store.getState().transcripts[AGENT_ID]).toBeUndefined();
     });
 
