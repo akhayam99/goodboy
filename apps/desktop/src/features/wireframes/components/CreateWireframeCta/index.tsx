@@ -1,20 +1,21 @@
 import { useMemo, useState } from 'react';
+import { LayoutTemplate } from 'lucide-react';
 import { runsForWorkflowRun } from '@goodboy/core';
 import { AnchoredPopover, Button, PopoverBody, cn, formatError, useDropdown } from '@goodboy/ui';
 import type { Agent, SessionId, WorkflowRunId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import {
   ARTIFACT_CTA_BLOCK_COPY,
   resolveArtifactCtaState,
 } from '../../../artifacts/artifactCtaState';
 import {
-  REPORT_TYPES,
-  REPORT_TYPE_HINT,
-  REPORT_TYPE_LABEL,
-  type ReportType,
-} from '../../reportTypes';
-import { ReportTypeRow } from './ReportTypeRow';
+  WIREFRAME_FIDELITIES,
+  WIREFRAME_FIDELITY_CHOICE_LABEL,
+  WIREFRAME_FIDELITY_HINT,
+  type WireframeFidelity,
+} from '../../wireframeFidelity';
+import { FidelityRow } from './FidelityRow';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -22,7 +23,7 @@ type Props = {
   readonly className?: string;
 };
 
-export const CreateReportCta = ({ sessionId, workflowRunId = null, className }: Props) => {
+export const CreateWireframeCta = ({ sessionId, workflowRunId = null, className }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
     expectedHeight: 200,
@@ -30,7 +31,7 @@ export const CreateReportCta = ({ sessionId, workflowRunId = null, className }: 
     width: 'w-72 max-w-[calc(100vw-2rem)]',
   });
   const { close, toggle } = dropdown;
-  const [pending, setPending] = useState<ReportType | null>(null);
+  const [pending, setPending] = useState<WireframeFidelity | null>(null);
   const [error, setError] = useState<string | null>(null);
   const agents = useAppStore(
     (state) => state.sessionPhaseRuns?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -44,7 +45,7 @@ export const CreateReportCta = ({ sessionId, workflowRunId = null, className }: 
       return turn?.kind === 'running' || turn?.kind === 'starting';
     }),
   );
-  const spawnReportAgent = useAppStore((state) => state.spawnReportAgent);
+  const spawnWireframeAgent = useAppStore((state) => state.spawnWireframeAgent);
   const runAgents = useMemo(
     () => (workflowRunId === null ? null : runsForWorkflowRun(agents, workflowRunId)),
     [agents, workflowRunId],
@@ -58,14 +59,14 @@ export const CreateReportCta = ({ sessionId, workflowRunId = null, className }: 
   const isBlocked = state.kind === 'blocked';
   const blockCopy = state.kind === 'blocked' ? ARTIFACT_CTA_BLOCK_COPY[state.reason] : null;
 
-  const create = async (reportType: ReportType) => {
+  const create = async (fidelity: WireframeFidelity) => {
     if (pending !== null) {
       return;
     }
-    setPending(reportType);
+    setPending(fidelity);
     setError(null);
     try {
-      await spawnReportAgent({ sessionId, reportType, workflowRunId });
+      await spawnWireframeAgent({ sessionId, fidelity, workflowRunId });
       close();
       window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
     } catch (cause) {
@@ -79,7 +80,7 @@ export const CreateReportCta = ({ sessionId, workflowRunId = null, className }: 
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Create report"
+      ariaLabel="Create wireframe"
       className="flex flex-col bg-subtle"
       anchorClassName={cn('min-w-0', className)}
       trigger={
@@ -88,23 +89,23 @@ export const CreateReportCta = ({ sessionId, workflowRunId = null, className }: 
           size="sm"
           onClick={toggle}
           disabled={isBlocked}
-          data-testid="create-report-cta"
-          title={blockCopy ?? 'Synthesize a report from what this session produced'}
+          data-testid="create-wireframe-cta"
+          title={blockCopy ?? 'Draft a navigable wireframe from what this session produced'}
         >
-          <CONCEPT_ICONS.changelog size={ICON_SIZE.row} aria-hidden />
-          Create report
+          <LayoutTemplate size={ICON_SIZE.row} aria-hidden />
+          Create wireframe
         </Button>
       }
     >
       <PopoverBody className="flex flex-col gap-0.5 p-1">
-        {REPORT_TYPES.map((reportType) => (
-          <ReportTypeRow
-            key={reportType}
-            label={REPORT_TYPE_LABEL[reportType]}
-            hint={REPORT_TYPE_HINT[reportType]}
-            isBusy={pending === reportType}
+        {WIREFRAME_FIDELITIES.map((fidelity) => (
+          <FidelityRow
+            key={fidelity}
+            label={WIREFRAME_FIDELITY_CHOICE_LABEL[fidelity]}
+            hint={WIREFRAME_FIDELITY_HINT[fidelity]}
+            isBusy={pending === fidelity}
             isDisabled={pending !== null}
-            onSelect={() => void create(reportType)}
+            onSelect={() => void create(fidelity)}
           />
         ))}
         {error === null ? null : (

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, AgentStatus, SessionId, WorkflowRunId } from '@goodboy/types';
-import { resolveReportCtaState } from './reportCtaState';
+import { resolveArtifactCtaState } from './artifactCtaState';
 
 const SESSION_ID = 'session-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
@@ -22,10 +22,10 @@ const agent = ({
   ...(workflowRunId !== undefined && { workflowRunId }),
 });
 
-describe('resolveReportCtaState', () => {
+describe('resolveArtifactCtaState', () => {
   it('is blocked with nothing to report on', () => {
     expect(
-      resolveReportCtaState({
+      resolveArtifactCtaState({
         agents: [],
         runAgents: null,
         isTurnRunning: false,
@@ -36,7 +36,7 @@ describe('resolveReportCtaState', () => {
 
   it('is ready once every agent has stopped and the session is idle', () => {
     expect(
-      resolveReportCtaState({
+      resolveArtifactCtaState({
         agents: [agent({ id: 'a', status: 'completed' })],
         runAgents: null,
         isTurnRunning: false,
@@ -47,7 +47,7 @@ describe('resolveReportCtaState', () => {
 
   it('is blocked while the source run is still going', () => {
     expect(
-      resolveReportCtaState({
+      resolveArtifactCtaState({
         agents: [agent({ id: 'a', status: 'running', workflowRunId: RUN_ID })],
         runAgents: [agent({ id: 'a', status: 'running', workflowRunId: RUN_ID })],
         isTurnRunning: false,
@@ -58,7 +58,7 @@ describe('resolveReportCtaState', () => {
 
   it('is blocked when the run finished but the session is still busy elsewhere', () => {
     expect(
-      resolveReportCtaState({
+      resolveArtifactCtaState({
         agents: [
           agent({ id: 'a', status: 'completed', workflowRunId: RUN_ID }),
           agent({ id: 'b', status: 'running' }),
@@ -73,7 +73,7 @@ describe('resolveReportCtaState', () => {
   it('is blocked while a turn or the summarizer runs', () => {
     const agents = [agent({ id: 'a', status: 'completed' })];
     expect(
-      resolveReportCtaState({
+      resolveArtifactCtaState({
         agents,
         runAgents: null,
         isTurnRunning: true,
@@ -81,7 +81,7 @@ describe('resolveReportCtaState', () => {
       }),
     ).toEqual({ kind: 'blocked', reason: 'session-busy' });
     expect(
-      resolveReportCtaState({
+      resolveArtifactCtaState({
         agents,
         runAgents: null,
         isTurnRunning: false,

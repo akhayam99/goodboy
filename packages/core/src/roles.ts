@@ -232,7 +232,7 @@ export const ROLE_REGISTRY = {
     outputKind: 'wireframe',
     workflowEligible: true,
     classifierEligible: false,
-    selectionEligible: false,
+    selectionEligible: true,
     provider: 'anthropic',
     model: 'sonnet-5',
     effort: 'medium',

@@ -10,7 +10,11 @@ import { ResolveItemScene } from './scenes/ResolveItemScene';
 import { BoardScene } from './scenes/BoardScene';
 import { TranscriptMountScene } from './scenes/TranscriptMountScene';
 import { BoardShellScene } from './scenes/BoardShellScene';
-import { ArtifactReportScene } from './scenes/ArtifactScenes';
+import {
+  ArtifactReportScene,
+  ArtifactWireframeHighScene,
+  ArtifactWireframeLowScene,
+} from './scenes/ArtifactScenes';
 
 const SCENES = {
   workspace: WorkspaceScene,
@@ -24,6 +28,8 @@ const SCENES = {
   'transcript-mount': TranscriptMountScene,
   'board-shell': BoardShellScene,
   'artifact-report': ArtifactReportScene,
+  'artifact-wireframe-low': ArtifactWireframeLowScene,
+  'artifact-wireframe-high': ArtifactWireframeHighScene,
 };
 
 export const MockScene = () => {

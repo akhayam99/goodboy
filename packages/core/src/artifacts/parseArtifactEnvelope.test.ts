@@ -5,6 +5,25 @@ import { parseArtifactEnvelope } from './parseArtifactEnvelope';
 const envelope = (attrs: string, body: string): string =>
   `intro line\n<<artifact ${attrs}>>\n${body}\n<</artifact>>\ntrailing line`;
 
+const wireframeDocument = () => ({
+  version: 1,
+  initialScreenId: 'home',
+  theme: { name: 'generic' },
+  screens: [
+    {
+      id: 'home',
+      title: 'Home',
+      viewport: 'desktop',
+      root: {
+        id: 'home-root',
+        kind: 'navigation',
+        variant: 'top',
+        items: [{ id: 'nav-home', label: 'Home', isActive: true }],
+      },
+    },
+  ],
+});
+
 describe('parseArtifactEnvelope', () => {
   it('returns none when no marker is present', () => {
     expect(parseArtifactEnvelope('just prose').status).toBe('none');
@@ -50,21 +69,65 @@ describe('parseArtifactEnvelope', () => {
   });
 
   it('captures a wireframe envelope and defaults its metadata', () => {
+    const document = wireframeDocument();
     const result = parseArtifactEnvelope(
       envelope(
         'v=1 kind=wireframe',
         JSON.stringify({
           title: 'Onboarding',
           format: 'json',
-          content: { screens: [] },
+          content: document,
         }),
       ),
     );
     expect(result.status).toBe('captured');
     if (result.status !== 'captured' || result.artifact.kind !== 'wireframe') return;
     expect(result.artifact.sourceFormat).toBe('json');
-    expect(result.artifact.sourceText).toBe('{"screens":[]}');
+    expect(result.artifact.sourceText).toBe(JSON.stringify(document));
     expect(result.artifact.metadata).toEqual({ fidelity: 'low', designProfile: {} });
+  });
+
+  it('rejects a wireframe whose document does not match the contract', () => {
+    const result = parseArtifactEnvelope(
+      envelope(
+        'v=1 kind=wireframe',
+        JSON.stringify({ title: 'Onboarding', format: 'json', content: { screens: [] } }),
+      ),
+    );
+    expect(result.status).toBe('error');
+    if (result.status !== 'error') return;
+    expect(result.code).toBe('invalid_payload');
+    expect(result.message).toContain('does not match the contract');
+  });
+
+  it('rejects a wireframe whose navigation item carries a non-boolean isActive', () => {
+    const document = wireframeDocument();
+    const result = parseArtifactEnvelope(
+      envelope(
+        'v=1 kind=wireframe',
+        JSON.stringify({
+          title: 'Onboarding',
+          format: 'json',
+          content: {
+            ...document,
+            screens: [
+              {
+                ...document.screens[0],
+                root: {
+                  id: 'home-root',
+                  kind: 'navigation',
+                  variant: 'top',
+                  items: [{ id: 'nav-home', label: 'Home', isActive: 'yes' }],
+                },
+              },
+            ],
+          },
+        }),
+      ),
+    );
+    expect(result.status).toBe('error');
+    if (result.status !== 'error') return;
+    expect(result.message).toContain('isActive');
   });
 
   it('accepts quoted attribute values', () => {

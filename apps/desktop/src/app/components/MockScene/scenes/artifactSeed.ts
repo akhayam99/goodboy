@@ -15,9 +15,17 @@ import type {
   SessionId,
   SessionProjectMount,
   TurnEvent,
+  WireframeArtifact,
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
+import type {
+  WireframeDocument,
+  WireframeNode,
+  WireframeScreen,
+  WireframeTheme,
+  WireframeTransition,
+} from '@goodboy/core';
 import { useAppStore } from '../../../../store';
 
 const WORKSPACE_ID = 'mock-artifact-workspace-harborline' as WorkspaceId;
@@ -30,9 +38,12 @@ const IMPLEMENTER_AGENT_ID = 'mock-artifact-agent-implementer' as AgentId;
 const TESTER_AGENT_ID = 'mock-artifact-agent-tester' as AgentId;
 const REPORT_AGENT_ID = 'mock-artifact-agent-report' as AgentId;
 const CHANGE_REPORT_AGENT_ID = 'mock-artifact-agent-change-report' as AgentId;
+const WIREFRAME_AGENT_ID = 'mock-artifact-agent-wireframe' as AgentId;
 
 const REPORT_ARTIFACT_ID = 'mock-artifact-report-summary' as ArtifactId;
 const CHANGE_REPORT_ARTIFACT_ID = 'mock-artifact-report-change' as ArtifactId;
+const WIREFRAME_LOW_ARTIFACT_ID = 'mock-artifact-wireframe-low' as ArtifactId;
+const WIREFRAME_HIGH_ARTIFACT_ID = 'mock-artifact-wireframe-high' as ArtifactId;
 const PLAN_ARTIFACT_ID = 'mock-artifact-plan-rounding' as ArtifactId;
 const PLAN_ID = 'mock-artifact-plan-rounding' as PlanId;
 const OLD_PLAN_ID = 'mock-artifact-plan-backfill' as PlanId;
@@ -222,6 +233,20 @@ const AGENTS: ReadonlyArray<Agent> = [
     lastViewedAt: NOW,
     doneAt: '2026-09-14T16:27:00.000Z' as IsoDateTime,
   },
+  {
+    id: WIREFRAME_AGENT_ID,
+    sessionId: SESSION_ID,
+    ordinal: 6,
+    name: 'Sketch the settlement review flow',
+    kind: 'wireframe',
+    status: 'completed',
+    outputSummary: 'Drew four screens for reviewing and releasing a settlement batch.',
+    startedAt: '2026-09-14T16:28:00.000Z' as IsoDateTime,
+    completedAt: '2026-09-14T16:38:00.000Z' as IsoDateTime,
+    lastFinishedAt: '2026-09-14T16:38:00.000Z' as IsoDateTime,
+    lastViewedAt: NOW,
+    doneAt: '2026-09-14T16:38:00.000Z' as IsoDateTime,
+  },
 ];
 
 const PLAN_BODY = `## Approach
@@ -392,6 +417,32 @@ notify-relay off main, head 7b30e15, 4 files changed, 74 additions, 31 deletions
 
 nothing was truncated.`;
 
+const WIREFRAME_KICKOFF = `# evidence pack: Wireframe
+
+draft a plain wireframe of the flow this session produced.
+scope: the whole session. captured at 2026-09-14T16:28:00.000Z.
+session ${SESSION_ID}: ${SESSION.goal}
+
+this pack is the only evidence you have. it carries final agent messages, not tool calls or tool output. never invent a fact that is not here; say plainly what is missing.
+
+## agents
+
+- ${SCOUT_AGENT_ID} scout "Trace the rounding drift": the drift is in the per posting rounding of split allocations.
+- ${IMPLEMENTER_AGENT_ID} implementer "Apply the rounding fix in ledger-core": rounding moved to the batch total, postings stay balanced.
+
+## artifacts
+
+- ${PLAN_ARTIFACT_ID} plan "Round once per batch" (consumed).
+- ${REPORT_ARTIFACT_ID} report "Rounding drift in ledger-core postings" (active).
+
+## design profile
+
+no design evidence was collected for this run, so the theme is generic.
+
+## truncation
+
+nothing was truncated.`;
+
 const transcriptOf = ({
   runId,
   text,
@@ -463,10 +514,380 @@ const PLAN_ARTIFACT: SessionArtifact = {
   updatedAt: '2026-09-14T15:31:00.000Z' as IsoDateTime,
 };
 
+const BATCHES_CHILDREN: ReadonlyArray<WireframeNode> = [
+  {
+    id: 'batches-nav',
+    kind: 'navigation',
+    variant: 'top',
+    items: [
+      { id: 'nav-batches', label: 'Batches', isActive: true },
+      {
+        id: 'nav-exceptions',
+        label: 'Exceptions',
+        action: { type: 'navigate', toScreenId: 'exception' },
+      },
+      { id: 'nav-audit', label: 'Audit', action: { type: 'navigate', toScreenId: 'audit' } },
+    ],
+  },
+  { id: 'batches-title', kind: 'text', text: 'Settlement batches', variant: 'title' },
+  {
+    id: 'batches-filter',
+    kind: 'stack',
+    direction: 'row',
+    gap: 'sm',
+    align: 'center',
+    children: [
+      { id: 'batches-search', kind: 'input', inputType: 'search', placeholder: 'Find a batch' },
+      {
+        id: 'batches-toggle-settled',
+        kind: 'button',
+        label: 'Show settled',
+        variant: 'ghost',
+        action: { type: 'toggle', stateKey: 'showSettled' },
+      },
+    ],
+  },
+  {
+    id: 'batches-list',
+    kind: 'list',
+    items: [
+      {
+        id: 'batch-4471',
+        title: 'Batch 4471',
+        subtitle: '128 postings, 2 cents out',
+        action: { type: 'navigate', toScreenId: 'review' },
+      },
+      {
+        id: 'batch-4470',
+        title: 'Batch 4470',
+        subtitle: '96 postings, balanced',
+        action: { type: 'navigate', toScreenId: 'review' },
+      },
+      {
+        id: 'batch-4469',
+        title: 'Batch 4469',
+        subtitle: '204 postings, 1 cent out',
+        action: { type: 'navigate', toScreenId: 'exception' },
+      },
+    ],
+  },
+];
+
+const BATCHES_METRICS: WireframeNode = {
+  id: 'batches-metrics',
+  kind: 'grid',
+  columns: 3,
+  gap: 'sm',
+  children: [
+    {
+      id: 'metric-open',
+      kind: 'stack',
+      direction: 'column',
+      gap: 'sm',
+      padding: 'sm',
+      surface: true,
+      children: [
+        { id: 'metric-open-label', kind: 'text', text: 'Out of balance', variant: 'label' },
+        { id: 'metric-open-value', kind: 'text', text: '3 batches', variant: 'title' },
+      ],
+    },
+    {
+      id: 'metric-settled',
+      kind: 'stack',
+      direction: 'column',
+      gap: 'sm',
+      padding: 'sm',
+      surface: true,
+      children: [
+        { id: 'metric-settled-label', kind: 'text', text: 'Settled today', variant: 'label' },
+        { id: 'metric-settled-value', kind: 'text', text: '128 batches', variant: 'title' },
+      ],
+    },
+    { id: 'batches-hero', kind: 'image', alt: 'Settlement health chart', ratio: 'wide' },
+  ],
+};
+
+const batchesScreen = ({
+  children,
+}: {
+  readonly children: ReadonlyArray<WireframeNode>;
+}): WireframeScreen => ({
+  id: 'batches',
+  title: 'Settlement batches',
+  viewport: 'desktop',
+  note: 'The operator lands here after signing in.',
+  root: {
+    id: 'batches-root',
+    kind: 'stack',
+    direction: 'column',
+    gap: 'md',
+    padding: 'md',
+    children,
+  },
+});
+
+const REVIEW_SCREEN: WireframeScreen = {
+  id: 'review',
+  title: 'Review batch',
+  viewport: 'desktop',
+  note: 'Opened from a batch row.',
+  root: {
+    id: 'review-root',
+    kind: 'stack',
+    direction: 'column',
+    gap: 'md',
+    padding: 'md',
+    children: [
+      { id: 'review-title', kind: 'text', text: 'Batch 4471', variant: 'title' },
+      {
+        id: 'review-summary',
+        kind: 'text',
+        text: 'The allocation total is two cents under the invoice total.',
+        variant: 'body',
+      },
+      {
+        id: 'review-table',
+        kind: 'table',
+        columns: ['Posting', 'Account', 'Allocated', 'Rounded'],
+        rows: [
+          ['P-1', 'Receivables', '33.34', '33.33'],
+          ['P-2', 'Receivables', '33.33', '33.33'],
+          ['P-3', 'Fees', '33.33', '33.33'],
+        ],
+      },
+      {
+        id: 'review-actions',
+        kind: 'stack',
+        direction: 'row',
+        gap: 'sm',
+        justify: 'between',
+        children: [
+          {
+            id: 'review-back',
+            kind: 'button',
+            label: 'Back to batches',
+            variant: 'ghost',
+            action: { type: 'navigate', toScreenId: 'batches' },
+          },
+          {
+            id: 'review-escalate',
+            kind: 'button',
+            label: 'Escalate',
+            variant: 'danger',
+            action: { type: 'navigate', toScreenId: 'exception' },
+          },
+          {
+            id: 'review-release',
+            kind: 'button',
+            label: 'Release batch',
+            variant: 'primary',
+            action: { type: 'navigate', toScreenId: 'audit' },
+          },
+        ],
+      },
+    ],
+  },
+};
+
+const EXCEPTION_SCREEN: WireframeScreen = {
+  id: 'exception',
+  title: 'Exception detail',
+  viewport: 'desktop',
+  root: {
+    id: 'exception-root',
+    kind: 'stack',
+    direction: 'column',
+    gap: 'md',
+    padding: 'md',
+    children: [
+      { id: 'exception-title', kind: 'text', text: 'Rounding exception', variant: 'title' },
+      {
+        id: 'exception-note',
+        kind: 'text',
+        text: 'Three allocations rounded down, so the batch total is short.',
+        variant: 'body',
+      },
+      {
+        id: 'exception-reason',
+        kind: 'input',
+        inputType: 'textarea',
+        label: 'Reason',
+        placeholder: 'Why is this being accepted?',
+      },
+      {
+        id: 'exception-owner',
+        kind: 'input',
+        inputType: 'select',
+        label: 'Assign to',
+        options: ['Settlements', 'Invoicing', 'Platform'],
+      },
+      {
+        id: 'exception-actions',
+        kind: 'stack',
+        direction: 'row',
+        gap: 'sm',
+        children: [
+          {
+            id: 'exception-cancel',
+            kind: 'button',
+            label: 'Back to review',
+            variant: 'ghost',
+            action: { type: 'navigate', toScreenId: 'review' },
+          },
+          {
+            id: 'exception-accept',
+            kind: 'button',
+            label: 'Accept and log',
+            variant: 'primary',
+            action: { type: 'navigate', toScreenId: 'audit' },
+          },
+        ],
+      },
+    ],
+  },
+};
+
+const AUDIT_SCREEN: WireframeScreen = {
+  id: 'audit',
+  title: 'Audit trail',
+  viewport: 'desktop',
+  root: {
+    id: 'audit-root',
+    kind: 'stack',
+    direction: 'column',
+    gap: 'md',
+    padding: 'md',
+    children: [
+      { id: 'audit-title', kind: 'text', text: 'Audit trail', variant: 'title' },
+      {
+        id: 'audit-table',
+        kind: 'table',
+        columns: ['When', 'Who', 'Action'],
+        rows: [
+          ['16:31', 'Operator', 'Released batch 4471'],
+          ['16:12', 'Operator', 'Accepted a rounding exception'],
+          ['15:58', 'System', 'Flagged batch 4469'],
+        ],
+      },
+      {
+        id: 'audit-back',
+        kind: 'button',
+        label: 'Back to batches',
+        variant: 'secondary',
+        action: { type: 'navigate', toScreenId: 'batches' },
+      },
+    ],
+  },
+};
+
+const WIREFRAME_TRANSITIONS: ReadonlyArray<WireframeTransition> = [
+  { fromNodeId: 'batch-4471', toScreenId: 'review', label: 'open a batch' },
+  { fromNodeId: 'batch-4469', toScreenId: 'exception', label: 'open a flagged batch' },
+  { fromNodeId: 'review-release', toScreenId: 'audit', label: 'release' },
+  { fromNodeId: 'review-escalate', toScreenId: 'exception', label: 'escalate' },
+  { fromNodeId: 'exception-accept', toScreenId: 'audit', label: 'accept and log' },
+  { fromNodeId: 'audit-back', toScreenId: 'batches', label: 'back to the list' },
+  { fromNodeId: 'nav-exceptions', toScreenId: 'exception', label: 'exceptions tab' },
+  { fromNodeId: 'nav-audit', toScreenId: 'audit', label: 'audit tab' },
+];
+
+const HIGH_THEME: WireframeTheme = {
+  name: 'harborline-console',
+  font: 'sans',
+  radius: 'lg',
+  colors: {
+    background: '#0d1117',
+    surface: '#161b22',
+    foreground: '#e6edf3',
+    muted: '#8b949e',
+    border: '#30363d',
+    accent: '#2f81f7',
+    accentForeground: '#ffffff',
+    danger: '#f85149',
+  },
+  sources: ['ledger-core/app/styles/tokens.css', 'ledger-core/app/components/Button.tsx'],
+};
+
+const WIREFRAME_LOW_DOCUMENT: WireframeDocument = {
+  version: 1,
+  initialScreenId: 'batches',
+  theme: { name: 'generic', font: 'sans', radius: 'md' },
+  mockState: { showSettled: false },
+  screens: [
+    batchesScreen({ children: BATCHES_CHILDREN }),
+    REVIEW_SCREEN,
+    EXCEPTION_SCREEN,
+    AUDIT_SCREEN,
+  ],
+  transitions: WIREFRAME_TRANSITIONS,
+};
+
+const WIREFRAME_HIGH_DOCUMENT: WireframeDocument = {
+  ...WIREFRAME_LOW_DOCUMENT,
+  theme: HIGH_THEME,
+  screens: [
+    batchesScreen({
+      children: [...BATCHES_CHILDREN.slice(0, 2), BATCHES_METRICS, ...BATCHES_CHILDREN.slice(2)],
+    }),
+    REVIEW_SCREEN,
+    EXCEPTION_SCREEN,
+    AUDIT_SCREEN,
+  ],
+};
+
+const WIREFRAME_LOW_ARTIFACT: WireframeArtifact = {
+  id: WIREFRAME_LOW_ARTIFACT_ID,
+  sessionId: SESSION_ID,
+  agentId: WIREFRAME_AGENT_ID,
+  workflowRunId: null,
+  kind: 'wireframe',
+  schemaVersion: 1,
+  title: 'Settlement review flow',
+  sourceFormat: 'json',
+  sourceText: JSON.stringify(WIREFRAME_LOW_DOCUMENT, null, 2),
+  metadata: { fidelity: 'low', designProfile: {} },
+  status: 'active',
+  revision: 1,
+  sourceTurnId: 'mock-artifact-turn-wireframe-low',
+  createdAt: '2026-09-14T16:34:00.000Z' as IsoDateTime,
+  updatedAt: '2026-09-14T16:34:00.000Z' as IsoDateTime,
+};
+
+const WIREFRAME_HIGH_ARTIFACT: WireframeArtifact = {
+  id: WIREFRAME_HIGH_ARTIFACT_ID,
+  sessionId: SESSION_ID,
+  agentId: WIREFRAME_AGENT_ID,
+  workflowRunId: null,
+  kind: 'wireframe',
+  schemaVersion: 1,
+  title: 'Settlement review flow, themed',
+  sourceFormat: 'json',
+  sourceText: JSON.stringify(WIREFRAME_HIGH_DOCUMENT, null, 2),
+  metadata: {
+    fidelity: 'high',
+    designProfile: {
+      themeName: 'harborline-console',
+      commitSha: 'a41f9c2',
+      sources: [
+        'ledger-core/app/styles/tokens.css',
+        'ledger-core/app/components/Button.tsx',
+        'ledger-core/tailwind.config.ts',
+      ],
+    },
+  },
+  status: 'active',
+  revision: 3,
+  sourceTurnId: 'mock-artifact-turn-wireframe-high',
+  createdAt: '2026-09-14T16:38:00.000Z' as IsoDateTime,
+  updatedAt: '2026-09-14T16:38:00.000Z' as IsoDateTime,
+};
+
 const ARTIFACTS: ReadonlyArray<SessionArtifact> = [
   PLAN_ARTIFACT,
   REPORT_ARTIFACT,
   CHANGE_REPORT_ARTIFACT,
+  WIREFRAME_LOW_ARTIFACT,
+  WIREFRAME_HIGH_ARTIFACT,
 ];
 
 const PLANS: ReadonlyArray<PlanWithCount> = [
@@ -515,6 +936,11 @@ export const seedArtifactScene = () => {
         runId: 'mock-artifact-run-change-report',
         text: CHANGE_REPORT_KICKOFF,
         at: '2026-09-14T16:19:00.000Z',
+      }),
+      [WIREFRAME_AGENT_ID]: transcriptOf({
+        runId: 'mock-artifact-run-wireframe',
+        text: WIREFRAME_KICKOFF,
+        at: '2026-09-14T16:28:00.000Z',
       }),
     },
     sessionArtifacts: { [SESSION_ID]: ARTIFACTS },

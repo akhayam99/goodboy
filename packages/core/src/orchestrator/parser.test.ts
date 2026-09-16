@@ -71,13 +71,13 @@ describe('parseOrchestratorDecision', () => {
     expect(parsed?.action === 'next' && parsed.step.role).toBe('custom');
   });
 
-  it('falls back to custom for a role unavailable to the user', () => {
+  it('keeps the shipped wireframe role', () => {
     const parsed = parseOrchestratorDecision({
       provider: 'anthropic',
       raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"x","role":"wireframe","promptPrefix":"x"}}<</orchestrator>>',
     });
 
-    expect(parsed?.action === 'next' && parsed.step.role).toBe('custom');
+    expect(parsed?.action === 'next' && parsed.step.role).toBe('wireframe');
   });
 
   it('tolerates a missing expected output and a missing reason', () => {

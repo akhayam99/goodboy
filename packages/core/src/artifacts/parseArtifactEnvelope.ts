@@ -7,6 +7,7 @@ import type {
 } from '@goodboy/types';
 import { ARTIFACT_MAX_BYTES, ARTIFACT_SCHEMA_VERSION, extractArtifactBlocks } from './grammar';
 import type { ArtifactCaptureError, ArtifactCaptureResult, ParsedArtifact } from './types';
+import { parseWireframeSource, type WireframeIssue } from './wireframe';
 
 const KINDS: ReadonlySet<string> = new Set<ArtifactKind>(['plan', 'report', 'wireframe']);
 
@@ -15,6 +16,8 @@ const MAX_TITLE_LENGTH = 300;
 const STRICT_VERSION_RE = /^[0-9]{1,9}$/;
 
 const DEFAULT_REPORT_TYPE = 'session-summary';
+
+const MAX_REPORTED_WIREFRAME_ISSUES = 3;
 
 const fail = (code: ArtifactCaptureError['code'], message: string): ArtifactCaptureError => ({
   status: 'error',
@@ -64,6 +67,19 @@ const wireframeMetadata = (value: unknown): WireframeArtifactMetadata => {
     fidelity: fidelityRaw === 'high' ? 'high' : 'low',
     designProfile: isRecord(profileRaw) ? profileRaw : {},
   };
+};
+
+const describeWireframeIssues = ({
+  issues,
+}: {
+  readonly issues: ReadonlyArray<WireframeIssue>;
+}): string => {
+  const head = issues
+    .slice(0, MAX_REPORTED_WIREFRAME_ISSUES)
+    .map((issue) => (issue.path.length === 0 ? issue.message : `${issue.path}: ${issue.message}`))
+    .join('; ');
+  const rest = issues.length - MAX_REPORTED_WIREFRAME_ISSUES;
+  return rest > 0 ? `${head}; and ${rest} more` : head;
 };
 
 const markdownContent = (value: unknown): string | null => {
@@ -149,6 +165,13 @@ export const parseArtifactEnvelope = (assistantText: string): ArtifactCaptureRes
     const sourceText = jsonContent(payload['content']);
     if (sourceText === null) {
       return fail('invalid_payload', 'the wireframe content must be a JSON object');
+    }
+    const validated = parseWireframeSource({ source: sourceText });
+    if (validated.status === 'invalid') {
+      return fail(
+        'invalid_payload',
+        `the wireframe document does not match the contract: ${describeWireframeIssues({ issues: validated.issues })}`,
+      );
     }
     const artifact: ParsedArtifact = {
       kind,

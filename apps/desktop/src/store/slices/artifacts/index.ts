@@ -3,6 +3,7 @@ import { loadSessionArtifacts } from './loadSessionArtifacts';
 import { restoreArtifact } from './restoreArtifact';
 import { setArtifactStatus } from './setArtifactStatus';
 import { spawnReportAgent } from './spawnReportAgent';
+import { spawnWireframeAgent } from './spawnWireframeAgent';
 import { updateArtifactSource } from './updateArtifactSource';
 import type { GetFn, SetFn } from './types';
 
@@ -22,5 +23,6 @@ export const createArtifactsSlice = (set: SetFn, get: GetFn) => {
     deleteArtifact: deleteArtifact(set),
     restoreArtifact: restoreArtifact(set),
     spawnReportAgent: spawnReportAgent(get),
+    spawnWireframeAgent: spawnWireframeAgent(get),
   };
 };

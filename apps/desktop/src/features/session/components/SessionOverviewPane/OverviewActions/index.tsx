@@ -3,6 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { CreateAgentPopover } from '../../CreateAgentPopover';
 import { CreateReportCta } from '../../../../reports/components/CreateReportCta';
+import { CreateWireframeCta } from '../../../../wireframes/components/CreateWireframeCta';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -17,6 +18,7 @@ export const OverviewActions = ({ sessionId, onOpenWorkflowBuilder }: Props) => 
         Add workflow
       </Button>
       <CreateReportCta sessionId={sessionId} />
+      <CreateWireframeCta sessionId={sessionId} />
       <CreateAgentPopover sessionId={sessionId} variant="compact" />
     </div>
   );

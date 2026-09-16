@@ -119,7 +119,7 @@ describe('ROLE_REGISTRY contract', () => {
     expect(presentationKeyForRole({ role: 'custom' })).toBe('generic');
   });
 
-  it('ships report as selectable while wireframe stays unavailable', () => {
+  it('ships report and wireframe as selectable artifact roles the classifier never picks', () => {
     expect(ROLE_REGISTRY.report).toMatchObject({
       outputKind: 'report',
       workflowEligible: true,
@@ -130,7 +130,7 @@ describe('ROLE_REGISTRY contract', () => {
       outputKind: 'wireframe',
       workflowEligible: true,
       classifierEligible: false,
-      selectionEligible: false,
+      selectionEligible: true,
     });
   });
 
@@ -145,13 +145,15 @@ describe('ROLE_REGISTRY contract', () => {
       'resolver',
       'docs',
       'report',
+      'wireframe',
       'custom',
     ]);
   });
 
-  it('normalizes unavailable generated roles to custom', () => {
+  it('normalizes every selectable role to itself and the rest to custom', () => {
     expect(normalizeSelectableAgentRole({ role: 'report' })).toBe('report');
-    expect(normalizeSelectableAgentRole({ role: 'wireframe' })).toBe('custom');
+    expect(normalizeSelectableAgentRole({ role: 'wireframe' })).toBe('wireframe');
+    expect(normalizeSelectableAgentRole({ role: 'emperor' })).toBe('custom');
   });
 });
 

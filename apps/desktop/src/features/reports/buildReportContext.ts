@@ -7,8 +7,8 @@ import type {
   TurnEvent,
   WorkflowRunId,
 } from '@goodboy/types';
+import { redactSecrets } from '../../shared/utils/redactSecrets';
 import type { ScriptRunRecord } from '../scripts/scripts';
-import { redactSecrets } from './redactSecrets';
 import { REPORT_TYPE_HINT, REPORT_TYPE_LABEL, type ReportType } from './reportTypes';
 
 export const REPORT_CONTEXT_LIMITS = {

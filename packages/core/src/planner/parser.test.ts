@@ -149,14 +149,14 @@ describe('parsePlannerOutput', () => {
     expect(out.steps[0]!.role).toBe('custom');
   });
 
-  it('maps an unavailable role to custom', () => {
-    const unavailable = JSON.stringify({
+  it('keeps the shipped wireframe role available', () => {
+    const shipped = JSON.stringify({
       workflowName: 'X',
       reasoning: 'x',
       steps: [{ name: 'X', role: 'wireframe', promptPrefix: 'p', expectedOutput: 'o' }],
     });
 
-    expect(parsePlannerOutput(unavailable).steps[0]!.role).toBe('custom');
+    expect(parsePlannerOutput(shipped).steps[0]!.role).toBe('wireframe');
   });
 
   it('keeps the shipped report role available', () => {
@@ -171,7 +171,7 @@ describe('parsePlannerOutput', () => {
 
   it('advertises exactly the selection-eligible role vocabulary', () => {
     expect(PLANNER_SYSTEM_PROMPT).toContain(
-      '"role": "<scout|investigator|planner|implementer|reviewer|tester|resolver|docs|report|custom>"',
+      '"role": "<scout|investigator|planner|implementer|reviewer|tester|resolver|docs|report|wireframe|custom>"',
     );
   });
 
