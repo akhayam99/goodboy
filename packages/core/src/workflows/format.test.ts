@@ -51,12 +51,12 @@ describe('parseFormattedWorkflow', () => {
     expect(result?.steps[0]?.role).toBe('custom');
   });
 
-  it('coerces an unavailable role to custom', () => {
+  it('keeps the shipped wireframe role', () => {
     const json = JSON.stringify({
       steps: [{ name: 'Do', role: 'wireframe', promptPrefix: '', expectedOutput: '' }],
     });
 
-    expect(parseFormattedWorkflow(json)?.steps[0]?.role).toBe('custom');
+    expect(parseFormattedWorkflow(json)?.steps[0]?.role).toBe('wireframe');
   });
 
   it('normalizes legacy role aliases', () => {
@@ -197,7 +197,7 @@ describe('formatWorkflowFromNL', () => {
       expect.objectContaining({
         args: expect.objectContaining({
           systemPrompt: expect.stringContaining(
-            'role: one of scout, investigator, planner, implementer, reviewer, tester, resolver, docs, report, custom.',
+            'role: one of scout, investigator, planner, implementer, reviewer, tester, resolver, docs, report, wireframe, custom.',
           ),
         }),
       }),

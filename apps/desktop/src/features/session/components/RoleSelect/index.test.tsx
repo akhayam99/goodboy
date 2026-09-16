@@ -27,16 +27,18 @@ describe('RoleSelect', () => {
       'Resolver',
       'Docs',
       'Report',
+      'Wireframe',
       'Custom',
     ]);
   });
 
-  it('does not offer unreleased artifact roles', () => {
+  it('offers the shipped artifact roles', () => {
     render(<RoleSelect value={'custom' as AgentRole} onChange={vi.fn()} disabled={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Custom/i }));
     const options = within(screen.getByRole('listbox', { name: 'Agent role' }));
 
-    expect(options.queryByRole('button', { name: 'Wireframe' })).toBeNull();
+    expect(options.getByRole('button', { name: 'Report' })).toBeDefined();
+    expect(options.getByRole('button', { name: 'Wireframe' })).toBeDefined();
   });
 });

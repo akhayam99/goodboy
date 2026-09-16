@@ -56,13 +56,33 @@ const report = {
   updatedAt: '2026-01-02T03:04:05.000Z',
 };
 
+const wireframeDocument = {
+  version: 1,
+  initialScreenId: 'welcome',
+  theme: { name: 'generic' },
+  screens: [
+    {
+      id: 'welcome',
+      title: 'Welcome',
+      viewport: 'desktop',
+      root: {
+        id: 'welcome-root',
+        kind: 'stack',
+        direction: 'column',
+        children: [{ id: 'welcome-title', kind: 'text', text: 'Welcome', variant: 'title' }],
+      },
+    },
+  ],
+  transitions: [],
+};
+
 const wireframe = {
   ...report,
   id: 'artifact-wireframe',
   kind: 'wireframe',
   title: 'Onboarding flow',
   sourceFormat: 'json',
-  sourceText: '{"screens":[]}',
+  sourceText: JSON.stringify(wireframeDocument),
   metadata: { fidelity: 'low', designProfile: {} },
   revision: 1,
 };
@@ -150,10 +170,22 @@ describe('ArtifactStudio', () => {
     expect(screen.getByTestId('artifact-save-pdf').hasAttribute('disabled')).toBe(true);
   });
 
-  it('renders a wireframe as pretty printed json', () => {
+  it('opens a wireframe in the native renderer instead of the markdown reader', () => {
     state.sessionArtifacts = { 'sess-1': [wireframe] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('Onboarding flow'));
+    expect(screen.getByTestId('wireframe-studio')).toBeDefined();
+    expect(screen.getByTestId('wireframe-screen').getAttribute('data-screen-id')).toBe('welcome');
+    expect(screen.queryByTestId('artifact-json-source')).toBeNull();
+  });
+
+  it('falls back to the json source when the wireframe does not match the schema', () => {
+    state.sessionArtifacts = {
+      'sess-1': [{ ...wireframe, sourceText: '{"screens":[]}' }],
+    };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('Onboarding flow'));
+    expect(screen.getByTestId('wireframe-issues')).toBeDefined();
     expect(screen.getByTestId('artifact-json-source').textContent).toContain('"screens"');
   });
 

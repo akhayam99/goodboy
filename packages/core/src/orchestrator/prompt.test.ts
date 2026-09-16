@@ -191,9 +191,8 @@ describe('ORCHESTRATOR_SYSTEM_PROMPT', () => {
 
   it('offers only selection-eligible roles', () => {
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain(
-      'Roles are limited to: scout, investigator, planner, implementer, reviewer, tester, resolver, docs, report, custom.',
+      'Roles are limited to: scout, investigator, planner, implementer, reviewer, tester, resolver, docs, report, wireframe, custom.',
     );
-    expect(ORCHESTRATOR_SYSTEM_PROMPT).not.toContain('wireframe');
     expect(ORCHESTRATOR_SYSTEM_PROMPT).not.toContain('artifact-only goal');
   });
 
