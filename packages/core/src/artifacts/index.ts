@@ -1,4 +1,5 @@
-export { ARTIFACT_MAX_BYTES, ARTIFACT_SCHEMA_VERSION } from './grammar';
+export { ARTIFACT_MAX_BYTES, ARTIFACT_SCHEMA_VERSION, scanArtifactBlocks } from './grammar';
+export type { ArtifactScanState } from './grammar';
 export { parseArtifactEnvelope } from './parseArtifactEnvelope';
 export { captureArtifactFromTurnText, parseLegacyPlanMarkers } from './legacyAdapter';
 export type {

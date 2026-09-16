@@ -1,4 +1,4 @@
-import { CornerDownRight, Eye, EyeOff, ListFilter } from 'lucide-react';
+import { Check, Eye, EyeOff, ListFilter } from 'lucide-react';
 import {
   AnchoredPopover,
   Divider,
@@ -41,6 +41,10 @@ const ACTIVITY_CATEGORY_CONCEPT = {
 const PANEL_LABEL = 'Activity filter';
 
 const PANEL_EXPECTED_HEIGHT = 324;
+
+const PANEL_WIDTH = 288;
+
+const PANEL_WIDTH_CLASS = 'w-72';
 
 type Props = {
   readonly filter: ActivityFilter;
@@ -87,7 +91,7 @@ const CategoryRow = ({ category, isActive, onToggle }: CategoryRowProps) => {
       aria-checked={isActive}
       onClick={() => onToggle({ toggle: category, enabled: !isActive })}
       className={cn(
-        'group flex w-full items-center gap-2 px-3 py-1.5 text-left motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-focus-ring)]',
+        'group flex w-full items-center gap-2 px-3 py-2 text-left motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-focus-ring)]',
         isActive ? 'bg-muted/60 hover:bg-muted' : 'hover:bg-muted/40',
       )}
     >
@@ -101,7 +105,7 @@ const CategoryRow = ({ category, isActive, onToggle }: CategoryRowProps) => {
       />
       <span
         className={cn(
-          'flex-1 whitespace-nowrap text-xs motion-safe:transition-colors',
+          'flex-1 whitespace-nowrap text-xs leading-4 motion-safe:transition-colors',
           isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground',
         )}
       >
@@ -112,14 +116,14 @@ const CategoryRow = ({ category, isActive, onToggle }: CategoryRowProps) => {
   );
 };
 
-type ChildRowProps = {
+type ChildChipProps = {
   readonly toggle: ActivityChildToggle;
   readonly isActive: boolean;
   readonly isParentActive: boolean;
   readonly onToggle: Props['onToggle'];
 };
 
-const ChildRow = ({ toggle, isActive, isParentActive, onToggle }: ChildRowProps) => {
+const ChildChip = ({ toggle, isActive, isParentActive, onToggle }: ChildChipProps) => {
   const isOn = isActive && isParentActive;
   return (
     <button
@@ -130,28 +134,54 @@ const ChildRow = ({ toggle, isActive, isParentActive, onToggle }: ChildRowProps)
       disabled={!isParentActive}
       onClick={() => onToggle({ toggle, enabled: !isActive })}
       className={cn(
-        'group flex w-full items-center gap-2 py-1 pl-7 pr-3 text-left motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-focus-ring)]',
-        isParentActive ? (isOn ? 'bg-muted/60 hover:bg-muted' : 'hover:bg-muted/40') : 'opacity-50',
+        'inline-flex items-center gap-1 whitespace-nowrap rounded-md border px-2 py-0.5 text-2xs motion-safe:transition-colors disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-focus-ring)]',
+        isOn
+          ? 'border-border bg-muted text-foreground'
+          : 'border-border-soft bg-elevated/30 text-muted-foreground',
+        isParentActive && !isOn
+          ? 'hover:border-border hover:bg-muted/60 hover:text-foreground'
+          : '',
+        isParentActive && isOn ? 'hover:bg-muted/80' : '',
       )}
     >
-      <CornerDownRight
+      <Check
         size={10}
         aria-hidden
-        className={cn('shrink-0', isOn ? 'text-muted-foreground' : 'text-muted-foreground/50')}
-      />
-      <span
         className={cn(
-          'flex-1 whitespace-nowrap text-2xs motion-safe:transition-colors',
-          isOn ? 'text-foreground' : 'text-muted-foreground',
-          isParentActive && 'group-hover:text-foreground',
+          'shrink-0 motion-safe:transition-opacity',
+          isOn ? 'opacity-100' : 'opacity-0',
         )}
-      >
-        {ACTIVITY_CHILD[toggle].label}
-      </span>
-      <EyeMark isActive={isOn} />
+      />
+      {ACTIVITY_CHILD[toggle].label}
     </button>
   );
 };
+
+type ChildChipRowProps = {
+  readonly toggles: ReadonlyArray<ActivityChildToggle>;
+  readonly filter: ActivityFilter;
+  readonly isParentActive: boolean;
+  readonly onToggle: Props['onToggle'];
+};
+
+const ChildChipRow = ({ toggles, filter, isParentActive, onToggle }: ChildChipRowProps) => (
+  <div
+    className={cn(
+      'flex flex-wrap items-center gap-1 pl-8 pr-3',
+      isParentActive ? '' : 'opacity-50',
+    )}
+  >
+    {toggles.map((toggle) => (
+      <ChildChip
+        key={toggle}
+        toggle={toggle}
+        isActive={filter[toggle]}
+        isParentActive={isParentActive}
+        onToggle={onToggle}
+      />
+    ))}
+  </div>
+);
 
 type ChildrenParams = {
   readonly category: ActivityCategory;
@@ -164,8 +194,8 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
   const dropdown = useDropdown({
     align: 'end',
     expectedHeight: PANEL_EXPECTED_HEIGHT,
-    expectedWidth: 208,
-    width: 'w-52',
+    expectedWidth: PANEL_WIDTH,
+    width: PANEL_WIDTH_CLASS,
   });
   const { open, toggle } = dropdown;
 
@@ -195,21 +225,28 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
         </button>
       }
     >
-      <ScrollFade className="max-h-72" viewportClassName="py-1" fadeSize={12} fadeFrom="subtle">
-        {ACTIVITY_CATEGORIES.map((category) => (
-          <div key={category}>
-            <CategoryRow category={category} isActive={filter[category]} onToggle={onToggle} />
-            {childTogglesOf({ category }).map((toggle) => (
-              <ChildRow
-                key={toggle}
-                toggle={toggle}
-                isActive={filter[toggle]}
-                isParentActive={filter[category]}
-                onToggle={onToggle}
-              />
-            ))}
-          </div>
-        ))}
+      <ScrollFade
+        className="max-h-72"
+        viewportClassName="flex flex-col gap-2 py-2"
+        fadeSize={12}
+        fadeFrom="subtle"
+      >
+        {ACTIVITY_CATEGORIES.map((category) => {
+          const toggles = childTogglesOf({ category });
+          return (
+            <div key={category} className="flex flex-col gap-1">
+              <CategoryRow category={category} isActive={filter[category]} onToggle={onToggle} />
+              {toggles.length > 0 ? (
+                <ChildChipRow
+                  toggles={toggles}
+                  filter={filter}
+                  isParentActive={filter[category]}
+                  onToggle={onToggle}
+                />
+              ) : null}
+            </div>
+          );
+        })}
       </ScrollFade>
       <Divider />
       <PopoverFooter className="flex items-center gap-1 bg-subtle px-1.5 py-1">

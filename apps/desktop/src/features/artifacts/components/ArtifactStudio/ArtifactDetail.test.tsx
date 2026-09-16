@@ -161,6 +161,37 @@ describe('ArtifactDetail tabs', () => {
     expect(screen.getByRole('tab', { name: 'Step transcript' })).toBeDefined();
     expect(screen.queryByRole('tab', { name: 'Conversation' })).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'Step transcript' }));
-    expect(screen.getByText('create another from this workflow run')).toBeDefined();
+    expect(screen.getByTestId('create-report-cta').getAttribute('title')).toBe(
+      'create another from this workflow run',
+    );
+  });
+});
+
+describe('ArtifactDetail header', () => {
+  it('keeps the export status out of the button flow', () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    const controls = screen.getByTestId('artifact-export-controls');
+    const status = screen.getByTestId('artifact-export-status');
+    expect(controls.contains(status)).toBe(false);
+    expect(status.className).toContain('w-40');
+    expect(status.className).toContain('truncate');
+    expect(controls.querySelectorAll('button')).toHaveLength(3);
+  });
+
+  it('leaves one label treatment per control in the conversation dock', () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    fireEvent.click(screen.getByRole('tab', { name: 'Conversation' }));
+    expect(screen.queryByText('create another from this')).toBeNull();
+    expect(screen.getByTestId('artifact-attach').textContent).toContain('Attach report');
+    expect(screen.getByTestId('create-report-cta').textContent).toContain('Create report');
+  });
+
+  it('keeps the follow up note on one line beside the recipient', () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    fireEvent.click(screen.getByRole('tab', { name: 'Conversation' }));
+    const note = screen.getByText(/does not rewrite this artifact/i);
+    const recipient = screen.getByTestId('artifact-conversation-recipient');
+    expect(note.parentElement).toBe(recipient.parentElement);
+    expect(note.className).toContain('truncate');
   });
 });

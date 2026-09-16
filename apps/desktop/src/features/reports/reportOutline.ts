@@ -1,4 +1,4 @@
-import { parseMarkdown } from '@goodboy/ui';
+import { inlineMarkdownText, parseMarkdown } from '@goodboy/ui';
 
 export type ReportOutlineEntry = Readonly<{
   id: string;
@@ -25,9 +25,8 @@ export const buildReportOutline = ({
     .blocks.flatMap((block, index) =>
       block.kind === 'heading' && block.level <= REPORT_OUTLINE_MAX_LEVEL ? [{ block, index }] : [],
     )
-    .map(({ block, index }) => ({
-      id: slugify({ title: block.content, index }),
-      level: block.level,
-      title: block.content,
-    }));
+    .map(({ block, index }) => {
+      const title = inlineMarkdownText({ text: block.content });
+      return { id: slugify({ title, index }), level: block.level, title };
+    });
 };

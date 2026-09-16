@@ -3,7 +3,13 @@ import { Markdown, formatError } from '@goodboy/ui';
 import type { SessionArtifact } from '@goodboy/types';
 import { listArtifactsForSession } from '../../../artifacts/artifacts';
 import type { ArtifactPrintRequest } from '../../artifactPrintRequest';
+import { artifactMetaFields } from './artifactMetaFields';
+import { CONTENTS_MIN_SECTIONS, documentOutline } from './documentOutline';
+import { dropLeadingTitleHeading } from './dropLeadingTitleHeading';
+import { PrintContents } from './PrintContents';
+import { PrintLetterhead } from './PrintLetterhead';
 import { PRINT_SHEET_CSS } from './printSheetCss';
+import { removeBootShell } from './removeBootShell';
 
 type Props = {
   readonly request: ArtifactPrintRequest;
@@ -18,12 +24,34 @@ type Status =
 const PRINT_UNSUPPORTED_COPY =
   'the print sheet only lays out markdown, so this artifact has no printable page yet';
 
+const PrintDocument = ({ artifact }: { readonly artifact: SessionArtifact }) => {
+  const body = dropLeadingTitleHeading({
+    sourceText: artifact.sourceText,
+    title: artifact.title,
+  });
+  const sections = documentOutline({ sourceText: body });
+  return (
+    <article>
+      <PrintLetterhead
+        kind={artifact.kind}
+        title={artifact.title}
+        fields={artifactMetaFields({ artifact })}
+      />
+      {sections.length >= CONTENTS_MIN_SECTIONS ? <PrintContents sections={sections} /> : null}
+      <div className="print-body">
+        <Markdown text={body} />
+      </div>
+    </article>
+  );
+};
+
 export const ArtifactPrintView = ({ request }: Props) => {
   const [status, setStatus] = useState<Status>({ kind: 'loading' });
   const hasPrinted = useRef(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', 'light');
+    removeBootShell();
     let isActive = true;
     listArtifactsForSession(request.sessionId)
       .then((artifacts) => {
@@ -88,23 +116,18 @@ export const ArtifactPrintView = ({ request }: Props) => {
       ) : null}
       {status.kind === 'unsupported' ? (
         <article>
-          <h1 className="print-title">{status.artifact.title}</h1>
+          <PrintLetterhead
+            kind={status.artifact.kind}
+            title={status.artifact.title}
+            fields={artifactMetaFields({ artifact: status.artifact })}
+          />
           <p role="alert" className="print-note">
             {PRINT_UNSUPPORTED_COPY}. the {status.artifact.sourceFormat} source is still available
             in the app, so nothing was lost.
           </p>
         </article>
       ) : null}
-      {status.kind === 'ready' ? (
-        <article>
-          <h1 className="print-title">{status.artifact.title}</h1>
-          <p className="print-note">
-            {status.artifact.kind} revision {status.artifact.revision}, captured{' '}
-            {status.artifact.createdAt}
-          </p>
-          <Markdown text={status.artifact.sourceText} />
-        </article>
-      ) : null}
+      {status.kind === 'ready' ? <PrintDocument artifact={status.artifact} /> : null}
     </div>
   );
 };

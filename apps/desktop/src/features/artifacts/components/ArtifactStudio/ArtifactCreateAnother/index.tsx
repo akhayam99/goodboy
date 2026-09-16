@@ -13,19 +13,25 @@ export const ArtifactCreateAnother = ({ sessionId, artifact, isWorkflowOwned }: 
     return null;
   }
 
+  const title = isWorkflowOwned
+    ? 'create another from this workflow run'
+    : 'create another from this';
+
   return (
-    <div
-      data-testid="artifact-create-another"
-      className="flex min-w-0 flex-wrap items-center gap-2"
-    >
-      <span className="text-2xs text-muted-foreground">
-        {isWorkflowOwned ? 'create another from this workflow run' : 'create another from this'}
-      </span>
+    <span data-testid="artifact-create-another" className="inline-flex min-w-0">
       {artifact.kind === 'report' ? (
-        <CreateReportCta sessionId={sessionId} workflowRunId={artifact.workflowRunId} />
+        <CreateReportCta
+          sessionId={sessionId}
+          workflowRunId={artifact.workflowRunId}
+          title={title}
+        />
       ) : (
-        <CreateWireframeCta sessionId={sessionId} workflowRunId={artifact.workflowRunId} />
+        <CreateWireframeCta
+          sessionId={sessionId}
+          workflowRunId={artifact.workflowRunId}
+          title={title}
+        />
       )}
-    </div>
+    </span>
   );
 };

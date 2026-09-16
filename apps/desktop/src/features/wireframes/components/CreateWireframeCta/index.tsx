@@ -9,9 +9,15 @@ type Props = {
   readonly sessionId: SessionId;
   readonly workflowRunId?: WorkflowRunId | null;
   readonly className?: string;
+  readonly title?: string;
 };
 
-export const CreateWireframeCta = ({ sessionId, workflowRunId = null, className }: Props) => {
+export const CreateWireframeCta = ({
+  sessionId,
+  workflowRunId = null,
+  className,
+  title,
+}: Props) => {
   const openArtifactCreation = useAppStore((state) => state.openArtifactCreation);
 
   return (
@@ -20,7 +26,7 @@ export const CreateWireframeCta = ({ sessionId, workflowRunId = null, className 
       size="sm"
       className={cn('min-w-0', className)}
       data-testid="create-wireframe-cta"
-      title={wireframeCreationAdapter.ctaTitle}
+      title={title ?? wireframeCreationAdapter.ctaTitle}
       onClick={() => openArtifactCreation({ sessionId, kind: 'wireframe', workflowRunId })}
     >
       <LayoutTemplate size={ICON_SIZE.row} aria-hidden />
