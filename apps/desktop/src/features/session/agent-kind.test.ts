@@ -649,13 +649,14 @@ describe('agent visibility', () => {
       'generic',
       'implementer',
       'planner',
+      'report',
       'reviewer',
       'scout',
       'tester',
     ]);
     expect(visibleAgentRoles()).toContain('docs');
     expect(visibleAgentRoles()).toContain('resolver');
-    expect(visibleAgentRoles()).not.toContain('report');
+    expect(visibleAgentRoles()).toContain('report');
     expect(visibleAgentRoles()).not.toContain('wireframe');
   });
 });

@@ -8,6 +8,8 @@ import {
   type ErrorReportRequest,
 } from '@goodboy/ui';
 import { App } from './App';
+import { artifactPrintRequest } from './features/reports/artifactPrintRequest';
+import { ArtifactPrintView } from './features/reports/components/ArtifactPrintView';
 import { bootstrapTheme } from './shared/lib/theme';
 import { loadRemoteImage } from './shared/lib/remoteImage';
 import { openUrl } from './shared/lib/editor';
@@ -37,11 +39,13 @@ if (!container) {
   throw new Error('root element not found');
 }
 
+const printRequest = artifactPrintRequest({ hash: globalThis.location?.hash ?? '' });
+
 createRoot(container).render(
   <StrictMode>
     <ErrorBoundary onReport={reportCrash} reportSummary={REPORT_SUMMARY}>
       <RemoteImageLoaderProvider load={loadRemoteImage}>
-        <App />
+        {printRequest === null ? <App /> : <ArtifactPrintView request={printRequest} />}
       </RemoteImageLoaderProvider>
     </ErrorBoundary>
   </StrictMode>,

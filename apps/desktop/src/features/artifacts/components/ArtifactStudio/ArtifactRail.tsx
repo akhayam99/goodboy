@@ -34,7 +34,7 @@ export const ArtifactRail = ({ artifacts, onSelect }: Props) => {
                 <RailCard
                   title={artifact.title}
                   muted={artifact.status === 'discarded'}
-                  status={<ArtifactStatusChip status={artifact.status} />}
+                  status={<ArtifactStatusChip kind={artifact.kind} status={artifact.status} />}
                   meta={
                     <MetaRow
                       items={[

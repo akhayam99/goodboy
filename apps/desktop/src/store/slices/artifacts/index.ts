@@ -2,8 +2,9 @@ import { deleteArtifact } from './deleteArtifact';
 import { loadSessionArtifacts } from './loadSessionArtifacts';
 import { restoreArtifact } from './restoreArtifact';
 import { setArtifactStatus } from './setArtifactStatus';
+import { spawnReportAgent } from './spawnReportAgent';
 import { updateArtifactSource } from './updateArtifactSource';
-import type { SetFn } from './types';
+import type { GetFn, SetFn } from './types';
 
 export { artifactsInitialState } from './state';
 export {
@@ -13,12 +14,13 @@ export {
   selectSessionArtifacts,
 } from './selectors';
 
-export const createArtifactsSlice = (set: SetFn) => {
+export const createArtifactsSlice = (set: SetFn, get: GetFn) => {
   return {
     loadSessionArtifacts: loadSessionArtifacts(set),
     updateArtifactSource: updateArtifactSource(set),
     setArtifactStatus: setArtifactStatus(set),
     deleteArtifact: deleteArtifact(set),
     restoreArtifact: restoreArtifact(set),
+    spawnReportAgent: spawnReportAgent(get),
   };
 };

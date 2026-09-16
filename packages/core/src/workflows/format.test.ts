@@ -197,7 +197,7 @@ describe('formatWorkflowFromNL', () => {
       expect.objectContaining({
         args: expect.objectContaining({
           systemPrompt: expect.stringContaining(
-            'role: one of scout, investigator, planner, implementer, reviewer, tester, resolver, docs, custom.',
+            'role: one of scout, investigator, planner, implementer, reviewer, tester, resolver, docs, report, custom.',
           ),
         }),
       }),

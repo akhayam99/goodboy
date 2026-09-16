@@ -1,3 +1,4 @@
+mod artifacts;
 mod attachment;
 mod aux_spawn;
 mod bitbucket;
@@ -214,6 +215,7 @@ pub fn run() {
             bridge::bridge_command_result,
             bridge::bridge_revoke,
             profile_file::workspace_profile_project,
+            artifacts::export_artifact_to_file,
             session_dir::session_dir_create,
             session_dir::session_dir_remove,
             session_dir::session_dir_exists,

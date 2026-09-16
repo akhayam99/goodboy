@@ -26,6 +26,7 @@ describe('RoleSelect', () => {
       'Tester',
       'Resolver',
       'Docs',
+      'Report',
       'Custom',
     ]);
   });
@@ -36,7 +37,6 @@ describe('RoleSelect', () => {
     fireEvent.click(screen.getByRole('button', { name: /Custom/i }));
     const options = within(screen.getByRole('listbox', { name: 'Agent role' }));
 
-    expect(options.queryByRole('button', { name: 'Report' })).toBeNull();
     expect(options.queryByRole('button', { name: 'Wireframe' })).toBeNull();
   });
 });

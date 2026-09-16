@@ -1,1 +1,1 @@
-export type { SetFn } from '../../slice-types';
+export type { GetFn, SetFn } from '../../slice-types';
