@@ -101,6 +101,7 @@ export const spawnReportAgent = (get: GetFn) => {
       session,
       workflowRunId,
       brief,
+      executingAgentId: null,
     });
     const agentId = await get().spawnAgent(sessionId, {
       kindOverride: 'report',

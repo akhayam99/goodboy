@@ -1,5 +1,5 @@
 import { runsForWorkflowRun } from '@goodboy/core';
-import type { IsoDateTime, Session, WorkflowRunId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, Session, WorkflowRunId } from '@goodboy/types';
 import type { AppState } from '../../store/types';
 import { buildReportContext } from '../reports/buildReportContext';
 import { collectReportDiffEvidence } from '../reports/collectReportDiffEvidence';
@@ -8,6 +8,7 @@ import { buildWireframeContext } from '../wireframes/buildWireframeContext';
 import { collectWireframeDesignProfile } from '../wireframes/collectWireframeDesignProfile';
 import { describeDesignProfile } from '../wireframes/describeDesignProfile';
 import type { WireframeFidelity } from '../wireframes/wireframeFidelity';
+import { artifactEvidenceAgents } from './artifactEvidenceAgents';
 import { artifactEvidenceInventory, type RecordArtifactProvenanceArgs } from './artifactProvenance';
 
 type Params = Readonly<{
@@ -15,6 +16,7 @@ type Params = Readonly<{
   session: Session;
   workflowRunId: WorkflowRunId | null;
   brief: string | null;
+  executingAgentId: AgentId | null;
 }> &
   (
     | Readonly<{ kind: 'report'; reportType: ReportType }>
@@ -31,12 +33,17 @@ export const prepareArtifactEvidence = async ({
   session,
   workflowRunId,
   brief,
+  executingAgentId,
   ...choice
 }: Params): Promise<PreparedEvidence> => {
   const sessionId = session.id;
-  const agents = state.sessionPhaseRuns?.[sessionId] ?? [];
   const artifacts = state.sessionArtifacts?.[sessionId] ?? [];
   const transcripts = state.transcripts ?? {};
+  const agents = artifactEvidenceAgents({
+    agents: state.sessionPhaseRuns?.[sessionId] ?? [],
+    transcripts,
+    executingAgentId,
+  });
   if (choice.kind === 'report') {
     const diff = await collectReportDiffEvidence({ state, sessionId });
     const context = buildReportContext({

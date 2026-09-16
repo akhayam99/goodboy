@@ -878,11 +878,16 @@ describe('activateWorkflowAgent, artifact evidence', () => {
     'falls back to session evidence when a %s step has no run',
     async (kind) => {
       const agent = { ...makeAgent(kind, kind), workflowRunId: undefined };
+      const scout = {
+        ...makeAgent('scout', 'session scout'),
+        id: 'scout-1' as AgentId,
+        status: 'completed' as const,
+      };
       const { state, sendTurn, activate } = buildHarness({
         agent,
         workflow: makeWorkflow(kind),
         plans: [],
-        extraAgents: [{ ...makeAgent('scout', 'session scout'), id: 'scout-1' as AgentId }],
+        extraAgents: [scout],
       });
       Object.assign(state, {
         sessionArtifacts: { [SESSION_ID]: [evidenceArtifact({ workflowRunId: null })] },
@@ -898,6 +903,62 @@ describe('activateWorkflowAgent, artifact evidence', () => {
           }),
         }),
       );
+    },
+  );
+
+  it.each(['report', 'wireframe'])(
+    'keeps the executing %s step out of its own pack and provenance',
+    async (kind) => {
+      const earlier = {
+        ...makeAgent('scout', 'in-run scout'),
+        id: 'earlier-agent' as AgentId,
+        status: 'completed' as const,
+      };
+      const later = {
+        ...makeAgent('reviewer', 'later reviewer'),
+        id: 'later-agent' as AgentId,
+        ordinal: 2,
+      };
+      const { state, sendTurn, activate } = buildHarness({
+        agent: makeAgent(kind, kind),
+        workflow: makeWorkflow(kind),
+        plans: [],
+        extraAgents: [earlier, later],
+      });
+      Object.assign(state, {
+        transcripts: {
+          [earlier.id]: [
+            {
+              kind: 'assistant_text',
+              runId: 'turn-1' as TurnEvent['runId'],
+              at: NOW,
+              delta: 'the run discovered a session inbox',
+            },
+          ],
+          [AGENT_ID]: [
+            {
+              kind: 'assistant_text',
+              runId: 'turn-9' as TurnEvent['runId'],
+              at: NOW,
+              delta: 'a discarded first attempt at this artifact',
+            },
+          ],
+        } satisfies Record<string, ReadonlyArray<TurnEvent>>,
+      });
+      await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+      const prompt = sendTurn.mock.calls[0]?.[0].content;
+      expect(prompt).toContain('the run discovered a session inbox');
+      expect(prompt).not.toContain('a discarded first attempt at this artifact');
+      expect(prompt).not.toContain('no assistant output recorded');
+      expect(prompt).not.toContain('no final message was recorded');
+      expect(prompt).not.toContain('later reviewer');
+      const recorded = putArtifactProvenanceSpy.mock.calls[0]?.[0] as {
+        readonly input: { readonly evidence: ReadonlyArray<{ readonly id: string }> };
+      };
+      const evidenceIds = recorded.input.evidence.map((entry) => entry.id);
+      expect(evidenceIds).toContain(earlier.id);
+      expect(evidenceIds).not.toContain(AGENT_ID);
+      expect(evidenceIds).not.toContain(later.id);
     },
   );
 

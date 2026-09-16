@@ -53,6 +53,34 @@ const state = {
   },
 } as unknown as AppState;
 
+const EXECUTING_ID = 'agent-2' as AgentId;
+const executing: Agent = {
+  id: EXECUTING_ID,
+  sessionId: SESSION_ID,
+  workflowRunId: RUN_ID,
+  ordinal: 1,
+  name: 'Session summary',
+  status: 'pending',
+};
+
+type WithExecutingParams = Readonly<{ transcript: boolean }>;
+
+const withExecuting = ({ transcript }: WithExecutingParams): AppState =>
+  ({
+    ...state,
+    sessionPhaseRuns: { [SESSION_ID]: [agent, executing] },
+    transcripts: {
+      ...state.transcripts,
+      ...(transcript
+        ? {
+            [EXECUTING_ID]: [
+              { kind: 'assistant_text', runId: 'turn-2', at: NOW, delta: 'a discarded first try' },
+            ],
+          }
+        : {}),
+    },
+  }) as unknown as AppState;
+
 describe('prepareArtifactEvidence', () => {
   it('carries report omissions and source labels into provenance', async () => {
     const prepared = await prepareArtifactEvidence({
@@ -60,6 +88,7 @@ describe('prepareArtifactEvidence', () => {
       session,
       workflowRunId: RUN_ID,
       brief: null,
+      executingAgentId: null,
       kind: 'report',
       reportType: 'session-summary',
     });
@@ -78,6 +107,7 @@ describe('prepareArtifactEvidence', () => {
       session,
       workflowRunId: RUN_ID,
       brief: null,
+      executingAgentId: null,
       kind: 'wireframe',
       fidelity: 'high',
     });
@@ -85,5 +115,44 @@ describe('prepareArtifactEvidence', () => {
     expect(prepared.text).toContain('never invent branding');
     expect(prepared.provenance.designProfileSummary).toBeNull();
     expect(prepared.provenance.sourceWorkflowRunId).toBe(RUN_ID);
+  });
+
+  it.each(['report', 'wireframe'] as const)(
+    'never packs the executing agent into its own %s',
+    async (kind) => {
+      const prepared = await prepareArtifactEvidence({
+        state: withExecuting({ transcript: true }),
+        session,
+        workflowRunId: RUN_ID,
+        brief: null,
+        executingAgentId: EXECUTING_ID,
+        ...(kind === 'report'
+          ? { kind: 'report' as const, reportType: 'session-summary' as const }
+          : { kind: 'wireframe' as const, fidelity: 'low' as const }),
+      });
+      expect(prepared.text).not.toContain(EXECUTING_ID);
+      expect(prepared.text).not.toContain('a discarded first try');
+      expect(prepared.provenance.evidence.map((entry) => entry.id)).not.toContain(EXECUTING_ID);
+      expect(prepared.provenance.evidence).toContainEqual({
+        kind: 'agent',
+        id: AGENT_ID,
+        label: 'scout',
+      });
+    },
+  );
+
+  it('leaves out a pending agent that has produced nothing', async () => {
+    const prepared = await prepareArtifactEvidence({
+      state: withExecuting({ transcript: false }),
+      session,
+      workflowRunId: RUN_ID,
+      brief: null,
+      executingAgentId: null,
+      kind: 'report',
+      reportType: 'session-summary',
+    });
+    expect(prepared.text).not.toContain(EXECUTING_ID);
+    expect(prepared.text).not.toContain('no assistant output recorded');
+    expect(prepared.provenance.evidence.map((entry) => entry.id)).not.toContain(EXECUTING_ID);
   });
 });
