@@ -110,6 +110,12 @@ const TOMBSTONE_READ_ALLOWLIST: ReadonlyArray<TombstoneAllowance> = [
       'provenance join: a consumption outlives its agent, so a deleted consumer still has to render',
   },
   {
+    file: 'plan.ts',
+    contains: ['LEFT JOIN agents la ON la.id = lc.agent_id'],
+    reason:
+      'provenance join: the plan rail names its most recent consumer, and that name has to survive the deletion of the agent that earned it',
+  },
+  {
     file: 'impact.ts',
     contains: ['FROM agents a', 'a.deleted_at IS NULL'],
     reason: 'impact accounting filters tombstones inline and owns its own deleted-spend policy',
