@@ -1541,6 +1541,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         set,
         sessionId,
         agentId: activeAgentId,
+        agentName: agentRowEarly?.name ?? null,
         assistantText,
         emittingProvider: provider,
         sourceTurnId: runId,

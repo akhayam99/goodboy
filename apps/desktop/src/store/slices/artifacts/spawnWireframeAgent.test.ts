@@ -42,6 +42,13 @@ const readSpy = vi.fn(async ({ relPath }: { readonly relPath: string }) => {
   throw new Error('missing');
 });
 
+vi.mock('../../../features/wireframes/collectWireframeScoutPlan', () => ({
+  collectWireframeScoutPlan: async () => ({
+    plan: { kind: 'skipped', reason: 'no mounted project, so nothing is scouted' },
+    gate: { kind: 'skipped', reason: 'no mounted project, so nothing is scouted' },
+  }),
+}));
+
 vi.mock('../../../features/explore/explore', () => ({
   exploreList: (args: unknown) => listSpy(args),
   exploreRead: (args: unknown) => readSpy(args as never),

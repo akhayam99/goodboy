@@ -118,6 +118,8 @@ describe('resolveArtifactGenerations', () => {
         provider: null,
         model: null,
         isTurnRunning: false,
+        scouts: [],
+        canStop: false,
       },
     ]);
   });

@@ -132,6 +132,7 @@ describe('artifacts slice', () => {
   it('selectors narrow by session, kind and id', () => {
     const populated: ArtifactsState = {
       sessionArtifacts: { [SESSION_ID]: [planArtifact, reportArtifact] },
+      wireframeScoutVerification: {},
     };
     expect(selectSessionArtifacts({ state: populated, sessionId: SESSION_ID })).toHaveLength(2);
     expect(

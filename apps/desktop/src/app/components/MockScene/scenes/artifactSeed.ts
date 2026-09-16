@@ -40,6 +40,9 @@ const TESTER_AGENT_ID = 'mock-artifact-agent-tester' as AgentId;
 const REPORT_AGENT_ID = 'mock-artifact-agent-report' as AgentId;
 const CHANGE_REPORT_AGENT_ID = 'mock-artifact-agent-change-report' as AgentId;
 const WIREFRAME_AGENT_ID = 'mock-artifact-agent-wireframe' as AgentId;
+const SCOUTING_WIREFRAME_AGENT_ID = 'mock-artifact-agent-wireframe-scouting' as AgentId;
+const SCREENS_SCOUT_AGENT_ID = 'mock-artifact-agent-scout-screens' as AgentId;
+const DATA_SCOUT_AGENT_ID = 'mock-artifact-agent-scout-data' as AgentId;
 
 export const REPORT_ARTIFACT_ID = 'mock-artifact-report-summary' as ArtifactId;
 const CHANGE_REPORT_ARTIFACT_ID = 'mock-artifact-report-change' as ArtifactId;
@@ -247,6 +250,40 @@ const AGENTS: ReadonlyArray<Agent> = [
     lastFinishedAt: '2026-09-14T16:38:00.000Z' as IsoDateTime,
     lastViewedAt: NOW,
     doneAt: '2026-09-14T16:38:00.000Z' as IsoDateTime,
+  },
+  {
+    id: SCOUTING_WIREFRAME_AGENT_ID,
+    sessionId: SESSION_ID,
+    ordinal: 7,
+    name: 'High fidelity',
+    kind: 'wireframe',
+    status: 'running',
+    startedAt: '2026-09-14T16:39:00.000Z' as IsoDateTime,
+    providerOverride: 'anthropic',
+    modelOverride: 'claude-sonnet-5',
+  },
+  {
+    id: SCREENS_SCOUT_AGENT_ID,
+    sessionId: SESSION_ID,
+    parentAgentId: SCOUTING_WIREFRAME_AGENT_ID,
+    ordinal: 8,
+    name: 'screens and routes',
+    kind: 'scout',
+    status: 'completed',
+    outputSummary: 'the batch list already renders the totals apps/web/src/Batches.tsx',
+    startedAt: '2026-09-14T16:39:00.000Z' as IsoDateTime,
+    completedAt: '2026-09-14T16:39:14.000Z' as IsoDateTime,
+    lastFinishedAt: '2026-09-14T16:39:14.000Z' as IsoDateTime,
+  },
+  {
+    id: DATA_SCOUT_AGENT_ID,
+    sessionId: SESSION_ID,
+    parentAgentId: SCOUTING_WIREFRAME_AGENT_ID,
+    ordinal: 9,
+    name: 'data and contracts',
+    kind: 'scout',
+    status: 'running',
+    startedAt: '2026-09-14T16:39:00.000Z' as IsoDateTime,
   },
 ];
 
@@ -966,6 +1003,16 @@ export const seedArtifactScene = ({ focusedArtifactId }: SeedParams) => {
       }),
     },
     sessionArtifacts: { [SESSION_ID]: ARTIFACTS },
+    wireframeScoutVerification: {
+      [SCREENS_SCOUT_AGENT_ID]: { verified: 8, cited: 11 },
+    },
+    agentTurnState: {
+      [DATA_SCOUT_AGENT_ID]: {
+        kind: 'running',
+        runId: 'mock-artifact-run-scout-data' as ProviderRunId,
+        startedAt: NOW,
+      },
+    },
     sessionPlans: { [SESSION_ID]: PLANS },
     sessionEvents: { [SESSION_ID]: SESSION_EVENTS },
     sessionWorktreeRecords: {

@@ -108,3 +108,32 @@ export const recordArtifactProvenance = async (
 export const loadArtifactProvenance = async (
   agentId: AgentId,
 ): Promise<ArtifactProvenance | null> => dbGetArtifactProvenance({ db: tauriDatabase, agentId });
+
+export type AppendArtifactOmissionArgs = {
+  readonly agentId: AgentId;
+  readonly note: string;
+};
+
+export const appendArtifactProvenanceOmission = async ({
+  agentId,
+  note,
+}: AppendArtifactOmissionArgs): Promise<void> => {
+  const current = await dbGetArtifactProvenance({ db: tauriDatabase, agentId });
+  if (current === null || current.omissions.includes(note)) {
+    return;
+  }
+  await dbPutArtifactProvenance({
+    db: tauriDatabase,
+    input: {
+      agentId,
+      sessionId: current.sessionId,
+      kind: current.kind,
+      brief: current.brief,
+      evidence: current.evidence,
+      omissions: [...current.omissions, note],
+      designProfileSummary: current.designProfileSummary,
+      sourceWorkflowRunId: current.sourceWorkflowRunId,
+      executingWorkflowRunId: current.executingWorkflowRunId,
+    },
+  });
+};

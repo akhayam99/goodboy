@@ -9,6 +9,7 @@ import type { DesignEvidence } from '../wireframes/collectDesignProfile';
 import { collectWireframeDesignProfile } from '../wireframes/collectWireframeDesignProfile';
 import { describeDesignProfile } from '../wireframes/describeDesignProfile';
 import type { WireframeFidelity } from '../wireframes/wireframeFidelity';
+import type { WireframeScoutPlan } from '../wireframes/wireframeScoutPlan';
 import type { WireframeTarget } from '../wireframes/wireframeTarget';
 import type { ArtifactAttachment } from './artifactAttachments';
 import { artifactEvidenceAgents } from './artifactEvidenceAgents';
@@ -25,7 +26,13 @@ type Params = Readonly<{
 }> &
   (
     | Readonly<{ kind: 'report'; reportType: ReportType }>
-    | Readonly<{ kind: 'wireframe'; fidelity: WireframeFidelity; target: WireframeTarget }>
+    | Readonly<{
+        kind: 'wireframe';
+        fidelity: WireframeFidelity;
+        target: WireframeTarget;
+        scoutPlan?: WireframeScoutPlan | null;
+        scoutSection?: string | null;
+      }>
   );
 
 type PreparedEvidence = Readonly<{
@@ -104,6 +111,8 @@ export const prepareArtifactEvidence = async ({
     transcripts,
     artifacts,
     designEvidence,
+    scoutPlan: choice.scoutPlan ?? null,
+    scoutSection: choice.scoutSection ?? null,
     capturedAt: new Date().toISOString() as IsoDateTime,
   });
   return {

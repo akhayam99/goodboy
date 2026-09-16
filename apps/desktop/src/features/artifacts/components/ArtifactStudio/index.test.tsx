@@ -52,6 +52,8 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       closeArtifactCreation: vi.fn(),
       setArtifactDraft: vi.fn(),
       cancelCurrentTurn: vi.fn(async () => undefined),
+      stopArtifactGeneration: vi.fn(async () => undefined),
+      wireframeScoutVerification: {},
       lensHistory: {} as Record<string, { readonly index: number }>,
       lensGo: vi.fn(),
       plans: [] as ReadonlyArray<unknown>,
@@ -201,6 +203,7 @@ beforeEach(() => {
   state.closeArtifactCreation.mockClear();
   state.setArtifactDraft.mockClear();
   state.cancelCurrentTurn.mockClear();
+  state.stopArtifactGeneration.mockClear();
   state.setFocusedPlanId.mockClear();
   state.setFocusedArtifactId.mockClear();
   state.setArtifactFilter.mockClear();
@@ -334,7 +337,10 @@ describe('ArtifactStudio', () => {
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     expect(screen.getByText(/Claude/)).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
-    expect(state.cancelCurrentTurn).toHaveBeenCalledWith('sess-1', 'agent-report-2');
+    expect(state.stopArtifactGeneration).toHaveBeenCalledWith({
+      sessionId: 'sess-1',
+      agentId: 'agent-report-2',
+    });
   });
 
   it('offers try again on a generation that produced nothing', async () => {

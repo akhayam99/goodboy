@@ -11,6 +11,7 @@ const ARTIFACT_CONTEXT_ROW_IDS = [
   'diff',
   'checks',
   'events',
+  'scouts',
   'theme',
   'excluded',
   'size',
