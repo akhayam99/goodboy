@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
+import { ArtifactBlockCard } from '../ArtifactBlockCard';
 import { ArtifactCaptureNoticeCard } from '../ArtifactCaptureNoticeCard';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { SkillInvocationCard } from '../SkillInvocationCard';
@@ -53,6 +54,8 @@ function TranscriptCardImpl({
       );
     case 'assistant_text':
       return <AssistantText text={item.text} sessionId={sessionId} agentId={agentId} />;
+    case 'artifact_block':
+      return <ArtifactBlockCard item={item} />;
     case 'tool_call':
       return <ToolCallCard item={item} />;
     case 'file_edit':
@@ -123,6 +126,9 @@ function itemEqual(a: TranscriptItem, b: TranscriptItem): boolean {
   }
   if (a.kind === 'assistant_text' && b.kind === 'assistant_text') {
     return a.text === b.text;
+  }
+  if (a.kind === 'artifact_block' && b.kind === 'artifact_block') {
+    return a.complete === b.complete && a.artifactKind === b.artifactKind && a.title === b.title;
   }
   return true;
 }

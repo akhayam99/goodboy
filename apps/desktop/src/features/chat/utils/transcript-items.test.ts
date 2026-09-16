@@ -360,3 +360,184 @@ describe('reduceTranscript incremental resume', () => {
     expect(items).toEqual(freshPass({ events: cloned }));
   });
 });
+
+const reportEnvelope = ({ title }: { readonly title: string }): string =>
+  [
+    '<<artifact v=1 kind=report>>',
+    JSON.stringify({ title, format: 'markdown', content: '# heading\n\nbody' }),
+    '<</artifact>>',
+  ].join('\n');
+
+describe('reduceTranscript artifact envelopes', () => {
+  it('replaces a lone complete block with a compact item and no assistant text', () => {
+    const events = [assistantText({ delta: reportEnvelope({ title: 'Release readout' }) })];
+
+    expect(reduceTranscript(events)).toEqual([
+      {
+        kind: 'artifact_block',
+        key: 'text-0-artifact-0',
+        artifactKind: 'report',
+        title: 'Release readout',
+        complete: true,
+      },
+    ]);
+  });
+
+  it('keeps the prose before and after a block and drops the envelope', () => {
+    const text = [
+      'here is the readout.',
+      '',
+      reportEnvelope({ title: 'Release readout' }),
+      '',
+      'tell me what to change.',
+    ].join('\n');
+    const events = [assistantText({ delta: text }), doneEvent()];
+
+    const items = reduceTranscript(events);
+    expect(items).toEqual([
+      { kind: 'assistant_text', key: 'text-0', text: 'here is the readout.\n' },
+      {
+        kind: 'artifact_block',
+        key: 'text-0-artifact-0',
+        artifactKind: 'report',
+        title: 'Release readout',
+        complete: true,
+      },
+      { kind: 'assistant_text', key: 'text-0-prose-1', text: '\ntell me what to change.' },
+      { kind: 'done', key: 'done-1' },
+    ]);
+    expect(
+      items.some((item) => item.kind === 'assistant_text' && item.text.includes('<<artifact')),
+    ).toBe(false);
+  });
+
+  it('renders an incomplete block as a pending item, never as raw text', () => {
+    const text = [
+      'writing it now.',
+      '<<artifact v=1 kind=wireframe>>',
+      '{"title":"Checkout flow","format":"json","content":{',
+    ].join('\n');
+
+    expect(reduceTranscript([assistantText({ delta: text })])).toEqual([
+      { kind: 'assistant_text', key: 'text-0', text: 'writing it now.' },
+      {
+        kind: 'artifact_block',
+        key: 'text-0-artifact-0',
+        artifactKind: 'wireframe',
+        title: null,
+        complete: false,
+      },
+    ]);
+  });
+
+  it('emits one item per block when a turn carries two of them', () => {
+    const text = [
+      reportEnvelope({ title: 'First' }),
+      'and the plan:',
+      '<<artifact v=1 kind=plan>>',
+      JSON.stringify({ title: 'Second', format: 'markdown', content: '- one\n- two' }),
+      '<</artifact>>',
+    ].join('\n');
+
+    expect(reduceTranscript([assistantText({ delta: text })])).toEqual([
+      {
+        kind: 'artifact_block',
+        key: 'text-0-artifact-0',
+        artifactKind: 'report',
+        title: 'First',
+        complete: true,
+      },
+      { kind: 'assistant_text', key: 'text-0', text: 'and the plan:' },
+      {
+        kind: 'artifact_block',
+        key: 'text-0-artifact-1',
+        artifactKind: 'plan',
+        title: 'Second',
+        complete: true,
+      },
+    ]);
+  });
+
+  it('never exposes the envelope while the block arrives across several deltas', () => {
+    const chunks = [
+      'here it comes.\n',
+      '<<artifact v=1 kind=report>>\n',
+      '{"title":"Release readout",',
+      '"format":"markdown","content":"# heading"}\n',
+      '<</artifact>>\n',
+      'done.',
+    ];
+    const events = chunks.map((delta) => assistantText({ delta }));
+
+    for (let length = 1; length <= events.length; length += 1) {
+      const prefix = events.slice(0, length);
+      const items = reduceTranscript(prefix);
+      expect(items).toEqual(freshPass({ events: prefix }));
+      for (const item of items) {
+        if (item.kind === 'assistant_text') {
+          expect(item.text).not.toContain('<<artifact');
+          expect(item.text).not.toContain('<</artifact>>');
+        }
+      }
+    }
+
+    expect(reduceTranscript(events)).toEqual([
+      { kind: 'assistant_text', key: 'text-0', text: 'here it comes.' },
+      {
+        kind: 'artifact_block',
+        key: 'text-0-artifact-0',
+        artifactKind: 'report',
+        title: 'Release readout',
+        complete: true,
+      },
+      { kind: 'assistant_text', key: 'text-0-prose-1', text: 'done.' },
+    ]);
+  });
+
+  it('leaves an envelope inside a code fence as plain assistant text', () => {
+    const text = ['look at this:', '```', '<<artifact v=1 kind=report>>', '```'].join('\n');
+
+    expect(reduceTranscript([assistantText({ delta: text })])).toEqual([
+      { kind: 'assistant_text', key: 'text-0', text },
+    ]);
+  });
+});
+
+describe('reduceTranscript artifact scan reuse', () => {
+  const BODY_LINES = 200;
+  const BODY_LINE_LENGTH = 200;
+
+  it('scans only the tail while a long block arrives across many deltas', () => {
+    const deltas = ['here it comes.\n', '<<artifact v=1 kind=report>>\n'];
+    for (let line = 0; line < BODY_LINES; line += 1) {
+      deltas.push(`${'x'.repeat(BODY_LINE_LENGTH)}\n`);
+    }
+    deltas.push('<</artifact>>\n');
+    const events = deltas.map((delta) => assistantText({ delta }));
+    const turnLength = deltas.join('').length;
+
+    resetReduceTranscriptTrace();
+    for (let length = 1; length <= events.length; length += 1) {
+      reduceTranscript(events.slice(0, length));
+    }
+
+    expect(reduceTranscriptTrace.textScans).toBe(events.length);
+    expect(reduceTranscriptTrace.textScanRestarts).toBe(1);
+    expect(reduceTranscriptTrace.textScanChars).toBeLessThan(turnLength * 2);
+  });
+
+  it('restarts the scan for every fresh pass over the same turn', () => {
+    const events = [
+      assistantText({ delta: '<<artifact v=1 kind=plan>>\n' }),
+      assistantText({ delta: '{"title":"Rollout"}\n' }),
+      assistantText({ delta: '<</artifact>>\n' }),
+    ];
+
+    resetReduceTranscriptTrace();
+    for (let length = 1; length <= events.length; length += 1) {
+      const prefix = events.slice(0, length);
+      expect(reduceTranscript(prefix)).toEqual(freshPass({ events: prefix }));
+    }
+    expect(reduceTranscriptTrace.textScanRestarts).toBe(events.length + 1);
+  });
+});

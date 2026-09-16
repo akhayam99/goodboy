@@ -4,8 +4,8 @@ export const ARTIFACT_MAX_BYTES = 512 * 1024;
 
 const OPEN_MARKER = '<<artifact';
 const MARKER_END = '>>';
-const CLOSE_RE = /^[ \t]*<<\/artifact>>[ \t]*$/;
-const FENCE_RE = /^[ \t]*(`{3,}|~{3,})/;
+const CLOSE_STICKY_RE = /[ \t]*<<\/artifact>>[ \t]*/y;
+const FENCE_STICKY_RE = /[ \t]*(`{3,}|~{3,})/y;
 const WHITESPACE_CHAR_RE = /\s/;
 const NAME_CHAR_RE = /[a-zA-Z-]/;
 
@@ -14,6 +14,33 @@ export type ArtifactBlock = {
   readonly body: string;
   readonly complete: boolean;
 };
+
+export type ArtifactBlockSpan = {
+  readonly attrs: Readonly<Record<string, string>>;
+  readonly start: number;
+  readonly bodyStart: number;
+  readonly bodyEnd: number;
+  readonly end: number;
+  readonly complete: boolean;
+};
+
+export type ArtifactScanState = {
+  readonly scanned: number;
+  readonly fence: string | null;
+  readonly open: {
+    readonly attrs: Readonly<Record<string, string>>;
+    readonly start: number;
+    readonly bodyStart: number;
+  } | null;
+  readonly spans: ReadonlyArray<ArtifactBlockSpan>;
+};
+
+export type ArtifactScanResult = {
+  readonly spans: ReadonlyArray<ArtifactBlockSpan>;
+  readonly state: ArtifactScanState;
+};
+
+type OpenSpan = NonNullable<ArtifactScanState['open']>;
 
 type ScanParams = {
   readonly text: string;
@@ -137,59 +164,159 @@ const parseAttrs = (raw: string): Readonly<Record<string, string>> => {
   return attrs;
 };
 
-const fenceRun = (line: string): string | null => {
-  const match = FENCE_RE.exec(line);
+type LineParams = {
+  readonly text: string;
+  readonly lineStart: number;
+  readonly lineEnd: number;
+};
+
+const fenceRunAt = ({ text, from }: ScanParams): string | null => {
+  FENCE_STICKY_RE.lastIndex = from;
+  const match = FENCE_STICKY_RE.exec(text);
   return match === null ? null : match[1]!;
 };
 
-const closesFence = ({ line, open }: { readonly line: string; readonly open: string }): boolean => {
-  const run = fenceRun(line);
-  return run !== null && run[0] === open[0] && run.length >= open.length;
+const isCloseLine = ({ text, lineStart, lineEnd }: LineParams): boolean => {
+  CLOSE_STICKY_RE.lastIndex = lineStart;
+  return CLOSE_STICKY_RE.test(text) && CLOSE_STICKY_RE.lastIndex === lineEnd;
 };
 
-export const extractArtifactBlocks = (text: string): ReadonlyArray<ArtifactBlock> => {
-  const lines = text.split('\n');
-  const out: ArtifactBlock[] = [];
-  let fence: string | null = null;
-  let open: { readonly attrs: Readonly<Record<string, string>>; readonly body: string[] } | null =
-    null;
+const openMarkerAttrsAt = ({ text, lineStart, lineEnd }: LineParams): string | null => {
+  const indentEnd = scanWhile({ text, from: lineStart, accepts: isIndent });
+  if (!text.startsWith(OPEN_MARKER, indentEnd)) {
+    return null;
+  }
+  return readOpenMarkerAttrs(text.slice(lineStart, lineEnd));
+};
 
-  for (const line of lines) {
-    if (fence !== null) {
-      if (closesFence({ line, open: fence })) {
-        fence = null;
-      }
-      if (open !== null) {
-        open.body.push(line);
-      }
-      continue;
-    }
-    if (open === null) {
-      const fenceStart = fenceRun(line);
-      if (fenceStart !== null) {
-        fence = fenceStart;
-        continue;
-      }
-      const attrSource = readOpenMarkerAttrs(line);
-      if (attrSource !== null) {
-        open = { attrs: parseAttrs(attrSource), body: [] };
-      }
-      continue;
-    }
-    if (CLOSE_RE.test(line)) {
-      out.push({ attrs: open.attrs, body: open.body.join('\n'), complete: true });
-      open = null;
-      continue;
-    }
-    const fenceStart = fenceRun(line);
+type StepParams = LineParams & {
+  readonly next: number;
+  readonly fence: string | null;
+  readonly open: OpenSpan | null;
+  readonly spans: ArtifactBlockSpan[];
+};
+
+type StepResult = {
+  readonly fence: string | null;
+  readonly open: OpenSpan | null;
+};
+
+const stepLine = ({
+  text,
+  lineStart,
+  lineEnd,
+  next,
+  fence,
+  open,
+  spans,
+}: StepParams): StepResult => {
+  if (fence !== null) {
+    const run = fenceRunAt({ text, from: lineStart });
+    const closed = run !== null && run[0] === fence[0] && run.length >= fence.length;
+    return { fence: closed ? null : fence, open };
+  }
+
+  if (open === null) {
+    const fenceStart = fenceRunAt({ text, from: lineStart });
     if (fenceStart !== null) {
-      fence = fenceStart;
+      return { fence: fenceStart, open: null };
     }
-    open.body.push(line);
+    const attrSource = openMarkerAttrsAt({ text, lineStart, lineEnd });
+    if (attrSource === null) {
+      return { fence: null, open: null };
+    }
+    return {
+      fence: null,
+      open: { attrs: parseAttrs(attrSource), start: lineStart, bodyStart: next },
+    };
+  }
+
+  if (isCloseLine({ text, lineStart, lineEnd })) {
+    spans.push({
+      attrs: open.attrs,
+      start: open.start,
+      bodyStart: open.bodyStart,
+      bodyEnd: Math.max(open.bodyStart, lineStart - 1),
+      end: next,
+      complete: true,
+    });
+    return { fence: null, open: null };
+  }
+
+  return { fence: fenceRunAt({ text, from: lineStart }), open };
+};
+
+type ScanArtifactBlocksParams = {
+  readonly text: string;
+  readonly from?: ArtifactScanState | null;
+};
+
+export const scanArtifactBlocks = ({
+  text,
+  from = null,
+}: ScanArtifactBlocksParams): ArtifactScanResult => {
+  const resumable = from !== null && from.scanned <= text.length ? from : null;
+  const spans: ArtifactBlockSpan[] = resumable !== null ? resumable.spans.slice() : [];
+  let fence: string | null = resumable !== null ? resumable.fence : null;
+  let open: OpenSpan | null = resumable !== null ? resumable.open : null;
+  let lineStart = resumable !== null ? resumable.scanned : 0;
+
+  for (;;) {
+    const lineEnd = text.indexOf('\n', lineStart);
+    if (lineEnd === -1) {
+      break;
+    }
+    const step = stepLine({
+      text,
+      lineStart,
+      lineEnd,
+      next: lineEnd + 1,
+      fence,
+      open,
+      spans,
+    });
+    fence = step.fence;
+    open = step.open;
+    lineStart = lineEnd + 1;
+  }
+
+  const state: ArtifactScanState = {
+    scanned: lineStart,
+    fence,
+    open,
+    spans: spans.slice(),
+  };
+
+  if (lineStart < text.length) {
+    const step = stepLine({
+      text,
+      lineStart,
+      lineEnd: text.length,
+      next: text.length,
+      fence,
+      open,
+      spans,
+    });
+    open = step.open;
   }
 
   if (open !== null) {
-    out.push({ attrs: open.attrs, body: open.body.join('\n'), complete: false });
+    spans.push({
+      attrs: open.attrs,
+      start: open.start,
+      bodyStart: open.bodyStart,
+      bodyEnd: text.length,
+      end: text.length,
+      complete: false,
+    });
   }
-  return out;
+
+  return { spans, state };
 };
+
+export const extractArtifactBlocks = (text: string): ReadonlyArray<ArtifactBlock> =>
+  scanArtifactBlocks({ text }).spans.map((span) => ({
+    attrs: span.attrs,
+    body: text.slice(span.bodyStart, span.bodyEnd),
+    complete: span.complete,
+  }));

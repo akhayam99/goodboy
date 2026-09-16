@@ -10,10 +10,11 @@ import type {
   SessionId,
   TurnEvent,
 } from '@goodboy/types';
-import { isOpenQuestionAnswerText } from '@goodboy/core';
+import { isOpenQuestionAnswerText, type ArtifactScanState } from '@goodboy/core';
 import { decodeAuthRequiredMessage } from '../turn';
 import { isWorkflowKickoff, parseWorkflowKickoff } from './parse-workflow-kickoff';
 import { parseResolverKickoff, type ResolverKickoffThread } from './parse-resolver-kickoff';
+import { splitArtifactText } from './split-artifact-blocks';
 import { reduceTranscriptTrace } from './transcript-items-trace';
 
 export type TranscriptItem =
@@ -27,6 +28,13 @@ export type TranscriptItem =
       at: IsoDateTime;
     }
   | { kind: 'assistant_text'; key: string; text: string }
+  | {
+      kind: 'artifact_block';
+      key: string;
+      artifactKind: string;
+      title: string | null;
+      complete: boolean;
+    }
   | {
       kind: 'tool_call';
       key: string;
@@ -127,9 +135,66 @@ type ReduceSnapshot = {
   readonly permToolNames: ReadonlyMap<string, string>;
   readonly textBuffer: string;
   readonly textKey: string | null;
+  readonly textScan: ArtifactScanState | null;
 };
 
 const snapshots = new WeakMap<TurnEvent, ReduceSnapshot>();
+
+type AssistantTextItemsParams = {
+  readonly key: string;
+  readonly text: string;
+  readonly scan: ArtifactScanState | null;
+};
+
+type AssistantTextItemsResult = {
+  readonly items: ReadonlyArray<TranscriptItem>;
+  readonly scan: ArtifactScanState;
+};
+
+const assistantTextItems = ({
+  key,
+  text,
+  scan,
+}: AssistantTextItemsParams): AssistantTextItemsResult => {
+  if (import.meta.env.DEV) {
+    const from = scan === null ? 0 : scan.scanned;
+    reduceTranscriptTrace.textScans += 1;
+    reduceTranscriptTrace.textScanChars += text.length - from;
+    if (from === 0) {
+      reduceTranscriptTrace.textScanRestarts += 1;
+    }
+  }
+  const split = splitArtifactText({ text, scan });
+  const segments = split.segments;
+  const first = segments[0];
+  if (segments.length === 1 && first !== undefined && first.kind === 'prose') {
+    return { items: [{ kind: 'assistant_text', key, text }], scan: split.scan };
+  }
+
+  const out: TranscriptItem[] = [];
+  let proseCount = 0;
+  let artifactCount = 0;
+  for (const segment of segments) {
+    if (segment.kind === 'artifact') {
+      out.push({
+        kind: 'artifact_block',
+        key: `${key}-artifact-${artifactCount}`,
+        artifactKind: segment.artifactKind,
+        title: segment.title,
+        complete: segment.complete,
+      });
+      artifactCount += 1;
+      continue;
+    }
+    const proseKey = proseCount === 0 ? key : `${key}-prose-${proseCount}`;
+    proseCount += 1;
+    if (segment.text.trim().length === 0) {
+      continue;
+    }
+    out.push({ kind: 'assistant_text', key: proseKey, text: segment.text });
+  }
+  return { items: out, scan: split.scan };
+};
 
 export const reduceTranscript = (
   events: ReadonlyArray<TurnEvent>,
@@ -149,13 +214,15 @@ export const reduceTranscript = (
     resumed !== null ? new Map<string, string>(resumed.permToolNames) : new Map<string, string>();
   let textBuffer = resumed !== null ? resumed.textBuffer : '';
   let textKey: string | null = resumed !== null ? resumed.textKey : null;
+  let textScan: ArtifactScanState | null = resumed !== null ? resumed.textScan : null;
 
   const flushText = () => {
-    if (textBuffer.length > 0 && textKey) {
-      items.push({ kind: 'assistant_text', key: textKey, text: textBuffer });
+    if (textBuffer.length > 0 && textKey !== null) {
+      items.push(...assistantTextItems({ key: textKey, text: textBuffer, scan: textScan }).items);
     }
     textBuffer = '';
     textKey = null;
+    textScan = null;
   };
 
   for (let i = resumed !== null ? resumed.length : 0; i < events.length; i += 1) {
@@ -362,6 +429,14 @@ export const reduceTranscript = (
     }
   }
 
+  const tail =
+    textBuffer.length > 0 && textKey !== null
+      ? assistantTextItems({ key: textKey, text: textBuffer, scan: textScan })
+      : null;
+  if (tail !== null) {
+    textScan = tail.scan;
+  }
+
   if (firstEvent !== null) {
     snapshots.set(firstEvent, {
       lastEvent: events[events.length - 1]!,
@@ -371,11 +446,12 @@ export const reduceTranscript = (
       permToolNames,
       textBuffer,
       textKey,
+      textScan,
     });
   }
 
-  if (textBuffer.length > 0 && textKey !== null) {
-    return [...items, { kind: 'assistant_text', key: textKey, text: textBuffer }];
+  if (tail !== null) {
+    return [...items, ...tail.items];
   }
   return items;
 };
