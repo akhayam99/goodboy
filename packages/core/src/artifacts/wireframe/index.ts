@@ -24,6 +24,8 @@ export type {
   WireframeImageRatio,
   WireframeInputNode,
   WireframeInputType,
+  WireframeAdjustment,
+  WireframeAdjustmentChange,
   WireframeIssue,
   WireframeJustification,
   WireframeListItem,

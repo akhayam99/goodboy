@@ -1,5 +1,6 @@
 import {
   GENERIC_THEME_NAME,
+  MAX_WIREFRAME_ADJUSTMENTS,
   WIREFRAME_ALIGNMENTS,
   WIREFRAME_BUTTON_VARIANTS,
   WIREFRAME_DIRECTIONS,
@@ -17,17 +18,38 @@ import {
   WIREFRAME_THEME_RADII,
   WIREFRAME_VIEWPORTS,
   type WireframeAction,
+  type WireframeAdjustment,
+  type WireframeAdjustmentChange,
+  type WireframeAlignment,
+  type WireframeButtonVariant,
+  type WireframeDirection,
   type WireframeDocument,
+  type WireframeImageRatio,
+  type WireframeInputType,
   type WireframeIssue,
+  type WireframeJustification,
+  type WireframeNavigationVariant,
   type WireframeNode,
   type WireframeScreen,
+  type WireframeSpacing,
+  type WireframeTextVariant,
   type WireframeTheme,
+  type WireframeThemeFont,
+  type WireframeThemeRadius,
   type WireframeTransition,
   type WireframeValidationResult,
+  type WireframeViewport,
 } from './schema';
+
+type RawAdjustment = Readonly<{
+  change: WireframeAdjustmentChange;
+  path: string;
+  message: string;
+}>;
 
 type Ctx = {
   readonly issues: WireframeIssue[];
+  readonly adjustments: RawAdjustment[];
   nodeCount: number;
   readonly nodeIds: Set<string>;
   readonly interactiveNodeIds: Set<string>;
@@ -64,7 +86,19 @@ const MARKUP_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
 
 const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
-const ID_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/;
+const ID_PATTERN = new RegExp(`^[a-zA-Z][a-zA-Z0-9_-]{0,${WIREFRAME_LIMITS.maxIdLength - 1}}$`);
+
+const CLIP_MARK = '\u2026';
+
+const CLIP_WORD_REACH = 24;
+
+const clipText = ({ value, max }: { readonly value: string; readonly max: number }): string => {
+  const head = value.slice(0, max - CLIP_MARK.length);
+  const lastSpace = head.lastIndexOf(' ');
+  const reachedBack = head.length - lastSpace <= CLIP_WORD_REACH;
+  const cut = lastSpace > 0 && reachedBack ? lastSpace : head.length;
+  return `${head.slice(0, cut).trimEnd()}${CLIP_MARK}`;
+};
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -74,7 +108,7 @@ const fail = ({ ctx, path, message }: { ctx: Ctx; path: string; message: string 
   return null;
 };
 
-const rejectUnknownKeys = ({
+const dropUnknownKeys = ({
   ctx,
   path,
   value,
@@ -87,7 +121,11 @@ const rejectUnknownKeys = ({
 }): void => {
   for (const key of Object.keys(value)) {
     if (!allowed.includes(key)) {
-      ctx.issues.push({ path: `${path}.${key}`, message: 'unknown property' });
+      ctx.adjustments.push({
+        change: 'dropped',
+        path: `${path}.${key}`,
+        message: 'is not part of the wireframe contract, so it was dropped',
+      });
     }
   }
 };
@@ -106,15 +144,20 @@ const safeText = ({
   if (typeof value !== 'string') {
     return fail({ ctx, path, message: 'expected a string' });
   }
-  if (value.length > max) {
-    return fail({ ctx, path, message: `longer than the ${max} character limit` });
-  }
   for (const [pattern, message] of MARKUP_PATTERNS) {
     if (pattern.test(value)) {
       return fail({ ctx, path, message });
     }
   }
-  return value;
+  if (value.length <= max) {
+    return value;
+  }
+  ctx.adjustments.push({
+    change: 'clipped',
+    path,
+    message: `was longer than the ${max} character limit, so it was shortened to fit`,
+  });
+  return clipText({ value, max });
 };
 
 const requiredText = ({
@@ -162,22 +205,394 @@ const enumValue = <T extends string>({
   path,
   value,
   options,
-  fallback,
 }: {
   readonly ctx: Ctx;
   readonly path: string;
   readonly value: unknown;
   readonly options: ReadonlyArray<T>;
-  readonly fallback: T | null;
 }): T | null => {
-  if (value === undefined && fallback !== null) {
-    return fallback;
-  }
   if (typeof value === 'string' && (options as ReadonlyArray<string>).includes(value)) {
     return value as T;
   }
   return fail({ ctx, path, message: `expected one of ${options.join(', ')}` });
 };
+
+const describeValue = ({ value }: { readonly value: unknown }): string => {
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return JSON.stringify(value);
+  }
+  if (value === undefined) {
+    return 'nothing';
+  }
+  if (value === null) {
+    return 'null';
+  }
+  return Array.isArray(value) ? 'a list' : 'that value';
+};
+
+const record = ({
+  ctx,
+  path,
+  message,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly message: string;
+}): void => {
+  ctx.adjustments.push({ change: 'moved', path, message });
+};
+
+const spacingForSize = ({ size }: { readonly size: number }): WireframeSpacing => {
+  if (size <= 0) {
+    return 'none';
+  }
+  if (size <= 8) {
+    return 'sm';
+  }
+  return size <= 20 ? 'md' : 'lg';
+};
+
+const SPACING_NEAR: Readonly<Record<string, WireframeSpacing>> = {
+  zero: 'none',
+  flat: 'none',
+  tight: 'sm',
+  compact: 'sm',
+  xxs: 'sm',
+  xs: 'sm',
+  s: 'sm',
+  small: 'sm',
+  m: 'md',
+  medium: 'md',
+  normal: 'md',
+  default: 'md',
+  regular: 'md',
+  l: 'lg',
+  large: 'lg',
+  xl: 'lg',
+  xxl: 'lg',
+  '2xl': 'lg',
+  '3xl': 'lg',
+  huge: 'lg',
+  loose: 'lg',
+  wide: 'lg',
+};
+
+const DIRECTION_NEAR: Readonly<Record<string, WireframeDirection>> = {
+  horizontal: 'row',
+  x: 'row',
+  inline: 'row',
+  'row-reverse': 'row',
+  vertical: 'column',
+  y: 'column',
+  col: 'column',
+  stack: 'column',
+  'column-reverse': 'column',
+};
+
+const ALIGNMENT_NEAR: Readonly<Record<string, WireframeAlignment>> = {
+  'flex-start': 'start',
+  left: 'start',
+  top: 'start',
+  baseline: 'start',
+  centre: 'center',
+  middle: 'center',
+  'flex-end': 'end',
+  right: 'end',
+  bottom: 'end',
+  fill: 'stretch',
+  full: 'stretch',
+};
+
+const JUSTIFICATION_NEAR: Readonly<Record<string, WireframeJustification>> = {
+  'flex-start': 'start',
+  left: 'start',
+  top: 'start',
+  centre: 'center',
+  middle: 'center',
+  'flex-end': 'end',
+  right: 'end',
+  bottom: 'end',
+  'space-between': 'between',
+  'space-around': 'between',
+  'space-evenly': 'between',
+  around: 'between',
+  evenly: 'between',
+};
+
+const TEXT_VARIANT_NEAR: Readonly<Record<string, WireframeTextVariant>> = {
+  h1: 'title',
+  h2: 'title',
+  heading: 'title',
+  headline: 'title',
+  display: 'title',
+  h3: 'subtitle',
+  h4: 'subtitle',
+  subheading: 'subtitle',
+  subhead: 'subtitle',
+  lead: 'subtitle',
+  paragraph: 'body',
+  text: 'body',
+  default: 'body',
+  small: 'caption',
+  hint: 'caption',
+  helper: 'caption',
+  meta: 'caption',
+  overline: 'label',
+  eyebrow: 'label',
+  tag: 'label',
+};
+
+const BUTTON_VARIANT_NEAR: Readonly<Record<string, WireframeButtonVariant>> = {
+  cta: 'primary',
+  filled: 'primary',
+  solid: 'primary',
+  default: 'secondary',
+  outline: 'secondary',
+  outlined: 'secondary',
+  tonal: 'secondary',
+  tertiary: 'ghost',
+  link: 'ghost',
+  text: 'ghost',
+  plain: 'ghost',
+  quiet: 'ghost',
+  destructive: 'danger',
+  error: 'danger',
+  warning: 'danger',
+  critical: 'danger',
+};
+
+const INPUT_TYPE_NEAR: Readonly<Record<string, WireframeInputType>> = {
+  date: 'text',
+  time: 'text',
+  datetime: 'text',
+  tel: 'text',
+  phone: 'text',
+  url: 'text',
+  file: 'text',
+  string: 'text',
+  num: 'number',
+  numeric: 'number',
+  integer: 'number',
+  currency: 'number',
+  multiline: 'textarea',
+  textbox: 'textarea',
+  longtext: 'textarea',
+  dropdown: 'select',
+  combobox: 'select',
+  picker: 'select',
+  radio: 'checkbox',
+  toggle: 'checkbox',
+  switch: 'checkbox',
+};
+
+const IMAGE_RATIO_NEAR: Readonly<Record<string, WireframeImageRatio>> = {
+  '1:1': 'square',
+  '1x1': 'square',
+  landscape: 'wide',
+  banner: 'wide',
+  hero: 'wide',
+  '16:9': 'wide',
+  '4:3': 'wide',
+  '3:2': 'wide',
+  portrait: 'tall',
+  '9:16': 'tall',
+  '3:4': 'tall',
+  circle: 'avatar',
+  round: 'avatar',
+  profile: 'avatar',
+  thumbnail: 'avatar',
+};
+
+const NAVIGATION_VARIANT_NEAR: Readonly<Record<string, WireframeNavigationVariant>> = {
+  header: 'top',
+  topbar: 'top',
+  navbar: 'top',
+  appbar: 'top',
+  sidebar: 'side',
+  rail: 'side',
+  drawer: 'side',
+  left: 'side',
+  tabbar: 'tabs',
+  segmented: 'tabs',
+  pills: 'tabs',
+  footer: 'bottom',
+  tabbarbottom: 'bottom',
+};
+
+const VIEWPORT_NEAR: Readonly<Record<string, WireframeViewport>> = {
+  phone: 'mobile',
+  handset: 'mobile',
+  sm: 'mobile',
+  small: 'mobile',
+  ipad: 'tablet',
+  md: 'tablet',
+  medium: 'tablet',
+  web: 'desktop',
+  laptop: 'desktop',
+  lg: 'desktop',
+  large: 'desktop',
+  wide: 'desktop',
+};
+
+const THEME_FONT_NEAR: Readonly<Record<string, WireframeThemeFont>> = {
+  'sans-serif': 'sans',
+  sansserif: 'sans',
+  system: 'sans',
+  ui: 'sans',
+  monospace: 'mono',
+  code: 'mono',
+  slab: 'serif',
+};
+
+const THEME_RADIUS_NEAR: Readonly<Record<string, WireframeThemeRadius>> = {
+  square: 'none',
+  sharp: 'none',
+  xs: 'sm',
+  xl: 'lg',
+  xxl: 'lg',
+  '2xl': 'lg',
+  '3xl': 'lg',
+  rounded: 'md',
+  pill: 'full',
+  circle: 'full',
+  round: 'full',
+};
+
+const nearestOf = <T extends string>({
+  value,
+  near,
+}: {
+  readonly value: unknown;
+  readonly near: Readonly<Record<string, T>>;
+}): T | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  return (
+    near[
+      value
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_]+/g, '-')
+    ] ?? null
+  );
+};
+
+const nearestSpacing = ({ value }: { readonly value: unknown }): WireframeSpacing | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return spacingForSize({ size: value });
+  }
+  const named = nearestOf({ value, near: SPACING_NEAR });
+  if (named !== null) {
+    return named;
+  }
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const size = Number.parseFloat(value);
+  return Number.isNaN(size) ? null : spacingForSize({ size });
+};
+
+const presentationEnum = <T extends string>({
+  ctx,
+  path,
+  value,
+  options,
+  fallback,
+  nearest,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+  readonly options: ReadonlyArray<T>;
+  readonly fallback: T;
+  readonly nearest: T | null;
+}): T => {
+  if (value === undefined) {
+    return fallback;
+  }
+  if (typeof value === 'string' && (options as ReadonlyArray<string>).includes(value)) {
+    return value as T;
+  }
+  const resolved = nearest ?? fallback;
+  record({
+    ctx,
+    path,
+    message: `${describeValue({ value })} is not one of ${options.join(', ')}, so it was drawn as ${resolved}`,
+  });
+  return resolved;
+};
+
+const presentationFlag = ({
+  ctx,
+  path,
+  value,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+}): boolean => {
+  if (value === undefined || typeof value === 'boolean') {
+    return value === true;
+  }
+  record({
+    ctx,
+    path,
+    message: `${describeValue({ value })} is not true or false, so it was drawn as false`,
+  });
+  return false;
+};
+
+const DEFAULT_GRID_COLUMNS = 2;
+
+const gridColumns = ({
+  ctx,
+  path,
+  value,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+}): number => {
+  const isExact =
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= 1 &&
+    value <= WIREFRAME_LIMITS.maxGridColumns;
+  if (isExact) {
+    return value;
+  }
+  const raw = typeof value === 'number' ? value : Number.parseFloat(String(value));
+  const drawn = Number.isFinite(raw)
+    ? Math.min(Math.max(Math.round(raw), 1), WIREFRAME_LIMITS.maxGridColumns)
+    : DEFAULT_GRID_COLUMNS;
+  record({
+    ctx,
+    path,
+    message: `${describeValue({ value })} is not a column count from 1 to ${WIREFRAME_LIMITS.maxGridColumns}, so the grid was drawn with ${drawn} columns`,
+  });
+  return drawn;
+};
+
+const spacing = ({
+  ctx,
+  path,
+  value,
+  fallback,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+  readonly fallback: WireframeSpacing;
+}): WireframeSpacing =>
+  presentationEnum({
+    ctx,
+    path,
+    value,
+    options: WIREFRAME_SPACINGS,
+    fallback,
+    nearest: nearestSpacing({ value }),
+  });
 
 const parseAction = ({
   ctx,
@@ -193,7 +608,7 @@ const parseAction = ({
   }
   const type = value['type'];
   if (type === 'navigate') {
-    rejectUnknownKeys({ ctx, path, value, allowed: ['type', 'toScreenId'] });
+    dropUnknownKeys({ ctx, path, value, allowed: ['type', 'toScreenId'] });
     const target = identifier({ ctx, path: `${path}.toScreenId`, value: value['toScreenId'] });
     if (target === null) {
       return null;
@@ -202,7 +617,7 @@ const parseAction = ({
     return { type: 'navigate', toScreenId: target };
   }
   if (type === 'toggle') {
-    rejectUnknownKeys({ ctx, path, value, allowed: ['type', 'stateKey'] });
+    dropUnknownKeys({ ctx, path, value, allowed: ['type', 'stateKey'] });
     const key = identifier({ ctx, path: `${path}.stateKey`, value: value['stateKey'] });
     if (key === null) {
       return null;
@@ -285,7 +700,6 @@ const parseNode = ({
     path: `${path}.kind`,
     value: value['kind'],
     options: WIREFRAME_NODE_KINDS,
-    fallback: null,
   });
   if (kind === null) {
     return null;
@@ -310,7 +724,7 @@ const parseNode = ({
   const noteField = note === null ? {} : { note };
 
   if (kind === 'stack') {
-    rejectUnknownKeys({
+    dropUnknownKeys({
       ctx,
       path,
       value,
@@ -327,60 +741,48 @@ const parseNode = ({
         'children',
       ],
     });
-    const direction = enumValue({
+    const direction = presentationEnum({
       ctx,
       path: `${path}.direction`,
       value: value['direction'],
       options: WIREFRAME_DIRECTIONS,
       fallback: 'column',
+      nearest: nearestOf({ value: value['direction'], near: DIRECTION_NEAR }),
     });
-    const gap = enumValue({
-      ctx,
-      path: `${path}.gap`,
-      value: value['gap'],
-      options: WIREFRAME_SPACINGS,
-      fallback: 'md',
-    });
-    const padding = enumValue({
+    const gap = spacing({ ctx, path: `${path}.gap`, value: value['gap'], fallback: 'md' });
+    const padding = spacing({
       ctx,
       path: `${path}.padding`,
       value: value['padding'],
-      options: WIREFRAME_SPACINGS,
       fallback: 'none',
     });
-    const align = enumValue({
+    const align = presentationEnum({
       ctx,
       path: `${path}.align`,
       value: value['align'],
       options: WIREFRAME_ALIGNMENTS,
       fallback: 'stretch',
+      nearest: nearestOf({ value: value['align'], near: ALIGNMENT_NEAR }),
     });
-    const justify = enumValue({
+    const justify = presentationEnum({
       ctx,
       path: `${path}.justify`,
       value: value['justify'],
       options: WIREFRAME_JUSTIFICATIONS,
       fallback: 'start',
+      nearest: nearestOf({ value: value['justify'], near: JUSTIFICATION_NEAR }),
     });
-    const surface = value['surface'];
-    if (surface !== undefined && typeof surface !== 'boolean') {
-      fail({ ctx, path: `${path}.surface`, message: 'expected a boolean' });
-    }
+    const surface = presentationFlag({
+      ctx,
+      path: `${path}.surface`,
+      value: value['surface'],
+    });
     const children = parseChildren({
       ctx,
       path: `${path}.children`,
       value: value['children'],
       depth,
     });
-    if (
-      direction === null ||
-      gap === null ||
-      padding === null ||
-      align === null ||
-      justify === null
-    ) {
-      return null;
-    }
     return {
       id,
       kind,
@@ -390,43 +792,24 @@ const parseNode = ({
       padding,
       align,
       justify,
-      surface: surface === true,
+      surface,
       children,
     };
   }
 
   if (kind === 'grid') {
-    rejectUnknownKeys({
+    dropUnknownKeys({
       ctx,
       path,
       value,
       allowed: ['id', 'kind', 'note', 'columns', 'gap', 'padding', 'children'],
     });
-    const columns = value['columns'];
-    const isValidColumns =
-      typeof columns === 'number' &&
-      Number.isInteger(columns) &&
-      columns >= 1 &&
-      columns <= WIREFRAME_LIMITS.maxGridColumns;
-    if (!isValidColumns) {
-      fail({
-        ctx,
-        path: `${path}.columns`,
-        message: `expected an integer from 1 to ${WIREFRAME_LIMITS.maxGridColumns}`,
-      });
-    }
-    const gap = enumValue({
-      ctx,
-      path: `${path}.gap`,
-      value: value['gap'],
-      options: WIREFRAME_SPACINGS,
-      fallback: 'md',
-    });
-    const padding = enumValue({
+    const columns = gridColumns({ ctx, path: `${path}.columns`, value: value['columns'] });
+    const gap = spacing({ ctx, path: `${path}.gap`, value: value['gap'], fallback: 'md' });
+    const padding = spacing({
       ctx,
       path: `${path}.padding`,
       value: value['padding'],
-      options: WIREFRAME_SPACINGS,
       fallback: 'none',
     });
     const children = parseChildren({
@@ -435,35 +818,33 @@ const parseNode = ({
       value: value['children'],
       depth,
     });
-    if (!isValidColumns || gap === null || padding === null) {
-      return null;
-    }
-    return { id, kind, ...noteField, columns: columns as number, gap, padding, children };
+    return { id, kind, ...noteField, columns, gap, padding, children };
   }
 
   if (kind === 'text') {
-    rejectUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'text', 'variant'] });
+    dropUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'text', 'variant'] });
     const text = requiredText({
       ctx,
       path: `${path}.text`,
       value: value['text'],
       max: WIREFRAME_LIMITS.maxTextLength,
     });
-    const variant = enumValue({
+    const variant = presentationEnum({
       ctx,
       path: `${path}.variant`,
       value: value['variant'],
       options: WIREFRAME_TEXT_VARIANTS,
       fallback: 'body',
+      nearest: nearestOf({ value: value['variant'], near: TEXT_VARIANT_NEAR }),
     });
-    if (text === null || variant === null) {
+    if (text === null) {
       return null;
     }
     return { id, kind, ...noteField, text, variant };
   }
 
   if (kind === 'button') {
-    rejectUnknownKeys({
+    dropUnknownKeys({
       ctx,
       path,
       value,
@@ -475,15 +856,16 @@ const parseNode = ({
       value: value['label'],
       max: WIREFRAME_LIMITS.maxTextLength,
     });
-    const variant = enumValue({
+    const variant = presentationEnum({
       ctx,
       path: `${path}.variant`,
       value: value['variant'],
       options: WIREFRAME_BUTTON_VARIANTS,
       fallback: 'secondary',
+      nearest: nearestOf({ value: value['variant'], near: BUTTON_VARIANT_NEAR }),
     });
     const action = optionalAction({ ctx, path: `${path}.action`, value: value['action'] });
-    if (label === null || variant === null) {
+    if (label === null) {
       return null;
     }
     ctx.interactiveNodeIds.add(id);
@@ -494,18 +876,19 @@ const parseNode = ({
   }
 
   if (kind === 'input') {
-    rejectUnknownKeys({
+    dropUnknownKeys({
       ctx,
       path,
       value,
       allowed: ['id', 'kind', 'note', 'inputType', 'label', 'placeholder', 'options'],
     });
-    const inputType = enumValue({
+    const inputType = presentationEnum({
       ctx,
       path: `${path}.inputType`,
       value: value['inputType'],
       options: WIREFRAME_INPUT_TYPES,
       fallback: 'text',
+      nearest: nearestOf({ value: value['inputType'], near: INPUT_TYPE_NEAR }),
     });
     const label =
       value['label'] === undefined
@@ -550,9 +933,6 @@ const parseNode = ({
         });
       }
     }
-    if (inputType === null) {
-      return null;
-    }
     return {
       id,
       kind,
@@ -565,7 +945,7 @@ const parseNode = ({
   }
 
   if (kind === 'list') {
-    rejectUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'items'] });
+    dropUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'items'] });
     const rawItems = value['items'];
     if (!Array.isArray(rawItems)) {
       return fail({ ctx, path: `${path}.items`, message: 'expected an array of list items' });
@@ -589,7 +969,7 @@ const parseNode = ({
         fail({ ctx, path: itemPath, message: 'expected a list item object' });
         return;
       }
-      rejectUnknownKeys({
+      dropUnknownKeys({
         ctx,
         path: itemPath,
         value: raw,
@@ -635,7 +1015,7 @@ const parseNode = ({
   }
 
   if (kind === 'table') {
-    rejectUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'columns', 'rows'] });
+    dropUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'columns', 'rows'] });
     const rawColumns = value['columns'];
     const rawRows = value['rows'];
     if (!Array.isArray(rawColumns) || rawColumns.length === 0) {
@@ -706,33 +1086,35 @@ const parseNode = ({
   }
 
   if (kind === 'image') {
-    rejectUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'alt', 'ratio'] });
+    dropUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'alt', 'ratio'] });
     const alt = requiredText({
       ctx,
       path: `${path}.alt`,
       value: value['alt'],
       max: WIREFRAME_LIMITS.maxTextLength,
     });
-    const ratio = enumValue({
+    const ratio = presentationEnum({
       ctx,
       path: `${path}.ratio`,
       value: value['ratio'],
       options: WIREFRAME_IMAGE_RATIOS,
       fallback: 'wide',
+      nearest: nearestOf({ value: value['ratio'], near: IMAGE_RATIO_NEAR }),
     });
-    if (alt === null || ratio === null) {
+    if (alt === null) {
       return null;
     }
     return { id, kind, ...noteField, alt, ratio };
   }
 
-  rejectUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'variant', 'items'] });
-  const variant = enumValue({
+  dropUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'variant', 'items'] });
+  const variant = presentationEnum({
     ctx,
     path: `${path}.variant`,
     value: value['variant'],
     options: WIREFRAME_NAVIGATION_VARIANTS,
     fallback: 'top',
+    nearest: nearestOf({ value: value['variant'], near: NAVIGATION_VARIANT_NEAR }),
   });
   const rawItems = value['items'];
   if (!Array.isArray(rawItems)) {
@@ -757,7 +1139,7 @@ const parseNode = ({
       fail({ ctx, path: itemPath, message: 'expected a navigation item object' });
       return;
     }
-    rejectUnknownKeys({
+    dropUnknownKeys({
       ctx,
       path: itemPath,
       value: raw,
@@ -771,10 +1153,11 @@ const parseNode = ({
       max: WIREFRAME_LIMITS.maxTextLength,
     });
     const action = optionalAction({ ctx, path: `${itemPath}.action`, value: raw['action'] });
-    const isActive = raw['isActive'];
-    if (isActive !== undefined && typeof isActive !== 'boolean') {
-      fail({ ctx, path: `${itemPath}.isActive`, message: 'expected a boolean' });
-    }
+    const isActive = presentationFlag({
+      ctx,
+      path: `${itemPath}.isActive`,
+      value: raw['isActive'],
+    });
     if (itemId === null || label === null) {
       return;
     }
@@ -790,13 +1173,10 @@ const parseNode = ({
     items.push({
       id: itemId,
       label,
-      isActive: isActive === true,
+      isActive,
       ...(action !== null && { action }),
     });
   });
-  if (variant === null) {
-    return null;
-  }
   return { id, kind, ...noteField, variant, items };
 };
 
@@ -814,7 +1194,7 @@ const parseTheme = ({
     fail({ ctx, path: 'theme', message: 'expected a theme object' });
     return { name: GENERIC_THEME_NAME };
   }
-  rejectUnknownKeys({
+  dropUnknownKeys({
     ctx,
     path: 'theme',
     value,
@@ -822,27 +1202,33 @@ const parseTheme = ({
   });
   const name =
     safeText({ ctx, path: 'theme.name', value: value['name'], max: 80 }) ?? GENERIC_THEME_NAME;
-  const font = enumValue({
+  const font = presentationEnum({
     ctx,
     path: 'theme.font',
     value: value['font'],
     options: WIREFRAME_THEME_FONTS,
     fallback: 'sans',
+    nearest: nearestOf({ value: value['font'], near: THEME_FONT_NEAR }),
   });
-  const radius = enumValue({
+  const radius = presentationEnum({
     ctx,
     path: 'theme.radius',
     value: value['radius'],
     options: WIREFRAME_THEME_RADII,
     fallback: 'md',
+    nearest: nearestOf({ value: value['radius'], near: THEME_RADIUS_NEAR }),
   });
   const colors: Record<string, string> = {};
   const rawColors = value['colors'];
   if (rawColors !== undefined) {
     if (!isRecord(rawColors)) {
-      fail({ ctx, path: 'theme.colors', message: 'expected a color token object' });
+      record({
+        ctx,
+        path: 'theme.colors',
+        message: `${describeValue({ value: rawColors })} is not a color token object, so the generic palette was used`,
+      });
     } else {
-      rejectUnknownKeys({
+      dropUnknownKeys({
         ctx,
         path: 'theme.colors',
         value: rawColors,
@@ -854,10 +1240,10 @@ const parseTheme = ({
           continue;
         }
         if (typeof raw !== 'string' || !HEX_COLOR.test(raw)) {
-          fail({
+          record({
             ctx,
             path: `theme.colors.${token}`,
-            message: 'expected a hex color like #1a1a1a',
+            message: `${describeValue({ value: raw })} is not a hex color like #1a1a1a, so the generic ${token} was used`,
           });
           continue;
         }
@@ -881,8 +1267,8 @@ const parseTheme = ({
   }
   return {
     name: name.trim().length === 0 ? GENERIC_THEME_NAME : name,
-    ...(font !== null && { font }),
-    ...(radius !== null && { radius }),
+    font,
+    radius,
     ...(Object.keys(colors).length > 0 && { colors }),
     ...(sources.length > 0 && { sources }),
   };
@@ -915,7 +1301,7 @@ const parseScreens = ({
       fail({ ctx, path, message: 'expected a screen object' });
       return;
     }
-    rejectUnknownKeys({
+    dropUnknownKeys({
       ctx,
       path,
       value: raw,
@@ -928,12 +1314,13 @@ const parseScreens = ({
       value: raw['title'],
       max: WIREFRAME_LIMITS.maxTextLength,
     });
-    const viewport = enumValue({
+    const viewport = presentationEnum({
       ctx,
       path: `${path}.viewport`,
       value: raw['viewport'],
       options: WIREFRAME_VIEWPORTS,
       fallback: 'desktop',
+      nearest: nearestOf({ value: raw['viewport'], near: VIEWPORT_NEAR }),
     });
     const note =
       raw['note'] === undefined
@@ -945,7 +1332,7 @@ const parseScreens = ({
             max: WIREFRAME_LIMITS.maxTextLength,
           });
     const root = parseNode({ ctx, path: `${path}.root`, value: raw['root'], depth: 1 });
-    if (id === null || title === null || viewport === null || root === null) {
+    if (id === null || title === null || root === null) {
       return;
     }
     if (seen.has(id)) {
@@ -989,7 +1376,7 @@ const parseTransitions = ({
       fail({ ctx, path, message: 'expected a transition object' });
       return;
     }
-    rejectUnknownKeys({ ctx, path, value: raw, allowed: ['fromNodeId', 'toScreenId', 'label'] });
+    dropUnknownKeys({ ctx, path, value: raw, allowed: ['fromNodeId', 'toScreenId', 'label'] });
     const fromNodeId = identifier({ ctx, path: `${path}.fromNodeId`, value: raw['fromNodeId'] });
     const toScreenId = identifier({ ctx, path: `${path}.toScreenId`, value: raw['toScreenId'] });
     const label = requiredText({
@@ -1070,6 +1457,67 @@ const parseMockState = ({
   return out;
 };
 
+const fieldOf = ({ path }: { readonly path: string }): string => {
+  const segments = path.split('.');
+  return segments[segments.length - 1] ?? path;
+};
+
+type AdjustmentGroup = {
+  readonly change: WireframeAdjustmentChange;
+  readonly path: string;
+  readonly message: string;
+  count: number;
+};
+
+const groupAdjustments = ({
+  adjustments,
+}: {
+  readonly adjustments: ReadonlyArray<RawAdjustment>;
+}): ReadonlyArray<AdjustmentGroup> => {
+  const groups = new Map<string, AdjustmentGroup>();
+  for (const entry of adjustments) {
+    const key = [entry.change, fieldOf({ path: entry.path }), entry.message].join('\u0000');
+    const seen = groups.get(key);
+    if (seen === undefined) {
+      groups.set(key, {
+        change: entry.change,
+        path: entry.path,
+        message: entry.message,
+        count: 1,
+      });
+      continue;
+    }
+    seen.count += 1;
+  }
+  return [...groups.values()];
+};
+
+const reportedAdjustments = ({
+  adjustments,
+}: {
+  readonly adjustments: ReadonlyArray<RawAdjustment>;
+}): ReadonlyArray<WireframeAdjustment> => {
+  const groups = groupAdjustments({ adjustments });
+  const shown = groups
+    .slice(0, MAX_WIREFRAME_ADJUSTMENTS)
+    .map(({ change, path, message, count }) => ({ change, path, message, count }));
+  const hidden = groups.slice(MAX_WIREFRAME_ADJUSTMENTS);
+  if (hidden.length === 0) {
+    return shown;
+  }
+  const countHidden = ({ change }: { readonly change: WireframeAdjustmentChange }): number =>
+    hidden.filter((group) => group.change === change).length;
+  return [
+    ...shown,
+    {
+      change: 'hidden',
+      moved: countHidden({ change: 'moved' }),
+      clipped: countHidden({ change: 'clipped' }),
+      dropped: countHidden({ change: 'dropped' }),
+    },
+  ];
+};
+
 export const validateWireframeDocument = ({
   value,
 }: {
@@ -1077,6 +1525,7 @@ export const validateWireframeDocument = ({
 }): WireframeValidationResult => {
   const ctx: Ctx = {
     issues: [],
+    adjustments: [],
     nodeCount: 0,
     nodeIds: new Set<string>(),
     interactiveNodeIds: new Set<string>(),
@@ -1086,7 +1535,7 @@ export const validateWireframeDocument = ({
   if (!isRecord(value)) {
     return { status: 'invalid', issues: [{ path: '', message: 'expected a wireframe object' }] };
   }
-  rejectUnknownKeys({
+  dropUnknownKeys({
     ctx,
     path: '',
     value,
@@ -1144,6 +1593,7 @@ export const validateWireframeDocument = ({
       transitions,
       ...(Object.keys(mockState).length > 0 && { mockState }),
     },
+    adjustments: reportedAdjustments({ adjustments: ctx.adjustments }),
   };
 };
 

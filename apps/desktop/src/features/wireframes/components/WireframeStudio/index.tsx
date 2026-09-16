@@ -78,6 +78,7 @@ export const WireframeStudio = ({ sessionId, artifact }: Props) => {
       artifact={artifact}
       fidelity={fidelity}
       document={parsed.document}
+      adjustments={parsed.adjustments}
       isRespawning={isRespawning}
       error={error}
       onRespawn={(next) => void respawn(next)}
