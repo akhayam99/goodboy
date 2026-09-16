@@ -4,6 +4,7 @@ import type { ReportOutlineEntry } from '../../reportOutline';
 type Props = {
   readonly entries: ReadonlyArray<ReportOutlineEntry>;
   readonly activeId: string | null;
+  readonly showHeader: boolean;
   readonly onSelect: (id: string) => void;
 };
 
@@ -13,13 +14,13 @@ const INDENT: Record<number, string> = {
   3: 'pl-6',
 };
 
-export const ReportOutlineNav = ({ entries, activeId, onSelect }: Props) => {
+export const ReportOutlineNav = ({ entries, activeId, showHeader, onSelect }: Props) => {
   if (entries.length === 0) {
     return null;
   }
   return (
     <nav aria-label="Report outline" className="flex min-w-0 flex-col gap-1">
-      <SectionHeader label="Outline" />
+      {showHeader && <SectionHeader label="Outline" />}
       <ul className="flex min-w-0 flex-col gap-0.5">
         {entries.map((entry) => (
           <li key={entry.id} className="min-w-0">

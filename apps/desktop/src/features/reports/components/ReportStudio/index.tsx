@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Eye, Pencil, RotateCcw } from 'lucide-react';
+import { ChevronRight, Eye, Pencil, RotateCcw } from 'lucide-react';
 import { Button, Divider, Markdown, SegmentedTabs, Textarea, cn, formatError } from '@goodboy/ui';
 import type {
   Agent,
@@ -9,12 +9,14 @@ import type {
   SessionArtifact,
   SessionId,
 } from '@goodboy/types';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { buildReportOutline } from '../../reportOutline';
 import { collectReportSourceLinks } from '../../reportSourceLinks';
 import { asReportType, REPORT_TYPE_LABEL } from '../../reportTypes';
 import { ReportOutlineNav } from './ReportOutlineNav';
 import { ReportProvenanceRow } from './ReportProvenanceRow';
+import { useOutlinePlacement } from './useOutlinePlacement';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -31,7 +33,10 @@ export const ReportStudio = ({ sessionId, artifact, agents, artifacts }: Props) 
   const [error, setError] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
+  const [isOutlineOpen, setIsOutlineOpen] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
+  const isOutlineInline = useOutlinePlacement({ containerRef: layoutRef }) === 'inline';
   const updateArtifactSource = useAppStore((state) => state.updateArtifactSource);
   const spawnReportAgent = useAppStore((state) => state.spawnReportAgent);
   const selectAgent = useAppStore((state) => state.selectAgent);
@@ -152,30 +157,66 @@ export const ReportStudio = ({ sessionId, artifact, agents, artifacts }: Props) 
         </span>
       )}
       <Divider />
-      <div className={cn('flex min-w-0 gap-4', outline.length === 0 && 'gap-0')}>
-        {outline.length === 0 ? null : (
-          <aside className="hidden w-48 shrink-0 lg:block">
+      <div
+        ref={layoutRef}
+        className={cn('flex min-w-0 gap-4', (outline.length === 0 || isOutlineInline) && 'gap-0')}
+      >
+        {outline.length === 0 || isOutlineInline ? null : (
+          <aside className="w-48 shrink-0">
             <ReportOutlineNav
               entries={outline}
               activeId={activeHeadingId}
+              showHeader
               onSelect={scrollToHeading}
             />
           </aside>
         )}
-        <div ref={bodyRef} className="min-w-0 flex-1">
-          {mode === 'edit' ? (
-            <Textarea
-              autoFocus
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              className="w-full font-mono text-xs"
-              autoGrow
-              minRows={12}
-              maxRows={80}
-            />
-          ) : (
-            <Markdown text={artifact.sourceText} className="text-xs" />
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          {outline.length === 0 || !isOutlineInline ? null : (
+            <div className="flex flex-col gap-2 rounded-md border border-border-soft bg-elevated p-2">
+              <button
+                type="button"
+                aria-expanded={isOutlineOpen}
+                data-testid="report-outline-toggle"
+                className="flex items-center gap-1.5 text-2xs uppercase tracking-wide text-muted-foreground motion-safe:transition-colors hover:text-foreground"
+                onClick={() => setIsOutlineOpen((previous) => !previous)}
+              >
+                <ChevronRight
+                  size={ICON_SIZE.row}
+                  aria-hidden
+                  className={cn('motion-safe:transition-transform', isOutlineOpen && 'rotate-90')}
+                />
+                Outline
+                <span className="tabular-nums normal-case tracking-normal">{outline.length}</span>
+              </button>
+              {isOutlineOpen && (
+                <ReportOutlineNav
+                  entries={outline}
+                  activeId={activeHeadingId}
+                  showHeader={false}
+                  onSelect={(id) => {
+                    scrollToHeading(id);
+                    setIsOutlineOpen(false);
+                  }}
+                />
+              )}
+            </div>
           )}
+          <div ref={bodyRef} className="min-w-0">
+            {mode === 'edit' ? (
+              <Textarea
+                autoFocus
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                className="w-full font-mono text-xs"
+                autoGrow
+                minRows={12}
+                maxRows={80}
+              />
+            ) : (
+              <Markdown text={artifact.sourceText} className="text-xs" />
+            )}
+          </div>
         </div>
       </div>
     </div>

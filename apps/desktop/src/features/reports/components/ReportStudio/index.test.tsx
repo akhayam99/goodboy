@@ -75,10 +75,40 @@ describe('ReportStudio', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Outcome' })).toBeDefined();
   });
 
-  it('links a cited source id back to its agent', () => {
+  it('links a cited source id back to its agent from a labelled chip', () => {
     renderStudio();
-    fireEvent.click(screen.getByRole('button', { name: 'implementer' }));
+    const chip = screen.getByRole('button', { name: 'open the agent implementer' });
+    expect(chip.getAttribute('data-testid')).toBe('report-source-chip');
+    fireEvent.click(chip);
     expect(state.selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-1');
+  });
+
+  it('collapses a long source list behind a count and expands it inline', () => {
+    const many = Array.from({ length: 7 }, (_, index) => ({
+      id: `agent-${index}`,
+      sessionId: SESSION_ID,
+      ordinal: index,
+      name: `worker ${index}`,
+      status: 'completed',
+    }));
+    render(
+      <ReportStudio
+        sessionId={SESSION_ID}
+        artifact={JSON.parse(
+          JSON.stringify({
+            ...report,
+            sourceText: many.map((agent) => agent.id).join(' and '),
+          }),
+        )}
+        agents={JSON.parse(JSON.stringify(many))}
+        artifacts={[]}
+      />,
+    );
+    expect(screen.getAllByTestId('report-source-chip')).toHaveLength(4);
+    fireEvent.click(screen.getByTestId('report-sources-more'));
+    expect(screen.getAllByTestId('report-source-chip')).toHaveLength(7);
+    fireEvent.click(screen.getByTestId('report-sources-less'));
+    expect(screen.getAllByTestId('report-source-chip')).toHaveLength(4);
   });
 
   it('saves an edited source, which bumps the revision in the store', async () => {
