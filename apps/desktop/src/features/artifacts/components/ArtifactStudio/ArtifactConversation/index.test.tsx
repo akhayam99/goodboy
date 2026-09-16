@@ -167,6 +167,22 @@ describe('ArtifactConversation', () => {
     expect(screen.getByTestId('create-report-cta')).toBeDefined();
   });
 
+  it('carries the sentence on the button instead of a caption beside it', () => {
+    render(
+      <ArtifactConversation
+        sessionId={SESSION_ID}
+        artifact={report}
+        agent={agent}
+        isWorkflowOwned={false}
+      />,
+    );
+    expect(screen.queryByText('create another from this')).toBeNull();
+    expect(screen.getByTestId('create-report-cta').getAttribute('title')).toBe(
+      'create another from this',
+    );
+    expect(screen.getByTestId('artifact-attach').textContent).toContain('Attach report');
+  });
+
   it('keeps workflow vocabulary for a workflow owned agent', () => {
     render(
       <ArtifactConversation
@@ -176,7 +192,9 @@ describe('ArtifactConversation', () => {
         isWorkflowOwned
       />,
     );
-    expect(screen.getByText('create another from this workflow run')).toBeDefined();
+    expect(screen.getByTestId('create-report-cta').getAttribute('title')).toBe(
+      'create another from this workflow run',
+    );
     expect(screen.getByText(/this is the step transcript/i)).toBeDefined();
     expect(screen.queryByText(/reopen/i)).toBeNull();
   });

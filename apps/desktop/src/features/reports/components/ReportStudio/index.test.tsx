@@ -85,6 +85,16 @@ describe('ReportStudio', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Outcome' })).toBeDefined();
   });
 
+  it('pins the outline rail so it survives the body scroll', () => {
+    renderStudio();
+    const rail = screen.getByTestId('report-outline-rail');
+    expect(rail.className).toContain('sticky');
+    expect(rail.className).toContain('top-0');
+    expect(rail.className).toContain('self-start');
+    expect(rail.className).toContain('overflow-y-auto');
+    expect(rail.className).toContain('max-h-[60vh]');
+  });
+
   it('links a cited source id back to its agent from a labelled chip', () => {
     renderStudio();
     const chip = screen.getByRole('button', { name: 'open the agent implementer' });

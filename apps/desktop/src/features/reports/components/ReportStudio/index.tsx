@@ -186,7 +186,10 @@ export const ReportStudio = ({
         className={cn('flex min-w-0 gap-4', (outline.length === 0 || isOutlineInline) && 'gap-0')}
       >
         {outline.length === 0 || isOutlineInline ? null : (
-          <aside className="w-48 shrink-0">
+          <aside
+            data-testid="report-outline-rail"
+            className="sticky top-0 flex max-h-[60vh] w-48 shrink-0 flex-col self-start overflow-y-auto"
+          >
             <ReportOutlineNav
               entries={outline}
               activeId={activeHeadingId}
