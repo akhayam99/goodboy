@@ -176,6 +176,42 @@ describe('m157 session artifacts', () => {
     expect(remaining).toEqual([]);
   });
 
+  it('aborts and leaves pre-migration state intact when a foreign key violation exists', async () => {
+    const db = await seed();
+    await db.exec('PRAGMA foreign_keys = OFF');
+    await db.execute(
+      `INSERT INTO session_plans (
+         id, session_id, agent_id, title, body_md, status, created_at, updated_at
+       ) VALUES ('plan-orphan', 'session', 'agent-missing', 'title plan-orphan', 'body plan-orphan', 'active', 1000, 1000)`,
+    );
+    await db.exec('PRAGMA foreign_keys = ON');
+
+    await expect(migrate(db, migrations)).rejects.toThrow(
+      /Migration v157: foreign key violation detected in session_artifacts \(1 row\)/,
+    );
+
+    const versions = await db.select<{ readonly version: number }>(
+      'SELECT version FROM schema_version WHERE version = 157',
+    );
+    expect(versions).toEqual([]);
+
+    const tables = await db.select<{ readonly name: string }>(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'session_artifacts'",
+    );
+    expect(tables).toEqual([]);
+
+    const plans = await db.select<{ readonly id: string }>(
+      'SELECT id FROM session_plans ORDER BY id ASC',
+    );
+    expect(plans.map((plan) => plan.id)).toEqual([
+      'plan-active',
+      'plan-consumed',
+      'plan-discarded',
+      'plan-orphan',
+      'plan-superseded',
+    ]);
+  });
+
   it('refuses a consumption that points at a non-plan artifact', async () => {
     const db = await seed();
     await migrate(db, migrations);

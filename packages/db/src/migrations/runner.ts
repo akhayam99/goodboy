@@ -16,6 +16,10 @@ CREATE TABLE IF NOT EXISTS schema_migration_segment (
 `;
 
 const FOREIGN_KEYS_PRAGMA = /^[\t ]*PRAGMA[\t ]+foreign_keys[\t ]*=[\t ]*(ON|OFF)[\t ]*$/im;
+const FOREIGN_KEY_CHECK_PRAGMA = /^[\t ]*PRAGMA[\t ]+foreign_key_check[\t ]*(\([^)]*\))?[\t ]*$/im;
+const INTEGRITY_CHECK_PRAGMA = /^[\t ]*PRAGMA[\t ]+integrity_check[\t ]*(\([^)]*\))?[\t ]*$/im;
+
+const ENFORCED_POST_CONDITION_MIN_VERSION = 157;
 
 type MigrationPart =
   | {
@@ -178,6 +182,14 @@ const executeStatement = async ({
   statement,
   version,
 }: ExecuteStatementInput): Promise<void> => {
+  if (version >= ENFORCED_POST_CONDITION_MIN_VERSION && FOREIGN_KEY_CHECK_PRAGMA.test(statement)) {
+    await assertNoForeignKeyViolations({ db, statement, version });
+    return;
+  }
+  if (version >= ENFORCED_POST_CONDITION_MIN_VERSION && INTEGRITY_CHECK_PRAGMA.test(statement)) {
+    await assertIntegrityCheckOk({ db, statement, version });
+    return;
+  }
   try {
     await db.exec(statement);
   } catch (error) {
@@ -189,6 +201,48 @@ const executeStatement = async ({
     }
     throw error;
   }
+};
+
+type ForeignKeyViolationRow = {
+  readonly table: string;
+  readonly rowid: number | null;
+};
+
+type IntegrityCheckRow = {
+  readonly integrity_check: string;
+};
+
+const assertNoForeignKeyViolations = async ({
+  db,
+  statement,
+  version,
+}: ExecuteStatementInput): Promise<void> => {
+  const violations = await db.select<ForeignKeyViolationRow>(statement);
+  if (violations.length === 0) {
+    return;
+  }
+  const countsByTable = new Map<string, number>();
+  for (const violation of violations) {
+    countsByTable.set(violation.table, (countsByTable.get(violation.table) ?? 0) + 1);
+  }
+  const detail = [...countsByTable.entries()]
+    .map(([table, count]) => `${table} (${count} row${count === 1 ? '' : 's'})`)
+    .join(', ');
+  throw new Error(`Migration v${version}: foreign key violation detected in ${detail}`);
+};
+
+const assertIntegrityCheckOk = async ({
+  db,
+  statement,
+  version,
+}: ExecuteStatementInput): Promise<void> => {
+  const rows = await db.select<IntegrityCheckRow>(statement);
+  const isOk = rows.length === 1 && rows[0]?.integrity_check === 'ok';
+  if (isOk) {
+    return;
+  }
+  const detail = rows.map((row) => row.integrity_check).join('; ');
+  throw new Error(`Migration v${version}: integrity check failed: ${detail}`);
 };
 
 const restoreAfterFailure = async ({
