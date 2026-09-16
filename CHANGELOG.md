@@ -7,6 +7,39 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.1
+
+A plan that comes back unreadable can be repaired instead of vanishing, and
+every plan you have moves to a new store on first launch.
+
+### [#1775] An unreadable plan can be repaired
+
+When an agent ended a turn with something that looked like a plan and Goodboy
+could not read it, the output was dropped. The transcript carried on as if the
+agent had written nothing, and the only clue was the plan you were waiting for
+never appearing.
+
+You now see that the output came back unreadable, with the offer to repair it
+in the same place. What you can ask an agent for is unchanged: a plan is still
+the only thing it hands back that Goodboy stores and re-opens.
+
+### [#1775] Plans move to a new store on first launch
+
+Plans used to be kept apart from everything else an agent hands back. First
+launch on 0.3.1 moves every plan you have into a general store: the title, the
+body, the status, the dates, the agent that wrote it and the workflow run it
+belongs to all come across.
+
+The move runs once, behind the snapshot Goodboy saves before a migration that
+rewrites data. If it would leave a single record pointing at something that no
+longer exists, it stops and your database stays as it was. Every migration
+after this one is held to that check.
+
+### Fixes
+
+- Replaying a turn that produced a plan no longer stores a second copy of it
+  [#1775]
+
 ## Goodboy v0.3.0
 
 A role means the same thing wherever you pick it, and a workflow step can be a
