@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type {
   AgentId,
+  PlanConsumptionId,
+  PlanId,
   SessionId,
   WorkflowRoutingDecision,
   WorkflowRoutingLock,
@@ -12,7 +14,14 @@ import type {
 import type { Database } from '../client';
 import { migrate } from '../migrations/runner';
 import { makeTestDatabase } from '../test-helpers/test-db';
-import { getAgentById, updateAgentRouting } from './agent';
+import {
+  getAgentById,
+  listAgentsForSession,
+  listAgentsForSessions,
+  purgeAgentForDelete,
+  updateAgentRouting,
+} from './agent';
+import { addPlanConsumption, listConsumptionsForPlan, upsertPlan } from './plan';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
 const sessionId = 'session-1' as SessionId;
@@ -33,6 +42,80 @@ describe('agent queries', () => {
       'INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
       [sessionId, workspaceId, 'goal', 'idle', now, now],
     );
+  });
+
+  const seedAgent = async (id: AgentId, ordinal: number): Promise<void> => {
+    await db.execute(
+      `INSERT INTO agents (id, session_id, ordinal, name, status, output_summary)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [id, sessionId, ordinal, `agent ${ordinal}`, 'completed', 'summary'],
+    );
+  };
+
+  it('purgeAgentForDelete drops the transcript and tombstones the agent', async () => {
+    await seedAgent(agentId, 0);
+    const now = Date.now();
+    await db.execute(
+      `INSERT INTO messages (id, session_id, agent_id, role, content, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      ['message-1', sessionId, agentId, 'user', 'hello', now],
+    );
+    await db.execute(
+      `INSERT INTO turn_events (id, session_id, agent_id, payload, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      ['event-1', sessionId, agentId, '{"kind":"user_text","text":"hello"}', now],
+    );
+
+    await purgeAgentForDelete({ db, id: agentId });
+
+    expect(await db.select('SELECT id FROM messages WHERE agent_id = ?', [agentId])).toEqual([]);
+    expect(await db.select('SELECT id FROM turn_events WHERE agent_id = ?', [agentId])).toEqual([]);
+    const rows = await db.select<{
+      readonly deleted_at: number | null;
+      readonly output_summary: string | null;
+    }>('SELECT deleted_at, output_summary FROM agents WHERE id = ?', [agentId]);
+    expect(rows[0]?.deleted_at).toEqual(expect.any(Number));
+    expect(rows[0]?.output_summary).toBeNull();
+  });
+
+  it('purgeAgentForDelete keeps the plan the agent authored and its consumptions', async () => {
+    await seedAgent(agentId, 0);
+    const consumerId = 'agent-2' as AgentId;
+    await seedAgent(consumerId, 1);
+    const plan = await upsertPlan(db, {
+      id: 'plan-1' as PlanId,
+      sessionId,
+      agentId,
+      title: 'plan',
+      bodyMd: 'body',
+    });
+    await addPlanConsumption(db, {
+      id: 'consumption-1' as PlanConsumptionId,
+      planId: plan.id,
+      agentId: consumerId,
+    });
+
+    await purgeAgentForDelete({ db, id: agentId });
+
+    expect(await db.select('SELECT id, agent_id FROM session_plans')).toEqual([
+      { id: 'plan-1', agent_id: agentId },
+    ]);
+    const consumptions = await listConsumptionsForPlan(db, plan.id);
+    expect(consumptions.map((consumption) => consumption.id)).toEqual(['consumption-1']);
+  });
+
+  it('hides a tombstoned agent from the listings but keeps it reachable by id', async () => {
+    await seedAgent(agentId, 0);
+    const survivorId = 'agent-2' as AgentId;
+    await seedAgent(survivorId, 1);
+
+    await purgeAgentForDelete({ db, id: agentId });
+
+    const listed = await listAgentsForSession(db, sessionId);
+    expect(listed.map((agent) => agent.id)).toEqual([survivorId]);
+    const batched = await listAgentsForSessions(db, [sessionId]);
+    expect(batched.get(sessionId)?.map((agent) => agent.id)).toEqual([survivorId]);
+    expect((await getAgentById(db, agentId))?.id).toBe(agentId);
   });
 
   it('round-trips the provider session id and its owning provider', async () => {

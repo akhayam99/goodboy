@@ -25,6 +25,7 @@ const hoisted = vi.hoisted(() => ({
     waiting: [],
   })),
   execute: vi.fn(async () => undefined),
+  purgeAgentForDelete: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../features/chat/turn', () => ({
@@ -37,6 +38,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 vi.mock('@goodboy/db', () => ({
   updateSessionState: hoisted.updateSessionState,
   listResolveAttempts: hoisted.listResolveAttempts,
+  purgeAgentForDelete: hoisted.purgeAgentForDelete,
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: { execute: hoisted.execute } }));
 vi.mock('../../../features/worktree/worktree', () => ({
@@ -222,5 +224,19 @@ describe('deleteAgent', () => {
     await deleteAgent(set, get)(SID, DOOMED);
 
     expect(hoisted.abandonWorktreeWriter).not.toHaveBeenCalled();
+  });
+
+  it('purges the agent instead of deleting its row', async () => {
+    const { get, set } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([]);
+
+    await deleteAgent(set, get)(SID, DOOMED);
+
+    expect(hoisted.purgeAgentForDelete).toHaveBeenCalledWith({
+      db: expect.anything(),
+      id: DOOMED,
+    });
+    expect(hoisted.execute).not.toHaveBeenCalled();
   });
 });

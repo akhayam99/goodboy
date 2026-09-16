@@ -266,8 +266,8 @@ export const updateStepRouting = async ({
     `UPDATE steps SET routing_lock = ?, routing_decision = ?, task_profile = ?,
        provider_override = ?, model_override = ?, effort = ?
      WHERE id = ? AND NOT EXISTS (
-       SELECT 1 FROM agents
-       WHERE agents.step_id = steps.id AND status IN ('starting', 'running', 'completed')
+       SELECT 1 FROM live_agents
+       WHERE live_agents.step_id = steps.id AND status IN ('starting', 'running', 'completed')
      )`,
     [
       stringifyRoutingJson({

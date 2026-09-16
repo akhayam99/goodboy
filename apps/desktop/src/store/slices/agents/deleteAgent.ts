@@ -1,5 +1,5 @@
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
-import { updateSessionState } from '@goodboy/db';
+import { purgeAgentForDelete, updateSessionState } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn, deleteAttachment } from '../../../features/chat/turn';
 import { abandonWorktreeWriter } from '../../../features/worktree/worktree';
@@ -32,7 +32,7 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
       }
     }
 
-    await tauriDatabase.execute('DELETE FROM agents WHERE id = ?', [agentId]);
+    await purgeAgentForDelete({ db: tauriDatabase, id: agentId });
     const refreshed = await invokeAgentList(sessionId);
     let derived: ReturnType<typeof deriveSessionState> | null = null;
     dropPendingTurnEvents({ agentIds: [agentId] });

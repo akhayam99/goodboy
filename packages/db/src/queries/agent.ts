@@ -148,7 +148,7 @@ export const listAgentsForSession = async (
   sessionId: SessionId,
 ): Promise<ReadonlyArray<Agent>> => {
   const rows = await db.select<AgentRow>(
-    'SELECT * FROM agents WHERE session_id = ? ORDER BY ordinal ASC',
+    'SELECT * FROM live_agents WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
   );
   return rows.map((row) => toAgent({ row }));
@@ -164,7 +164,7 @@ export const listAgentsForSessions = async (
   }
   const placeholders = sessionIds.map(() => '?').join(', ');
   const rows = await db.select<AgentRow>(
-    `SELECT * FROM agents WHERE session_id IN (${placeholders}) AND deleted_at IS NULL ORDER BY session_id, ordinal ASC`,
+    `SELECT * FROM live_agents WHERE session_id IN (${placeholders}) ORDER BY session_id, ordinal ASC`,
     sessionIds,
   );
   for (const row of rows) {
@@ -242,6 +242,28 @@ export const softDeleteAgent = async (db: Database, id: AgentId): Promise<void> 
 
 export const restoreAgent = async (db: Database, id: AgentId): Promise<void> => {
   await db.execute('UPDATE agents SET deleted_at = NULL WHERE id = ?', [id]);
+};
+
+export const purgeAgentForDelete = async ({
+  db,
+  id,
+}: {
+  readonly db: Database;
+  readonly id: AgentId;
+}): Promise<void> => {
+  await db.exec('BEGIN');
+  try {
+    await db.execute('DELETE FROM messages WHERE agent_id = ?', [id]);
+    await db.execute('DELETE FROM turn_events WHERE agent_id = ?', [id]);
+    await db.execute('UPDATE agents SET deleted_at = ?, output_summary = NULL WHERE id = ?', [
+      Date.now(),
+      id,
+    ]);
+    await db.exec('COMMIT');
+  } catch (error) {
+    await db.exec('ROLLBACK');
+    throw error;
+  }
 };
 
 export type AgentConfigUpdate = {

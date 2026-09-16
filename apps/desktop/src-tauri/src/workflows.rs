@@ -1181,7 +1181,7 @@ pub async fn agent_list_for_session(
 ) -> Result<Vec<SessionRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let sql = format!(
-        "SELECT {cols} FROM agents WHERE session_id = ?1 ORDER BY ordinal ASC",
+        "SELECT {cols} FROM live_agents WHERE session_id = ?1 ORDER BY ordinal ASC",
         cols = AGENT_SESSION_COLS
     );
     let mut stmt = conn.prepare(&sql)?;
@@ -1292,7 +1292,7 @@ fn children_of_parent(
     parent_agent_id: &str,
 ) -> Result<Vec<SessionRow>, PhaseError> {
     let sql = format!(
-        "SELECT {cols} FROM agents WHERE parent_agent_id = ?1 ORDER BY ordinal ASC",
+        "SELECT {cols} FROM live_agents WHERE parent_agent_id = ?1 ORDER BY ordinal ASC",
         cols = AGENT_SESSION_COLS
     );
     let mut stmt = conn.prepare(&sql)?;
@@ -1387,7 +1387,7 @@ pub async fn workflow_node_routing_update(
         }
         "step" => {
             let blocked: bool = transaction.query_row(
-                "SELECT EXISTS(SELECT 1 FROM agents WHERE step_id = ?1 AND status IN ('starting', 'running', 'completed'))",
+                "SELECT EXISTS(SELECT 1 FROM live_agents WHERE step_id = ?1 AND status IN ('starting', 'running', 'completed'))",
                 rusqlite::params![input.id],
                 |row| row.get(0),
             )?;
@@ -1576,7 +1576,7 @@ pub async fn workspaces_with_unread(state: State<'_, Db>) -> Result<Vec<String>,
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT DISTINCT t.workspace_id
-         FROM agents a
+         FROM live_agents a
          JOIN sessions t ON a.session_id = t.id
          WHERE a.last_finished_at IS NOT NULL
            AND a.status != 'skipped'
@@ -1603,8 +1603,9 @@ mod tests {
                 kind TEXT, verbosity TEXT, effort TEXT, model_override TEXT, provider_override TEXT,
                 parent_agent_id TEXT, workflow_run_id TEXT, source_thread_id TEXT,
                 source_thread_ids TEXT, source_comment_url TEXT, source_kind TEXT, domains_json TEXT,
-                routing_lock TEXT, routing_decision TEXT, task_profile TEXT
-            )",
+                routing_lock TEXT, routing_decision TEXT, task_profile TEXT, deleted_at INTEGER
+            );
+            CREATE VIEW live_agents AS SELECT * FROM agents WHERE deleted_at IS NULL;",
         )
         .unwrap();
         conn
@@ -1932,5 +1933,54 @@ mod tests {
             vec!["c1", "c2"]
         );
         assert_eq!(child_count(&conn, "container"), 2);
+    }
+
+    #[test]
+    fn children_of_parent_skips_tombstoned_children() {
+        let mut conn = agents_table_conn();
+        insert_agent_batch(
+            &mut conn,
+            "container",
+            vec![child_input("c1", 0), child_input("c2", 1)],
+        )
+        .unwrap();
+        conn.execute("UPDATE agents SET deleted_at = 1 WHERE id = 'c1'", [])
+            .unwrap();
+
+        let stored = children_of_parent(&conn, "container").unwrap();
+
+        assert_eq!(
+            stored.iter().map(|row| row.id.as_str()).collect::<Vec<_>>(),
+            vec!["c2"]
+        );
+    }
+
+    #[test]
+    fn agent_insert_batch_refans_out_once_every_child_is_tombstoned() {
+        let mut conn = agents_table_conn();
+        insert_agent_batch(
+            &mut conn,
+            "container",
+            vec![child_input("c1", 0), child_input("c2", 1)],
+        )
+        .unwrap();
+        conn.execute(
+            "UPDATE agents SET deleted_at = 1 WHERE parent_agent_id = 'container'",
+            [],
+        )
+        .unwrap();
+
+        let outcome =
+            insert_agent_batch(&mut conn, "container", vec![child_input("c3", 2)]).unwrap();
+
+        assert!(outcome.inserted);
+        assert_eq!(
+            outcome
+                .agents
+                .iter()
+                .map(|row| row.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["c3"]
+        );
     }
 }
