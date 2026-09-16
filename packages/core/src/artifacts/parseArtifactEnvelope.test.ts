@@ -100,7 +100,7 @@ describe('parseArtifactEnvelope', () => {
     expect(result.message).toContain('does not match the contract');
   });
 
-  it('rejects a wireframe whose navigation item carries a non-boolean isActive', () => {
+  it('captures a wireframe whose presentation values sit outside the enums', () => {
     const document = wireframeDocument();
     const result = parseArtifactEnvelope(
       envelope(
@@ -115,10 +115,41 @@ describe('parseArtifactEnvelope', () => {
                 ...document.screens[0],
                 root: {
                   id: 'home-root',
-                  kind: 'navigation',
-                  variant: 'top',
-                  items: [{ id: 'nav-home', label: 'Home', isActive: 'yes' }],
+                  kind: 'stack',
+                  direction: 'column',
+                  gap: 'xl',
+                  children: [
+                    {
+                      id: 'home-nav',
+                      kind: 'navigation',
+                      variant: 'top',
+                      items: [{ id: 'nav-home', label: 'Home', isActive: 'yes' }],
+                    },
+                  ],
                 },
+              },
+            ],
+          },
+        }),
+      ),
+    );
+    expect(result.status).toBe('captured');
+  });
+
+  it('rejects a wireframe whose node kind does not exist', () => {
+    const document = wireframeDocument();
+    const result = parseArtifactEnvelope(
+      envelope(
+        'v=1 kind=wireframe',
+        JSON.stringify({
+          title: 'Onboarding',
+          format: 'json',
+          content: {
+            ...document,
+            screens: [
+              {
+                ...document.screens[0],
+                root: { id: 'home-root', kind: 'iframe' },
               },
             ],
           },
@@ -127,7 +158,7 @@ describe('parseArtifactEnvelope', () => {
     );
     expect(result.status).toBe('error');
     if (result.status !== 'error') return;
-    expect(result.message).toContain('isActive');
+    expect(result.message).toContain('does not match the contract');
   });
 
   it('accepts quoted attribute values', () => {

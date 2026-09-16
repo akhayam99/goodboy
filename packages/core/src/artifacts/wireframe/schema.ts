@@ -233,8 +233,20 @@ export type WireframeIssue = Readonly<{
   message: string;
 }>;
 
+export const MAX_WIREFRAME_ADJUSTMENTS = 24;
+
+export type WireframeAdjustment = Readonly<{
+  path: string;
+  message: string;
+  count: number;
+}>;
+
 export type WireframeValidationResult =
-  | Readonly<{ status: 'valid'; document: WireframeDocument }>
+  | Readonly<{
+      status: 'valid';
+      document: WireframeDocument;
+      adjustments: ReadonlyArray<WireframeAdjustment>;
+    }>
   | Readonly<{ status: 'invalid'; issues: ReadonlyArray<WireframeIssue> }>;
 
 export const GENERIC_THEME_NAME = 'generic';

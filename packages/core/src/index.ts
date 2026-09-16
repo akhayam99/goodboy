@@ -146,6 +146,7 @@ export {
   type WireframeImageRatio,
   type WireframeInputNode,
   type WireframeInputType,
+  type WireframeAdjustment,
   type WireframeIssue,
   type WireframeJustification,
   type WireframeListItem,
