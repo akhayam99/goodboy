@@ -22,6 +22,20 @@ describe('buildReportOutline', () => {
     expect(new Set(outline.map((entry) => entry.id)).size).toBe(2);
   });
 
+  it('strips inline markup from the label and from the id it derives', () => {
+    const outline = buildReportOutline({
+      markdown: [
+        '## **Checks**',
+        'a',
+        '## [Risk](https://example.com/risk)',
+        'b',
+        '## `deploy`',
+      ].join('\n'),
+    });
+    expect(outline.map((entry) => entry.title)).toEqual(['Checks', 'Risk', 'deploy']);
+    expect(outline.map((entry) => entry.id)).toEqual(['checks-0', 'risk-2', 'deploy-4']);
+  });
+
   it('returns nothing for a report without headings', () => {
     expect(buildReportOutline({ markdown: 'just a paragraph' })).toEqual([]);
   });

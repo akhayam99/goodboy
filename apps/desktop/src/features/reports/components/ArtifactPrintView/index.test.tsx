@@ -110,6 +110,41 @@ describe('ArtifactPrintView', () => {
     expect(contents.textContent).toContain('Risk');
   });
 
+  it('lists a marked-up heading in the contents exactly as the heading renders', async () => {
+    listSpy.mockResolvedValueOnce([
+      {
+        ...report,
+        sourceText: [
+          '## **Checks**',
+          '',
+          'text',
+          '',
+          '## [Risk](https://example.com/risk)',
+          '',
+          'text',
+          '',
+          '## `deploy` notes',
+          '',
+          'text',
+        ].join('\n'),
+      },
+    ]);
+    render(<ArtifactPrintView request={request} />);
+    const contents = await waitFor(() => screen.getByRole('navigation', { name: 'Contents' }));
+    const headings = screen.getAllByRole('heading', { level: 2 });
+    expect(headings.map((heading) => heading.textContent)).toEqual([
+      'Checks',
+      'Risk',
+      'deploy notes',
+    ]);
+    expect(contents.textContent).toContain('Checks');
+    expect(contents.textContent).toContain('Risk');
+    expect(contents.textContent).toContain('deploy notes');
+    expect(contents.textContent).not.toContain('**');
+    expect(contents.textContent).not.toContain('](');
+    expect(contents.textContent).not.toContain('`');
+  });
+
   it('leaves a short report without a contents block', async () => {
     listSpy.mockResolvedValueOnce([
       { ...report, sourceText: '## Only section\n\ntext\n\n## Second\n\ntext' },

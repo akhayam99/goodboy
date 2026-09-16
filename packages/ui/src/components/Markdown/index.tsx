@@ -1,96 +1,11 @@
 import { Fragment, memo, useMemo, type ReactNode } from 'react';
-import { Activity, CheckCheck, FileEdit, HelpCircle, Target, type LucideIcon } from 'lucide-react';
 import { cn } from '../../cn';
 import { RemoteImage } from '../RemoteImage';
 import { LocalImage } from '../LocalImage';
+import { ctxStyleForTag, ctxTagLabel } from './ctxTagStyle';
+import { parseInline, type InlineNode } from './parseInline';
 import { parseMarkdown, type Block, type CellAlign } from './parseMarkdown';
 import { tokenizeCode, type CodeToken, type CodeTokenKind } from './tokenizeCode';
-
-type CtxTagStyle = {
-  readonly icon: LucideIcon;
-  readonly label: string;
-  readonly iconClass: string;
-  readonly chipClass: string;
-  readonly calloutClass: string;
-  readonly calloutLabelClass: string;
-};
-
-const CTX_DEFAULT: CtxTagStyle = {
-  icon: Activity,
-  label: '',
-  iconClass: 'text-muted-foreground',
-  chipClass: 'bg-muted text-muted-foreground',
-  calloutClass: 'border-border-soft bg-muted/40',
-  calloutLabelClass: 'text-muted-foreground',
-};
-
-const CTX_TAG_STYLES: ReadonlyArray<readonly [RegExp, CtxTagStyle]> = [
-  [
-    /^(ctx-?)?goal$/i,
-    {
-      icon: Target,
-      label: 'goal',
-      iconClass: 'text-primary',
-      chipClass: 'bg-primary/10 text-primary',
-      calloutClass: 'border-primary/20 bg-primary/5',
-      calloutLabelClass: 'text-primary',
-    },
-  ],
-  [
-    /^(ctx-?)?(decision|decisions)$/i,
-    {
-      icon: CheckCheck,
-      label: 'decision',
-      iconClass: 'text-success',
-      chipClass: 'bg-success/10 text-success',
-      calloutClass: 'border-success/20 bg-success/5',
-      calloutLabelClass: 'text-success',
-    },
-  ],
-  [
-    /^(ctx-?)?(question|questions|open-?questions)$/i,
-    {
-      icon: HelpCircle,
-      label: 'question',
-      iconClass: 'text-warning',
-      chipClass: 'bg-warning/10 text-warning',
-      calloutClass: 'border-warning/25 bg-warning/5',
-      calloutLabelClass: 'text-warning',
-    },
-  ],
-  [
-    /^(ctx-?)?(output|last-?output|last-?output-?summary|summary)$/i,
-    {
-      icon: Activity,
-      label: 'output',
-      iconClass: 'text-info',
-      chipClass: 'bg-info/10 text-info',
-      calloutClass: 'border-info/20 bg-info/5',
-      calloutLabelClass: 'text-info',
-    },
-  ],
-  [
-    /^(ctx-?)?(files?|files-?touched)$/i,
-    {
-      icon: FileEdit,
-      label: 'files',
-      iconClass: 'text-info',
-      chipClass: 'bg-info/10 text-info',
-      calloutClass: 'border-info/20 bg-info/5',
-      calloutLabelClass: 'text-info',
-    },
-  ],
-];
-
-function ctxStyleForTag(tag: string): CtxTagStyle {
-  const stripped = tag.replace(/^ctx-?/i, '');
-  for (const [re, style] of CTX_TAG_STYLES) {
-    if (re.test(tag) || re.test(stripped)) {
-      return style;
-    }
-  }
-  return { ...CTX_DEFAULT, label: stripped || tag };
-}
 
 type MarkdownVariant = 'document' | 'preview';
 
@@ -183,173 +98,77 @@ const renderImage = ({ alt, url, key, variant }: ImageParams): ReactNode => {
   return <RemoteImage key={key} url={url} alt={alt} />;
 };
 
-function renderInline(input: string, keyPrefix: string, variant: MarkdownVariant): ReactNode {
-  const out: ReactNode[] = [];
-  let buf = '';
-  let i = 0;
-  let keyN = 0;
-  const flush = () => {
-    if (buf.length > 0) {
-      out.push(buf);
-      buf = '';
+type InlineRenderParams = {
+  readonly nodes: ReadonlyArray<InlineNode>;
+  readonly keyPrefix: string;
+  readonly variant: MarkdownVariant;
+};
+
+const renderInlineNodes = ({ nodes, keyPrefix, variant }: InlineRenderParams): ReactNode => {
+  const out: ReactNode[] = nodes.map((node, index) => {
+    const key = `${keyPrefix}-${index}`;
+    if (node.kind === 'text') {
+      return node.value;
     }
-  };
-  const nextKey = () => `${keyPrefix}-${keyN++}`;
-
-  while (i < input.length) {
-    const ch = input[i];
-
-    if (ch === '<' && input[i + 1] === '<') {
-      const close = input.indexOf('>>', i + 2);
-      if (close > i) {
-        const inner = input.slice(i + 2, close);
-        if (/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(inner)) {
-          flush();
-          const style = ctxStyleForTag(inner);
-          const Icon = style.icon;
-          const label = style.label || inner.replace(/^ctx-?/i, '') || inner;
-          out.push(
-            <span key={nextKey()} className={cn(CHIP_CLASS, style.chipClass)}>
-              <Icon size={10} aria-hidden />
-              {label}
-            </span>,
-          );
-          i = close + 2;
-          continue;
-        }
-      }
+    if (node.kind === 'code') {
+      return (
+        <code key={key} className={INLINE_CODE_CLASS[variant]}>
+          {node.value}
+        </code>
+      );
     }
-
-    if (ch === '`') {
-      const end = input.indexOf('`', i + 1);
-      if (end > i) {
-        const inner = input.slice(i + 1, end);
-        const ctxMatch = inner.match(/^<<([a-zA-Z][a-zA-Z0-9_-]*)>>$/);
-        if (ctxMatch) {
-          flush();
-          const tag = ctxMatch[1]!;
-          const style = ctxStyleForTag(tag);
-          const Icon = style.icon;
-          const label = style.label || tag.replace(/^ctx-?/i, '') || tag;
-          out.push(
-            <span key={nextKey()} className={cn(CHIP_CLASS, style.chipClass)}>
-              <Icon size={10} aria-hidden />
-              {label}
-            </span>,
-          );
-          i = end + 1;
-          continue;
-        }
-        flush();
-        out.push(
-          <code key={nextKey()} className={INLINE_CODE_CLASS[variant]}>
-            {inner}
-          </code>,
-        );
-        i = end + 1;
-        continue;
-      }
+    if (node.kind === 'chip') {
+      const style = ctxStyleForTag({ tag: node.tag });
+      const Icon = style.icon;
+      return (
+        <span key={key} className={cn(CHIP_CLASS, style.chipClass)}>
+          <Icon size={10} aria-hidden />
+          {ctxTagLabel({ tag: node.tag })}
+        </span>
+      );
     }
-
-    if ((ch === '*' || ch === '_') && input[i + 1] === ch) {
-      const delim = ch + ch;
-      const end = input.indexOf(delim, i + 2);
-      if (end > i) {
-        flush();
-        out.push(
-          <strong key={nextKey()} className="font-semibold">
-            {renderInline(input.slice(i + 2, end), `${keyPrefix}-b${keyN}`, variant)}
-          </strong>,
-        );
-        i = end + 2;
-        continue;
-      }
+    if (node.kind === 'strong') {
+      return (
+        <strong key={key} className="font-semibold">
+          {renderInlineNodes({ nodes: node.children, keyPrefix: `${key}-b`, variant })}
+        </strong>
+      );
     }
-
-    if (ch === '~' && input[i + 1] === '~') {
-      const end = input.indexOf('~~', i + 2);
-      if (end > i) {
-        flush();
-        out.push(
-          <del key={nextKey()} className="text-muted-foreground">
-            {renderInline(input.slice(i + 2, end), `${keyPrefix}-s${keyN}`, variant)}
-          </del>,
-        );
-        i = end + 2;
-        continue;
-      }
+    if (node.kind === 'em') {
+      return (
+        <em key={key}>
+          {renderInlineNodes({ nodes: node.children, keyPrefix: `${key}-i`, variant })}
+        </em>
+      );
     }
-
-    if ((ch === '*' || ch === '_') && input[i + 1] !== ch) {
-      const prev = input[i - 1];
-      const isWordBoundary = !prev || /\s|[(\[{,.!?]/.test(prev);
-      if (isWordBoundary) {
-        const end = input.indexOf(ch, i + 1);
-        if (end > i && input[end - 1] !== ch) {
-          flush();
-          out.push(
-            <em key={nextKey()}>
-              {renderInline(input.slice(i + 1, end), `${keyPrefix}-i${keyN}`, variant)}
-            </em>,
-          );
-          i = end + 1;
-          continue;
-        }
-      }
+    if (node.kind === 'del') {
+      return (
+        <del key={key} className="text-muted-foreground">
+          {renderInlineNodes({ nodes: node.children, keyPrefix: `${key}-s`, variant })}
+        </del>
+      );
     }
-
-    if (ch === '!' && input[i + 1] === '[') {
-      const closeBracket = input.indexOf(']', i + 2);
-      if (closeBracket > i && input[closeBracket + 1] === '(') {
-        const closeParen = input.indexOf(')', closeBracket + 2);
-        if (closeParen > closeBracket) {
-          const alt = input.slice(i + 2, closeBracket);
-          const url = input.slice(closeBracket + 2, closeParen).trim();
-          flush();
-          out.push(renderImage({ alt, url, key: nextKey(), variant }));
-          i = closeParen + 1;
-          continue;
-        }
-      }
+    if (node.kind === 'image') {
+      return renderImage({ alt: node.alt, url: node.url, key, variant });
     }
+    return (
+      <a
+        key={key}
+        href={node.url}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="text-primary underline-offset-2 hover:underline"
+      >
+        {renderInlineNodes({ nodes: node.children, keyPrefix: `${key}-l`, variant })}
+      </a>
+    );
+  });
 
-    if (ch === '[') {
-      const closeBracket = input.indexOf(']', i + 1);
-      if (closeBracket > i && input[closeBracket + 1] === '(') {
-        const closeParen = input.indexOf(')', closeBracket + 2);
-        if (closeParen > closeBracket) {
-          const label = input.slice(i + 1, closeBracket);
-          const url = input.slice(closeBracket + 2, closeParen);
-          const safe = /^(https?:|mailto:)/i.test(url);
-          flush();
-          if (safe) {
-            out.push(
-              <a
-                key={nextKey()}
-                href={url}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="text-primary underline-offset-2 hover:underline"
-              >
-                {renderInline(label, `${keyPrefix}-l${keyN}`, variant)}
-              </a>,
-            );
-          } else {
-            out.push(label);
-          }
-          i = closeParen + 1;
-          continue;
-        }
-      }
-    }
-
-    buf += ch;
-    i++;
-  }
-
-  flush();
   return out.length === 1 ? out[0] : <>{out}</>;
-}
+};
+
+const renderInline = (input: string, keyPrefix: string, variant: MarkdownVariant): ReactNode =>
+  renderInlineNodes({ nodes: parseInline({ text: input }), keyPrefix, variant });
 
 const HEADING_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
   1: 'text-lg font-semibold leading-snug text-foreground',
@@ -524,9 +343,9 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
       );
     }
     case 'callout': {
-      const style = ctxStyleForTag(block.tag);
+      const style = ctxStyleForTag({ tag: block.tag });
       const Icon = style.icon;
-      const label = style.label || block.tag.replace(/^ctx-?/i, '') || block.tag;
+      const label = ctxTagLabel({ tag: block.tag });
       if (variant === 'preview') {
         return (
           <div key={key} className="flex min-w-0 items-center gap-1.5 text-sm">

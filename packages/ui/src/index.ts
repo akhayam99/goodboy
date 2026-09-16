@@ -104,6 +104,7 @@ export { KbdPill } from './components/KbdPill';
 export type { KbdPillProps } from './components/KbdPill';
 export { Markdown } from './components/Markdown';
 export { parseMarkdown } from './components/Markdown/parseMarkdown';
+export { inlineMarkdownText } from './components/Markdown/inlineMarkdownText';
 export { MetaRow } from './components/MetaRow';
 export type { MetaRowProps } from './components/MetaRow';
 export { AnchoredPopover } from './components/AnchoredPopover';
