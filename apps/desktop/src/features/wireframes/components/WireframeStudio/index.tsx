@@ -56,6 +56,7 @@ export const WireframeStudio = ({ sessionId, artifact }: Props) => {
             ? (deriveWireframeTarget({ screens: parsed.document.screens }) ?? 'both')
             : 'both',
         workflowRunId: artifact.workflowRunId,
+        attachments: [],
         ...(next === fidelity && kickoff !== null ? { evidence: kickoff } : {}),
       });
       window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));

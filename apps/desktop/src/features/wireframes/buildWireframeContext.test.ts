@@ -118,6 +118,7 @@ const contextFor = ({
   const session = sessionWith({ goal });
   return buildWireframeContext({
     brief,
+    attachments: [],
     fidelity: designEvidence.source === 'none' ? 'low' : 'high',
     target: 'both',
     session,
@@ -165,6 +166,7 @@ describe('buildWireframeContext', () => {
   it('reports its inventory with the plans it kept session wide', () => {
     const context = buildWireframeContext({
       brief: null,
+      attachments: [],
       fidelity: 'low',
       target: 'both',
       session: sessionWith({ goal: 'ship the wireframe role' }),
@@ -213,6 +215,7 @@ describe('buildWireframeContext', () => {
   it('records the session as a source', () => {
     const context = buildWireframeContext({
       brief: null,
+      attachments: [],
       fidelity: 'low',
       target: 'both',
       session: sessionWith({ goal: 'ship the wireframe role' }),
@@ -233,6 +236,7 @@ describe('buildWireframeContext', () => {
     const forTarget = (target: 'mobile' | 'desktop' | 'both') =>
       buildWireframeContext({
         brief: null,
+        attachments: [],
         fidelity: 'low',
         target,
         session: sessionWith({ goal: 'ship the wireframe role' }),
@@ -345,6 +349,7 @@ describe('buildWireframeContext high fidelity theme', () => {
     const session = sessionWith({ goal: 'ship the wireframe role' });
     return buildWireframeContext({
       brief: null,
+      attachments: [],
       fidelity: 'high',
       target: 'both',
       session,

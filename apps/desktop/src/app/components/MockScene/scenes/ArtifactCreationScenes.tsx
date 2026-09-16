@@ -41,6 +41,7 @@ const draftFor = ({
 }): ArtifactCreationDraft => {
   const base = {
     brief,
+    attachments: [],
     basedOn: { kind: 'workflow-run', workflowRunId: RUN_ID },
     routing: null,
     updatedAt: AT,

@@ -152,6 +152,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
             session,
             workflowRunId: agent.workflowRunId ?? null,
             brief: promptPrefix,
+            attachments: [],
             executingAgentId: agentId,
             ...(effectiveKind === 'report'
               ? { kind: 'report', reportType: 'session-summary' }

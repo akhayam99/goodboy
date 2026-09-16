@@ -151,6 +151,7 @@ describe('spawnReportAgent', () => {
   it('spawns without taking focus when asked', async () => {
     await spawnReportAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       reportType: 'session-summary',
       focus: 'none',
     });
@@ -163,7 +164,11 @@ describe('spawnReportAgent', () => {
   });
 
   it('spawns a standalone report agent with no step, run or parent linkage', async () => {
-    await spawnReportAgent(getWith())({ sessionId: SESSION_ID, reportType: 'session-summary' });
+    await spawnReportAgent(getWith())({
+      sessionId: SESSION_ID,
+      attachments: [],
+      reportType: 'session-summary',
+    });
     const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
     expect(spawnAgentSpy.mock.calls[0]?.[0]).toBe(SESSION_ID);
     expect(args['kindOverride']).toBe('report');
@@ -175,6 +180,7 @@ describe('spawnReportAgent', () => {
   it('carries the evidence pack as the kickoff prompt', async () => {
     await spawnReportAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       reportType: 'change-summary',
       workflowRunId: RUN_ID,
     });
@@ -189,6 +195,7 @@ describe('spawnReportAgent', () => {
   it('carries the goal the user wrote into the kickoff pack, not the clamped title', async () => {
     await spawnReportAgent(withGoalSlot())({
       sessionId: SESSION_ID,
+      attachments: [],
       reportType: 'session-summary',
     });
     const prompt = String(spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt']);
@@ -197,14 +204,22 @@ describe('spawnReportAgent', () => {
   });
 
   it('sends the title alone when no goal slot says more', async () => {
-    await spawnReportAgent(getWith())({ sessionId: SESSION_ID, reportType: 'session-summary' });
+    await spawnReportAgent(getWith())({
+      sessionId: SESSION_ID,
+      attachments: [],
+      reportType: 'session-summary',
+    });
     const prompt = String(spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt']);
     expect(prompt).not.toContain('## goal');
   });
 
   it('still spawns when the diff collection fails', async () => {
     changedFilesSpy.mockRejectedValueOnce(new Error('not a worktree'));
-    await spawnReportAgent(getWith())({ sessionId: SESSION_ID, reportType: 'session-summary' });
+    await spawnReportAgent(getWith())({
+      sessionId: SESSION_ID,
+      attachments: [],
+      reportType: 'session-summary',
+    });
     const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
     expect(String(args['initialPrompt'])).toContain('no mount diff was available');
   });
@@ -212,6 +227,7 @@ describe('spawnReportAgent', () => {
   it('adds a redacted brief while retaining session output and collected diff evidence', async () => {
     await spawnReportAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       reportType: 'change-summary',
       brief: 'explain the Harborline rollout with api_key=harborline-test-value',
     });
@@ -228,6 +244,7 @@ describe('spawnReportAgent', () => {
   it('reuses a supplied evidence pack for regeneration without collecting a new diff', async () => {
     await spawnReportAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       reportType: 'change-summary',
       evidence: 'the original kickoff',
     });
@@ -239,6 +256,7 @@ describe('spawnReportAgent', () => {
   it('records what the report was built from, keeping the source run out of the executing run', async () => {
     await spawnReportAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       reportType: 'change-summary',
       workflowRunId: RUN_ID,
       brief: 'explain the Harborline rollout with api_key=harborline-test-value',
@@ -259,7 +277,11 @@ describe('spawnReportAgent', () => {
   });
 
   it('names every session agent the pack carried when no run scopes it', async () => {
-    await spawnReportAgent(getWith())({ sessionId: SESSION_ID, reportType: 'session-summary' });
+    await spawnReportAgent(getWith())({
+      sessionId: SESSION_ID,
+      attachments: [],
+      reportType: 'session-summary',
+    });
     const recorded = recordProvenanceSpy.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(recorded['evidence']).toEqual([
       { kind: 'session', id: SESSION_ID, label: 'ship the report role' },
@@ -272,6 +294,7 @@ describe('spawnReportAgent', () => {
     recordProvenanceSpy.mockRejectedValueOnce(new Error('database is locked'));
     const agentId = await spawnReportAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       reportType: 'session-summary',
     });
     expect(agentId).toBe(AGENT_ID);
@@ -281,6 +304,7 @@ describe('spawnReportAgent', () => {
   it('collects fresh evidence and provenance when the supplied pack is whitespace', async () => {
     await spawnReportAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       reportType: 'session-summary',
       evidence: ' \n ',
     });
@@ -298,6 +322,7 @@ describe('spawnReportAgent', () => {
     await expect(
       spawnReportAgent(getWith({ sessions: [] }))({
         sessionId: SESSION_ID,
+        attachments: [],
         reportType: 'session-summary',
       }),
     ).rejects.toThrow('session not found');

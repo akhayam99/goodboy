@@ -26,11 +26,13 @@ import { resolveArtifactCtaState } from '../../artifactCtaState';
 import { artifactCreationGate } from '../../artifactCreationGate';
 import { ARTIFACT_CREATION_ADAPTERS } from '../../artifactCreationAdapters';
 import type { GeneratedArtifactKind } from '../../artifactCollection';
+import { ArtifactAttachmentsField } from './ArtifactAttachmentsField';
 import { ArtifactBasedOnField, type ArtifactRunOption } from './ArtifactBasedOnField';
 import { ArtifactBriefField } from './ArtifactBriefField';
 import { ArtifactChoiceRows } from './ArtifactChoiceRows';
 import { ArtifactContextDisclosure } from './ArtifactContextDisclosure';
 import { ArtifactCreationFooter } from './ArtifactCreationFooter';
+import { useArtifactAttachments } from './useArtifactAttachments';
 import { useArtifactContextPreview } from './useArtifactContextPreview';
 import { useArtifactCreationDraft } from './useArtifactCreationDraft';
 
@@ -72,7 +74,8 @@ export const ArtifactCreationPane = ({
 }: Props) => {
   const adapter = ARTIFACT_CREATION_ADAPTERS[kind];
   const handle = useArtifactCreationDraft({ sessionId, kind });
-  const { draft, brief, choice, secondChoice, basedOn, routing, isEmpty } = handle;
+  const { draft, brief, attachments, choice, secondChoice, basedOn, routing, isEmpty } = handle;
+  const files = useArtifactAttachments({ sessionId, onChange: handle.setAttachments });
   const [isStarting, setIsStarting] = useState(false);
   const [isDiscardArmed, setIsDiscardArmed] = useState(false);
   const [isContextOpen, setIsContextOpen] = useState(false);
@@ -171,6 +174,7 @@ export const ArtifactCreationPane = ({
     basedOn,
     choice,
     secondChoice,
+    attachments,
   });
   const inventory = useMemo(
     () => replaceInventoryRow({ rows: preview.inventory, row: briefInventoryRow({ brief }) }),
@@ -256,6 +260,16 @@ export const ArtifactCreationPane = ({
               onChange={handle.setBrief}
               onSubmit={generate}
             />
+            <ArtifactAttachmentsField
+              attachments={attachments}
+              worktree={files.worktree}
+              isDragging={files.isDragging}
+              note={files.note}
+              composerRef={files.composerRef}
+              fileInputRef={files.fileInputRef}
+              onFileInputChange={files.onFileInputChange}
+              onRemove={files.remove}
+            />
             <section className="flex min-w-0 flex-col gap-2">
               <SectionHeader label={adapter.choice.label} />
               <ArtifactChoiceRows
@@ -309,6 +323,7 @@ export const ArtifactCreationPane = ({
           onArmDiscard={() => setIsDiscardArmed(true)}
           onDisarmDiscard={() => setIsDiscardArmed(false)}
           onDiscard={() => {
+            files.discardAll();
             clearArtifactDraft({ sessionId, kind });
             onClose();
           }}

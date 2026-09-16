@@ -14,6 +14,7 @@ const draft = (overrides: Partial<ArtifactWireframeDraft> = {}): ArtifactWirefra
   fidelity: 'low',
   target: 'both',
   brief: '',
+  attachments: [],
   basedOn: { kind: 'session' },
   routing: null,
   updatedAt: NOW,
@@ -56,6 +57,7 @@ describe('wireframeCreationAdapter', () => {
       workflowRunId: RUN_ID,
       routing: null,
       brief: 'the settlement review flow',
+      attachments: [],
       focus: 'none',
     });
     expect(spies.spawnReportAgent).not.toHaveBeenCalled();

@@ -126,6 +126,7 @@ const goalOf = ({ value }: { readonly value: string }) =>
 
 const baseParams = {
   reportType: 'session-summary',
+  attachments: [],
   session,
   goal: sessionGoalText({ slots: [], session }),
   agents: [agent({})],

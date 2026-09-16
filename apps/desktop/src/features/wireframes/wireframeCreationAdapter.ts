@@ -94,6 +94,7 @@ export const wireframeCreationAdapter: ArtifactCreationAdapter = {
       workflowRunId: artifactSpawnScope({ draft }),
       routing: draft.routing,
       brief: artifactSpawnBrief({ draft }),
+      attachments: draft.attachments,
       focus: 'none',
     }),
 };

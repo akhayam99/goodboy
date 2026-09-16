@@ -158,6 +158,7 @@ describe('ReportStudio', () => {
         sessionId: SESSION_ID,
         reportType: 'session-summary',
         workflowRunId: null,
+        attachments: [],
         evidence: 'the original pack',
       });
     });

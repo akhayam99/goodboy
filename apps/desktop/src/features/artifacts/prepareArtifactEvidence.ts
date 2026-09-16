@@ -10,6 +10,7 @@ import { collectWireframeDesignProfile } from '../wireframes/collectWireframeDes
 import { describeDesignProfile } from '../wireframes/describeDesignProfile';
 import type { WireframeFidelity } from '../wireframes/wireframeFidelity';
 import type { WireframeTarget } from '../wireframes/wireframeTarget';
+import type { ArtifactAttachment } from './artifactAttachments';
 import { artifactEvidenceAgents } from './artifactEvidenceAgents';
 import { artifactEvidenceInventory, type RecordArtifactProvenanceArgs } from './artifactProvenance';
 import { sessionGoalText } from './sessionGoalText';
@@ -19,6 +20,7 @@ type Params = Readonly<{
   session: Session;
   workflowRunId: WorkflowRunId | null;
   brief: string | null;
+  attachments: ReadonlyArray<ArtifactAttachment>;
   executingAgentId: AgentId | null;
 }> &
   (
@@ -36,6 +38,7 @@ export const prepareArtifactEvidence = async ({
   session,
   workflowRunId,
   brief,
+  attachments,
   executingAgentId,
   ...choice
 }: Params): Promise<PreparedEvidence> => {
@@ -54,6 +57,7 @@ export const prepareArtifactEvidence = async ({
     const context = buildReportContext({
       reportType: choice.reportType,
       brief,
+      attachments,
       session,
       goal,
       agents,
@@ -93,6 +97,7 @@ export const prepareArtifactEvidence = async ({
     fidelity: choice.fidelity,
     target: choice.target,
     brief,
+    attachments,
     session,
     goal,
     agents: workflowRunId === null ? agents : runsForWorkflowRun(agents, workflowRunId),

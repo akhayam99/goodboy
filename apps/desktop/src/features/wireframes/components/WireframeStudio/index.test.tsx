@@ -282,6 +282,7 @@ describe('WireframeStudio', () => {
         fidelity: 'high',
         target: 'both',
         workflowRunId: null,
+        attachments: [],
       });
     });
   });

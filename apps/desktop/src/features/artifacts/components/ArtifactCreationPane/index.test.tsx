@@ -3,51 +3,64 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-const { state, onClose, onStarted, slotsBySession, slotsLoadBySession, ensureSlotsSpy } =
-  vi.hoisted(() => {
-    const slotsBySession: Record<string, ReadonlyArray<Record<string, unknown>>> = {};
-    const slotsLoadBySession: Record<string, string | null> = {};
-    const ensureSlotsSpy = vi.fn(
-      async (sessionId: string): Promise<ReadonlyArray<Record<string, unknown>>> =>
-        slotsBySession[sessionId] ?? [],
-    );
-    return {
-      slotsBySession,
-      slotsLoadBySession,
-      ensureSlotsSpy,
-      onClose: vi.fn(),
-      onStarted: vi.fn(),
-      state: {
-        ensureSessionSlots: ensureSlotsSpy,
-        artifactDrafts: {} as Record<string, Record<string, unknown>>,
-        sessions: [] as ReadonlyArray<Record<string, unknown>>,
-        sessionPhaseRuns: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
-        sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
-        sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
-        scriptRuns: {} as Record<string, Record<string, unknown>>,
-        transcripts: {} as Record<string, ReadonlyArray<unknown>>,
-        summarizerStatus: {} as Record<string, { readonly status: string }>,
-        agentTurnState: {} as Record<string, { readonly kind: string }>,
-        providers: [{ id: 'anthropic', connection: 'connected' }] as ReadonlyArray<
-          Record<string, unknown>
-        >,
-        providerCooldowns: {},
-        budgetAlerts: [] as ReadonlyArray<unknown>,
-        workspaceOverrides: {},
-        sessionMounts: {} as Record<string, ReadonlyArray<unknown>>,
-        sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
-        sessionActiveMount: {},
-        sessionActiveProject: {},
-        phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
-        sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
-        setArtifactDraft: vi.fn(),
-        clearArtifactDraft: vi.fn(),
-        setArtifactFilter: vi.fn(),
-        spawnReportAgent: vi.fn(async () => 'agent-report'),
-        spawnWireframeAgent: vi.fn(async () => 'agent-wireframe'),
-      },
-    };
-  });
+const {
+  state,
+  onClose,
+  onStarted,
+  slotsBySession,
+  slotsLoadBySession,
+  ensureSlotsSpy,
+  writeAttachmentSpy,
+  readAttachmentSpy,
+  deleteAttachmentSpy,
+} = vi.hoisted(() => {
+  const slotsBySession: Record<string, ReadonlyArray<Record<string, unknown>>> = {};
+  const slotsLoadBySession: Record<string, string | null> = {};
+  const ensureSlotsSpy = vi.fn(
+    async (sessionId: string): Promise<ReadonlyArray<Record<string, unknown>>> =>
+      slotsBySession[sessionId] ?? [],
+  );
+  return {
+    slotsBySession,
+    slotsLoadBySession,
+    ensureSlotsSpy,
+    writeAttachmentSpy: vi.fn(async () => '.goodboy/attachments/att-1-inbox.png'),
+    readAttachmentSpy: vi.fn(async () => 'data:image/png;base64,aGk='),
+    deleteAttachmentSpy: vi.fn(async () => undefined),
+    onClose: vi.fn(),
+    onStarted: vi.fn(),
+    state: {
+      ensureSessionSlots: ensureSlotsSpy,
+      artifactDrafts: {} as Record<string, Record<string, unknown>>,
+      sessions: [] as ReadonlyArray<Record<string, unknown>>,
+      sessionPhaseRuns: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
+      sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
+      scriptRuns: {} as Record<string, Record<string, unknown>>,
+      transcripts: {} as Record<string, ReadonlyArray<unknown>>,
+      summarizerStatus: {} as Record<string, { readonly status: string }>,
+      agentTurnState: {} as Record<string, { readonly kind: string }>,
+      providers: [{ id: 'anthropic', connection: 'connected' }] as ReadonlyArray<
+        Record<string, unknown>
+      >,
+      providerCooldowns: {},
+      budgetAlerts: [] as ReadonlyArray<unknown>,
+      workspaceOverrides: {},
+      sessionMounts: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionActiveMount: {},
+      sessionActiveProject: {},
+      phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
+      setArtifactDraft: vi.fn(),
+      clearArtifactDraft: vi.fn(),
+      setArtifactFilter: vi.fn(),
+      spawnReportAgent: vi.fn(async () => 'agent-report'),
+      spawnWireframeAgent: vi.fn(async () => 'agent-wireframe'),
+    },
+  };
+});
 
 vi.mock('../../../../store', () => {
   const useAppStore = <T,>(selector: (s: typeof state) => T) => selector(state);
@@ -60,6 +73,18 @@ vi.mock('../../../../store', () => {
   };
 });
 
+vi.mock('@tauri-apps/api/webview', () => ({
+  getCurrentWebview: () => ({
+    onDragDropEvent: async () => () => undefined,
+  }),
+}));
+
+vi.mock('../../../chat/turn', () => ({
+  writeAttachment: writeAttachmentSpy,
+  readAttachment: readAttachmentSpy,
+  deleteAttachment: deleteAttachmentSpy,
+}));
+
 vi.mock('../../../../shared/components/RoutingPicker', () => ({
   RoutingPicker: ({ model }: { readonly model: string }) => (
     <div data-testid="routing-picker">{model}</div>
@@ -69,6 +94,7 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
 import { ArtifactCreationPane } from './index';
 
 const SESSION_ID = JSON.parse(JSON.stringify('session-harborline'));
+const WORKTREE = '/tmp/harborline-worktree';
 const RUN_ID = JSON.parse(JSON.stringify('run-ledger-1'));
 const WORKSPACE_ID = JSON.parse(JSON.stringify('workspace-harborline'));
 
@@ -138,6 +164,7 @@ beforeEach(() => {
   state.sessionProjectMounts = {};
   state.phaseTemplates = {};
   state.sessionWorkflows = {};
+  state.sessionWorktrees = { [SESSION_ID]: [WORKTREE] };
   slotsBySession[SESSION_ID] = [];
   slotsLoadBySession[SESSION_ID] = 'loaded';
   ensureSlotsSpy.mockImplementation(async (sessionId: string) => slotsBySession[sessionId] ?? []);
@@ -262,6 +289,7 @@ describe('ArtifactCreationPane', () => {
           kind: 'report',
           reportType: 'session-summary',
           brief: '',
+          attachments: [],
           basedOn: { kind: 'workflow-run', workflowRunId: RUN_ID },
           routing: null,
           updatedAt: '2026-09-16T10:00:00.000Z',
@@ -280,6 +308,7 @@ describe('ArtifactCreationPane', () => {
           kind: 'report',
           reportType: 'session-summary',
           brief: '',
+          attachments: [],
           basedOn: { kind: 'workflow-run', workflowRunId: RUN_ID },
           routing: null,
           updatedAt: '2026-09-16T10:00:00.000Z',
@@ -332,6 +361,7 @@ describe('ArtifactCreationPane', () => {
         workflowRunId: RUN_ID,
         routing: null,
         brief: 'call out the residual convention',
+        attachments: [],
         focus: 'none',
       });
     });
@@ -352,6 +382,7 @@ describe('ArtifactCreationPane', () => {
         workflowRunId: null,
         routing: null,
         brief: 'the settlement review flow',
+        attachments: [],
         focus: 'none',
       });
     });
@@ -469,6 +500,76 @@ describe('ArtifactCreationPane', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
+  it.each(['report', 'wireframe'] as const)(
+    'stores an attached screen and sends its path with the %s',
+    async (kind) => {
+      state.sessionPhaseRuns = { [SESSION_ID]: [finishedAgent()] };
+      renderPane({ kind });
+      fireEvent.change(screen.getByTestId('artifact-brief'), {
+        target: { value: 'match this layout' },
+      });
+      await act(async () => {
+        fireEvent.change(screen.getByTestId('artifact-attachments-input'), {
+          target: { files: [new File(['bytes'], 'inbox.png', { type: 'image/png' })] },
+        });
+        await Promise.resolve();
+      });
+      await waitFor(() => {
+        expect(writeAttachmentSpy).toHaveBeenCalledWith({
+          worktreeDir: WORKTREE,
+          attachmentId: expect.any(String),
+          fileName: 'inbox.png',
+          dataBase64: expect.any(String),
+        });
+      });
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Remove inbox.png' })).toBeTruthy();
+      });
+      fireEvent.click(screen.getByTestId('artifact-generate'));
+      const spawn = kind === 'report' ? state.spawnReportAgent : state.spawnWireframeAgent;
+      await waitFor(() => {
+        expect(spawn).toHaveBeenCalledWith(
+          expect.objectContaining({
+            attachments: [
+              expect.objectContaining({
+                fileName: 'inbox.png',
+                mimeType: 'image/png',
+                relPath: '.goodboy/attachments/att-1-inbox.png',
+              }),
+            ],
+          }),
+        );
+      });
+    },
+  );
+
+  it('drops the chip and the file on disk when the draft is discarded', async () => {
+    renderPane();
+    await act(async () => {
+      fireEvent.change(screen.getByTestId('artifact-attachments-input'), {
+        target: { files: [new File(['bytes'], 'inbox.png', { type: 'image/png' })] },
+      });
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Remove inbox.png' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+    await waitFor(() => {
+      expect(deleteAttachmentSpy).toHaveBeenCalledWith(
+        WORKTREE,
+        '.goodboy/attachments/att-1-inbox.png',
+      );
+    });
+  });
+
+  it('says nothing can be attached while the session has no worktree', () => {
+    state.sessionWorktrees = {};
+    renderPane();
+    expect(screen.getByText(/no worktree yet/)).toBeTruthy();
+  });
+
   it('asks a wireframe what it is drawn for, and offers no target on a report', () => {
     renderPane({ kind: 'wireframe' });
     expect(screen.getByRole('listbox', { name: 'Target' })).toBeTruthy();
@@ -497,6 +598,7 @@ describe('ArtifactCreationPane', () => {
         workflowRunId: null,
         routing: null,
         brief: 'the operator console',
+        attachments: [],
         focus: 'none',
       });
     });

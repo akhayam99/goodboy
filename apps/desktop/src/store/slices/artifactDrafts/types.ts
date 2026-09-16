@@ -5,6 +5,7 @@ import type {
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
+import type { ArtifactAttachment } from '../../../features/artifacts/artifactAttachments';
 import type { GeneratedArtifactKind } from '../../../features/artifacts/artifactCollection';
 import type { ReportType } from '../../../features/reports/reportTypes';
 import type { WireframeFidelity } from '../../../features/wireframes/wireframeFidelity';
@@ -23,6 +24,7 @@ export type ArtifactCreationRouting = Readonly<{
 
 type DraftBase = Readonly<{
   brief: string;
+  attachments: ReadonlyArray<ArtifactAttachment>;
   basedOn: ArtifactBasedOn;
   routing: ArtifactCreationRouting | null;
   updatedAt: IsoDateTime;

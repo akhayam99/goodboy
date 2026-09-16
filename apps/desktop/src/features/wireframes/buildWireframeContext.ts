@@ -3,6 +3,11 @@ import type { Agent, IsoDateTime, Session, SessionArtifact, TurnEvent } from '@g
 import { redactSecrets } from '../../shared/utils/redactSecrets';
 import { ARTIFACT_BRIEF_CLIP_NOTE, clipBrief, formatBriefCount } from '../artifacts/artifactBrief';
 import {
+  artifactAttachmentsSection,
+  attachmentsInventoryRow,
+  type ArtifactAttachment,
+} from '../artifacts/artifactAttachments';
+import {
   briefInventoryRow,
   excludedInventoryRow,
   keptRowState,
@@ -37,6 +42,7 @@ export type WireframeContextParams = Readonly<{
   fidelity: WireframeFidelity;
   target: WireframeTarget;
   brief?: string | null;
+  attachments: ReadonlyArray<ArtifactAttachment>;
   session: Session;
   goal: SessionGoalText;
   agents: ReadonlyArray<Agent>;
@@ -268,6 +274,7 @@ export const buildWireframeContext = ({
   fidelity,
   target,
   brief = null,
+  attachments,
   session,
   goal,
   agents,
@@ -298,6 +305,7 @@ export const buildWireframeContext = ({
   const goalBlock = goal.isDetailed ? [`## goal\n\n${goal.packText}`] : [];
 
   inventory.push(briefInventoryRow({ brief: request.text }));
+  inventory.push(attachmentsInventoryRow({ attachments }));
   inventory.push({
     id: 'goal',
     label: 'goal',
@@ -315,9 +323,11 @@ export const buildWireframeContext = ({
     detail: [WIREFRAME_TARGET_BRIEF[target]],
   });
 
+  const attachmentsBlock = artifactAttachmentsSection({ attachments });
   const evidence = [
     header,
     ...goalBlock,
+    ...(attachmentsBlock === null ? [] : [attachmentsBlock]),
     agentSection({ agents, transcripts, truncations, sourceIds, inventory }),
     planSection({ artifacts, truncations, sourceIds, inventory }),
     themeSection({ fidelity, designEvidence, inventory }),
