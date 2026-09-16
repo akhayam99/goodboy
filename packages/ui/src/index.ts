@@ -107,6 +107,8 @@ export { parseMarkdown } from './components/Markdown/parseMarkdown';
 export { inlineMarkdownText } from './components/Markdown/inlineMarkdownText';
 export { MetaRow } from './components/MetaRow';
 export type { MetaRowProps } from './components/MetaRow';
+export { ActionTile } from './components/ActionTile';
+export type { ActionTileProps } from './components/ActionTile';
 export { AnchoredPopover } from './components/AnchoredPopover';
 export type { AnchoredPopoverProps } from './components/AnchoredPopover';
 export { Popover, PopoverBody, PopoverFooter } from './components/Popover';

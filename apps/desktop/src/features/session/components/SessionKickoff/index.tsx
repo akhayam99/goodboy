@@ -4,15 +4,13 @@ import { cn, formatError, Skeleton } from '@goodboy/ui';
 import type { IsoDateTime, Session } from '@goodboy/types';
 import { useAppStore, useSessionSlots } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 import {
   TRACKER_STUDIO_LINKS,
   TrackerStudioLinks,
 } from '../../../integrations/components/TrackerStudioLinks';
-import { CreateAgentPopover } from '../CreateAgentPopover';
-import { KickoffTile } from './KickoffTile';
+import { OverviewActions } from '../SessionOverviewPane/OverviewActions';
 import { hasNothingToAdopt, proposeIssueAdoption, type IssueAdoption } from './issueAdoption';
 import { useKickoffIssues } from './useKickoffIssues';
 
@@ -75,20 +73,11 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdopti
           Pick a starting point. These suggestions step aside once the first activity lands.
         </p>
       </header>
-      <div className="grid gap-2 lg:grid-cols-2">
-        <CreateAgentPopover
-          sessionId={session.id}
-          variant="tile"
-          description="Brief a specialist and let it run."
-        />
-        <KickoffTile
-          icon={CONCEPT_ICONS.workflows}
-          iconClassName="text-accent"
-          title="Add a workflow"
-          description="Run a multi-step plan with checkpoints."
-          onClick={onOpenWorkflowBuilder}
-        />
-      </div>
+      <OverviewActions
+        sessionId={session.id}
+        variant="tile"
+        onOpenWorkflowBuilder={onOpenWorkflowBuilder}
+      />
       <div className="flex flex-col gap-1">
         <p className="px-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
           Or pick up an issue

@@ -54,4 +54,18 @@ describe('CreateWireframeCta', () => {
       'Draw a screen or flow from a brief and what this session did',
     );
   });
+
+  it('stays reachable as a tile while the session has produced nothing', () => {
+    render(<CreateWireframeCta sessionId={SESSION_ID} variant="tile" />);
+
+    const trigger = screen.getByTestId('create-wireframe-cta');
+    expect(trigger.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(trigger);
+    expect(state.openArtifactCreation).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      kind: 'wireframe',
+      workflowRunId: null,
+    });
+  });
 });

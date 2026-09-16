@@ -60,6 +60,7 @@ const { storeState, diffStats, unread, questions, suggestionState, agentsLoaded,
       loadSessionAnsweredQuestions: vi.fn(async () => undefined),
       loadSessionDismissedQuestions: vi.fn(async () => undefined),
       markAllAgentsSeen: vi.fn(),
+      openArtifactCreation: vi.fn(),
       setActiveLens: vi.fn(),
       setFocusedArtifactId: vi.fn(),
       openMountDiff: vi.fn(),
@@ -80,6 +81,9 @@ vi.mock('../../../../../../store', () => {
     useIsSessionCollectionLoaded: () => agentsLoaded.current,
   };
 });
+vi.mock('../../../CreateAgentPopover', () => ({
+  CreateAgentPopover: () => <button type="button">Create agent</button>,
+}));
 vi.mock('../../../../../workflows/useAttachedWorkflowRuns', () => ({
   useAttachedWorkflowRuns: () => attachedRuns.list,
 }));
@@ -113,6 +117,7 @@ vi.mock('../../../../../suggestions/useSuggestionActions', () => ({
 }));
 
 import { TimelinePane } from './index';
+import { OverviewActions } from '../../../SessionOverviewPane/OverviewActions';
 
 const SESSION = {
   id: 'session-1',
@@ -143,6 +148,7 @@ beforeEach(() => {
   storeState.projects = [];
   storeState.sessionProjectMounts = {};
   storeState.openMountDiff.mockReset();
+  storeState.openArtifactCreation.mockReset();
   storeState.markAllAgentsSeen.mockReset();
   storeState.setActiveLens.mockReset();
   storeState.setFocusedArtifactId.mockReset();
@@ -215,25 +221,51 @@ describe('TimelinePane under a full filter', () => {
 });
 
 describe('TimelinePane on an empty session', () => {
-  it('keeps the header actions mounted above a quiet empty line', () => {
+  const renderEmptySession = () => {
     storeState.sessionEvents = { 'session-1': [] };
-
-    render(
+    return render(
       <TimelinePane
         session={SESSION}
         runs={RUNS}
-        actions={<button type="button">Add workflow</button>}
+        actions={<OverviewActions sessionId={SESSION.id} onOpenWorkflowBuilder={() => undefined} />}
+        kickoff={
+          <OverviewActions
+            sessionId={SESSION.id}
+            variant="tile"
+            onOpenWorkflowBuilder={() => undefined}
+          />
+        }
       />,
     );
+  };
 
-    expect(screen.getByRole('button', { name: 'Add workflow' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Filter' })).toBeDefined();
-    expect(
-      screen.getByText(
-        'Nothing yet. Agents, workflows and session facts land here as they happen.',
-      ),
-    ).toBeDefined();
+  it('keeps every session action offered on the path production takes', () => {
+    renderEmptySession();
+
+    for (const name of ['Create agent', 'Add workflow', 'Create report', 'Create wireframe']) {
+      expect(screen.getByRole('button', { name: new RegExp(name) })).toBeDefined();
+    }
     expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
+  });
+
+  it('withholds the report with a reason rather than dropping it', () => {
+    renderEmptySession();
+
+    expect(screen.getByTestId('create-report-cta').hasAttribute('disabled')).toBe(true);
+    expect(
+      screen.getByText('nothing has run yet, so there is nothing to work from.'),
+    ).toBeDefined();
+    expect(screen.getByTestId('create-wireframe-cta').hasAttribute('disabled')).toBe(false);
+  });
+
+  it('offers the header the same four actions once the first activity lands', () => {
+    storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
+    renderEmptySession();
+
+    expect(screen.getByRole('button', { name: 'Filter' })).toBeDefined();
+    for (const name of ['Create agent', 'Add workflow', 'Create report', 'Create wireframe']) {
+      expect(screen.getByRole('button', { name: new RegExp(name) })).toBeDefined();
+    }
   });
 });
 
