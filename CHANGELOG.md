@@ -7,6 +7,147 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.5
+
+A wireframe stops being something only you can see. Every screen on one sheet,
+and that sheet prints.
+
+### [#1788] Every screen of a wireframe on one sheet
+
+The studio has a Screen and Contact sheet pair at the head of its controls. The
+sheet lays out every screen in document order, each in a device frame sized
+from its own viewport, numbered, titled and carrying its notes.
+
+The sheet is live. It shares where you are with the single screen view, so
+following a hotspot keeps you on the sheet, moves the current screen ring to
+the screen you landed on and scrolls it into view. Every frame label carries an
+Open control that takes you to that screen on its own.
+
+### [#1788] A wireframe is not assumed to be mobile
+
+Every wireframe used to come back as phone screens. The creation pane asks for
+a target now, mobile, desktop or both, and takes both unless you say otherwise.
+The target goes to the model with the rest of the pack, and a desktop only
+document prints landscape, on wider plates.
+
+There is no tablet target. The schema still carries a tablet viewport per
+screen, and a document whose screens include one is reported as having no
+single target rather than being relabelled as desktop.
+
+### [#1788] A wireframe prints
+
+Printing a wireframe used to be refused outright, with copy that said the print
+sheet only lays out markdown. It comes out as the contact sheet now, under the
+same letterhead and meta fields a report prints with, so the two artifacts
+arrive as one family and a frame never splits across a page. A wireframe whose
+document cannot be read still refuses, and says what is wrong with it rather
+than repeating the old notice.
+
+On paper the sheet is inert, and a desktop or tablet frame falls to the height
+of its own content, because nothing scrolls on a sheet of paper and an unfilled
+window reads as a rendering error. A phone keeps its full height, since the
+silhouette is what makes the page read as phones. A mixed document fills 77 and
+76 per cent of its two pages and a desktop only one 71 and 82, where page one
+used to be 15. Plates are sized so two mobile rows fit A4 at 20mm margins: a
+different paper size or margin can push that to one row per page, and a desktop
+screen prints small enough that its body text is a suggestion rather than
+reading matter.
+
+Follow-up: pagination stands on a real PDF, two pages with rows breaking
+cleanly, though not yet through the app's own print dialog.
+
+### [#1784] An exported PDF that reads like a document
+
+The report sheet has a letterhead with the brand mark, a properties block, a
+contents block built from the document's own headings, a heading ladder sized
+for paper and a dated meta line. The boot message that used to print across the
+middle of page one is gone, along with the duplicated title and the stylesheet
+that came with it.
+
+Code blocks are coloured, by the same colouring the app uses on screen, for ts,
+json, bash, sql, rust and diff. Any other language prints plain, as it did
+before. There are no page numbers and no running footer, because the print
+window has nowhere to put them.
+
+### [#1784] A wireframe flow you can follow
+
+Screens were packed four to a row and every connection dived below the row and
+climbed back, with labels landing on each other and boxes painted over them.
+The flow ranks the screens instead, keeps the primary path straight, and gives
+each connection a role: spine, branch, skip, back or self. Colour is never the
+only cue, so the dash, the side it routes on and the arrowhead all stay and
+nothing is lost in greyscale. No label sits on a line and no line crosses a
+screen.
+
+### [#1786] A wireframe survives a value we do not recognise
+
+One unknown spacing value used to reject a whole wireframe. You had paid for it
+and waited for it, and all that was left was the raw JSON in the transcript.
+
+Presentation values Goodboy does not recognise now move to the nearest one it
+does, and an unknown property is dropped rather than fatal. A document that
+needed either says so in a collapsed line above the screen tabs, grouped by
+field, so the adjustment worth knowing is near the top.
+
+What still stops a document is what would make it unrenderable or a lie: an
+unknown kind of node, ids and transition targets that do not line up,
+duplicates, the size limits, the version, and the text patterns that keep
+markup, scripts and outside addresses out of the application. The list of
+design files a theme claims to have read stays fatal too.
+
+### [#1785] A workflow report or wireframe step gets the evidence
+
+A report or wireframe step scheduled by a workflow used to receive the goal and
+its prompt and nothing else, so it could only invent its content. It now gets
+the same evidence pack the pane builds when you start one by hand, scoped to
+the workflow run, and what it was built from is recorded the same way on both
+paths.
+
+A workflow step cannot say which report type or which wireframe fidelity it
+wants yet, so it takes session summary and low fidelity, low being the one that
+does not read design files out of a mounted repository.
+
+### [#1785] An artifact in the pack is excerpted by what it is
+
+A wireframe used to reach the model as the first 400 characters of its source,
+which is an opening brace and part of the theme. It contributes its screen
+titles and its transitions now, and a report its headings. A document that
+cannot be read falls back to the old slice, and the inventory row you read in
+the creation pane before generating says which of the three it did.
+
+### [#1787] An empty session offers all four actions
+
+A session with nothing run yet showed Create agent and Add workflow, while the
+Artifacts lens told you in prose that Create report and Create wireframe
+existed. All four are on screen now. Create report is there and disabled, with
+its reason on it: nothing has run yet, so there is nothing to work from. Create
+wireframe stays live, because a wireframe from a goal and a brief is a
+legitimate thing to ask for, and the brief is written in the pane it opens.
+
+### [#1789] The goal you wrote is the goal the agent gets
+
+A report or a wireframe was built from the session title, a clamped line, while
+the goal you actually wrote sat in the session and never left it. Whatever you
+wrote goes out as its own part of the pack now, listed in Included context and
+counted in the clip notes like everything else. Use the session goal in the
+creation pane inserts what you wrote, not the title.
+
+### Fixes
+
+- The block an artifact agent hands back used to arrive in the transcript as
+  raw marker text with escaped newlines. It is recognised and rendered [#1784]
+- The artifact header had four ways of writing a button and shifted sideways
+  every time an export changed state. Two buttons, and the status has a slot of
+  its own [#1784]
+- The outline rail scrolled away as soon as you clicked an entry in it. It
+  stays [#1784]
+- The activity filter listed sixteen near identical rows. A parent's children
+  are chips on one wrapping row, in a wider panel [#1784]
+- A mobile screen never fitted the wireframe canvas and the bottom of it sat
+  behind a nested scrollbar. The cap that did that is gone [#1788]
+- Printing anything longer than a page produced one page and dropped the rest.
+  It paginates [#1788]
+
 ## Goodboy v0.3.4
 
 An artifact is something you author, not an agent you hire. A report or a
