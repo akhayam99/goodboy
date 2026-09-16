@@ -12,6 +12,7 @@ const NOW = '2026-09-16T10:00:00.000Z' as IsoDateTime;
 const draft = (overrides: Partial<ArtifactWireframeDraft> = {}): ArtifactWireframeDraft => ({
   kind: 'wireframe',
   fidelity: 'low',
+  target: 'both',
   brief: '',
   basedOn: { kind: 'session' },
   routing: null,
@@ -51,6 +52,7 @@ describe('wireframeCreationAdapter', () => {
     expect(spies.spawnWireframeAgent).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       fidelity: 'high',
+      target: 'both',
       workflowRunId: RUN_ID,
       routing: null,
       brief: 'the settlement review flow',

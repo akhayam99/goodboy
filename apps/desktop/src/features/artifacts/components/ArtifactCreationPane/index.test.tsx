@@ -257,6 +257,7 @@ describe('ArtifactCreationPane', () => {
       expect(state.spawnWireframeAgent).toHaveBeenCalledWith({
         sessionId: SESSION_ID,
         fidelity: 'low',
+        target: 'both',
         workflowRunId: null,
         routing: null,
         brief: 'the settlement review flow',
@@ -375,5 +376,38 @@ describe('ArtifactCreationPane', () => {
     expect(screen.getByRole('status').textContent).toBe('pasted text was cut at 2,000 characters');
     fireEvent.change(brief, { target: { value: 'x'.repeat(1_991) } });
     expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('asks a wireframe what it is drawn for, and offers no target on a report', () => {
+    renderPane({ kind: 'wireframe' });
+    expect(screen.getByRole('listbox', { name: 'Target' })).toBeTruthy();
+    expect(
+      screen.getByRole('option', { name: /Phone and desktop/ }).getAttribute('aria-selected'),
+    ).toBe('true');
+    expect(screen.getByRole('option', { name: /^Desktop/ })).toBeTruthy();
+    cleanup();
+    renderPane();
+    expect(screen.queryByRole('listbox', { name: 'Target' })).toBeNull();
+  });
+
+  it('sends the target the user picked to the wireframe agent', async () => {
+    state.sessionPhaseRuns = { [SESSION_ID]: [] };
+    renderPane({ kind: 'wireframe' });
+    fireEvent.change(screen.getByTestId('artifact-brief'), {
+      target: { value: 'the operator console' },
+    });
+    fireEvent.click(screen.getByRole('option', { name: /^Desktop/ }));
+    fireEvent.click(screen.getByTestId('artifact-generate'));
+    await waitFor(() => {
+      expect(state.spawnWireframeAgent).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        fidelity: 'low',
+        target: 'desktop',
+        workflowRunId: null,
+        routing: null,
+        brief: 'the operator console',
+        focus: 'none',
+      });
+    });
   });
 });

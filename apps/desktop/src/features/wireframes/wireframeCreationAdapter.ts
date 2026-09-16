@@ -11,9 +11,18 @@ import {
   WIREFRAME_FIDELITY_CHOICE_LABEL,
   WIREFRAME_FIDELITY_HINT,
 } from './wireframeFidelity';
+import {
+  asWireframeTarget,
+  WIREFRAME_TARGETS,
+  WIREFRAME_TARGET_CHOICE_LABEL,
+  WIREFRAME_TARGET_HINT,
+} from './wireframeTarget';
 
 const choiceOf = ({ draft }: Parameters<ArtifactCreationAdapter['choiceOf']>[0]): string =>
   draft.kind === 'wireframe' ? draft.fidelity : 'low';
+
+const targetOf = ({ draft }: Parameters<ArtifactCreationAdapter['choiceOf']>[0]): string =>
+  draft.kind === 'wireframe' ? draft.target : 'both';
 
 export const wireframeCreationAdapter: ArtifactCreationAdapter = {
   kind: 'wireframe',
@@ -29,6 +38,23 @@ export const wireframeCreationAdapter: ArtifactCreationAdapter = {
       label: WIREFRAME_FIDELITY_CHOICE_LABEL[fidelity],
       hint: WIREFRAME_FIDELITY_HINT[fidelity],
     })),
+  },
+  secondChoice: {
+    label: 'Target',
+    ariaLabel: 'Target',
+    options: WIREFRAME_TARGETS.map((target) => ({
+      value: target,
+      label: WIREFRAME_TARGET_CHOICE_LABEL[target],
+      hint: WIREFRAME_TARGET_HINT[target],
+    })),
+    choiceOf: targetOf,
+    withChoice: ({ draft, choice }) => {
+      const target = asWireframeTarget({ value: choice });
+      if (draft.kind !== 'wireframe' || target === null) {
+        return draft;
+      }
+      return { ...draft, target };
+    },
   },
   scopeCopy: {
     session: 'agents and plans come from the whole session.',
@@ -64,6 +90,7 @@ export const wireframeCreationAdapter: ArtifactCreationAdapter = {
     actions.spawnWireframeAgent({
       sessionId,
       fidelity: asWireframeFidelity({ value: choiceOf({ draft }) }) ?? 'low',
+      target: asWireframeTarget({ value: targetOf({ draft }) }) ?? 'both',
       workflowRunId: artifactSpawnScope({ draft }),
       routing: draft.routing,
       brief: artifactSpawnBrief({ draft }),

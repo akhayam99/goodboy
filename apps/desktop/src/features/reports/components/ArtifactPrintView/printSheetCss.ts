@@ -295,3 +295,14 @@ export const PRINT_SHEET_CSS = `
   }
 }
 `;
+
+export const PRINT_LANDSCAPE_CSS = `
+@page {
+  size: landscape;
+}
+@media screen {
+  .print-sheet {
+    max-width: 64rem;
+  }
+}
+`;

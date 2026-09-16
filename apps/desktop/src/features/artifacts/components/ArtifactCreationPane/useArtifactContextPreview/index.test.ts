@@ -68,6 +68,7 @@ describe('useArtifactContextPreview', () => {
         kind: 'report',
         basedOn: { kind: 'session' },
         choice: 'session-summary',
+        secondChoice: 'both',
       }),
     );
     expect(result.current.status).toBe('collecting');
@@ -109,6 +110,7 @@ describe('useArtifactContextPreview', () => {
         kind: 'report',
         basedOn: { kind: 'session' },
         choice: 'session-summary',
+        secondChoice: 'both',
       }),
     );
     await waitFor(() => {
@@ -126,6 +128,7 @@ describe('useArtifactContextPreview', () => {
         kind: 'wireframe',
         basedOn: { kind: 'session' },
         choice: 'low',
+        secondChoice: 'both',
       }),
     );
     await waitFor(() => {
@@ -144,6 +147,7 @@ describe('useArtifactContextPreview', () => {
         kind: 'wireframe',
         basedOn: { kind: 'session' },
         choice: 'high',
+        secondChoice: 'both',
       }),
     );
     await waitFor(() => {

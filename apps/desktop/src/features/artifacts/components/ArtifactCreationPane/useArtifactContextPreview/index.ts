@@ -14,6 +14,7 @@ import {
 } from '../../../../wireframes/buildWireframeContext';
 import { collectWireframeDesignProfile } from '../../../../wireframes/collectWireframeDesignProfile';
 import { asWireframeFidelity } from '../../../../wireframes/wireframeFidelity';
+import { asWireframeTarget } from '../../../../wireframes/wireframeTarget';
 import type { ArtifactContextInventoryRow } from '../../../artifactContextInventory';
 import { artifactEvidenceAgents } from '../../../artifactEvidenceAgents';
 import type { GeneratedArtifactKind } from '../../../artifactCollection';
@@ -31,6 +32,7 @@ type Params = Readonly<{
   kind: GeneratedArtifactKind;
   basedOn: ArtifactBasedOn;
   choice: string;
+  secondChoice: string;
 }>;
 
 const DEBOUNCE_MS = 300;
@@ -54,6 +56,7 @@ const collect = async ({
   kind,
   basedOn,
   choice,
+  secondChoice,
 }: CollectParams): Promise<ArtifactContextPreview | null> => {
   const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
   if (session === null) {
@@ -96,6 +99,7 @@ const collect = async ({
     fidelity === 'high' ? await collectWireframeDesignProfile({ state, sessionId }) : null;
   const context = buildWireframeContext({
     fidelity,
+    target: asWireframeTarget({ value: secondChoice }) ?? 'both',
     brief: null,
     session,
     agents: workflowRunId === null ? agents : runsForWorkflowRun(agents, workflowRunId),
@@ -118,6 +122,7 @@ export const useArtifactContextPreview = ({
   kind,
   basedOn,
   choice,
+  secondChoice,
 }: Params): ArtifactContextPreview => {
   const [preview, setPreview] = useState<ArtifactContextPreview>(EMPTY);
   const mountRevision = useAppStore(
@@ -136,6 +141,7 @@ export const useArtifactContextPreview = ({
         basedOn:
           scopeKey === '' ? { kind: 'session' } : { kind: 'workflow-run', workflowRunId: scopeKey },
         choice,
+        secondChoice,
       })
         .then((next) => {
           if (isCurrent && next !== null) {
@@ -152,7 +158,7 @@ export const useArtifactContextPreview = ({
       isCurrent = false;
       window.clearTimeout(timer);
     };
-  }, [sessionId, kind, scopeKey, choice, mountRevision]);
+  }, [sessionId, kind, scopeKey, choice, secondChoice, mountRevision]);
 
   return preview;
 };

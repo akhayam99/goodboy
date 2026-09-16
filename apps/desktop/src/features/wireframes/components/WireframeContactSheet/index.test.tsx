@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { parseWireframeSource, type WireframeDocument } from '@goodboy/core';
-import { CONTACT_SHEET_PLATE_WIDTH, wireframePalette } from '../../wireframePalette';
+import { contactSheetPlates } from '../../contactSheetLayout';
+import { VIEWPORT_MIN_HEIGHT, wireframePalette } from '../../wireframePalette';
 import { WireframeContactSheet } from './index';
 
 const source = {
@@ -98,15 +99,44 @@ const parse = ({
   return parsed.document;
 };
 
-const renderSheet = ({ overrides = {} }: { readonly overrides?: Record<string, unknown> } = {}) => {
+const renderSheet = ({
+  overrides = {},
+  surface = 'app',
+}: {
+  readonly overrides?: Record<string, unknown>;
+  readonly surface?: 'app' | 'print';
+} = {}) => {
   const document = parse({ overrides });
   return render(
     <WireframeContactSheet
       document={document}
       palette={wireframePalette({ theme: document.theme, fidelity: 'low' })}
       isLowFidelity
+      surface={surface}
     />,
   );
+};
+
+const liveSheet = ({ overrides = {} }: { readonly overrides?: Record<string, unknown> } = {}) => {
+  const document = parse({ overrides });
+  const onAction = vi.fn();
+  const onOpenScreen = vi.fn();
+  render(
+    <WireframeContactSheet
+      document={document}
+      palette={wireframePalette({ theme: document.theme, fidelity: 'low' })}
+      isLowFidelity
+      interaction={{
+        currentScreenId: 'ledger',
+        selectedNodeId: null,
+        hotspots: new Set(['sign-in-continue']),
+        onSelect: vi.fn(),
+        onAction,
+        onOpenScreen,
+      }}
+    />,
+  );
+  return { onAction, onOpenScreen };
 };
 
 afterEach(cleanup);
@@ -141,9 +171,10 @@ describe('WireframeContactSheet', () => {
       'tablet',
       'desktop',
     ]);
-    expect(frames[0]?.style.width).toBe(`${CONTACT_SHEET_PLATE_WIDTH.mobile}px`);
-    expect(frames[2]?.style.width).toBe(`${CONTACT_SHEET_PLATE_WIDTH.tablet}px`);
-    expect(frames[3]?.style.width).toBe(`${CONTACT_SHEET_PLATE_WIDTH.desktop}px`);
+    const plates = contactSheetPlates({ screens: parse({ overrides: {} }).screens });
+    expect(frames[0]?.style.width).toBe(`${plates.mobile}px`);
+    expect(frames[2]?.style.width).toBe(`${plates.tablet}px`);
+    expect(frames[3]?.style.width).toBe(`${plates.desktop}px`);
   });
 
   it('gives a mobile screen a home indicator and leaves a desktop screen without one', () => {
@@ -177,5 +208,74 @@ describe('WireframeContactSheet', () => {
     expect(screen.getByTestId('wireframe-contact-sheet')).toBeDefined();
     expect(screen.getAllByTestId('wireframe-sheet-frame')).toHaveLength(1);
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('draws the screens inert when no interaction is handed to it', () => {
+    const { container } = renderSheet();
+    expect(container.querySelectorAll('[inert]')).toHaveLength(4);
+    expect(screen.queryByTestId('wireframe-sheet-open')).toBeNull();
+  });
+
+  it('lets a hotspot act and marks the screen the flow is on when it is live', () => {
+    const { onAction } = liveSheet();
+    const frames = screen.getAllByTestId('wireframe-sheet-frame');
+    expect(frames.map((frame) => frame.getAttribute('data-current'))).toEqual([
+      'false',
+      'true',
+      'false',
+      'false',
+    ]);
+    const button = screen.getByText('Continue');
+    expect(button.getAttribute('data-hotspot')).toBe('true');
+    fireEvent.click(button);
+    expect(onAction).toHaveBeenCalledWith({
+      nodeId: 'sign-in-continue',
+      action: { type: 'navigate', toScreenId: 'ledger' },
+    });
+  });
+
+  it('offers a way out of the sheet to the single screen', () => {
+    const { onOpenScreen } = liveSheet();
+    const opens = screen.getAllByTestId('wireframe-sheet-open');
+    expect(opens).toHaveLength(4);
+    fireEvent.click(opens[2] as HTMLElement);
+    expect(onOpenScreen).toHaveBeenCalledWith('relay');
+  });
+
+  it('gives a sheet with no phone in it wider frames than a mixed sheet', () => {
+    renderSheet({
+      overrides: {
+        initialScreenId: 'console',
+        screens: [source.screens[3]],
+        transitions: [],
+      },
+    });
+    const wide = screen.getByTestId('wireframe-sheet-frame').style.width;
+    cleanup();
+    renderSheet();
+    const mixed = screen.getAllByTestId('wireframe-sheet-frame')[3]?.style.width;
+    expect(Number.parseInt(wide, 10)).toBeGreaterThan(Number.parseInt(mixed ?? '0', 10));
+  });
+
+  it('keeps every screen at the height of its viewport in the app', () => {
+    renderSheet();
+    const screens = screen.getAllByTestId('wireframe-sheet-screen');
+    expect(screens.map((entry) => entry.style.minHeight)).toEqual([
+      `${VIEWPORT_MIN_HEIGHT.mobile}px`,
+      `${VIEWPORT_MIN_HEIGHT.mobile}px`,
+      `${VIEWPORT_MIN_HEIGHT.tablet}px`,
+      `${VIEWPORT_MIN_HEIGHT.desktop}px`,
+    ]);
+  });
+
+  it('lets a wide screen fall to its content on paper and keeps a phone a phone', () => {
+    renderSheet({ surface: 'print' });
+    const screens = screen.getAllByTestId('wireframe-sheet-screen');
+    expect(screens.map((entry) => entry.style.minHeight)).toEqual([
+      `${VIEWPORT_MIN_HEIGHT.mobile}px`,
+      `${VIEWPORT_MIN_HEIGHT.mobile}px`,
+      '',
+      '',
+    ]);
   });
 });

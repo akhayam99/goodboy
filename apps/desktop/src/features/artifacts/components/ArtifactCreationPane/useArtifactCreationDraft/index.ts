@@ -17,11 +17,13 @@ export type ArtifactCreationDraftHandle = Readonly<{
   draft: ArtifactCreationDraft;
   brief: string;
   choice: string;
+  secondChoice: string;
   basedOn: ArtifactBasedOn;
   routing: ArtifactCreationRouting | null;
   isEmpty: boolean;
   setBrief: (brief: string) => void;
   setChoice: (choice: string) => void;
+  setSecondChoice: (choice: string) => void;
   setBasedOn: (basedOn: ArtifactBasedOn) => void;
   setRouting: (routing: ArtifactCreationRouting | null) => void;
 }>;
@@ -46,13 +48,22 @@ export const useArtifactCreationDraft = ({
   );
   const [brief, setBrief] = useState(initial.brief);
   const [choice, setChoice] = useState(adapter.choiceOf({ draft: initial }));
+  const [secondChoice, setSecondChoice] = useState(
+    adapter.secondChoice?.choiceOf({ draft: initial }) ?? '',
+  );
   const [basedOn, setBasedOn] = useState<ArtifactBasedOn>(initial.basedOn);
   const [routing, setRouting] = useState<ArtifactCreationRouting | null>(initial.routing);
 
-  const draft = useMemo<ArtifactCreationDraft>(
-    () => adapter.withChoice({ draft: { ...initial, brief, basedOn, routing }, choice }),
-    [adapter, initial, brief, basedOn, routing, choice],
-  );
+  const draft = useMemo<ArtifactCreationDraft>(() => {
+    const withChoice = adapter.withChoice({
+      draft: { ...initial, brief, basedOn, routing },
+      choice,
+    });
+    const second = adapter.secondChoice;
+    return second === undefined
+      ? withChoice
+      : second.withChoice({ draft: withChoice, choice: secondChoice });
+  }, [adapter, initial, brief, basedOn, routing, choice, secondChoice]);
   const isEmpty = isArtifactDraftEmpty({ draft });
 
   useEffect(() => {
@@ -67,11 +78,13 @@ export const useArtifactCreationDraft = ({
     draft,
     brief,
     choice,
+    secondChoice,
     basedOn,
     routing,
     isEmpty,
     setBrief,
     setChoice,
+    setSecondChoice,
     setBasedOn,
     setRouting,
   };

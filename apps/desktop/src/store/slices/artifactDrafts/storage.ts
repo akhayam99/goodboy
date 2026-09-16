@@ -10,7 +10,9 @@ import { GENERATED_ARTIFACT_KINDS } from '../../../features/artifacts/artifactCo
 import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import { asReportType } from '../../../features/reports/reportTypes';
 import { asWireframeFidelity } from '../../../features/wireframes/wireframeFidelity';
+import { asWireframeTarget } from '../../../features/wireframes/wireframeTarget';
 import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
+import { DEFAULT_WIREFRAME_TARGET } from './defaultArtifactDraft';
 import type {
   ArtifactBasedOn,
   ArtifactCreationDraft,
@@ -79,7 +81,9 @@ const readDraft = (value: unknown): ArtifactCreationDraft | null => {
   }
   if (value['kind'] === 'wireframe') {
     const fidelity = asWireframeFidelity({ value: String(value['fidelity'] ?? '') });
-    return fidelity === null ? null : { ...base, kind: 'wireframe', fidelity };
+    const target =
+      asWireframeTarget({ value: String(value['target'] ?? '') }) ?? DEFAULT_WIREFRAME_TARGET;
+    return fidelity === null ? null : { ...base, kind: 'wireframe', fidelity, target };
   }
   return null;
 };

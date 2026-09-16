@@ -35,6 +35,7 @@ const BASE_REPORT: ArtifactReportDraft = {
 const BASE_WIREFRAME: ArtifactWireframeDraft = {
   kind: 'wireframe',
   fidelity: 'low',
+  target: 'both',
   brief: '',
   basedOn: { kind: 'session' },
   routing: null,

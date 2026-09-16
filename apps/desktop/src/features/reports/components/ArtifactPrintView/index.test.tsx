@@ -256,4 +256,30 @@ describe('ArtifactPrintView', () => {
     });
     expect(window.print).not.toHaveBeenCalled();
   });
+
+  it('prints a desktop only wireframe on a landscape page and keeps it inert', async () => {
+    const desktopOnly = {
+      ...wireframeDocument,
+      initialScreenId: 'console',
+      screens: [wireframeDocument.screens[1]],
+    };
+    listSpy.mockResolvedValueOnce([{ ...wireframe, sourceText: JSON.stringify(desktopOnly) }]);
+    const { container } = render(<ArtifactPrintView request={request} />);
+    await waitFor(() => {
+      expect(screen.getByTestId('print-wireframe-sheet')).toBeDefined();
+    });
+    expect(screen.getByTestId('print-wireframe-sheet').getAttribute('data-page')).toBe('landscape');
+    expect(container.innerHTML).toContain('size: landscape');
+    expect(container.querySelectorAll('[inert]')).toHaveLength(1);
+  });
+
+  it('keeps a mixed wireframe on the portrait page the report uses', async () => {
+    listSpy.mockResolvedValueOnce([wireframe]);
+    const { container } = render(<ArtifactPrintView request={request} />);
+    await waitFor(() => {
+      expect(screen.getByTestId('print-wireframe-sheet')).toBeDefined();
+    });
+    expect(screen.getByTestId('print-wireframe-sheet').getAttribute('data-page')).toBe('portrait');
+    expect(container.innerHTML).not.toContain('size: landscape');
+  });
 });

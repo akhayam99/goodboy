@@ -7,6 +7,7 @@ import {
   WIREFRAME_FIDELITY_LABEL,
   type WireframeFidelity,
 } from '../../../features/wireframes/wireframeFidelity';
+import type { WireframeTarget } from '../../../features/wireframes/wireframeTarget';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { GetFn } from './types';
@@ -20,6 +21,7 @@ export type WireframeRouting = {
 export type SpawnWireframeAgentParams = {
   readonly sessionId: SessionId;
   readonly fidelity: WireframeFidelity;
+  readonly target?: WireframeTarget;
   readonly workflowRunId?: WorkflowRunId | null;
   readonly routing?: WireframeRouting | null;
   readonly brief?: string | null;
@@ -81,6 +83,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
   return async ({
     sessionId,
     fidelity,
+    target = 'both',
     workflowRunId = null,
     routing = null,
     brief = null,
@@ -108,6 +111,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
     const prepared = await prepareArtifactEvidence({
       kind: 'wireframe',
       fidelity,
+      target,
       state,
       session,
       workflowRunId,

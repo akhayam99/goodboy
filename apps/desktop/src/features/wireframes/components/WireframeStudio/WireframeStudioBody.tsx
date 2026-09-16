@@ -155,17 +155,28 @@ export const WireframeStudioBody = ({
           {error}
         </span>
       )}
+      {toggledOn.length === 0 ? null : (
+        <span data-testid="wireframe-mock-state" className="text-2xs text-muted-foreground">
+          mock state on: {toggledOn.map(([key]) => key).join(', ')}
+        </span>
+      )}
       {view === 'sheet' ? (
         <WireframeContactSheet
           document={document}
           palette={palette}
           isLowFidelity={fidelity === 'low'}
+          interaction={{
+            currentScreenId: navigation.currentScreenId,
+            selectedNodeId: navigation.selectedNodeId,
+            hotspots: index.hotspots,
+            onSelect: navigation.select,
+            onAction: runAction,
+            onOpenScreen: (screenId) => {
+              navigation.goTo(screenId);
+              setView('screen');
+            },
+          }}
         />
-      ) : null}
-      {view === 'screen' && toggledOn.length > 0 ? (
-        <span data-testid="wireframe-mock-state" className="text-2xs text-muted-foreground">
-          mock state on: {toggledOn.map(([key]) => key).join(', ')}
-        </span>
       ) : null}
       {view === 'screen' && screen !== undefined ? (
         <>
