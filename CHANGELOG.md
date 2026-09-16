@@ -7,6 +7,54 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.3
+
+An agent can hand back a wireframe now: screens you click through, drawn in the
+app rather than described to you.
+
+### [#1779] A wireframe an agent returns and Goodboy draws
+
+A wireframe agent hands back a document, not markup: a list of screens, each a
+tree of nodes, plus the transitions between them. Goodboy draws it natively.
+
+The document is JSON against a closed schema, which is what keeps an agent from
+putting scripts, arbitrary markup or an outside address into the application.
+A document that breaks a rule is shown with what is wrong with it rather than
+half drawn.
+
+### [#1779] A studio you click through
+
+The studio opens on the first screen, with a tab per screen and the hotspots
+live, so you move through the flow by clicking it, with back and forward across
+the screens you visited. The canvas fits the pane on open and on every screen
+change, and a zoom you set by hand stays until you fit again.
+
+Under it sits the flow: every screen and every transition between them, routed
+so the labels can be read. Copy the document, or save it as JSON. There is no
+PDF for a wireframe, because printing the document would print its source.
+
+### [#1779] Plain, or styled from the project
+
+A wireframe comes plain, or styled from the design files of a mounted project:
+the colours, the type and the radii found there, with the files it read named
+on the artifact. When it finds nothing to go on it says so and uses the generic
+theme, rather than implying it matched an application it never saw.
+
+Converting one into the other creates a separate variant and leaves the
+original alone, which is what it always did, so it says so now.
+
+### [#1779] Where a wireframe starts
+
+The same two places a report starts: after a session has run, and on a finished
+workflow. The wireframe role is selectable now, the last of this run to open
+up.
+
+### Fixes
+
+- Credentials are now removed from the evidence a wireframe sends to the model
+  provider, values read out of files in your own repository included. They used
+  to go out as written [#1779]
+
 ## Goodboy v0.3.2
 
 An agent can hand back something that is not a plan: a report Goodboy stores,
