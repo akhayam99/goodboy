@@ -7,6 +7,46 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.2
+
+An agent can hand back something that is not a plan: a report Goodboy stores,
+renders and keeps.
+
+### [#1777] A report an agent writes and you keep
+
+A report agent reads an evidence pack Goodboy builds rather than the repository
+itself: the session, its agents, the local diff, the branch commits and the
+checks that ran, each part bounded. It writes a session summary, what happened
+in this session and what came out of it, or a local change report, what the
+working tree and the branch hold right now.
+
+Both are named for what they read, and neither reads a pull request. The type
+that used to be named for one was built from the local diff all along, so it
+now says so, and a report saved under the old name still opens.
+
+### [#1777] A studio that reads it back
+
+The report opens with an outline that follows the document, a body you can
+edit, and the sources it was built from as chips that open the plan or the
+agent behind them. Every artifact in the session sits in a rail beside it.
+
+Copy it, save it as markdown, or send it to the print sheet for a PDF.
+Regenerate replays the evidence the agent was given, and once that evidence is
+no longer in memory, after a restart, the button is off and says why rather
+than building a different report out of whatever is around now.
+
+### [#1777] Where a report starts
+
+A report is offered after a session has run and on a finished workflow, with no
+prompt in the middle of one. The report role is selectable now that there is
+somewhere to read what it produces.
+
+### Fixes
+
+- The evidence pack sent to the model provider now removes a labelled
+  credential in full, and the free text around it, titles and commit subjects
+  included. Some of both used to go out as written [#1777]
+
 ## Goodboy v0.3.1
 
 A plan that comes back unreadable can be repaired instead of vanishing, and
