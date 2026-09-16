@@ -103,6 +103,15 @@ afterEach(() => {
 h.sessions = [makeSession()];
 
 describe('CreateAgentPopover', () => {
+  it('omits report and wireframe from the manual agent picker', () => {
+    renderControl();
+    openPopover();
+
+    expect(screen.queryByRole('button', { name: 'Report' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Wireframe' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Docs' })).toBeDefined();
+  });
+
   it('replaces the multi-control row with one tile that opens a single popover', () => {
     renderControl();
     const trigger = screen.getByRole('button', { name: 'Create agent' });

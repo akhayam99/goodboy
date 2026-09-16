@@ -641,7 +641,7 @@ describe('boundary systemPrompts', () => {
 });
 
 describe('agent visibility', () => {
-  it('exposes only selection-eligible roles and manually spawnable kinds', () => {
+  it('exposes picker-eligible roles and manually spawnable kinds', () => {
     expect(visibleAgentRoles().length).toBeGreaterThan(3);
     expect(visibleAgentKinds()).toEqual([
       'debugger',
@@ -649,15 +649,25 @@ describe('agent visibility', () => {
       'generic',
       'implementer',
       'planner',
-      'report',
       'reviewer',
       'scout',
       'tester',
-      'wireframe',
     ]);
     expect(visibleAgentRoles()).toContain('docs');
     expect(visibleAgentRoles()).toContain('resolver');
-    expect(visibleAgentRoles()).toContain('report');
-    expect(visibleAgentRoles()).toContain('wireframe');
+  });
+
+  it('excludes artifact roles from the manual create-agent picker', () => {
+    expect(visibleAgentRoles()).toEqual([
+      'scout',
+      'investigator',
+      'planner',
+      'implementer',
+      'reviewer',
+      'tester',
+      'resolver',
+      'docs',
+      'custom',
+    ]);
   });
 });

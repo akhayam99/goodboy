@@ -11,7 +11,7 @@ afterEach(() => {
 });
 
 describe('RoleSelect', () => {
-  it('offers exactly the selection-eligible roles', () => {
+  it('offers exactly the picker-eligible roles', () => {
     render(<RoleSelect value={'custom' as AgentRole} onChange={vi.fn()} disabled={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Custom/i }));
@@ -26,19 +26,17 @@ describe('RoleSelect', () => {
       'Tester',
       'Resolver',
       'Docs',
-      'Report',
-      'Wireframe',
       'Custom',
     ]);
   });
 
-  it('offers the shipped artifact roles', () => {
+  it('omits artifact roles from the manual picker', () => {
     render(<RoleSelect value={'custom' as AgentRole} onChange={vi.fn()} disabled={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Custom/i }));
     const options = within(screen.getByRole('listbox', { name: 'Agent role' }));
 
-    expect(options.getByRole('button', { name: 'Report' })).toBeDefined();
-    expect(options.getByRole('button', { name: 'Wireframe' })).toBeDefined();
+    expect(options.queryByRole('button', { name: 'Report' })).toBeNull();
+    expect(options.queryByRole('button', { name: 'Wireframe' })).toBeNull();
   });
 });
