@@ -270,9 +270,89 @@ describe('WireframeStudio', () => {
     expect(screen.queryByTestId('wireframe-canvas')).toBeNull();
     const issues = screen.getByTestId('wireframe-issues');
     expect(issues.textContent).toContain('raw html is not allowed');
-    expect(issues.textContent).toContain('unknown property');
+    expect(issues.textContent).not.toContain('unknown property');
     expect(container.querySelectorAll('script')).toHaveLength(0);
     expect(screen.getByTestId('artifact-json-source').textContent).toContain('"screens"');
+  });
+
+  it('draws a document whose spacing tokens are outside the enum and says what it moved', () => {
+    const drifted = {
+      ...document,
+      screens: [
+        {
+          ...document.screens[0],
+          root: {
+            id: 'inbox-root',
+            kind: 'stack',
+            direction: 'column',
+            gap: 'xl',
+            children: [
+              { id: 'inbox-heading', kind: 'text', text: 'Inbox', variant: 'title' },
+              {
+                id: 'inbox-body',
+                kind: 'stack',
+                direction: 'column',
+                gap: 'xs',
+                width: 320,
+                children: [{ id: 'inbox-note', kind: 'text', text: 'Nothing new' }],
+              },
+            ],
+          },
+        },
+        document.screens[1],
+        document.screens[2],
+      ],
+      transitions: [],
+    };
+    renderStudio({ sourceText: JSON.stringify(drifted) });
+    expect(screen.getByTestId('wireframe-canvas')).toBeDefined();
+    expect(screen.queryByTestId('wireframe-issues')).toBeNull();
+    const adjustments = screen.getByTestId('wireframe-adjustments');
+    expect(adjustments.textContent).toContain('adjusted to draw this wireframe');
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    expect(adjustments.textContent).toContain('screens[0].root.gap');
+    expect(adjustments.textContent).toContain('so it was drawn as lg');
+    expect(adjustments.textContent).toContain('so it was drawn as sm');
+    expect(adjustments.textContent).toContain('screens[0].root.children[1].width');
+    expect(adjustments.textContent).toContain('so it was dropped');
+    expect(adjustments.textContent).not.toContain('places');
+  });
+
+  it('collapses a drift repeated across nodes into one row that counts the places', () => {
+    const repeated = {
+      ...document,
+      screens: [
+        {
+          ...document.screens[0],
+          root: {
+            id: 'inbox-root',
+            kind: 'stack',
+            direction: 'column',
+            children: Array.from({ length: 6 }, (_unused, index) => ({
+              id: `card-${index}`,
+              kind: 'stack',
+              direction: 'column',
+              gap: 'xl',
+              children: [],
+            })),
+          },
+        },
+        document.screens[1],
+        document.screens[2],
+      ],
+      transitions: [],
+    };
+    renderStudio({ sourceText: JSON.stringify(repeated) });
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    const rows = screen.getByTestId('wireframe-adjustments').querySelectorAll('li');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.textContent).toContain('screens[0].root.children[0].gap');
+    expect(rows[0]?.textContent).toContain('(6 places)');
+  });
+
+  it('says nothing about adjustments when the document already matches the contract', () => {
+    renderStudio();
+    expect(screen.queryByTestId('wireframe-adjustments')).toBeNull();
   });
 
   it('shows the issues for a payload that is not json at all', () => {

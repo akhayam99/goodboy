@@ -9,13 +9,14 @@ import {
   SkipBack,
   SkipForward,
 } from 'lucide-react';
-import type { WireframeAction, WireframeDocument } from '@goodboy/core';
+import type { WireframeAction, WireframeAdjustment, WireframeDocument } from '@goodboy/core';
 import { Button, Divider, cn } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { WIREFRAME_FIDELITY_VARIANT_LABEL, type WireframeFidelity } from '../../wireframeFidelity';
 import { buildWireframeIndex } from '../../wireframeIndex';
 import { VIEWPORT_WIDTH, wireframePalette } from '../../wireframePalette';
+import { WireframeAdjustments } from './WireframeAdjustments';
 import { WireframeCanvas } from './WireframeCanvas';
 import { WireframeFlowOverview } from './WireframeFlowOverview';
 import { WireframeProvenanceRow } from './WireframeProvenanceRow';
@@ -29,6 +30,7 @@ type Props = {
   readonly artifact: WireframeArtifact;
   readonly fidelity: WireframeFidelity;
   readonly document: WireframeDocument;
+  readonly adjustments: ReadonlyArray<WireframeAdjustment>;
   readonly isRespawning: boolean;
   readonly error: string | null;
   readonly onRespawn: (fidelity: WireframeFidelity) => void;
@@ -38,6 +40,7 @@ export const WireframeStudioBody = ({
   artifact,
   fidelity,
   document,
+  adjustments,
   isRespawning,
   error,
   onRespawn,
@@ -111,6 +114,7 @@ export const WireframeStudioBody = ({
         theme={document.theme}
         designProfile={artifact.metadata.designProfile}
       />
+      <WireframeAdjustments adjustments={adjustments} />
       <WireframeScreenTabs
         screens={document.screens}
         currentScreenId={navigation.currentScreenId}
