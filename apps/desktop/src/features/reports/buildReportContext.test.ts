@@ -549,6 +549,15 @@ describe('buildReportContext session goal', () => {
     expect(row?.detail).toEqual([`the goal you wrote, ${LONG_GOAL.length} characters`]);
   });
 
+  it('counts the redacted goal in the inventory, not the raw one', () => {
+    const goal = goalOf({ value: `${LONG_GOAL}\n\nuse api_key=harborline-test-value` });
+    expect(goal.packText.length).toBeLessThan(goal.editorText.length);
+    const row = buildReportContext({ ...baseParams, goal }).inventory.find(
+      (entry) => entry.id === 'goal',
+    );
+    expect(row?.detail).toEqual([`the goal you wrote, ${goal.packText.length} characters`]);
+  });
+
   it('keeps the goal inventory row bare when only the title is sent', () => {
     const row = buildReportContext({ ...baseParams }).inventory.find(
       (entry) => entry.id === 'goal',

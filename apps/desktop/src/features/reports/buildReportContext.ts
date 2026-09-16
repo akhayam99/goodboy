@@ -472,7 +472,7 @@ export const buildReportContext = ({
     'this pack is the only evidence you have. it carries final agent messages, not tool calls or tool output. never invent a fact that is not here; say plainly what is missing.',
   ].join('\n');
 
-  const goalBlock = goal.isDetailed ? [`## goal\n\n${redactSecrets({ text: goal.text })}`] : [];
+  const goalBlock = goal.isDetailed ? [`## goal\n\n${goal.packText}`] : [];
 
   if (workflowRunId !== null) {
     sourceIds.push(workflowRunId);
@@ -485,7 +485,7 @@ export const buildReportContext = ({
     summary: 'the session goal and the report type',
     state: goal.isClipped ? 'partial' : 'included',
     detail: goal.isDetailed
-      ? [`the goal you wrote, ${formatBriefCount({ value: goal.text.length })} characters`]
+      ? [`the goal you wrote, ${formatBriefCount({ value: goal.packText.length })} characters`]
       : [],
   });
 

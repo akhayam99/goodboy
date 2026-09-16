@@ -299,6 +299,17 @@ describe('buildWireframeContext session goal', () => {
     expect(row?.detail).toEqual([`the goal you wrote, ${LONG_GOAL.length} characters`]);
   });
 
+  it('counts the redacted goal in the inventory, not the raw one', () => {
+    const goalSlot = `${LONG_GOAL}\n\nuse api_key=harborline-test-value`;
+    const goal = sessionGoalText({
+      slots: [{ key: 'goal', value: goalSlot, enabled: true }],
+      session: sessionWith({ goal: 'ship the wireframe role' }),
+    });
+    expect(goal.packText.length).toBeLessThan(goal.editorText.length);
+    const row = contextFor({ goalSlot }).inventory.find((entry) => entry.id === 'goal');
+    expect(row?.detail).toEqual([`the goal you wrote, ${goal.packText.length} characters`]);
+  });
+
   it('keeps the goal inventory row bare when only the title is sent', () => {
     const row = contextFor().inventory.find((entry) => entry.id === 'goal');
     expect(row?.state).toBe('included');

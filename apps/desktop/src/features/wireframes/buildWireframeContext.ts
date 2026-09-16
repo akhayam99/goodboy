@@ -293,7 +293,7 @@ export const buildWireframeContext = ({
     'this pack is the only evidence you have. it carries final agent messages, not tool calls or tool output. never invent a product fact that is not here; put what is missing in a node note.',
   ].join('\n');
 
-  const goalBlock = goal.isDetailed ? [`## goal\n\n${redactSecrets({ text: goal.text })}`] : [];
+  const goalBlock = goal.isDetailed ? [`## goal\n\n${goal.packText}`] : [];
 
   inventory.push(briefInventoryRow({ brief: request.text }));
   inventory.push({
@@ -302,7 +302,7 @@ export const buildWireframeContext = ({
     summary: 'the session goal and the fidelity',
     state: goal.isClipped ? 'partial' : 'included',
     detail: goal.isDetailed
-      ? [`the goal you wrote, ${formatBriefCount({ value: goal.text.length })} characters`]
+      ? [`the goal you wrote, ${formatBriefCount({ value: goal.packText.length })} characters`]
       : [],
   });
   inventory.push({

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ContextSlot, Session } from '@goodboy/types';
+import { REDACTED } from '../../shared/utils/redactSecrets';
 import { SESSION_GOAL_LIMITS, sessionGoalText } from './sessionGoalText';
 
 const TITLE = 'Fix the rounding drift in ledger-core postings';
@@ -23,7 +24,8 @@ const LONG = [
 describe('sessionGoalText', () => {
   it('falls back to the title when the session has no goal slot', () => {
     expect(sessionGoalText({ slots: [], session })).toEqual({
-      text: TITLE,
+      editorText: TITLE,
+      packText: TITLE,
       isClipped: false,
       isDetailed: false,
     });
@@ -32,7 +34,8 @@ describe('sessionGoalText', () => {
   it('falls back to the title when another slot carries the long text', () => {
     const slots = [{ key: 'decisions', value: LONG, enabled: true } satisfies ContextSlot];
     expect(sessionGoalText({ slots, session })).toEqual({
-      text: TITLE,
+      editorText: TITLE,
+      packText: TITLE,
       isClipped: false,
       isDetailed: false,
     });
@@ -41,7 +44,8 @@ describe('sessionGoalText', () => {
   it('respects a disabled goal slot and keeps the title', () => {
     const slots = [goalSlot({ value: LONG, enabled: false })];
     expect(sessionGoalText({ slots, session })).toEqual({
-      text: TITLE,
+      editorText: TITLE,
+      packText: TITLE,
       isClipped: false,
       isDetailed: false,
     });
@@ -49,7 +53,8 @@ describe('sessionGoalText', () => {
 
   it.each(['', '  \n\t '])('keeps the title for an empty goal slot (%j)', (value) => {
     expect(sessionGoalText({ slots: [goalSlot({ value })], session })).toEqual({
-      text: TITLE,
+      editorText: TITLE,
+      packText: TITLE,
       isClipped: false,
       isDetailed: false,
     });
@@ -58,7 +63,8 @@ describe('sessionGoalText', () => {
   it('is not detailed when the slot only repeats the title', () => {
     const slots = [goalSlot({ value: `  ${TITLE}\n` })];
     expect(sessionGoalText({ slots, session })).toEqual({
-      text: TITLE,
+      editorText: TITLE,
+      packText: TITLE,
       isClipped: false,
       isDetailed: false,
     });
@@ -66,7 +72,8 @@ describe('sessionGoalText', () => {
 
   it('uses the slot when it says more than the title', () => {
     expect(sessionGoalText({ slots: [goalSlot({ value: `  ${LONG}  ` })], session })).toEqual({
-      text: LONG,
+      editorText: LONG,
+      packText: LONG,
       isClipped: false,
       isDetailed: true,
     });
@@ -77,16 +84,48 @@ describe('sessionGoalText', () => {
     const result = sessionGoalText({ slots: [goalSlot({ value })], session });
     expect(result.isDetailed).toBe(true);
     expect(result.isClipped).toBe(true);
-    expect(result.text).toHaveLength(SESSION_GOAL_LIMITS.chars);
-    expect(value.startsWith(result.text)).toBe(true);
+    expect(result.packText).toHaveLength(SESSION_GOAL_LIMITS.chars);
+    expect(value.startsWith(result.packText)).toBe(true);
+    expect(result.editorText).toBe(value.trim());
   });
 
   it('keeps a goal slot exactly at the limit whole', () => {
     const value = 'a'.repeat(SESSION_GOAL_LIMITS.chars);
     expect(sessionGoalText({ slots: [goalSlot({ value })], session })).toEqual({
-      text: value,
+      editorText: value,
+      packText: value,
       isClipped: false,
       isDetailed: true,
     });
+  });
+});
+
+describe('sessionGoalText secrets', () => {
+  it('redacts before the cut so a straddling secret leaves no plaintext fragment', () => {
+    const value = `${'a'.repeat(SESSION_GOAL_LIMITS.chars - 12)} api_key=harborline-test-value ${'b'.repeat(100)}`;
+    expect(value.slice(0, SESSION_GOAL_LIMITS.chars)).toContain('api_key=har');
+
+    const result = sessionGoalText({ slots: [goalSlot({ value })], session });
+    expect(result.isClipped).toBe(true);
+    expect(result.packText).not.toContain('api_key=har');
+    expect(result.packText).not.toContain('harborline');
+  });
+
+  it('hands the editor the untouched text the user wrote', () => {
+    const value = `${LONG}\n\nuse api_key=harborline-test-value`;
+    const result = sessionGoalText({ slots: [goalSlot({ value })], session });
+    expect(result.editorText).toBe(value);
+    expect(result.editorText).toContain('harborline-test-value');
+    expect(result.packText).not.toContain('harborline-test-value');
+    expect(result.packText).toContain(REDACTED);
+  });
+
+  it('measures the clip against the redacted text, not the raw text', () => {
+    const secret = ' api_key=harborline-test-value';
+    const value = `${'a'.repeat(SESSION_GOAL_LIMITS.chars - 5)}${secret}`;
+    const result = sessionGoalText({ slots: [goalSlot({ value })], session });
+    expect(value.length).toBeGreaterThan(SESSION_GOAL_LIMITS.chars);
+    expect(result.packText.length).toBeLessThanOrEqual(SESSION_GOAL_LIMITS.chars);
+    expect(result.packText).not.toContain('harborline');
   });
 });

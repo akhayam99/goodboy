@@ -1,4 +1,5 @@
 import type { ContextSlot, Session } from '@goodboy/types';
+import { redactSecrets } from '../../shared/utils/redactSecrets';
 import { formatBriefCount } from './artifactBrief';
 
 export const SESSION_GOAL_LIMITS = {
@@ -10,7 +11,8 @@ export const SESSION_GOAL_CLIP_NOTE = `session goal cut at ${formatBriefCount({
 })} characters`;
 
 export type SessionGoalText = Readonly<{
-  text: string;
+  editorText: string;
+  packText: string;
   isClipped: boolean;
   isDetailed: boolean;
 }>;
@@ -20,8 +22,24 @@ type Params = Readonly<{
   session: Pick<Session, 'goal'>;
 }>;
 
+type PackParams = Readonly<{
+  text: string;
+}>;
+
+const packValue = ({ text }: PackParams): Pick<SessionGoalText, 'packText' | 'isClipped'> => {
+  const redacted = redactSecrets({ text });
+  if (redacted.length <= SESSION_GOAL_LIMITS.chars) {
+    return { packText: redacted, isClipped: false };
+  }
+  return { packText: redacted.slice(0, SESSION_GOAL_LIMITS.chars), isClipped: true };
+};
+
 export const sessionGoalText = ({ slots, session }: Params): SessionGoalText => {
-  const title: SessionGoalText = { text: session.goal, isClipped: false, isDetailed: false };
+  const title: SessionGoalText = {
+    editorText: session.goal,
+    ...packValue({ text: session.goal }),
+    isDetailed: false,
+  };
   const slot = slots.find((entry) => entry.key === 'goal');
   if (slot === undefined || slot.enabled === false) {
     return title;
@@ -30,12 +48,9 @@ export const sessionGoalText = ({ slots, session }: Params): SessionGoalText => 
   if (detailed.length === 0 || detailed === session.goal.trim()) {
     return title;
   }
-  if (detailed.length <= SESSION_GOAL_LIMITS.chars) {
-    return { text: detailed, isClipped: false, isDetailed: true };
-  }
   return {
-    text: detailed.slice(0, SESSION_GOAL_LIMITS.chars),
-    isClipped: true,
+    editorText: detailed,
+    ...packValue({ text: detailed }),
     isDetailed: true,
   };
 };
