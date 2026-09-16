@@ -153,6 +153,14 @@ export const activityChildOf = ({ entry }: EntryParams): ActivityChildToggle | n
   return null;
 };
 
+type ChildShownParams = {
+  readonly filter: ActivityFilter;
+  readonly toggle: ActivityChildToggle;
+};
+
+export const isActivityChildShown = ({ filter, toggle }: ChildShownParams): boolean =>
+  filter[ACTIVITY_CHILD[toggle].parent] && filter[toggle];
+
 type FilterParams = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
   readonly filter: ActivityFilter;
@@ -168,7 +176,7 @@ export const filterTimelineEntries = ({
       return false;
     }
     const child = activityChildOf({ entry });
-    return child == null || filter[child];
+    return child == null || isActivityChildShown({ filter, toggle: child });
   });
 
 type ParseParams = {

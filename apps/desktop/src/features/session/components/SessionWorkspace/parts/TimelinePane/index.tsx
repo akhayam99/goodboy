@@ -18,7 +18,7 @@ import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWor
 import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
 import { useWorkflowAdvanceStates } from '../../../../../workflows/useWorkflowAdvanceStates';
 import { useToast } from '../../../../../../app/components/Toast';
-import { filterTimelineEntries } from '../../../../timeline/activityFilter';
+import { filterTimelineEntries, isActivityChildShown } from '../../../../timeline/activityFilter';
 import { buildTimelineGroups } from '../../../../timeline/buildTimelineGroups';
 import {
   buildTimelineStream,
@@ -209,23 +209,12 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         dayLabelFor: dayLabel,
         showWorkflowSubagents: activity.filter.workflowSubagents,
         showAgentSubagents: activity.filter.agentSubagents,
-        showPlans: activity.filter.plans,
-        showReports: activity.filter.reports,
-        showWireframes: activity.filter.wireframes,
+        showPlans: isActivityChildShown({ filter: activity.filter, toggle: 'plans' }),
+        showReports: isActivityChildShown({ filter: activity.filter, toggle: 'reports' }),
+        showWireframes: isActivityChildShown({ filter: activity.filter, toggle: 'wireframes' }),
         showQuestions: activity.filter.questions,
       }),
-    [
-      activity.filter.agentSubagents,
-      activity.filter.plans,
-      activity.filter.questions,
-      activity.filter.reports,
-      activity.filter.wireframes,
-      activity.filter.workflowSubagents,
-      blockedRunIds,
-      decidingRunIds,
-      unreadAgentIds,
-      visibleEntries,
-    ],
+    [activity.filter, blockedRunIds, decidingRunIds, unreadAgentIds, visibleEntries],
   );
 
   const rail = useMemo(

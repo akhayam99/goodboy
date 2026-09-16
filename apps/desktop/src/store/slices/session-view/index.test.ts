@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
   AgentId,
+  ArtifactId,
   BudgetRule,
   BudgetAlert,
   ContextSlot,
@@ -768,6 +769,34 @@ describe('store contract', () => {
       store.getState().setSessionStudio(SESSION_ID, { kind: 'workflow' });
       expect(store.getState().focusedPlanId[SESSION_ID]).toBe(PLAN_ID);
       expect(store.getState().sessionStudio[SESSION_ID]).toEqual({ kind: 'workflow' });
+    });
+
+    it('focuses one artifact at a time and clears the other focus on the round trip', async () => {
+      const store = await getStore();
+      const artifactId = 'artifact-report' as ArtifactId;
+
+      store.getState().setFocusedArtifactId(SESSION_ID, artifactId);
+      expect(store.getState().focusedArtifactId[SESSION_ID]).toBe(artifactId);
+      expect(store.getState().focusedPlanId[SESSION_ID]).toBeNull();
+
+      store.getState().setFocusedPlanId(SESSION_ID, null);
+      expect(store.getState().focusedArtifactId[SESSION_ID]).toBeNull();
+
+      store.getState().setFocusedPlanId(SESSION_ID, PLAN_ID);
+      expect(store.getState().focusedPlanId[SESSION_ID]).toBe(PLAN_ID);
+      expect(store.getState().focusedArtifactId[SESSION_ID]).toBeNull();
+
+      store.getState().setFocusedArtifactId(SESSION_ID, null);
+      expect(store.getState().focusedPlanId[SESSION_ID]).toBeNull();
+    });
+
+    it('focusedArtifactId survives the switch to the plans lens and dies on any other', async () => {
+      const store = await getStore();
+      store.getState().setFocusedArtifactId(SESSION_ID, 'artifact-report' as ArtifactId);
+      store.getState().setActiveLens(SESSION_ID, 'plans');
+      expect(store.getState().focusedArtifactId[SESSION_ID]).toBe('artifact-report');
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      expect(store.getState().focusedArtifactId[SESSION_ID]).toBeNull();
     });
 
     it('setActiveLens clears the selected agent (foreground reconciliation)', async () => {

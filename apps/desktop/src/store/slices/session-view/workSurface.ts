@@ -157,9 +157,7 @@ export const setFocusedPlanId = (set: SetFn) => {
   return (sessionId: SessionId, planId: PlanId | null): void => {
     set((s) => ({
       focusedPlanId: { ...s.focusedPlanId, [sessionId]: planId },
-      ...(planId != null && {
-        focusedArtifactId: { ...s.focusedArtifactId, [sessionId]: null },
-      }),
+      focusedArtifactId: { ...s.focusedArtifactId, [sessionId]: null },
     }));
   };
 };
@@ -168,7 +166,7 @@ export const setFocusedArtifactId = (set: SetFn) => {
   return (sessionId: SessionId, artifactId: ArtifactId | null): void => {
     set((s) => ({
       focusedArtifactId: { ...s.focusedArtifactId, [sessionId]: artifactId },
-      ...(artifactId != null && { focusedPlanId: { ...s.focusedPlanId, [sessionId]: null } }),
+      focusedPlanId: { ...s.focusedPlanId, [sessionId]: null },
     }));
   };
 };

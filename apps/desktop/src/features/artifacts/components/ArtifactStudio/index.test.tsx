@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const { notify, state, showToast, subscribers } = vi.hoisted(() => {
   const listeners = new Set<() => void>();
@@ -30,17 +30,13 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       focusedPlanId: {} as Record<string, string | null>,
       setFocusedPlanId: vi.fn((sessionId: string, planId: string | null) => {
         state.focusedPlanId = { ...state.focusedPlanId, [sessionId]: planId };
-        if (planId !== null) {
-          state.focusedArtifactId = { ...state.focusedArtifactId, [sessionId]: null };
-        }
+        state.focusedArtifactId = { ...state.focusedArtifactId, [sessionId]: null };
         notify();
       }),
       focusedArtifactId: {} as Record<string, string | null>,
       setFocusedArtifactId: vi.fn((sessionId: string, artifactId: string | null) => {
         state.focusedArtifactId = { ...state.focusedArtifactId, [sessionId]: artifactId };
-        if (artifactId !== null) {
-          state.focusedPlanId = { ...state.focusedPlanId, [sessionId]: null };
-        }
+        state.focusedPlanId = { ...state.focusedPlanId, [sessionId]: null };
         notify();
       }),
       artifactFilter: {} as Record<string, string>,
@@ -496,6 +492,20 @@ describe('ArtifactStudio', () => {
     expect(screen.getByRole('button', { name: /start/i })).toBeDefined();
     expect(screen.getByLabelText('Delete plan')).toBeDefined();
     expect(screen.getByRole('tab', { name: /edit/i })).toBeDefined();
+  });
+
+  it('returns to the collection when the crumb clears the plan focus', () => {
+    state.sessionArtifacts = { 'sess-1': [report] };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('Session report'));
+    expect(screen.getByTestId('artifact-export-slot')).toBeDefined();
+
+    act(() => {
+      state.setFocusedPlanId('sess-1', null);
+    });
+
+    expect(screen.queryByTestId('artifact-export-slot')).toBeNull();
+    expect(screen.getByRole('heading', { level: 2, name: 'Reports' })).toBeDefined();
   });
 
   it('opens the artifact another surface focused in the store', () => {
