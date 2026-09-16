@@ -506,6 +506,8 @@ describe('reduceTranscript artifact envelopes', () => {
 describe('reduceTranscript artifact scan reuse', () => {
   const BODY_LINES = 200;
   const BODY_LINE_LENGTH = 200;
+  const BODY_CHUNKS = 200;
+  const BODY_CHUNK_LENGTH = 200;
 
   it('scans only the tail while a long block arrives across many deltas', () => {
     const deltas = ['here it comes.\n', '<<artifact v=1 kind=report>>\n'];
@@ -513,6 +515,25 @@ describe('reduceTranscript artifact scan reuse', () => {
       deltas.push(`${'x'.repeat(BODY_LINE_LENGTH)}\n`);
     }
     deltas.push('<</artifact>>\n');
+    const events = deltas.map((delta) => assistantText({ delta }));
+    const turnLength = deltas.join('').length;
+
+    resetReduceTranscriptTrace();
+    for (let length = 1; length <= events.length; length += 1) {
+      reduceTranscript(events.slice(0, length));
+    }
+
+    expect(reduceTranscriptTrace.textScans).toBe(events.length);
+    expect(reduceTranscriptTrace.textScanRestarts).toBe(1);
+    expect(reduceTranscriptTrace.textScanChars).toBeLessThan(turnLength * 2);
+  });
+
+  it('scans only the tail while one json line grows across many deltas', () => {
+    const deltas = ['here it comes.\n', '<<artifact v=1 kind=report>>\n', '{"title":"Rollout"'];
+    for (let chunk = 0; chunk < BODY_CHUNKS; chunk += 1) {
+      deltas.push(`,"k${chunk}":"${'x'.repeat(BODY_CHUNK_LENGTH)}"`);
+    }
+    deltas.push('}\n', '<</artifact>>\n');
     const events = deltas.map((delta) => assistantText({ delta }));
     const turnLength = deltas.join('').length;
 

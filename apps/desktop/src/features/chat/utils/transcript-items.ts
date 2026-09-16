@@ -157,7 +157,7 @@ const assistantTextItems = ({
   scan,
 }: AssistantTextItemsParams): AssistantTextItemsResult => {
   if (import.meta.env.DEV) {
-    const from = scan === null ? 0 : scan.scanned;
+    const from = scan === null ? 0 : scan.searched;
     reduceTranscriptTrace.textScans += 1;
     reduceTranscriptTrace.textScanChars += text.length - from;
     if (from === 0) {

@@ -25,6 +25,7 @@ export type ArtifactBlockSpan = {
 
 export type ArtifactScanState = {
   readonly scanned: number;
+  readonly searched: number;
   readonly fence: string | null;
   readonly open: {
     readonly attrs: Readonly<Record<string, string>>;
@@ -262,14 +263,15 @@ export const scanArtifactBlocks = ({
   text,
   from = null,
 }: ScanArtifactBlocksParams): ArtifactScanResult => {
-  const resumable = from !== null && from.scanned <= text.length ? from : null;
+  const resumable = from !== null && from.searched <= text.length ? from : null;
   const spans: ArtifactBlockSpan[] = resumable !== null ? resumable.spans.slice() : [];
   let fence: string | null = resumable !== null ? resumable.fence : null;
   let open: OpenSpan | null = resumable !== null ? resumable.open : null;
   let lineStart = resumable !== null ? resumable.scanned : 0;
+  let searchFrom = resumable !== null ? Math.max(resumable.searched, lineStart) : 0;
 
   for (;;) {
-    const lineEnd = text.indexOf('\n', lineStart);
+    const lineEnd = text.indexOf('\n', searchFrom);
     if (lineEnd === -1) {
       break;
     }
@@ -285,10 +287,12 @@ export const scanArtifactBlocks = ({
     fence = step.fence;
     open = step.open;
     lineStart = lineEnd + 1;
+    searchFrom = lineStart;
   }
 
   const state: ArtifactScanState = {
     scanned: lineStart,
+    searched: text.length,
     fence,
     open,
     spans: spans.slice(),

@@ -163,6 +163,19 @@ describe('scanArtifactBlocks spans', () => {
     expect(tail.spans).toEqual(scanArtifactBlocks({ text }).spans);
   });
 
+  it('carries a search boundary past the start of an unterminated line', () => {
+    const head = `<<artifact v=1 kind=report>>\n{"title":"Rollout"`;
+    const state = scanArtifactBlocks({ text: head }).state;
+    expect(state.scanned).toBe(`<<artifact v=1 kind=report>>\n`.length);
+    expect(state.searched).toBe(head.length);
+
+    const grown = `${head},"body":"more"`;
+    const resumed = scanArtifactBlocks({ text: grown, from: state });
+    expect(resumed.state.scanned).toBe(state.scanned);
+    expect(resumed.state.searched).toBe(grown.length);
+    expect(resumed.spans).toEqual(scanArtifactBlocks({ text: grown }).spans);
+  });
+
   it('starts over when the carried boundary is past the end of the text', () => {
     const stale = scanArtifactBlocks({ text }).state;
     expect(scanArtifactBlocks({ text: 'short', from: stale }).spans).toEqual([]);
