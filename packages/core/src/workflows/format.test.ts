@@ -51,6 +51,30 @@ describe('parseFormattedWorkflow', () => {
     expect(result?.steps[0]?.role).toBe('custom');
   });
 
+  it('coerces an unavailable role to custom', () => {
+    const json = JSON.stringify({
+      steps: [{ name: 'Do', role: 'wireframe', promptPrefix: '', expectedOutput: '' }],
+    });
+
+    expect(parseFormattedWorkflow(json)?.steps[0]?.role).toBe('custom');
+  });
+
+  it('normalizes legacy role aliases', () => {
+    const json = JSON.stringify({
+      steps: [
+        { name: 'Docs', role: 'writer', promptPrefix: '', expectedOutput: '' },
+        { name: 'Debug', role: 'debugger', promptPrefix: '', expectedOutput: '' },
+        { name: 'General', role: 'generic', promptPrefix: '', expectedOutput: '' },
+      ],
+    });
+
+    expect(parseFormattedWorkflow(json)?.steps.map((step) => step.role)).toEqual([
+      'docs',
+      'investigator',
+      'custom',
+    ]);
+  });
+
   it('drops steps without a name and returns null when none remain', () => {
     const json = JSON.stringify({ steps: [{ role: 'planner', promptPrefix: 'x' }] });
     expect(parseFormattedWorkflow(json)).toBeNull();
@@ -161,6 +185,23 @@ describe('formatWorkflowFromNL', () => {
     });
     expect(result?.name).toBe('plan-implement-review');
     expect(result?.steps).toHaveLength(2);
+  });
+
+  it('advertises only selection-eligible roles', async () => {
+    const deps = makeDeps();
+
+    await formatWorkflowFromNL({ deps, input: { description: 'plan and build' } });
+
+    expect(deps.invokeFn).toHaveBeenCalledWith(
+      'summarize_session',
+      expect.objectContaining({
+        args: expect.objectContaining({
+          systemPrompt: expect.stringContaining(
+            'role: one of scout, investigator, planner, implementer, reviewer, tester, resolver, docs, custom.',
+          ),
+        }),
+      }),
+    );
   });
 
   it('anthropic provider unwraps the {result} JSON envelope', async () => {

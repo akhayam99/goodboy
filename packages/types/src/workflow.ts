@@ -27,6 +27,9 @@ export type AgentRole =
   | 'investigator'
   | 'tester'
   | 'resolver'
+  | 'docs'
+  | 'report'
+  | 'wireframe'
   | 'custom';
 
 export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';

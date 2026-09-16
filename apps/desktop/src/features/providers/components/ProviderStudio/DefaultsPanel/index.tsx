@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE, TASKS } from '@goodboy/types';
 import type { AgentRole, OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
-import { ROLE_DEFAULTS, isAgentRole } from '@goodboy/core';
+import { ROLE_REGISTRY, SELECTABLE_AGENT_ROLES } from '@goodboy/core';
 import { Divider, EmptyState, FieldRow, SectionHeader, SegmentedTabs } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ProviderChip } from '../../ProviderChip';
@@ -24,7 +24,7 @@ type ProviderParams = {
 
 type DefaultsGroup = 'task' | 'role';
 
-const ROLES: ReadonlyArray<AgentRole> = Object.keys(ROLE_DEFAULTS).filter(isAgentRole);
+const ROLES: ReadonlyArray<AgentRole> = SELECTABLE_AGENT_ROLES;
 
 const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
@@ -193,7 +193,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
                   <RoleModelRow
                     role={role}
                     label={ROLE_LABEL[role]}
-                    help={ROLE_DEFAULTS[role].description}
+                    help={ROLE_REGISTRY[role].description}
                     preference={overrides.roleModels?.[role] ?? null}
                     defaultProviderId={defaultProviderId}
                     connectedProviderIds={connectedProviderIds}

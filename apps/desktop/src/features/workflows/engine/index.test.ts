@@ -87,14 +87,23 @@ describe('workflow authoring engine', () => {
     });
   });
 
-  it('normalizes unknown planner roles', () => {
+  it('normalizes planner role aliases and unknown roles', () => {
     const steps = draftFromPlannerSteps({
       steps: [
         { name: 'Known', role: 'reviewer', promptPrefix: 'Review', expectedOutput: 'Notes' },
+        { name: 'Docs', role: 'writer', promptPrefix: 'Document', expectedOutput: 'Docs' },
+        { name: 'Debug', role: 'debugger', promptPrefix: 'Debug', expectedOutput: 'Fix' },
+        { name: 'General', role: 'generic', promptPrefix: 'Handle', expectedOutput: 'Result' },
         { name: 'Unknown', role: 'emperor', promptPrefix: 'Rule', expectedOutput: 'Order' },
       ],
     });
-    expect(steps.map((step) => step.role)).toEqual(['reviewer', 'custom']);
+    expect(steps.map((step) => step.role)).toEqual([
+      'reviewer',
+      'docs',
+      'investigator',
+      'custom',
+      'custom',
+    ]);
   });
 
   it('clamps effort when the model changes', () => {

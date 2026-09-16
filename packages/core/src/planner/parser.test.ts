@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parsePlannerOutput, PlannerParseError } from './parser';
+import { PLANNER_SYSTEM_PROMPT } from './prompt';
 
 const validJson = JSON.stringify({
   workflowName: 'Auth Refactor',
@@ -146,6 +147,32 @@ describe('parsePlannerOutput', () => {
     });
     const out = parsePlannerOutput(other);
     expect(out.steps[0]!.role).toBe('custom');
+  });
+
+  it('maps an unavailable role to custom', () => {
+    const unavailable = JSON.stringify({
+      workflowName: 'X',
+      reasoning: 'x',
+      steps: [{ name: 'X', role: 'report', promptPrefix: 'p', expectedOutput: 'o' }],
+    });
+
+    expect(parsePlannerOutput(unavailable).steps[0]!.role).toBe('custom');
+  });
+
+  it('advertises exactly the selection-eligible role vocabulary', () => {
+    expect(PLANNER_SYSTEM_PROMPT).toContain(
+      '"role": "<scout|investigator|planner|implementer|reviewer|tester|resolver|docs|custom>"',
+    );
+  });
+
+  it('normalizes a legacy role alias', () => {
+    const legacy = JSON.stringify({
+      workflowName: 'X',
+      reasoning: 'x',
+      steps: [{ name: 'Docs', role: 'writer', promptPrefix: 'p', expectedOutput: 'o' }],
+    });
+
+    expect(parsePlannerOutput(legacy).steps[0]!.role).toBe('docs');
   });
 
   it('preserves a canonical role verbatim', () => {

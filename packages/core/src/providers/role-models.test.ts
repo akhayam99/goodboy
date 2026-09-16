@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ProviderId, RoleModelPreferences } from '@goodboy/types';
-import { ROLE_DEFAULTS } from '../roles';
+import { ROLE_REGISTRY } from '../roles';
 import { resolveRoleRouting } from './role-models';
 
 describe('resolveRoleRouting', () => {
   it('resolves a role with no stored preference to its compiled default', () => {
     expect(resolveRoleRouting({ role: 'investigator', prefs: null })).toEqual({
-      provider: ROLE_DEFAULTS.investigator.provider,
-      model: ROLE_DEFAULTS.investigator.model,
-      effort: ROLE_DEFAULTS.investigator.effort,
+      provider: ROLE_REGISTRY.investigator.provider,
+      model: ROLE_REGISTRY.investigator.model,
+      effort: ROLE_REGISTRY.investigator.effort,
       isOverride: false,
     });
   });
@@ -32,7 +32,7 @@ describe('resolveRoleRouting', () => {
     };
     const resolved = resolveRoleRouting({ role: 'reviewer', prefs });
 
-    expect(resolved.model).toBe(ROLE_DEFAULTS.reviewer.model);
+    expect(resolved.model).toBe(ROLE_REGISTRY.reviewer.model);
     expect(resolved.isOverride).toBe(false);
   });
 
@@ -42,8 +42,8 @@ describe('resolveRoleRouting', () => {
     };
     const resolved = resolveRoleRouting({ role: 'reviewer', prefs });
 
-    expect(resolved.provider).toBe(ROLE_DEFAULTS.reviewer.provider);
-    expect(resolved.model).toBe(ROLE_DEFAULTS.reviewer.model);
+    expect(resolved.provider).toBe(ROLE_REGISTRY.reviewer.provider);
+    expect(resolved.model).toBe(ROLE_REGISTRY.reviewer.model);
     expect(resolved.isOverride).toBe(false);
   });
 
@@ -86,15 +86,15 @@ describe('resolveRoleRouting', () => {
     };
     const resolved = resolveRoleRouting({ role: 'tester', prefs });
 
-    expect(resolved.model).toBe(ROLE_DEFAULTS.tester.model);
+    expect(resolved.model).toBe(ROLE_REGISTRY.tester.model);
     expect(resolved.isOverride).toBe(false);
   });
 
   it('resolves the resolver role to its compiled default with no stored preference', () => {
     expect(resolveRoleRouting({ role: 'resolver', prefs: null })).toEqual({
-      provider: ROLE_DEFAULTS.resolver.provider,
-      model: ROLE_DEFAULTS.resolver.model,
-      effort: ROLE_DEFAULTS.resolver.effort,
+      provider: ROLE_REGISTRY.resolver.provider,
+      model: ROLE_REGISTRY.resolver.model,
+      effort: ROLE_REGISTRY.resolver.effort,
       isOverride: false,
     });
   });
@@ -123,7 +123,7 @@ describe('resolveRoleRouting', () => {
     };
     const resolved = resolveRoleRouting({ role: 'resolver', prefs });
 
-    expect(resolved.model).toBe(ROLE_DEFAULTS.resolver.model);
+    expect(resolved.model).toBe(ROLE_REGISTRY.resolver.model);
     expect(resolved.isOverride).toBe(false);
   });
 
@@ -296,8 +296,8 @@ describe('resolveRoleRouting', () => {
     const resolved = resolveRoleRouting({ role: 'reviewer', prefs });
 
     expect(resolved).toMatchObject({
-      provider: ROLE_DEFAULTS.reviewer.provider,
-      model: ROLE_DEFAULTS.reviewer.model,
+      provider: ROLE_REGISTRY.reviewer.provider,
+      model: ROLE_REGISTRY.reviewer.model,
       isOverride: false,
     });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('invalid reviewer model'));

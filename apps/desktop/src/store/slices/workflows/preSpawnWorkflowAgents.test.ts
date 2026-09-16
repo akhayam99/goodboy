@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  ROLE_DEFAULTS,
+  ROLE_REGISTRY,
   getCheapModel,
   resolveModelArgs,
   resolveModelForProvider,
@@ -298,10 +298,10 @@ describe('preSpawnWorkflowAgents', () => {
     });
 
     const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
-    expect(insert['modelOverride']).toBe(ROLE_DEFAULTS.scout.model);
+    expect(insert['modelOverride']).toBe(ROLE_REGISTRY.scout.model);
     expect(insert['modelOverride']).not.toBe('opus-5');
-    expect(insert['effort']).toBe(ROLE_DEFAULTS.scout.effort);
-    expect(result.modelOverrides['agent-1']).toBe(ROLE_DEFAULTS.scout.model);
+    expect(insert['effort']).toBe(ROLE_REGISTRY.scout.effort);
+    expect(result.modelOverrides['agent-1']).toBe(ROLE_REGISTRY.scout.model);
   });
 
   it('keeps each step on its own role model when a run mixes roles', async () => {
@@ -320,8 +320,8 @@ describe('preSpawnWorkflowAgents', () => {
     const [scoutInsert, plannerInsert] = invokeAgentInsertSpy.mock.calls.map(
       (call) => call[0] as Record<string, unknown>,
     );
-    expect(scoutInsert!['modelOverride']).toBe(ROLE_DEFAULTS.scout.model);
-    expect(plannerInsert!['modelOverride']).toBe(ROLE_DEFAULTS.planner.model);
+    expect(scoutInsert!['modelOverride']).toBe(ROLE_REGISTRY.scout.model);
+    expect(plannerInsert!['modelOverride']).toBe(ROLE_REGISTRY.planner.model);
     expect(scoutInsert!['modelOverride']).not.toBe(plannerInsert!['modelOverride']);
   });
 

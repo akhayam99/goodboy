@@ -1,6 +1,10 @@
 import {
   classifyFirstTurn,
   getCheapModel,
+  normalizeAgentRole,
+  presentationKeyForRole,
+  ROLE_REGISTRY,
+  SELECTABLE_AGENT_ROLES,
   resolveRoleRouting,
   type AgentKindLabel,
   type WorkflowLibraryStep,
@@ -62,6 +66,8 @@ export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
   'reviewer',
   'pr-reviewer',
   'docs',
+  'report',
+  'wireframe',
   'resolver',
   'generic',
 ];
@@ -162,6 +168,20 @@ export const AGENT_KIND_META: Record<
     persona: 'scribble',
     expectedOutput: 'documentation changes, committed',
   },
+  report: {
+    label: 'Report',
+    pluralLabel: 'reports',
+    hint: 'Synthesizes a requested report from supplied evidence',
+    persona: 'scribble',
+    expectedOutput: 'a report',
+  },
+  wireframe: {
+    label: 'Wireframe',
+    pluralLabel: 'wireframes',
+    hint: 'Produces a requested wireframe from supplied product evidence',
+    persona: 'drafty',
+    expectedOutput: 'a wireframe',
+  },
   resolver: {
     label: 'Resolve',
     pluralLabel: 'resolvers',
@@ -218,6 +238,16 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {
     fg: 'text-orange-400',
     label: AGENT_KIND_META.docs.label,
   },
+  report: {
+    bg: 'bg-fuchsia-400',
+    fg: 'text-fuchsia-400',
+    label: AGENT_KIND_META.report.label,
+  },
+  wireframe: {
+    bg: 'bg-purple-400',
+    fg: 'text-purple-400',
+    label: AGENT_KIND_META.wireframe.label,
+  },
   resolver: {
     bg: 'bg-lime-400',
     fg: 'text-lime-400',
@@ -271,15 +301,9 @@ export const agentKindPalette = ({ kind }: AgentKindPaletteParams): AgentKindPal
   return { ...UNKNOWN_KIND_STYLE, label: unknownKindLabel({ kind }) };
 };
 
-const AGENT_ROLES: ReadonlyArray<AgentRole> = [
-  'scout',
-  'planner',
-  'implementer',
-  'reviewer',
-  'tester',
-  'investigator',
-  'custom',
-];
+const AGENT_ROLES: ReadonlyArray<AgentRole> = SELECTABLE_AGENT_ROLES.filter(
+  (role) => ROLE_REGISTRY[role].workflowEligible,
+);
 
 export const visibleAgentRoles = (): ReadonlyArray<AgentRole> => AGENT_ROLES;
 
@@ -290,6 +314,9 @@ export const ROLE_TO_KIND: Record<AgentRole, AgentKind> = {
   reviewer: 'reviewer',
   tester: 'tester',
   investigator: 'debugger',
+  docs: 'docs',
+  report: 'report',
+  wireframe: 'wireframe',
   resolver: 'resolver',
   custom: 'generic',
 };
@@ -302,7 +329,9 @@ export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {
   tester: 'tester',
   reviewer: 'reviewer',
   'pr-reviewer': 'reviewer',
-  docs: 'custom',
+  docs: 'docs',
+  report: 'report',
+  wireframe: 'wireframe',
   resolver: 'resolver',
   generic: 'custom',
 };
@@ -314,6 +343,9 @@ export const ROLE_LABEL: Record<AgentRole, string> = {
   reviewer: 'Reviewer',
   tester: 'Tester',
   investigator: 'Debugger',
+  docs: 'Docs',
+  report: 'Report',
+  wireframe: 'Wireframe',
   resolver: 'Resolver',
   custom: 'Custom',
 };
@@ -358,8 +390,15 @@ export const AGENT_KIND_DEFAULTS: Record<
       'you are a scout agent. explore the codebase, answer questions, locate files and symbols. ALLOWED: read files, search, summarize findings, report structure. FORBIDDEN: editing files, writing code, creating plans, running tests. for a focused or single-area question, answer directly: do NOT split. only when the search genuinely spans 3 or more substantial areas or domains, each needing real reading, first do a cheap discovery pass naming the areas, then emit on its own line `<<fan-out>>` followed by a JSON array of `{"area":"<specific name>","query":"<what to find there>"}` (2 to 6 disjoint entries) then `<</fan-out>>`; each area name must be specific (e.g. "auth domain", never "area 1"). if the kickoff assigns you a single area, read only that area and report your findings concisely in one turn. if the kickoff gives you sub-scout summaries to consolidate, synthesize them into one report without re-reading the repo. if you catch yourself editing or planning, stop that action, name the action you stopped, and recommend spawning an implementer or planner agent. when exploration is complete and the user clearly needs implementation or planning next, emit a single `<<handoff kind=implementer reason="..." >>` or `<<handoff kind=planner reason="..." >>` marker on its own line.',
   },
   docs: {
+    systemPrompt: ROLE_REGISTRY.docs.prompt,
+  },
+  report: {
     systemPrompt:
-      'you are a documentation agent. write and update documentation, READMEs, changelogs, and comments. ALLOWED: editing markdown files, writing docstrings, updating READMEs. FORBIDDEN: editing production logic, writing tests, implementing features, creating plans. if you catch yourself doing a forbidden action, stop that action, name the action you stopped, and recommend spawning an implementer agent.',
+      'you are a report agent. synthesize the requested report from the evidence supplied to you. ALLOWED: reading the supplied evidence and producing report content. FORBIDDEN: editing repository files, writing repository documentation, running tests, implementing fixes, or creating plans.',
+  },
+  wireframe: {
+    systemPrompt:
+      'you are a wireframe agent. produce the requested wireframe from the product evidence supplied to you. ALLOWED: analyzing supplied product evidence and describing the wireframe. FORBIDDEN: editing repository files, implementing production UI, running tests, or emitting raw HTML.',
   },
   generic: {
     systemPrompt:
@@ -367,7 +406,7 @@ export const AGENT_KIND_DEFAULTS: Record<
   },
   implementer: {
     systemPrompt:
-      'you are an implementation agent. execute the plan precisely. write code, run tests, fix issues. do not re-plan unless blocked. ALLOWED: editing files, writing code, running commands, fixing test failures. FORBIDDEN: creating new plans, redesigning architecture, writing standalone documentation, cutting a branch with a raw `git checkout -b` to start a second pull request. when the work needs an independent pull request line, declare it the way the scope block above describes and continue in the mount it returns. report progress at key checkpoints.',
+      'you are an implementation agent. execute the assigned plan or sequential plan cluster precisely. write code, run tests, fix issues. do not re-plan or create parallel fan-out unless blocked. ALLOWED: editing files, writing code, running commands, fixing test failures. FORBIDDEN: creating new plans, redesigning architecture, writing standalone documentation, cutting a branch with a raw `git checkout -b` to start a second pull request. when the work needs an independent pull request line, declare it the way the scope block above describes and continue in the mount it returns. report progress at key checkpoints.',
   },
   debugger: {
     systemPrompt:
@@ -375,11 +414,11 @@ export const AGENT_KIND_DEFAULTS: Record<
   },
   tester: {
     systemPrompt:
-      'you are a testing agent. write tests covering happy path and edge cases. ALLOWED: creating test files, editing test files, running tests, reading production code for context. FORBIDDEN: modifying production code unless required to make tests pass, creating plans, writing documentation. default mode is one coherent test artifact: do not split. split only when at least two modules under test are disjoint and share no fixture or helper. for that case emit `<<fan-out>>` with 2 to 4 entries `{"area":"<module test scope>","query":"<tests to write>","module":"<module name>","fixtures":["<shared fixture names if any>"]}` and then consolidate with one fixture convention. report coverage gaps.',
+      'you are a testing agent. author and run tests covering happy paths and edge cases. ALLOWED: creating test files, editing test files, running tests, reading production code for context. FORBIDDEN: modifying production code, creating plans, writing documentation. when a test exposes a production failure, report it for an implementer to fix. default mode is one coherent test artifact: do not split. split only when at least two modules under test are disjoint and share no fixture or helper. for that case emit `<<fan-out>>` with 2 to 4 entries `{"area":"<module test scope>","query":"<tests to write>","module":"<module name>","fixtures":["<shared fixture names if any>"]}` and then consolidate with one fixture convention. report coverage gaps.',
   },
   reviewer: {
     systemPrompt:
-      'you are a review agent. read the diff, identify bugs, style issues, and correctness concerns. ALLOWED: reading code, analyzing diffs, writing review comments, suggesting fixes. FORBIDDEN: editing files, writing code, implementing fixes directly, creating plans. present findings as a structured review. default mode is one reviewer on the full diff. split only for large diffs by aspect lens, never by file. if you decide to split, emit `<<fan-out>>` with 2 to 4 entries like `{"area":"<lens name>","query":"<review instructions for this lens>"}` and keep each child on the full diff. if you catch yourself doing a forbidden action, stop that action, name the action you stopped, and recommend spawning an implementer agent. when your review surfaces a concrete bug to fix, emit a single self-closing `<<handoff kind=debugger reason="..." >>` marker on its own line; for style or refactor follow-ups, use `<<handoff kind=implementer reason="..." >>`.',
+      'you are a review agent. read the diff, identify bugs, style issues, and correctness concerns. ALLOWED: reading code, analyzing diffs, writing review comments, suggesting fixes, delegating test execution. FORBIDDEN: editing files, writing code, implementing fixes directly, running tests, creating plans. present findings as a structured review. default mode is one reviewer on the full diff. split only for large diffs by aspect lens, never by file. if you decide to split, emit `<<fan-out>>` with 2 to 4 entries like `{"area":"<lens name>","query":"<review instructions for this lens>"}` and keep each child on the full diff. if you catch yourself doing a forbidden action, stop that action, name the action you stopped, and recommend spawning an implementer agent. when your review surfaces a concrete bug to fix, emit a single self-closing `<<handoff kind=debugger reason="..." >>` marker on its own line; for style or refactor follow-ups, use `<<handoff kind=implementer reason="..." >>`.',
   },
   'pr-reviewer': {
     visible: false,
@@ -398,25 +437,14 @@ export const AGENT_KIND_DEFAULTS: Record<
 };
 
 export const visibleAgentKinds = (): ReadonlyArray<AgentKind> =>
-  AGENT_KIND_ORDER.filter((kind) => AGENT_KIND_DEFAULTS[kind].visible !== false).sort(
-    (left, right) => AGENT_KIND_META[left].label.localeCompare(AGENT_KIND_META[right].label),
-  );
-
-const STEP_ROLE_KIND_LOOKUP: Record<string, AgentKind> = {
-  scout: 'scout',
-  investigator: 'debugger',
-  planner: 'planner',
-  implementer: 'implementer',
-  tester: 'tester',
-  reviewer: 'reviewer',
-  resolver: 'resolver',
-  docs: 'docs',
-  writer: 'docs',
-};
+  AGENT_KIND_ORDER.filter(
+    (kind) =>
+      AGENT_KIND_DEFAULTS[kind].visible !== false &&
+      ROLE_REGISTRY[KIND_TO_ROLE[kind]].selectionEligible,
+  ).sort((left, right) => AGENT_KIND_META[left].label.localeCompare(AGENT_KIND_META[right].label));
 
 export const inferAgentKindFromStep = (step: WorkflowLibraryStep): AgentKind => {
-  const role = step.role.toLowerCase();
-  return STEP_ROLE_KIND_LOOKUP[role] ?? 'generic';
+  return presentationKeyForRole({ role: step.role });
 };
 
 export const inferAgentKindFromName = (name: string): AgentKind => {
@@ -453,11 +481,16 @@ export const inferAgentKindFromName = (name: string): AgentKind => {
 
 export const classifyAgent = (agent: Agent, override: AgentKind | null): AgentKind => {
   if (override != null) {
-    return override;
+    if (override === 'pr-reviewer') {
+      return override;
+    }
+    return presentationKeyForRole({ role: override });
   }
-  const persistedKind = AGENT_KIND_ORDER.find((kind) => kind === agent.kind);
-  if (persistedKind != null) {
-    return persistedKind;
+  if (agent.kind != null) {
+    if (agent.kind === 'pr-reviewer') {
+      return agent.kind;
+    }
+    return presentationKeyForRole({ role: agent.kind });
   }
   return inferAgentKindFromName(agent.name);
 };
@@ -483,15 +516,18 @@ export const resolveAgentKind = (
   firstUserText: string | null,
   override: AgentKind | null = null,
 ): AgentKind => {
-  if (override) {
-    return override;
+  if (override !== null) {
+    if (override === 'pr-reviewer') {
+      return override;
+    }
+    return presentationKeyForRole({ role: override });
   }
   const fromName = inferAgentKindFromName(name);
   if (fromName !== 'generic') {
     return fromName;
   }
-  if (!firstUserText) {
+  if (firstUserText === null || firstUserText === '') {
     return 'generic';
   }
-  return classifyFirstTurn(firstUserText);
+  return classifyFirstTurn({ text: firstUserText });
 };

@@ -20,6 +20,8 @@ const KIND_IMAGE: Record<AgentKind, string | null> = {
   reviewer: agentReviewer,
   'pr-reviewer': agentReviewer,
   docs: agentDocs,
+  report: null,
+  wireframe: null,
   resolver: null,
 };
 
@@ -33,6 +35,8 @@ const KIND_COLOR: Record<AgentKind, string> = {
   reviewer: 'var(--color-agent-reviewer)',
   'pr-reviewer': 'var(--color-agent-pr-reviewer)',
   docs: 'var(--color-agent-docs)',
+  report: 'var(--color-agent-docs)',
+  wireframe: 'var(--color-agent-planner)',
   resolver: 'var(--color-agent-resolver)',
 };
 

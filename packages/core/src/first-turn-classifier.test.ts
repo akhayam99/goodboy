@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { classifyFirstTurn, type AgentKindLabel } from './first-turn-classifier';
 
 describe('classifyFirstTurn', () => {
+  it('gives an explicit kind priority over regex inference', () => {
+    expect(classifyFirstTurn({ text: 'design the navigation', explicitKind: 'wireframe' })).toBe(
+      'wireframe',
+    );
+    expect(classifyFirstTurn({ text: 'plan the report', explicitKind: 'report' })).toBe('report');
+    expect(classifyFirstTurn({ text: 'review the docs', explicitKind: 'writer' })).toBe('docs');
+  });
+
   it.each<[string, AgentKindLabel]>([
     ['pianifica la migrazione', 'planner'],
     ['plan the new feature flow', 'planner'],

@@ -24,7 +24,10 @@ const { extractHandoffMock, showToast, state } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('@goodboy/core', () => ({ extractHandoff: extractHandoffMock }));
+vi.mock('@goodboy/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core')>();
+  return { ...actual, extractHandoff: extractHandoffMock };
+});
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),

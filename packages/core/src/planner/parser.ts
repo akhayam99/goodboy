@@ -1,4 +1,4 @@
-import { isAgentRole } from '../roles';
+import { normalizeSelectableAgentRole } from '../roles';
 import type { PlannerOutput, PlannerStep } from './types';
 
 export class PlannerParseError extends Error {
@@ -80,7 +80,7 @@ export const parsePlannerOutput = (raw: string): PlannerOutput => {
     if (typeof expectedOutput !== 'string') {
       throw new PlannerParseError(`planner step at index ${index} missing "expectedOutput"`, raw);
     }
-    const normalizedRole = isAgentRole(role.trim()) ? role.trim() : 'custom';
+    const normalizedRole = normalizeSelectableAgentRole({ role });
     steps.push({ name, role: normalizedRole, promptPrefix, expectedOutput });
   }
 

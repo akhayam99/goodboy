@@ -49,7 +49,7 @@ describe('parseOrchestratorDecision', () => {
     ).toBeNull();
   });
 
-  it('falls back to the custom role for an unknown role', () => {
+  it('normalizes a legacy role alias', () => {
     const parsed = parseOrchestratorDecision({
       provider: 'anthropic',
       raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"x","role":"writer","promptPrefix":"x","expectedOutput":"x"}}<</orchestrator>>',
@@ -58,8 +58,26 @@ describe('parseOrchestratorDecision', () => {
     expect(parsed).toEqual({
       action: 'next',
       reason: 'x',
-      step: { name: 'x', role: 'custom', promptPrefix: 'x', expectedOutput: 'x' },
+      step: { name: 'x', role: 'docs', promptPrefix: 'x', expectedOutput: 'x' },
     });
+  });
+
+  it('falls back to custom for an unknown role', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"x","role":"oracle","promptPrefix":"x"}}<</orchestrator>>',
+    });
+
+    expect(parsed?.action === 'next' && parsed.step.role).toBe('custom');
+  });
+
+  it('falls back to custom for a role unavailable to the user', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"x","role":"wireframe","promptPrefix":"x"}}<</orchestrator>>',
+    });
+
+    expect(parsed?.action === 'next' && parsed.step.role).toBe('custom');
   });
 
   it('tolerates a missing expected output and a missing reason', () => {

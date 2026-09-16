@@ -7,7 +7,7 @@ import type {
 import { PROVIDER_IDS } from '@goodboy/types';
 import { resolvedStoredModelId } from '../providers/resolvedStoredModelId';
 import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
-import { isAgentRole } from '../roles';
+import { normalizeSelectableAgentRole } from '../roles';
 import { MODEL_EFFORTS } from './parseWorkflowRoutingProposal';
 import { structuredRunSummary } from './runSummary';
 import type { OrchestratorDecision, OrchestratorStep, RunSummary } from './types';
@@ -205,7 +205,7 @@ const parseStep = ({ value, provider }: StepParams): OrchestratorStep | null => 
   const effort = requestedEffort(nonEmptyString(step['effort']));
   return {
     name,
-    role: role !== null && isAgentRole(role) ? role : 'custom',
+    role: normalizeSelectableAgentRole({ role: role ?? 'custom' }),
     promptPrefix,
     ...(expectedOutput !== null && { expectedOutput }),
     ...(requestedProvider !== null && { provider: selectedProvider ?? requestedProvider }),

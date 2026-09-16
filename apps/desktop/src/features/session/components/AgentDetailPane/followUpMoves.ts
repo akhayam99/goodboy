@@ -19,6 +19,8 @@ const FOLLOW_UP_KINDS: Readonly<Record<AgentKind, ReadonlyArray<FollowUpKind>>> 
   implementer: [],
   tester: [],
   docs: [],
+  report: [],
+  wireframe: [],
   resolver: [],
   'pr-reviewer': [],
 };
@@ -39,6 +41,8 @@ const FOLLOW_UP_HINTS: Readonly<Record<FollowUpKind, Partial<Record<AgentKind, s
   tester: {},
   reviewer: {},
   docs: {},
+  report: {},
+  wireframe: {},
   generic: {},
 };
 

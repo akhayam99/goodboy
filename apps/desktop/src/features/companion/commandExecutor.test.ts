@@ -13,7 +13,31 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('../../store/store', () => ({ useAppStore: { getState: () => h.state.value } }));
-vi.mock('@goodboy/core', () => ({ runsForWorkflowRun: () => [] }));
+vi.mock('@goodboy/core', () => ({
+  ROLE_REGISTRY: {
+    scout: { presentationKey: 'scout' },
+    investigator: { presentationKey: 'debugger' },
+    planner: { presentationKey: 'planner' },
+    implementer: { presentationKey: 'implementer' },
+    reviewer: { presentationKey: 'reviewer' },
+    tester: { presentationKey: 'tester' },
+    resolver: { presentationKey: 'resolver' },
+    docs: { presentationKey: 'docs' },
+    custom: { presentationKey: 'generic' },
+  },
+  SELECTABLE_AGENT_ROLES: [
+    'scout',
+    'investigator',
+    'planner',
+    'implementer',
+    'reviewer',
+    'tester',
+    'resolver',
+    'docs',
+    'custom',
+  ],
+  runsForWorkflowRun: () => [],
+}));
 vi.mock('../workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
@@ -130,6 +154,14 @@ describe('spawnAgent kind allow-list', () => {
     expect(res.ok).toBe(true);
     const opts = h.spawnAgent.mock.calls[0]![1] as Record<string, unknown>;
     expect(opts.kindOverride).toBeUndefined();
+  });
+
+  it('drops registered kinds that are unavailable for selection', async () => {
+    await executeBridgeCommand(cmd('spawnAgent', { sessionId: 's1', kind: 'report' }));
+    await executeBridgeCommand(cmd('spawnAgent', { sessionId: 's1', kind: 'wireframe' }));
+
+    expect(h.spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('kindOverride');
+    expect(h.spawnAgent.mock.calls[1]?.[1]).not.toHaveProperty('kindOverride');
   });
 });
 

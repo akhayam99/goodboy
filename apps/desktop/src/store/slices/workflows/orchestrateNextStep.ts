@@ -23,7 +23,8 @@ import type {
 import {
   OrchestratorClient,
   OrchestratorProviderError,
-  ROLE_DEFAULTS,
+  ROLE_REGISTRY,
+  SELECTABLE_AGENT_ROLES,
   defaultsForRole,
   hintedRoutingOutcome,
   orchestratorModelPool,
@@ -128,7 +129,7 @@ const roleDefaultsFor = ({
   provider,
   roleModels,
 }: RoleDefaultsParams): ReadonlyArray<OrchestratorRoleDefault> =>
-  (Object.keys(ROLE_DEFAULTS) as ReadonlyArray<AgentRole>).map((role) => {
+  SELECTABLE_AGENT_ROLES.filter((role) => ROLE_REGISTRY[role].workflowEligible).map((role) => {
     const routing = resolveRoleRouting({ role, prefs: roleModels });
     if (routing.isOverride === true) {
       return {

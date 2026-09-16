@@ -2,6 +2,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
   PROVIDER_CAPABILITIES,
+  ROLE_REGISTRY,
+  SELECTABLE_AGENT_ROLES,
   getDefaultTurnModel,
   isSlotKey,
   runsForWorkflowRun,
@@ -98,15 +100,9 @@ export type BridgeCommand = {
   readonly data: unknown;
 };
 
-const MOBILE_AGENT_KINDS: ReadonlySet<string> = new Set([
-  'planner',
-  'implementer',
-  'reviewer',
-  'tester',
-  'debugger',
-  'scout',
-  'resolver',
-]);
+const MOBILE_AGENT_KINDS: ReadonlySet<string> = new Set(
+  SELECTABLE_AGENT_ROLES.map((role) => ROLE_REGISTRY[role].presentationKey),
+);
 
 function inTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;

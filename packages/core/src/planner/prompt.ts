@@ -1,4 +1,9 @@
+import { ROLE_REGISTRY, SELECTABLE_AGENT_ROLES } from '../roles';
 import type { PlannerInput } from './types';
+
+const PLANNER_ROLE_VOCABULARY = SELECTABLE_AGENT_ROLES.filter(
+  (role) => ROLE_REGISTRY[role].workflowEligible,
+).join('|');
 
 export const PLANNER_SYSTEM_PROMPT = `You are a planning agent for an AI coding workspace.
 
@@ -20,7 +25,7 @@ no code fences. The schema is:
   "steps": [
     {
       "name": "<short imperative title>",
-      "role": "<scout|planner|implementer|reviewer|tester|investigator|custom>",
+      "role": "<${PLANNER_ROLE_VOCABULARY}>",
       "promptPrefix": "<system-style instructions for the step's agent>",
       "expectedOutput": "<one sentence describing what the step should produce>"
     },
