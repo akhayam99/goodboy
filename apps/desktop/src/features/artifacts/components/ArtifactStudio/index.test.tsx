@@ -387,6 +387,8 @@ describe('ArtifactStudio', () => {
     fireEvent.click(screen.getByText('Session report'));
     expect(screen.getByRole('heading', { level: 1, name: 'Artifacts' })).toBeDefined();
     expect(screen.getByText('reporter')).toBeDefined();
+    expect(screen.queryByText('rev 2')).toBeNull();
+    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
     expect(screen.getByText('rev 2')).toBeDefined();
     expect(screen.queryByText('active')).toBeNull();
     expect(screen.getByTestId('artifact-export-slot')).toBeDefined();
@@ -410,11 +412,13 @@ describe('ArtifactStudio', () => {
     state.sessionArtifacts = { 'sess-1': [report, wireframe] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('Session report'));
-    expect(screen.getByTestId('artifact-save-source').textContent).toContain('Save markdown');
+    expect(screen.getByTestId('artifact-save-source').getAttribute('aria-label')).toBe(
+      'Save markdown',
+    );
     expect(screen.getByTestId('artifact-save-pdf').hasAttribute('disabled')).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: /all artifacts/i }));
     fireEvent.click(screen.getByText('Onboarding flow'));
-    expect(screen.getByTestId('artifact-save-source').textContent).toContain('Save JSON');
+    expect(screen.getByTestId('artifact-save-source').getAttribute('aria-label')).toBe('Save JSON');
     expect(screen.getByTestId('artifact-save-pdf').hasAttribute('disabled')).toBe(false);
   });
 

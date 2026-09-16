@@ -1,26 +1,14 @@
 import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import {
-  Button,
-  Divider,
-  HeaderBand,
-  Markdown,
-  MetaRow,
-  PANE_RHYTHM,
-  ScrollFade,
-  StudioDetailTabs,
-  cn,
-} from '@goodboy/ui';
+import { Button, Divider, Markdown, PANE_RHYTHM, ScrollFade, cn } from '@goodboy/ui';
 import type { Agent, ArtifactId, SessionArtifact, SessionId } from '@goodboy/types';
 import { ArtifactBuiltFrom } from './ArtifactBuiltFrom';
 import { ArtifactConversation } from './ArtifactConversation';
-import { ArtifactExportActions } from './ArtifactExportActions';
-import { ArtifactStatusChip } from './ArtifactStatusChip';
+import { ArtifactIdentityBand, type ArtifactDetailTab } from './ArtifactIdentityBand';
 import { ReportStudio } from '../../../reports/components/ReportStudio';
 import { WireframeStudio } from '../../../wireframes/components/WireframeStudio';
 import { FocusedPane } from '../../../../shared/components/PaneShell/FocusedPane';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -31,8 +19,6 @@ type Props = {
   readonly onBack: () => void;
   readonly onSelectArtifact: (artifactId: ArtifactId) => void;
 };
-
-type Tab = 'artifact' | 'conversation';
 
 export const ArtifactDetail = ({
   sessionId,
@@ -45,17 +31,20 @@ export const ArtifactDetail = ({
 }: Props) => {
   const creator = agents.find((agent) => agent.id === artifact.agentId) ?? null;
   const isWorkflowOwned = creator?.stepId != null;
-  const [opened, setOpened] = useState<{ readonly artifactId: ArtifactId; readonly tab: Tab }>({
+  const [opened, setOpened] = useState<{
+    readonly artifactId: ArtifactId;
+    readonly tab: ArtifactDetailTab;
+  }>({
     artifactId: artifact.id,
     tab: 'artifact',
   });
-  const tab: Tab = opened.artifactId === artifact.id ? opened.tab : 'artifact';
-  const setTab = (next: Tab) => setOpened({ artifactId: artifact.id, tab: next });
+  const tab: ArtifactDetailTab = opened.artifactId === artifact.id ? opened.tab : 'artifact';
+  const setTab = (next: ArtifactDetailTab) => setOpened({ artifactId: artifact.id, tab: next });
 
   const tabs = [
     { value: 'artifact', label: 'Artifact' },
     { value: 'conversation', label: isWorkflowOwned ? 'Step transcript' : 'Conversation' },
-  ] satisfies ReadonlyArray<{ readonly value: Tab; readonly label: string }>;
+  ] satisfies ReadonlyArray<{ readonly value: ArtifactDetailTab; readonly label: string }>;
 
   return (
     <FocusedPane
@@ -69,42 +58,14 @@ export const ArtifactDetail = ({
       }
     >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className={cn('flex shrink-0 flex-col gap-2', PANE_RHYTHM.body)}>
+        <div className={cn('flex shrink-0 flex-col', PANE_RHYTHM.dock)}>
           <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}>
-            <HeaderBand
-              title={artifact.title}
-              meta={<ArtifactStatusChip kind={artifact.kind} status={artifact.status} />}
-              subtitle={
-                <MetaRow
-                  items={[
-                    <span key="agent" className="inline-flex min-w-0 items-center gap-1.5">
-                      <CONCEPT_ICONS.agents
-                        size={11}
-                        aria-hidden
-                        className="shrink-0 text-primary"
-                      />
-                      <span className="truncate">{creator?.name ?? 'unknown agent'}</span>
-                    </span>,
-                    <span key="kind">{artifact.kind}</span>,
-                    artifact.workflowRunId !== null ? (
-                      <span key="run">workflow run</span>
-                    ) : (
-                      <span key="run">standalone</span>
-                    ),
-                    <span key="revision">rev {artifact.revision}</span>,
-                    <span key="created" className="tabular-nums">
-                      {formatCompactDateTime({ iso: artifact.createdAt })}
-                    </span>,
-                  ]}
-                />
-              }
-              actions={<ArtifactExportActions artifact={artifact} />}
-            />
-            <StudioDetailTabs
-              ariaLabel="Artifact sections"
-              options={tabs}
-              value={tab}
-              onChange={setTab}
+            <ArtifactIdentityBand
+              artifact={artifact}
+              creatorName={creator?.name ?? 'unknown agent'}
+              tabs={tabs}
+              tab={tab}
+              onTabChange={setTab}
             />
           </div>
         </div>

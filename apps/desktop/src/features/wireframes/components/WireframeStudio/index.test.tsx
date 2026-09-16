@@ -113,17 +113,30 @@ const currentScreen = () => screen.getByTestId('wireframe-screen').getAttribute(
 
 const PANE_WIDTH = 640;
 
+type StubBoxParams = Readonly<{ key: 'clientWidth' | 'offsetHeight'; value: number }>;
+
+const stubBox = ({ key, value }: StubBoxParams): (() => void) => {
+  const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, key);
+  Object.defineProperty(HTMLElement.prototype, key, { configurable: true, value });
+  return () => {
+    if (original === undefined) {
+      Reflect.deleteProperty(HTMLElement.prototype, key);
+      return;
+    }
+    Object.defineProperty(HTMLElement.prototype, key, original);
+  };
+};
+
+let restoreClientWidth: () => void = () => undefined;
+
 beforeEach(() => {
   state.transcripts = {};
   state.sessionPhaseRuns = {};
   state.spawnWireframeAgent.mockClear();
-  Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
-    configurable: true,
-    value: PANE_WIDTH,
-  });
+  restoreClientWidth = stubBox({ key: 'clientWidth', value: PANE_WIDTH });
 });
 afterEach(() => {
-  Reflect.deleteProperty(HTMLElement.prototype, 'clientWidth');
+  restoreClientWidth();
   cleanup();
 });
 
@@ -164,14 +177,41 @@ describe('WireframeStudio', () => {
   });
 
   it('reserves the scroll box from the real height of the screen', () => {
-    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
-      configurable: true,
-      value: 1200,
-    });
+    const restore = stubBox({ key: 'offsetHeight', value: 1200 });
     renderStudio();
     const box = screen.getByTestId('wireframe-screen').parentElement;
     expect(box?.style.height).toBe(`${1200 * 0.47}px`);
-    Reflect.deleteProperty(HTMLElement.prototype, 'offsetHeight');
+    restore();
+  });
+
+  it('fits a screen taller than the pane on its height, not on its width', () => {
+    const restore = stubBox({ key: 'offsetHeight', value: 1200 });
+    renderStudio();
+    expect(screen.getByText(/%$/).textContent).toBe('47%');
+    const canvas = screen.getByTestId('wireframe-canvas');
+    expect(canvas.style.maxHeight).toBe('744px');
+    fireEvent.click(screen.getByRole('tab', { name: /Archive/ }));
+    expect(screen.getByText(/%$/).textContent).toBe('59%');
+    const drawn = screen.getByTestId('wireframe-screen').parentElement;
+    expect(Number.parseFloat(drawn?.style.height ?? '0')).toBeLessThanOrEqual(744);
+    restore();
+  });
+
+  it('keeps the screen tabs and the canvas controls on one toolbar band', () => {
+    renderStudio();
+    const toolbar = screen.getByTestId('wireframe-toolbar');
+    expect(toolbar.contains(screen.getByTestId('wireframe-screen-tabs'))).toBe(true);
+    expect(toolbar.contains(screen.getByTestId('wireframe-zoom-fit'))).toBe(true);
+    expect(toolbar.contains(screen.getByTestId('wireframe-convert-fidelity'))).toBe(true);
+  });
+
+  it('reads the provenance before the document, not after it', () => {
+    renderStudio();
+    const canvas = screen.getByTestId('wireframe-canvas');
+    const provenance = screen.getByTestId('wireframe-provenance');
+    expect(canvas.compareDocumentPosition(provenance) & Node.DOCUMENT_POSITION_PRECEDING).toBe(
+      Node.DOCUMENT_POSITION_PRECEDING,
+    );
   });
 
   it('walks the screens in document order with previous and next', () => {
@@ -198,7 +238,7 @@ describe('WireframeStudio', () => {
     expect(screen.getByText(/%$/).textContent).toBe('47%');
     fireEvent.click(screen.getByRole('tab', { name: /Archive/ }));
     expect(currentScreen()).toBe('archive');
-    expect(screen.getByText(/%$/).textContent).toBe('150%');
+    expect(screen.getByText(/%$/).textContent).toBe('110%');
   });
 
   it('keeps a manual zoom and the selection across a screen switch', () => {
@@ -224,7 +264,7 @@ describe('WireframeStudio', () => {
     fireEvent.click(screen.getByTestId('wireframe-zoom-fit'));
     expect(screen.getByText(/%$/).textContent).toBe('47%');
     fireEvent.click(screen.getByRole('tab', { name: /Archive/ }));
-    expect(screen.getByText(/%$/).textContent).toBe('150%');
+    expect(screen.getByText(/%$/).textContent).toBe('110%');
   });
 
   it('toggles declared mock state instead of navigating', () => {

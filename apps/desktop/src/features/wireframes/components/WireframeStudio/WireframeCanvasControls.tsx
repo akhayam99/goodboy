@@ -7,7 +7,7 @@ import {
   SkipBack,
   SkipForward,
 } from 'lucide-react';
-import { Button, Divider } from '@goodboy/ui';
+import { Button, Divider, IconButton } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ZOOM_BOUNDS, type WireframeNavigation } from './useWireframeNavigation';
 
@@ -23,77 +23,63 @@ type Props = {
 export const WireframeCanvasControls = ({ navigation, order, screenCount, onZoomToFit }: Props) => (
   <>
     <Divider orientation="vertical" className="mx-1 h-4" />
-    <Button
+    <IconButton
       variant="ghost"
-      size="sm"
+      icon={ChevronLeft}
+      label="Back"
+      tooltip="Back in the click history"
       onClick={navigation.goBack}
       disabled={!navigation.canGoBack}
       data-testid="wireframe-back"
-      title="Back in the click history"
-    >
-      <ChevronLeft size={ICON_SIZE.row} aria-hidden />
-      Back
-    </Button>
-    <Button
+    />
+    <IconButton
       variant="ghost"
-      size="sm"
+      icon={ChevronRight}
+      label="Forward"
+      tooltip="Forward in the click history"
       onClick={navigation.goForward}
       disabled={!navigation.canGoForward}
       data-testid="wireframe-forward"
-      title="Forward in the click history"
-    >
-      Forward
-      <ChevronRight size={ICON_SIZE.row} aria-hidden />
-    </Button>
+    />
     <Divider orientation="vertical" className="mx-1 h-4" />
-    <Button
+    <IconButton
       variant="ghost"
-      size="sm"
+      icon={SkipBack}
+      label="Previous"
+      tooltip="Previous screen in document order"
       onClick={navigation.goPrevious}
       disabled={order <= 0}
       data-testid="wireframe-previous"
-      title="Previous screen in document order"
-    >
-      <SkipBack size={ICON_SIZE.row} aria-hidden />
-      Previous
-    </Button>
-    <Button
+    />
+    <IconButton
       variant="ghost"
-      size="sm"
+      icon={SkipForward}
+      label="Next"
+      tooltip="Next screen in document order"
       onClick={navigation.goNext}
       disabled={order < 0 || order >= screenCount - 1}
       data-testid="wireframe-next"
-      title="Next screen in document order"
-    >
-      Next
-      <SkipForward size={ICON_SIZE.row} aria-hidden />
-    </Button>
+    />
     <Divider orientation="vertical" className="mx-1 h-4" />
-    <Button
+    <IconButton
       variant="ghost"
-      size="sm"
+      icon={Minus}
+      label="Zoom out"
       onClick={() => navigation.setZoom(navigation.zoom - ZOOM_STEP)}
       disabled={navigation.zoom <= ZOOM_BOUNDS.min}
       data-testid="wireframe-zoom-out"
-      title="Zoom out"
-      aria-label="Zoom out"
-    >
-      <Minus size={ICON_SIZE.row} aria-hidden />
-    </Button>
+    />
     <span className="min-w-10 text-center tabular-nums text-2xs text-muted-foreground">
       {Math.round(navigation.zoom * 100)}%
     </span>
-    <Button
+    <IconButton
       variant="ghost"
-      size="sm"
+      icon={Plus}
+      label="Zoom in"
       onClick={() => navigation.setZoom(navigation.zoom + ZOOM_STEP)}
       disabled={navigation.zoom >= ZOOM_BOUNDS.max}
       data-testid="wireframe-zoom-in"
-      title="Zoom in"
-      aria-label="Zoom in"
-    >
-      <Plus size={ICON_SIZE.row} aria-hidden />
-    </Button>
+    />
     <Button
       variant="ghost"
       size="sm"
