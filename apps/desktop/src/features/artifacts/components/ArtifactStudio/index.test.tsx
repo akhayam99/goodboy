@@ -1,52 +1,83 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-const { state, showToast } = vi.hoisted(() => ({
-  showToast: vi.fn(),
-  state: {
-    sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
-    planConsumptions: {} as Record<string, ReadonlyArray<unknown>>,
-    agentTurnState: {} as Record<string, { readonly kind: string }>,
-    loadSessionArtifacts: vi.fn(async () => undefined),
-    loadConsumptionsForPlan: vi.fn(async () => undefined),
-    updatePlanBody: vi.fn(async () => undefined),
-    deletePlan: vi.fn(async () => undefined),
-    restorePlan: vi.fn(async () => undefined),
-    runPlan: vi.fn(async () => 'agent-impl'),
-    selectAgent: vi.fn(async () => undefined),
-    setCurrentSession: vi.fn(async () => undefined),
-    setActiveLens: vi.fn(),
-    focusedPlanId: {} as Record<string, string | null>,
-    setFocusedPlanId: vi.fn(),
-    artifactFilter: {} as Record<string, string>,
-    setArtifactFilter: vi.fn(),
-    sessions: [] as ReadonlyArray<Record<string, unknown>>,
-    selectedAgentId: {} as Record<string, string | null>,
-    sessionStudio: {} as Record<string, unknown>,
-    artifactCreation: {} as Record<
-      string,
-      { readonly kind: string; readonly note: string | null } | null
-    >,
-    openArtifactCreation: vi.fn(),
-    closeArtifactCreation: vi.fn(),
-    setArtifactDraft: vi.fn(),
-    cancelCurrentTurn: vi.fn(async () => undefined),
-    lensHistory: {} as Record<string, { readonly index: number }>,
-    lensGo: vi.fn(),
-    plans: [] as ReadonlyArray<unknown>,
-    openQuestions: [] as ReadonlyArray<unknown>,
-  },
-}));
+const { notify, state, showToast, subscribers } = vi.hoisted(() => {
+  const listeners = new Set<() => void>();
+  return {
+    subscribers: listeners,
+    notify: () => {
+      for (const listener of listeners) {
+        listener();
+      }
+    },
+    showToast: vi.fn(),
+    state: {
+      sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
+      planConsumptions: {} as Record<string, ReadonlyArray<unknown>>,
+      agentTurnState: {} as Record<string, { readonly kind: string }>,
+      loadSessionArtifacts: vi.fn(async () => undefined),
+      loadConsumptionsForPlan: vi.fn(async () => undefined),
+      updatePlanBody: vi.fn(async () => undefined),
+      deletePlan: vi.fn(async () => undefined),
+      restorePlan: vi.fn(async () => undefined),
+      runPlan: vi.fn(async () => 'agent-impl'),
+      selectAgent: vi.fn(async () => undefined),
+      setCurrentSession: vi.fn(async () => undefined),
+      setActiveLens: vi.fn(),
+      focusedPlanId: {} as Record<string, string | null>,
+      setFocusedPlanId: vi.fn((sessionId: string, planId: string | null) => {
+        state.focusedPlanId = { ...state.focusedPlanId, [sessionId]: planId };
+        state.focusedArtifactId = { ...state.focusedArtifactId, [sessionId]: null };
+        notify();
+      }),
+      focusedArtifactId: {} as Record<string, string | null>,
+      setFocusedArtifactId: vi.fn((sessionId: string, artifactId: string | null) => {
+        state.focusedArtifactId = { ...state.focusedArtifactId, [sessionId]: artifactId };
+        state.focusedPlanId = { ...state.focusedPlanId, [sessionId]: null };
+        notify();
+      }),
+      artifactFilter: {} as Record<string, string>,
+      setArtifactFilter: vi.fn(),
+      sessions: [] as ReadonlyArray<Record<string, unknown>>,
+      selectedAgentId: {} as Record<string, string | null>,
+      sessionStudio: {} as Record<string, unknown>,
+      artifactCreation: {} as Record<
+        string,
+        { readonly kind: string; readonly note: string | null } | null
+      >,
+      openArtifactCreation: vi.fn(),
+      closeArtifactCreation: vi.fn(),
+      setArtifactDraft: vi.fn(),
+      cancelCurrentTurn: vi.fn(async () => undefined),
+      lensHistory: {} as Record<string, { readonly index: number }>,
+      lensGo: vi.fn(),
+      plans: [] as ReadonlyArray<unknown>,
+      openQuestions: [] as ReadonlyArray<unknown>,
+    },
+  };
+});
 
-vi.mock('../../../../store', () => ({
-  EMPTY_ARRAY: [] as readonly never[],
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
-  useSessionPlans: () => state.plans,
-  useSessionOpenQuestions: () => state.openQuestions,
-}));
+vi.mock('../../../../store', async () => {
+  const react = await import('react');
+  return {
+    EMPTY_ARRAY: [] as readonly never[],
+    useAppStore: <T,>(selector: (s: typeof state) => T): T => {
+      const [, bump] = react.useReducer((count: number) => count + 1, 0);
+      react.useEffect(() => {
+        subscribers.add(bump);
+        return () => {
+          subscribers.delete(bump);
+        };
+      }, [bump]);
+      return selector(state);
+    },
+    useSessionPlans: () => state.plans,
+    useSessionOpenQuestions: () => state.openQuestions,
+  };
+});
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast }),
@@ -159,6 +190,7 @@ beforeEach(() => {
   state.agentTurnState = {};
   state.plans = [];
   state.focusedPlanId = {};
+  state.focusedArtifactId = {};
   state.artifactFilter = {};
   state.sessions = [{ id: 'sess-1', goal: 'fix the rounding drift' }];
   state.selectedAgentId = {};
@@ -170,6 +202,7 @@ beforeEach(() => {
   state.setArtifactDraft.mockClear();
   state.cancelCurrentTurn.mockClear();
   state.setFocusedPlanId.mockClear();
+  state.setFocusedArtifactId.mockClear();
   state.setArtifactFilter.mockClear();
   state.selectAgent.mockClear();
 });
@@ -433,7 +466,8 @@ describe('ArtifactStudio', () => {
     fireEvent.click(screen.getByText('Earlier report'));
     fireEvent.click(screen.getByTestId('report-source-chip'));
     expect(screen.getByText('shipped it')).toBeDefined();
-    expect(state.setFocusedPlanId).toHaveBeenCalledWith('sess-1', null);
+    expect(state.setFocusedArtifactId).toHaveBeenCalledWith('sess-1', 'artifact-report');
+    expect(state.focusedPlanId['sess-1']).toBeNull();
   });
 
   it('focuses a cited plan as a plan and leaves the artifact detail', () => {
@@ -445,7 +479,8 @@ describe('ArtifactStudio', () => {
     fireEvent.click(screen.getByText('Session report'));
     fireEvent.click(screen.getByTestId('report-source-chip'));
     expect(state.setFocusedPlanId).toHaveBeenCalledWith('sess-1', 'plan-1');
-    expect(screen.getByRole('heading', { level: 1, name: 'Artifacts' })).toBeDefined();
+    expect(state.focusedArtifactId['sess-1']).toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: 'Plans' })).toBeDefined();
   });
 
   it('keeps the plan-only controls on a focused plan', () => {
@@ -457,5 +492,27 @@ describe('ArtifactStudio', () => {
     expect(screen.getByRole('button', { name: /start/i })).toBeDefined();
     expect(screen.getByLabelText('Delete plan')).toBeDefined();
     expect(screen.getByRole('tab', { name: /edit/i })).toBeDefined();
+  });
+
+  it('returns to the collection when the crumb clears the plan focus', () => {
+    state.sessionArtifacts = { 'sess-1': [report] };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('Session report'));
+    expect(screen.getByTestId('artifact-export-slot')).toBeDefined();
+
+    act(() => {
+      state.setFocusedPlanId('sess-1', null);
+    });
+
+    expect(screen.queryByTestId('artifact-export-slot')).toBeNull();
+    expect(screen.getByRole('heading', { level: 2, name: 'Reports' })).toBeDefined();
+  });
+
+  it('opens the artifact another surface focused in the store', () => {
+    state.sessionArtifacts = { 'sess-1': [report] };
+    state.focusedArtifactId = { 'sess-1': 'artifact-report' };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    expect(screen.getByTestId('artifact-export-slot')).toBeDefined();
+    expect(screen.getByRole('button', { name: /all artifacts/i })).toBeDefined();
   });
 });

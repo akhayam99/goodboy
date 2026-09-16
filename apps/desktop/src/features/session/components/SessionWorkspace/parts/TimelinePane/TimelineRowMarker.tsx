@@ -3,6 +3,10 @@ import type { LucideIcon } from 'lucide-react';
 import { tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
+import {
+  ARTIFACT_KIND_CONCEPT,
+  ARTIFACT_KIND_MARKER_LABEL,
+} from '../../../../../artifacts/artifactPresentation';
 import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { sessionEventGlyph } from '../../../../timeline/sessionEventPresentation';
@@ -65,6 +69,17 @@ export const TimelineRowMarker = ({ item }: Props) => {
         icon={CONCEPT_ICONS.plans}
         tone={CONCEPT_TONE.plans}
         label="Plan"
+        grade={grade}
+      />
+    );
+  }
+  if (entry.kind === 'artifact') {
+    const concept = ARTIFACT_KIND_CONCEPT[entry.artifact.kind];
+    return (
+      <TimelineEmphasisMarker
+        icon={CONCEPT_ICONS[concept]}
+        tone={CONCEPT_TONE[concept]}
+        label={ARTIFACT_KIND_MARKER_LABEL[entry.artifact.kind]}
         grade={grade}
       />
     );

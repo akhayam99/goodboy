@@ -14,6 +14,7 @@ import {
 import type {
   AgentId,
   AgentSourceKind,
+  ArtifactId,
   BudgetAlert,
   BudgetRule,
   ClaudePermissionMode,
@@ -931,6 +932,7 @@ type AppActions = {
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
+  setFocusedArtifactId(sessionId: SessionId, artifactId: ArtifactId | null): void;
   setArtifactFilter(params: {
     readonly sessionId: SessionId;
     readonly filter: ArtifactFilter;

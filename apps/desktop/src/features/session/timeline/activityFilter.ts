@@ -7,7 +7,7 @@ export const ACTIVITY_CATEGORIES = [
   'issues',
   'pullRequests',
   'workflows',
-  'plans',
+  'artifacts',
   'agents',
   'questions',
   'resolver',
@@ -17,17 +17,36 @@ export const ACTIVITY_CATEGORIES = [
 
 export type ActivityCategory = (typeof ACTIVITY_CATEGORIES)[number];
 
-export const ACTIVITY_SUBAGENT_TOGGLES = ['workflowSubagents', 'agentSubagents'] as const;
+export const ACTIVITY_CHILD_TOGGLES = [
+  'workflowSubagents',
+  'agentSubagents',
+  'plans',
+  'reports',
+  'wireframes',
+] as const;
 
-export type ActivitySubagentToggle = (typeof ACTIVITY_SUBAGENT_TOGGLES)[number];
+export type ActivityChildToggle = (typeof ACTIVITY_CHILD_TOGGLES)[number];
 
-export const ACTIVITY_TOGGLES = [...ACTIVITY_CATEGORIES, ...ACTIVITY_SUBAGENT_TOGGLES] as const;
+export const ACTIVITY_TOGGLES = [...ACTIVITY_CATEGORIES, ...ACTIVITY_CHILD_TOGGLES] as const;
 
 export type ActivityToggle = (typeof ACTIVITY_TOGGLES)[number];
 
-export const ACTIVITY_SUBAGENT_PARENT: Record<ActivitySubagentToggle, ActivityCategory> = {
-  workflowSubagents: 'workflows',
-  agentSubagents: 'agents',
+type ActivityChild = {
+  readonly parent: ActivityCategory;
+  readonly label: string;
+  readonly ariaLabel: string;
+};
+
+export const ACTIVITY_CHILD: Record<ActivityChildToggle, ActivityChild> = {
+  workflowSubagents: {
+    parent: 'workflows',
+    label: 'Subagents',
+    ariaLabel: 'Workflow subagents',
+  },
+  agentSubagents: { parent: 'agents', label: 'Subagents', ariaLabel: 'Agent subagents' },
+  plans: { parent: 'artifacts', label: 'Plans', ariaLabel: 'Plans' },
+  reports: { parent: 'artifacts', label: 'Reports', ariaLabel: 'Reports' },
+  wireframes: { parent: 'artifacts', label: 'Wireframes', ariaLabel: 'Wireframes' },
 };
 
 export type ActivityFilter = Readonly<Record<ActivityToggle, boolean>>;
@@ -38,7 +57,7 @@ export const ACTIVITY_CATEGORY_LABEL: Record<ActivityCategory, string> = {
   issues: 'Issues',
   pullRequests: 'Pull requests',
   workflows: 'Workflows',
-  plans: 'Plans',
+  artifacts: 'Artifacts',
   agents: 'Agents',
   questions: 'Questions',
   resolver: 'Resolver',
@@ -52,7 +71,7 @@ export const DEFAULT_ACTIVITY_FILTER: ActivityFilter = {
   issues: true,
   pullRequests: true,
   workflows: true,
-  plans: true,
+  artifacts: true,
   agents: true,
   questions: true,
   resolver: true,
@@ -60,6 +79,9 @@ export const DEFAULT_ACTIVITY_FILTER: ActivityFilter = {
   session: true,
   workflowSubagents: true,
   agentSubagents: true,
+  plans: true,
+  reports: true,
+  wireframes: true,
 };
 
 const ACTIVITY_FILTER_STORAGE_KEY = 'goodboy:activity-filter';
@@ -109,8 +131,8 @@ export const activityCategoryOf = ({ entry }: EntryParams): ActivityCategory | n
   if (entry.kind === 'agent') {
     return entry.agentKind === 'resolver' ? 'resolver' : 'agents';
   }
-  if (entry.kind === 'plan') {
-    return 'plans';
+  if (entry.kind === 'plan' || entry.kind === 'artifact') {
+    return 'artifacts';
   }
   if (entry.kind === 'issue') {
     return 'issues';
@@ -120,6 +142,24 @@ export const activityCategoryOf = ({ entry }: EntryParams): ActivityCategory | n
   }
   return null;
 };
+
+export const activityChildOf = ({ entry }: EntryParams): ActivityChildToggle | null => {
+  if (entry.kind === 'plan') {
+    return 'plans';
+  }
+  if (entry.kind === 'artifact') {
+    return entry.artifact.kind === 'report' ? 'reports' : 'wireframes';
+  }
+  return null;
+};
+
+type ChildShownParams = {
+  readonly filter: ActivityFilter;
+  readonly toggle: ActivityChildToggle;
+};
+
+export const isActivityChildShown = ({ filter, toggle }: ChildShownParams): boolean =>
+  filter[ACTIVITY_CHILD[toggle].parent] && filter[toggle];
 
 type FilterParams = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
@@ -132,11 +172,32 @@ export const filterTimelineEntries = ({
 }: FilterParams): ReadonlyArray<TimelineTopLevelEntry> =>
   entries.filter((entry) => {
     const category = activityCategoryOf({ entry });
-    return category == null || filter[category];
+    if (category != null && !filter[category]) {
+      return false;
+    }
+    const child = activityChildOf({ entry });
+    return child == null || isActivityChildShown({ filter, toggle: child });
   });
 
 type ParseParams = {
   readonly raw: string | null;
+};
+
+const migratedArtifactToggles = ({
+  source,
+}: {
+  readonly source: Readonly<Record<string, unknown>>;
+}): Partial<Record<ActivityToggle, boolean>> => {
+  const storedPlans = source.plans;
+  if (typeof storedPlans !== 'boolean' || typeof source.artifacts === 'boolean') {
+    return {};
+  }
+  return {
+    artifacts: storedPlans,
+    plans: storedPlans,
+    reports: storedPlans,
+    wireframes: storedPlans,
+  };
 };
 
 export const parseActivityFilter = ({ raw }: ParseParams): ActivityFilter => {
@@ -149,7 +210,12 @@ export const parseActivityFilter = ({ raw }: ParseParams): ActivityFilter => {
       return DEFAULT_ACTIVITY_FILTER;
     }
     const source = parsed as Readonly<Record<string, unknown>>;
+    const migrated = migratedArtifactToggles({ source });
     const entries = ACTIVITY_TOGGLES.map((toggle) => {
+      const migratedValue = migrated[toggle];
+      if (typeof migratedValue === 'boolean') {
+        return [toggle, migratedValue];
+      }
       const value = source[toggle];
       return [toggle, typeof value === 'boolean' ? value : DEFAULT_ACTIVITY_FILTER[toggle]];
     });

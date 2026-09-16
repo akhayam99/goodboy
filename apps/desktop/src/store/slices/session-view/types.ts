@@ -1,5 +1,6 @@
 import type {
   AgentId,
+  ArtifactId,
   IsoDateTime,
   MountId,
   PlanId,
@@ -171,6 +172,7 @@ type SessionViewSliceState = {
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
+  readonly focusedArtifactId: Readonly<Record<SessionId, ArtifactId | null>>;
   readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
   readonly artifactConversationAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly artifactCreation: Readonly<Record<SessionId, ArtifactCreationTarget | null>>;
@@ -200,6 +202,7 @@ type SessionViewSliceActions = {
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
+  setFocusedArtifactId(sessionId: SessionId, artifactId: ArtifactId | null): void;
   setArtifactFilter(params: {
     readonly sessionId: SessionId;
     readonly filter: ArtifactFilter;

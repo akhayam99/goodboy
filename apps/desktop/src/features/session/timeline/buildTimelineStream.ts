@@ -2,6 +2,7 @@ import type { Agent, OpenQuestion, SessionEventKind } from '@goodboy/types';
 import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
 import type {
   TimelineAgentEntry,
+  TimelineArtifactEntry,
   TimelineBranchEntry,
   TimelineEventEntry,
   TimelineIssueEntry,
@@ -25,6 +26,7 @@ export type TimelineStreamEntry =
   | TimelineRunEntry
   | TimelineAgentEntry
   | TimelinePlanEntry
+  | TimelineArtifactEntry
   | TimelineIssueEntry
   | TimelineBranchEntry
   | TimelineEventEntry
@@ -87,6 +89,8 @@ type Params = {
   readonly showWorkflowSubagents?: boolean;
   readonly showAgentSubagents?: boolean;
   readonly showPlans?: boolean;
+  readonly showReports?: boolean;
+  readonly showWireframes?: boolean;
   readonly showQuestions?: boolean;
 };
 
@@ -395,6 +399,14 @@ const mergeConsecutiveQuestionRows = ({
   return merged;
 };
 
+const isArtifactShown = ({
+  entry,
+  context,
+}: {
+  readonly entry: TimelineArtifactEntry;
+  readonly context: EmitContext;
+}): boolean => (entry.artifact.kind === 'report' ? context.showReports : context.showWireframes);
+
 const stepAgentsOf = ({ entry }: { readonly entry: TimelineRunEntry }): ReadonlyArray<Agent> =>
   entry.children.flatMap((child) => (child.kind === 'agent' ? [child.agent] : []));
 
@@ -420,6 +432,8 @@ type EmitContext = {
   readonly showWorkflowSubagents: boolean;
   readonly showAgentSubagents: boolean;
   readonly showPlans: boolean;
+  readonly showReports: boolean;
+  readonly showWireframes: boolean;
   readonly showQuestions: boolean;
 };
 
@@ -547,6 +561,9 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
       continue;
     }
     if (child.kind === 'plan' && !context.showPlans) {
+      continue;
+    }
+    if (child.kind === 'artifact' && !isArtifactShown({ entry: child, context })) {
       continue;
     }
     const row: DraftRow = {
@@ -722,6 +739,8 @@ export const buildTimelineStream = ({
   showWorkflowSubagents = true,
   showAgentSubagents = true,
   showPlans = true,
+  showReports = true,
+  showWireframes = true,
   showQuestions = true,
 }: Params): TimelineStream => {
   const context: EmitContext = {
@@ -732,6 +751,8 @@ export const buildTimelineStream = ({
     showWorkflowSubagents,
     showAgentSubagents,
     showPlans,
+    showReports,
+    showWireframes,
     showQuestions,
   };
   const rows: DraftRow[] = [];
@@ -756,7 +777,7 @@ export const buildTimelineStream = ({
       );
       continue;
     }
-    if (entry.kind === 'plan' && entry.lane != null) {
+    if ((entry.kind === 'plan' || entry.kind === 'artifact') && entry.lane != null) {
       rows.push({
         kind: 'row',
         id: entry.id,

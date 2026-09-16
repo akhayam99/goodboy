@@ -1,5 +1,13 @@
 import { CornerDownRight, Eye, EyeOff, ListFilter } from 'lucide-react';
-import { AnchoredPopover, Divider, cn, tintClasses, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Divider,
+  PopoverFooter,
+  ScrollFade,
+  cn,
+  tintClasses,
+  useDropdown,
+} from '@goodboy/ui';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
@@ -8,11 +16,11 @@ import {
 import {
   ACTIVITY_CATEGORIES,
   ACTIVITY_CATEGORY_LABEL,
-  ACTIVITY_SUBAGENT_PARENT,
-  ACTIVITY_SUBAGENT_TOGGLES,
+  ACTIVITY_CHILD,
+  ACTIVITY_CHILD_TOGGLES,
   type ActivityCategory,
+  type ActivityChildToggle,
   type ActivityFilter,
-  type ActivitySubagentToggle,
   type ActivityToggle,
 } from '../../../../timeline/activityFilter';
 
@@ -22,7 +30,7 @@ const ACTIVITY_CATEGORY_CONCEPT = {
   issues: 'issues',
   pullRequests: 'pr',
   workflows: 'workflows',
-  plans: 'plans',
+  artifacts: 'artifacts',
   agents: 'agents',
   questions: 'questions',
   resolver: 'resolve',
@@ -30,12 +38,9 @@ const ACTIVITY_CATEGORY_CONCEPT = {
   session: 'archive',
 } satisfies Record<ActivityCategory, keyof typeof CONCEPT_ICONS>;
 
-const SUBAGENT_ROW_LABEL: Record<ActivitySubagentToggle, string> = {
-  workflowSubagents: 'Workflow subagents',
-  agentSubagents: 'Agent subagents',
-};
-
 const PANEL_LABEL = 'Activity filter';
+
+const PANEL_EXPECTED_HEIGHT = 324;
 
 type Props = {
   readonly filter: ActivityFilter;
@@ -107,21 +112,21 @@ const CategoryRow = ({ category, isActive, onToggle }: CategoryRowProps) => {
   );
 };
 
-type SubagentRowProps = {
-  readonly toggle: ActivitySubagentToggle;
+type ChildRowProps = {
+  readonly toggle: ActivityChildToggle;
   readonly isActive: boolean;
   readonly isParentActive: boolean;
   readonly onToggle: Props['onToggle'];
 };
 
-const SubagentRow = ({ toggle, isActive, isParentActive, onToggle }: SubagentRowProps) => {
+const ChildRow = ({ toggle, isActive, isParentActive, onToggle }: ChildRowProps) => {
   const isOn = isActive && isParentActive;
   return (
     <button
       type="button"
       role="menuitemcheckbox"
       aria-checked={isOn}
-      aria-label={SUBAGENT_ROW_LABEL[toggle]}
+      aria-label={ACTIVITY_CHILD[toggle].ariaLabel}
       disabled={!isParentActive}
       onClick={() => onToggle({ toggle, enabled: !isActive })}
       className={cn(
@@ -141,21 +146,24 @@ const SubagentRow = ({ toggle, isActive, isParentActive, onToggle }: SubagentRow
           isParentActive && 'group-hover:text-foreground',
         )}
       >
-        Subagents
+        {ACTIVITY_CHILD[toggle].label}
       </span>
       <EyeMark isActive={isOn} />
     </button>
   );
 };
 
-const SUBAGENT_ROW_AFTER = Object.fromEntries(
-  ACTIVITY_SUBAGENT_TOGGLES.map((toggle) => [ACTIVITY_SUBAGENT_PARENT[toggle], toggle]),
-) as Partial<Record<ActivityCategory, ActivitySubagentToggle>>;
+type ChildrenParams = {
+  readonly category: ActivityCategory;
+};
+
+const childTogglesOf = ({ category }: ChildrenParams): ReadonlyArray<ActivityChildToggle> =>
+  ACTIVITY_CHILD_TOGGLES.filter((toggle) => ACTIVITY_CHILD[toggle].parent === category);
 
 export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
-    expectedHeight: 372,
+    expectedHeight: PANEL_EXPECTED_HEIGHT,
     expectedWidth: 208,
     width: 'w-52',
   });
@@ -166,7 +174,7 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
       dropdown={dropdown}
       role="menu"
       ariaLabel={PANEL_LABEL}
-      className="bg-subtle py-1"
+      className="flex flex-col bg-subtle"
       anchorClassName="inline-flex"
       trigger={
         <button
@@ -187,24 +195,24 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
         </button>
       }
     >
-      {ACTIVITY_CATEGORIES.map((category) => {
-        const subagentToggle = SUBAGENT_ROW_AFTER[category];
-        return (
+      <ScrollFade className="max-h-72" viewportClassName="py-1" fadeSize={12} fadeFrom="subtle">
+        {ACTIVITY_CATEGORIES.map((category) => (
           <div key={category}>
             <CategoryRow category={category} isActive={filter[category]} onToggle={onToggle} />
-            {subagentToggle != null && (
-              <SubagentRow
-                toggle={subagentToggle}
-                isActive={filter[subagentToggle]}
+            {childTogglesOf({ category }).map((toggle) => (
+              <ChildRow
+                key={toggle}
+                toggle={toggle}
+                isActive={filter[toggle]}
                 isParentActive={filter[category]}
                 onToggle={onToggle}
               />
-            )}
+            ))}
           </div>
-        );
-      })}
-      <Divider className="my-1" />
-      <div className="flex items-center gap-1 px-1.5 py-0.5">
+        ))}
+      </ScrollFade>
+      <Divider />
+      <PopoverFooter className="flex items-center gap-1 bg-subtle px-1.5 py-1">
         <button
           type="button"
           role="menuitem"
@@ -223,7 +231,7 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
           <EyeOff size={11} aria-hidden className="shrink-0" />
           Hide all
         </button>
-      </div>
+      </PopoverFooter>
     </AnchoredPopover>
   );
 };

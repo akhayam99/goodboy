@@ -7,6 +7,7 @@ import type {
   OpenQuestionId,
   PlanId,
   PlanWithCount,
+  SessionArtifact,
   SessionEvent,
   SessionEventId,
   SessionEventKind,
@@ -170,10 +171,13 @@ type StreamParams = {
   readonly decidingRunIds?: ReadonlySet<string>;
   readonly events?: ReadonlyArray<SessionEvent>;
   readonly plans?: ReadonlyArray<PlanWithCount>;
+  readonly artifacts?: ReadonlyArray<SessionArtifact>;
   readonly questions?: ReadonlyArray<OpenQuestion>;
   readonly showWorkflowSubagents?: boolean;
   readonly showAgentSubagents?: boolean;
   readonly showPlans?: boolean;
+  readonly showReports?: boolean;
+  readonly showWireframes?: boolean;
   readonly showQuestions?: boolean;
 };
 
@@ -184,10 +188,13 @@ const stream = ({
   decidingRunIds = new Set(),
   events = [],
   plans = [],
+  artifacts = [],
   questions = [],
   showWorkflowSubagents,
   showAgentSubagents,
   showPlans,
+  showReports,
+  showWireframes,
   showQuestions,
 }: StreamParams) =>
   buildTimelineStream({
@@ -196,6 +203,7 @@ const stream = ({
       agents,
       workflows,
       plans,
+      artifacts,
       externalTasks: [],
       questions,
       worktrees: [],
@@ -209,6 +217,8 @@ const stream = ({
     ...(showWorkflowSubagents != null ? { showWorkflowSubagents } : {}),
     ...(showAgentSubagents != null ? { showAgentSubagents } : {}),
     ...(showPlans != null ? { showPlans } : {}),
+    ...(showReports != null ? { showReports } : {}),
+    ...(showWireframes != null ? { showWireframes } : {}),
     ...(showQuestions != null ? { showQuestions } : {}),
   });
 
@@ -1605,6 +1615,47 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
 
     expect(items.map(labelOf)).not.toContain('step:plan:plan-1');
     expect(items.map(labelOf)).toContain('step:agent:plan');
+  });
+
+  const runReport = {
+    id: 'report-1',
+    sessionId: SESSION_ID,
+    agentId: typedString<AgentId>({ value: 'plan' }),
+    workflowRunId: RUN_ID,
+    kind: 'report',
+    schemaVersion: 1,
+    title: 'migration report',
+    sourceFormat: 'markdown',
+    sourceText: '',
+    metadata: { reportType: 'session' },
+    status: 'active',
+    revision: 1,
+    sourceTurnId: null,
+    createdAt: typedString<IsoDateTime>({ value: localIso({ day: 18, hour: 9, minute: 30 }) }),
+    updatedAt: typedString<IsoDateTime>({ value: localIso({ day: 18, hour: 9, minute: 30 }) }),
+  } as unknown as SessionArtifact;
+
+  it('keeps a run report in the stream by default', () => {
+    const { items } = stream({
+      workflows: PLAN_RUN_WORKFLOWS,
+      agents: PLAN_RUN_AGENTS,
+      artifacts: [runReport],
+    });
+
+    expect(items.map(labelOf)).toContain('step:artifact:report-1');
+  });
+
+  it('drops a run report from the stream when reports are hidden', () => {
+    const { items } = stream({
+      workflows: PLAN_RUN_WORKFLOWS,
+      agents: PLAN_RUN_AGENTS,
+      plans: [runPlan],
+      artifacts: [runReport],
+      showReports: false,
+    });
+
+    expect(items.map(labelOf)).not.toContain('step:artifact:report-1');
+    expect(items.map(labelOf)).toContain('step:plan:plan-1');
   });
 
   const answeredQuestion: OpenQuestion = {

@@ -37,6 +37,9 @@ const segmentsOf = ({ entry }: EntryParams): ReadonlyArray<TimelineLabelSegment>
   if (entry.kind === 'plan') {
     return [{ kind: 'text', text: entry.plan.title }];
   }
+  if (entry.kind === 'artifact') {
+    return [{ kind: 'text', text: entry.artifact.title }];
+  }
   if (entry.kind === 'issue') {
     return [
       { kind: 'value', text: entry.task.identifier, variant: 'issue' },

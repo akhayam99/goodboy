@@ -5,6 +5,7 @@ import {
   ACTIVITY_CATEGORY_LABEL,
   DEFAULT_ACTIVITY_FILTER,
   activityCategoryOf,
+  activityChildOf,
   filterTimelineEntries,
   parseActivityFilter,
   readActivityFilter,
@@ -54,6 +55,26 @@ const agentEntry = ({
     chain: null,
   }) as unknown as TimelineTopLevelEntry;
 
+const planEntry = (): TimelineTopLevelEntry =>
+  ({
+    kind: 'plan',
+    id: 'plan:1',
+    at: '2026-08-21T10:00:00.000Z',
+    plan: { id: 'plan-1', title: 'Round once per batch' },
+  }) as unknown as TimelineTopLevelEntry;
+
+const artifactEntry = ({
+  kind,
+}: {
+  readonly kind: 'report' | 'wireframe';
+}): TimelineTopLevelEntry =>
+  ({
+    kind: 'artifact',
+    id: `artifact:${kind}`,
+    at: '2026-08-21T10:05:00.000Z',
+    artifact: { id: `artifact-${kind}`, kind, title: 'Settlement review' },
+  }) as unknown as TimelineTopLevelEntry;
+
 describe('activityCategoryOf', () => {
   it('files every event kind under a category', () => {
     expect(activityCategoryOf({ entry: eventEntry({ id: 'a', kind: 'branch_switched' }) })).toBe(
@@ -82,14 +103,17 @@ describe('activityCategoryOf', () => {
     );
   });
 
-  it('files a plan under its own category', () => {
-    const plan = {
-      kind: 'plan',
-      id: 'plan:1',
-      at: '2026-08-21T10:00:00.000Z',
-    } as unknown as TimelineTopLevelEntry;
+  it('files a plan, a report and a wireframe under the artifacts category', () => {
+    expect(activityCategoryOf({ entry: planEntry() })).toBe('artifacts');
+    expect(activityCategoryOf({ entry: artifactEntry({ kind: 'report' }) })).toBe('artifacts');
+    expect(activityCategoryOf({ entry: artifactEntry({ kind: 'wireframe' }) })).toBe('artifacts');
+  });
 
-    expect(activityCategoryOf({ entry: plan })).toBe('plans');
+  it('gives each artifact kind its own child toggle', () => {
+    expect(activityChildOf({ entry: planEntry() })).toBe('plans');
+    expect(activityChildOf({ entry: artifactEntry({ kind: 'report' }) })).toBe('reports');
+    expect(activityChildOf({ entry: artifactEntry({ kind: 'wireframe' }) })).toBe('wireframes');
+    expect(activityChildOf({ entry: eventEntry({ id: 'a', kind: 'pr_merged' }) })).toBeNull();
   });
 
   it('separates a resolver agent from an ordinary one', () => {
@@ -140,11 +164,7 @@ describe('filterTimelineEntries', () => {
   });
 
   it('shows a plan by default and hides it when plans are off', () => {
-    const plan = {
-      kind: 'plan',
-      id: 'plan:1',
-      at: '2026-08-21T10:00:00.000Z',
-    } as unknown as TimelineTopLevelEntry;
+    const plan = planEntry();
 
     expect(
       filterTimelineEntries({ entries: [plan], filter: DEFAULT_ACTIVITY_FILTER }),
@@ -154,6 +174,33 @@ describe('filterTimelineEntries', () => {
         entries: [plan],
         filter: { ...DEFAULT_ACTIVITY_FILTER, plans: false },
       }),
+    ).toHaveLength(0);
+  });
+
+  it('hides one artifact kind without touching the others', () => {
+    const entries = [
+      planEntry(),
+      artifactEntry({ kind: 'report' }),
+      artifactEntry({ kind: 'wireframe' }),
+    ];
+
+    expect(
+      filterTimelineEntries({
+        entries,
+        filter: { ...DEFAULT_ACTIVITY_FILTER, reports: false },
+      }).map((entry) => entry.id),
+    ).toEqual(['plan:1', 'artifact:wireframe']);
+  });
+
+  it('hides every artifact kind once the artifacts category is off', () => {
+    const entries = [
+      planEntry(),
+      artifactEntry({ kind: 'report' }),
+      artifactEntry({ kind: 'wireframe' }),
+    ];
+
+    expect(
+      filterTimelineEntries({ entries, filter: { ...DEFAULT_ACTIVITY_FILTER, artifacts: false } }),
     ).toHaveLength(0);
   });
 
@@ -234,6 +281,37 @@ describe('parseActivityFilter', () => {
     expect(parsed.plans).toBe(true);
     expect(parsed.workflowSubagents).toBe(true);
     expect(parsed.agentSubagents).toBe(true);
+  });
+
+  it('carries a stored plans choice onto the artifacts category and its kinds', () => {
+    const parsed = parseActivityFilter({ raw: '{"worktree":false,"plans":false}' });
+
+    expect(parsed.artifacts).toBe(false);
+    expect(parsed.plans).toBe(false);
+    expect(parsed.reports).toBe(false);
+    expect(parsed.wireframes).toBe(false);
+    expect(parsed.worktree).toBe(false);
+    expect(parsed.agents).toBe(true);
+  });
+
+  it('leaves a stored artifacts payload alone', () => {
+    const parsed = parseActivityFilter({
+      raw: '{"artifacts":true,"plans":false,"reports":true,"wireframes":false}',
+    });
+
+    expect(parsed.artifacts).toBe(true);
+    expect(parsed.plans).toBe(false);
+    expect(parsed.reports).toBe(true);
+    expect(parsed.wireframes).toBe(false);
+  });
+
+  it('defaults the artifact toggles on a payload that never stored plans', () => {
+    const parsed = parseActivityFilter({ raw: '{"worktree":false}' });
+
+    expect(parsed.artifacts).toBe(true);
+    expect(parsed.plans).toBe(true);
+    expect(parsed.reports).toBe(true);
+    expect(parsed.wireframes).toBe(true);
   });
 
   it('honors a stored subagent choice on either flag', () => {

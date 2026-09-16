@@ -93,6 +93,16 @@ export const useTimelineOpen = ({
           },
         };
       }
+      if (entry.kind === 'artifact') {
+        const { artifact } = entry;
+        return {
+          label: artifact.kind === 'report' ? 'Open report' : 'Open wireframe',
+          open: () => {
+            store.setFocusedArtifactId(sessionId, artifact.id);
+            store.setActiveLens(sessionId, 'plans');
+          },
+        };
+      }
       if (entry.kind === 'issue') {
         return {
           label: `Open ${entry.task.identifier}`,

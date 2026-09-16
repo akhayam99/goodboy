@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
   ACTIVITY_CATEGORIES,
+  ACTIVITY_CHILD_TOGGLES,
   DEFAULT_ACTIVITY_FILTER,
   type ActivityFilter,
   type ActivityToggle,
@@ -39,9 +40,11 @@ const open = ({
 };
 
 describe('ActivityFilterButton', () => {
-  it('lists every activity group and both subagent sub-rows as toggleable items', () => {
+  it('lists every activity group and every sub-row as toggleable items', () => {
     open();
-    expect(screen.getAllByRole('menuitemcheckbox')).toHaveLength(ACTIVITY_CATEGORIES.length + 2);
+    expect(screen.getAllByRole('menuitemcheckbox')).toHaveLength(
+      ACTIVITY_CATEGORIES.length + ACTIVITY_CHILD_TOGGLES.length,
+    );
     expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
   });
 
@@ -64,11 +67,33 @@ describe('ActivityFilterButton', () => {
     expect(onToggle).toHaveBeenCalledWith({ toggle: 'decisions', enabled: true });
   });
 
-  it('offers a plans row like any other category', () => {
+  it('nests plans, reports and wireframes under one Artifacts category', () => {
     const onToggle = vi.fn();
     open({ onToggle });
-    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Plans' }));
-    expect(onToggle).toHaveBeenCalledWith({ toggle: 'plans', enabled: false });
+    const artifactsRow = screen.getByRole('menuitemcheckbox', { name: 'Artifacts' });
+    const plansRow = screen.getByRole('menuitemcheckbox', { name: 'Plans' });
+    const reportsRow = screen.getByRole('menuitemcheckbox', { name: 'Reports' });
+    const wireframesRow = screen.getByRole('menuitemcheckbox', { name: 'Wireframes' });
+
+    expect(artifactsRow.nextElementSibling).toBe(plansRow);
+    expect(plansRow.nextElementSibling).toBe(reportsRow);
+    expect(reportsRow.nextElementSibling).toBe(wireframesRow);
+
+    fireEvent.click(reportsRow);
+    expect(onToggle).toHaveBeenCalledWith({ toggle: 'reports', enabled: false });
+    fireEvent.click(artifactsRow);
+    expect(onToggle).toHaveBeenCalledWith({ toggle: 'artifacts', enabled: false });
+  });
+
+  it('disables every artifact sub-row while Artifacts is hidden', () => {
+    const onToggle = vi.fn();
+    open({ filter: { ...DEFAULT_ACTIVITY_FILTER, artifacts: false }, onToggle });
+    const wireframesRow = screen.getByRole('menuitemcheckbox', { name: 'Wireframes' });
+
+    expect(wireframesRow.hasAttribute('disabled')).toBe(true);
+    expect(wireframesRow.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(wireframesRow);
+    expect(onToggle).not.toHaveBeenCalled();
   });
 
   it('offers a suggestions row and counts it on the badge once hidden', () => {
@@ -108,6 +133,20 @@ describe('ActivityFilterButton', () => {
     expect(subRow.getAttribute('aria-checked')).toBe('false');
     fireEvent.click(subRow);
     expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  it('scrolls the rows inside a capped panel and keeps the footer out of that scroll', () => {
+    open();
+    const menu = screen.getByRole('menu');
+    const rows = screen.getAllByRole('menuitemcheckbox');
+    const first = rows[0];
+    const showAll = screen.getByRole('menuitem', { name: 'Show all' });
+    const scroller = first?.closest('.max-h-72') ?? null;
+
+    expect(scroller).not.toBeNull();
+    expect(menu.className).not.toContain('max-h-72');
+    expect(rows.every((row) => scroller?.contains(row) === true)).toBe(true);
+    expect(scroller?.contains(showAll)).toBe(false);
   });
 
   it('keeps both bulk actions on one row below the categories', () => {

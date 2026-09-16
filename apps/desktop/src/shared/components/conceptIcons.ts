@@ -52,6 +52,7 @@ import {
   PenLine,
   SearchX,
   Settings,
+  Shapes,
   SquareArrowOutUpRight,
   SquarePen,
   SquareTerminal,
@@ -81,6 +82,7 @@ export const ICON_SIZE = {
 export const CONCEPT_ICONS = {
   agents: Bot,
   archive: Archive,
+  artifacts: Shapes,
   autorun: Gauge,
   bitbucket: BitbucketIcon,
   branch: GitBranch,
@@ -152,6 +154,7 @@ type Concept = keyof typeof CONCEPT_ICONS;
 export const CONCEPT_TONE = {
   agents: 'primary',
   archive: 'neutral',
+  artifacts: 'draft',
   autorun: 'primary',
   bitbucket: 'primary',
   branch: 'info',

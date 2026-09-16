@@ -22,8 +22,9 @@ type FakeSuggestion = {
   readonly payload?: { readonly projectId: string };
 };
 
-const { storeState, diffStats, unread, questions, suggestionState, agentsLoaded } = vi.hoisted(
-  () => ({
+const { storeState, diffStats, unread, questions, suggestionState, agentsLoaded, attachedRuns } =
+  vi.hoisted(() => ({
+    attachedRuns: { list: [] as ReadonlyArray<unknown> },
     unread: { current: false },
     agentsLoaded: { current: true },
     suggestionState: {
@@ -45,6 +46,7 @@ const { storeState, diffStats, unread, questions, suggestionState, agentsLoaded 
     storeState: {
       sessionPhaseRuns: {},
       sessionPlans: {},
+      sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
       sessionExternalTasks: {},
       sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
       sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
@@ -54,14 +56,15 @@ const { storeState, diffStats, unread, questions, suggestionState, agentsLoaded 
       sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
       agentKindOverride: {},
       loadSessionEvents: vi.fn(async () => undefined),
+      loadSessionArtifacts: vi.fn(async () => undefined),
       loadSessionAnsweredQuestions: vi.fn(async () => undefined),
       loadSessionDismissedQuestions: vi.fn(async () => undefined),
       markAllAgentsSeen: vi.fn(),
       setActiveLens: vi.fn(),
+      setFocusedArtifactId: vi.fn(),
       openMountDiff: vi.fn(),
     },
-  }),
-);
+  }));
 
 vi.mock('../../../../../../store', () => {
   const useAppStore = <T,>(selector: (state: typeof storeState) => T) => selector(storeState);
@@ -78,7 +81,7 @@ vi.mock('../../../../../../store', () => {
   };
 });
 vi.mock('../../../../../workflows/useAttachedWorkflowRuns', () => ({
-  useAttachedWorkflowRuns: () => [],
+  useAttachedWorkflowRuns: () => attachedRuns.list,
 }));
 vi.mock('../../../../../workflows/useAdvanceWorkflowAgent', () => ({
   useAdvanceWorkflowAgent: () => vi.fn(),
@@ -132,6 +135,7 @@ const WORKTREE: Worktree = {
 
 beforeEach(() => {
   storeState.sessionWorktreeRecords = {};
+  storeState.sessionArtifacts = {};
   storeState.sessionPhaseRuns = {};
   storeState.sessionEvents = {};
   storeState.selectedAgentId = {};
@@ -141,6 +145,8 @@ beforeEach(() => {
   storeState.openMountDiff.mockReset();
   storeState.markAllAgentsSeen.mockReset();
   storeState.setActiveLens.mockReset();
+  storeState.setFocusedArtifactId.mockReset();
+  storeState.loadSessionArtifacts.mockClear();
   storeState.loadSessionAnsweredQuestions.mockClear();
   storeState.loadSessionDismissedQuestions.mockClear();
   unread.current = false;
@@ -152,6 +158,7 @@ beforeEach(() => {
   suggestionState.onAct.mockReset();
   suggestionState.onDismiss.mockReset();
   agentsLoaded.current = true;
+  attachedRuns.list = [];
   localStorage.clear();
 });
 
@@ -522,5 +529,167 @@ describe('TimelinePane questions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
 
     expect(storeState.setActiveLens).toHaveBeenCalledWith('session-1', 'questions');
+  });
+});
+
+describe('TimelinePane artifact rows', () => {
+  const REPORT = {
+    id: 'artifact-report',
+    sessionId: 'session-1',
+    agentId: 'agent-report',
+    workflowRunId: null,
+    kind: 'report',
+    schemaVersion: 1,
+    title: 'Rounding drift in ledger-core postings',
+    sourceFormat: 'markdown',
+    sourceText: 'body',
+    metadata: { reportType: 'session' },
+    status: 'active',
+    revision: 1,
+    sourceTurnId: null,
+    createdAt: '2026-08-20T11:00:00.000Z',
+    updatedAt: '2026-08-20T11:00:00.000Z',
+  };
+  const WIREFRAME = {
+    ...REPORT,
+    id: 'artifact-wireframe',
+    kind: 'wireframe',
+    title: 'Settlement review flow',
+    sourceFormat: 'json',
+    metadata: { fidelity: 'low', designProfile: {} },
+    createdAt: '2026-08-20T11:30:00.000Z',
+    updatedAt: '2026-08-20T11:30:00.000Z',
+  };
+
+  it('loads the artifacts and seats a report and a wireframe on the feed', () => {
+    storeState.sessionArtifacts = { 'session-1': [REPORT, WIREFRAME] };
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    expect(storeState.loadSessionArtifacts).toHaveBeenCalledWith('session-1');
+    expect(screen.getByText('Rounding drift in ledger-core postings')).toBeDefined();
+    expect(screen.getByText('Settlement review flow')).toBeDefined();
+  });
+
+  it('opens the artifact itself where artifacts are read', () => {
+    storeState.sessionArtifacts = { 'session-1': [REPORT] };
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    fireEvent.click(screen.getByRole('button', { name: /Rounding drift in ledger-core postings/ }));
+
+    expect(storeState.setFocusedArtifactId).toHaveBeenCalledWith('session-1', 'artifact-report');
+    expect(storeState.setActiveLens).toHaveBeenCalledWith('session-1', 'plans');
+  });
+
+  it('hides the kinds the activity filter turned off', () => {
+    storeState.sessionArtifacts = { 'session-1': [REPORT, WIREFRAME] };
+    localStorage.setItem('goodboy:activity-filter', JSON.stringify({ reports: false }));
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
+    expect(screen.getByText('Settlement review flow')).toBeDefined();
+  });
+
+  it('keeps every artifact kind off the feed once the artifacts category is hidden', () => {
+    storeState.sessionArtifacts = { 'session-1': [REPORT, WIREFRAME] };
+    localStorage.setItem('goodboy:activity-filter', JSON.stringify({ artifacts: false }));
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
+    expect(screen.queryByText('Settlement review flow')).toBeNull();
+  });
+});
+
+describe('TimelinePane artifacts inside a workflow run', () => {
+  const RUN = {
+    run: {
+      id: 'run-1',
+      workflowId: 'workflow-1',
+      ordinal: 0,
+      currentStep: 0,
+      autoRun: false,
+      triggerMode: 'manual',
+      executionMode: 'static',
+      createdAt: '2026-08-20T10:30:00.000Z',
+    },
+    workflow: {
+      id: 'workflow-1',
+      workspaceId: 'ws-1',
+      name: 'Rounding fix',
+      description: '',
+      steps: [],
+      createdAt: '2026-08-20T10:30:00.000Z',
+      updatedAt: '2026-08-20T10:30:00.000Z',
+    },
+  };
+  const RUN_REPORT = {
+    id: 'artifact-run-report',
+    sessionId: 'session-1',
+    agentId: 'agent-report',
+    workflowRunId: 'run-1',
+    kind: 'report',
+    schemaVersion: 1,
+    title: 'Rounding drift in ledger-core postings',
+    sourceFormat: 'markdown',
+    sourceText: 'body',
+    metadata: { reportType: 'session' },
+    status: 'active',
+    revision: 1,
+    sourceTurnId: null,
+    createdAt: '2026-08-20T11:00:00.000Z',
+    updatedAt: '2026-08-20T11:00:00.000Z',
+  };
+  const RUN_PLAN = {
+    id: 'plan-run',
+    sessionId: 'session-1',
+    agentId: 'agent-planner',
+    workflowRunId: 'run-1',
+    title: 'Round once per batch',
+    bodyMd: 'body',
+    status: 'active',
+    consumptionCount: 0,
+    createdAt: '2026-08-20T10:45:00.000Z',
+    updatedAt: '2026-08-20T10:45:00.000Z',
+  };
+
+  it('nests the run artifacts under the run by default', () => {
+    attachedRuns.list = [RUN];
+    storeState.sessionArtifacts = { 'session-1': [RUN_REPORT] };
+    storeState.sessionPlans = { 'session-1': [RUN_PLAN] };
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    expect(screen.getByText('Rounding drift in ledger-core postings')).toBeDefined();
+    expect(screen.getByText('Round once per batch')).toBeDefined();
+  });
+
+  it('hides the nested rows when the artifacts category is off, children left on', () => {
+    attachedRuns.list = [RUN];
+    storeState.sessionArtifacts = { 'session-1': [RUN_REPORT] };
+    storeState.sessionPlans = { 'session-1': [RUN_PLAN] };
+    localStorage.setItem(
+      'goodboy:activity-filter',
+      JSON.stringify({ artifacts: false, plans: true, reports: true, wireframes: true }),
+    );
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
+    expect(screen.queryByText('Round once per batch')).toBeNull();
+    expect(screen.getByText(/Rounding fix/)).toBeDefined();
+  });
+
+  it('hides only the nested reports when the report child is off', () => {
+    attachedRuns.list = [RUN];
+    storeState.sessionArtifacts = { 'session-1': [RUN_REPORT] };
+    storeState.sessionPlans = { 'session-1': [RUN_PLAN] };
+    localStorage.setItem('goodboy:activity-filter', JSON.stringify({ reports: false }));
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
+    expect(screen.getByText('Round once per batch')).toBeDefined();
   });
 });
