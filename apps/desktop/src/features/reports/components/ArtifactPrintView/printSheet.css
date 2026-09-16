@@ -1,4 +1,3 @@
-export const PRINT_SHEET_CSS = `
 @page {
   margin: 20mm 24mm;
 }
@@ -294,15 +293,14 @@ export const PRINT_SHEET_CSS = `
     vertical-align: top;
   }
 }
-`;
-
-export const PRINT_LANDSCAPE_CSS = `
-@page {
+@page landscape-sheet {
   size: landscape;
 }
+.print-sheet[data-page='landscape'] {
+  page: landscape-sheet;
+}
 @media screen {
-  .print-sheet {
+  .print-sheet[data-page='landscape'] {
     max-width: 64rem;
   }
 }
-`;
