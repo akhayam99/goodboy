@@ -11,8 +11,9 @@ import type {
   TurnEvent,
   WorkspaceId,
 } from '@goodboy/types';
+import { ARTIFACT_BRIEF_CLIP_NOTE, ARTIFACT_BRIEF_LIMITS } from '../artifacts/artifactBrief';
 import { REDACTED } from '../../shared/utils/redactSecrets';
-import { buildWireframeContext } from './buildWireframeContext';
+import { buildWireframeContext, WIREFRAME_CONTEXT_LIMITS } from './buildWireframeContext';
 import type { DesignProfile } from './collectDesignProfile';
 
 const NOW = '2026-09-16T10:00:00.000Z' as IsoDateTime;
@@ -88,18 +89,23 @@ const profileWith = (): DesignProfile => ({
   notes: [],
 });
 
-const textFor = ({
-  goal = 'ship the wireframe role',
-  agentName = 'scout',
-  planTitle = 'Ship it',
-  designProfile = null,
-}: {
+type TextForParams = {
+  readonly brief?: string | null;
   readonly goal?: string;
   readonly agentName?: string;
   readonly planTitle?: string;
   readonly designProfile?: DesignProfile | null;
-} = {}): string =>
+};
+
+const textFor = ({
+  brief = null,
+  goal = 'ship the wireframe role',
+  agentName = 'scout',
+  planTitle = 'Ship it',
+  designProfile = null,
+}: TextForParams = {}): string =>
   buildWireframeContext({
+    brief,
     fidelity: designProfile === null ? 'low' : 'high',
     session: sessionWith({ goal }),
     agents: [agentWith({ name: agentName })],
@@ -110,6 +116,50 @@ const textFor = ({
   }).text;
 
 describe('buildWireframeContext', () => {
+  it('adds the explicit user request separately from the unchanged evidence and contract', () => {
+    const baseline = textFor();
+    const text = textFor({ brief: '  show the Harborline inbox\ninclude the empty state  ' });
+    expect(text).toBe(
+      `# user request\n\nshow the Harborline inbox\ninclude the empty state\n\n${baseline}`,
+    );
+  });
+
+  it('redacts credentials in the user request', () => {
+    const text = textFor({ brief: 'show access with api_key=harborline-test-value' });
+    expect(text).toContain('# user request\n\nshow access with api_key=[redacted]');
+    expect(text).not.toContain('harborline-test-value');
+  });
+
+  it.each([null, '', ' \n\t '])('keeps the default request for an empty brief (%j)', (brief) => {
+    expect(textFor({ brief })).toBe(textFor());
+  });
+
+  it('notes a clipped brief in the truncation section', () => {
+    const text = textFor({ brief: 'Harborline '.repeat(WIREFRAME_CONTEXT_LIMITS.total) });
+    expect(text).toContain(ARTIFACT_BRIEF_CLIP_NOTE);
+    expect(text.split('# user request\n\n')[1]?.split('\n\n# low fidelity')[0]).toHaveLength(
+      ARTIFACT_BRIEF_LIMITS.chars,
+    );
+  });
+
+  it('reports its inventory with the plans it kept session wide', () => {
+    const context = buildWireframeContext({
+      brief: null,
+      fidelity: 'low',
+      session: sessionWith({ goal: 'ship the wireframe role' }),
+      agents: [agentWith({ name: 'scout' })],
+      transcripts,
+      artifacts: [planWith({ title: 'Ship it' })],
+      designProfile: null,
+      capturedAt: NOW,
+    });
+    const plans = context.inventory.find((row) => row.id === 'plans');
+    const theme = context.inventory.find((row) => row.id === 'theme');
+    expect(plans?.summary).toContain('1 of 1 session plans');
+    expect(plans?.detail).toContain('session plans, not scoped to a run');
+    expect(theme?.summary).toBe('plain wireframe, no design files read');
+  });
+
   it('redacts a secret carried in an agent name', () => {
     const text = textFor({ agentName: 'deploy ghp_abcdefghijklmnopqrst' });
     expect(text).not.toContain('ghp_abcdefghijklmnopqrst');
@@ -133,5 +183,19 @@ describe('buildWireframeContext', () => {
     expect(text).not.toContain('sk-live-abcdefghijklmnop');
     expect(text).not.toContain('ghp_abcdefghijklmnopqrst');
     expect(text).toContain('--accent: #3355ff');
+  });
+
+  it('records the session as a source', () => {
+    const context = buildWireframeContext({
+      brief: null,
+      fidelity: 'low',
+      session: sessionWith({ goal: 'ship the wireframe role' }),
+      agents: [agentWith({ name: 'scout' })],
+      transcripts,
+      artifacts: [planWith({ title: 'Ship it' })],
+      designProfile: null,
+      capturedAt: NOW,
+    });
+    expect(context.sourceIds).toContain(SESSION_ID);
   });
 });

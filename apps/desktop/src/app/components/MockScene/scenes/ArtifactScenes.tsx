@@ -5,13 +5,13 @@ import { CreateWireframeCta } from '../../../../features/wireframes/components/C
 import { SESSION_ID, seedArtifactScene } from './artifactSeed';
 
 const openRailCard = ({ title }: { readonly title: string }): boolean => {
-  const rail = window.document.querySelector('[data-testid="artifact-rail"]');
-  if (rail === null) {
+  const sections = [...window.document.querySelectorAll('[data-testid="artifact-section"]')];
+  if (sections.length === 0) {
     return window.document.querySelector('[data-testid="artifact-export-slot"]') !== null;
   }
-  const card = [...rail.querySelectorAll('button')].find((button) =>
-    button.textContent?.includes(title),
-  );
+  const card = sections
+    .flatMap((section) => [...section.querySelectorAll('button')])
+    .find((button) => button.textContent?.includes(title));
   card?.click();
   return card !== undefined;
 };

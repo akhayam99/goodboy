@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import {
   Button,
@@ -7,9 +8,12 @@ import {
   MetaRow,
   PANE_RHYTHM,
   ScrollFade,
+  StudioDetailTabs,
   cn,
 } from '@goodboy/ui';
 import type { Agent, ArtifactId, SessionArtifact, SessionId } from '@goodboy/types';
+import { ArtifactBuiltFrom } from './ArtifactBuiltFrom';
+import { ArtifactConversation } from './ArtifactConversation';
 import { ArtifactExportActions } from './ArtifactExportActions';
 import { ArtifactStatusChip } from './ArtifactStatusChip';
 import { ReportStudio } from '../../../reports/components/ReportStudio';
@@ -28,6 +32,8 @@ type Props = {
   readonly onSelectArtifact: (artifactId: ArtifactId) => void;
 };
 
+type Tab = 'artifact' | 'conversation';
+
 export const ArtifactDetail = ({
   sessionId,
   artifact,
@@ -37,7 +43,19 @@ export const ArtifactDetail = ({
   onBack,
   onSelectArtifact,
 }: Props) => {
-  const creator = agents.find((agent) => agent.id === artifact.agentId);
+  const creator = agents.find((agent) => agent.id === artifact.agentId) ?? null;
+  const isWorkflowOwned = creator?.stepId != null;
+  const [opened, setOpened] = useState<{ readonly artifactId: ArtifactId; readonly tab: Tab }>({
+    artifactId: artifact.id,
+    tab: 'artifact',
+  });
+  const tab: Tab = opened.artifactId === artifact.id ? opened.tab : 'artifact';
+  const setTab = (next: Tab) => setOpened({ artifactId: artifact.id, tab: next });
+
+  const tabs = [
+    { value: 'artifact', label: 'Artifact' },
+    { value: 'conversation', label: isWorkflowOwned ? 'Step transcript' : 'Conversation' },
+  ] satisfies ReadonlyArray<{ readonly value: Tab; readonly label: string }>;
 
   return (
     <FocusedPane
@@ -82,28 +100,44 @@ export const ArtifactDetail = ({
               }
               actions={<ArtifactExportActions artifact={artifact} />}
             />
+            <StudioDetailTabs
+              ariaLabel="Artifact sections"
+              options={tabs}
+              value={tab}
+              onChange={setTab}
+            />
           </div>
         </div>
         <Divider />
-        <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-          <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}>
-            {artifact.kind === 'report' ? (
-              <ReportStudio
-                sessionId={sessionId}
-                artifact={artifact}
-                agents={agents}
-                artifacts={artifacts}
-                onSelectArtifact={onSelectArtifact}
-              />
-            ) : null}
-            {artifact.kind === 'wireframe' ? (
-              <WireframeStudio sessionId={sessionId} artifact={artifact} />
-            ) : null}
-            {artifact.kind === 'plan' ? (
-              <Markdown text={artifact.sourceText} className="text-xs" />
-            ) : null}
-          </div>
-        </ScrollFade>
+        {tab === 'conversation' ? (
+          <ArtifactConversation
+            sessionId={sessionId}
+            artifact={artifact}
+            agent={creator}
+            isWorkflowOwned={isWorkflowOwned}
+          />
+        ) : (
+          <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
+            <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}>
+              {artifact.kind === 'report' ? (
+                <ReportStudio
+                  sessionId={sessionId}
+                  artifact={artifact}
+                  agents={agents}
+                  artifacts={artifacts}
+                  onSelectArtifact={onSelectArtifact}
+                />
+              ) : null}
+              {artifact.kind === 'wireframe' ? (
+                <WireframeStudio sessionId={sessionId} artifact={artifact} />
+              ) : null}
+              {artifact.kind === 'plan' ? (
+                <Markdown text={artifact.sourceText} className="text-xs" />
+              ) : null}
+              <ArtifactBuiltFrom artifact={artifact} />
+            </div>
+          </ScrollFade>
+        )}
       </div>
     </FocusedPane>
   );

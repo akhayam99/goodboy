@@ -89,9 +89,11 @@ import type { BugReportDraftState } from './slices/bugReportDraft/state';
 import type { ChangelogState } from './slices/changelog/state';
 import type { ProviderConnectMap, ProviderLifecycleMap } from './slices/providers';
 import type { ReviewPrsState } from './slices/review-prs/types';
+import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
 import type { WriteDestination } from './slices/project-mounts/writeDestination';
 import type {
+  ArtifactCreationTarget,
   DiffFocus,
   FocusedExternalTask,
   LensHistory,
@@ -104,6 +106,7 @@ import type {
 import type { PanelSection } from './slices/sidebar/types';
 import type { UpdaterState } from './slices/updater/state';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
+import type { SessionArtifactDrafts } from './slices/artifactDrafts/types';
 import type { WorkflowGeneration, WorkflowStudioDraft } from './slices/workflowStudio/types';
 
 export type BootPhase =
@@ -346,6 +349,7 @@ export type AppState = AppSliceState & {
   readonly agentKindOverride: Readonly<Record<AgentId, AgentKind>>;
   readonly agentDraft: Readonly<Record<AgentId, string>>;
   readonly workflowDrafts: Readonly<Record<SessionId, WorkflowBuilderDraft | undefined>>;
+  readonly artifactDrafts: Readonly<Record<SessionId, SessionArtifactDrafts>>;
   readonly workflowStudioDrafts: Readonly<Record<WorkspaceId, WorkflowStudioDraft | undefined>>;
   readonly workflowGenerations: Readonly<Record<WorkspaceId, WorkflowGeneration | undefined>>;
   readonly visibleWorkflowStudioWorkspaceId: WorkspaceId | null;
@@ -391,6 +395,9 @@ export type AppState = AppSliceState & {
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
+  readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
+  readonly artifactConversationAgentId: Readonly<Record<SessionId, AgentId | null>>;
+  readonly artifactCreation: Readonly<Record<SessionId, ArtifactCreationTarget | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;

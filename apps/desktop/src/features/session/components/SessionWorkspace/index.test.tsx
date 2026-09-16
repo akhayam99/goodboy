@@ -15,6 +15,7 @@ type Store = {
   sessionProjectMounts: Record<string, ReadonlyArray<never>>;
   sessionActiveProject: Record<string, string>;
   sessionStudio: Record<string, null>;
+  artifactConversationAgentId: Record<string, string | null>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   sessionPlans: Record<string, ReadonlyArray<unknown>>;
   sessionTelemetry: Record<string, ReadonlyArray<never>>;
@@ -24,6 +25,7 @@ type Store = {
   phaseTemplates: Record<string, ReadonlyArray<unknown>>;
   sessionWorkflows: Record<string, ReadonlyArray<unknown>>;
   focusedPlanId: Record<string, string | null>;
+  artifactCreation: Record<string, { readonly kind: string } | null>;
   focusedGithubIssueNumber: Record<string, number | null>;
   sessionExternalTasks: Record<string, ReadonlyArray<unknown>>;
   sessionGithub: Record<string, unknown>;
@@ -60,6 +62,7 @@ const { store, hooks } = vi.hoisted(() => ({
     sessionProjectMounts: {},
     sessionActiveProject: {},
     sessionStudio: {},
+    artifactConversationAgentId: {},
     sessionPhaseRuns: {},
     sessionPlans: {},
     sessionTelemetry: {},
@@ -69,6 +72,7 @@ const { store, hooks } = vi.hoisted(() => ({
     phaseTemplates: {},
     sessionWorkflows: {},
     focusedPlanId: {},
+    artifactCreation: {},
     focusedGithubIssueNumber: {},
     sessionExternalTasks: {},
     sessionGithub: {},
@@ -271,6 +275,7 @@ beforeEach(() => {
   store.phaseTemplates = {};
   store.sessionWorkflows = {};
   store.focusedPlanId = {};
+  store.artifactCreation = {};
   store.focusedGithubIssueNumber = {};
   store.sessionExternalTasks = {};
   store.sessionGithub = {};

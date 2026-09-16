@@ -5,6 +5,7 @@ import type { BreadcrumbCrumb } from '../../../../app/components/AppBreadcrumb/b
 import { useIsBranchlessSession } from '../useIsBranchlessSession';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
+import { ARTIFACT_CREATION_ADAPTERS } from '../../../artifacts/artifactCreationAdapters';
 import { buildSessionBreadcrumb } from '../../components/SessionWorkspace/sessionBreadcrumb';
 import { SIMPLE_LENSES, lensLabelFor } from '../../lens-labels';
 import { resolveRootAgent } from '../../agent-kind';
@@ -26,6 +27,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
   const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId[sessionId] ?? null);
   const focusedPlanId = useAppStore((s) => s.focusedPlanId[sessionId] ?? null);
+  const artifactCreationKind = useAppStore((s) => s.artifactCreation[sessionId]?.kind ?? null);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -78,6 +80,11 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     [plans, focusedPlanId],
   );
 
+  const artifactCreationLabel =
+    artifactCreationKind === null
+      ? null
+      : ARTIFACT_CREATION_ADAPTERS[artifactCreationKind].crumbLabel;
+
   const selectedChildWorkflowName =
     selectedWorkflowRun == null ? null : workflowKindName(selectedWorkflowRun.workflow);
   const selectedWorkflowRunId = selectedWorkflowRun?.run.id ?? null;
@@ -90,6 +97,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
         focusedWorkflowName,
         selectedChildWorkflowName,
         focusedPlanTitle,
+        artifactCreationLabel,
         selectedChildLabel,
         selectedChildHome,
         selectedParentLabel,
@@ -134,6 +142,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       selectedChildWorkflowName,
       selectedWorkflowRunId,
       focusedPlanTitle,
+      artifactCreationLabel,
       selectedChildLabel,
       selectedChildHome,
       selectedParentLabel,

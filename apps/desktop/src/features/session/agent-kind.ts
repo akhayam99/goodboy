@@ -303,7 +303,7 @@ export const agentKindPalette = ({ kind }: AgentKindPaletteParams): AgentKindPal
 };
 
 const AGENT_ROLES: ReadonlyArray<AgentRole> = SELECTABLE_AGENT_ROLES.filter(
-  (role) => ROLE_REGISTRY[role].workflowEligible,
+  (role) => ROLE_REGISTRY[role].pickerEligible,
 );
 
 export const visibleAgentRoles = (): ReadonlyArray<AgentRole> => AGENT_ROLES;
@@ -443,7 +443,8 @@ export const visibleAgentKinds = (): ReadonlyArray<AgentKind> =>
   AGENT_KIND_ORDER.filter(
     (kind) =>
       AGENT_KIND_DEFAULTS[kind].visible !== false &&
-      ROLE_REGISTRY[KIND_TO_ROLE[kind]].selectionEligible,
+      ROLE_REGISTRY[KIND_TO_ROLE[kind]].selectionEligible &&
+      ROLE_REGISTRY[KIND_TO_ROLE[kind]].pickerEligible,
   ).sort((left, right) => AGENT_KIND_META[left].label.localeCompare(AGENT_KIND_META[right].label));
 
 export const inferAgentKindFromStep = (step: WorkflowLibraryStep): AgentKind => {

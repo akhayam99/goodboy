@@ -8,6 +8,14 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { redactSecrets } from '../../shared/utils/redactSecrets';
+import { ARTIFACT_BRIEF_CLIP_NOTE, clipBrief } from '../artifacts/artifactBrief';
+import {
+  briefInventoryRow,
+  excludedInventoryRow,
+  keptRowState,
+  sizeInventoryRow,
+  type ArtifactContextInventoryRow,
+} from '../artifacts/artifactContextInventory';
 import type { ScriptRunRecord } from '../scripts/scripts';
 import { REPORT_TYPE_HINT, REPORT_TYPE_LABEL, type ReportType } from './reportTypes';
 
@@ -23,6 +31,18 @@ export const REPORT_CONTEXT_LIMITS = {
   total: 48_000,
 } as const;
 
+export type ReportDiffUnavailableReason = 'no-mount' | 'unreadable';
+
+export const REPORT_DEFAULT_REQUEST = ({
+  reportType,
+}: {
+  readonly reportType: ReportType;
+}): string =>
+  `write a ${REPORT_TYPE_LABEL[reportType].toLowerCase()}: ${REPORT_TYPE_HINT[reportType]}.`;
+
+export const REPORT_EXCLUDED_COPY =
+  'never sent: tool calls, tool output, transcripts beyond the last message, open questions, decisions, review threads, the session summary, other mounts';
+
 export type ReportDiffEvidence = Readonly<{
   mountName: string;
   baseBranch: string;
@@ -35,6 +55,7 @@ export type ReportDiffEvidence = Readonly<{
 
 export type ReportContextParams = Readonly<{
   reportType: ReportType;
+  brief?: string | null;
   session: Session;
   agents: ReadonlyArray<Agent>;
   transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
@@ -42,6 +63,7 @@ export type ReportContextParams = Readonly<{
   events: ReadonlyArray<SessionEvent>;
   scriptRuns: Readonly<Record<string, ScriptRunRecord>>;
   diff: ReportDiffEvidence | null;
+  diffUnavailableReason?: ReportDiffUnavailableReason | null;
   workflowRunId: WorkflowRunId | null;
   capturedAt: IsoDateTime;
 }>;
@@ -50,6 +72,7 @@ export type ReportContext = Readonly<{
   text: string;
   sourceIds: ReadonlyArray<string>;
   truncations: ReadonlyArray<string>;
+  inventory: ReadonlyArray<ArtifactContextInventoryRow>;
 }>;
 
 type ClipParams = Readonly<{ text: string; limit: number }>;
@@ -108,13 +131,22 @@ const agentSection = ({
   transcripts,
   truncations,
   sourceIds,
+  inventory,
 }: {
   readonly agents: ReadonlyArray<Agent>;
   readonly transcripts: ReportContextParams['transcripts'];
   readonly truncations: Array<string>;
   readonly sourceIds: Array<string>;
+  readonly inventory: Array<ArtifactContextInventoryRow>;
 }): string => {
   if (agents.length === 0) {
+    inventory.push({
+      id: 'agents',
+      label: 'agents',
+      summary: 'no agent has run in this scope',
+      state: 'missing',
+      detail: [],
+    });
     return '## agents\n\nno agents ran in this scope.';
   }
   const kept = agents.slice(-REPORT_CONTEXT_LIMITS.agents);
@@ -123,11 +155,13 @@ const agentSection = ({
       `agents: kept the last ${kept.length} of ${agents.length}; earlier agents are missing`,
     );
   }
+  let silent = 0;
   const rows = kept.map((agent) => {
     sourceIds.push(agent.id);
     const events = transcripts[agent.id] ?? [];
     const text = lastAssistantText({ events });
     if (text === null) {
+      silent += 1;
       return `### ${redactSecrets({ text: agent.name })} (agent ${agent.id}, ${agent.status})\n\nno assistant output recorded.`;
     }
     const clipped = clip({ text: redactSecrets({ text }), limit: REPORT_CONTEXT_LIMITS.agentText });
@@ -136,6 +170,18 @@ const agentSection = ({
     }
     return `### ${redactSecrets({ text: agent.name })} (agent ${agent.id}, ${agent.status})\n\n${clipped.text}`;
   });
+  inventory.push({
+    id: 'agents',
+    label: 'agents',
+    summary: `${kept.length} of ${agents.length} agents, last message of each up to ${REPORT_CONTEXT_LIMITS.agentText} characters`,
+    state: keptRowState({ kept: kept.length, total: agents.length }),
+    detail: [
+      ...(kept.length < agents.length
+        ? [`only the last ${REPORT_CONTEXT_LIMITS.agents} fit, earlier agents are missing`]
+        : []),
+      ...(silent > 0 ? [`${silent} had no output recorded`] : []),
+    ],
+  });
   return `## agents\n\n${rows.join('\n\n')}`;
 };
 
@@ -143,12 +189,21 @@ const artifactSection = ({
   artifacts,
   truncations,
   sourceIds,
+  inventory,
 }: {
   readonly artifacts: ReadonlyArray<SessionArtifact>;
   readonly truncations: Array<string>;
   readonly sourceIds: Array<string>;
+  readonly inventory: Array<ArtifactContextInventoryRow>;
 }): string => {
   if (artifacts.length === 0) {
+    inventory.push({
+      id: 'artifacts',
+      label: 'artifacts',
+      summary: 'no plan, report or wireframe in this scope',
+      state: 'missing',
+      detail: [],
+    });
     return '## artifacts\n\nno plans, reports or wireframes were captured in this scope.';
   }
   const kept = artifacts.slice(-REPORT_CONTEXT_LIMITS.artifacts);
@@ -169,11 +224,36 @@ const artifactSection = ({
     const title = redactSecrets({ text: artifact.title });
     return `- ${artifact.kind} ${artifact.id} rev ${artifact.revision} (${artifact.status}) "${title}"\n  ${excerpt.text.replace(/\n/g, '\n  ')}`;
   });
+  inventory.push({
+    id: 'artifacts',
+    label: 'artifacts',
+    summary: `${kept.length} of ${artifacts.length} artifacts, first ${REPORT_CONTEXT_LIMITS.artifactExcerpt} characters of each, discarded ones included`,
+    state: keptRowState({ kept: kept.length, total: artifacts.length }),
+    detail:
+      kept.length < artifacts.length
+        ? [`only the last ${REPORT_CONTEXT_LIMITS.artifacts} fit, earlier artifacts are missing`]
+        : [],
+  });
   return `## artifacts\n\n${rows.join('\n')}`;
 };
 
-const diffSection = ({ diff }: { readonly diff: ReportDiffEvidence | null }): string => {
+const diffSection = ({
+  diff,
+  reason,
+  inventory,
+}: {
+  readonly diff: ReportDiffEvidence | null;
+  readonly reason: ReportDiffUnavailableReason | null;
+  readonly inventory: Array<ArtifactContextInventoryRow>;
+}): string => {
   if (diff === null) {
+    inventory.push({
+      id: 'diff',
+      label: 'local change',
+      summary: reason === 'unreadable' ? 'the worktree could not be read' : 'no mounted project',
+      state: 'missing',
+      detail: [],
+    });
     return '## diff\n\nno mount diff was available at capture time.';
   }
   const commits = diff.commits
@@ -185,6 +265,13 @@ const diffSection = ({ diff }: { readonly diff: ReportDiffEvidence | null }): st
     .map((path) => `- ${path}`)
     .join('\n');
   const head = diff.headSha ?? 'unknown';
+  inventory.push({
+    id: 'diff',
+    label: 'local change',
+    summary: `${diff.mountName} against ${diff.baseBranch}: ${diff.commits.length} commits, ${diff.paths.length} files, +${diff.additions} -${diff.deletions}`,
+    state: 'included',
+    detail: ['file paths and commit subjects only, no file contents'],
+  });
   return [
     '## diff',
     '',
@@ -198,8 +285,10 @@ const diffSection = ({ diff }: { readonly diff: ReportDiffEvidence | null }): st
 
 const scriptSection = ({
   scriptRuns,
+  inventory,
 }: {
   readonly scriptRuns: ReportContextParams['scriptRuns'];
+  readonly inventory: Array<ArtifactContextInventoryRow>;
 }): string => {
   const rows = Object.entries(scriptRuns)
     .filter(([, record]) => record.status === 'ok' || record.status === 'error')
@@ -210,19 +299,42 @@ const scriptSection = ({
       return `- ${redactSecrets({ text: record.name ?? scriptId })}: ${record.status}, ${exit}`;
     });
   if (rows.length === 0) {
+    inventory.push({
+      id: 'checks',
+      label: 'checks',
+      summary: 'no script run recorded',
+      state: 'missing',
+      detail: [],
+    });
     return '## checks\n\nno script or test run outcome was recorded in this session.';
   }
+  inventory.push({
+    id: 'checks',
+    label: 'checks',
+    summary: `${rows.length} script runs with an outcome, exit codes only`,
+    state: 'included',
+    detail: ['scripts you ran from this session, not CI'],
+  });
   return `## checks\n\n${rows.join('\n')}`;
 };
 
 const eventSection = ({
   events,
   truncations,
+  inventory,
 }: {
   readonly events: ReadonlyArray<SessionEvent>;
   readonly truncations: Array<string>;
+  readonly inventory: Array<ArtifactContextInventoryRow>;
 }): string => {
   if (events.length === 0) {
+    inventory.push({
+      id: 'events',
+      label: 'session events',
+      summary: 'no session event recorded',
+      state: 'missing',
+      detail: [],
+    });
     return '## session events\n\nno session events were recorded.';
   }
   const kept = events.slice(-REPORT_CONTEXT_LIMITS.events);
@@ -232,11 +344,19 @@ const eventSection = ({
     );
   }
   const rows = kept.map((event) => `- ${event.createdAt} ${event.kind}`);
+  inventory.push({
+    id: 'events',
+    label: 'session events',
+    summary: `last ${kept.length} of ${events.length} session events, kind and time only`,
+    state: keptRowState({ kept: kept.length, total: events.length }),
+    detail: [],
+  });
   return `## session events\n\n${rows.join('\n')}`;
 };
 
 export const buildReportContext = ({
   reportType,
+  brief = null,
   session,
   agents,
   transcripts,
@@ -244,18 +364,24 @@ export const buildReportContext = ({
   events,
   scriptRuns,
   diff,
+  diffUnavailableReason = null,
   workflowRunId,
   capturedAt,
 }: ReportContextParams): ReportContext => {
   const truncations: Array<string> = [];
   const sourceIds: Array<string> = [session.id];
+  const inventory: Array<ArtifactContextInventoryRow> = [];
+  const request = clipBrief({ text: brief ?? '' });
+  if (request.isClipped) {
+    truncations.push(ARTIFACT_BRIEF_CLIP_NOTE);
+  }
   const scopedAgentList = scopedAgents({ agents, workflowRunId });
   const scopedArtifactList = scopedArtifacts({ artifacts, workflowRunId });
   const scope = workflowRunId === null ? 'the whole session' : `workflow run ${workflowRunId}`;
   const header = [
     `# evidence pack: ${REPORT_TYPE_LABEL[reportType]}`,
     '',
-    `write a ${REPORT_TYPE_LABEL[reportType].toLowerCase()}: ${REPORT_TYPE_HINT[reportType]}.`,
+    REPORT_DEFAULT_REQUEST({ reportType }),
     `scope: ${scope}. captured at ${capturedAt}.`,
     `session ${session.id}: ${redactSecrets({ text: session.goal })}`,
     '',
@@ -266,13 +392,22 @@ export const buildReportContext = ({
     sourceIds.push(workflowRunId);
   }
 
+  inventory.push(briefInventoryRow({ brief: request.text }));
+  inventory.push({
+    id: 'goal',
+    label: 'goal',
+    summary: 'the session goal and the report type',
+    state: 'included',
+    detail: [],
+  });
+
   const body = [
     header,
-    agentSection({ agents: scopedAgentList, transcripts, truncations, sourceIds }),
-    artifactSection({ artifacts: scopedArtifactList, truncations, sourceIds }),
-    diffSection({ diff }),
-    scriptSection({ scriptRuns }),
-    eventSection({ events, truncations }),
+    agentSection({ agents: scopedAgentList, transcripts, truncations, sourceIds, inventory }),
+    artifactSection({ artifacts: scopedArtifactList, truncations, sourceIds, inventory }),
+    diffSection({ diff, reason: diffUnavailableReason, inventory }),
+    scriptSection({ scriptRuns, inventory }),
+    eventSection({ events, truncations, inventory }),
   ].join('\n\n');
 
   const capped = clip({ text: body, limit: REPORT_CONTEXT_LIMITS.total });
@@ -284,9 +419,24 @@ export const buildReportContext = ({
       ? '## truncation\n\nnothing was truncated.'
       : `## truncation\n\n${truncations.map((note) => `- ${note}`).join('\n')}`;
 
+  const sections = [
+    ...(request.text.length > 0
+      ? [`# user request\n\n${redactSecrets({ text: request.text })}`]
+      : []),
+    `${capped.text}\n\n${notes}`,
+  ];
+  inventory.push(excludedInventoryRow({ summary: REPORT_EXCLUDED_COPY }));
+  inventory.push(
+    sizeInventoryRow({
+      size: body.length,
+      cap: REPORT_CONTEXT_LIMITS.total,
+      isCapped: capped.isClipped,
+    }),
+  );
   return {
-    text: `${capped.text}\n\n${notes}`,
+    text: sections.join('\n\n'),
     sourceIds,
     truncations,
+    inventory,
   };
 };

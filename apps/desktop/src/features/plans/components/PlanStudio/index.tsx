@@ -25,19 +25,17 @@ import { FocusedPane } from '../../../../shared/components/PaneShell/FocusedPane
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { PlanStatusChip } from './PlanStatusChip';
 import { PlanProvenance } from './PlanProvenance';
-import { PlanRailCard } from './PlanRailCard';
+import { PlanList } from './PlanList';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
-import { FinishedRegister } from '../../../../shared/components/FinishedRegister';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly eyebrow?: ReactNode;
-  readonly railFooter?: ReactNode;
 };
 
-export const PlanStudio = ({ sessionId, eyebrow, railFooter }: Props) => {
+export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
   const plans = useSessionPlans(sessionId);
   const openQuestionCount = useSessionOpenQuestions(sessionId).length;
   const agents = useAppStore(
@@ -312,9 +310,6 @@ export const PlanStudio = ({ sessionId, eyebrow, railFooter }: Props) => {
   }
 
   const active = plans.filter((plan) => plan.status === 'active');
-  const consumed = plans.filter((plan) => plan.status !== 'active');
-  const visibleConsumed = consumed.slice(0, 30);
-  const earlierConsumed = consumed.slice(30);
 
   return (
     <PaneShell
@@ -339,51 +334,11 @@ export const PlanStudio = ({ sessionId, eyebrow, railFooter }: Props) => {
           description="Every plan here already ran or was discarded. Finished plans remain below for reference."
         />
       ) : null}
-      {active.length > 0 ? (
-        <ul className="flex flex-col gap-2">
-          {active.map((plan) => (
-            <li key={plan.id}>
-              <PlanRailCard
-                plan={plan}
-                openQuestionCount={openQuestionCount}
-                onSelect={() => setFocusedPlanId(sessionId, plan.id)}
-              />
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      <FinishedRegister
-        label="Finished"
-        count={consumed.length}
-        visible={
-          <ul className="flex flex-col gap-2">
-            {visibleConsumed.map((plan) => (
-              <li key={plan.id}>
-                <PlanRailCard
-                  plan={plan}
-                  openQuestionCount={openQuestionCount}
-                  onSelect={() => setFocusedPlanId(sessionId, plan.id)}
-                />
-              </li>
-            ))}
-          </ul>
-        }
-        earlierCount={earlierConsumed.length}
-        earlier={
-          <ul className="flex flex-col gap-2">
-            {earlierConsumed.map((plan) => (
-              <li key={plan.id}>
-                <PlanRailCard
-                  plan={plan}
-                  openQuestionCount={openQuestionCount}
-                  onSelect={() => setFocusedPlanId(sessionId, plan.id)}
-                />
-              </li>
-            ))}
-          </ul>
-        }
+      <PlanList
+        plans={plans}
+        openQuestionCount={openQuestionCount}
+        onSelect={(planId) => setFocusedPlanId(sessionId, planId)}
       />
-      {railFooter}
     </PaneShell>
   );
 };

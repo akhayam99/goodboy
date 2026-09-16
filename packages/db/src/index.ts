@@ -357,6 +357,11 @@ export {
   type GetArtifactRenditionInput,
 } from './queries/artifact';
 export {
+  putArtifactProvenance,
+  getArtifactProvenance,
+  type PutArtifactProvenanceInput,
+} from './queries/artifact-provenance';
+export {
   listPlansForSession,
   upsertPlan,
   updatePlanStatus,

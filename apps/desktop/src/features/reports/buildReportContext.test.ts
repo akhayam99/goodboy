@@ -13,6 +13,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import { ARTIFACT_BRIEF_CLIP_NOTE, ARTIFACT_BRIEF_LIMITS } from '../artifacts/artifactBrief';
 import { buildReportContext, REPORT_CONTEXT_LIMITS } from './buildReportContext';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -91,6 +92,56 @@ const baseParams = {
 } as const;
 
 describe('buildReportContext', () => {
+  it('adds the explicit user request separately from the unchanged evidence pack', () => {
+    const baseline = buildReportContext({ ...baseParams });
+    const context = buildReportContext({
+      ...baseParams,
+      brief: '  explain the Harborline rollout risks\ninclude remaining checks  ',
+    });
+    expect(context.text).toBe(
+      `# user request\n\nexplain the Harborline rollout risks\ninclude remaining checks\n\n${baseline.text}`,
+    );
+    expect(context.sourceIds).toEqual(baseline.sourceIds);
+    expect(context.truncations).toEqual(baseline.truncations);
+  });
+
+  it('redacts credentials in the user request', () => {
+    const context = buildReportContext({
+      ...baseParams,
+      brief: 'explain access with api_key=harborline-test-value',
+    });
+    expect(context.text).toContain('# user request\n\nexplain access with api_key=[redacted]');
+    expect(context.text).not.toContain('harborline-test-value');
+  });
+
+  it.each([null, '', ' \n\t '])('keeps the default request for an empty brief (%j)', (brief) => {
+    expect(buildReportContext({ ...baseParams, brief })).toEqual(
+      buildReportContext({ ...baseParams }),
+    );
+  });
+
+  it('notes a clipped brief in the truncation section', () => {
+    const context = buildReportContext({
+      ...baseParams,
+      brief: 'Harborline '.repeat(REPORT_CONTEXT_LIMITS.total),
+    });
+    expect(context.truncations).toContain(ARTIFACT_BRIEF_CLIP_NOTE);
+    expect(context.text).toContain(ARTIFACT_BRIEF_CLIP_NOTE);
+    expect(
+      context.text.split('# user request\n\n')[1]?.split('\n\n# evidence pack')[0],
+    ).toHaveLength(ARTIFACT_BRIEF_LIMITS.chars);
+  });
+
+  it('reports its inventory with the same counts it wrote into the pack', () => {
+    const context = buildReportContext({ ...baseParams });
+    const agents = context.inventory.find((row) => row.id === 'agents');
+    const excluded = context.inventory.find((row) => row.id === 'excluded');
+    const size = context.inventory.find((row) => row.id === 'size');
+    expect(agents?.summary).toContain('agents, last message of each up to 1200 characters');
+    expect(excluded?.summary).toContain('tool calls');
+    expect(size?.state).toBe('included');
+  });
+
   it('keeps only the last assistant message per agent and cites the agent id', () => {
     const context = buildReportContext({ ...baseParams });
     expect(context.text).toContain('landed the change');

@@ -8,7 +8,8 @@ export type ArtifactCtaState =
 export type ArtifactCtaParams = Readonly<{
   agents: ReadonlyArray<Agent>;
   runAgents: ReadonlyArray<Agent> | null;
-  isTurnRunning: boolean;
+  hasSourceActiveTurn: boolean;
+  hasSessionActiveTurn: boolean;
   isSummarizerRunning: boolean;
 }>;
 
@@ -18,23 +19,32 @@ export const ARTIFACT_CTA_BLOCK_COPY: Record<ArtifactCtaBlockReason, string> = {
   'session-busy': 'the session is busy, wait for it to settle',
 };
 
-const isLive = (agent: Agent): boolean => agent.status === 'pending' || agent.status === 'running';
-
 export const resolveArtifactCtaState = ({
   agents,
   runAgents,
-  isTurnRunning,
+  hasSourceActiveTurn,
+  hasSessionActiveTurn,
   isSummarizerRunning,
 }: ArtifactCtaParams): ArtifactCtaState => {
   const source = runAgents ?? agents;
-  if (source.length === 0) {
-    return { kind: 'blocked', reason: 'no-evidence' };
-  }
-  if (source.some(isLive)) {
+  if (source.some((agent) => agent.status === 'running') || hasSourceActiveTurn) {
     return { kind: 'blocked', reason: 'run-active' };
   }
-  if (agents.some(isLive) || isTurnRunning || isSummarizerRunning) {
+  if (
+    agents.some((agent) => agent.status === 'running') ||
+    hasSessionActiveTurn ||
+    isSummarizerRunning
+  ) {
     return { kind: 'blocked', reason: 'session-busy' };
+  }
+  const hasEvidence = source.some(
+    (agent) =>
+      agent.status === 'completed' ||
+      agent.status === 'failed' ||
+      (agent.outputSummary?.trim().length ?? 0) > 0,
+  );
+  if (hasEvidence === false) {
+    return { kind: 'blocked', reason: 'no-evidence' };
   }
   return { kind: 'ready' };
 };

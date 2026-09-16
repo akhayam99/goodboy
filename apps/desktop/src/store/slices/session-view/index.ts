@@ -1,5 +1,8 @@
 import { getSessionViewPrefs } from './getSessionViewPrefs';
 import { createInitialSessionViewState } from './createInitialSessionViewState';
+import { setArtifactFilter } from './artifactFilter';
+import { closeArtifactConversation, openArtifactConversation } from './artifactConversation';
+import { closeArtifactCreation, openArtifactCreation } from './artifactCreation';
 import { setSessionGroup } from './setSessionGroup';
 import { setSessionSort } from './setSessionSort';
 import {
@@ -29,6 +32,7 @@ export { readPersistedLens } from './workSurfaceStorage';
 export { EMPTY_RESOLVE_QUEUE_VIEW } from './types';
 export type { GroupedSessions, SessionViewSlice } from './types';
 export type {
+  ArtifactCreationTarget,
   FocusedExternalTask,
   SessionStudio,
   LensKind,
@@ -54,6 +58,11 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     toggleWorkflowExpand: toggleWorkflowExpand(set),
     setFocusedWorkflowRun: setFocusedWorkflowRun(set),
     setFocusedPlanId: setFocusedPlanId(set),
+    setArtifactFilter: setArtifactFilter(set),
+    openArtifactConversation: openArtifactConversation(set, get),
+    closeArtifactConversation: closeArtifactConversation(set),
+    openArtifactCreation: openArtifactCreation(set, get),
+    closeArtifactCreation: closeArtifactCreation(set),
     setFocusedGithubIssueNumber: setFocusedGithubIssueNumber(set),
     setSessionStudio: setSessionStudio(set),
     setDiffFocus: setDiffFocus(set),

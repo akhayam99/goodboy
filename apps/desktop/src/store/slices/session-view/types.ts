@@ -13,8 +13,13 @@ import type {
   SessionSortKey,
   SessionStage,
   SessionViewPrefs,
+  WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import type {
+  ArtifactFilter,
+  GeneratedArtifactKind,
+} from '../../../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../../../features/resolve/resolveItemDraft';
 
 export type { SetFn, GetFn } from '../../slice-types';
@@ -133,6 +138,22 @@ export type LensHistory = {
   readonly index: number;
 };
 
+export type ArtifactCreationTarget = Readonly<{
+  kind: GeneratedArtifactKind;
+  note: string | null;
+}>;
+
+export type OpenArtifactCreationParams = Readonly<{
+  sessionId: SessionId;
+  kind: GeneratedArtifactKind;
+  workflowRunId?: WorkflowRunId | null;
+  note?: string | null;
+}>;
+
+export type CloseArtifactCreationParams = Readonly<{
+  sessionId: SessionId;
+}>;
+
 export type SessionCreationKind = 'agent' | 'workflow' | 'branch';
 
 export type SessionCreationId = string;
@@ -150,6 +171,9 @@ type SessionViewSliceState = {
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
+  readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
+  readonly artifactConversationAgentId: Readonly<Record<SessionId, AgentId | null>>;
+  readonly artifactCreation: Readonly<Record<SessionId, ArtifactCreationTarget | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
@@ -176,6 +200,20 @@ type SessionViewSliceActions = {
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
+  setArtifactFilter(params: {
+    readonly sessionId: SessionId;
+    readonly filter: ArtifactFilter;
+  }): void;
+  openArtifactConversation(params: {
+    readonly sessionId: SessionId;
+    readonly agentId: AgentId;
+  }): void;
+  closeArtifactConversation(params: {
+    readonly sessionId: SessionId;
+    readonly agentId: AgentId;
+  }): void;
+  openArtifactCreation(params: OpenArtifactCreationParams): void;
+  closeArtifactCreation(params: CloseArtifactCreationParams): void;
   setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;

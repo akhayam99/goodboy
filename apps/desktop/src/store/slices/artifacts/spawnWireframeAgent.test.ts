@@ -41,6 +41,18 @@ vi.mock('../../../features/explore/explore', () => ({
   exploreRead: (args: unknown) => readSpy(args as never),
 }));
 
+const recordProvenanceSpy = vi.fn(async (_args: Record<string, unknown>) => undefined);
+
+vi.mock('../../../features/artifacts/artifactProvenance', async () => {
+  const actual = await vi.importActual<
+    typeof import('../../../features/artifacts/artifactProvenance')
+  >('../../../features/artifacts/artifactProvenance');
+  return {
+    artifactEvidenceInventory: actual.artifactEvidenceInventory,
+    recordArtifactProvenance: (args: Record<string, unknown>) => recordProvenanceSpy(args),
+  };
+});
+
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
 const NOW = '2026-09-15T10:00:00.000Z' as IsoDateTime;
@@ -136,17 +148,17 @@ describe('spawnWireframeAgent', () => {
     expect(args['parentAgentId']).toBeUndefined();
   });
 
-  it('keeps the agent inside the workflow run it was asked for', async () => {
+  it('scopes the evidence to a run without joining the agent to it', async () => {
     await spawnWireframeAgent(getWith())({
       sessionId: SESSION_ID,
       fidelity: 'low',
       workflowRunId: RUN_ID,
     });
     const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
-    expect(args['workflowRunId']).toBe(RUN_ID);
+    expect(args['workflowRunId']).toBeUndefined();
   });
 
-  it('keeps a re-spawn from a supplied evidence pack inside its workflow run', async () => {
+  it('keeps a re-spawn from a supplied evidence pack standalone', async () => {
     await spawnWireframeAgent(getWith())({
       sessionId: SESSION_ID,
       fidelity: 'low',
@@ -154,8 +166,18 @@ describe('spawnWireframeAgent', () => {
       evidence: 'the original kickoff',
     });
     const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
-    expect(args['workflowRunId']).toBe(RUN_ID);
+    expect(args['workflowRunId']).toBeUndefined();
     expect(args['initialPrompt']).toBe('the original kickoff');
+  });
+
+  it('spawns without taking focus when asked', async () => {
+    await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      fidelity: 'low',
+      focus: 'none',
+    });
+    const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(args['focus']).toBe('none');
   });
 
   it('carries the product evidence and the document contract in the kickoff', async () => {
@@ -177,6 +199,20 @@ describe('spawnWireframeAgent', () => {
     );
     expect(prompt).toContain('low fidelity wireframe');
     expect(prompt).toContain('set theme.name to "generic"');
+  });
+
+  it('adds a redacted brief while retaining product evidence, design profile and contract', async () => {
+    await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      fidelity: 'high',
+      brief: 'show the Harborline inbox with api_key=harborline-test-value',
+    });
+    const prompt = String(spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt']);
+    expect(prompt).toContain('# user request\n\nshow the Harborline inbox with api_key=[redacted]');
+    expect(prompt).not.toContain('harborline-test-value');
+    expect(prompt).toContain('the inbox lists sessions');
+    expect(prompt).toContain('commit: abcdef1');
+    expect(prompt).toContain('document contract');
   });
 
   it('collects a pinned design profile at high fidelity', async () => {
@@ -208,6 +244,43 @@ describe('spawnWireframeAgent', () => {
     const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
     expect(args['initialPrompt']).toBe('the original kickoff');
     expect(readSpy).not.toHaveBeenCalled();
+  });
+
+  it('records the source run without an executing run for a run scoped wireframe', async () => {
+    await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      fidelity: 'high',
+      workflowRunId: RUN_ID,
+      brief: 'show the Harborline inbox',
+    });
+    const recorded = recordProvenanceSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(recorded['agentId']).toBe(AGENT_ID);
+    expect(recorded['kind']).toBe('wireframe');
+    expect(recorded['brief']).toBe('show the Harborline inbox');
+    expect(recorded['sourceWorkflowRunId']).toBe(RUN_ID);
+    expect(recorded['executingWorkflowRunId']).toBeNull();
+    expect(String(recorded['designProfileSummary'])).toContain('commit: abcdef1');
+  });
+
+  it('records no design profile at low fidelity and no run outside a workflow', async () => {
+    await spawnWireframeAgent(getWith())({ sessionId: SESSION_ID, fidelity: 'low' });
+    const recorded = recordProvenanceSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(recorded['designProfileSummary']).toBeNull();
+    expect(recorded['sourceWorkflowRunId']).toBeNull();
+    expect(recorded['executingWorkflowRunId']).toBeNull();
+    expect(recorded['evidence']).toEqual([
+      { kind: 'session', id: SESSION_ID, label: 'ship the wireframe role' },
+      { kind: 'agent', id: AGENT_ID, label: 'scout' },
+    ]);
+  });
+
+  it('still spawns when provenance cannot be written', async () => {
+    recordProvenanceSpy.mockRejectedValueOnce(new Error('database is locked'));
+    const agentId = await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      fidelity: 'low',
+    });
+    expect(agentId).toBe(AGENT_ID);
   });
 
   it('throws when the session is unknown', async () => {
