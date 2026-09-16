@@ -3,21 +3,28 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 
-const { state, collectDesignProfile } = vi.hoisted(() => ({
-  collectDesignProfile: vi.fn(async () => null),
-  state: {
-    sessions: [] as ReadonlyArray<Record<string, unknown>>,
-    sessionPhaseRuns: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
-    sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
-    scriptRuns: {} as Record<string, Record<string, unknown>>,
-    transcripts: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionMounts: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionActiveMount: {},
-    sessionActiveProject: {},
-  },
-}));
+const { state, collectDesignProfile, slotsBySession } = vi.hoisted(() => {
+  const slotsBySession: Record<string, ReadonlyArray<Record<string, unknown>>> = {};
+  return {
+    slotsBySession,
+    collectDesignProfile: vi.fn(async () => null),
+    state: {
+      ensureSessionSlots: async (
+        sessionId: string,
+      ): Promise<ReadonlyArray<Record<string, unknown>>> => slotsBySession[sessionId] ?? [],
+      sessions: [] as ReadonlyArray<Record<string, unknown>>,
+      sessionPhaseRuns: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
+      sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
+      scriptRuns: {} as Record<string, Record<string, unknown>>,
+      transcripts: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionMounts: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionActiveMount: {},
+      sessionActiveProject: {},
+    },
+  };
+});
 
 vi.mock('../../../../../store', () => {
   const useAppStore = <T>(selector: (s: typeof state) => T) => selector(state);
@@ -56,6 +63,7 @@ beforeEach(() => {
   state.transcripts = {};
   state.sessionMounts = {};
   state.sessionProjectMounts = {};
+  slotsBySession[SESSION_ID] = [];
 });
 
 afterEach(cleanup);
@@ -157,5 +165,50 @@ describe('useArtifactContextPreview', () => {
       await Promise.resolve();
     });
     expect(collectDesignProfile).toHaveBeenCalled();
+  });
+});
+
+describe('useArtifactContextPreview session goal', () => {
+  const LONG_GOAL = [
+    'Northwind settles ledger-core postings twice a day and the second pass rounds the residual away.',
+    'Walk the notify-relay receipts against the ledger and show where the cent goes missing.',
+  ].join('\n\n');
+
+  it.each(['report', 'wireframe'] as const)(
+    'previews the goal the user wrote for a %s',
+    async (kind) => {
+      slotsBySession[SESSION_ID] = [{ key: 'goal', value: LONG_GOAL, enabled: true }];
+      const { result } = renderHook(() =>
+        useArtifactContextPreview({
+          sessionId: SESSION_ID,
+          kind,
+          basedOn: { kind: 'session' },
+          choice: kind === 'report' ? 'session-summary' : 'low',
+          secondChoice: 'both',
+        }),
+      );
+      await waitFor(() => {
+        expect(result.current.status).toBe('ready');
+      });
+      expect(result.current.inventory.find((row) => row.id === 'goal')?.detail).toEqual([
+        `the goal you wrote, ${LONG_GOAL.length} characters`,
+      ]);
+    },
+  );
+
+  it('keeps the goal row bare when the slot only repeats the title', async () => {
+    const { result } = renderHook(() =>
+      useArtifactContextPreview({
+        sessionId: SESSION_ID,
+        kind: 'report',
+        basedOn: { kind: 'session' },
+        choice: 'session-summary',
+        secondChoice: 'both',
+      }),
+    );
+    await waitFor(() => {
+      expect(result.current.status).toBe('ready');
+    });
+    expect(result.current.inventory.find((row) => row.id === 'goal')?.detail).toEqual([]);
   });
 });

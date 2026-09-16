@@ -9,7 +9,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { redactSecrets } from '../../shared/utils/redactSecrets';
-import { ARTIFACT_BRIEF_CLIP_NOTE, clipBrief } from '../artifacts/artifactBrief';
+import { ARTIFACT_BRIEF_CLIP_NOTE, clipBrief, formatBriefCount } from '../artifacts/artifactBrief';
 import {
   briefInventoryRow,
   excludedInventoryRow,
@@ -17,6 +17,7 @@ import {
   sizeInventoryRow,
   type ArtifactContextInventoryRow,
 } from '../artifacts/artifactContextInventory';
+import { SESSION_GOAL_CLIP_NOTE, type SessionGoalText } from '../artifacts/sessionGoalText';
 import type { ScriptRunRecord } from '../scripts/scripts';
 import { buildWireframeIndex } from '../wireframes/wireframeIndex';
 import { buildReportOutline } from './reportOutline';
@@ -62,6 +63,7 @@ export type ReportContextParams = Readonly<{
   reportType: ReportType;
   brief?: string | null;
   session: Session;
+  goal: SessionGoalText;
   agents: ReadonlyArray<Agent>;
   transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   artifacts: ReadonlyArray<SessionArtifact>;
@@ -436,6 +438,7 @@ export const buildReportContext = ({
   reportType,
   brief = null,
   session,
+  goal,
   agents,
   transcripts,
   artifacts,
@@ -453,6 +456,9 @@ export const buildReportContext = ({
   if (request.isClipped) {
     truncations.push(ARTIFACT_BRIEF_CLIP_NOTE);
   }
+  if (goal.isClipped) {
+    truncations.push(SESSION_GOAL_CLIP_NOTE);
+  }
   const scopedAgentList = scopedAgents({ agents, workflowRunId });
   const scopedArtifactList = scopedArtifacts({ artifacts, workflowRunId });
   const scope = workflowRunId === null ? 'the whole session' : `workflow run ${workflowRunId}`;
@@ -466,6 +472,8 @@ export const buildReportContext = ({
     'this pack is the only evidence you have. it carries final agent messages, not tool calls or tool output. never invent a fact that is not here; say plainly what is missing.',
   ].join('\n');
 
+  const goalBlock = goal.isDetailed ? [`## goal\n\n${goal.packText}`] : [];
+
   if (workflowRunId !== null) {
     sourceIds.push(workflowRunId);
   }
@@ -475,12 +483,15 @@ export const buildReportContext = ({
     id: 'goal',
     label: 'goal',
     summary: 'the session goal and the report type',
-    state: 'included',
-    detail: [],
+    state: goal.isClipped ? 'partial' : 'included',
+    detail: goal.isDetailed
+      ? [`the goal you wrote, ${formatBriefCount({ value: goal.packText.length })} characters`]
+      : [],
   });
 
   const body = [
     header,
+    ...goalBlock,
     agentSection({ agents: scopedAgentList, transcripts, truncations, sourceIds, inventory }),
     artifactSection({ artifacts: scopedArtifactList, truncations, sourceIds, inventory }),
     diffSection({ diff, reason: diffUnavailableReason, inventory }),

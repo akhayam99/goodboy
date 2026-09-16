@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import type {
   Agent,
   AgentId,
@@ -8,7 +8,8 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import type { AppState } from '../../store/types';
+import type { ContextSlot } from '@goodboy/types';
+import type { AppStore } from '../../store/store';
 import { REPORT_CONTEXT_LIMITS } from '../reports/buildReportContext';
 import { prepareArtifactEvidence } from './prepareArtifactEvidence';
 
@@ -38,7 +39,13 @@ const agent: Agent = {
   name: 'scout',
   status: 'completed',
 };
+const slotsBySession: Record<string, ReadonlyArray<ContextSlot>> = {};
+
+const ensureSessionSlots = async (sessionId: string): Promise<ReadonlyArray<ContextSlot>> =>
+  slotsBySession[sessionId] ?? [];
+
 const state = {
+  ensureSessionSlots,
   sessions: [session],
   sessionPhaseRuns: { [SESSION_ID]: [agent] },
   transcripts: {
@@ -51,7 +58,7 @@ const state = {
       },
     ],
   },
-} as unknown as AppState;
+} as unknown as AppStore;
 
 const EXECUTING_ID = 'agent-2' as AgentId;
 const executing: Agent = {
@@ -65,7 +72,7 @@ const executing: Agent = {
 
 type WithExecutingParams = Readonly<{ transcript: boolean }>;
 
-const withExecuting = ({ transcript }: WithExecutingParams): AppState =>
+const withExecuting = ({ transcript }: WithExecutingParams): AppStore =>
   ({
     ...state,
     sessionPhaseRuns: { [SESSION_ID]: [agent, executing] },
@@ -79,7 +86,7 @@ const withExecuting = ({ transcript }: WithExecutingParams): AppState =>
           }
         : {}),
     },
-  }) as unknown as AppState;
+  }) as unknown as AppStore;
 
 describe('prepareArtifactEvidence', () => {
   it('carries report omissions and source labels into provenance', async () => {
@@ -155,5 +162,49 @@ describe('prepareArtifactEvidence', () => {
     expect(prepared.text).not.toContain(EXECUTING_ID);
     expect(prepared.text).not.toContain('no assistant output recorded');
     expect(prepared.provenance.evidence.map((entry) => entry.id)).not.toContain(EXECUTING_ID);
+  });
+});
+
+describe('prepareArtifactEvidence session goal', () => {
+  const LONG_GOAL = [
+    'Northwind settles ledger-core postings twice a day and the second pass rounds the residual away.',
+    'Walk the notify-relay receipts against the ledger and show where the cent goes missing.',
+  ].join('\n\n');
+
+  afterEach(() => {
+    delete slotsBySession[SESSION_ID];
+  });
+
+  it.each(['report', 'wireframe'] as const)(
+    'sends the goal the user wrote into the %s pack, not the title alone',
+    async (kind) => {
+      slotsBySession[SESSION_ID] = [{ key: 'goal', value: LONG_GOAL, enabled: true }];
+      const prepared = await prepareArtifactEvidence({
+        state,
+        session,
+        workflowRunId: RUN_ID,
+        brief: null,
+        executingAgentId: null,
+        ...(kind === 'report'
+          ? { kind: 'report' as const, reportType: 'session-summary' as const }
+          : { kind: 'wireframe' as const, fidelity: 'low' as const, target: 'both' as const }),
+      });
+      expect(prepared.text).toContain(`## goal\n\n${LONG_GOAL}`);
+    },
+  );
+
+  it('keeps the title alone when the user disabled the goal slot', async () => {
+    slotsBySession[SESSION_ID] = [{ key: 'goal', value: LONG_GOAL, enabled: false }];
+    const prepared = await prepareArtifactEvidence({
+      state,
+      session,
+      workflowRunId: RUN_ID,
+      brief: null,
+      executingAgentId: null,
+      kind: 'report',
+      reportType: 'session-summary',
+    });
+    expect(prepared.text).not.toContain('## goal');
+    expect(prepared.text).toContain(session.goal);
   });
 });

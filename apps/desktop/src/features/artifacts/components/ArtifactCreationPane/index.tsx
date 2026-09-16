@@ -12,7 +12,7 @@ import {
   useEscapeLayer,
 } from '@goodboy/ui';
 import type { Agent, AgentId, ProviderId, Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessionSlots, useSessionSlotsLoad } from '../../../../store';
 import { selectActiveMount } from '../../../../store/slices/project-mounts/selectors';
 import { FocusedPane } from '../../../../shared/components/PaneShell/FocusedPane';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -20,6 +20,7 @@ import { workflowAvailabilitySnapshot } from '../../../workflows/workflowAvailab
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 import { ARTIFACT_BRIEF_LIMITS } from '../../artifactBrief';
+import { sessionGoalText } from '../../sessionGoalText';
 import { briefInventoryRow, replaceInventoryRow } from '../../artifactContextInventory';
 import { resolveArtifactCtaState } from '../../artifactCtaState';
 import { artifactCreationGate } from '../../artifactCreationGate';
@@ -76,6 +77,16 @@ export const ArtifactCreationPane = ({
   const [isDiscardArmed, setIsDiscardArmed] = useState(false);
   const [isContextOpen, setIsContextOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const slots = useSessionSlots(sessionId);
+  const slotsLoad = useSessionSlotsLoad(sessionId);
+  const ensureSessionSlots = useAppStore((s) => s.ensureSessionSlots);
+  const goal = sessionGoalText({ slots, session });
+  const isGoalPending = slotsLoad === null;
+
+  useEffect(() => {
+    void ensureSessionSlots(sessionId);
+  }, [ensureSessionSlots, sessionId]);
 
   const attached = useAttachedWorkflowRuns({ session });
   const runs = useMemo(() => runOptions({ attached }), [attached]);
@@ -239,7 +250,8 @@ export const ArtifactCreationPane = ({
               label={adapter.brief.label}
               placeholder={adapter.brief.placeholder}
               value={brief}
-              goal={session.goal}
+              goal={goal.editorText}
+              isGoalPending={isGoalPending}
               defaultRequest={adapter.defaultRequest({ choice })}
               onChange={handle.setBrief}
               onSubmit={generate}

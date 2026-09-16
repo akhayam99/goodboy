@@ -1,6 +1,6 @@
 import { runsForWorkflowRun } from '@goodboy/core';
 import type { AgentId, IsoDateTime, Session, WorkflowRunId } from '@goodboy/types';
-import type { AppState } from '../../store/types';
+import type { AppStore } from '../../store/store';
 import { buildReportContext } from '../reports/buildReportContext';
 import { collectReportDiffEvidence } from '../reports/collectReportDiffEvidence';
 import type { ReportType } from '../reports/reportTypes';
@@ -11,9 +11,10 @@ import type { WireframeFidelity } from '../wireframes/wireframeFidelity';
 import type { WireframeTarget } from '../wireframes/wireframeTarget';
 import { artifactEvidenceAgents } from './artifactEvidenceAgents';
 import { artifactEvidenceInventory, type RecordArtifactProvenanceArgs } from './artifactProvenance';
+import { sessionGoalText } from './sessionGoalText';
 
 type Params = Readonly<{
-  state: AppState;
+  state: AppStore;
   session: Session;
   workflowRunId: WorkflowRunId | null;
   brief: string | null;
@@ -45,12 +46,15 @@ export const prepareArtifactEvidence = async ({
     transcripts,
     executingAgentId,
   });
+  const slots = await state.ensureSessionSlots(sessionId);
+  const goal = sessionGoalText({ slots, session });
   if (choice.kind === 'report') {
     const diff = await collectReportDiffEvidence({ state, sessionId });
     const context = buildReportContext({
       reportType: choice.reportType,
       brief,
       session,
+      goal,
       agents,
       transcripts,
       artifacts,
@@ -87,6 +91,7 @@ export const prepareArtifactEvidence = async ({
     target: choice.target,
     brief,
     session,
+    goal,
     agents: workflowRunId === null ? agents : runsForWorkflowRun(agents, workflowRunId),
     transcripts,
     artifacts,

@@ -590,17 +590,20 @@ describe('store contract', () => {
       listSlots.mockRejectedValueOnce(new Error('database is locked'));
       const trace = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-      await store.getState().ensureSessionSlots(SESSION_ID);
+      const afterFailure = await store.getState().ensureSessionSlots(SESSION_ID);
       trace.mockRestore();
       expect(listSlots).toHaveBeenCalledTimes(1);
+      expect(afterFailure).toEqual([]);
 
       listSlots.mockResolvedValueOnce([{ key: 'goal', value: 'g', enabled: true } as ContextSlot]);
-      await store.getState().ensureSessionSlots(SESSION_ID);
+      const afterLoad = await store.getState().ensureSessionSlots(SESSION_ID);
       expect(listSlots).toHaveBeenCalledTimes(2);
       expect(store.getState().sessionSlots[SESSION_ID]).toHaveLength(1);
+      expect(afterLoad).toEqual([{ key: 'goal', value: 'g', enabled: true }]);
 
-      await store.getState().ensureSessionSlots(SESSION_ID);
+      const cached = await store.getState().ensureSessionSlots(SESSION_ID);
       expect(listSlots).toHaveBeenCalledTimes(2);
+      expect(cached).toEqual([{ key: 'goal', value: 'g', enabled: true }]);
     });
 
     it('reads the database once when the switch and the pane both ask at once', async () => {
@@ -609,13 +612,15 @@ describe('store contract', () => {
       const listSlots = db.listContextSlotsForSession as unknown as ReturnType<typeof vi.fn>;
       listSlots.mockResolvedValue([{ key: 'goal', value: 'g', enabled: true } as ContextSlot]);
 
-      await Promise.all([
+      const [first, second] = await Promise.all([
         store.getState().ensureSessionSlots(SESSION_ID),
         store.getState().ensureSessionSlots(SESSION_ID),
       ]);
 
       expect(listSlots).toHaveBeenCalledTimes(1);
       expect(store.getState().sessionSlotsLoad[SESSION_ID]).toBe('loaded');
+      expect(first).toEqual([{ key: 'goal', value: 'g', enabled: true }]);
+      expect(second).toEqual([{ key: 'goal', value: 'g', enabled: true }]);
     });
 
     it('marks the read in flight so a retry is not mistaken for the failure it replaces', async () => {

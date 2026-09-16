@@ -15,6 +15,12 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { ARTIFACT_BRIEF_CLIP_NOTE, ARTIFACT_BRIEF_LIMITS } from '../artifacts/artifactBrief';
+import {
+  SESSION_GOAL_CLIP_NOTE,
+  SESSION_GOAL_LIMITS,
+  sessionGoalText,
+} from '../artifacts/sessionGoalText';
+import { REDACTED } from '../../shared/utils/redactSecrets';
 import { buildReportContext, REPORT_CONTEXT_LIMITS } from './buildReportContext';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -115,9 +121,13 @@ const wireframeArtifact = ({ sourceText }: WireframeArtifactParams): WireframeAr
     }),
 });
 
+const goalOf = ({ value }: { readonly value: string }) =>
+  sessionGoalText({ slots: [{ key: 'goal', value, enabled: true }], session });
+
 const baseParams = {
   reportType: 'session-summary',
   session,
+  goal: sessionGoalText({ slots: [], session }),
   agents: [agent({})],
   transcripts: {
     [AGENT_ID]: [
@@ -503,5 +513,66 @@ describe('buildReportContext', () => {
     expect(context.text).toContain('- test: error, exit 1');
     expect(context.text).toContain('pr_created');
     expect(context.sourceIds).toContain('artifact-1');
+  });
+});
+
+describe('buildReportContext session goal', () => {
+  const LONG_GOAL = [
+    'Northwind settles ledger-core postings twice a day and the second pass rounds the residual away.',
+    'Walk the notify-relay receipts against the ledger and show where the cent goes missing.',
+  ].join('\n\n');
+
+  it('leaves out the goal block when the slot says no more than the title', () => {
+    expect(buildReportContext({ ...baseParams }).text).not.toContain('## goal');
+  });
+
+  it('carries the goal the user wrote in its own block after the header', () => {
+    const context = buildReportContext({ ...baseParams, goal: goalOf({ value: LONG_GOAL }) });
+    expect(context.text).toContain(`## goal\n\n${LONG_GOAL}`);
+    expect(context.text).toContain(`session ${SESSION_ID}: ${session.goal}`);
+    expect(context.text.indexOf('## goal')).toBeLessThan(context.text.indexOf('## agents'));
+  });
+
+  it('redacts a secret carried in the goal the user wrote', () => {
+    const context = buildReportContext({
+      ...baseParams,
+      goal: goalOf({ value: `${LONG_GOAL}\n\nuse api_key=harborline-test-value` }),
+    });
+    expect(context.text).not.toContain('harborline-test-value');
+    expect(context.text).toContain(REDACTED);
+  });
+
+  it('reports the goal the user wrote in the inventory', () => {
+    const context = buildReportContext({ ...baseParams, goal: goalOf({ value: LONG_GOAL }) });
+    const row = context.inventory.find((entry) => entry.id === 'goal');
+    expect(row?.state).toBe('included');
+    expect(row?.detail).toEqual([`the goal you wrote, ${LONG_GOAL.length} characters`]);
+  });
+
+  it('counts the redacted goal in the inventory, not the raw one', () => {
+    const goal = goalOf({ value: `${LONG_GOAL}\n\nuse api_key=harborline-test-value` });
+    expect(goal.packText.length).toBeLessThan(goal.editorText.length);
+    const row = buildReportContext({ ...baseParams, goal }).inventory.find(
+      (entry) => entry.id === 'goal',
+    );
+    expect(row?.detail).toEqual([`the goal you wrote, ${goal.packText.length} characters`]);
+  });
+
+  it('keeps the goal inventory row bare when only the title is sent', () => {
+    const row = buildReportContext({ ...baseParams }).inventory.find(
+      (entry) => entry.id === 'goal',
+    );
+    expect(row?.state).toBe('included');
+    expect(row?.detail).toEqual([]);
+  });
+
+  it('notes a clipped goal in the truncation section and the inventory', () => {
+    const context = buildReportContext({
+      ...baseParams,
+      goal: goalOf({ value: 'Harborline '.repeat(SESSION_GOAL_LIMITS.chars) }),
+    });
+    expect(context.truncations).toContain(SESSION_GOAL_CLIP_NOTE);
+    expect(context.text).toContain(SESSION_GOAL_CLIP_NOTE);
+    expect(context.inventory.find((entry) => entry.id === 'goal')?.state).toBe('partial');
   });
 });
