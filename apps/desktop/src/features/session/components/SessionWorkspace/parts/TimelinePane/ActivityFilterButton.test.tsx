@@ -67,33 +67,47 @@ describe('ActivityFilterButton', () => {
     expect(onToggle).toHaveBeenCalledWith({ toggle: 'decisions', enabled: true });
   });
 
-  it('nests plans, reports and wireframes under one Artifacts category', () => {
+  it('holds plans, reports and wireframes as chips on one row under Artifacts', () => {
     const onToggle = vi.fn();
     open({ onToggle });
     const artifactsRow = screen.getByRole('menuitemcheckbox', { name: 'Artifacts' });
-    const plansRow = screen.getByRole('menuitemcheckbox', { name: 'Plans' });
-    const reportsRow = screen.getByRole('menuitemcheckbox', { name: 'Reports' });
-    const wireframesRow = screen.getByRole('menuitemcheckbox', { name: 'Wireframes' });
+    const plansChip = screen.getByRole('menuitemcheckbox', { name: 'Plans' });
+    const reportsChip = screen.getByRole('menuitemcheckbox', { name: 'Reports' });
+    const wireframesChip = screen.getByRole('menuitemcheckbox', { name: 'Wireframes' });
+    const chipRow = artifactsRow.nextElementSibling;
 
-    expect(artifactsRow.nextElementSibling).toBe(plansRow);
-    expect(plansRow.nextElementSibling).toBe(reportsRow);
-    expect(reportsRow.nextElementSibling).toBe(wireframesRow);
+    expect(chipRow?.className).toContain('flex-wrap');
+    expect(Array.from(chipRow?.children ?? [])).toEqual([plansChip, reportsChip, wireframesChip]);
 
-    fireEvent.click(reportsRow);
+    fireEvent.click(reportsChip);
+    expect(onToggle).toHaveBeenCalledTimes(1);
     expect(onToggle).toHaveBeenCalledWith({ toggle: 'reports', enabled: false });
     fireEvent.click(artifactsRow);
     expect(onToggle).toHaveBeenCalledWith({ toggle: 'artifacts', enabled: false });
   });
 
-  it('disables every artifact sub-row while Artifacts is hidden', () => {
+  it('disables every artifact chip while Artifacts is hidden', () => {
     const onToggle = vi.fn();
     open({ filter: { ...DEFAULT_ACTIVITY_FILTER, artifacts: false }, onToggle });
-    const wireframesRow = screen.getByRole('menuitemcheckbox', { name: 'Wireframes' });
+    const artifactsRow = screen.getByRole('menuitemcheckbox', { name: 'Artifacts' });
+    const chipRow = artifactsRow.nextElementSibling;
+    const chips = Array.from(chipRow?.children ?? []);
 
-    expect(wireframesRow.hasAttribute('disabled')).toBe(true);
-    expect(wireframesRow.getAttribute('aria-checked')).toBe('false');
-    fireEvent.click(wireframesRow);
+    expect(chips).toHaveLength(3);
+    expect(chips.every((chip) => chip.hasAttribute('disabled'))).toBe(true);
+    expect(chips.every((chip) => chip.getAttribute('aria-checked') === 'false')).toBe(true);
+    expect(chipRow?.className).toContain('opacity-50');
+    chips.forEach((chip) => fireEvent.click(chip));
     expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  it('keeps an off chip on a bordered ground so it never reads as a caption', () => {
+    open({ filter: { ...DEFAULT_ACTIVITY_FILTER, reports: false } });
+    const reportsChip = screen.getByRole('menuitemcheckbox', { name: 'Reports' });
+
+    expect(reportsChip.getAttribute('aria-checked')).toBe('false');
+    expect(reportsChip.className).toContain('border-border-soft');
+    expect(reportsChip.className).toContain('bg-elevated/30');
   });
 
   it('offers a suggestions row and counts it on the badge once hidden', () => {
@@ -108,15 +122,19 @@ describe('ActivityFilterButton', () => {
     expect(onToggle).toHaveBeenCalledWith({ toggle: 'suggestions', enabled: true });
   });
 
-  it('nests a subagent sub-row directly under Workflows and under Agents', () => {
+  it('puts a subagent chip on the row under Workflows and under Agents', () => {
     open();
     const workflowsRow = screen.getByRole('menuitemcheckbox', { name: 'Workflows' });
     const agentsRow = screen.getByRole('menuitemcheckbox', { name: 'Agents' });
-    expect(workflowsRow.nextElementSibling?.getAttribute('aria-label')).toBe('Workflow subagents');
-    expect(agentsRow.nextElementSibling?.getAttribute('aria-label')).toBe('Agent subagents');
+    expect(workflowsRow.nextElementSibling?.firstElementChild?.getAttribute('aria-label')).toBe(
+      'Workflow subagents',
+    );
+    expect(agentsRow.nextElementSibling?.firstElementChild?.getAttribute('aria-label')).toBe(
+      'Agent subagents',
+    );
   });
 
-  it('flips a subagent flag from its sub-row', () => {
+  it('flips a subagent flag from its chip', () => {
     const onToggle = vi.fn();
     open({ onToggle });
     fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Workflow subagents' }));
@@ -125,13 +143,21 @@ describe('ActivityFilterButton', () => {
     expect(onToggle).toHaveBeenCalledWith({ toggle: 'agentSubagents', enabled: false });
   });
 
-  it('disables the sub-row and reads it as off while its parent is hidden', () => {
+  it('leaves the sibling chips alone when one chip is flipped', () => {
+    const onToggle = vi.fn();
+    open({ onToggle });
+    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Wireframes' }));
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    expect(onToggle).toHaveBeenCalledWith({ toggle: 'wireframes', enabled: false });
+  });
+
+  it('disables the chip and reads it as off while its parent is hidden', () => {
     const onToggle = vi.fn();
     open({ filter: { ...DEFAULT_ACTIVITY_FILTER, workflows: false }, onToggle });
-    const subRow = screen.getByRole('menuitemcheckbox', { name: 'Workflow subagents' });
-    expect(subRow.hasAttribute('disabled')).toBe(true);
-    expect(subRow.getAttribute('aria-checked')).toBe('false');
-    fireEvent.click(subRow);
+    const chip = screen.getByRole('menuitemcheckbox', { name: 'Workflow subagents' });
+    expect(chip.hasAttribute('disabled')).toBe(true);
+    expect(chip.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(chip);
     expect(onToggle).not.toHaveBeenCalled();
   });
 
