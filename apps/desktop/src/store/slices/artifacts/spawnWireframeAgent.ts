@@ -1,20 +1,8 @@
-import { autoModelForRole, resolveRoleRouting, runsForWorkflowRun } from '@goodboy/core';
+import { autoModelForRole, resolveRoleRouting } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
-import type {
-  AgentEffort,
-  AgentId,
-  IsoDateTime,
-  ProviderId,
-  SessionId,
-  WorkflowRunId,
-} from '@goodboy/types';
-import {
-  artifactEvidenceInventory,
-  recordArtifactProvenance,
-} from '../../../features/artifacts/artifactProvenance';
-import { buildWireframeContext } from '../../../features/wireframes/buildWireframeContext';
-import { collectWireframeDesignProfile } from '../../../features/wireframes/collectWireframeDesignProfile';
-import { describeDesignProfile } from '../../../features/wireframes/describeDesignProfile';
+import type { AgentEffort, AgentId, ProviderId, SessionId, WorkflowRunId } from '@goodboy/types';
+import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
+import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
 import {
   WIREFRAME_FIDELITY_LABEL,
   type WireframeFidelity,
@@ -117,20 +105,14 @@ export const spawnWireframeAgent = (get: GetFn) => {
         focus,
       });
     }
-    const designProfile =
-      fidelity === 'high' ? await collectWireframeDesignProfile({ state, sessionId }) : null;
-    const sessionAgents = state.sessionPhaseRuns?.[sessionId] ?? [];
-    const scoped =
-      workflowRunId === null ? sessionAgents : runsForWorkflowRun(sessionAgents, workflowRunId);
-    const context = buildWireframeContext({
+    const prepared = await prepareArtifactEvidence({
+      kind: 'wireframe',
       fidelity,
-      brief,
+      state,
       session,
-      agents: scoped,
-      transcripts: state.transcripts ?? {},
-      artifacts: state.sessionArtifacts?.[sessionId] ?? [],
-      designProfile,
-      capturedAt: new Date().toISOString() as IsoDateTime,
+      workflowRunId,
+      brief,
+      executingAgentId: null,
     });
     const agentId = await get().spawnAgent(sessionId, {
       kindOverride: 'wireframe',
@@ -138,25 +120,12 @@ export const spawnWireframeAgent = (get: GetFn) => {
       provider: resolved.provider,
       model: resolved.model,
       effort: resolved.effort,
-      initialPrompt: context.text,
+      initialPrompt: prepared.text,
       focus,
     });
     await recordArtifactProvenance({
+      ...prepared.provenance,
       agentId,
-      sessionId,
-      kind: 'wireframe',
-      brief,
-      evidence: artifactEvidenceInventory({
-        sourceIds: context.sourceIds,
-        session,
-        agents: sessionAgents,
-        artifacts: state.sessionArtifacts?.[sessionId] ?? [],
-        sourceWorkflowRunId: workflowRunId,
-      }),
-      omissions: context.truncations,
-      designProfileSummary:
-        designProfile === null ? null : describeDesignProfile({ profile: designProfile }),
-      sourceWorkflowRunId: workflowRunId,
       executingWorkflowRunId: null,
     }).catch((error: unknown) => {
       console.warn(`[artifact-provenance] wireframe ${agentId}: ${formatError(error)}`);

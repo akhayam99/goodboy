@@ -15,6 +15,7 @@ import {
 import { collectWireframeDesignProfile } from '../../../../wireframes/collectWireframeDesignProfile';
 import { asWireframeFidelity } from '../../../../wireframes/wireframeFidelity';
 import type { ArtifactContextInventoryRow } from '../../../artifactContextInventory';
+import { artifactEvidenceAgents } from '../../../artifactEvidenceAgents';
 import type { GeneratedArtifactKind } from '../../../artifactCollection';
 
 export type ArtifactContextPreview = Readonly<{
@@ -60,7 +61,12 @@ const collect = async ({
   }
   const workflowRunId = basedOn.kind === 'workflow-run' ? basedOn.workflowRunId : null;
   const capturedAt = new Date().toISOString() as IsoDateTime;
-  const agents = state.sessionPhaseRuns?.[sessionId] ?? [];
+  const transcripts = state.transcripts ?? {};
+  const agents = artifactEvidenceAgents({
+    agents: state.sessionPhaseRuns?.[sessionId] ?? [],
+    transcripts,
+    executingAgentId: null,
+  });
   if (kind === 'report') {
     const diff = await collectReportDiffEvidence({ state, sessionId });
     const context = buildReportContext({
@@ -68,7 +74,7 @@ const collect = async ({
       brief: null,
       session,
       agents,
-      transcripts: state.transcripts ?? {},
+      transcripts,
       artifacts: state.sessionArtifacts?.[sessionId] ?? [],
       events: state.sessionEvents?.[sessionId] ?? [],
       scriptRuns: state.scriptRuns?.[sessionId] ?? {},
@@ -93,7 +99,7 @@ const collect = async ({
     brief: null,
     session,
     agents: workflowRunId === null ? agents : runsForWorkflowRun(agents, workflowRunId),
-    transcripts: state.transcripts ?? {},
+    transcripts,
     artifacts: state.sessionArtifacts?.[sessionId] ?? [],
     designProfile,
     capturedAt,

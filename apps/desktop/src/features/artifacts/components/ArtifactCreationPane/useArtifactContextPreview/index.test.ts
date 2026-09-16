@@ -91,6 +91,34 @@ describe('useArtifactContextPreview', () => {
     );
   });
 
+  it('does not count a pending agent that has produced nothing', async () => {
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        { id: 'agent-1', sessionId: SESSION_ID, ordinal: 0, name: 'scout', status: 'completed' },
+        { id: 'agent-2', sessionId: SESSION_ID, ordinal: 1, name: 'reviewer', status: 'pending' },
+      ],
+    };
+    state.transcripts = {
+      'agent-1': [
+        { kind: 'assistant_text', runId: 'turn-1', at: '2026-09-16T10:00:00.000Z', delta: 'found' },
+      ],
+    };
+    const { result } = renderHook(() =>
+      useArtifactContextPreview({
+        sessionId: SESSION_ID,
+        kind: 'report',
+        basedOn: { kind: 'session' },
+        choice: 'session-summary',
+      }),
+    );
+    await waitFor(() => {
+      expect(result.current.status).toBe('ready');
+    });
+    const agents = result.current.inventory.find((row) => row.id === 'agents');
+    expect(agents?.summary).toContain('1 of 1 agents');
+    expect(agents?.detail).toEqual([]);
+  });
+
   it('reads no design profile for a low fidelity wireframe', async () => {
     const { result } = renderHook(() =>
       useArtifactContextPreview({

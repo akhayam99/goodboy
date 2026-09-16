@@ -283,6 +283,22 @@ describe('spawnWireframeAgent', () => {
     expect(agentId).toBe(AGENT_ID);
   });
 
+  it('collects fresh evidence and provenance when the supplied pack is whitespace', async () => {
+    await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      fidelity: 'high',
+      evidence: ' \n ',
+    });
+    expect(readSpy).toHaveBeenCalled();
+    expect(spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt']).toContain('design profile');
+    expect(recordProvenanceSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentId: AGENT_ID,
+        executingWorkflowRunId: null,
+      }),
+    );
+  });
+
   it('throws when the session is unknown', async () => {
     await expect(
       spawnWireframeAgent(getWith({ sessions: [] }))({ sessionId: SESSION_ID, fidelity: 'low' }),

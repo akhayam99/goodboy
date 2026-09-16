@@ -1,19 +1,8 @@
 import { getCheapModel, resolveRoleRouting } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
-import type {
-  AgentEffort,
-  AgentId,
-  IsoDateTime,
-  ProviderId,
-  SessionId,
-  WorkflowRunId,
-} from '@goodboy/types';
-import {
-  artifactEvidenceInventory,
-  recordArtifactProvenance,
-} from '../../../features/artifacts/artifactProvenance';
-import { buildReportContext } from '../../../features/reports/buildReportContext';
-import { collectReportDiffEvidence } from '../../../features/reports/collectReportDiffEvidence';
+import type { AgentEffort, AgentId, ProviderId, SessionId, WorkflowRunId } from '@goodboy/types';
+import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
+import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
 import { REPORT_TYPE_LABEL, type ReportType } from '../../../features/reports/reportTypes';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import type { SpawnFocus } from '../session-view/spawnFocus';
@@ -105,20 +94,14 @@ export const spawnReportAgent = (get: GetFn) => {
         focus,
       });
     }
-    const diff = await collectReportDiffEvidence({ state, sessionId });
-    const context = buildReportContext({
+    const prepared = await prepareArtifactEvidence({
+      kind: 'report',
       reportType,
-      brief,
+      state,
       session,
-      agents: state.sessionPhaseRuns?.[sessionId] ?? [],
-      transcripts: state.transcripts ?? {},
-      artifacts: state.sessionArtifacts?.[sessionId] ?? [],
-      events: state.sessionEvents?.[sessionId] ?? [],
-      scriptRuns: state.scriptRuns?.[sessionId] ?? {},
-      diff: diff.evidence,
-      diffUnavailableReason: diff.reason,
       workflowRunId,
-      capturedAt: new Date().toISOString() as IsoDateTime,
+      brief,
+      executingAgentId: null,
     });
     const agentId = await get().spawnAgent(sessionId, {
       kindOverride: 'report',
@@ -126,24 +109,12 @@ export const spawnReportAgent = (get: GetFn) => {
       provider: resolved.provider,
       model: resolved.model,
       effort: resolved.effort,
-      initialPrompt: context.text,
+      initialPrompt: prepared.text,
       focus,
     });
     await recordArtifactProvenance({
+      ...prepared.provenance,
       agentId,
-      sessionId,
-      kind: 'report',
-      brief,
-      evidence: artifactEvidenceInventory({
-        sourceIds: context.sourceIds,
-        session,
-        agents: state.sessionPhaseRuns?.[sessionId] ?? [],
-        artifacts: state.sessionArtifacts?.[sessionId] ?? [],
-        sourceWorkflowRunId: workflowRunId,
-      }),
-      omissions: context.truncations,
-      designProfileSummary: null,
-      sourceWorkflowRunId: workflowRunId,
       executingWorkflowRunId: null,
     }).catch((error: unknown) => {
       console.warn(`[artifact-provenance] report ${agentId}: ${formatError(error)}`);
