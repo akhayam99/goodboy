@@ -13,6 +13,8 @@ const { store, hooks, spies } = vi.hoisted(() => ({
       string,
       ReadonlyArray<{ provider: string; externalId: string }>
     >,
+    sessionPhaseRuns: {} as Record<string, ReadonlyArray<{ status: string }>>,
+    openArtifactCreation: vi.fn(),
     linkSessionExternalTask: vi.fn(async () => undefined),
     upsertSessionSlot: vi.fn(async () => undefined),
   },
@@ -90,6 +92,8 @@ beforeEach(() => {
   store.workspaceIntegrations = {};
   store.projects = [];
   store.sessionExternalTasks = {};
+  store.sessionPhaseRuns = {};
+  store.openArtifactCreation.mockClear();
   store.linkSessionExternalTask.mockClear();
   store.upsertSessionSlot.mockClear();
   hooks.isGithubAuthenticated.current = false;
@@ -103,13 +107,15 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SessionKickoff', () => {
-  it('offers the three starting points and tracker studios without trackers', () => {
+  it('offers every session action and tracker studios without trackers', () => {
     const onOpenWorkflowBuilder = vi.fn();
     render(<SessionKickoff session={session} onOpenWorkflowBuilder={onOpenWorkflowBuilder} />);
 
     expect(screen.getByText('How do you want to start?')).toBeDefined();
     expect(screen.getByTestId('create-agent-tile')).toBeDefined();
-    expect(screen.getByRole('button', { name: /Add a workflow/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Add workflow/ })).toBeDefined();
+    expect(screen.getByTestId('create-report-cta')).toBeDefined();
+    expect(screen.getByTestId('create-wireframe-cta')).toBeDefined();
     expect(screen.getByText('Or pick up an issue')).toBeDefined();
     expect(screen.getByText('No tracker connected yet')).toBeDefined();
     expect(screen.getByTestId('glyph-linear')).toBeDefined();
@@ -167,8 +173,24 @@ describe('SessionKickoff', () => {
     const onOpenWorkflowBuilder = vi.fn();
     render(<SessionKickoff session={session} onOpenWorkflowBuilder={onOpenWorkflowBuilder} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Add a workflow/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Add workflow/ }));
     expect(onOpenWorkflowBuilder).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the report reachable as an explanation and the wireframe as an act', () => {
+    render(<SessionKickoff session={session} onOpenWorkflowBuilder={vi.fn()} />);
+
+    expect(screen.getByTestId('create-report-cta').hasAttribute('disabled')).toBe(true);
+    expect(
+      screen.getByText('nothing has run yet, so there is nothing to work from.'),
+    ).toBeDefined();
+
+    fireEvent.click(screen.getByTestId('create-wireframe-cta'));
+    expect(store.openArtifactCreation).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      kind: 'wireframe',
+      workflowRunId: null,
+    });
   });
 
   it('lists recent tracker issues, hiding ones a session already picked up', async () => {

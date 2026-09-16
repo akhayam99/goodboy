@@ -6,6 +6,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 const { state } = vi.hoisted(() => ({
   state: {
     openArtifactCreation: vi.fn(),
+    sessionPhaseRuns: {} as Record<string, ReadonlyArray<{ status: string }>>,
   },
 }));
 
@@ -24,6 +25,7 @@ afterEach(cleanup);
 describe('CreateReportCta', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    state.sessionPhaseRuns = {};
   });
 
   it('opens the creation pane instead of spawning', () => {
@@ -51,5 +53,33 @@ describe('CreateReportCta', () => {
     const trigger = screen.getByTestId('create-report-cta');
     expect(trigger.hasAttribute('disabled')).toBe(false);
     expect(trigger.getAttribute('title')).toBe('Write a report from what this session did');
+  });
+
+  it('shows the tile but withholds it while the session has produced nothing', () => {
+    render(<CreateReportCta sessionId={SESSION_ID} variant="tile" />);
+
+    const trigger = screen.getByTestId('create-report-cta');
+    expect(trigger.hasAttribute('disabled')).toBe(true);
+    expect(
+      screen.getByText('nothing has run yet, so there is nothing to work from.'),
+    ).toBeDefined();
+
+    fireEvent.click(trigger);
+    expect(state.openArtifactCreation).not.toHaveBeenCalled();
+  });
+
+  it('opens the tile once an agent has finished', () => {
+    state.sessionPhaseRuns = { [SESSION_ID]: [{ status: 'completed' }] };
+
+    render(<CreateReportCta sessionId={SESSION_ID} variant="tile" />);
+
+    const trigger = screen.getByTestId('create-report-cta');
+    expect(trigger.hasAttribute('disabled')).toBe(false);
+    fireEvent.click(trigger);
+    expect(state.openArtifactCreation).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      kind: 'report',
+      workflowRunId: null,
+    });
   });
 });
