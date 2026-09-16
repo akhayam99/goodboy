@@ -31,6 +31,8 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
   const focusedPlanId = useAppStore((s) => s.focusedPlanId[sessionId] ?? null);
+  const focusedArtifactId = useAppStore((s) => s.focusedArtifactId[sessionId] ?? null);
+  const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const filter = useAppStore((s) => s.artifactFilter[sessionId] ?? 'all');
   const setArtifactFilter = useAppStore((s) => s.setArtifactFilter);
@@ -56,7 +58,6 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
       agents.filter((agent) => s.agentTurnState?.[agent.id]?.kind === 'running').map((a) => a.id),
     ),
   );
-  const [focusedArtifactId, setFocusedArtifactId] = useState<ArtifactId | null>(null);
   const [awaitedAgentId, setAwaitedAgentId] = useState<AgentId | null>(null);
 
   useEffect(() => {
@@ -64,7 +65,6 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
   }, [sessionId, loadSessionArtifacts]);
 
   useEffect(() => {
-    setFocusedArtifactId(null);
     setAwaitedAgentId(null);
   }, [sessionId]);
 
@@ -84,7 +84,7 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
       selectedAgentId === null &&
       sessionStudio === null
     ) {
-      setFocusedArtifactId(arrived.id);
+      setFocusedArtifactId(sessionId, arrived.id);
     }
   }, [
     artifacts,
@@ -93,7 +93,9 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
     focusedPlanId,
     creation,
     selectedAgentId,
+    sessionId,
     sessionStudio,
+    setFocusedArtifactId,
   ]);
 
   const generations = useMemo(
@@ -116,12 +118,10 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
       return;
     }
     if (target.kind === 'plan') {
-      setFocusedArtifactId(null);
       setFocusedPlanId(sessionId, target.id);
       return;
     }
-    setFocusedPlanId(sessionId, null);
-    setFocusedArtifactId(target.id);
+    setFocusedArtifactId(sessionId, target.id);
   };
 
   const retryGeneration = (generation: ArtifactGeneration) => {
@@ -164,7 +164,7 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
         agents={agents}
         artifacts={artifacts}
         count={artifacts.length}
-        onBack={() => setFocusedArtifactId(null)}
+        onBack={() => setFocusedArtifactId(sessionId, null)}
         onSelectArtifact={selectArtifact}
       />
     );

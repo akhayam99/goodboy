@@ -12,6 +12,7 @@ import type {
   ReportArtifact,
   Session,
   SessionArtifact,
+  SessionEvent,
   SessionId,
   SessionProjectMount,
   TurnEvent,
@@ -132,7 +133,7 @@ const RELAY_MOUNT: SessionProjectMount = {
 
 const MOUNTS = [LEDGER_MOUNT, RELAY_MOUNT];
 
-const SESSION: Session = {
+export const SESSION: Session = {
   id: SESSION_ID,
   workspaceId: WORKSPACE_ID,
   goal: 'Fix the half-cent rounding drift in ledger-core postings and stop notify-relay from retrying settled batches',
@@ -882,6 +883,23 @@ const WIREFRAME_HIGH_ARTIFACT: WireframeArtifact = {
   updatedAt: '2026-09-14T16:38:00.000Z' as IsoDateTime,
 };
 
+const SESSION_EVENTS = [
+  {
+    id: 'mock-artifact-event-branch',
+    sessionId: SESSION_ID,
+    kind: 'branch_created',
+    payload: { branch: LEDGER_MOUNT.branch, projectName: LEDGER_MOUNT.mountName },
+    createdAt: '2026-09-14T15:00:00.000Z' as IsoDateTime,
+  },
+  {
+    id: 'mock-artifact-event-pr',
+    sessionId: SESSION_ID,
+    kind: 'pr_created',
+    payload: { number: 412, title: 'Round once per batch', url: 'https://example.invalid/pr/412' },
+    createdAt: '2026-09-14T16:12:00.000Z' as IsoDateTime,
+  },
+] as unknown as ReadonlyArray<SessionEvent>;
+
 const ARTIFACTS: ReadonlyArray<SessionArtifact> = [
   PLAN_ARTIFACT,
   REPORT_ARTIFACT,
@@ -945,6 +963,33 @@ export const seedArtifactScene = () => {
     },
     sessionArtifacts: { [SESSION_ID]: ARTIFACTS },
     sessionPlans: { [SESSION_ID]: PLANS },
+    sessionEvents: { [SESSION_ID]: SESSION_EVENTS },
+    sessionWorktreeRecords: {
+      [SESSION_ID]: MOUNTS.map((mount, index) => ({
+        id: `mock-artifact-worktree-${index}`,
+        sessionId: SESSION_ID,
+        worktreePath: mount.worktreePath,
+        branch: mount.branch,
+        parallelIndex: index,
+        projectId: mount.projectId,
+        mountName: mount.mountName,
+        repoSlug: `harborline/${mount.mountName}`,
+        createdAt: Date.parse(EARLIER),
+      })),
+    },
+    sessionSlots: { [SESSION_ID]: [{ key: 'goal', value: SESSION.goal, enabled: true }] },
+    sessionSlotsLoad: { [SESSION_ID]: 'loaded' },
+    sessionLoading: {
+      [SESSION_ID]: {
+        agents: false,
+        transcript: false,
+        telemetry: false,
+        slots: false,
+        plans: false,
+        summary: false,
+      },
+    },
+    sessionDismissedQuestions: { [SESSION_ID]: [] },
     sessionOpenQuestions: { [SESSION_ID]: [] },
     sessionAnsweredQuestions: { [SESSION_ID]: [] },
     planConsumptions: {},
@@ -968,6 +1013,11 @@ export const seedArtifactScene = () => {
     slotHistory: { [SESSION_ID]: {} },
     slotHistoryCounts: { [SESSION_ID]: {} },
     loadSessionArtifacts: async () => undefined,
+    loadSessionEvents: async () => undefined,
+    loadSessionAnsweredQuestions: async () => undefined,
+    loadSessionDismissedQuestions: async () => undefined,
+    setFocusedArtifactId: () => undefined,
+    setActiveLens: () => undefined,
     loadConsumptionsForPlan: async () => undefined,
     selectAgent: async () => undefined,
     setFocusedPlanId: () => undefined,

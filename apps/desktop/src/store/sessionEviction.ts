@@ -77,6 +77,7 @@ export const SESSION_EVICTION = [
   { key: 'sessionCreations', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionStudio', keyedBy: 'session', evictOn: 'archive' },
   { key: 'focusedPlanId', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'focusedArtifactId', keyedBy: 'session', evictOn: 'archive' },
   { key: 'artifactFilter', keyedBy: 'session', evictOn: 'archive' },
   { key: 'artifactConversationAgentId', keyedBy: 'session', evictOn: 'archive' },
   { key: 'artifactCreation', keyedBy: 'session', evictOn: 'archive' },

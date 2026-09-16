@@ -62,6 +62,17 @@ executed it. An artifact made before this release has no record and says so.
 The two roles sat next to implementer as if you were staffing a team. They are
 gone from the picker; workflow steps still route to both.
 
+### [#1783] Reports and wireframes land in Activity
+
+The session feed only ever showed plans, so a report or a wireframe left no
+trace of itself: the agent row was there, the thing it produced was not. Both
+sit on the timeline now, beside the plans, nested under the workflow run that
+produced them when there was one, and a row opens the artifact itself.
+
+The filter followed. Plans, reports and wireframes are three sub rows under one
+Artifacts category, so a feed crowded with wireframes can drop them and keep the
+plans. A stored choice to hide plans carries over to the new category.
+
 ### Fixes
 
 - Create report and Create wireframe could stay greyed out for the life of a

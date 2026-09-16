@@ -3,9 +3,12 @@ import type {
   Agent,
   OpenQuestion,
   PlanWithCount,
+  ReportArtifact,
+  SessionArtifact,
   SessionEvent,
   SessionExternalTask,
   SessionId,
+  WireframeArtifact,
   Workflow,
   WorkflowRun,
 } from '@goodboy/types';
@@ -39,10 +42,20 @@ export type TimelinePlanEntry = {
   readonly id: string;
   readonly at: string;
   readonly plan: PlanWithCount;
-  readonly lane?: {
-    readonly identity: RunIdentity;
-    readonly rootEntryId: string;
-  };
+  readonly lane?: TimelineArtifactLane;
+};
+
+export type TimelineArtifactLane = {
+  readonly identity: RunIdentity;
+  readonly rootEntryId: string;
+};
+
+export type TimelineArtifactEntry = {
+  readonly kind: 'artifact';
+  readonly id: string;
+  readonly at: string;
+  readonly artifact: ReportArtifact | WireframeArtifact;
+  readonly lane?: TimelineArtifactLane;
 };
 
 export type TimelineIssueEntry = {
@@ -92,7 +105,7 @@ export type TimelineQuestionEntry = {
   readonly lane: TimelineQuestionLane | null;
 };
 
-type TimelineRunChild = TimelineAgentEntry | TimelinePlanEntry;
+type TimelineRunChild = TimelineAgentEntry | TimelinePlanEntry | TimelineArtifactEntry;
 
 export type TimelineRunEntry = {
   readonly kind: 'run';
@@ -108,6 +121,7 @@ export type TimelineRunEntry = {
 export type TimelineTopLevelEntry =
   | TimelineAgentEntry
   | TimelinePlanEntry
+  | TimelineArtifactEntry
   | TimelineIssueEntry
   | TimelineBranchEntry
   | TimelineEventEntry
@@ -128,6 +142,7 @@ type Params = {
   readonly agents: ReadonlyArray<Agent>;
   readonly workflows: ReadonlyArray<AttachedWorkflow>;
   readonly plans: ReadonlyArray<PlanWithCount>;
+  readonly artifacts: ReadonlyArray<SessionArtifact>;
   readonly externalTasks: ReadonlyArray<SessionExternalTask>;
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly worktrees: ReadonlyArray<SessionWorktree>;
@@ -194,12 +209,16 @@ export const buildTimelineGroups = ({
   agents,
   workflows,
   plans,
+  artifacts,
   externalTasks,
   questions,
   worktrees,
   events,
   agentKindOverride,
 }: Params): TimelineModel => {
+  const readableArtifacts: ReadonlyArray<ReportArtifact | WireframeArtifact> = artifacts.flatMap(
+    (artifact) => (artifact.kind === 'plan' ? [] : [artifact]),
+  );
   const seed = runIdentitySeed({ sessionId });
   const liveAgents = agents.filter((agent) => agent.deletedAt == null);
   const creations = resolveAgentCreation({ agents: liveAgents });
@@ -318,12 +337,23 @@ export const buildTimelineGroups = ({
     const runPlans: ReadonlyArray<TimelinePlanEntry> = plans
       .filter((plan) => plan.workflowRunId === run.id)
       .map((plan) => ({ kind: 'plan', id: `plan:${plan.id}`, at: plan.createdAt, plan }));
-    const children: ReadonlyArray<TimelineRunChild> = [...stepEntries, ...runPlans].sort(
-      (first, second) =>
-        compareNewestFirst(
-          { at: first.at, ordinal: first.kind === 'agent' ? first.ordinal : 0, id: first.id },
-          { at: second.at, ordinal: second.kind === 'agent' ? second.ordinal : 0, id: second.id },
-        ),
+    const runArtifacts: ReadonlyArray<TimelineArtifactEntry> = readableArtifacts
+      .filter((artifact) => artifact.workflowRunId === run.id)
+      .map((artifact) => ({
+        kind: 'artifact',
+        id: `artifact:${artifact.id}`,
+        at: artifact.createdAt,
+        artifact,
+      }));
+    const children: ReadonlyArray<TimelineRunChild> = [
+      ...stepEntries,
+      ...runPlans,
+      ...runArtifacts,
+    ].sort((first, second) =>
+      compareNewestFirst(
+        { at: first.at, ordinal: first.kind === 'agent' ? first.ordinal : 0, id: first.id },
+        { at: second.at, ordinal: second.kind === 'agent' ? second.ordinal : 0, id: second.id },
+      ),
     );
     const producedPlan =
       [...plans]
@@ -349,6 +379,11 @@ export const buildTimelineGroups = ({
       .flatMap((entry) => entry.children)
       .flatMap((child) => (child.kind === 'plan' ? [child.plan.id] : [])),
   );
+  const groupedArtifactIds = new Set(
+    runEntries
+      .flatMap((entry) => entry.children)
+      .flatMap((child) => (child.kind === 'artifact' ? [child.artifact.id] : [])),
+  );
   const standaloneAgents = byOrdinal
     .filter(
       (agent) =>
@@ -363,25 +398,38 @@ export const buildTimelineGroups = ({
         chain: hasDescendants ? { identity: identityFor({ runId: agent.id }) } : null,
       });
     });
+  const laneForAuthor = ({
+    agentId,
+  }: {
+    readonly agentId: Agent['id'];
+  }): { readonly lane: TimelineArtifactLane } | Record<string, never> => {
+    const rootId = chainRootIdByAgentId.get(agentId);
+    if (rootId == null || !chainRootIds.has(rootId)) {
+      return {};
+    }
+    return {
+      lane: { identity: identityFor({ runId: rootId }), rootEntryId: `agent:${rootId}` },
+    };
+  };
+
   const standalonePlans: ReadonlyArray<TimelinePlanEntry> = plans
     .filter((plan) => !groupedPlanIds.has(plan.id))
-    .map((plan) => {
-      const rootId = chainRootIdByAgentId.get(plan.agentId);
-      return {
-        kind: 'plan',
-        id: `plan:${plan.id}`,
-        at: plan.createdAt,
-        plan,
-        ...(rootId != null && chainRootIds.has(rootId)
-          ? {
-              lane: {
-                identity: identityFor({ runId: rootId }),
-                rootEntryId: `agent:${rootId}`,
-              },
-            }
-          : {}),
-      };
-    });
+    .map((plan) => ({
+      kind: 'plan',
+      id: `plan:${plan.id}`,
+      at: plan.createdAt,
+      plan,
+      ...laneForAuthor({ agentId: plan.agentId }),
+    }));
+  const standaloneArtifacts: ReadonlyArray<TimelineArtifactEntry> = readableArtifacts
+    .filter((artifact) => !groupedArtifactIds.has(artifact.id))
+    .map((artifact) => ({
+      kind: 'artifact',
+      id: `artifact:${artifact.id}`,
+      at: artifact.createdAt,
+      artifact,
+      ...laneForAuthor({ agentId: artifact.agentId }),
+    }));
 
   const authorAgentIdByQuestionId = new Map<string, Agent['id']>();
   for (const candidate of byOrdinal) {
@@ -485,6 +533,7 @@ export const buildTimelineGroups = ({
     ...runEntries,
     ...standaloneAgents,
     ...standalonePlans,
+    ...standaloneArtifacts,
     ...questionEntries,
     ...visibleIssues,
     ...branches,

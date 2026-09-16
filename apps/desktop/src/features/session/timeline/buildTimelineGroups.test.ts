@@ -6,6 +6,8 @@ import type {
   OpenQuestion,
   OpenQuestionId,
   ProjectId,
+  PlanWithCount,
+  SessionArtifact,
   SessionEvent,
   SessionEventId,
   SessionEventKind,
@@ -132,9 +134,70 @@ const question = ({
   ...(answeredAt != null ? { answeredAt: typedString<IsoDateTime>({ value: answeredAt }) } : {}),
 });
 
+type ArtifactParams = {
+  readonly id: string;
+  readonly kind: 'plan' | 'report' | 'wireframe';
+  readonly agentId: string;
+  readonly createdAt: string;
+  readonly workflowRunId?: WorkflowRunId;
+  readonly status?: SessionArtifact['status'];
+};
+
+const artifact = ({
+  id,
+  kind,
+  agentId,
+  createdAt,
+  workflowRunId,
+  status = 'active',
+}: ArtifactParams): SessionArtifact =>
+  ({
+    id,
+    sessionId: SESSION_ID,
+    agentId: typedString<AgentId>({ value: agentId }),
+    workflowRunId: workflowRunId ?? null,
+    kind,
+    schemaVersion: 1,
+    title: `${kind} ${id}`,
+    sourceFormat: kind === 'wireframe' ? 'json' : 'markdown',
+    sourceText: kind === 'wireframe' ? '{"screens":[]}' : 'body',
+    metadata: kind === 'report' ? { reportType: 'session' } : {},
+    status,
+    revision: 1,
+    sourceTurnId: null,
+    createdAt: typedString<IsoDateTime>({ value: createdAt }),
+    updatedAt: typedString<IsoDateTime>({ value: createdAt }),
+  }) as unknown as SessionArtifact;
+
+const plan = ({
+  id,
+  agentId,
+  createdAt,
+  workflowRunId,
+}: {
+  readonly id: string;
+  readonly agentId: string;
+  readonly createdAt: string;
+  readonly workflowRunId?: WorkflowRunId;
+}): PlanWithCount =>
+  ({
+    id,
+    sessionId: SESSION_ID,
+    agentId: typedString<AgentId>({ value: agentId }),
+    ...(workflowRunId != null ? { workflowRunId } : {}),
+    title: `plan ${id}`,
+    bodyMd: 'body',
+    status: 'active',
+    consumptionCount: 0,
+    createdAt: typedString<IsoDateTime>({ value: createdAt }),
+    updatedAt: typedString<IsoDateTime>({ value: createdAt }),
+  }) as unknown as PlanWithCount;
+
 type BuildParams = {
   readonly sessionId?: SessionId;
   readonly agents: ReadonlyArray<Agent>;
+  readonly plans?: ReadonlyArray<PlanWithCount>;
+  readonly artifacts?: ReadonlyArray<SessionArtifact>;
   readonly workflows?: ReadonlyArray<ReturnType<typeof attachedWorkflow>>;
   readonly questions?: ReadonlyArray<OpenQuestion>;
   readonly externalTasks?: ReadonlyArray<SessionExternalTask>;
@@ -145,6 +208,8 @@ type BuildParams = {
 const build = ({
   sessionId = SESSION_ID,
   agents,
+  plans = [],
+  artifacts = [],
   workflows = [],
   questions = [],
   externalTasks = [],
@@ -155,7 +220,8 @@ const build = ({
     sessionId,
     agents,
     workflows,
-    plans: [],
+    plans,
+    artifacts,
     externalTasks,
     questions,
     worktrees,
@@ -781,5 +847,118 @@ describe('buildTimelineGroups, agent chains', () => {
     const child = step?.kind === 'agent' ? step.children[0] : null;
 
     expect(child == null ? 'missing' : child.chain).toBeNull();
+  });
+});
+
+describe('buildTimelineGroups artifacts', () => {
+  it('seats a report and a wireframe on the timeline beside a plan', () => {
+    const model = build({
+      agents: [agent({ id: 'reporter', startedAt: '2026-08-17T09:00:00Z' })],
+      plans: [plan({ id: 'plan-1', agentId: 'reporter', createdAt: '2026-08-17T09:10:00Z' })],
+      artifacts: [
+        artifact({
+          id: 'artifact-report',
+          kind: 'report',
+          agentId: 'reporter',
+          createdAt: '2026-08-17T09:20:00Z',
+        }),
+        artifact({
+          id: 'artifact-wireframe',
+          kind: 'wireframe',
+          agentId: 'reporter',
+          createdAt: '2026-08-17T09:30:00Z',
+        }),
+      ],
+    });
+
+    expect(
+      model.entries.filter((entry) => entry.kind === 'artifact').map((entry) => entry.id),
+    ).toEqual(['artifact:artifact-wireframe', 'artifact:artifact-report']);
+    expect(model.entries.filter((entry) => entry.kind === 'plan')).toHaveLength(1);
+  });
+
+  it('renders a plan once, from the plan facade and not from the artifact table', () => {
+    const model = build({
+      agents: [agent({ id: 'planner', startedAt: '2026-08-17T09:00:00Z' })],
+      plans: [plan({ id: 'plan-1', agentId: 'planner', createdAt: '2026-08-17T09:10:00Z' })],
+      artifacts: [
+        artifact({
+          id: 'plan-1',
+          kind: 'plan',
+          agentId: 'planner',
+          createdAt: '2026-08-17T09:10:00Z',
+        }),
+      ],
+    });
+
+    expect(
+      model.entries.filter((entry) => entry.kind === 'plan' || entry.kind === 'artifact'),
+    ).toHaveLength(1);
+  });
+
+  it('keeps a discarded artifact on the timeline, the way a discarded plan stays', () => {
+    const model = build({
+      agents: [agent({ id: 'reporter', startedAt: '2026-08-17T09:00:00Z' })],
+      artifacts: [
+        artifact({
+          id: 'artifact-report',
+          kind: 'report',
+          agentId: 'reporter',
+          createdAt: '2026-08-17T09:20:00Z',
+          status: 'discarded',
+        }),
+      ],
+    });
+
+    expect(model.entries.some((entry) => entry.id === 'artifact:artifact-report')).toBe(true);
+  });
+
+  it('nests an artifact produced inside a workflow run under that run', () => {
+    const model = build({
+      workflows: [attachedWorkflow()],
+      agents: [
+        agent({ id: 'step', startedAt: '2026-08-17T09:00:00Z', workflowRunId: WORKFLOW_RUN_ID }),
+      ],
+      artifacts: [
+        artifact({
+          id: 'artifact-report',
+          kind: 'report',
+          agentId: 'step',
+          createdAt: '2026-08-17T09:20:00Z',
+          workflowRunId: WORKFLOW_RUN_ID,
+        }),
+      ],
+    });
+    const run = model.entries.find((entry) => entry.kind === 'run');
+
+    expect(run?.kind === 'run' ? run.children.map((child) => child.id) : []).toContain(
+      'artifact:artifact-report',
+    );
+    expect(model.entries.some((entry) => entry.kind === 'artifact')).toBe(false);
+  });
+
+  it('lays an artifact of a fanned out agent on that chain lane', () => {
+    const model = build({
+      agents: [
+        agent({ id: 'planner', ordinal: 0, startedAt: '2026-08-17T09:00:00Z' }),
+        agent({
+          id: 'child',
+          ordinal: 1,
+          parentAgentId: 'planner',
+          startedAt: '2026-08-17T09:05:00Z',
+        }),
+      ],
+      artifacts: [
+        artifact({
+          id: 'artifact-report',
+          kind: 'report',
+          agentId: 'child',
+          createdAt: '2026-08-17T09:20:00Z',
+        }),
+      ],
+    });
+    const entry = model.entries.find((item) => item.id === 'artifact:artifact-report');
+
+    expect(entry?.kind === 'artifact' ? entry.lane?.rootEntryId : null).toBe('agent:planner');
   });
 });

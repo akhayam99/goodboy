@@ -53,12 +53,14 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   const sessionId: SessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const plans = useAppStore((s) => s.sessionPlans?.[sessionId] ?? EMPTY_ARRAY);
+  const artifacts = useAppStore((s) => s.sessionArtifacts?.[sessionId] ?? EMPTY_ARRAY);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks?.[sessionId] ?? EMPTY_ARRAY);
   const worktrees = useAppStore((s) => s.sessionWorktreeRecords?.[sessionId] ?? EMPTY_ARRAY);
   const events = useAppStore((s) => s.sessionEvents?.[sessionId] ?? EMPTY_ARRAY);
   const areEventsLoaded = useAppStore((s) => s.sessionEvents?.[sessionId] !== undefined);
   const areAgentsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
   const loadSessionEvents = useAppStore((s) => s.loadSessionEvents);
+  const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const orchestratingWorkflowRuns = useAppStore((s) => s.orchestratingWorkflowRuns);
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
@@ -93,6 +95,10 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   }, [loadSessionEvents, sessionId]);
 
   useEffect(() => {
+    void loadSessionArtifacts(sessionId);
+  }, [loadSessionArtifacts, sessionId]);
+
+  useEffect(() => {
     void loadSessionAnsweredQuestions(sessionId);
     void loadSessionDismissedQuestions(sessionId);
   }, [loadSessionAnsweredQuestions, loadSessionDismissedQuestions, sessionId]);
@@ -121,6 +127,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         agents,
         workflows,
         plans,
+        artifacts,
         externalTasks,
         questions,
         worktrees,
@@ -130,6 +137,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
     [
       agentKindOverride,
       agents,
+      artifacts,
       events,
       externalTasks,
       plans,
@@ -202,12 +210,16 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         showWorkflowSubagents: activity.filter.workflowSubagents,
         showAgentSubagents: activity.filter.agentSubagents,
         showPlans: activity.filter.plans,
+        showReports: activity.filter.reports,
+        showWireframes: activity.filter.wireframes,
         showQuestions: activity.filter.questions,
       }),
     [
       activity.filter.agentSubagents,
       activity.filter.plans,
       activity.filter.questions,
+      activity.filter.reports,
+      activity.filter.wireframes,
       activity.filter.workflowSubagents,
       blockedRunIds,
       decidingRunIds,

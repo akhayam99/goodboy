@@ -19,6 +19,7 @@ import {
   ArtifactCreateReportScene,
   ArtifactCreateWireframeScene,
 } from './scenes/ArtifactCreationScenes';
+import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
 
 const SCENES = {
   workspace: WorkspaceScene,
@@ -36,6 +37,8 @@ const SCENES = {
   'artifact-wireframe-high': ArtifactWireframeHighScene,
   'artifact-create-report': ArtifactCreateReportScene,
   'artifact-create-wireframe': ArtifactCreateWireframeScene,
+  activity: ActivityTimelineScene,
+  'activity-filter': ActivityFilterScene,
 };
 
 export const MockScene = () => {
