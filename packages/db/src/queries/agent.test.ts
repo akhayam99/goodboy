@@ -97,9 +97,9 @@ describe('agent queries', () => {
 
     await purgeAgentForDelete({ db, id: agentId });
 
-    expect(await db.select('SELECT id, agent_id FROM session_plans')).toEqual([
-      { id: 'plan-1', agent_id: agentId },
-    ]);
+    expect(
+      await db.select("SELECT id, agent_id FROM session_artifacts WHERE kind = 'plan'"),
+    ).toEqual([{ id: 'plan-1', agent_id: agentId }]);
     const consumptions = await listConsumptionsForPlan(db, plan.id);
     expect(consumptions.map((consumption) => consumption.id)).toEqual(['consumption-1']);
   });

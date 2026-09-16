@@ -1,3 +1,7 @@
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import BetterSqlite3 from 'better-sqlite3';
 import { describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
@@ -140,7 +144,7 @@ describe('runRuntimeMigrations', () => {
     sql: 'CREATE TABLE snapshot_test (id INTEGER PRIMARY KEY);',
   } satisfies Migration;
 
-  it('creates a versioned snapshot before the first pending migration', async () => {
+  it('names the snapshot after the pending migration and the version it backs up', async () => {
     const database = makeTestDatabase();
     await migrate(database, [migration]);
     const pendingMigration = {
@@ -150,7 +154,7 @@ describe('runRuntimeMigrations', () => {
     const statements: string[] = [];
     const db = makeSnapshotDatabase({ database, statements });
     const storage = {
-      list: vi.fn(async () => ['/tmp/data.db.pre-m1-20260822T120000000Z.bak']),
+      list: vi.fn(async () => ['/tmp/data.db.pre-m2-from-m1-20260822T120000000Z.bak']),
       remove: vi.fn(async () => undefined),
     } satisfies MigrationSnapshotStorage;
 
@@ -167,7 +171,7 @@ describe('runRuntimeMigrations', () => {
       statement.includes('CREATE TABLE pending_snapshot_test'),
     );
     expect(statements[snapshotIndex]).toBe(
-      "VACUUM INTO '/tmp/data.db.pre-m1-20260822T120000000Z.bak'",
+      "VACUUM INTO '/tmp/data.db.pre-m2-from-m1-20260822T120000000Z.bak'",
     );
     expect(snapshotIndex).toBeLessThan(migrationIndex);
   });
@@ -241,14 +245,14 @@ describe('runRuntimeMigrations', () => {
     expect(tables).toEqual([]);
   });
 
-  it('retains the two newest migration snapshots', async () => {
+  it('retains the two newest migration snapshots across both filename generations', async () => {
     const database = makeTestDatabase();
     const remove = vi.fn(async () => undefined);
     const storage = {
       list: vi.fn(async () => [
         '/tmp/data.db.pre-m120-20260820T120000000Z.bak',
         '/tmp/data.db.pre-m9-20260821T120000000Z.bak',
-        '/tmp/data.db.pre-m0-20260822T120000000Z.bak',
+        '/tmp/data.db.pre-m157-from-m155-20260822T120000000Z.bak',
       ]),
       remove,
     } satisfies MigrationSnapshotStorage;
@@ -265,6 +269,65 @@ describe('runRuntimeMigrations', () => {
     expect(remove).toHaveBeenCalledWith({
       path: '/tmp/data.db.pre-m120-20260820T120000000Z.bak',
     });
+  });
+});
+
+describe('enforced integrity check', () => {
+  const INTEGRITY_MIGRATION = {
+    version: 1157,
+    sql: `
+      CREATE TABLE integrity_probe (id INTEGER PRIMARY KEY);
+      PRAGMA integrity_check;
+    `,
+  } satisfies Migration;
+
+  const makeDatabaseFile = (): string =>
+    join(mkdtempSync(join(tmpdir(), 'goodboy-integrity-')), 'data.db');
+
+  const seedIndexedRows = ({ raw }: { readonly raw: BetterSqlite3.Database }): void => {
+    raw.exec('CREATE TABLE probe (id INTEGER PRIMARY KEY, value TEXT NOT NULL)');
+    raw.exec('CREATE INDEX probe_value ON probe(value)');
+    const insert = raw.prepare('INSERT INTO probe (id, value) VALUES (?, ?)');
+    for (let id = 1; id <= 200; id += 1) {
+      insert.run(id, `value-${id}`);
+    }
+  };
+
+  it('aborts the migration when the database is corrupt', async () => {
+    const path = makeDatabaseFile();
+    const raw = new BetterSqlite3(path);
+    seedIndexedRows({ raw });
+    raw.unsafeMode(true);
+    raw.pragma('writable_schema = ON');
+    raw.prepare("DELETE FROM sqlite_master WHERE name = 'probe_value'").run();
+    raw.pragma('writable_schema = OFF');
+    raw.close();
+
+    const db = makeTestDatabase(path);
+    await expect(migrate(db, [INTEGRITY_MIGRATION])).rejects.toThrow(
+      /Migration v1157: integrity check failed: .*never used/s,
+    );
+    const versions = await db.select<{ readonly version: number }>(
+      'SELECT version FROM schema_version WHERE version = 1157',
+    );
+    expect(versions).toEqual([]);
+    rmSync(dirname(path), { force: true, recursive: true });
+  });
+
+  it('applies the migration when the database is sound', async () => {
+    const path = makeDatabaseFile();
+    const raw = new BetterSqlite3(path);
+    seedIndexedRows({ raw });
+    raw.close();
+
+    const db = makeTestDatabase(path);
+    const result = await migrate(db, [INTEGRITY_MIGRATION]);
+    const tables = await db.select<{ readonly name: string }>(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'integrity_probe'",
+    );
+    expect(result.applied).toEqual([1157]);
+    expect(tables).toEqual([{ name: 'integrity_probe' }]);
+    rmSync(dirname(path), { force: true, recursive: true });
   });
 });
 

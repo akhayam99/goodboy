@@ -1,15 +1,9 @@
 import type { AgentId, IsoDateTime, SessionId, WorkflowRunId } from './ids';
-import type { WorkflowRoutingProposal } from './workflow-routing';
+import type { ArtifactId, ArtifactStatus, ImplementationCluster } from './artifact';
 
-export type PlanId = string & { readonly __brand: 'PlanId' };
+export type PlanId = ArtifactId;
 
-export type PlanStatus = 'active' | 'consumed' | 'superseded' | 'discarded';
-
-export type ImplementationCluster = Readonly<{
-  title: string;
-  instructions: string;
-  routingProposal?: WorkflowRoutingProposal | null;
-}>;
+export type PlanStatus = ArtifactStatus;
 
 export type Plan = Readonly<{
   id: PlanId;

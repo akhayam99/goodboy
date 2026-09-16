@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { AgentId, PlanId, SessionId } from '@goodboy/types';
+import type { AgentId, ArtifactId, PlanId, SessionId } from '@goodboy/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from '../migrations/runner';
+import { getArtifact, insertArtifact } from './artifact';
 import {
   deletePlan,
   listConsumptionsForPlan,
@@ -56,7 +57,7 @@ const sessionId = 't1' as SessionId;
 const agentA1 = 'a1' as AgentId;
 const agentA2 = 'a2' as AgentId;
 
-describe('session_plans queries', () => {
+describe('plan artifact queries', () => {
   it('upsertPlan inserts a new plan and listPlansForSession returns it', async () => {
     const db = await seedFixture();
     await upsertPlan(db, {
@@ -172,10 +173,12 @@ describe('session_plans queries', () => {
       bodyMd: 'body',
       clusters: [{ title: 'move files to domain', instructions: 'relocate the files' }],
     });
-    await db.execute(`UPDATE session_plans SET clusters_json = ? WHERE id = ?`, [
-      JSON.stringify([
-        { title: 'move files to domain', instructions: 'relocate the files', ownerHint: 'ak' },
-      ]),
+    await db.execute(`UPDATE session_artifacts SET metadata_json = ? WHERE id = ?`, [
+      JSON.stringify({
+        clusters: [
+          { title: 'move files to domain', instructions: 'relocate the files', ownerHint: 'ak' },
+        ],
+      }),
       'p1',
     ]);
     const plans = await listPlansForSession(db, sessionId);
@@ -331,6 +334,93 @@ describe('session_plans queries', () => {
     const history = await listConsumptionsForPlan(db, 'p1' as PlanId);
 
     expect(plans[0]!.lastConsumer?.agentId).toBe(history[0]!.agentId);
+  });
+
+  it('replays the same turn onto the plan it already created', async () => {
+    const db = await seedFixture();
+    const first = await upsertPlan(db, {
+      id: 'p1' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA1,
+      title: 'first plan',
+      bodyMd: 'body',
+      sourceTurnId: 'turn-1',
+    });
+    await updatePlanStatus(db, first.id, 'consumed');
+
+    const replayed = await upsertPlan(db, {
+      id: 'p2' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA1,
+      title: 'first plan',
+      bodyMd: 'body',
+      sourceTurnId: 'turn-1',
+    });
+
+    const plans = await listPlansForSession(db, sessionId);
+    expect(plans).toHaveLength(1);
+    expect(replayed.id).toBe(first.id);
+    expect(plans[0]!.status).toBe('consumed');
+  });
+
+  it('keeps the producing turn on the plan the same agent revises', async () => {
+    const db = await seedFixture();
+    await upsertPlan(db, {
+      id: 'p1' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA1,
+      title: 'v1',
+      bodyMd: 'b1',
+      sourceTurnId: 'turn-1',
+    });
+    const revised = await upsertPlan(db, {
+      id: 'p2' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA1,
+      title: 'v2',
+      bodyMd: 'b2',
+      sourceTurnId: 'turn-2',
+    });
+    await updatePlanStatus(db, revised.id, 'discarded');
+
+    await upsertPlan(db, {
+      id: 'p3' as PlanId,
+      sessionId: sessionId,
+      agentId: agentA1,
+      title: 'v2',
+      bodyMd: 'b2',
+      sourceTurnId: 'turn-2',
+    });
+
+    const plans = await listPlansForSession(db, sessionId);
+    expect(plans).toHaveLength(1);
+    expect(plans[0]!.status).toBe('discarded');
+  });
+
+  it('refuses to discard or delete an artifact that is not a plan', async () => {
+    const db = await seedFixture();
+    await insertArtifact({
+      db,
+      input: {
+        id: 'report-1' as ArtifactId,
+        sessionId: sessionId,
+        agentId: agentA1,
+        kind: 'report',
+        schemaVersion: 1,
+        title: 'Session report',
+        sourceFormat: 'markdown',
+        sourceText: '## Outcome',
+        metadata: { reportType: 'session-summary' },
+      },
+    });
+
+    await updatePlanStatus(db, 'report-1' as PlanId, 'discarded');
+    const afterStatus = await getArtifact({ db, artifactId: 'report-1' as ArtifactId });
+    await deletePlan(db, 'report-1' as PlanId);
+    const afterDelete = await getArtifact({ db, artifactId: 'report-1' as ArtifactId });
+
+    expect(afterStatus?.status).toBe('active');
+    expect(afterDelete).not.toBeNull();
   });
 
   it('cascades on task delete', async () => {

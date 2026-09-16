@@ -88,6 +88,7 @@ import { type AgentKind } from '../features/session/agent-kind';
 import type { TerminalTabId, TerminalTabStatus } from '../shared/types/terminal';
 import { createNotificationsSlice } from './slices/notifications';
 import { createNudgesSlice } from './slices/nudges';
+import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts';
 import { createPlansSlice } from './slices/plans';
 import { createOpenQuestionsSlice } from './slices/open-questions';
 import { createBudgetSlice } from './slices/budget';
@@ -963,6 +964,7 @@ type AppActions = {
 
 export type AppStore = AppState &
   AppActions &
+  ReturnType<typeof createArtifactsSlice> &
   ReturnType<typeof createResolveSlice> &
   ReturnType<typeof createReviewNavigationSlice> &
   ReturnType<typeof createPrWritesSlice>;
@@ -1076,6 +1078,7 @@ export const initialState: AppState = {
   agentKindOverride: {},
   ...resolveInitialState,
   ...reviewNavigationInitialState,
+  ...artifactsInitialState,
   agentDraft: {},
   workflowDrafts: {},
   ...initialWorkflowStudioState,
@@ -1111,6 +1114,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...initialState,
   ...createNotificationsSlice(set, get),
   ...createNudgesSlice(set, get),
+  ...createArtifactsSlice(set),
   ...createPlansSlice(set, get),
   ...createOpenQuestionsSlice(set, get),
   ...createBudgetSlice(set, get),

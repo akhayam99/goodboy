@@ -206,8 +206,9 @@ pub fn build() -> Result<Snapshot, BridgeError> {
     )?;
     let session_plans = rows(
         &conn,
-        "SELECT id, session_id, agent_id, title, body_md, status, clusters_json, workflow_run_id, \
-         created_at, updated_at FROM session_plans",
+        "SELECT id, session_id, agent_id, title, source_text AS body_md, status, \
+         json_extract(metadata_json, '$.clusters') AS clusters_json, workflow_run_id, \
+         created_at, updated_at FROM session_artifacts WHERE kind = 'plan'",
     )?;
     let workflows = rows(
         &conn,

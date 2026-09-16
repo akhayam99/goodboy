@@ -339,6 +339,24 @@ export {
   type NudgeOutcomeCount,
 } from './queries/impact';
 export {
+  insertArtifact,
+  getArtifact,
+  getArtifactBySourceTurn,
+  listArtifactsForSession,
+  listArtifactsForRun,
+  updateArtifactSource,
+  setArtifactStatus,
+  deleteArtifact,
+  restoreArtifact,
+  removeArtifact,
+  putArtifactRendition,
+  getArtifactRendition,
+  type InsertArtifactInput,
+  type UpdateArtifactSourceInput,
+  type PutArtifactRenditionInput,
+  type GetArtifactRenditionInput,
+} from './queries/artifact';
+export {
   listPlansForSession,
   upsertPlan,
   updatePlanStatus,

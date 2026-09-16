@@ -296,7 +296,21 @@ export type {
   DiffCommentStatus,
 } from './diff-comment';
 export type {
+  ArtifactId,
+  ArtifactKind,
+  ArtifactRendition,
+  ArtifactSourceFormat,
+  ArtifactStatus,
   ImplementationCluster,
+  PlanArtifact,
+  PlanArtifactMetadata,
+  ReportArtifact,
+  ReportArtifactMetadata,
+  SessionArtifact,
+  WireframeArtifact,
+  WireframeArtifactMetadata,
+} from './artifact';
+export type {
   Plan,
   PlanConsumption,
   PlanConsumptionId,

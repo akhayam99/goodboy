@@ -1,6 +1,6 @@
 import {
+  captureArtifactFromTurnText,
   extractFanOut,
-  extractPlanFromMarker,
   extractReviewComments,
   fanOutCapabilityForRole,
   fallbackStepOutputSummary,
@@ -42,14 +42,12 @@ export const completeResolvedAgent = async ({
     : null;
   const role = ranKind ? KIND_TO_ROLE[ranKind] : 'custom';
   const capability = fanOutCapabilityForRole(role);
-  const extractedFanOut = extractFanOut({
-    assistantText,
-    emittingProvider: agentEmittingProvider({
-      state: get(),
-      sessionId,
-      agentId: resolvedAgentId,
-    }),
+  const emittingProvider = agentEmittingProvider({
+    state: get(),
+    sessionId,
+    agentId: resolvedAgentId,
   });
+  const extractedFanOut = extractFanOut({ assistantText, emittingProvider });
   const isFanOutNode =
     capability.mode !== 'never' &&
     (ranAgent?.parentAgentId != null || (extractedFanOut != null && extractedFanOut.length >= 2));
@@ -65,7 +63,9 @@ export const completeResolvedAgent = async ({
   }
 
   if (!!ranAgent?.stepId && !!ranAgent?.workflowRunId) {
-    const planCapturedThisTurn = extractPlanFromMarker(assistantText) !== null;
+    const captured = captureArtifactFromTurnText({ assistantText, emittingProvider });
+    const planCapturedThisTurn =
+      captured.status === 'captured' && captured.artifact.kind === 'plan';
     const { shouldAutoAdvance } = await get().finalizeWorkflowStep(
       sessionId,
       resolvedAgentId,

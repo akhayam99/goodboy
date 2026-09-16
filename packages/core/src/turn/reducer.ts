@@ -83,6 +83,7 @@ function applyTurnEvent(state: TurnState, turn: TurnEvent): TurnState {
     case 'orchestrator_decision':
     case 'permission_decision':
     case 'decision_note':
+    case 'artifact_capture_failed':
     case 'unknown_payload':
     case 'provider_session_init':
       return state;

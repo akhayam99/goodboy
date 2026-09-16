@@ -47,6 +47,13 @@ export type TranscriptItem =
       retryable?: boolean;
     }
   | { kind: 'decision_note'; key: string; message: string; runId: ProviderRunId }
+  | {
+      kind: 'artifact_capture_failed';
+      key: string;
+      code: string;
+      message: string;
+      runId: ProviderRunId;
+    }
   | { kind: 'auth_required'; key: string; providerId: ProviderId; identity: string | null }
   | { kind: 'skill_invocation'; key: string; skillName: string; args: ReadonlyArray<string> }
   | {
@@ -276,6 +283,15 @@ export const reduceTranscript = (
         items.push({
           kind: 'decision_note',
           key: `decision-${i}`,
+          message: event.message,
+          runId: event.runId,
+        });
+        break;
+      case 'artifact_capture_failed':
+        items.push({
+          kind: 'artifact_capture_failed',
+          key: `artifact-capture-${i}`,
+          code: event.code,
           message: event.message,
           runId: event.runId,
         });

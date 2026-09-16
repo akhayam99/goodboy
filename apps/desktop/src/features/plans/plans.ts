@@ -33,6 +33,7 @@ export type UpsertPlanArgs = {
   readonly title: string;
   readonly bodyMd: string;
   readonly clusters?: ReadonlyArray<ImplementationCluster>;
+  readonly sourceTurnId?: string;
 };
 
 export const upsertPlan = async (args: UpsertPlanArgs): Promise<Plan> => {
@@ -45,6 +46,7 @@ export const upsertPlan = async (args: UpsertPlanArgs): Promise<Plan> => {
     title: args.title,
     bodyMd: args.bodyMd,
     ...(args.clusters && { clusters: args.clusters }),
+    ...(args.sourceTurnId !== undefined && { sourceTurnId: args.sourceTurnId }),
   });
 };
 

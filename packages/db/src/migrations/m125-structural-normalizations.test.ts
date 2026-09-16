@@ -296,7 +296,7 @@ describe('m125 through m129 structural normalizations', () => {
               fv.provider_run_id AS provider_run
        FROM agents a
        JOIN open_questions q ON q.session_id = a.session_id
-       JOIN session_plans p ON p.agent_id = a.id
+       JOIN session_artifacts p ON p.agent_id = a.id AND p.kind = 'plan'
        JOIN session_workflows sw ON sw.session_id = a.session_id
        JOIN file_versions fv ON fv.session_id = a.session_id`,
     );

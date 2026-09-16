@@ -104,7 +104,7 @@ import {
   buildAttachmentPromptBlock,
   buildGoalAttachmentsBlock,
   captureMaterializeRequestsFromTurn,
-  capturePlanFromTurn,
+  captureArtifactsFromTurn,
   captureScoutDomainsFromTurn,
   emitTurnNudges,
   enqueueSummarizer,
@@ -1537,14 +1537,25 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         turnOutput: assistantText,
         workingDir,
       });
-      const capturedPlan = await capturePlanFromTurn({
+      const captured = await captureArtifactsFromTurn({
         set,
         sessionId,
         agentId: activeAgentId,
         assistantText,
         emittingProvider: provider,
+        sourceTurnId: runId,
         workflowRunId: phaseWorkflowRunId ?? undefined,
       });
+      const capturedPlan = captured.plan;
+      if (captured.error !== null) {
+        get().appendTurnEvent(activeAgentId, sessionId, {
+          kind: 'artifact_capture_failed',
+          runId,
+          code: captured.error.code,
+          message: captured.error.message,
+          at: now(),
+        });
+      }
       await captureScoutDomainsFromTurn({
         set,
         sessionId,

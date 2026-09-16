@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, AgentId, IsoDateTime, ResolveThread, SessionId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  IsoDateTime,
+  ResolveThread,
+  SessionId,
+  StepId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import { createResolveSlice } from '../resolve';
 import { resolveInitialState } from '../resolve/state';
 import { buildResolutionReplyBody } from '../github/buildResolutionReplyBody';
@@ -44,6 +52,14 @@ const agent: Agent = {
   kind: 'resolver',
   status: 'running',
   sourceThreadIds: ['PRRT_1'],
+};
+
+const plannerStepAgent: Agent = {
+  ...agent,
+  name: 'plan the work',
+  kind: 'planner',
+  stepId: 'step-1' as StepId,
+  workflowRunId: 'run-1' as WorkflowRunId,
 };
 
 type Harness = {
@@ -277,6 +293,82 @@ describe('completeResolvedAgent', () => {
     );
     expect(state.emitNotification).not.toHaveBeenCalled();
   });
+  it('counts a plan artifact envelope as the workflow step output', async () => {
+    const { state, set, get } = createHarness({});
+    const finalizeWorkflowStep = vi.fn(async () => ({ shouldAutoAdvance: true }));
+    Object.assign(state, { finalizeWorkflowStep });
+    state.sessionPhaseRuns = { [SESSION_ID]: [plannerStepAgent] };
+    const body = JSON.stringify({
+      title: 'Ship it',
+      format: 'markdown',
+      content: 'step one',
+    });
+
+    const advance = await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: `<<artifact v=1 kind=plan>>\n${body}\n<</artifact>>`,
+      now: () => NOW,
+    });
+
+    expect(finalizeWorkflowStep).toHaveBeenCalledWith(
+      SESSION_ID,
+      AGENT_ID,
+      expect.any(String),
+      true,
+    );
+    expect(advance).toBe(true);
+  });
+
+  it('still counts the legacy plan marker as the workflow step output', async () => {
+    const { state, set, get } = createHarness({});
+    const finalizeWorkflowStep = vi.fn(async () => ({ shouldAutoAdvance: true }));
+    Object.assign(state, { finalizeWorkflowStep });
+    state.sessionPhaseRuns = { [SESSION_ID]: [plannerStepAgent] };
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: '<<plan>>\nShip it\nstep one\n<</plan>>',
+      now: () => NOW,
+    });
+
+    expect(finalizeWorkflowStep).toHaveBeenCalledWith(
+      SESSION_ID,
+      AGENT_ID,
+      expect.any(String),
+      true,
+    );
+  });
+
+  it('does not let a report envelope stand in for the plan a step owes', async () => {
+    const { state, set, get } = createHarness({});
+    const finalizeWorkflowStep = vi.fn(async () => ({ shouldAutoAdvance: false }));
+    Object.assign(state, { finalizeWorkflowStep });
+    state.sessionPhaseRuns = { [SESSION_ID]: [plannerStepAgent] };
+    const body = JSON.stringify({ title: 'Report', format: 'markdown', content: '## Outcome' });
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: `<<artifact v=1 kind=report>>\n${body}\n<</artifact>>`,
+      now: () => NOW,
+    });
+
+    expect(finalizeWorkflowStep).toHaveBeenCalledWith(
+      SESSION_ID,
+      AGENT_ID,
+      expect.any(String),
+      false,
+    );
+  });
+
   it('leaves a thread the agent does not own out of its rows', async () => {
     const { state, set, get } = createHarness({});
     await completeResolvedAgent({

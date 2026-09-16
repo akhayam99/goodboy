@@ -1,3 +1,4 @@
+import type { ArtifactsState } from './slices/artifacts/state';
 import type { ResolveState } from './slices/resolve/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
 import type { OrphanWorktree } from '../features/worktree/worktree';
@@ -220,7 +221,8 @@ export type PendingOrchestration = {
   readonly routing?: OrchestratorRouting;
 };
 
-type AppSliceState = ResolveState &
+type AppSliceState = ArtifactsState &
+  ResolveState &
   ReviewNavigationState &
   PrWritesState &
   UpdaterState &

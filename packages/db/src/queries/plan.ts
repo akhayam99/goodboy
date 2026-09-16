@@ -3,130 +3,103 @@ import type {
   ImplementationCluster,
   IsoDateTime,
   Plan,
+  PlanArtifact,
   PlanConsumption,
   PlanConsumptionId,
   PlanId,
   PlanLastConsumer,
   PlanStatus,
   PlanWithCount,
+  SessionArtifact,
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
 import type { Database } from '../client';
-import { isWorkflowRoutingProposal } from './workflowRoutingCodec';
+import {
+  getArtifact,
+  insertArtifact,
+  listArtifactsForSession,
+  removeArtifact,
+  setArtifactStatus,
+  updateArtifactSource,
+} from './artifact';
 
-type PlanRow = {
-  id: string;
-  session_id: string;
-  agent_id: string;
-  workflow_run_id: string | null;
-  title: string;
-  body_md: string;
-  status: string;
-  clusters_json: string | null;
-  created_at: number;
-  updated_at: number;
+const PLAN_SCHEMA_VERSION = 1;
+
+const isPlanArtifact = (artifact: SessionArtifact): artifact is PlanArtifact =>
+  artifact.kind === 'plan';
+
+const toDomain = (artifact: PlanArtifact): Plan => {
+  const clusters = artifact.metadata.clusters;
+  return {
+    id: artifact.id as PlanId,
+    sessionId: artifact.sessionId,
+    agentId: artifact.agentId,
+    ...(artifact.workflowRunId != null && { workflowRunId: artifact.workflowRunId }),
+    title: artifact.title,
+    bodyMd: artifact.sourceText,
+    status: artifact.status,
+    ...(clusters && clusters.length > 0 && { clusters }),
+    createdAt: artifact.createdAt,
+    updatedAt: artifact.updatedAt,
+  };
 };
 
-type PlanWithCountRow = PlanRow & {
+const loadPlan = async (db: Database, id: PlanId): Promise<PlanArtifact | null> => {
+  const artifact = await getArtifact({ db, artifactId: id });
+  if (artifact === null || !isPlanArtifact(artifact)) {
+    return null;
+  }
+  return artifact;
+};
+
+type PlanConsumptionSummaryRow = {
+  plan_id: string;
   consumption_count: number;
   last_consumer_agent_id: string | null;
   last_consumer_agent_name: string | null;
 };
 
-const isImplementationCluster = (value: unknown): value is ImplementationCluster => {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return false;
-  }
-  const entry = value as Record<string, unknown>;
-  if (typeof entry['title'] !== 'string' || typeof entry['instructions'] !== 'string') {
-    return false;
-  }
-  const proposal = entry['routingProposal'];
-  if (proposal === undefined || proposal === null) {
-    return true;
-  }
-  return isWorkflowRoutingProposal(proposal);
-};
-
-function parseClusters(raw: string | null): ReadonlyArray<ImplementationCluster> | undefined {
-  if (!raw) {
-    return undefined;
-  }
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return undefined;
-    }
-    const out = parsed.filter(isImplementationCluster);
-    return out.length > 0 ? out : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function serializeClusters(clusters?: ReadonlyArray<ImplementationCluster>): string | null {
-  if (!clusters || clusters.length === 0) {
-    return null;
-  }
-  const valid = clusters.filter(isImplementationCluster);
-  if (valid.length !== clusters.length) {
-    throw new Error('Invalid implementation cluster routing proposal');
-  }
-  return JSON.stringify(valid);
-}
-
-function toDomain(row: PlanRow): Plan {
-  const clusters = parseClusters(row.clusters_json);
-  return {
-    id: row.id as PlanId,
-    sessionId: row.session_id as SessionId,
-    agentId: row.agent_id as AgentId,
-    ...(row.workflow_run_id != null && { workflowRunId: row.workflow_run_id as WorkflowRunId }),
-    title: row.title,
-    bodyMd: row.body_md,
-    status: row.status as PlanStatus,
-    ...(clusters && { clusters }),
-    createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
-    updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
-  };
-}
-
-function toDomainWithCount(row: PlanWithCountRow): PlanWithCount {
-  const lastConsumer: PlanLastConsumer | null =
-    row.last_consumer_agent_id != null
-      ? {
-          agentId: row.last_consumer_agent_id as AgentId,
-          name: row.last_consumer_agent_name,
-        }
-      : null;
-  return { ...toDomain(row), consumptionCount: row.consumption_count, lastConsumer };
-}
-
 const LAST_CONSUMPTION = `FROM plan_consumptions lc
              LEFT JOIN agents la ON la.id = lc.agent_id
-             WHERE lc.plan_id = p.id
+             WHERE lc.plan_id = c.plan_id
              ORDER BY lc.consumed_at DESC, lc.id DESC
              LIMIT 1`;
+
+const toLastConsumer = (row: PlanConsumptionSummaryRow | undefined): PlanLastConsumer | null => {
+  if (row === undefined || row.last_consumer_agent_id === null) {
+    return null;
+  }
+  return {
+    agentId: row.last_consumer_agent_id as AgentId,
+    name: row.last_consumer_agent_name,
+  };
+};
 
 export const listPlansForSession = async (
   db: Database,
   sessionId: SessionId,
 ): Promise<ReadonlyArray<PlanWithCount>> => {
-  const rows = await db.select<PlanWithCountRow>(
-    `SELECT p.id, p.session_id, p.agent_id, p.workflow_run_id, p.title, p.body_md, p.status,
-            p.clusters_json, p.created_at, p.updated_at,
-            COUNT(c.id) AS consumption_count,
+  const artifacts = await listArtifactsForSession({ db, sessionId });
+  const summaries = await db.select<PlanConsumptionSummaryRow>(
+    `SELECT c.plan_id AS plan_id, COUNT(c.id) AS consumption_count,
             (SELECT lc.agent_id ${LAST_CONSUMPTION}) AS last_consumer_agent_id,
             (SELECT la.name ${LAST_CONSUMPTION}) AS last_consumer_agent_name
-     FROM session_plans p
-     LEFT JOIN plan_consumptions c ON c.plan_id = p.id
-     WHERE p.session_id = ?
-     GROUP BY p.id
-     ORDER BY p.created_at ASC`,
+     FROM plan_consumptions c
+     JOIN session_artifacts a ON a.id = c.plan_id
+     WHERE a.session_id = ?
+     GROUP BY c.plan_id`,
     [sessionId],
   );
-  return rows.map(toDomainWithCount);
+  const summaryById = new Map(summaries.map((row) => [row.plan_id, row]));
+  return artifacts.filter(isPlanArtifact).map((artifact) => {
+    const summary = summaryById.get(artifact.id);
+    return {
+      ...toDomain(artifact),
+      consumptionCount: summary?.consumption_count ?? 0,
+      lastConsumer: toLastConsumer(summary),
+    };
+  });
 };
 
 export type UpsertPlanInput = {
@@ -137,60 +110,109 @@ export type UpsertPlanInput = {
   readonly title: string;
   readonly bodyMd: string;
   readonly clusters?: ReadonlyArray<ImplementationCluster>;
+  readonly sourceTurnId?: string | null;
 };
 
-const PLAN_SELECT = `SELECT id, session_id, agent_id, workflow_run_id, title, body_md, status, clusters_json, created_at, updated_at FROM session_plans`;
+const replayKey = (input: UpsertPlanInput): string | null => {
+  const sourceTurnId = input.sourceTurnId ?? null;
+  if (sourceTurnId === null || sourceTurnId.length === 0) {
+    return null;
+  }
+  return sourceTurnId;
+};
 
-export const upsertPlan = async (db: Database, input: UpsertPlanInput): Promise<Plan> => {
-  const now = Date.now();
-  const clustersJson = serializeClusters(input.clusters);
-  const existing = input.workflowRunId
+const planIdForSourceTurn = async (
+  db: Database,
+  input: UpsertPlanInput,
+): Promise<string | undefined> => {
+  const sourceTurnId = replayKey(input);
+  if (sourceTurnId === null) {
+    return undefined;
+  }
+  const rows = await db.select<{ id: string }>(
+    `SELECT id FROM session_artifacts
+     WHERE kind = 'plan' AND agent_id = ? AND source_turn_id = ?
+     LIMIT 1`,
+    [input.agentId, sourceTurnId],
+  );
+  return rows[0]?.id;
+};
+
+const activePlanIdInScope = async (
+  db: Database,
+  input: UpsertPlanInput,
+): Promise<string | undefined> => {
+  const rows = input.workflowRunId
     ? await db.select<{ id: string }>(
-        `SELECT id FROM session_plans
-         WHERE session_id = ? AND workflow_run_id = ? AND status = 'active'
+        `SELECT id FROM session_artifacts
+         WHERE kind = 'plan' AND session_id = ? AND workflow_run_id = ? AND status = 'active'
          ORDER BY created_at DESC LIMIT 1`,
         [input.sessionId, input.workflowRunId],
       )
     : await db.select<{ id: string }>(
-        `SELECT id FROM session_plans
-         WHERE session_id = ? AND workflow_run_id IS NULL AND status = 'active'
+        `SELECT id FROM session_artifacts
+         WHERE kind = 'plan' AND session_id = ? AND workflow_run_id IS NULL AND status = 'active'
          ORDER BY created_at DESC LIMIT 1`,
         [input.sessionId],
       );
-  const activeId = existing[0]?.id;
+  return rows[0]?.id;
+};
+
+export const upsertPlan = async (db: Database, input: UpsertPlanInput): Promise<Plan> => {
+  const replayedId = await planIdForSourceTurn(db, input);
+  if (replayedId !== undefined) {
+    const replayed = await loadPlan(db, replayedId as PlanId);
+    if (replayed !== null) {
+      return toDomain(replayed);
+    }
+  }
+  const metadata = input.clusters && input.clusters.length > 0 ? { clusters: input.clusters } : {};
+  const activeId = await activePlanIdInScope(db, input);
   if (activeId) {
-    await db.execute(
-      `UPDATE session_plans SET title = ?, body_md = ?, clusters_json = ?, updated_at = ? WHERE id = ?`,
-      [input.title, input.bodyMd, clustersJson, now, activeId],
-    );
-    const rows = await db.select<PlanRow>(`${PLAN_SELECT} WHERE id = ?`, [activeId]);
-    const row = rows[0];
-    if (!row) {
+    const updated = await updateArtifactSource({
+      db,
+      input: {
+        id: activeId as PlanId,
+        title: input.title,
+        sourceFormat: 'markdown',
+        sourceText: input.bodyMd,
+        metadata,
+      },
+    });
+    if (!isPlanArtifact(updated)) {
       throw new Error(`plan update failed: ${activeId}`);
     }
-    return toDomain(row);
+    const sourceTurnId = replayKey(input);
+    if (sourceTurnId !== null) {
+      await db.execute(
+        `UPDATE session_artifacts SET source_turn_id = ?
+         WHERE id = ? AND kind = 'plan' AND agent_id = ?`,
+        [sourceTurnId, activeId, input.agentId],
+      );
+    }
+    return toDomain(updated);
   }
-  await db.execute(
-    `INSERT INTO session_plans (id, session_id, agent_id, workflow_run_id, title, body_md, status, clusters_json, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
-    [
-      input.id,
-      input.sessionId,
-      input.agentId,
-      input.workflowRunId ?? null,
-      input.title,
-      input.bodyMd,
-      clustersJson,
-      now,
-      now,
-    ],
-  );
-  const rows = await db.select<PlanRow>(`${PLAN_SELECT} WHERE id = ?`, [input.id]);
-  const row = rows[0];
-  if (!row) {
+  const created = await insertArtifact({
+    db,
+    input: {
+      id: input.id,
+      sessionId: input.sessionId,
+      agentId: input.agentId,
+      workflowRunId: input.workflowRunId ?? null,
+      kind: 'plan',
+      schemaVersion: PLAN_SCHEMA_VERSION,
+      title: input.title,
+      sourceFormat: 'markdown',
+      sourceText: input.bodyMd,
+      metadata,
+      status: 'active',
+      sourceTurnId: replayKey(input),
+    },
+  });
+  if (!isPlanArtifact(created)) {
     throw new Error(`plan insert failed: ${input.id}`);
   }
-  return toDomain(row);
+  return toDomain(created);
 };
 
 export const updatePlanStatus = async (
@@ -198,11 +220,7 @@ export const updatePlanStatus = async (
   id: PlanId,
   status: PlanStatus,
 ): Promise<void> => {
-  await db.execute(`UPDATE session_plans SET status = ?, updated_at = ? WHERE id = ?`, [
-    status,
-    Date.now(),
-    id,
-  ]);
+  await setArtifactStatus({ db, artifactId: id, status, kind: 'plan' });
 };
 
 export const updatePlanBody = async (
@@ -211,16 +229,24 @@ export const updatePlanBody = async (
   title: string,
   bodyMd: string,
 ): Promise<void> => {
-  await db.execute(`UPDATE session_plans SET title = ?, body_md = ?, updated_at = ? WHERE id = ?`, [
-    title,
-    bodyMd,
-    Date.now(),
-    id,
-  ]);
+  const existing = await loadPlan(db, id);
+  if (existing === null) {
+    return;
+  }
+  await updateArtifactSource({
+    db,
+    input: {
+      id,
+      title,
+      sourceFormat: 'markdown',
+      sourceText: bodyMd,
+      metadata: existing.metadata,
+    },
+  });
 };
 
 export const deletePlan = async (db: Database, id: PlanId): Promise<void> => {
-  await db.execute(`DELETE FROM session_plans WHERE id = ?`, [id]);
+  await removeArtifact({ db, artifactId: id, kind: 'plan' });
 };
 
 type PlanConsumptionRow = {
@@ -262,10 +288,10 @@ export const addPlanConsumption = async (
     `INSERT INTO plan_consumptions (id, plan_id, agent_id, consumed_at) VALUES (?, ?, ?, ?)`,
     [input.id, input.planId, input.agentId, now],
   );
-  await db.execute(`UPDATE session_plans SET status = 'consumed', updated_at = ? WHERE id = ?`, [
-    now,
-    input.planId,
-  ]);
+  await db.execute(
+    `UPDATE session_artifacts SET status = 'consumed', updated_at = ? WHERE id = ? AND kind = 'plan'`,
+    [now, input.planId],
+  );
   const rows = await db.select<{ name: string | null }>(`SELECT name FROM agents WHERE id = ?`, [
     input.agentId,
   ]);

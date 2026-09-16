@@ -58,7 +58,7 @@ describe('m135 supersede discarded workflow plans', () => {
     await migrate(db, migrations);
 
     const rows = await db.select<{ readonly id: string; readonly status: string }>(
-      'SELECT id, status FROM session_plans ORDER BY id ASC',
+      "SELECT id, status FROM session_artifacts WHERE kind = 'plan' ORDER BY id ASC",
     );
     expect(rows).toEqual([
       { id: 'plan-discarded', status: 'superseded' },

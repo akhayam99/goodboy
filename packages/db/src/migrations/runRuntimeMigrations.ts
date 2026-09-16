@@ -37,6 +37,7 @@ type CreateSnapshotParams = {
   readonly currentVersion: number;
   readonly databasePath: string;
   readonly db: Database;
+  readonly nextVersion: number;
   readonly now: () => Date;
   readonly storage: MigrationSnapshotStorage;
 };
@@ -71,10 +72,11 @@ const createSnapshot = async ({
   currentVersion,
   databasePath,
   db,
+  nextVersion,
   now,
   storage,
 }: CreateSnapshotParams): Promise<void> => {
-  const snapshotPath = `${databasePath}.pre-m${currentVersion}-${snapshotTimestamp({ date: now() })}.bak`;
+  const snapshotPath = `${databasePath}.pre-m${nextVersion}-from-m${currentVersion}-${snapshotTimestamp({ date: now() })}.bak`;
 
   try {
     await db.exec(`VACUUM INTO '${escapeSqlString({ value: snapshotPath })}'`);
@@ -113,7 +115,8 @@ export const runRuntimeMigrations = async ({
 
   if (pending.length > 0 && isFileDatabase) {
     const currentVersion = rows.reduce((highest, row) => Math.max(highest, row.version), 0);
-    await createSnapshot({ currentVersion, databasePath, db, now, storage });
+    const nextVersion = Math.min(...pending.map((migration) => migration.version));
+    await createSnapshot({ currentVersion, databasePath, db, nextVersion, now, storage });
   }
 
   return migrate(db, migrations);

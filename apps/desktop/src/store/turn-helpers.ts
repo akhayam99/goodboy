@@ -2,16 +2,16 @@ import { invoke } from '@tauri-apps/api/core';
 import { formatError } from '@goodboy/ui';
 import {
   assessPlanReadiness,
-  extractClustersFromMarker,
+  captureArtifactFromTurnText,
   extractHandoff,
   extractMaterializeRequests,
-  extractPlanFromMarker,
   extractScoutDomains,
   planTaskModelFallback,
   resolveTaskModel,
   SLOT_BUDGETS,
   Summarizer,
   SummarizerParseError,
+  type ArtifactCaptureError,
   type ExtractedHandoff,
   type SlotKey,
 } from '@goodboy/core';
@@ -35,6 +35,7 @@ import {
 import type {
   AgentId,
   ContextSlot,
+  SessionArtifact,
   GoalAttachment,
   IsoDateTime,
   MessageAttachment,
@@ -64,6 +65,10 @@ import {
   listPlansForSession as invokeListPlansForSession,
   upsertPlan as invokeUpsertPlan,
 } from '../features/plans/plans';
+import {
+  createArtifact as invokeCreateArtifact,
+  listArtifactsForSession as invokeListArtifactsForSession,
+} from '../features/artifacts/artifacts';
 import { buildProviderSpendBreakdown } from './slices/budget';
 import type { SessionNudge } from './types';
 import type { SetFn, GetFn } from './slice-types';
@@ -596,54 +601,92 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
   }
 };
 
-type CapturePlanParams = {
+type CaptureArtifactsParams = {
   readonly set: SetFn;
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly assistantText: string;
   readonly emittingProvider: ProviderId | null;
+  readonly sourceTurnId: string;
   readonly workflowRunId?: WorkflowRunId | undefined;
 };
 
-export const capturePlanFromTurn = async ({
+export type CapturedArtifacts = {
+  readonly plan: PlanWithCount | null;
+  readonly artifact: SessionArtifact | null;
+  readonly error: ArtifactCaptureError | null;
+};
+
+const NOTHING_CAPTURED: CapturedArtifacts = { plan: null, artifact: null, error: null };
+
+export const captureArtifactsFromTurn = async ({
   set,
   sessionId,
   agentId,
   assistantText,
   emittingProvider,
+  sourceTurnId,
   workflowRunId,
-}: CapturePlanParams): Promise<PlanWithCount | null> => {
+}: CaptureArtifactsParams): Promise<CapturedArtifacts> => {
+  const captured = captureArtifactFromTurnText({ assistantText, emittingProvider });
+  if (captured.status === 'none') {
+    return NOTHING_CAPTURED;
+  }
+  if (captured.status === 'error') {
+    return { plan: null, artifact: null, error: captured };
+  }
+  const parsed = captured.artifact;
   try {
-    const extracted = extractPlanFromMarker(assistantText);
-    if (!extracted) {
-      return null;
+    if (parsed.kind === 'plan') {
+      await invokeUpsertPlan({
+        sessionId,
+        agentId,
+        ...(workflowRunId !== undefined && { workflowRunId }),
+        title: parsed.title,
+        bodyMd: parsed.sourceText,
+        ...(parsed.metadata.clusters && { clusters: parsed.metadata.clusters }),
+        sourceTurnId,
+      });
+      const refreshed = await invokeListPlansForSession(sessionId);
+      set((state) => ({
+        sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
+      }));
+      const plan =
+        refreshed.find((p) => p.title === parsed.title && p.bodyMd === parsed.sourceText) ??
+        refreshed[0] ??
+        null;
+      return { plan, artifact: null, error: null };
     }
-    const clusters = extractClustersFromMarker({
-      assistantText,
-      emittingProvider,
-    });
-    await invokeUpsertPlan({
+    const artifact = await invokeCreateArtifact({
       sessionId,
       agentId,
-      ...(workflowRunId !== undefined && { workflowRunId }),
-      title: extracted.title,
-      bodyMd: extracted.bodyMd,
-      ...(clusters && { clusters }),
+      workflowRunId: workflowRunId ?? null,
+      kind: parsed.kind,
+      schemaVersion: parsed.schemaVersion,
+      title: parsed.title,
+      sourceFormat: parsed.sourceFormat,
+      sourceText: parsed.sourceText,
+      metadata: parsed.metadata,
+      sourceTurnId,
     });
-    const refreshed = await invokeListPlansForSession(sessionId);
+    const refreshed = await invokeListArtifactsForSession(sessionId);
     set((state) => ({
-      sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
+      sessionArtifacts: { ...state.sessionArtifacts, [sessionId]: refreshed },
     }));
-    return (
-      refreshed.find((p) => p.title === extracted.title && p.bodyMd === extracted.bodyMd) ??
-      refreshed[0] ??
-      null
-    );
+    return { plan: null, artifact, error: null };
   } catch (err) {
     if (import.meta.env.DEV) {
-      console.warn(`[plan-capture] failed for session ${sessionId}: ${formatError(err)}`);
+      console.warn(`[artifact-capture] failed for session ${sessionId}: ${formatError(err)}`);
     }
-    return null;
+    return {
+      plan: null,
+      artifact: null,
+      error: {
+        status: 'error',
+        code: 'invalid_payload',
+        message: formatError(err),
+      },
+    };
   }
 };
 

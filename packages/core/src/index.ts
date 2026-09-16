@@ -104,6 +104,22 @@ export {
   type RoleRegistryEntry,
 } from './roles';
 
+export {
+  ARTIFACT_MAX_BYTES,
+  ARTIFACT_SCHEMA_VERSION,
+  captureArtifactFromTurnText,
+  parseArtifactEnvelope,
+  parseLegacyPlanMarkers,
+  type ArtifactCaptureError,
+  type ArtifactCaptureErrorCode,
+  type ArtifactCaptureResult,
+  type ArtifactOrigin,
+  type ParsedArtifact,
+  type ParsedPlanArtifact,
+  type ParsedReportArtifact,
+  type ParsedWireframeArtifact,
+} from './artifacts';
+
 export { classifyFirstTurn, type AgentKindLabel } from './first-turn-classifier';
 
 export {

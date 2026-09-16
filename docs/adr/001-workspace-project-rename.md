@@ -53,7 +53,8 @@ every query and every new feature.
   0.1.x calls `workspaces` holds projects. There is no in-place downgrade.
 - The rollback path is the pre-migration snapshot: at boot, pending
   migrations trigger a `VACUUM INTO` snapshot next to the database
-  (`data.db.pre-m<version>-<timestamp>.bak`, two kept) before anything runs,
+  (`data.db.pre-m<next>-from-m<current>-<timestamp>.bak`, two kept) before
+  anything runs,
   and a failed snapshot aborts the migrations
   ([architecture.md](../architecture.md) → Database migrations). Going back
   to 0.1.x means restoring that file.
