@@ -29,7 +29,12 @@ vi.mock('../../../features/worktree/worktree', () => ({
   listBranchCommits: (path: string) => commitsSpy(path as never),
 }));
 
-const listSpy = vi.fn(async (_args: unknown) => []);
+const listSpy = vi.fn(async (args: unknown) => {
+  const relPath = String((args as { readonly relPath?: string } | null)?.relPath ?? '');
+  return relPath === ''
+    ? [{ name: 'tailwind.config.ts', relPath: 'tailwind.config.ts', isDir: false }]
+    : [];
+});
 const readSpy = vi.fn(async ({ relPath }: { readonly relPath: string }) => {
   if (relPath === 'tailwind.config.ts') {
     return { type: 'text' as const, text: 'export default {};', truncated: false };
@@ -159,7 +164,11 @@ describe('spawnWireframeAgent', () => {
   });
 
   it('spawns a standalone wireframe agent with no step, run or parent linkage', async () => {
-    await spawnWireframeAgent(getWith())({ sessionId: SESSION_ID, fidelity: 'low' });
+    await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      attachments: [],
+      fidelity: 'low',
+    });
     const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
     expect(spawnAgentSpy.mock.calls[0]?.[0]).toBe(SESSION_ID);
     expect(args['kindOverride']).toBe('wireframe');
@@ -171,6 +180,7 @@ describe('spawnWireframeAgent', () => {
   it('scopes the evidence to a run without joining the agent to it', async () => {
     await spawnWireframeAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       fidelity: 'low',
       workflowRunId: RUN_ID,
     });
@@ -181,6 +191,7 @@ describe('spawnWireframeAgent', () => {
   it('keeps a re-spawn from a supplied evidence pack standalone', async () => {
     await spawnWireframeAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       fidelity: 'low',
       workflowRunId: RUN_ID,
       evidence: 'the original kickoff',
@@ -193,6 +204,7 @@ describe('spawnWireframeAgent', () => {
   it('spawns without taking focus when asked', async () => {
     await spawnWireframeAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       fidelity: 'low',
       focus: 'none',
     });
@@ -201,7 +213,11 @@ describe('spawnWireframeAgent', () => {
   });
 
   it('carries the product evidence and the document contract in the kickoff', async () => {
-    await spawnWireframeAgent(getWith())({ sessionId: SESSION_ID, fidelity: 'low' });
+    await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      attachments: [],
+      fidelity: 'low',
+    });
     const prompt = String(
       (spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>)['initialPrompt'],
     );
@@ -212,7 +228,11 @@ describe('spawnWireframeAgent', () => {
   });
 
   it('carries the goal the user wrote into the kickoff pack, not the clamped title', async () => {
-    await spawnWireframeAgent(withGoalSlot())({ sessionId: SESSION_ID, fidelity: 'low' });
+    await spawnWireframeAgent(withGoalSlot())({
+      sessionId: SESSION_ID,
+      attachments: [],
+      fidelity: 'low',
+    });
     const prompt = String(
       (spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>)['initialPrompt'],
     );
@@ -221,7 +241,11 @@ describe('spawnWireframeAgent', () => {
   });
 
   it('sends the title alone as the goal when no goal slot says more', async () => {
-    await spawnWireframeAgent(getWith())({ sessionId: SESSION_ID, fidelity: 'low' });
+    await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      attachments: [],
+      fidelity: 'low',
+    });
     const prompt = String(
       (spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>)['initialPrompt'],
     );
@@ -230,7 +254,11 @@ describe('spawnWireframeAgent', () => {
   });
 
   it('skips the design profile at low fidelity', async () => {
-    await spawnWireframeAgent(getWith())({ sessionId: SESSION_ID, fidelity: 'low' });
+    await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      attachments: [],
+      fidelity: 'low',
+    });
     expect(readSpy).not.toHaveBeenCalled();
     const prompt = String(
       (spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>)['initialPrompt'],
@@ -242,6 +270,7 @@ describe('spawnWireframeAgent', () => {
   it('adds a redacted brief while retaining product evidence, design profile and contract', async () => {
     await spawnWireframeAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       fidelity: 'high',
       brief: 'show the Harborline inbox with api_key=harborline-test-value',
     });
@@ -254,7 +283,11 @@ describe('spawnWireframeAgent', () => {
   });
 
   it('collects a pinned design profile at high fidelity', async () => {
-    await spawnWireframeAgent(getWith())({ sessionId: SESSION_ID, fidelity: 'high' });
+    await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      attachments: [],
+      fidelity: 'high',
+    });
     expect(readSpy).toHaveBeenCalled();
     const prompt = String(
       (spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>)['initialPrompt'],
@@ -266,16 +299,17 @@ describe('spawnWireframeAgent', () => {
 
   it('falls back to a generic theme when high fidelity has no mount', async () => {
     const get = getWith({ sessionProjectMounts: {}, sessionActiveMount: {} });
-    await spawnWireframeAgent(get)({ sessionId: SESSION_ID, fidelity: 'high' });
+    await spawnWireframeAgent(get)({ sessionId: SESSION_ID, attachments: [], fidelity: 'high' });
     const prompt = String(
       (spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>)['initialPrompt'],
     );
-    expect(prompt).toContain('the app collected no design profile');
+    expect(prompt).toContain('no repository is mounted, so nothing could be read');
   });
 
   it('reuses a supplied evidence pack for a re-spawn', async () => {
     await spawnWireframeAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       fidelity: 'high',
       evidence: 'the original kickoff',
     });
@@ -287,6 +321,7 @@ describe('spawnWireframeAgent', () => {
   it('records the source run without an executing run for a run scoped wireframe', async () => {
     await spawnWireframeAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       fidelity: 'high',
       workflowRunId: RUN_ID,
       brief: 'show the Harborline inbox',
@@ -301,7 +336,11 @@ describe('spawnWireframeAgent', () => {
   });
 
   it('records no design profile at low fidelity and no run outside a workflow', async () => {
-    await spawnWireframeAgent(getWith())({ sessionId: SESSION_ID, fidelity: 'low' });
+    await spawnWireframeAgent(getWith())({
+      sessionId: SESSION_ID,
+      attachments: [],
+      fidelity: 'low',
+    });
     const recorded = recordProvenanceSpy.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(recorded['designProfileSummary']).toBeNull();
     expect(recorded['sourceWorkflowRunId']).toBeNull();
@@ -316,6 +355,7 @@ describe('spawnWireframeAgent', () => {
     recordProvenanceSpy.mockRejectedValueOnce(new Error('database is locked'));
     const agentId = await spawnWireframeAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       fidelity: 'low',
     });
     expect(agentId).toBe(AGENT_ID);
@@ -324,6 +364,7 @@ describe('spawnWireframeAgent', () => {
   it('collects fresh evidence and provenance when the supplied pack is whitespace', async () => {
     await spawnWireframeAgent(getWith())({
       sessionId: SESSION_ID,
+      attachments: [],
       fidelity: 'high',
       evidence: ' \n ',
     });
@@ -339,7 +380,11 @@ describe('spawnWireframeAgent', () => {
 
   it('throws when the session is unknown', async () => {
     await expect(
-      spawnWireframeAgent(getWith({ sessions: [] }))({ sessionId: SESSION_ID, fidelity: 'low' }),
+      spawnWireframeAgent(getWith({ sessions: [] }))({
+        sessionId: SESSION_ID,
+        attachments: [],
+        fidelity: 'low',
+      }),
     ).rejects.toThrow('session not found');
   });
 });

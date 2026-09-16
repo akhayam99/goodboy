@@ -10,6 +10,8 @@ import type {
 } from '@goodboy/types';
 import type { ContextSlot } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
+import { ATTACHMENT_KIND_ROUTING } from '../providers/attachment-routing';
+import type { ArtifactAttachment } from './artifactAttachments';
 import { REPORT_CONTEXT_LIMITS } from '../reports/buildReportContext';
 import { prepareArtifactEvidence } from './prepareArtifactEvidence';
 
@@ -17,6 +19,12 @@ const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
 const RUN_ID = 'run-1' as WorkflowRunId;
 const NOW = '2026-09-16T10:00:00.000Z' as IsoDateTime;
+const SCREEN: ArtifactAttachment = {
+  id: 'att-inbox',
+  fileName: 'inbox.png',
+  mimeType: 'image/png',
+  relPath: '.goodboy/attachments/att-inbox-inbox.png',
+};
 const session: Session = {
   id: SESSION_ID,
   workspaceId: 'ws-1' as WorkspaceId,
@@ -95,6 +103,7 @@ describe('prepareArtifactEvidence', () => {
       session,
       workflowRunId: RUN_ID,
       brief: null,
+      attachments: [],
       executingAgentId: null,
       kind: 'report',
       reportType: 'session-summary',
@@ -114,12 +123,13 @@ describe('prepareArtifactEvidence', () => {
       session,
       workflowRunId: RUN_ID,
       brief: null,
+      attachments: [],
       executingAgentId: null,
       kind: 'wireframe',
       target: 'both',
       fidelity: 'high',
     });
-    expect(prepared.text).toContain('the app collected no design profile');
+    expect(prepared.text).toContain('no repository is mounted, so nothing could be read');
     expect(prepared.text).toContain('never invent branding');
     expect(prepared.provenance.designProfileSummary).toBeNull();
     expect(prepared.provenance.sourceWorkflowRunId).toBe(RUN_ID);
@@ -133,6 +143,7 @@ describe('prepareArtifactEvidence', () => {
         session,
         workflowRunId: RUN_ID,
         brief: null,
+        attachments: [],
         executingAgentId: EXECUTING_ID,
         ...(kind === 'report'
           ? { kind: 'report' as const, reportType: 'session-summary' as const }
@@ -155,6 +166,7 @@ describe('prepareArtifactEvidence', () => {
       session,
       workflowRunId: RUN_ID,
       brief: null,
+      attachments: [],
       executingAgentId: null,
       kind: 'report',
       reportType: 'session-summary',
@@ -184,12 +196,52 @@ describe('prepareArtifactEvidence session goal', () => {
         session,
         workflowRunId: RUN_ID,
         brief: null,
+        attachments: [],
         executingAgentId: null,
         ...(kind === 'report'
           ? { kind: 'report' as const, reportType: 'session-summary' as const }
           : { kind: 'wireframe' as const, fidelity: 'low' as const, target: 'both' as const }),
       });
       expect(prepared.text).toContain(`## goal\n\n${LONG_GOAL}`);
+    },
+  );
+
+  it.each(['report', 'wireframe'] as const)(
+    'sends an attached screen into the %s pack as a path to read',
+    async (kind) => {
+      const prepared = await prepareArtifactEvidence({
+        state,
+        session,
+        workflowRunId: RUN_ID,
+        brief: 'match this layout',
+        attachments: [SCREEN],
+        executingAgentId: null,
+        ...(kind === 'report'
+          ? { kind: 'report' as const, reportType: 'session-summary' as const }
+          : { kind: 'wireframe' as const, fidelity: 'low' as const, target: 'both' as const }),
+      });
+      expect(prepared.text).toContain('## attachments');
+      expect(prepared.text).toContain(SCREEN.relPath);
+      expect(prepared.text).toContain('read each path with your Read tool before relying on it');
+    },
+  );
+
+  it.each(['report', 'wireframe'] as const)(
+    'never routes a %s attachment through the agent kind table that would drop it',
+    async (kind) => {
+      expect(ATTACHMENT_KIND_ROUTING.image).not.toContain(kind);
+      const prepared = await prepareArtifactEvidence({
+        state,
+        session,
+        workflowRunId: RUN_ID,
+        brief: null,
+        attachments: [SCREEN],
+        executingAgentId: null,
+        ...(kind === 'report'
+          ? { kind: 'report' as const, reportType: 'session-summary' as const }
+          : { kind: 'wireframe' as const, fidelity: 'low' as const, target: 'both' as const }),
+      });
+      expect(prepared.text).toContain(SCREEN.relPath);
     },
   );
 
@@ -200,6 +252,7 @@ describe('prepareArtifactEvidence session goal', () => {
       session,
       workflowRunId: RUN_ID,
       brief: null,
+      attachments: [],
       executingAgentId: null,
       kind: 'report',
       reportType: 'session-summary',

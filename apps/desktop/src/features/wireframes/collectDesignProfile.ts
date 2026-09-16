@@ -27,6 +27,9 @@ export type DesignProfile = Readonly<{
   notes: ReadonlyArray<string>;
 }>;
 
+export type DesignEvidence =
+  Readonly<{ source: 'none' }> | Readonly<{ source: 'mount'; profile: DesignProfile }>;
+
 export type DesignProfileEntry = Readonly<{
   name: string;
   relPath: string;
@@ -58,47 +61,63 @@ export const DESIGN_PROFILE_LIMITS = {
   maxVariantsPerGroup: 10,
   maxLayoutExamples: 3,
   maxScannedFiles: 40,
+  maxDirectoryDepth: 6,
+  maxWalkedDirectories: 240,
 } as const;
 
-const TAILWIND_CANDIDATES = [
-  'tailwind.config.ts',
-  'tailwind.config.js',
-  'tailwind.config.cjs',
-  'tailwind.config.mjs',
-  'packages/ui/tailwind.config.ts',
-  'apps/desktop/tailwind.config.ts',
-];
+const NO_MOUNT_NOTE = 'no mount is attached, so no design evidence was read';
 
-const TOKEN_CANDIDATES = [
-  'apps/desktop/src/styles.css',
-  'packages/ui/src/styles.css',
-  'src/styles.css',
-  'src/index.css',
-  'src/app/globals.css',
-  'styles/globals.css',
-];
+const READ_SHARE = {
+  tailwind: 3,
+  tokens: 12,
+  variants: 20,
+  layouts: 5,
+} as const;
 
-const COMPONENT_DIRECTORIES = [
-  'packages/ui/src/components',
-  'src/components/ui',
-  'src/components',
-  'app/components',
-];
+const SKIPPED_DIRECTORIES = new Set([
+  'node_modules',
+  'dist',
+  'build',
+  'out',
+  '.next',
+  'coverage',
+  'target',
+  '.git',
+  '.turbo',
+  'vendor',
+]);
 
-const LAYOUT_CANDIDATES = [
-  'src/App.tsx',
-  'apps/desktop/src/App.tsx',
-  'src/app/layout.tsx',
-  'app/layout.tsx',
-  'src/app/page.tsx',
-  'app/page.tsx',
-];
+const COMPONENT_DIRECTORY_NAMES = new Set(['components', 'ui', 'design-system', 'ds']);
+
+const ROUTE_DIRECTORY_NAMES = new Set(['app', 'pages']);
+
+const LAYOUT_FILE_NAMES = new Set(['App.tsx', 'layout.tsx', 'page.tsx', '_app.tsx']);
+
+const TOKEN_FILE_NAMES = ['styles', 'globals', 'index', 'theme', 'tokens', 'variables'];
+
+const TAILWIND_CONFIG_NAME = /^tailwind\.config\.(?:ts|js|cjs|mjs)$/;
 
 const CSS_VARIABLE = /--([a-z0-9-]+)\s*:\s*([^;\n]{1,64});/gi;
 
 const VARIANT_BLOCK = /variants\s*:\s*\{\s*([\s\S]{0,600}?)\n\s*\}/;
 
 const VARIANT_KEY = /^\s{0,12}([a-zA-Z][a-zA-Z0-9_]*)\s*:/gm;
+
+type ReadBudget = { remaining: number };
+
+type DiscoveredFile = Readonly<{
+  path: string;
+  name: string;
+  depth: number;
+}>;
+
+type Discovery = Readonly<{
+  tailwind: ReadonlyArray<DiscoveredFile>;
+  styles: ReadonlyArray<DiscoveredFile>;
+  components: ReadonlyArray<DiscoveredFile>;
+  layouts: ReadonlyArray<DiscoveredFile>;
+  isBounded: boolean;
+}>;
 
 const clamp = ({ text, max }: { readonly text: string; readonly max: number }): string =>
   text.length <= max ? text : `${text.slice(0, max)}\n... truncated`;
@@ -107,11 +126,17 @@ const readText = async ({
   read,
   rootPath,
   relPath,
+  budget,
 }: {
   readonly read: CollectDesignProfileParams['read'];
   readonly rootPath: string;
   readonly relPath: string;
+  readonly budget: ReadBudget;
 }): Promise<string | null> => {
+  if (budget.remaining <= 0) {
+    return null;
+  }
+  budget.remaining -= 1;
   try {
     const content = await read({ sessionDir: rootPath, relPath });
     return content.type === 'text' ? content.text : null;
@@ -136,18 +161,120 @@ const listEntries = async ({
   }
 };
 
+const stylePriority = ({ name }: { readonly name: string }): number => {
+  const base = name.slice(0, name.length - '.css'.length).toLowerCase();
+  const index = TOKEN_FILE_NAMES.indexOf(base);
+  return index === -1 ? TOKEN_FILE_NAMES.length : index;
+};
+
+const byStylePreference = (left: DiscoveredFile, right: DiscoveredFile): number => {
+  const priority = stylePriority({ name: left.name }) - stylePriority({ name: right.name });
+  if (priority !== 0) {
+    return priority;
+  }
+  if (left.depth !== right.depth) {
+    return left.depth - right.depth;
+  }
+  return left.path.localeCompare(right.path);
+};
+
+const discover = async ({
+  list,
+  rootPath,
+}: {
+  readonly list: CollectDesignProfileParams['list'];
+  readonly rootPath: string;
+}): Promise<Discovery> => {
+  const tailwind: Array<DiscoveredFile> = [];
+  const styles: Array<DiscoveredFile> = [];
+  const components: Array<DiscoveredFile> = [];
+  const layouts: Array<DiscoveredFile> = [];
+  const queue: Array<{
+    readonly relPath: string;
+    readonly depth: number;
+    readonly isComponentTree: boolean;
+    readonly isRouteTree: boolean;
+  }> = [{ relPath: '', depth: 0, isComponentTree: false, isRouteTree: false }];
+  let walked = 0;
+  let isBounded = false;
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (current === undefined) {
+      break;
+    }
+    if (walked >= DESIGN_PROFILE_LIMITS.maxWalkedDirectories) {
+      isBounded = true;
+      break;
+    }
+    walked += 1;
+    const entries = await listEntries({ list, rootPath, relPath: current.relPath });
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) {
+        continue;
+      }
+      if (entry.isDir) {
+        if (SKIPPED_DIRECTORIES.has(entry.name)) {
+          continue;
+        }
+        if (current.depth + 1 > DESIGN_PROFILE_LIMITS.maxDirectoryDepth) {
+          isBounded = true;
+          continue;
+        }
+        queue.push({
+          relPath: entry.relPath,
+          depth: current.depth + 1,
+          isComponentTree: current.isComponentTree || COMPONENT_DIRECTORY_NAMES.has(entry.name),
+          isRouteTree: ROUTE_DIRECTORY_NAMES.has(entry.name),
+        });
+        continue;
+      }
+      const file: DiscoveredFile = {
+        path: entry.relPath,
+        name: entry.name,
+        depth: current.depth,
+      };
+      if (TAILWIND_CONFIG_NAME.test(entry.name)) {
+        tailwind.push(file);
+      }
+      if (entry.name.endsWith('.css')) {
+        styles.push(file);
+      }
+      if (current.isComponentTree && entry.name.endsWith('.tsx')) {
+        components.push(file);
+      }
+      if (
+        LAYOUT_FILE_NAMES.has(entry.name) ||
+        (current.isRouteTree && entry.name.endsWith('.tsx'))
+      ) {
+        layouts.push(file);
+      }
+    }
+  }
+  return {
+    tailwind: tailwind.slice(0, READ_SHARE.tailwind),
+    styles: [...styles].sort(byStylePreference).slice(0, READ_SHARE.tokens),
+    components: components.slice(0, READ_SHARE.variants),
+    layouts: layouts.slice(0, READ_SHARE.layouts),
+    isBounded,
+  };
+};
+
 const collectTailwind = async ({
   read,
   rootPath,
+  candidates,
+  budget,
 }: {
   readonly read: CollectDesignProfileParams['read'];
   readonly rootPath: string;
+  readonly candidates: ReadonlyArray<DiscoveredFile>;
+  readonly budget: ReadBudget;
 }): Promise<DesignProfileFileRef | null> => {
-  for (const relPath of TAILWIND_CANDIDATES) {
-    const text = await readText({ read, rootPath, relPath });
+  for (const candidate of candidates) {
+    const text = await readText({ read, rootPath, relPath: candidate.path, budget });
     if (text !== null && text.trim().length > 0) {
       return {
-        path: relPath,
+        path: candidate.path,
         excerpt: clamp({ text, max: DESIGN_PROFILE_LIMITS.maxExcerptChars }),
       };
     }
@@ -158,17 +285,21 @@ const collectTailwind = async ({
 const collectTokens = async ({
   read,
   rootPath,
+  candidates,
+  budget,
 }: {
   readonly read: CollectDesignProfileParams['read'];
   readonly rootPath: string;
+  readonly candidates: ReadonlyArray<DiscoveredFile>;
+  readonly budget: ReadBudget;
 }): Promise<ReadonlyArray<DesignProfileToken>> => {
-  const tokens: DesignProfileToken[] = [];
+  const tokens: Array<DesignProfileToken> = [];
   const seen = new Set<string>();
-  for (const relPath of TOKEN_CANDIDATES) {
+  for (const candidate of candidates) {
     if (tokens.length >= DESIGN_PROFILE_LIMITS.maxTokens) {
       break;
     }
-    const text = await readText({ read, rootPath, relPath });
+    const text = await readText({ read, rootPath, relPath: candidate.path, budget });
     if (text === null) {
       continue;
     }
@@ -181,7 +312,7 @@ const collectTokens = async ({
         continue;
       }
       seen.add(name);
-      tokens.push({ name, value, path: relPath });
+      tokens.push({ name, value, path: candidate.path });
       if (tokens.length >= DESIGN_PROFILE_LIMITS.maxTokens) {
         break;
       }
@@ -196,7 +327,7 @@ const variantNamesIn = ({ source }: { readonly source: string }): ReadonlyArray<
     return [];
   }
   const body = block[1] ?? '';
-  const names: string[] = [];
+  const names: Array<string> = [];
   VARIANT_KEY.lastIndex = 0;
   let match: RegExpExecArray | null;
   while ((match = VARIANT_KEY.exec(body)) !== null) {
@@ -212,46 +343,34 @@ const variantNamesIn = ({ source }: { readonly source: string }): ReadonlyArray<
 };
 
 const collectVariants = async ({
-  list,
   read,
   rootPath,
+  candidates,
+  budget,
 }: {
-  readonly list: CollectDesignProfileParams['list'];
   readonly read: CollectDesignProfileParams['read'];
   readonly rootPath: string;
+  readonly candidates: ReadonlyArray<DiscoveredFile>;
+  readonly budget: ReadBudget;
 }): Promise<ReadonlyArray<DesignProfileVariantGroup>> => {
-  const groups: DesignProfileVariantGroup[] = [];
-  let scanned = 0;
-  for (const directory of COMPONENT_DIRECTORIES) {
+  const groups: Array<DesignProfileVariantGroup> = [];
+  for (const candidate of candidates) {
     if (groups.length >= DESIGN_PROFILE_LIMITS.maxVariantGroups) {
       break;
     }
-    const entries = await listEntries({ list, rootPath, relPath: directory });
-    for (const entry of entries) {
-      if (
-        groups.length >= DESIGN_PROFILE_LIMITS.maxVariantGroups ||
-        scanned >= DESIGN_PROFILE_LIMITS.maxScannedFiles
-      ) {
-        break;
-      }
-      if (entry.isDir || !entry.name.endsWith('.tsx')) {
-        continue;
-      }
-      scanned += 1;
-      const source = await readText({ read, rootPath, relPath: entry.relPath });
-      if (source === null) {
-        continue;
-      }
-      const variants = variantNamesIn({ source });
-      if (variants.length === 0) {
-        continue;
-      }
-      groups.push({
-        path: entry.relPath,
-        component: entry.name.replace(/\.tsx$/, ''),
-        variants,
-      });
+    const source = await readText({ read, rootPath, relPath: candidate.path, budget });
+    if (source === null) {
+      continue;
     }
+    const variants = variantNamesIn({ source });
+    if (variants.length === 0) {
+      continue;
+    }
+    groups.push({
+      path: candidate.path,
+      component: candidate.name.replace(/\.tsx$/, ''),
+      variants,
+    });
   }
   return groups;
 };
@@ -259,26 +378,48 @@ const collectVariants = async ({
 const collectLayoutExamples = async ({
   read,
   rootPath,
+  candidates,
+  budget,
 }: {
   readonly read: CollectDesignProfileParams['read'];
   readonly rootPath: string;
+  readonly candidates: ReadonlyArray<DiscoveredFile>;
+  readonly budget: ReadBudget;
 }): Promise<ReadonlyArray<DesignProfileFileRef>> => {
-  const examples: DesignProfileFileRef[] = [];
-  for (const relPath of LAYOUT_CANDIDATES) {
+  const examples: Array<DesignProfileFileRef> = [];
+  for (const candidate of candidates) {
     if (examples.length >= DESIGN_PROFILE_LIMITS.maxLayoutExamples) {
       break;
     }
-    const text = await readText({ read, rootPath, relPath });
+    const text = await readText({ read, rootPath, relPath: candidate.path, budget });
     if (text === null || text.trim().length === 0) {
       continue;
     }
     examples.push({
-      path: relPath,
+      path: candidate.path,
       excerpt: clamp({ text, max: DESIGN_PROFILE_LIMITS.maxExcerptChars }),
     });
   }
   return examples;
 };
+
+type UnwalkedProfileParams = Readonly<{
+  commitSha: string | null;
+  notes: ReadonlyArray<string>;
+}>;
+
+export const unwalkedDesignProfile = ({
+  commitSha,
+  notes,
+}: UnwalkedProfileParams): DesignProfile => ({
+  themeName: GENERIC_THEME_NAME,
+  commitSha,
+  tailwind: null,
+  tokens: [],
+  variants: [],
+  layoutExamples: [],
+  notes,
+});
 
 export const collectDesignProfile = async ({
   rootPath,
@@ -288,34 +429,46 @@ export const collectDesignProfile = async ({
   read,
 }: CollectDesignProfileParams): Promise<DesignProfile> => {
   if (rootPath.length === 0) {
-    return {
-      themeName: GENERIC_THEME_NAME,
-      commitSha,
-      tailwind: null,
-      tokens: [],
-      variants: [],
-      layoutExamples: [],
-      notes: ['no mount is attached, so no design evidence was read'],
-    };
+    return unwalkedDesignProfile({ commitSha, notes: [NO_MOUNT_NOTE] });
   }
-  const [tailwind, tokens, variants, layoutExamples] = await Promise.all([
-    collectTailwind({ read, rootPath }),
-    collectTokens({ read, rootPath }),
-    collectVariants({ list, read, rootPath }),
-    collectLayoutExamples({ read, rootPath }),
-  ]);
-  const notes: string[] = [];
+  const budget: ReadBudget = { remaining: DESIGN_PROFILE_LIMITS.maxScannedFiles };
+  const discovery = await discover({ list, rootPath });
+  const tailwind = await collectTailwind({
+    read,
+    rootPath,
+    candidates: discovery.tailwind,
+    budget,
+  });
+  const tokens = await collectTokens({ read, rootPath, candidates: discovery.styles, budget });
+  const variants = await collectVariants({
+    read,
+    rootPath,
+    candidates: discovery.components,
+    budget,
+  });
+  const layoutExamples = await collectLayoutExamples({
+    read,
+    rootPath,
+    candidates: discovery.layouts,
+    budget,
+  });
+  const notes: Array<string> = [];
   if (tailwind === null) {
-    notes.push('no tailwind config was found at the known paths');
+    notes.push('the walk found no tailwind config in this repository');
   }
   if (tokens.length === 0) {
-    notes.push('no css custom properties were found at the known paths');
+    notes.push('the walk found no css custom properties in this repository');
   }
   if (variants.length === 0) {
-    notes.push('no component variant maps were found');
+    notes.push('the walk found no component variant map in this repository');
   }
   if (layoutExamples.length === 0) {
-    notes.push('no layout example was found');
+    notes.push('the walk found no layout example in this repository');
+  }
+  if (discovery.isBounded) {
+    notes.push(
+      `the walk stopped at ${DESIGN_PROFILE_LIMITS.maxDirectoryDepth} folders deep, so deeper folders were not read`,
+    );
   }
   if (commitSha === null) {
     notes.push('the mount head commit was not resolved, so the refs are not pinned');
@@ -333,3 +486,9 @@ export const collectDesignProfile = async ({
     notes,
   };
 };
+
+export const hasDesignEvidence = ({ profile }: { readonly profile: DesignProfile }): boolean =>
+  profile.tailwind !== null ||
+  profile.tokens.length > 0 ||
+  profile.variants.length > 0 ||
+  profile.layoutExamples.length > 0;

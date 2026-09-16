@@ -11,6 +11,11 @@ import type {
 import { redactSecrets } from '../../shared/utils/redactSecrets';
 import { ARTIFACT_BRIEF_CLIP_NOTE, clipBrief, formatBriefCount } from '../artifacts/artifactBrief';
 import {
+  artifactAttachmentsSection,
+  attachmentsInventoryRow,
+  type ArtifactAttachment,
+} from '../artifacts/artifactAttachments';
+import {
   briefInventoryRow,
   excludedInventoryRow,
   keptRowState,
@@ -62,6 +67,7 @@ export type ReportDiffEvidence = Readonly<{
 export type ReportContextParams = Readonly<{
   reportType: ReportType;
   brief?: string | null;
+  attachments: ReadonlyArray<ArtifactAttachment>;
   session: Session;
   goal: SessionGoalText;
   agents: ReadonlyArray<Agent>;
@@ -437,6 +443,7 @@ const eventSection = ({
 export const buildReportContext = ({
   reportType,
   brief = null,
+  attachments,
   session,
   goal,
   agents,
@@ -479,6 +486,7 @@ export const buildReportContext = ({
   }
 
   inventory.push(briefInventoryRow({ brief: request.text }));
+  inventory.push(attachmentsInventoryRow({ attachments }));
   inventory.push({
     id: 'goal',
     label: 'goal',
@@ -489,9 +497,11 @@ export const buildReportContext = ({
       : [],
   });
 
+  const attachmentsBlock = artifactAttachmentsSection({ attachments });
   const body = [
     header,
     ...goalBlock,
+    ...(attachmentsBlock === null ? [] : [attachmentsBlock]),
     agentSection({ agents: scopedAgentList, transcripts, truncations, sourceIds, inventory }),
     artifactSection({ artifacts: scopedArtifactList, truncations, sourceIds, inventory }),
     diffSection({ diff, reason: diffUnavailableReason, inventory }),

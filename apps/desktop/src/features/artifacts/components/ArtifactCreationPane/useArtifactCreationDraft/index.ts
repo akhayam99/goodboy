@@ -10,18 +10,21 @@ import type {
   ArtifactCreationDraft,
   ArtifactCreationRouting,
 } from '../../../../../store/slices/artifactDrafts/types';
+import type { ArtifactAttachment } from '../../../artifactAttachments';
 import type { GeneratedArtifactKind } from '../../../artifactCollection';
 import { ARTIFACT_CREATION_ADAPTERS } from '../../../artifactCreationAdapters';
 
 export type ArtifactCreationDraftHandle = Readonly<{
   draft: ArtifactCreationDraft;
   brief: string;
+  attachments: ReadonlyArray<ArtifactAttachment>;
   choice: string;
   secondChoice: string;
   basedOn: ArtifactBasedOn;
   routing: ArtifactCreationRouting | null;
   isEmpty: boolean;
   setBrief: (brief: string) => void;
+  setAttachments: (attachments: ReadonlyArray<ArtifactAttachment>) => void;
   setChoice: (choice: string) => void;
   setSecondChoice: (choice: string) => void;
   setBasedOn: (basedOn: ArtifactBasedOn) => void;
@@ -47,6 +50,9 @@ export const useArtifactCreationDraft = ({
     () => stored ?? defaultArtifactDraft({ kind, now: now() }),
   );
   const [brief, setBrief] = useState(initial.brief);
+  const [attachments, setAttachments] = useState<ReadonlyArray<ArtifactAttachment>>(
+    initial.attachments,
+  );
   const [choice, setChoice] = useState(adapter.choiceOf({ draft: initial }));
   const [secondChoice, setSecondChoice] = useState(
     adapter.secondChoice?.choiceOf({ draft: initial }) ?? '',
@@ -56,14 +62,14 @@ export const useArtifactCreationDraft = ({
 
   const draft = useMemo<ArtifactCreationDraft>(() => {
     const withChoice = adapter.withChoice({
-      draft: { ...initial, brief, basedOn, routing },
+      draft: { ...initial, brief, attachments, basedOn, routing },
       choice,
     });
     const second = adapter.secondChoice;
     return second === undefined
       ? withChoice
       : second.withChoice({ draft: withChoice, choice: secondChoice });
-  }, [adapter, initial, brief, basedOn, routing, choice, secondChoice]);
+  }, [adapter, initial, brief, attachments, basedOn, routing, choice, secondChoice]);
   const isEmpty = isArtifactDraftEmpty({ draft });
 
   useEffect(() => {
@@ -77,12 +83,14 @@ export const useArtifactCreationDraft = ({
   return {
     draft,
     brief,
+    attachments,
     choice,
     secondChoice,
     basedOn,
     routing,
     isEmpty,
     setBrief,
+    setAttachments,
     setChoice,
     setSecondChoice,
     setBasedOn,

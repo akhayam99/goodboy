@@ -5,10 +5,12 @@ import { buildReportContext } from '../reports/buildReportContext';
 import { collectReportDiffEvidence } from '../reports/collectReportDiffEvidence';
 import type { ReportType } from '../reports/reportTypes';
 import { buildWireframeContext } from '../wireframes/buildWireframeContext';
+import type { DesignEvidence } from '../wireframes/collectDesignProfile';
 import { collectWireframeDesignProfile } from '../wireframes/collectWireframeDesignProfile';
 import { describeDesignProfile } from '../wireframes/describeDesignProfile';
 import type { WireframeFidelity } from '../wireframes/wireframeFidelity';
 import type { WireframeTarget } from '../wireframes/wireframeTarget';
+import type { ArtifactAttachment } from './artifactAttachments';
 import { artifactEvidenceAgents } from './artifactEvidenceAgents';
 import { artifactEvidenceInventory, type RecordArtifactProvenanceArgs } from './artifactProvenance';
 import { sessionGoalText } from './sessionGoalText';
@@ -18,6 +20,7 @@ type Params = Readonly<{
   session: Session;
   workflowRunId: WorkflowRunId | null;
   brief: string | null;
+  attachments: ReadonlyArray<ArtifactAttachment>;
   executingAgentId: AgentId | null;
 }> &
   (
@@ -35,6 +38,7 @@ export const prepareArtifactEvidence = async ({
   session,
   workflowRunId,
   brief,
+  attachments,
   executingAgentId,
   ...choice
 }: Params): Promise<PreparedEvidence> => {
@@ -53,6 +57,7 @@ export const prepareArtifactEvidence = async ({
     const context = buildReportContext({
       reportType: choice.reportType,
       brief,
+      attachments,
       session,
       goal,
       agents,
@@ -84,18 +89,21 @@ export const prepareArtifactEvidence = async ({
       },
     };
   }
-  const designProfile =
-    choice.fidelity === 'high' ? await collectWireframeDesignProfile({ state, sessionId }) : null;
+  const designEvidence: DesignEvidence =
+    choice.fidelity === 'high'
+      ? await collectWireframeDesignProfile({ state, sessionId })
+      : { source: 'none' };
   const context = buildWireframeContext({
     fidelity: choice.fidelity,
     target: choice.target,
     brief,
+    attachments,
     session,
     goal,
     agents: workflowRunId === null ? agents : runsForWorkflowRun(agents, workflowRunId),
     transcripts,
     artifacts,
-    designProfile,
+    designEvidence,
     capturedAt: new Date().toISOString() as IsoDateTime,
   });
   return {
@@ -113,7 +121,9 @@ export const prepareArtifactEvidence = async ({
       }),
       omissions: context.truncations,
       designProfileSummary:
-        designProfile === null ? null : describeDesignProfile({ profile: designProfile }),
+        designEvidence.source === 'none'
+          ? null
+          : describeDesignProfile({ profile: designEvidence.profile }),
       sourceWorkflowRunId: workflowRunId,
     },
   };

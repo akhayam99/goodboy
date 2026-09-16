@@ -12,9 +12,11 @@ import {
   buildWireframeContext,
   WIREFRAME_CONTEXT_LIMITS,
 } from '../../../../wireframes/buildWireframeContext';
+import type { DesignEvidence } from '../../../../wireframes/collectDesignProfile';
 import { collectWireframeDesignProfile } from '../../../../wireframes/collectWireframeDesignProfile';
 import { asWireframeFidelity } from '../../../../wireframes/wireframeFidelity';
 import { asWireframeTarget } from '../../../../wireframes/wireframeTarget';
+import type { ArtifactAttachment } from '../../../artifactAttachments';
 import type { ArtifactContextInventoryRow } from '../../../artifactContextInventory';
 import { artifactEvidenceAgents } from '../../../artifactEvidenceAgents';
 import { sessionGoalText } from '../../../sessionGoalText';
@@ -34,6 +36,7 @@ type Params = Readonly<{
   basedOn: ArtifactBasedOn;
   choice: string;
   secondChoice: string;
+  attachments: ReadonlyArray<ArtifactAttachment>;
 }>;
 
 const DEBOUNCE_MS = 300;
@@ -58,6 +61,7 @@ const collect = async ({
   basedOn,
   choice,
   secondChoice,
+  attachments,
 }: CollectParams): Promise<ArtifactContextPreview | null> => {
   const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
   if (session === null) {
@@ -78,6 +82,7 @@ const collect = async ({
     const context = buildReportContext({
       reportType: asReportType({ value: choice }) ?? 'session-summary',
       brief: null,
+      attachments,
       session,
       goal,
       agents,
@@ -99,18 +104,21 @@ const collect = async ({
     };
   }
   const fidelity = asWireframeFidelity({ value: choice }) ?? 'low';
-  const designProfile =
-    fidelity === 'high' ? await collectWireframeDesignProfile({ state, sessionId }) : null;
+  const designEvidence: DesignEvidence =
+    fidelity === 'high'
+      ? await collectWireframeDesignProfile({ state, sessionId })
+      : { source: 'none' };
   const context = buildWireframeContext({
     fidelity,
     target: asWireframeTarget({ value: secondChoice }) ?? 'both',
     brief: null,
+    attachments,
     session,
     goal,
     agents: workflowRunId === null ? agents : runsForWorkflowRun(agents, workflowRunId),
     transcripts,
     artifacts: state.sessionArtifacts?.[sessionId] ?? [],
-    designProfile,
+    designEvidence,
     capturedAt,
   });
   return {
@@ -128,12 +136,14 @@ export const useArtifactContextPreview = ({
   basedOn,
   choice,
   secondChoice,
+  attachments,
 }: Params): ArtifactContextPreview => {
   const [preview, setPreview] = useState<ArtifactContextPreview>(EMPTY);
   const mountRevision = useAppStore(
     (s) => selectActiveMount({ state: s, sessionId })?.revision ?? null,
   );
   const scopeKey = basedOn.kind === 'workflow-run' ? basedOn.workflowRunId : '';
+  const attachmentsKey = attachments.map((attachment) => attachment.relPath).join('|');
 
   useEffect(() => {
     let isCurrent = true;
@@ -147,6 +157,7 @@ export const useArtifactContextPreview = ({
           scopeKey === '' ? { kind: 'session' } : { kind: 'workflow-run', workflowRunId: scopeKey },
         choice,
         secondChoice,
+        attachments,
       })
         .then((next) => {
           if (isCurrent && next !== null) {
@@ -163,7 +174,7 @@ export const useArtifactContextPreview = ({
       isCurrent = false;
       window.clearTimeout(timer);
     };
-  }, [sessionId, kind, scopeKey, choice, secondChoice, mountRevision]);
+  }, [sessionId, kind, scopeKey, choice, secondChoice, attachmentsKey, mountRevision]);
 
   return preview;
 };

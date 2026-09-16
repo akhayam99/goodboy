@@ -71,6 +71,7 @@ const readDraft = (value: unknown): ArtifactCreationDraft | null => {
   }
   const base = {
     brief: typeof value['brief'] === 'string' ? value['brief'] : '',
+    attachments: [],
     basedOn: readBasedOn(value['basedOn']),
     routing: readRouting(value['routing']),
     updatedAt: typeof value['updatedAt'] === 'string' ? (value['updatedAt'] as IsoDateTime) : EPOCH,
@@ -112,7 +113,7 @@ export const writeToStorage = ({ sessionId, drafts }: WriteParams): void => {
     const kept = GENERATED_ARTIFACT_KINDS.reduce<Record<string, ArtifactCreationDraft>>(
       (acc, kind) => {
         const draft = drafts[kind];
-        return draft === undefined ? acc : { ...acc, [kind]: draft };
+        return draft === undefined ? acc : { ...acc, [kind]: { ...draft, attachments: [] } };
       },
       {},
     );

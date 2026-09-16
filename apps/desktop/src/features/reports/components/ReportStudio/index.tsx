@@ -114,6 +114,7 @@ export const ReportStudio = ({
         sessionId,
         reportType: reportType ?? 'session-summary',
         workflowRunId: artifact.workflowRunId,
+        attachments: [],
         evidence: kickoff,
       });
       window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));

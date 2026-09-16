@@ -269,17 +269,17 @@ describe('ArtifactPrintView', () => {
       expect(screen.getByTestId('print-wireframe-sheet')).toBeDefined();
     });
     expect(screen.getByTestId('print-wireframe-sheet').getAttribute('data-page')).toBe('landscape');
-    expect(container.innerHTML).toContain('size: landscape');
+    expect(screen.getByTestId('artifact-print-view').getAttribute('data-page')).toBe('landscape');
     expect(container.querySelectorAll('[inert]')).toHaveLength(1);
   });
 
   it('keeps a mixed wireframe on the portrait page the report uses', async () => {
     listSpy.mockResolvedValueOnce([wireframe]);
-    const { container } = render(<ArtifactPrintView request={request} />);
+    render(<ArtifactPrintView request={request} />);
     await waitFor(() => {
       expect(screen.getByTestId('print-wireframe-sheet')).toBeDefined();
     });
     expect(screen.getByTestId('print-wireframe-sheet').getAttribute('data-page')).toBe('portrait');
-    expect(container.innerHTML).not.toContain('size: landscape');
+    expect(screen.getByTestId('artifact-print-view').getAttribute('data-page')).toBe('portrait');
   });
 });

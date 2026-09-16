@@ -613,6 +613,7 @@ describe('store contract', () => {
         draft: {
           kind: 'report',
           reportType: 'change-summary',
+          attachments: [],
           brief: 'the residual convention',
           basedOn: { kind: 'session' },
           routing: null,

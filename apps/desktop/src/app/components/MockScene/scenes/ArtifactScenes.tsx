@@ -1,40 +1,27 @@
 import { useEffect, useState } from 'react';
+import type { ArtifactId } from '@goodboy/types';
 import { ArtifactStudio } from '../../../../features/artifacts/components/ArtifactStudio';
 import { CreateReportCta } from '../../../../features/reports/components/CreateReportCta';
 import { CreateWireframeCta } from '../../../../features/wireframes/components/CreateWireframeCta';
-import { SESSION_ID, seedArtifactScene } from './artifactSeed';
+import {
+  REPORT_ARTIFACT_ID,
+  SESSION_ID,
+  WIREFRAME_HIGH_ARTIFACT_ID,
+  WIREFRAME_LOW_ARTIFACT_ID,
+  seedArtifactScene,
+} from './artifactSeed';
 
-const openRailCard = ({ title }: { readonly title: string }): boolean => {
-  const sections = [...window.document.querySelectorAll('[data-testid="artifact-section"]')];
-  if (sections.length === 0) {
-    return window.document.querySelector('[data-testid="artifact-export-slot"]') !== null;
-  }
-  const card = sections
-    .flatMap((section) => [...section.querySelectorAll('button')])
-    .find((button) => button.textContent?.includes(title));
-  card?.click();
-  return card !== undefined;
+type Props = {
+  readonly artifactId: ArtifactId;
 };
 
-const ArtifactScene = ({ title }: { readonly title: string }) => {
+const ArtifactScene = ({ artifactId }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedArtifactScene();
+    seedArtifactScene({ focusedArtifactId: artifactId });
     setIsReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isReady) {
-      return;
-    }
-    const interval = window.setInterval(() => {
-      if (openRailCard({ title })) {
-        window.clearInterval(interval);
-      }
-    }, 120);
-    return () => window.clearInterval(interval);
-  }, [isReady, title]);
+  }, [artifactId]);
 
   if (!isReady) {
     return null;
@@ -53,12 +40,12 @@ const ArtifactScene = ({ title }: { readonly title: string }) => {
   );
 };
 
-export const ArtifactReportScene = () => (
-  <ArtifactScene title="Rounding drift in ledger-core postings" />
+export const ArtifactReportScene = () => <ArtifactScene artifactId={REPORT_ARTIFACT_ID} />;
+
+export const ArtifactWireframeLowScene = () => (
+  <ArtifactScene artifactId={WIREFRAME_LOW_ARTIFACT_ID} />
 );
 
-export const ArtifactWireframeLowScene = () => <ArtifactScene title="Settlement review flow" />;
-
 export const ArtifactWireframeHighScene = () => (
-  <ArtifactScene title="Settlement review flow, themed" />
+  <ArtifactScene artifactId={WIREFRAME_HIGH_ARTIFACT_ID} />
 );

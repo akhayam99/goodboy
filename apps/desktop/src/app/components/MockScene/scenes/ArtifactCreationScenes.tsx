@@ -41,6 +41,7 @@ const draftFor = ({
 }): ArtifactCreationDraft => {
   const base = {
     brief,
+    attachments: [],
     basedOn: { kind: 'workflow-run', workflowRunId: RUN_ID },
     routing: null,
     updatedAt: AT,
@@ -60,7 +61,7 @@ const ArtifactCreationScene = ({
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedArtifactScene();
+    seedArtifactScene({ focusedArtifactId: null });
     const store = useAppStore.getState();
     const seeded = store.sessions[0];
     const mount = store.sessionProjectMounts[SESSION_ID]?.[0];

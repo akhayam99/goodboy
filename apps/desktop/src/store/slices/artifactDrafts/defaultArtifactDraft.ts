@@ -19,6 +19,7 @@ export const defaultArtifactDraft = ({ kind, now }: Params): ArtifactCreationDra
       kind: 'report',
       reportType: DEFAULT_REPORT_TYPE,
       brief: '',
+      attachments: [],
       basedOn: { kind: 'session' },
       routing: null,
       updatedAt: now,
@@ -29,6 +30,7 @@ export const defaultArtifactDraft = ({ kind, now }: Params): ArtifactCreationDra
     fidelity: DEFAULT_WIREFRAME_FIDELITY,
     target: DEFAULT_WIREFRAME_TARGET,
     brief: '',
+    attachments: [],
     basedOn: { kind: 'session' },
     routing: null,
     updatedAt: now,
@@ -41,6 +43,9 @@ export const isArtifactDraftEmpty = ({
   readonly draft: ArtifactCreationDraft;
 }): boolean => {
   if (draft.brief.trim().length > 0) {
+    return false;
+  }
+  if (draft.attachments.length > 0) {
     return false;
   }
   if (draft.basedOn.kind !== 'session' || draft.routing !== null) {

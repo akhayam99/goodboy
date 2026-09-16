@@ -10,8 +10,9 @@ import { dropLeadingTitleHeading } from './dropLeadingTitleHeading';
 import { PrintContents } from './PrintContents';
 import { PrintLetterhead } from './PrintLetterhead';
 import { PrintWireframeSheet } from './PrintWireframeSheet';
-import { PRINT_SHEET_CSS } from './printSheetCss';
+import { printPage } from './printPage';
 import { removeBootShell } from './removeBootShell';
+import './printSheet.css';
 
 type Props = {
   readonly request: ArtifactPrintRequest;
@@ -115,9 +116,10 @@ export const ArtifactPrintView = ({ request }: Props) => {
     return () => globalThis.cancelAnimationFrame(frame);
   }, [status]);
 
+  const page = printPage({ document: status.kind === 'wireframe' ? status.document : null });
+
   return (
-    <div data-testid="artifact-print-view" className="print-sheet">
-      <style>{PRINT_SHEET_CSS}</style>
+    <div data-testid="artifact-print-view" className="print-sheet" data-page={page}>
       {status.kind === 'loading' ? <p className="print-note">preparing the document</p> : null}
       {status.kind === 'failed' ? (
         <p role="alert" className="print-note">
@@ -139,7 +141,7 @@ export const ArtifactPrintView = ({ request }: Props) => {
       ) : null}
       {status.kind === 'ready' ? <PrintDocument artifact={status.artifact} /> : null}
       {status.kind === 'wireframe' ? (
-        <PrintWireframeSheet artifact={status.artifact} document={status.document} />
+        <PrintWireframeSheet artifact={status.artifact} document={status.document} page={page} />
       ) : null}
     </div>
   );

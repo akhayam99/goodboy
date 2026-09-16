@@ -23,7 +23,7 @@ const ActivityScene = ({ isFilterOpen }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedArtifactScene();
+    seedArtifactScene({ focusedArtifactId: null });
     setIsReady(true);
   }, []);
 

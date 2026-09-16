@@ -12,6 +12,7 @@ const draft = (overrides: Partial<ArtifactReportDraft> = {}): ArtifactReportDraf
   kind: 'report',
   reportType: 'session-summary',
   brief: '',
+  attachments: [],
   basedOn: { kind: 'session' },
   routing: null,
   updatedAt: NOW,
@@ -44,6 +45,7 @@ describe('reportCreationAdapter', () => {
       workflowRunId: RUN_ID,
       routing: null,
       brief: 'what changed in ledger-core',
+      attachments: [],
       focus: 'none',
     });
     expect(spies.spawnWireframeAgent).not.toHaveBeenCalled();

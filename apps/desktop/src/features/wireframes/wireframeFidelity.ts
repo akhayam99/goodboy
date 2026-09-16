@@ -22,6 +22,17 @@ export const WIREFRAME_FIDELITY_HINT: Record<WireframeFidelity, string> = {
   high: 'colors, type and radii read from the design files in the mounted repo. when the app finds no style evidence it says so and uses the generic theme instead',
 };
 
+export const requestedWireframeFidelity = ({
+  agentName,
+}: {
+  readonly agentName: string | null;
+}): WireframeFidelity | null =>
+  agentName === null
+    ? null
+    : (WIREFRAME_FIDELITIES.find(
+        (candidate) => WIREFRAME_FIDELITY_LABEL[candidate] === agentName.trim(),
+      ) ?? null);
+
 export const asWireframeFidelity = ({
   value,
 }: {

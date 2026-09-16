@@ -2,12 +2,13 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import type { DesignEvidence } from '../../../../wireframes/collectDesignProfile';
 
 const { state, collectDesignProfile, slotsBySession } = vi.hoisted(() => {
   const slotsBySession: Record<string, ReadonlyArray<Record<string, unknown>>> = {};
   return {
     slotsBySession,
-    collectDesignProfile: vi.fn(async () => null),
+    collectDesignProfile: vi.fn<() => Promise<DesignEvidence>>(async () => ({ source: 'none' })),
     state: {
       ensureSessionSlots: async (
         sessionId: string,
@@ -37,8 +38,15 @@ vi.mock('../../../../wireframes/collectWireframeDesignProfile', () => ({
 }));
 
 import { useArtifactContextPreview } from './index';
+import type { ArtifactAttachment } from '../../../artifactAttachments';
 
 const SESSION_ID = JSON.parse(JSON.stringify('session-harborline'));
+const SCREEN: ArtifactAttachment = {
+  id: 'att-inbox',
+  fileName: 'inbox.png',
+  mimeType: 'image/png',
+  relPath: '.goodboy/attachments/att-inbox-inbox.png',
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -77,6 +85,7 @@ describe('useArtifactContextPreview', () => {
         basedOn: { kind: 'session' },
         choice: 'session-summary',
         secondChoice: 'both',
+        attachments: [],
       }),
     );
     expect(result.current.status).toBe('collecting');
@@ -86,6 +95,7 @@ describe('useArtifactContextPreview', () => {
     const ids = result.current.inventory.map((row) => row.id);
     expect(ids).toEqual([
       'brief',
+      'attachments',
       'goal',
       'agents',
       'artifacts',
@@ -119,6 +129,7 @@ describe('useArtifactContextPreview', () => {
         basedOn: { kind: 'session' },
         choice: 'session-summary',
         secondChoice: 'both',
+        attachments: [],
       }),
     );
     await waitFor(() => {
@@ -137,6 +148,7 @@ describe('useArtifactContextPreview', () => {
         basedOn: { kind: 'session' },
         choice: 'low',
         secondChoice: 'both',
+        attachments: [],
       }),
     );
     await waitFor(() => {
@@ -156,6 +168,7 @@ describe('useArtifactContextPreview', () => {
         basedOn: { kind: 'session' },
         choice: 'high',
         secondChoice: 'both',
+        attachments: [],
       }),
     );
     await waitFor(() => {
@@ -165,6 +178,43 @@ describe('useArtifactContextPreview', () => {
       await Promise.resolve();
     });
     expect(collectDesignProfile).toHaveBeenCalled();
+    expect(result.current.inventory.find((row) => row.id === 'theme')?.summary).toBe(
+      'no repository is mounted, so no design file was read',
+    );
+  });
+
+  it('previews the walked repository that yielded nothing exactly as the spawn packs it', async () => {
+    collectDesignProfile.mockResolvedValueOnce({
+      source: 'mount',
+      profile: {
+        themeName: 'generic',
+        commitSha: 'abc1234',
+        tailwind: null,
+        tokens: [],
+        variants: [],
+        layoutExamples: [],
+        notes: ['the walk found no tailwind config in this repository'],
+      },
+    });
+    const { result } = renderHook(() =>
+      useArtifactContextPreview({
+        sessionId: SESSION_ID,
+        kind: 'wireframe',
+        basedOn: { kind: 'session' },
+        choice: 'high',
+        secondChoice: 'both',
+        attachments: [],
+      }),
+    );
+    await waitFor(() => {
+      expect(result.current.status).toBe('ready');
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const theme = result.current.inventory.find((row) => row.id === 'theme');
+    expect(theme?.summary).toBe('the mounted repository was walked and no design file was found');
+    expect(theme?.detail).toEqual(['the walk found no tailwind config in this repository']);
   });
 });
 
@@ -185,6 +235,7 @@ describe('useArtifactContextPreview session goal', () => {
           basedOn: { kind: 'session' },
           choice: kind === 'report' ? 'session-summary' : 'low',
           secondChoice: 'both',
+          attachments: [],
         }),
       );
       await waitFor(() => {
@@ -196,6 +247,54 @@ describe('useArtifactContextPreview session goal', () => {
     },
   );
 
+  it.each(['report', 'wireframe'] as const)(
+    'counts an attached screen in the %s preview and names it in the inventory',
+    async (kind) => {
+      const { result } = renderHook(() =>
+        useArtifactContextPreview({
+          sessionId: SESSION_ID,
+          kind,
+          basedOn: { kind: 'session' },
+          choice: kind === 'report' ? 'session-summary' : 'low',
+          secondChoice: 'both',
+          attachments: [SCREEN],
+        }),
+      );
+      await waitFor(() => {
+        expect(result.current.status).toBe('ready');
+      });
+      const row = result.current.inventory.find((entry) => entry.id === 'attachments');
+      expect(row?.state).toBe('included');
+      expect(row?.detail).toEqual(['inbox.png']);
+    },
+  );
+
+  it.each(['report', 'wireframe'] as const)(
+    'grows the %s pack by the attached paths it will send',
+    async (kind) => {
+      const sizeFor = async (attachments: ReadonlyArray<ArtifactAttachment>) => {
+        const { result } = renderHook(() =>
+          useArtifactContextPreview({
+            sessionId: SESSION_ID,
+            kind,
+            basedOn: { kind: 'session' },
+            choice: kind === 'report' ? 'session-summary' : 'low',
+            secondChoice: 'both',
+            attachments,
+          }),
+        );
+        await waitFor(() => {
+          expect(result.current.status).toBe('ready');
+        });
+        return result.current.size;
+      };
+      const bare = await sizeFor([]);
+      cleanup();
+      const withScreen = await sizeFor([SCREEN]);
+      expect(withScreen).toBeGreaterThan(bare);
+    },
+  );
+
   it('keeps the goal row bare when the slot only repeats the title', async () => {
     const { result } = renderHook(() =>
       useArtifactContextPreview({
@@ -204,6 +303,7 @@ describe('useArtifactContextPreview session goal', () => {
         basedOn: { kind: 'session' },
         choice: 'session-summary',
         secondChoice: 'both',
+        attachments: [],
       }),
     );
     await waitFor(() => {

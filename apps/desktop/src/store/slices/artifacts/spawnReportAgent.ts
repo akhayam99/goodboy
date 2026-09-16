@@ -1,6 +1,7 @@
 import { getCheapModel, resolveRoleRouting } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { AgentEffort, AgentId, ProviderId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { ArtifactAttachment } from '../../../features/artifacts/artifactAttachments';
 import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
 import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
 import { REPORT_TYPE_LABEL, type ReportType } from '../../../features/reports/reportTypes';
@@ -20,6 +21,7 @@ export type SpawnReportAgentParams = {
   readonly workflowRunId?: WorkflowRunId | null;
   readonly routing?: ReportRouting | null;
   readonly brief?: string | null;
+  readonly attachments: ReadonlyArray<ArtifactAttachment>;
   readonly evidence?: string | null;
   readonly focus?: SpawnFocus;
 };
@@ -74,6 +76,7 @@ export const spawnReportAgent = (get: GetFn) => {
     workflowRunId = null,
     routing = null,
     brief = null,
+    attachments,
     evidence = null,
     focus = 'agent',
   }: SpawnReportAgentParams): Promise<AgentId> => {
@@ -101,6 +104,7 @@ export const spawnReportAgent = (get: GetFn) => {
       session,
       workflowRunId,
       brief,
+      attachments,
       executingAgentId: null,
     });
     const agentId = await get().spawnAgent(sessionId, {
