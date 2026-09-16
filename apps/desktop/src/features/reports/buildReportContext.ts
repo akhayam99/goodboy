@@ -93,6 +93,16 @@ const scopedAgents = ({
   return [...scoped].sort((left, right) => left.ordinal - right.ordinal);
 };
 
+const scopedArtifacts = ({
+  artifacts,
+  workflowRunId,
+}: Pick<ReportContextParams, 'artifacts' | 'workflowRunId'>): ReadonlyArray<SessionArtifact> => {
+  if (workflowRunId === null) {
+    return artifacts;
+  }
+  return artifacts.filter((artifact) => artifact.workflowRunId === workflowRunId);
+};
+
 const agentSection = ({
   agents,
   transcripts,
@@ -118,13 +128,13 @@ const agentSection = ({
     const events = transcripts[agent.id] ?? [];
     const text = lastAssistantText({ events });
     if (text === null) {
-      return `### ${agent.name} (agent ${agent.id}, ${agent.status})\n\nno assistant output recorded.`;
+      return `### ${redactSecrets({ text: agent.name })} (agent ${agent.id}, ${agent.status})\n\nno assistant output recorded.`;
     }
     const clipped = clip({ text: redactSecrets({ text }), limit: REPORT_CONTEXT_LIMITS.agentText });
     if (clipped.isClipped) {
       truncations.push(`agent ${agent.id}: final message truncated`);
     }
-    return `### ${agent.name} (agent ${agent.id}, ${agent.status})\n\n${clipped.text}`;
+    return `### ${redactSecrets({ text: agent.name })} (agent ${agent.id}, ${agent.status})\n\n${clipped.text}`;
   });
   return `## agents\n\n${rows.join('\n\n')}`;
 };
@@ -139,7 +149,7 @@ const artifactSection = ({
   readonly sourceIds: Array<string>;
 }): string => {
   if (artifacts.length === 0) {
-    return '## artifacts\n\nno plans, reports or wireframes were captured.';
+    return '## artifacts\n\nno plans, reports or wireframes were captured in this scope.';
   }
   const kept = artifacts.slice(-REPORT_CONTEXT_LIMITS.artifacts);
   if (kept.length < artifacts.length) {
@@ -156,7 +166,8 @@ const artifactSection = ({
     if (excerpt.isClipped) {
       truncations.push(`artifact ${artifact.id}: source truncated`);
     }
-    return `- ${artifact.kind} ${artifact.id} rev ${artifact.revision} (${artifact.status}) "${artifact.title}"\n  ${excerpt.text.replace(/\n/g, '\n  ')}`;
+    const title = redactSecrets({ text: artifact.title });
+    return `- ${artifact.kind} ${artifact.id} rev ${artifact.revision} (${artifact.status}) "${title}"\n  ${excerpt.text.replace(/\n/g, '\n  ')}`;
   });
   return `## artifacts\n\n${rows.join('\n')}`;
 };
@@ -167,7 +178,7 @@ const diffSection = ({ diff }: { readonly diff: ReportDiffEvidence | null }): st
   }
   const commits = diff.commits
     .slice(0, REPORT_CONTEXT_LIMITS.commits)
-    .map((commit) => `- ${commit.sha} ${commit.subject}`)
+    .map((commit) => `- ${commit.sha} ${redactSecrets({ text: commit.subject })}`)
     .join('\n');
   const paths = diff.paths
     .slice(0, REPORT_CONTEXT_LIMITS.paths)
@@ -177,7 +188,7 @@ const diffSection = ({ diff }: { readonly diff: ReportDiffEvidence | null }): st
   return [
     '## diff',
     '',
-    `mount ${diff.mountName}, base ${diff.baseBranch}, head ${head}, +${diff.additions} -${diff.deletions}, ${diff.paths.length} files`,
+    `mount ${redactSecrets({ text: diff.mountName })}, base ${redactSecrets({ text: diff.baseBranch })}, head ${head}, +${diff.additions} -${diff.deletions}, ${diff.paths.length} files`,
     '',
     commits.length === 0 ? 'no commits recorded.' : `commits:\n${commits}`,
     '',
@@ -196,7 +207,7 @@ const scriptSection = ({
     .map(([scriptId, record]) => {
       const exitCode = record.result?.exitCode ?? null;
       const exit = exitCode === null ? 'no exit code' : `exit ${exitCode}`;
-      return `- ${record.name ?? scriptId}: ${record.status}, ${exit}`;
+      return `- ${redactSecrets({ text: record.name ?? scriptId })}: ${record.status}, ${exit}`;
     });
   if (rows.length === 0) {
     return '## checks\n\nno script or test run outcome was recorded in this session.';
@@ -238,7 +249,8 @@ export const buildReportContext = ({
 }: ReportContextParams): ReportContext => {
   const truncations: Array<string> = [];
   const sourceIds: Array<string> = [session.id];
-  const scoped = scopedAgents({ agents, workflowRunId });
+  const scopedAgentList = scopedAgents({ agents, workflowRunId });
+  const scopedArtifactList = scopedArtifacts({ artifacts, workflowRunId });
   const scope = workflowRunId === null ? 'the whole session' : `workflow run ${workflowRunId}`;
   const header = [
     `# evidence pack: ${REPORT_TYPE_LABEL[reportType]}`,
@@ -256,8 +268,8 @@ export const buildReportContext = ({
 
   const body = [
     header,
-    agentSection({ agents: scoped, transcripts, truncations, sourceIds }),
-    artifactSection({ artifacts, truncations, sourceIds }),
+    agentSection({ agents: scopedAgentList, transcripts, truncations, sourceIds }),
+    artifactSection({ artifacts: scopedArtifactList, truncations, sourceIds }),
     diffSection({ diff }),
     scriptSection({ scriptRuns }),
     eventSection({ events, truncations }),

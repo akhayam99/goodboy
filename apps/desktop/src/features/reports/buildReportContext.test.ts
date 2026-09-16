@@ -52,6 +52,25 @@ const assistantTurn = ({ runId, delta }: { runId: string; delta: string }): Turn
   at: NOW,
 });
 
+const reportArtifact = (overrides: Partial<ReportArtifact>): ReportArtifact => ({
+  id: 'artifact-1' as ArtifactId,
+  sessionId: SESSION_ID,
+  agentId: AGENT_ID,
+  workflowRunId: null,
+  kind: 'report',
+  schemaVersion: 1,
+  title: 'Earlier report',
+  sourceFormat: 'markdown',
+  sourceText: 'body',
+  metadata: { reportType: 'session-summary' },
+  status: 'active',
+  revision: 2,
+  sourceTurnId: null,
+  createdAt: NOW,
+  updatedAt: NOW,
+  ...overrides,
+});
+
 const baseParams = {
   reportType: 'session-summary',
   session,
@@ -149,6 +168,57 @@ describe('buildReportContext', () => {
     expect(context.text).toContain('no mount diff was available');
     expect(context.text).toContain('no script or test run outcome');
     expect(context.text).toContain('no session events were recorded');
+  });
+
+  it('redacts a credential an agent put in an artifact title', () => {
+    const context = buildReportContext({
+      ...baseParams,
+      artifacts: [reportArtifact({ title: 'deploy notes password: hunter2000xyz' })],
+    });
+    expect(context.text).not.toContain('hunter2000xyz');
+    expect(context.text).toContain('[redacted]');
+  });
+
+  it('redacts a credential carried by a commit subject', () => {
+    const context = buildReportContext({
+      ...baseParams,
+      diff: {
+        mountName: 'goodboy',
+        baseBranch: 'main',
+        headSha: 'abc1234',
+        commits: [
+          { sha: 'abc1234', subject: 'chore: rotate ghp_abcdefghijklmnopqrstuvwxyz012345' },
+        ],
+        additions: 1,
+        deletions: 0,
+        paths: [],
+      },
+    });
+    expect(context.text).not.toContain('ghp_abcdefghijklmnopqrstuvwxyz012345');
+    expect(context.text).toContain('[redacted]');
+  });
+
+  it('redacts a credential carried by an agent name', () => {
+    const context = buildReportContext({
+      ...baseParams,
+      agents: [agent({ name: 'runner Authorization: Bearer abcdefghijklmnop' })],
+    });
+    expect(context.text).not.toContain('abcdefghijklmnop');
+  });
+
+  it('scopes artifacts to a workflow run when one is given', () => {
+    const context = buildReportContext({
+      ...baseParams,
+      workflowRunId: RUN_ID,
+      agents: [agent({ workflowRunId: RUN_ID })],
+      artifacts: [
+        reportArtifact({ id: 'artifact-1' as ArtifactId, workflowRunId: RUN_ID, title: 'in run' }),
+        reportArtifact({ id: 'artifact-2' as ArtifactId, title: 'standalone artifact' }),
+      ],
+    });
+    expect(context.text).toContain('artifact-1');
+    expect(context.text).not.toContain('artifact-2');
+    expect(context.sourceIds).not.toContain('artifact-2');
   });
 
   it('lists artifact revisions and script outcomes', () => {

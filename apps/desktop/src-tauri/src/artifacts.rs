@@ -4,7 +4,7 @@ use thiserror::Error;
 
 pub const MAX_EXPORT_BYTES: usize = 8 * 1024 * 1024;
 
-const ALLOWED_EXTENSIONS: [&str; 3] = ["md", "markdown", "txt"];
+const ALLOWED_EXTENSIONS: [&str; 4] = ["md", "markdown", "txt", "json"];
 
 #[derive(Debug, Error)]
 pub enum ArtifactExportError {
@@ -59,7 +59,7 @@ fn validate_destination(path: &Path) -> Result<(), ArtifactExportError> {
         .unwrap_or_default();
     if !ALLOWED_EXTENSIONS.contains(&extension.as_str()) {
         return Err(ArtifactExportError::Destination(format!(
-            "the destination must end in .md, .markdown or .txt, not .{extension}"
+            "the destination must end in .md, .markdown, .txt or .json, not .{extension}"
         )));
     }
     let parent = path.parent().ok_or_else(|| {
@@ -82,9 +82,17 @@ fn temp_sibling(path: &Path) -> PathBuf {
     parent.join(format!(".{name}.{}.part", crate::util::uuid_v4()))
 }
 
+fn write_synced(path: &Path, contents: &str) -> std::io::Result<()> {
+    use std::io::Write;
+
+    let mut file = std::fs::File::create(path)?;
+    file.write_all(contents.as_bytes())?;
+    file.sync_all()
+}
+
 fn write_atomic(path: &Path, contents: &str) -> Result<(), ArtifactExportError> {
     let temp = temp_sibling(path);
-    if let Err(error) = std::fs::write(&temp, contents) {
+    if let Err(error) = write_synced(&temp, contents) {
         let _ = std::fs::remove_file(&temp);
         return Err(ArtifactExportError::Io(error));
     }
@@ -149,6 +157,24 @@ mod tests {
         let path = scratch("report.exe");
         let error = validate_destination(&path).unwrap_err();
         assert!(error.to_string().contains(".md"));
+    }
+
+    #[test]
+    fn the_extension_message_names_json() {
+        let path = scratch("report.exe");
+        let error = validate_destination(&path).unwrap_err();
+        assert!(error.to_string().contains(".json"));
+        let _ = std::fs::remove_dir_all(path.parent().expect("parent"));
+    }
+
+    #[test]
+    fn a_json_destination_is_written_and_read_back() {
+        let path = scratch("onboarding-flow.json");
+        validate_destination(&path).expect("a json destination is accepted");
+        let body = "{\n  \"screens\": []\n}\n";
+        write_atomic(&path, body).expect("write");
+        assert_eq!(std::fs::read_to_string(&path).expect("read"), body);
+        let _ = std::fs::remove_dir_all(path.parent().expect("parent"));
     }
 
     #[test]

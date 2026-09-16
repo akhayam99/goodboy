@@ -5,11 +5,21 @@ const OPAQUE_SECRET_PATTERNS: ReadonlyArray<RegExp> = [
   /\bsk-[A-Za-z0-9_-]{16,}/g,
   /\bglpat-[A-Za-z0-9_-]{16,}/g,
   /\bey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g,
-  /\bAKIA[0-9A-Z]{16}\b/g,
+  /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g,
 ];
 
-const LABELLED_SECRET_PATTERN =
-  /\b(authorization|bearer|api[_-]?key|access[_-]?token|refresh[_-]?token|password|passwd|secret)\b(\s*[:=]\s*|\s+)("?)[^\s"']{6,}\3/gi;
+const SECRET_LABEL = String.raw`(authorization|bearer|api[_-]?key|access[_-]?token|refresh[_-]?token|password|passwd|secret)`;
+
+const LABEL_SEPARATOR = String.raw`(\s*[:=]\s*|\s+)`;
+
+const AUTH_SCHEME = String.raw`(?:bearer|basic|digest|token|jwt|apikey|negotiate|dpop)\s+`;
+
+const SECRET_VALUE = String.raw`(?:"[^"\n]{6,}"|'[^'\n]{6,}'|[^\s"']{6,})`;
+
+const LABELLED_SECRET_PATTERN = new RegExp(
+  String.raw`\b${SECRET_LABEL}\b${LABEL_SEPARATOR}(?:${AUTH_SCHEME})?${SECRET_VALUE}`,
+  'gi',
+);
 
 export const REDACTED = '[redacted]';
 
