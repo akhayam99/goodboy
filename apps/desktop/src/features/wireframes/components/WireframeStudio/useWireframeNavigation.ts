@@ -5,6 +5,7 @@ export type WireframeNavigation = Readonly<{
   currentScreenId: string;
   selectedNodeId: string | null;
   zoom: number;
+  isZoomPinned: boolean;
   mockState: Readonly<Record<string, boolean>>;
   canGoBack: boolean;
   canGoForward: boolean;
@@ -16,6 +17,7 @@ export type WireframeNavigation = Readonly<{
   select: (nodeId: string) => void;
   toggle: (stateKey: string) => void;
   setZoom: (zoom: number) => void;
+  fitZoom: (zoom: number) => void;
 }>;
 
 export const ZOOM_BOUNDS = { min: 0.25, max: 1.5 } as const;
@@ -35,6 +37,7 @@ export const useWireframeNavigation = ({
   const [trail, setTrail] = useState<Trail>({ entries: [document.initialScreenId], cursor: 0 });
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [zoom, setZoomState] = useState(1);
+  const [isZoomPinned, setIsZoomPinned] = useState(false);
   const [mockState, setMockState] = useState<Readonly<Record<string, boolean>>>(
     document.mockState ?? {},
   );
@@ -42,6 +45,7 @@ export const useWireframeNavigation = ({
   useEffect(() => {
     setTrail({ entries: [document.initialScreenId], cursor: 0 });
     setSelectedNodeId(null);
+    setIsZoomPinned(false);
     setMockState(document.mockState ?? {});
   }, [resetKey, document.initialScreenId, document.mockState]);
 
@@ -92,12 +96,19 @@ export const useWireframeNavigation = ({
 
   const setZoom = useCallback((next: number) => {
     setZoomState(clampZoom(next));
+    setIsZoomPinned(true);
+  }, []);
+
+  const fitZoom = useCallback((next: number) => {
+    setZoomState(clampZoom(next));
+    setIsZoomPinned(false);
   }, []);
 
   return {
     currentScreenId,
     selectedNodeId,
     zoom,
+    isZoomPinned,
     mockState,
     canGoBack: trail.cursor > 0,
     canGoForward: trail.cursor < trail.entries.length - 1,
@@ -109,5 +120,6 @@ export const useWireframeNavigation = ({
     select: setSelectedNodeId,
     toggle,
     setZoom,
+    fitZoom,
   };
 };

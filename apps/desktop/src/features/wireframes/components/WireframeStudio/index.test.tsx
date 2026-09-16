@@ -106,11 +106,20 @@ const renderStudio = (overrides: Record<string, unknown> = {}) =>
 
 const currentScreen = () => screen.getByTestId('wireframe-screen').getAttribute('data-screen-id');
 
+const PANE_WIDTH = 640;
+
 beforeEach(() => {
   state.transcripts = {};
   state.spawnWireframeAgent.mockClear();
+  Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+    configurable: true,
+    value: PANE_WIDTH,
+  });
 });
-afterEach(cleanup);
+afterEach(() => {
+  Reflect.deleteProperty(HTMLElement.prototype, 'clientWidth');
+  cleanup();
+});
 
 describe('WireframeStudio', () => {
   it('renders the initial screen with its tabs and provenance', () => {
@@ -160,17 +169,38 @@ describe('WireframeStudio', () => {
     expect(currentScreen()).toBe('archive');
   });
 
-  it('keeps the selection and the zoom across a screen switch', () => {
+  it('fits the desktop screen to the pane on mount and refits on a screen change', () => {
     renderStudio();
-    fireEvent.click(screen.getByText('Inbox', { selector: 'p' }));
-    fireEvent.click(screen.getByTestId('wireframe-zoom-fit'));
-    const zoom = screen.getByText(/%$/).textContent;
+    expect(screen.getByText(/%$/).textContent).toBe('47%');
     fireEvent.click(screen.getByRole('tab', { name: /Archive/ }));
     expect(currentScreen()).toBe('archive');
-    expect(screen.getByText(/%$/).textContent).toBe(zoom);
+    expect(screen.getByText(/%$/).textContent).toBe('150%');
+  });
+
+  it('keeps a manual zoom and the selection across a screen switch', () => {
+    renderStudio();
+    fireEvent.click(screen.getByText('Inbox', { selector: 'p' }));
+    fireEvent.click(screen.getByTestId('wireframe-zoom-in'));
+    expect(screen.getByText(/%$/).textContent).toBe('57%');
+    fireEvent.click(screen.getByRole('tab', { name: /Archive/ }));
+    expect(currentScreen()).toBe('archive');
+    expect(screen.getByText(/%$/).textContent).toBe('57%');
+    fireEvent.click(screen.getByTestId('wireframe-zoom-out'));
+    expect(screen.getByText(/%$/).textContent).toBe('47%');
     fireEvent.click(screen.getByRole('tab', { name: /Inbox/ }));
     const heading = screen.getByText('Inbox', { selector: 'p' });
     expect(heading.getAttribute('style')).toContain('outline');
+  });
+
+  it('returns to the fitted view when Fit is pressed after a manual zoom', () => {
+    renderStudio();
+    fireEvent.click(screen.getByTestId('wireframe-zoom-in'));
+    fireEvent.click(screen.getByTestId('wireframe-zoom-in'));
+    expect(screen.getByText(/%$/).textContent).toBe('67%');
+    fireEvent.click(screen.getByTestId('wireframe-zoom-fit'));
+    expect(screen.getByText(/%$/).textContent).toBe('47%');
+    fireEvent.click(screen.getByRole('tab', { name: /Archive/ }));
+    expect(screen.getByText(/%$/).textContent).toBe('150%');
   });
 
   it('toggles declared mock state instead of navigating', () => {

@@ -111,6 +111,7 @@ export const WireframeNodeView = ({ node, ...handlers }: Props) => {
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${node.columns}, minmax(0, 1fr))`,
+          alignItems: 'start',
           gap: SPACING_PX[node.gap ?? 'md'],
           padding: SPACING_PX[node.padding ?? 'none'],
           ...outline,

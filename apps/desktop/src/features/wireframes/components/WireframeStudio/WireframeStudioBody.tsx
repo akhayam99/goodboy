@@ -1,8 +1,10 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
   Maximize2,
+  Minus,
+  Plus,
   RotateCcw,
   SkipBack,
   SkipForward,
@@ -18,7 +20,10 @@ import { WireframeCanvas } from './WireframeCanvas';
 import { WireframeFlowOverview } from './WireframeFlowOverview';
 import { WireframeProvenanceRow } from './WireframeProvenanceRow';
 import { WireframeScreenTabs } from './WireframeScreenTabs';
-import { useWireframeNavigation } from './useWireframeNavigation';
+import { ZOOM_BOUNDS, useWireframeNavigation } from './useWireframeNavigation';
+
+const CANVAS_GUTTER = 40;
+const ZOOM_STEP = 0.1;
 
 type Props = {
   readonly artifact: WireframeArtifact;
@@ -66,13 +71,34 @@ export const WireframeStudioBody = ({
     navigation.toggle(action.stateKey);
   };
 
-  const zoomToFit = () => {
-    if (screen === undefined) {
+  const viewportWidth = screen === undefined ? null : VIEWPORT_WIDTH[screen.viewport];
+  const { fitZoom, isZoomPinned } = navigation;
+
+  const zoomToFit = useCallback(() => {
+    const node = canvasRef.current;
+    if (node === null || viewportWidth === null) {
       return;
     }
-    const available = (canvasRef.current?.clientWidth ?? 0) - 40;
-    navigation.setZoom(available > 0 ? available / VIEWPORT_WIDTH[screen.viewport] : 1);
-  };
+    const available = node.clientWidth - CANVAS_GUTTER;
+    if (available <= 0) {
+      return;
+    }
+    fitZoom(available / viewportWidth);
+  }, [fitZoom, viewportWidth]);
+
+  useEffect(() => {
+    if (isZoomPinned) {
+      return;
+    }
+    zoomToFit();
+    const node = canvasRef.current;
+    if (node === null || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const observer = new ResizeObserver(() => zoomToFit());
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [isZoomPinned, zoomToFit, screen?.id]);
 
   const toggledOn = Object.entries(navigation.mockState).filter(([, value]) => value === true);
 
@@ -138,16 +164,38 @@ export const WireframeStudioBody = ({
         <Button
           variant="ghost"
           size="sm"
+          onClick={() => navigation.setZoom(navigation.zoom - ZOOM_STEP)}
+          disabled={navigation.zoom <= ZOOM_BOUNDS.min}
+          data-testid="wireframe-zoom-out"
+          title="Zoom out"
+          aria-label="Zoom out"
+        >
+          <Minus size={ICON_SIZE.row} aria-hidden />
+        </Button>
+        <span className="min-w-10 text-center tabular-nums text-2xs text-muted-foreground">
+          {Math.round(navigation.zoom * 100)}%
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigation.setZoom(navigation.zoom + ZOOM_STEP)}
+          disabled={navigation.zoom >= ZOOM_BOUNDS.max}
+          data-testid="wireframe-zoom-in"
+          title="Zoom in"
+          aria-label="Zoom in"
+        >
+          <Plus size={ICON_SIZE.row} aria-hidden />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={zoomToFit}
           data-testid="wireframe-zoom-fit"
-          title="Fit the screen to the pane"
+          title="Fit the screen to the pane and follow it again"
         >
           <Maximize2 size={ICON_SIZE.row} aria-hidden />
           Fit
         </Button>
-        <span className="tabular-nums text-2xs text-muted-foreground">
-          {Math.round(navigation.zoom * 100)}%
-        </span>
         <Button
           variant="secondary"
           size="sm"
