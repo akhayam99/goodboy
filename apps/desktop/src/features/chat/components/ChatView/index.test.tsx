@@ -17,6 +17,7 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
     selectedAgentId: {} as Record<string, string | null>,
     transcripts: {} as Record<string, unknown>,
     selectAgent: vi.fn(async () => undefined),
+    loadSessionArtifacts: vi.fn(async () => undefined),
     advanceClusterImplementation: vi.fn(async () => undefined),
     markAgentViewed: vi.fn(async () => undefined),
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,

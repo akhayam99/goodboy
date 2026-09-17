@@ -34,7 +34,9 @@ const AttentionChip = ({ icon: Icon, label, count, tooltip, onOpen }: ChipProps)
 export const AttentionChips = ({ sessionId, onSelectLens }: Props) => {
   const artifacts = useAppStore((s) => s.sessionArtifacts[sessionId] ?? EMPTY_ARRAY);
   const counts = useDestinationCounts({ sessionId });
-  const artifactCount = standaloneArtifacts({ artifacts }).length;
+  const artifactCount = standaloneArtifacts({ artifacts }).filter(
+    (artifact) => artifact.status !== 'discarded',
+  ).length;
   const reviewCount = counts.review ?? 0;
   const questionCount = counts.questions ?? 0;
 

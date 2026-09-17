@@ -684,8 +684,12 @@ export const captureArtifactsFromTurn = async ({
         sourceTurnId,
       });
       const refreshed = await invokeListPlansForSession(sessionId);
+      const refreshedArtifacts = await invokeListArtifactsForSession(sessionId).catch(() => null);
       set((state) => ({
         sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
+        ...(refreshedArtifacts === null
+          ? {}
+          : { sessionArtifacts: { ...state.sessionArtifacts, [sessionId]: refreshedArtifacts } }),
       }));
       const plan =
         refreshed.find((p) => p.title === parsed.title && p.bodyMd === parsed.sourceText) ??

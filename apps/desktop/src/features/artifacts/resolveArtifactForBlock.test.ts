@@ -4,6 +4,7 @@ import type {
   ArtifactId,
   ArtifactKind,
   ArtifactStatus,
+  IsoDateTime,
   ProviderRunId,
   SessionArtifact,
   SessionId,
@@ -22,30 +23,47 @@ type Seed = Readonly<{
   status?: ArtifactStatus;
 }>;
 
+const base = {
+  sessionId: SESSION_ID,
+  workflowRunId: null,
+  schemaVersion: 1,
+  sourceText: '',
+  revision: 1,
+  createdAt: '2026-09-14T10:00:00.000Z' as IsoDateTime,
+  updatedAt: '2026-09-14T10:00:00.000Z' as IsoDateTime,
+};
+
 const artifactOf = ({
   id,
   agentId,
   kind,
   sourceTurnId,
   status = 'active',
-}: Seed): SessionArtifact =>
-  ({
-    id: id as ArtifactId,
-    sessionId: SESSION_ID,
-    agentId,
-    workflowRunId: null,
-    kind,
-    schemaVersion: 1,
-    title: id,
-    sourceFormat: kind === 'wireframe' ? 'json' : 'markdown',
-    sourceText: '',
+}: Seed): SessionArtifact => {
+  const shared = { ...base, id: id as ArtifactId, agentId, title: id, status, sourceTurnId };
+  if (kind === 'wireframe') {
+    return {
+      ...shared,
+      kind: 'wireframe',
+      sourceFormat: 'json',
+      metadata: { fidelity: 'low', designProfile: {} },
+    } satisfies SessionArtifact;
+  }
+  if (kind === 'report') {
+    return {
+      ...shared,
+      kind: 'report',
+      sourceFormat: 'markdown',
+      metadata: { reportType: 'analysis' },
+    } satisfies SessionArtifact;
+  }
+  return {
+    ...shared,
+    kind: 'plan',
+    sourceFormat: 'markdown',
     metadata: {},
-    status,
-    revision: 1,
-    sourceTurnId,
-    createdAt: '2026-09-14T10:00:00.000Z',
-    updatedAt: '2026-09-14T10:00:00.000Z',
-  }) as unknown as SessionArtifact;
+  } satisfies SessionArtifact;
+};
 
 describe('resolveArtifactForBlock', () => {
   it('matches the artifact the run that wrote the block produced', () => {
@@ -142,6 +160,39 @@ describe('resolveArtifactForBlock', () => {
         agentId: SCOUT,
         runId: 'run-1' as ProviderRunId,
         artifactKind: 'artifact',
+      }),
+    ).toBeNull();
+  });
+
+  it('refuses a discarded artifact even when the run id still matches it', () => {
+    const dropped = artifactOf({
+      id: 'a1',
+      agentId: SCOUT,
+      kind: 'report',
+      sourceTurnId: 'run-1',
+      status: 'discarded',
+    });
+
+    expect(
+      resolveArtifactForBlock({
+        artifacts: [dropped],
+        agentId: SCOUT,
+        runId: 'run-1' as ProviderRunId,
+        artifactKind: 'report',
+      }),
+    ).toBeNull();
+  });
+
+  it('refuses to guess when the agent has more than one live artifact of that kind', () => {
+    const first = artifactOf({ id: 'a1', agentId: SCOUT, kind: 'report', sourceTurnId: 'run-1' });
+    const second = artifactOf({ id: 'a2', agentId: SCOUT, kind: 'report', sourceTurnId: 'run-2' });
+
+    expect(
+      resolveArtifactForBlock({
+        artifacts: [first, second],
+        agentId: SCOUT,
+        runId: 'run-9' as ProviderRunId,
+        artifactKind: 'report',
       }),
     ).toBeNull();
   });

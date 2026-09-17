@@ -35,11 +35,11 @@ const previewSentence = ({ artifactKind, complete }: SentenceParams): string => 
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'artifact_block' }>;
-  readonly sessionId?: SessionId | null;
-  readonly agentId?: AgentId | null;
+  readonly sessionId: SessionId | null;
+  readonly agentId: AgentId | null;
 };
 
-export const ArtifactBlockCard = ({ item, sessionId = null, agentId = null }: Props) => {
+export const ArtifactBlockCard = ({ item, sessionId, agentId }: Props) => {
   const artifacts = useAppStore((s) =>
     sessionId === null ? EMPTY_ARRAY : (s.sessionArtifacts[sessionId] ?? EMPTY_ARRAY),
   );
