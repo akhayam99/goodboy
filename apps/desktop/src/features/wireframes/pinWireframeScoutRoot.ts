@@ -109,10 +109,22 @@ type CollectParams = Readonly<{
   read: (params: Readonly<{ relPath: string }>) => Promise<string | null>;
 }>;
 
+const inlineSequenceEntries = ({ text }: Readonly<{ text: string }>): ReadonlyArray<string> =>
+  text
+    .split(',')
+    .map((entry) => entry.trim().replace(/^['"]/, '').replace(/['"]$/, '').trim())
+    .filter((entry) => entry.length > 0);
+
 const pnpmWorkspacePatterns = ({ text }: Readonly<{ text: string }>): ReadonlyArray<string> => {
   const patterns: Array<string> = [];
   let isInPackages = false;
   for (const line of text.split(/\r?\n/)) {
+    const inline = line.match(/^packages\s*:\s*\[([^\]]*)\]/);
+    if (inline !== null) {
+      patterns.push(...inlineSequenceEntries({ text: inline[1]! }));
+      isInPackages = false;
+      continue;
+    }
     if (/^packages\s*:/.test(line)) {
       isInPackages = true;
       continue;

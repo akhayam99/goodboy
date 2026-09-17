@@ -84,6 +84,36 @@ describe('collectWireframeScoutRootCandidates', () => {
     expect(candidates).toEqual(['apps/web', 'apps/admin', 'packages/ui']);
   });
 
+  it('expands the inline sequence form of the pnpm workspace list', async () => {
+    const list = vi.fn(async ({ relPath }: { readonly relPath: string }) =>
+      relPath === 'apps'
+        ? [
+            { name: 'web', isDir: true },
+            { name: 'admin', isDir: true },
+          ]
+        : [{ name: 'ui', isDir: true }],
+    );
+    const read = vi.fn(async ({ relPath }: { readonly relPath: string }) =>
+      relPath === 'pnpm-workspace.yaml' ? "packages: ['apps/*', 'packages/*']\n" : null,
+    );
+    const candidates = await collectWireframeScoutRootCandidates({ list, read });
+    expect(candidates).toEqual(['apps/web', 'apps/admin', 'packages/ui']);
+  });
+
+  it('pins a workspace from an inline sequence instead of the whole repository', async () => {
+    const list = vi.fn(async () => [{ name: 'admin', isDir: true }]);
+    const read = vi.fn(async ({ relPath }: { readonly relPath: string }) =>
+      relPath === 'pnpm-workspace.yaml' ? 'packages: [apps/*]' : null,
+    );
+    const candidates = await collectWireframeScoutRootCandidates({ list, read });
+    const pinned = pinWireframeScoutRoot({
+      candidates,
+      goal: 'redesign the admin batch review screen',
+      brief: null,
+    });
+    expect(pinned.path).toBe('apps/admin');
+  });
+
   it('falls back to the package.json workspaces field', async () => {
     const list = vi.fn(async () => [{ name: 'web', isDir: true }]);
     const read = vi.fn(async ({ relPath }: { readonly relPath: string }) =>
