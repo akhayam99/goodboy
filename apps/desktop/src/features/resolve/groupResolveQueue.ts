@@ -1,9 +1,11 @@
 import type { ResolveQueueStatus } from '../../store/slices/resolve/deriveResolveQueueStatus';
 import type { ResolveQueueFilter } from '../../store/slices/session-view';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
+import { isDecidedUnpublished } from './publishCounts';
 
 export type ResolveQueueGroups = {
   readonly needsReview: ReadonlyArray<ResolveQueueRow>;
+  readonly approved: ReadonlyArray<ResolveQueueRow>;
   readonly active: ReadonlyArray<ResolveQueueRow>;
   readonly retryable: ReadonlyArray<ResolveQueueRow>;
   readonly completed: ReadonlyArray<ResolveQueueRow>;
@@ -49,6 +51,10 @@ export const groupResolveQueue = ({
 }): ResolveQueueGroups => ({
   needsReview: rows
     .filter((row) => NEEDS_REVIEW_STATUSES.has(row.status))
+    .slice()
+    .sort(byReviewerTime),
+  approved: rows
+    .filter((row) => !NEEDS_REVIEW_STATUSES.has(row.status) && isDecidedUnpublished(row))
     .slice()
     .sort(byReviewerTime),
   active: rows
@@ -109,7 +115,7 @@ export const rowsForResolveFilter = ({
   readonly filter: ResolveQueueFilter;
 }): ReadonlyArray<ResolveQueueRow> => {
   if (filter === 'needs_review') {
-    return groups.needsReview;
+    return [...groups.needsReview, ...groups.approved];
   }
   return filter === 'retryable' ? groups.retryable : groups.active;
 };

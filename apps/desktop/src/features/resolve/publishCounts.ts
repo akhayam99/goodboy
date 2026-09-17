@@ -4,17 +4,17 @@ import type { PublishCounts } from './resolvePublishCopy';
 const isLocalNote = ({ entry }: { readonly entry: ResolveQueueItemWithThread }): boolean =>
   entry.thread.originKind === 'diff_comment';
 
+export const isDecidedUnpublished = ({ item, thread }: ResolveQueueItemWithThread): boolean =>
+  (item.approvalState === 'accepted' || item.approvalState === 'wont_fix') &&
+  item.deliveredAt === null &&
+  item.approvedRevision === thread.revision;
+
 export const acceptedPublishCounts = ({
   entries,
 }: {
   readonly entries: ReadonlyArray<ResolveQueueItemWithThread>;
 }): PublishCounts => {
-  const decided = entries.filter(
-    ({ item, thread }) =>
-      (item.approvalState === 'accepted' || item.approvalState === 'wont_fix') &&
-      item.deliveredAt === null &&
-      item.approvedRevision === thread.revision,
-  );
+  const decided = entries.filter(isDecidedUnpublished);
   const commits = new Set(
     decided.flatMap(({ item, thread }) =>
       item.approvalState === 'accepted'

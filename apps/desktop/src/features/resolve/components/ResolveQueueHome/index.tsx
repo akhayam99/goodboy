@@ -423,7 +423,7 @@ export const ResolveQueueHome = ({ session }: Props) => {
             )}
             <QueueFilterChips
               filter={view.filter}
-              needsReviewCount={groups.needsReview.length}
+              needsReviewCount={groups.needsReview.length + groups.approved.length}
               activeCount={groups.active.length}
               retryableCount={groups.retryable.length}
               onChange={(filter) => setResolveQueueView({ sessionId, patch: { filter } })}
