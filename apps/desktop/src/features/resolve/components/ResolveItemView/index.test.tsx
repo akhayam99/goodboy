@@ -445,6 +445,13 @@ describe('the resolve item view', () => {
     expect(screen.queryByText('No agent reply yet')).toBeNull();
   });
 
+  it('names what the primary approves, a reply when there is no code change', () => {
+    renderView({ proposalKind: 'reply_only' });
+
+    expect(screen.getByRole('button', { name: 'Approve reply' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Approve fix' })).toBeNull();
+  });
+
   it('leads with the answer while the agent is waiting on one', () => {
     const onStartRevise = vi.fn();
     renderView({ row: { ...LEAD, status: 'agent_asked' } as typeof LEAD, onStartRevise });

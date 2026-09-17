@@ -120,6 +120,10 @@ export const ResolveItemView = ({
   const isAnswering = row.status === 'agent_asked';
   const fieldId = `resolve-item-${row.thread.threadId}`;
   const nextStep = RESOLVE_QUEUE_NEXT_STEP[row.status];
+  const approveLabel =
+    proposalKind === 'reply_only'
+      ? RESOLVE_QUEUE_ACTION_LABEL.approveReply
+      : RESOLVE_QUEUE_ACTION_LABEL.approveFix;
   const reviseItems: ReadonlyArray<OverflowMenuItem> = isAnswering
     ? []
     : [
@@ -175,14 +179,14 @@ export const ResolveItemView = ({
             </Button>
           )}
           {mode === 'reply' && !isDelivered && !isAnswering && (
-            <Tooltip content={approveBlockedReason ?? RESOLVE_QUEUE_ACTION_LABEL.approveFix}>
+            <Tooltip content={approveBlockedReason ?? approveLabel}>
               <Button
                 size="sm"
                 variant="primary"
                 disabled={isBusy || !canApprove}
                 onClick={onApprove}
               >
-                {RESOLVE_QUEUE_ACTION_LABEL.approveFix}
+                {approveLabel}
               </Button>
             </Tooltip>
           )}
