@@ -66,6 +66,7 @@ export const ArtifactPrintView = ({ request }: Props) => {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.setAttribute('data-print-window', 'true');
     removeBootShell();
     let isActive = true;
     listArtifactsForSession(request.sessionId)
