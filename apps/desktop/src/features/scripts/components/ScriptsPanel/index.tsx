@@ -27,7 +27,6 @@ import { readScriptsProject, writeScriptsProject } from '../../projectSelectionS
 import { discoveredScriptId, type ScriptGroup as ManifestScriptGroup } from '../../scripts';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
 import { DiscoveredScriptGroup } from './DiscoveredScriptGroup';
-import { ManifestRail, type ManifestRailEntry } from './ManifestRail';
 import { ManifestSearchInput } from './ManifestSearchInput';
 import { NewScriptCard } from './NewScriptCard';
 import { ProjectRail, type ProjectRailEntry } from './ProjectRail';
@@ -110,7 +109,7 @@ type SelectProjectParams = {
   readonly projectId: ProjectId;
 };
 
-type SelectManifestParams = {
+type ToggleManifestParams = {
   readonly key: string;
 };
 
@@ -247,8 +246,8 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
   const [copiedId, setCopiedId] = useState<ProjectScriptId | null>(null);
   const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [manifestKeyByProject, setManifestKeyByProject] = useState<
-    Readonly<Partial<Record<ProjectId, string>>>
+  const [manifestOpenByProject, setManifestOpenByProject] = useState<
+    Readonly<Partial<Record<ProjectId, Readonly<Record<string, boolean>>>>>
   >({});
 
   const selectedProject =
@@ -376,52 +375,23 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
       userScriptsByProjectId,
     ],
   );
-  const manifestEntries = useMemo<ReadonlyArray<ManifestRailEntry>>(() => {
-    if (selectedMount === null) {
-      return [];
-    }
-    return manifestGroups.map((group, index) => ({
-      key: manifestKey({ group }),
-      source: group.source,
-      packageName: group.packageName,
-      relDir: group.relDir,
-      manager: group.manager,
-      scriptCount: group.scripts.length,
-      matchCount: filteredManifestGroups[index]?.group.scripts.length ?? 0,
-      isRunning:
-        pendingScriptIds.size > 0 &&
-        group.scripts.some((script) =>
-          pendingScriptIds.has(
-            discoveredScriptId({
-              worktreePath: selectedMount.worktreePath,
-              source: group.source,
-              relDir: group.relDir,
-              name: script.name,
-            }),
-          ),
-        ),
-    }));
-  }, [filteredManifestGroups, manifestGroups, pendingScriptIds, selectedMount]);
-  const storedManifestKey =
-    selectedProjectId === null ? null : (manifestKeyByProject[selectedProjectId] ?? null);
-  const selectedManifestKey =
-    storedManifestKey !== null && manifestEntries.some((entry) => entry.key === storedManifestKey)
-      ? storedManifestKey
-      : (manifestEntries[0]?.key ?? null);
   const visibleManifestGroups =
     normalizedQuery === ''
-      ? filteredManifestGroups.filter((entry) => manifestKey(entry) === selectedManifestKey)
+      ? filteredManifestGroups
       : filteredManifestGroups.filter((entry) => entry.group.scripts.length > 0);
-  const firstVisibleManifest = visibleManifestGroups[0] ?? null;
-  const railManifestKey =
-    normalizedQuery === '' || firstVisibleManifest === null
-      ? selectedManifestKey
-      : manifestKey(firstVisibleManifest);
+  const openManifests =
+    selectedProjectId === null ? undefined : manifestOpenByProject[selectedProjectId];
+  const isManifestOpen = ({
+    key,
+    index,
+  }: {
+    readonly key: string;
+    readonly index: number;
+  }): boolean => openManifests?.[key] ?? (normalizedQuery !== '' || index === 0);
   const selectedManifestCount = filteredManifestGroups.reduce(
     (total, entry) => total + entry.group.scripts.length,
     0,
   );
-  const hasManifestRail = manifestEntries.length > 1;
   const selectedScan =
     selectedMount === null ? undefined : discoveredScriptScans?.[selectedMount.worktreePath];
   const isDiscoveryLoading =
@@ -697,12 +667,16 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
     setError(null);
   }, []);
 
-  const onSelectManifest = useCallback(
-    ({ key }: SelectManifestParams) => {
+  const onToggleManifest = useCallback(
+    ({ key }: ToggleManifestParams) => {
       if (selectedProjectId === null) {
         return;
       }
-      setManifestKeyByProject((current) => ({ ...current, [selectedProjectId]: key }));
+      setManifestOpenByProject((current) => {
+        const forProject = current[selectedProjectId] ?? {};
+        const isOpen = forProject[key] ?? false;
+        return { ...current, [selectedProjectId]: { ...forProject, [key]: !isOpen } };
+      });
     },
     [selectedProjectId],
   );
@@ -935,19 +909,12 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                   </div>
                 ) : null}
                 {visibleManifestGroups.length > 0 ? (
-                  <div className="flex min-w-0 items-start gap-4">
-                    {hasManifestRail && railManifestKey !== null ? (
-                      <ManifestRail
-                        entries={manifestEntries}
-                        selectedKey={railManifestKey}
-                        hasSearch={normalizedQuery !== ''}
-                        onSelect={(key) => onSelectManifest({ key })}
-                      />
-                    ) : null}
-                    <div className="flex min-w-0 flex-1 flex-col gap-5">
-                      {visibleManifestGroups.map((entry) => (
+                  <div className="flex min-w-0 flex-1 flex-col gap-5">
+                    {visibleManifestGroups.map((entry, index) => {
+                      const key = manifestKey(entry);
+                      return (
                         <DiscoveredScriptGroup
-                          key={manifestKey(entry)}
+                          key={key}
                           group={entry.group}
                           worktreePath={entry.worktreePath}
                           runs={runs}
@@ -955,11 +922,13 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                           emptyLabel={
                             normalizedQuery === '' ? 'No scripts in this manifest.' : null
                           }
+                          isOpen={isManifestOpen({ key, index })}
+                          onToggle={() => onToggleManifest({ key })}
                           onRun={onRunDiscovered}
                           onCancel={onCancelDiscovered}
                         />
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 ) : null}
               </section>

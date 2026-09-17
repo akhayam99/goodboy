@@ -109,8 +109,6 @@ const rail = () => screen.getByRole('navigation', { name: 'Script projects' });
 
 const manifestSection = () => screen.getByRole('region', { name: 'Manifest scripts' });
 
-const manifestRail = () => screen.getByRole('navigation', { name: 'Manifest packages' });
-
 const headings = () =>
   Array.from(manifestSection().querySelectorAll('span[role="heading"]')).map(
     (heading) => heading.textContent,
@@ -332,26 +330,17 @@ describe('ScriptsPanel', () => {
 
     renderPanel();
 
-    const packages = within(manifestRail()).getAllByRole('button');
-    expect(packages.map((row) => row.textContent)).toEqual([
-      expect.stringContaining('root'),
-      expect.stringContaining('@acme/web'),
-      expect.stringContaining('acme/api'),
-    ]);
-    expect(packages[0]?.getAttribute('aria-current')).toBe('true');
-    expect(headings()).toEqual(['root']);
+    expect(headings()).toEqual(['root', '@acme/web', 'acme/api']);
+    expect(screen.getByRole('button', { name: /pnpm run build/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /pnpm run dev/ })).toBeNull();
 
-    fireEvent.click(within(manifestRail()).getByRole('button', { name: /@acme\/web/ }));
+    fireEvent.click(within(manifestSection()).getByRole('button', { name: /@acme\/web/ }));
 
-    expect(headings()).toEqual(['@acme/web']);
-    expect(
-      within(manifestRail())
-        .getByRole('button', { name: /@acme\/web/ })
-        .getAttribute('aria-current'),
-    ).toBe('true');
+    expect(screen.getByRole('button', { name: /pnpm run dev/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /pnpm run build/ })).toBeDefined();
   });
 
-  it('remembers the manifest picked for each project', () => {
+  it('remembers which packages were opened for each project', () => {
     withTwoProjects();
     state.discoveredScripts = {
       'session-1': {
@@ -376,16 +365,16 @@ describe('ScriptsPanel', () => {
 
     renderPanel();
 
-    fireEvent.click(within(manifestRail()).getByRole('button', { name: /@acme\/web/ }));
-    expect(headings()).toEqual(['@acme/web']);
+    fireEvent.click(within(manifestSection()).getByRole('button', { name: /@acme\/web/ }));
+    expect(screen.getByRole('button', { name: /pnpm run dev/ })).toBeDefined();
 
     fireEvent.click(within(rail()).getByRole('button', { name: /Web/ }));
     fireEvent.click(within(rail()).getByRole('button', { name: /API/ }));
 
-    expect(headings()).toEqual(['@acme/web']);
+    expect(screen.getByRole('button', { name: /pnpm run dev/ })).toBeDefined();
   });
 
-  it('hides the manifest rail when a project has a single manifest', () => {
+  it('opens the only package of a project without asking', () => {
     state.discoveredScripts = {
       'session-1': {
         '/tmp/api': [
@@ -406,7 +395,7 @@ describe('ScriptsPanel', () => {
     expect(headings()).toEqual(['api']);
   });
 
-  it('summarises a package with a category strip and groups its scripts by category', () => {
+  it('names each category once, as the heading of its own group', () => {
     state.discoveredScripts = {
       'session-1': {
         '/tmp/api': [
@@ -431,9 +420,7 @@ describe('ScriptsPanel', () => {
     renderPanel();
 
     const pkg = within(screen.getByRole('region', { name: 'root scripts' }));
-    expect(pkg.getByTestId('category-strip-test').textContent).toBe('1');
-    expect(pkg.getByTestId('category-strip-typecheck').textContent).toBe('1');
-    expect(pkg.queryByTestId('category-strip-deploy')).toBeNull();
+    expect(pkg.queryByLabelText('Script categories')).toBeNull();
     expect(pkg.getAllByRole('region').map((section) => section.getAttribute('aria-label'))).toEqual(
       [
         'Dev scripts',
@@ -600,24 +587,17 @@ describe('ScriptsPanel', () => {
 
     renderPanel();
 
-    expect(headings()).toEqual(['root']);
+    expect(headings()).toEqual(['root', '@acme/web']);
     fireEvent.change(searchBox(), { target: { value: 'deploy' } });
 
     expect(screen.getByText('deploy user')).toBeDefined();
     expect(screen.queryByText('lint user')).toBeNull();
     expect(headings()).toEqual(['@acme/web']);
     expect(screen.getByText('deploy manifest')).toBeDefined();
-    expect(within(manifestRail()).getByText('1 match')).toBeDefined();
-    expect(within(manifestRail()).getByText('0 matches')).toBeDefined();
-    expect(
-      within(manifestRail())
-        .getByRole('button', { name: /@acme\/web/ })
-        .getAttribute('aria-current'),
-    ).toBe('true');
     expect(within(rail()).getByText('1 match')).toBeDefined();
 
     fireEvent.keyDown(searchBox(), { key: 'Escape' });
-    expect(headings()).toEqual(['root']);
+    expect(headings()).toEqual(['root', '@acme/web']);
     expect(screen.getByText('lint user')).toBeDefined();
   });
 
