@@ -259,3 +259,33 @@ describe('Markdown preview variant', () => {
     expect(container.querySelector('ul')?.className).toContain('pl-4');
   });
 });
+
+describe('Markdown print hooks', () => {
+  it('marks a callout with its block and tone for the print sheet', () => {
+    const { container } = render(<Markdown text="<<output>>ran the tests<</output>>" />);
+    const callout = container.querySelector('[data-block="callout"]');
+    expect(callout).not.toBeNull();
+    expect(callout?.getAttribute('data-tone')).toBe('output');
+  });
+
+  it('marks an inline chip with its block and tone for the print sheet', () => {
+    const { container } = render(<Markdown text="see <<ctx-goal>> now" />);
+    const chip = container.querySelector('[data-block="chip"]');
+    expect(chip).not.toBeNull();
+    expect(chip?.getAttribute('data-tone')).toBe('goal');
+  });
+
+  it('marks an ascii tree paragraph as a tree block', () => {
+    const { container } = render(
+      <Markdown text={['src', '├── index.ts', '└── cn.ts'].join('\n')} />,
+    );
+    const tree = container.querySelector('[data-block="tree"]');
+    expect(tree).not.toBeNull();
+    expect(tree?.tagName).toBe('P');
+  });
+
+  it('leaves an ordinary paragraph without a block attribute', () => {
+    const { container } = render(<Markdown text="a plain line of prose" />);
+    expect(container.querySelector('p')?.hasAttribute('data-block')).toBe(false);
+  });
+});

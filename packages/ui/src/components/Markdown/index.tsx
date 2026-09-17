@@ -120,10 +120,16 @@ const renderInlineNodes = ({ nodes, keyPrefix, variant }: InlineRenderParams): R
     if (node.kind === 'chip') {
       const style = ctxStyleForTag({ tag: node.tag });
       const Icon = style.icon;
+      const label = ctxTagLabel({ tag: node.tag });
       return (
-        <span key={key} className={cn(CHIP_CLASS, style.chipClass)}>
+        <span
+          key={key}
+          data-block="chip"
+          data-tone={label}
+          className={cn(CHIP_CLASS, style.chipClass)}
+        >
           <Icon size={10} aria-hidden />
-          {ctxTagLabel({ tag: node.tag })}
+          {label}
         </span>
       );
     }
@@ -349,7 +355,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
       if (variant === 'preview') {
         return (
           <div key={key} className="flex min-w-0 items-center gap-1.5 text-sm">
-            <span className={cn(CHIP_CLASS, style.chipClass)}>
+            <span data-block="chip" data-tone={label} className={cn(CHIP_CLASS, style.chipClass)}>
               <Icon size={10} aria-hidden />
               {label}
             </span>
@@ -362,6 +368,8 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
       return (
         <div
           key={key}
+          data-block="callout"
+          data-tone={label}
           className={cn('flex flex-col gap-1.5 rounded-md border p-3 text-sm', style.calloutClass)}
         >
           <div
@@ -383,6 +391,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
       return (
         <p
           key={key}
+          data-block={block.isTree ? 'tree' : undefined}
           className={cn(
             'leading-relaxed',
             block.isTree && 'overflow-x-auto whitespace-pre-wrap font-mono',
