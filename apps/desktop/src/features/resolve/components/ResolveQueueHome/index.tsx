@@ -16,7 +16,14 @@ import {
   Tooltip,
   formatError,
 } from '@goodboy/ui';
-import type { PrCheckRun, PrComment, ResolveAttempt, Session, SessionId } from '@goodboy/types';
+import type {
+  PrCheckRun,
+  PrComment,
+  ResolveAttempt,
+  ResolvePublicationDrift,
+  Session,
+  SessionId,
+} from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useToast } from '../../../../app/components/Toast';
@@ -38,6 +45,7 @@ import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../../session/components/AgentSpa
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
 import { useResolveQueueRows } from '../../hooks/useResolveQueueRows';
 import { hasActiveResolveRun } from '../../hasActiveResolveRun';
+import { heldBackByThreadId } from '../../heldBackByThreadId';
 import { startResolveRun } from '../../startResolveRun';
 import type { ResolveQueueRow as QueueRow } from '../../buildResolveQueueRows';
 import { groupResolveQueue, groupSharedRuns, rowsForResolveFilter } from '../../groupResolveQueue';
@@ -68,6 +76,7 @@ type Props = {
 };
 
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
+const EMPTY_DRIFT: ReadonlyArray<ResolvePublicationDrift> = [];
 const EMPTY_CHECKS: ReadonlyArray<PrCheckRun> = [];
 const SKELETON_ROWS = [0, 1, 2];
 const DETAIL_WIDTH = 520;
@@ -96,6 +105,7 @@ export const ResolveQueueHome = ({ session }: Props) => {
   const checks = useAppStore((s) => s.sessionGithub[sessionId]?.detail?.checks ?? EMPTY_CHECKS);
   const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
   const view = useAppStore((s) => s.resolveQueueView[sessionId] ?? EMPTY_RESOLVE_QUEUE_VIEW);
+  const publicationPreview = useAppStore((s) => s.activePublicationPreview[sessionId] ?? null);
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
   const deferResolveQueueItem = useAppStore((s) => s.deferResolveQueueItem);
   const takeUpResolveQueueItem = useAppStore((s) => s.takeUpResolveQueueItem);
@@ -128,6 +138,10 @@ export const ResolveQueueHome = ({ session }: Props) => {
     [groups, view.filter, view.order],
   );
   const listGroups = useMemo(() => groupSharedRuns({ rows: listed }), [listed]);
+  const heldBack = useMemo(
+    () => heldBackByThreadId({ drift: publicationPreview?.drift ?? EMPTY_DRIFT }),
+    [publicationPreview],
+  );
   const nextThreadId = useMemo(
     () => threadIdAfterDecision({ rows: listed, selectedThreadId: view.expandedThreadId }),
     [listed, view.expandedThreadId],
@@ -363,6 +377,7 @@ export const ResolveQueueHome = ({ session }: Props) => {
         key={row.thread.threadId}
         row={row}
         isSelected={row.thread.threadId === view.expandedThreadId}
+        heldBack={heldBack.get(row.thread.threadId) ?? null}
         onOpen={() => onSelect(row.thread.threadId)}
         onLater={() => onLater({ itemId: row.item.id })}
         onResume={() => onResume({ itemId: row.item.id })}
@@ -376,7 +391,7 @@ export const ResolveQueueHome = ({ session }: Props) => {
         }
       />
     ),
-    [onLater, onOpenInDiff, onResume, onSelect, view.expandedThreadId],
+    [heldBack, onLater, onOpenInDiff, onResume, onSelect, view.expandedThreadId],
   );
 
   if (github?.pr == null) {

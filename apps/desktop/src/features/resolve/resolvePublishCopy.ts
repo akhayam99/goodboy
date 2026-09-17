@@ -119,7 +119,15 @@ export const driftSentence = ({
   if (remote !== undefined) {
     return `The remote moved from ${remote.before} to ${remote.after}`;
   }
+  if (drift.every((entry) => entry.threadId !== null)) {
+    return null;
+  }
   return drift.length === 0 ? null : 'Something changed while you were looking';
+};
+
+export const HELD_BACK_NOTE: Record<'comment_changed' | 'approval_withdrawn', string> = {
+  comment_changed: 'Held back, the comment changed',
+  approval_withdrawn: 'Held back, you took the approval back',
 };
 
 export type BlockerCopy = {

@@ -31,12 +31,21 @@ const rowOf = ({ body }: { readonly body: string }): QueueRow =>
     delivery: null,
   }) as unknown as QueueRow;
 
-const renderRow = ({ body, onOpen }: { readonly body: string; readonly onOpen: () => void }) =>
+const renderRow = ({
+  body,
+  onOpen,
+  heldBack = null,
+}: {
+  readonly body: string;
+  readonly onOpen: () => void;
+  readonly heldBack?: 'comment_changed' | 'approval_withdrawn' | null;
+}) =>
   render(
     <ul>
       <ResolveQueueRow
         row={rowOf({ body })}
         isSelected={false}
+        heldBack={heldBack}
         onOpen={onOpen}
         onLater={vi.fn()}
         onResume={vi.fn()}
@@ -74,5 +83,23 @@ describe('the resolve queue row', () => {
     fireEvent.click(screen.getByText('Cap the attempts.'));
 
     expect(onOpen).toHaveBeenCalledOnce();
+  });
+
+  it('says on the row itself that a publish left this comment behind', () => {
+    renderRow({ body: 'Cap the attempts.', onOpen: vi.fn(), heldBack: 'comment_changed' });
+
+    expect(screen.getByText('Held back, the comment changed')).toBeDefined();
+  });
+
+  it('says which kind of hold it was when the approval was taken back', () => {
+    renderRow({ body: 'Cap the attempts.', onOpen: vi.fn(), heldBack: 'approval_withdrawn' });
+
+    expect(screen.getByText('Held back, you took the approval back')).toBeDefined();
+  });
+
+  it('stays quiet when nothing held the comment back', () => {
+    renderRow({ body: 'Cap the attempts.', onOpen: vi.fn() });
+
+    expect(screen.queryByText(/Held back/)).toBeNull();
   });
 });

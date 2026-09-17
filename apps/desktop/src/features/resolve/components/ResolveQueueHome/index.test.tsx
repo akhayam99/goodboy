@@ -19,6 +19,7 @@ const h = vi.hoisted(() => {
     sessionResolveAttempts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionResolvePublications: {} as Record<string, ReadonlyArray<unknown>>,
     resolveQueueView: {} as Record<string, unknown>,
+    activePublicationPreview: {} as Record<string, unknown>,
     reviewTargets: {} as Record<string, unknown>,
     loadResolveSession: vi.fn(async () => undefined),
     deferResolveQueueItem: vi.fn(async () => undefined),

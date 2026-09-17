@@ -1,10 +1,12 @@
 import type { KeyboardEvent, SyntheticEvent } from 'react';
 import { CalendarClock, ChevronRight, RotateCcw } from 'lucide-react';
-import { CardAction, CardActionSlot, ClampedProse, Tooltip, cn } from '@goodboy/ui';
+import { CardAction, CardActionSlot, Chip, ClampedProse, Tooltip, cn } from '@goodboy/ui';
 import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { RESOLVE_COMMENT_UNAVAILABLE, RESOLVE_QUEUE_ACTION_LABEL } from '../../resolveQueueCopy';
 import { deliverySupportLine } from '../../resolveDeliverySupport';
+import { HELD_BACK_NOTE } from '../../resolvePublishCopy';
+import type { HeldBackKind } from '../../heldBackByThreadId';
 import { shortSha } from '../../resolveItemCopy';
 import type { ResolveQueueRow as QueueRow } from '../../buildResolveQueueRows';
 import { ResolveStatusBadge } from '../ResolveStatusBadge';
@@ -12,6 +14,7 @@ import { ResolveStatusBadge } from '../ResolveStatusBadge';
 type Props = {
   readonly row: QueueRow;
   readonly isSelected: boolean;
+  readonly heldBack: HeldBackKind | null;
   readonly onOpen: () => void;
   readonly onLater: () => void;
   readonly onResume: () => void;
@@ -41,6 +44,7 @@ const stopOnInnerControl = (event: SyntheticEvent<HTMLElement>): void => {
 export const ResolveQueueRow = ({
   row,
   isSelected,
+  heldBack,
   onOpen,
   onLater,
   onResume,
@@ -146,7 +150,10 @@ export const ResolveQueueRow = ({
             )}
           </span>
         </span>
-        <span className="col-start-2 row-start-2 self-start text-right text-2xs text-muted-foreground">
+        <span className="col-start-2 row-start-2 flex items-center justify-end gap-2 self-start text-right text-2xs text-muted-foreground">
+          {heldBack !== null && (
+            <Chip size="3xs" tone="warning" bordered={false} label={HELD_BACK_NOTE[heldBack]} />
+          )}
           {support}
         </span>
         <CardActionSlot
