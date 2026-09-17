@@ -322,11 +322,12 @@
 }
 .print-sheet .print-body [data-block='chip'] {
   -webkit-print-color-adjust: exact;
+  align-items: baseline;
   background: none;
   border: 1px solid currentColor;
   border-radius: 2px;
   color: var(--print-tone);
-  display: inline-block;
+  display: inline-flex;
   padding: 0 0.3em;
   print-color-adjust: exact;
   white-space: nowrap;
