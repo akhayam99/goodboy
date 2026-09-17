@@ -9,6 +9,8 @@ if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
 ## Goodboy v0.3.7
 
+A wireframe stops being one agent guessing at a repository it never opened, the artifact gets back a third of the screen it was spending on chrome, and Save PDF prints the whole report instead of its first page.
+
 ### [#1795] Wireframes and reports are flows now, not one agent with a pack
 
 Asking for a wireframe or a report used to hand one agent a packet of evidence and hope. Now it starts a run: scouts fan out in parallel across the repositories you picked, each claim they bring back is checked against the files on disk, and only then does the producing agent write the document.
@@ -45,14 +47,14 @@ The window that opens after Save PDF scrolls, and Escape closes it.
 
 ### Fixes
 
-- An answered question produced a second artifact instead of a new revision of the one you were improving.
-- A finished run stayed in its producing phase forever, so the next session switch marked it failed.
-- A repository repointed under the same name and branch went unnoticed by the creation pane, which kept reading the old worktree.
-- Repositories resolved in the session's order rather than the order you chose them, so the theme could come from the one you picked second.
-- A repository whose diff named no file still spent a scout turn on a report with nothing to read.
-- A report pack could carry wireframe wording, telling a report agent that a wireframe was being drawn.
-- Body text was clipped rather than wrapped in a narrow pane, in the shared studio layout that Workflows and Inbox also use.
-- Every callout leaked a stray bracket into its text, on screen and on paper.
+- An answered question produced a second artifact instead of a new revision of the one you were improving [#1795]
+- A finished run stayed in its producing phase forever, so the next session switch marked it failed [#1795]
+- A repository repointed under the same name and branch went unnoticed by the creation pane, which kept reading the old worktree [#1795]
+- Repositories resolved in the session's order rather than the order you chose them, so the theme could come from the one you picked second [#1795]
+- A repository whose diff named no file still spent a scout turn on a report with nothing to read [#1795]
+- A report pack could carry wireframe wording, telling a report agent that a wireframe was being drawn [#1795]
+- Body text was clipped rather than wrapped in a narrow pane, in the shared studio layout that Workflows and Inbox also use [#1796]
+- Every callout leaked a stray bracket into its text, on screen and on paper [#1794]
 
 ## Goodboy v0.3.6
 
