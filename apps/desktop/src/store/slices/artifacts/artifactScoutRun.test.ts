@@ -921,6 +921,62 @@ describe('report scouting', () => {
     expect(pack).not.toContain('most of what it reported could not be found on disk');
   });
 
+  it('writes the roster on the row before it starts a single scout', async () => {
+    changedFiles.mockResolvedValue({
+      paths: ['apps/web/src/Batches.tsx'],
+      additions: 2,
+      deletions: 1,
+    });
+    const h = harness();
+    await reportSpawn(h, 'change-summary');
+    const first = advanceRun.mock.calls[0]![0] as Record<string, unknown>;
+    expect(advanceRun.mock.invocationCallOrder[0]!).toBeLessThan(
+      insertBatch.mock.invocationCallOrder[0]!,
+    );
+    const plan = first['scoutPlan'] as ReadonlyArray<Record<string, unknown>>;
+    expect(plan).toHaveLength(1);
+    expect(plan[0]!['roleId']).toBe('diff-context');
+  });
+
+  it('rejoins the scouts of a roster whose agent ids were never written', async () => {
+    changedFiles.mockImplementation(async ({ worktreePath }) =>
+      worktreePath === MOUNT.worktreePath
+        ? { paths: ['apps/web/src/Batches.tsx'], additions: 2, deletions: 1 }
+        : { paths: ['services/api/src/Totals.ts'], additions: 5, deletions: 0 },
+    );
+    const h = harness();
+    const containerId = await reportSpawn(h, 'change-summary', [MOUNT.mountId, MOUNT_TWO.mountId]);
+    const row = provenanceRows.get(containerId)!;
+    provenanceRows.set(containerId, {
+      ...row,
+      scoutPlan: (row['scoutPlan'] as ReadonlyArray<Record<string, unknown>>).map((entry) => ({
+        ...entry,
+        agentId: null,
+      })),
+    });
+    for (const child of h.agents.filter((agent) => agent.parentAgentId === containerId)) {
+      const index = h.agents.findIndex((agent) => agent.id === child.id);
+      h.agents[index] = {
+        ...child,
+        status: 'completed',
+        outputSummary: `${child.name} read it apps/web/src/Batches.tsx`,
+      } as Agent;
+    }
+    h.set(() => ({ sessionPhaseRuns: { [SESSION_ID]: [...h.agents] } }) as never);
+    resetArtifactScoutRegistry();
+    h.sendTurn.mockClear();
+    await (h.state['recoverArtifactScouts'] as (args: Record<string, unknown>) => Promise<void>)({
+      sessionId: SESSION_ID,
+    });
+    const containerTurns = h.sendTurn.mock.calls.filter(
+      (call) => (call[0] as Record<string, unknown>)['agentId'] === containerId,
+    );
+    expect(containerTurns).toHaveLength(1);
+    const pack = String((containerTurns[0]![0] as Record<string, unknown>)['content']);
+    expect(pack).toContain('diff context in goodboy read it');
+    expect(pack).toContain('diff context in goodboy-api read it');
+  });
+
   it('joins the diff context report into the pack it sends the container', async () => {
     changedFiles.mockResolvedValue({
       paths: ['apps/web/src/Batches.tsx'],

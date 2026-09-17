@@ -270,6 +270,14 @@ const startArtifactScouts = async ({
     return false;
   }
   const scouts = scoutsOf({ picks: roster.picks });
+  const warnRunFailure = (error: unknown): void => {
+    console.warn(`[artifact-run] ${params.kind} ${containerId}: ${formatError(error)}`);
+  };
+  await advanceArtifactRun({
+    agentId: containerId,
+    phase: 'gathering',
+    scoutPlan: artifactScoutPlanEntries({ picks: roster.picks, agentIds: [] }),
+  }).catch(warnRunFailure);
   const started = await startFanOutChildren({
     set,
     get,
@@ -299,9 +307,7 @@ const startArtifactScouts = async ({
     agentId: containerId,
     phase: 'gathering',
     scoutPlan: artifactScoutPlanEntries({ picks: roster.picks, agentIds: started.childIds }),
-  }).catch((error: unknown) => {
-    console.warn(`[artifact-run] ${params.kind} ${containerId}: ${formatError(error)}`);
-  });
+  }).catch(warnRunFailure);
   containers.set(containerId, contextFor({ params, picks: roster.picks }));
   joined.delete(containerId);
   clearDeadline({ containerId });
@@ -464,9 +470,12 @@ const recoveredPicks = ({
   provenance: ArtifactProvenance;
   children: ReadonlyArray<Agent>;
 }>): ReadonlyArray<ArtifactScoutPick> =>
-  provenance.scoutPlan.map((entry) => {
+  provenance.scoutPlan.map((entry, index) => {
     const role = ARTIFACT_SCOUT_ROLES[entry.roleId as keyof typeof ARTIFACT_SCOUT_ROLES] ?? null;
-    const child = children.find((agent) => agent.id === entry.agentId) ?? null;
+    const child =
+      entry.agentId === null
+        ? (children[index] ?? null)
+        : (children.find((agent) => agent.id === entry.agentId) ?? null);
     return {
       roleId: entry.roleId,
       mountId: entry.mountId,
