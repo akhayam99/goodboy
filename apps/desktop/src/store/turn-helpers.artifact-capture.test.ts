@@ -421,6 +421,16 @@ describe('captureArtifactsFromTurn revisions', () => {
     expect(result.artifact).toMatchObject({ id: 'artifact-0' });
   });
 
+  it('creates the artifact of an agent with no run of its own, same document or not', async () => {
+    loadArtifactProvenance.mockResolvedValue(null);
+    listArtifactsForSession.mockResolvedValue([priorReport({})]);
+
+    await run(REPORT_TURN('## Outcome'));
+
+    expect(updateArtifactSource).not.toHaveBeenCalled();
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+  });
+
   it('leaves the artifact of another agent alone', async () => {
     loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
     listArtifactsForSession.mockResolvedValue([priorReport({ agentId: 'agent-2' })]);

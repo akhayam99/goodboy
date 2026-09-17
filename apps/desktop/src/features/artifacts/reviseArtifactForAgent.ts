@@ -42,12 +42,12 @@ export const reviseArtifactForAgent = async ({
   if (prior === null || prior.sourceTurnId === sourceTurnId) {
     return null;
   }
-  if (prior.title === title && prior.sourceText === sourceText) {
-    return prior;
-  }
   const provenance = await loadArtifactProvenance(agentId).catch(() => null);
   if (provenance === null) {
     return null;
+  }
+  if (prior.title === title && prior.sourceText === sourceText) {
+    return prior;
   }
   return updateArtifactSource({
     artifactId: prior.id,
