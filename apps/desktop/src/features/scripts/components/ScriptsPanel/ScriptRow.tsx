@@ -5,6 +5,7 @@ import type { Project, ProjectId, ProjectScript } from '@goodboy/types';
 import { CardAction } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
 import type { ScriptRunRecord } from '../../scripts';
+import { extractPreviewLine } from './extractPreviewLine';
 import { ScriptRunOutput } from './ScriptRunOutput';
 import { SCRIPT_RUN_PRESENTATION } from './scriptRunPresentation';
 import { ProjectSelect } from './ProjectSelect';
@@ -30,10 +31,6 @@ type Props = {
   readonly onDelete: () => void | Promise<void>;
 };
 
-type PreviewParams = {
-  readonly body: string;
-};
-
 type EditField = 'name' | 'body';
 
 type EditParams = {
@@ -42,23 +39,6 @@ type EditParams = {
 
 type ProjectChangeParams = {
   readonly projectId: ProjectId;
-};
-
-const PREAMBLE = /^(set\s+-|cd\s+"?\$\(dirname\b)/;
-
-export const extractPreviewLine = ({ body }: PreviewParams): string => {
-  const lines = body.split('\n');
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed === '' || trimmed.startsWith('#')) {
-      continue;
-    }
-    if (PREAMBLE.test(trimmed)) {
-      continue;
-    }
-    return trimmed;
-  }
-  return 'empty script';
 };
 
 export const ScriptRow = ({
@@ -221,6 +201,12 @@ export const ScriptRow = ({
         <div className="col-start-2 row-start-1 flex items-start gap-1">
           {status === 'pending' ? (
             <StatusDot tone="info" pulsing ariaLabel="Running" className="mt-2" />
+          ) : null}
+          {copied ? (
+            <span className="mt-1.5 inline-flex shrink-0 items-center gap-1 text-2xs text-success">
+              <Check size={ICON_SIZE.row} aria-hidden />
+              Copied
+            </span>
           ) : null}
           <CardActionSlot label="Script lifecycle actions">
             {runnable && status === 'pending' ? (

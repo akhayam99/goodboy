@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractPreviewLine } from './ScriptRow';
+import { extractPreviewLine } from './extractPreviewLine';
 
 describe('extractPreviewLine', () => {
   it('skips the shebang and the shell preamble to the first line that runs something', () => {

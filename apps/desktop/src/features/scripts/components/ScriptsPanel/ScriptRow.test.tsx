@@ -128,6 +128,32 @@ describe('ScriptRow', () => {
     expect(screen.getByRole('menuitem', { name: 'Delete script' })).toBeDefined();
   });
 
+  it('says on the row that the command was copied, not inside a shut menu', () => {
+    render(
+      <ScriptRow
+        script={script}
+        projects={projects}
+        projectName="API"
+        mountPath="/tmp/api"
+        run={null}
+        completedAt={undefined}
+        expanded={false}
+        runnable
+        canRun
+        runDisabledReason={null}
+        copied
+        onToggle={vi.fn()}
+        onSave={vi.fn()}
+        onRun={vi.fn()}
+        onCancel={vi.fn()}
+        onCopy={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Copied')).toBeDefined();
+  });
+
   it('deletes only after inline confirmation', () => {
     const onDelete = vi.fn();
     render(
