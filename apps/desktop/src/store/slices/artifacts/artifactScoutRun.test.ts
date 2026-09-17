@@ -4,13 +4,17 @@ import type {
   AgentId,
   ContextSlot,
   IsoDateTime,
+  MountId,
+  ProjectId,
   Session,
   SessionId,
+  SessionProjectMount,
   WorkspaceId,
 } from '@goodboy/types';
 
 const {
   scoutPlan,
+  changedFiles,
   insertBatch,
   agentList,
   updateStatus,
@@ -22,6 +26,13 @@ const {
   const rows = new Map<string, Record<string, unknown>>();
   return {
     scoutPlan: vi.fn(),
+    changedFiles: vi.fn<
+      () => Promise<{
+        readonly paths: ReadonlyArray<string>;
+        readonly additions: number;
+        readonly deletions: number;
+      }>
+    >(async () => ({ paths: [], additions: 0, deletions: 0 })),
     insertBatch: vi.fn(),
     agentList: vi.fn(),
     updateStatus: vi.fn(),
@@ -93,7 +104,7 @@ vi.mock('../../../features/artifacts/artifactProvenance', async () => {
 
 vi.mock('../../../features/worktree/worktree', () => ({
   listBranchCommits: async () => [],
-  worktreeChangedFiles: async () => ({ paths: [], additions: 0, deletions: 0 }),
+  worktreeChangedFiles: changedFiles,
 }));
 
 vi.mock('../../../features/explore/explore', () => ({
@@ -113,16 +124,18 @@ import {
 import { cancelCurrentTurn } from '../turn/cancelCurrentTurn';
 import { claimTurnStart, resetTurnStartWindows } from '../turn/turnStartWindow';
 import { advanceScoutTree } from '../workflows/scoutTree';
+import { spawnReportAgent } from './spawnReportAgent';
 import { spawnWireframeAgent } from './spawnWireframeAgent';
 import {
-  expireWireframeScouts,
-  joinWireframeScouts,
-  recoverWireframeScouts,
-  resetWireframeScoutRegistry,
+  artifactRunRestartSummary,
+  expireArtifactScouts,
+  joinArtifactScouts,
+  recoverArtifactScouts,
+  resetArtifactScoutRegistry,
+  startReportScouts,
   startWireframeScouts,
   stopArtifactGeneration,
-  WIREFRAME_SCOUT_RESTART_SUMMARY,
-} from './wireframeScouts';
+} from './artifactScoutRun';
 import type { GetFn, SetFn } from './types';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -143,6 +156,22 @@ const session: Session = {
   createdAt: NOW,
   updatedAt: NOW,
 };
+
+const MOUNT = {
+  mountId: 'mount-1' as MountId,
+  sessionId: SESSION_ID,
+  projectId: 'project-1' as ProjectId,
+  mountName: 'goodboy',
+  worktreePath: '/tmp/worktree',
+  lastWorktreePath: null,
+  repoRoot: '/tmp/repo',
+  branch: 'ak/feat-x',
+  baseBranch: 'main',
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 1,
+} as unknown as SessionProjectMount;
 
 const READY_PLAN = {
   plan: {
@@ -190,7 +219,7 @@ const harness = (): Harness => {
       sessionId: SESSION_ID,
       ordinal: 0,
       name: String(args['name'] ?? 'Low fidelity'),
-      kind: 'wireframe',
+      kind: String(args['kindOverride'] ?? 'wireframe'),
       status: 'pending',
       createdAt: NOW,
     } as Agent);
@@ -213,8 +242,8 @@ const harness = (): Harness => {
     providerCooldowns: {},
     budgetAlerts: [],
     sessionMounts: {},
-    sessionProjectMounts: {},
-    sessionActiveMount: {},
+    sessionProjectMounts: { [SESSION_ID]: [MOUNT] },
+    sessionActiveMount: { [SESSION_ID]: MOUNT.mountId },
     sessionActiveProject: {},
     mountBranchObservations: {},
     sessionSlots: {} as Record<string, ReadonlyArray<ContextSlot>>,
@@ -234,12 +263,14 @@ const harness = (): Harness => {
   }) as unknown as SetFn;
   const get = (() => state) as unknown as GetFn;
   state['startWireframeScouts'] = startWireframeScouts(set, get);
-  state['joinWireframeScouts'] = joinWireframeScouts(set, get);
-  state['expireWireframeScouts'] = expireWireframeScouts(set, get);
-  state['recoverWireframeScouts'] = recoverWireframeScouts(set, get);
+  state['startReportScouts'] = startReportScouts(set, get);
+  state['joinArtifactScouts'] = joinArtifactScouts(set, get);
+  state['expireArtifactScouts'] = expireArtifactScouts(set, get);
+  state['recoverArtifactScouts'] = recoverArtifactScouts(set, get);
   state['stopArtifactGeneration'] = stopArtifactGeneration(set, get);
   state['advanceScoutTree'] = advanceScoutTree(set, get);
   state['spawnWireframeAgent'] = spawnWireframeAgent(get);
+  state['spawnReportAgent'] = spawnReportAgent(get);
   return { state, agents, sendTurn, spawnAgent, cancelCurrentTurn, get, set };
 };
 
@@ -254,7 +285,7 @@ const childOf = ({
 beforeEach(() => {
   vi.clearAllMocks();
   provenanceRows.clear();
-  resetWireframeScoutRegistry();
+  resetArtifactScoutRegistry();
   resetTurnStartWindows();
   scoutPlan.mockResolvedValue(READY_PLAN);
   insertBatch.mockImplementation(
@@ -573,7 +604,7 @@ describe('a scout cancelled before its turn has started', () => {
 
 describe('recovering a container after a restart', () => {
   const recover = async (h: Harness): Promise<void> => {
-    await (h.state['recoverWireframeScouts'] as (args: Record<string, unknown>) => Promise<void>)({
+    await (h.state['recoverArtifactScouts'] as (args: Record<string, unknown>) => Promise<void>)({
       sessionId: SESSION_ID,
     });
   };
@@ -594,7 +625,7 @@ describe('recovering a container after a restart', () => {
   it('settles the children and fails a container whose run was never recorded', async () => {
     const h = harness();
     const containerId = await spawn(h);
-    resetWireframeScoutRegistry();
+    resetArtifactScoutRegistry();
     provenanceRows.clear();
     await recover(h);
     for (const scout of WIREFRAME_SCOUTS) {
@@ -604,7 +635,7 @@ describe('recovering a container after a restart', () => {
     }
     const container = h.agents.find((agent) => agent.id === containerId)!;
     expect(container.status).toBe('failed');
-    expect(container.outputSummary).toBe(WIREFRAME_SCOUT_RESTART_SUMMARY);
+    expect(container.outputSummary).toBe(artifactRunRestartSummary({ kind: 'wireframe' }));
   });
 
   it('leaves a container this process is still waiting on alone', async () => {
@@ -618,7 +649,7 @@ describe('recovering a container after a restart', () => {
     const h = harness();
     const containerId = await spawn(h);
     reportAll(h);
-    resetWireframeScoutRegistry();
+    resetArtifactScoutRegistry();
     h.sendTurn.mockClear();
     await recover(h);
     const containerTurns = h.sendTurn.mock.calls.filter(
@@ -635,12 +666,12 @@ describe('recovering a container after a restart', () => {
     const h = harness();
     const containerId = await spawn(h);
     reportAll(h);
-    resetWireframeScoutRegistry();
+    resetArtifactScoutRegistry();
     h.sendTurn.mockClear();
     await recover(h);
-    resetWireframeScoutRegistry();
+    resetArtifactScoutRegistry();
     await recover(h);
-    await (h.state['joinWireframeScouts'] as (args: Record<string, unknown>) => Promise<void>)({
+    await (h.state['joinArtifactScouts'] as (args: Record<string, unknown>) => Promise<void>)({
       sessionId: SESSION_ID,
       containerId,
     });
@@ -655,7 +686,7 @@ describe('recovering a container after a restart', () => {
     const h = harness();
     const containerId = await spawn(h);
     reportAll(h);
-    resetWireframeScoutRegistry();
+    resetArtifactScoutRegistry();
     await recover(h);
     const row = provenanceRows.get(containerId)!;
     expect(row['phase']).toBe('producing');
@@ -672,7 +703,7 @@ describe('recovering a container after a restart', () => {
     try {
       const h = harness();
       const containerId = await spawn(h);
-      resetWireframeScoutRegistry();
+      resetArtifactScoutRegistry();
       h.sendTurn.mockClear();
       await recover(h);
       expect(h.agents.find((agent) => agent.id === containerId)!.status).not.toBe('failed');
@@ -684,5 +715,165 @@ describe('recovering a container after a restart', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('report scouting', () => {
+  const reportSpawn = async (
+    h: Harness,
+    reportType: 'change-summary' | 'session-summary',
+  ): Promise<AgentId> => {
+    const listed = h.agents;
+    agentList.mockImplementation(async () => [...listed]);
+    insertBatch.mockImplementation(
+      async ({
+        parentAgentId,
+        children,
+      }: {
+        readonly parentAgentId: AgentId;
+        readonly children: ReadonlyArray<Record<string, unknown>>;
+      }) => {
+        const inserted = children.map(
+          (child, index) =>
+            ({
+              id: `${parentAgentId}-child-${index}` as AgentId,
+              sessionId: SESSION_ID,
+              parentAgentId,
+              ordinal: Number(child['ordinal'] ?? index + 1),
+              name: String(child['name']),
+              kind: 'scout',
+              status: 'pending',
+              createdAt: NOW,
+            }) as Agent,
+        );
+        listed.push(...inserted);
+        return { inserted: true, agents: inserted };
+      },
+    );
+    updateStatus.mockImplementation(async (agentId: AgentId, patch: Record<string, unknown>) => {
+      const index = listed.findIndex((agent) => agent.id === agentId);
+      if (index >= 0) {
+        listed[index] = { ...listed[index]!, ...patch } as Agent;
+      }
+    });
+    return (h.state['spawnReportAgent'] as (args: Record<string, unknown>) => Promise<AgentId>)({
+      sessionId: SESSION_ID,
+      reportType,
+      attachments: [],
+      focus: 'none',
+    });
+  };
+
+  const settle = async (h: Harness, name: string, text: string): Promise<void> => {
+    const child = childOf({ agents: h.agents, name });
+    await (
+      h.state['advanceScoutTree'] as (
+        sessionId: SessionId,
+        agentId: AgentId,
+        assistantText: string,
+      ) => Promise<void>
+    )(SESSION_ID, child.id, text);
+  };
+
+  it('spawns one diff context scout for the mount the diff touched', async () => {
+    changedFiles.mockResolvedValue({
+      paths: ['apps/web/src/Batches.tsx'],
+      additions: 2,
+      deletions: 1,
+    });
+    const h = harness();
+    const containerId = await reportSpawn(h, 'change-summary');
+    expect(insertBatch).toHaveBeenCalledTimes(1);
+    const inserted = insertBatch.mock.calls[0]![0] as {
+      readonly children: ReadonlyArray<Record<string, unknown>>;
+    };
+    expect(inserted.children.map((child) => child['name'])).toEqual(['diff context']);
+    const kickoff = String((h.sendTurn.mock.calls[0]![0] as Record<string, unknown>)['content']);
+    expect(kickoff).toContain('apps/web/src/Batches.tsx');
+    expect(kickoff).toContain('**Bound** one turn');
+    const turns = h.sendTurn.mock.calls.map(
+      (call) => (call[0] as Record<string, unknown>)['agentId'],
+    );
+    expect(turns).not.toContain(containerId);
+  });
+
+  it('joins the diff context report into the pack it sends the container', async () => {
+    changedFiles.mockResolvedValue({
+      paths: ['apps/web/src/Batches.tsx'],
+      additions: 2,
+      deletions: 1,
+    });
+    const h = harness();
+    const containerId = await reportSpawn(h, 'change-summary');
+    h.sendTurn.mockClear();
+    await settle(h, 'diff context', 'the totals helper moved apps/web/src/Batches.tsx');
+    const containerTurns = h.sendTurn.mock.calls.filter(
+      (call) => (call[0] as Record<string, unknown>)['agentId'] === containerId,
+    );
+    expect(containerTurns).toHaveLength(1);
+    const pack = String((containerTurns[0]![0] as Record<string, unknown>)['content']);
+    expect(pack).toContain('evidence pack');
+    expect(pack).toContain('## scout reports');
+    expect(pack).toContain('the totals helper moved');
+    expect(provenanceRows.get(containerId)?.['phase']).toBe('producing');
+  });
+
+  it('counts a path the diff deleted as verified, never as an invention', async () => {
+    changedFiles.mockResolvedValue({
+      paths: ['apps/web/src/Gone.tsx'],
+      additions: 0,
+      deletions: 9,
+    });
+    const h = harness();
+    const containerId = await reportSpawn(h, 'change-summary');
+    h.sendTurn.mockClear();
+    await settle(h, 'diff context', 'the old totals helper is gone apps/web/src/Gone.tsx');
+    const containerTurns = h.sendTurn.mock.calls.filter(
+      (call) => (call[0] as Record<string, unknown>)['agentId'] === containerId,
+    );
+    const pack = String((containerTurns[0]![0] as Record<string, unknown>)['content']);
+    expect(pack).toContain('verified 1 of 1 cited paths');
+    expect(pack).toContain('the old totals helper is gone');
+    expect(pack).not.toContain('most of what it reported could not be found on disk');
+  });
+
+  it('produces a session summary immediately, with no scout at all', async () => {
+    const h = harness();
+    const containerId = await reportSpawn(h, 'session-summary');
+    expect(insertBatch).not.toHaveBeenCalled();
+    const args = h.spawnAgent.mock.calls[0]![1] as Record<string, unknown>;
+    expect(String(args['initialPrompt'])).toContain('evidence pack');
+    expect(provenanceRows.get(containerId)?.['phase']).toBe('producing');
+  });
+
+  it('rejoins a report run whose scout reported before the reload', async () => {
+    changedFiles.mockResolvedValue({
+      paths: ['apps/web/src/Batches.tsx'],
+      additions: 2,
+      deletions: 1,
+    });
+    const h = harness();
+    const containerId = await reportSpawn(h, 'change-summary');
+    const child = childOf({ agents: h.agents, name: 'diff context' });
+    const index = h.agents.findIndex((agent) => agent.id === child.id);
+    h.agents[index] = {
+      ...child,
+      status: 'completed',
+      outputSummary: 'the totals helper moved apps/web/src/Batches.tsx',
+    } as Agent;
+    h.set(() => ({ sessionPhaseRuns: { [SESSION_ID]: [...h.agents] } }) as never);
+    resetArtifactScoutRegistry();
+    h.sendTurn.mockClear();
+    await (h.state['recoverArtifactScouts'] as (args: Record<string, unknown>) => Promise<void>)({
+      sessionId: SESSION_ID,
+    });
+    const containerTurns = h.sendTurn.mock.calls.filter(
+      (call) => (call[0] as Record<string, unknown>)['agentId'] === containerId,
+    );
+    expect(containerTurns).toHaveLength(1);
+    const pack = String((containerTurns[0]![0] as Record<string, unknown>)['content']);
+    expect(pack).toContain('## scout reports');
+    expect(pack).toContain('the totals helper moved');
+    expect(h.agents.find((agent) => agent.id === containerId)!.status).not.toBe('failed');
   });
 });

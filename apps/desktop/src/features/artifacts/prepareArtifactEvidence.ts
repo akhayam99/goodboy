@@ -1,7 +1,7 @@
 import { runsForWorkflowRun } from '@goodboy/core';
 import type { AgentId, IsoDateTime, Session, WorkflowRunId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
-import { buildReportContext } from '../reports/buildReportContext';
+import { buildReportContext, type ReportScoutEvidence } from '../reports/buildReportContext';
 import { collectReportDiffEvidence } from '../reports/collectReportDiffEvidence';
 import type { ReportType } from '../reports/reportTypes';
 import { buildWireframeContext } from '../wireframes/buildWireframeContext';
@@ -26,7 +26,7 @@ type Params = Readonly<{
   executingAgentId: AgentId | null;
 }> &
   (
-    | Readonly<{ kind: 'report'; reportType: ReportType }>
+    | Readonly<{ kind: 'report'; reportType: ReportType; scouts?: ReportScoutEvidence | null }>
     | Readonly<{
         kind: 'wireframe';
         fidelity: WireframeFidelity;
@@ -75,6 +75,7 @@ export const prepareArtifactEvidence = async ({
       scriptRuns: state.scriptRuns?.[sessionId] ?? {},
       diff: diff.evidence,
       diffUnavailableReason: diff.reason,
+      scouts: choice.scouts ?? null,
       workflowRunId,
       capturedAt: new Date().toISOString() as IsoDateTime,
     });

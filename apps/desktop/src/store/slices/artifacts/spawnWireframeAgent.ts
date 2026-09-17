@@ -160,10 +160,14 @@ export const spawnWireframeAgent = (get: GetFn) => {
           : await get().startWireframeScouts({
               sessionId,
               containerId,
-              mountId: scouting.gate.mountId,
-              mountName: scouting.gate.mountName,
-              root: scouting.plan.root,
-              worktreePath: scouting.gate.worktreePath,
+              mounts: [
+                {
+                  mountId: scouting.gate.mountId,
+                  mountName: scouting.gate.mountName,
+                  root: scouting.plan.root,
+                  worktreePath: scouting.gate.worktreePath,
+                },
+              ],
               fidelity,
               target,
               workflowRunId,

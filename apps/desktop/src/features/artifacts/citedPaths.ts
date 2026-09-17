@@ -78,6 +78,7 @@ export type CitedPathListing = ReadonlyArray<Readonly<{ name: string }>>;
 type VerifyParams = Readonly<{
   paths: ReadonlyArray<string>;
   list: (params: Readonly<{ relPath: string }>) => Promise<CitedPathListing>;
+  knownPaths?: ReadonlyArray<string>;
   now?: () => number;
 }>;
 
@@ -94,14 +95,21 @@ const basenameOf = ({ path }: Readonly<{ path: string }>): string => {
 export const verifyCitedPaths = async ({
   paths,
   list,
+  knownPaths = [],
   now = Date.now,
 }: VerifyParams): Promise<CitedPathVerification> => {
   const capped = paths.slice(0, CITED_PATH_LIMITS.paths);
   if (capped.length === 0) {
     return EMPTY_CITED_PATH_VERIFICATION;
   }
+  const known = new Set(knownPaths);
+  const verified: Array<string> = [];
   const byDirectory = new Map<string, Array<string>>();
   for (const path of capped) {
+    if (known.has(path)) {
+      verified.push(path);
+      continue;
+    }
     const parent = parentOf({ path });
     const bucket = byDirectory.get(parent);
     if (bucket === undefined) {
@@ -111,7 +119,6 @@ export const verifyCitedPaths = async ({
     bucket.push(path);
   }
   const startedAt = now();
-  const verified: Array<string> = [];
   const missing: Array<string> = [];
   const unverified: Array<string> = [];
   let listed = 0;

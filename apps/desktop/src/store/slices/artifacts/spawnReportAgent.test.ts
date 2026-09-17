@@ -10,6 +10,10 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import {
+  NO_MOUNT_NO_SCOUT_REASON,
+  SESSION_SUMMARY_NO_SCOUT_REASON,
+} from '../../../features/artifacts/pickArtifactScouts';
 import { resolveReportRouting, spawnReportAgent } from './spawnReportAgent';
 import type { GetFn } from './types';
 
@@ -50,6 +54,7 @@ vi.mock('../../../features/artifacts/artifactProvenance', async () => {
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
+const IMPLEMENTER_ID = 'agent-implementer' as AgentId;
 const RUN_ID = 'run-1' as WorkflowRunId;
 const NOW = '2026-09-15T10:00:00.000Z' as IsoDateTime;
 
@@ -90,13 +95,23 @@ const mount = {
 const spawnAgentSpy = vi.fn(
   async (_sessionId: SessionId, _args: Record<string, unknown>) => AGENT_ID,
 );
+const startReportScoutsSpy = vi.fn(async (_args: Record<string, unknown>) => false);
+const sendTurnSpy = vi.fn(async (_args: Record<string, unknown>) => undefined);
+
+const packOf = (): string => {
+  const spawned = spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt'];
+  if (typeof spawned === 'string') {
+    return spawned;
+  }
+  return String(sendTurnSpy.mock.calls.at(-1)?.[0]['content'] ?? '');
+};
 
 const baseState = {
   sessions: [session],
   sessionPhaseRuns: {
     [SESSION_ID]: [
       {
-        id: AGENT_ID,
+        id: IMPLEMENTER_ID,
         sessionId: SESSION_ID,
         ordinal: 0,
         name: 'implementer',
@@ -105,7 +120,7 @@ const baseState = {
     ],
   },
   transcripts: {
-    [AGENT_ID]: [{ kind: 'assistant_text', runId: 'r1', delta: 'work is done', at: NOW }],
+    [IMPLEMENTER_ID]: [{ kind: 'assistant_text', runId: 'r1', delta: 'work is done', at: NOW }],
   },
   sessionArtifacts: {},
   sessionEvents: {},
@@ -124,6 +139,8 @@ const baseState = {
   mountBranchObservations: {},
   sessionSlots: {} as Record<string, ReadonlyArray<ContextSlot>>,
   spawnAgent: spawnAgentSpy,
+  startReportScouts: startReportScoutsSpy,
+  sendTurn: sendTurnSpy,
 };
 
 const getWith = (overrides: Record<string, unknown> = {}): GetFn => {
@@ -184,12 +201,69 @@ describe('spawnReportAgent', () => {
       reportType: 'change-summary',
       workflowRunId: RUN_ID,
     });
-    const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
-    const prompt = String(args['initialPrompt']);
+    const prompt = packOf();
     expect(prompt).toContain('evidence pack');
     expect(prompt).toContain(`workflow run ${RUN_ID}`);
     expect(prompt).toContain('abcdef1 feat: reports');
     expect(prompt).toContain('+4 -1');
+  });
+
+  it('fans a diff context scout out over the mount the diff touched', async () => {
+    startReportScoutsSpy.mockResolvedValueOnce(true);
+    await spawnReportAgent(getWith())({
+      sessionId: SESSION_ID,
+      attachments: [],
+      reportType: 'change-summary',
+    });
+    const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(args['initialPrompt']).toBeUndefined();
+    expect(startReportScoutsSpy).toHaveBeenCalledTimes(1);
+    const started = startReportScoutsSpy.mock.calls[0]![0];
+    expect(started['changedMountIds']).toEqual(['mount-1']);
+    expect(started['changedPaths']).toEqual(['apps/desktop/src/a.ts']);
+    expect(started['mounts']).toEqual([
+      { mountId: 'mount-1', mountName: 'goodboy', root: '.', worktreePath: '/tmp/worktree' },
+    ]);
+    expect(sendTurnSpy).not.toHaveBeenCalled();
+  });
+
+  it('opens the run in the gathering phase with the mount it will read', async () => {
+    startReportScoutsSpy.mockResolvedValueOnce(true);
+    await spawnReportAgent(getWith())({
+      sessionId: SESSION_ID,
+      attachments: [],
+      reportType: 'change-summary',
+    });
+    const recorded = recordProvenanceSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(recorded['phase']).toBe('gathering');
+    expect(recorded['mountIds']).toEqual(['mount-1']);
+    expect(recorded['deadlineAt']).toBeGreaterThan(Date.now());
+  });
+
+  it('spawns no scout for a session summary and says why on the row', async () => {
+    await spawnReportAgent(getWith())({
+      sessionId: SESSION_ID,
+      attachments: [],
+      reportType: 'session-summary',
+    });
+    expect(startReportScoutsSpy).not.toHaveBeenCalled();
+    const prompt = packOf();
+    expect(prompt).toContain('evidence pack');
+    const recorded = recordProvenanceSpy.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(recorded['omissions']).toContain(SESSION_SUMMARY_NO_SCOUT_REASON);
+    expect(recorded['phase']).toBe('producing');
+  });
+
+  it('spawns no scout when no repository is mounted and says so', async () => {
+    await spawnReportAgent(getWith({ sessionProjectMounts: { [SESSION_ID]: [] } }))({
+      sessionId: SESSION_ID,
+      attachments: [],
+      reportType: 'change-summary',
+    });
+    expect(startReportScoutsSpy).not.toHaveBeenCalled();
+    const recorded = recordProvenanceSpy.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(recorded['omissions']).toContain(NO_MOUNT_NO_SCOUT_REASON);
+    expect(recorded['mountIds']).toEqual([]);
   });
 
   it('carries the goal the user wrote into the kickoff pack, not the clamped title', async () => {
@@ -198,7 +272,7 @@ describe('spawnReportAgent', () => {
       attachments: [],
       reportType: 'session-summary',
     });
-    const prompt = String(spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt']);
+    const prompt = packOf();
     expect(prompt).toContain(`## goal\n\n${LONG_GOAL}`);
     expect(prompt).toContain(`session ${SESSION_ID}: ${session.goal}`);
   });
@@ -209,7 +283,7 @@ describe('spawnReportAgent', () => {
       attachments: [],
       reportType: 'session-summary',
     });
-    const prompt = String(spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt']);
+    const prompt = packOf();
     expect(prompt).not.toContain('## goal');
   });
 
@@ -220,8 +294,7 @@ describe('spawnReportAgent', () => {
       attachments: [],
       reportType: 'session-summary',
     });
-    const args = spawnAgentSpy.mock.calls[0]?.[1] as Record<string, unknown>;
-    expect(String(args['initialPrompt'])).toContain('no mount diff was available');
+    expect(packOf()).toContain('no mount diff was available');
   });
 
   it('adds a redacted brief while retaining session output and collected diff evidence', async () => {
@@ -231,7 +304,7 @@ describe('spawnReportAgent', () => {
       reportType: 'change-summary',
       brief: 'explain the Harborline rollout with api_key=harborline-test-value',
     });
-    const prompt = String(spawnAgentSpy.mock.calls[0]?.[1]['initialPrompt']);
+    const prompt = packOf();
     expect(prompt).toContain(
       '# user request\n\nexplain the Harborline rollout with api_key=[redacted]',
     );
@@ -261,7 +334,7 @@ describe('spawnReportAgent', () => {
       workflowRunId: RUN_ID,
       brief: 'explain the Harborline rollout with api_key=harborline-test-value',
     });
-    const recorded = recordProvenanceSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    const recorded = recordProvenanceSpy.mock.calls.at(-1)?.[0] as Record<string, unknown>;
     expect(recorded['agentId']).toBe(AGENT_ID);
     expect(recorded['kind']).toBe('report');
     expect(recorded['brief']).toBe(
@@ -285,7 +358,7 @@ describe('spawnReportAgent', () => {
     const recorded = recordProvenanceSpy.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(recorded['evidence']).toEqual([
       { kind: 'session', id: SESSION_ID, label: 'ship the report role' },
-      { kind: 'agent', id: AGENT_ID, label: 'implementer' },
+      { kind: 'agent', id: IMPLEMENTER_ID, label: 'implementer' },
     ]);
     expect(recorded['sourceWorkflowRunId']).toBeNull();
   });

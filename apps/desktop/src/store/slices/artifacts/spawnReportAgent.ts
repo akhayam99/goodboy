@@ -1,13 +1,32 @@
 import { getCheapModel, resolveRoleRouting } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
-import type { AgentEffort, AgentId, ProviderId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type {
+  AgentEffort,
+  AgentId,
+  MountId,
+  ProviderId,
+  SessionId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import type { ArtifactAttachment } from '../../../features/artifacts/artifactAttachments';
 import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
+import { pickArtifactScouts } from '../../../features/artifacts/pickArtifactScouts';
 import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
+import { sessionGoalText } from '../../../features/artifacts/sessionGoalText';
+import { collectReportDiffEvidence } from '../../../features/reports/collectReportDiffEvidence';
 import { REPORT_TYPE_LABEL, type ReportType } from '../../../features/reports/reportTypes';
+import { WIREFRAME_SCOUT_DEADLINE_MS } from '../../../features/wireframes/wireframeScoutReports';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { selectActiveMount } from '../project-mounts/selectors';
 import type { SpawnFocus } from '../session-view/spawnFocus';
+import type { ArtifactRunMount } from './artifactScoutRun';
 import type { GetFn } from './types';
+
+export const REPORT_SCOUT_PENDING_NOTE =
+  'the scouts had not reported yet when this row was written';
+
+export const REPORT_SCOUT_SKIP_BUDGET =
+  'this session is budget blocked, so no scout read a repository';
 
 export type ReportRouting = {
   readonly provider: ProviderId;
@@ -27,6 +46,27 @@ export type SpawnReportAgentParams = {
 };
 
 type State = ReturnType<GetFn>;
+
+type UsableParams = {
+  readonly state: State;
+  readonly sessionId: SessionId;
+};
+
+const usableProviders = ({ state, sessionId }: UsableParams): ReadonlyArray<ProviderId> => {
+  const availability = workflowAvailabilitySnapshot({
+    providers: state.providers ?? [],
+    cooldowns: state.providerCooldowns ?? {},
+    alerts: state.budgetAlerts ?? [],
+    sessionId,
+    isRunBudgetBlocked: false,
+    nowMs: Date.now(),
+  });
+  return availability.connectedProviders.filter(
+    (provider) =>
+      !availability.coolingDownProviders.includes(provider) &&
+      !availability.budgetBlockedProviders.includes(provider),
+  );
+};
 
 type RoutingParams = {
   readonly state: State;
@@ -49,24 +89,35 @@ export const resolveReportRouting = ({
   if (role.isOverride) {
     return { provider: role.provider, model: role.model, effort: role.effort };
   }
-  const availability = workflowAvailabilitySnapshot({
-    providers: state.providers ?? [],
-    cooldowns: state.providerCooldowns ?? {},
-    alerts: state.budgetAlerts ?? [],
-    sessionId,
-    isRunBudgetBlocked: false,
-    nowMs: Date.now(),
-  });
-  const usable = availability.connectedProviders.filter(
-    (provider) =>
-      !availability.coolingDownProviders.includes(provider) &&
-      !availability.budgetBlockedProviders.includes(provider),
-  );
+  const usable = usableProviders({ state, sessionId });
   const provider = usable.includes(role.provider) ? role.provider : usable[0];
   if (provider === undefined) {
     return { provider: role.provider, model: role.model, effort: role.effort };
   }
   return { provider, model: getCheapModel(provider), effort: 'low' };
+};
+
+const withScoutNote = ({
+  omissions,
+  note,
+}: {
+  readonly omissions: ReadonlyArray<string>;
+  readonly note: string | null;
+}): ReadonlyArray<string> => (note === null ? omissions : [...omissions, note]);
+
+const reportScoutMounts = ({ state, sessionId }: UsableParams): ReadonlyArray<ArtifactRunMount> => {
+  const mount = selectActiveMount({ state, sessionId });
+  if (mount === null || mount.worktreePath.length === 0) {
+    return [];
+  }
+  return [
+    {
+      mountId: mount.mountId,
+      mountName: mount.mountName,
+      root: '.',
+      worktreePath: mount.worktreePath,
+    },
+  ];
 };
 
 export const spawnReportAgent = (get: GetFn) => {
@@ -86,10 +137,11 @@ export const spawnReportAgent = (get: GetFn) => {
       throw new Error(`session not found: ${sessionId}`);
     }
     const resolved = resolveReportRouting({ state, sessionId, picked: routing });
+    const name = REPORT_TYPE_LABEL[reportType];
     if (evidence !== null && evidence.trim().length > 0) {
       return get().spawnAgent(sessionId, {
         kindOverride: 'report',
-        name: REPORT_TYPE_LABEL[reportType],
+        name,
         provider: resolved.provider,
         model: resolved.model,
         effort: resolved.effort,
@@ -97,9 +149,99 @@ export const spawnReportAgent = (get: GetFn) => {
         focus,
       });
     }
+    const slots = await state.ensureSessionSlots(sessionId);
+    const goal = sessionGoalText({ slots, session });
+    const mounts = reportScoutMounts({ state, sessionId });
+    const mountIds = mounts.map((mount) => mount.mountId);
+    const diff =
+      reportType === 'change-summary' && mounts.length > 0
+        ? await collectReportDiffEvidence({ state, sessionId }).catch(() => null)
+        : null;
+    const changedMountIds: ReadonlyArray<MountId> =
+      diff === null || diff.evidence === null || diff.mountId === null ? [] : [diff.mountId];
+    const roster = await pickArtifactScouts({
+      kind: 'report',
+      reportType,
+      changedMountIds,
+      mounts: mounts.map((mount) => ({
+        mountId: mount.mountId,
+        label: mount.mountName,
+        root: mount.root,
+      })),
+      probe: async () => [],
+    });
+    const isBudgetBlocked = usableProviders({ state, sessionId }).length === 0;
+    const scoutNote = isBudgetBlocked ? REPORT_SCOUT_SKIP_BUDGET : roster.note;
+    if (roster.picks.length > 0 && !isBudgetBlocked) {
+      const containerId = await get().spawnAgent(sessionId, {
+        kindOverride: 'report',
+        name,
+        provider: resolved.provider,
+        model: resolved.model,
+        effort: resolved.effort,
+        focus,
+      });
+      await recordArtifactProvenance({
+        sessionId,
+        kind: 'report',
+        brief,
+        evidence: [],
+        omissions: [REPORT_SCOUT_PENDING_NOTE],
+        designProfileSummary: null,
+        hasDesignEvidence: false,
+        phase: 'gathering',
+        scoutPlan: [],
+        mountIds,
+        target: null,
+        deadlineAt: Date.now() + WIREFRAME_SCOUT_DEADLINE_MS,
+        sourceWorkflowRunId: workflowRunId,
+        agentId: containerId,
+        executingWorkflowRunId: null,
+      }).catch((error: unknown) => {
+        console.warn(`[artifact-provenance] report ${containerId}: ${formatError(error)}`);
+      });
+      const isStarted = await get().startReportScouts({
+        sessionId,
+        containerId,
+        mounts,
+        reportType,
+        changedMountIds,
+        changedPaths: diff?.evidence?.paths ?? [],
+        workflowRunId,
+        brief,
+        attachments,
+        goal: goal.packText,
+      });
+      if (isStarted) {
+        return containerId;
+      }
+      const fallback = await prepareArtifactEvidence({
+        kind: 'report',
+        reportType,
+        scouts: { names: [], section: null, note: scoutNote },
+        state: get(),
+        session,
+        workflowRunId,
+        brief,
+        attachments,
+        executingAgentId: containerId,
+      });
+      await recordArtifactProvenance({
+        ...fallback.provenance,
+        omissions: withScoutNote({ omissions: fallback.provenance.omissions, note: scoutNote }),
+        mountIds,
+        agentId: containerId,
+        executingWorkflowRunId: null,
+      }).catch((error: unknown) => {
+        console.warn(`[artifact-provenance] report ${containerId}: ${formatError(error)}`);
+      });
+      void get().sendTurn({ sessionId, agentId: containerId, content: fallback.text });
+      return containerId;
+    }
     const prepared = await prepareArtifactEvidence({
       kind: 'report',
       reportType,
+      scouts: { names: [], section: null, note: scoutNote },
       state,
       session,
       workflowRunId,
@@ -109,7 +251,7 @@ export const spawnReportAgent = (get: GetFn) => {
     });
     const agentId = await get().spawnAgent(sessionId, {
       kindOverride: 'report',
-      name: REPORT_TYPE_LABEL[reportType],
+      name,
       provider: resolved.provider,
       model: resolved.model,
       effort: resolved.effort,
@@ -118,6 +260,8 @@ export const spawnReportAgent = (get: GetFn) => {
     });
     await recordArtifactProvenance({
       ...prepared.provenance,
+      omissions: withScoutNote({ omissions: prepared.provenance.omissions, note: scoutNote }),
+      mountIds,
       agentId,
       executingWorkflowRunId: null,
     }).catch((error: unknown) => {

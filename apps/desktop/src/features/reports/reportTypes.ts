@@ -17,5 +17,14 @@ const REPORT_TYPE_ALIAS: Readonly<Record<string, ReportType>> = {
   'pr-report': 'change-summary',
 };
 
+export const requestedReportType = ({
+  agentName,
+}: {
+  readonly agentName: string | null;
+}): ReportType | null =>
+  agentName === null
+    ? null
+    : (REPORT_TYPES.find((candidate) => REPORT_TYPE_LABEL[candidate] === agentName.trim()) ?? null);
+
 export const asReportType = ({ value }: { readonly value: string }): ReportType | null =>
   REPORT_TYPES.find((candidate) => candidate === value) ?? REPORT_TYPE_ALIAS[value] ?? null;

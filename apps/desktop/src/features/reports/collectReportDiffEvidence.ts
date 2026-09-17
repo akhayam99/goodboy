@@ -1,10 +1,11 @@
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../store/types';
 import { selectActiveMount } from '../../store/slices/project-mounts/selectors';
 import { listBranchCommits, worktreeChangedFiles } from '../worktree/worktree';
 import type { ReportDiffEvidence, ReportDiffUnavailableReason } from './buildReportContext';
 
 export type ReportDiffCollection = Readonly<{
+  mountId: MountId | null;
   evidence: ReportDiffEvidence | null;
   reason: ReportDiffUnavailableReason | null;
 }>;
@@ -20,7 +21,7 @@ export const collectReportDiffEvidence = async ({
 }: Params): Promise<ReportDiffCollection> => {
   const mount = selectActiveMount({ state, sessionId });
   if (mount === null || mount.worktreePath.length === 0) {
-    return { evidence: null, reason: 'no-mount' };
+    return { mountId: null, evidence: null, reason: 'no-mount' };
   }
   const baseBranch = mount.baseBranch ?? 'main';
   try {
@@ -29,6 +30,7 @@ export const collectReportDiffEvidence = async ({
       listBranchCommits(mount.worktreePath).catch(() => []),
     ]);
     return {
+      mountId: mount.mountId,
       evidence: {
         mountName: mount.mountName,
         baseBranch,
@@ -41,6 +43,6 @@ export const collectReportDiffEvidence = async ({
       reason: null,
     };
   } catch {
-    return { evidence: null, reason: 'unreadable' };
+    return { mountId: mount.mountId, evidence: null, reason: 'unreadable' };
   }
 };

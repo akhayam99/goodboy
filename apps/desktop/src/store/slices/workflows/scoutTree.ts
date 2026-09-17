@@ -539,7 +539,7 @@ const maybeSynthesizeParent = async ({
   }
   const provenance = await loadArtifactProvenance(parentId).catch(() => null);
   if (provenance !== null && provenance.phase === 'gathering') {
-    await get().joinWireframeScouts({ sessionId, containerId: parentId });
+    await get().joinArtifactScouts({ sessionId, containerId: parentId });
     return;
   }
   activateAgent({

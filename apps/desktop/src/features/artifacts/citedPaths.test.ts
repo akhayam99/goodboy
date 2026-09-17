@@ -144,3 +144,34 @@ describe('isCitedPathMajorityVerified', () => {
     ).toBe(true);
   });
 });
+
+describe('verifyCitedPaths with known paths', () => {
+  it('verifies a path the diff deleted without listing its directory', async () => {
+    const listed: Array<string> = [];
+    const verification = await verifyCitedPaths({
+      paths: ['apps/web/src/Gone.tsx'],
+      knownPaths: ['apps/web/src/Gone.tsx'],
+      list: async ({ relPath }) => {
+        listed.push(relPath);
+        return [];
+      },
+    });
+    expect(verification).toEqual({
+      cited: 1,
+      verified: ['apps/web/src/Gone.tsx'],
+      missing: [],
+      unverified: [],
+    });
+    expect(listed).toEqual([]);
+  });
+
+  it('still calls out a path that is neither on disk nor in the diff', async () => {
+    const verification = await verifyCitedPaths({
+      paths: ['apps/web/src/Gone.tsx', 'apps/web/src/Invented.tsx'],
+      knownPaths: ['apps/web/src/Gone.tsx'],
+      list: async () => [],
+    });
+    expect(verification.verified).toEqual(['apps/web/src/Gone.tsx']);
+    expect(verification.missing).toEqual(['apps/web/src/Invented.tsx']);
+  });
+});
