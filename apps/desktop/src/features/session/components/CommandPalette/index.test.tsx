@@ -15,6 +15,7 @@ const { state, hooks, toastMock } = vi.hoisted(() => ({
     setCurrentSession: vi.fn(async () => undefined),
     selectAgent: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
+    setScriptsLensScope: vi.fn(),
     runScript: vi.fn(async () => ({ exitCode: 0 })),
   },
   hooks: { currentSession: null as { readonly id: string } | null },
@@ -23,7 +24,9 @@ const { state, hooks, toastMock } = vi.hoisted(() => ({
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+  useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
+    getState: () => state,
+  }),
   useWorkspaces: () => [],
   useSessions: () => [],
   useCurrentWorkspace: () => null,

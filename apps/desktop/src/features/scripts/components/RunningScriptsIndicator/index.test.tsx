@@ -20,12 +20,15 @@ const { state } = vi.hoisted(() => ({
     } as Record<string, ReadonlyArray<{ id: string; name: string }>>,
     setCurrentSession: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
+    setScriptsLensScope: vi.fn(),
     cancelScript: vi.fn(),
   },
 }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+  useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
+    getState: () => state,
+  }),
 }));
 
 import { RunningScriptsIndicator } from './index';

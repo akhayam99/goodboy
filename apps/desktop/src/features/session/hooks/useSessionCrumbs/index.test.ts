@@ -18,6 +18,7 @@ const { store, actions } = vi.hoisted(() => {
   const store: { state: StoreState } = { state: {} };
   const actions = {
     setActiveLens: vi.fn(),
+    setScriptsLensScope: vi.fn(),
     setFocusedWorkflowRun: vi.fn(),
     setFocusedPlanId: vi.fn(),
     selectAgent: vi.fn(),
@@ -27,7 +28,9 @@ const { store, actions } = vi.hoisted(() => {
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
-  useAppStore: (selector: (state: StoreState) => unknown) => selector(store.state),
+  useAppStore: Object.assign((selector: (state: StoreState) => unknown) => selector(store.state), {
+    getState: () => store.state,
+  }),
   useSessionPlans: () => [],
 }));
 

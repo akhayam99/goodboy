@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AnchoredPopover, cn, Divider, ScrollFade, Tooltip, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { openLens } from '../../../session/openLens';
 import { RunningScriptRow } from './RunningScriptRow';
 import { useRunningScripts, type RunningScript } from './useRunningScripts';
 
@@ -11,7 +12,6 @@ const DROPDOWN_MAX_HEIGHT = 437;
 export const RunningScriptsIndicator = () => {
   const running = useRunningScripts();
   const setCurrentSession = useAppStore((state) => state.setCurrentSession);
-  const setActiveLens = useAppStore((state) => state.setActiveLens);
   const cancelScript = useAppStore((state) => state.cancelScript);
   const [now, setNow] = useState(() => Date.now());
   const dropdown = useDropdown({
@@ -45,7 +45,7 @@ export const RunningScriptsIndicator = () => {
   const onOpen = (run: RunningScript) => {
     close();
     void setCurrentSession(run.sessionId).then(() => {
-      setActiveLens(run.sessionId, 'scripts');
+      openLens({ sessionId: run.sessionId, lens: 'scripts' });
     });
   };
 

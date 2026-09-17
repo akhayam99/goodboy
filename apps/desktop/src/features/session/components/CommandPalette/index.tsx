@@ -18,6 +18,7 @@ import {
 import { parseQuery } from '../../../quick-actions';
 import { PALETTE_PREFIXES, palettePlaceholder, type PaletteGroup } from './palettePrefixes';
 import { lensDestinations } from '../../lens-destinations';
+import { openLens } from '../../openLens';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEvent';
@@ -104,7 +105,6 @@ export const CommandPalette = ({
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const selectAgent = useAppStore((s) => s.selectAgent);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const scripts = useAppStore((s) =>
     currentWorkspace ? (s.projectScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<ProjectScript>;
@@ -171,7 +171,7 @@ export const CommandPalette = ({
           label: `Open ${SHORTCUTS[destination.shortcut].label}`,
           sublabel: shortcutGlyphs(destination.shortcut),
           group: 'action',
-          onSelect: () => setActiveLens(sessionId, destination.lens),
+          onSelect: () => openLens({ sessionId, lens: destination.lens }),
         });
       }
     }
@@ -274,7 +274,6 @@ export const CommandPalette = ({
     openWorkspace,
     setCurrentSession,
     selectAgent,
-    setActiveLens,
     onOpenSettings,
     onNewSession,
     onOpenProviders,
