@@ -28,6 +28,8 @@ import { ChangeBlock } from './ChangeBlock';
 import { ChecksBlock } from './ChecksBlock';
 import type { ResolveDecisionMode } from '../../resolveItemDraft';
 import { DecisionBlock } from './DecisionBlock';
+import { SharedCandidateNote } from './SharedCandidateNote';
+import type { SharedCandidateMember } from '../../sharedCandidateThreadIds';
 import { ResolveCommitIdentity } from './ResolveCommitIdentity';
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
 import { RunCard } from './RunCard';
@@ -48,6 +50,7 @@ type Props = {
   readonly isBusy: boolean;
   readonly canApprove: boolean;
   readonly approveBlockedReason: string | null;
+  readonly sharedMembers: ReadonlyArray<SharedCandidateMember>;
   readonly refuseBlockedReason: string | null;
   readonly canRunCheck: boolean;
   readonly isCheckRunning: boolean;
@@ -89,6 +92,7 @@ export const ResolveItemView = ({
   isBusy,
   canApprove,
   approveBlockedReason,
+  sharedMembers,
   refuseBlockedReason,
   canRunCheck,
   isCheckRunning,
@@ -120,10 +124,12 @@ export const ResolveItemView = ({
   const isAnswering = row.status === 'agent_asked';
   const fieldId = `resolve-item-${row.thread.threadId}`;
   const nextStep = RESOLVE_QUEUE_NEXT_STEP[row.status];
-  const approveLabel =
+  const approveVerb =
     proposalKind === 'reply_only'
       ? RESOLVE_QUEUE_ACTION_LABEL.approveReply
       : RESOLVE_QUEUE_ACTION_LABEL.approveFix;
+  const approveLabel =
+    sharedMembers.length === 0 ? approveVerb : `Approve ${sharedMembers.length + 1}`;
   const reviseItems: ReadonlyArray<OverflowMenuItem> = isAnswering
     ? []
     : [
@@ -208,6 +214,7 @@ export const ResolveItemView = ({
               />
             </div>
           )}
+          {!isDelivered && <SharedCandidateNote members={sharedMembers} />}
           <DecisionBlock
             fieldId={fieldId}
             reply={reply}

@@ -137,6 +137,7 @@ const renderView = (overrides: Partial<Parameters<typeof ResolveItemView>[0]> = 
       instruction=""
       mode="reply"
       proposalKind="fix"
+      sharedMembers={[]}
       isBusy={false}
       canApprove
       approveBlockedReason={null}
@@ -443,6 +444,46 @@ describe('the resolve item view', () => {
 
     expect(screen.getByText('Reply only, no code change')).toBeDefined();
     expect(screen.queryByText('No agent reply yet')).toBeNull();
+  });
+
+  it('names the comments one approval carries, and counts them on the primary', () => {
+    renderView({
+      sharedMembers: [
+        {
+          queueItemId: 'i-2',
+          threadId: 't-2',
+          title: 'The metric name is wrong.',
+          approvalState: 'none',
+        },
+      ],
+    });
+
+    expect(screen.getByText('Approving this also approves 1 other comment')).toBeDefined();
+    expect(screen.getByText('The metric name is wrong.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Approve 2' })).toBeDefined();
+  });
+
+  it('refuses the approval before the click when a sibling was parked', () => {
+    renderView({
+      canApprove: false,
+      approveBlockedReason:
+        'This change also answers comments you left for later. Accept them together, or take those back up first',
+      sharedMembers: [
+        {
+          queueItemId: 'i-2',
+          threadId: 't-2',
+          title: 'The metric name is wrong.',
+          approvalState: 'deferred',
+        },
+      ],
+    });
+
+    expect(
+      screen.getByText(
+        'This change also answers comments you left for later. Accept them together, or take those back up first',
+      ),
+    ).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Approve 2' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('names what the primary approves, a reply when there is no code change', () => {

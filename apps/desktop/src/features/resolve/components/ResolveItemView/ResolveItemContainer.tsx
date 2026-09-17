@@ -14,6 +14,11 @@ import { refuseBlockedReason } from '../../refuseBlockedReason';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import { candidateHeadSha, selectResolveCandidate } from '../../selectResolveCandidate';
 import { selectResolveCheckScript } from '../../selectResolveCheckScript';
+import { sharedCandidateBlocker, sharedCandidateThreadIds } from '../../sharedCandidateThreadIds';
+import {
+  PARTIAL_ACCEPTANCE,
+  PARTIAL_REFUSAL,
+} from '../../../../store/slices/resolve/acceptResolveQueueItem';
 import type { ResolveQueueStatus } from '../../../../store/slices/resolve/deriveResolveQueueStatus';
 import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve/state';
 import { ResolveItemView } from './index';
@@ -52,10 +57,18 @@ const APPROVABLE_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set([
 const approveBlockedReasonFor = ({
   row,
   isApprovable,
+  sharedBlocker,
 }: {
   readonly row: ResolveQueueRow;
   readonly isApprovable: boolean;
+  readonly sharedBlocker: 'deferred' | 'wont_fix' | null;
 }): string | null => {
+  if (sharedBlocker === 'deferred') {
+    return PARTIAL_ACCEPTANCE;
+  }
+  if (sharedBlocker === 'wont_fix') {
+    return PARTIAL_REFUSAL;
+  }
   if (row.status === 'working') {
     return 'The run has to stop first';
   }
@@ -159,6 +172,14 @@ export const ResolveItemContainer = ({
   const checkScript = useMemo(
     () => selectResolveCheckScript({ groups: scriptGroups }),
     [scriptGroups],
+  );
+  const sharedMembers = useMemo(
+    () => sharedCandidateThreadIds({ queueItemId: row.item.id, candidates, rows: allRows }),
+    [allRows, candidates, row.item.id],
+  );
+  const sharedBlocker = useMemo(
+    () => sharedCandidateBlocker({ members: sharedMembers }),
+    [sharedMembers],
   );
   const proposalKind = candidate === null ? row.proposalKind : 'fix';
   const isApprovable = proposalKind !== 'none' || reply.trim() !== '';
@@ -281,8 +302,9 @@ export const ResolveItemContainer = ({
       mode={mode}
       isBusy={isBusy}
       proposalKind={proposalKind}
-      canApprove={APPROVABLE_STATUSES.has(row.status) && isApprovable}
-      approveBlockedReason={approveBlockedReasonFor({ row, isApprovable })}
+      canApprove={APPROVABLE_STATUSES.has(row.status) && isApprovable && sharedBlocker === null}
+      approveBlockedReason={approveBlockedReasonFor({ row, isApprovable, sharedBlocker })}
+      sharedMembers={sharedMembers}
       refuseBlockedReason={refuseBlockedReason({ row })}
       canRunCheck={candidate !== null && checkScript !== null}
       isCheckRunning={isCheckRunning}
