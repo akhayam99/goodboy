@@ -48,17 +48,18 @@ export const ArtifactGroups = ({
   onRetryGeneration,
 }: Props) => (
   <>
-    {isCompact ? (
-      <ScrollFade orientation="horizontal" fadeSize={16} className="shrink-0">
-        <ArtifactFilterTabs value={filter} counts={counts} onChange={onFilterChange} />
-      </ScrollFade>
-    ) : (
+    <ScrollFade orientation="horizontal" fadeSize={16} className="min-w-0 shrink-0">
       <ArtifactFilterTabs value={filter} counts={counts} onChange={onFilterChange} />
-    )}
+    </ScrollFade>
     {counts[filter] === 0 ? empty : null}
     {isArtifactSectionShown({ filter, kind: 'plan', counts }) ? (
       <ArtifactSection heading={ARTIFACT_FILTER_LABEL.plan}>
-        <PlanList plans={plans} openQuestionCount={openQuestionCount} onSelect={onSelectPlan} />
+        <PlanList
+          plans={plans}
+          openQuestionCount={openQuestionCount}
+          {...(isCompact && { visibleFinishedCount: 0 })}
+          onSelect={onSelectPlan}
+        />
       </ArtifactSection>
     ) : null}
     {groups.map((group) =>

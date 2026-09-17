@@ -5,16 +5,22 @@ import { FinishedRegister } from '../../../../shared/components/FinishedRegister
 type Props = {
   readonly plans: ReadonlyArray<PlanWithCount>;
   readonly openQuestionCount: number;
+  readonly visibleFinishedCount?: number;
   readonly onSelect: (planId: PlanId) => void;
 };
 
 const VISIBLE_FINISHED = 30;
 
-export const PlanList = ({ plans, openQuestionCount, onSelect }: Props) => {
+export const PlanList = ({
+  plans,
+  openQuestionCount,
+  visibleFinishedCount = VISIBLE_FINISHED,
+  onSelect,
+}: Props) => {
   const active = plans.filter((plan) => plan.status === 'active');
   const finished = plans.filter((plan) => plan.status !== 'active');
-  const visibleFinished = finished.slice(0, VISIBLE_FINISHED);
-  const earlierFinished = finished.slice(VISIBLE_FINISHED);
+  const visibleFinished = finished.slice(0, visibleFinishedCount);
+  const earlierFinished = finished.slice(visibleFinishedCount);
 
   return (
     <>

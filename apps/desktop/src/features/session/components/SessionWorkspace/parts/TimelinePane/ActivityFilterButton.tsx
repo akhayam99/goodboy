@@ -40,7 +40,11 @@ const ACTIVITY_CATEGORY_CONCEPT = {
 
 const PANEL_LABEL = 'Activity filter';
 
-const PANEL_EXPECTED_HEIGHT = 324;
+const PANEL_SCROLLER_HEIGHT = 320;
+
+const PANEL_FOOTER_HEIGHT = 33;
+
+const PANEL_EXPECTED_HEIGHT = PANEL_SCROLLER_HEIGHT + PANEL_FOOTER_HEIGHT;
 
 const PANEL_WIDTH = 288;
 
@@ -226,7 +230,7 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
       }
     >
       <ScrollFade
-        className="max-h-72"
+        className="max-h-80"
         viewportClassName="flex flex-col gap-2 py-2"
         fadeSize={12}
         fadeFrom="subtle"

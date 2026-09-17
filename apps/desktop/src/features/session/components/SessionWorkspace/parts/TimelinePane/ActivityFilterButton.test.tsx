@@ -167,10 +167,10 @@ describe('ActivityFilterButton', () => {
     const rows = screen.getAllByRole('menuitemcheckbox');
     const first = rows[0];
     const showAll = screen.getByRole('menuitem', { name: 'Show all' });
-    const scroller = first?.closest('.max-h-72') ?? null;
+    const scroller = first?.closest('.max-h-80') ?? null;
 
     expect(scroller).not.toBeNull();
-    expect(menu.className).not.toContain('max-h-72');
+    expect(menu.className).not.toContain('max-h-80');
     expect(rows.every((row) => scroller?.contains(row) === true)).toBe(true);
     expect(scroller?.contains(showAll)).toBe(false);
   });
