@@ -386,6 +386,26 @@ body,
   color-scheme: dark;
 }
 
+@media print {
+  html,
+  body,
+  body.bg-background,
+  #root {
+    height: auto;
+    overflow: visible;
+    background: #ffffff;
+  }
+}
+
+@media screen {
+  html[data-print-window],
+  html[data-print-window] body,
+  html[data-print-window] #root {
+    height: auto;
+    overflow: auto;
+  }
+}
+
 body {
   font-feature-settings: 'cv11', 'ss01', 'tnum';
   -webkit-font-smoothing: antialiased;

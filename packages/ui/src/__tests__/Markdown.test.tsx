@@ -75,6 +75,22 @@ describe('Markdown html handling', () => {
     expect(container.textContent).toContain('ran the tests');
     expect(container.textContent).toContain('output');
   });
+
+  it('closes a callout on the doubled bracket without leaking one into its text', () => {
+    const { container } = render(<Markdown text="<<output>>ran the tests<</output>>" />);
+    const callout = container.querySelector('[data-block="callout"]');
+    expect(callout?.textContent).toContain('ran the tests');
+    expect(callout?.textContent).not.toContain('<');
+  });
+
+  it('closes a multi line callout without leaking a bracket onto its last line', () => {
+    const { container } = render(
+      <Markdown text={['<<goal>>', 'ship the print sheet', '<</goal>>'].join('\n')} />,
+    );
+    const callout = container.querySelector('[data-block="callout"]');
+    expect(callout?.textContent).toContain('ship the print sheet');
+    expect(callout?.textContent).not.toContain('<');
+  });
 });
 
 describe('Markdown document rhythm', () => {
@@ -257,5 +273,42 @@ describe('Markdown preview variant', () => {
     const { container } = render(<Markdown variant="preview" text={'- one\n- two'} />);
     expect(container.querySelector('ul')?.className).toContain('gap-0.5');
     expect(container.querySelector('ul')?.className).toContain('pl-4');
+  });
+});
+
+describe('Markdown print hooks', () => {
+  it('marks a callout with its block and tone for the print sheet', () => {
+    const { container } = render(<Markdown text="<<output>>ran the tests<</output>>" />);
+    const callout = container.querySelector('[data-block="callout"]');
+    expect(callout).not.toBeNull();
+    expect(callout?.getAttribute('data-tone')).toBe('output');
+  });
+
+  it('marks an inline chip with its block and tone for the print sheet', () => {
+    const { container } = render(<Markdown text="see <<ctx-goal>> now" />);
+    const chip = container.querySelector('[data-block="chip"]');
+    expect(chip).not.toBeNull();
+    expect(chip?.getAttribute('data-tone')).toBe('goal');
+  });
+
+  it('marks the callout label row so the print sheet can keep it a row', () => {
+    const { container } = render(<Markdown text="<<question>>who signs<</question>>" />);
+    const label = container.querySelector('[data-block="callout-label"]');
+    expect(label).not.toBeNull();
+    expect(label?.textContent).toContain('question');
+  });
+
+  it('marks an ascii tree paragraph as a tree block', () => {
+    const { container } = render(
+      <Markdown text={['src', '├── index.ts', '└── cn.ts'].join('\n')} />,
+    );
+    const tree = container.querySelector('[data-block="tree"]');
+    expect(tree).not.toBeNull();
+    expect(tree?.tagName).toBe('P');
+  });
+
+  it('leaves an ordinary paragraph without a block attribute', () => {
+    const { container } = render(<Markdown text="a plain line of prose" />);
+    expect(container.querySelector('p')?.hasAttribute('data-block')).toBe(false);
   });
 });

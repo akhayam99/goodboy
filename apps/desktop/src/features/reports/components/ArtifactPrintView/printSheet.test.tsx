@@ -57,6 +57,43 @@ const report = {
   updatedAt: '2026-09-15T10:00:00',
 };
 
+const reportWithList = {
+  ...report,
+  sourceText: [
+    '## What shipped',
+    '',
+    'the pane calls `listArtifactsForSession` once.',
+    '',
+    '- the first item of the list',
+    '- the second item of the list',
+    '',
+    '## Checks',
+    '',
+    'text',
+    '',
+    '## Risk',
+    '',
+    'text',
+  ].join('\n'),
+};
+
+const reportWithCallout = {
+  ...report,
+  sourceText: [
+    '## What shipped',
+    '',
+    '<<question>>who signs the release<</question>>',
+    '',
+    '## Checks',
+    '',
+    'text',
+    '',
+    '## Risk',
+    '',
+    'text',
+  ].join('\n'),
+};
+
 const wideWireframe = {
   ...report,
   kind: 'wireframe',
@@ -91,14 +128,20 @@ const adoptSheet = ({ css }: { readonly css: string }): void => {
   document.head.append(sheet);
 };
 
-const renderSheet = async () => {
-  listSpy.mockResolvedValueOnce([report]);
+type RenderParams = Readonly<{
+  artifact: Record<string, unknown>;
+}>;
+
+const renderArtifact = async ({ artifact }: RenderParams) => {
+  listSpy.mockResolvedValueOnce([artifact]);
   const rendered = render(<ArtifactPrintView request={request} />);
   await waitFor(() => {
     expect(screen.getByRole('navigation', { name: 'Contents' })).toBeDefined();
   });
   return rendered;
 };
+
+const renderSheet = async () => renderArtifact({ artifact: report });
 
 const styleOf = ({ selector }: { readonly selector: string }): CSSStyleDeclaration => {
   const element = document.querySelector(selector);
@@ -190,5 +233,72 @@ describe('print sheet styling', () => {
 
     expect(container.querySelectorAll('style')).toHaveLength(0);
     expect(document.querySelectorAll('style')).toHaveLength(0);
+  });
+
+  it('gives a long table a repeating header and no blanket avoid on a block', () => {
+    expect(SHEET_CSS).toContain('table-header-group');
+    expect(SHEET_CSS).toMatch(/\.print-body tr \{[^}]*break-inside: avoid/);
+    expect(SHEET_CSS).not.toMatch(/print-body > div > div > div/);
+  });
+
+  it('writes callout and chip tones as tokens, which happy-dom cannot resolve', () => {
+    expect(SHEET_CSS).toContain("[data-tone='goal']");
+    expect(SHEET_CSS).toContain('var(--color-primary)');
+    expect(SHEET_CSS).toContain('var(--color-success)');
+    expect(SHEET_CSS).toContain('var(--color-warning)');
+    expect(SHEET_CSS).toContain('var(--color-info)');
+    expect(SHEET_CSS).toMatch(/\[data-block='chip'\] \{[^}]*background: none/);
+    expect(SHEET_CSS).toMatch(/\[data-block='callout'\] \{[^}]*background: none/);
+  });
+
+  it('runs a paragraph and a list item at the same leading', async () => {
+    adoptSheet({ css: SHEET_CSS });
+    await renderArtifact({ artifact: reportWithList });
+
+    const paragraph = styleOf({ selector: '.print-body p' }).lineHeight;
+    const item = styleOf({ selector: '.print-body li' }).lineHeight;
+    expect(paragraph).toBe('1.5');
+    expect(item).toBe(paragraph);
+  });
+  it('keeps the callout label a flex row while its wrappers stay blocks', async () => {
+    adoptSheet({ css: SHEET_CSS });
+    await renderArtifact({ artifact: reportWithCallout });
+
+    expect(styleOf({ selector: "[data-block='callout-label']" }).display).toBe('flex');
+    expect(styleOf({ selector: "[data-block='callout-label']" }).alignItems).toBe('baseline');
+    expect(styleOf({ selector: "[data-block='callout']" }).display).toBe('block');
+    expect(styleOf({ selector: '.print-body > div > div' }).display).toBe('block');
+  });
+  it('pins the paper so a dialog default cannot redraw the layout', () => {
+    expect(SHEET_CSS).toMatch(/@page \{[^@]*size: A4;/);
+    expect(SHEET_CSS).toContain('size: A4 landscape');
+    expect(SHEET_CSS).toMatch(/@page \{[^@]*margin: 16mm 22\.5mm 18mm;/);
+  });
+
+  it('lets the page margin alone set the text block, with no clamp to fight it', () => {
+    expect(SHEET_CSS).toMatch(/@media print \{\s*\.print-sheet \{[^}]*max-width: none;/);
+    expect(SHEET_CSS).not.toContain('max-width: 150mm');
+  });
+
+  it('scales prose to one body size and holds the monospace blocks still', () => {
+    expect(SHEET_CSS).toMatch(/\.print-body p \{[^}]*font-size: 13pt;/);
+    expect(SHEET_CSS).toMatch(/\.print-body li \{[^}]*font-size: 13pt;/);
+    expect(SHEET_CSS).toMatch(/\.print-body pre \{[^}]*font-size: 8\.5pt;/);
+    expect(SHEET_CSS).toMatch(/\[data-block='tree'\] \{[^}]*font-size: 8pt;/);
+  });
+
+  it('hangs a wrapped ascii tree line under the branch it continues', () => {
+    expect(SHEET_CSS).toMatch(/@supports \(text-indent: -3em each-line\)/);
+    expect(SHEET_CSS).toMatch(/text-indent: -3em each-line;/);
+    expect(SHEET_CSS).toMatch(/padding-left: 3em;/);
+  });
+
+  it('gives a paragraph and a list item the same computed size', async () => {
+    adoptSheet({ css: SHEET_CSS });
+    await renderArtifact({ artifact: reportWithList });
+
+    const paragraph = styleOf({ selector: '.print-body p' }).fontSize;
+    expect(styleOf({ selector: '.print-body li' }).fontSize).toBe(paragraph);
+    expect(paragraph).not.toBe('');
   });
 });

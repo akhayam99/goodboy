@@ -5,6 +5,7 @@ import type { SessionArtifact, WireframeArtifact } from '@goodboy/types';
 import { listArtifactsForSession } from '../../../artifacts/artifacts';
 import type { ArtifactPrintRequest } from '../../artifactPrintRequest';
 import { artifactMetaFields } from './artifactMetaFields';
+import { closePrintWindow } from './closePrintWindow';
 import { CONTENTS_MIN_SECTIONS, documentOutline } from './documentOutline';
 import { dropLeadingTitleHeading } from './dropLeadingTitleHeading';
 import { PrintContents } from './PrintContents';
@@ -66,6 +67,7 @@ export const ArtifactPrintView = ({ request }: Props) => {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.setAttribute('data-print-window', 'true');
     removeBootShell();
     let isActive = true;
     listArtifactsForSession(request.sessionId)
@@ -89,6 +91,17 @@ export const ArtifactPrintView = ({ request }: Props) => {
       isActive = false;
     };
   }, [request.sessionId, request.artifactId]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+      void closePrintWindow();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   useEffect(() => {
     if ((status.kind !== 'ready' && status.kind !== 'wireframe') || hasPrinted.current) {
