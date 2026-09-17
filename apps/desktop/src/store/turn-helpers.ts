@@ -642,7 +642,7 @@ const overrideWireframeFidelity = async ({
   const provenance = await loadArtifactProvenance(agentId).catch(() => null);
   const decision = capturedWireframeFidelity({
     requested: requestedWireframeFidelity({ agentName }),
-    hasDesignSource: provenance?.designProfileSummary != null,
+    hasDesignSource: provenance?.hasDesignEvidence === true,
   });
   if (decision.note !== null) {
     await appendArtifactProvenanceOmission({ agentId, note: decision.note }).catch(() => undefined);

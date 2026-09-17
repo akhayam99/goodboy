@@ -78,6 +78,7 @@ export type RecordArtifactProvenanceArgs = {
   readonly evidence: ReadonlyArray<ArtifactEvidenceSource>;
   readonly omissions: ReadonlyArray<string>;
   readonly designProfileSummary: string | null;
+  readonly hasDesignEvidence: boolean;
   readonly sourceWorkflowRunId: WorkflowRunId | null;
   readonly executingWorkflowRunId: WorkflowRunId | null;
 };
@@ -99,6 +100,7 @@ export const recordArtifactProvenance = async (
         args.designProfileSummary === null
           ? null
           : redactSecrets({ text: args.designProfileSummary }),
+      hasDesignEvidence: args.hasDesignEvidence,
       sourceWorkflowRunId: args.sourceWorkflowRunId,
       executingWorkflowRunId: args.executingWorkflowRunId,
     },
@@ -132,6 +134,7 @@ export const appendArtifactProvenanceOmission = async ({
       evidence: current.evidence,
       omissions: [...current.omissions, note],
       designProfileSummary: current.designProfileSummary,
+      hasDesignEvidence: current.hasDesignEvidence,
       sourceWorkflowRunId: current.sourceWorkflowRunId,
       executingWorkflowRunId: current.executingWorkflowRunId,
     },

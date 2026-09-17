@@ -74,6 +74,7 @@ export type ArtifactProvenance = Readonly<{
   evidence: ReadonlyArray<ArtifactEvidenceSource>;
   omissions: ReadonlyArray<string>;
   designProfileSummary: string | null;
+  hasDesignEvidence: boolean;
   sourceWorkflowRunId: WorkflowRunId | null;
   executingWorkflowRunId: WorkflowRunId | null;
   createdAt: IsoDateTime;

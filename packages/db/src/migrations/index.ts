@@ -17,6 +17,7 @@ import { m155WorkflowRoutingDecisions } from './m155-workflow-routing-decisions'
 import { m156LiveAgentsView } from './m156-live-agents-view';
 import { m157SessionArtifacts } from './m157-session-artifacts';
 import { m158ArtifactProvenance } from './m158-artifact-provenance';
+import { m159ArtifactDesignEvidence } from './m159-artifact-design-evidence';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -321,4 +322,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 156, sql: m156LiveAgentsView },
   { version: 157, sql: m157SessionArtifacts },
   { version: 158, sql: m158ArtifactProvenance },
+  { version: 159, sql: m159ArtifactDesignEvidence },
 ];

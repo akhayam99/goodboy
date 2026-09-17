@@ -20,7 +20,9 @@ const { upsertPlan, listPlansForSession, createArtifact, listArtifactsForSession
 );
 
 const { loadArtifactProvenance, appendArtifactProvenanceOmission } = vi.hoisted(() => ({
-  loadArtifactProvenance: vi.fn(async () => null as { designProfileSummary: string | null } | null),
+  loadArtifactProvenance: vi.fn(
+    async () => null as { designProfileSummary: string | null; hasDesignEvidence?: boolean } | null,
+  ),
   appendArtifactProvenanceOmission: vi.fn(async () => undefined),
 }));
 
@@ -155,7 +157,10 @@ describe('captureArtifactsFromTurn', () => {
     })}\n<</artifact>>`;
 
   it('creates a wireframe artifact with the json source', async () => {
-    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: 'tailwind config' });
+    loadArtifactProvenance.mockResolvedValue({
+      designProfileSummary: 'tailwind config',
+      hasDesignEvidence: true,
+    });
     await run(wireframeTurn('high'), 'High fidelity');
     expect(createArtifact).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -179,8 +184,25 @@ describe('captureArtifactsFromTurn', () => {
     );
   });
 
+  it('forces low fidelity when the walk found no design file, whatever it described', async () => {
+    loadArtifactProvenance.mockResolvedValue({
+      designProfileSummary: 'theme name: generic\ncommit: abc1234',
+      hasDesignEvidence: false,
+    });
+    await run(wireframeTurn('high'), 'High fidelity');
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: { fidelity: 'low', designProfile: { tokens: 1 } } }),
+    );
+    expect(appendArtifactProvenanceOmission).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: AGENT_ID }),
+    );
+  });
+
   it('forces low fidelity when the user asked for a plain wireframe', async () => {
-    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: 'tailwind config' });
+    loadArtifactProvenance.mockResolvedValue({
+      designProfileSummary: 'tailwind config',
+      hasDesignEvidence: true,
+    });
     await run(wireframeTurn('high'), 'Low fidelity');
     expect(createArtifact).toHaveBeenCalledWith(
       expect.objectContaining({ metadata: { fidelity: 'low', designProfile: { tokens: 1 } } }),

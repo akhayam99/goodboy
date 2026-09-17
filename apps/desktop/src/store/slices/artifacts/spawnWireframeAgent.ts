@@ -141,6 +141,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
         evidence: [],
         omissions: [WIREFRAME_SCOUT_PENDING_NOTE],
         designProfileSummary: null,
+        hasDesignEvidence: false,
         sourceWorkflowRunId: workflowRunId,
         agentId: containerId,
         executingWorkflowRunId: null,

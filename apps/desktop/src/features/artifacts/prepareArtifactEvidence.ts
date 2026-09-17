@@ -8,6 +8,7 @@ import { buildWireframeContext } from '../wireframes/buildWireframeContext';
 import type { DesignEvidence } from '../wireframes/collectDesignProfile';
 import { collectWireframeDesignProfile } from '../wireframes/collectWireframeDesignProfile';
 import { describeDesignProfile } from '../wireframes/describeDesignProfile';
+import { hasDesignEvidence } from '../wireframes/hasDesignEvidence';
 import type { WireframeFidelity } from '../wireframes/wireframeFidelity';
 import type { WireframeScoutPlan } from '../wireframes/wireframeScoutPlan';
 import type { WireframeTarget } from '../wireframes/wireframeTarget';
@@ -92,6 +93,7 @@ export const prepareArtifactEvidence = async ({
         }),
         omissions: context.truncations,
         designProfileSummary: null,
+        hasDesignEvidence: false,
         sourceWorkflowRunId: workflowRunId,
       },
     };
@@ -133,6 +135,8 @@ export const prepareArtifactEvidence = async ({
         designEvidence.source === 'none'
           ? null
           : describeDesignProfile({ profile: designEvidence.profile }),
+      hasDesignEvidence:
+        designEvidence.source !== 'none' && hasDesignEvidence({ profile: designEvidence.profile }),
       sourceWorkflowRunId: workflowRunId,
     },
   };
