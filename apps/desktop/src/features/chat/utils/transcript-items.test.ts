@@ -379,6 +379,7 @@ describe('reduceTranscript artifact envelopes', () => {
         artifactKind: 'report',
         title: 'Release readout',
         complete: true,
+        runId: RUN,
       },
     ]);
   });
@@ -402,6 +403,7 @@ describe('reduceTranscript artifact envelopes', () => {
         artifactKind: 'report',
         title: 'Release readout',
         complete: true,
+        runId: RUN,
       },
       { kind: 'assistant_text', key: 'text-0-prose-1', text: '\ntell me what to change.' },
       { kind: 'done', key: 'done-1' },
@@ -426,6 +428,7 @@ describe('reduceTranscript artifact envelopes', () => {
         artifactKind: 'wireframe',
         title: null,
         complete: false,
+        runId: RUN,
       },
     ]);
   });
@@ -446,6 +449,7 @@ describe('reduceTranscript artifact envelopes', () => {
         artifactKind: 'report',
         title: 'First',
         complete: true,
+        runId: RUN,
       },
       { kind: 'assistant_text', key: 'text-0', text: 'and the plan:' },
       {
@@ -454,6 +458,7 @@ describe('reduceTranscript artifact envelopes', () => {
         artifactKind: 'plan',
         title: 'Second',
         complete: true,
+        runId: RUN,
       },
     ]);
   });
@@ -489,9 +494,27 @@ describe('reduceTranscript artifact envelopes', () => {
         artifactKind: 'report',
         title: 'Release readout',
         complete: true,
+        runId: RUN,
       },
       { kind: 'assistant_text', key: 'text-0-prose-1', text: 'done.' },
     ]);
+  });
+
+  it('stamps each block with the run that wrote it, not with the first run of the turn', () => {
+    const second = 'run-2' as ProviderRunId;
+    const events: ReadonlyArray<TurnEvent> = [
+      assistantText({ delta: reportEnvelope({ title: 'First' }) }),
+      doneEvent(),
+      {
+        kind: 'assistant_text',
+        runId: second,
+        delta: reportEnvelope({ title: 'Second' }),
+        at: AT,
+      },
+    ];
+
+    const blocks = reduceTranscript(events).filter((item) => item.kind === 'artifact_block');
+    expect(blocks.map((block) => block.runId)).toEqual([RUN, second]);
   });
 
   it('leaves an envelope inside a code fence as plain assistant text', () => {

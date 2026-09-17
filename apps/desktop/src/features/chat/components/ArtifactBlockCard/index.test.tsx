@@ -1,13 +1,54 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { AgentId, SessionId } from '@goodboy/types';
+
+const { state } = vi.hoisted(() => ({
+  state: {
+    sessionArtifacts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
+    setFocusedArtifactId: vi.fn(),
+    setFocusedPlanId: vi.fn(),
+    setActiveLens: vi.fn(),
+    setScriptsLensScope: vi.fn(),
+  },
+}));
+
+vi.mock('../../../../store', () => ({
+  EMPTY_ARRAY: [],
+  useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
+    getState: () => state,
+  }),
+}));
+
 import { ArtifactBlockCard } from './index';
+
+const SESSION_ID = 'session-1' as SessionId;
+const SCOUT = 'agent-scout' as AgentId;
+
+const artifactOf = (overrides: Record<string, unknown>) => ({
+  id: 'artifact-1',
+  agentId: SCOUT,
+  kind: 'report',
+  title: 'Rounding drift in ledger-core postings',
+  status: 'ready',
+  sourceTurnId: 'run-1',
+  ...overrides,
+});
+
+beforeEach(() => {
+  state.sessionArtifacts = {};
+  state.setFocusedArtifactId = vi.fn();
+  state.setFocusedPlanId = vi.fn();
+  state.setActiveLens = vi.fn();
+  state.setScriptsLensScope = vi.fn();
+});
 
 afterEach(cleanup);
 
 describe('ArtifactBlockCard', () => {
-  it('announces a captured artifact with its kind and title', () => {
+  it('opens the artifact the run that wrote the block produced', () => {
+    state.sessionArtifacts = { [SESSION_ID]: [artifactOf({})] };
     render(
       <ArtifactBlockCard
         item={{
@@ -16,33 +57,48 @@ describe('ArtifactBlockCard', () => {
           artifactKind: 'report',
           title: 'Release readout',
           complete: true,
+          runId: 'run-1' as never,
         }}
+        sessionId={SESSION_ID}
+        agentId={SCOUT}
       />,
     );
-    const row = screen.getByTestId('artifact-block-row');
-    expect(row.textContent).toContain('report captured');
-    expect(row.textContent).toContain('Release readout');
+
+    const chip = screen.getByTestId('artifact-block-chip');
+    expect(chip.textContent).toContain('Report');
+    expect(chip.textContent).toContain('Rounding drift in ledger-core postings');
+
+    fireEvent.click(chip);
+    expect(state.setFocusedArtifactId).toHaveBeenCalledWith(SESSION_ID, 'artifact-1');
+    expect(state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'plans');
   });
 
-  it('shows a pending row while the block is still arriving', () => {
+  it('opens the revised artifact from the block the revision wrote', () => {
+    state.sessionArtifacts = { [SESSION_ID]: [artifactOf({ sourceTurnId: 'run-1' })] };
     render(
       <ArtifactBlockCard
         item={{
           kind: 'artifact_block',
           key: 'text-0-artifact-0',
-          artifactKind: 'wireframe',
-          title: null,
-          complete: false,
+          artifactKind: 'report',
+          title: 'Release readout',
+          complete: true,
+          runId: 'run-2' as never,
         }}
+        sessionId={SESSION_ID}
+        agentId={SCOUT}
       />,
     );
-    expect(screen.getByTestId('artifact-block-row').textContent).toContain(
-      'wireframe still arriving',
-    );
+
+    fireEvent.click(screen.getByTestId('artifact-block-chip'));
+    expect(state.setFocusedArtifactId).toHaveBeenCalledWith(SESSION_ID, 'artifact-1');
   });
 
-  it('never opens an expanded body', () => {
-    const { container } = render(
+  it('sends a plan block to the plan it wrote', () => {
+    state.sessionArtifacts = {
+      [SESSION_ID]: [artifactOf({ id: 'plan-1', kind: 'plan', title: 'Rollout' })],
+    };
+    render(
       <ArtifactBlockCard
         item={{
           kind: 'artifact_block',
@@ -50,8 +106,59 @@ describe('ArtifactBlockCard', () => {
           artifactKind: 'plan',
           title: 'Rollout',
           complete: true,
+          runId: 'run-1' as never,
         }}
+        sessionId={SESSION_ID}
+        agentId={SCOUT}
       />,
+    );
+
+    fireEvent.click(screen.getByTestId('artifact-block-chip'));
+    expect(state.setFocusedPlanId).toHaveBeenCalledWith(SESSION_ID, 'plan-1');
+    expect(state.setFocusedArtifactId).not.toHaveBeenCalled();
+    expect(state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'plans');
+  });
+
+  it('leaves a block still arriving as a row with nothing to press', () => {
+    const { container } = render(
+      <ArtifactBlockCard
+        item={{
+          kind: 'artifact_block',
+          key: 'text-0-artifact-0',
+          artifactKind: 'wireframe',
+          title: null,
+          complete: false,
+          runId: 'run-1' as never,
+        }}
+        sessionId={SESSION_ID}
+        agentId={SCOUT}
+      />,
+    );
+
+    expect(screen.getByTestId('artifact-block-row').textContent).toContain(
+      'wireframe still arriving',
+    );
+    expect(container.querySelectorAll('button')).toHaveLength(0);
+  });
+
+  it('says so when the block names an artifact this session does not hold', () => {
+    const { container } = render(
+      <ArtifactBlockCard
+        item={{
+          kind: 'artifact_block',
+          key: 'text-0-artifact-0',
+          artifactKind: 'report',
+          title: 'Release readout',
+          complete: true,
+          runId: 'run-9' as never,
+        }}
+        sessionId={SESSION_ID}
+        agentId={SCOUT}
+      />,
+    );
+
+    expect(screen.getByTestId('artifact-block-row').textContent).toContain(
+      'Report not in this session',
     );
     expect(container.querySelectorAll('button')).toHaveLength(0);
   });
