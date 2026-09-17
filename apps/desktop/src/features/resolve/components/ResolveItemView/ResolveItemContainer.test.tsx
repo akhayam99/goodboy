@@ -111,14 +111,21 @@ const rowOf = ({ threadId, body }: { readonly threadId: string; readonly body: s
 const RETRY = rowOf({ threadId: 't-retry', body: 'This retries forever on a 500.' });
 const PARSER = rowOf({ threadId: 't-parser', body: 'The parser swallows the error here.' });
 
-const renderContainer = ({ row }: { readonly row: ResolveQueueRow }) =>
+type RenderParams = {
+  readonly row: ResolveQueueRow;
+  readonly nextThreadId?: string | null;
+  readonly onSelect?: (threadId: string | null) => void;
+};
+
+const renderContainer = ({ row, nextThreadId = null, onSelect = vi.fn() }: RenderParams) =>
   render(
     <ResolveItemContainer
       sessionId={sessionId}
       row={row}
       allRows={[RETRY, PARSER]}
+      nextThreadId={nextThreadId}
       worktreePath={null}
-      onSelect={vi.fn()}
+      onSelect={onSelect}
       onAskForChanges={vi.fn()}
       onOpenInDiff={vi.fn()}
     />,
@@ -164,6 +171,7 @@ describe('an asynchronous resolve decision', () => {
         sessionId={sessionId}
         row={PARSER}
         allRows={[RETRY, PARSER]}
+        nextThreadId={null}
         worktreePath={null}
         onSelect={vi.fn()}
         onAskForChanges={vi.fn()}
@@ -175,5 +183,38 @@ describe('an asynchronous resolve decision', () => {
 
     expect(screen.getByText('The parser swallows the error here.')).toBeDefined();
     expect(screen.queryByText('The branch moved under the approval')).toBeNull();
+  });
+
+  it('moves to the comment below once the approval has landed', async () => {
+    acceptResolveQueueItem.mockResolvedValue(undefined);
+    const onSelect = vi.fn();
+    renderContainer({ row: RETRY, nextThreadId: 't-parser', onSelect });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Approve fix' }));
+
+    await vi.waitFor(() => expect(onSelect).toHaveBeenCalledWith('t-parser'));
+  });
+
+  it('leaves the panel shut when the approved comment was the last one', async () => {
+    acceptResolveQueueItem.mockResolvedValue(undefined);
+    const onSelect = vi.fn();
+    renderContainer({ row: RETRY, nextThreadId: null, onSelect });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Approve fix' }));
+
+    await vi.waitFor(() => expect(onSelect).toHaveBeenCalledWith(null));
+  });
+
+  it('never moves on when the approval failed', async () => {
+    acceptResolveQueueItem.mockRejectedValue(new Error('The branch moved under the approval'));
+    const onSelect = vi.fn();
+    renderContainer({ row: RETRY, nextThreadId: 't-parser', onSelect });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Approve fix' }));
+
+    await vi.waitFor(() =>
+      expect(screen.getByText('The branch moved under the approval')).toBeDefined(),
+    );
+    expect(onSelect).not.toHaveBeenCalled();
   });
 });

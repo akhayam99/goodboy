@@ -74,6 +74,7 @@ export const ResolveQueueRow = ({
         aria-label={accessibleName}
         aria-current={isSelected ? 'true' : undefined}
         data-selected={isSelected}
+        data-thread-id={row.thread.threadId}
         onClick={onOpen}
         onKeyDown={onKeyDown}
         className={cn(

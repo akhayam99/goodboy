@@ -22,6 +22,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly row: ResolveQueueRow;
   readonly allRows: ReadonlyArray<ResolveQueueRow>;
+  readonly nextThreadId: string | null;
   readonly worktreePath: string | null;
   readonly onSelect: (threadId: string | null) => void;
   readonly onAskForChanges: (params: {
@@ -83,6 +84,7 @@ export const ResolveItemContainer = ({
   sessionId,
   row,
   allRows,
+  nextThreadId,
   worktreePath,
   onSelect,
   onAskForChanges,
@@ -184,13 +186,15 @@ export const ResolveItemContainer = ({
 
   const onApprove = (): void => {
     void guard({
-      run: () =>
-        acceptResolveQueueItem({
+      run: async () => {
+        await acceptResolveQueueItem({
           sessionId,
           itemId: row.item.id,
           revision: row.thread.revision,
           reply,
-        }),
+        });
+        onSelect(nextThreadId);
+      },
     });
   };
 
@@ -204,6 +208,7 @@ export const ResolveItemContainer = ({
           reply,
         });
         setMode('reply');
+        onSelect(nextThreadId);
       },
     });
   };
@@ -212,7 +217,7 @@ export const ResolveItemContainer = ({
     void guard({
       run: async () => {
         await deferResolveQueueItem({ sessionId, itemId: row.item.id });
-        onSelect(null);
+        onSelect(nextThreadId);
       },
     });
   };
@@ -298,6 +303,7 @@ export const ResolveItemContainer = ({
         onAskForChanges({ threadId: row.thread.threadId, instruction: instruction.trim() });
         setInstruction('');
         setMode('reply');
+        onSelect(nextThreadId);
       }}
       onLater={onLater}
       onReopen={onReopen}

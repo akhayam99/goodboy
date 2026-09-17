@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 import {
   Button,
   Divider,
@@ -47,6 +55,7 @@ import { ResolveItemContainer } from '../ResolveItemView/ResolveItemContainer';
 import { QueueFilterChips } from './QueueFilterChips';
 import { ResolveQueueRow } from './ResolveQueueRow';
 import { ResolveQueueFooter } from './ResolveQueueFooter';
+import { threadIdAfterDecision, threadIdAtStep } from './queueTraversal';
 import {
   NoResolveTargetState,
   NothingToRetryState,
@@ -77,6 +86,7 @@ const scrollableAncestor = (node: HTMLElement | null): HTMLElement | null => {
 export const ResolveQueueHome = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
   const listRef = useRef<HTMLDivElement | null>(null);
+  const detailRef = useRef<HTMLDivElement | null>(null);
   const { showToast } = useToast();
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const comments = useAppStore(
@@ -118,6 +128,10 @@ export const ResolveQueueHome = ({ session }: Props) => {
     [groups, view.filter, view.order],
   );
   const listGroups = useMemo(() => groupSharedRuns({ rows: listed }), [listed]);
+  const nextThreadId = useMemo(
+    () => threadIdAfterDecision({ rows: listed, selectedThreadId: view.expandedThreadId }),
+    [listed, view.expandedThreadId],
+  );
   const selectedRow = useMemo(
     () => rows.find((row) => row.thread.threadId === view.expandedThreadId) ?? null,
     [rows, view.expandedThreadId],
@@ -299,6 +313,50 @@ export const ResolveQueueHome = ({ session }: Props) => {
     }
   };
 
+  const focusRow = useCallback((threadId: string): void => {
+    listRef.current
+      ?.querySelector<HTMLElement>(`[data-thread-id="${CSS.escape(threadId)}"]`)
+      ?.focus();
+  }, []);
+
+  const onListKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>): void => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+        return;
+      }
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        const threadId = threadIdAtStep({
+          rows: listed,
+          selectedThreadId: view.expandedThreadId,
+          delta: event.key === 'ArrowDown' ? 1 : -1,
+        });
+        if (threadId === null) {
+          return;
+        }
+        event.preventDefault();
+        onSelect(threadId);
+        focusRow(threadId);
+        return;
+      }
+      if (event.key === 'Enter' && view.expandedThreadId !== null) {
+        const control = detailRef.current?.querySelector<HTMLElement>(
+          'button:not([disabled]), textarea, [href], input:not([disabled])',
+        );
+        if (control == null) {
+          return;
+        }
+        event.preventDefault();
+        control.focus();
+        return;
+      }
+      if (event.key === 'Escape' && view.expandedThreadId !== null) {
+        event.preventDefault();
+        focusRow(view.expandedThreadId);
+      }
+    },
+    [focusRow, listed, onSelect, view.expandedThreadId],
+  );
+
   const renderRow = useCallback(
     ({ row }: { readonly row: QueueRow }): ReactNode => (
       <ResolveQueueRow
@@ -355,16 +413,19 @@ export const ResolveQueueHome = ({ session }: Props) => {
       open={selectedRow !== null}
       panel={
         selectedRow === null ? null : (
-          <ResolveItemContainer
-            key={selectedRow.thread.threadId}
-            sessionId={sessionId}
-            row={selectedRow}
-            allRows={rows}
-            worktreePath={repo?.worktreePath ?? null}
-            onSelect={onSelect}
-            onAskForChanges={onAskForChanges}
-            onOpenInDiff={onOpenInDiff}
-          />
+          <div ref={detailRef} className="flex h-full min-h-0 min-w-0 flex-col">
+            <ResolveItemContainer
+              key={selectedRow.thread.threadId}
+              sessionId={sessionId}
+              row={selectedRow}
+              allRows={rows}
+              nextThreadId={nextThreadId}
+              worktreePath={repo?.worktreePath ?? null}
+              onSelect={onSelect}
+              onAskForChanges={onAskForChanges}
+              onOpenInDiff={onOpenInDiff}
+            />
+          </div>
         )
       }
     >
@@ -398,7 +459,7 @@ export const ResolveQueueHome = ({ session }: Props) => {
             onCancel={() => setIsConfiguring(false)}
           />
         ) : (
-          <div className="flex min-w-0 flex-col gap-4" ref={listRef}>
+          <div className="flex min-w-0 flex-col gap-4" ref={listRef} onKeyDown={onListKeyDown}>
             {errorPlacement === 'inline' && refreshError !== null && (
               <ErrorStrip
                 label={RESOLVE_QUEUE_REFRESH_LABEL}
