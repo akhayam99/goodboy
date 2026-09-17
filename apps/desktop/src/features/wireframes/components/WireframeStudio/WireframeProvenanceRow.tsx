@@ -5,7 +5,6 @@ import type { WireframeFidelity } from '../../wireframeFidelity';
 
 type Props = {
   readonly fidelity: WireframeFidelity;
-  readonly requestedFidelity: WireframeFidelity | null;
   readonly theme: WireframeTheme;
   readonly designProfile: Readonly<Record<string, unknown>>;
 };
@@ -39,16 +38,10 @@ const profileRefs = ({
     .slice(0, 12);
 };
 
-export const WireframeProvenanceRow = ({
-  fidelity,
-  requestedFidelity,
-  theme,
-  designProfile,
-}: Props) => {
+export const WireframeProvenanceRow = ({ fidelity, theme, designProfile }: Props) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const commit = asString(designProfile['commitSha']);
   const refs = [...new Set([...(theme.sources ?? []), ...profileRefs({ designProfile })])];
-  const isDiverged = requestedFidelity !== null && requestedFidelity !== fidelity;
   const overflow = refs.length - COLLAPSED_LIMIT;
   const visible = isExpanded || overflow <= 0 ? refs : refs.slice(0, COLLAPSED_LIMIT);
 
@@ -57,18 +50,9 @@ export const WireframeProvenanceRow = ({
       data-testid="wireframe-provenance"
       className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-2xs text-muted-foreground"
     >
-      {isDiverged ? (
-        <span
-          data-testid="wireframe-fidelity-divergence"
-          className="shrink-0 rounded-sm bg-warning/15 px-1.5 py-0.5 uppercase tracking-wide text-warning"
-        >
-          {requestedFidelity} fidelity asked, {fidelity} fidelity produced
-        </span>
-      ) : (
-        <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 uppercase tracking-wide">
-          {fidelity} fidelity
-        </span>
-      )}
+      <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 uppercase tracking-wide">
+        {fidelity} fidelity
+      </span>
       <span className="shrink-0">theme {theme.name}</span>
       {commit === null ? null : <span className="shrink-0 tabular-nums">at {commit}</span>}
       {refs.length === 0 ? (

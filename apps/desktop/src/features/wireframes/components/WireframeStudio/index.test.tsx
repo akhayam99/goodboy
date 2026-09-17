@@ -141,42 +141,18 @@ afterEach(() => {
 });
 
 describe('WireframeStudio', () => {
-  it('renders the initial screen with its tabs and provenance', () => {
+  it('renders the initial screen with its tabs', () => {
     renderStudio();
     expect(currentScreen()).toBe('inbox');
     expect(screen.getByRole('tab', { name: /Inbox/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: /Archive/ })).toBeDefined();
-    const provenance = screen.getByTestId('wireframe-provenance');
-    expect(provenance.textContent).toContain('low fidelity');
-    expect(screen.queryByTestId('wireframe-fidelity-divergence')).toBeNull();
-    expect(provenance.textContent).toContain('theme goodboy');
-    expect(provenance.textContent).toContain('abcdef1');
-    const chip = screen.getByTestId('wireframe-source-chip');
-    expect(chip.textContent).toBe('styles.css');
-    expect(chip.getAttribute('title')).toBe('packages/ui/src/styles.css');
   });
 
-  it('keeps every design source on one row and reveals the rest on demand', () => {
-    const many = {
-      ...document,
-      theme: {
-        ...document.theme,
-        sources: [
-          'packages/ui/src/styles.css',
-          'packages/ui/src/tokens.css',
-          'apps/desktop/src/app/theme.ts',
-          'apps/desktop/tailwind.config.ts',
-          'packages/ui/src/Button.tsx',
-        ],
-      },
-    };
-    renderStudio({ sourceText: JSON.stringify(many) });
-    expect(screen.getAllByTestId('wireframe-source-chip')).toHaveLength(4);
-    const more = screen.getByTestId('wireframe-sources-more');
-    expect(more.textContent).toBe('+1 more');
-    fireEvent.click(more);
-    expect(screen.getAllByTestId('wireframe-source-chip')).toHaveLength(5);
-    expect(screen.getByTestId('wireframe-sources-less')).toBeDefined();
+  it('leaves provenance and fidelity to the detail band, not to the canvas column', () => {
+    renderStudio();
+    expect(screen.queryByTestId('wireframe-provenance')).toBeNull();
+    expect(screen.queryByTestId('wireframe-fidelity-divergence')).toBeNull();
+    expect(screen.queryByTestId('wireframe-source-chip')).toBeNull();
   });
 
   it('renders an image node as a labelled placeholder, never a remote asset', () => {
@@ -234,13 +210,14 @@ describe('WireframeStudio', () => {
     expect(screen.queryByTestId('wireframe-convert-fidelity')).toBeNull();
   });
 
-  it('reads the provenance before the document, not after it', () => {
+  it('opens on the toolbar, with the canvas as the first thing under it', () => {
     renderStudio();
     const canvas = screen.getByTestId('wireframe-canvas');
-    const provenance = screen.getByTestId('wireframe-provenance');
-    expect(canvas.compareDocumentPosition(provenance) & Node.DOCUMENT_POSITION_PRECEDING).toBe(
+    const toolbar = screen.getByTestId('wireframe-toolbar');
+    expect(canvas.compareDocumentPosition(toolbar) & Node.DOCUMENT_POSITION_PRECEDING).toBe(
       Node.DOCUMENT_POSITION_PRECEDING,
     );
+    expect(toolbar.parentElement?.firstElementChild).toBe(toolbar);
   });
 
   it('walks the screens in document order with previous and next', () => {
@@ -304,39 +281,12 @@ describe('WireframeStudio', () => {
     expect(screen.getByTestId('wireframe-mock-state').textContent).toContain('isFilterOpen');
   });
 
-  it('says both truths once the document declares a lower fidelity than the one asked for', () => {
-    state.sessionPhaseRuns = {
-      [SESSION_ID]: [
-        {
-          id: 'agent-wireframe',
-          sessionId: SESSION_ID,
-          ordinal: 0,
-          name: 'High fidelity',
-          status: 'completed',
-        },
-      ],
-    };
+  it('keeps the mock state as a chip inside the toolbar', () => {
     renderStudio();
-    const divergence = screen.getByTestId('wireframe-fidelity-divergence');
-    expect(divergence.textContent).toContain('high fidelity asked');
-    expect(divergence.textContent).toContain('low fidelity produced');
-  });
-
-  it('states one fidelity once the document declares the one that was asked for', () => {
-    state.sessionPhaseRuns = {
-      [SESSION_ID]: [
-        {
-          id: 'agent-wireframe',
-          sessionId: SESSION_ID,
-          ordinal: 0,
-          name: 'Low fidelity',
-          status: 'completed',
-        },
-      ],
-    };
-    renderStudio();
-    expect(screen.queryByTestId('wireframe-fidelity-divergence')).toBeNull();
-    expect(screen.getByTestId('wireframe-provenance').textContent).toContain('low fidelity');
+    expect(screen.queryByTestId('wireframe-mock-state')).toBeNull();
+    fireEvent.click(screen.getByText('Filters'));
+    const chip = screen.getByTestId('wireframe-mock-state');
+    expect(screen.getByTestId('wireframe-toolbar').contains(chip)).toBe(true);
   });
 
   it('shows the validation issues and the raw json for a hostile payload', () => {

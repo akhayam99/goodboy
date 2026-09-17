@@ -1,91 +1,83 @@
-import { useState, type ReactNode } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { Divider, IconButton, MetaRow, StudioDetailTabs } from '@goodboy/ui';
+import type { ReactNode } from 'react';
+import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { Button, Divider, IconButton, PANE_RHYTHM, StudioDetailTabs, cn } from '@goodboy/ui';
 import type { SessionArtifact } from '@goodboy/types';
 import { ArtifactExportActions } from './ArtifactExportActions';
 import { ArtifactStatusChip } from './ArtifactStatusChip';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type ArtifactDetailTab = 'artifact' | 'conversation';
 
 type Props = {
   readonly artifact: SessionArtifact;
-  readonly creatorName: string;
   readonly tabs: ReadonlyArray<{ readonly value: ArtifactDetailTab; readonly label: string }>;
   readonly tab: ArtifactDetailTab;
-  readonly onTabChange: (next: ArtifactDetailTab) => void;
+  readonly stateChip: ReactNode;
   readonly actions: ReactNode;
+  readonly isDetailsOpen: boolean;
+  readonly onTabChange: (next: ArtifactDetailTab) => void;
+  readonly onDetailsToggle: () => void;
+  readonly onBack: () => void;
 };
 
 export const ArtifactIdentityBand = ({
   artifact,
-  creatorName,
   tabs,
   tab,
-  onTabChange,
+  stateChip,
   actions,
+  isDetailsOpen,
+  onTabChange,
+  onDetailsToggle,
+  onBack,
 }: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const DisclosureIcon = isOpen ? ChevronUp : ChevronDown;
+  const DisclosureIcon = isDetailsOpen ? ChevronUp : ChevronDown;
 
   return (
-    <div className="flex min-w-0 flex-col gap-1.5">
-      <div className="flex min-w-0 items-center gap-2">
-        <h2
-          data-testid="artifact-title"
-          className="min-w-0 shrink truncate text-sm font-semibold leading-snug text-foreground"
-        >
-          {artifact.title}
-        </h2>
-        <ArtifactStatusChip kind={artifact.kind} status={artifact.status} />
-        <IconButton
-          variant="ghost"
-          icon={DisclosureIcon}
-          iconSize={12}
-          label="Artifact details"
-          tooltip={isOpen ? 'Hide the artifact details' : 'Show the artifact details'}
-          aria-expanded={isOpen}
-          onClick={() => setIsOpen((previous) => !previous)}
-          data-testid="artifact-details-toggle"
-          className="shrink-0"
+    <div
+      data-testid="artifact-band"
+      className={cn('flex h-11 shrink-0 items-center gap-2', PANE_RHYTHM.detail.band)}
+    >
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onBack}
+        className="shrink-0 @min-[1265px]:hidden"
+        data-testid="artifact-back"
+      >
+        <ArrowLeft size={ICON_SIZE.row} aria-hidden />
+        All artifacts
+      </Button>
+      <h2
+        data-testid="artifact-title"
+        className="min-w-0 shrink truncate text-sm font-semibold leading-snug text-foreground"
+      >
+        {artifact.title}
+      </h2>
+      <ArtifactStatusChip kind={artifact.kind} status={artifact.status} />
+      {stateChip}
+      <IconButton
+        variant="ghost"
+        icon={DisclosureIcon}
+        iconSize={12}
+        label="Artifact details"
+        tooltip={isDetailsOpen ? 'Hide the artifact details' : 'Show the artifact details'}
+        aria-expanded={isDetailsOpen}
+        onClick={onDetailsToggle}
+        data-testid="artifact-details-toggle"
+        className="shrink-0"
+      />
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        <StudioDetailTabs
+          ariaLabel="Artifact sections"
+          options={tabs}
+          value={tab}
+          onChange={onTabChange}
         />
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          <StudioDetailTabs
-            ariaLabel="Artifact sections"
-            options={tabs}
-            value={tab}
-            onChange={onTabChange}
-          />
-          <Divider orientation="vertical" className="h-4" />
-          {actions}
-          <ArtifactExportActions artifact={artifact} />
-        </div>
+        <Divider orientation="vertical" className="h-4" />
+        {actions}
+        <ArtifactExportActions artifact={artifact} />
       </div>
-      {isOpen ? (
-        <MetaRow
-          items={[
-            <span
-              key="creator"
-              data-testid="artifact-creator"
-              className="flex min-w-0 items-center gap-1.5"
-            >
-              <CONCEPT_ICONS.agents size={11} aria-hidden className="shrink-0 text-primary" />
-              <span className="truncate">{creatorName}</span>
-            </span>,
-            <span key="kind">{artifact.kind}</span>,
-            artifact.workflowRunId !== null ? (
-              <span key="run">workflow run</span>
-            ) : (
-              <span key="run">standalone</span>
-            ),
-            <span key="revision">rev {artifact.revision}</span>,
-            <span key="created" className="tabular-nums">
-              {formatCompactDateTime({ iso: artifact.createdAt })}
-            </span>,
-          ]}
-        />
-      ) : null}
     </div>
   );
 };

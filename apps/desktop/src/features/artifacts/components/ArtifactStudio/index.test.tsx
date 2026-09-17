@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const { notify, state, showToast, subscribers } = vi.hoisted(() => {
   const listeners = new Set<() => void>();
@@ -387,19 +387,41 @@ describe('ArtifactStudio', () => {
     expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-report-2');
   });
 
-  it('opens a report with its provenance, status and export slot', () => {
+  it('opens a report with its status and export slot, metadata behind the toggle', () => {
     state.sessionArtifacts = { 'sess-1': [report] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('Session report'));
+    const detail = screen.getByTestId('artifact-detail');
     expect(screen.getByRole('heading', { level: 1, name: 'Artifacts' })).toBeDefined();
-    expect(screen.queryByText('reporter')).toBeNull();
-    expect(screen.queryByText('rev 2')).toBeNull();
+    expect(within(detail).queryByText('reporter')).toBeNull();
+    expect(within(detail).queryByText('rev 2')).toBeNull();
     fireEvent.click(screen.getByTestId('artifact-details-toggle'));
-    expect(screen.getByTestId('artifact-creator').textContent).toBe('reporter');
-    expect(screen.getByText('rev 2')).toBeDefined();
-    expect(screen.queryByText('active')).toBeNull();
+    expect(within(detail).getByTestId('artifact-creator').textContent).toBe('reporter');
+    expect(within(detail).getByText('rev 2')).toBeDefined();
+    expect(within(detail).queryByText('active')).toBeNull();
     expect(screen.getByTestId('artifact-export-slot')).toBeDefined();
     expect(screen.getByText('shipped it')).toBeDefined();
+  });
+
+  it('keeps the whole list in the rail beside the artifact it opened', () => {
+    state.sessionArtifacts = { 'sess-1': [report, wireframe] };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('Session report'));
+    const rail = screen.getByTestId('artifact-rail');
+    expect(within(rail).getByText('Session report')).toBeDefined();
+    expect(within(rail).getByText('Onboarding flow')).toBeDefined();
+    fireEvent.click(within(rail).getByText('Onboarding flow'));
+    expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', 'artifact-wireframe');
+  });
+
+  it('holds the rail behind a container query the suite cannot evaluate', () => {
+    state.sessionArtifacts = { 'sess-1': [report] };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('Session report'));
+    const rail = screen.getByRole('complementary', { name: 'Artifacts' });
+    expect(rail.className).toContain('@min-[1265px]:flex');
+    expect(rail.className).toContain('hidden');
+    expect(screen.getByTestId('artifact-back').className).toContain('@min-[1265px]:hidden');
   });
 
   it('keeps the plan lifecycle vocabulary off reports and wireframes', () => {
@@ -475,6 +497,7 @@ describe('ArtifactStudio', () => {
     state.sessionArtifacts = { 'sess-1': [report, earlier] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('Earlier report'));
+    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
     fireEvent.click(screen.getByTestId('report-source-chip'));
     expect(screen.getByText('shipped it')).toBeDefined();
     expect(state.setFocusedArtifactId).toHaveBeenCalledWith('sess-1', 'artifact-report');
@@ -488,6 +511,7 @@ describe('ArtifactStudio', () => {
     };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('Session report'));
+    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
     fireEvent.click(screen.getByTestId('report-source-chip'));
     expect(state.setFocusedPlanId).toHaveBeenCalledWith('sess-1', 'plan-1');
     expect(state.focusedArtifactId['sess-1']).toBeNull();

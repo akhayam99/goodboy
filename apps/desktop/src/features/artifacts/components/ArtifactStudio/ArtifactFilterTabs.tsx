@@ -15,6 +15,7 @@ export const ArtifactFilterTabs = ({ value, counts, onChange }: Props) => (
   <SegmentedTabs
     ariaLabel="Artifact kind"
     size="sm"
+    className="w-max shrink-0"
     value={value}
     onChange={onChange}
     options={ARTIFACT_FILTERS.map((filter) => ({

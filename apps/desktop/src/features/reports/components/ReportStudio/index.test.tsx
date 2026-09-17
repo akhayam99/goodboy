@@ -12,8 +12,6 @@ const { state } = vi.hoisted(() => ({
   },
 }));
 
-const selectArtifact = vi.fn();
-
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
@@ -41,27 +39,12 @@ const report = {
   updatedAt: '2026-09-15T10:00:00.000Z',
 };
 
-const agents = [
-  { id: 'agent-report', sessionId: SESSION_ID, ordinal: 1, name: 'reporter', status: 'completed' },
-  { id: 'agent-1', sessionId: SESSION_ID, ordinal: 0, name: 'implementer', status: 'completed' },
-];
-
-const plan = {
-  ...report,
-  id: 'plan-1',
-  kind: 'plan',
-  title: 'Ship the thing',
-  sourceText: 'step one',
-};
-
-const renderStudio = () =>
+const renderStudio = ({ mode }: { readonly mode: 'preview' | 'edit' }) =>
   render(
     <ReportStudio
       sessionId={SESSION_ID}
       artifact={JSON.parse(JSON.stringify(report))}
-      agents={JSON.parse(JSON.stringify(agents))}
-      artifacts={[JSON.parse(JSON.stringify(report))]}
-      onSelectArtifact={selectArtifact}
+      mode={mode}
     />,
   );
 
@@ -76,7 +59,7 @@ describe('ReportStudio', () => {
   });
 
   it('renders the heading outline beside the readable body', () => {
-    renderStudio();
+    renderStudio({ mode: 'preview' });
     const outline = screen.getByRole('navigation', { name: 'Report outline' });
     expect([...outline.querySelectorAll('button')].map((node) => node.textContent)).toEqual([
       'Outcome',
@@ -86,7 +69,7 @@ describe('ReportStudio', () => {
   });
 
   it('pins the outline rail so it survives the body scroll', () => {
-    renderStudio();
+    renderStudio({ mode: 'preview' });
     const rail = screen.getByTestId('report-outline-rail');
     expect(rail.className).toContain('sticky');
     expect(rail.className).toContain('top-0');
@@ -95,49 +78,24 @@ describe('ReportStudio', () => {
     expect(rail.className).toContain('max-h-[60vh]');
   });
 
-  it('links a cited source id back to its agent from a labelled chip', () => {
-    renderStudio();
-    const chip = screen.getByRole('button', { name: 'open the agent implementer' });
-    expect(chip.getAttribute('data-testid')).toBe('report-source-chip');
-    fireEvent.click(chip);
-    expect(state.selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-1');
+  it('spends no room on provenance or actions, which the detail band owns', () => {
+    renderStudio({ mode: 'preview' });
+    expect(screen.queryByTestId('report-provenance')).toBeNull();
+    expect(screen.queryByTestId('report-regenerate')).toBeNull();
+    expect(screen.queryByRole('tab', { name: /Preview/ })).toBeNull();
   });
 
-  it('collapses a long source list behind a count and expands it inline', () => {
-    const many = Array.from({ length: 7 }, (_, index) => ({
-      id: `agent-${index}`,
-      sessionId: SESSION_ID,
-      ordinal: index,
-      name: `worker ${index}`,
-      status: 'completed',
-    }));
-    render(
-      <ReportStudio
-        sessionId={SESSION_ID}
-        artifact={JSON.parse(
-          JSON.stringify({
-            ...report,
-            sourceText: many.map((agent) => agent.id).join(' and '),
-          }),
-        )}
-        agents={JSON.parse(JSON.stringify(many))}
-        artifacts={[]}
-        onSelectArtifact={selectArtifact}
-      />,
-    );
-    expect(screen.getAllByTestId('report-source-chip')).toHaveLength(4);
-    fireEvent.click(screen.getByTestId('report-sources-more'));
-    expect(screen.getAllByTestId('report-source-chip')).toHaveLength(7);
-    fireEvent.click(screen.getByTestId('report-sources-less'));
-    expect(screen.getAllByTestId('report-source-chip')).toHaveLength(4);
-  });
-
-  it('saves an edited source, which bumps the revision in the store', async () => {
-    renderStudio();
-    fireEvent.click(screen.getByRole('tab', { name: /Edit/ }));
+  it('saves an edited source when the band leaves edit, which bumps the revision', async () => {
+    const view = renderStudio({ mode: 'edit' });
     const textarea = screen.getByRole('textbox');
     fireEvent.change(textarea, { target: { value: '# Rewritten' } });
-    fireEvent.click(screen.getByRole('tab', { name: /Preview/ }));
+    view.rerender(
+      <ReportStudio
+        sessionId={SESSION_ID}
+        artifact={JSON.parse(JSON.stringify(report))}
+        mode="preview"
+      />,
+    );
     await waitFor(() => {
       expect(state.updateArtifactSource).toHaveBeenCalledWith({
         sessionId: SESSION_ID,
@@ -148,44 +106,6 @@ describe('ReportStudio', () => {
         metadata: { reportType: 'session-summary' },
       });
     });
-  });
-
-  it('regenerates against the original evidence pack', async () => {
-    renderStudio();
-    fireEvent.click(screen.getByTestId('report-regenerate'));
-    await waitFor(() => {
-      expect(state.spawnReportAgent).toHaveBeenCalledWith({
-        sessionId: SESSION_ID,
-        reportType: 'session-summary',
-        workflowRunId: null,
-        attachments: [],
-        evidence: 'the original pack',
-      });
-    });
-  });
-
-  it('shows a regenerate failure inline', async () => {
-    state.spawnReportAgent.mockRejectedValueOnce(new Error('no provider connected'));
-    renderStudio();
-    fireEvent.click(screen.getByTestId('report-regenerate'));
-    await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toContain('no provider connected');
-    });
-  });
-  it('sends a cited artifact to the studio selection, not to the plan focus', () => {
-    render(
-      <ReportStudio
-        sessionId={SESSION_ID}
-        artifact={JSON.parse(
-          JSON.stringify({ ...report, sourceText: 'built on plan-1 and nothing else' }),
-        )}
-        agents={[]}
-        artifacts={JSON.parse(JSON.stringify([report, plan]))}
-        onSelectArtifact={selectArtifact}
-      />,
-    );
-    fireEvent.click(screen.getByTestId('report-source-chip'));
-    expect(selectArtifact).toHaveBeenCalledWith('plan-1');
   });
 
   it('scrolls to the repeated heading the reader picked, not to the first of its name', () => {
@@ -202,9 +122,7 @@ describe('ReportStudio', () => {
             sourceText: '# Outcome\n\n## Risks\n\nfirst.\n\n## Risks\n\nsecond.',
           }),
         )}
-        agents={[]}
-        artifacts={[]}
-        onSelectArtifact={selectArtifact}
+        mode="preview"
       />,
     );
     const outline = screen.getByRole('navigation', { name: 'Report outline' });
@@ -215,8 +133,7 @@ describe('ReportStudio', () => {
   });
 
   it('drops the draft of the previous report when another one is shown', () => {
-    const { rerender } = renderStudio();
-    fireEvent.click(screen.getByRole('tab', { name: /Edit/ }));
+    const { rerender } = renderStudio({ mode: 'edit' });
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '# Leaked edit' } });
     rerender(
       <ReportStudio
@@ -224,25 +141,10 @@ describe('ReportStudio', () => {
         artifact={JSON.parse(
           JSON.stringify({ ...report, id: 'report-2', sourceText: '# Second report' }),
         )}
-        agents={JSON.parse(JSON.stringify(agents))}
-        artifacts={[]}
-        onSelectArtifact={selectArtifact}
+        mode="edit"
       />,
     );
-    fireEvent.click(screen.getByRole('tab', { name: /Edit/ }));
     expect(screen.getByRole('textbox')).toHaveProperty('value', '# Second report');
     expect(state.updateArtifactSource).not.toHaveBeenCalled();
-  });
-
-  it('refuses to regenerate once the evidence pack has left memory', () => {
-    state.transcripts = {};
-    renderStudio();
-    const button = screen.getByTestId('report-regenerate');
-    expect(button.hasAttribute('disabled')).toBe(true);
-    expect(screen.getByTestId('report-regenerate-blocked').textContent).toContain(
-      'no longer in memory',
-    );
-    fireEvent.click(button);
-    expect(state.spawnReportAgent).not.toHaveBeenCalled();
   });
 });

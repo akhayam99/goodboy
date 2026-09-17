@@ -1,9 +1,10 @@
 import { RotateCcw, Square } from 'lucide-react';
-import { Chip, GhostActionButton, MetaRow, RailCard } from '@goodboy/ui';
+import { Chip, GhostActionButton, MetaRow, RailCard, cn } from '@goodboy/ui';
 import {
   ARTIFACT_GENERATION_PRESENTATION,
   type ArtifactGeneration,
 } from '../../artifactCollection';
+import { SELECTED_ROW_CLASS } from './selectedRow';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PROVIDER_LABEL, modelLabel } from '../../../chat/utils/chat-constants';
@@ -12,6 +13,8 @@ import { wireframeScoutLine } from '../../../wireframes/wireframeScoutProgress';
 
 type Props = {
   readonly generation: ArtifactGeneration;
+  readonly isSelected: boolean;
+  readonly hasScoutLines: boolean;
   readonly onSelect: () => void;
   readonly onStop: () => void;
   readonly onRetry: () => void;
@@ -29,7 +32,14 @@ const routingLabel = ({
   return generation.model === null ? provider : `${provider} · ${modelLabel(generation.model)}`;
 };
 
-export const ArtifactGenerationRow = ({ generation, onSelect, onStop, onRetry }: Props) => {
+export const ArtifactGenerationRow = ({
+  generation,
+  isSelected,
+  hasScoutLines,
+  onSelect,
+  onStop,
+  onRetry,
+}: Props) => {
   const presentation = ARTIFACT_GENERATION_PRESENTATION[generation.kind][generation.state];
   const Icon = presentation.icon;
   const routing = routingLabel({ generation });
@@ -49,7 +59,7 @@ export const ArtifactGenerationRow = ({ generation, onSelect, onStop, onRetry }:
         <RailCard
           title={generation.title}
           muted={generation.state === 'unproduced'}
-          className="pr-24"
+          className={cn('pr-24', isSelected && SELECTED_ROW_CLASS)}
           status={
             <Chip
               tone={presentation.tone}
@@ -75,7 +85,7 @@ export const ArtifactGenerationRow = ({ generation, onSelect, onStop, onRetry }:
           </span>
         ) : null}
       </div>
-      {generation.scouts.length === 0 ? null : (
+      {!hasScoutLines || generation.scouts.length === 0 ? null : (
         <ul data-testid="artifact-generation-scouts" className="flex min-w-0 flex-col gap-0.5 pl-3">
           {generation.scouts.map((scout) => (
             <li key={scout.agentId} className="truncate text-2xs text-muted-foreground">

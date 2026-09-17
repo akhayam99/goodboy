@@ -2,32 +2,24 @@ import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { LensEmptyState } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
-import type { AgentId, ArtifactId, PlanId, PlanWithCount, SessionArtifact } from '@goodboy/types';
-import {
-  ARTIFACT_FILTER_LABEL,
-  GENERATED_ARTIFACT_KINDS,
-  type ArtifactFilter,
-  type ArtifactGeneration,
-  type GeneratedArtifactKind,
-} from '../../artifactCollection';
-import { ArtifactFilterTabs } from './ArtifactFilterTabs';
-import { ArtifactKindRows } from './ArtifactKindRows';
-import { ArtifactSection } from './ArtifactSection';
-import { PlanList } from '../../../plans/components/PlanStudio/PlanList';
+import type { ArtifactId, PlanId, PlanWithCount } from '@goodboy/types';
+import { type ArtifactFilter, type ArtifactGeneration } from '../../artifactCollection';
+import type { ArtifactGroup } from '../../artifactGroups';
+import { ArtifactGroups } from './ArtifactGroups';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly plans: ReadonlyArray<PlanWithCount>;
-  readonly artifacts: ReadonlyArray<SessionArtifact>;
-  readonly generations: ReadonlyArray<ArtifactGeneration>;
+  readonly groups: ReadonlyArray<ArtifactGroup>;
+  readonly counts: Readonly<Record<ArtifactFilter, number>>;
   readonly openQuestionCount: number;
   readonly filter: ArtifactFilter;
   readonly eyebrow?: ReactNode;
   readonly onFilterChange: (filter: ArtifactFilter) => void;
   readonly onSelectPlan: (planId: PlanId) => void;
   readonly onSelectArtifact: (artifactId: ArtifactId) => void;
-  readonly onSelectGeneration: (agentId: AgentId) => void;
+  readonly onSelectGeneration: (generation: ArtifactGeneration) => void;
   readonly onStopGeneration: (generation: ArtifactGeneration) => void;
   readonly onRetryGeneration: (generation: ArtifactGeneration) => void;
 };
@@ -69,8 +61,8 @@ const EMPTY_COPY: Record<ArtifactFilter, EmptyCopy> = {
 
 export const ArtifactCollection = ({
   plans,
-  artifacts,
-  generations,
+  groups,
+  counts,
   openQuestionCount,
   filter,
   eyebrow,
@@ -81,23 +73,6 @@ export const ArtifactCollection = ({
   onStopGeneration,
   onRetryGeneration,
 }: Props) => {
-  const byKind = GENERATED_ARTIFACT_KINDS.map((kind) => ({
-    kind,
-    artifacts: artifacts.filter((artifact) => artifact.kind === kind),
-    generations: generations.filter((generation) => generation.kind === kind),
-  }));
-  const countOf = (kind: GeneratedArtifactKind): number => {
-    const group = byKind.find((entry) => entry.kind === kind);
-    return group === undefined ? 0 : group.artifacts.length + group.generations.length;
-  };
-  const counts: Record<ArtifactFilter, number> = {
-    plan: plans.length,
-    report: countOf('report'),
-    wireframe: countOf('wireframe'),
-    all: plans.length + countOf('report') + countOf('wireframe'),
-  };
-  const isShown = (kind: ArtifactFilter): boolean =>
-    (filter === 'all' || filter === kind) && counts[kind] > 0;
   const empty = EMPTY_COPY[filter];
 
   return (
@@ -107,34 +82,30 @@ export const ArtifactCollection = ({
       meta={counts.all > 0 ? counts.all : undefined}
       eyebrow={eyebrow}
     >
-      <ArtifactFilterTabs value={filter} counts={counts} onChange={onFilterChange} />
-      {counts[filter] === 0 ? (
-        <LensEmptyState
-          tone={empty.tone}
-          icon={empty.icon}
-          title={empty.title}
-          description={empty.description}
-        />
-      ) : null}
-      {isShown('plan') ? (
-        <ArtifactSection heading={ARTIFACT_FILTER_LABEL.plan}>
-          <PlanList plans={plans} openQuestionCount={openQuestionCount} onSelect={onSelectPlan} />
-        </ArtifactSection>
-      ) : null}
-      {byKind.map((group) =>
-        isShown(group.kind) ? (
-          <ArtifactSection key={group.kind} heading={ARTIFACT_FILTER_LABEL[group.kind]}>
-            <ArtifactKindRows
-              artifacts={group.artifacts}
-              generations={group.generations}
-              onSelectArtifact={onSelectArtifact}
-              onSelectGeneration={onSelectGeneration}
-              onStopGeneration={onStopGeneration}
-              onRetryGeneration={onRetryGeneration}
-            />
-          </ArtifactSection>
-        ) : null,
-      )}
+      <ArtifactGroups
+        plans={plans}
+        groups={groups}
+        counts={counts}
+        filter={filter}
+        openQuestionCount={openQuestionCount}
+        selectedArtifactId={null}
+        selectedGenerationAgentId={null}
+        isCompact={false}
+        empty={
+          <LensEmptyState
+            tone={empty.tone}
+            icon={empty.icon}
+            title={empty.title}
+            description={empty.description}
+          />
+        }
+        onFilterChange={onFilterChange}
+        onSelectPlan={onSelectPlan}
+        onSelectArtifact={onSelectArtifact}
+        onSelectGeneration={onSelectGeneration}
+        onStopGeneration={onStopGeneration}
+        onRetryGeneration={onRetryGeneration}
+      />
     </PaneShell>
   );
 };

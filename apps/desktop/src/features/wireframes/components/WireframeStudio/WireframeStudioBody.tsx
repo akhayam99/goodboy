@@ -16,7 +16,6 @@ import { WireframeAdjustments } from './WireframeAdjustments';
 import { WireframeCanvas } from './WireframeCanvas';
 import { WireframeCanvasControls } from './WireframeCanvasControls';
 import { WireframeFlowOverview } from './WireframeFlowOverview';
-import { WireframeProvenanceRow } from './WireframeProvenanceRow';
 import { WireframeScreenTabs } from './WireframeScreenTabs';
 import { useWireframeNavigation } from './useWireframeNavigation';
 
@@ -30,18 +29,11 @@ const VIEW_OPTIONS = [
 type Props = {
   readonly artifact: WireframeArtifact;
   readonly fidelity: WireframeFidelity;
-  readonly requestedFidelity: WireframeFidelity | null;
   readonly document: WireframeDocument;
   readonly adjustments: ReadonlyArray<WireframeAdjustment>;
 };
 
-export const WireframeStudioBody = ({
-  artifact,
-  fidelity,
-  requestedFidelity,
-  document,
-  adjustments,
-}: Props) => {
+export const WireframeStudioBody = ({ artifact, fidelity, document, adjustments }: Props) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<WireframeView>('screen');
   const [canvasHeight, setCanvasHeight] = useState<number | null>(null);
@@ -147,12 +139,6 @@ export const WireframeStudioBody = ({
 
   return (
     <div data-testid="wireframe-studio" className="flex min-w-0 flex-col gap-2">
-      <WireframeProvenanceRow
-        fidelity={fidelity}
-        requestedFidelity={requestedFidelity}
-        theme={document.theme}
-        designProfile={artifact.metadata.designProfile}
-      />
       <div data-testid="wireframe-toolbar" className="flex min-w-0 flex-wrap items-center gap-1">
         <StudioDetailTabs
           ariaLabel="Wireframe view"
@@ -176,12 +162,16 @@ export const WireframeStudioBody = ({
             />
           </>
         ) : null}
+        {toggledOn.length === 0 ? null : (
+          <span
+            data-testid="wireframe-mock-state"
+            title="screen state the mock is standing in"
+            className="ml-auto shrink-0 truncate rounded-full border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground"
+          >
+            mock state on: {toggledOn.map(([key]) => key).join(', ')}
+          </span>
+        )}
       </div>
-      {toggledOn.length === 0 ? null : (
-        <span data-testid="wireframe-mock-state" className="text-2xs text-muted-foreground">
-          mock state on: {toggledOn.map(([key]) => key).join(', ')}
-        </span>
-      )}
       {view === 'sheet' ? (
         <WireframeContactSheet
           document={document}
