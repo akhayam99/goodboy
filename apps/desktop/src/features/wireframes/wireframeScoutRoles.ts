@@ -1,3 +1,4 @@
+import { ARTIFACT_SCOUT_ROLES } from '../artifacts/artifactScoutRoles';
 import { redactSecrets } from '../../shared/utils/redactSecrets';
 
 export const WIREFRAME_SCOUT_IDS = ['screens', 'data'] as const;
@@ -5,25 +6,16 @@ export const WIREFRAME_SCOUT_IDS = ['screens', 'data'] as const;
 export type WireframeScoutId = (typeof WIREFRAME_SCOUT_IDS)[number];
 
 export type WireframeScout = Readonly<{
-  id: WireframeScoutId;
+  id: string;
   name: string;
   scope: string;
 }>;
 
-export const WIREFRAME_SCOUTS: ReadonlyArray<WireframeScout> = [
-  {
-    id: 'screens',
-    name: 'screens and routes',
-    scope:
-      'the routes, panes and screens nearest what the goal names. for each one say which file it is, what it already shows, and the component vocabulary it uses. while you are already in those files, answer whether a near neighbour of this feature exists and what it looked like. never walk the repository a second time for prior art.',
-  },
-  {
-    id: 'data',
-    name: 'data and contracts',
-    scope:
-      'the types, store slices, queries and api shapes behind those screens, down to the field names the ui can honestly render. say which field is optional and which is always present.',
-  },
-];
+export const WIREFRAME_SCOUTS: ReadonlyArray<WireframeScout> = WIREFRAME_SCOUT_IDS.map((id) => ({
+  id,
+  name: ARTIFACT_SCOUT_ROLES[id].name,
+  scope: ARTIFACT_SCOUT_ROLES[id].scope,
+}));
 
 export const WIREFRAME_SCOUT_GOAL_LIMIT = 600;
 export const WIREFRAME_SCOUT_BRIEF_LIMIT = 900;

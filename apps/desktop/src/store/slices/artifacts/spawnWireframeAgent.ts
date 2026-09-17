@@ -154,18 +154,23 @@ export const spawnWireframeAgent = (get: GetFn) => {
       }).catch((error: unknown) => {
         console.warn(`[artifact-provenance] wireframe ${containerId}: ${formatError(error)}`);
       });
-      const isStarted = await get().startWireframeScouts({
-        sessionId,
-        containerId,
-        root: scouting.plan.root,
-        worktreePath: scouting.gate.kind === 'ready' ? scouting.gate.worktreePath : '',
-        fidelity,
-        target,
-        workflowRunId,
-        brief,
-        attachments,
-        goal: goal.packText,
-      });
+      const isStarted =
+        scouting.gate.kind !== 'ready'
+          ? false
+          : await get().startWireframeScouts({
+              sessionId,
+              containerId,
+              mountId: scouting.gate.mountId,
+              mountName: scouting.gate.mountName,
+              root: scouting.plan.root,
+              worktreePath: scouting.gate.worktreePath,
+              fidelity,
+              target,
+              workflowRunId,
+              brief,
+              attachments,
+              goal: goal.packText,
+            });
       if (isStarted) {
         return containerId;
       }

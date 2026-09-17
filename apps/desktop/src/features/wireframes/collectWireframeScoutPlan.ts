@@ -1,4 +1,4 @@
-import type { SessionId, WorkflowRunId } from '@goodboy/types';
+import type { MountId, SessionId, WorkflowRunId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import { selectActiveMount } from '../../store/slices/project-mounts/selectors';
 import {
@@ -25,6 +25,8 @@ export type WireframeScoutGate =
   | Readonly<{ kind: 'skipped'; reason: string }>
   | Readonly<{
       kind: 'ready';
+      mountId: MountId;
+      mountName: string;
       worktreePath: string;
       modelLabel: string;
       routing: ChildRoutingBatch;
@@ -87,6 +89,8 @@ export const wireframeScoutGate = ({
   const model = first?.modelOverride ?? fallback.model;
   return {
     kind: 'ready',
+    mountId: mount.mountId,
+    mountName: mount.mountName,
     worktreePath: mount.worktreePath,
     modelLabel: `${PROVIDER_LABEL[provider]} ${modelLabel(model)}`,
     routing,

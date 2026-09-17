@@ -1,4 +1,11 @@
-import type { Agent, AgentId, IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  IsoDateTime,
+  MountId,
+  SessionId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import type { ArtifactAttachment } from '../../../features/artifacts/artifactAttachments';
 import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
@@ -7,6 +14,10 @@ import {
   verifyCitedPaths,
   type CitedPathVerification,
 } from '../../../features/artifacts/citedPaths';
+import {
+  pickArtifactScouts,
+  type ArtifactScoutPick,
+} from '../../../features/artifacts/pickArtifactScouts';
 import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
 import { exploreList } from '../../../features/explore/explore';
 import type { WireframeFidelity } from '../../../features/wireframes/wireframeFidelity';
@@ -23,7 +34,7 @@ import {
 import { WIREFRAME_SCOUT_STOP_REASON } from '../../../features/wireframes/wireframeScoutProgress';
 import {
   composeWireframeScoutKickoff,
-  WIREFRAME_SCOUTS,
+  type WireframeScout,
 } from '../../../features/wireframes/wireframeScoutRoles';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { startFanOutChildren } from '../workflows/scoutTree';
@@ -42,7 +53,13 @@ type WireframeScoutContainer = Readonly<{
   attachments: ReadonlyArray<ArtifactAttachment>;
   root: string;
   worktreePath: string;
+  picks: ReadonlyArray<ArtifactScoutPick>;
 }>;
+
+const scoutsOf = ({
+  picks,
+}: Readonly<{ picks: ReadonlyArray<ArtifactScoutPick> }>): ReadonlyArray<WireframeScout> =>
+  picks.map((pick) => ({ id: pick.roleId, name: pick.name, scope: pick.scope }));
 
 const containers = new Map<AgentId, WireframeScoutContainer>();
 const deadlines = new Map<AgentId, ReturnType<typeof setTimeout>>();
@@ -58,6 +75,14 @@ export const resetWireframeScoutRegistry = (): void => {
 };
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
+
+const probeRelPath = ({ root, relPath }: Readonly<{ root: string; relPath: string }>): string => {
+  const base = root === '.' ? '' : root;
+  if (base.length === 0) {
+    return relPath;
+  }
+  return relPath.length === 0 ? base : `${base}/${relPath}`;
+};
 
 const TERMINAL: ReadonlyArray<Agent['status']> = ['completed', 'failed', 'skipped'];
 
@@ -80,6 +105,8 @@ const clearDeadline = ({ containerId }: Readonly<{ containerId: AgentId }>): voi
 type StartParams = Readonly<{
   sessionId: SessionId;
   containerId: AgentId;
+  mountId: MountId;
+  mountName: string;
   root: string;
   worktreePath: string;
   fidelity: WireframeFidelity;
@@ -94,6 +121,8 @@ export const startWireframeScouts = (set: SetFn, get: GetFn) => {
   return async ({
     sessionId,
     containerId,
+    mountId,
+    mountName,
     root,
     worktreePath,
     fidelity,
@@ -108,6 +137,23 @@ export const startWireframeScouts = (set: SetFn, get: GetFn) => {
     if (container === null) {
       return false;
     }
+    const roster = await pickArtifactScouts({
+      kind: 'wireframe',
+      fidelity,
+      target,
+      mounts: [{ mountId, label: mountName, root }],
+      probe: async ({ relPath }) => {
+        const entries = await exploreList({
+          sessionDir: worktreePath,
+          relPath: probeRelPath({ root, relPath }),
+        }).catch(() => []);
+        return entries.filter((entry) => entry.isDir).map((entry) => entry.name);
+      },
+    });
+    if (roster.picks.length === 0) {
+      return false;
+    }
+    const scouts = scoutsOf({ picks: roster.picks });
     const started = await startFanOutChildren({
       set,
       get,
@@ -115,12 +161,12 @@ export const startWireframeScouts = (set: SetFn, get: GetFn) => {
       container,
       role: 'scout',
       childKind: 'scout',
-      specs: WIREFRAME_SCOUTS.map((scout) => ({
+      specs: scouts.map((scout) => ({
         name: scout.name,
         promptText: `${scout.name}\n${scout.scope}`,
         kickoff: composeWireframeScoutKickoff({
           scout,
-          others: WIREFRAME_SCOUTS.filter((entry) => entry.id !== scout.id),
+          others: scouts.filter((entry) => entry.name !== scout.name),
           root,
           goal,
           brief,
@@ -140,6 +186,7 @@ export const startWireframeScouts = (set: SetFn, get: GetFn) => {
       attachments,
       root,
       worktreePath,
+      picks: roster.picks,
     });
     joined.delete(containerId);
     clearDeadline({ containerId });
@@ -221,13 +268,15 @@ const verifyReports = async ({
   agents,
   containerId,
   worktreePath,
+  picks,
 }: Readonly<{
   agents: ReadonlyArray<Agent>;
   containerId: AgentId;
   worktreePath: string;
+  picks: ReadonlyArray<ArtifactScoutPick>;
 }>): Promise<ReadonlyArray<VerifiedEntry>> => {
   const reports = collectWireframeScoutReports({
-    scouts: WIREFRAME_SCOUTS,
+    scouts: scoutsOf({ picks }),
     children: childrenOf({ agents, containerId }),
   });
   const verified: Array<VerifiedEntry> = [];
@@ -274,6 +323,7 @@ export const joinWireframeScouts = (set: SetFn, get: GetFn) => {
       agents,
       containerId,
       worktreePath: context.worktreePath,
+      picks: context.picks,
     });
     set((current) => {
       const next = { ...current.wireframeScoutVerification };

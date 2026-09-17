@@ -126,7 +126,13 @@ const READY_PLAN = {
     scouts: WIREFRAME_SCOUTS,
     modelLabel: 'Claude Haiku 4.5',
   },
-  gate: { kind: 'ready', worktreePath: '/tmp/worktree', modelLabel: 'Claude Haiku 4.5' },
+  gate: {
+    kind: 'ready',
+    mountId: 'mount-1',
+    mountName: 'web',
+    worktreePath: '/tmp/worktree',
+    modelLabel: 'Claude Haiku 4.5',
+  },
 };
 
 const SKIPPED_PLAN = (reason: string) => ({
