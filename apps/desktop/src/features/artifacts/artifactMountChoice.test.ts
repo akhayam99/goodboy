@@ -162,14 +162,31 @@ describe('resolveArtifactMounts', () => {
     mountRow({ mountId: 'mount-api', mountName: 'api' }),
   ]);
 
-  it('resolves the chosen ids in the order the session lists them', () => {
+  it('resolves the chosen ids in the order the user chose them', () => {
     expect(
       resolveArtifactMounts({
         state,
         sessionId: SESSION_ID,
         mountIds: ['mount-api' as MountId, 'mount-web' as MountId],
       }).map((entry) => entry.mountId),
-    ).toEqual(['mount-web', 'mount-api']);
+    ).toEqual(['mount-api', 'mount-web']);
+  });
+
+  it('caps the chosen ids from the end the user chose last', () => {
+    const many = stateWith(
+      Array.from({ length: ARTIFACT_MOUNT_CAP + 1 }, (_, index) =>
+        mountRow({ mountId: `mount-${index}`, mountName: `name-${index}` }),
+      ),
+    );
+    const chosen = Array.from(
+      { length: ARTIFACT_MOUNT_CAP + 1 },
+      (_, index) => `mount-${ARTIFACT_MOUNT_CAP - index}` as MountId,
+    );
+    expect(
+      resolveArtifactMounts({ state: many, sessionId: SESSION_ID, mountIds: chosen }).map(
+        (entry) => entry.mountId,
+      ),
+    ).toEqual(chosen.slice(0, ARTIFACT_MOUNT_CAP));
   });
 
   it('resolves nothing when nothing was chosen', () => {

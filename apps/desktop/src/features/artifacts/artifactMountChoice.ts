@@ -108,5 +108,10 @@ export const resolveArtifactMounts = ({
   if (mountIds.length === 0) {
     return [];
   }
-  return options.filter((option) => mountIds.includes(option.mountId)).slice(0, ARTIFACT_MOUNT_CAP);
+  return mountIds
+    .flatMap((mountId) => {
+      const option = options.find((candidate) => candidate.mountId === mountId) ?? null;
+      return option === null ? [] : [option];
+    })
+    .slice(0, ARTIFACT_MOUNT_CAP);
 };
