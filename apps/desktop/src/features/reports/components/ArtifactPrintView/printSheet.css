@@ -1,5 +1,17 @@
 @page {
   margin: 18mm 22mm 22mm;
+  @top-left {
+    color: #6b7079;
+    content: string(doc-title);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 7.5pt;
+  }
+  @bottom-right {
+    color: #6b7079;
+    content: counter(page) ' / ' counter(pages);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 8pt;
+  }
 }
 .print-sheet {
   background: #ffffff;
@@ -46,6 +58,7 @@
   letter-spacing: -0.012em;
   line-height: 1.18;
   margin: 0.6rem 0 0;
+  string-set: doc-title content(text);
 }
 .print-sheet .print-meta {
   display: flex;
