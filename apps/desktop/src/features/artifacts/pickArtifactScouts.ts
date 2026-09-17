@@ -237,6 +237,7 @@ export const artifactScoutPlanEntries = ({
   picks.map((pick, index) => ({
     roleId: pick.roleId,
     mountId: pick.mountId,
+    root: pick.root,
     reason: pick.reason,
     agentId: agentIds[index] ?? null,
   }));

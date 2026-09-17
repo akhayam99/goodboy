@@ -9,13 +9,37 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-const { scoutPlan, insertBatch, agentList, updateStatus, recordProvenance } = vi.hoisted(() => ({
-  scoutPlan: vi.fn(),
-  insertBatch: vi.fn(),
-  agentList: vi.fn(),
-  updateStatus: vi.fn(),
-  recordProvenance: vi.fn(async () => undefined),
-}));
+const {
+  scoutPlan,
+  insertBatch,
+  agentList,
+  updateStatus,
+  provenanceRows,
+  recordProvenance,
+  loadProvenance,
+  advanceRun,
+} = vi.hoisted(() => {
+  const rows = new Map<string, Record<string, unknown>>();
+  return {
+    scoutPlan: vi.fn(),
+    insertBatch: vi.fn(),
+    agentList: vi.fn(),
+    updateStatus: vi.fn(),
+    provenanceRows: rows,
+    recordProvenance: vi.fn(async (args: Record<string, unknown>) => {
+      rows.set(String(args['agentId']), { ...args });
+    }),
+    loadProvenance: vi.fn(async (agentId: string) => rows.get(agentId) ?? null),
+    advanceRun: vi.fn(async (args: Record<string, unknown>) => {
+      const agentId = String(args['agentId']);
+      const current = rows.get(agentId);
+      if (current === undefined) {
+        return;
+      }
+      rows.set(agentId, { ...current, phase: args['phase'], scoutPlan: args['scoutPlan'] });
+    }),
+  };
+});
 
 vi.mock('../../../features/wireframes/collectWireframeScoutPlan', () => ({
   collectWireframeScoutPlan: scoutPlan,
@@ -62,6 +86,8 @@ vi.mock('../../../features/artifacts/artifactProvenance', async () => {
   return {
     artifactEvidenceInventory: actual.artifactEvidenceInventory,
     recordArtifactProvenance: recordProvenance,
+    loadArtifactProvenance: loadProvenance,
+    advanceArtifactRun: advanceRun,
   };
 });
 
@@ -227,6 +253,7 @@ const childOf = ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  provenanceRows.clear();
   resetWireframeScoutRegistry();
   resetTurnStartWindows();
   scoutPlan.mockResolvedValue(READY_PLAN);
@@ -545,13 +572,31 @@ describe('a scout cancelled before its turn has started', () => {
 });
 
 describe('recovering a container after a restart', () => {
-  it('settles the children and fails the container it can no longer wait for', async () => {
-    const h = harness();
-    const containerId = await spawn(h);
-    resetWireframeScoutRegistry();
+  const recover = async (h: Harness): Promise<void> => {
     await (h.state['recoverWireframeScouts'] as (args: Record<string, unknown>) => Promise<void>)({
       sessionId: SESSION_ID,
     });
+  };
+
+  const reportAll = (h: Harness): void => {
+    for (const scout of WIREFRAME_SCOUTS) {
+      const child = childOf({ agents: h.agents, name: scout.name });
+      const index = h.agents.findIndex((agent) => agent.id === child.id);
+      h.agents[index] = {
+        ...child,
+        status: 'completed',
+        outputSummary: 'the batch list renders totals apps/web/src/Batches.tsx',
+      } as Agent;
+    }
+    h.set(() => ({ sessionPhaseRuns: { [SESSION_ID]: [...h.agents] } }) as never);
+  };
+
+  it('settles the children and fails a container whose run was never recorded', async () => {
+    const h = harness();
+    const containerId = await spawn(h);
+    resetWireframeScoutRegistry();
+    provenanceRows.clear();
+    await recover(h);
     for (const scout of WIREFRAME_SCOUTS) {
       const child = childOf({ agents: h.agents, name: scout.name });
       expect(child.status).toBe('skipped');
@@ -565,9 +610,79 @@ describe('recovering a container after a restart', () => {
   it('leaves a container this process is still waiting on alone', async () => {
     const h = harness();
     const containerId = await spawn(h);
-    await (h.state['recoverWireframeScouts'] as (args: Record<string, unknown>) => Promise<void>)({
-      sessionId: SESSION_ID,
-    });
+    await recover(h);
     expect(h.agents.find((agent) => agent.id === containerId)!.status).toBe('running');
+  });
+
+  it('rejoins and produces when every scout reported before the reload', async () => {
+    const h = harness();
+    const containerId = await spawn(h);
+    reportAll(h);
+    resetWireframeScoutRegistry();
+    h.sendTurn.mockClear();
+    await recover(h);
+    const containerTurns = h.sendTurn.mock.calls.filter(
+      (call) => (call[0] as Record<string, unknown>)['agentId'] === containerId,
+    );
+    expect(containerTurns).toHaveLength(1);
+    const pack = String((containerTurns[0]![0] as Record<string, unknown>)['content']);
+    expect(pack).toContain('## scout reports');
+    expect(pack).toContain('the batch list renders totals');
+    expect(h.agents.find((agent) => agent.id === containerId)!.status).not.toBe('failed');
+  });
+
+  it('joins once across the reload, whatever runs recovery again', async () => {
+    const h = harness();
+    const containerId = await spawn(h);
+    reportAll(h);
+    resetWireframeScoutRegistry();
+    h.sendTurn.mockClear();
+    await recover(h);
+    resetWireframeScoutRegistry();
+    await recover(h);
+    await (h.state['joinWireframeScouts'] as (args: Record<string, unknown>) => Promise<void>)({
+      sessionId: SESSION_ID,
+      containerId,
+    });
+    const containerTurns = h.sendTurn.mock.calls.filter(
+      (call) => (call[0] as Record<string, unknown>)['agentId'] === containerId,
+    );
+    expect(containerTurns).toHaveLength(1);
+    expect(provenanceRows.get(containerId)?.['phase']).toBe('producing');
+  });
+
+  it('keeps the scout plan and the mount on the row it rewrites when it produces', async () => {
+    const h = harness();
+    const containerId = await spawn(h);
+    reportAll(h);
+    resetWireframeScoutRegistry();
+    await recover(h);
+    const row = provenanceRows.get(containerId)!;
+    expect(row['phase']).toBe('producing');
+    expect(row['deadlineAt']).toBeNull();
+    expect(row['mountIds']).toEqual(['mount-1']);
+    expect(row['target']).toBe('both');
+    expect((row['scoutPlan'] as ReadonlyArray<Record<string, unknown>>).length).toBe(
+      WIREFRAME_SCOUTS.length,
+    );
+  });
+
+  it('re-arms the clock instead of failing a run whose scouts are still out', async () => {
+    vi.useFakeTimers();
+    try {
+      const h = harness();
+      const containerId = await spawn(h);
+      resetWireframeScoutRegistry();
+      h.sendTurn.mockClear();
+      await recover(h);
+      expect(h.agents.find((agent) => agent.id === containerId)!.status).not.toBe('failed');
+      await vi.advanceTimersByTimeAsync(WIREFRAME_SCOUT_DEADLINE_MS + 1);
+      const containerTurns = h.sendTurn.mock.calls.filter(
+        (call) => (call[0] as Record<string, unknown>)['agentId'] === containerId,
+      );
+      expect(containerTurns).toHaveLength(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -1,6 +1,8 @@
 import type {
   Agent,
   AgentId,
+  ArtifactProvenance,
+  ArtifactScoutPlanEntry,
   IsoDateTime,
   MountId,
   SessionId,
@@ -8,19 +10,28 @@ import type {
 } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import type { ArtifactAttachment } from '../../../features/artifacts/artifactAttachments';
-import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
+import {
+  advanceArtifactRun,
+  loadArtifactProvenance,
+  recordArtifactProvenance,
+} from '../../../features/artifacts/artifactProvenance';
 import {
   extractCitedPaths,
   verifyCitedPaths,
   type CitedPathVerification,
 } from '../../../features/artifacts/citedPaths';
 import {
+  artifactScoutPlanEntries,
   pickArtifactScouts,
   type ArtifactScoutPick,
 } from '../../../features/artifacts/pickArtifactScouts';
+import { ARTIFACT_SCOUT_ROLES } from '../../../features/artifacts/artifactScoutRoles';
 import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
 import { exploreList } from '../../../features/explore/explore';
-import type { WireframeFidelity } from '../../../features/wireframes/wireframeFidelity';
+import {
+  requestedWireframeFidelity,
+  type WireframeFidelity,
+} from '../../../features/wireframes/wireframeFidelity';
 import type { WireframeTarget } from '../../../features/wireframes/wireframeTarget';
 import {
   collectWireframeScoutReports,
@@ -37,6 +48,7 @@ import {
   type WireframeScout,
 } from '../../../features/wireframes/wireframeScoutRoles';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { selectMountById } from '../project-mounts/selectors';
 import { startFanOutChildren } from '../workflows/scoutTree';
 import { openTurnStartWindow } from '../turn/turnStartWindow';
 import type { GetFn, SetFn } from './types';
@@ -177,6 +189,13 @@ export const startWireframeScouts = (set: SetFn, get: GetFn) => {
     if (started.kind !== 'started') {
       return false;
     }
+    await advanceArtifactRun({
+      agentId: containerId,
+      phase: 'gathering',
+      scoutPlan: artifactScoutPlanEntries({ picks: roster.picks, agentIds: started.childIds }),
+    }).catch((error: unknown) => {
+      console.warn(`[artifact-run] wireframe ${containerId}: ${formatError(error)}`);
+    });
     containers.set(containerId, {
       sessionId,
       fidelity,
@@ -302,12 +321,84 @@ const verifyReports = async ({
   return verified;
 };
 
+const recoveredPicks = ({
+  provenance,
+  children,
+}: Readonly<{
+  provenance: ArtifactProvenance;
+  children: ReadonlyArray<Agent>;
+}>): ReadonlyArray<ArtifactScoutPick> =>
+  provenance.scoutPlan.map((entry) => {
+    const role = ARTIFACT_SCOUT_ROLES[entry.roleId as keyof typeof ARTIFACT_SCOUT_ROLES] ?? null;
+    const child = children.find((agent) => agent.id === entry.agentId) ?? null;
+    return {
+      roleId: entry.roleId,
+      mountId: entry.mountId,
+      name: child?.name ?? role?.name ?? entry.roleId,
+      scope: role?.scope ?? '',
+      root: entry.root,
+      reason: entry.reason,
+    };
+  });
+
+const recoveredContext = ({
+  state,
+  sessionId,
+  containerId,
+  provenance,
+}: Readonly<{
+  state: ReturnType<GetFn>;
+  sessionId: SessionId;
+  containerId: AgentId;
+  provenance: ArtifactProvenance;
+}>): WireframeScoutContainer | null => {
+  const agents = state.sessionPhaseRuns?.[sessionId] ?? [];
+  const container = agents.find((agent) => agent.id === containerId) ?? null;
+  if (container === null) {
+    return null;
+  }
+  const mountId = provenance.mountIds[0] ?? null;
+  const mount = mountId === null ? null : selectMountById({ state, sessionId, mountId });
+  const picks = recoveredPicks({
+    provenance,
+    children: childrenOf({ agents, containerId }),
+  });
+  return {
+    sessionId,
+    fidelity: requestedWireframeFidelity({ agentName: container.name }) ?? 'low',
+    target: provenance.target ?? 'both',
+    workflowRunId: provenance.sourceWorkflowRunId,
+    brief: provenance.brief,
+    attachments: [],
+    root: picks[0]?.root ?? '.',
+    worktreePath: mount?.worktreePath ?? '',
+    picks,
+  };
+};
+
+const settledPlan = ({
+  provenance,
+  picks,
+}: Readonly<{
+  provenance: ArtifactProvenance;
+  picks: ReadonlyArray<ArtifactScoutPick>;
+}>): ReadonlyArray<ArtifactScoutPlanEntry> =>
+  provenance.scoutPlan.length > 0
+    ? provenance.scoutPlan
+    : artifactScoutPlanEntries({ picks, agentIds: [] });
+
 export const joinWireframeScouts = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, containerId }: ContainerParams): Promise<void> => {
     if (joined.has(containerId)) {
       return;
     }
-    const context = containers.get(containerId) ?? null;
+    const provenance = await loadArtifactProvenance(containerId).catch(() => null);
+    if (provenance === null || provenance.phase !== 'gathering') {
+      return;
+    }
+    const context =
+      containers.get(containerId) ??
+      recoveredContext({ state: get(), sessionId, containerId, provenance });
     if (context === null) {
       return;
     }
@@ -338,6 +429,12 @@ export const joinWireframeScouts = (set: SetFn, get: GetFn) => {
       }
       return { wireframeScoutVerification: next };
     });
+    const plan = settledPlan({ provenance, picks: context.picks });
+    await advanceArtifactRun({ agentId: containerId, phase: 'producing', scoutPlan: plan }).catch(
+      (error: unknown) => {
+        console.warn(`[artifact-run] wireframe ${containerId}: ${formatError(error)}`);
+      },
+    );
     const prepared = await prepareArtifactEvidence({
       kind: 'wireframe',
       fidelity: context.fidelity,
@@ -355,6 +452,11 @@ export const joinWireframeScouts = (set: SetFn, get: GetFn) => {
     });
     await recordArtifactProvenance({
       ...prepared.provenance,
+      phase: 'producing',
+      scoutPlan: plan,
+      mountIds: provenance.mountIds,
+      target: provenance.target,
+      deadlineAt: null,
       agentId: containerId,
       executingWorkflowRunId: null,
     }).catch((error: unknown) => {
@@ -371,6 +473,16 @@ export const stopArtifactGeneration = (set: SetFn, get: GetFn) => {
     clearDeadline({ containerId: agentId });
     joined.add(agentId);
     containers.delete(agentId);
+    const provenance = await loadArtifactProvenance(agentId).catch(() => null);
+    if (provenance !== null && provenance.phase === 'gathering') {
+      await advanceArtifactRun({
+        agentId,
+        phase: 'failed',
+        scoutPlan: provenance.scoutPlan,
+      }).catch((error: unknown) => {
+        console.warn(`[artifact-run] wireframe ${agentId}: ${formatError(error)}`);
+      });
+    }
     const agents = get().sessionPhaseRuns?.[sessionId] ?? [];
     for (const child of childrenOf({ agents, containerId: agentId })) {
       if (TERMINAL.includes(child.status)) {
@@ -402,6 +514,28 @@ const isStalledContainer = ({ container }: Readonly<{ container: Agent }>): bool
   container.deletedAt == null &&
   !TERMINAL.includes(container.status);
 
+const rearmDeadline = ({
+  get,
+  sessionId,
+  containerId,
+  deadlineAt,
+}: Readonly<{
+  get: GetFn;
+  sessionId: SessionId;
+  containerId: AgentId;
+  deadlineAt: number | null;
+}>): void => {
+  clearDeadline({ containerId });
+  const remaining =
+    deadlineAt === null ? WIREFRAME_SCOUT_DEADLINE_MS : Math.max(0, deadlineAt - Date.now());
+  deadlines.set(
+    containerId,
+    setTimeout(() => {
+      void get().expireWireframeScouts({ sessionId, containerId });
+    }, remaining),
+  );
+};
+
 export const recoverWireframeScouts = (set: SetFn, get: GetFn) => {
   return async ({ sessionId }: Readonly<{ sessionId: SessionId }>): Promise<void> => {
     const agents = get().sessionPhaseRuns?.[sessionId] ?? [];
@@ -414,7 +548,25 @@ export const recoverWireframeScouts = (set: SetFn, get: GetFn) => {
     if (stalled.length === 0) {
       return;
     }
+    let isAbandoned = false;
     for (const container of stalled) {
+      const provenance = await loadArtifactProvenance(container.id).catch(() => null);
+      if (provenance !== null && provenance.phase === 'gathering') {
+        const children = childrenOf({ agents, containerId: container.id });
+        const isSettled = children.every((child) => TERMINAL.includes(child.status));
+        if (isSettled) {
+          await get().joinWireframeScouts({ sessionId, containerId: container.id });
+          continue;
+        }
+        rearmDeadline({
+          get,
+          sessionId,
+          containerId: container.id,
+          deadlineAt: provenance.deadlineAt,
+        });
+        continue;
+      }
+      isAbandoned = true;
       await settleChildren({
         set,
         get,
@@ -427,6 +579,9 @@ export const recoverWireframeScouts = (set: SetFn, get: GetFn) => {
         outputSummary: WIREFRAME_SCOUT_RESTART_SUMMARY,
         completedAt: nowIso(),
       }).catch(() => undefined);
+    }
+    if (!isAbandoned) {
+      return;
     }
     const refreshed = await invokeAgentList(sessionId).catch(() => null);
     if (refreshed !== null) {

@@ -152,6 +152,7 @@ const toScoutPlan = (value: unknown): ReadonlyArray<ArtifactScoutPlanEntry> => {
     }
     const roleId = entry['roleId'];
     const mountId = entry['mountId'];
+    const root = entry['root'];
     const reason = entry['reason'];
     const agentId = entry['agentId'];
     if (typeof roleId !== 'string' || typeof mountId !== 'string') {
@@ -161,6 +162,7 @@ const toScoutPlan = (value: unknown): ReadonlyArray<ArtifactScoutPlanEntry> => {
       {
         roleId,
         mountId: mountId as MountId,
+        root: typeof root === 'string' ? root : '.',
         reason: typeof reason === 'string' ? reason : '',
         agentId: typeof agentId === 'string' ? (agentId as AgentId) : null,
       },

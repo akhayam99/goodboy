@@ -145,7 +145,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
         hasDesignEvidence: false,
         phase: 'gathering',
         scoutPlan: [],
-        mountIds: [],
+        mountIds: scouting.gate.kind === 'ready' ? [scouting.gate.mountId] : [],
         target,
         deadlineAt: Date.now() + WIREFRAME_SCOUT_DEADLINE_MS,
         sourceWorkflowRunId: workflowRunId,

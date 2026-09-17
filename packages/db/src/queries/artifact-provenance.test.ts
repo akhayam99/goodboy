@@ -140,8 +140,20 @@ describe('artifact provenance queries', () => {
         kind: 'wireframe',
         phase: 'gathering',
         scoutPlan: [
-          { roleId: 'screens', mountId, reason: 'the goal names a route', agentId },
-          { roleId: 'data', mountId, reason: 'the screens need field names', agentId: null },
+          {
+            roleId: 'screens',
+            mountId,
+            root: 'apps/web',
+            reason: 'the goal names a route',
+            agentId,
+          },
+          {
+            roleId: 'data',
+            mountId,
+            root: 'apps/web',
+            reason: 'the screens need field names',
+            agentId: null,
+          },
         ],
         mountIds: [mountId],
         target: 'mobile',
@@ -151,8 +163,14 @@ describe('artifact provenance queries', () => {
     const stored = await getArtifactProvenance({ db, agentId });
     expect(stored?.phase).toBe('gathering');
     expect(stored?.scoutPlan).toEqual([
-      { roleId: 'screens', mountId, reason: 'the goal names a route', agentId },
-      { roleId: 'data', mountId, reason: 'the screens need field names', agentId: null },
+      { roleId: 'screens', mountId, root: 'apps/web', reason: 'the goal names a route', agentId },
+      {
+        roleId: 'data',
+        mountId,
+        root: 'apps/web',
+        reason: 'the screens need field names',
+        agentId: null,
+      },
     ]);
     expect(stored?.mountIds).toEqual([mountId]);
     expect(stored?.target).toBe('mobile');
@@ -170,7 +188,15 @@ describe('artifact provenance queries', () => {
       input: {
         agentId,
         phase: 'producing',
-        scoutPlan: [{ roleId: 'screens', mountId, reason: 'the goal names a route', agentId }],
+        scoutPlan: [
+          {
+            roleId: 'screens',
+            mountId,
+            root: 'apps/web',
+            reason: 'the goal names a route',
+            agentId,
+          },
+        ],
       },
     });
     const stored = await getArtifactProvenance({ db, agentId });
@@ -194,7 +220,9 @@ describe('artifact provenance queries', () => {
       agentId,
     ]);
     const stored = await getArtifactProvenance({ db, agentId });
-    expect(stored?.scoutPlan).toEqual([{ roleId: 'data', mountId, reason: '', agentId: null }]);
+    expect(stored?.scoutPlan).toEqual([
+      { roleId: 'data', mountId, root: '.', reason: '', agentId: null },
+    ]);
   });
 
   it('drops malformed evidence entries instead of failing the read', async () => {

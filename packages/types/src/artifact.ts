@@ -73,6 +73,7 @@ export type ArtifactRunTarget = 'mobile' | 'desktop' | 'both';
 export type ArtifactScoutPlanEntry = Readonly<{
   roleId: string;
   mountId: MountId;
+  root: string;
   reason: string;
   agentId: AgentId | null;
 }>;
