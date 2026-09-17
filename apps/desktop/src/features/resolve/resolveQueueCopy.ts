@@ -87,16 +87,6 @@ export const activeFilterLabel = ({ count }: { readonly count: number }): string
 export const retryableFilterLabel = ({ count }: { readonly count: number }): string =>
   countedLabel({ label: 'Retryable', count });
 
-export const RESOLVE_QUEUE_COUNT_LABEL = {
-  queued: 'queued',
-  working: 'working',
-  question: 'question',
-  failed: 'failed',
-  published: 'published',
-} as const;
-
-export const RESOLVE_QUEUE_COUNTS_LABEL = 'Queue counts';
-
 export const RESOLVE_QUEUE_RETRYABLE_EMPTY = 'Nothing to retry right now';
 
 export const sharedRunHeading = ({ count }: { readonly count: number }): string =>

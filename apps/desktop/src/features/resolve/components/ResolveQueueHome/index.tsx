@@ -33,7 +33,6 @@ import { hasActiveResolveRun } from '../../hasActiveResolveRun';
 import { startResolveRun } from '../../startResolveRun';
 import type { ResolveQueueRow as QueueRow } from '../../buildResolveQueueRows';
 import { groupResolveQueue, groupSharedRuns, rowsForResolveFilter } from '../../groupResolveQueue';
-import { resolveQueueCounts } from '../../resolveQueueCounts';
 import { orderResolveQueueRows } from '../../orderResolveQueueRows';
 import { resolveQueueErrorPlacement } from '../../resolveQueueErrorPlacement';
 import {
@@ -45,7 +44,6 @@ import {
 } from '../../resolveQueueCopy';
 import { ResolveSpawnSheet } from '../ResolveSpawnSheet';
 import { ResolveItemContainer } from '../ResolveItemView/ResolveItemContainer';
-import { QueueCountsLine } from './QueueCountsLine';
 import { QueueFilterChips } from './QueueFilterChips';
 import { ResolveQueueRow } from './ResolveQueueRow';
 import { ResolveQueueFooter } from './ResolveQueueFooter';
@@ -111,7 +109,6 @@ export const ResolveQueueHome = ({ session }: Props) => {
   }, [loadResolveSession, sessionId]);
 
   const groups = useMemo(() => groupResolveQueue({ rows }), [rows]);
-  const counts = useMemo(() => resolveQueueCounts({ rows }), [rows]);
   const listed = useMemo(
     () =>
       orderResolveQueueRows({
@@ -428,7 +425,6 @@ export const ResolveQueueHome = ({ session }: Props) => {
               retryableCount={groups.retryable.length}
               onChange={(filter) => setResolveQueueView({ sessionId, patch: { filter } })}
             />
-            <QueueCountsLine counts={counts} />
             {isLoading && (
               <div className="flex flex-col gap-4">
                 {SKELETON_ROWS.map((key) => (
