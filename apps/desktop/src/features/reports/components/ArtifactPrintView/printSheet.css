@@ -1,5 +1,5 @@
 @page {
-  margin: 20mm 24mm;
+  margin: 18mm 22mm 22mm;
 }
 .print-sheet {
   background: #ffffff;
@@ -98,7 +98,7 @@
   border: 0;
   border-top: 1px solid #c9cdd4;
   height: 0;
-  margin: 1.1rem 0 1.4rem;
+  margin: 1rem 0 1.25rem;
 }
 .print-sheet .print-note {
   color: #5a5f68;
@@ -114,31 +114,24 @@
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
-.print-sheet .print-body > div,
-.print-sheet .print-body > div > div {
+.print-sheet .print-body div {
   display: block;
+  overflow: visible;
 }
 .print-sheet .print-body > div {
   color: #14161a;
   font-size: 10.5pt;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 .print-sheet .print-body > div > div {
-  margin: 0 0 0.95em;
+  margin: 0 0 1em;
 }
-.print-sheet .print-body > div > div > div {
-  break-inside: avoid;
-}
-.print-sheet .print-body div {
-  overflow: visible;
-}
-.print-sheet .print-body p,
-.print-sheet .print-body ul,
-.print-sheet .print-body ol,
-.print-sheet .print-body pre,
-.print-sheet .print-body blockquote,
-.print-sheet .print-body table {
-  margin: 0 0 0.7em;
+.print-sheet .print-body p {
+  font-size: 10.5pt;
+  line-height: 1.5;
+  margin: 0 0 0.6em;
+  orphans: 3;
+  widows: 3;
 }
 .print-sheet .print-body h1,
 .print-sheet .print-body h2,
@@ -147,30 +140,35 @@
 .print-sheet .print-body h5,
 .print-sheet .print-body h6 {
   break-after: avoid;
+  break-inside: avoid;
   color: #0f1115;
   font-weight: 600;
-  line-height: 1.25;
+  page-break-after: avoid;
 }
 .print-sheet .print-body h1 {
-  font-size: 17.5pt;
+  font-size: 16pt;
   letter-spacing: -0.01em;
-  margin: 1.6em 0 0.5em;
+  line-height: 1.2;
+  margin: 1.5em 0 0.4em;
 }
 .print-sheet .print-body h2 {
-  font-size: 15pt;
-  margin: 1.45em 0 0.42em;
+  font-size: 13pt;
+  line-height: 1.25;
+  margin: 1.4em 0 0.35em;
 }
 .print-sheet .print-body h3 {
-  font-size: 12.5pt;
-  margin: 1.3em 0 0.35em;
+  font-size: 11pt;
+  line-height: 1.3;
+  margin: 1.2em 0 0.3em;
 }
 .print-sheet .print-body h4,
 .print-sheet .print-body h5,
 .print-sheet .print-body h6 {
   color: #4c515a;
-  font-size: 9pt;
-  letter-spacing: 0.07em;
-  margin: 1.5em 0 0.5em;
+  font-size: 8.5pt;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  margin: 1.3em 0 0.4em;
   text-transform: uppercase;
 }
 .print-sheet .print-body > div > div:first-child > :first-child {
@@ -184,16 +182,20 @@
 }
 .print-sheet .print-body ul,
 .print-sheet .print-body ol {
+  break-inside: auto;
   display: block;
+  margin: 0 0 0.7em;
   padding-left: 1.5em;
 }
 .print-sheet .print-body li {
   break-inside: avoid;
-  line-height: 1.55;
-  margin: 0 0 0.28em;
+  font-size: 10.5pt;
+  line-height: 1.5;
+  margin: 0 0 0.2em;
 }
-.print-sheet .print-body li > div {
-  display: block;
+.print-sheet .print-body li ul,
+.print-sheet .print-body li ol {
+  margin: 0.2em 0 0;
 }
 .print-sheet .print-body code {
   background: none;
@@ -201,7 +203,7 @@
   border-radius: 0;
   color: inherit;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.88em;
+  font-size: 0.9em;
   padding: 0;
 }
 .print-sheet .print-body pre,
@@ -213,45 +215,124 @@
   background: #ffffff;
   border: 1px solid #d5d8de;
   border-radius: 2px;
-  break-inside: avoid;
+  break-inside: auto;
   color: #14161a;
-  font-size: 9pt;
-  line-height: 1.5;
+  font-size: 8.5pt;
+  line-height: 1.45;
+  margin: 0 0 0.8em;
+  orphans: 3;
   overflow: visible;
   padding: 0.65em 0.8em;
   white-space: pre-wrap;
+  widows: 3;
 }
 .print-sheet .print-body table {
   border-collapse: collapse;
-  break-inside: avoid;
-  font-size: 9.5pt;
+  break-inside: auto;
+  font-size: 9pt;
+  line-height: 1.4;
+  margin: 0 0 0.8em;
+  table-layout: auto;
   width: 100%;
+}
+.print-sheet .print-body thead {
+  display: table-header-group;
+}
+.print-sheet .print-body tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 .print-sheet .print-body th,
 .print-sheet .print-body td {
   border-bottom: 1px solid #e2e5ea;
   font-feature-settings: 'tnum';
   font-variant-numeric: tabular-nums;
-  padding: 0.38em 0.5em;
+  padding: 0.3em 0.45em;
   vertical-align: top;
 }
 .print-sheet .print-body th {
   border-bottom: 1px solid #b9bec7;
   color: #4c515a;
-  font-size: 8.5pt;
+  font-size: 7.5pt;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 .print-sheet .print-body blockquote {
   border-left: 2px solid #d5d8de;
+  break-inside: avoid;
   color: #4c515a;
   display: block;
   font-size: 10pt;
+  line-height: 1.5;
+  margin: 0 0 0.7em;
   padding-left: 0.85em;
 }
 .print-sheet .print-body blockquote p {
+  font-size: inherit;
+  line-height: inherit;
   margin: 0 0 0.35em;
+  orphans: 2;
+  widows: 2;
+}
+.print-sheet .print-body [data-block='callout'],
+.print-sheet .print-body [data-block='chip'] {
+  --print-tone: #4c515a;
+}
+.print-sheet .print-body [data-tone='goal'] {
+  --print-tone: var(--color-primary);
+}
+.print-sheet .print-body [data-tone='decision'] {
+  --print-tone: var(--color-success);
+}
+.print-sheet .print-body [data-tone='question'] {
+  --print-tone: var(--color-warning);
+}
+.print-sheet .print-body [data-tone='output'],
+.print-sheet .print-body [data-tone='files'] {
+  --print-tone: var(--color-info);
+}
+.print-sheet .print-body [data-block='callout'] {
+  -webkit-print-color-adjust: exact;
+  background: none;
+  border: 1px solid #c9cdd4;
+  border-left: 3px solid var(--print-tone);
+  border-radius: 2px;
+  break-inside: avoid;
+  color: #14161a;
+  font-size: 9.5pt;
+  line-height: 1.45;
+  padding: 0.55em 0.75em;
+  page-break-inside: avoid;
+  print-color-adjust: exact;
+}
+.print-sheet .print-body [data-block='callout'] > div:first-child {
+  color: var(--print-tone);
+  font-size: 7.5pt;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.print-sheet .print-body [data-block='chip'] {
+  -webkit-print-color-adjust: exact;
+  background: none;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  color: var(--print-tone);
+  display: inline;
+  padding: 0 0.3em;
+  print-color-adjust: exact;
+}
+.print-sheet .print-body [data-block='tree'] {
+  break-inside: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8pt;
+  line-height: 1.35;
+  orphans: 3;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  widows: 3;
 }
 .print-sheet .print-body [role='separator'] {
   background: none;
@@ -262,6 +343,10 @@
 .print-sheet .print-body img {
   break-inside: avoid;
   max-width: 100%;
+}
+.print-sheet .print-screens > :first-child {
+  break-after: avoid;
+  page-break-after: avoid;
 }
 @media print {
   html,
@@ -276,8 +361,12 @@
     overflow: visible;
   }
   .print-sheet {
-    max-width: none;
+    margin: 0 auto;
+    max-width: 150mm;
     padding: 0;
+  }
+  .print-sheet[data-page='landscape'] {
+    max-width: none;
   }
   .print-sheet .print-screens,
   .print-sheet .print-frames {
