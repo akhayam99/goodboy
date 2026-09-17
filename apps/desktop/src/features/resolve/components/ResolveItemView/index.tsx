@@ -130,17 +130,6 @@ export const ResolveItemView = ({
       : RESOLVE_QUEUE_ACTION_LABEL.approveFix;
   const approveLabel =
     sharedMembers.length === 0 ? approveVerb : `Approve ${sharedMembers.length + 1}`;
-  const reviseItems: ReadonlyArray<OverflowMenuItem> = isAnswering
-    ? []
-    : [
-        {
-          kind: 'item',
-          key: 'revise',
-          label: RESOLVE_QUEUE_ACTION_LABEL.askForChanges,
-          disabled: isBusy,
-          onClick: onStartRevise,
-        },
-      ];
   const menuItems: ReadonlyArray<OverflowMenuItem> = isDelivered
     ? [
         {
@@ -152,7 +141,6 @@ export const ResolveItemView = ({
         },
       ]
     : [
-        ...reviseItems,
         {
           kind: 'item',
           key: 'wont-fix',
@@ -185,18 +173,28 @@ export const ResolveItemView = ({
             </Button>
           )}
           {mode === 'reply' && !isDelivered && !isAnswering && (
-            <Tooltip content={approveBlockedReason ?? approveLabel}>
-              <Button
-                size="sm"
-                variant="primary"
-                disabled={isBusy || !canApprove}
-                onClick={onApprove}
-              >
-                {approveLabel}
+            <>
+              <Button size="sm" variant="ghost" disabled={isBusy} onClick={onStartRevise}>
+                {RESOLVE_QUEUE_ACTION_LABEL.askForChanges}
               </Button>
-            </Tooltip>
+              <Tooltip content={approveBlockedReason ?? approveLabel}>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  disabled={isBusy || !canApprove}
+                  onClick={onApprove}
+                >
+                  {approveLabel}
+                </Button>
+              </Tooltip>
+            </>
           )}
-          <OverflowMenu items={menuItems} label="Comment actions" align="right" />
+          <OverflowMenu
+            items={menuItems}
+            label="More"
+            align="right"
+            trigger={<span className="px-1 text-2xs">More</span>}
+          />
         </span>
       </div>
       <Divider />

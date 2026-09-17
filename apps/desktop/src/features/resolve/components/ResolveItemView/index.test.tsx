@@ -387,7 +387,7 @@ describe('the resolve item view', () => {
     const onStartRefuse = vi.fn();
     renderView({ onStartRefuse });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Comment actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Will not fix' }));
 
     expect(onStartRefuse).toHaveBeenCalledOnce();
@@ -396,7 +396,7 @@ describe('the resolve item view', () => {
   it('blocks the refusal with its reason once the fix is already integrated', () => {
     renderView({ refuseBlockedReason: 'Fix already integrated' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Comment actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
 
     const entry = screen.getByRole('menuitem', { name: /Will not fix/ });
     expect(entry.hasAttribute('disabled')).toBe(true);
@@ -444,6 +444,25 @@ describe('the resolve item view', () => {
 
     expect(screen.getByText('Reply only, no code change')).toBeDefined();
     expect(screen.queryByText('No agent reply yet')).toBeNull();
+  });
+
+  it('offers the revise verb next to the primary instead of hiding it in a kebab', () => {
+    const onStartRevise = vi.fn();
+    renderView({ onStartRevise });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ask agent to revise' }));
+
+    expect(onStartRevise).toHaveBeenCalledOnce();
+  });
+
+  it('leaves the rarer verbs behind a menu that says what it is', () => {
+    renderView();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    expect(screen.getByRole('menuitem', { name: 'Will not fix' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'Later' })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: 'Ask agent to revise' })).toBeNull();
   });
 
   it('names the comments one approval carries, and counts them on the primary', () => {
