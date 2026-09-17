@@ -75,6 +75,22 @@ describe('Markdown html handling', () => {
     expect(container.textContent).toContain('ran the tests');
     expect(container.textContent).toContain('output');
   });
+
+  it('closes a callout on the doubled bracket without leaking one into its text', () => {
+    const { container } = render(<Markdown text="<<output>>ran the tests<</output>>" />);
+    const callout = container.querySelector('[data-block="callout"]');
+    expect(callout?.textContent).toContain('ran the tests');
+    expect(callout?.textContent).not.toContain('<');
+  });
+
+  it('closes a multi line callout without leaking a bracket onto its last line', () => {
+    const { container } = render(
+      <Markdown text={['<<goal>>', 'ship the print sheet', '<</goal>>'].join('\n')} />,
+    );
+    const callout = container.querySelector('[data-block="callout"]');
+    expect(callout?.textContent).toContain('ship the print sheet');
+    expect(callout?.textContent).not.toContain('<');
+  });
 });
 
 describe('Markdown document rhythm', () => {

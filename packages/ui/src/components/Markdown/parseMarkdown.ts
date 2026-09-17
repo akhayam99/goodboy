@@ -269,7 +269,7 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
     const calloutOpen = line.match(CALLOUT_OPEN_RE);
     if (calloutOpen) {
       const tag = calloutOpen[1]!;
-      const closeRe = new RegExp(`</${tag}>>?`);
+      const closeRe = new RegExp(`<{1,2}/${tag}>>?`);
       const buf: string[] = [];
       const firstLineRest = calloutOpen[2] ?? '';
       const firstClose = firstLineRest.match(closeRe);
