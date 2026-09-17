@@ -1,4 +1,4 @@
-import type { IsoDateTime } from '@goodboy/types';
+import type { IsoDateTime, MountId } from '@goodboy/types';
 import type { GeneratedArtifactKind } from '../../../features/artifacts/artifactCollection';
 import type { ArtifactCreationDraft } from './types';
 
@@ -39,15 +39,32 @@ export const defaultArtifactDraft = ({ kind, now }: Params): ArtifactCreationDra
   };
 };
 
-export const isArtifactDraftEmpty = ({
-  draft,
-}: {
-  readonly draft: ArtifactCreationDraft;
-}): boolean => {
+type MountChoiceParams = Readonly<{
+  mountIds: ReadonlyArray<MountId>;
+  defaultMountIds: ReadonlyArray<MountId>;
+}>;
+
+const isDefaultMountChoice = ({ mountIds, defaultMountIds }: MountChoiceParams): boolean => {
+  if (mountIds.length !== defaultMountIds.length) {
+    return false;
+  }
+  const defaults = new Set(defaultMountIds);
+  return mountIds.every((mountId) => defaults.has(mountId));
+};
+
+type EmptyParams = Readonly<{
+  draft: ArtifactCreationDraft;
+  defaultMountIds: ReadonlyArray<MountId>;
+}>;
+
+export const isArtifactDraftEmpty = ({ draft, defaultMountIds }: EmptyParams): boolean => {
   if (draft.brief.trim().length > 0) {
     return false;
   }
   if (draft.attachments.length > 0) {
+    return false;
+  }
+  if (!isDefaultMountChoice({ mountIds: draft.mountIds, defaultMountIds })) {
     return false;
   }
   if (draft.basedOn.kind !== 'session' || draft.routing !== null) {

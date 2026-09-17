@@ -7,17 +7,25 @@ vi.mock('../shared/lib/db', () => ({
   runDbMigrations: vi.fn(),
 }));
 
-const { upsertPlan, listPlansForSession, createArtifact, listArtifactsForSession } = vi.hoisted(
-  () => ({
-    upsertPlan: vi.fn(async () => undefined),
-    listPlansForSession: vi.fn(async () => [] as ReadonlyArray<unknown>),
-    createArtifact: vi.fn(async (args: { readonly sourceTurnId: string }) => ({
-      id: 'artifact-1',
-      sourceTurnId: args.sourceTurnId,
-    })),
-    listArtifactsForSession: vi.fn(async () => [] as ReadonlyArray<unknown>),
-  }),
-);
+const {
+  upsertPlan,
+  listPlansForSession,
+  createArtifact,
+  listArtifactsForSession,
+  updateArtifactSource,
+} = vi.hoisted(() => ({
+  upsertPlan: vi.fn(async () => undefined),
+  listPlansForSession: vi.fn(async () => [] as ReadonlyArray<unknown>),
+  createArtifact: vi.fn(async (args: { readonly sourceTurnId: string }) => ({
+    id: 'artifact-1',
+    sourceTurnId: args.sourceTurnId,
+  })),
+  listArtifactsForSession: vi.fn(async () => [] as ReadonlyArray<unknown>),
+  updateArtifactSource: vi.fn(async (args: { readonly artifactId: string }) => ({
+    id: args.artifactId,
+    revision: 2,
+  })),
+}));
 
 const { loadArtifactProvenance, appendArtifactProvenanceOmission } = vi.hoisted(() => ({
   loadArtifactProvenance: vi.fn(
@@ -32,7 +40,11 @@ vi.mock('../features/artifacts/artifactProvenance', () => ({
 }));
 
 vi.mock('../features/plans/plans', () => ({ upsertPlan, listPlansForSession }));
-vi.mock('../features/artifacts/artifacts', () => ({ createArtifact, listArtifactsForSession }));
+vi.mock('../features/artifacts/artifacts', () => ({
+  createArtifact,
+  listArtifactsForSession,
+  updateArtifactSource,
+}));
 
 import { captureArtifactsFromTurn } from './turn-helpers';
 
@@ -87,6 +99,7 @@ beforeEach(() => {
     sourceTurnId: args.sourceTurnId,
   }));
   listArtifactsForSession.mockClear();
+  updateArtifactSource.mockClear();
   listPlansForSession.mockResolvedValue([]);
   listArtifactsForSession.mockResolvedValue([]);
   loadArtifactProvenance.mockReset();
@@ -287,5 +300,134 @@ describe('captureArtifactsFromTurn', () => {
   it('gives the plan path the same replay key as the artifact path', async () => {
     await run('<<plan>>\nShip it\nstep one\n<</plan>>');
     expect(upsertPlan).toHaveBeenCalledWith(expect.objectContaining({ sourceTurnId: RUN_ID }));
+  });
+});
+
+const REPORT_TURN = (content: string, title = 'Session report'): string =>
+  `<<artifact v=1 kind=report>>\n${JSON.stringify({
+    title,
+    format: 'markdown',
+    content,
+    metadata: { reportType: 'session-summary' },
+  })}\n<</artifact>>`;
+
+const QUESTIONS = [
+  '<<ctx-question suggestions="desktop first|mobile first" recommended="desktop first" select="one">>which surface leads?<</ctx-question>>',
+  '<<ctx-question suggestions="keep the old route|drop it" recommended="keep the old route" select="one">>what happens to the legacy route?<</ctx-question>>',
+].join('\n');
+
+const priorReport = (overrides: Readonly<Record<string, unknown>>) => ({
+  id: 'artifact-0',
+  agentId: AGENT_ID,
+  kind: 'report',
+  status: 'active',
+  title: 'Session report',
+  sourceText: '## Outcome',
+  sourceTurnId: 'run-0',
+  ...overrides,
+});
+
+describe('captureArtifactsFromTurn questions', () => {
+  it('produces the artifact in the same turn as two questions and records both assumptions', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    const { result } = await run(`${QUESTIONS}\n${REPORT_TURN('## Outcome')}`);
+
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+    expect(result.artifact).not.toBeNull();
+    expect(appendArtifactProvenanceOmission).toHaveBeenCalledWith({
+      agentId: AGENT_ID,
+      note: 'asked "which surface leads?" and assumed "desktop first"',
+    });
+    expect(appendArtifactProvenanceOmission).toHaveBeenCalledWith({
+      agentId: AGENT_ID,
+      note: 'asked "what happens to the legacy route?" and assumed "keep the old route"',
+    });
+  });
+
+  it('records the question even when the agent gave no recommended answer', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    await run(
+      `<<ctx-question suggestions="a|b">>which one?<</ctx-question>>\n${REPORT_TURN('## Outcome')}`,
+    );
+
+    expect(appendArtifactProvenanceOmission).toHaveBeenCalledWith({
+      agentId: AGENT_ID,
+      note: 'asked "which one?" and assumed its own answer, with no recommendation on record',
+    });
+  });
+
+  it('records nothing for an agent that never started an artifact run', async () => {
+    loadArtifactProvenance.mockResolvedValue(null);
+    await run(`${QUESTIONS}\n${REPORT_TURN('## Outcome')}`);
+
+    expect(appendArtifactProvenanceOmission).not.toHaveBeenCalled();
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves a turn without questions alone', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    await run(REPORT_TURN('## Outcome'));
+
+    expect(appendArtifactProvenanceOmission).not.toHaveBeenCalled();
+  });
+});
+
+describe('captureArtifactsFromTurn revisions', () => {
+  it('revises the artifact the container already produced instead of listing a second one', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    listArtifactsForSession.mockResolvedValue([priorReport({})]);
+
+    const { result } = await run(REPORT_TURN('## Outcome, now with the answer'));
+
+    expect(updateArtifactSource).toHaveBeenCalledWith({
+      artifactId: 'artifact-0',
+      title: 'Session report',
+      sourceFormat: 'markdown',
+      sourceText: '## Outcome, now with the answer',
+      metadata: { reportType: 'session-summary' },
+    });
+    expect(createArtifact).not.toHaveBeenCalled();
+    expect(result.artifact).toMatchObject({ id: 'artifact-0', revision: 2 });
+  });
+
+  it('never revises for an agent that has no artifact run of its own', async () => {
+    loadArtifactProvenance.mockResolvedValue(null);
+    listArtifactsForSession.mockResolvedValue([priorReport({})]);
+
+    await run(REPORT_TURN('## Outcome, now with the answer'));
+
+    expect(updateArtifactSource).not.toHaveBeenCalled();
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the revision where it is when the same turn is captured twice', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    listArtifactsForSession.mockResolvedValue([priorReport({ sourceTurnId: RUN_ID })]);
+
+    await run(REPORT_TURN('## Outcome, now with the answer'));
+
+    expect(updateArtifactSource).not.toHaveBeenCalled();
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the revision where it is when the container repeats the same document', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    listArtifactsForSession.mockResolvedValue([priorReport({})]);
+
+    const { result } = await run(REPORT_TURN('## Outcome'));
+
+    expect(updateArtifactSource).not.toHaveBeenCalled();
+    expect(createArtifact).not.toHaveBeenCalled();
+    expect(result.artifact).toMatchObject({ id: 'artifact-0' });
+  });
+
+  it('leaves the artifact of another agent alone', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    listArtifactsForSession.mockResolvedValue([priorReport({ agentId: 'agent-2' })]);
+
+    await run(REPORT_TURN('## Outcome, now with the answer'));
+
+    expect(updateArtifactSource).not.toHaveBeenCalled();
+    expect(createArtifact).toHaveBeenCalledTimes(1);
   });
 });

@@ -15,6 +15,7 @@ import {
   attachmentsInventoryRow,
   type ArtifactAttachment,
 } from '../artifacts/artifactAttachments';
+import { artifactQuestionContract } from '../artifacts/artifactQuestionContract';
 import {
   briefInventoryRow,
   excludedInventoryRow,
@@ -559,11 +560,12 @@ export const buildReportContext = ({
       ? '## truncation\n\nnothing was truncated.'
       : `## truncation\n\n${truncations.map((note) => `- ${note}`).join('\n')}`;
 
+  const questions = artifactQuestionContract({ kind: 'report' });
   const sections = [
     ...(request.text.length > 0
       ? [`# user request\n\n${redactSecrets({ text: request.text })}`]
       : []),
-    `${capped.text}\n\n${notes}`,
+    `${capped.text}\n\n${notes}\n\n${questions}`,
   ];
   inventory.push(excludedInventoryRow({ summary: REPORT_EXCLUDED_COPY }));
   inventory.push(

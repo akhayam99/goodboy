@@ -88,7 +88,7 @@ export const useArtifactCreationDraft = ({
       ? withChoice
       : second.withChoice({ draft: withChoice, choice: secondChoice });
   }, [adapter, initial, brief, attachments, mountIds, basedOn, routing, choice, secondChoice]);
-  const isEmpty = isArtifactDraftEmpty({ draft });
+  const isEmpty = isArtifactDraftEmpty({ draft, defaultMountIds });
 
   useEffect(() => {
     if (isEmpty) {

@@ -7,6 +7,7 @@ import {
   attachmentsInventoryRow,
   type ArtifactAttachment,
 } from '../artifacts/artifactAttachments';
+import { artifactQuestionContract } from '../artifacts/artifactQuestionContract';
 import {
   briefInventoryRow,
   excludedInventoryRow,
@@ -363,12 +364,13 @@ export const buildWireframeContext = ({
       ? '## truncation\n\nnothing was truncated.'
       : `## truncation\n\n${truncations.map((note) => `- ${note}`).join('\n')}`;
 
+  const questions = artifactQuestionContract({ kind: 'wireframe' });
   const contract = `## document contract\n\n${WIREFRAME_SCHEMA_BRIEF}`;
   const sections = [
     ...(request.text.length > 0
       ? [`# user request\n\n${redactSecrets({ text: request.text })}`]
       : []),
-    `${capped.text}\n\n${notes}\n\n${contract}`,
+    `${capped.text}\n\n${notes}\n\n${questions}\n\n${contract}`,
   ];
   inventory.push(excludedInventoryRow({ summary: WIREFRAME_EXCLUDED_COPY }));
   inventory.push(
