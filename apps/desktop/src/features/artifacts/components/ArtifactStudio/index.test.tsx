@@ -421,9 +421,9 @@ describe('ArtifactStudio', () => {
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('Session report'));
     const rail = screen.getByRole('complementary', { name: 'Artifacts' });
-    expect(rail.className).toContain('@min-[1265px]:flex');
+    expect(rail.className).toContain('@min-[1025px]:flex');
     expect(rail.className).toContain('hidden');
-    expect(screen.getByTestId('artifact-back').className).toContain('@min-[1265px]:hidden');
+    expect(screen.getByTestId('artifact-back').className).toContain('@min-[1025px]:hidden');
   });
 
   it('keeps the plan lifecycle vocabulary off reports and wireframes', () => {
