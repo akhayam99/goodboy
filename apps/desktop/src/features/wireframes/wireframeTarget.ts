@@ -1,6 +1,11 @@
 import type { WireframeScreen } from '@goodboy/core';
+import type { ArtifactRunTarget } from '@goodboy/types';
 
-export const WIREFRAME_TARGETS = ['mobile', 'desktop', 'both'] as const;
+export const WIREFRAME_TARGETS = [
+  'mobile',
+  'desktop',
+  'both',
+] as const satisfies ReadonlyArray<ArtifactRunTarget>;
 
 export type WireframeTarget = (typeof WIREFRAME_TARGETS)[number];
 

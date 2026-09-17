@@ -1,10 +1,19 @@
 import { autoModelForRole, resolveRoleRouting } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
-import type { AgentEffort, AgentId, ProviderId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type {
+  AgentEffort,
+  AgentId,
+  MountId,
+  ProviderId,
+  SessionId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import type { ArtifactAttachment } from '../../../features/artifacts/artifactAttachments';
 import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
 import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
+import { selectDefaultArtifactMountIds } from '../../../features/artifacts/artifactMountChoice';
 import { collectWireframeScoutPlan } from '../../../features/wireframes/collectWireframeScoutPlan';
+import { WIREFRAME_SCOUT_DEADLINE_MS } from '../../../features/wireframes/wireframeScoutReports';
 import { sessionGoalText } from '../../../features/artifacts/sessionGoalText';
 import {
   WIREFRAME_FIDELITY_LABEL,
@@ -32,6 +41,7 @@ export type SpawnWireframeAgentParams = {
   readonly routing?: WireframeRouting | null;
   readonly brief?: string | null;
   readonly attachments: ReadonlyArray<ArtifactAttachment>;
+  readonly mountIds?: ReadonlyArray<MountId>;
   readonly evidence?: string | null;
   readonly focus?: SpawnFocus;
 };
@@ -95,6 +105,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
     routing = null,
     brief = null,
     attachments,
+    mountIds,
     evidence = null,
     focus = 'agent',
   }: SpawnWireframeAgentParams): Promise<AgentId> => {
@@ -118,10 +129,12 @@ export const spawnWireframeAgent = (get: GetFn) => {
     }
     const slots = await state.ensureSessionSlots(sessionId);
     const goal = sessionGoalText({ slots, session });
+    const chosenMountIds = mountIds ?? selectDefaultArtifactMountIds({ state, sessionId });
     const scouting = await collectWireframeScoutPlan({
       state,
       sessionId,
       workflowRunId,
+      mountIds: chosenMountIds,
       goal: goal.packText,
       brief,
     });
@@ -142,24 +155,37 @@ export const spawnWireframeAgent = (get: GetFn) => {
         omissions: [WIREFRAME_SCOUT_PENDING_NOTE],
         designProfileSummary: null,
         hasDesignEvidence: false,
+        phase: 'gathering',
+        scoutPlan: [],
+        mountIds:
+          scouting.gate.kind === 'ready' ? scouting.gate.mounts.map((mount) => mount.mountId) : [],
+        target,
+        deadlineAt: Date.now() + WIREFRAME_SCOUT_DEADLINE_MS,
         sourceWorkflowRunId: workflowRunId,
         agentId: containerId,
         executingWorkflowRunId: null,
       }).catch((error: unknown) => {
         console.warn(`[artifact-provenance] wireframe ${containerId}: ${formatError(error)}`);
       });
-      const isStarted = await get().startWireframeScouts({
-        sessionId,
-        containerId,
-        root: scouting.plan.root,
-        worktreePath: scouting.gate.kind === 'ready' ? scouting.gate.worktreePath : '',
-        fidelity,
-        target,
-        workflowRunId,
-        brief,
-        attachments,
-        goal: goal.packText,
-      });
+      const isStarted =
+        scouting.gate.kind !== 'ready'
+          ? false
+          : await get().startWireframeScouts({
+              sessionId,
+              containerId,
+              mounts: scouting.plan.roots.map((entry) => ({
+                mountId: entry.mountId,
+                mountName: entry.mountName,
+                root: entry.root,
+                worktreePath: entry.worktreePath,
+              })),
+              fidelity,
+              target,
+              workflowRunId,
+              brief,
+              attachments,
+              goal: goal.packText,
+            });
       if (isStarted) {
         return containerId;
       }
@@ -172,6 +198,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
         workflowRunId,
         brief,
         attachments,
+        mountIds: chosenMountIds,
         executingAgentId: containerId,
       });
       await recordArtifactProvenance({
@@ -193,6 +220,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
       workflowRunId,
       brief,
       attachments,
+      mountIds: chosenMountIds,
       executingAgentId: null,
       scoutPlan: scouting.plan,
     });

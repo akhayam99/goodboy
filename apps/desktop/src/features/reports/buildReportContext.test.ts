@@ -20,6 +20,7 @@ import {
   SESSION_GOAL_LIMITS,
   sessionGoalText,
 } from '../artifacts/sessionGoalText';
+import { ARTIFACT_QUESTION_LIMIT } from '../artifacts/artifactQuestionContract';
 import { REDACTED } from '../../shared/utils/redactSecrets';
 import { buildReportContext, REPORT_CONTEXT_LIMITS } from './buildReportContext';
 
@@ -144,6 +145,32 @@ const baseParams = {
   workflowRunId: null,
   capturedAt: NOW,
 } as const;
+
+describe('buildReportContext question contract', () => {
+  it('tells the agent to ask at most two marked questions before the report', () => {
+    const text = buildReportContext({ ...baseParams }).text;
+    expect(text).toContain('## questions');
+    expect(text).toContain(
+      '<<ctx-question suggestions="first option|second option" recommended="first option" select="one">>the question<</ctx-question>>',
+    );
+    expect(text).toContain(`at most ${ARTIFACT_QUESTION_LIMIT} questions`);
+    expect(text).toContain('put the questions before the artifact block, in the same turn');
+  });
+
+  it('names the report home for the assumption it made', () => {
+    expect(buildReportContext({ ...baseParams }).text).toContain(
+      'a line in the body of the report',
+    );
+  });
+
+  it('keeps the contract after the truncation notes, outside the capped evidence', () => {
+    const text = buildReportContext({
+      ...baseParams,
+      brief: 'Harborline '.repeat(REPORT_CONTEXT_LIMITS.total),
+    }).text;
+    expect(text.indexOf('## questions')).toBeGreaterThan(text.indexOf('## truncation'));
+  });
+});
 
 describe('buildReportContext', () => {
   it('adds the explicit user request separately from the unchanged evidence pack', () => {

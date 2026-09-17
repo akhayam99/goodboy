@@ -17,6 +17,7 @@ import {
   SESSION_GOAL_LIMITS,
   sessionGoalText,
 } from '../artifacts/sessionGoalText';
+import { ARTIFACT_QUESTION_LIMIT } from '../artifacts/artifactQuestionContract';
 import { REDACTED } from '../../shared/utils/redactSecrets';
 import {
   buildWireframeContext,
@@ -135,6 +136,29 @@ const contextFor = ({
 };
 
 const textFor = (params: TextForParams = {}): string => contextFor(params).text;
+
+describe('buildWireframeContext question contract', () => {
+  it('tells the agent to ask at most two marked questions before the document', () => {
+    const text = textFor();
+    expect(text).toContain('## questions');
+    expect(text).toContain(
+      '<<ctx-question suggestions="first option|second option" recommended="first option" select="one">>the question<</ctx-question>>',
+    );
+    expect(text).toContain(`at most ${ARTIFACT_QUESTION_LIMIT} questions`);
+    expect(text).toContain('put the questions before the artifact block, in the same turn');
+  });
+
+  it('keeps the contract out of the capped evidence so a long pack never drops it', () => {
+    const text = textFor({ brief: 'Harborline '.repeat(WIREFRAME_CONTEXT_LIMITS.total) });
+    expect(text).toContain('## questions');
+    expect(text.indexOf('## questions')).toBeGreaterThan(text.indexOf('## truncation'));
+    expect(text.indexOf('## questions')).toBeLessThan(text.indexOf('## document contract'));
+  });
+
+  it('names the wireframe home for the assumption it made', () => {
+    expect(textFor()).toContain('a node note on the screen it decides');
+  });
+});
 
 describe('buildWireframeContext', () => {
   it('adds the explicit user request separately from the unchanged evidence and contract', () => {

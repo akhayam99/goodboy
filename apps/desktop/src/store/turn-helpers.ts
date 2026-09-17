@@ -55,8 +55,11 @@ import type {
 import { tauriDatabase } from '../shared/lib/db';
 import {
   appendArtifactProvenanceOmission,
+  completeArtifactRun,
   loadArtifactProvenance,
 } from '../features/artifacts/artifactProvenance';
+import { recordArtifactAssumptions } from '../features/artifacts/recordArtifactAssumptions';
+import { reviseArtifactForAgent } from '../features/artifacts/reviseArtifactForAgent';
 import { capturedWireframeFidelity } from '../features/wireframes/capturedWireframeFidelity';
 import { requestedWireframeFidelity } from '../features/wireframes/wireframeFidelity';
 import type { AgentKind } from '../features/session/agent-kind';
@@ -660,6 +663,7 @@ export const captureArtifactsFromTurn = async ({
   sourceTurnId,
   workflowRunId,
 }: CaptureArtifactsParams): Promise<CapturedArtifacts> => {
+  await recordArtifactAssumptions({ agentId, assistantText });
   const captured = captureArtifactFromTurnText({ assistantText, emittingProvider });
   if (captured.status === 'none') {
     return NOTHING_CAPTURED;
@@ -693,18 +697,31 @@ export const captureArtifactsFromTurn = async ({
       parsed.kind === 'wireframe'
         ? await overrideWireframeFidelity({ agentId, agentName, parsed })
         : parsed.metadata;
-    const artifact = await invokeCreateArtifact({
+    const revised = await reviseArtifactForAgent({
       sessionId,
       agentId,
-      workflowRunId: workflowRunId ?? null,
       kind: parsed.kind,
-      schemaVersion: parsed.schemaVersion,
       title: parsed.title,
       sourceFormat: parsed.sourceFormat,
       sourceText: parsed.sourceText,
       metadata,
       sourceTurnId,
     });
+    const artifact =
+      revised ??
+      (await invokeCreateArtifact({
+        sessionId,
+        agentId,
+        workflowRunId: workflowRunId ?? null,
+        kind: parsed.kind,
+        schemaVersion: parsed.schemaVersion,
+        title: parsed.title,
+        sourceFormat: parsed.sourceFormat,
+        sourceText: parsed.sourceText,
+        metadata,
+        sourceTurnId,
+      }));
+    await completeArtifactRun({ agentId }).catch(() => undefined);
     const refreshed = await invokeListArtifactsForSession(sessionId);
     set((state) => ({
       sessionArtifacts: { ...state.sessionArtifacts, [sessionId]: refreshed },

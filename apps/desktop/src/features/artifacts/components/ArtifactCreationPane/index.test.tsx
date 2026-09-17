@@ -290,6 +290,7 @@ describe('ArtifactCreationPane', () => {
           reportType: 'session-summary',
           brief: '',
           attachments: [],
+          mountIds: [],
           basedOn: { kind: 'workflow-run', workflowRunId: RUN_ID },
           routing: null,
           updatedAt: '2026-09-16T10:00:00.000Z',
@@ -309,6 +310,7 @@ describe('ArtifactCreationPane', () => {
           reportType: 'session-summary',
           brief: '',
           attachments: [],
+          mountIds: [],
           basedOn: { kind: 'workflow-run', workflowRunId: RUN_ID },
           routing: null,
           updatedAt: '2026-09-16T10:00:00.000Z',
@@ -362,6 +364,7 @@ describe('ArtifactCreationPane', () => {
         routing: null,
         brief: 'call out the residual convention',
         attachments: [],
+        mountIds: [],
         focus: 'none',
       });
     });
@@ -383,6 +386,7 @@ describe('ArtifactCreationPane', () => {
         routing: null,
         brief: 'the settlement review flow',
         attachments: [],
+        mountIds: [],
         focus: 'none',
       });
     });
@@ -599,8 +603,98 @@ describe('ArtifactCreationPane', () => {
         routing: null,
         brief: 'the operator console',
         attachments: [],
+        mountIds: [],
         focus: 'none',
       });
+    });
+  });
+
+  const mountRow = ({
+    mountId,
+    mountName,
+    branch,
+  }: {
+    readonly mountId: string;
+    readonly mountName: string;
+    readonly branch: string;
+  }) => ({
+    mountId,
+    sessionId: SESSION_ID,
+    projectId: 'project-1',
+    mountName,
+    worktreePath: `/tmp/${mountId}`,
+    lastWorktreePath: null,
+    repoRoot: `/repo/${mountId}`,
+    branch,
+    baseBranch: 'main',
+    parallelIndex: 0,
+    isAttached: true,
+    diskState: 'present',
+    revision: 1,
+  });
+
+  const WEB = mountRow({ mountId: 'mount-web', mountName: 'web', branch: 'ak/feat-web' });
+  const API = mountRow({ mountId: 'mount-api', mountName: 'api', branch: 'ak/feat-api' });
+
+  it('renders no read from row when nothing is mounted', () => {
+    state.sessionPhaseRuns = { [SESSION_ID]: [] };
+    renderPane({ kind: 'wireframe' });
+    expect(screen.queryByTestId('artifact-mount-rows')).toBeNull();
+  });
+
+  it('shows the sole mount and its branch, already chosen', () => {
+    state.sessionPhaseRuns = { [SESSION_ID]: [] };
+    state.sessionProjectMounts = { [SESSION_ID]: [WEB] };
+    renderPane({ kind: 'wireframe' });
+    const chip = screen.getByRole('option', { name: /web/ });
+    expect(chip.getAttribute('aria-selected')).toBe('true');
+    expect(chip.textContent).toContain('ak/feat-web');
+  });
+
+  it('preselects every mount when two are attached and none is selected', async () => {
+    state.sessionPhaseRuns = { [SESSION_ID]: [] };
+    state.sessionProjectMounts = { [SESSION_ID]: [WEB, API] };
+    renderPane({ kind: 'wireframe' });
+    fireEvent.change(screen.getByTestId('artifact-brief'), {
+      target: { value: 'the settlement review flow' },
+    });
+    fireEvent.click(screen.getByTestId('artifact-generate'));
+    await waitFor(() => {
+      expect(state.spawnWireframeAgent).toHaveBeenCalledWith(
+        expect.objectContaining({ mountIds: ['mount-web', 'mount-api'] }),
+      );
+    });
+  });
+
+  it('sends only the mount the user left selected', async () => {
+    state.sessionPhaseRuns = { [SESSION_ID]: [] };
+    state.sessionProjectMounts = { [SESSION_ID]: [WEB, API] };
+    renderPane({ kind: 'wireframe' });
+    fireEvent.change(screen.getByTestId('artifact-brief'), {
+      target: { value: 'the settlement review flow' },
+    });
+    fireEvent.click(screen.getByRole('option', { name: /api/ }));
+    fireEvent.click(screen.getByTestId('artifact-generate'));
+    await waitFor(() => {
+      expect(state.spawnWireframeAgent).toHaveBeenCalledWith(
+        expect.objectContaining({ mountIds: ['mount-web'] }),
+      );
+    });
+  });
+
+  it('honours the selected mount over the rest when one is selected', async () => {
+    state.sessionPhaseRuns = { [SESSION_ID]: [] };
+    state.sessionProjectMounts = { [SESSION_ID]: [WEB, API] };
+    state.sessionActiveMount = { [SESSION_ID]: 'mount-api' };
+    renderPane({ kind: 'wireframe' });
+    fireEvent.change(screen.getByTestId('artifact-brief'), {
+      target: { value: 'the settlement review flow' },
+    });
+    fireEvent.click(screen.getByTestId('artifact-generate'));
+    await waitFor(() => {
+      expect(state.spawnWireframeAgent).toHaveBeenCalledWith(
+        expect.objectContaining({ mountIds: ['mount-api'] }),
+      );
     });
   });
 });

@@ -3,12 +3,10 @@ import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import {
   clampWireframeScoutReport,
   collectWireframeScoutReports,
-  wireframeScoutSection,
   wireframeScoutSectionEntry,
   WIREFRAME_SCOUT_DEADLINE_REASON,
   WIREFRAME_SCOUT_DEMOTION_REASON,
   WIREFRAME_SCOUT_LIMITS,
-  WIREFRAME_SCOUT_NOTHING_USABLE,
 } from './wireframeScoutReports';
 import { WIREFRAME_SCOUTS } from './wireframeScoutRoles';
 
@@ -143,45 +141,5 @@ describe('wireframeScoutSectionEntry', () => {
       },
     });
     expect(entry.body).toBe('a claim a/b.ts');
-  });
-});
-
-describe('wireframeScoutSection', () => {
-  it('names the root, states the hearsay rule and carries both reports', () => {
-    const section = wireframeScoutSection({
-      root: 'apps/web',
-      entries: [
-        { name: screens!.name, header: 'verified 2 of 2 cited paths', body: 'screens', note: null },
-        { name: data!.name, header: null, body: 'contracts', note: null },
-      ],
-    });
-    expect(section).toContain('rooted at apps/web');
-    expect(section).toContain('hearsay');
-    expect(section).toContain('### screens and routes');
-    expect(section).toContain('### data and contracts');
-    expect(section).not.toContain(WIREFRAME_SCOUT_NOTHING_USABLE);
-  });
-
-  it('says scouting produced nothing usable when no report survived', () => {
-    const section = wireframeScoutSection({
-      root: '.',
-      entries: [
-        { name: screens!.name, header: null, body: null, note: 'this scout failed' },
-        { name: data!.name, header: null, body: null, note: WIREFRAME_SCOUT_DEMOTION_REASON },
-      ],
-    });
-    expect(section).toContain(WIREFRAME_SCOUT_NOTHING_USABLE);
-    expect(section).toContain('this scout reported nothing usable: this scout failed');
-  });
-
-  it('never grows past the section budget', () => {
-    const section = wireframeScoutSection({
-      root: '.',
-      entries: [
-        { name: screens!.name, header: null, body: 'x'.repeat(20_000), note: null },
-        { name: data!.name, header: null, body: 'y'.repeat(20_000), note: null },
-      ],
-    });
-    expect(section.length).toBeLessThanOrEqual(WIREFRAME_SCOUT_LIMITS.section);
   });
 });

@@ -1,6 +1,7 @@
 import type {
   AgentEffort,
   IsoDateTime,
+  MountId,
   ProviderId,
   SessionId,
   WorkflowRunId,
@@ -25,6 +26,7 @@ export type ArtifactCreationRouting = Readonly<{
 type DraftBase = Readonly<{
   brief: string;
   attachments: ReadonlyArray<ArtifactAttachment>;
+  mountIds: ReadonlyArray<MountId>;
   basedOn: ArtifactBasedOn;
   routing: ArtifactCreationRouting | null;
   updatedAt: IsoDateTime;

@@ -18,6 +18,13 @@ type OpenQuestionRowSnapshot = {
   readonly user_answer: string | null;
 };
 
+type OpenQuestionTargetRow = {
+  readonly created_by_agent_id: string | null;
+  readonly workflow_id: string | null;
+  readonly workflow_run_id: string | null;
+  readonly recommended_answer: string | null;
+};
+
 type OpenQuestionProvenanceRow = {
   readonly workflow_id: string | null;
   readonly created_by_step_ordinal: number | null;
@@ -241,6 +248,35 @@ describe('autoPopulateContext', () => {
     expect(rows[0]?.created_by_step_ordinal).toBe(1);
     expect(rows[0]?.owned_by_step_ordinal).toBe(1);
     expect(rows[0]?.created_by_agent_id).toBe(agentId);
+  });
+
+  it('credits the asking agent when the turn belongs to no workflow run', async () => {
+    const db = makeDb();
+    await migrate(db);
+    const sessionId = 'task_ap_prov_3' as SessionId;
+    await seedSession(db, sessionId);
+    const agentId = 'agent_wireframe_1' as AgentId;
+    await seedAgent(db, agentId, sessionId);
+
+    await autoPopulateContext({
+      db,
+      sessionId,
+      filesEdited: [],
+      assistantText:
+        '<<ctx-question suggestions="desktop first|mobile first" recommended="desktop first" select="one">>which surface leads?<</ctx-question>>',
+      agentContext: { agentId, turnOrdinal: 1 },
+    });
+
+    const rows = await db.select<OpenQuestionTargetRow>(
+      `SELECT created_by_agent_id, workflow_id, workflow_run_id, recommended_answer
+         FROM open_questions WHERE session_id = ?`,
+      [sessionId],
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.created_by_agent_id).toBe(agentId);
+    expect(rows[0]?.workflow_id).toBeNull();
+    expect(rows[0]?.workflow_run_id).toBeNull();
+    expect(rows[0]?.recommended_answer).toBe('desktop first');
   });
 
   it('leaves provenance null when no agentContext is supplied', async () => {

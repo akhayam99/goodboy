@@ -15,6 +15,7 @@ import {
   attachmentsInventoryRow,
   type ArtifactAttachment,
 } from '../artifacts/artifactAttachments';
+import { artifactQuestionContract } from '../artifacts/artifactQuestionContract';
 import {
   briefInventoryRow,
   excludedInventoryRow,
@@ -51,6 +52,8 @@ export const REPORT_DEFAULT_REQUEST = ({
 }): string =>
   `write a ${REPORT_TYPE_LABEL[reportType].toLowerCase()}: ${REPORT_TYPE_HINT[reportType]}.`;
 
+export const REPORT_NO_SCOUT_COPY = 'no scout read a repository for this report';
+
 export const REPORT_EXCLUDED_COPY =
   'never sent: tool calls, tool output, transcripts beyond the last message, open questions, decisions, review threads, the session summary, other mounts';
 
@@ -62,6 +65,12 @@ export type ReportDiffEvidence = Readonly<{
   additions: number;
   deletions: number;
   paths: ReadonlyArray<string>;
+}>;
+
+export type ReportScoutEvidence = Readonly<{
+  names: ReadonlyArray<string>;
+  section: string | null;
+  note: string | null;
 }>;
 
 export type ReportContextParams = Readonly<{
@@ -77,6 +86,7 @@ export type ReportContextParams = Readonly<{
   scriptRuns: Readonly<Record<string, ScriptRunRecord>>;
   diff: ReportDiffEvidence | null;
   diffUnavailableReason?: ReportDiffUnavailableReason | null;
+  scouts?: ReportScoutEvidence | null;
   workflowRunId: WorkflowRunId | null;
   capturedAt: IsoDateTime;
 }>;
@@ -440,6 +450,36 @@ const eventSection = ({
   return `## session events\n\n${rows.join('\n')}`;
 };
 
+const scoutBlock = ({
+  scouts,
+  inventory,
+}: {
+  readonly scouts: ReportScoutEvidence | null;
+  readonly inventory: Array<ArtifactContextInventoryRow>;
+}): ReadonlyArray<string> => {
+  if (scouts === null) {
+    return [];
+  }
+  if (scouts.section === null) {
+    inventory.push({
+      id: 'scouts',
+      label: 'scouts',
+      summary: scouts.note ?? REPORT_NO_SCOUT_COPY,
+      state: 'missing',
+      detail: ['the report is written from the evidence in this pack alone'],
+    });
+    return [];
+  }
+  inventory.push({
+    id: 'scouts',
+    label: 'scouts',
+    summary: `${scouts.names.length} scouts read the diff context in parallel, one turn each: ${scouts.names.join(', ')}`,
+    state: 'included',
+    detail: [],
+  });
+  return [scouts.section];
+};
+
 export const buildReportContext = ({
   reportType,
   brief = null,
@@ -453,6 +493,7 @@ export const buildReportContext = ({
   scriptRuns,
   diff,
   diffUnavailableReason = null,
+  scouts = null,
   workflowRunId,
   capturedAt,
 }: ReportContextParams): ReportContext => {
@@ -505,6 +546,7 @@ export const buildReportContext = ({
     agentSection({ agents: scopedAgentList, transcripts, truncations, sourceIds, inventory }),
     artifactSection({ artifacts: scopedArtifactList, truncations, sourceIds, inventory }),
     diffSection({ diff, reason: diffUnavailableReason, inventory }),
+    ...scoutBlock({ scouts, inventory }),
     scriptSection({ scriptRuns, inventory }),
     eventSection({ events, truncations, inventory }),
   ].join('\n\n');
@@ -518,11 +560,12 @@ export const buildReportContext = ({
       ? '## truncation\n\nnothing was truncated.'
       : `## truncation\n\n${truncations.map((note) => `- ${note}`).join('\n')}`;
 
+  const questions = artifactQuestionContract({ kind: 'report' });
   const sections = [
     ...(request.text.length > 0
       ? [`# user request\n\n${redactSecrets({ text: request.text })}`]
       : []),
-    `${capped.text}\n\n${notes}`,
+    `${capped.text}\n\n${notes}\n\n${questions}`,
   ];
   inventory.push(excludedInventoryRow({ summary: REPORT_EXCLUDED_COPY }));
   inventory.push(

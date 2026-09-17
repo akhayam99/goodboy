@@ -359,7 +359,9 @@ export {
 export {
   putArtifactProvenance,
   getArtifactProvenance,
+  updateArtifactRun,
   type PutArtifactProvenanceInput,
+  type UpdateArtifactRunInput,
 } from './queries/artifact-provenance';
 export {
   listPlansForSession,

@@ -6,12 +6,13 @@ import { spawnReportAgent } from './spawnReportAgent';
 import { spawnWireframeAgent } from './spawnWireframeAgent';
 import { updateArtifactSource } from './updateArtifactSource';
 import {
-  expireWireframeScouts,
-  joinWireframeScouts,
-  recoverWireframeScouts,
+  expireArtifactScouts,
+  joinArtifactScouts,
+  recoverArtifactScouts,
+  startReportScouts,
   startWireframeScouts,
   stopArtifactGeneration,
-} from './wireframeScouts';
+} from './artifactScoutRun';
 import type { GetFn, SetFn } from './types';
 
 export { artifactsInitialState } from './state';
@@ -32,9 +33,10 @@ export const createArtifactsSlice = (set: SetFn, get: GetFn) => {
     spawnReportAgent: spawnReportAgent(get),
     spawnWireframeAgent: spawnWireframeAgent(get),
     startWireframeScouts: startWireframeScouts(set, get),
-    joinWireframeScouts: joinWireframeScouts(set, get),
-    expireWireframeScouts: expireWireframeScouts(set, get),
-    recoverWireframeScouts: recoverWireframeScouts(set, get),
+    startReportScouts: startReportScouts(set, get),
+    joinArtifactScouts: joinArtifactScouts(set, get),
+    expireArtifactScouts: expireArtifactScouts(set, get),
+    recoverArtifactScouts: recoverArtifactScouts(set, get),
     stopArtifactGeneration: stopArtifactGeneration(set, get),
   };
 };

@@ -142,38 +142,3 @@ export const wireframeScoutSectionEntry = ({
     note: null,
   };
 };
-
-type SectionParams = Readonly<{
-  root: string;
-  entries: ReadonlyArray<WireframeScoutSectionEntry>;
-}>;
-
-const entryBlock = ({ entry }: Readonly<{ entry: WireframeScoutSectionEntry }>): string => {
-  const lines = [`### ${entry.name}`];
-  if (entry.header !== null) {
-    lines.push(entry.header);
-  }
-  if (entry.body !== null) {
-    lines.push(entry.body);
-    return lines.join('\n\n');
-  }
-  lines.push(`this scout reported nothing usable: ${entry.note ?? 'no reason was recorded'}`);
-  return lines.join('\n\n');
-};
-
-export const wireframeScoutSection = ({ root, entries }: SectionParams): string => {
-  const usable = entries.filter((entry) => entry.body !== null);
-  const head = [
-    '## scout reports',
-    `${entries.length} scouts read the mounted repository in parallel, one turn each, rooted at ${root}.`,
-    WIREFRAME_SCOUT_HEARSAY_RULE,
-  ].join('\n\n');
-  if (usable.length === 0) {
-    return [head, WIREFRAME_SCOUT_NOTHING_USABLE, ...entries.map((entry) => entryBlock({ entry }))]
-      .join('\n\n')
-      .slice(0, WIREFRAME_SCOUT_LIMITS.section);
-  }
-  return [head, ...entries.map((entry) => entryBlock({ entry }))]
-    .join('\n\n')
-    .slice(0, WIREFRAME_SCOUT_LIMITS.section);
-};

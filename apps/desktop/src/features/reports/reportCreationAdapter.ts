@@ -1,5 +1,6 @@
 import {
   artifactSpawnBrief,
+  artifactSpawnMountIds,
   artifactSpawnScope,
   type ArtifactCreationAdapter,
 } from '../artifacts/artifactCreationAdapter';
@@ -56,6 +57,7 @@ export const reportCreationAdapter: ArtifactCreationAdapter = {
       routing: draft.routing,
       brief: artifactSpawnBrief({ draft }),
       attachments: draft.attachments,
+      mountIds: artifactSpawnMountIds({ draft }),
       focus: 'none',
     }),
 };

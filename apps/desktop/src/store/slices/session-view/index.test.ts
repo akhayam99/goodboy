@@ -614,6 +614,7 @@ describe('store contract', () => {
           kind: 'report',
           reportType: 'change-summary',
           attachments: [],
+          mountIds: [],
           brief: 'the residual convention',
           basedOn: { kind: 'session' },
           routing: null,

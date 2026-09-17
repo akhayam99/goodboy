@@ -13,15 +13,21 @@ import type {
 
 vi.mock('../../shared/lib/db', () => ({ tauriDatabase: { execute: vi.fn(), select: vi.fn() } }));
 
-const { putArtifactProvenance, getArtifactProvenance } = vi.hoisted(() => ({
+const { putArtifactProvenance, getArtifactProvenance, updateArtifactRun } = vi.hoisted(() => ({
   putArtifactProvenance: vi.fn(),
   getArtifactProvenance: vi.fn(),
+  updateArtifactRun: vi.fn(),
 }));
 
-vi.mock('@goodboy/db', () => ({ putArtifactProvenance, getArtifactProvenance }));
+vi.mock('@goodboy/db', () => ({
+  putArtifactProvenance,
+  getArtifactProvenance,
+  updateArtifactRun,
+}));
 
 import {
   artifactEvidenceInventory,
+  completeArtifactRun,
   loadArtifactProvenance,
   recordArtifactProvenance,
 } from './artifactProvenance';
@@ -130,6 +136,11 @@ describe('recordArtifactProvenance', () => {
       omissions: ['dropped password: harborline-test-value'],
       designProfileSummary: 'theme name: Harborline, secret=harborline-test-value',
       hasDesignEvidence: true,
+      phase: 'producing',
+      scoutPlan: [],
+      mountIds: [],
+      target: 'desktop',
+      deadlineAt: null,
       sourceWorkflowRunId: RUN_ID,
       executingWorkflowRunId: null,
     });
@@ -138,6 +149,8 @@ describe('recordArtifactProvenance', () => {
     expect(input['omissions']).toEqual(['dropped password: [redacted]']);
     expect(String(input['designProfileSummary'])).toBe('theme name: Harborline, secret=[redacted]');
     expect(input['hasDesignEvidence']).toBe(true);
+    expect(input['phase']).toBe('producing');
+    expect(input['target']).toBe('desktop');
     expect(input['sourceWorkflowRunId']).toBe(RUN_ID);
     expect(input['executingWorkflowRunId']).toBeNull();
   });
@@ -152,6 +165,11 @@ describe('recordArtifactProvenance', () => {
       omissions: [],
       designProfileSummary: null,
       hasDesignEvidence: false,
+      phase: 'producing',
+      scoutPlan: [],
+      mountIds: [],
+      target: null,
+      deadlineAt: null,
       sourceWorkflowRunId: null,
       executingWorkflowRunId: null,
     });
@@ -163,5 +181,48 @@ describe('loadArtifactProvenance', () => {
   it('returns nothing for a generation that recorded nothing', async () => {
     getArtifactProvenance.mockResolvedValueOnce(null);
     expect(await loadArtifactProvenance(AGENT_ID)).toBeNull();
+  });
+});
+
+describe('completeArtifactRun', () => {
+  const row = (phase: string) => ({
+    agentId: AGENT_ID,
+    phase,
+    scoutPlan: [
+      { roleId: 'diff-context', mountId: 'mount-1', root: '.', reason: 'r', agentId: null },
+    ],
+  });
+
+  beforeEach(() => {
+    updateArtifactRun.mockClear();
+    getArtifactProvenance.mockReset();
+  });
+
+  it('marks a producing run done and keeps the roster on the row', async () => {
+    getArtifactProvenance.mockResolvedValueOnce(row('producing'));
+    await completeArtifactRun({ agentId: AGENT_ID });
+    expect(updateArtifactRun.mock.calls[0]?.[0]['input']).toEqual({
+      agentId: AGENT_ID,
+      phase: 'done',
+      scoutPlan: row('producing').scoutPlan,
+    });
+  });
+
+  it('marks a gathering run done when the artifact arrived early', async () => {
+    getArtifactProvenance.mockResolvedValueOnce(row('gathering'));
+    await completeArtifactRun({ agentId: AGENT_ID });
+    expect(updateArtifactRun.mock.calls[0]?.[0]['input']['phase']).toBe('done');
+  });
+
+  it('never reopens a run the user already stopped', async () => {
+    getArtifactProvenance.mockResolvedValueOnce(row('failed'));
+    await completeArtifactRun({ agentId: AGENT_ID });
+    expect(updateArtifactRun).not.toHaveBeenCalled();
+  });
+
+  it('writes nothing for an agent with no run of its own', async () => {
+    getArtifactProvenance.mockResolvedValueOnce(null);
+    await completeArtifactRun({ agentId: AGENT_ID });
+    expect(updateArtifactRun).not.toHaveBeenCalled();
   });
 });

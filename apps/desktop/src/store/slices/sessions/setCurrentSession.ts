@@ -149,7 +149,7 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
     }
 
     if (cached?.agents === true) {
-      void get().recoverWireframeScouts({ sessionId: id });
+      void get().recoverArtifactScouts({ sessionId: id });
       void get()
         .loadResolveSession({ sessionId: id })
         .catch((error: unknown) => {
@@ -213,7 +213,7 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
             agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
           }));
           markDone('agents');
-          void get().recoverWireframeScouts({ sessionId: id });
+          void get().recoverArtifactScouts({ sessionId: id });
           void get()
             .loadResolveSession({ sessionId: id })
             .catch((error: unknown) => {

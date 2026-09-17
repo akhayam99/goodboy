@@ -1,6 +1,7 @@
 import { formatError } from '@goodboy/ui';
 import type { AgentId, IsoDateTime, PlanId, SessionId } from '@goodboy/types';
 import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
+import { selectDefaultArtifactMountIds } from '../../../features/artifacts/artifactMountChoice';
 import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
 import {
   addPlanConsumption as invokeAddPlanConsumption,
@@ -153,6 +154,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
             workflowRunId: agent.workflowRunId ?? null,
             brief: promptPrefix,
             attachments: [],
+            mountIds: selectDefaultArtifactMountIds({ state: get(), sessionId }),
             executingAgentId: agentId,
             ...(effectiveKind === 'report'
               ? { kind: 'report', reportType: 'session-summary' }

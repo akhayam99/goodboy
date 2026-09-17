@@ -1,4 +1,4 @@
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import type {
   ArtifactCreationDraft,
@@ -77,6 +77,12 @@ export const artifactSpawnScope = ({
   readonly draft: ArtifactCreationDraft;
 }): Parameters<ArtifactSpawnActions['spawnReportAgent']>[0]['workflowRunId'] =>
   draft.basedOn.kind === 'workflow-run' ? draft.basedOn.workflowRunId : null;
+
+export const artifactSpawnMountIds = ({
+  draft,
+}: {
+  readonly draft: ArtifactCreationDraft;
+}): ReadonlyArray<MountId> => draft.mountIds;
 
 export const artifactSpawnBrief = ({
   draft,

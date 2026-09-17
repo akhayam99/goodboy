@@ -18,6 +18,7 @@ import {
   invokeAgentUpdateStatus,
   type AgentInsertArgs,
 } from '../../../features/workflows/workflows';
+import { loadArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
 import { worktreeChangedFiles } from '../../../features/worktree/worktree';
 import {
   KIND_TO_ROLE,
@@ -536,8 +537,9 @@ const maybeSynthesizeParent = async ({
   if (!container) {
     return;
   }
-  if (resolveAgentKind(container) === 'wireframe') {
-    await get().joinWireframeScouts({ sessionId, containerId: parentId });
+  const provenance = await loadArtifactProvenance(parentId).catch(() => null);
+  if (provenance !== null && provenance.phase === 'gathering') {
+    await get().joinArtifactScouts({ sessionId, containerId: parentId });
     return;
   }
   activateAgent({

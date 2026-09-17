@@ -4,6 +4,10 @@ import type {
   ArtifactEvidenceSource,
   ArtifactKind,
   ArtifactProvenance,
+  ArtifactRunPhase,
+  ArtifactRunTarget,
+  ArtifactScoutPlanEntry,
+  MountId,
   Session,
   SessionArtifact,
   SessionId,
@@ -12,6 +16,7 @@ import type {
 import {
   getArtifactProvenance as dbGetArtifactProvenance,
   putArtifactProvenance as dbPutArtifactProvenance,
+  updateArtifactRun as dbUpdateArtifactRun,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
 import { redactSecrets } from '../../shared/utils/redactSecrets';
@@ -79,6 +84,11 @@ export type RecordArtifactProvenanceArgs = {
   readonly omissions: ReadonlyArray<string>;
   readonly designProfileSummary: string | null;
   readonly hasDesignEvidence: boolean;
+  readonly phase: ArtifactRunPhase;
+  readonly scoutPlan: ReadonlyArray<ArtifactScoutPlanEntry>;
+  readonly mountIds: ReadonlyArray<MountId>;
+  readonly target: ArtifactRunTarget | null;
+  readonly deadlineAt: number | null;
   readonly sourceWorkflowRunId: WorkflowRunId | null;
   readonly executingWorkflowRunId: WorkflowRunId | null;
 };
@@ -101,9 +111,44 @@ export const recordArtifactProvenance = async (
           ? null
           : redactSecrets({ text: args.designProfileSummary }),
       hasDesignEvidence: args.hasDesignEvidence,
+      phase: args.phase,
+      scoutPlan: args.scoutPlan,
+      mountIds: args.mountIds,
+      target: args.target,
+      deadlineAt: args.deadlineAt,
       sourceWorkflowRunId: args.sourceWorkflowRunId,
       executingWorkflowRunId: args.executingWorkflowRunId,
     },
+  });
+};
+
+export type AdvanceArtifactRunArgs = {
+  readonly agentId: AgentId;
+  readonly phase: ArtifactRunPhase;
+  readonly scoutPlan: ReadonlyArray<ArtifactScoutPlanEntry>;
+};
+
+export const advanceArtifactRun = async ({
+  agentId,
+  phase,
+  scoutPlan,
+}: AdvanceArtifactRunArgs): Promise<void> => {
+  await dbUpdateArtifactRun({ db: tauriDatabase, input: { agentId, phase, scoutPlan } });
+};
+
+export const completeArtifactRun = async ({
+  agentId,
+}: Readonly<{ agentId: AgentId }>): Promise<void> => {
+  const current = await dbGetArtifactProvenance({ db: tauriDatabase, agentId });
+  if (current === null) {
+    return;
+  }
+  if (current.phase !== 'gathering' && current.phase !== 'producing') {
+    return;
+  }
+  await dbUpdateArtifactRun({
+    db: tauriDatabase,
+    input: { agentId, phase: 'done', scoutPlan: current.scoutPlan },
   });
 };
 
@@ -135,6 +180,11 @@ export const appendArtifactProvenanceOmission = async ({
       omissions: [...current.omissions, note],
       designProfileSummary: current.designProfileSummary,
       hasDesignEvidence: current.hasDesignEvidence,
+      phase: current.phase,
+      scoutPlan: current.scoutPlan,
+      mountIds: current.mountIds,
+      target: current.target,
+      deadlineAt: current.deadlineAt,
       sourceWorkflowRunId: current.sourceWorkflowRunId,
       executingWorkflowRunId: current.executingWorkflowRunId,
     },
