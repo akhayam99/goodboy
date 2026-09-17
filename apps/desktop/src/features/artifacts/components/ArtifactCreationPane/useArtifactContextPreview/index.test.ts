@@ -187,6 +187,45 @@ describe('useArtifactContextPreview', () => {
     );
   });
 
+  it('reads the repository again once a selected mount is repointed', async () => {
+    const mountRow = (worktreePath: string, revision: number) => ({
+      mountId: 'mount-web',
+      sessionId: SESSION_ID,
+      projectId: 'project-1',
+      mountName: 'web',
+      worktreePath,
+      lastWorktreePath: null,
+      repoRoot: '/repo/web',
+      branch: 'ak/feat-x',
+      baseBranch: 'main',
+      parallelIndex: 0,
+      isAttached: true,
+      diskState: 'present',
+      revision,
+    });
+    state.sessionProjectMounts = { [SESSION_ID]: [mountRow('/tmp/before', 1)] };
+    const { result, rerender } = renderHook(() =>
+      useArtifactContextPreview({
+        sessionId: SESSION_ID,
+        kind: 'wireframe',
+        basedOn: { kind: 'session' },
+        choice: 'high',
+        secondChoice: 'both',
+        attachments: [],
+        mountIds: ['mount-web'] as never,
+      }),
+    );
+    await waitFor(() => {
+      expect(result.current.status).toBe('ready');
+    });
+    expect(collectDesignProfile).toHaveBeenCalledTimes(1);
+    state.sessionProjectMounts = { [SESSION_ID]: [mountRow('/tmp/after', 2)] };
+    rerender();
+    await waitFor(() => {
+      expect(collectDesignProfile).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it('previews the walked repository that yielded nothing exactly as the spawn packs it', async () => {
     collectDesignProfile.mockResolvedValueOnce({
       source: 'mount',

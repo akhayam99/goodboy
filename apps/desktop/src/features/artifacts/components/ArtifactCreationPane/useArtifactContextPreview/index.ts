@@ -154,7 +154,8 @@ export const useArtifactContextPreview = ({
   const [preview, setPreview] = useState<ArtifactContextPreview>(EMPTY);
   const mountRevision = useAppStore((s) =>
     selectArtifactMountOptions({ state: s, sessionId })
-      .map((option) => option.mountId)
+      .filter((option) => mountIds.includes(option.mountId))
+      .map((option) => `${option.mountId}:${option.worktreePath}:${option.revision}`)
       .join('|'),
   );
   const scopeKey = basedOn.kind === 'workflow-run' ? basedOn.workflowRunId : '';

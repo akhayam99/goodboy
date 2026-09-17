@@ -12,6 +12,7 @@ export type ArtifactMountOption = Readonly<{
   branch: string;
   baseBranch: string | null;
   worktreePath: string;
+  revision: number;
 }>;
 
 type SessionParams = Readonly<{
@@ -34,11 +35,15 @@ export const selectArtifactMountOptions = ({
       branch: mount.branch,
       baseBranch: mount.baseBranch,
       worktreePath: mount.worktreePath,
+      revision: mount.revision,
     }));
 
 export const artifactMountOptionsKey = ({ state, sessionId }: SessionParams): string =>
   selectArtifactMountOptions({ state, sessionId })
-    .map((option) => `${option.mountId}:${option.mountName}:${option.branch}`)
+    .map(
+      (option) =>
+        `${option.mountId}:${option.mountName}:${option.branch}:${option.worktreePath}:${option.revision}`,
+    )
     .join('|');
 
 type DefaultParams = Readonly<{

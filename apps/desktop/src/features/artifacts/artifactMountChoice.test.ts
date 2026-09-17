@@ -18,10 +18,12 @@ const mountRow = ({
   mountId,
   mountName,
   worktreePath = `/tmp/${mountId}`,
+  revision = 1,
 }: {
   readonly mountId: string;
   readonly mountName: string;
   readonly worktreePath?: string;
+  readonly revision?: number;
 }) => ({
   mountId: mountId as MountId,
   sessionId: SESSION_ID,
@@ -35,7 +37,7 @@ const mountRow = ({
   parallelIndex: 0,
   isAttached: true,
   diskState: 'present',
-  revision: 1,
+  revision,
 });
 
 const stateWith = (
@@ -55,6 +57,7 @@ const option = (mountId: string): ArtifactMountOption => ({
   branch: 'main',
   baseBranch: 'main',
   worktreePath: `/tmp/${mountId}`,
+  revision: 1,
 });
 
 describe('selectArtifactMountOptions', () => {
@@ -70,7 +73,27 @@ describe('selectArtifactMountOptions', () => {
 
   it('keys the options by what the row shows', () => {
     const state = stateWith([mountRow({ mountId: 'mount-web', mountName: 'web' })]);
-    expect(artifactMountOptionsKey({ state, sessionId: SESSION_ID })).toBe('mount-web:web:ak/web');
+    expect(artifactMountOptionsKey({ state, sessionId: SESSION_ID })).toBe(
+      'mount-web:web:ak/web:/tmp/mount-web:1',
+    );
+  });
+
+  it('changes the key when a mount is repointed under the same name and branch', () => {
+    const before = stateWith([mountRow({ mountId: 'mount-web', mountName: 'web' })]);
+    const after = stateWith([
+      mountRow({ mountId: 'mount-web', mountName: 'web', worktreePath: '/tmp/moved' }),
+    ]);
+    expect(artifactMountOptionsKey({ state: after, sessionId: SESSION_ID })).not.toBe(
+      artifactMountOptionsKey({ state: before, sessionId: SESSION_ID }),
+    );
+  });
+
+  it('changes the key when a mount is reattached at a new revision', () => {
+    const before = stateWith([mountRow({ mountId: 'mount-web', mountName: 'web' })]);
+    const after = stateWith([mountRow({ mountId: 'mount-web', mountName: 'web', revision: 2 })]);
+    expect(artifactMountOptionsKey({ state: after, sessionId: SESSION_ID })).not.toBe(
+      artifactMountOptionsKey({ state: before, sessionId: SESSION_ID }),
+    );
   });
 });
 
