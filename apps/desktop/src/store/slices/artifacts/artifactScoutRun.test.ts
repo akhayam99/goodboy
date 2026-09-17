@@ -509,6 +509,22 @@ describe('wireframe scout join', () => {
     expect(pack).toContain('most of what it reported could not be found on disk');
   });
 
+  it('sends one pack when two joins race on the same container', async () => {
+    const h = harness();
+    const containerId = await spawn(h);
+    await settle(h, 'screens and routes', 'the batch list renders totals apps/web/src/Batches.tsx');
+    h.sendTurn.mockClear();
+    const join = h.state['joinArtifactScouts'] as (args: Record<string, unknown>) => Promise<void>;
+    await Promise.all([
+      join({ sessionId: SESSION_ID, containerId }),
+      join({ sessionId: SESSION_ID, containerId }),
+    ]);
+    const containerTurns = h.sendTurn.mock.calls.filter(
+      (call) => (call[0] as Record<string, unknown>)['agentId'] === containerId,
+    );
+    expect(containerTurns).toHaveLength(1);
+  });
+
   it('never splits a wireframe scout, whatever it emits', async () => {
     const h = harness();
     await spawn(h);

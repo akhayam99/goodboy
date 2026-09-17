@@ -619,23 +619,29 @@ const joinArtifactScoutsFor = async ({
   if (joined.has(containerId)) {
     return;
   }
+  joined.add(containerId);
   const provenance = await loadArtifactProvenance(containerId).catch(() => null);
-  if (provenance === null || provenance.phase !== 'gathering') {
+  if (provenance === null) {
+    joined.delete(containerId);
+    return;
+  }
+  if (provenance.phase !== 'gathering') {
     return;
   }
   const context =
     containers.get(containerId) ??
     recoveredContext({ state: get(), sessionId, containerId, provenance });
   if (context === null) {
+    joined.delete(containerId);
     return;
   }
-  joined.add(containerId);
-  clearDeadline({ containerId });
   const state = get();
   const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
   if (session === null) {
+    joined.delete(containerId);
     return;
   }
+  clearDeadline({ containerId });
   const agents = state.sessionPhaseRuns?.[sessionId] ?? [];
   const knownPaths =
     context.kind === 'report'
