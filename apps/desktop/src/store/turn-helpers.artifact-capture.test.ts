@@ -185,6 +185,18 @@ describe('captureArtifactsFromTurn', () => {
     expect(createArtifact).toHaveBeenCalledWith(
       expect.objectContaining({ metadata: { fidelity: 'low', designProfile: { tokens: 1 } } }),
     );
+    expect(appendArtifactProvenanceOmission).not.toHaveBeenCalled();
+  });
+
+  it('notes the downgrade on a high fidelity request the agent reported as low', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    await run(wireframeTurn('low'), 'High fidelity');
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: { fidelity: 'low', designProfile: { tokens: 1 } } }),
+    );
+    expect(appendArtifactProvenanceOmission).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: AGENT_ID }),
+    );
   });
 
   it('leaves a low fidelity claim alone without a downgrade note', async () => {

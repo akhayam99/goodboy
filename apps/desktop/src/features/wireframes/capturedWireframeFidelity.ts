@@ -1,7 +1,7 @@
 import type { WireframeFidelity } from './wireframeFidelity';
 
 export const WIREFRAME_FIDELITY_DOWNGRADE_NOTE =
-  'fidelity forced to low: no design source survived for this agent, so the theme it claimed is not backed by anything read from the repository';
+  'fidelity forced to low: this wireframe was asked for high fidelity, but no design source survived for this agent, so no theme here is backed by anything read from the repository';
 
 export type CapturedWireframeFidelity = Readonly<{
   fidelity: WireframeFidelity;
@@ -10,20 +10,18 @@ export type CapturedWireframeFidelity = Readonly<{
 
 type Params = Readonly<{
   requested: WireframeFidelity | null;
-  claimed: WireframeFidelity;
   hasDesignSource: boolean;
 }>;
 
 export const capturedWireframeFidelity = ({
   requested,
-  claimed,
   hasDesignSource,
 }: Params): CapturedWireframeFidelity => {
-  if (requested === 'high' && hasDesignSource) {
+  if (requested !== 'high') {
+    return { fidelity: 'low', note: null };
+  }
+  if (hasDesignSource) {
     return { fidelity: 'high', note: null };
   }
-  if (claimed === 'high') {
-    return { fidelity: 'low', note: WIREFRAME_FIDELITY_DOWNGRADE_NOTE };
-  }
-  return { fidelity: 'low', note: null };
+  return { fidelity: 'low', note: WIREFRAME_FIDELITY_DOWNGRADE_NOTE };
 };
