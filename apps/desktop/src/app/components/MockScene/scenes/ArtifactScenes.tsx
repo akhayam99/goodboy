@@ -5,6 +5,7 @@ import { CreateReportCta } from '../../../../features/reports/components/CreateR
 import { CreateWireframeCta } from '../../../../features/wireframes/components/CreateWireframeCta';
 import {
   REPORT_ARTIFACT_ID,
+  SCOUTING_WIREFRAME_RUN_TITLE,
   SESSION_ID,
   WIREFRAME_HIGH_ARTIFACT_ID,
   WIREFRAME_LOW_ARTIFACT_ID,
@@ -12,16 +13,34 @@ import {
 } from './artifactSeed';
 
 type Props = {
-  readonly artifactId: ArtifactId;
+  readonly artifactId: ArtifactId | null;
+  readonly openRunTitle?: string;
 };
 
-const ArtifactScene = ({ artifactId }: Props) => {
+const ArtifactScene = ({ artifactId, openRunTitle }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     seedArtifactScene({ focusedArtifactId: artifactId });
     setIsReady(true);
   }, [artifactId]);
+
+  useEffect(() => {
+    if (!isReady || openRunTitle === undefined) {
+      return;
+    }
+    const interval = window.setInterval(() => {
+      const row = [...window.document.querySelectorAll('button')].find((button) =>
+        button.textContent?.startsWith(openRunTitle),
+      );
+      if (row === undefined) {
+        return;
+      }
+      row.click();
+      window.clearInterval(interval);
+    }, 120);
+    return () => window.clearInterval(interval);
+  }, [isReady, openRunTitle]);
 
   if (!isReady) {
     return null;
@@ -48,4 +67,8 @@ export const ArtifactWireframeLowScene = () => (
 
 export const ArtifactWireframeHighScene = () => (
   <ArtifactScene artifactId={WIREFRAME_HIGH_ARTIFACT_ID} />
+);
+
+export const ArtifactGeneratingScene = () => (
+  <ArtifactScene artifactId={null} openRunTitle={SCOUTING_WIREFRAME_RUN_TITLE} />
 );

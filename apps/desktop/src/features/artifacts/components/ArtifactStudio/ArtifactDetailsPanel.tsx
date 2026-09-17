@@ -1,6 +1,7 @@
 import { MetaRow, PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { Agent, ArtifactId, SessionArtifact, SessionId } from '@goodboy/types';
 import { ArtifactReportProvenance } from './ArtifactReportProvenance';
+import { ArtifactScouts } from './ArtifactScouts';
 import { ArtifactWireframeProvenance } from './ArtifactWireframeProvenance';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
@@ -58,5 +59,10 @@ export const ArtifactDetailsPanel = ({
       />
     ) : null}
     {artifact.kind === 'wireframe' ? <ArtifactWireframeProvenance artifact={artifact} /> : null}
+    <ArtifactScouts
+      sessionId={sessionId}
+      agentId={artifact.agentId}
+      emptyLine="no scout read a repository for this one"
+    />
   </div>
 );
