@@ -13,8 +13,8 @@ const RAIL_VISIBILITY_CLASSES = {
   always: { root: '', rail: 'flex', divider: '' },
   wideContainer: {
     root: '@container',
-    rail: 'hidden @min-[1265px]:flex',
-    divider: 'hidden @min-[1265px]:block',
+    rail: 'hidden @min-[1025px]:flex',
+    divider: 'hidden @min-[1025px]:block',
   },
 } satisfies Record<
   string,
@@ -46,7 +46,7 @@ export const StudioRailLayout = ({
         {rail}
       </aside>
       <Divider orientation="vertical" className={visibility.divider} />
-      <div className="min-h-0 flex-1">{detail}</div>
+      <div className="min-h-0 min-w-0 flex-1">{detail}</div>
     </div>
   );
 };
