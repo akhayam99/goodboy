@@ -111,6 +111,12 @@ type SelectProjectParams = {
 
 type ToggleManifestParams = {
   readonly key: string;
+  readonly isOpen: boolean;
+};
+
+type ManifestOpenParams = {
+  readonly key: string;
+  readonly index: number;
 };
 
 type SearchTarget = {
@@ -381,13 +387,12 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
       : filteredManifestGroups.filter((entry) => entry.group.scripts.length > 0);
   const openManifests =
     selectedProjectId === null ? undefined : manifestOpenByProject[selectedProjectId];
-  const isManifestOpen = ({
-    key,
-    index,
-  }: {
-    readonly key: string;
-    readonly index: number;
-  }): boolean => openManifests?.[key] ?? (normalizedQuery !== '' || index === 0);
+  const isManifestOpen = ({ key, index }: ManifestOpenParams): boolean => {
+    if (normalizedQuery !== '') {
+      return true;
+    }
+    return openManifests?.[key] ?? index === 0;
+  };
   const selectedManifestCount = filteredManifestGroups.reduce(
     (total, entry) => total + entry.group.scripts.length,
     0,
@@ -668,13 +673,12 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
   }, []);
 
   const onToggleManifest = useCallback(
-    ({ key }: ToggleManifestParams) => {
+    ({ key, isOpen }: ToggleManifestParams) => {
       if (selectedProjectId === null) {
         return;
       }
       setManifestOpenByProject((current) => {
         const forProject = current[selectedProjectId] ?? {};
-        const isOpen = forProject[key] ?? false;
         return { ...current, [selectedProjectId]: { ...forProject, [key]: !isOpen } };
       });
     },
@@ -912,6 +916,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                   <div className="flex min-w-0 flex-1 flex-col gap-5">
                     {visibleManifestGroups.map((entry, index) => {
                       const key = manifestKey(entry);
+                      const isOpen = isManifestOpen({ key, index });
                       return (
                         <DiscoveredScriptGroup
                           key={key}
@@ -922,8 +927,8 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                           emptyLabel={
                             normalizedQuery === '' ? 'No scripts in this manifest.' : null
                           }
-                          isOpen={isManifestOpen({ key, index })}
-                          onToggle={() => onToggleManifest({ key })}
+                          isOpen={isOpen}
+                          onToggle={() => onToggleManifest({ key, isOpen })}
                           onRun={onRunDiscovered}
                           onCancel={onCancelDiscovered}
                         />

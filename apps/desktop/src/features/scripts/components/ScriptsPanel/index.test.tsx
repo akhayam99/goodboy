@@ -374,6 +374,33 @@ describe('ScriptsPanel', () => {
     expect(screen.getByRole('button', { name: /pnpm run dev/ })).toBeDefined();
   });
 
+  it('opens a matching package the user had collapsed, then gives the collapse back', () => {
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'package-json',
+            packageName: 'root',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [{ name: 'build', command: 'pnpm run build' }],
+          },
+        ],
+      },
+    };
+
+    renderPanel();
+
+    fireEvent.click(within(manifestSection()).getByRole('button', { name: /root/ }));
+    expect(screen.queryByRole('button', { name: /pnpm run build/ })).toBeNull();
+
+    fireEvent.change(searchBox(), { target: { value: 'build' } });
+    expect(screen.getByRole('button', { name: /pnpm run build/ })).toBeDefined();
+
+    fireEvent.keyDown(searchBox(), { key: 'Escape' });
+    expect(screen.queryByRole('button', { name: /pnpm run build/ })).toBeNull();
+  });
+
   it('opens the only package of a project without asking', () => {
     state.discoveredScripts = {
       'session-1': {
