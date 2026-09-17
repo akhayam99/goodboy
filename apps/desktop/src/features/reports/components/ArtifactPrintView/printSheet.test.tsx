@@ -77,6 +77,23 @@ const reportWithList = {
   ].join('\n'),
 };
 
+const reportWithCallout = {
+  ...report,
+  sourceText: [
+    '## What shipped',
+    '',
+    '<<question>>who signs the release<</question>>',
+    '',
+    '## Checks',
+    '',
+    'text',
+    '',
+    '## Risk',
+    '',
+    'text',
+  ].join('\n'),
+};
+
 const wideWireframe = {
   ...report,
   kind: 'wireframe',
@@ -242,5 +259,14 @@ describe('print sheet styling', () => {
     const item = styleOf({ selector: '.print-body li' }).lineHeight;
     expect(paragraph).toBe('1.5');
     expect(item).toBe(paragraph);
+  });
+  it('keeps the callout label a flex row while its wrappers stay blocks', async () => {
+    adoptSheet({ css: SHEET_CSS });
+    await renderArtifact({ artifact: reportWithCallout });
+
+    expect(styleOf({ selector: "[data-block='callout-label']" }).display).toBe('flex');
+    expect(styleOf({ selector: "[data-block='callout-label']" }).alignItems).toBe('baseline');
+    expect(styleOf({ selector: "[data-block='callout']" }).display).toBe('block');
+    expect(styleOf({ selector: '.print-body > div > div' }).display).toBe('block');
   });
 });

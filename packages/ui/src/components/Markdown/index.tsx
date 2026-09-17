@@ -373,6 +373,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
           className={cn('flex flex-col gap-1.5 rounded-md border p-3 text-sm', style.calloutClass)}
         >
           <div
+            data-block="callout-label"
             className={cn(
               'inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-eyebrow',
               style.calloutLabelClass,

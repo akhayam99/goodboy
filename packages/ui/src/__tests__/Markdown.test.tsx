@@ -291,6 +291,13 @@ describe('Markdown print hooks', () => {
     expect(chip?.getAttribute('data-tone')).toBe('goal');
   });
 
+  it('marks the callout label row so the print sheet can keep it a row', () => {
+    const { container } = render(<Markdown text="<<question>>who signs<</question>>" />);
+    const label = container.querySelector('[data-block="callout-label"]');
+    expect(label).not.toBeNull();
+    expect(label?.textContent).toContain('question');
+  });
+
   it('marks an ascii tree paragraph as a tree block', () => {
     const { container } = render(
       <Markdown text={['src', '├── index.ts', '└── cn.ts'].join('\n')} />,

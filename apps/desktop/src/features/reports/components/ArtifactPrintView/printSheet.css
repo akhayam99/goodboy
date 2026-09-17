@@ -124,6 +124,17 @@
   display: block;
   overflow: visible;
 }
+.print-sheet .print-body [data-block='callout-label'] {
+  align-items: baseline;
+  color: var(--print-tone);
+  display: flex;
+  font-size: 7.5pt;
+  font-weight: 600;
+  gap: 0.4em;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.3em;
+  text-transform: uppercase;
+}
 .print-sheet .print-body > div {
   color: #14161a;
   font-size: 10.5pt;
@@ -312,13 +323,6 @@
   padding: 0.55em 0.75em;
   page-break-inside: avoid;
   print-color-adjust: exact;
-}
-.print-sheet .print-body [data-block='callout'] > div:first-child {
-  color: var(--print-tone);
-  font-size: 7.5pt;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 .print-sheet .print-body [data-block='chip'] {
   -webkit-print-color-adjust: exact;
