@@ -58,13 +58,7 @@ export const DiscoveredScriptRow = ({
           ) : null}
           <CardActionSlot label="Script lifecycle actions">
             {status === 'pending' ? (
-              <CardAction
-                icon={Square}
-                label={`Stop ${name}`}
-                tone="danger"
-                size="default"
-                onClick={onCancel}
-              />
+              <CardAction icon={Square} label={`Stop ${name}`} size="default" onClick={onCancel} />
             ) : (
               <CardAction icon={Play} label={`Run ${name}`} size="default" onClick={onRun} />
             )}

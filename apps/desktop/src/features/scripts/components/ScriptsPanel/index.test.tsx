@@ -680,7 +680,8 @@ describe('ScriptsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     fireEvent.click(within(rail()).getByRole('button', { name: /API/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Edit script' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit script' }));
     await act(async () => {
       fireEvent.change(screen.getByRole('combobox', { name: 'Edit script project' }), {
         target: { value: 'project-2' },
@@ -718,7 +719,8 @@ describe('ScriptsPanel', () => {
     state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
     renderSettingsPanel();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit script' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit script' }));
     const textarea = screen.getByRole('textbox', { name: 'Edit setup command' });
     fireEvent.change(textarea, { target: { value: 'echo hi again' } });
     await act(async () => {
@@ -771,14 +773,12 @@ describe('ScriptsPanel', () => {
     expect(screen.getByRole('button', { name: 'Collapse setup' })).toBeDefined();
   });
 
-  it('deletes a script through its lifecycle action after confirmation', async () => {
+  it('deletes a script from its menu after confirmation', async () => {
     state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
     renderSettingsPanel();
 
-    const lifecycleSlot = screen.getByRole('group', { name: 'Script lifecycle actions' });
-    const deleteAction = screen.getByRole('button', { name: 'Delete script' });
-    expect(lifecycleSlot.contains(deleteAction)).toBe(true);
-    fireEvent.click(deleteAction);
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete script' }));
     expect(state.deleteScript).not.toHaveBeenCalled();
     expect(screen.getByRole('group', { name: 'Delete "setup"?' })).toBeDefined();
     await act(async () => {

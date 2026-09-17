@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, Copy, Pencil, Play, Square, Trash2 } from 'lucide-react';
-import { InlineConfirm, StatusDot, Textarea, cn } from '@goodboy/ui';
+import { InlineConfirm, OverflowMenu, StatusDot, Textarea, cn } from '@goodboy/ui';
 import type { Project, ProjectId, ProjectScript } from '@goodboy/types';
 import { CardAction } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
@@ -44,16 +44,21 @@ type ProjectChangeParams = {
   readonly projectId: ProjectId;
 };
 
-const extractPreviewLine = ({ body }: PreviewParams): string => {
+const PREAMBLE = /^(set\s+-|cd\s+"?\$\(dirname\b)/;
+
+export const extractPreviewLine = ({ body }: PreviewParams): string => {
   const lines = body.split('\n');
   for (const line of lines) {
     const trimmed = line.trim();
-    if (trimmed === '' || trimmed.startsWith('#!')) {
+    if (trimmed === '' || trimmed.startsWith('#')) {
+      continue;
+    }
+    if (PREAMBLE.test(trimmed)) {
       continue;
     }
     return trimmed;
   }
-  return '';
+  return 'empty script';
 };
 
 export const ScriptRow = ({
@@ -219,13 +224,7 @@ export const ScriptRow = ({
           ) : null}
           <CardActionSlot label="Script lifecycle actions">
             {runnable && status === 'pending' ? (
-              <CardAction
-                icon={Square}
-                label="Stop script"
-                tone="danger"
-                size="default"
-                onClick={onCancel}
-              />
+              <CardAction icon={Square} label="Stop script" size="default" onClick={onCancel} />
             ) : null}
             {runnable && status !== 'pending' ? (
               <CardAction
@@ -237,28 +236,31 @@ export const ScriptRow = ({
                 onClick={onRun}
               />
             ) : null}
-            <CardAction
-              icon={copied ? Check : Copy}
-              label="Copy script"
-              tone={copied ? 'success' : 'neutral'}
-              size="default"
-              highlighted={copied}
-              onClick={onCopy}
-            />
-            <CardAction
-              icon={Pencil}
-              label="Edit script"
-              size="default"
-              onClick={() => startEditing({ field: 'body' })}
-            />
-            <CardAction
-              icon={Trash2}
-              label="Delete script"
-              tone="danger"
-              size="default"
-              highlighted={isDeleteArmed}
-              expanded={isDeleteArmed}
-              onClick={() => setIsDeleteArmed(true)}
+            <OverflowMenu
+              label="More"
+              align="right"
+              trigger={<span className="px-1 text-2xs">More</span>}
+              items={[
+                {
+                  kind: 'item',
+                  key: 'copy',
+                  label: copied ? 'Copied' : 'Copy script',
+                  onClick: onCopy,
+                },
+                {
+                  kind: 'item',
+                  key: 'edit',
+                  label: 'Edit script',
+                  onClick: () => startEditing({ field: 'body' }),
+                },
+                {
+                  kind: 'item',
+                  key: 'delete',
+                  label: 'Delete script',
+                  destructive: true,
+                  onClick: () => setIsDeleteArmed(true),
+                },
+              ]}
             />
           </CardActionSlot>
           <CardActionSlot label="Script navigation actions">
