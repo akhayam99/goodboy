@@ -66,27 +66,33 @@ export const ArtifactScoutList = ({ rows, emptyLine }: Props) => {
           <li
             key={row.key}
             data-testid="artifact-scout-row"
-            className="flex min-w-0 items-baseline gap-2 text-2xs text-muted-foreground"
+            className="flex min-w-0 flex-col gap-0.5 text-2xs text-muted-foreground"
           >
-            <span
-              aria-hidden
-              className={cn('mt-1 size-1.5 shrink-0 rounded-full', DOT_CLASS[row.state])}
-            />
-            <span className="shrink-0 font-medium text-foreground">{row.name}</span>
-            {where === null ? null : (
+            <span className="flex min-w-0 items-baseline gap-2">
               <span
-                className="max-w-[20rem] shrink-0 truncate font-mono"
-                title={row.root === null ? where : row.root}
-              >
-                {where}
-              </span>
-            )}
+                aria-hidden
+                className={cn('mt-1 size-1.5 shrink-0 rounded-full', DOT_CLASS[row.state])}
+              />
+              <span className="shrink-0 font-medium text-foreground">{row.name}</span>
+              {where === null ? null : (
+                <span
+                  className="min-w-0 shrink truncate font-mono"
+                  title={row.root === null ? where : row.root}
+                >
+                  {where}
+                </span>
+              )}
+              <span className="ml-auto shrink-0 tabular-nums">{stateLine({ row })}</span>
+            </span>
             {row.reason === null ? null : (
-              <span className="min-w-0 flex-1 truncate" title={row.reason}>
+              <span
+                data-testid="artifact-scout-reason"
+                className="min-w-0 truncate pl-3.5"
+                title={row.reason}
+              >
                 {row.reason}
               </span>
             )}
-            <span className="ml-auto shrink-0 tabular-nums">{stateLine({ row })}</span>
           </li>
         );
       })}
