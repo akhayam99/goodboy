@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
 const { store } = vi.hoisted(() => ({
@@ -11,12 +11,18 @@ const { store } = vi.hoisted(() => ({
     clearPendingTitleFocus: vi.fn(),
     sessionGithub: {},
     sessionExternalTasks: {},
+    sessionArtifacts: {} as Record<string, ReadonlyArray<{ readonly kind: string }>>,
+    sessionResolveQueueItems: {},
+    sessionResolveAttempts: {},
+    sessionResolvePublications: {},
+    sessionOpenQuestions: {} as Record<string, ReadonlyArray<unknown>>,
   },
 }));
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
+  useSessionOpenQuestions: (id: string) => store.sessionOpenQuestions[id] ?? [],
 }));
 
 vi.mock('../../hooks/useSessionTitleRename', () => ({
@@ -71,6 +77,33 @@ describe('HeaderBand', () => {
   beforeEach(() => {
     store.pendingTitleFocusSessionId = null;
     store.clearPendingTitleFocus.mockClear();
+    store.sessionArtifacts = {};
+    store.sessionOpenQuestions = {};
+  });
+
+  it('stays clear of attention chips when nothing is waiting', () => {
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+
+    expect(screen.queryByRole('button', { name: /Artifacts/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Questions/ })).toBeNull();
+  });
+
+  it('counts the artifacts this session wrote and opens their page', () => {
+    store.sessionArtifacts = {
+      'session-1': [{ kind: 'report' }, { kind: 'wireframe' }, { kind: 'plan' }],
+    };
+    store.sessionOpenQuestions = { 'session-1': [{ id: 'q1' }] };
+    const onSelectLens = vi.fn();
+    render(<HeaderBand session={session} onSelectLens={onSelectLens} goal={<div>Goal</div>} />);
+
+    const chip = screen.getByRole('button', { name: /Artifacts/ });
+    expect(chip.textContent).toContain('2');
+
+    fireEvent.click(chip);
+    expect(onSelectLens).toHaveBeenCalledWith('plans');
+
+    fireEvent.click(screen.getByRole('button', { name: /Questions/ }));
+    expect(onSelectLens).toHaveBeenCalledWith('questions');
   });
 
   it('keeps only archive and delete in the title action zone', () => {
