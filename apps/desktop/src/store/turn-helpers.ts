@@ -55,6 +55,7 @@ import type {
 import { tauriDatabase } from '../shared/lib/db';
 import {
   appendArtifactProvenanceOmission,
+  completeArtifactRun,
   loadArtifactProvenance,
 } from '../features/artifacts/artifactProvenance';
 import { recordArtifactAssumptions } from '../features/artifacts/recordArtifactAssumptions';
@@ -720,6 +721,7 @@ export const captureArtifactsFromTurn = async ({
         metadata,
         sourceTurnId,
       }));
+    await completeArtifactRun({ agentId }).catch(() => undefined);
     const refreshed = await invokeListArtifactsForSession(sessionId);
     set((state) => ({
       sessionArtifacts: { ...state.sessionArtifacts, [sessionId]: refreshed },

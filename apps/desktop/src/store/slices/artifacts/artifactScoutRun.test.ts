@@ -130,6 +130,7 @@ import { spawnReportAgent } from './spawnReportAgent';
 import { spawnWireframeAgent } from './spawnWireframeAgent';
 import {
   ARTIFACT_RUN_LOST_ATTACHMENTS_NOTE,
+  artifactProducerRestartSummary,
   artifactRunRestartSummary,
   expireArtifactScouts,
   joinArtifactScouts,
@@ -777,6 +778,48 @@ describe('recovering a container after a restart', () => {
     expect(provenanceRows.get(containerId)?.['omissions']).not.toContain(
       ARTIFACT_RUN_LOST_ATTACHMENTS_NOTE,
     );
+  });
+
+  const produce = async (h: Harness, containerId: AgentId): Promise<void> => {
+    reportAll(h);
+    await (h.state['joinArtifactScouts'] as (args: Record<string, unknown>) => Promise<void>)({
+      sessionId: SESSION_ID,
+      containerId,
+    });
+    resetArtifactScoutRegistry();
+    h.sendTurn.mockClear();
+  };
+
+  it('leaves a run alone while the producer turn is still in flight', async () => {
+    const h = harness();
+    const containerId = await spawn(h);
+    await produce(h, containerId);
+    h.state['agentTurnState'] = {
+      [containerId]: { kind: 'running', runId: 'run-1', startedAt: NOW },
+    };
+    await recover(h);
+    expect(h.agents.find((agent) => agent.id === containerId)!.status).not.toBe('failed');
+    expect(h.sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('says the producer was cut off, never that the scouts never finished', async () => {
+    const h = harness();
+    const containerId = await spawn(h);
+    await produce(h, containerId);
+    await recover(h);
+    const container = h.agents.find((agent) => agent.id === containerId)!;
+    expect(container.status).toBe('failed');
+    expect(container.outputSummary).toBe(artifactProducerRestartSummary({ kind: 'wireframe' }));
+  });
+
+  it('leaves a run that already reached done alone', async () => {
+    const h = harness();
+    const containerId = await spawn(h);
+    await produce(h, containerId);
+    const row = provenanceRows.get(containerId)!;
+    provenanceRows.set(containerId, { ...row, phase: 'done' });
+    await recover(h);
+    expect(h.agents.find((agent) => agent.id === containerId)!.status).not.toBe('failed');
   });
 
   it('re-arms the clock instead of failing a run whose scouts are still out', async () => {

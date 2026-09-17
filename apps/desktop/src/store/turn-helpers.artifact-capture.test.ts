@@ -27,16 +27,20 @@ const {
   })),
 }));
 
-const { loadArtifactProvenance, appendArtifactProvenanceOmission } = vi.hoisted(() => ({
-  loadArtifactProvenance: vi.fn(
-    async () => null as { designProfileSummary: string | null; hasDesignEvidence?: boolean } | null,
-  ),
-  appendArtifactProvenanceOmission: vi.fn(async () => undefined),
-}));
+const { loadArtifactProvenance, appendArtifactProvenanceOmission, completeArtifactRun } =
+  vi.hoisted(() => ({
+    loadArtifactProvenance: vi.fn(
+      async () =>
+        null as { designProfileSummary: string | null; hasDesignEvidence?: boolean } | null,
+    ),
+    appendArtifactProvenanceOmission: vi.fn(async () => undefined),
+    completeArtifactRun: vi.fn(async () => undefined),
+  }));
 
 vi.mock('../features/artifacts/artifactProvenance', () => ({
   loadArtifactProvenance,
   appendArtifactProvenanceOmission,
+  completeArtifactRun,
 }));
 
 vi.mock('../features/plans/plans', () => ({ upsertPlan, listPlansForSession }));
@@ -102,6 +106,7 @@ beforeEach(() => {
   updateArtifactSource.mockClear();
   listPlansForSession.mockResolvedValue([]);
   listArtifactsForSession.mockResolvedValue([]);
+  completeArtifactRun.mockClear();
   loadArtifactProvenance.mockReset();
   loadArtifactProvenance.mockResolvedValue(null);
   appendArtifactProvenanceOmission.mockClear();
@@ -419,6 +424,15 @@ describe('captureArtifactsFromTurn revisions', () => {
     expect(updateArtifactSource).not.toHaveBeenCalled();
     expect(createArtifact).not.toHaveBeenCalled();
     expect(result.artifact).toMatchObject({ id: 'artifact-0' });
+  });
+
+  it('marks the run done once the artifact it produced is stored', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    listArtifactsForSession.mockResolvedValue([]);
+
+    await run(REPORT_TURN('## Outcome'));
+
+    expect(completeArtifactRun).toHaveBeenCalledWith({ agentId: AGENT_ID });
   });
 
   it('creates the artifact of an agent with no run of its own, same document or not', async () => {

@@ -2,10 +2,12 @@ import type {
   Agent,
   AgentId,
   ArtifactProvenance,
+  ArtifactRunPhase,
   ArtifactScoutPlanEntry,
   IsoDateTime,
   MountId,
   SessionId,
+  TurnState,
   WorkflowRunId,
 } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
@@ -60,6 +62,11 @@ export type ArtifactRunKind = 'wireframe' | 'report';
 
 export const artifactRunRestartSummary = ({ kind }: Readonly<{ kind: ArtifactRunKind }>): string =>
   `the app restarted before the scouts finished, so this ${kind} was never written. try again.`;
+
+export const artifactProducerRestartSummary = ({
+  kind,
+}: Readonly<{ kind: ArtifactRunKind }>): string =>
+  `the app restarted while this ${kind} was being written, so it was never finished. try again.`;
 
 export type ArtifactRunMount = Readonly<{
   mountId: MountId;
@@ -753,6 +760,39 @@ export const stopArtifactGeneration = (set: SetFn, get: GetFn) => {
   };
 };
 
+type ArtifactRunRecovery = 'rejoin' | 'wait' | 'leave' | 'abandon-scouts' | 'abandon-producer';
+
+const LIVE_TURN_KINDS: ReadonlyArray<TurnState['kind']> = ['starting', 'running', 'blocked'];
+
+const recoveryFor = ({
+  phase,
+  isSettled,
+  isTurnLive,
+}: Readonly<{
+  phase: ArtifactRunPhase;
+  isSettled: boolean;
+  isTurnLive: boolean;
+}>): ArtifactRunRecovery => {
+  switch (phase) {
+    case 'gathering': {
+      return isSettled ? 'rejoin' : 'wait';
+    }
+    case 'producing': {
+      return isTurnLive ? 'leave' : 'abandon-producer';
+    }
+    case 'done': {
+      return 'leave';
+    }
+    case 'failed': {
+      return 'leave';
+    }
+    default: {
+      const unreachable: never = phase;
+      return unreachable;
+    }
+  }
+};
+
 const isStalledContainer = ({ container }: Readonly<{ container: Agent }>): boolean =>
   RECOVERABLE_KINDS.includes(container.kind) &&
   container.deletedAt == null &&
@@ -795,22 +835,43 @@ export const recoverArtifactScouts = (set: SetFn, get: GetFn) => {
     let isAbandoned = false;
     for (const container of stalled) {
       const provenance = await loadArtifactProvenance(container.id).catch(() => null);
-      if (provenance !== null && provenance.phase === 'gathering') {
-        const children = childrenOf({ agents, containerId: container.id });
-        const isSettled = children.every((child) => TERMINAL.includes(child.status));
-        if (isSettled) {
-          await get().joinArtifactScouts({ sessionId, containerId: container.id });
-          continue;
-        }
+      const kind: ArtifactRunKind = container.kind === 'report' ? 'report' : 'wireframe';
+      const children = childrenOf({ agents, containerId: container.id });
+      const decision: ArtifactRunRecovery =
+        provenance === null
+          ? 'abandon-scouts'
+          : recoveryFor({
+              phase: provenance.phase,
+              isSettled: children.every((child) => TERMINAL.includes(child.status)),
+              isTurnLive: LIVE_TURN_KINDS.includes(
+                get().agentTurnState?.[container.id]?.kind ?? 'idle',
+              ),
+            });
+      if (decision === 'leave') {
+        continue;
+      }
+      if (decision === 'rejoin') {
+        await get().joinArtifactScouts({ sessionId, containerId: container.id });
+        continue;
+      }
+      if (decision === 'wait') {
         rearmDeadline({
           get,
           sessionId,
           containerId: container.id,
-          deadlineAt: provenance.deadlineAt,
+          deadlineAt: provenance?.deadlineAt ?? null,
         });
         continue;
       }
       isAbandoned = true;
+      if (decision === 'abandon-producer') {
+        await invokeAgentUpdateStatus(container.id, {
+          status: 'failed',
+          outputSummary: artifactProducerRestartSummary({ kind }),
+          completedAt: nowIso(),
+        }).catch(() => undefined);
+        continue;
+      }
       await settleChildren({
         set,
         get,
@@ -820,9 +881,7 @@ export const recoverArtifactScouts = (set: SetFn, get: GetFn) => {
       });
       await invokeAgentUpdateStatus(container.id, {
         status: 'failed',
-        outputSummary: artifactRunRestartSummary({
-          kind: container.kind === 'report' ? 'report' : 'wireframe',
-        }),
+        outputSummary: artifactRunRestartSummary({ kind }),
         completedAt: nowIso(),
       }).catch(() => undefined);
     }

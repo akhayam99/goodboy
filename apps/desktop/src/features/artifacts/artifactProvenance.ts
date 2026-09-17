@@ -136,6 +136,22 @@ export const advanceArtifactRun = async ({
   await dbUpdateArtifactRun({ db: tauriDatabase, input: { agentId, phase, scoutPlan } });
 };
 
+export const completeArtifactRun = async ({
+  agentId,
+}: Readonly<{ agentId: AgentId }>): Promise<void> => {
+  const current = await dbGetArtifactProvenance({ db: tauriDatabase, agentId });
+  if (current === null) {
+    return;
+  }
+  if (current.phase !== 'gathering' && current.phase !== 'producing') {
+    return;
+  }
+  await dbUpdateArtifactRun({
+    db: tauriDatabase,
+    input: { agentId, phase: 'done', scoutPlan: current.scoutPlan },
+  });
+};
+
 export const loadArtifactProvenance = async (
   agentId: AgentId,
 ): Promise<ArtifactProvenance | null> => dbGetArtifactProvenance({ db: tauriDatabase, agentId });
