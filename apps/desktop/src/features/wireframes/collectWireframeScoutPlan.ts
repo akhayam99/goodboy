@@ -1,6 +1,6 @@
 import type { MountId, SessionId, WorkflowRunId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
-import { selectActiveMount } from '../../store/slices/project-mounts/selectors';
+import { resolveArtifactMounts, type ArtifactMountOption } from '../artifacts/artifactMountChoice';
 import {
   childRoutingBatch,
   type ChildRoutingBatch,
@@ -18,6 +18,7 @@ import {
   WIREFRAME_SCOUT_SKIP_NO_MOUNT,
   wireframeScoutSkipRouting,
   type WireframeScoutPlan,
+  type WireframeScoutRoot,
 } from './wireframeScoutPlan';
 import { WIREFRAME_SCOUTS } from './wireframeScoutRoles';
 
@@ -25,9 +26,7 @@ export type WireframeScoutGate =
   | Readonly<{ kind: 'skipped'; reason: string }>
   | Readonly<{
       kind: 'ready';
-      mountId: MountId;
-      mountName: string;
-      worktreePath: string;
+      mounts: ReadonlyArray<ArtifactMountOption>;
       modelLabel: string;
       routing: ChildRoutingBatch;
     }>;
@@ -36,15 +35,17 @@ type GateParams = Readonly<{
   state: AppStore;
   sessionId: SessionId;
   workflowRunId: WorkflowRunId | null;
+  mountIds: ReadonlyArray<MountId>;
 }>;
 
 export const wireframeScoutGate = ({
   state,
   sessionId,
   workflowRunId,
+  mountIds,
 }: GateParams): WireframeScoutGate => {
-  const mount = selectActiveMount({ state, sessionId });
-  if (mount === null || mount.worktreePath.length === 0) {
+  const mounts = resolveArtifactMounts({ state, sessionId, mountIds });
+  if (mounts.length === 0) {
     return { kind: 'skipped', reason: WIREFRAME_SCOUT_SKIP_NO_MOUNT };
   }
   const availability = workflowAvailabilitySnapshot({
@@ -89,9 +90,7 @@ export const wireframeScoutGate = ({
   const model = first?.modelOverride ?? fallback.model;
   return {
     kind: 'ready',
-    mountId: mount.mountId,
-    mountName: mount.mountName,
-    worktreePath: mount.worktreePath,
+    mounts,
     modelLabel: `${PROVIDER_LABEL[provider]} ${modelLabel(model)}`,
     routing,
   };
@@ -101,6 +100,7 @@ type PlanParams = Readonly<{
   state: AppStore;
   sessionId: SessionId;
   workflowRunId: WorkflowRunId | null;
+  mountIds: ReadonlyArray<MountId>;
   goal: string;
   brief: string | null;
 }>;
@@ -110,18 +110,16 @@ export type WireframeScoutPlanResult = Readonly<{
   gate: WireframeScoutGate;
 }>;
 
-export const collectWireframeScoutPlan = async ({
-  state,
-  sessionId,
-  workflowRunId,
+const pinnedRootOf = async ({
+  mount,
   goal,
   brief,
-}: PlanParams): Promise<WireframeScoutPlanResult> => {
-  const gate = wireframeScoutGate({ state, sessionId, workflowRunId });
-  if (gate.kind === 'skipped') {
-    return { plan: { kind: 'skipped', reason: gate.reason }, gate };
-  }
-  const sessionDir = gate.worktreePath;
+}: Readonly<{
+  mount: ArtifactMountOption;
+  goal: string;
+  brief: string | null;
+}>): Promise<WireframeScoutRoot> => {
+  const sessionDir = mount.worktreePath;
   const candidates = await collectWireframeScoutRootCandidates({
     list: ({ relPath }) => exploreList({ sessionDir, relPath }),
     read: async ({ relPath }) => {
@@ -131,10 +129,34 @@ export const collectWireframeScoutPlan = async ({
   }).catch(() => []);
   const pinned = pinWireframeScoutRoot({ candidates, goal, brief });
   return {
+    mountId: mount.mountId,
+    mountName: mount.mountName,
+    worktreePath: mount.worktreePath,
+    root: pinned.path,
+    rootReason: pinned.reason,
+  };
+};
+
+export const collectWireframeScoutPlan = async ({
+  state,
+  sessionId,
+  workflowRunId,
+  mountIds,
+  goal,
+  brief,
+}: PlanParams): Promise<WireframeScoutPlanResult> => {
+  const gate = wireframeScoutGate({ state, sessionId, workflowRunId, mountIds });
+  if (gate.kind === 'skipped') {
+    return { plan: { kind: 'skipped', reason: gate.reason }, gate };
+  }
+  const roots: Array<WireframeScoutRoot> = [];
+  for (const mount of gate.mounts) {
+    roots.push(await pinnedRootOf({ mount, goal, brief }));
+  }
+  return {
     plan: {
       kind: 'ready',
-      root: pinned.path,
-      rootReason: pinned.reason,
+      roots,
       scouts: WIREFRAME_SCOUTS,
       modelLabel: gate.modelLabel,
     },

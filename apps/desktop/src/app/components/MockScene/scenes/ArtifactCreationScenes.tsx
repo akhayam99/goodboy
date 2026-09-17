@@ -42,6 +42,7 @@ const draftFor = ({
   const base = {
     brief,
     attachments: [],
+    mountIds: [],
     basedOn: { kind: 'workflow-run', workflowRunId: RUN_ID },
     routing: null,
     updatedAt: AT,

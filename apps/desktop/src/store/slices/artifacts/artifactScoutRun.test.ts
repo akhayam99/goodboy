@@ -127,6 +127,7 @@ import { advanceScoutTree } from '../workflows/scoutTree';
 import { spawnReportAgent } from './spawnReportAgent';
 import { spawnWireframeAgent } from './spawnWireframeAgent';
 import {
+  ARTIFACT_RUN_LOST_ATTACHMENTS_NOTE,
   artifactRunRestartSummary,
   expireArtifactScouts,
   joinArtifactScouts,
@@ -176,16 +177,21 @@ const MOUNT = {
 const READY_PLAN = {
   plan: {
     kind: 'ready',
-    root: 'apps/web',
-    rootReason: '"web" names this workspace',
+    roots: [
+      {
+        mountId: MOUNT.mountId,
+        mountName: MOUNT.mountName,
+        worktreePath: MOUNT.worktreePath,
+        root: 'apps/web',
+        rootReason: '"web" names this workspace',
+      },
+    ],
     scouts: WIREFRAME_SCOUTS,
     modelLabel: 'Claude Haiku 4.5',
   },
   gate: {
     kind: 'ready',
-    mountId: 'mount-1',
-    mountName: 'web',
-    worktreePath: '/tmp/worktree',
+    mounts: [MOUNT],
     modelLabel: 'Claude Haiku 4.5',
   },
 };
@@ -695,6 +701,47 @@ describe('recovering a container after a restart', () => {
     expect(row['target']).toBe('both');
     expect((row['scoutPlan'] as ReadonlyArray<Record<string, unknown>>).length).toBe(
       WIREFRAME_SCOUTS.length,
+    );
+  });
+
+  it('says on the row that a recovered pack lost the attached files', async () => {
+    const h = harness();
+    const containerId = await spawn(h);
+    reportAll(h);
+    resetArtifactScoutRegistry();
+    await recover(h);
+    expect(provenanceRows.get(containerId)?.['omissions']).toContain(
+      ARTIFACT_RUN_LOST_ATTACHMENTS_NOTE,
+    );
+  });
+
+  it('says nothing about attachments on a run that never lost its context', async () => {
+    const h = harness();
+    const containerId = await spawn(h);
+    await (
+      h.state['advanceScoutTree'] as (
+        sessionId: SessionId,
+        agentId: AgentId,
+        assistantText: string,
+      ) => Promise<void>
+    )(
+      SESSION_ID,
+      childOf({ agents: h.agents, name: 'screens and routes' }).id,
+      'a apps/web/src/Batches.tsx',
+    );
+    await (
+      h.state['advanceScoutTree'] as (
+        sessionId: SessionId,
+        agentId: AgentId,
+        assistantText: string,
+      ) => Promise<void>
+    )(
+      SESSION_ID,
+      childOf({ agents: h.agents, name: 'data and contracts' }).id,
+      'b apps/web/src/Batches.tsx',
+    );
+    expect(provenanceRows.get(containerId)?.['omissions']).not.toContain(
+      ARTIFACT_RUN_LOST_ATTACHMENTS_NOTE,
     );
   });
 

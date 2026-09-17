@@ -2,6 +2,7 @@ import { PROVIDER_IDS } from '@goodboy/types';
 import type {
   AgentEffort,
   IsoDateTime,
+  MountId,
   ProviderId,
   SessionId,
   WorkflowRunId,
@@ -65,6 +66,13 @@ const readRouting = (value: unknown): ArtifactCreationRouting | null => {
   };
 };
 
+const readMountIds = (value: unknown): ReadonlyArray<MountId> => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((entry): entry is MountId => typeof entry === 'string' && entry.length > 0);
+};
+
 const readDraft = (value: unknown): ArtifactCreationDraft | null => {
   if (!isRecord(value)) {
     return null;
@@ -72,6 +80,7 @@ const readDraft = (value: unknown): ArtifactCreationDraft | null => {
   const base = {
     brief: typeof value['brief'] === 'string' ? value['brief'] : '',
     attachments: [],
+    mountIds: readMountIds(value['mountIds']),
     basedOn: readBasedOn(value['basedOn']),
     routing: readRouting(value['routing']),
     updatedAt: typeof value['updatedAt'] === 'string' ? (value['updatedAt'] as IsoDateTime) : EPOCH,

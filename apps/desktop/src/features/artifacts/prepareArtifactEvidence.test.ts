@@ -113,6 +113,7 @@ describe('prepareArtifactEvidence', () => {
       workflowRunId: RUN_ID,
       brief: null,
       attachments: [],
+      mountIds: [],
       executingAgentId: null,
       kind: 'report',
       reportType: 'session-summary',
@@ -133,6 +134,7 @@ describe('prepareArtifactEvidence', () => {
       workflowRunId: RUN_ID,
       brief: null,
       attachments: [],
+      mountIds: [],
       executingAgentId: null,
       kind: 'wireframe',
       target: 'both',
@@ -163,6 +165,7 @@ describe('prepareArtifactEvidence', () => {
       workflowRunId: RUN_ID,
       brief: null,
       attachments: [],
+      mountIds: [],
       executingAgentId: null,
       kind: 'wireframe',
       target: 'both',
@@ -191,6 +194,7 @@ describe('prepareArtifactEvidence', () => {
       workflowRunId: RUN_ID,
       brief: null,
       attachments: [],
+      mountIds: [],
       executingAgentId: null,
       kind: 'wireframe',
       target: 'both',
@@ -208,6 +212,7 @@ describe('prepareArtifactEvidence', () => {
         workflowRunId: RUN_ID,
         brief: null,
         attachments: [],
+        mountIds: [],
         executingAgentId: EXECUTING_ID,
         ...(kind === 'report'
           ? { kind: 'report' as const, reportType: 'session-summary' as const }
@@ -231,6 +236,7 @@ describe('prepareArtifactEvidence', () => {
       workflowRunId: RUN_ID,
       brief: null,
       attachments: [],
+      mountIds: [],
       executingAgentId: null,
       kind: 'report',
       reportType: 'session-summary',
@@ -261,6 +267,7 @@ describe('prepareArtifactEvidence session goal', () => {
         workflowRunId: RUN_ID,
         brief: null,
         attachments: [],
+        mountIds: [],
         executingAgentId: null,
         ...(kind === 'report'
           ? { kind: 'report' as const, reportType: 'session-summary' as const }
@@ -279,6 +286,7 @@ describe('prepareArtifactEvidence session goal', () => {
         workflowRunId: RUN_ID,
         brief: 'match this layout',
         attachments: [SCREEN],
+        mountIds: [],
         executingAgentId: null,
         ...(kind === 'report'
           ? { kind: 'report' as const, reportType: 'session-summary' as const }
@@ -300,6 +308,7 @@ describe('prepareArtifactEvidence session goal', () => {
         workflowRunId: RUN_ID,
         brief: null,
         attachments: [SCREEN],
+        mountIds: [],
         executingAgentId: null,
         ...(kind === 'report'
           ? { kind: 'report' as const, reportType: 'session-summary' as const }
@@ -317,6 +326,7 @@ describe('prepareArtifactEvidence session goal', () => {
       workflowRunId: RUN_ID,
       brief: null,
       attachments: [],
+      mountIds: [],
       executingAgentId: null,
       kind: 'report',
       reportType: 'session-summary',

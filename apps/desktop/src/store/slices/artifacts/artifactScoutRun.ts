@@ -77,10 +77,14 @@ type ArtifactRunContext = Readonly<{
   workflowRunId: WorkflowRunId | null;
   brief: string | null;
   attachments: ReadonlyArray<ArtifactAttachment>;
+  hasLostAttachments: boolean;
   mounts: ReadonlyArray<ArtifactRunMount>;
   picks: ReadonlyArray<ArtifactScoutPick>;
 }> &
   ArtifactRunShape;
+
+export const ARTIFACT_RUN_LOST_ATTACHMENTS_NOTE =
+  'the app restarted while the scouts were out, so the files attached to the brief are not in this pack';
 
 const scoutsOf = ({
   picks,
@@ -240,6 +244,7 @@ const contextFor = ({
     workflowRunId: params.workflowRunId,
     brief: params.brief,
     attachments: params.attachments,
+    hasLostAttachments: false,
     mounts: params.mounts,
     picks,
   };
@@ -518,6 +523,7 @@ const recoveredContext = ({
     workflowRunId: provenance.sourceWorkflowRunId,
     brief: provenance.brief,
     attachments: [],
+    hasLostAttachments: true,
     mounts: recoveredMounts({ state, sessionId, provenance, picks }),
     picks,
   };
@@ -566,6 +572,7 @@ const preparedPack = async ({
     workflowRunId: context.workflowRunId,
     brief: context.brief,
     attachments: context.attachments,
+    mountIds: context.mounts.map((mount) => mount.mountId),
     executingAgentId: containerId,
   };
   if (context.kind === 'report') {
@@ -623,8 +630,13 @@ const joinArtifactScoutsFor = async ({
   const agents = state.sessionPhaseRuns?.[sessionId] ?? [];
   const knownPaths =
     context.kind === 'report'
-      ? ((await collectReportDiffEvidence({ state, sessionId }).catch(() => null))?.evidence
-          ?.paths ?? [])
+      ? ((
+          await collectReportDiffEvidence({
+            state,
+            sessionId,
+            mountIds: context.mounts.map((mount) => mount.mountId),
+          }).catch(() => null)
+        )?.evidence?.paths ?? [])
       : [];
   const verified = await verifyReports({ agents, containerId, context, knownPaths });
   set((current) => {
@@ -658,6 +670,9 @@ const joinArtifactScoutsFor = async ({
   });
   await recordArtifactProvenance({
     ...prepared.provenance,
+    omissions: context.hasLostAttachments
+      ? [...prepared.provenance.omissions, ARTIFACT_RUN_LOST_ATTACHMENTS_NOTE]
+      : prepared.provenance.omissions,
     phase: 'producing',
     scoutPlan: plan,
     mountIds: provenance.mountIds,

@@ -1,6 +1,6 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../store/types';
-import { selectActiveMount } from '../../store/slices/project-mounts/selectors';
+import { resolveArtifactMounts } from '../artifacts/artifactMountChoice';
 import { listBranchCommits, worktreeChangedFiles } from '../worktree/worktree';
 import type { ReportDiffEvidence, ReportDiffUnavailableReason } from './buildReportContext';
 
@@ -13,14 +13,16 @@ export type ReportDiffCollection = Readonly<{
 type Params = Readonly<{
   state: AppState;
   sessionId: SessionId;
+  mountIds: ReadonlyArray<MountId>;
 }>;
 
 export const collectReportDiffEvidence = async ({
   state,
   sessionId,
+  mountIds,
 }: Params): Promise<ReportDiffCollection> => {
-  const mount = selectActiveMount({ state, sessionId });
-  if (mount === null || mount.worktreePath.length === 0) {
+  const mount = resolveArtifactMounts({ state, sessionId, mountIds })[0] ?? null;
+  if (mount === null) {
     return { mountId: null, evidence: null, reason: 'no-mount' };
   }
   const baseBranch = mount.baseBranch ?? 'main';

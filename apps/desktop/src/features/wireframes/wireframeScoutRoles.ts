@@ -3,8 +3,6 @@ import { redactSecrets } from '../../shared/utils/redactSecrets';
 
 export const WIREFRAME_SCOUT_IDS = ['screens', 'data'] as const;
 
-export type WireframeScoutId = (typeof WIREFRAME_SCOUT_IDS)[number];
-
 export type WireframeScout = Readonly<{
   id: string;
   name: string;

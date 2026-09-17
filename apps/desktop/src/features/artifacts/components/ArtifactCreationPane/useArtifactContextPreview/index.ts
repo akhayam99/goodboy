@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { runsForWorkflowRun } from '@goodboy/core';
-import type { IsoDateTime, SessionId } from '@goodboy/types';
+import type { IsoDateTime, MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { selectActiveMount } from '../../../../../store/slices/project-mounts/selectors';
 import type { AppStore } from '../../../../../store/store';
 import type { ArtifactBasedOn } from '../../../../../store/slices/artifactDrafts/types';
 import { buildReportContext, REPORT_CONTEXT_LIMITS } from '../../../../reports/buildReportContext';
@@ -19,6 +18,7 @@ import { asWireframeFidelity } from '../../../../wireframes/wireframeFidelity';
 import { asWireframeTarget } from '../../../../wireframes/wireframeTarget';
 import type { ArtifactAttachment } from '../../../artifactAttachments';
 import type { ArtifactContextInventoryRow } from '../../../artifactContextInventory';
+import { selectArtifactMountOptions } from '../../../artifactMountChoice';
 import { artifactEvidenceAgents } from '../../../artifactEvidenceAgents';
 import { sessionGoalText } from '../../../sessionGoalText';
 import type { GeneratedArtifactKind } from '../../../artifactCollection';
@@ -38,6 +38,7 @@ type Params = Readonly<{
   choice: string;
   secondChoice: string;
   attachments: ReadonlyArray<ArtifactAttachment>;
+  mountIds: ReadonlyArray<MountId>;
 }>;
 
 const DEBOUNCE_MS = 300;
@@ -63,6 +64,7 @@ const collect = async ({
   choice,
   secondChoice,
   attachments,
+  mountIds,
 }: CollectParams): Promise<ArtifactContextPreview | null> => {
   const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
   if (session === null) {
@@ -79,7 +81,7 @@ const collect = async ({
   const slots = await state.ensureSessionSlots(sessionId);
   const goal = sessionGoalText({ slots, session });
   if (kind === 'report') {
-    const diff = await collectReportDiffEvidence({ state, sessionId });
+    const diff = await collectReportDiffEvidence({ state, sessionId, mountIds });
     const context = buildReportContext({
       reportType: asReportType({ value: choice }) ?? 'session-summary',
       brief: null,
@@ -107,12 +109,13 @@ const collect = async ({
   const fidelity = asWireframeFidelity({ value: choice }) ?? 'low';
   const designEvidence: DesignEvidence =
     fidelity === 'high'
-      ? await collectWireframeDesignProfile({ state, sessionId })
+      ? await collectWireframeDesignProfile({ state, sessionId, mountIds })
       : { source: 'none' };
   const scouting = await collectWireframeScoutPlan({
     state,
     sessionId,
     workflowRunId,
+    mountIds,
     goal: goal.packText,
     brief: null,
   });
@@ -146,13 +149,17 @@ export const useArtifactContextPreview = ({
   choice,
   secondChoice,
   attachments,
+  mountIds,
 }: Params): ArtifactContextPreview => {
   const [preview, setPreview] = useState<ArtifactContextPreview>(EMPTY);
-  const mountRevision = useAppStore(
-    (s) => selectActiveMount({ state: s, sessionId })?.revision ?? null,
+  const mountRevision = useAppStore((s) =>
+    selectArtifactMountOptions({ state: s, sessionId })
+      .map((option) => option.mountId)
+      .join('|'),
   );
   const scopeKey = basedOn.kind === 'workflow-run' ? basedOn.workflowRunId : '';
   const attachmentsKey = attachments.map((attachment) => attachment.relPath).join('|');
+  const mountKey = mountIds.join('|');
 
   useEffect(() => {
     let isCurrent = true;
@@ -167,6 +174,7 @@ export const useArtifactContextPreview = ({
         choice,
         secondChoice,
         attachments,
+        mountIds,
       })
         .then((next) => {
           if (isCurrent && next !== null) {
@@ -183,7 +191,7 @@ export const useArtifactContextPreview = ({
       isCurrent = false;
       window.clearTimeout(timer);
     };
-  }, [sessionId, kind, scopeKey, choice, secondChoice, attachmentsKey, mountRevision]);
+  }, [sessionId, kind, scopeKey, choice, secondChoice, attachmentsKey, mountKey, mountRevision]);
 
   return preview;
 };

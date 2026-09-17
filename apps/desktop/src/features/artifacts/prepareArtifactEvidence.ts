@@ -1,5 +1,5 @@
 import { runsForWorkflowRun } from '@goodboy/core';
-import type { AgentId, IsoDateTime, Session, WorkflowRunId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, MountId, Session, WorkflowRunId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import { buildReportContext, type ReportScoutEvidence } from '../reports/buildReportContext';
 import { collectReportDiffEvidence } from '../reports/collectReportDiffEvidence';
@@ -23,6 +23,7 @@ type Params = Readonly<{
   workflowRunId: WorkflowRunId | null;
   brief: string | null;
   attachments: ReadonlyArray<ArtifactAttachment>;
+  mountIds: ReadonlyArray<MountId>;
   executingAgentId: AgentId | null;
 }> &
   (
@@ -47,6 +48,7 @@ export const prepareArtifactEvidence = async ({
   workflowRunId,
   brief,
   attachments,
+  mountIds,
   executingAgentId,
   ...choice
 }: Params): Promise<PreparedEvidence> => {
@@ -61,7 +63,7 @@ export const prepareArtifactEvidence = async ({
   const slots = await state.ensureSessionSlots(sessionId);
   const goal = sessionGoalText({ slots, session });
   if (choice.kind === 'report') {
-    const diff = await collectReportDiffEvidence({ state, sessionId });
+    const diff = await collectReportDiffEvidence({ state, sessionId, mountIds });
     const context = buildReportContext({
       reportType: choice.reportType,
       brief,
@@ -97,7 +99,7 @@ export const prepareArtifactEvidence = async ({
         hasDesignEvidence: false,
         phase: 'producing',
         scoutPlan: [],
-        mountIds: [],
+        mountIds,
         target: null,
         deadlineAt: null,
         sourceWorkflowRunId: workflowRunId,
@@ -106,7 +108,7 @@ export const prepareArtifactEvidence = async ({
   }
   const designEvidence: DesignEvidence =
     choice.fidelity === 'high'
-      ? await collectWireframeDesignProfile({ state, sessionId })
+      ? await collectWireframeDesignProfile({ state, sessionId, mountIds })
       : { source: 'none' };
   const context = buildWireframeContext({
     fidelity: choice.fidelity,
@@ -145,7 +147,7 @@ export const prepareArtifactEvidence = async ({
         designEvidence.source !== 'none' && hasDesignEvidence({ profile: designEvidence.profile }),
       phase: 'producing',
       scoutPlan: [],
-      mountIds: [],
+      mountIds,
       target: choice.target,
       deadlineAt: null,
       sourceWorkflowRunId: workflowRunId,

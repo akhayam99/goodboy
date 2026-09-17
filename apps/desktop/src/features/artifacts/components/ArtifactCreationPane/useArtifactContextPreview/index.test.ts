@@ -86,6 +86,7 @@ describe('useArtifactContextPreview', () => {
         choice: 'session-summary',
         secondChoice: 'both',
         attachments: [],
+        mountIds: [],
       }),
     );
     expect(result.current.status).toBe('collecting');
@@ -130,6 +131,7 @@ describe('useArtifactContextPreview', () => {
         choice: 'session-summary',
         secondChoice: 'both',
         attachments: [],
+        mountIds: [],
       }),
     );
     await waitFor(() => {
@@ -149,6 +151,7 @@ describe('useArtifactContextPreview', () => {
         choice: 'low',
         secondChoice: 'both',
         attachments: [],
+        mountIds: [],
       }),
     );
     await waitFor(() => {
@@ -169,6 +172,7 @@ describe('useArtifactContextPreview', () => {
         choice: 'high',
         secondChoice: 'both',
         attachments: [],
+        mountIds: [],
       }),
     );
     await waitFor(() => {
@@ -204,6 +208,7 @@ describe('useArtifactContextPreview', () => {
         choice: 'high',
         secondChoice: 'both',
         attachments: [],
+        mountIds: [],
       }),
     );
     await waitFor(() => {
@@ -236,6 +241,7 @@ describe('useArtifactContextPreview session goal', () => {
           choice: kind === 'report' ? 'session-summary' : 'low',
           secondChoice: 'both',
           attachments: [],
+          mountIds: [],
         }),
       );
       await waitFor(() => {
@@ -258,6 +264,7 @@ describe('useArtifactContextPreview session goal', () => {
           choice: kind === 'report' ? 'session-summary' : 'low',
           secondChoice: 'both',
           attachments: [SCREEN],
+          mountIds: [],
         }),
       );
       await waitFor(() => {
@@ -281,6 +288,7 @@ describe('useArtifactContextPreview session goal', () => {
             choice: kind === 'report' ? 'session-summary' : 'low',
             secondChoice: 'both',
             attachments,
+            mountIds: [],
           }),
         );
         await waitFor(() => {
@@ -304,6 +312,7 @@ describe('useArtifactContextPreview session goal', () => {
         choice: 'session-summary',
         secondChoice: 'both',
         attachments: [],
+        mountIds: [],
       }),
     );
     await waitFor(() => {

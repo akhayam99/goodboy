@@ -13,7 +13,7 @@ import {
 } from '@goodboy/ui';
 import type { Agent, AgentId, ProviderId, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots, useSessionSlotsLoad } from '../../../../store';
-import { selectActiveMount } from '../../../../store/slices/project-mounts/selectors';
+import { selectSelectedMountId } from '../../../../store/slices/project-mounts/selectedMountId';
 import { FocusedPane } from '../../../../shared/components/PaneShell/FocusedPane';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { workflowAvailabilitySnapshot } from '../../../workflows/workflowAvailabilitySnapshot';
@@ -25,11 +25,18 @@ import { briefInventoryRow, replaceInventoryRow } from '../../artifactContextInv
 import { resolveArtifactCtaState } from '../../artifactCtaState';
 import { artifactCreationGate } from '../../artifactCreationGate';
 import { ARTIFACT_CREATION_ADAPTERS } from '../../artifactCreationAdapters';
+import {
+  artifactMountOptionsKey,
+  defaultArtifactMountIds,
+  selectArtifactMountOptions,
+  toggleArtifactMountId,
+} from '../../artifactMountChoice';
 import type { GeneratedArtifactKind } from '../../artifactCollection';
 import { ArtifactAttachmentsField } from './ArtifactAttachmentsField';
 import { ArtifactBasedOnField, type ArtifactRunOption } from './ArtifactBasedOnField';
 import { ArtifactBriefField } from './ArtifactBriefField';
 import { ArtifactChoiceRows } from './ArtifactChoiceRows';
+import { ArtifactMountRows } from './ArtifactMountRows';
 import { ArtifactContextDisclosure } from './ArtifactContextDisclosure';
 import { ArtifactCreationFooter } from './ArtifactCreationFooter';
 import { useArtifactAttachments } from './useArtifactAttachments';
@@ -73,8 +80,19 @@ export const ArtifactCreationPane = ({
   onStarted,
 }: Props) => {
   const adapter = ARTIFACT_CREATION_ADAPTERS[kind];
-  const handle = useArtifactCreationDraft({ sessionId, kind });
-  const { draft, brief, attachments, choice, secondChoice, basedOn, routing, isEmpty } = handle;
+  const mountKey = useAppStore((s) => artifactMountOptionsKey({ state: s, sessionId }));
+  const selectedMountId = useAppStore((s) => selectSelectedMountId({ state: s, sessionId }));
+  const mountOptions = useMemo(
+    () => selectArtifactMountOptions({ state: useAppStore.getState(), sessionId }),
+    [mountKey, sessionId],
+  );
+  const defaultMountIds = useMemo(
+    () => defaultArtifactMountIds({ options: mountOptions, selectedMountId }),
+    [mountOptions, selectedMountId],
+  );
+  const handle = useArtifactCreationDraft({ sessionId, kind, defaultMountIds });
+  const { draft, brief, attachments, mountIds, choice, secondChoice, basedOn, routing, isEmpty } =
+    handle;
   const files = useArtifactAttachments({ sessionId, onChange: handle.setAttachments });
   const [isStarting, setIsStarting] = useState(false);
   const [isDiscardArmed, setIsDiscardArmed] = useState(false);
@@ -137,18 +155,16 @@ export const ArtifactCreationPane = ({
   const recommendation = useAppStore(
     useShallow((s) => adapter.resolveRouting({ state: s, sessionId, choice })),
   );
-  const repo = useAppStore(
-    useShallow((s) => {
-      const mount = selectActiveMount({ state: s, sessionId });
-      return mount === null
-        ? null
-        : {
-            mountName: mount.mountName,
-            branch: mount.branch,
-            baseBranch: mount.baseBranch ?? 'main',
-          };
-    }),
-  );
+  const repo = useMemo(() => {
+    const chosen = mountOptions.find((option) => mountIds.includes(option.mountId)) ?? null;
+    return chosen === null
+      ? null
+      : {
+          mountName: chosen.mountName,
+          branch: chosen.branch,
+          baseBranch: chosen.baseBranch ?? 'main',
+        };
+  }, [mountOptions, mountIds]);
   const spawnActions = useAppStore(
     useShallow((s) => ({
       spawnReportAgent: s.spawnReportAgent,
@@ -175,6 +191,7 @@ export const ArtifactCreationPane = ({
     choice,
     secondChoice,
     attachments,
+    mountIds,
   });
   const inventory = useMemo(
     () => replaceInventoryRow({ rows: preview.inventory, row: briefInventoryRow({ brief }) }),
@@ -287,6 +304,18 @@ export const ArtifactCreationPane = ({
                   options={adapter.secondChoice.options}
                   value={secondChoice}
                   onChange={handle.setSecondChoice}
+                />
+              </section>
+            )}
+            {mountOptions.length === 0 ? null : (
+              <section className="flex min-w-0 flex-col gap-2">
+                <SectionHeader label="Read from" />
+                <ArtifactMountRows
+                  options={mountOptions}
+                  value={mountIds}
+                  onChange={(mountId) =>
+                    handle.setMountIds(toggleArtifactMountId({ mountIds, mountId }))
+                  }
                 />
               </section>
             )}

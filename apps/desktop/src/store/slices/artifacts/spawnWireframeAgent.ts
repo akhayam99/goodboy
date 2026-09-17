@@ -1,9 +1,17 @@
 import { autoModelForRole, resolveRoleRouting } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
-import type { AgentEffort, AgentId, ProviderId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type {
+  AgentEffort,
+  AgentId,
+  MountId,
+  ProviderId,
+  SessionId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import type { ArtifactAttachment } from '../../../features/artifacts/artifactAttachments';
 import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
 import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
+import { selectDefaultArtifactMountIds } from '../../../features/artifacts/artifactMountChoice';
 import { collectWireframeScoutPlan } from '../../../features/wireframes/collectWireframeScoutPlan';
 import { WIREFRAME_SCOUT_DEADLINE_MS } from '../../../features/wireframes/wireframeScoutReports';
 import { sessionGoalText } from '../../../features/artifacts/sessionGoalText';
@@ -33,6 +41,7 @@ export type SpawnWireframeAgentParams = {
   readonly routing?: WireframeRouting | null;
   readonly brief?: string | null;
   readonly attachments: ReadonlyArray<ArtifactAttachment>;
+  readonly mountIds?: ReadonlyArray<MountId>;
   readonly evidence?: string | null;
   readonly focus?: SpawnFocus;
 };
@@ -96,6 +105,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
     routing = null,
     brief = null,
     attachments,
+    mountIds,
     evidence = null,
     focus = 'agent',
   }: SpawnWireframeAgentParams): Promise<AgentId> => {
@@ -119,10 +129,12 @@ export const spawnWireframeAgent = (get: GetFn) => {
     }
     const slots = await state.ensureSessionSlots(sessionId);
     const goal = sessionGoalText({ slots, session });
+    const chosenMountIds = mountIds ?? selectDefaultArtifactMountIds({ state, sessionId });
     const scouting = await collectWireframeScoutPlan({
       state,
       sessionId,
       workflowRunId,
+      mountIds: chosenMountIds,
       goal: goal.packText,
       brief,
     });
@@ -145,7 +157,8 @@ export const spawnWireframeAgent = (get: GetFn) => {
         hasDesignEvidence: false,
         phase: 'gathering',
         scoutPlan: [],
-        mountIds: scouting.gate.kind === 'ready' ? [scouting.gate.mountId] : [],
+        mountIds:
+          scouting.gate.kind === 'ready' ? scouting.gate.mounts.map((mount) => mount.mountId) : [],
         target,
         deadlineAt: Date.now() + WIREFRAME_SCOUT_DEADLINE_MS,
         sourceWorkflowRunId: workflowRunId,
@@ -160,14 +173,12 @@ export const spawnWireframeAgent = (get: GetFn) => {
           : await get().startWireframeScouts({
               sessionId,
               containerId,
-              mounts: [
-                {
-                  mountId: scouting.gate.mountId,
-                  mountName: scouting.gate.mountName,
-                  root: scouting.plan.root,
-                  worktreePath: scouting.gate.worktreePath,
-                },
-              ],
+              mounts: scouting.plan.roots.map((entry) => ({
+                mountId: entry.mountId,
+                mountName: entry.mountName,
+                root: entry.root,
+                worktreePath: entry.worktreePath,
+              })),
               fidelity,
               target,
               workflowRunId,
@@ -187,6 +198,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
         workflowRunId,
         brief,
         attachments,
+        mountIds: chosenMountIds,
         executingAgentId: containerId,
       });
       await recordArtifactProvenance({
@@ -208,6 +220,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
       workflowRunId,
       brief,
       attachments,
+      mountIds: chosenMountIds,
       executingAgentId: null,
       scoutPlan: scouting.plan,
     });

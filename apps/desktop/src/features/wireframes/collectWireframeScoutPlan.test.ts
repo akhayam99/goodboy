@@ -42,8 +42,10 @@ import { WIREFRAME_SCOUT_SKIP_BUDGET, WIREFRAME_SCOUT_SKIP_NO_MOUNT } from './wi
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 
+const MOUNT_ID = 'mount-1' as MountId;
+
 const mount = {
-  mountId: 'mount-1' as MountId,
+  mountId: MOUNT_ID,
   sessionId: SESSION_ID,
   projectId: 'project-1' as ProjectId,
   mountName: 'goodboy',
@@ -85,6 +87,7 @@ describe('wireframeScoutGate', () => {
       state: stateWith({ sessionProjectMounts: {}, sessionActiveMount: {} }),
       sessionId: SESSION_ID,
       workflowRunId: null,
+      mountIds: [MOUNT_ID],
     });
     expect(gate).toEqual({ kind: 'skipped', reason: WIREFRAME_SCOUT_SKIP_NO_MOUNT });
   });
@@ -94,6 +97,7 @@ describe('wireframeScoutGate', () => {
       state: stateWith({ providers: [] }),
       sessionId: SESSION_ID,
       workflowRunId: null,
+      mountIds: [MOUNT_ID],
     });
     expect(gate).toEqual({ kind: 'skipped', reason: WIREFRAME_SCOUT_SKIP_BUDGET });
   });
@@ -114,6 +118,7 @@ describe('wireframeScoutGate', () => {
       }),
       sessionId: SESSION_ID,
       workflowRunId: null,
+      mountIds: [MOUNT_ID],
     });
     expect(gate).toEqual({ kind: 'skipped', reason: WIREFRAME_SCOUT_SKIP_BUDGET });
   });
@@ -135,6 +140,7 @@ describe('wireframeScoutGate', () => {
       }),
       sessionId: SESSION_ID,
       workflowRunId: null,
+      mountIds: [MOUNT_ID],
     });
     expect(gate.kind).toBe('ready');
   });
@@ -145,6 +151,7 @@ describe('wireframeScoutGate', () => {
       state: stateWith(),
       sessionId: SESSION_ID,
       workflowRunId: null,
+      mountIds: [MOUNT_ID],
     });
     expect(gate.kind).toBe('skipped');
     expect(gate.kind === 'skipped' ? gate.reason : '').toContain('no model for scout');
@@ -155,9 +162,12 @@ describe('wireframeScoutGate', () => {
       state: stateWith(),
       sessionId: SESSION_ID,
       workflowRunId: null,
+      mountIds: [MOUNT_ID],
     });
     expect(gate.kind).toBe('ready');
-    expect(gate.kind === 'ready' ? gate.worktreePath : null).toBe('/tmp/worktree');
+    expect(gate.kind === 'ready' ? gate.mounts.map((entry) => entry.worktreePath) : null).toEqual([
+      '/tmp/worktree',
+    ]);
   });
 });
 
@@ -172,11 +182,14 @@ describe('collectWireframeScoutPlan', () => {
       state: stateWith(),
       sessionId: SESSION_ID,
       workflowRunId: null,
+      mountIds: [MOUNT_ID],
       goal: 'redraw the web checkout',
       brief: null,
     });
     expect(result.plan.kind).toBe('ready');
-    expect(result.plan.kind === 'ready' ? result.plan.root : null).toBe('apps/web');
+    expect(
+      result.plan.kind === 'ready' ? result.plan.roots.map((entry) => entry.root) : null,
+    ).toEqual(['apps/web']);
   });
 
   it('carries the skip reason through when the gate refuses', async () => {
@@ -184,6 +197,7 @@ describe('collectWireframeScoutPlan', () => {
       state: stateWith({ sessionProjectMounts: {}, sessionActiveMount: {} }),
       sessionId: SESSION_ID,
       workflowRunId: null,
+      mountIds: [MOUNT_ID],
       goal: 'redraw the web checkout',
       brief: null,
     });

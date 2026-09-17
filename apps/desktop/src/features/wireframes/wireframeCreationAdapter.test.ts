@@ -1,5 +1,12 @@
 import { describe, expect, it, vi, type Mock } from 'vitest';
-import type { AgentId, IsoDateTime, ProviderId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type {
+  AgentId,
+  IsoDateTime,
+  MountId,
+  ProviderId,
+  SessionId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import type { ArtifactSpawnActions } from '../artifacts/artifactCreationAdapter';
 import type { AppStore } from '../../store/store';
 import type { ArtifactWireframeDraft } from '../../store/slices/artifactDrafts/types';
@@ -8,6 +15,7 @@ import { wireframeCreationAdapter } from './wireframeCreationAdapter';
 const SESSION_ID = 'session-harborline' as SessionId;
 const RUN_ID = 'run-northwind-2' as WorkflowRunId;
 const NOW = '2026-09-16T10:00:00.000Z' as IsoDateTime;
+const MOUNTS = ['mount-web' as MountId, 'mount-api' as MountId];
 
 const draft = (overrides: Partial<ArtifactWireframeDraft> = {}): ArtifactWireframeDraft => ({
   kind: 'wireframe',
@@ -15,6 +23,7 @@ const draft = (overrides: Partial<ArtifactWireframeDraft> = {}): ArtifactWirefra
   target: 'both',
   brief: '',
   attachments: [],
+  mountIds: [],
   basedOn: { kind: 'session' },
   routing: null,
   updatedAt: NOW,
@@ -47,6 +56,7 @@ describe('wireframeCreationAdapter', () => {
       draft: draft({
         fidelity: 'high',
         brief: 'the settlement review flow',
+        mountIds: MOUNTS,
         basedOn: { kind: 'workflow-run', workflowRunId: RUN_ID },
       }),
     });
@@ -58,6 +68,7 @@ describe('wireframeCreationAdapter', () => {
       routing: null,
       brief: 'the settlement review flow',
       attachments: [],
+      mountIds: MOUNTS,
       focus: 'none',
     });
     expect(spies.spawnReportAgent).not.toHaveBeenCalled();

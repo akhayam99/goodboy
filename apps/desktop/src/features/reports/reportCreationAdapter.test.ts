@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, type Mock } from 'vitest';
-import type { AgentId, IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, MountId, SessionId, WorkflowRunId } from '@goodboy/types';
 import type { ArtifactSpawnActions } from '../artifacts/artifactCreationAdapter';
 import type { ArtifactReportDraft } from '../../store/slices/artifactDrafts/types';
 import { reportCreationAdapter } from './reportCreationAdapter';
@@ -7,12 +7,14 @@ import { reportCreationAdapter } from './reportCreationAdapter';
 const SESSION_ID = 'session-harborline' as SessionId;
 const RUN_ID = 'run-northwind-2' as WorkflowRunId;
 const NOW = '2026-09-16T10:00:00.000Z' as IsoDateTime;
+const MOUNTS = ['mount-web' as MountId, 'mount-api' as MountId];
 
 const draft = (overrides: Partial<ArtifactReportDraft> = {}): ArtifactReportDraft => ({
   kind: 'report',
   reportType: 'session-summary',
   brief: '',
   attachments: [],
+  mountIds: [],
   basedOn: { kind: 'session' },
   routing: null,
   updatedAt: NOW,
@@ -36,6 +38,7 @@ describe('reportCreationAdapter', () => {
       draft: draft({
         reportType: 'change-summary',
         brief: '  what changed in ledger-core  ',
+        mountIds: MOUNTS,
         basedOn: { kind: 'workflow-run', workflowRunId: RUN_ID },
       }),
     });
@@ -46,6 +49,7 @@ describe('reportCreationAdapter', () => {
       routing: null,
       brief: 'what changed in ledger-core',
       attachments: [],
+      mountIds: MOUNTS,
       focus: 'none',
     });
     expect(spies.spawnWireframeAgent).not.toHaveBeenCalled();

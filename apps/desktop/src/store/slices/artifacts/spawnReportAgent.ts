@@ -10,6 +10,10 @@ import type {
 } from '@goodboy/types';
 import type { ArtifactAttachment } from '../../../features/artifacts/artifactAttachments';
 import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
+import {
+  resolveArtifactMounts,
+  selectDefaultArtifactMountIds,
+} from '../../../features/artifacts/artifactMountChoice';
 import { pickArtifactScouts } from '../../../features/artifacts/pickArtifactScouts';
 import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
 import { sessionGoalText } from '../../../features/artifacts/sessionGoalText';
@@ -17,13 +21,14 @@ import { collectReportDiffEvidence } from '../../../features/reports/collectRepo
 import { REPORT_TYPE_LABEL, type ReportType } from '../../../features/reports/reportTypes';
 import { WIREFRAME_SCOUT_DEADLINE_MS } from '../../../features/wireframes/wireframeScoutReports';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
-import { selectActiveMount } from '../project-mounts/selectors';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { ArtifactRunMount } from './artifactScoutRun';
 import type { GetFn } from './types';
 
 export const REPORT_SCOUT_PENDING_NOTE =
   'the scouts had not reported yet when this row was written';
+
+const REPORT_SCOUT_ROOT = '.';
 
 export const REPORT_SCOUT_SKIP_BUDGET =
   'this session is budget blocked, so no scout read a repository';
@@ -41,6 +46,7 @@ export type SpawnReportAgentParams = {
   readonly routing?: ReportRouting | null;
   readonly brief?: string | null;
   readonly attachments: ReadonlyArray<ArtifactAttachment>;
+  readonly mountIds?: ReadonlyArray<MountId>;
   readonly evidence?: string | null;
   readonly focus?: SpawnFocus;
 };
@@ -105,20 +111,23 @@ const withScoutNote = ({
   readonly note: string | null;
 }): ReadonlyArray<string> => (note === null ? omissions : [...omissions, note]);
 
-const reportScoutMounts = ({ state, sessionId }: UsableParams): ReadonlyArray<ArtifactRunMount> => {
-  const mount = selectActiveMount({ state, sessionId });
-  if (mount === null || mount.worktreePath.length === 0) {
-    return [];
-  }
-  return [
-    {
-      mountId: mount.mountId,
-      mountName: mount.mountName,
-      root: '.',
-      worktreePath: mount.worktreePath,
-    },
-  ];
-};
+type ScoutMountParams = Readonly<{
+  state: State;
+  sessionId: SessionId;
+  mountIds: ReadonlyArray<MountId>;
+}>;
+
+const reportScoutMounts = ({
+  state,
+  sessionId,
+  mountIds,
+}: ScoutMountParams): ReadonlyArray<ArtifactRunMount> =>
+  resolveArtifactMounts({ state, sessionId, mountIds }).map((mount) => ({
+    mountId: mount.mountId,
+    mountName: mount.mountName,
+    root: REPORT_SCOUT_ROOT,
+    worktreePath: mount.worktreePath,
+  }));
 
 export const spawnReportAgent = (get: GetFn) => {
   return async ({
@@ -128,6 +137,7 @@ export const spawnReportAgent = (get: GetFn) => {
     routing = null,
     brief = null,
     attachments,
+    mountIds,
     evidence = null,
     focus = 'agent',
   }: SpawnReportAgentParams): Promise<AgentId> => {
@@ -151,11 +161,16 @@ export const spawnReportAgent = (get: GetFn) => {
     }
     const slots = await state.ensureSessionSlots(sessionId);
     const goal = sessionGoalText({ slots, session });
-    const mounts = reportScoutMounts({ state, sessionId });
-    const mountIds = mounts.map((mount) => mount.mountId);
+    const chosenMountIds = mountIds ?? selectDefaultArtifactMountIds({ state, sessionId });
+    const mounts = reportScoutMounts({ state, sessionId, mountIds: chosenMountIds });
+    const readMountIds = mounts.map((mount) => mount.mountId);
     const diff =
       reportType === 'change-summary' && mounts.length > 0
-        ? await collectReportDiffEvidence({ state, sessionId }).catch(() => null)
+        ? await collectReportDiffEvidence({
+            state,
+            sessionId,
+            mountIds: readMountIds,
+          }).catch(() => null)
         : null;
     const changedMountIds: ReadonlyArray<MountId> =
       diff === null || diff.evidence === null || diff.mountId === null ? [] : [diff.mountId];
@@ -191,7 +206,7 @@ export const spawnReportAgent = (get: GetFn) => {
         hasDesignEvidence: false,
         phase: 'gathering',
         scoutPlan: [],
-        mountIds,
+        mountIds: readMountIds,
         target: null,
         deadlineAt: Date.now() + WIREFRAME_SCOUT_DEADLINE_MS,
         sourceWorkflowRunId: workflowRunId,
@@ -224,12 +239,13 @@ export const spawnReportAgent = (get: GetFn) => {
         workflowRunId,
         brief,
         attachments,
+        mountIds: readMountIds,
         executingAgentId: containerId,
       });
       await recordArtifactProvenance({
         ...fallback.provenance,
         omissions: withScoutNote({ omissions: fallback.provenance.omissions, note: scoutNote }),
-        mountIds,
+        mountIds: readMountIds,
         agentId: containerId,
         executingWorkflowRunId: null,
       }).catch((error: unknown) => {
@@ -247,6 +263,7 @@ export const spawnReportAgent = (get: GetFn) => {
       workflowRunId,
       brief,
       attachments,
+      mountIds: readMountIds,
       executingAgentId: null,
     });
     const agentId = await get().spawnAgent(sessionId, {
@@ -261,7 +278,7 @@ export const spawnReportAgent = (get: GetFn) => {
     await recordArtifactProvenance({
       ...prepared.provenance,
       omissions: withScoutNote({ omissions: prepared.provenance.omissions, note: scoutNote }),
-      mountIds,
+      mountIds: readMountIds,
       agentId,
       executingWorkflowRunId: null,
     }).catch((error: unknown) => {
