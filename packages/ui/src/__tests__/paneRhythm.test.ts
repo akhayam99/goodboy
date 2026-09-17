@@ -6,6 +6,13 @@ describe('PANE_RHYTHM', () => {
     expect(PANE_RHYTHM.header).toContain(PANE_RHYTHM.inset);
     expect(PANE_RHYTHM.body).toContain(PANE_RHYTHM.inset);
     expect(PANE_RHYTHM.dock).toContain(PANE_RHYTHM.inset);
+    expect(PANE_RHYTHM.detail.band).toContain(PANE_RHYTHM.inset);
+    expect(PANE_RHYTHM.detail.body).toContain(PANE_RHYTHM.inset);
+  });
+
+  it('keeps the detail band shorter than the pane header it replaces', () => {
+    expect(PANE_RHYTHM.detail.band).toBe('px-6 py-2');
+    expect(PANE_RHYTHM.header).toBe('px-6 py-5');
   });
 
   it('keeps every supported measure available', () => {

@@ -40,7 +40,8 @@ const TESTER_AGENT_ID = 'mock-artifact-agent-tester' as AgentId;
 const REPORT_AGENT_ID = 'mock-artifact-agent-report' as AgentId;
 const CHANGE_REPORT_AGENT_ID = 'mock-artifact-agent-change-report' as AgentId;
 const WIREFRAME_AGENT_ID = 'mock-artifact-agent-wireframe' as AgentId;
-const SCOUTING_WIREFRAME_AGENT_ID = 'mock-artifact-agent-wireframe-scouting' as AgentId;
+export const SCOUTING_WIREFRAME_AGENT_ID = 'mock-artifact-agent-wireframe-scouting' as AgentId;
+export const SCOUTING_WIREFRAME_RUN_TITLE = 'High fidelity';
 const SCREENS_SCOUT_AGENT_ID = 'mock-artifact-agent-scout-screens' as AgentId;
 const DATA_SCOUT_AGENT_ID = 'mock-artifact-agent-scout-data' as AgentId;
 
@@ -255,7 +256,7 @@ const AGENTS: ReadonlyArray<Agent> = [
     id: SCOUTING_WIREFRAME_AGENT_ID,
     sessionId: SESSION_ID,
     ordinal: 7,
-    name: 'High fidelity',
+    name: SCOUTING_WIREFRAME_RUN_TITLE,
     kind: 'wireframe',
     status: 'running',
     startedAt: '2026-09-14T16:39:00.000Z' as IsoDateTime,

@@ -11,6 +11,10 @@ const { state } = vi.hoisted(() => ({
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
     agentTurnState: {} as Record<string, { readonly kind: string }>,
+    wireframeScoutVerification: {} as Record<
+      string,
+      { readonly verified: number; readonly cited: number }
+    >,
     summarizerStatus: {} as Record<string, { readonly status: string }>,
     transcripts: {} as Record<string, ReadonlyArray<unknown>>,
     agentDraft: {} as Record<string, string>,
@@ -20,13 +24,15 @@ const { state } = vi.hoisted(() => ({
     selectAgent: vi.fn(async () => undefined),
     spawnReportAgent: vi.fn(async () => 'agent-2'),
     spawnWireframeAgent: vi.fn(async () => 'agent-3'),
+    updateArtifactSource: vi.fn(async () => undefined),
   },
 }));
 
-vi.mock('../../../../store', () => ({
-  EMPTY_ARRAY: [] as readonly never[],
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
-}));
+vi.mock('../../../../store', () => {
+  const useAppStore = <T,>(selector: (s: typeof state) => T) => selector(state);
+  useAppStore.getState = () => state;
+  return { EMPTY_ARRAY: [] as readonly never[], useAppStore };
+});
 
 vi.mock('../../../chat/components/ChatView', () => ({
   ChatView: () => <div data-testid="chat-view" />,
@@ -135,7 +141,6 @@ const renderDetail = ({
       artifact={artifact}
       agents={agents}
       artifacts={[report, otherReport]}
-      count={2}
       onBack={() => undefined}
       onSelectArtifact={() => undefined}
     />,
@@ -146,6 +151,12 @@ beforeEach(() => {
   state.sessionArtifacts = { 'sess-1': [report, otherReport] };
   state.agentTurnState = {};
   state.agentDraft = {};
+  state.wireframeScoutVerification = {};
+  state.transcripts = {
+    'agent-report-1': [{ kind: 'user_text', runId: 'run-1', text: 'the original pack', at: '' }],
+  };
+  state.spawnReportAgent.mockClear();
+  state.selectAgent.mockClear();
   state.openArtifactConversation.mockClear();
   state.closeArtifactConversation.mockClear();
   state.spawnWireframeAgent.mockClear();
@@ -184,7 +195,6 @@ describe('ArtifactDetail tabs', () => {
         artifact={otherReport}
         agents={[reporter, otherReporter]}
         artifacts={[report, otherReport]}
-        count={2}
         onBack={() => undefined}
         onSelectArtifact={() => undefined}
       />,
@@ -250,9 +260,30 @@ describe('ArtifactDetail header', () => {
     const controls = screen.getByTestId('artifact-export-controls');
     const status = screen.getByTestId('artifact-export-status');
     expect(controls.contains(status)).toBe(false);
-    expect(status.className).toContain('w-40');
     expect(status.className).toContain('truncate');
     expect(controls.querySelectorAll('button')).toHaveLength(3);
+  });
+
+  it('reserves no resting width for the export status, which used to hold 160px', () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    const status = screen.getByTestId('artifact-export-status');
+    expect(status.textContent).toBe('');
+    expect(status.className).not.toMatch(/(^|\s)w-40(\s|$)/);
+    expect(status.className).toContain('max-w-40');
+    expect(status.className).toContain('shrink');
+  });
+
+  it('keeps the band to one row above the divider', () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    const band = screen.getByTestId('artifact-band');
+    expect(band.className).toContain('h-11');
+    expect(band.className).toContain('px-6 py-2');
+    expect(band.className).toContain('items-center');
+  });
+
+  it('hides back above the container width the rail needs, a class happy-dom cannot evaluate', () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    expect(screen.getByTestId('artifact-back').className).toContain('@min-[1025px]:hidden');
   });
 
   it('leaves one label treatment per control in the conversation dock', () => {
@@ -307,5 +338,135 @@ describe('ArtifactDetail wireframe actions', () => {
   it('leaves a report without a variant action', () => {
     renderDetail({ artifact: report, agents: [reporter, otherReporter] });
     expect(screen.queryByTestId('wireframe-convert-fidelity')).toBeNull();
+  });
+});
+
+describe('ArtifactDetail metadata disclosure', () => {
+  it('keeps the report provenance out of the document until the disclosure is opened', () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    expect(screen.queryByTestId('report-provenance')).toBeNull();
+    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
+    const provenance = screen.getByTestId('report-provenance');
+    expect(provenance.textContent).toContain('Session summary');
+    expect(screen.getByTestId('artifact-details').contains(provenance)).toBe(true);
+  });
+
+  it('links a cited source id back to its agent from a labelled chip', () => {
+    renderDetail({
+      artifact: { ...report, sourceText: 'agent-report-2 did it' } as unknown as SessionArtifact,
+      agents: [reporter, otherReporter],
+    });
+    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
+    const chip = screen.getByRole('button', { name: 'open the agent Migration summary' });
+    expect(chip.getAttribute('data-testid')).toBe('report-source-chip');
+    fireEvent.click(chip);
+    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-report-2');
+  });
+
+  it('keeps the wireframe provenance out of the document until the disclosure is opened', () => {
+    renderDetail({ artifact: wireframe, agents: [wireframer] });
+    expect(screen.queryByTestId('wireframe-provenance')).toBeNull();
+    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
+    expect(screen.getByTestId('wireframe-provenance').textContent).toContain('low fidelity');
+  });
+
+  it('leaves the fidelity divergence visible in the band because it is a state', () => {
+    renderDetail({ artifact: wireframe, agents: [{ ...wireframer, name: 'High fidelity' }] });
+    const divergence = screen.getByTestId('wireframe-fidelity-divergence');
+    expect(divergence.textContent).toContain('high asked, low produced');
+    expect(screen.getByTestId('artifact-title').parentElement?.contains(divergence)).toBe(true);
+  });
+
+  it('lists the agents behind the artifact as the third line of the disclosure', async () => {
+    state.sessionPhaseRuns = {
+      'sess-1': [
+        wireframer,
+        {
+          id: 'agent-scout-screens',
+          sessionId: 'sess-1',
+          parentAgentId: 'agent-wireframe-1',
+          ordinal: 3,
+          name: 'screens and routes',
+          kind: 'scout',
+          status: 'completed',
+        },
+      ] as unknown as ReadonlyArray<Agent>,
+    };
+    renderDetail({ artifact: wireframe, agents: [wireframer] });
+    expect(screen.queryByTestId('artifact-scouts')).toBeNull();
+    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
+    await waitFor(() => {
+      expect(screen.getAllByTestId('artifact-scout-row')).toHaveLength(1);
+    });
+    const details = screen.getByTestId('artifact-details');
+    expect(details.contains(screen.getByTestId('artifact-scouts'))).toBe(true);
+    expect(screen.getByTestId('artifact-scout-row').textContent).toContain('screens and routes');
+  });
+
+  it('says so when no scout read a repository for the artifact', async () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
+    await waitFor(() => {
+      expect(screen.getByTestId('artifact-scouts-empty').textContent).toContain(
+        'no scout read a repository',
+      );
+    });
+  });
+
+  it('leaves no divergence chip when the wireframe came back as asked', () => {
+    renderDetail({ artifact: wireframe, agents: [wireframer] });
+    expect(screen.queryByTestId('wireframe-fidelity-divergence')).toBeNull();
+  });
+});
+
+describe('ArtifactDetail report actions', () => {
+  it('carries preview, edit and regenerate as pressed icon buttons in the band', () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    const band = screen.getByTestId('artifact-title').parentElement;
+    expect(band?.contains(screen.getByTestId('report-regenerate'))).toBe(true);
+    expect(screen.getByTestId('report-preview').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByTestId('report-edit').getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(screen.getByTestId('report-edit'));
+    expect(screen.getByTestId('report-edit').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('textbox')).toBeDefined();
+  });
+
+  it('regenerates against the original evidence pack', async () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    fireEvent.click(screen.getByTestId('report-regenerate'));
+    await waitFor(() => {
+      expect(state.spawnReportAgent).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        reportType: 'session-summary',
+        workflowRunId: null,
+        attachments: [],
+        evidence: 'the original pack',
+      });
+    });
+  });
+
+  it('shows a regenerate failure inline', async () => {
+    state.spawnReportAgent.mockRejectedValueOnce(new Error('no provider connected'));
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    fireEvent.click(screen.getByTestId('report-regenerate'));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toContain('no provider connected');
+    });
+  });
+
+  it('states the reason regenerate is blocked in the tooltip, not in a sentence', () => {
+    state.transcripts = {};
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    const button = screen.getByTestId('report-regenerate');
+    expect(button.hasAttribute('disabled')).toBe(true);
+    expect(button.getAttribute('aria-label')).toBe('Regenerate');
+    expect(screen.queryByTestId('report-regenerate-blocked')).toBeNull();
+    fireEvent.click(button);
+    expect(state.spawnReportAgent).not.toHaveBeenCalled();
+  });
+
+  it('leaves a wireframe without report actions', () => {
+    renderDetail({ artifact: wireframe, agents: [wireframer] });
+    expect(screen.queryByTestId('report-regenerate')).toBeNull();
   });
 });

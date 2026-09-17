@@ -11,6 +11,7 @@ import { BoardScene } from './scenes/BoardScene';
 import { TranscriptMountScene } from './scenes/TranscriptMountScene';
 import { BoardShellScene } from './scenes/BoardShellScene';
 import {
+  ArtifactGeneratingScene,
   ArtifactReportScene,
   ArtifactWireframeHighScene,
   ArtifactWireframeLowScene,
@@ -35,6 +36,7 @@ const SCENES = {
   'artifact-report': ArtifactReportScene,
   'artifact-wireframe-low': ArtifactWireframeLowScene,
   'artifact-wireframe-high': ArtifactWireframeHighScene,
+  'artifact-generating': ArtifactGeneratingScene,
   'artifact-create-report': ArtifactCreateReportScene,
   'artifact-create-wireframe': ArtifactCreateWireframeScene,
   activity: ActivityTimelineScene,

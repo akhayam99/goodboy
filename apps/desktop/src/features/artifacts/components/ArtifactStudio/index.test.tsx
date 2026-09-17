@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const { notify, state, showToast, subscribers } = vi.hoisted(() => {
   const listeners = new Set<() => void>();
@@ -64,18 +64,20 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
 
 vi.mock('../../../../store', async () => {
   const react = await import('react');
+  const useAppStore = <T,>(selector: (s: typeof state) => T): T => {
+    const [, bump] = react.useReducer((count: number) => count + 1, 0);
+    react.useEffect(() => {
+      subscribers.add(bump);
+      return () => {
+        subscribers.delete(bump);
+      };
+    }, [bump]);
+    return selector(state);
+  };
+  useAppStore.getState = () => state;
   return {
     EMPTY_ARRAY: [] as readonly never[],
-    useAppStore: <T,>(selector: (s: typeof state) => T): T => {
-      const [, bump] = react.useReducer((count: number) => count + 1, 0);
-      react.useEffect(() => {
-        subscribers.add(bump);
-        return () => {
-          subscribers.delete(bump);
-        };
-      }, [bump]);
-      return selector(state);
-    },
+    useAppStore,
     useSessionPlans: () => state.plans,
     useSessionOpenQuestions: () => state.openQuestions,
   };
@@ -387,19 +389,41 @@ describe('ArtifactStudio', () => {
     expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-report-2');
   });
 
-  it('opens a report with its provenance, status and export slot', () => {
+  it('opens a report with its status and export slot, metadata behind the toggle', () => {
     state.sessionArtifacts = { 'sess-1': [report] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('Session report'));
+    const detail = screen.getByTestId('artifact-detail');
     expect(screen.getByRole('heading', { level: 1, name: 'Artifacts' })).toBeDefined();
-    expect(screen.queryByText('reporter')).toBeNull();
-    expect(screen.queryByText('rev 2')).toBeNull();
+    expect(within(detail).queryByText('reporter')).toBeNull();
+    expect(within(detail).queryByText('rev 2')).toBeNull();
     fireEvent.click(screen.getByTestId('artifact-details-toggle'));
-    expect(screen.getByTestId('artifact-creator').textContent).toBe('reporter');
-    expect(screen.getByText('rev 2')).toBeDefined();
-    expect(screen.queryByText('active')).toBeNull();
+    expect(within(detail).getByTestId('artifact-creator').textContent).toBe('reporter');
+    expect(within(detail).getByText('rev 2')).toBeDefined();
+    expect(within(detail).queryByText('active')).toBeNull();
     expect(screen.getByTestId('artifact-export-slot')).toBeDefined();
     expect(screen.getByText('shipped it')).toBeDefined();
+  });
+
+  it('keeps the whole list in the rail beside the artifact it opened', () => {
+    state.sessionArtifacts = { 'sess-1': [report, wireframe] };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('Session report'));
+    const rail = screen.getByTestId('artifact-rail');
+    expect(within(rail).getByText('Session report')).toBeDefined();
+    expect(within(rail).getByText('Onboarding flow')).toBeDefined();
+    fireEvent.click(within(rail).getByText('Onboarding flow'));
+    expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', 'artifact-wireframe');
+  });
+
+  it('holds the rail behind a container query the suite cannot evaluate', () => {
+    state.sessionArtifacts = { 'sess-1': [report] };
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('Session report'));
+    const rail = screen.getByRole('complementary', { name: 'Artifacts' });
+    expect(rail.className).toContain('@min-[1025px]:flex');
+    expect(rail.className).toContain('hidden');
+    expect(screen.getByTestId('artifact-back').className).toContain('@min-[1025px]:hidden');
   });
 
   it('keeps the plan lifecycle vocabulary off reports and wireframes', () => {
@@ -475,6 +499,7 @@ describe('ArtifactStudio', () => {
     state.sessionArtifacts = { 'sess-1': [report, earlier] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('Earlier report'));
+    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
     fireEvent.click(screen.getByTestId('report-source-chip'));
     expect(screen.getByText('shipped it')).toBeDefined();
     expect(state.setFocusedArtifactId).toHaveBeenCalledWith('sess-1', 'artifact-report');
@@ -488,6 +513,7 @@ describe('ArtifactStudio', () => {
     };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('Session report'));
+    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
     fireEvent.click(screen.getByTestId('report-source-chip'));
     expect(state.setFocusedPlanId).toHaveBeenCalledWith('sess-1', 'plan-1');
     expect(state.focusedArtifactId['sess-1']).toBeNull();
@@ -525,5 +551,86 @@ describe('ArtifactStudio', () => {
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     expect(screen.getByTestId('artifact-export-slot')).toBeDefined();
     expect(screen.getByRole('button', { name: /all artifacts/i })).toBeDefined();
+  });
+});
+
+describe('ArtifactStudio generating run', () => {
+  const container = {
+    id: 'agent-wireframe-live',
+    name: 'High fidelity',
+    kind: 'wireframe',
+    status: 'running',
+    startedAt: '2026-01-02T03:00:00.000Z',
+  };
+  const scoutDone = {
+    id: 'agent-scout-screens',
+    parentAgentId: 'agent-wireframe-live',
+    ordinal: 1,
+    name: 'screens and routes',
+    kind: 'scout',
+    status: 'completed',
+    startedAt: '2026-01-02T03:00:00.000Z',
+    completedAt: '2026-01-02T03:00:14.000Z',
+  };
+  const scoutRunning = {
+    id: 'agent-scout-data',
+    parentAgentId: 'agent-wireframe-live',
+    ordinal: 2,
+    name: 'data and contracts',
+    kind: 'scout',
+    status: 'running',
+    startedAt: '2026-01-02T03:00:00.000Z',
+  };
+
+  beforeEach(() => {
+    state.sessionPhaseRuns = { 'sess-1': [container, scoutDone, scoutRunning] };
+    state.agentTurnState = {
+      'agent-wireframe-live': { kind: 'running' },
+      'agent-scout-data': { kind: 'running' },
+    };
+    state.wireframeScoutVerification = { 'agent-scout-screens': { verified: 8, cited: 11 } };
+  });
+
+  it('opens the run in the detail column, with the agents it spawned listed live', () => {
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('High fidelity'));
+    const detail = screen.getByTestId('artifact-run-detail');
+    const rows = within(detail).getAllByTestId('artifact-scout-row');
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.textContent).toContain('screens and routes');
+    expect(rows[0]?.textContent).toContain('8 of 11 claims verified');
+    expect(rows[1]?.textContent).toContain('data and contracts');
+    expect(rows[1]?.textContent).toContain('running');
+    expect(state.selectAgent).not.toHaveBeenCalled();
+  });
+
+  it('keeps the run beside the rail instead of taking a view of its own', () => {
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('High fidelity'));
+    expect(screen.getByTestId('artifact-rail')).toBeDefined();
+    expect(screen.getByRole('complementary', { name: 'Artifacts' })).toBeDefined();
+  });
+
+  it('stops the run from the band and hands the agent over when asked', () => {
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('High fidelity'));
+    fireEvent.click(screen.getByTestId('artifact-run-stop'));
+    expect(state.stopArtifactGeneration).toHaveBeenCalledWith({
+      sessionId: 'sess-1',
+      agentId: 'agent-wireframe-live',
+    });
+    fireEvent.click(screen.getByTestId('artifact-run-agent'));
+    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-wireframe-live');
+  });
+
+  it('follows the run to the artifact it produced instead of leaving a dead column', () => {
+    const { rerender } = render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('High fidelity'));
+    expect(screen.getByTestId('artifact-run-detail')).toBeDefined();
+    state.sessionArtifacts = {
+      'sess-1': [{ ...wireframe, agentId: 'agent-wireframe-live' }],
+    };
+    rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
+    expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', 'artifact-wireframe');
   });
 });

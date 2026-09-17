@@ -12,6 +12,10 @@ export const PANE_RHYTHM = {
     chat: 'max-w-[880px]',
     hero: 'max-w-[640px]',
   },
+  detail: {
+    band: 'px-6 py-2',
+    body: 'px-6 py-4',
+  },
   rail: {
     header: 'px-3 py-2.5',
     body: 'px-3 py-3',
