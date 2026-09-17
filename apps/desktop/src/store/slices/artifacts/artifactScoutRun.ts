@@ -26,6 +26,7 @@ import {
   type ArtifactScoutPick,
 } from '../../../features/artifacts/pickArtifactScouts';
 import { ARTIFACT_SCOUT_ROLES } from '../../../features/artifacts/artifactScoutRoles';
+import { artifactScoutSection } from '../../../features/artifacts/artifactScoutSection';
 import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
 import { exploreList } from '../../../features/explore/explore';
 import { collectReportDiffEvidence } from '../../../features/reports/collectReportDiffEvidence';
@@ -38,7 +39,6 @@ import {
 import type { WireframeTarget } from '../../../features/wireframes/wireframeTarget';
 import {
   collectWireframeScoutReports,
-  wireframeScoutSection,
   wireframeScoutSectionEntry,
   WIREFRAME_SCOUT_DEADLINE_MS,
   WIREFRAME_SCOUT_DEADLINE_REASON,
@@ -663,8 +663,12 @@ const joinArtifactScoutsFor = async ({
     state: get(),
     session,
     containerId,
-    scoutSection: wireframeScoutSection({
-      root: context.mounts.map((mount) => mount.root).join(', '),
+    scoutSection: artifactScoutSection({
+      kind: context.kind,
+      scope:
+        context.kind === 'report'
+          ? context.mounts.map((mount) => mount.mountName).join(', ')
+          : context.mounts.map((mount) => mount.root).join(', '),
       entries: verified.map((row) => row.entry),
     }),
   });

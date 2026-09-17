@@ -119,8 +119,10 @@ import { WIREFRAME_SCOUTS } from '../../../features/wireframes/wireframeScoutRol
 import {
   WIREFRAME_SCOUT_DEADLINE_MS,
   WIREFRAME_SCOUT_DEADLINE_REASON,
+  WIREFRAME_SCOUT_NOTHING_USABLE,
   WIREFRAME_SCOUT_RESTART_REASON,
 } from '../../../features/wireframes/wireframeScoutReports';
+import { REPORT_SCOUT_NOTHING_USABLE } from '../../../features/artifacts/artifactScoutSection';
 import { cancelCurrentTurn } from '../turn/cancelCurrentTurn';
 import { claimTurnStart, resetTurnStartWindows } from '../turn/turnStartWindow';
 import { advanceScoutTree } from '../workflows/scoutTree';
@@ -957,6 +959,29 @@ describe('report scouting', () => {
     expect(pack).toContain('verified 1 of 1 cited paths');
     expect(pack).toContain('the old totals helper is gone');
     expect(pack).not.toContain('most of what it reported could not be found on disk');
+  });
+
+  it('tells a report whose scout came back empty that it is writing a report', async () => {
+    changedFiles.mockResolvedValue({
+      paths: ['apps/web/src/Batches.tsx'],
+      additions: 2,
+      deletions: 1,
+    });
+    const h = harness();
+    const containerId = await reportSpawn(h, 'change-summary');
+    h.sendTurn.mockClear();
+    await (h.state['expireArtifactScouts'] as (args: Record<string, unknown>) => Promise<void>)({
+      sessionId: SESSION_ID,
+      containerId,
+    });
+    const containerTurns = h.sendTurn.mock.calls.filter(
+      (call) => (call[0] as Record<string, unknown>)['agentId'] === containerId,
+    );
+    expect(containerTurns).toHaveLength(1);
+    const pack = String((containerTurns[0]![0] as Record<string, unknown>)['content']);
+    expect(pack).toContain(REPORT_SCOUT_NOTHING_USABLE);
+    expect(pack).not.toContain(WIREFRAME_SCOUT_NOTHING_USABLE);
+    expect(pack).not.toContain('never a theme value');
   });
 
   it('produces a session summary immediately, with no scout at all', async () => {
