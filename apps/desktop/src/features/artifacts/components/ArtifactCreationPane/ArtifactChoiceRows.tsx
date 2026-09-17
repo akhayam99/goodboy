@@ -39,6 +39,7 @@ export const ArtifactChoiceRows = ({ ariaLabel, options, value, onChange }: Prop
     0,
     options.findIndex((option) => option.value === value),
   );
+  const hint = options[current]?.hint ?? null;
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const target = nextIndex({ key: event.key, current, total: options.length });
@@ -55,31 +56,36 @@ export const ArtifactChoiceRows = ({ ariaLabel, options, value, onChange }: Prop
   };
 
   return (
-    <div
-      ref={listRef}
-      role="listbox"
-      aria-label={ariaLabel}
-      onKeyDown={onKeyDown}
-      className="flex flex-col gap-1"
-    >
-      {options.map((option, index) => (
-        <SelectableRow
-          key={option.value}
-          role="option"
-          selected={option.value === value}
-          ariaSelected={option.value === value}
-          tabIndex={index === current ? 0 : -1}
-          onClick={() => onChange(option.value)}
-          className="flex-col gap-0.5 border border-border-soft bg-elevated/30 px-2.5 py-2 data-[selected=true]:border-transparent"
+    <div className="flex min-w-0 flex-col gap-1">
+      <div
+        ref={listRef}
+        role="listbox"
+        aria-label={ariaLabel}
+        onKeyDown={onKeyDown}
+        className="flex min-w-0 flex-wrap gap-1"
+      >
+        {options.map((option, index) => (
+          <SelectableRow
+            key={option.value}
+            role="option"
+            selected={option.value === value}
+            ariaSelected={option.value === value}
+            tabIndex={index === current ? 0 : -1}
+            onClick={() => onChange(option.value)}
+            className="w-auto border border-border-soft bg-elevated/30 px-2.5 py-1.5 data-[selected=true]:border-transparent"
+          >
+            <span className="truncate text-xs font-medium">{option.label}</span>
+          </SelectableRow>
+        ))}
+      </div>
+      {hint === null ? null : (
+        <span
+          data-testid="artifact-choice-hint"
+          className="text-2xs leading-relaxed text-muted-foreground"
         >
-          <span className="text-xs font-medium">{option.label}</span>
-          {option.value === value ? (
-            <span className="text-2xs font-normal leading-relaxed text-muted-foreground">
-              {option.hint}
-            </span>
-          ) : null}
-        </SelectableRow>
-      ))}
+          {hint}
+        </span>
+      )}
     </div>
   );
 };

@@ -272,14 +272,27 @@ describe('ArtifactCreationPane', () => {
     );
   });
 
-  it('keeps the hint under the selected choice only', () => {
+  it('spends one line on the hint of the choice the user is on, beside no other', () => {
     renderPane();
-    const hintOf = (name: RegExp): string => screen.getByRole('option', { name }).textContent ?? '';
-    expect(hintOf(/Session summary/)).toContain('what the session set out to do');
-    expect(hintOf(/Local change report/)).not.toContain('as a reviewer reads it');
+    expect(screen.getByRole('option', { name: /Session summary/ }).textContent).toBe(
+      'Session summary',
+    );
+    const hint = () => screen.getByTestId('artifact-choice-hint').textContent ?? '';
+    expect(hint()).toContain('what the session set out to do');
     fireEvent.click(screen.getByRole('option', { name: /Local change report/ }));
-    expect(hintOf(/Local change report/)).toContain('as a reviewer reads it');
-    expect(hintOf(/Session summary/)).not.toContain('what the session set out to do');
+    expect(hint()).toContain('as a reviewer reads it');
+    expect(hint()).not.toContain('what the session set out to do');
+  });
+
+  it('keeps the options on one wrapping row instead of a card each', () => {
+    renderPane();
+    const list = screen.getByRole('listbox', { name: 'Report type' });
+    expect(list.className).toContain('flex-wrap');
+    const options = [...list.querySelectorAll('[role="option"]')];
+    expect(options).toHaveLength(2);
+    for (const option of options) {
+      expect(option.className).toContain('w-auto');
+    }
   });
 
   it('prefills based on with the run it was opened from', () => {
