@@ -18,7 +18,11 @@ const { state, hooks, toastMock } = vi.hoisted(() => ({
     setScriptsLensScope: vi.fn(),
     runScript: vi.fn(async () => ({ exitCode: 0 })),
   },
-  hooks: { currentSession: null as { readonly id: string } | null },
+  hooks: {
+    currentSession: null as { readonly id: string } | null,
+    sessions: [] as ReadonlyArray<{ readonly id: string; readonly goal: string }>,
+    workspaces: [] as ReadonlyArray<{ readonly id: string; readonly name: string }>,
+  },
   toastMock: vi.fn(),
 }));
 
@@ -27,8 +31,8 @@ vi.mock('../../../../store', () => ({
   useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
     getState: () => state,
   }),
-  useWorkspaces: () => [],
-  useSessions: () => [],
+  useWorkspaces: () => hooks.workspaces,
+  useSessions: () => hooks.sessions,
   useCurrentWorkspace: () => null,
   useCurrentSession: () => hooks.currentSession,
 }));
@@ -50,6 +54,8 @@ beforeEach(() => {
   state.agentKindOverride = {};
   state.setActiveLens.mockReset();
   hooks.currentSession = null;
+  hooks.sessions = [];
+  hooks.workspaces = [];
   toastMock.mockReset();
 });
 afterEach(cleanup);
@@ -106,6 +112,23 @@ describe('CommandPalette', () => {
     fireEvent.mouseDown(screen.getByText(label));
 
     expect(state.setActiveLens).toHaveBeenCalledWith('session-1', lens);
+  });
+
+  it('keeps the session pages in the empty palette behind a wall of sessions', () => {
+    hooks.currentSession = { id: 'session-1' };
+    hooks.sessions = Array.from({ length: 24 }, (_, index) => ({
+      id: `session-${index}`,
+      goal: `settle batch ${index}`,
+    }));
+    hooks.workspaces = Array.from({ length: 6 }, (_, index) => ({
+      id: `workspace-${index}`,
+      name: `Harborline ${index}`,
+    }));
+    render(<CommandPalette onClose={vi.fn()} />);
+
+    expect(screen.getByText('Open Artifacts')).toBeDefined();
+    expect(screen.getByText('Open Review')).toBeDefined();
+    expect(screen.queryByText('settle batch 20')).toBeNull();
   });
 
   it('teaches each navigation destination with the chord that reaches it', () => {

@@ -57,6 +57,33 @@ const GROUP_ORDER: ReadonlyArray<PaletteGroup> = [
   'help',
 ];
 
+const EMPTY_QUERY_QUOTA = {
+  agent: 5,
+  session: 8,
+  workspace: 3,
+  script: 3,
+  action: 12,
+  help: 2,
+} satisfies Record<PaletteGroup, number>;
+
+const withGroupQuota = (items: ReadonlyArray<PaletteItem>): ReadonlyArray<PaletteItem> => {
+  const taken: Record<PaletteGroup, number> = {
+    agent: 0,
+    session: 0,
+    workspace: 0,
+    script: 0,
+    action: 0,
+    help: 0,
+  };
+  return items.filter((item) => {
+    if (taken[item.group] >= EMPTY_QUERY_QUOTA[item.group]) {
+      return false;
+    }
+    taken[item.group] += 1;
+    return true;
+  });
+};
+
 function fuzzyScore(query: string, text: string): number {
   if (query.length === 0) {
     return 1;
@@ -286,7 +313,7 @@ export const CommandPalette = ({
     const { prefix, query: q } = parsed;
     const scope = prefix ? items.filter((it) => it.group === prefix.group) : items;
     if (q.length === 0) {
-      return prefix ? scope.slice(0, 50) : scope.slice(0, 30);
+      return prefix ? scope.slice(0, 50) : withGroupQuota(scope);
     }
     return scope
       .map((item) => ({
