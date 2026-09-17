@@ -6,12 +6,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 
-const { listSpy } = vi.hoisted(() => ({
+const { listSpy, closeSpy } = vi.hoisted(() => ({
   listSpy: vi.fn(async (_sessionId: string) => [] as ReadonlyArray<Record<string, unknown>>),
+  closeSpy: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../artifacts/artifacts', () => ({
   listArtifactsForSession: (sessionId: string) => listSpy(sessionId),
+}));
+
+vi.mock('@tauri-apps/api/window', () => ({
+  getCurrentWindow: () => ({ close: () => closeSpy() }),
 }));
 
 import { ArtifactPrintView } from './index';
@@ -214,6 +219,29 @@ describe('ArtifactPrintView', () => {
     const styles = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
     expect(styles).toMatch(/@media screen \{\s*html\[data-print-window\][^}]*overflow: auto;/);
     expect(styles).toMatch(/html,\s*body,\s*#root \{[^}]*overflow: hidden;/);
+  });
+
+  it('closes the print window on escape and stops listening once it is gone', async () => {
+    Reflect.set(window, '__TAURI_INTERNALS__', {});
+    listSpy.mockResolvedValueOnce([report]);
+    const { unmount } = render(<ArtifactPrintView request={request} />);
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Session report' })).toBeDefined();
+    });
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(closeSpy).not.toHaveBeenCalled();
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await waitFor(() => {
+      expect(closeSpy).toHaveBeenCalledTimes(1);
+    });
+    expect(window.print).toHaveBeenCalledTimes(1);
+
+    unmount();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(closeSpy).toHaveBeenCalledTimes(1);
+    Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
   });
 
   it('says the source is still safe when printing is unsupported', async () => {
