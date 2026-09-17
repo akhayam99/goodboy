@@ -1,5 +1,6 @@
 @page {
-  margin: 18mm 22mm 22mm;
+  margin: 16mm 22.5mm 18mm;
+  size: A4;
   @bottom-right {
     color: #6b7079;
     content: counter(page) ' / ' counter(pages);
@@ -11,7 +12,7 @@
   background: #ffffff;
   color: #14161a;
   font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 10.5pt;
+  font-size: 13pt;
   line-height: 1.6;
   margin: 0 auto;
   max-width: 42rem;
@@ -28,7 +29,7 @@
 }
 .print-sheet .print-kind {
   color: #6b7079;
-  font-size: 8pt;
+  font-size: 10pt;
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
@@ -36,7 +37,7 @@
   align-items: center;
   color: #14161a;
   display: inline-flex;
-  font-size: 9.5pt;
+  font-size: 12pt;
   font-weight: 600;
   gap: 0.4em;
   letter-spacing: -0.005em;
@@ -47,7 +48,7 @@
 }
 .print-sheet .print-title {
   color: #0f1115;
-  font-size: 20pt;
+  font-size: 25pt;
   font-weight: 600;
   letter-spacing: -0.012em;
   line-height: 1.18;
@@ -64,14 +65,14 @@
 }
 .print-sheet .print-meta dt {
   color: #6b7079;
-  font-size: 7.5pt;
+  font-size: 9.5pt;
   letter-spacing: 0.085em;
   text-transform: uppercase;
 }
 .print-sheet .print-meta dd {
   color: #14161a;
   font-feature-settings: 'tnum';
-  font-size: 9.5pt;
+  font-size: 12pt;
   font-variant-numeric: tabular-nums;
   margin: 0.18em 0 0;
 }
@@ -81,7 +82,7 @@
 }
 .print-sheet .print-contents-label {
   color: #6b7079;
-  font-size: 7.5pt;
+  font-size: 9.5pt;
   letter-spacing: 0.085em;
   margin: 0 0 0.55em;
   text-transform: uppercase;
@@ -89,7 +90,7 @@
 .print-sheet .print-contents-list {
   color: #14161a;
   display: block;
-  font-size: 10pt;
+  font-size: 12.5pt;
   line-height: 1.5;
   list-style: decimal;
   margin: 0;
@@ -108,7 +109,7 @@
 }
 .print-sheet .print-note {
   color: #5a5f68;
-  font-size: 9.5pt;
+  font-size: 12pt;
   margin: 0;
 }
 .print-sheet .print-frame {
@@ -128,7 +129,7 @@
   align-items: baseline;
   color: var(--print-tone);
   display: flex;
-  font-size: 7.5pt;
+  font-size: 9.5pt;
   font-weight: 600;
   gap: 0.4em;
   letter-spacing: 0.06em;
@@ -137,14 +138,14 @@
 }
 .print-sheet .print-body > div {
   color: #14161a;
-  font-size: 10.5pt;
+  font-size: 13pt;
   line-height: 1.5;
 }
 .print-sheet .print-body > div > div {
   margin: 0 0 1em;
 }
 .print-sheet .print-body p {
-  font-size: 10.5pt;
+  font-size: 13pt;
   line-height: 1.5;
   margin: 0 0 0.6em;
   orphans: 3;
@@ -163,18 +164,18 @@
   page-break-after: avoid;
 }
 .print-sheet .print-body h1 {
-  font-size: 16pt;
+  font-size: 19.5pt;
   letter-spacing: -0.01em;
   line-height: 1.2;
   margin: 1.5em 0 0.4em;
 }
 .print-sheet .print-body h2 {
-  font-size: 13pt;
+  font-size: 16pt;
   line-height: 1.25;
   margin: 1.4em 0 0.35em;
 }
 .print-sheet .print-body h3 {
-  font-size: 11pt;
+  font-size: 13.5pt;
   line-height: 1.3;
   margin: 1.2em 0 0.3em;
 }
@@ -182,7 +183,7 @@
 .print-sheet .print-body h5,
 .print-sheet .print-body h6 {
   color: #4c515a;
-  font-size: 8.5pt;
+  font-size: 10.5pt;
   letter-spacing: 0.06em;
   line-height: 1.3;
   margin: 1.3em 0 0.4em;
@@ -206,7 +207,7 @@
 }
 .print-sheet .print-body li {
   break-inside: avoid;
-  font-size: 10.5pt;
+  font-size: 13pt;
   line-height: 1.5;
   margin: 0 0 0.2em;
 }
@@ -246,7 +247,7 @@
 .print-sheet .print-body table {
   border-collapse: collapse;
   break-inside: auto;
-  font-size: 9pt;
+  font-size: 11pt;
   line-height: 1.4;
   margin: 0 0 0.8em;
   table-layout: auto;
@@ -270,7 +271,7 @@
 .print-sheet .print-body th {
   border-bottom: 1px solid #b9bec7;
   color: #4c515a;
-  font-size: 7.5pt;
+  font-size: 9.5pt;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -280,7 +281,7 @@
   break-inside: avoid;
   color: #4c515a;
   display: block;
-  font-size: 10pt;
+  font-size: 12.5pt;
   line-height: 1.5;
   margin: 0 0 0.7em;
   padding-left: 0.85em;
@@ -317,7 +318,7 @@
   border-radius: 2px;
   break-inside: avoid;
   color: #14161a;
-  font-size: 9.5pt;
+  font-size: 12pt;
   line-height: 1.45;
   margin: 0 0 0.8em;
   padding: 0.55em 0.75em;
@@ -347,6 +348,12 @@
   white-space: pre-wrap;
   widows: 3;
 }
+@supports (text-indent: -3em each-line) {
+  .print-sheet .print-body [data-block='tree'] {
+    padding-left: 3em;
+    text-indent: -3em each-line;
+  }
+}
 .print-sheet .print-body [role='separator'] {
   background: none;
   border-top: 1px solid #d5d8de;
@@ -363,12 +370,9 @@
 }
 @media print {
   .print-sheet {
-    margin: 0 auto;
-    max-width: 150mm;
-    padding: 0;
-  }
-  .print-sheet[data-page='landscape'] {
+    margin: 0;
     max-width: none;
+    padding: 0;
   }
   .print-sheet .print-screens,
   .print-sheet .print-frames {
@@ -385,7 +389,7 @@
   }
 }
 @page landscape-sheet {
-  size: landscape;
+  size: A4 landscape;
 }
 .print-sheet[data-page='landscape'] {
   page: landscape-sheet;

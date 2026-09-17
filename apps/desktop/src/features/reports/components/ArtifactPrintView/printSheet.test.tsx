@@ -269,4 +269,36 @@ describe('print sheet styling', () => {
     expect(styleOf({ selector: "[data-block='callout']" }).display).toBe('block');
     expect(styleOf({ selector: '.print-body > div > div' }).display).toBe('block');
   });
+  it('pins the paper so a dialog default cannot redraw the layout', () => {
+    expect(SHEET_CSS).toMatch(/@page \{[^@]*size: A4;/);
+    expect(SHEET_CSS).toContain('size: A4 landscape');
+    expect(SHEET_CSS).toMatch(/@page \{[^@]*margin: 16mm 22\.5mm 18mm;/);
+  });
+
+  it('lets the page margin alone set the text block, with no clamp to fight it', () => {
+    expect(SHEET_CSS).toMatch(/@media print \{\s*\.print-sheet \{[^}]*max-width: none;/);
+    expect(SHEET_CSS).not.toContain('max-width: 150mm');
+  });
+
+  it('scales prose to one body size and holds the monospace blocks still', () => {
+    expect(SHEET_CSS).toMatch(/\.print-body p \{[^}]*font-size: 13pt;/);
+    expect(SHEET_CSS).toMatch(/\.print-body li \{[^}]*font-size: 13pt;/);
+    expect(SHEET_CSS).toMatch(/\.print-body pre \{[^}]*font-size: 8\.5pt;/);
+    expect(SHEET_CSS).toMatch(/\[data-block='tree'\] \{[^}]*font-size: 8pt;/);
+  });
+
+  it('hangs a wrapped ascii tree line under the branch it continues', () => {
+    expect(SHEET_CSS).toMatch(/@supports \(text-indent: -3em each-line\)/);
+    expect(SHEET_CSS).toMatch(/text-indent: -3em each-line;/);
+    expect(SHEET_CSS).toMatch(/padding-left: 3em;/);
+  });
+
+  it('gives a paragraph and a list item the same computed size', async () => {
+    adoptSheet({ css: SHEET_CSS });
+    await renderArtifact({ artifact: reportWithList });
+
+    const paragraph = styleOf({ selector: '.print-body p' }).fontSize;
+    expect(styleOf({ selector: '.print-body li' }).fontSize).toBe(paragraph);
+    expect(paragraph).not.toBe('');
+  });
 });
