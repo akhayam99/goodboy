@@ -27,6 +27,7 @@ import {
 } from '../../../features/session/agent-kind';
 import { clampWireframeScoutReport } from '../../../features/wireframes/wireframeScoutReports';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
+import { openTurnStartWindow } from '../turn/turnStartWindow';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import type { GetFn, SetFn } from './types';
 
@@ -219,6 +220,7 @@ const activateAgent = ({
       [agentId]: { kind: 'idle' as const, lastActivityAt: nowIso() },
     },
   }));
+  openTurnStartWindow({ agentId });
   void get().sendTurn({ sessionId, agentId, content, origin: 'workflow' });
 };
 

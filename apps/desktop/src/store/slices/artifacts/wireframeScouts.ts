@@ -27,6 +27,7 @@ import {
 } from '../../../features/wireframes/wireframeScoutRoles';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { startFanOutChildren } from '../workflows/scoutTree';
+import { openTurnStartWindow } from '../turn/turnStartWindow';
 import type { GetFn, SetFn } from './types';
 
 export const WIREFRAME_SCOUT_RESTART_SUMMARY =
@@ -310,6 +311,7 @@ export const joinWireframeScouts = (set: SetFn, get: GetFn) => {
       console.warn(`[artifact-provenance] wireframe ${containerId}: ${formatError(error)}`);
     });
     containers.delete(containerId);
+    openTurnStartWindow({ agentId: containerId });
     void get().sendTurn({ sessionId, agentId: containerId, content: prepared.text });
   };
 };

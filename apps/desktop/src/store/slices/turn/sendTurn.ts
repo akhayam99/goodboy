@@ -87,6 +87,7 @@ import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds, purgedAgentIds } from '../../session-mutators';
+import { claimTurnStart, closeTurnStartWindow } from './turnStartWindow';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from '../../integrationsGuard';
 import { buildProfileGuard } from '../../profileGuard';
@@ -700,6 +701,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       createdAt: now(),
     };
     await insertProviderRun(tauriDatabase, providerRun);
+
+    if (claimTurnStart({ agentId: activeAgentId }) === 'cancelled') {
+      await updateProviderRunStatus(tauriDatabase, runId, {
+        kind: 'cancelled',
+        finishedAt: now(),
+      });
+      return NOT_BLOCKED;
+    }
 
     let resolvedAgentId: AgentId | null = null;
     if (phaseDefinition) {
@@ -1644,6 +1653,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     try {
       return await runOnce(input, lease);
     } finally {
+      if (input.agentId !== undefined) {
+        closeTurnStartWindow({ agentId: input.agentId });
+      }
       const { path, holder, attemptId } = lease;
       if (path !== null && holder !== null) {
         await releaseWorktreeWriter({ path, holder });

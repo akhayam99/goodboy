@@ -84,6 +84,8 @@ import {
   WIREFRAME_SCOUT_DEADLINE_REASON,
   WIREFRAME_SCOUT_RESTART_REASON,
 } from '../../../features/wireframes/wireframeScoutReports';
+import { cancelCurrentTurn } from '../turn/cancelCurrentTurn';
+import { claimTurnStart, resetTurnStartWindows } from '../turn/turnStartWindow';
 import { advanceScoutTree } from '../workflows/scoutTree';
 import { spawnWireframeAgent } from './spawnWireframeAgent';
 import {
@@ -220,6 +222,7 @@ const childOf = ({
 beforeEach(() => {
   vi.clearAllMocks();
   resetWireframeScoutRegistry();
+  resetTurnStartWindows();
   scoutPlan.mockResolvedValue(READY_PLAN);
   insertBatch.mockImplementation(
     async ({
@@ -477,6 +480,61 @@ describe('stopping a wireframe generation', () => {
       expect(h.cancelCurrentTurn).toHaveBeenCalledWith(SESSION_ID, child.id);
       expect(child.status).toBe('skipped');
     }
+  });
+});
+
+describe('a scout cancelled before its turn has started', () => {
+  const withRealCancel = (h: Harness): void => {
+    h.state['cancelCurrentTurn'] = cancelCurrentTurn(h.set, h.get);
+  };
+
+  it('refuses the queued turn of a scout the user stopped', async () => {
+    const h = harness();
+    withRealCancel(h);
+    const containerId = await spawn(h);
+    await (h.state['stopArtifactGeneration'] as (args: Record<string, unknown>) => Promise<void>)({
+      sessionId: SESSION_ID,
+      agentId: containerId,
+    });
+    for (const scout of WIREFRAME_SCOUTS) {
+      const child = childOf({ agents: h.agents, name: scout.name });
+      expect(child.status).toBe('skipped');
+      expect(claimTurnStart({ agentId: child.id })).toBe('cancelled');
+    }
+  });
+
+  it('refuses the queued turn of a scout the deadline gave up on', async () => {
+    vi.useFakeTimers();
+    try {
+      const h = harness();
+      withRealCancel(h);
+      await spawn(h);
+      await vi.advanceTimersByTimeAsync(WIREFRAME_SCOUT_DEADLINE_MS + 1);
+      for (const scout of WIREFRAME_SCOUTS) {
+        const child = childOf({ agents: h.agents, name: scout.name });
+        expect(child.status).toBe('skipped');
+        expect(claimTurnStart({ agentId: child.id })).toBe('cancelled');
+      }
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('leaves a scout that is already running to the run cancellation', async () => {
+    const h = harness();
+    withRealCancel(h);
+    const containerId = await spawn(h);
+    const child = childOf({ agents: h.agents, name: 'screens and routes' });
+    (h.state['agentTurnState'] as Record<string, unknown>)[child.id] = {
+      kind: 'running',
+      runId: 'run-1',
+      startedAt: NOW,
+    };
+    await (h.state['stopArtifactGeneration'] as (args: Record<string, unknown>) => Promise<void>)({
+      sessionId: SESSION_ID,
+      agentId: containerId,
+    });
+    expect(claimTurnStart({ agentId: child.id })).toBe('granted');
   });
 });
 
