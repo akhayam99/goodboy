@@ -31,6 +31,8 @@ vi.mock('../../../../store', () => ({
   }),
   useCurrentSession: () => h.currentSession,
   useSessionStageInfo: () => h.stage,
+  useSessionOpenQuestions: (id: SessionId) =>
+    (h.state.sessionOpenQuestions as Record<string, ReadonlyArray<unknown>>)[id] ?? [],
 }));
 
 vi.mock('../../hooks/useSessionCrumbs', () => ({
@@ -128,6 +130,9 @@ const resetState = () => {
     sessionPhaseRuns: { [SESSION_ID]: [scout, implementer, workflowStep] },
     agentKindOverride: {},
     sessionResolveAttempts: {},
+    sessionResolveQueueItems: {},
+    sessionResolvePublications: {},
+    sessionOpenQuestions: {},
     sessionBranches: { [SESSION_ID]: 'ak/feat-one' },
     sessionGithub: {},
     phaseTemplates: { 'workspace-1': [{ id: 'workflow-1', name: 'refactor', steps: [] }] },
@@ -337,6 +342,23 @@ describe('SessionCrumbBar', () => {
     const menu = screen.getByRole('menu', { name: 'Switch page' });
     fireEvent.click(within(menu).getByRole('menuitem', { name: /Questions/ }));
     expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'questions');
+  });
+
+  it('carries the open question count on the questions destination only', () => {
+    h.crumbs = [
+      { id: 'overview', label: 'Overview', onClick: vi.fn() },
+      { id: 'lens-agents', label: 'Agents' },
+    ];
+    h.state.selectedAgentId = {};
+    h.state.sessionOpenQuestions = { [SESSION_ID]: [{ id: 'q1' }, { id: 'q2' }] };
+    render(<SessionCrumbBar />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
+    const menu = screen.getByRole('menu', { name: 'Switch page' });
+    expect(within(menu).getByRole('menuitem', { name: /Questions/ }).textContent).toContain('2');
+    expect(within(menu).getByRole('menuitem', { name: /Artifacts/ }).textContent).not.toContain(
+      '2',
+    );
   });
 
   it('gives the lone overview crumb the destination switcher', () => {

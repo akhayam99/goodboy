@@ -2,6 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import type { LensKind } from '../../../../store';
 import { lensLabelFor } from '../../lens-labels';
+import type { DestinationCounts } from '../../hooks/useDestinationCounts';
 import { resolveLensSurface } from '../../lens-surface';
 import { SIBLING_GROUP_LABEL_CLASS } from './crumbClasses';
 import { DestinationRow } from './DestinationRow';
@@ -14,6 +15,7 @@ type LensSwitcherCrumbProps = {
   readonly accessory?: ReactNode;
   readonly activeLens: LensKind | null;
   readonly isBranchless: boolean;
+  readonly counts: DestinationCounts;
   readonly onNavigate?: () => void;
   readonly onSelect: (lens: LensKind) => void;
 };
@@ -24,6 +26,7 @@ export const LensSwitcherCrumb = ({
   accessory,
   activeLens,
   isBranchless,
+  counts,
   onNavigate,
   onSelect,
 }: LensSwitcherCrumbProps) => {
@@ -49,6 +52,7 @@ export const LensSwitcherCrumb = ({
                   entry={entry}
                   label={lensLabelFor({ lens: entry.lens, isBranchless })}
                   isCurrent={currentSurface === resolveLensSurface({ lens: entry.lens })}
+                  count={counts[entry.lens] ?? null}
                   onSelect={(lens) => {
                     close();
                     onSelect(lens);

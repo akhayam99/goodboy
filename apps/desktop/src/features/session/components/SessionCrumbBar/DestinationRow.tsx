@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { Chip, cn } from '@goodboy/ui';
 import type { LensKind } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
@@ -9,10 +9,17 @@ type DestinationRowProps = {
   readonly entry: LensMenuEntry;
   readonly label: string;
   readonly isCurrent: boolean;
+  readonly count: number | null;
   readonly onSelect: (lens: LensKind) => void;
 };
 
-export const DestinationRow = ({ entry, label, isCurrent, onSelect }: DestinationRowProps) => {
+export const DestinationRow = ({
+  entry,
+  label,
+  isCurrent,
+  count,
+  onSelect,
+}: DestinationRowProps) => {
   const Icon = LENS_ICON[entry.lens];
   const glyphs = shortcutGlyphs(entry.shortcut);
 
@@ -30,6 +37,9 @@ export const DestinationRow = ({ entry, label, isCurrent, onSelect }: Destinatio
     >
       <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/70" />
       <span className="min-w-0 flex-1 truncate">{label}</span>
+      {count === null || count === 0 ? null : (
+        <Chip size="3xs" tone="info" bordered={false} label={String(count)} />
+      )}
       {glyphs === '' ? null : (
         <span className="shrink-0 text-2xs tracking-wide text-muted-foreground/60">{glyphs}</span>
       )}

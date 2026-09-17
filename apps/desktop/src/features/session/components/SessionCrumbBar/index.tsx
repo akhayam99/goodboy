@@ -12,6 +12,7 @@ import { describeSessionStage } from '../../session-stage';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
+import { useDestinationCounts } from '../../hooks/useDestinationCounts';
 import { openLens } from '../../openLens';
 import { agentHomeLens, classifyAgent, resolveRootAgent } from '../../agent-kind';
 import { isAgentFinished } from '../../agent-lifecycle';
@@ -41,6 +42,7 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   ) as AgentId | null;
   const activeLens = useAppStore((state) => state.activeLens[sessionId] ?? null);
   const isBranchless = useIsBranchlessSession({ session });
+  const destinationCounts = useDestinationCounts({ sessionId });
   const phaseRuns = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -195,6 +197,7 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
                 accessory={visibleCrumb.accessory}
                 activeLens={activeLens}
                 isBranchless={isBranchless}
+                counts={destinationCounts}
                 onNavigate={crumb.onClick}
                 onSelect={(lens) => openLens({ sessionId, lens })}
               />
