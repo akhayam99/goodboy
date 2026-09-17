@@ -636,7 +636,7 @@ const joinArtifactScoutsFor = async ({
             sessionId,
             mountIds: context.mounts.map((mount) => mount.mountId),
           }).catch(() => null)
-        )?.evidence?.paths ?? [])
+        )?.paths ?? [])
       : [];
   const verified = await verifyReports({ agents, containerId, context, knownPaths });
   set((current) => {

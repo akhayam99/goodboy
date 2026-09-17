@@ -27,7 +27,7 @@ const {
   return {
     scoutPlan: vi.fn(),
     changedFiles: vi.fn<
-      () => Promise<{
+      (params: { readonly worktreePath: string; readonly baseBranch: string }) => Promise<{
         readonly paths: ReadonlyArray<string>;
         readonly additions: number;
         readonly deletions: number;
@@ -174,6 +174,22 @@ const MOUNT = {
   revision: 1,
 } as unknown as SessionProjectMount;
 
+const MOUNT_TWO = {
+  mountId: 'mount-2' as MountId,
+  sessionId: SESSION_ID,
+  projectId: 'project-2' as ProjectId,
+  mountName: 'goodboy-api',
+  worktreePath: '/tmp/worktree-api',
+  lastWorktreePath: null,
+  repoRoot: '/tmp/repo-api',
+  branch: 'ak/feat-y',
+  baseBranch: 'main',
+  parallelIndex: 1,
+  isAttached: true,
+  diskState: 'present',
+  revision: 1,
+} as unknown as SessionProjectMount;
+
 const READY_PLAN = {
   plan: {
     kind: 'ready',
@@ -248,7 +264,7 @@ const harness = (): Harness => {
     providerCooldowns: {},
     budgetAlerts: [],
     sessionMounts: {},
-    sessionProjectMounts: { [SESSION_ID]: [MOUNT] },
+    sessionProjectMounts: { [SESSION_ID]: [MOUNT, MOUNT_TWO] },
     sessionActiveMount: { [SESSION_ID]: MOUNT.mountId },
     sessionActiveProject: {},
     mountBranchObservations: {},
@@ -769,6 +785,7 @@ describe('report scouting', () => {
   const reportSpawn = async (
     h: Harness,
     reportType: 'change-summary' | 'session-summary',
+    mountIds?: ReadonlyArray<MountId>,
   ): Promise<AgentId> => {
     const listed = h.agents;
     agentList.mockImplementation(async () => [...listed]);
@@ -808,6 +825,7 @@ describe('report scouting', () => {
       reportType,
       attachments: [],
       focus: 'none',
+      ...(mountIds === undefined ? {} : { mountIds }),
     });
   };
 
@@ -842,6 +860,63 @@ describe('report scouting', () => {
       (call) => (call[0] as Record<string, unknown>)['agentId'],
     );
     expect(turns).not.toContain(containerId);
+  });
+
+  it('spawns one diff context scout for every repository the diff touched', async () => {
+    changedFiles.mockImplementation(async ({ worktreePath }) =>
+      worktreePath === MOUNT.worktreePath
+        ? { paths: ['apps/web/src/Batches.tsx'], additions: 2, deletions: 1 }
+        : { paths: ['services/api/src/Totals.ts'], additions: 5, deletions: 0 },
+    );
+    const h = harness();
+    await reportSpawn(h, 'change-summary', [MOUNT.mountId, MOUNT_TWO.mountId]);
+    expect(insertBatch).toHaveBeenCalledTimes(1);
+    const inserted = insertBatch.mock.calls[0]![0] as {
+      readonly children: ReadonlyArray<Record<string, unknown>>;
+    };
+    expect(inserted.children).toHaveLength(2);
+    const kickoffs = h.sendTurn.mock.calls.map((call) =>
+      String((call[0] as Record<string, unknown>)['content']),
+    );
+    expect(kickoffs.join('\n')).toContain('services/api/src/Totals.ts');
+  });
+
+  it('spends no scout turn on a repository whose diff named no path', async () => {
+    changedFiles.mockResolvedValue({ paths: [], additions: 0, deletions: 0 });
+    const h = harness();
+    const containerId = await reportSpawn(h, 'change-summary');
+    expect(insertBatch).not.toHaveBeenCalled();
+    const args = h.spawnAgent.mock.calls[0]![1] as Record<string, unknown>;
+    expect(String(args['initialPrompt'])).toContain('evidence pack');
+    expect(provenanceRows.get(containerId)?.['phase']).toBe('producing');
+  });
+
+  it('counts a path from the second repository as verified, never as an invention', async () => {
+    changedFiles.mockImplementation(async ({ worktreePath }) =>
+      worktreePath === MOUNT.worktreePath
+        ? { paths: ['apps/web/src/Batches.tsx'], additions: 2, deletions: 1 }
+        : { paths: ['services/api/src/Gone.ts'], additions: 0, deletions: 9 },
+    );
+    const h = harness();
+    const containerId = await reportSpawn(h, 'change-summary', [MOUNT.mountId, MOUNT_TWO.mountId]);
+    h.sendTurn.mockClear();
+    const children = h.agents.filter((agent) => agent.parentAgentId === containerId);
+    for (const child of children) {
+      await (
+        h.state['advanceScoutTree'] as (
+          sessionId: SessionId,
+          agentId: AgentId,
+          assistantText: string,
+        ) => Promise<void>
+      )(SESSION_ID, child.id, 'the totals helper is gone services/api/src/Gone.ts');
+    }
+    const containerTurns = h.sendTurn.mock.calls.filter(
+      (call) => (call[0] as Record<string, unknown>)['agentId'] === containerId,
+    );
+    expect(containerTurns).toHaveLength(1);
+    const pack = String((containerTurns[0]![0] as Record<string, unknown>)['content']);
+    expect(pack).toContain('verified 1 of 1 cited paths');
+    expect(pack).not.toContain('most of what it reported could not be found on disk');
   });
 
   it('joins the diff context report into the pack it sends the container', async () => {

@@ -172,8 +172,7 @@ export const spawnReportAgent = (get: GetFn) => {
             mountIds: readMountIds,
           }).catch(() => null)
         : null;
-    const changedMountIds: ReadonlyArray<MountId> =
-      diff === null || diff.evidence === null || diff.mountId === null ? [] : [diff.mountId];
+    const changedMountIds: ReadonlyArray<MountId> = diff?.changedMountIds ?? [];
     const roster = await pickArtifactScouts({
       kind: 'report',
       reportType,
@@ -221,7 +220,7 @@ export const spawnReportAgent = (get: GetFn) => {
         mounts,
         reportType,
         changedMountIds,
-        changedPaths: diff?.evidence?.paths ?? [],
+        changedPaths: diff?.paths ?? [],
         workflowRunId,
         brief,
         attachments,
