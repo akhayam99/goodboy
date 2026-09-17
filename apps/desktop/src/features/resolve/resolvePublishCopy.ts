@@ -26,16 +26,16 @@ export const REVIEW_PUBLICATION = 'Review publication';
 export const PUBLICATION_COMPLETE = 'Publication complete';
 
 export const PUBLISH_INTENT_LABEL: Record<ResolvePublishIntent, string> = {
-  publish_fix: 'Publish fix and close',
-  close_without_fix: 'Close without the fix',
+  publish_fix: 'Push fix and resolve threads',
+  close_without_fix: 'Resolve threads without the fix',
   post_replies: 'Post replies',
 };
 
 export const CLOSE_WITHOUT_FIX_CONFIRM = {
-  title: 'Close without the fix',
+  title: 'Resolve threads without the fix',
   description:
     'No commit goes out with this batch. The reviewer threads read as resolved on the pull request and the code stays as it is.',
-  confirmLabel: 'Close them anyway',
+  confirmLabel: 'Resolve them anyway',
   cancelLabel: 'Keep them open',
 } as const;
 

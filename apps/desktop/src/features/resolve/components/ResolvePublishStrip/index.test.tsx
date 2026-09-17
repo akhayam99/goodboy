@@ -118,15 +118,15 @@ describe('ResolvePublishStrip', () => {
 
     expect(screen.getByText('3 replies to post · 3 threads to resolve')).toBeDefined();
     expect(screen.getByText(frozenAtLabel({ frozenAt: FROZEN_AT }))).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Close without the fix' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve threads without the fix' }));
 
     expect(h.state.publishConversations).not.toHaveBeenCalled();
-    expect(screen.getByRole('group', { name: 'Close without the fix' })).toBeDefined();
+    expect(screen.getByRole('group', { name: 'Resolve threads without the fix' })).toBeDefined();
     expect(
       screen.getByText('3 replies to post · 3 threads to resolve. 3 threads on #248'),
     ).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close them anyway' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve them anyway' }));
 
     await waitFor(() => expect(h.state.publishConversations).toHaveBeenCalledTimes(1));
     expect(h.state.publishConversations.mock.calls[0]?.[0]).toMatchObject({
@@ -150,10 +150,10 @@ describe('ResolvePublishStrip', () => {
     };
     render(<ResolvePublishStrip sessionId={SESSION_ID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Publish fix and close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Push fix and resolve threads' }));
 
     await waitFor(() => expect(h.state.publishConversations).toHaveBeenCalledTimes(1));
-    expect(screen.queryByRole('group', { name: 'Close without the fix' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Resolve threads without the fix' })).toBeNull();
   });
 
   it('posts replies without a confirm when the batch closes nothing', async () => {
@@ -173,11 +173,11 @@ describe('ResolvePublishStrip', () => {
     h.state.activePublicationPreview = { [SESSION_ID]: previewOf({}) };
     render(<ResolvePublishStrip sessionId={SESSION_ID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close without the fix' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve threads without the fix' }));
     fireEvent.click(screen.getByRole('button', { name: 'Keep them open' }));
 
     expect(h.state.publishConversations).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Close without the fix' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Resolve threads without the fix' })).toBeDefined();
   });
 
   it('asks for a fresh review when the branch moved under the preview', () => {
@@ -202,7 +202,7 @@ describe('ResolvePublishStrip', () => {
     render(<ResolvePublishStrip sessionId={SESSION_ID} />);
 
     expect(screen.getByText('· 1 held back, the comment changed')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Close without the fix' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Resolve threads without the fix' })).toBeDefined();
   });
 
   it('offers to check before retrying once a push is stuck', () => {
