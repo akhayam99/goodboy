@@ -13,7 +13,7 @@ import { PublishConversationsBar } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
 
-const renderBar = (mode: ReviewMode) =>
+const renderBar = ({ mode }: { readonly mode: ReviewMode }) =>
   render(
     <PublishConversationsBar
       sessionId={SESSION_ID}
@@ -27,20 +27,20 @@ afterEach(cleanup);
 
 describe('PublishConversationsBar', () => {
   it('offers the publish strip on the queue, where the decisions are made', () => {
-    renderBar('queue');
+    renderBar({ mode: 'queue' });
     expect(screen.getByTestId('publish-strip')).toBeDefined();
   });
 
   it.each(['pr_details', 'pr_activity', 'checks', 'create_pr'] as const)(
     'hides the publish strip on %s, so the machine cannot be driven from elsewhere',
     (mode) => {
-      renderBar(mode);
+      renderBar({ mode });
       expect(screen.queryByTestId('publish-strip')).toBeNull();
     },
   );
 
   it('keeps the four mode buttons in every mode', () => {
-    renderBar('checks');
+    renderBar({ mode: 'checks' });
     expect(screen.getByRole('button', { name: /Write review/ })).toBeDefined();
     expect(screen.getByRole('button', { name: /PR details/ })).toBeDefined();
     expect(screen.getByRole('button', { name: /PR activity/ })).toBeDefined();

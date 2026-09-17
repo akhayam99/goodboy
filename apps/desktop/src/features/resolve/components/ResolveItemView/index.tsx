@@ -181,6 +181,7 @@ export const ResolveItemView = ({
                 <Button
                   size="sm"
                   variant="primary"
+                  data-resolve-primary
                   disabled={isBusy || !canApprove}
                   onClick={onApprove}
                 >
@@ -212,7 +213,9 @@ export const ResolveItemView = ({
               />
             </div>
           )}
-          {!isDelivered && <SharedCandidateNote members={sharedMembers} />}
+          {!isDelivered && mode === 'reply' && !isAnswering && (
+            <SharedCandidateNote members={sharedMembers} />
+          )}
           <DecisionBlock
             fieldId={fieldId}
             reply={reply}

@@ -321,3 +321,92 @@ describe('the resolve queue home', () => {
     });
   });
 });
+
+describe('walking the queue from the keyboard', () => {
+  const twoRows = () => {
+    h.state.sessionGithub = {
+      [SESSION_ID]: {
+        pr: { number: 248, url: 'https://github.com/acme/web/pull/248', state: 'open' },
+        detail: {
+          prNumber: 248,
+          comments: [commentOf('PRRT_1'), commentOf('PRRT_2')],
+          reviews: [],
+          checks: [],
+        },
+        detailLoading: false,
+        detailError: null,
+      },
+    };
+    h.state.sessionResolveQueueItems = {
+      [SESSION_ID]: [
+        entryOf({ item: { id: 'item-1', threadId: 'PRRT_1' }, thread: { threadId: 'PRRT_1' } }),
+        entryOf({ item: { id: 'item-2', threadId: 'PRRT_2' }, thread: { threadId: 'PRRT_2' } }),
+      ],
+    };
+  };
+
+  const rowFor = (threadId: string): HTMLElement => {
+    const row = document.querySelector<HTMLElement>(`[data-thread-id="${threadId}"]`);
+    if (row === null) {
+      throw new Error(`no row for ${threadId}`);
+    }
+    return row;
+  };
+
+  it('moves the selection down and up from the row that has the focus', () => {
+    twoRows();
+    render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.keyDown(rowFor('PRRT_1'), { key: 'ArrowDown' });
+
+    expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      patch: { expandedThreadId: 'PRRT_2', order: ['PRRT_1', 'PRRT_2'] },
+    });
+
+    h.state.setResolveQueueView.mockClear();
+    fireEvent.keyDown(rowFor('PRRT_2'), { key: 'ArrowUp' });
+
+    expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      patch: { expandedThreadId: 'PRRT_1', order: ['PRRT_1', 'PRRT_2'] },
+    });
+  });
+
+  it('stops at the ends rather than wrapping the list around', () => {
+    twoRows();
+    render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.keyDown(rowFor('PRRT_1'), { key: 'ArrowUp' });
+
+    expect(h.state.setResolveQueueView).not.toHaveBeenCalled();
+  });
+
+  it('leaves a control inside a row alone, so its own key handling still runs', () => {
+    twoRows();
+    h.state.resolveQueueView = {
+      [SESSION_ID]: {
+        filter: 'needs_review',
+        expandedThreadId: 'PRRT_1',
+        order: [],
+        scrollTop: 0,
+      },
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    const inner = within(rowFor('PRRT_2')).getAllByRole('button')[0];
+    const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    inner?.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('ignores an arrow pressed with a modifier, which belongs to the app', () => {
+    twoRows();
+    render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.keyDown(rowFor('PRRT_1'), { key: 'ArrowDown', metaKey: true });
+
+    expect(h.state.setResolveQueueView).not.toHaveBeenCalled();
+  });
+});

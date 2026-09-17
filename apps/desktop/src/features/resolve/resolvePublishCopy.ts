@@ -73,6 +73,11 @@ export const publicationCountsLine = ({
 export const frozenAtLabel = ({ frozenAt }: { readonly frozenAt: number }): string =>
   `as of ${new Date(frozenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
+export const HELD_BACK_REASON: Record<'comment_changed' | 'approval_withdrawn', string> = {
+  comment_changed: 'the comment changed',
+  approval_withdrawn: 'you took the approval back',
+};
+
 export const heldBackNote = ({
   preview,
 }: {
@@ -83,7 +88,9 @@ export const heldBackNote = ({
     return null;
   }
   const reason =
-    held[0]?.kind === 'approval_withdrawn' ? 'you took the approval back' : 'the comment changed';
+    held[0]?.kind === 'approval_withdrawn'
+      ? HELD_BACK_REASON.approval_withdrawn
+      : HELD_BACK_REASON.comment_changed;
   return `${held.length} held back, ${reason}`;
 };
 
@@ -125,10 +132,11 @@ export const driftSentence = ({
   return drift.length === 0 ? null : 'Something changed while you were looking';
 };
 
-export const HELD_BACK_NOTE: Record<'comment_changed' | 'approval_withdrawn', string> = {
-  comment_changed: 'Held back, the comment changed',
-  approval_withdrawn: 'Held back, you took the approval back',
-};
+export const heldBackChipLabel = ({
+  kind,
+}: {
+  readonly kind: 'comment_changed' | 'approval_withdrawn';
+}): string => `Held back, ${HELD_BACK_REASON[kind]}`;
 
 export type BlockerCopy = {
   readonly sentence: string;

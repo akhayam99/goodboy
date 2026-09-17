@@ -21,6 +21,7 @@ export const PublishLines = ({ preview }: Props) => {
           {held !== null && <span className="text-warning">{` · ${held}`}</span>}
         </p>
       )}
+      {counts === null && held !== null && <p className="text-2xs text-warning">{held}</p>}
       {counts === null && excluded !== null && (
         <p className="text-2xs text-muted-foreground">{excluded}</p>
       )}

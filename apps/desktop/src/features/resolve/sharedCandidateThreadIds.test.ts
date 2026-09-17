@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolveCandidateWithItems } from '../../store/slices/resolve/state';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
-import { sharedCandidateBlocker, sharedCandidateThreadIds } from './sharedCandidateThreadIds';
+import {
+  sharedCandidateBlocker,
+  sharedCandidateThreadIds,
+  type SharedCandidateMember,
+} from './sharedCandidateThreadIds';
 
 type RowSeed = Readonly<{
   itemId: string;
   threadId: string;
   body: string;
-  approvalState?: string;
+  approvalState?: SharedCandidateMember['approvalState'];
 }>;
 
 const rowOf = ({ itemId, threadId, body, approvalState = 'none' }: RowSeed): ResolveQueueRow =>

@@ -10,7 +10,11 @@ type Props = {
   readonly members: ReadonlyArray<SharedCandidateMember>;
 };
 
-export const sharedCandidateSentence = ({ count }: { readonly count: number }): string =>
+type SentenceParams = {
+  readonly count: number;
+};
+
+const sharedCandidateSentence = ({ count }: SentenceParams): string =>
   count === 1
     ? 'Approving this also approves 1 other comment'
     : `Approving this also approves ${count} other comments`;

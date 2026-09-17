@@ -47,11 +47,13 @@ export const sharedCandidateThreadIds = ({
   });
 };
 
+type BlockerParams = Readonly<{
+  members: ReadonlyArray<SharedCandidateMember>;
+}>;
+
 export const sharedCandidateBlocker = ({
   members,
-}: {
-  readonly members: ReadonlyArray<SharedCandidateMember>;
-}): 'deferred' | 'wont_fix' | null => {
+}: BlockerParams): 'deferred' | 'wont_fix' | null => {
   if (members.some((member) => member.approvalState === 'deferred')) {
     return 'deferred';
   }

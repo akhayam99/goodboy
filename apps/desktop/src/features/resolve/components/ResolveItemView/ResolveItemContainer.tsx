@@ -33,7 +33,7 @@ type Props = {
   readonly onAskForChanges: (params: {
     readonly threadId: string;
     readonly instruction: string;
-  }) => void;
+  }) => boolean;
   readonly onOpenInDiff: (params: {
     readonly threadId: string;
     readonly sha: string;
@@ -53,6 +53,9 @@ const APPROVABLE_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set([
   'no_change',
   'changed_since_accepted',
 ]);
+
+const COULD_NOT_SEND =
+  'This comment is no longer on the pull request, so the agent cannot be asked about it';
 
 const approveBlockedReasonFor = ({
   row,
@@ -322,7 +325,14 @@ export const ResolveItemContainer = ({
         setMode('reply');
       }}
       onSendToAgent={() => {
-        onAskForChanges({ threadId: row.thread.threadId, instruction: instruction.trim() });
+        const isSent = onAskForChanges({
+          threadId: row.thread.threadId,
+          instruction: instruction.trim(),
+        });
+        if (!isSent) {
+          setError(COULD_NOT_SEND);
+          return;
+        }
         setInstruction('');
         setMode('reply');
         onSelect(nextThreadId);

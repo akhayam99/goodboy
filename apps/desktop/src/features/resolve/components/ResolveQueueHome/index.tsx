@@ -77,6 +77,15 @@ type Props = {
 
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 const EMPTY_DRIFT: ReadonlyArray<ResolvePublicationDrift> = [];
+
+type AskForChangesParams = {
+  readonly threadId: string;
+  readonly instruction: string;
+};
+
+type FocusRowParams = {
+  readonly threadId: string;
+};
 const EMPTY_CHECKS: ReadonlyArray<PrCheckRun> = [];
 const SKELETON_ROWS = [0, 1, 2];
 const DETAIL_WIDTH = 520;
@@ -129,14 +138,16 @@ export const ResolveQueueHome = ({ session }: Props) => {
   }, [loadResolveSession, sessionId]);
 
   const groups = useMemo(() => groupResolveQueue({ rows }), [rows]);
-  const listed = useMemo(
-    () =>
-      orderResolveQueueRows({
-        rows: rowsForResolveFilter({ groups, filter: view.filter }),
-        pinned: view.order,
-      }),
-    [groups, view.filter, view.order],
-  );
+  const listed = useMemo(() => {
+    const ordered = orderResolveQueueRows({
+      rows: rowsForResolveFilter({ groups, filter: view.filter }),
+      pinned: view.order,
+    });
+    return [
+      ...ordered.filter((row) => row.status === 'agent_asked'),
+      ...ordered.filter((row) => row.status !== 'agent_asked'),
+    ];
+  }, [groups, view.filter, view.order]);
   const listGroups = useMemo(() => groupSharedRuns({ rows: listed }), [listed]);
   const heldBack = useMemo(
     () => heldBackByThreadId({ drift: publicationPreview?.drift ?? EMPTY_DRIFT }),
@@ -260,11 +271,11 @@ export const ResolveQueueHome = ({ session }: Props) => {
   );
 
   const onAskForChanges = useCallback(
-    ({ threadId, instruction }: { readonly threadId: string; readonly instruction: string }) => {
+    ({ threadId, instruction }: AskForChangesParams): boolean => {
       const pr = github?.pr ?? null;
       const thread = threadsByThreadId.get(threadId);
       if (pr === null || thread === undefined || instruction === '') {
-        return;
+        return false;
       }
       const routing = kindRouting({ kind: 'resolver', roleModels });
       const row = rows.find((candidate) => candidate.thread.threadId === threadId) ?? null;
@@ -291,6 +302,7 @@ export const ResolveQueueHome = ({ session }: Props) => {
         spawnAgent,
         setAgentConfig,
       }).catch((error: unknown) => showToast('error', formatError(error)));
+      return true;
     },
     [github, roleModels, rows, sessionId, setAgentConfig, showToast, spawnAgent, threadsByThreadId],
   );
@@ -327,10 +339,24 @@ export const ResolveQueueHome = ({ session }: Props) => {
     }
   };
 
-  const focusRow = useCallback((threadId: string): void => {
+  const focusRow = useCallback(({ threadId }: FocusRowParams): void => {
     listRef.current
       ?.querySelector<HTMLElement>(`[data-thread-id="${CSS.escape(threadId)}"]`)
       ?.focus();
+  }, []);
+
+  const focusPanel = useCallback((): void => {
+    const panel = detailRef.current;
+    if (panel === null) {
+      return;
+    }
+    const primary = panel.querySelector<HTMLElement>('[data-resolve-primary]:not([disabled])');
+    const control =
+      primary ??
+      panel.querySelector<HTMLElement>(
+        'button:not([disabled]), textarea, [href], input:not([disabled])',
+      );
+    control?.focus();
   }, []);
 
   const onListKeyDown = useCallback(
@@ -338,10 +364,15 @@ export const ResolveQueueHome = ({ session }: Props) => {
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
         return;
       }
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const rowThreadId = target?.dataset.threadId ?? null;
+      if (rowThreadId === null) {
+        return;
+      }
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         const threadId = threadIdAtStep({
           rows: listed,
-          selectedThreadId: view.expandedThreadId,
+          selectedThreadId: rowThreadId,
           delta: event.key === 'ArrowDown' ? 1 : -1,
         });
         if (threadId === null) {
@@ -349,26 +380,26 @@ export const ResolveQueueHome = ({ session }: Props) => {
         }
         event.preventDefault();
         onSelect(threadId);
-        focusRow(threadId);
+        focusRow({ threadId });
         return;
       }
-      if (event.key === 'Enter' && view.expandedThreadId !== null) {
-        const control = detailRef.current?.querySelector<HTMLElement>(
-          'button:not([disabled]), textarea, [href], input:not([disabled])',
-        );
-        if (control == null) {
-          return;
-        }
+      if (event.key === 'Enter' && rowThreadId === view.expandedThreadId) {
         event.preventDefault();
-        control.focus();
-        return;
-      }
-      if (event.key === 'Escape' && view.expandedThreadId !== null) {
-        event.preventDefault();
-        focusRow(view.expandedThreadId);
+        focusPanel();
       }
     },
-    [focusRow, listed, onSelect, view.expandedThreadId],
+    [focusPanel, focusRow, listed, onSelect, view.expandedThreadId],
+  );
+
+  const onPanelKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>): void => {
+      if (event.key !== 'Escape' || view.expandedThreadId === null) {
+        return;
+      }
+      event.preventDefault();
+      focusRow({ threadId: view.expandedThreadId });
+    },
+    [focusRow, view.expandedThreadId],
   );
 
   const renderRow = useCallback(
@@ -428,7 +459,11 @@ export const ResolveQueueHome = ({ session }: Props) => {
       open={selectedRow !== null}
       panel={
         selectedRow === null ? null : (
-          <div ref={detailRef} className="flex h-full min-h-0 min-w-0 flex-col">
+          <div
+            ref={detailRef}
+            onKeyDown={onPanelKeyDown}
+            className="flex h-full min-h-0 min-w-0 flex-col"
+          >
             <ResolveItemContainer
               key={selectedRow.thread.threadId}
               sessionId={sessionId}

@@ -5,7 +5,7 @@ import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/ut
 import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { RESOLVE_COMMENT_UNAVAILABLE, RESOLVE_QUEUE_ACTION_LABEL } from '../../resolveQueueCopy';
 import { deliverySupportLine } from '../../resolveDeliverySupport';
-import { HELD_BACK_NOTE } from '../../resolvePublishCopy';
+import { heldBackChipLabel } from '../../resolvePublishCopy';
 import type { HeldBackKind } from '../../heldBackByThreadId';
 import { shortSha } from '../../resolveItemCopy';
 import type { ResolveQueueRow as QueueRow } from '../../buildResolveQueueRows';
@@ -152,7 +152,12 @@ export const ResolveQueueRow = ({
         </span>
         <span className="col-start-2 row-start-2 flex items-center justify-end gap-2 self-start text-right text-2xs text-muted-foreground">
           {heldBack !== null && (
-            <Chip size="3xs" tone="warning" bordered={false} label={HELD_BACK_NOTE[heldBack]} />
+            <Chip
+              size="3xs"
+              tone="warning"
+              bordered={false}
+              label={heldBackChipLabel({ kind: heldBack })}
+            />
           )}
           {support}
         </span>

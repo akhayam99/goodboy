@@ -27,5 +27,10 @@ type NextParams = Readonly<{
   selectedThreadId: string | null;
 }>;
 
-export const threadIdAfterDecision = ({ rows, selectedThreadId }: NextParams): string | null =>
-  threadIdAtStep({ rows, selectedThreadId, delta: 1 });
+export const threadIdAfterDecision = ({ rows, selectedThreadId }: NextParams): string | null => {
+  const index = rows.findIndex((row) => row.thread.threadId === selectedThreadId);
+  if (index === -1) {
+    return null;
+  }
+  return rows[index + 1]?.thread.threadId ?? null;
+};

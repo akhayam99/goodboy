@@ -38,14 +38,19 @@ const RETRYABLE_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set([
 
 const HISTORY_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set(['later', 'pushed']);
 
+const DECIDED_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set(['ready_to_push', 'wont_fix']);
+
 const reviewerTimeOf = ({ row }: { readonly row: ResolveQueueRow }): number =>
   row.reviewerNote?.createdAtMs ?? row.thread.createdAt;
 
 const byReviewerTime = (a: ResolveQueueRow, b: ResolveQueueRow): number =>
   reviewerTimeOf({ row: a }) - reviewerTimeOf({ row: b });
 
-const askedRank = ({ row }: { readonly row: ResolveQueueRow }): number =>
-  row.status === 'agent_asked' ? 0 : 1;
+type RankParams = {
+  readonly row: ResolveQueueRow;
+};
+
+const askedRank = ({ row }: RankParams): number => (row.status === 'agent_asked' ? 0 : 1);
 
 const byAgentQuestionThenTime = (a: ResolveQueueRow, b: ResolveQueueRow): number => {
   const rank = askedRank({ row: a }) - askedRank({ row: b });
@@ -62,7 +67,7 @@ export const groupResolveQueue = ({
     .slice()
     .sort(byAgentQuestionThenTime),
   approved: rows
-    .filter((row) => !NEEDS_REVIEW_STATUSES.has(row.status) && isDecidedUnpublished(row))
+    .filter((row) => DECIDED_STATUSES.has(row.status) && isDecidedUnpublished(row))
     .slice()
     .sort(byReviewerTime),
   active: rows

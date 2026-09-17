@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { ResolveQueueRow } from '../../buildResolveQueueRows';
 import { threadIdAfterDecision, threadIdAtStep } from './queueTraversal';
 
-const rowOf = (threadId: string): ResolveQueueRow =>
+const rowOf = ({ threadId }: { readonly threadId: string }): ResolveQueueRow =>
   ({ thread: { threadId } }) as unknown as ResolveQueueRow;
 
-const rows = [rowOf('one'), rowOf('two'), rowOf('three')];
+const rows = [rowOf({ threadId: 'one' }), rowOf({ threadId: 'two' }), rowOf({ threadId: 'three' })];
 
 describe('threadIdAtStep', () => {
   it('walks down and up the list as it is shown', () => {
@@ -39,5 +39,10 @@ describe('threadIdAfterDecision', () => {
 
   it('closes the panel when the decided row was the last one', () => {
     expect(threadIdAfterDecision({ rows, selectedThreadId: 'three' })).toBeNull();
+  });
+
+  it('closes the panel rather than jumping to the top when the row is not listed', () => {
+    expect(threadIdAfterDecision({ rows, selectedThreadId: 'parked' })).toBeNull();
+    expect(threadIdAfterDecision({ rows, selectedThreadId: null })).toBeNull();
   });
 });
