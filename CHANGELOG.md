@@ -7,6 +7,53 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.7
+
+### [#1795] Wireframes and reports are flows now, not one agent with a pack
+
+Asking for a wireframe or a report used to hand one agent a packet of evidence and hope. Now it starts a run: scouts fan out in parallel across the repositories you picked, each claim they bring back is checked against the files on disk, and only then does the producing agent write the document.
+
+You choose which repositories the run reads, in the creation pane, before you press the button. That ends the failure that started this work: the app decided alone which repository to walk, so a session with two of them attached and none selected walked nothing, and one with the wrong one selected walked the wrong repository in silence. A change report had the same defect, and now describes every repository its diff touched instead of the first one it found.
+
+Reports get scouts of their own. A change summary sends one scout per repository the diff touched, to read what those functions did before, whether a test covers them and whether a doc went stale, because the diff itself carries hunks and never meaning. A session summary sends none and says so: its subject is the session, and the session is already recorded.
+
+The producing agent may now ask you up to two questions, and produces the artifact in the same turn anyway, using its own recommended answer and naming the assumption in the document. Answering refines what you already have instead of making you wait for it.
+
+A run survives a reload. Its phase, its roster and its deadline live on the artifact's provenance row, so a container whose scouts have all reported rejoins and produces instead of being marked failed.
+
+### [#1796] The artifact gets its screen back
+
+The Artifacts surface spent a third of the window on chrome before the first line of what you opened: 253px on a report and 248px on a wireframe, measured. It is now 61px and 123px, and the wireframe canvas grew by exactly the 125px it stopped paying, which is why a desktop screen would not fit on one page.
+
+Three bands became one. Metadata and provenance moved behind the details disclosure, the report's Preview, Edit and Regenerate became actions in the band rather than a band of their own, and the export status slot stopped reserving 160px to show nothing.
+
+Opening an artifact no longer destroys the list: a rail carries it alongside, when the pane is wide enough to hold both without squeezing the document.
+
+The agents behind an artifact are visible while it is being made and afterwards: which ones were spawned, which repository and branch each one read, and the one line reason it was chosen.
+
+The creation pane's choices became inline chips, so two binary choices cost 170px instead of 288 and nothing sits below the fold.
+
+### [#1794] Save PDF prints the whole report
+
+Save PDF had never printed more than one page. The document was cut wherever the first screenful ended and the footer read 1 / 1, so a seven page report shipped as a fragment. The application's own rule that keeps the window from scrolling was winning over the print stylesheet's reset, because both were unlayered with identical selectors and the application's came later in the bundle.
+
+The page is A4 and says so. Without an explicit size the paper was whatever the print dialog defaulted to, and on US Letter the same document paginated differently.
+
+The printed page is also a page now: 13pt body in a 165mm column instead of a 150mm ribbon adrift in 30mm margins, 75 to 83 characters a line instead of 85 to 90, tables that repeat their header when they cross a page and never break through a row, code blocks and paragraphs that break with orphans and widows instead of being declared unbreakable, and callouts and chips that declare themselves with a border and ink so they survive a print with background graphics switched off.
+
+The window that opens after Save PDF scrolls, and Escape closes it.
+
+### Fixes
+
+- An answered question produced a second artifact instead of a new revision of the one you were improving.
+- A finished run stayed in its producing phase forever, so the next session switch marked it failed.
+- A repository repointed under the same name and branch went unnoticed by the creation pane, which kept reading the old worktree.
+- Repositories resolved in the session's order rather than the order you chose them, so the theme could come from the one you picked second.
+- A repository whose diff named no file still spent a scout turn on a report with nothing to read.
+- A report pack could carry wireframe wording, telling a report agent that a wireframe was being drawn.
+- Body text was clipped rather than wrapped in a narrow pane, in the shared studio layout that Workflows and Inbox also use.
+- Every callout leaked a stray bracket into its text, on screen and on paper.
+
 ## Goodboy v0.3.6
 
 A wireframe stops being drawn by one agent reading nothing. Two scouts read the
