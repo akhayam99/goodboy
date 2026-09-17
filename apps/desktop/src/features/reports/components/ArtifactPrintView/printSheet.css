@@ -1,11 +1,5 @@
 @page {
   margin: 18mm 22mm 22mm;
-  @top-left {
-    color: #6b7079;
-    content: string(doc-title);
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 7.5pt;
-  }
   @bottom-right {
     color: #6b7079;
     content: counter(page) ' / ' counter(pages);
@@ -58,7 +52,6 @@
   letter-spacing: -0.012em;
   line-height: 1.18;
   margin: 0.6rem 0 0;
-  string-set: doc-title content(text);
 }
 .print-sheet .print-meta {
   display: flex;
@@ -315,6 +308,7 @@
   color: #14161a;
   font-size: 9.5pt;
   line-height: 1.45;
+  margin: 0 0 0.8em;
   padding: 0.55em 0.75em;
   page-break-inside: avoid;
   print-color-adjust: exact;
@@ -332,9 +326,10 @@
   border: 1px solid currentColor;
   border-radius: 2px;
   color: var(--print-tone);
-  display: inline;
+  display: inline-block;
   padding: 0 0.3em;
   print-color-adjust: exact;
+  white-space: nowrap;
 }
 .print-sheet .print-body [data-block='tree'] {
   break-inside: auto;
