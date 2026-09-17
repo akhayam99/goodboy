@@ -362,17 +362,6 @@
   page-break-after: avoid;
 }
 @media print {
-  html,
-  body,
-  body.bg-background {
-    background: #ffffff;
-  }
-  html,
-  body,
-  #root {
-    height: auto;
-    overflow: visible;
-  }
   .print-sheet {
     margin: 0 auto;
     max-width: 150mm;
