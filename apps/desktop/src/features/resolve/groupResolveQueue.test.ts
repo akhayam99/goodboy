@@ -183,6 +183,34 @@ describe('groupResolveQueue', () => {
     ]);
   });
 
+  it('leads with the question the run is parked on, however late it arrived', () => {
+    const rows = [
+      row({ threadId: 'first', status: 'fix_ready', reviewerCreatedAtMs: 100 }),
+      row({ threadId: 'second', status: 'reply_ready', reviewerCreatedAtMs: 200 }),
+      row({ threadId: 'asked', status: 'agent_asked', reviewerCreatedAtMs: 900 }),
+    ];
+
+    expect(groupResolveQueue({ rows }).needsReview.map((entry) => entry.thread.threadId)).toEqual([
+      'asked',
+      'first',
+      'second',
+    ]);
+  });
+
+  it('keeps two parked questions among themselves in the order they arrived', () => {
+    const rows = [
+      row({ threadId: 'late', status: 'agent_asked', reviewerCreatedAtMs: 900 }),
+      row({ threadId: 'early', status: 'agent_asked', reviewerCreatedAtMs: 100 }),
+      row({ threadId: 'fix', status: 'fix_ready', reviewerCreatedAtMs: 50 }),
+    ];
+
+    expect(groupResolveQueue({ rows }).needsReview.map((entry) => entry.thread.threadId)).toEqual([
+      'early',
+      'late',
+      'fix',
+    ]);
+  });
+
   it('keeps failed and uncertain delivery in the needs-review bucket', () => {
     const rows = [
       row({ threadId: 'f', status: 'delivery_failed', reviewerCreatedAtMs: 1 }),

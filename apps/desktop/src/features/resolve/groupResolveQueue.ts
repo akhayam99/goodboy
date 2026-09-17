@@ -44,6 +44,14 @@ const reviewerTimeOf = ({ row }: { readonly row: ResolveQueueRow }): number =>
 const byReviewerTime = (a: ResolveQueueRow, b: ResolveQueueRow): number =>
   reviewerTimeOf({ row: a }) - reviewerTimeOf({ row: b });
 
+const askedRank = ({ row }: { readonly row: ResolveQueueRow }): number =>
+  row.status === 'agent_asked' ? 0 : 1;
+
+const byAgentQuestionThenTime = (a: ResolveQueueRow, b: ResolveQueueRow): number => {
+  const rank = askedRank({ row: a }) - askedRank({ row: b });
+  return rank === 0 ? byReviewerTime(a, b) : rank;
+};
+
 export const groupResolveQueue = ({
   rows,
 }: {
@@ -52,7 +60,7 @@ export const groupResolveQueue = ({
   needsReview: rows
     .filter((row) => NEEDS_REVIEW_STATUSES.has(row.status))
     .slice()
-    .sort(byReviewerTime),
+    .sort(byAgentQuestionThenTime),
   approved: rows
     .filter((row) => !NEEDS_REVIEW_STATUSES.has(row.status) && isDecidedUnpublished(row))
     .slice()
