@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Chip, StatusDot, Tooltip } from '@goodboy/ui';
+import { StatusDot, Tooltip } from '@goodboy/ui';
 import type { Agent, AgentId, ResolveAttempt, Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -12,7 +12,6 @@ import { describeSessionStage } from '../../session-stage';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
-import { useDestinationCounts } from '../../hooks/useDestinationCounts';
 import { openLens } from '../../openLens';
 import { agentHomeLens, classifyAgent, resolveRootAgent } from '../../agent-kind';
 import { isAgentFinished } from '../../agent-lifecycle';
@@ -42,7 +41,9 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   ) as AgentId | null;
   const activeLens = useAppStore((state) => state.activeLens[sessionId] ?? null);
   const isBranchless = useIsBranchlessSession({ session });
-  const destinationCounts = useDestinationCounts({ sessionId });
+  const setFocusedPlanId = useAppStore((state) => state.setFocusedPlanId);
+  const setFocusedArtifactId = useAppStore((state) => state.setFocusedArtifactId);
+  const setFocusedWorkflowRun = useAppStore((state) => state.setFocusedWorkflowRun);
   const phaseRuns = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -60,11 +61,6 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
     () => phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null,
     [phaseRuns, selectedAgentId],
   );
-  const queuedAttemptCount = useMemo(
-    () => resolveAttempts.filter((attempt) => attempt.phase === 'queued').length,
-    [resolveAttempts],
-  );
-
   const rootAgent = useMemo(() => {
     if (selectedAgentId == null) {
       return null;
@@ -149,8 +145,6 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
         const accessory =
           isLast && crumb.id === 'selected-child' && selectedAgent != null ? (
             <AgentStatusIcon status={selectedAgent.status} />
-          ) : activeLens === 'review' && crumb.id === 'lens-review' && queuedAttemptCount > 0 ? (
-            <Chip size="3xs" tone="info" bordered={false} label={`${queuedAttemptCount} queued`} />
           ) : (
             crumb.accessory
           );
@@ -195,11 +189,16 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
                 label={visibleCrumb.label}
                 icon={visibleCrumb.icon}
                 accessory={visibleCrumb.accessory}
+                sessionId={sessionId}
                 activeLens={activeLens}
                 isBranchless={isBranchless}
-                counts={destinationCounts}
                 onNavigate={crumb.onClick}
-                onSelect={(lens) => openLens({ sessionId, lens })}
+                onSelect={(lens) => {
+                  setFocusedPlanId(sessionId, null);
+                  setFocusedArtifactId(sessionId, null);
+                  setFocusedWorkflowRun(sessionId, null);
+                  openLens({ sessionId, lens });
+                }}
               />
             ) : (
               <PlainCrumb crumb={visibleCrumb} isLast={isLast} />

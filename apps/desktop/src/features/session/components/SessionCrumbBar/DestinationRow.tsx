@@ -1,33 +1,33 @@
+import type { LucideIcon } from 'lucide-react';
 import { Chip, cn } from '@goodboy/ui';
-import type { LensKind } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { LENS_ICON } from '../../lens-labels';
-import type { LensMenuEntry } from './lensSwitcherGroups';
+import { shortcutGlyphs, type ShortcutId } from '../../../../shared/keyboard/registry';
 
 type DestinationRowProps = {
-  readonly entry: LensMenuEntry;
   readonly label: string;
+  readonly icon: LucideIcon;
+  readonly shortcut: ShortcutId;
   readonly isCurrent: boolean;
   readonly count: number | null;
-  readonly onSelect: (lens: LensKind) => void;
+  readonly onSelect: () => void;
 };
 
 export const DestinationRow = ({
-  entry,
   label,
+  icon: Icon,
+  shortcut,
   isCurrent,
   count,
   onSelect,
 }: DestinationRowProps) => {
-  const Icon = LENS_ICON[entry.lens];
-  const glyphs = shortcutGlyphs(entry.shortcut);
+  const glyphs = shortcutGlyphs(shortcut);
 
   return (
     <button
       type="button"
       role="menuitem"
-      onClick={() => onSelect(entry.lens)}
+      onClick={onSelect}
+      aria-current={isCurrent ? 'page' : undefined}
       className={cn(
         'flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors',
         isCurrent

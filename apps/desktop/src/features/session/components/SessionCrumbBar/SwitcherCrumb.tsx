@@ -14,6 +14,8 @@ type SwitcherCrumbProps = {
   readonly menuLabel: string;
   readonly icon?: LucideIcon;
   readonly accessory?: ReactNode;
+  readonly menuHeight?: number;
+  readonly menuHeightClass?: string;
   readonly onNavigate?: () => void;
   readonly children: (params: MenuParams) => ReactNode;
 };
@@ -23,12 +25,14 @@ export const SwitcherCrumb = ({
   menuLabel,
   icon: Icon,
   accessory,
+  menuHeight = 260,
+  menuHeightClass = 'max-h-64',
   onNavigate,
   children,
 }: SwitcherCrumbProps) => {
   const dropdown = useDropdown({
     align: 'start',
-    expectedHeight: 260,
+    expectedHeight: menuHeight,
     expectedWidth: 256,
     width: 'w-64 max-w-[calc(100vw-2rem)]',
   });
@@ -60,7 +64,10 @@ export const SwitcherCrumb = ({
       <span className="flex min-w-0 items-center">
         <button
           type="button"
-          onClick={onNavigate}
+          onClick={() => {
+            close();
+            onNavigate();
+          }}
           className={cn(CRUMB_BUTTON_CLASS, CRUMB_LINK_CLASS)}
         >
           {Icon == null ? null : (
@@ -93,7 +100,7 @@ export const SwitcherCrumb = ({
       anchorClassName="flex min-w-0 items-center"
       trigger={trigger}
     >
-      <ScrollFade fadeFrom="subtle" className="min-h-0 flex-1" viewportClassName="max-h-64">
+      <ScrollFade fadeFrom="subtle" className="min-h-0 flex-1" viewportClassName={menuHeightClass}>
         <div className="flex flex-col gap-0.5 p-1">{children({ close })}</div>
       </ScrollFade>
     </AnchoredPopover>

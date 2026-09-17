@@ -269,8 +269,8 @@ breadcrumb IA, exit on close or Esc, and only one is open at a time.
   comes from one durable conversation model, and everything it sends leaves
   through one publisher, so a restart finds the same rows in the same states
   and there is no second path that pushes a reply or closes a thread.
-- **A lens surface is reached from the overview, never from a rail, or from
-  the trail's destination switcher.** Rows and
+- **A lens surface is reached from the overview or from the trail's
+  destination switcher, never from a rail.** Rows and
   chips inside the overview route to it, expanding in place or opening a side
   panel; counts and dots are read-only signals on the row that routes there.
   Session lifecycle actions are not navigation and do not belong on those

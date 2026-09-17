@@ -34,6 +34,7 @@ type PaletteItem = {
   readonly label: string;
   readonly sublabel?: string;
   readonly group: PaletteGroup;
+  readonly isDestination?: boolean;
   readonly accent?: string;
   readonly icon?: string;
   readonly onSelect: () => void;
@@ -57,29 +58,37 @@ const GROUP_ORDER: ReadonlyArray<PaletteGroup> = [
   'help',
 ];
 
+type QuotaBucket = PaletteGroup | 'destination';
+
 const EMPTY_QUERY_QUOTA = {
   agent: 5,
   session: 8,
   workspace: 3,
   script: 3,
   action: 12,
+  destination: 20,
   help: 2,
-} satisfies Record<PaletteGroup, number>;
+} satisfies Record<QuotaBucket, number>;
+
+const bucketOf = (item: PaletteItem): QuotaBucket =>
+  item.isDestination === true ? 'destination' : item.group;
 
 const withGroupQuota = (items: ReadonlyArray<PaletteItem>): ReadonlyArray<PaletteItem> => {
-  const taken: Record<PaletteGroup, number> = {
+  const taken: Record<QuotaBucket, number> = {
     agent: 0,
     session: 0,
     workspace: 0,
     script: 0,
     action: 0,
+    destination: 0,
     help: 0,
   };
   return items.filter((item) => {
-    if (taken[item.group] >= EMPTY_QUERY_QUOTA[item.group]) {
+    const bucket = bucketOf(item);
+    if (taken[bucket] >= EMPTY_QUERY_QUOTA[bucket]) {
       return false;
     }
-    taken[item.group] += 1;
+    taken[bucket] += 1;
     return true;
   });
 };
@@ -198,6 +207,7 @@ export const CommandPalette = ({
           label: `Open ${SHORTCUTS[destination.shortcut].label}`,
           sublabel: shortcutGlyphs(destination.shortcut),
           group: 'action',
+          isDestination: true,
           onSelect: () => openLens({ sessionId, lens: destination.lens }),
         });
       }

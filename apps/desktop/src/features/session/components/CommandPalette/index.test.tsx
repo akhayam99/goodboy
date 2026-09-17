@@ -131,6 +131,15 @@ describe('CommandPalette', () => {
     expect(screen.queryByText('settle batch 20')).toBeNull();
   });
 
+  it('keeps the global actions in the empty palette behind every destination', () => {
+    hooks.currentSession = { id: 'session-1' };
+    render(<CommandPalette onClose={vi.fn()} onOpenSettings={vi.fn()} onNewSession={vi.fn()} />);
+
+    expect(screen.getByText('Open Terminal')).toBeDefined();
+    expect(screen.getByText('Open settings')).toBeDefined();
+    expect(screen.getByText('Report an issue')).toBeDefined();
+  });
+
   it('teaches each navigation destination with the chord that reaches it', () => {
     hooks.currentSession = { id: 'session-1' };
     render(<CommandPalette onClose={vi.fn()} initialQuery="Open Agents" />);
