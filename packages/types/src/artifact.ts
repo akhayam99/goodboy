@@ -1,4 +1,4 @@
-import type { AgentId, IsoDateTime, SessionId, WorkflowRunId } from './ids';
+import type { AgentId, IsoDateTime, MountId, SessionId, WorkflowRunId } from './ids';
 import type { WorkflowRoutingProposal } from './workflow-routing';
 
 export type ArtifactId = string & { readonly __brand: 'ArtifactId' };
@@ -66,6 +66,17 @@ export type ArtifactEvidenceSource = Readonly<{
   label: string;
 }>;
 
+export type ArtifactRunPhase = 'gathering' | 'producing' | 'done' | 'failed';
+
+export type ArtifactRunTarget = 'mobile' | 'desktop' | 'both';
+
+export type ArtifactScoutPlanEntry = Readonly<{
+  roleId: string;
+  mountId: MountId;
+  reason: string;
+  agentId: AgentId | null;
+}>;
+
 export type ArtifactProvenance = Readonly<{
   agentId: AgentId;
   sessionId: SessionId;
@@ -75,6 +86,11 @@ export type ArtifactProvenance = Readonly<{
   omissions: ReadonlyArray<string>;
   designProfileSummary: string | null;
   hasDesignEvidence: boolean;
+  phase: ArtifactRunPhase;
+  scoutPlan: ReadonlyArray<ArtifactScoutPlanEntry>;
+  mountIds: ReadonlyArray<MountId>;
+  target: ArtifactRunTarget | null;
+  deadlineAt: number | null;
   sourceWorkflowRunId: WorkflowRunId | null;
   executingWorkflowRunId: WorkflowRunId | null;
   createdAt: IsoDateTime;

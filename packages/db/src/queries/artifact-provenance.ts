@@ -111,6 +111,11 @@ const toDomain = (row: ProvenanceRow): ArtifactProvenance => ({
   omissions: toOmissions(parseJson(row.omissions_json)),
   designProfileSummary: row.design_profile_summary,
   hasDesignEvidence: row.has_design_evidence === 1,
+  phase: 'done',
+  scoutPlan: [],
+  mountIds: [],
+  target: null,
+  deadlineAt: null,
   sourceWorkflowRunId:
     row.source_workflow_run_id === null ? null : (row.source_workflow_run_id as WorkflowRunId),
   executingWorkflowRunId:
