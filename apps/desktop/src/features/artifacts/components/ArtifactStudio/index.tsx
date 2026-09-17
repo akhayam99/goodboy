@@ -12,6 +12,7 @@ import { PlanStudio } from '../../../plans/components/PlanStudio';
 import { ArtifactCollection } from './ArtifactCollection';
 import { ArtifactDetail } from './ArtifactDetail';
 import { ArtifactRail } from './ArtifactRail';
+import { ArtifactRunDetail } from './ArtifactRunDetail';
 import { ArtifactCreationPane } from '../ArtifactCreationPane';
 import { loadArtifactProvenance } from '../../artifactProvenance';
 import { ARTIFACT_RETRY_MISSING_BRIEF, artifactRetryDraft } from '../../artifactRetryDraft';
@@ -63,6 +64,7 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
     ),
   );
   const [awaitedAgentId, setAwaitedAgentId] = useState<AgentId | null>(null);
+  const [focusedRunAgentId, setFocusedRunAgentId] = useState<AgentId | null>(null);
 
   useEffect(() => {
     void loadSessionArtifacts(sessionId);
@@ -70,6 +72,7 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
 
   useEffect(() => {
     setAwaitedAgentId(null);
+    setFocusedRunAgentId(null);
   }, [sessionId]);
 
   useEffect(() => {
@@ -116,6 +119,23 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
 
   const standalone = artifacts.filter((artifact) => artifact.kind !== 'plan');
   const selected = standalone.find((artifact) => artifact.id === focusedArtifactId) ?? null;
+  const focusedRun =
+    generations.find((generation) => generation.agentId === focusedRunAgentId) ?? null;
+
+  useEffect(() => {
+    if (
+      focusedRunAgentId === null ||
+      generations.some((generation) => generation.agentId === focusedRunAgentId)
+    ) {
+      return;
+    }
+    const produced = artifacts.find((artifact) => artifact.agentId === focusedRunAgentId) ?? null;
+    setFocusedRunAgentId(null);
+    if (produced !== null && produced.kind !== 'plan') {
+      setFocusedArtifactId(sessionId, produced.id);
+    }
+  }, [focusedRunAgentId, generations, artifacts, sessionId, setFocusedArtifactId]);
+
   const groups = useMemo(
     () => artifactGroups({ artifacts: standalone, generations }),
     [standalone, generations],
@@ -153,7 +173,14 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
   };
 
   const selectGeneration = (generation: ArtifactGeneration) => {
-    void selectAgent(sessionId, generation.agentId);
+    if (generation.state !== 'generating') {
+      void selectAgent(sessionId, generation.agentId);
+      return;
+    }
+    if (focusedArtifactId !== null) {
+      setFocusedArtifactId(sessionId, null);
+    }
+    setFocusedRunAgentId(generation.agentId);
   };
 
   const stopGeneration = (generation: ArtifactGeneration) => {
@@ -180,7 +207,7 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
     return <PlanStudio sessionId={sessionId} eyebrow={eyebrow} />;
   }
 
-  if (selected === null) {
+  if (selected === null && focusedRun === null) {
     return (
       <ArtifactCollection
         plans={plans}
@@ -199,6 +226,26 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
     );
   }
 
+  const detail =
+    selected !== null ? (
+      <ArtifactDetail
+        sessionId={sessionId}
+        artifact={selected}
+        agents={agents}
+        artifacts={artifacts}
+        onBack={() => setFocusedArtifactId(sessionId, null)}
+        onSelectArtifact={selectArtifact}
+      />
+    ) : focusedRun === null ? null : (
+      <ArtifactRunDetail
+        sessionId={sessionId}
+        generation={focusedRun}
+        onBack={() => setFocusedRunAgentId(null)}
+        onStop={() => stopGeneration(focusedRun)}
+        onOpenAgent={() => void selectAgent(sessionId, focusedRun.agentId)}
+      />
+    );
+
   return (
     <StudioRailLayout
       railLabel="Artifacts"
@@ -211,8 +258,8 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
           counts={counts}
           openQuestionCount={openQuestionCount}
           filter={filter}
-          selectedArtifactId={selected.id}
-          selectedGenerationAgentId={null}
+          selectedArtifactId={selected?.id ?? null}
+          selectedGenerationAgentId={focusedRun?.agentId ?? null}
           onFilterChange={changeFilter}
           onSelectPlan={(planId) => setFocusedPlanId(sessionId, planId)}
           onSelectArtifact={selectArtifact}
@@ -221,16 +268,7 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
           onRetryGeneration={retryGeneration}
         />
       }
-      detail={
-        <ArtifactDetail
-          sessionId={sessionId}
-          artifact={selected}
-          agents={agents}
-          artifacts={artifacts}
-          onBack={() => setFocusedArtifactId(sessionId, null)}
-          onSelectArtifact={selectArtifact}
-        />
-      }
+      detail={detail}
     />
   );
 };

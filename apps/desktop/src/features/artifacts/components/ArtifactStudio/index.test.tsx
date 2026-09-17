@@ -64,18 +64,20 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
 
 vi.mock('../../../../store', async () => {
   const react = await import('react');
+  const useAppStore = <T,>(selector: (s: typeof state) => T): T => {
+    const [, bump] = react.useReducer((count: number) => count + 1, 0);
+    react.useEffect(() => {
+      subscribers.add(bump);
+      return () => {
+        subscribers.delete(bump);
+      };
+    }, [bump]);
+    return selector(state);
+  };
+  useAppStore.getState = () => state;
   return {
     EMPTY_ARRAY: [] as readonly never[],
-    useAppStore: <T,>(selector: (s: typeof state) => T): T => {
-      const [, bump] = react.useReducer((count: number) => count + 1, 0);
-      react.useEffect(() => {
-        subscribers.add(bump);
-        return () => {
-          subscribers.delete(bump);
-        };
-      }, [bump]);
-      return selector(state);
-    },
+    useAppStore,
     useSessionPlans: () => state.plans,
     useSessionOpenQuestions: () => state.openQuestions,
   };
@@ -549,5 +551,86 @@ describe('ArtifactStudio', () => {
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     expect(screen.getByTestId('artifact-export-slot')).toBeDefined();
     expect(screen.getByRole('button', { name: /all artifacts/i })).toBeDefined();
+  });
+});
+
+describe('ArtifactStudio generating run', () => {
+  const container = {
+    id: 'agent-wireframe-live',
+    name: 'High fidelity',
+    kind: 'wireframe',
+    status: 'running',
+    startedAt: '2026-01-02T03:00:00.000Z',
+  };
+  const scoutDone = {
+    id: 'agent-scout-screens',
+    parentAgentId: 'agent-wireframe-live',
+    ordinal: 1,
+    name: 'screens and routes',
+    kind: 'scout',
+    status: 'completed',
+    startedAt: '2026-01-02T03:00:00.000Z',
+    completedAt: '2026-01-02T03:00:14.000Z',
+  };
+  const scoutRunning = {
+    id: 'agent-scout-data',
+    parentAgentId: 'agent-wireframe-live',
+    ordinal: 2,
+    name: 'data and contracts',
+    kind: 'scout',
+    status: 'running',
+    startedAt: '2026-01-02T03:00:00.000Z',
+  };
+
+  beforeEach(() => {
+    state.sessionPhaseRuns = { 'sess-1': [container, scoutDone, scoutRunning] };
+    state.agentTurnState = {
+      'agent-wireframe-live': { kind: 'running' },
+      'agent-scout-data': { kind: 'running' },
+    };
+    state.wireframeScoutVerification = { 'agent-scout-screens': { verified: 8, cited: 11 } };
+  });
+
+  it('opens the run in the detail column, with the agents it spawned listed live', () => {
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('High fidelity'));
+    const detail = screen.getByTestId('artifact-run-detail');
+    const rows = within(detail).getAllByTestId('artifact-scout-row');
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.textContent).toContain('screens and routes');
+    expect(rows[0]?.textContent).toContain('8 of 11 claims verified');
+    expect(rows[1]?.textContent).toContain('data and contracts');
+    expect(rows[1]?.textContent).toContain('running');
+    expect(state.selectAgent).not.toHaveBeenCalled();
+  });
+
+  it('keeps the run beside the rail instead of taking a view of its own', () => {
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('High fidelity'));
+    expect(screen.getByTestId('artifact-rail')).toBeDefined();
+    expect(screen.getByRole('complementary', { name: 'Artifacts' })).toBeDefined();
+  });
+
+  it('stops the run from the band and hands the agent over when asked', () => {
+    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('High fidelity'));
+    fireEvent.click(screen.getByTestId('artifact-run-stop'));
+    expect(state.stopArtifactGeneration).toHaveBeenCalledWith({
+      sessionId: 'sess-1',
+      agentId: 'agent-wireframe-live',
+    });
+    fireEvent.click(screen.getByTestId('artifact-run-agent'));
+    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-wireframe-live');
+  });
+
+  it('follows the run to the artifact it produced instead of leaving a dead column', () => {
+    const { rerender } = render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByText('High fidelity'));
+    expect(screen.getByTestId('artifact-run-detail')).toBeDefined();
+    state.sessionArtifacts = {
+      'sess-1': [{ ...wireframe, agentId: 'agent-wireframe-live' }],
+    };
+    rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
+    expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', 'artifact-wireframe');
   });
 });

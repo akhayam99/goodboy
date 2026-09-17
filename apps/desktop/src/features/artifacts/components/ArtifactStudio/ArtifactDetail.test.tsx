@@ -11,6 +11,10 @@ const { state } = vi.hoisted(() => ({
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
     agentTurnState: {} as Record<string, { readonly kind: string }>,
+    wireframeScoutVerification: {} as Record<
+      string,
+      { readonly verified: number; readonly cited: number }
+    >,
     summarizerStatus: {} as Record<string, { readonly status: string }>,
     transcripts: {} as Record<string, ReadonlyArray<unknown>>,
     agentDraft: {} as Record<string, string>,
@@ -24,10 +28,11 @@ const { state } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../store', () => ({
-  EMPTY_ARRAY: [] as readonly never[],
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
-}));
+vi.mock('../../../../store', () => {
+  const useAppStore = <T,>(selector: (s: typeof state) => T) => selector(state);
+  useAppStore.getState = () => state;
+  return { EMPTY_ARRAY: [] as readonly never[], useAppStore };
+});
 
 vi.mock('../../../chat/components/ChatView', () => ({
   ChatView: () => <div data-testid="chat-view" />,
@@ -146,6 +151,7 @@ beforeEach(() => {
   state.sessionArtifacts = { 'sess-1': [report, otherReport] };
   state.agentTurnState = {};
   state.agentDraft = {};
+  state.wireframeScoutVerification = {};
   state.transcripts = {
     'agent-report-1': [{ kind: 'user_text', runId: 'run-1', text: 'the original pack', at: '' }],
   };
@@ -369,6 +375,42 @@ describe('ArtifactDetail metadata disclosure', () => {
     const divergence = screen.getByTestId('wireframe-fidelity-divergence');
     expect(divergence.textContent).toContain('high asked, low produced');
     expect(screen.getByTestId('artifact-title').parentElement?.contains(divergence)).toBe(true);
+  });
+
+  it('lists the agents behind the artifact as the third line of the disclosure', async () => {
+    state.sessionPhaseRuns = {
+      'sess-1': [
+        wireframer,
+        {
+          id: 'agent-scout-screens',
+          sessionId: 'sess-1',
+          parentAgentId: 'agent-wireframe-1',
+          ordinal: 3,
+          name: 'screens and routes',
+          kind: 'scout',
+          status: 'completed',
+        },
+      ] as unknown as ReadonlyArray<Agent>,
+    };
+    renderDetail({ artifact: wireframe, agents: [wireframer] });
+    expect(screen.queryByTestId('artifact-scouts')).toBeNull();
+    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
+    await waitFor(() => {
+      expect(screen.getAllByTestId('artifact-scout-row')).toHaveLength(1);
+    });
+    const details = screen.getByTestId('artifact-details');
+    expect(details.contains(screen.getByTestId('artifact-scouts'))).toBe(true);
+    expect(screen.getByTestId('artifact-scout-row').textContent).toContain('screens and routes');
+  });
+
+  it('says so when no scout read a repository for the artifact', async () => {
+    renderDetail({ artifact: report, agents: [reporter, otherReporter] });
+    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
+    await waitFor(() => {
+      expect(screen.getByTestId('artifact-scouts-empty').textContent).toContain(
+        'no scout read a repository',
+      );
+    });
   });
 
   it('leaves no divergence chip when the wireframe came back as asked', () => {
