@@ -42,7 +42,7 @@ export const ArtifactIdentityBand = ({
         variant="ghost"
         size="sm"
         onClick={onBack}
-        className="shrink-0 @min-[1265px]:hidden"
+        className="shrink-0 @min-[1025px]:hidden"
         data-testid="artifact-back"
       >
         <ArrowLeft size={ICON_SIZE.row} aria-hidden />
