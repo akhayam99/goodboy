@@ -130,6 +130,11 @@ describe('recordArtifactProvenance', () => {
       omissions: ['dropped password: harborline-test-value'],
       designProfileSummary: 'theme name: Harborline, secret=harborline-test-value',
       hasDesignEvidence: true,
+      phase: 'producing',
+      scoutPlan: [],
+      mountIds: [],
+      target: 'desktop',
+      deadlineAt: null,
       sourceWorkflowRunId: RUN_ID,
       executingWorkflowRunId: null,
     });
@@ -138,6 +143,8 @@ describe('recordArtifactProvenance', () => {
     expect(input['omissions']).toEqual(['dropped password: [redacted]']);
     expect(String(input['designProfileSummary'])).toBe('theme name: Harborline, secret=[redacted]');
     expect(input['hasDesignEvidence']).toBe(true);
+    expect(input['phase']).toBe('producing');
+    expect(input['target']).toBe('desktop');
     expect(input['sourceWorkflowRunId']).toBe(RUN_ID);
     expect(input['executingWorkflowRunId']).toBeNull();
   });
@@ -152,6 +159,11 @@ describe('recordArtifactProvenance', () => {
       omissions: [],
       designProfileSummary: null,
       hasDesignEvidence: false,
+      phase: 'producing',
+      scoutPlan: [],
+      mountIds: [],
+      target: null,
+      deadlineAt: null,
       sourceWorkflowRunId: null,
       executingWorkflowRunId: null,
     });

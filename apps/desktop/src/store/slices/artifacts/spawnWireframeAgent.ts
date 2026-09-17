@@ -5,6 +5,7 @@ import type { ArtifactAttachment } from '../../../features/artifacts/artifactAtt
 import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
 import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
 import { collectWireframeScoutPlan } from '../../../features/wireframes/collectWireframeScoutPlan';
+import { WIREFRAME_SCOUT_DEADLINE_MS } from '../../../features/wireframes/wireframeScoutReports';
 import { sessionGoalText } from '../../../features/artifacts/sessionGoalText';
 import {
   WIREFRAME_FIDELITY_LABEL,
@@ -142,6 +143,11 @@ export const spawnWireframeAgent = (get: GetFn) => {
         omissions: [WIREFRAME_SCOUT_PENDING_NOTE],
         designProfileSummary: null,
         hasDesignEvidence: false,
+        phase: 'gathering',
+        scoutPlan: [],
+        mountIds: [],
+        target,
+        deadlineAt: Date.now() + WIREFRAME_SCOUT_DEADLINE_MS,
         sourceWorkflowRunId: workflowRunId,
         agentId: containerId,
         executingWorkflowRunId: null,

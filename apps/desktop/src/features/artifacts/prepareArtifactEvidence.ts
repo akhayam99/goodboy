@@ -94,6 +94,11 @@ export const prepareArtifactEvidence = async ({
         omissions: context.truncations,
         designProfileSummary: null,
         hasDesignEvidence: false,
+        phase: 'producing',
+        scoutPlan: [],
+        mountIds: [],
+        target: null,
+        deadlineAt: null,
         sourceWorkflowRunId: workflowRunId,
       },
     };
@@ -137,6 +142,11 @@ export const prepareArtifactEvidence = async ({
           : describeDesignProfile({ profile: designEvidence.profile }),
       hasDesignEvidence:
         designEvidence.source !== 'none' && hasDesignEvidence({ profile: designEvidence.profile }),
+      phase: 'producing',
+      scoutPlan: [],
+      mountIds: [],
+      target: choice.target,
+      deadlineAt: null,
       sourceWorkflowRunId: workflowRunId,
     },
   };

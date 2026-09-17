@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { AgentId, MountId, SessionId, WorkflowRunId } from '@goodboy/types';
 import type { Database } from '../client';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from '../migrations/runner';
-import { getArtifactProvenance, putArtifactProvenance } from './artifact-provenance';
+import {
+  getArtifactProvenance,
+  putArtifactProvenance,
+  updateArtifactRun,
+} from './artifact-provenance';
 
 const sessionId = 'session' as SessionId;
 const agentId = 'agent' as AgentId;
 const sourceRunId = 'run-source' as WorkflowRunId;
 const executingRunId = 'run-executing' as WorkflowRunId;
+const mountId = 'mount' as MountId;
 
 const seed = async (): Promise<Database> => {
   const db = makeTestDatabase();
@@ -48,6 +53,11 @@ const input = {
   omissions: ['agents: kept the last 12 of 30'],
   designProfileSummary: null,
   hasDesignEvidence: false,
+  phase: 'producing',
+  scoutPlan: [],
+  mountIds: [],
+  target: null,
+  deadlineAt: null,
   sourceWorkflowRunId: sourceRunId,
   executingWorkflowRunId: executingRunId,
 } as const;
@@ -119,6 +129,72 @@ describe('artifact provenance queries', () => {
     const stored = await getArtifactProvenance({ db, agentId });
     expect(stored?.designProfileSummary).toContain('generic');
     expect(stored?.hasDesignEvidence).toBe(false);
+  });
+
+  it('round trips the run a reload has to pick back up', async () => {
+    const db = await seed();
+    await putArtifactProvenance({
+      db,
+      input: {
+        ...input,
+        kind: 'wireframe',
+        phase: 'gathering',
+        scoutPlan: [
+          { roleId: 'screens', mountId, reason: 'the goal names a route', agentId },
+          { roleId: 'data', mountId, reason: 'the screens need field names', agentId: null },
+        ],
+        mountIds: [mountId],
+        target: 'mobile',
+        deadlineAt: 361_000,
+      },
+    });
+    const stored = await getArtifactProvenance({ db, agentId });
+    expect(stored?.phase).toBe('gathering');
+    expect(stored?.scoutPlan).toEqual([
+      { roleId: 'screens', mountId, reason: 'the goal names a route', agentId },
+      { roleId: 'data', mountId, reason: 'the screens need field names', agentId: null },
+    ]);
+    expect(stored?.mountIds).toEqual([mountId]);
+    expect(stored?.target).toBe('mobile');
+    expect(stored?.deadlineAt).toBe(361_000);
+  });
+
+  it('moves a run on without rewriting the rest of the row', async () => {
+    const db = await seed();
+    await putArtifactProvenance({
+      db,
+      input: { ...input, phase: 'gathering', mountIds: [mountId], target: 'desktop' },
+    });
+    await updateArtifactRun({
+      db,
+      input: {
+        agentId,
+        phase: 'producing',
+        scoutPlan: [{ roleId: 'screens', mountId, reason: 'the goal names a route', agentId }],
+      },
+    });
+    const stored = await getArtifactProvenance({ db, agentId });
+    expect(stored?.phase).toBe('producing');
+    expect(stored?.scoutPlan).toHaveLength(1);
+    expect(stored?.brief).toBe('explain what ledger-core changed');
+    expect(stored?.mountIds).toEqual([mountId]);
+    expect(stored?.target).toBe('desktop');
+  });
+
+  it('drops malformed scout plan entries instead of failing the read', async () => {
+    const db = await seed();
+    await putArtifactProvenance({ db, input });
+    await db.execute('UPDATE artifact_provenance SET scout_plan_json = ? WHERE agent_id = ?', [
+      JSON.stringify([
+        { roleId: 'screens' },
+        { mountId: 'mount' },
+        'loose',
+        { roleId: 'data', mountId: 'mount' },
+      ]),
+      agentId,
+    ]);
+    const stored = await getArtifactProvenance({ db, agentId });
+    expect(stored?.scoutPlan).toEqual([{ roleId: 'data', mountId, reason: '', agentId: null }]);
   });
 
   it('drops malformed evidence entries instead of failing the read', async () => {
