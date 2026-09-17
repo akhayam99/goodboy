@@ -7,6 +7,139 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.6
+
+A wireframe stops being drawn by one agent reading nothing. Two scouts read the
+repository first, and what they could not prove does not become a screen.
+
+### [#1792] A wireframe is scouted before it is drawn
+
+Creating a wireframe starts two agents that read the mounted repository in
+parallel and hand their reports to the agent that draws. One reads the routes,
+panes and screens nearest what the goal names, which files they are, what each
+already shows and whether a near neighbour of the feature already exists. The
+other reads the types, store slices, queries and API shapes behind those
+screens, down to the field names a screen can honestly render.
+
+There is no scout for the design system. The app already walks the repository
+for the tailwind config, the custom properties, the component variants and the
+layout examples, deterministically and for free, so paying a model to read them
+again would be the clearest waste on the list.
+
+In a repository with more than one package each scout would otherwise pick its
+own idea of the product, and the wireframe would land one package's screens on
+another's data with nothing showing the seam. The app picks the root first,
+from the workspace list scored against the goal and the brief, and pins it into
+both briefs. The root is named in the creation pane before anything is spent.
+
+### [#1792] What a scout could not prove does not become a screen
+
+Every claim a scout makes has to end in a path. Those paths are checked before
+the wireframe is written, by listing the directories they sit in, so a dozen
+citations cost a handful of listings and no model call at all. A report carries
+what it proved, `verified 7 of 12 cited paths`, and the rule the wireframe
+agent is given is that a claim whose only support is a missing path is hearsay:
+never a screen, never a theme value, at most a note. A report that proves less
+than half of what it cites is demoted to notes. If both are demoted, the pack
+says scouting produced nothing usable and the wireframe is written from the
+evidence it would have had before.
+
+This catches a scout that invents a file. It does not catch a scout that cites
+a real file and describes it falsely, and it is not sold as if it did: the
+wireframe agent is told to open a cited file before drawing a screen from it.
+
+### [#1792] The fidelity is decided by the app
+
+A wireframe used to be labelled with the fidelity you asked for while the
+document underneath declared its own. High now survives only if you asked for
+high and a design file was actually found. Otherwise the artifact is captured
+as plain, with a line saying it was downgraded because no design source
+survived. Whether the walk found anything is recorded when the pack is built
+rather than guessed from the presence of prose about it.
+
+### [#1792] Bounds
+
+A scout cannot split itself, and that is enforced where the split happens
+rather than requested in its brief. Each one gets a single turn. Six minutes
+after they start, whatever has not finished is cancelled rather than
+relabelled, and the wireframe is written with an honest line about what is
+missing. Stop reaches a scout that has not started yet. Nothing is scouted when
+no repository is mounted, when routing comes back blocked, or when the session
+is over budget: each of those takes the single agent path, and the pane says so
+before you spend anything.
+
+### [#1791] High fidelity reads the files your repository actually has
+
+The design profile was collected from six guessed paths shaped like this
+application's own layout. A repository that keeps its code anywhere else
+matched nothing, so high fidelity produced an empty profile, and the pack then
+told the model in as many words that nothing was collected and to use the
+generic theme. The model obeyed. High fidelity had never read a file.
+
+It walks the repository now: the tailwind config wherever it lives, stylesheets
+ranked by name and depth, components under any `components`, `ui`,
+`design-system` or `ds` subtree, and the layout and page entry points. Bounded
+by depth and by a directory budget, skipping the usual build output.
+
+The pane also tells the three states apart, before you spend anything: no
+repository is mounted, a repository was walked and nothing was found, or a
+profile was read.
+
+### [#1791] The header spent seven bands before the document
+
+Title and actions, a meta line, a section switch, provenance, screen tabs,
+canvas controls and a theme note, each on its own row. Two bands now: identity
+with the section switch and the exports as icons, then one toolbar with the
+view switch, the screen tabs scrolling rather than wrapping, the canvas
+controls and the variant action. Kind, scope, revision, date and the agent that
+wrote it moved behind a disclosure. The design sources are chips on one row
+instead of full paths on two.
+
+### [#1791] Fit fits
+
+Fit measured the width and ignored the height, so a desktop screen fitted
+across the pane and ran off the bottom at any zoom. It is the smaller of the
+two ratios now, measured against the real box the canvas sits in and against
+the height the frame actually draws.
+
+### [#1791] Save PDF produces the sheet it always described
+
+The print window came out unstyled: no page padding, the letterhead fields in a
+bare column, the contents list without its numbering. The cause was not the
+stylesheet. The application injects a nonce into every inline style tag it
+embeds and appends that nonce to the style policy, and a nonce in the policy
+makes `unsafe-inline` ignored, so the style element the print view created at
+runtime was blocked while the bundled stylesheet loaded normally. It looked
+correct in development because the development page never gets that policy.
+
+The rules ship in the stylesheet now, unchanged, and the landscape sheet is a
+named page so it can still be scoped. The regression test reads the stylesheet
+from disk and asserts computed styles on rendered nodes.
+
+### [#1791] Screens attached to a brief
+
+The creation pane takes files alongside the brief, written into the session's
+worktree, shown as chips with a thumbnail. Their paths go to the model as their
+own part of the pack, listed in Included context like everything else. They do
+not pass through the routing table that decides which roles read images, since
+that table lists neither reports nor wireframes and would have dropped every
+one of them without a word.
+
+An attachment lives for the session: discarding the draft deletes the files,
+and a restart clears both the paths and the files rather than leaving a chip
+pointing at something that is gone.
+
+### Fixes
+
+- A scout that had not started yet ignored Stop, and the deadline that gave up
+  on it only relabelled it while its request carried on [#1792]
+- A session over budget could still start scouts, because the gate read the
+  providers and not the session [#1792]
+- A repository declaring its packages on one line lost its pinned root [#1792]
+- The artifact mock scenes could not open an artifact, so the surface could not
+  be looked at without installing a build [#1791]
+- The attachments field named a control that does not exist [#1791]
+
 ## Goodboy v0.3.5
 
 A wireframe stops being something only you can see. Every screen on one sheet,
