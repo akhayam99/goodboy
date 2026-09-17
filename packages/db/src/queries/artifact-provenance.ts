@@ -18,6 +18,7 @@ type ProvenanceRow = {
   readonly evidence_json: string;
   readonly omissions_json: string;
   readonly design_profile_summary: string | null;
+  readonly has_design_evidence: number;
   readonly source_workflow_run_id: string | null;
   readonly executing_workflow_run_id: string | null;
   readonly created_at: number;
@@ -31,6 +32,7 @@ export type PutArtifactProvenanceInput = {
   readonly evidence: ReadonlyArray<ArtifactEvidenceSource>;
   readonly omissions: ReadonlyArray<string>;
   readonly designProfileSummary: string | null;
+  readonly hasDesignEvidence: boolean;
   readonly sourceWorkflowRunId: WorkflowRunId | null;
   readonly executingWorkflowRunId: WorkflowRunId | null;
 };
@@ -40,7 +42,7 @@ type DatabaseParams = {
 };
 
 const PROVENANCE_SELECT = `SELECT agent_id, session_id, kind, brief, evidence_json,
-  omissions_json, design_profile_summary, source_workflow_run_id,
+  omissions_json, design_profile_summary, has_design_evidence, source_workflow_run_id,
   executing_workflow_run_id, created_at FROM artifact_provenance`;
 
 const EVIDENCE_KINDS: ReadonlyArray<ArtifactEvidenceKind> = [
@@ -108,6 +110,7 @@ const toDomain = (row: ProvenanceRow): ArtifactProvenance => ({
   evidence: toEvidence(parseJson(row.evidence_json)),
   omissions: toOmissions(parseJson(row.omissions_json)),
   designProfileSummary: row.design_profile_summary,
+  hasDesignEvidence: row.has_design_evidence === 1,
   sourceWorkflowRunId:
     row.source_workflow_run_id === null ? null : (row.source_workflow_run_id as WorkflowRunId),
   executingWorkflowRunId:
@@ -124,8 +127,9 @@ export const putArtifactProvenance = async ({
   await db.execute(
     `INSERT INTO artifact_provenance (
        agent_id, session_id, kind, brief, evidence_json, omissions_json,
-       design_profile_summary, source_workflow_run_id, executing_workflow_run_id, created_at
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       design_profile_summary, has_design_evidence, source_workflow_run_id,
+       executing_workflow_run_id, created_at
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(agent_id) DO UPDATE SET
        session_id = excluded.session_id,
        kind = excluded.kind,
@@ -133,6 +137,7 @@ export const putArtifactProvenance = async ({
        evidence_json = excluded.evidence_json,
        omissions_json = excluded.omissions_json,
        design_profile_summary = excluded.design_profile_summary,
+       has_design_evidence = excluded.has_design_evidence,
        source_workflow_run_id = excluded.source_workflow_run_id,
        executing_workflow_run_id = excluded.executing_workflow_run_id`,
     [
@@ -143,6 +148,7 @@ export const putArtifactProvenance = async ({
       JSON.stringify(input.evidence),
       JSON.stringify(input.omissions),
       input.designProfileSummary,
+      input.hasDesignEvidence ? 1 : 0,
       input.sourceWorkflowRunId,
       input.executingWorkflowRunId,
       Date.now(),

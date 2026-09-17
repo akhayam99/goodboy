@@ -3,6 +3,7 @@ import { updateSessionState } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
+import { cancelTurnStartWindow } from './turnStartWindow';
 import type { GetFn, SetFn } from './types';
 
 export const cancelCurrentTurn = (set: SetFn, get: GetFn) => {
@@ -13,6 +14,7 @@ export const cancelCurrentTurn = (set: SetFn, get: GetFn) => {
     }
     const agentState = get().agentTurnState[activeAgentId];
     if (agentState?.kind !== 'running') {
+      cancelTurnStartWindow({ agentId: activeAgentId });
       return;
     }
     cancelledRunIds.add(agentState.runId);

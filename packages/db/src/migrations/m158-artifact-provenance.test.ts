@@ -154,10 +154,10 @@ describe('m158 artifact provenance', () => {
     expect(violations).toEqual([]);
   });
 
-  it('reaches version 158 on a fresh database', async () => {
+  it('applies version 158 on a fresh database', async () => {
     const db = makeTestDatabase();
     const result = await migrate(db, migrations);
-    expect(result.currentVersion).toBe(158);
+    expect(result.currentVersion).toBe(migrations.at(-1)?.version);
     expect(result.applied).toContain(158);
     const tables = await db.select<{ readonly name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'artifact_provenance'",

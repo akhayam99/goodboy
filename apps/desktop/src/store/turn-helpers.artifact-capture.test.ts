@@ -19,6 +19,18 @@ const { upsertPlan, listPlansForSession, createArtifact, listArtifactsForSession
   }),
 );
 
+const { loadArtifactProvenance, appendArtifactProvenanceOmission } = vi.hoisted(() => ({
+  loadArtifactProvenance: vi.fn(
+    async () => null as { designProfileSummary: string | null; hasDesignEvidence?: boolean } | null,
+  ),
+  appendArtifactProvenanceOmission: vi.fn(async () => undefined),
+}));
+
+vi.mock('../features/artifacts/artifactProvenance', () => ({
+  loadArtifactProvenance,
+  appendArtifactProvenanceOmission,
+}));
+
 vi.mock('../features/plans/plans', () => ({ upsertPlan, listPlansForSession }));
 vi.mock('../features/artifacts/artifacts', () => ({ createArtifact, listArtifactsForSession }));
 
@@ -52,12 +64,13 @@ const harness = () => {
   return { patches, set };
 };
 
-const run = async (assistantText: string) => {
+const run = async (assistantText: string, agentName: string | null = null) => {
   const { patches, set } = harness();
   const result = await captureArtifactsFromTurn({
     set,
     sessionId: SESSION_ID,
     agentId: AGENT_ID,
+    agentName,
     assistantText,
     emittingProvider: null,
     sourceTurnId: RUN_ID,
@@ -76,6 +89,9 @@ beforeEach(() => {
   listArtifactsForSession.mockClear();
   listPlansForSession.mockResolvedValue([]);
   listArtifactsForSession.mockResolvedValue([]);
+  loadArtifactProvenance.mockReset();
+  loadArtifactProvenance.mockResolvedValue(null);
+  appendArtifactProvenanceOmission.mockClear();
 });
 
 describe('captureArtifactsFromTurn', () => {
@@ -132,14 +148,20 @@ describe('captureArtifactsFromTurn', () => {
     expect(patches.some((patch) => 'sessionArtifacts' in patch)).toBe(true);
   });
 
-  it('creates a wireframe artifact with the json source', async () => {
-    const body = JSON.stringify({
+  const wireframeTurn = (fidelity: string): string =>
+    `<<artifact v=1 kind=wireframe>>\n${JSON.stringify({
       title: 'Onboarding',
       format: 'json',
       content: WIREFRAME_DOCUMENT,
-      metadata: { fidelity: 'high', designProfile: { tokens: 1 } },
+      metadata: { fidelity, designProfile: { tokens: 1 } },
+    })}\n<</artifact>>`;
+
+  it('creates a wireframe artifact with the json source', async () => {
+    loadArtifactProvenance.mockResolvedValue({
+      designProfileSummary: 'tailwind config',
+      hasDesignEvidence: true,
     });
-    await run(`<<artifact v=1 kind=wireframe>>\n${body}\n<</artifact>>`);
+    await run(wireframeTurn('high'), 'High fidelity');
     expect(createArtifact).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 'wireframe',
@@ -148,6 +170,63 @@ describe('captureArtifactsFromTurn', () => {
         metadata: { fidelity: 'high', designProfile: { tokens: 1 } },
       }),
     );
+    expect(appendArtifactProvenanceOmission).not.toHaveBeenCalled();
+  });
+
+  it('forces low fidelity and notes the downgrade when no design source survived', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    await run(wireframeTurn('high'), 'High fidelity');
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: { fidelity: 'low', designProfile: { tokens: 1 } } }),
+    );
+    expect(appendArtifactProvenanceOmission).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: AGENT_ID }),
+    );
+  });
+
+  it('forces low fidelity when the walk found no design file, whatever it described', async () => {
+    loadArtifactProvenance.mockResolvedValue({
+      designProfileSummary: 'theme name: generic\ncommit: abc1234',
+      hasDesignEvidence: false,
+    });
+    await run(wireframeTurn('high'), 'High fidelity');
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: { fidelity: 'low', designProfile: { tokens: 1 } } }),
+    );
+    expect(appendArtifactProvenanceOmission).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: AGENT_ID }),
+    );
+  });
+
+  it('forces low fidelity when the user asked for a plain wireframe', async () => {
+    loadArtifactProvenance.mockResolvedValue({
+      designProfileSummary: 'tailwind config',
+      hasDesignEvidence: true,
+    });
+    await run(wireframeTurn('high'), 'Low fidelity');
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: { fidelity: 'low', designProfile: { tokens: 1 } } }),
+    );
+    expect(appendArtifactProvenanceOmission).not.toHaveBeenCalled();
+  });
+
+  it('notes the downgrade on a high fidelity request the agent reported as low', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    await run(wireframeTurn('low'), 'High fidelity');
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: { fidelity: 'low', designProfile: { tokens: 1 } } }),
+    );
+    expect(appendArtifactProvenanceOmission).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: AGENT_ID }),
+    );
+  });
+
+  it('leaves a low fidelity claim alone without a downgrade note', async () => {
+    await run(wireframeTurn('low'), 'Low fidelity');
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: { fidelity: 'low', designProfile: { tokens: 1 } } }),
+    );
+    expect(appendArtifactProvenanceOmission).not.toHaveBeenCalled();
   });
 
   it('rejects a malformed wireframe document instead of storing it', async () => {

@@ -109,6 +109,7 @@ export const SESSION_EVICTION = [
   { key: 'agentProviderOverride', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentEffortOverride', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentKindOverride', keyedBy: 'agent', evictOn: 'delete' },
+  { key: 'wireframeScoutVerification', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'workflowRunAttachments', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'orchestratingWorkflowRuns', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'announcedWorkflowBlocks', keyedBy: 'workflowRun', evictOn: 'delete' },

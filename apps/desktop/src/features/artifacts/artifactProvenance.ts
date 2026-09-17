@@ -78,6 +78,7 @@ export type RecordArtifactProvenanceArgs = {
   readonly evidence: ReadonlyArray<ArtifactEvidenceSource>;
   readonly omissions: ReadonlyArray<string>;
   readonly designProfileSummary: string | null;
+  readonly hasDesignEvidence: boolean;
   readonly sourceWorkflowRunId: WorkflowRunId | null;
   readonly executingWorkflowRunId: WorkflowRunId | null;
 };
@@ -99,6 +100,7 @@ export const recordArtifactProvenance = async (
         args.designProfileSummary === null
           ? null
           : redactSecrets({ text: args.designProfileSummary }),
+      hasDesignEvidence: args.hasDesignEvidence,
       sourceWorkflowRunId: args.sourceWorkflowRunId,
       executingWorkflowRunId: args.executingWorkflowRunId,
     },
@@ -108,3 +110,33 @@ export const recordArtifactProvenance = async (
 export const loadArtifactProvenance = async (
   agentId: AgentId,
 ): Promise<ArtifactProvenance | null> => dbGetArtifactProvenance({ db: tauriDatabase, agentId });
+
+export type AppendArtifactOmissionArgs = {
+  readonly agentId: AgentId;
+  readonly note: string;
+};
+
+export const appendArtifactProvenanceOmission = async ({
+  agentId,
+  note,
+}: AppendArtifactOmissionArgs): Promise<void> => {
+  const current = await dbGetArtifactProvenance({ db: tauriDatabase, agentId });
+  if (current === null || current.omissions.includes(note)) {
+    return;
+  }
+  await dbPutArtifactProvenance({
+    db: tauriDatabase,
+    input: {
+      agentId,
+      sessionId: current.sessionId,
+      kind: current.kind,
+      brief: current.brief,
+      evidence: current.evidence,
+      omissions: [...current.omissions, note],
+      designProfileSummary: current.designProfileSummary,
+      hasDesignEvidence: current.hasDesignEvidence,
+      sourceWorkflowRunId: current.sourceWorkflowRunId,
+      executingWorkflowRunId: current.executingWorkflowRunId,
+    },
+  });
+};

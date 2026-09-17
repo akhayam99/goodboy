@@ -42,7 +42,8 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
   const openArtifactCreation = useAppStore((s) => s.openArtifactCreation);
   const closeArtifactCreation = useAppStore((s) => s.closeArtifactCreation);
   const setArtifactDraft = useAppStore((s) => s.setArtifactDraft);
-  const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
+  const stopArtifactGeneration = useAppStore((s) => s.stopArtifactGeneration);
+  const verifications = useAppStore((s) => s.wireframeScoutVerification);
   const activeAgentIds = useAppStore(
     useShallow((s) =>
       agents
@@ -105,8 +106,9 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
         artifacts,
         activeAgentIds: new Set<AgentId>(activeAgentIds),
         runningAgentIds: new Set<AgentId>(runningAgentIds),
+        verifications,
       }),
-    [agents, artifacts, activeAgentIds, runningAgentIds],
+    [agents, artifacts, activeAgentIds, runningAgentIds, verifications],
   );
 
   const standalone = artifacts.filter((artifact) => artifact.kind !== 'plan');
@@ -186,7 +188,9 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
       onSelectPlan={(planId) => setFocusedPlanId(sessionId, planId)}
       onSelectArtifact={selectArtifact}
       onSelectGeneration={(agentId) => void selectAgent(sessionId, agentId)}
-      onStopGeneration={(generation) => void cancelCurrentTurn(sessionId, generation.agentId)}
+      onStopGeneration={(generation) =>
+        void stopArtifactGeneration({ sessionId, agentId: generation.agentId })
+      }
       onRetryGeneration={retryGeneration}
     />
   );

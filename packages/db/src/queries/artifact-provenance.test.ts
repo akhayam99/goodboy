@@ -47,6 +47,7 @@ const input = {
   ],
   omissions: ['agents: kept the last 12 of 30'],
   designProfileSummary: null,
+  hasDesignEvidence: false,
   sourceWorkflowRunId: sourceRunId,
   executingWorkflowRunId: executingRunId,
 } as const;
@@ -68,6 +69,7 @@ describe('artifact provenance queries', () => {
     expect(stored?.sourceWorkflowRunId).toBe(sourceRunId);
     expect(stored?.executingWorkflowRunId).toBe(executingRunId);
     expect(stored?.designProfileSummary).toBeNull();
+    expect(stored?.hasDesignEvidence).toBe(false);
   });
 
   it('keeps a missing brief and a wireframe design profile apart', async () => {
@@ -79,6 +81,7 @@ describe('artifact provenance queries', () => {
         kind: 'wireframe',
         brief: null,
         designProfileSummary: 'theme name: Harborline\ncommit: abc1234',
+        hasDesignEvidence: true,
         sourceWorkflowRunId: null,
         executingWorkflowRunId: executingRunId,
       },
@@ -87,6 +90,7 @@ describe('artifact provenance queries', () => {
     expect(stored?.brief).toBeNull();
     expect(stored?.kind).toBe('wireframe');
     expect(stored?.designProfileSummary).toContain('Harborline');
+    expect(stored?.hasDesignEvidence).toBe(true);
     expect(stored?.sourceWorkflowRunId).toBeNull();
     expect(stored?.executingWorkflowRunId).toBe(executingRunId);
   });
@@ -99,6 +103,22 @@ describe('artifact provenance queries', () => {
     expect(rows).toHaveLength(1);
     const stored = await getArtifactProvenance({ db, agentId });
     expect(stored?.brief).toBe('second request');
+  });
+
+  it('keeps a summary that names no design file apart from real evidence', async () => {
+    const db = await seed();
+    await putArtifactProvenance({
+      db,
+      input: {
+        ...input,
+        kind: 'wireframe',
+        designProfileSummary: 'theme name: generic\ncommit: abc1234',
+        hasDesignEvidence: false,
+      },
+    });
+    const stored = await getArtifactProvenance({ db, agentId });
+    expect(stored?.designProfileSummary).toContain('generic');
+    expect(stored?.hasDesignEvidence).toBe(false);
   });
 
   it('drops malformed evidence entries instead of failing the read', async () => {

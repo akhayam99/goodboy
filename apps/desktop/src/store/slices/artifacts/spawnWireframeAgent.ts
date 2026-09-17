@@ -4,6 +4,8 @@ import type { AgentEffort, AgentId, ProviderId, SessionId, WorkflowRunId } from 
 import type { ArtifactAttachment } from '../../../features/artifacts/artifactAttachments';
 import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
 import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
+import { collectWireframeScoutPlan } from '../../../features/wireframes/collectWireframeScoutPlan';
+import { sessionGoalText } from '../../../features/artifacts/sessionGoalText';
 import {
   WIREFRAME_FIDELITY_LABEL,
   type WireframeFidelity,
@@ -12,6 +14,9 @@ import type { WireframeTarget } from '../../../features/wireframes/wireframeTarg
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { GetFn } from './types';
+
+export const WIREFRAME_SCOUT_PENDING_NOTE =
+  'the scouts had not reported yet when this row was written';
 
 export type WireframeRouting = {
   readonly provider: ProviderId;
@@ -111,6 +116,74 @@ export const spawnWireframeAgent = (get: GetFn) => {
         focus,
       });
     }
+    const slots = await state.ensureSessionSlots(sessionId);
+    const goal = sessionGoalText({ slots, session });
+    const scouting = await collectWireframeScoutPlan({
+      state,
+      sessionId,
+      workflowRunId,
+      goal: goal.packText,
+      brief,
+    });
+    if (scouting.plan.kind === 'ready') {
+      const containerId = await get().spawnAgent(sessionId, {
+        kindOverride: 'wireframe',
+        name,
+        provider: resolved.provider,
+        model: resolved.model,
+        effort: resolved.effort,
+        focus,
+      });
+      await recordArtifactProvenance({
+        sessionId,
+        kind: 'wireframe',
+        brief,
+        evidence: [],
+        omissions: [WIREFRAME_SCOUT_PENDING_NOTE],
+        designProfileSummary: null,
+        hasDesignEvidence: false,
+        sourceWorkflowRunId: workflowRunId,
+        agentId: containerId,
+        executingWorkflowRunId: null,
+      }).catch((error: unknown) => {
+        console.warn(`[artifact-provenance] wireframe ${containerId}: ${formatError(error)}`);
+      });
+      const isStarted = await get().startWireframeScouts({
+        sessionId,
+        containerId,
+        root: scouting.plan.root,
+        worktreePath: scouting.gate.kind === 'ready' ? scouting.gate.worktreePath : '',
+        fidelity,
+        target,
+        workflowRunId,
+        brief,
+        attachments,
+        goal: goal.packText,
+      });
+      if (isStarted) {
+        return containerId;
+      }
+      const fallback = await prepareArtifactEvidence({
+        kind: 'wireframe',
+        fidelity,
+        target,
+        state: get(),
+        session,
+        workflowRunId,
+        brief,
+        attachments,
+        executingAgentId: containerId,
+      });
+      await recordArtifactProvenance({
+        ...fallback.provenance,
+        agentId: containerId,
+        executingWorkflowRunId: null,
+      }).catch((error: unknown) => {
+        console.warn(`[artifact-provenance] wireframe ${containerId}: ${formatError(error)}`);
+      });
+      void get().sendTurn({ sessionId, agentId: containerId, content: fallback.text });
+      return containerId;
+    }
     const prepared = await prepareArtifactEvidence({
       kind: 'wireframe',
       fidelity,
@@ -121,6 +194,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
       brief,
       attachments,
       executingAgentId: null,
+      scoutPlan: scouting.plan,
     });
     const agentId = await get().spawnAgent(sessionId, {
       kindOverride: 'wireframe',

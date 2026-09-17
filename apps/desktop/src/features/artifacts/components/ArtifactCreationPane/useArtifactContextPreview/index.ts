@@ -14,6 +14,7 @@ import {
 } from '../../../../wireframes/buildWireframeContext';
 import type { DesignEvidence } from '../../../../wireframes/collectDesignProfile';
 import { collectWireframeDesignProfile } from '../../../../wireframes/collectWireframeDesignProfile';
+import { collectWireframeScoutPlan } from '../../../../wireframes/collectWireframeScoutPlan';
 import { asWireframeFidelity } from '../../../../wireframes/wireframeFidelity';
 import { asWireframeTarget } from '../../../../wireframes/wireframeTarget';
 import type { ArtifactAttachment } from '../../../artifactAttachments';
@@ -108,6 +109,13 @@ const collect = async ({
     fidelity === 'high'
       ? await collectWireframeDesignProfile({ state, sessionId })
       : { source: 'none' };
+  const scouting = await collectWireframeScoutPlan({
+    state,
+    sessionId,
+    workflowRunId,
+    goal: goal.packText,
+    brief: null,
+  });
   const context = buildWireframeContext({
     fidelity,
     target: asWireframeTarget({ value: secondChoice }) ?? 'both',
@@ -119,6 +127,7 @@ const collect = async ({
     transcripts,
     artifacts: state.sessionArtifacts?.[sessionId] ?? [],
     designEvidence,
+    scoutPlan: scouting.plan,
     capturedAt,
   });
   return {

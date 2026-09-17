@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
   AgentId,
@@ -13,6 +13,15 @@ import type { AppStore } from '../../store/store';
 import { ATTACHMENT_KIND_ROUTING } from '../providers/attachment-routing';
 import type { ArtifactAttachment } from './artifactAttachments';
 import { REPORT_CONTEXT_LIMITS } from '../reports/buildReportContext';
+
+const { designProfile } = vi.hoisted(() => ({
+  designProfile: vi.fn(async (): Promise<unknown> => ({ source: 'none' })),
+}));
+
+vi.mock('../wireframes/collectWireframeDesignProfile', () => ({
+  collectWireframeDesignProfile: designProfile,
+}));
+
 import { prepareArtifactEvidence } from './prepareArtifactEvidence';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -133,6 +142,61 @@ describe('prepareArtifactEvidence', () => {
     expect(prepared.text).toContain('never invent branding');
     expect(prepared.provenance.designProfileSummary).toBeNull();
     expect(prepared.provenance.sourceWorkflowRunId).toBe(RUN_ID);
+  });
+
+  it('records that a walked repository yielded no design file at all', async () => {
+    designProfile.mockResolvedValueOnce({
+      source: 'mount',
+      profile: {
+        themeName: 'generic',
+        commitSha: 'abc1234',
+        tailwind: null,
+        tokens: [],
+        variants: [],
+        layoutExamples: [],
+        notes: ['no tailwind config was found'],
+      },
+    });
+    const prepared = await prepareArtifactEvidence({
+      state,
+      session,
+      workflowRunId: RUN_ID,
+      brief: null,
+      attachments: [],
+      executingAgentId: null,
+      kind: 'wireframe',
+      target: 'both',
+      fidelity: 'high',
+    });
+    expect(prepared.provenance.designProfileSummary).toContain('theme name: generic');
+    expect(prepared.provenance.hasDesignEvidence).toBe(false);
+  });
+
+  it('records the design evidence a walked repository did yield', async () => {
+    designProfile.mockResolvedValueOnce({
+      source: 'mount',
+      profile: {
+        themeName: 'Harborline',
+        commitSha: 'abc1234',
+        tailwind: { path: 'tailwind.config.ts', excerpt: 'theme: {}' },
+        tokens: [],
+        variants: [],
+        layoutExamples: [],
+        notes: [],
+      },
+    });
+    const prepared = await prepareArtifactEvidence({
+      state,
+      session,
+      workflowRunId: RUN_ID,
+      brief: null,
+      attachments: [],
+      executingAgentId: null,
+      kind: 'wireframe',
+      target: 'both',
+      fidelity: 'high',
+    });
+    expect(prepared.provenance.hasDesignEvidence).toBe(true);
   });
 
   it.each(['report', 'wireframe'] as const)(

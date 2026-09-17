@@ -129,6 +129,7 @@ describe('recordArtifactProvenance', () => {
       evidence: inventory([AGENT_ID], null),
       omissions: ['dropped password: harborline-test-value'],
       designProfileSummary: 'theme name: Harborline, secret=harborline-test-value',
+      hasDesignEvidence: true,
       sourceWorkflowRunId: RUN_ID,
       executingWorkflowRunId: null,
     });
@@ -136,6 +137,7 @@ describe('recordArtifactProvenance', () => {
     expect(input['brief']).toBe('show the inbox, api_key=[redacted]');
     expect(input['omissions']).toEqual(['dropped password: [redacted]']);
     expect(String(input['designProfileSummary'])).toBe('theme name: Harborline, secret=[redacted]');
+    expect(input['hasDesignEvidence']).toBe(true);
     expect(input['sourceWorkflowRunId']).toBe(RUN_ID);
     expect(input['executingWorkflowRunId']).toBeNull();
   });
@@ -149,6 +151,7 @@ describe('recordArtifactProvenance', () => {
       evidence: [],
       omissions: [],
       designProfileSummary: null,
+      hasDesignEvidence: false,
       sourceWorkflowRunId: null,
       executingWorkflowRunId: null,
     });

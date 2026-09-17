@@ -7,6 +7,12 @@ import type {
   SessionArtifact,
 } from '@goodboy/types';
 import { ARTIFACT_KIND_LABEL } from './artifact-status';
+import {
+  hasLiveWireframeScout,
+  wireframeScoutProgress,
+  type WireframeScoutProgress,
+  type WireframeScoutVerification,
+} from '../wireframes/wireframeScoutProgress';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import type { StatePresentation } from '../../shared/utils/statePresentation';
 
@@ -37,6 +43,8 @@ export type ArtifactGeneration = Readonly<{
   provider: ProviderId | null;
   model: string | null;
   isTurnRunning: boolean;
+  scouts: ReadonlyArray<WireframeScoutProgress>;
+  canStop: boolean;
 }>;
 
 const GENERATING: StatePresentation = {
@@ -92,6 +100,7 @@ export type ArtifactGenerationsParams = Readonly<{
   artifacts: ReadonlyArray<SessionArtifact>;
   activeAgentIds: ReadonlySet<AgentId>;
   runningAgentIds: ReadonlySet<AgentId>;
+  verifications?: Readonly<Record<string, WireframeScoutVerification>>;
 }>;
 
 export const resolveArtifactGenerations = ({
@@ -99,6 +108,7 @@ export const resolveArtifactGenerations = ({
   artifacts,
   activeAgentIds,
   runningAgentIds,
+  verifications = {},
 }: ArtifactGenerationsParams): ReadonlyArray<ArtifactGeneration> => {
   const produced = new Set(artifacts.map((artifact) => artifact.agentId));
   const rows: Array<ArtifactGeneration> = [];
@@ -107,6 +117,10 @@ export const resolveArtifactGenerations = ({
     if (kind === null || agent.deletedAt != null || produced.has(agent.id)) {
       continue;
     }
+    const scouts =
+      kind === 'wireframe'
+        ? wireframeScoutProgress({ container: agent, agents, runningAgentIds, verifications })
+        : [];
     rows.push({
       agentId: agent.id,
       kind,
@@ -116,6 +130,8 @@ export const resolveArtifactGenerations = ({
       provider: agent.providerOverride ?? null,
       model: agent.modelOverride ?? null,
       isTurnRunning: runningAgentIds.has(agent.id),
+      scouts,
+      canStop: runningAgentIds.has(agent.id) || hasLiveWireframeScout({ scouts }),
     });
   }
   return rows;

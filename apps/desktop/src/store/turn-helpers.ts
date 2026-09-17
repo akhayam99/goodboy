@@ -13,6 +13,7 @@ import {
   SummarizerParseError,
   type ArtifactCaptureError,
   type ExtractedHandoff,
+  type ParsedArtifact,
   type SlotKey,
 } from '@goodboy/core';
 import {
@@ -48,9 +49,16 @@ import type {
   TaskModelPreference,
   TelemetryRecord,
   TelemetryRecordId,
+  WireframeArtifactMetadata,
   WorkflowRunId,
 } from '@goodboy/types';
 import { tauriDatabase } from '../shared/lib/db';
+import {
+  appendArtifactProvenanceOmission,
+  loadArtifactProvenance,
+} from '../features/artifacts/artifactProvenance';
+import { capturedWireframeFidelity } from '../features/wireframes/capturedWireframeFidelity';
+import { requestedWireframeFidelity } from '../features/wireframes/wireframeFidelity';
 import type { AgentKind } from '../features/session/agent-kind';
 import { kindReadsAttachment } from '../features/providers/attachment-routing';
 import { classifyProviderError } from '../features/chat/classifyProviderError';
@@ -605,6 +613,7 @@ type CaptureArtifactsParams = {
   readonly set: SetFn;
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
+  readonly agentName?: string | null;
   readonly assistantText: string;
   readonly emittingProvider: ProviderId | null;
   readonly sourceTurnId: string;
@@ -619,10 +628,33 @@ export type CapturedArtifacts = {
 
 const NOTHING_CAPTURED: CapturedArtifacts = { plan: null, artifact: null, error: null };
 
+type OverrideFidelityParams = {
+  readonly agentId: AgentId;
+  readonly agentName: string | null;
+  readonly parsed: Extract<ParsedArtifact, { readonly kind: 'wireframe' }>;
+};
+
+const overrideWireframeFidelity = async ({
+  agentId,
+  agentName,
+  parsed,
+}: OverrideFidelityParams): Promise<WireframeArtifactMetadata> => {
+  const provenance = await loadArtifactProvenance(agentId).catch(() => null);
+  const decision = capturedWireframeFidelity({
+    requested: requestedWireframeFidelity({ agentName }),
+    hasDesignSource: provenance?.hasDesignEvidence === true,
+  });
+  if (decision.note !== null) {
+    await appendArtifactProvenanceOmission({ agentId, note: decision.note }).catch(() => undefined);
+  }
+  return { ...parsed.metadata, fidelity: decision.fidelity };
+};
+
 export const captureArtifactsFromTurn = async ({
   set,
   sessionId,
   agentId,
+  agentName = null,
   assistantText,
   emittingProvider,
   sourceTurnId,
@@ -657,6 +689,10 @@ export const captureArtifactsFromTurn = async ({
         null;
       return { plan, artifact: null, error: null };
     }
+    const metadata =
+      parsed.kind === 'wireframe'
+        ? await overrideWireframeFidelity({ agentId, agentName, parsed })
+        : parsed.metadata;
     const artifact = await invokeCreateArtifact({
       sessionId,
       agentId,
@@ -666,7 +702,7 @@ export const captureArtifactsFromTurn = async ({
       title: parsed.title,
       sourceFormat: parsed.sourceFormat,
       sourceText: parsed.sourceText,
-      metadata: parsed.metadata,
+      metadata,
       sourceTurnId,
     });
     const refreshed = await invokeListArtifactsForSession(sessionId);

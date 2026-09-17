@@ -60,6 +60,7 @@ const provenance: ArtifactProvenance = {
   ],
   omissions: ['agents: kept the last 12 of 30'],
   designProfileSummary: null,
+  hasDesignEvidence: false,
   sourceWorkflowRunId: null,
   executingWorkflowRunId: null,
   createdAt: NOW,

@@ -18,6 +18,7 @@ import { SESSION_GOAL_CLIP_NOTE, type SessionGoalText } from '../artifacts/sessi
 import { hasDesignEvidence, type DesignEvidence, type DesignProfile } from './collectDesignProfile';
 import { describeDesignProfile } from './describeDesignProfile';
 import { WIREFRAME_FIDELITY_LABEL, type WireframeFidelity } from './wireframeFidelity';
+import { wireframeScoutInventoryRow, type WireframeScoutPlan } from './wireframeScoutPlan';
 import {
   WIREFRAME_TARGET_BRIEF,
   WIREFRAME_TARGET_LABEL,
@@ -29,7 +30,7 @@ export const WIREFRAME_CONTEXT_LIMITS = {
   agentText: 900,
   artifacts: 6,
   artifactExcerpt: 700,
-  total: 40_000,
+  total: 49_000,
 } as const;
 
 export const WIREFRAME_DEFAULT_REQUEST =
@@ -49,6 +50,8 @@ export type WireframeContextParams = Readonly<{
   transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   artifacts: ReadonlyArray<SessionArtifact>;
   designEvidence: DesignEvidence;
+  scoutPlan?: WireframeScoutPlan | null;
+  scoutSection?: string | null;
   capturedAt: IsoDateTime;
 }>;
 
@@ -270,6 +273,21 @@ const themeSection = ({
   ].join('\n\n');
 };
 
+const scoutBlock = ({
+  scoutPlan,
+  scoutSection,
+  inventory,
+}: {
+  readonly scoutPlan: WireframeScoutPlan | null;
+  readonly scoutSection: string | null;
+  readonly inventory: Array<ArtifactContextInventoryRow>;
+}): ReadonlyArray<string> => {
+  if (scoutPlan !== null) {
+    inventory.push(wireframeScoutInventoryRow({ plan: scoutPlan }));
+  }
+  return scoutSection === null ? [] : [scoutSection];
+};
+
 export const buildWireframeContext = ({
   fidelity,
   target,
@@ -281,6 +299,8 @@ export const buildWireframeContext = ({
   transcripts,
   artifacts,
   designEvidence,
+  scoutPlan = null,
+  scoutSection = null,
   capturedAt,
 }: WireframeContextParams): WireframeContext => {
   const sourceIds: Array<string> = [session.id];
@@ -330,6 +350,7 @@ export const buildWireframeContext = ({
     ...(attachmentsBlock === null ? [] : [attachmentsBlock]),
     agentSection({ agents, transcripts, truncations, sourceIds, inventory }),
     planSection({ artifacts, truncations, sourceIds, inventory }),
+    ...scoutBlock({ scoutPlan, scoutSection, inventory }),
     themeSection({ fidelity, designEvidence, inventory }),
   ].join('\n\n');
 

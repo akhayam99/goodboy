@@ -1,4 +1,11 @@
-import type { Agent, AgentRole, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentRole,
+  AgentId,
+  IsoDateTime,
+  SessionId,
+  WorkflowRoutingProposal,
+} from '@goodboy/types';
 import {
   extractFanOut,
   fanOutCapabilityForRole,
@@ -15,9 +22,12 @@ import { worktreeChangedFiles } from '../../../features/worktree/worktree';
 import {
   KIND_TO_ROLE,
   inferAgentKindFromName,
+  resolveRootAgent,
   type AgentKind,
 } from '../../../features/session/agent-kind';
+import { clampWireframeScoutReport } from '../../../features/wireframes/wireframeScoutReports';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
+import { openTurnStartWindow } from '../turn/turnStartWindow';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import type { GetFn, SetFn } from './types';
 
@@ -210,6 +220,7 @@ const activateAgent = ({
       [agentId]: { kind: 'idle' as const, lastActivityAt: nowIso() },
     },
   }));
+  openTurnStartWindow({ agentId });
   void get().sendTurn({ sessionId, agentId, content, origin: 'workflow' });
 };
 
@@ -299,38 +310,38 @@ const canFanOutByRole = async ({
   return false;
 };
 
-const fanOutAgents = async ({
+export type FanOutChildSpec = Readonly<{
+  name: string;
+  promptText: string;
+  kickoff: string;
+  routingProposal: WorkflowRoutingProposal | null;
+}>;
+
+export type FanOutStartResult =
+  | Readonly<{ kind: 'started'; childIds: ReadonlyArray<AgentId> }>
+  | Readonly<{ kind: 'blocked'; reason: string }>
+  | Readonly<{ kind: 'skipped' }>;
+
+export const startFanOutChildren = async ({
   set,
   get,
   sessionId,
   container,
-  areas,
   role,
+  childKind,
+  specs,
 }: {
   readonly set: SetFn;
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly container: Agent;
-  readonly areas: ReadonlyArray<ExtractedFanOutArea>;
   readonly role: AgentRole;
-}): Promise<void> => {
-  const clamped = areas.slice(0, FAN_OUT_MAX_CHILDREN);
-  const dropped = areas.length - clamped.length;
-  if (dropped > 0) {
-    void get().emitNotification(
-      'agent-auto-spawn',
-      'info',
-      `agent fan-out capped: ${container.name}`,
-      `dropped ${dropped} area(s) over the ${FAN_OUT_MAX_CHILDREN}-child limit`,
-      { sessionId },
-    );
-  }
-  if (clamped.length < 2) {
-    return;
-  }
+  readonly childKind: AgentKind;
+  readonly specs: ReadonlyArray<FanOutChildSpec>;
+}): Promise<FanOutStartResult> => {
   const existing = get().sessionPhaseRuns[sessionId] ?? [];
   if (childrenOf(existing, container.id).length > 0) {
-    return;
+    return { kind: 'skipped' };
   }
 
   const batch = childRoutingBatch({
@@ -338,37 +349,28 @@ const fanOutAgents = async ({
     sessionId,
     workflowRunId: container.workflowRunId ?? null,
     role,
-    requests: clamped.map((area) => ({
-      proposal: area.routingProposal ?? null,
-      promptText: `${area.area}\n${area.query}`,
+    requests: specs.map((spec) => ({
+      proposal: spec.routingProposal,
+      promptText: spec.promptText,
       childLock: null,
     })),
   });
   if (batch.kind === 'blocked') {
-    void get().emitNotification(
-      'agent-auto-spawn',
-      'warning',
-      `agent fan-out held: ${container.name}`,
-      batch.reason,
-      { sessionId },
-    );
-    return;
+    return { kind: 'blocked', reason: batch.reason };
   }
 
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
-  const childDepth = scoutDepth(runs, container.id) + 1;
-  const childKind = resolveAgentKind(container);
   const baseOrdinal = runs.reduce((m, r) => Math.max(m, r.ordinal), -1) + 1;
 
   const materialized = await invokeAgentInsertBatch({
     parentAgentId: container.id,
-    children: clamped.map((area, index): AgentInsertArgs => {
+    children: specs.map((spec, index): AgentInsertArgs => {
       const fields = batch.entries[index]!;
       return {
         sessionId,
         parentAgentId: container.id,
         ordinal: baseOrdinal + index,
-        name: area.area,
+        name: spec.name,
         status: 'pending',
         kind: childKind,
         ...(container.workflowRunId != null && { workflowRunId: container.workflowRunId }),
@@ -382,7 +384,7 @@ const fanOutAgents = async ({
     }),
   });
   if (materialized.inserted === false) {
-    return;
+    return { kind: 'skipped' };
   }
   const childIds: AgentId[] = materialized.agents.map((agent) => agent.id);
 
@@ -430,9 +432,66 @@ const fanOutAgents = async ({
       get,
       sessionId,
       agentId: childIds[i]!,
-      content: composeChildKickoff({ role, area: clamped[i]!, depth: childDepth }),
+      content: specs[i]!.kickoff,
       select: false,
     });
+  }
+  return { kind: 'started', childIds };
+};
+
+const fanOutAgents = async ({
+  set,
+  get,
+  sessionId,
+  container,
+  areas,
+  role,
+}: {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly container: Agent;
+  readonly areas: ReadonlyArray<ExtractedFanOutArea>;
+  readonly role: AgentRole;
+}): Promise<void> => {
+  const clamped = areas.slice(0, FAN_OUT_MAX_CHILDREN);
+  const dropped = areas.length - clamped.length;
+  if (dropped > 0) {
+    void get().emitNotification(
+      'agent-auto-spawn',
+      'info',
+      `agent fan-out capped: ${container.name}`,
+      `dropped ${dropped} area(s) over the ${FAN_OUT_MAX_CHILDREN}-child limit`,
+      { sessionId },
+    );
+  }
+  if (clamped.length < 2) {
+    return;
+  }
+  const runs = get().sessionPhaseRuns[sessionId] ?? [];
+  const childDepth = scoutDepth(runs, container.id) + 1;
+  const started = await startFanOutChildren({
+    set,
+    get,
+    sessionId,
+    container,
+    role,
+    childKind: resolveAgentKind(container),
+    specs: clamped.map((area) => ({
+      name: area.area,
+      promptText: `${area.area}\n${area.query}`,
+      kickoff: composeChildKickoff({ role, area, depth: childDepth }),
+      routingProposal: area.routingProposal ?? null,
+    })),
+  });
+  if (started.kind === 'blocked') {
+    void get().emitNotification(
+      'agent-auto-spawn',
+      'warning',
+      `agent fan-out held: ${container.name}`,
+      started.reason,
+      { sessionId },
+    );
   }
 };
 
@@ -477,6 +536,10 @@ const maybeSynthesizeParent = async ({
   if (!container) {
     return;
   }
+  if (resolveAgentKind(container) === 'wireframe') {
+    await get().joinWireframeScouts({ sessionId, containerId: parentId });
+    return;
+  }
   activateAgent({
     set,
     get,
@@ -498,6 +561,7 @@ const settleAgent = async ({
   agentId,
   agentName,
   summary,
+  isDegradedNoticeSuppressed = false,
 }: {
   readonly set: SetFn;
   readonly get: GetFn;
@@ -505,18 +569,21 @@ const settleAgent = async ({
   readonly agentId: AgentId;
   readonly agentName: string;
   readonly summary: string;
+  readonly isDegradedNoticeSuppressed?: boolean;
 }): Promise<void> => {
-  void get().emitNotification(
-    'summarizer-degraded',
-    'warning',
-    `step summary degraded: ${agentName}`,
-    'fan-out branch summaries skip the LLM summarizer, showing raw output instead.',
-    {
-      sessionId,
-      action: { kind: 'retry-step-summary', sessionId, agentId },
-      coalesceKey: `step-summary-degraded:${agentId}`,
-    },
-  );
+  if (isDegradedNoticeSuppressed === false) {
+    void get().emitNotification(
+      'summarizer-degraded',
+      'warning',
+      `step summary degraded: ${agentName}`,
+      'fan-out branch summaries skip the LLM summarizer, showing raw output instead.',
+      {
+        sessionId,
+        action: { kind: 'retry-step-summary', sessionId, agentId },
+        coalesceKey: `step-summary-degraded:${agentId}`,
+      },
+    );
+  }
   await invokeAgentUpdateStatus(agentId, {
     status: 'completed',
     outputSummary: summary,
@@ -533,6 +600,22 @@ export const advanceScoutTree = (set: SetFn, get: GetFn) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
     if (!agent) {
+      return;
+    }
+
+    const root = resolveRootAgent({ agents: runs, agentId });
+    const isWireframeScout =
+      root !== null && root.id !== agentId && resolveAgentKind(root) === 'wireframe';
+    if (isWireframeScout) {
+      await settleAgent({
+        set,
+        get,
+        sessionId,
+        agentId,
+        agentName: agent.name,
+        summary: clampWireframeScoutReport({ text: assistantText }),
+        isDegradedNoticeSuppressed: true,
+      });
       return;
     }
 
