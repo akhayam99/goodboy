@@ -16,7 +16,7 @@ export const PublishConversationsBar = ({ sessionId, draftCount, mode, onSelectM
     className={cn('flex flex-wrap items-center justify-between gap-x-4 gap-y-2', PANE_RHYTHM.dock)}
   >
     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
-      <ResolvePublishStrip sessionId={sessionId} />
+      {mode === 'queue' ? <ResolvePublishStrip sessionId={sessionId} /> : null}
     </div>
     <div className="flex shrink-0 flex-wrap items-center gap-1">
       <GhostActionButton
