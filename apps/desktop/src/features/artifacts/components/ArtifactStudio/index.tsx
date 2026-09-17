@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { StudioRailLayout } from '@goodboy/ui';
 import type { Agent, AgentId, ArtifactId, IsoDateTime, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -10,10 +11,12 @@ import {
 import { PlanStudio } from '../../../plans/components/PlanStudio';
 import { ArtifactCollection } from './ArtifactCollection';
 import { ArtifactDetail } from './ArtifactDetail';
+import { ArtifactRail } from './ArtifactRail';
 import { ArtifactCreationPane } from '../ArtifactCreationPane';
 import { loadArtifactProvenance } from '../../artifactProvenance';
 import { ARTIFACT_RETRY_MISSING_BRIEF, artifactRetryDraft } from '../../artifactRetryDraft';
 import { resolveArtifactGenerations, type ArtifactGeneration } from '../../artifactCollection';
+import { artifactCounts, artifactGroups } from '../../artifactGroups';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -113,6 +116,11 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
 
   const standalone = artifacts.filter((artifact) => artifact.kind !== 'plan');
   const selected = standalone.find((artifact) => artifact.id === focusedArtifactId) ?? null;
+  const groups = useMemo(
+    () => artifactGroups({ artifacts: standalone, generations }),
+    [standalone, generations],
+  );
+  const counts = useMemo(() => artifactCounts({ plans, groups }), [plans, groups]);
 
   const selectArtifact = (artifactId: ArtifactId) => {
     const target = artifacts.find((artifact) => artifact.id === artifactId) ?? null;
@@ -144,6 +152,16 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
       });
   };
 
+  const selectGeneration = (generation: ArtifactGeneration) => {
+    void selectAgent(sessionId, generation.agentId);
+  };
+
+  const stopGeneration = (generation: ArtifactGeneration) => {
+    void stopArtifactGeneration({ sessionId, agentId: generation.agentId });
+  };
+
+  const changeFilter = (next: typeof filter) => setArtifactFilter({ sessionId, filter: next });
+
   if (creation !== null && session !== null) {
     return (
       <ArtifactCreationPane
@@ -158,40 +176,61 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
     );
   }
 
-  if (selected !== null) {
-    return (
-      <ArtifactDetail
-        sessionId={sessionId}
-        artifact={selected}
-        agents={agents}
-        artifacts={artifacts}
-        count={artifacts.length}
-        onBack={() => setFocusedArtifactId(sessionId, null)}
-        onSelectArtifact={selectArtifact}
-      />
-    );
-  }
-
   if (focusedPlanId !== null) {
     return <PlanStudio sessionId={sessionId} eyebrow={eyebrow} />;
   }
 
+  if (selected === null) {
+    return (
+      <ArtifactCollection
+        plans={plans}
+        groups={groups}
+        counts={counts}
+        openQuestionCount={openQuestionCount}
+        filter={filter}
+        eyebrow={eyebrow}
+        onFilterChange={changeFilter}
+        onSelectPlan={(planId) => setFocusedPlanId(sessionId, planId)}
+        onSelectArtifact={selectArtifact}
+        onSelectGeneration={selectGeneration}
+        onStopGeneration={stopGeneration}
+        onRetryGeneration={retryGeneration}
+      />
+    );
+  }
+
   return (
-    <ArtifactCollection
-      plans={plans}
-      artifacts={standalone}
-      generations={generations}
-      openQuestionCount={openQuestionCount}
-      filter={filter}
-      eyebrow={eyebrow}
-      onFilterChange={(next) => setArtifactFilter({ sessionId, filter: next })}
-      onSelectPlan={(planId) => setFocusedPlanId(sessionId, planId)}
-      onSelectArtifact={selectArtifact}
-      onSelectGeneration={(agentId) => void selectAgent(sessionId, agentId)}
-      onStopGeneration={(generation) =>
-        void stopArtifactGeneration({ sessionId, agentId: generation.agentId })
+    <StudioRailLayout
+      railLabel="Artifacts"
+      railWidth="narrow"
+      railVisibility="wideContainer"
+      rail={
+        <ArtifactRail
+          plans={plans}
+          groups={groups}
+          counts={counts}
+          openQuestionCount={openQuestionCount}
+          filter={filter}
+          selectedArtifactId={selected.id}
+          selectedGenerationAgentId={null}
+          onFilterChange={changeFilter}
+          onSelectPlan={(planId) => setFocusedPlanId(sessionId, planId)}
+          onSelectArtifact={selectArtifact}
+          onSelectGeneration={selectGeneration}
+          onStopGeneration={stopGeneration}
+          onRetryGeneration={retryGeneration}
+        />
       }
-      onRetryGeneration={retryGeneration}
+      detail={
+        <ArtifactDetail
+          sessionId={sessionId}
+          artifact={selected}
+          agents={agents}
+          artifacts={artifacts}
+          onBack={() => setFocusedArtifactId(sessionId, null)}
+          onSelectArtifact={selectArtifact}
+        />
+      }
     />
   );
 };
