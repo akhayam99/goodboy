@@ -35,11 +35,18 @@ const stateLine = ({ row }: Readonly<{ row: ArtifactScoutRow }>): string => {
   return parts.join(' · ');
 };
 
+const rootLeaf = ({ root }: Readonly<{ root: string }>): string =>
+  root
+    .split('/')
+    .filter((segment) => segment.length > 0)
+    .pop() ?? root;
+
 const whereLine = ({ row }: Readonly<{ row: ArtifactScoutRow }>): string | null => {
   if (row.root === null) {
     return null;
   }
-  return row.branch === null ? row.root : `${row.root} on ${row.branch}`;
+  const leaf = rootLeaf({ root: row.root });
+  return row.branch === null ? leaf : `${leaf} on ${row.branch}`;
 };
 
 export const ArtifactScoutList = ({ rows, emptyLine }: Props) => {
@@ -67,7 +74,10 @@ export const ArtifactScoutList = ({ rows, emptyLine }: Props) => {
             />
             <span className="shrink-0 font-medium text-foreground">{row.name}</span>
             {where === null ? null : (
-              <span className="min-w-0 shrink truncate font-mono" title={where}>
+              <span
+                className="max-w-[20rem] shrink-0 truncate font-mono"
+                title={row.root === null ? where : row.root}
+              >
                 {where}
               </span>
             )}
