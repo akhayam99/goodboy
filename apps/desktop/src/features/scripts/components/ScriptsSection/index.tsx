@@ -102,7 +102,7 @@ export const ScriptsSection = ({
         <SectionHeader
           className="mt-6 pb-1.5"
           icon={<CONCEPT_ICONS.scripts size={11} aria-hidden className="text-info" />}
-          label="Scripts"
+          label="Saved scripts"
           action={
             <Tooltip content={`${expanded ? 'Collapse' : 'Expand'} scripts`}>
               <button

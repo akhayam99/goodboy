@@ -28,15 +28,17 @@ export const ScriptRunOutput = ({ run, completedAt }: Props) => {
         ) : (
           <ChevronRight size={ICON_SIZE.row} aria-hidden />
         )}
-        <span>Last run</span>
-        <span
-          className={cn(
-            'text-2xs font-normal capitalize',
-            SCRIPT_RUN_PRESENTATION[run.status].textClass,
-          )}
-        >
-          {run.status}
-        </span>
+        <span>{result === null ? 'Running' : 'Last run'}</span>
+        {result !== null ? (
+          <span
+            className={cn(
+              'text-2xs font-normal capitalize',
+              SCRIPT_RUN_PRESENTATION[run.status].textClass,
+            )}
+          >
+            {run.status}
+          </span>
+        ) : null}
         {result !== null ? (
           <span className="text-2xs font-normal text-muted-foreground">
             exit {result.exitCode}

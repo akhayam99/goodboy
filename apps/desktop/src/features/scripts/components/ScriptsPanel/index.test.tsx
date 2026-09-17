@@ -116,7 +116,7 @@ const headings = () =>
     (heading) => heading.textContent,
   );
 
-const searchBox = () => screen.getByRole('searchbox', { name: 'Search scripts' });
+const searchBox = () => screen.getByRole('searchbox', { name: 'Search manifest scripts' });
 
 beforeEach(() => {
   localStorage.clear();
@@ -241,7 +241,14 @@ describe('ScriptsPanel', () => {
 
     expect(screen.getByRole('heading', { level: 2, name: 'Web' })).toBeDefined();
     expect(screen.queryByText('setup api')).toBeNull();
-    expect(screen.getByText('No scripts for Web yet')).toBeDefined();
+    expect(
+      screen.getByText('No scripts saved for Web yet. Save the command you keep retyping.'),
+    ).toBeDefined();
+    expect(
+      within(screen.getByRole('region', { name: 'Your scripts' })).getByRole('button', {
+        name: /new script/i,
+      }),
+    ).toBeDefined();
   });
 
   it('preselects the scoped project and then clears the scope', () => {
@@ -632,7 +639,7 @@ describe('ScriptsPanel', () => {
     renderSettingsPanel();
 
     expect(screen.queryByRole('region', { name: 'Manifest scripts' })).toBeNull();
-    expect(screen.queryByRole('searchbox', { name: 'Search scripts' })).toBeNull();
+    expect(screen.queryByRole('searchbox', { name: 'Search manifest scripts' })).toBeNull();
     expect(screen.getByRole('region', { name: 'Your scripts' })).toBeDefined();
   });
 
@@ -673,7 +680,11 @@ describe('ScriptsPanel', () => {
     renderPanel();
 
     fireEvent.click(within(rail()).getByRole('button', { name: /Web/ }));
-    fireEvent.click(screen.getByRole('button', { name: /new script/i }));
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'Your scripts' })).getByRole('button', {
+        name: /new script/i,
+      }),
+    );
     expect(
       (screen.getByRole('combobox', { name: 'New script project' }) as HTMLSelectElement).value,
     ).toBe('project-2');

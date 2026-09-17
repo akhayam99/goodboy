@@ -800,6 +800,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
             <section className="flex flex-col gap-3" aria-label="Your scripts">
               <SectionHeader
                 label="Your scripts"
+                hint="Saved on this workspace. Edit, run, delete."
                 headingLevel={3}
                 action={
                   <Chip tone="neutral" label={String(selectedUserScripts.length)} size="3xs" />
@@ -827,11 +828,19 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                 />
               ) : null}
               {selectedUserScripts.length === 0 && newDraft === null ? (
-                <p className="text-xs text-muted-foreground">
-                  {normalizedQuery === ''
-                    ? `No scripts for ${selectedProject.name} yet`
-                    : 'No matching scripts here'}
-                </p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-muted/20 px-2.5 py-2">
+                  <p className="text-xs text-muted-foreground">
+                    {normalizedQuery === ''
+                      ? `No scripts saved for ${selectedProject.name} yet. Save the command you keep retyping.`
+                      : 'No matching scripts here'}
+                  </p>
+                  {normalizedQuery === '' && workspaceProjects.length > 0 ? (
+                    <Button variant="ghost" size="sm" onClick={onOpenNew}>
+                      <Plus size={ICON_SIZE.row} aria-hidden />
+                      New script
+                    </Button>
+                  ) : null}
+                </div>
               ) : (
                 <ul className="flex flex-col gap-2">
                   {selectedUserScripts.map((script) => {
@@ -877,6 +886,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
               <section className="flex flex-col gap-3" aria-label="Manifest scripts">
                 <SectionHeader
                   label="Manifest scripts"
+                  hint="Read from package.json and composer.json at run time. Run only."
                   headingLevel={3}
                   action={
                     <span className="flex items-center gap-2">
