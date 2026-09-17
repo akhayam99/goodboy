@@ -7,7 +7,7 @@ import { artifactMountOptionsKey, selectArtifactMountOptions } from '../artifact
 import { loadArtifactProvenance } from '../artifactProvenance';
 import { artifactScoutRoster, type ArtifactScoutRow } from '../artifactScoutRoster';
 
-const NO_PLAN = EMPTY_ARRAY as ReadonlyArray<ArtifactScoutPlanEntry>;
+const NO_PLAN: ReadonlyArray<ArtifactScoutPlanEntry> = [];
 
 export type ArtifactScoutRosterHandle = Readonly<{
   rows: ReadonlyArray<ArtifactScoutRow>;
