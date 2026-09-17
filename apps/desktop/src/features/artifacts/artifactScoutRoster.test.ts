@@ -13,6 +13,7 @@ const mounts: ReadonlyArray<ArtifactMountOption> = [
     branch: 'ak/fix-posting-rounding',
     baseBranch: 'main',
     worktreePath: '/tmp/ledger',
+    revision: 1,
   },
 ];
 
