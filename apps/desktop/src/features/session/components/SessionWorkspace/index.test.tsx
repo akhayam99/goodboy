@@ -107,7 +107,9 @@ vi.mock('../../../../store', () => ({
     agent.lastFinishedAt != null &&
     (agent.lastViewedAt == null || agent.lastFinishedAt > agent.lastViewedAt),
   readPersistedLens: () => null,
-  useAppStore: <T,>(selector: (state: Store) => T) => selector(store),
+  useAppStore: Object.assign(<T,>(selector: (state: Store) => T) => selector(store), {
+    getState: () => store,
+  }),
   useIsSessionCollectionLoaded: ({
     sessionId,
     collection,

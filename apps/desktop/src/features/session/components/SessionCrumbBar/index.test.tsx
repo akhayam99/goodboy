@@ -20,11 +20,15 @@ const h = vi.hoisted(() => ({
   } as SessionStageInfo,
   currentSession: null as Session | null,
   selectAgent: vi.fn(),
+  setActiveLens: vi.fn(),
+  setScriptsLensScope: vi.fn(),
 }));
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
-  useAppStore: <T,>(selector: (state: typeof h.state) => T) => selector(h.state),
+  useAppStore: Object.assign(<T,>(selector: (state: typeof h.state) => T) => selector(h.state), {
+    getState: () => h.state,
+  }),
   useCurrentSession: () => h.currentSession,
   useSessionStageInfo: () => h.stage,
 }));
@@ -124,10 +128,13 @@ const resetState = () => {
     sessionPhaseRuns: { [SESSION_ID]: [scout, implementer, workflowStep] },
     agentKindOverride: {},
     sessionResolveAttempts: {},
+    sessionBranches: { [SESSION_ID]: 'ak/feat-one' },
     sessionGithub: {},
     phaseTemplates: { 'workspace-1': [{ id: 'workflow-1', name: 'refactor', steps: [] }] },
     sessionWorkflows: { [SESSION_ID]: [] },
     selectAgent: h.selectAgent,
+    setActiveLens: h.setActiveLens,
+    setScriptsLensScope: h.setScriptsLensScope,
   });
 };
 
@@ -278,7 +285,7 @@ describe('SessionCrumbBar', () => {
     expect(scoutSpan.getAttribute('aria-current')).toBe('page');
   });
 
-  it('does not render a switcher when no agent is selected', () => {
+  it('gives the lens crumb the destination switcher when no agent is selected', () => {
     h.crumbs = [
       { id: 'overview', label: 'Overview', onClick: vi.fn() },
       { id: 'lens-agents', label: 'Agents' },
@@ -286,9 +293,60 @@ describe('SessionCrumbBar', () => {
     h.state.selectedAgentId = {};
     render(<SessionCrumbBar />);
 
-    const last = screen.getByText('Agents');
+    const last = screen.getByRole('button', { name: /Agents/ });
+    expect(last.getAttribute('title')).toBe('Agents. Switch page.');
     expect(last.getAttribute('aria-current')).toBe('page');
     expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('opens the sibling destinations from the lens crumb and marks the current one', () => {
+    h.crumbs = [
+      { id: 'overview', label: 'Overview', onClick: vi.fn() },
+      { id: 'lens-agents', label: 'Agents' },
+    ];
+    h.state.selectedAgentId = {};
+    render(<SessionCrumbBar />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
+    const menu = screen.getByRole('menu', { name: 'Switch page' });
+    expect(menu.textContent).toContain('Artifacts');
+    expect(menu.textContent).toContain('Review');
+    expect(menu.textContent).toContain('Scripts');
+    expect(within(menu).getByRole('menuitem', { name: /Agents/ }).className).toContain(
+      'bg-background',
+    );
+
+    fireEvent.click(within(menu).getByRole('menuitem', { name: /Review/ }));
+    expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
+  });
+
+  it('switches page from the lens crumb of a deeper trail without navigating', () => {
+    const toPlans = vi.fn();
+    h.crumbs = [
+      { id: 'overview', label: 'Overview', onClick: vi.fn() },
+      { id: 'plans', label: 'Artifacts', onClick: toPlans },
+      { id: 'plan', label: 'Rounding drift' },
+    ];
+    h.state.activeLens = { [SESSION_ID]: 'plans' };
+    h.state.selectedAgentId = {};
+    render(<SessionCrumbBar />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Artifacts. Switch page.' }));
+    expect(toPlans).not.toHaveBeenCalled();
+
+    const menu = screen.getByRole('menu', { name: 'Switch page' });
+    fireEvent.click(within(menu).getByRole('menuitem', { name: /Questions/ }));
+    expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'questions');
+  });
+
+  it('gives the lone overview crumb the destination switcher', () => {
+    h.crumbs = [{ id: 'overview', label: 'Overview' }];
+    h.state.activeLens = { [SESSION_ID]: null };
+    h.state.selectedAgentId = {};
+    render(<SessionCrumbBar />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Overview/ }));
+    expect(screen.getByRole('menu', { name: 'Switch page' }).textContent).toContain('Terminal');
   });
 });
 
