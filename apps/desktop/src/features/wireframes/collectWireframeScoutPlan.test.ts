@@ -98,6 +98,47 @@ describe('wireframeScoutGate', () => {
     expect(gate).toEqual({ kind: 'skipped', reason: WIREFRAME_SCOUT_SKIP_BUDGET });
   });
 
+  it('skips when a live alert says the session is budget blocked', () => {
+    const gate = wireframeScoutGate({
+      state: stateWith({
+        budgetAlerts: [
+          {
+            id: 'alert-1',
+            kind: 'session-exceeded',
+            sessionId: SESSION_ID,
+            currentUsd: 12,
+            capUsd: 10,
+            createdAt: '2026-09-15T10:00:00.000Z',
+          },
+        ],
+      }),
+      sessionId: SESSION_ID,
+      workflowRunId: null,
+    });
+    expect(gate).toEqual({ kind: 'skipped', reason: WIREFRAME_SCOUT_SKIP_BUDGET });
+  });
+
+  it('starts the scouts once a session budget alert is dismissed', () => {
+    const gate = wireframeScoutGate({
+      state: stateWith({
+        budgetAlerts: [
+          {
+            id: 'alert-1',
+            kind: 'session-exceeded',
+            sessionId: SESSION_ID,
+            currentUsd: 12,
+            capUsd: 10,
+            createdAt: '2026-09-15T10:00:00.000Z',
+            dismissedAt: '2026-09-15T10:05:00.000Z',
+          },
+        ],
+      }),
+      sessionId: SESSION_ID,
+      workflowRunId: null,
+    });
+    expect(gate.kind).toBe('ready');
+  });
+
   it('skips when the routing batch comes back blocked', () => {
     routingBatch.mockReturnValue({ kind: 'blocked', reason: 'no model for scout' } as BatchResult);
     const gate = wireframeScoutGate({

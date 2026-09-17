@@ -53,6 +53,9 @@ export const wireframeScoutGate = ({
     isRunBudgetBlocked: false,
     nowMs: Date.now(),
   });
+  if (availability.isSessionBudgetBlocked) {
+    return { kind: 'skipped', reason: WIREFRAME_SCOUT_SKIP_BUDGET };
+  }
   const usable = availability.connectedProviders.filter(
     (provider) =>
       !availability.coolingDownProviders.includes(provider) &&
