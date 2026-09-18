@@ -120,6 +120,9 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
     if (run.orchestrationOutcome != null || isRunSettled({ run, workflow, agents: runAgents })) {
       return { kind: 'refused', reason: 'this run is already finished' };
     }
+    if (get().orchestratingWorkflowRuns?.[run.id] === true) {
+      return { kind: 'refused', reason: 'the orchestrator is choosing the next step' };
+    }
 
     const isClone = workflow.isPreset === true;
     const clone = isClone ? clonePlanFor({ workflow }) : null;
@@ -148,17 +151,19 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
     };
 
     const origin: WorkflowOrigin | null = isClone ? 'custom' : (workflow.origin ?? null);
-    const saved = await invokeWorkflowUpsert({
-      id: targetWorkflowId,
-      workspaceId: workflow.workspaceId,
-      name: workflow.name,
-      description: workflow.description,
-      ...(workflow.goal != null && { goal: workflow.goal }),
-      ...(workflow.processText != null && { processText: workflow.processText }),
-      steps: [...baseSteps, nextStep],
-      isPreset: false,
-      ...(origin != null && { origin }),
-    });
+    const upsertTarget = (steps: ReadonlyArray<WorkflowStepUpsertArgs>): Promise<Workflow> =>
+      invokeWorkflowUpsert({
+        id: targetWorkflowId,
+        workspaceId: workflow.workspaceId,
+        name: workflow.name,
+        description: workflow.description,
+        ...(workflow.goal != null && { goal: workflow.goal }),
+        ...(workflow.processText != null && { processText: workflow.processText }),
+        steps,
+        isPreset: false,
+        ...(origin != null && { origin }),
+      });
+    const saved = await upsertTarget([...baseSteps, nextStep]);
 
     if (clone != null) {
       await repointWorkflowRunTemplate({
@@ -190,12 +195,54 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
       }));
     }
 
+    const patchWorkflows = (
+      workflows: ReadonlyArray<Workflow>,
+      next: Workflow,
+      dropsSource: boolean,
+    ): ReadonlyArray<Workflow> => {
+      const kept = dropsSource
+        ? workflows.filter((current) => current.id !== workflow.id)
+        : workflows;
+      const replaced = kept.map((current) => (current.id === next.id ? next : current));
+      return replaced.some((current) => current.id === next.id) ? replaced : [...replaced, next];
+    };
+
+    const commitWorkflow = (next: Workflow): void => {
+      const dropsSource =
+        clone != null &&
+        !(get().sessions.find((candidate) => candidate.id === sessionId)?.workflowRuns ?? []).some(
+          (candidate) =>
+            candidate.id !== workflowRunId &&
+            candidate.discardedAt == null &&
+            candidate.workflowId === workflow.id,
+        );
+      set((state) => ({
+        phaseTemplates: {
+          ...state.phaseTemplates,
+          [workflow.workspaceId]: patchWorkflows(
+            state.phaseTemplates[workflow.workspaceId] ?? [],
+            next,
+            false,
+          ),
+        },
+        sessionWorkflows: {
+          ...state.sessionWorkflows,
+          [sessionId]: patchWorkflows(state.sessionWorkflows[sessionId] ?? [], next, dropsSource),
+        },
+      }));
+    };
+
+    const rollback = async (reason: string): Promise<AddStepToWorkflowRunResult> => {
+      commitWorkflow(await upsertTarget(baseSteps));
+      return { kind: 'refused', reason };
+    };
+
     const existingAgents = get().sessionPhaseRuns[sessionId] ?? [];
     const baseOrdinal =
       existingAgents.reduce((max, current) => Math.max(max, current.ordinal), -1) + 1;
     const savedStep = saved.steps.find((candidate) => candidate.id === stepId);
     if (savedStep == null) {
-      return { kind: 'refused', reason: 'the step could not be saved' };
+      return rollback('the step could not be saved');
     }
     const spawned = await preSpawnWorkflowAgents({
       sessionId,
@@ -218,30 +265,16 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
       }),
     });
 
-    const patchWorkflows = (workflows: ReadonlyArray<Workflow>): ReadonlyArray<Workflow> => {
-      const replaced = workflows.map((current) => (current.id === saved.id ? saved : current));
-      return replaced.some((current) => current.id === saved.id) ? replaced : [...replaced, saved];
-    };
-
-    set((state) => ({
-      phaseTemplates: {
-        ...state.phaseTemplates,
-        [workflow.workspaceId]: patchWorkflows(state.phaseTemplates[workflow.workspaceId] ?? []),
-      },
-      sessionWorkflows: {
-        ...state.sessionWorkflows,
-        [sessionId]: patchWorkflows(state.sessionWorkflows[sessionId] ?? []),
-      },
-    }));
-
     const blockedStep = spawned.blocked[0];
     if (blockedStep != null) {
-      return { kind: 'refused', reason: blockedStep.reason };
+      return rollback(blockedStep.reason);
     }
     const agent = spawned.agents[0];
     if (agent == null) {
-      return { kind: 'refused', reason: 'the step agent could not be created' };
+      return rollback('the step agent could not be created');
     }
+
+    commitWorkflow(saved);
 
     set((state) => ({
       sessionPhaseRuns: {

@@ -43,6 +43,14 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,
 }));
 
+const { preSpawnSpy } = vi.hoisted(() => ({ preSpawnSpy: vi.fn() }));
+
+vi.mock('./preSpawnWorkflowAgents', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./preSpawnWorkflowAgents')>();
+  preSpawnSpy.mockImplementation(actual.preSpawnWorkflowAgents);
+  return { preSpawnWorkflowAgents: preSpawnSpy };
+});
+
 import { addStepToWorkflowRun } from './addStepToWorkflowRun';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 
@@ -104,9 +112,14 @@ const makeAgent = ({ stepId, status, ordinal }: AgentParams): Agent => ({
 type SessionParams = {
   readonly autoRun?: boolean;
   readonly discardedAt?: IsoDateTime;
+  readonly siblingRuns?: ReadonlyArray<Session['workflowRuns'][number]>;
 };
 
-const makeSession = ({ autoRun = false, discardedAt }: SessionParams = {}): Session => ({
+const makeSession = ({
+  autoRun = false,
+  discardedAt,
+  siblingRuns = [],
+}: SessionParams = {}): Session => ({
   id: SESSION_ID,
   workspaceId: WORKSPACE_ID,
   goal: 'ship the change',
@@ -125,6 +138,7 @@ const makeSession = ({ autoRun = false, discardedAt }: SessionParams = {}): Sess
       executionMode: 'static',
       ...(discardedAt != null && { discardedAt }),
     },
+    ...siblingRuns,
   ],
   autoRun,
   titleUserEdited: false,
@@ -139,6 +153,7 @@ type StateParams = {
   readonly agents?: ReadonlyArray<Agent>;
   readonly autoRun?: boolean;
   readonly discardedAt?: IsoDateTime;
+  readonly siblingRuns?: ReadonlyArray<Session['workflowRuns'][number]>;
 };
 
 const baseState = ({
@@ -146,10 +161,17 @@ const baseState = ({
   agents,
   autoRun = false,
   discardedAt,
+  siblingRuns,
 }: StateParams = {}): State => {
   const workflow = makeWorkflow({ isPreset });
   return {
-    sessions: [makeSession({ autoRun, ...(discardedAt != null && { discardedAt }) })],
+    sessions: [
+      makeSession({
+        autoRun,
+        ...(discardedAt != null && { discardedAt }),
+        ...(siblingRuns != null && { siblingRuns }),
+      }),
+    ],
     workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
     providers: [{ id: 'anthropic', connection: 'connected' }],
     providerCooldowns: {},
@@ -203,13 +225,16 @@ const flush = async (): Promise<void> => {
   await new Promise((resolve) => setTimeout(resolve, 0));
 };
 
-const upsertArgs = () =>
-  invokeWorkflowUpsertSpy.mock.calls[0]![0] as {
-    readonly id: WorkflowId;
-    readonly isPreset: boolean;
-    readonly origin?: string;
-    readonly steps: ReadonlyArray<Record<string, unknown>>;
-  };
+type UpsertArgs = {
+  readonly id: WorkflowId;
+  readonly isPreset: boolean;
+  readonly origin?: string;
+  readonly steps: ReadonlyArray<Record<string, unknown>>;
+};
+
+const upsertArgs = () => invokeWorkflowUpsertSpy.mock.calls[0]![0] as UpsertArgs;
+
+const upsertArgsAt = (index: number) => invokeWorkflowUpsertSpy.mock.calls[index]![0] as UpsertArgs;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -324,6 +349,108 @@ describe('addStepToWorkflowRun', () => {
       expect(clone.steps.some((step) => step.id === agent.stepId)).toBe(true);
     }
     expect(templates.some((workflow) => workflow.id === WORKFLOW_ID)).toBe(true);
+
+    const attached = (state['sessionWorkflows'] as Record<string, ReadonlyArray<Workflow>>)[
+      SESSION_ID
+    ]!;
+    expect(attached.map((workflow) => workflow.id)).toEqual([run.workflowId]);
+  });
+
+  it('keeps the preset attached when another run still points at it', async () => {
+    const state = baseState({
+      isPreset: true,
+      agents: [
+        makeAgent({ stepId: 'step-1', status: 'completed', ordinal: 0 }),
+        makeAgent({ stepId: 'step-2', status: 'running', ordinal: 1 }),
+      ],
+      siblingRuns: [
+        {
+          id: 'run-2' as WorkflowRunId,
+          workflowId: WORKFLOW_ID,
+          ordinal: 1,
+          currentStep: 0,
+          autoRun: false,
+          triggerMode: 'immediate',
+          executionMode: 'static',
+        },
+      ],
+    });
+    const { add } = harness(state);
+
+    const result = await add({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      name: 'Review',
+      role: 'reviewer',
+    });
+
+    expect(result.kind).toBe('added');
+    const attached = (state['sessionWorkflows'] as Record<string, ReadonlyArray<Workflow>>)[
+      SESSION_ID
+    ]!;
+    expect(attached.map((workflow) => workflow.id)).toContain(WORKFLOW_ID);
+    expect(attached).toHaveLength(2);
+  });
+
+  it('rolls the step back when no agent can be spawned', async () => {
+    const state = baseState({
+      agents: [
+        makeAgent({ stepId: 'step-1', status: 'completed', ordinal: 0 }),
+        makeAgent({ stepId: 'step-2', status: 'running', ordinal: 1 }),
+      ],
+    });
+    preSpawnSpy.mockResolvedValueOnce({
+      agents: [],
+      modelOverrides: {},
+      kindOverrides: {},
+      providerOverrides: {},
+      effortOverrides: {},
+      blocked: [{ stepId: 'step-new' as StepId, stepName: 'Review', reason: 'anthropic is down' }],
+    });
+    const { add } = harness(state);
+
+    const result = await add({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      name: 'Review',
+      role: 'reviewer',
+    });
+
+    expect(result).toEqual({ kind: 'refused', reason: 'anthropic is down' });
+    expect(invokeWorkflowUpsertSpy).toHaveBeenCalledTimes(2);
+    const rolledBack = upsertArgsAt(1);
+    expect(rolledBack.id).toBe(WORKFLOW_ID);
+    expect(rolledBack.steps.map((step) => step['id'])).toEqual(['step-1', 'step-2']);
+    const templates = (state['phaseTemplates'] as Record<string, ReadonlyArray<Workflow>>)[
+      WORKSPACE_ID
+    ]!;
+    expect(templates.find((workflow) => workflow.id === WORKFLOW_ID)!.steps).toHaveLength(2);
+    const agents = (state['sessionPhaseRuns'] as Record<string, ReadonlyArray<Agent>>)[SESSION_ID]!;
+    expect(agents).toHaveLength(2);
+  });
+
+  it('refuses while the orchestrator is deciding', async () => {
+    const state = baseState({
+      agents: [
+        makeAgent({ stepId: 'step-1', status: 'completed', ordinal: 0 }),
+        makeAgent({ stepId: 'step-2', status: 'running', ordinal: 1 }),
+      ],
+    });
+    state['orchestratingWorkflowRuns'] = { [RUN_ID]: true };
+    const { add } = harness(state);
+
+    const result = await add({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      name: 'Review',
+      role: 'reviewer',
+    });
+
+    expect(result).toEqual({
+      kind: 'refused',
+      reason: 'the orchestrator is choosing the next step',
+    });
+    expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
   });
 
   it('hands the new step to autorun without extra wiring', async () => {
