@@ -7,6 +7,64 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.8
+
+Every part of a session is one click from every other part, a report or a wireframe opens from the message that announced it, and the resolve queue reads as one inbox instead of four tabs that disagreed with each other.
+
+### [#1798] Reach any part of a session from the trail
+
+The crumb at the top of a session opens a menu of everywhere that session goes: Work, Output, Context and Tools, with the keyboard chord for each destination on its own row. Review and Questions carry a number when something there is waiting on you.
+
+Until now every lens had a chord and a palette entry and nothing you could see, so the artifacts page and the resolve queue were reachable only by bouncing off a row in the overview.
+
+Opening the command palette with nothing typed shows the lenses again. The empty list used to be cut at thirty entries in insertion order, so workspaces, sessions and agents filled it and no destination ever appeared.
+
+### [#1799] Open an artifact from the message that announced it
+
+A report or a wireframe was the one object with a page of its own that the conversation which produced it could not reach. The block in the transcript is a chip now, and it opens the artifacts page on that document. A block whose artifact is not in the session says so instead of doing nothing.
+
+The overview header carries Questions, Review and Artifacts counts, each reading the same source as the page it sends you to.
+
+### [#1800] The resolve queue is one inbox
+
+Approving a comment used to drop it out of the Needs review tab while the publish bar went on counting it, so the set you were about to publish was visible nowhere. Approved comments stay in the queue with their own badge, and the tab and the bar count the same rows.
+
+Arrows walk the list, Enter drops into the comment, Escape comes back, and deciding one moves to the next with the keyboard still in your hands. One fix can answer several comments: the panel names which ones before you approve, and marks the ones already parked or refused.
+
+Badges say what a comment is, buttons say what pressing them does. Answer agent became Question for you, Review again became Comment changed, and publishing says it pushes the fix and resolves the threads.
+
+The publish bar appears only on the queue now. It used to sit under PR details, PR activity and Checks, so a publication could be driven while looking at something else.
+
+### [#1801] One scripts page, two collections
+
+The scripts page nested a second list inside the first: pick a project, then pick a package, then see one package at a time. It is one page and one rail now, holding the two collections it names: the scripts you saved, and the ones read from a project manifest.
+
+Every row carries one verb, with Copy, Edit and Delete behind a menu. A package you collapse answers the first press, a search reaches into every package instead of only the open one, and the row tells you how the last run actually ended.
+
+### [#1802] Filters that show all of themselves
+
+The artifact filter strip in the narrow rail wraps onto a second line instead of hiding its last tab, and the activity filter panel opens under its own button with a scrollbar that says when there is more below.
+
+### Fixes
+
+- The session destination menu was cut by its own height, so the whole Context group was unreachable with no scrollbar to say so [#1798].
+- Escape closed the destination menu and also threw the session out of the agent overlay behind it [#1798].
+- Picking the destination you were already standing in left the open plan or artifact in place, so the row appeared to do nothing [#1798].
+- A plan revision opened the older document, and a block announcing one stayed inert [#1799].
+- Deciding a comment from the keyboard left the focus nowhere, so the next arrow, Enter or Escape did nothing until you reached for the mouse [#1800].
+- Approving a comment moved the panel on even when you had opened another one while the approval ran [#1800].
+- Arrow keys on a parked or completed comment jumped to the top of the queue and opened whatever was there [#1800].
+- Escape inside a reply moved the focus away with the draft still in the field [#1800].
+- A comment with no fix offered to approve one [#1800].
+- The first press on the first package's collapse did nothing [#1801].
+- A package you had collapsed stayed collapsed during a search, hiding its matches [#1801].
+- Searching hid the package a script was running in, and the only button that could stop it [#1801].
+- Escape did not dismiss a script row's menu [#1801].
+- The copy confirmation followed Copy into a menu that closes on the click, so nothing said the command had been copied [#1801].
+- A stopped script showed an empty panel instead of saying it had been stopped [#1801].
+- The activity filter panel opened upward over the session title although the room was below it [#1802].
+- The finished register centred its toggle in a column that starts at the left [#1802].
+
 ## Goodboy v0.3.7
 
 A wireframe stops being one agent guessing at a repository it never opened, the artifact gets back a third of the screen it was spending on chrome, and Save PDF prints the whole report instead of its first page.
