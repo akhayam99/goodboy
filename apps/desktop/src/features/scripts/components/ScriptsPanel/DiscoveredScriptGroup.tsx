@@ -29,6 +29,7 @@ type Props = {
   readonly emptyLabel: string | null;
   readonly isOpen: boolean;
   readonly isRunning: boolean;
+  readonly canToggle: boolean;
   readonly onToggle: () => void;
   readonly onRun: (params: RunParams) => void;
   readonly onCancel: (params: CancelParams) => void;
@@ -42,6 +43,7 @@ export const DiscoveredScriptGroup = ({
   emptyLabel,
   isOpen,
   isRunning,
+  canToggle,
   onToggle,
   onRun,
   onCancel,
@@ -64,32 +66,36 @@ export const DiscoveredScriptGroup = ({
     >
       <header className="flex min-w-0 flex-col gap-1.5">
         <div className="flex min-w-0 items-center gap-2">
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-expanded={isOpen}
-            className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+          <span
+            role="heading"
+            aria-level={3}
+            className="flex min-w-0 items-center text-sm font-medium text-foreground"
           >
-            {isOpen ? (
-              <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+            {canToggle ? (
+              <button
+                type="button"
+                onClick={onToggle}
+                aria-expanded={isOpen}
+                className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+              >
+                {isOpen ? (
+                  <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+                ) : (
+                  <ChevronRight size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+                )}
+                <span className="truncate">{group.packageName}</span>
+              </button>
             ) : (
-              <ChevronRight size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+              <span className="truncate">{group.packageName}</span>
             )}
-            <span
-              role="heading"
-              aria-level={3}
-              className="truncate text-sm font-medium text-foreground"
-            >
-              {group.packageName}
+          </span>
+          {group.relDir !== '' ? (
+            <span className="truncate font-mono text-3xs text-muted-foreground">
+              {group.relDir}
             </span>
-            {group.relDir !== '' ? (
-              <span className="truncate font-mono text-3xs text-muted-foreground">
-                {group.relDir}
-              </span>
-            ) : null}
-            <Chip tone="neutral" label={group.manager} size="3xs" shape="badge" uppercase />
-            <Chip tone="neutral" label={String(scripts.length)} size="3xs" />
-          </button>
+          ) : null}
+          <Chip tone="neutral" label={group.manager} size="3xs" shape="badge" uppercase />
+          <Chip tone="neutral" label={String(scripts.length)} size="3xs" />
           {isRunning ? (
             <StatusDot tone="info" pulsing ariaLabel={`Running script in ${group.packageName}`} />
           ) : null}

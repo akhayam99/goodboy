@@ -943,6 +943,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                           }
                           isOpen={isOpen}
                           isRunning={entry.isRunning}
+                          canToggle={normalizedQuery === ''}
                           onToggle={() => onToggleManifest({ key, isOpen })}
                           onRun={onRunDiscovered}
                           onCancel={onCancelDiscovered}

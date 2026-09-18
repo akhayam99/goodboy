@@ -401,6 +401,43 @@ describe('ScriptsPanel', () => {
     expect(screen.queryByRole('button', { name: /pnpm run build/ })).toBeNull();
   });
 
+  it('takes the package collapse away while a search is running', () => {
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'package-json',
+            packageName: 'root',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [{ name: 'build', command: 'pnpm run build' }],
+          },
+        ],
+      },
+    };
+
+    renderPanel();
+
+    expect(within(manifestSection()).getByRole('button', { name: 'root' })).toBeDefined();
+
+    fireEvent.change(searchBox(), { target: { value: 'build' } });
+
+    expect(within(manifestSection()).queryByRole('button', { name: 'root' })).toBeNull();
+    expect(
+      manifestSection().querySelector(
+        'span[role="heading"] button, span[role="heading"][aria-expanded]',
+      ),
+    ).toBeNull();
+    expect(headings()).toEqual(['root']);
+    expect(screen.getByRole('button', { name: /pnpm run build/ })).toBeDefined();
+
+    fireEvent.keyDown(searchBox(), { key: 'Escape' });
+
+    const toggle = within(manifestSection()).getByRole('button', { name: 'root' });
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('button', { name: /pnpm run build/ })).toBeDefined();
+  });
+
   it('opens the only package of a project without asking', () => {
     state.discoveredScripts = {
       'session-1': {
