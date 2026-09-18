@@ -241,6 +241,7 @@ const flush = async (): Promise<void> => {
 type UpsertArgs = {
   readonly id: WorkflowId;
   readonly isPreset: boolean;
+  readonly name: string;
   readonly origin?: string;
   readonly steps: ReadonlyArray<Record<string, unknown>>;
 };
@@ -345,7 +346,8 @@ describe('addStepToWorkflowRun', () => {
     const args = upsertArgs();
     expect(args.id).not.toBe(WORKFLOW_ID);
     expect(args.isPreset).toBe(false);
-    expect(args.origin).toBe('custom');
+    expect(args.name).toBe('Ship it');
+    expect(args.origin).toBe('library');
     expect(args.steps.map((step) => step['id'])).not.toContain('step-1');
     expect(repointWorkflowRunTemplateSpy).toHaveBeenCalledTimes(1);
 

@@ -145,7 +145,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
       taskProfile: null,
     };
 
-    const origin: WorkflowOrigin | null = isClone ? 'custom' : (workflow.origin ?? null);
+    const origin: WorkflowOrigin = workflow.origin ?? 'custom';
     const upsertTarget = (steps: ReadonlyArray<WorkflowStepUpsertArgs>): Promise<Workflow> =>
       invokeWorkflowUpsert({
         id: targetWorkflowId,
@@ -156,7 +156,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
         ...(workflow.processText != null && { processText: workflow.processText }),
         steps,
         isPreset: false,
-        ...(origin != null && { origin }),
+        origin,
       });
     const saved = await upsertTarget([...baseSteps, nextStep]);
 
