@@ -826,7 +826,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                       ? `No scripts saved for ${selectedProject.name} yet. Save the command you keep retyping.`
                       : 'No matching scripts here'}
                   </p>
-                  {normalizedQuery === '' && workspaceProjects.length > 0 ? (
+                  {normalizedQuery === '' ? (
                     <Button variant="ghost" size="sm" onClick={onOpenNew}>
                       <Plus size={ICON_SIZE.row} aria-hidden />
                       New script
