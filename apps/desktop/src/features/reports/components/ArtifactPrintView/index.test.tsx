@@ -212,7 +212,9 @@ describe('ArtifactPrintView', () => {
     });
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     expect(document.documentElement.getAttribute('data-print-window')).toBe('true');
-    expect(window.print).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(window.print).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('unclamps the window it marks so a tall sheet scrolls on screen', () => {
@@ -236,7 +238,9 @@ describe('ArtifactPrintView', () => {
     await waitFor(() => {
       expect(closeSpy).toHaveBeenCalledTimes(1);
     });
-    expect(window.print).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(window.print).toHaveBeenCalledTimes(1);
+    });
 
     unmount();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
@@ -271,7 +275,9 @@ describe('ArtifactPrintView', () => {
     ]);
     expect(screen.queryByRole('alert')).toBeNull();
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-    expect(window.print).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(window.print).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('refuses a wireframe it cannot read instead of dumping its source', async () => {
