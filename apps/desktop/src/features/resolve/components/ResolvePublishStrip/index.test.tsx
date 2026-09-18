@@ -205,6 +205,21 @@ describe('ResolvePublishStrip', () => {
     expect(screen.getByRole('button', { name: 'Resolve threads without the fix' })).toBeDefined();
   });
 
+  it('carries the replies disclosure on one control, its icon beside the count', () => {
+    h.state.activePublicationPreview = { [SESSION_ID]: previewOf({}) };
+    render(<ResolvePublishStrip sessionId={SESSION_ID} />);
+
+    const toggle = screen.getByRole('button', { name: 'Show replies (3)' });
+
+    expect(toggle.querySelector('svg')).not.toBeNull();
+    expect(screen.queryByText('One')).toBeNull();
+
+    fireEvent.click(toggle);
+
+    expect(screen.getByRole('button', { name: 'Hide replies (3)' })).toBeDefined();
+    expect(screen.getByText('One')).toBeDefined();
+  });
+
   it('offers to check before retrying once a push is stuck', () => {
     h.state.sessionResolvePublications = { [SESSION_ID]: [{ id: 'pub-1', phase: 'failed' }] };
     render(<ResolvePublishStrip sessionId={SESSION_ID} />);

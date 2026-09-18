@@ -58,7 +58,12 @@ vi.mock('../../hooks/useResolveDeliveryReceipts', () => ({
 vi.mock('../../../review/openReview', () => ({ openReview: h.openReview }));
 vi.mock('../ResolveItemView/ResolveItemContainer', () => ({
   ResolveItemContainer: ({ row }: { readonly row: { thread: { threadId: string } } }) => (
-    <div data-testid="resolve-item">{row.thread.threadId}</div>
+    <div data-testid="resolve-item">
+      <span data-testid="resolve-item-thread">{row.thread.threadId}</span>
+      <button type="button" data-resolve-primary>
+        Approve fix
+      </button>
+    </div>
   ),
 }));
 
@@ -314,7 +319,7 @@ describe('the resolve queue home', () => {
     h.state.reviewTargets = { [SESSION_ID]: targetOf({}) };
     render(<ResolveQueueHome session={SESSION} />);
 
-    expect(screen.getByTestId('resolve-item').textContent).toBe('PRRT_1');
+    expect(screen.getByTestId('resolve-item-thread').textContent).toBe('PRRT_1');
     expect(h.state.consumeReviewTarget).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       requestId: 'req-1',
@@ -408,5 +413,110 @@ describe('walking the queue from the keyboard', () => {
     fireEvent.keyDown(rowFor('PRRT_1'), { key: 'ArrowDown', metaKey: true });
 
     expect(h.state.setResolveQueueView).not.toHaveBeenCalled();
+  });
+
+  it('opens the panel and lands the focus in it on the first Enter', () => {
+    twoRows();
+    const { rerender } = render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.keyDown(rowFor('PRRT_2'), { key: 'Enter' });
+
+    expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      patch: { expandedThreadId: 'PRRT_2', order: ['PRRT_1', 'PRRT_2'] },
+    });
+
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
+    };
+    rerender(<ResolveQueueHome session={SESSION} />);
+
+    expect(document.activeElement).toBe(
+      within(screen.getByTestId('resolve-item')).getByRole('button', { name: 'Approve fix' }),
+    );
+  });
+
+  it('keeps Enter on the open row going straight to the panel', () => {
+    twoRows();
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.keyDown(rowFor('PRRT_1'), { key: 'Enter' });
+
+    expect(document.activeElement).toBe(
+      within(screen.getByTestId('resolve-item')).getByRole('button', { name: 'Approve fix' }),
+    );
+  });
+});
+
+describe('the shape of the queue surface', () => {
+  const twoRows = () => {
+    h.state.sessionGithub = {
+      [SESSION_ID]: {
+        pr: { number: 248, url: 'https://github.com/acme/web/pull/248', state: 'open' },
+        detail: {
+          prNumber: 248,
+          comments: [commentOf('PRRT_1'), commentOf('PRRT_2')],
+          reviews: [],
+          checks: [],
+        },
+        detailLoading: false,
+        detailError: null,
+      },
+    };
+    h.state.sessionResolveQueueItems = {
+      [SESSION_ID]: [
+        entryOf({ item: { id: 'item-1', threadId: 'PRRT_1' }, thread: { threadId: 'PRRT_1' } }),
+        entryOf({ item: { id: 'item-2', threadId: 'PRRT_2' }, thread: { threadId: 'PRRT_2' } }),
+      ],
+    };
+  };
+
+  it('scrolls the rows in their own bounded region, below a header that stays put', () => {
+    twoRows();
+    render(<ResolveQueueHome session={SESSION} />);
+
+    const row = document.querySelector<HTMLElement>('[data-thread-id="PRRT_1"]') as HTMLElement;
+    const viewport = row.closest('.overflow-y-auto') as HTMLElement;
+    const region = viewport.parentElement as HTMLElement;
+
+    expect(region.className).toContain('min-h-0');
+    expect(region.className).toContain('flex-1');
+    expect(region.contains(screen.getByRole('heading', { name: 'Resolve' }))).toBe(false);
+    expect(
+      screen.getByRole('button', { name: 'Start resolve run' }).closest('.overflow-y-auto'),
+    ).toBeNull();
+  });
+
+  it('counts the retryable tab like its siblings once a run fails', () => {
+    twoRows();
+    h.state.sessionResolveQueueItems = {
+      [SESSION_ID]: [
+        entryOf({ item: { id: 'item-1', threadId: 'PRRT_1' }, thread: { threadId: 'PRRT_1' } }),
+        entryOf({
+          item: { id: 'item-2', threadId: 'PRRT_2' },
+          thread: { threadId: 'PRRT_2', activeAttemptId: 'attempt-1' },
+        }),
+      ],
+    };
+    h.state.sessionResolveAttempts = {
+      [SESSION_ID]: [{ id: 'attempt-1', agentId: 'agent-1', phase: 'failed', createdAt: 1 }],
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    expect(screen.getByRole('button', { name: 'Needs review 2' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Active 2' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retryable 1' })).toBeDefined();
+  });
+
+  it('drops the count from every tab that has nothing, the third one included', () => {
+    twoRows();
+    render(<ResolveQueueHome session={SESSION} />);
+
+    expect(screen.getByRole('button', { name: 'Needs review 2' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Active 2' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retryable' })).toBeDefined();
   });
 });

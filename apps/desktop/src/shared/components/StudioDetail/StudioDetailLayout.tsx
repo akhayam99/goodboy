@@ -71,7 +71,7 @@ export const StudioDetailLayout = ({
         {dock != null ? <Divider /> : null}
         {dock != null ? (
           <div data-testid="detail-dock" className={cn('flex shrink-0 flex-col', PANE_RHYTHM.dock)}>
-            <div className={cn('flex flex-col', PANE_RHYTHM.column, bodyMeasure)}>{dock}</div>
+            <div className={cn('flex flex-col', PANE_RHYTHM.column, headerMeasure)}>{dock}</div>
           </div>
         ) : null}
       </div>

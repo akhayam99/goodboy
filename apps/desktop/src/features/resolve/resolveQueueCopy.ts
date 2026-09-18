@@ -63,6 +63,8 @@ export const RESOLVE_HISTORY_LABEL = {
   completed: 'completed',
 } as const;
 
+export const RESOLVE_PUBLISH_REPLIES_LABEL = 'replies';
+
 export const RESOLVE_DELIVERY_SUPPORT = {
   replyPending: 'Reply pending',
   replyPosted: 'Reply posted',

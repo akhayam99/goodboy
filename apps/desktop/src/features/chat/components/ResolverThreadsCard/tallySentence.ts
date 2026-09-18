@@ -1,3 +1,4 @@
+import { RESOLVER_OUTCOME_LABEL, RESOLVER_OUTCOME_ORDER } from './resolverOutcome';
 import type { VerdictTally } from './verdictTally';
 
 type Params = {
@@ -8,13 +9,11 @@ export const tallySentence = ({ tally }: Params): string | null => {
   if (tally.total < 2) {
     return null;
   }
-  const parts = [
-    tally.resolved > 0 ? `${tally.resolved} fixed` : null,
-    tally.wontfix > 0 ? `${tally.wontfix} no change` : null,
-    tally.analyzed > 0 ? `${tally.analyzed} explained` : null,
-    tally.closed > 0 ? `${tally.closed} closed` : null,
-    tally.open > 0 ? `${tally.open} needs you` : null,
-  ].filter((part): part is string => part !== null);
+  const parts = RESOLVER_OUTCOME_ORDER.flatMap((outcome) =>
+    tally.counts[outcome] === 0
+      ? []
+      : [`${tally.counts[outcome]} ${RESOLVER_OUTCOME_LABEL[outcome]}`],
+  );
   if (parts.length === 0) {
     return null;
   }

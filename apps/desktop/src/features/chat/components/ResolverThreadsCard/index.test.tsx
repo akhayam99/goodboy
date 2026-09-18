@@ -202,4 +202,28 @@ describe('ResolverThreadsCard', () => {
     expect(screen.getByText('fix committed, thread closed')).toBeDefined();
     expect(screen.getByText('fix committed, reply queued')).toBeDefined();
   });
+
+  it('summarises the card in the same words its rows carry', () => {
+    h.resolved.mockReturnValue([
+      { threadId: 'PRRT_1', commitSha: 'abcdef1234567890' },
+      { threadId: 'PRRT_2', commitSha: '1234567890abcdef' },
+    ]);
+    h.wontfix.mockReturnValue([{ threadId: 'PRRT_3', reason: 'already covered upstream' }]);
+    h.comments = [{ threadId: 'PRRT_1', resolved: true }];
+
+    render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
+
+    expect(screen.getByText('1 fixed · 1 no change · 1 closed')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: /Expand resolve findings/ }));
+
+    const rowWords = [0, 1, 2].map(
+      (index) =>
+        within(screen.getByTestId(`resolver-thread-verdict-${index}`)).getByText(
+          /^(fixed|no change|explained|closed|needs you)$/,
+        ).textContent,
+    );
+
+    expect(rowWords.slice().sort()).toEqual(['closed', 'fixed', 'no change']);
+  });
 });

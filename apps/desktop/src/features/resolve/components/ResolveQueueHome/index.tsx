@@ -7,15 +7,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
-import {
-  Button,
-  Divider,
-  ErrorStrip,
-  SectionHeader,
-  Skeleton,
-  Tooltip,
-  formatError,
-} from '@goodboy/ui';
+import { Button, ErrorStrip, SectionHeader, Skeleton, Tooltip, formatError } from '@goodboy/ui';
 import type {
   PrCheckRun,
   PrComment,
@@ -345,6 +337,8 @@ export const ResolveQueueHome = ({ session }: Props) => {
       ?.focus();
   }, []);
 
+  const pendingPanelThreadIdRef = useRef<string | null>(null);
+
   const focusPanel = useCallback((): void => {
     const panel = detailRef.current;
     if (panel === null) {
@@ -383,13 +377,28 @@ export const ResolveQueueHome = ({ session }: Props) => {
         focusRow({ threadId });
         return;
       }
-      if (event.key === 'Enter' && rowThreadId === view.expandedThreadId) {
-        event.preventDefault();
-        focusPanel();
+      if (event.key !== 'Enter') {
+        return;
       }
+      event.preventDefault();
+      if (rowThreadId === view.expandedThreadId) {
+        focusPanel();
+        return;
+      }
+      pendingPanelThreadIdRef.current = rowThreadId;
+      onSelect(rowThreadId);
     },
     [focusPanel, focusRow, listed, onSelect, view.expandedThreadId],
   );
+
+  useEffect(() => {
+    const pending = pendingPanelThreadIdRef.current;
+    if (pending === null || selectedRow === null || selectedRow.thread.threadId !== pending) {
+      return;
+    }
+    pendingPanelThreadIdRef.current = null;
+    focusPanel();
+  }, [focusPanel, selectedRow]);
 
   const onPanelKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>): void => {
@@ -481,6 +490,7 @@ export const ResolveQueueHome = ({ session }: Props) => {
     >
       <PaneShell
         title={RESOLVE_QUEUE_TITLE}
+        scroll="body"
         actions={
           isConfiguring ? null : (
             <Tooltip
@@ -498,7 +508,6 @@ export const ResolveQueueHome = ({ session }: Props) => {
           )
         }
       >
-        <Divider />
         {isConfiguring ? (
           <ResolveSpawnSheet
             value={spawnConfig}

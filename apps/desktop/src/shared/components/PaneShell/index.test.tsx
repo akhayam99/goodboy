@@ -77,6 +77,37 @@ describe('PaneShell', () => {
     expect(column.className).toContain(PANE_RHYTHM.measure.full);
   });
 
+  it('bounds the body in its own scroll region and keeps the header out of it', () => {
+    render(
+      <PaneShell title="Resolve" scroll="body" actions={<button type="button">Start run</button>}>
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    const viewport = screen.getByText('Body copy').closest('.overflow-y-auto') as HTMLElement;
+    const region = viewport.parentElement as HTMLElement;
+
+    expect(region.className).toContain('min-h-0');
+    expect(region.className).toContain('flex-1');
+    expect(viewport.contains(screen.getByRole('heading', { name: 'Resolve' }))).toBe(false);
+    expect(viewport.contains(screen.getByRole('button', { name: 'Start run' }))).toBe(false);
+
+    const host = closestWith({ node: region, pattern: /^p[xy]-/ }) as HTMLElement;
+    expect(host.className).toContain(PANE_RHYTHM.body);
+  });
+
+  it('keeps one scroller for the whole pane by default', () => {
+    render(
+      <PaneShell title="Resolve">
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    const viewport = screen.getByText('Body copy').closest('.overflow-y-auto') as HTMLElement;
+
+    expect(viewport.contains(screen.getByRole('heading', { name: 'Resolve' }))).toBe(true);
+  });
+
   it('renders a custom header in place of the title block when given one', () => {
     render(
       <PaneShell header={<h1>Custom header</h1>}>

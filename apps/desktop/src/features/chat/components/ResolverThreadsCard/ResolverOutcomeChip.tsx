@@ -1,17 +1,11 @@
 import { Ban, CheckCheck, CircleHelp, Lock, Search } from 'lucide-react';
 import { Chip, type Tone } from '@goodboy/ui';
 import type { ResolverThreadVerdictKind } from './resolverThreadVerdicts';
+import { RESOLVER_OUTCOME_LABEL, resolverOutcome } from './resolverOutcome';
 
 type Props = {
   readonly kind: ResolverThreadVerdictKind;
   readonly isClosed: boolean;
-};
-
-const COPY: Record<ResolverThreadVerdictKind, string> = {
-  resolved: 'fixed',
-  wontfix: 'no change',
-  analyzed: 'explained',
-  open: 'needs you',
 };
 
 const TONE: Record<ResolverThreadVerdictKind, Tone> = {
@@ -28,8 +22,6 @@ const ICON = {
   open: CircleHelp,
 } satisfies Record<ResolverThreadVerdictKind, typeof CheckCheck>;
 
-const CLOSED_COPY = 'closed';
-
 const CLOSED_TONE: Tone = 'success';
 
 export const ResolverOutcomeChip = ({ kind, isClosed }: Props) => {
@@ -43,7 +35,7 @@ export const ResolverOutcomeChip = ({ kind, isClosed }: Props) => {
       emphasis="subtle"
       bordered={false}
       icon={<Icon size={10} aria-hidden />}
-      label={isClosed ? CLOSED_COPY : COPY[kind]}
+      label={RESOLVER_OUTCOME_LABEL[resolverOutcome({ kind, isClosed })]}
       className="shrink-0"
     />
   );

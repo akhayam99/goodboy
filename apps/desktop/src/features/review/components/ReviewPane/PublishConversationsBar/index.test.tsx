@@ -39,6 +39,17 @@ describe('PublishConversationsBar', () => {
     },
   );
 
+  it('sits the mode buttons on the baseline of the publish button, not the middle of the band', () => {
+    const { container } = renderBar({ mode: 'queue' });
+
+    const band = container.firstElementChild as HTMLElement;
+    const group = screen.getByRole('button', { name: /Write review/ }).parentElement as HTMLElement;
+
+    expect(band.className).toContain('items-end');
+    expect(band.className).not.toContain('items-center');
+    expect(group.className).toContain('items-end');
+  });
+
   it('keeps the four mode buttons in every mode', () => {
     renderBar({ mode: 'checks' });
     expect(screen.getByRole('button', { name: /Write review/ })).toBeDefined();
