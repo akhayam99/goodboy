@@ -128,6 +128,67 @@ describe('ScriptRow', () => {
     expect(screen.getByRole('menuitem', { name: 'Delete script' })).toBeDefined();
   });
 
+  it('dismisses the menu on Escape', () => {
+    render(
+      <ScriptRow
+        script={script}
+        projects={projects}
+        projectName="API"
+        mountPath="/tmp/api"
+        run={null}
+        completedAt={undefined}
+        expanded={false}
+        runnable
+        canRun
+        runDisabledReason={null}
+        copied={false}
+        onToggle={vi.fn()}
+        onSave={vi.fn()}
+        onRun={vi.fn()}
+        onCancel={vi.fn()}
+        onCopy={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'More' });
+    fireEvent.click(trigger);
+    expect(screen.getByRole('menuitem', { name: 'Delete script' })).toBeDefined();
+
+    fireEvent.keyDown(trigger, { key: 'Escape' });
+
+    expect(screen.queryByRole('menuitem', { name: 'Delete script' })).toBeNull();
+  });
+
+  it('keeps the menu item reading Copy script while the row confirms the copy', () => {
+    render(
+      <ScriptRow
+        script={script}
+        projects={projects}
+        projectName="API"
+        mountPath="/tmp/api"
+        run={null}
+        completedAt={undefined}
+        expanded={false}
+        runnable
+        canRun
+        runDisabledReason={null}
+        copied
+        onToggle={vi.fn()}
+        onSave={vi.fn()}
+        onRun={vi.fn()}
+        onCancel={vi.fn()}
+        onCopy={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    expect(screen.getByRole('menuitem', { name: 'Copy script' })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: 'Copied' })).toBeNull();
+  });
+
   it('says on the row that the command was copied, not inside a shut menu', () => {
     render(
       <ScriptRow

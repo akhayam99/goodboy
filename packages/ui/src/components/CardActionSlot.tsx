@@ -14,7 +14,12 @@ export const CardActionSlot = ({ label, className, children }: Props) => (
     className={cn('flex shrink-0 items-center justify-end gap-1', className)}
     onClick={(event) => event.stopPropagation()}
     onDoubleClick={(event) => event.stopPropagation()}
-    onKeyDown={(event) => event.stopPropagation()}
+    onKeyDown={(event) => {
+      if (event.key === 'Escape') {
+        return;
+      }
+      event.stopPropagation();
+    }}
   >
     {children}
   </div>

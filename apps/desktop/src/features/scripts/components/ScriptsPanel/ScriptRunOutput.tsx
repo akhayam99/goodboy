@@ -15,6 +15,7 @@ export const ScriptRunOutput = ({ run, completedAt }: Props) => {
   const [open, setOpen] = useState(true);
   const result = run.result;
   const isRunning = run.status === 'pending';
+  const isCancelled = run.status === 'cancelled';
 
   return (
     <div className="flex min-h-0 flex-col gap-1.5">
@@ -64,6 +65,9 @@ export const ScriptRunOutput = ({ run, completedAt }: Props) => {
       ) : null}
       {open && isRunning && result === null ? (
         <p className="px-1 text-2xs text-muted-foreground">Waiting for output</p>
+      ) : null}
+      {open && isCancelled && result === null ? (
+        <p className="px-1 text-2xs text-muted-foreground">Stopped, no output recorded</p>
       ) : null}
     </div>
   );

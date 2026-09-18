@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, ChevronDown, ChevronRight, Copy, Pencil, Play, Square, Trash2 } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, Play, Square, Trash2 } from 'lucide-react';
 import { InlineConfirm, OverflowMenu, StatusDot, Textarea, cn } from '@goodboy/ui';
 import type { Project, ProjectId, ProjectScript } from '@goodboy/types';
 import { CardAction } from '@goodboy/ui';
@@ -233,7 +233,7 @@ export const ScriptRow = ({
                 {
                   kind: 'item',
                   key: 'copy',
-                  label: copied ? 'Copied' : 'Copy script',
+                  label: 'Copy script',
                   onClick: onCopy,
                 },
                 {

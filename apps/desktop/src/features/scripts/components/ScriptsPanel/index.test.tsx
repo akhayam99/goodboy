@@ -701,6 +701,48 @@ describe('ScriptsPanel', () => {
     expect(screen.getByText('lint user')).toBeDefined();
   });
 
+  it('keeps a running package listed during a search, with its stop control', () => {
+    const scriptId = JSON.stringify(['/tmp/api', 'package-json', 'apps/worker', 'start']);
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'package-json',
+            packageName: 'root',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [{ name: 'build', command: 'pnpm run build' }],
+          },
+          {
+            source: 'package-json',
+            packageName: 'worker',
+            relDir: 'apps/worker',
+            manager: 'pnpm',
+            scripts: [
+              { name: 'start', command: 'pnpm run start' },
+              { name: 'lint', command: 'pnpm run lint' },
+            ],
+          },
+        ],
+      },
+    };
+    state.scriptRuns = {
+      'session-1': {
+        [scriptId]: { status: 'pending', result: null, runId: 'run-live' },
+      },
+    };
+
+    renderPanel();
+    fireEvent.change(searchBox(), { target: { value: 'build' } });
+
+    expect(headings()).toEqual(['root', 'worker']);
+    expect(screen.getByText('pnpm run build')).toBeDefined();
+    expect(screen.getByTestId(`discovered-script-${scriptId}`)).toBeDefined();
+    expect(screen.queryByText('pnpm run lint')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Stop start' }));
+    expect(state.cancelScript).toHaveBeenCalledWith('session-1', scriptId);
+  });
+
   it('offers to clear a search that matches nothing', () => {
     state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
 
@@ -920,6 +962,21 @@ describe('ScriptsPanel', () => {
     expect(screen.getByText('Last run')).toBeDefined();
     expect(screen.getByText('cancelled')).toBeDefined();
     expect(screen.queryByText('Running')).toBeNull();
+  });
+
+  it('says a cancelled run has no output yet instead of showing an empty body', () => {
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
+    state.scriptRuns = {
+      'session-1': {
+        s1: { status: 'cancelled', result: null, runId: 'run-1' },
+      },
+    };
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
+
+    expect(screen.getByText('Stopped, no output recorded')).toBeDefined();
+    expect(screen.queryByText('Waiting for output')).toBeNull();
   });
 
   it('renders an idle script row with no status border accent', () => {

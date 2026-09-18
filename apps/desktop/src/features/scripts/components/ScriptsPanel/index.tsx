@@ -93,6 +93,7 @@ type DiscoveredGroupEntry = {
   readonly group: ManifestScriptGroup;
   readonly worktreePath: string;
   readonly isRunning: boolean;
+  readonly matchCount: number;
 };
 
 type RunDiscoveredParams = {
@@ -310,20 +311,29 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
       return [];
     }
     return manifestGroups.map((group) => {
-      const isRunning = group.scripts.some((script) =>
-        pendingScriptIds.has(
-          discoveredScriptId({
-            worktreePath: selectedMount.worktreePath,
-            source: group.source,
-            relDir: group.relDir,
-            name: script.name,
-          }),
-        ),
+      const runningNames = new Set(
+        group.scripts
+          .filter((script) =>
+            pendingScriptIds.has(
+              discoveredScriptId({
+                worktreePath: selectedMount.worktreePath,
+                source: group.source,
+                relDir: group.relDir,
+                name: script.name,
+              }),
+            ),
+          )
+          .map((script) => script.name),
+      );
+      const matched = group.scripts.filter((script) => matchesSearch(script));
+      const visible = group.scripts.filter(
+        (script) => matchesSearch(script) || runningNames.has(script.name),
       );
       return {
-        group: { ...group, scripts: group.scripts.filter((script) => matchesSearch(script)) },
+        group: { ...group, scripts: visible },
         worktreePath: selectedMount.worktreePath,
-        isRunning,
+        isRunning: runningNames.size > 0,
+        matchCount: matched.length,
       };
     });
   }, [manifestGroups, matchesSearch, pendingScriptIds, selectedMount]);
@@ -408,7 +418,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
     return openManifests?.[key] ?? index === 0;
   };
   const selectedManifestCount = filteredManifestGroups.reduce(
-    (total, entry) => total + entry.group.scripts.length,
+    (total, entry) => total + entry.matchCount,
     0,
   );
   const selectedScan =
