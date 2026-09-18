@@ -12,10 +12,8 @@ import type {
   WorkflowRunId,
   VerbosityLevel,
 } from '@goodboy/types';
-import { runsForWorkflowRun } from '@goodboy/core';
 import { repointWorkflowRunTemplate, type WorkflowRunStepRepoint } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { isRunSettled } from '../../../features/workflows/isRunSettled';
 import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import {
@@ -24,6 +22,7 @@ import {
 } from '../../../features/workflows/workflows';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
+import { clearOrchestrationOutcome } from './clearOrchestrationOutcome';
 import { patchWorkflowRun } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
 
@@ -115,10 +114,6 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
       ) ?? null;
     if (workflow == null) {
       return { kind: 'refused', reason: 'the workflow behind this run is missing' };
-    }
-    const runAgents = runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId);
-    if (run.orchestrationOutcome != null || isRunSettled({ run, workflow, agents: runAgents })) {
-      return { kind: 'refused', reason: 'this run is already finished' };
     }
     if (get().orchestratingWorkflowRuns?.[run.id] === true) {
       return { kind: 'refused', reason: 'the orchestrator is choosing the next step' };
@@ -288,6 +283,10 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
       agentProviderOverride: { ...state.agentProviderOverride, ...spawned.providerOverrides },
       agentEffortOverride: { ...state.agentEffortOverride, ...spawned.effortOverrides },
     }));
+
+    if (run.executionMode === 'dynamic') {
+      await clearOrchestrationOutcome({ set, sessionId, workflowRunId });
+    }
 
     if (run.autoRun) {
       void get().maybeAutoAdvanceWorkflow(sessionId);

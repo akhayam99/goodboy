@@ -621,6 +621,12 @@ export const WorkflowRow = ({
             <div className="flex shrink-0 flex-wrap items-center gap-1">
               <CreateReportCta sessionId={task.id} workflowRunId={run.id} />
               <CreateWireframeCta sessionId={task.id} workflowRunId={run.id} />
+              <WorkflowAddStep
+                sessionId={task.id}
+                workspaceId={workflow.workspaceId}
+                workflowRunId={run.id}
+                stepCount={total}
+              />
             </div>
           ) : null}
         </div>

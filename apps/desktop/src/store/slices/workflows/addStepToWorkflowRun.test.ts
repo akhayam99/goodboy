@@ -22,18 +22,21 @@ const {
   repointWorkflowRunTemplateSpy,
   listOpenQuestionsSpy,
   updateOrchestrationStopSpy,
+  updateOrchestrationOutcomeSpy,
 } = vi.hoisted(() => ({
   invokeWorkflowUpsertSpy: vi.fn(),
   invokeAgentInsertSpy: vi.fn(),
   repointWorkflowRunTemplateSpy: vi.fn(async () => undefined),
   listOpenQuestionsSpy: vi.fn(async () => []),
   updateOrchestrationStopSpy: vi.fn(async () => undefined),
+  updateOrchestrationOutcomeSpy: vi.fn(async () => undefined),
 }));
 
 vi.mock('@goodboy/db', () => ({
   repointWorkflowRunTemplate: repointWorkflowRunTemplateSpy,
   listOpenQuestionsForSession: listOpenQuestionsSpy,
   updateWorkflowRunOrchestrationStop: updateOrchestrationStopSpy,
+  updateWorkflowRunOrchestrationOutcome: updateOrchestrationOutcomeSpy,
 }));
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -53,6 +56,7 @@ vi.mock('./preSpawnWorkflowAgents', async (importOriginal) => {
 
 import { addStepToWorkflowRun } from './addStepToWorkflowRun';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
+import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 const SESSION_ID = 'ses-1' as SessionId;
@@ -113,12 +117,14 @@ type SessionParams = {
   readonly autoRun?: boolean;
   readonly discardedAt?: IsoDateTime;
   readonly siblingRuns?: ReadonlyArray<Session['workflowRuns'][number]>;
+  readonly isDynamicDone?: boolean;
 };
 
 const makeSession = ({
   autoRun = false,
   discardedAt,
   siblingRuns = [],
+  isDynamicDone = false,
 }: SessionParams = {}): Session => ({
   id: SESSION_ID,
   workspaceId: WORKSPACE_ID,
@@ -135,7 +141,11 @@ const makeSession = ({
       currentStep: 0,
       autoRun,
       triggerMode: 'immediate',
-      executionMode: 'static',
+      executionMode: isDynamicDone ? 'dynamic' : 'static',
+      ...(isDynamicDone && {
+        orchestrationOutcome: 'done' as const,
+        orchestrationReason: 'the goal is met',
+      }),
       ...(discardedAt != null && { discardedAt }),
     },
     ...siblingRuns,
@@ -154,6 +164,7 @@ type StateParams = {
   readonly autoRun?: boolean;
   readonly discardedAt?: IsoDateTime;
   readonly siblingRuns?: ReadonlyArray<Session['workflowRuns'][number]>;
+  readonly isDynamicDone?: boolean;
 };
 
 const baseState = ({
@@ -162,6 +173,7 @@ const baseState = ({
   autoRun = false,
   discardedAt,
   siblingRuns,
+  isDynamicDone = false,
 }: StateParams = {}): State => {
   const workflow = makeWorkflow({ isPreset });
   return {
@@ -170,6 +182,7 @@ const baseState = ({
         autoRun,
         ...(discardedAt != null && { discardedAt }),
         ...(siblingRuns != null && { siblingRuns }),
+        isDynamicDone,
       }),
     ],
     workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
@@ -509,7 +522,7 @@ describe('addStepToWorkflowRun', () => {
     expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
   });
 
-  it('refuses a run whose steps have all settled', async () => {
+  it('appends to a settled static run and the run reads as in progress', async () => {
     const state = baseState();
     const { add } = harness(state);
 
@@ -520,7 +533,59 @@ describe('addStepToWorkflowRun', () => {
       role: 'reviewer',
     });
 
-    expect(result).toEqual({ kind: 'refused', reason: 'this run is already finished' });
-    expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
+    expect(result.kind).toBe('added');
+    const sessions = state['sessions'] as ReadonlyArray<Session>;
+    const run = sessions[0]!.workflowRuns[0]!;
+    const templates = (state['phaseTemplates'] as Record<string, ReadonlyArray<Workflow>>)[
+      WORKSPACE_ID
+    ]!;
+    const workflow = templates.find((candidate) => candidate.id === run.workflowId)!;
+    const agents = (state['sessionPhaseRuns'] as Record<string, ReadonlyArray<Agent>>)[SESSION_ID]!;
+    expect(workflow.steps).toHaveLength(3);
+    expect(isWorkflowRunComplete({ run, workflow, agents })).toBe(false);
+  });
+
+  it('clears the outcome of a dynamic run that concluded done and does not call orchestrateNextStep', async () => {
+    const state = baseState({ isDynamicDone: true });
+    const { add } = harness(state);
+
+    const result = await add({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      name: 'Review',
+      role: 'reviewer',
+    });
+
+    expect(result.kind).toBe('added');
+    expect(updateOrchestrationOutcomeSpy).toHaveBeenCalledWith({}, RUN_ID, null);
+    expect(updateOrchestrationStopSpy).toHaveBeenCalledWith({}, RUN_ID, null);
+    const sessions = state['sessions'] as ReadonlyArray<Session>;
+    const run = sessions[0]!.workflowRuns[0]!;
+    expect(run.orchestrationOutcome).toBeUndefined();
+    expect(run.orchestrationReason).toBeUndefined();
+    expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
+  });
+
+  it('puts the new agent in state before it clears the outcome', async () => {
+    const state = baseState({ isDynamicDone: true });
+    const seenAgentIds: Array<ReadonlyArray<string>> = [];
+    updateOrchestrationOutcomeSpy.mockImplementation(async () => {
+      const agents = (state['sessionPhaseRuns'] as Record<string, ReadonlyArray<Agent>>)[
+        SESSION_ID
+      ]!;
+      seenAgentIds.push(agents.map((agent) => agent.id));
+      return undefined;
+    });
+    const { add } = harness(state);
+
+    const result = await add({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      name: 'Review',
+      role: 'reviewer',
+    });
+
+    expect(result.kind).toBe('added');
+    expect(seenAgentIds).toEqual([['agent-step-1', 'agent-step-2', 'agent-new']]);
   });
 });

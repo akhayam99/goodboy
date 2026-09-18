@@ -1,10 +1,5 @@
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
-import {
-  updateWorkflowRunOrchestrationOutcome,
-  updateWorkflowRunOrchestrationStop,
-} from '@goodboy/db';
-import { tauriDatabase } from '../../../shared/lib/db';
-import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
+import { clearOrchestrationOutcome } from './clearOrchestrationOutcome';
 import type { GetFn, SetFn } from './types';
 
 export const continueWorkflowRun = (set: SetFn, get: GetFn) => {
@@ -15,15 +10,7 @@ export const continueWorkflowRun = (set: SetFn, get: GetFn) => {
       return;
     }
     const trimmed = note?.trim() ?? '';
-    await updateWorkflowRunOrchestrationOutcome(tauriDatabase, workflowRunId, null);
-    await updateWorkflowRunOrchestrationStop(tauriDatabase, workflowRunId, null);
-    patchWorkflowRun({
-      set,
-      sessionId,
-      workflowRunId,
-      patch: (current) =>
-        withoutKeys(current, ['orchestrationOutcome', 'orchestrationReason', 'orchestrationStop']),
-    });
+    await clearOrchestrationOutcome({ set, sessionId, workflowRunId });
     await get().orchestrateNextStep(sessionId, workflowRunId, {
       ...(trimmed !== '' && { extraHints: trimmed }),
     });

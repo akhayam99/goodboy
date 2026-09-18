@@ -82,7 +82,7 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex w-full flex-col gap-2">
       <ul className="flex list-none flex-col p-0">
         <WorkflowStepCard
           ordinal={stepCount}
