@@ -14,6 +14,8 @@ type Props = {
 export const ScriptRunOutput = ({ run, completedAt }: Props) => {
   const [open, setOpen] = useState(true);
   const result = run.result;
+  const isRunning = run.status === 'pending';
+  const isCancelled = run.status === 'cancelled';
 
   return (
     <div className="flex min-h-0 flex-col gap-1.5">
@@ -28,15 +30,17 @@ export const ScriptRunOutput = ({ run, completedAt }: Props) => {
         ) : (
           <ChevronRight size={ICON_SIZE.row} aria-hidden />
         )}
-        <span>Last run</span>
-        <span
-          className={cn(
-            'text-2xs font-normal capitalize',
-            SCRIPT_RUN_PRESENTATION[run.status].textClass,
-          )}
-        >
-          {run.status}
-        </span>
+        <span>{isRunning ? 'Running' : 'Last run'}</span>
+        {!isRunning ? (
+          <span
+            className={cn(
+              'text-2xs font-normal capitalize',
+              SCRIPT_RUN_PRESENTATION[run.status].textClass,
+            )}
+          >
+            {run.status}
+          </span>
+        ) : null}
         {result !== null ? (
           <span className="text-2xs font-normal text-muted-foreground">
             exit {result.exitCode}
@@ -59,8 +63,11 @@ export const ScriptRunOutput = ({ run, completedAt }: Props) => {
           {result.stdout === '' && result.stderr === '' ? '(no output)' : null}
         </ScrollFade>
       ) : null}
-      {open && result === null ? (
-        <p className="px-1 text-2xs text-muted-foreground">Running…</p>
+      {open && isRunning && result === null ? (
+        <p className="px-1 text-2xs text-muted-foreground">Waiting for output</p>
+      ) : null}
+      {open && isCancelled && result === null ? (
+        <p className="px-1 text-2xs text-muted-foreground">Stopped, no output recorded</p>
       ) : null}
     </div>
   );

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Check, ChevronDown, ChevronRight, Copy, Pencil, Play, Square, Trash2 } from 'lucide-react';
-import { InlineConfirm, StatusDot, Textarea, cn } from '@goodboy/ui';
+import { Check, ChevronDown, ChevronRight, Play, Square, Trash2 } from 'lucide-react';
+import { InlineConfirm, OverflowMenu, StatusDot, Textarea, cn } from '@goodboy/ui';
 import type { Project, ProjectId, ProjectScript } from '@goodboy/types';
 import { CardAction } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
 import type { ScriptRunRecord } from '../../scripts';
+import { extractPreviewLine } from './extractPreviewLine';
 import { ScriptRunOutput } from './ScriptRunOutput';
 import { SCRIPT_RUN_PRESENTATION } from './scriptRunPresentation';
 import { ProjectSelect } from './ProjectSelect';
@@ -30,10 +31,6 @@ type Props = {
   readonly onDelete: () => void | Promise<void>;
 };
 
-type PreviewParams = {
-  readonly body: string;
-};
-
 type EditField = 'name' | 'body';
 
 type EditParams = {
@@ -42,18 +39,6 @@ type EditParams = {
 
 type ProjectChangeParams = {
   readonly projectId: ProjectId;
-};
-
-const extractPreviewLine = ({ body }: PreviewParams): string => {
-  const lines = body.split('\n');
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed === '' || trimmed.startsWith('#!')) {
-      continue;
-    }
-    return trimmed;
-  }
-  return '';
 };
 
 export const ScriptRow = ({
@@ -155,47 +140,55 @@ export const ScriptRow = ({
         )}
       >
         <div className="col-start-1 row-start-1 flex min-w-0 flex-col gap-0.5">
-          {editingField === 'name' ? (
-            <input
-              autoFocus
-              value={nameDraft}
-              onChange={(event) => setNameDraft(event.target.value)}
-              onBlur={() => commit({ field: 'name' })}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') {
-                  event.preventDefault();
-                  cancelEditing({ field: 'name' });
-                }
-                if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-                  event.preventDefault();
-                  event.currentTarget.blur();
-                }
-              }}
-              aria-label="Edit script name"
-              className="min-h-7 rounded-md border border-border bg-background px-2 text-sm font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                if (expanded) {
-                  startEditing({ field: 'name' });
-                  return;
-                }
-                onToggle();
-              }}
-              className="min-w-0 truncate text-left text-sm font-medium text-foreground"
-            >
-              {script.name}
-              {projects.length > 1 ? (
-                <span className="text-xs font-normal text-muted-foreground">
-                  {' · '}
-                  {projectName}
-                </span>
-              ) : null}
-            </button>
-          )}
-          {!expanded && preview !== '' ? (
+          <div className="flex min-w-0 items-center gap-1.5">
+            {editingField === 'name' ? (
+              <input
+                autoFocus
+                value={nameDraft}
+                onChange={(event) => setNameDraft(event.target.value)}
+                onBlur={() => commit({ field: 'name' })}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    cancelEditing({ field: 'name' });
+                  }
+                  if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                    event.preventDefault();
+                    event.currentTarget.blur();
+                  }
+                }}
+                aria-label="Edit script name"
+                className="min-h-7 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-sm font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  if (expanded) {
+                    startEditing({ field: 'name' });
+                    return;
+                  }
+                  onToggle();
+                }}
+                className="min-w-0 truncate text-left text-sm font-medium text-foreground"
+              >
+                {script.name}
+                {projects.length > 1 ? (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    {' · '}
+                    {projectName}
+                  </span>
+                ) : null}
+              </button>
+            )}
+            {copied ? (
+              <span className="inline-flex shrink-0 items-center gap-1 text-2xs text-success">
+                <Check size={ICON_SIZE.row} aria-hidden />
+                Copied
+              </span>
+            ) : null}
+          </div>
+          {!expanded ? (
             <button
               type="button"
               onClick={onToggle}
@@ -219,13 +212,7 @@ export const ScriptRow = ({
           ) : null}
           <CardActionSlot label="Script lifecycle actions">
             {runnable && status === 'pending' ? (
-              <CardAction
-                icon={Square}
-                label="Stop script"
-                tone="danger"
-                size="default"
-                onClick={onCancel}
-              />
+              <CardAction icon={Square} label="Stop script" size="default" onClick={onCancel} />
             ) : null}
             {runnable && status !== 'pending' ? (
               <CardAction
@@ -237,28 +224,32 @@ export const ScriptRow = ({
                 onClick={onRun}
               />
             ) : null}
-            <CardAction
-              icon={copied ? Check : Copy}
-              label="Copy script"
-              tone={copied ? 'success' : 'neutral'}
-              size="default"
-              highlighted={copied}
-              onClick={onCopy}
-            />
-            <CardAction
-              icon={Pencil}
-              label="Edit script"
-              size="default"
-              onClick={() => startEditing({ field: 'body' })}
-            />
-            <CardAction
-              icon={Trash2}
-              label="Delete script"
-              tone="danger"
-              size="default"
-              highlighted={isDeleteArmed}
-              expanded={isDeleteArmed}
-              onClick={() => setIsDeleteArmed(true)}
+            <OverflowMenu
+              label="More"
+              align="right"
+              triggerClassName="px-1.5"
+              trigger={<span className="text-2xs">More</span>}
+              items={[
+                {
+                  kind: 'item',
+                  key: 'copy',
+                  label: 'Copy script',
+                  onClick: onCopy,
+                },
+                {
+                  kind: 'item',
+                  key: 'edit',
+                  label: 'Edit script',
+                  onClick: () => startEditing({ field: 'body' }),
+                },
+                {
+                  kind: 'item',
+                  key: 'delete',
+                  label: 'Delete script',
+                  destructive: true,
+                  onClick: () => setIsDeleteArmed(true),
+                },
+              ]}
             />
           </CardActionSlot>
           <CardActionSlot label="Script navigation actions">

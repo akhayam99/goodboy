@@ -88,7 +88,7 @@ describe('ScriptRow', () => {
     expect(onSave).toHaveBeenCalledWith('setup', 'echo next', 'project-1');
   });
 
-  it('places expand in navigation and run, copy, edit, and delete in lifecycle', () => {
+  it('keeps one verb on the row and the rest behind a menu that says what it is', () => {
     render(
       <ScriptRow
         script={script}
@@ -118,11 +118,101 @@ describe('ScriptRow', () => {
       true,
     );
     expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Run script' }))).toBe(true);
-    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Copy script' }))).toBe(true);
-    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Edit script' }))).toBe(true);
-    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete script' }))).toBe(
-      true,
+    expect(screen.queryByRole('button', { name: 'Copy script' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete script' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    expect(screen.getByRole('menuitem', { name: 'Copy script' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'Edit script' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'Delete script' })).toBeDefined();
+  });
+
+  it('dismisses the menu on Escape', () => {
+    render(
+      <ScriptRow
+        script={script}
+        projects={projects}
+        projectName="API"
+        mountPath="/tmp/api"
+        run={null}
+        completedAt={undefined}
+        expanded={false}
+        runnable
+        canRun
+        runDisabledReason={null}
+        copied={false}
+        onToggle={vi.fn()}
+        onSave={vi.fn()}
+        onRun={vi.fn()}
+        onCancel={vi.fn()}
+        onCopy={vi.fn()}
+        onDelete={vi.fn()}
+      />,
     );
+
+    const trigger = screen.getByRole('button', { name: 'More' });
+    fireEvent.click(trigger);
+    expect(screen.getByRole('menuitem', { name: 'Delete script' })).toBeDefined();
+
+    fireEvent.keyDown(trigger, { key: 'Escape' });
+
+    expect(screen.queryByRole('menuitem', { name: 'Delete script' })).toBeNull();
+  });
+
+  it('keeps the menu item reading Copy script while the row confirms the copy', () => {
+    render(
+      <ScriptRow
+        script={script}
+        projects={projects}
+        projectName="API"
+        mountPath="/tmp/api"
+        run={null}
+        completedAt={undefined}
+        expanded={false}
+        runnable
+        canRun
+        runDisabledReason={null}
+        copied
+        onToggle={vi.fn()}
+        onSave={vi.fn()}
+        onRun={vi.fn()}
+        onCancel={vi.fn()}
+        onCopy={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    expect(screen.getByRole('menuitem', { name: 'Copy script' })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: 'Copied' })).toBeNull();
+  });
+
+  it('says on the row that the command was copied, not inside a shut menu', () => {
+    render(
+      <ScriptRow
+        script={script}
+        projects={projects}
+        projectName="API"
+        mountPath="/tmp/api"
+        run={null}
+        completedAt={undefined}
+        expanded={false}
+        runnable
+        canRun
+        runDisabledReason={null}
+        copied
+        onToggle={vi.fn()}
+        onSave={vi.fn()}
+        onRun={vi.fn()}
+        onCancel={vi.fn()}
+        onCopy={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Copied')).toBeDefined();
   });
 
   it('deletes only after inline confirmation', () => {
@@ -149,10 +239,39 @@ describe('ScriptRow', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete script' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete script' }));
     expect(onDelete).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete setup' }));
     expect(onDelete).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the More trigger unframed alongside the ghost icon controls', () => {
+    render(
+      <ScriptRow
+        script={script}
+        projects={projects}
+        projectName="API"
+        mountPath="/tmp/api"
+        run={null}
+        completedAt={undefined}
+        expanded={false}
+        runnable
+        canRun
+        runDisabledReason={null}
+        copied={false}
+        onToggle={vi.fn()}
+        onSave={vi.fn()}
+        onRun={vi.fn()}
+        onCancel={vi.fn()}
+        onCopy={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'More' });
+
+    expect(trigger.className).not.toContain('border');
   });
 });

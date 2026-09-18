@@ -109,8 +109,6 @@ const rail = () => screen.getByRole('navigation', { name: 'Script projects' });
 
 const manifestSection = () => screen.getByRole('region', { name: 'Manifest scripts' });
 
-const manifestRail = () => screen.getByRole('navigation', { name: 'Manifest packages' });
-
 const headings = () =>
   Array.from(manifestSection().querySelectorAll('span[role="heading"]')).map(
     (heading) => heading.textContent,
@@ -241,7 +239,14 @@ describe('ScriptsPanel', () => {
 
     expect(screen.getByRole('heading', { level: 2, name: 'Web' })).toBeDefined();
     expect(screen.queryByText('setup api')).toBeNull();
-    expect(screen.getByText('No scripts for Web yet')).toBeDefined();
+    expect(
+      screen.getByText('No scripts saved for Web yet. Save the command you keep retyping.'),
+    ).toBeDefined();
+    expect(
+      within(screen.getByRole('region', { name: 'Your scripts' })).getByRole('button', {
+        name: /new script/i,
+      }),
+    ).toBeDefined();
   });
 
   it('preselects the scoped project and then clears the scope', () => {
@@ -325,26 +330,17 @@ describe('ScriptsPanel', () => {
 
     renderPanel();
 
-    const packages = within(manifestRail()).getAllByRole('button');
-    expect(packages.map((row) => row.textContent)).toEqual([
-      expect.stringContaining('root'),
-      expect.stringContaining('@acme/web'),
-      expect.stringContaining('acme/api'),
-    ]);
-    expect(packages[0]?.getAttribute('aria-current')).toBe('true');
-    expect(headings()).toEqual(['root']);
+    expect(headings()).toEqual(['root', '@acme/web', 'acme/api']);
+    expect(screen.getByRole('button', { name: /pnpm run build/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /pnpm run dev/ })).toBeNull();
 
-    fireEvent.click(within(manifestRail()).getByRole('button', { name: /@acme\/web/ }));
+    fireEvent.click(within(manifestSection()).getByRole('button', { name: /@acme\/web/ }));
 
-    expect(headings()).toEqual(['@acme/web']);
-    expect(
-      within(manifestRail())
-        .getByRole('button', { name: /@acme\/web/ })
-        .getAttribute('aria-current'),
-    ).toBe('true');
+    expect(screen.getByRole('button', { name: /pnpm run dev/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /pnpm run build/ })).toBeDefined();
   });
 
-  it('remembers the manifest picked for each project', () => {
+  it('remembers which packages were opened for each project', () => {
     withTwoProjects();
     state.discoveredScripts = {
       'session-1': {
@@ -369,16 +365,80 @@ describe('ScriptsPanel', () => {
 
     renderPanel();
 
-    fireEvent.click(within(manifestRail()).getByRole('button', { name: /@acme\/web/ }));
-    expect(headings()).toEqual(['@acme/web']);
+    fireEvent.click(within(manifestSection()).getByRole('button', { name: /@acme\/web/ }));
+    expect(screen.getByRole('button', { name: /pnpm run dev/ })).toBeDefined();
 
     fireEvent.click(within(rail()).getByRole('button', { name: /Web/ }));
     fireEvent.click(within(rail()).getByRole('button', { name: /API/ }));
 
-    expect(headings()).toEqual(['@acme/web']);
+    expect(screen.getByRole('button', { name: /pnpm run dev/ })).toBeDefined();
   });
 
-  it('hides the manifest rail when a project has a single manifest', () => {
+  it('opens a matching package the user had collapsed, then gives the collapse back', () => {
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'package-json',
+            packageName: 'root',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [{ name: 'build', command: 'pnpm run build' }],
+          },
+        ],
+      },
+    };
+
+    renderPanel();
+
+    fireEvent.click(within(manifestSection()).getByRole('button', { name: /root/ }));
+    expect(screen.queryByRole('button', { name: /pnpm run build/ })).toBeNull();
+
+    fireEvent.change(searchBox(), { target: { value: 'build' } });
+    expect(screen.getByRole('button', { name: /pnpm run build/ })).toBeDefined();
+
+    fireEvent.keyDown(searchBox(), { key: 'Escape' });
+    expect(screen.queryByRole('button', { name: /pnpm run build/ })).toBeNull();
+  });
+
+  it('takes the package collapse away while a search is running', () => {
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'package-json',
+            packageName: 'root',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [{ name: 'build', command: 'pnpm run build' }],
+          },
+        ],
+      },
+    };
+
+    renderPanel();
+
+    expect(within(manifestSection()).getByRole('button', { name: 'root' })).toBeDefined();
+
+    fireEvent.change(searchBox(), { target: { value: 'build' } });
+
+    expect(within(manifestSection()).queryByRole('button', { name: 'root' })).toBeNull();
+    expect(
+      manifestSection().querySelector(
+        'span[role="heading"] button, span[role="heading"][aria-expanded]',
+      ),
+    ).toBeNull();
+    expect(headings()).toEqual(['root']);
+    expect(screen.getByRole('button', { name: /pnpm run build/ })).toBeDefined();
+
+    fireEvent.keyDown(searchBox(), { key: 'Escape' });
+
+    const toggle = within(manifestSection()).getByRole('button', { name: 'root' });
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('button', { name: /pnpm run build/ })).toBeDefined();
+  });
+
+  it('opens the only package of a project without asking', () => {
     state.discoveredScripts = {
       'session-1': {
         '/tmp/api': [
@@ -399,7 +459,7 @@ describe('ScriptsPanel', () => {
     expect(headings()).toEqual(['api']);
   });
 
-  it('summarises a package with a category strip and groups its scripts by category', () => {
+  it('names each category once, as the heading of its own group', () => {
     state.discoveredScripts = {
       'session-1': {
         '/tmp/api': [
@@ -424,9 +484,7 @@ describe('ScriptsPanel', () => {
     renderPanel();
 
     const pkg = within(screen.getByRole('region', { name: 'root scripts' }));
-    expect(pkg.getByTestId('category-strip-test').textContent).toBe('1');
-    expect(pkg.getByTestId('category-strip-typecheck').textContent).toBe('1');
-    expect(pkg.queryByTestId('category-strip-deploy')).toBeNull();
+    expect(pkg.queryByLabelText('Script categories')).toBeNull();
     expect(pkg.getAllByRole('region').map((section) => section.getAttribute('aria-label'))).toEqual(
       [
         'Dev scripts',
@@ -502,6 +560,42 @@ describe('ScriptsPanel', () => {
     expect(screen.getByTestId(`discovered-script-${scriptId}`).dataset.status).toBe('pending');
     fireEvent.click(screen.getByRole('button', { name: 'Stop dev' }));
     expect(state.cancelScript).toHaveBeenCalledWith('session-1', scriptId);
+  });
+
+  it('shows the running dot on a package header while the package is collapsed', () => {
+    const scriptId = JSON.stringify(['/tmp/api', 'package-json', 'apps/worker', 'start']);
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'package-json',
+            packageName: 'root',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [{ name: 'build', command: 'pnpm run build' }],
+          },
+          {
+            source: 'package-json',
+            packageName: 'worker',
+            relDir: 'apps/worker',
+            manager: 'pnpm',
+            scripts: [{ name: 'start', command: 'pnpm run start' }],
+          },
+        ],
+      },
+    };
+    state.scriptRuns = {
+      'session-1': {
+        [scriptId]: { status: 'pending', result: null, runId: 'run-live' },
+      },
+    };
+
+    renderPanel();
+
+    expect(screen.queryByRole('button', { name: /pnpm run start/ })).toBeNull();
+    expect(
+      within(manifestSection()).getByRole('img', { name: 'Running script in worker' }),
+    ).toBeDefined();
   });
 
   it('shows manifest scan loading, empty, and error states quietly', () => {
@@ -593,25 +687,60 @@ describe('ScriptsPanel', () => {
 
     renderPanel();
 
-    expect(headings()).toEqual(['root']);
+    expect(headings()).toEqual(['root', '@acme/web']);
     fireEvent.change(searchBox(), { target: { value: 'deploy' } });
 
     expect(screen.getByText('deploy user')).toBeDefined();
     expect(screen.queryByText('lint user')).toBeNull();
     expect(headings()).toEqual(['@acme/web']);
     expect(screen.getByText('deploy manifest')).toBeDefined();
-    expect(within(manifestRail()).getByText('1 match')).toBeDefined();
-    expect(within(manifestRail()).getByText('0 matches')).toBeDefined();
-    expect(
-      within(manifestRail())
-        .getByRole('button', { name: /@acme\/web/ })
-        .getAttribute('aria-current'),
-    ).toBe('true');
     expect(within(rail()).getByText('1 match')).toBeDefined();
 
     fireEvent.keyDown(searchBox(), { key: 'Escape' });
-    expect(headings()).toEqual(['root']);
+    expect(headings()).toEqual(['root', '@acme/web']);
     expect(screen.getByText('lint user')).toBeDefined();
+  });
+
+  it('keeps a running package listed during a search, with its stop control', () => {
+    const scriptId = JSON.stringify(['/tmp/api', 'package-json', 'apps/worker', 'start']);
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'package-json',
+            packageName: 'root',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [{ name: 'build', command: 'pnpm run build' }],
+          },
+          {
+            source: 'package-json',
+            packageName: 'worker',
+            relDir: 'apps/worker',
+            manager: 'pnpm',
+            scripts: [
+              { name: 'start', command: 'pnpm run start' },
+              { name: 'lint', command: 'pnpm run lint' },
+            ],
+          },
+        ],
+      },
+    };
+    state.scriptRuns = {
+      'session-1': {
+        [scriptId]: { status: 'pending', result: null, runId: 'run-live' },
+      },
+    };
+
+    renderPanel();
+    fireEvent.change(searchBox(), { target: { value: 'build' } });
+
+    expect(headings()).toEqual(['root', 'worker']);
+    expect(screen.getByText('pnpm run build')).toBeDefined();
+    expect(screen.getByTestId(`discovered-script-${scriptId}`)).toBeDefined();
+    expect(screen.queryByText('pnpm run lint')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Stop start' }));
+    expect(state.cancelScript).toHaveBeenCalledWith('session-1', scriptId);
   });
 
   it('offers to clear a search that matches nothing', () => {
@@ -673,14 +802,19 @@ describe('ScriptsPanel', () => {
     renderPanel();
 
     fireEvent.click(within(rail()).getByRole('button', { name: /Web/ }));
-    fireEvent.click(screen.getByRole('button', { name: /new script/i }));
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'Your scripts' })).getByRole('button', {
+        name: /new script/i,
+      }),
+    );
     expect(
       (screen.getByRole('combobox', { name: 'New script project' }) as HTMLSelectElement).value,
     ).toBe('project-2');
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     fireEvent.click(within(rail()).getByRole('button', { name: /API/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Edit script' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit script' }));
     await act(async () => {
       fireEvent.change(screen.getByRole('combobox', { name: 'Edit script project' }), {
         target: { value: 'project-2' },
@@ -718,7 +852,8 @@ describe('ScriptsPanel', () => {
     state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
     renderSettingsPanel();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit script' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit script' }));
     const textarea = screen.getByRole('textbox', { name: 'Edit setup command' });
     fireEvent.change(textarea, { target: { value: 'echo hi again' } });
     await act(async () => {
@@ -771,14 +906,12 @@ describe('ScriptsPanel', () => {
     expect(screen.getByRole('button', { name: 'Collapse setup' })).toBeDefined();
   });
 
-  it('deletes a script through its lifecycle action after confirmation', async () => {
+  it('deletes a script from its menu after confirmation', async () => {
     state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
     renderSettingsPanel();
 
-    const lifecycleSlot = screen.getByRole('group', { name: 'Script lifecycle actions' });
-    const deleteAction = screen.getByRole('button', { name: 'Delete script' });
-    expect(lifecycleSlot.contains(deleteAction)).toBe(true);
-    fireEvent.click(deleteAction);
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete script' }));
     expect(state.deleteScript).not.toHaveBeenCalled();
     expect(screen.getByRole('group', { name: 'Delete "setup"?' })).toBeDefined();
     await act(async () => {
@@ -814,6 +947,36 @@ describe('ScriptsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
     expect(screen.getByText('Last run')).toBeDefined();
     expect(screen.getByText('completed output')).toBeDefined();
+  });
+
+  it('shows a cancelled run as cancelled instead of stuck running', () => {
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
+    state.scriptRuns = {
+      'session-1': {
+        s1: { status: 'cancelled', result: null, runId: 'run-1' },
+      },
+    };
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
+    expect(screen.getByText('Last run')).toBeDefined();
+    expect(screen.getByText('cancelled')).toBeDefined();
+    expect(screen.queryByText('Running')).toBeNull();
+  });
+
+  it('says a cancelled run has no output yet instead of showing an empty body', () => {
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
+    state.scriptRuns = {
+      'session-1': {
+        s1: { status: 'cancelled', result: null, runId: 'run-1' },
+      },
+    };
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
+
+    expect(screen.getByText('Stopped, no output recorded')).toBeDefined();
+    expect(screen.queryByText('Waiting for output')).toBeNull();
   });
 
   it('renders an idle script row with no status border accent', () => {

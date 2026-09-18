@@ -8,6 +8,7 @@ export type SectionHeaderProps = {
   readonly label: string;
   readonly icon?: ReactNode;
   readonly hint?: string;
+  readonly meta?: ReactNode;
   readonly action?: ReactNode;
   readonly size?: 'eyebrow' | 'page';
   readonly headingLevel?: 2 | 3;
@@ -19,6 +20,7 @@ export const SectionHeader = ({
   label,
   icon,
   hint,
+  meta,
   action,
   size = 'eyebrow',
   headingLevel,
@@ -34,6 +36,7 @@ export const SectionHeader = ({
           <div className="flex min-w-0 items-center gap-2">
             {icon != null ? <span className="flex shrink-0 items-center">{icon}</span> : null}
             <h2 className="min-w-0 text-base font-semibold leading-6 text-foreground">{title}</h2>
+            {meta ?? null}
           </div>
           {action ?? null}
         </div>
@@ -46,11 +49,19 @@ export const SectionHeader = ({
 
   const eyebrow = <Eyebrow icon={icon} label={title} className="flex items-center gap-1.5" />;
   const Heading = headingLevel == null ? null : HEADING_TAG[headingLevel];
+  const heading = Heading == null ? eyebrow : <Heading className="min-w-0">{eyebrow}</Heading>;
 
   return (
     <div className={cn('flex flex-col gap-1', className)}>
       <div className="flex items-center justify-between gap-2">
-        {Heading == null ? eyebrow : <Heading className="min-w-0">{eyebrow}</Heading>}
+        {meta == null ? (
+          heading
+        ) : (
+          <div className="flex min-w-0 items-center gap-2">
+            {heading}
+            {meta}
+          </div>
+        )}
         {action ?? null}
       </div>
       {hint != null ? <p className="text-2xs text-muted-foreground/70">{hint}</p> : null}

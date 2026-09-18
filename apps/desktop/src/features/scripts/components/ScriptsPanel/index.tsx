@@ -27,7 +27,6 @@ import { readScriptsProject, writeScriptsProject } from '../../projectSelectionS
 import { discoveredScriptId, type ScriptGroup as ManifestScriptGroup } from '../../scripts';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
 import { DiscoveredScriptGroup } from './DiscoveredScriptGroup';
-import { ManifestRail, type ManifestRailEntry } from './ManifestRail';
 import { ManifestSearchInput } from './ManifestSearchInput';
 import { NewScriptCard } from './NewScriptCard';
 import { ProjectRail, type ProjectRailEntry } from './ProjectRail';
@@ -93,6 +92,8 @@ type SaveExistingParams = {
 type DiscoveredGroupEntry = {
   readonly group: ManifestScriptGroup;
   readonly worktreePath: string;
+  readonly isRunning: boolean;
+  readonly matchCount: number;
 };
 
 type RunDiscoveredParams = {
@@ -110,8 +111,14 @@ type SelectProjectParams = {
   readonly projectId: ProjectId;
 };
 
-type SelectManifestParams = {
+type ToggleManifestParams = {
   readonly key: string;
+  readonly isOpen: boolean;
+};
+
+type ManifestOpenParams = {
+  readonly key: string;
+  readonly index: number;
 };
 
 type SearchTarget = {
@@ -247,8 +254,8 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
   const [copiedId, setCopiedId] = useState<ProjectScriptId | null>(null);
   const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [manifestKeyByProject, setManifestKeyByProject] = useState<
-    Readonly<Partial<Record<ProjectId, string>>>
+  const [manifestOpenByProject, setManifestOpenByProject] = useState<
+    Readonly<Partial<Record<ProjectId, Readonly<Record<string, boolean>>>>>
   >({});
 
   const selectedProject =
@@ -274,6 +281,15 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
       }),
     [list, matchesSearch, selectedProjectId],
   );
+  const pendingScriptIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const [scriptId, record] of Object.entries(runs ?? {})) {
+      if (record.status === 'pending') {
+        ids.add(scriptId);
+      }
+    }
+    return ids;
+  }, [runs]);
   const manifestGroups = useMemo<ReadonlyArray<ManifestScriptGroup>>(() => {
     if (selectedMount === null) {
       return [];
@@ -294,11 +310,33 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
     if (selectedMount === null) {
       return [];
     }
-    return manifestGroups.map((group) => ({
-      group: { ...group, scripts: group.scripts.filter((script) => matchesSearch(script)) },
-      worktreePath: selectedMount.worktreePath,
-    }));
-  }, [manifestGroups, matchesSearch, selectedMount]);
+    return manifestGroups.map((group) => {
+      const runningNames = new Set(
+        group.scripts
+          .filter((script) =>
+            pendingScriptIds.has(
+              discoveredScriptId({
+                worktreePath: selectedMount.worktreePath,
+                source: group.source,
+                relDir: group.relDir,
+                name: script.name,
+              }),
+            ),
+          )
+          .map((script) => script.name),
+      );
+      const matched = group.scripts.filter((script) => matchesSearch(script));
+      const visible = group.scripts.filter(
+        (script) => matchesSearch(script) || runningNames.has(script.name),
+      );
+      return {
+        group: { ...group, scripts: visible },
+        worktreePath: selectedMount.worktreePath,
+        isRunning: runningNames.size > 0,
+        matchCount: matched.length,
+      };
+    });
+  }, [manifestGroups, matchesSearch, pendingScriptIds, selectedMount]);
   const userScriptsByProjectId = useMemo(() => {
     const index = new Map<ProjectId, Array<ProjectScript>>();
     for (const script of list) {
@@ -311,15 +349,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
     }
     return index;
   }, [list]);
-  const pendingScriptIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const [scriptId, record] of Object.entries(runs ?? {})) {
-      if (record.status === 'pending') {
-        ids.add(scriptId);
-      }
-    }
-    return ids;
-  }, [runs]);
   const railEntries = useMemo<ReadonlyArray<ProjectRailEntry>>(
     () =>
       projects.map((project) => {
@@ -376,52 +405,22 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
       userScriptsByProjectId,
     ],
   );
-  const manifestEntries = useMemo<ReadonlyArray<ManifestRailEntry>>(() => {
-    if (selectedMount === null) {
-      return [];
-    }
-    return manifestGroups.map((group, index) => ({
-      key: manifestKey({ group }),
-      source: group.source,
-      packageName: group.packageName,
-      relDir: group.relDir,
-      manager: group.manager,
-      scriptCount: group.scripts.length,
-      matchCount: filteredManifestGroups[index]?.group.scripts.length ?? 0,
-      isRunning:
-        pendingScriptIds.size > 0 &&
-        group.scripts.some((script) =>
-          pendingScriptIds.has(
-            discoveredScriptId({
-              worktreePath: selectedMount.worktreePath,
-              source: group.source,
-              relDir: group.relDir,
-              name: script.name,
-            }),
-          ),
-        ),
-    }));
-  }, [filteredManifestGroups, manifestGroups, pendingScriptIds, selectedMount]);
-  const storedManifestKey =
-    selectedProjectId === null ? null : (manifestKeyByProject[selectedProjectId] ?? null);
-  const selectedManifestKey =
-    storedManifestKey !== null && manifestEntries.some((entry) => entry.key === storedManifestKey)
-      ? storedManifestKey
-      : (manifestEntries[0]?.key ?? null);
   const visibleManifestGroups =
     normalizedQuery === ''
-      ? filteredManifestGroups.filter((entry) => manifestKey(entry) === selectedManifestKey)
+      ? filteredManifestGroups
       : filteredManifestGroups.filter((entry) => entry.group.scripts.length > 0);
-  const firstVisibleManifest = visibleManifestGroups[0] ?? null;
-  const railManifestKey =
-    normalizedQuery === '' || firstVisibleManifest === null
-      ? selectedManifestKey
-      : manifestKey(firstVisibleManifest);
+  const openManifests =
+    selectedProjectId === null ? undefined : manifestOpenByProject[selectedProjectId];
+  const isManifestOpen = ({ key, index }: ManifestOpenParams): boolean => {
+    if (normalizedQuery !== '') {
+      return true;
+    }
+    return openManifests?.[key] ?? index === 0;
+  };
   const selectedManifestCount = filteredManifestGroups.reduce(
-    (total, entry) => total + entry.group.scripts.length,
+    (total, entry) => total + entry.matchCount,
     0,
   );
-  const hasManifestRail = manifestEntries.length > 1;
   const selectedScan =
     selectedMount === null ? undefined : discoveredScriptScans?.[selectedMount.worktreePath];
   const isDiscoveryLoading =
@@ -697,12 +696,15 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
     setError(null);
   }, []);
 
-  const onSelectManifest = useCallback(
-    ({ key }: SelectManifestParams) => {
+  const onToggleManifest = useCallback(
+    ({ key, isOpen }: ToggleManifestParams) => {
       if (selectedProjectId === null) {
         return;
       }
-      setManifestKeyByProject((current) => ({ ...current, [selectedProjectId]: key }));
+      setManifestOpenByProject((current) => {
+        const forProject = current[selectedProjectId] ?? {};
+        return { ...current, [selectedProjectId]: { ...forProject, [key]: !isOpen } };
+      });
     },
     [selectedProjectId],
   );
@@ -800,10 +802,9 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
             <section className="flex flex-col gap-3" aria-label="Your scripts">
               <SectionHeader
                 label="Your scripts"
+                hint="Saved on this workspace. Edit, run, delete."
                 headingLevel={3}
-                action={
-                  <Chip tone="neutral" label={String(selectedUserScripts.length)} size="3xs" />
-                }
+                meta={<Chip tone="neutral" label={String(selectedUserScripts.length)} size="3xs" />}
               />
               {newDraft !== null && newDraft.projectId !== null ? (
                 <NewScriptCard
@@ -827,11 +828,19 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                 />
               ) : null}
               {selectedUserScripts.length === 0 && newDraft === null ? (
-                <p className="text-xs text-muted-foreground">
-                  {normalizedQuery === ''
-                    ? `No scripts for ${selectedProject.name} yet`
-                    : 'No matching scripts here'}
-                </p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-muted/20 px-2.5 py-2">
+                  <p className="text-xs text-muted-foreground">
+                    {normalizedQuery === ''
+                      ? `No scripts saved for ${selectedProject.name} yet. Save the command you keep retyping.`
+                      : 'No matching scripts here'}
+                  </p>
+                  {normalizedQuery === '' ? (
+                    <Button variant="ghost" size="sm" onClick={onOpenNew}>
+                      <Plus size={ICON_SIZE.row} aria-hidden />
+                      New script
+                    </Button>
+                  ) : null}
+                </div>
               ) : (
                 <ul className="flex flex-col gap-2">
                   {selectedUserScripts.map((script) => {
@@ -877,10 +886,11 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
               <section className="flex flex-col gap-3" aria-label="Manifest scripts">
                 <SectionHeader
                   label="Manifest scripts"
+                  hint="Read from package.json and composer.json at run time. Run only."
                   headingLevel={3}
+                  meta={<Chip tone="neutral" label={String(selectedManifestCount)} size="3xs" />}
                   action={
                     <span className="flex items-center gap-2">
-                      <Chip tone="neutral" label={String(selectedManifestCount)} size="3xs" />
                       <span className="w-52">
                         <ManifestSearchInput value={searchQuery} onChange={setSearchQuery} />
                       </span>
@@ -925,19 +935,13 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                   </div>
                 ) : null}
                 {visibleManifestGroups.length > 0 ? (
-                  <div className="flex min-w-0 items-start gap-4">
-                    {hasManifestRail && railManifestKey !== null ? (
-                      <ManifestRail
-                        entries={manifestEntries}
-                        selectedKey={railManifestKey}
-                        hasSearch={normalizedQuery !== ''}
-                        onSelect={(key) => onSelectManifest({ key })}
-                      />
-                    ) : null}
-                    <div className="flex min-w-0 flex-1 flex-col gap-5">
-                      {visibleManifestGroups.map((entry) => (
+                  <div className="flex min-w-0 flex-1 flex-col gap-5">
+                    {visibleManifestGroups.map((entry, index) => {
+                      const key = manifestKey(entry);
+                      const isOpen = isManifestOpen({ key, index });
+                      return (
                         <DiscoveredScriptGroup
-                          key={manifestKey(entry)}
+                          key={key}
                           group={entry.group}
                           worktreePath={entry.worktreePath}
                           runs={runs}
@@ -945,11 +949,15 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                           emptyLabel={
                             normalizedQuery === '' ? 'No scripts in this manifest.' : null
                           }
+                          isOpen={isOpen}
+                          isRunning={entry.isRunning}
+                          canToggle={normalizedQuery === ''}
+                          onToggle={() => onToggleManifest({ key, isOpen })}
                           onRun={onRunDiscovered}
                           onCancel={onCancelDiscovered}
                         />
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 ) : null}
               </section>
