@@ -24,6 +24,7 @@ import {
   Divider,
   EmptyState,
   formatError,
+  Input,
   OverflowMenu,
   ScrollFade,
   SectionHeader,
@@ -163,6 +164,7 @@ const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
   d.workflow.steps.length === 0 &&
   !d.saveAsPreset &&
   !d.autoRun &&
+  !d.customNameEdited &&
   !d.dynamicNameEdited &&
   d.orchestratorModel.providerOverride === '' &&
   d.orchestratorModel.modelOverride === '' &&
@@ -244,6 +246,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     initialDraft?.basePresetId ?? null,
   );
   const [processText, setProcessText] = useState(initialDraft?.processText ?? '');
+  const [customName, setCustomName] = useState(initialDraft?.customName ?? '');
+  const [customNameEdited, setCustomNameEdited] = useState(initialDraft?.customNameEdited ?? false);
   const [dynamicName, setDynamicName] = useState(
     initialDraft?.dynamicName ?? uniqueWorkflowName('Orchestrated workflow', phaseTemplates),
   );
@@ -452,6 +456,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     },
     saveAsPreset,
     autoRun,
+    customName,
+    customNameEdited,
     dynamicName,
     dynamicNameEdited,
     orchestratorModel: {
@@ -480,6 +486,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     steps,
     saveAsPreset,
     autoRun,
+    customName,
+    customNameEdited,
     dynamicName,
     dynamicNameEdited,
     orchestratorProviderOverride,
@@ -504,6 +512,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setSteps([]);
     setSaveAsPreset(false);
     setAutoRun(false);
+    setCustomName('');
+    setCustomNameEdited(false);
     setDynamicName(uniqueWorkflowName('Orchestrated workflow', phaseTemplates));
     setDynamicNameEdited(false);
     resetOrchestratorModel();
@@ -760,15 +770,25 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setError(null);
   };
 
+  const defaultWorkflowName =
+    mode === 'custom'
+      ? (plan?.workflowName ?? 'Custom workflow')
+      : (selectedPreset?.name ?? basePreset?.name ?? 'Custom workflow');
+  const customNameValue = customNameEdited ? customName : defaultWorkflowName;
+  const isCustomNameDirty = customNameValue.trim() !== defaultWorkflowName.trim();
+
   const onStart = async () => {
     if (blocked) {
       return;
     }
-    const usePresetAsIs = mode === 'preset' && selectedPreset !== null && !presetDirty;
+    const usePresetAsIs =
+      mode === 'preset' && selectedPreset !== null && !presetDirty && !isCustomNameDirty;
     if (
       (mode === 'preset' && selectedPreset === null) ||
       (mode === 'custom' && steps.length === 0) ||
-      (mode === 'dynamic' && (processText.trim().length === 0 || dynamicName.trim().length === 0))
+      (mode === 'dynamic' &&
+        (processText.trim().length === 0 || dynamicName.trim().length === 0)) ||
+      (mode !== 'dynamic' && customNameValue.trim().length === 0)
     ) {
       return;
     }
@@ -784,11 +804,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       const now = new Date().toISOString() as Workflow['createdAt'];
       const workflowId = `wf_builder_${crypto.randomUUID()}` as WorkflowId;
       const name = uniqueWorkflowName(
-        mode === 'custom'
-          ? (plan?.workflowName ?? 'Custom workflow')
-          : mode === 'dynamic'
-            ? dynamicName.trim()
-            : (selectedPreset?.name ?? basePreset?.name ?? 'Custom workflow'),
+        mode === 'dynamic' ? dynamicName.trim() : customNameValue.trim(),
         phaseTemplates,
       );
       const description =
@@ -860,14 +876,15 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         : steps.length === 0;
   const spendLimitInvalid =
     mode === 'dynamic' && isSpendLimitEnabled && parseSpendLimit(spendLimitDraft) == null;
-  const dynamicNameMissing = mode === 'dynamic' && dynamicName.trim().length === 0;
+  const nameMissing =
+    mode === 'dynamic' ? dynamicName.trim().length === 0 : customNameValue.trim().length === 0;
   const startGate = workflowStartGate({
     mode,
     isStarting: busy,
     isPlanning: planning,
     hasGoal: !goalMissing,
     hasApproach: !approachMissing,
-    hasName: !dynamicNameMissing,
+    hasName: !nameMissing,
     isSpendLimitValid: !spendLimitInvalid,
   });
   const onModeChange = (next: Mode) => {
@@ -879,12 +896,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const showStepsEmptyState = mode === 'custom' && !showSteps && !planning;
   const showLaunch = showSteps || mode === 'dynamic';
   const customReady = mode === 'custom' && plan !== null;
-  const workflowName =
-    mode === 'custom'
-      ? (plan?.workflowName ?? 'Custom workflow')
-      : mode === 'dynamic'
-        ? dynamicName
-        : (selectedPreset?.name ?? basePreset?.name ?? 'Workflow');
+  const workflowName = mode === 'dynamic' ? dynamicName : customNameValue;
   const chainedTriggerOptions: ReadonlyArray<SegmentedTabOption<WorkflowTriggerMode>> =
     activeRuns.length > 0
       ? [
@@ -1280,10 +1292,22 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                   <Divider />
                   <section className="flex flex-col gap-3">
                     {showSteps ? (
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="truncate text-xs font-semibold text-foreground">
-                          {workflowName}
-                        </span>
+                      <div className="flex items-end justify-between gap-2">
+                        <div className="flex min-w-0 flex-1 flex-col gap-1">
+                          <label htmlFor="workflow-name" className={SECTION_LABEL_CLS}>
+                            <PenLine size={11} aria-hidden /> Workflow name
+                          </label>
+                          <Input
+                            id="workflow-name"
+                            value={workflowName}
+                            onChange={(event) => {
+                              setCustomName(event.target.value);
+                              setCustomNameEdited(true);
+                            }}
+                            disabled={blocked}
+                            className="h-8 bg-background/70 text-sm font-medium"
+                          />
+                        </div>
                         <div className="flex shrink-0 items-center gap-2">
                           {customReady ? (
                             <button
@@ -1299,7 +1323,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-2xs font-medium text-success">
                               <Check size={10} aria-hidden /> Ready
                             </span>
-                          ) : presetDirty ? (
+                          ) : presetDirty || isCustomNameDirty ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-1.5 py-0.5 text-2xs font-medium text-warning">
                               <Pencil size={9} aria-hidden /> Customized
                             </span>
@@ -1511,7 +1535,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           onChange={(next) => setAutoRun(next === 'autorun')}
                         />
                       </div>
-                      {mode === 'custom' || presetDirty ? (
+                      {mode === 'custom' || presetDirty || isCustomNameDirty ? (
                         <LaunchToggleRow
                           title="Save as preset"
                           description="Reuse this configuration in your workspace."

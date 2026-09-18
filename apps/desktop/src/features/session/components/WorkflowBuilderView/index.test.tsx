@@ -1477,3 +1477,125 @@ describe('WorkflowBuilderView (planner model picker)', () => {
     expect(storeState.workspaceOverrides).toEqual({});
   });
 });
+
+describe('WorkflowBuilderView (workflow name)', () => {
+  const nameField = () => screen.getByLabelText('Workflow name') as HTMLInputElement;
+
+  it('prefills the name with the planner title and saves it untouched', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+
+    expect(nameField().value).toBe('Test Workflow');
+
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    expect(mockSavePhaseTemplate.mock.calls[0]![0].name).toBe('Test Workflow');
+  });
+
+  it('saves the typed name instead of the planner title', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+
+    fireEvent.change(nameField(), { target: { value: 'Rounding drift repair' } });
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    expect(mockSavePhaseTemplate.mock.calls[0]![0].name).toBe('Rounding drift repair');
+    expect(toastMock).toHaveBeenCalledWith('success', 'workflow started: Rounding drift repair');
+  });
+
+  it('names a hand-authored workflow without ever calling the planner', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    handAuthorOneStep();
+
+    expect(nameField().value).toBe('Custom workflow');
+    fireEvent.change(nameField(), { target: { value: 'Router audit' } });
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    expect(mockSavePhaseTemplate.mock.calls[0]![0].name).toBe('Router audit');
+    expect(mockPlan).not.toHaveBeenCalled();
+  });
+
+  it('de-duplicates a typed name that a live workflow already uses', async () => {
+    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-taken', 'Router audit')] };
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('tab', { name: /^custom$/i }));
+    setGoal();
+    handAuthorOneStep();
+
+    fireEvent.change(nameField(), { target: { value: 'Router audit' } });
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    expect(mockSavePhaseTemplate.mock.calls[0]![0].name).toBe('Router audit 2');
+  });
+
+  it('blocks start and says why when the name is emptied', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+
+    fireEvent.change(nameField(), { target: { value: '  ' } });
+
+    expect(startBtn().disabled).toBe(true);
+    expect(screen.getByText('Name the workflow to start')).toBeDefined();
+  });
+
+  it('keeps the typed name in the draft when the builder closes half-filled', async () => {
+    const { unmount } = render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+    fireEvent.change(nameField(), { target: { value: 'Rounding drift repair' } });
+
+    await waitFor(() =>
+      expect(storeState.workflowDrafts['sess-1']?.customName).toBe('Rounding drift repair'),
+    );
+    expect(storeState.workflowDrafts['sess-1']?.customNameEdited).toBe(true);
+    unmount();
+
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    expect(nameField().value).toBe('Rounding drift repair');
+  });
+
+  it('prefills a selected preset name and attaches the preset itself when untouched', async () => {
+    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
+
+    expect(nameField().value).toBe('Ship It');
+    fireEvent.click(startBtn());
+
+    await waitFor(() =>
+      expect(mockAttach).toHaveBeenCalledWith('sess-1', 'wf-preset-1', {
+        autoRun: false,
+        navigate: true,
+        goal: 'test goal',
+      }),
+    );
+    expect(mockSavePhaseTemplate).not.toHaveBeenCalled();
+  });
+
+  it('forks a renamed preset into its own workflow instead of renaming the preset', async () => {
+    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
+
+    fireEvent.change(nameField(), { target: { value: 'Ship It slowly' } });
+    expect(screen.getByText('Customized')).toBeDefined();
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    const saved = mockSavePhaseTemplate.mock.calls[0]![0];
+    expect(saved.name).toBe('Ship It slowly');
+    expect(saved.id).not.toBe('wf-preset-1');
+    await waitFor(() =>
+      expect(mockAttach).toHaveBeenCalledWith('sess-1', saved.id, {
+        autoRun: false,
+        navigate: true,
+        goal: 'test goal',
+      }),
+    );
+  });
+});

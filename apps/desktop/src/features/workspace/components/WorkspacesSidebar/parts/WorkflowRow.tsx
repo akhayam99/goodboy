@@ -266,6 +266,11 @@ export const WorkflowRow = ({
                   hasOrchestratorStrip={hasOrchestratorStrip}
                 />
               </div>
+              {rename.editing && workflow.isPreset ? (
+                <p className="text-2xs leading-relaxed text-muted-foreground/70">
+                  This preset is shared: the new name shows on every run and every future attach.
+                </p>
+              ) : null}
               <MetaRow
                 items={[
                   total > 0 ? (

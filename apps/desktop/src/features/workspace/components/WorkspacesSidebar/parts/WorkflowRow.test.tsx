@@ -138,6 +138,7 @@ const session = { id: SESSION_ID, workflowRuns: [run] } as unknown as Session;
 
 type RenderParams = {
   readonly runOverride?: WorkflowRun;
+  readonly workflowOverride?: Workflow;
   readonly agentsOverride?: ReadonlyArray<Agent>;
   readonly actionableStepId?: string | null;
   readonly blockReason?: WorkflowBlockReason | null;
@@ -157,6 +158,7 @@ type RenderParams = {
 
 const renderDetail = ({
   runOverride = run,
+  workflowOverride = workflow,
   agentsOverride = agents,
   actionableStepId = 'step-2',
   blockReason = null,
@@ -172,7 +174,7 @@ const renderDetail = ({
   render(
     <WorkflowRow
       run={runOverride}
-      workflow={workflow}
+      workflow={workflowOverride}
       index={0}
       task={session}
       attachedRuns={[{ run: runOverride, workflow }]}
@@ -281,6 +283,28 @@ describe('WorkflowRow detail dashboard', () => {
       WORKFLOW_ID,
       'Language id remap',
     );
+  });
+
+  it('warns that renaming a preset reaches every run before the field is touched', () => {
+    renderDetail({ workflowOverride: { ...workflow, isPreset: true } });
+
+    expect(screen.queryByText(/This preset is shared/i)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit workflow name' }));
+
+    expect(
+      screen.getByText(
+        'This preset is shared: the new name shows on every run and every future attach.',
+      ),
+    ).toBeDefined();
+  });
+
+  it('keeps the shared-preset warning off a workflow this session authored', () => {
+    renderDetail();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit workflow name' }));
+
+    expect(screen.queryByText(/This preset is shared/i)).toBeNull();
   });
 
   it('puts the lifecycle actions in the header, ahead of the run body', () => {
