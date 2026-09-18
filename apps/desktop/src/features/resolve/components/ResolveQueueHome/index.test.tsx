@@ -57,12 +57,21 @@ vi.mock('../../hooks/useResolveDeliveryReceipts', () => ({
 }));
 vi.mock('../../../review/openReview', () => ({ openReview: h.openReview }));
 vi.mock('../ResolveItemView/ResolveItemContainer', () => ({
-  ResolveItemContainer: ({ row }: { readonly row: { thread: { threadId: string } } }) => (
+  ResolveItemContainer: ({
+    row,
+    nextThreadId,
+    onSelect,
+  }: {
+    readonly row: { thread: { threadId: string } };
+    readonly nextThreadId: string | null;
+    readonly onSelect: (threadId: string | null) => void;
+  }) => (
     <div data-testid="resolve-item">
       <span data-testid="resolve-item-thread">{row.thread.threadId}</span>
-      <button type="button" data-resolve-primary>
+      <button type="button" data-resolve-primary onClick={() => onSelect(nextThreadId)}>
         Approve fix
       </button>
+      <textarea aria-label="Reply to reviewer" />
     </div>
   ),
 }));
@@ -434,6 +443,98 @@ describe('walking the queue from the keyboard', () => {
     expect(document.activeElement).toBe(
       within(screen.getByTestId('resolve-item')).getByRole('button', { name: 'Approve fix' }),
     );
+  });
+
+  it('carries the focus into the comment the decision moved on to', () => {
+    twoRows();
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+    };
+    const { rerender } = render(<ResolveQueueHome session={SESSION} />);
+
+    const approve = within(screen.getByTestId('resolve-item')).getByRole('button', {
+      name: 'Approve fix',
+    });
+    approve.focus();
+    fireEvent.click(approve);
+
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
+    };
+    rerender(<ResolveQueueHome session={SESSION} />);
+
+    expect(screen.getByTestId('resolve-item-thread').textContent).toBe('PRRT_2');
+    expect(document.activeElement).toBe(
+      within(screen.getByTestId('resolve-item')).getByRole('button', { name: 'Approve fix' }),
+    );
+  });
+
+  it('leaves the focus where it was when a comment is opened with the mouse', () => {
+    twoRows();
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+    };
+    const { rerender } = render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.click(rowFor('PRRT_2'));
+
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
+    };
+    rerender(<ResolveQueueHome session={SESSION} />);
+
+    expect(screen.getByTestId('resolve-item-thread').textContent).toBe('PRRT_2');
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('stays on a parked comment instead of jumping to the top of the list', () => {
+    twoRows();
+    h.state.sessionResolveQueueItems = {
+      [SESSION_ID]: [
+        entryOf({ item: { id: 'item-1', threadId: 'PRRT_1' }, thread: { threadId: 'PRRT_1' } }),
+        entryOf({
+          item: { id: 'item-2', threadId: 'PRRT_2', approvalState: 'deferred', deferredAt: 3 },
+          thread: { threadId: 'PRRT_2' },
+        }),
+      ],
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show later (1)' }));
+    fireEvent.keyDown(rowFor('PRRT_2'), { key: 'ArrowDown' });
+    fireEvent.keyDown(rowFor('PRRT_2'), { key: 'ArrowUp' });
+
+    expect(h.state.setResolveQueueView).not.toHaveBeenCalled();
+  });
+
+  it('hands Escape back to the reply field the maintainer is typing in', () => {
+    twoRows();
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    const field = screen.getByLabelText('Reply to reviewer');
+    field.focus();
+    fireEvent.keyDown(field, { key: 'Escape' });
+
+    expect(document.activeElement).toBe(field);
+  });
+
+  it('sends Escape from the panel back to the row it belongs to', () => {
+    twoRows();
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    const approve = within(screen.getByTestId('resolve-item')).getByRole('button', {
+      name: 'Approve fix',
+    });
+    approve.focus();
+    fireEvent.keyDown(approve, { key: 'Escape' });
+
+    expect(document.activeElement).toBe(rowFor('PRRT_1'));
   });
 
   it('keeps Enter on the open row going straight to the panel', () => {

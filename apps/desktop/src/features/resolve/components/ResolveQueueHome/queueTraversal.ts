@@ -7,13 +7,9 @@ type StepParams = Readonly<{
 }>;
 
 export const threadIdAtStep = ({ rows, selectedThreadId, delta }: StepParams): string | null => {
-  if (rows.length === 0) {
-    return null;
-  }
   const index = rows.findIndex((row) => row.thread.threadId === selectedThreadId);
   if (index === -1) {
-    const first = delta > 0 ? rows[0] : rows[rows.length - 1];
-    return first?.thread.threadId ?? null;
+    return null;
   }
   const next = index + delta;
   if (next < 0 || next >= rows.length) {

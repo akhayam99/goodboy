@@ -82,6 +82,21 @@ const EMPTY_CHECKS: ReadonlyArray<PrCheckRun> = [];
 const SKELETON_ROWS = [0, 1, 2];
 const DETAIL_WIDTH = 520;
 
+type TextEntryParams = Readonly<{
+  target: EventTarget | null;
+}>;
+
+const isTextEntry = ({ target }: TextEntryParams): boolean => {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+  if (target.isContentEditable) {
+    return true;
+  }
+  const tag = target.tagName.toLowerCase();
+  return tag === 'input' || tag === 'textarea';
+};
+
 const scrollableAncestor = (node: HTMLElement | null): HTMLElement | null => {
   let current = node?.parentElement ?? null;
   while (current !== null) {
@@ -400,9 +415,24 @@ export const ResolveQueueHome = ({ session }: Props) => {
     focusPanel();
   }, [focusPanel, selectedRow]);
 
+  const onAdvanceFromPanel = useCallback(
+    (threadId: string | null): void => {
+      const panel = detailRef.current;
+      const focused = document.activeElement;
+      if (threadId !== null && panel !== null && focused !== null && panel.contains(focused)) {
+        pendingPanelThreadIdRef.current = threadId;
+      }
+      onSelect(threadId);
+    },
+    [onSelect],
+  );
+
   const onPanelKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>): void => {
       if (event.key !== 'Escape' || view.expandedThreadId === null) {
+        return;
+      }
+      if (isTextEntry({ target: event.target })) {
         return;
       }
       event.preventDefault();
@@ -480,7 +510,7 @@ export const ResolveQueueHome = ({ session }: Props) => {
               allRows={rows}
               nextThreadId={nextThreadId}
               worktreePath={repo?.worktreePath ?? null}
-              onSelect={onSelect}
+              onSelect={onAdvanceFromPanel}
               onAskForChanges={onAskForChanges}
               onOpenInDiff={onOpenInDiff}
             />

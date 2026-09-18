@@ -57,6 +57,15 @@ const APPROVABLE_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set([
 const COULD_NOT_SEND =
   'This comment is no longer on the pull request, so the agent cannot be asked about it';
 
+type GuardParams = Readonly<{
+  run: () => Promise<void>;
+  advanceTo?: string | null;
+}>;
+
+type StillSelectedParams = Readonly<{
+  startedOn: string;
+}>;
+
 const approveBlockedReasonFor = ({
   row,
   isApprovable,
@@ -137,9 +146,16 @@ export const ResolveItemContainer = ({
 
   const currentThreadIdRef = useRef(threadId);
   currentThreadIdRef.current = threadId;
+  const isOpenRef = useRef(true);
+  useEffect(() => {
+    isOpenRef.current = true;
+    return () => {
+      isOpenRef.current = false;
+    };
+  }, []);
   const isStillSelected = useCallback(
-    ({ startedOn }: { readonly startedOn: string }): boolean =>
-      currentThreadIdRef.current === startedOn,
+    ({ startedOn }: StillSelectedParams): boolean =>
+      isOpenRef.current && currentThreadIdRef.current === startedOn,
     [],
   );
 
@@ -191,12 +207,15 @@ export const ResolveItemContainer = ({
       ? null
       : (metrics.aggregatesByAgentId.get(row.attempt.agentId)?.estimatedCostUsd ?? null);
 
-  const guard = async ({ run }: { readonly run: () => Promise<void> }): Promise<void> => {
+  const guard = async ({ run, advanceTo }: GuardParams): Promise<void> => {
     const startedOn = threadId;
     setIsBusy(true);
     setError(null);
     try {
       await run();
+      if (advanceTo !== undefined && isStillSelected({ startedOn })) {
+        onSelect(advanceTo);
+      }
     } catch (caught) {
       if (isStillSelected({ startedOn })) {
         setError(formatError(caught));
@@ -210,6 +229,7 @@ export const ResolveItemContainer = ({
 
   const onApprove = (): void => {
     void guard({
+      advanceTo: nextThreadId,
       run: async () => {
         await acceptResolveQueueItem({
           sessionId,
@@ -217,13 +237,13 @@ export const ResolveItemContainer = ({
           revision: row.thread.revision,
           reply,
         });
-        onSelect(nextThreadId);
       },
     });
   };
 
   const onRefuse = (): void => {
     void guard({
+      advanceTo: nextThreadId,
       run: async () => {
         await refuseResolveQueueItem({
           sessionId,
@@ -232,16 +252,15 @@ export const ResolveItemContainer = ({
           reply,
         });
         setMode('reply');
-        onSelect(nextThreadId);
       },
     });
   };
 
   const onLater = (): void => {
     void guard({
+      advanceTo: nextThreadId,
       run: async () => {
         await deferResolveQueueItem({ sessionId, itemId: row.item.id });
-        onSelect(nextThreadId);
       },
     });
   };

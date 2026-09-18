@@ -125,9 +125,9 @@ export const ResolveItemView = ({
   const fieldId = `resolve-item-${row.thread.threadId}`;
   const nextStep = RESOLVE_QUEUE_NEXT_STEP[row.status];
   const approveVerb =
-    proposalKind === 'reply_only'
-      ? RESOLVE_QUEUE_ACTION_LABEL.approveReply
-      : RESOLVE_QUEUE_ACTION_LABEL.approveFix;
+    proposalKind === 'fix'
+      ? RESOLVE_QUEUE_ACTION_LABEL.approveFix
+      : RESOLVE_QUEUE_ACTION_LABEL.approveReply;
   const approveLabel =
     sharedMembers.length === 0 ? approveVerb : `${approveVerb} and ${sharedMembers.length} more`;
   const menuItems: ReadonlyArray<OverflowMenuItem> = isDelivered

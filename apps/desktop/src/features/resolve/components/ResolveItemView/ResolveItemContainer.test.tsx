@@ -205,6 +205,56 @@ describe('an asynchronous resolve decision', () => {
     await vi.waitFor(() => expect(onSelect).toHaveBeenCalledWith(null));
   });
 
+  it('never moves the panel on when the maintainer opened another comment meanwhile', async () => {
+    let land: () => void = () => undefined;
+    acceptResolveQueueItem.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          land = resolve;
+        }),
+    );
+    const onSelect = vi.fn();
+    const view = renderContainer({ row: RETRY, nextThreadId: 't-parser', onSelect });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Approve fix' }));
+    view.rerender(
+      <ResolveItemContainer
+        sessionId={sessionId}
+        row={PARSER}
+        allRows={[RETRY, PARSER]}
+        nextThreadId={null}
+        worktreePath={null}
+        onSelect={onSelect}
+        onAskForChanges={vi.fn()}
+        onOpenInDiff={vi.fn()}
+      />,
+    );
+    land();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(screen.getByText('The parser swallows the error here.')).toBeDefined();
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('never moves the panel on once the comment it decided has been closed', async () => {
+    let land: () => void = () => undefined;
+    acceptResolveQueueItem.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          land = resolve;
+        }),
+    );
+    const onSelect = vi.fn();
+    const view = renderContainer({ row: RETRY, nextThreadId: 't-parser', onSelect });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Approve fix' }));
+    view.unmount();
+    land();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
   it('never moves on when the approval failed', async () => {
     acceptResolveQueueItem.mockRejectedValue(new Error('The branch moved under the approval'));
     const onSelect = vi.fn();

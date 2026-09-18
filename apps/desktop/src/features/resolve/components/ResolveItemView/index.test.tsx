@@ -436,7 +436,16 @@ describe('the resolve item view', () => {
     });
 
     expect(screen.getByText('No agent reply yet')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Approve fix' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Approve reply' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+  });
+
+  it('names the primary for the reply alone once one is typed on a comment with no fix', () => {
+    renderView({ proposalKind: 'none', reply: 'We answered this in the thread.' });
+
+    expect(screen.getByRole('button', { name: 'Approve reply' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Approve fix' })).toBeNull();
   });
 
   it('marks a deliberate reply without a code change as exactly that', () => {

@@ -18,13 +18,14 @@ describe('threadIdAtStep', () => {
     expect(threadIdAtStep({ rows, selectedThreadId: 'one', delta: -1 })).toBeNull();
   });
 
-  it('enters the list from the near end when nothing is selected', () => {
-    expect(threadIdAtStep({ rows, selectedThreadId: null, delta: 1 })).toBe('one');
-    expect(threadIdAtStep({ rows, selectedThreadId: null, delta: -1 })).toBe('three');
+  it('stays put rather than entering the list when nothing is selected', () => {
+    expect(threadIdAtStep({ rows, selectedThreadId: null, delta: 1 })).toBeNull();
+    expect(threadIdAtStep({ rows, selectedThreadId: null, delta: -1 })).toBeNull();
   });
 
-  it('enters the list from the near end when the selection left the filter', () => {
-    expect(threadIdAtStep({ rows, selectedThreadId: 'gone', delta: 1 })).toBe('one');
+  it('stays put rather than jumping to the top when the row is not in the list', () => {
+    expect(threadIdAtStep({ rows, selectedThreadId: 'parked', delta: 1 })).toBeNull();
+    expect(threadIdAtStep({ rows, selectedThreadId: 'parked', delta: -1 })).toBeNull();
   });
 
   it('has nowhere to go in an empty list', () => {
