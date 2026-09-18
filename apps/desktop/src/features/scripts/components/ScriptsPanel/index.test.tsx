@@ -834,6 +834,21 @@ describe('ScriptsPanel', () => {
     expect(screen.getByText('completed output')).toBeDefined();
   });
 
+  it('shows a cancelled run as cancelled instead of stuck running', () => {
+    state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
+    state.scriptRuns = {
+      'session-1': {
+        s1: { status: 'cancelled', result: null, runId: 'run-1' },
+      },
+    };
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
+    expect(screen.getByText('Last run')).toBeDefined();
+    expect(screen.getByText('cancelled')).toBeDefined();
+    expect(screen.queryByText('Running')).toBeNull();
+  });
+
   it('renders an idle script row with no status border accent', () => {
     state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
     renderPanel();
