@@ -8,6 +8,7 @@ import type {
   RoleModelPreference,
   RoleModelPreferences,
   SessionId,
+  StepId,
   WorkflowId,
   WorkflowExecutionMode,
   WorkflowOrchestrationOutcome,
@@ -544,6 +545,44 @@ export const updateWorkflowRunSpendLimit = async (
     'UPDATE session_workflows SET spend_limit_usd = ?, spend_limit_mode = ? WHERE workflow_run_id = ?',
     [spendLimitUsd, mode, workflowRunId],
   );
+};
+
+export type WorkflowRunStepRepoint = Readonly<{
+  fromStepId: StepId;
+  toStepId: StepId;
+}>;
+
+type RepointWorkflowRunParams = {
+  readonly db: Database;
+  readonly workflowRunId: WorkflowRunId;
+  readonly workflowId: WorkflowId;
+  readonly stepRepoints: ReadonlyArray<WorkflowRunStepRepoint>;
+};
+
+export const repointWorkflowRunTemplate = async ({
+  db,
+  workflowRunId,
+  workflowId,
+  stepRepoints,
+}: RepointWorkflowRunParams): Promise<void> => {
+  await db.exec('BEGIN');
+  try {
+    await db.execute('UPDATE session_workflows SET workflow_id = ? WHERE workflow_run_id = ?', [
+      workflowId,
+      workflowRunId,
+    ]);
+    for (const repoint of stepRepoints) {
+      await db.execute('UPDATE agents SET step_id = ? WHERE workflow_run_id = ? AND step_id = ?', [
+        repoint.toStepId,
+        workflowRunId,
+        repoint.fromStepId,
+      ]);
+    }
+    await db.exec('COMMIT');
+  } catch (err) {
+    await db.exec('ROLLBACK');
+    throw err;
+  }
 };
 
 export const updateSessionWorkflowTriggerMode = async (

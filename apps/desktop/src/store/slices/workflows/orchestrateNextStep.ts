@@ -47,6 +47,7 @@ import {
   updateWorkflowRunOrchestratorSummary,
 } from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
+import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -365,23 +366,6 @@ const failureLabel = (error: unknown): string => {
     return 'the orchestrator timed out after 120s';
   }
   return error instanceof Error ? error.message : String(error);
-};
-
-type UniqueNameParams = {
-  readonly requested: string;
-  readonly steps: ReadonlyArray<Step>;
-};
-
-const uniqueStepName = ({ requested, steps }: UniqueNameParams): string => {
-  const names = new Set(steps.map((step) => step.name));
-  if (!names.has(requested)) {
-    return requested;
-  }
-  let suffix = 2;
-  while (names.has(`${requested} ${suffix}`)) {
-    suffix += 1;
-  }
-  return `${requested} ${suffix}`;
 };
 
 type AppendParams = {

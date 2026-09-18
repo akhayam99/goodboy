@@ -1,4 +1,5 @@
 import { activateWorkflowAgent } from './activateWorkflowAgent';
+import { addStepToWorkflowRun } from './addStepToWorkflowRun';
 import { advanceClusterImplementation } from './clusterImplementation';
 import { retryStepSummary } from './retryStepSummary';
 import { recoverStuckStep } from './recoverStuckStep';
@@ -61,6 +62,7 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     stopWorkflowRunNow: stopWorkflowRunNow(set, get),
     reprocessGoalForWorkflow: reprocessGoalForWorkflow(set, get),
     activateWorkflowAgent: activateWorkflowAgent(set, get),
+    addStepToWorkflowRun: addStepToWorkflowRun(set, get),
     advanceClusterImplementation: advanceClusterImplementation(set, get),
     finalizeWorkflowStep: finalizeWorkflowStep(set, get),
     skipStuckStepAndAdvance: skipStuckStepAndAdvance(set, get),

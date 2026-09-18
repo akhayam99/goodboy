@@ -33,6 +33,7 @@ import { WorkflowNextStepCta } from '../../../../../features/workflows/component
 import { OrchestratorPanel } from '../../../../../features/workflows/components/OrchestratorPanel';
 import { RunSpendLimitPopover } from '../../../../../features/workflows/components/RunSpendLimitPopover';
 import { WorkflowRunSummary } from '../../../../../features/workflows/components/WorkflowRunSummary';
+import { WorkflowAddStep } from '../../../../../features/workflows/components/WorkflowAddStep';
 import { CreateReportCta } from '../../../../../features/reports/components/CreateReportCta';
 import { CreateWireframeCta } from '../../../../../features/wireframes/components/CreateWireframeCta';
 import { WorkflowAutorunToggle } from '../../../../../features/workflows/components/WorkflowAutorunToggle';
@@ -606,6 +607,14 @@ export const WorkflowRow = ({
                 No agents yet for this workflow.
               </p>
             )
+          ) : null}
+          {isDetail && expanded && !isDiscarded && !isCompleted ? (
+            <WorkflowAddStep
+              sessionId={task.id}
+              workspaceId={workflow.workspaceId}
+              workflowRunId={run.id}
+              stepCount={total}
+            />
           ) : null}
           {isDetail ? <WorkflowRunSummary summary={run.orchestratorSummary} /> : null}
           {isDetail && isCompleted ? (

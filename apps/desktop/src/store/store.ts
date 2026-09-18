@@ -192,6 +192,10 @@ import { createCredentialsSlice } from './slices/credentials';
 import { createWorkflowsSlice } from './slices/workflows';
 import type { CopyWorkflowFromWorkspaceParams } from './slices/workflows/copyWorkflowFromWorkspace';
 import type { OrchestrateOptions } from './slices/workflows/orchestrateNextStep';
+import type {
+  AddStepToWorkflowRunParams,
+  AddStepToWorkflowRunResult,
+} from './slices/workflows/addStepToWorkflowRun';
 import type { ActivateWorkflowAgentParams } from './slices/workflows/activateWorkflowAgent';
 import { createSettingsSlice } from './slices/settings';
 import { createTranscriptsSlice } from './slices/transcripts';
@@ -542,6 +546,7 @@ type AppActions = {
     workflowRunIds: ReadonlyArray<WorkflowRunId>,
   ): Promise<void>;
   activateWorkflowAgent(params: ActivateWorkflowAgentParams): Promise<void>;
+  addStepToWorkflowRun(params: AddStepToWorkflowRunParams): Promise<AddStepToWorkflowRunResult>;
   advanceClusterImplementation(
     sessionId: SessionId,
     childAgentId: AgentId,
