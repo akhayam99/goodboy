@@ -32,7 +32,6 @@ export const LensSwitcherCrumb = ({
     icon={icon}
     accessory={accessory}
     menuHeight={420}
-    menuHeightClass="max-h-[26rem]"
     onNavigate={onNavigate}
   >
     {({ close }) => (

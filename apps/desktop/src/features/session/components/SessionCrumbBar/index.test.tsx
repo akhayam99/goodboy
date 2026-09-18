@@ -559,7 +559,7 @@ const openMenuAt = ({ top }: OpenAtParams): HTMLElement => {
 };
 
 describe('SessionCrumbBar switcher popover', () => {
-  it('caps the scrolling viewport rather than the popover, so long lists scroll', () => {
+  it('gives the scrolling viewport the whole popover, so nothing is cut early', () => {
     h.state.sessionPhaseRuns = {
       [SESSION_ID]: Array.from({ length: 20 }, (_, index) =>
         buildAgent({ id: `agent-${index}` as AgentId, name: `agent ${index}`, ordinal: index }),
@@ -576,10 +576,11 @@ describe('SessionCrumbBar switcher popover', () => {
     fireEvent.click(screen.getByRole('button', { name: /agent 0/ }));
     const menu = screen.getByRole('menu', { name: 'Switch agent' });
 
-    expect(menu.className).not.toContain('max-h-64');
-    const viewport = menu.querySelector('.overflow-y-auto');
-    expect(viewport?.className).toContain('max-h-64');
-    expect(viewport?.className).not.toContain('max-h-[inherit]');
+    expect(menu.style.maxHeight).not.toBe('');
+    const viewport = menu.firstElementChild;
+    expect(viewport?.className).toContain('overflow-y-auto');
+    expect(viewport?.className).toContain('flex-1');
+    expect(viewport?.className).not.toContain('max-h');
   });
 
   it('caps a downward menu at the room below the trigger', () => {

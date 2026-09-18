@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { AnchoredPopover, ScrollFade, Tooltip, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import { CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS, CRUMB_LINK_CLASS } from './crumbClasses';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -15,7 +15,6 @@ type SwitcherCrumbProps = {
   readonly icon?: LucideIcon;
   readonly accessory?: ReactNode;
   readonly menuHeight?: number;
-  readonly menuHeightClass?: string;
   readonly onNavigate?: () => void;
   readonly children: (params: MenuParams) => ReactNode;
 };
@@ -26,7 +25,6 @@ export const SwitcherCrumb = ({
   icon: Icon,
   accessory,
   menuHeight = 260,
-  menuHeightClass = 'max-h-64',
   onNavigate,
   children,
 }: SwitcherCrumbProps) => {
@@ -100,9 +98,9 @@ export const SwitcherCrumb = ({
       anchorClassName="flex min-w-0 items-center"
       trigger={trigger}
     >
-      <ScrollFade fadeFrom="subtle" className="min-h-0 flex-1" viewportClassName={menuHeightClass}>
-        <div className="flex flex-col gap-0.5 p-1">{children({ close })}</div>
-      </ScrollFade>
+      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto p-1">
+        {children({ close })}
+      </div>
     </AnchoredPopover>
   );
 };
