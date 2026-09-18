@@ -479,7 +479,7 @@ describe('the resolve item view', () => {
 
     expect(screen.getByText('Approving this also approves 1 other comment')).toBeDefined();
     expect(screen.getByText('The metric name is wrong.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Approve 2' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Approve fix and 1 more' })).toBeDefined();
   });
 
   it('refuses the approval before the click when a sibling was parked', () => {
@@ -502,7 +502,9 @@ describe('the resolve item view', () => {
         'This change also answers comments you left for later. Accept them together, or take those back up first',
       ),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Approve 2' }).hasAttribute('disabled')).toBe(true);
+    expect(
+      screen.getByRole('button', { name: 'Approve fix and 1 more' }).hasAttribute('disabled'),
+    ).toBe(true);
   });
 
   it('names what the primary approves, a reply when there is no code change', () => {

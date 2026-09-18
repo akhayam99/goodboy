@@ -129,7 +129,7 @@ export const ResolveItemView = ({
       ? RESOLVE_QUEUE_ACTION_LABEL.approveReply
       : RESOLVE_QUEUE_ACTION_LABEL.approveFix;
   const approveLabel =
-    sharedMembers.length === 0 ? approveVerb : `Approve ${sharedMembers.length + 1}`;
+    sharedMembers.length === 0 ? approveVerb : `${approveVerb} and ${sharedMembers.length} more`;
   const menuItems: ReadonlyArray<OverflowMenuItem> = isDelivered
     ? [
         {
@@ -194,7 +194,8 @@ export const ResolveItemView = ({
             items={menuItems}
             label="More"
             align="right"
-            trigger={<span className="px-1 text-2xs">More</span>}
+            triggerClassName="border border-border-soft px-1.5"
+            trigger={<span className="text-2xs">More</span>}
           />
         </span>
       </div>
