@@ -511,6 +511,7 @@ type AppActions = {
     sessionId: SessionId,
     args: { sha: string; message: string },
   ): Promise<RewrittenHead>;
+  setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
   setWorkflowRunAutoRun(
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,

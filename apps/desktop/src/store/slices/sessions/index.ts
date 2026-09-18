@@ -12,6 +12,7 @@ import { renameTask } from './renameTask';
 import { setAgentConfig } from './setAgentConfig';
 import { setAgentVerbosity } from './setAgentVerbosity';
 import { setCurrentSession } from './setCurrentSession';
+import { setSessionAutoRun } from './setSessionAutoRun';
 import { setSessionConfig } from './setSessionConfig';
 import { setSessionPermissionMode } from './setSessionPermissionMode';
 import { unarchiveTask } from './unarchiveTask';
@@ -22,6 +23,7 @@ export const createSessionsSlice = (set: SetFn, get: GetFn) => {
   return {
     evictSession: evictSession({ set, get }),
     renameTask: renameTask(set, get),
+    setSessionAutoRun: setSessionAutoRun(set),
     setSessionConfig: setSessionConfig(set, get),
     setAgentConfig: setAgentConfig(set, get),
     setSessionPermissionMode: setSessionPermissionMode(set),

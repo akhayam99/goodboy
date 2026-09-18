@@ -107,6 +107,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
   const discardWorkflow = useAppStore((s) => s.discardWorkflow);
   const reorderSessionWorkflows = useAppStore((s) => s.reorderSessionWorkflows);
   const setWorkflowRunAutoRun = useAppStore((s) => s.setWorkflowRunAutoRun);
+  const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
   const startWorkflowRun = useAppStore((s) => s.startWorkflowRun);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const workflowNameByRunId = useMemo(() => {
@@ -322,6 +323,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     setEditingId,
     setPanelSectionExpanded,
     setWorkflowRunAutoRun,
+    setSessionAutoRun,
     spawnError,
     standaloneAgentCount,
     startWorkflowRun: onStartWorkflowRun,
