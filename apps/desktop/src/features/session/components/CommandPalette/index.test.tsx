@@ -15,17 +15,24 @@ const { state, hooks, toastMock } = vi.hoisted(() => ({
     setCurrentSession: vi.fn(async () => undefined),
     selectAgent: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
+    setScriptsLensScope: vi.fn(),
     runScript: vi.fn(async () => ({ exitCode: 0 })),
   },
-  hooks: { currentSession: null as { readonly id: string } | null },
+  hooks: {
+    currentSession: null as { readonly id: string } | null,
+    sessions: [] as ReadonlyArray<{ readonly id: string; readonly goal: string }>,
+    workspaces: [] as ReadonlyArray<{ readonly id: string; readonly name: string }>,
+  },
   toastMock: vi.fn(),
 }));
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
-  useWorkspaces: () => [],
-  useSessions: () => [],
+  useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
+    getState: () => state,
+  }),
+  useWorkspaces: () => hooks.workspaces,
+  useSessions: () => hooks.sessions,
   useCurrentWorkspace: () => null,
   useCurrentSession: () => hooks.currentSession,
 }));
@@ -47,6 +54,8 @@ beforeEach(() => {
   state.agentKindOverride = {};
   state.setActiveLens.mockReset();
   hooks.currentSession = null;
+  hooks.sessions = [];
+  hooks.workspaces = [];
   toastMock.mockReset();
 });
 afterEach(cleanup);
@@ -103,6 +112,32 @@ describe('CommandPalette', () => {
     fireEvent.mouseDown(screen.getByText(label));
 
     expect(state.setActiveLens).toHaveBeenCalledWith('session-1', lens);
+  });
+
+  it('keeps the session pages in the empty palette behind a wall of sessions', () => {
+    hooks.currentSession = { id: 'session-1' };
+    hooks.sessions = Array.from({ length: 24 }, (_, index) => ({
+      id: `session-${index}`,
+      goal: `settle batch ${index}`,
+    }));
+    hooks.workspaces = Array.from({ length: 6 }, (_, index) => ({
+      id: `workspace-${index}`,
+      name: `Harborline ${index}`,
+    }));
+    render(<CommandPalette onClose={vi.fn()} />);
+
+    expect(screen.getByText('Open Artifacts')).toBeDefined();
+    expect(screen.getByText('Open Review')).toBeDefined();
+    expect(screen.queryByText('settle batch 20')).toBeNull();
+  });
+
+  it('keeps the global actions in the empty palette behind every destination', () => {
+    hooks.currentSession = { id: 'session-1' };
+    render(<CommandPalette onClose={vi.fn()} onOpenSettings={vi.fn()} onNewSession={vi.fn()} />);
+
+    expect(screen.getByText('Open Terminal')).toBeDefined();
+    expect(screen.getByText('Open settings')).toBeDefined();
+    expect(screen.getByText('Report an issue')).toBeDefined();
   });
 
   it('teaches each navigation destination with the chord that reaches it', () => {

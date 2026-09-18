@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Chip, StatusDot, Tooltip } from '@goodboy/ui';
+import { StatusDot, Tooltip } from '@goodboy/ui';
 import type { Agent, AgentId, ResolveAttempt, Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -11,12 +11,16 @@ import {
 import { describeSessionStage } from '../../session-stage';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
+import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
+import { openLens } from '../../openLens';
+import { supportedLens } from '../../supportedLens';
 import { agentHomeLens, classifyAgent, resolveRootAgent } from '../../agent-kind';
 import { isAgentFinished } from '../../agent-lifecycle';
 import { settledResolverAgentIds } from '../../../review/settledResolverAgentIds';
 import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';
 import { PlainCrumb } from './PlainCrumb';
 import { AgentSwitcherCrumb } from './AgentSwitcherCrumb';
+import { LensSwitcherCrumb } from './LensSwitcherCrumb';
 import { switcherPeers } from './switcherPeers';
 import type { SwitcherEntry } from './switcherEntry';
 
@@ -36,7 +40,12 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   const selectedAgentId = useAppStore(
     (state) => state.selectedAgentId[sessionId] ?? null,
   ) as AgentId | null;
-  const activeLens = useAppStore((state) => state.activeLens[sessionId] ?? null);
+  const storedActiveLens = useAppStore((state) => state.activeLens[sessionId] ?? null);
+  const isBranchless = useIsBranchlessSession({ session });
+  const activeLens = supportedLens({ lens: storedActiveLens, isBranchless });
+  const setFocusedPlanId = useAppStore((state) => state.setFocusedPlanId);
+  const setFocusedArtifactId = useAppStore((state) => state.setFocusedArtifactId);
+  const setFocusedWorkflowRun = useAppStore((state) => state.setFocusedWorkflowRun);
   const phaseRuns = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -54,11 +63,6 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
     () => phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null,
     [phaseRuns, selectedAgentId],
   );
-  const queuedAttemptCount = useMemo(
-    () => resolveAttempts.filter((attempt) => attempt.phase === 'queued').length,
-    [resolveAttempts],
-  );
-
   const rootAgent = useMemo(() => {
     if (selectedAgentId == null) {
       return null;
@@ -122,6 +126,7 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   const lastCrumb = crumbs[crumbs.length - 1];
   const isSelectedCrumbAnAgent = selectedAgent != null && lastCrumb?.id === 'selected-child';
   const canSwitchAgent = isSelectedCrumbAnAgent && siblings.length > 1;
+  const destinationCrumbIndex = crumbs.length > 1 ? 1 : 0;
 
   return (
     <nav
@@ -142,8 +147,6 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
         const accessory =
           isLast && crumb.id === 'selected-child' && selectedAgent != null ? (
             <AgentStatusIcon status={selectedAgent.status} />
-          ) : activeLens === 'review' && crumb.id === 'lens-review' && queuedAttemptCount > 0 ? (
-            <Chip size="3xs" tone="info" bordered={false} label={`${queuedAttemptCount} queued`} />
           ) : (
             crumb.accessory
           );
@@ -181,6 +184,22 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
                 onNavigate={crumb.onClick}
                 onSelect={(id) => {
                   void selectAgent(sessionId, id);
+                }}
+              />
+            ) : index === destinationCrumbIndex ? (
+              <LensSwitcherCrumb
+                label={visibleCrumb.label}
+                icon={visibleCrumb.icon}
+                accessory={visibleCrumb.accessory}
+                sessionId={sessionId}
+                activeLens={activeLens}
+                isBranchless={isBranchless}
+                onNavigate={crumb.onClick}
+                onSelect={(lens) => {
+                  setFocusedPlanId(sessionId, null);
+                  setFocusedArtifactId(sessionId, null);
+                  setFocusedWorkflowRun(sessionId, null);
+                  openLens({ sessionId, lens });
                 }}
               />
             ) : (

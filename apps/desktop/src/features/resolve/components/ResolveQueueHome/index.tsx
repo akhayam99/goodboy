@@ -8,15 +8,7 @@ import {
   Tooltip,
   formatError,
 } from '@goodboy/ui';
-import type {
-  PrCheckRun,
-  PrComment,
-  ResolveAttempt,
-  ResolvePublication,
-  ResolveQueueItemWithThread,
-  Session,
-  SessionId,
-} from '@goodboy/types';
+import type { PrCheckRun, PrComment, ResolveAttempt, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useToast } from '../../../../app/components/Toast';
@@ -36,13 +28,10 @@ import {
 import { reviewThreadId } from '../../../../store/slices/review-navigation';
 import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../../session/components/AgentSpawnConfig/defaultAgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
-import { useResolveDeliveryReceipts } from '../../hooks/useResolveDeliveryReceipts';
+import { useResolveQueueRows } from '../../hooks/useResolveQueueRows';
 import { hasActiveResolveRun } from '../../hasActiveResolveRun';
 import { startResolveRun } from '../../startResolveRun';
-import {
-  buildResolveQueueRows,
-  type ResolveQueueRow as QueueRow,
-} from '../../buildResolveQueueRows';
+import type { ResolveQueueRow as QueueRow } from '../../buildResolveQueueRows';
 import { groupResolveQueue, groupSharedRuns, rowsForResolveFilter } from '../../groupResolveQueue';
 import { resolveQueueCounts } from '../../resolveQueueCounts';
 import { orderResolveQueueRows } from '../../orderResolveQueueRows';
@@ -71,9 +60,7 @@ type Props = {
   readonly session: Session;
 };
 
-const EMPTY_QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = [];
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
-const EMPTY_PUBLICATIONS: ReadonlyArray<ResolvePublication> = [];
 const EMPTY_CHECKS: ReadonlyArray<PrCheckRun> = [];
 const SKELETON_ROWS = [0, 1, 2];
 const DETAIL_WIDTH = 520;
@@ -99,11 +86,7 @@ export const ResolveQueueHome = ({ session }: Props) => {
       s.sessionGithub[sessionId]?.detail?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>),
   );
   const checks = useAppStore((s) => s.sessionGithub[sessionId]?.detail?.checks ?? EMPTY_CHECKS);
-  const queueItems = useAppStore((s) => s.sessionResolveQueueItems[sessionId] ?? EMPTY_QUEUE_ITEMS);
   const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
-  const publications = useAppStore(
-    (s) => s.sessionResolvePublications[sessionId] ?? EMPTY_PUBLICATIONS,
-  );
   const view = useAppStore((s) => s.resolveQueueView[sessionId] ?? EMPTY_RESOLVE_QUEUE_VIEW);
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
   const deferResolveQueueItem = useAppStore((s) => s.deferResolveQueueItem);
@@ -116,7 +99,7 @@ export const ResolveQueueHome = ({ session }: Props) => {
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const setAgentConfig = useAppStore((s) => s.setAgentConfig);
 
-  const deliveryReceipts = useResolveDeliveryReceipts({ publications });
+  const rows = useResolveQueueRows({ sessionId });
   const repo = useSessionRepo({ sessionId });
   const roleModels = useSessionRoleModels({ sessionId });
   const [spawnConfig, setSpawnConfig] = useState<AgentSpawnConfigValue>(DEFAULT_AGENT_SPAWN_CONFIG);
@@ -126,17 +109,6 @@ export const ResolveQueueHome = ({ session }: Props) => {
   useEffect(() => {
     void loadResolveSession({ sessionId });
   }, [loadResolveSession, sessionId]);
-
-  const rows = useMemo(
-    () =>
-      buildResolveQueueRows({
-        entries: queueItems,
-        attempts,
-        deliveryReceipts,
-        comments,
-      }),
-    [attempts, comments, deliveryReceipts, queueItems],
-  );
 
   const groups = useMemo(() => groupResolveQueue({ rows }), [rows]);
   const counts = useMemo(() => resolveQueueCounts({ rows }), [rows]);

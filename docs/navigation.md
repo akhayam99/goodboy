@@ -99,8 +99,8 @@ does not carry a second mount control.
 mode: the sidebar lists the workspace's sessions grouped by stage, and the open
 session tells its own story in the main pane. Lens surfaces still exist, but
 they are reached from rows and chips inside the overview (expand-in-place or
-side panel), never from sidebar navigation. Board → session is the whole depth
-of the navigation.
+side panel) and from the trail's destination switcher, never from sidebar
+navigation. Board → session is the whole depth of the navigation.
 
 **Peek is a display of the sidebar, not a second sidebar.** The overlay renders
 the same sidebar component; there is one sessions list in the codebase. It is
@@ -148,6 +148,13 @@ parked beside it.
   in, so Back returns where you were while the trail states where you are.
 - **A crumb with siblings is a switcher**: plain text when the agent is alone
   in its home lens, otherwise a popover that switches the open agent in place.
+- **The depth-one crumb is the session's destination switcher.** It is the
+  lens crumb when the trail has one, the `Overview` crumb when that crumb is
+  alone, and it lists the session's own destinations grouped by what they are
+  for. A count in that menu obeys the rule below: it is the number the
+  destination itself lists, read from the selector the destination reads.
+  Deeper crumbs never carry it, and no second persistent strip, tab bar or
+  rail carries it either.
 - **The workflow case extends the same control**:
   `Overview > {WorkflowKind} > {Step}`, plus a fourth crumb for implementer
   clusters (the child's name, or `{done}/{total} clusters` when the root is
@@ -262,7 +269,8 @@ breadcrumb IA, exit on close or Esc, and only one is open at a time.
   comes from one durable conversation model, and everything it sends leaves
   through one publisher, so a restart finds the same rows in the same states
   and there is no second path that pushes a reply or closes a thread.
-- **A lens surface is reached from the overview, never from a rail.** Rows and
+- **A lens surface is reached from the overview or from the trail's
+  destination switcher, never from a rail.** Rows and
   chips inside the overview route to it, expanding in place or opening a side
   panel; counts and dots are read-only signals on the row that routes there.
   Session lifecycle actions are not navigation and do not belong on those

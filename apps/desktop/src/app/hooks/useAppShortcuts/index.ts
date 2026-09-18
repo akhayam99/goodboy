@@ -9,6 +9,7 @@ import {
   useWorkspaces,
   type LensKind,
 } from '../../../store';
+import { openLens } from '../../../features/session/openLens';
 
 type AppShortcutsParams = {
   readonly armDeleteConfirm: () => void;
@@ -97,13 +98,10 @@ export const useAppShortcuts = ({
     if (sessionId == null) {
       return;
     }
-    if (kind === 'scripts') {
-      state.setScriptsLensScope({ scope: null });
-    }
-    state.setActiveLens(
+    openLens({
       sessionId,
-      kind != null && state.activeLens[sessionId] === kind ? null : kind,
-    );
+      lens: kind != null && state.activeLens[sessionId] === kind ? null : kind,
+    });
   }, []);
 
   const isExploreSession = useAppStore((state) => {

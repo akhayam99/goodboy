@@ -73,6 +73,7 @@ export const useDropdown = ({
     }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isEscapeEnabled) {
+        event.preventDefault();
         setOpen(false);
       }
     };

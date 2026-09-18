@@ -18,6 +18,7 @@ import {
 import { parseQuery } from '../../../quick-actions';
 import { PALETTE_PREFIXES, palettePlaceholder, type PaletteGroup } from './palettePrefixes';
 import { lensDestinations } from '../../lens-destinations';
+import { openLens } from '../../openLens';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEvent';
@@ -33,6 +34,7 @@ type PaletteItem = {
   readonly label: string;
   readonly sublabel?: string;
   readonly group: PaletteGroup;
+  readonly isDestination?: boolean;
   readonly accent?: string;
   readonly icon?: string;
   readonly onSelect: () => void;
@@ -55,6 +57,41 @@ const GROUP_ORDER: ReadonlyArray<PaletteGroup> = [
   'action',
   'help',
 ];
+
+type QuotaBucket = PaletteGroup | 'destination';
+
+const EMPTY_QUERY_QUOTA = {
+  agent: 5,
+  session: 8,
+  workspace: 3,
+  script: 3,
+  action: 12,
+  destination: 20,
+  help: 2,
+} satisfies Record<QuotaBucket, number>;
+
+const bucketOf = (item: PaletteItem): QuotaBucket =>
+  item.isDestination === true ? 'destination' : item.group;
+
+const withGroupQuota = (items: ReadonlyArray<PaletteItem>): ReadonlyArray<PaletteItem> => {
+  const taken: Record<QuotaBucket, number> = {
+    agent: 0,
+    session: 0,
+    workspace: 0,
+    script: 0,
+    action: 0,
+    destination: 0,
+    help: 0,
+  };
+  return items.filter((item) => {
+    const bucket = bucketOf(item);
+    if (taken[bucket] >= EMPTY_QUERY_QUOTA[bucket]) {
+      return false;
+    }
+    taken[bucket] += 1;
+    return true;
+  });
+};
 
 function fuzzyScore(query: string, text: string): number {
   if (query.length === 0) {
@@ -104,7 +141,6 @@ export const CommandPalette = ({
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const selectAgent = useAppStore((s) => s.selectAgent);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const scripts = useAppStore((s) =>
     currentWorkspace ? (s.projectScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<ProjectScript>;
@@ -171,7 +207,8 @@ export const CommandPalette = ({
           label: `Open ${SHORTCUTS[destination.shortcut].label}`,
           sublabel: shortcutGlyphs(destination.shortcut),
           group: 'action',
-          onSelect: () => setActiveLens(sessionId, destination.lens),
+          isDestination: true,
+          onSelect: () => openLens({ sessionId, lens: destination.lens }),
         });
       }
     }
@@ -274,7 +311,6 @@ export const CommandPalette = ({
     openWorkspace,
     setCurrentSession,
     selectAgent,
-    setActiveLens,
     onOpenSettings,
     onNewSession,
     onOpenProviders,
@@ -287,7 +323,7 @@ export const CommandPalette = ({
     const { prefix, query: q } = parsed;
     const scope = prefix ? items.filter((it) => it.group === prefix.group) : items;
     if (q.length === 0) {
-      return prefix ? scope.slice(0, 50) : scope.slice(0, 30);
+      return prefix ? scope.slice(0, 50) : withGroupQuota(scope);
     }
     return scope
       .map((item) => ({
