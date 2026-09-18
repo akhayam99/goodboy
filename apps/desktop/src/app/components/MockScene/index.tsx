@@ -35,6 +35,7 @@ import {
   ResolvePublishBlockedScene,
   ArtifactsLensShellScene,
 } from './scenes/SurfaceAuditScenes';
+import { LensSwitcherClosedScene, LensSwitcherScene } from './scenes/LensSwitcherScenes';
 
 const SCENES = {
   workspace: WorkspaceScene,
@@ -65,6 +66,8 @@ const SCENES = {
   'resolve-queue-shell': ResolveQueueShellScene,
   'resolve-publish-blocked': ResolvePublishBlockedScene,
   'artifacts-lens-shell': ArtifactsLensShellScene,
+  'lens-switcher': LensSwitcherScene,
+  'lens-switcher-closed': LensSwitcherClosedScene,
 };
 
 export const MockScene = () => {
