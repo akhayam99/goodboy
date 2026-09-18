@@ -12,7 +12,13 @@ const { store } = vi.hoisted(() => ({
     sessionGithub: {},
     sessionExternalTasks: {},
     sessionArtifacts: {} as Record<string, ReadonlyArray<{ readonly kind: string }>>,
-    sessionResolveQueueItems: {},
+    sessionResolveQueueItems: {} as Record<
+      string,
+      ReadonlyArray<{
+        readonly item: Record<string, unknown>;
+        readonly thread: Record<string, unknown>;
+      }>
+    >,
     sessionResolveAttempts: {},
     sessionResolvePublications: {},
     sessionOpenQuestions: {} as Record<string, ReadonlyArray<unknown>>,
@@ -79,6 +85,7 @@ describe('HeaderBand', () => {
     store.clearPendingTitleFocus.mockClear();
     store.sessionArtifacts = {};
     store.sessionOpenQuestions = {};
+    store.sessionResolveQueueItems = {};
   });
 
   it('stays clear of attention chips when nothing is waiting', () => {
@@ -92,7 +99,7 @@ describe('HeaderBand', () => {
     store.sessionArtifacts = {
       'session-1': [{ kind: 'report' }, { kind: 'wireframe' }, { kind: 'plan' }],
     };
-    store.sessionOpenQuestions = { 'session-1': [{ id: 'q1' }] };
+    store.sessionOpenQuestions = { 'session-1': [{ id: 'q1', status: 'open' }] };
     const onSelectLens = vi.fn();
     render(<HeaderBand session={session} onSelectLens={onSelectLens} goal={<div>Goal</div>} />);
 
@@ -104,6 +111,42 @@ describe('HeaderBand', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Questions/ }));
     expect(onSelectLens).toHaveBeenCalledWith('questions');
+  });
+
+  it('counts the review comments waiting on the user and opens their page', () => {
+    store.sessionResolveQueueItems = {
+      'session-1': [
+        {
+          item: {
+            id: 'queue-1',
+            threadId: 'thread-1',
+            approvalState: 'none',
+            approvedRevision: null,
+            integratedSha: 'a1b2c3d',
+            deliveredAt: null,
+          },
+          thread: {
+            id: 'resolve-thread-1',
+            threadId: 'thread-1',
+            state: 'open',
+            revision: 1,
+            activeAttemptId: null,
+            replyDraft: null,
+            commitShas: null,
+            question: null,
+            createdAt: 1_760_000_000_000,
+          },
+        },
+      ],
+    };
+    const onSelectLens = vi.fn();
+    render(<HeaderBand session={session} onSelectLens={onSelectLens} goal={<div>Goal</div>} />);
+
+    const chip = screen.getByRole('button', { name: /Review/ });
+    expect(chip.textContent).toContain('1');
+
+    fireEvent.click(chip);
+    expect(onSelectLens).toHaveBeenCalledWith('review');
   });
 
   it('keeps only archive and delete in the title action zone', () => {

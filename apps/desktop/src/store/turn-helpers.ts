@@ -684,7 +684,16 @@ export const captureArtifactsFromTurn = async ({
         sourceTurnId,
       });
       const refreshed = await invokeListPlansForSession(sessionId);
-      const refreshedArtifacts = await invokeListArtifactsForSession(sessionId).catch(() => null);
+      const refreshedArtifacts = await invokeListArtifactsForSession(sessionId).catch(
+        (err: unknown) => {
+          if (import.meta.env.DEV) {
+            console.warn(
+              `[artifact-capture] artifact refresh failed for session ${sessionId}: ${formatError(err)}`,
+            );
+          }
+          return null;
+        },
+      );
       set((state) => ({
         sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
         ...(refreshedArtifacts === null

@@ -145,6 +145,44 @@ describe('captureArtifactsFromTurn', () => {
     expect(createArtifact).not.toHaveBeenCalled();
   });
 
+  it('stores the refreshed artifacts next to the plans on the plan path', async () => {
+    const storedPlan = { id: 'plan-1', title: 'Envelope plan', bodyMd: 'step one' };
+    const storedArtifact = { id: 'artifact-7', kind: 'report', title: 'Kickoff notes' };
+    listPlansForSession.mockResolvedValue([storedPlan]);
+    listArtifactsForSession.mockResolvedValue([storedArtifact]);
+    const body = JSON.stringify({
+      title: 'Envelope plan',
+      format: 'markdown',
+      content: 'step one',
+    });
+
+    const { patches, result } = await run(`<<artifact v=1 kind=plan>>\n${body}\n<</artifact>>`);
+
+    expect(result).toEqual({ plan: storedPlan, artifact: null, error: null });
+    expect(patches).toEqual([
+      {
+        sessionPlans: { [SESSION_ID]: [storedPlan] },
+        sessionArtifacts: { [SESSION_ID]: [storedArtifact] },
+      },
+    ]);
+  });
+
+  it('keeps the captured plan when the artifact refresh fails', async () => {
+    const storedPlan = { id: 'plan-1', title: 'Envelope plan', bodyMd: 'step one' };
+    listPlansForSession.mockResolvedValue([storedPlan]);
+    listArtifactsForSession.mockRejectedValue(new Error('artifact list unavailable'));
+    const body = JSON.stringify({
+      title: 'Envelope plan',
+      format: 'markdown',
+      content: 'step one',
+    });
+
+    const { patches, result } = await run(`<<artifact v=1 kind=plan>>\n${body}\n<</artifact>>`);
+
+    expect(result).toEqual({ plan: storedPlan, artifact: null, error: null });
+    expect(patches).toEqual([{ sessionPlans: { [SESSION_ID]: [storedPlan] } }]);
+  });
+
   it('creates an independent artifact for a report and stamps the source turn', async () => {
     const body = JSON.stringify({
       title: 'Session report',
