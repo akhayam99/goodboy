@@ -13,6 +13,7 @@ import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { openLens } from '../../openLens';
+import { supportedLens } from '../../supportedLens';
 import { agentHomeLens, classifyAgent, resolveRootAgent } from '../../agent-kind';
 import { isAgentFinished } from '../../agent-lifecycle';
 import { settledResolverAgentIds } from '../../../review/settledResolverAgentIds';
@@ -39,8 +40,9 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   const selectedAgentId = useAppStore(
     (state) => state.selectedAgentId[sessionId] ?? null,
   ) as AgentId | null;
-  const activeLens = useAppStore((state) => state.activeLens[sessionId] ?? null);
+  const storedActiveLens = useAppStore((state) => state.activeLens[sessionId] ?? null);
   const isBranchless = useIsBranchlessSession({ session });
+  const activeLens = supportedLens({ lens: storedActiveLens, isBranchless });
   const setFocusedPlanId = useAppStore((state) => state.setFocusedPlanId);
   const setFocusedArtifactId = useAppStore((state) => state.setFocusedArtifactId);
   const setFocusedWorkflowRun = useAppStore((state) => state.setFocusedWorkflowRun);

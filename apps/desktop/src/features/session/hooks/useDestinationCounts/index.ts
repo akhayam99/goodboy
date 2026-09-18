@@ -4,6 +4,7 @@ import type { LensKind } from '../../../../store';
 import { useSessionOpenQuestions } from '../../../../store';
 import { useResolveQueueRows } from '../../../resolve/hooks/useResolveQueueRows';
 import { groupResolveQueue, rowsForResolveFilter } from '../../../resolve/groupResolveQueue';
+import { selectOpenQuestions } from '../../components/SessionOverviewPane/lib';
 
 export type DestinationCounts = Partial<Record<LensKind, number>>;
 
@@ -21,8 +22,7 @@ export const useDestinationCounts = ({ sessionId }: Params): DestinationCounts =
     [rows],
   );
 
-  return useMemo(
-    () => ({ review: needsReview, questions: openQuestions.length }),
-    [needsReview, openQuestions.length],
-  );
+  const stillOpen = useMemo(() => selectOpenQuestions(openQuestions).length, [openQuestions]);
+
+  return useMemo(() => ({ review: needsReview, questions: stillOpen }), [needsReview, stillOpen]);
 };

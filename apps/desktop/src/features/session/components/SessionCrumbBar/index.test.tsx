@@ -389,6 +389,27 @@ describe('SessionCrumbBar', () => {
     expect(current[0]?.textContent).toContain('Decisions');
   });
 
+  it('falls back to overview when the stored lens has no home on this session', () => {
+    h.crumbs = [
+      { id: 'overview', label: 'Overview', onClick: vi.fn() },
+      { id: 'lens-agents', label: 'Agents' },
+    ];
+    h.state.sessionBranches = { [SESSION_ID]: '' };
+    h.state.activeLens = { [SESSION_ID]: 'review' };
+    h.state.selectedAgentId = {};
+    render(<SessionCrumbBar />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
+    const menu = screen.getByRole('menu', { name: 'Switch page' });
+    const current = within(menu)
+      .getAllByRole('menuitem')
+      .filter((row) => row.getAttribute('aria-current') === 'page');
+
+    expect(menu.textContent).not.toContain('Review');
+    expect(current).toHaveLength(1);
+    expect(current[0]?.textContent).toContain('Overview');
+  });
+
   it('offers overview as a destination of its own', () => {
     h.crumbs = [
       { id: 'overview', label: 'Overview', onClick: vi.fn() },
@@ -410,13 +431,41 @@ describe('SessionCrumbBar', () => {
       { id: 'lens-agents', label: 'Agents' },
     ];
     h.state.selectedAgentId = {};
-    h.state.sessionOpenQuestions = { [SESSION_ID]: [{ id: 'q1' }, { id: 'q2' }] };
+    h.state.sessionOpenQuestions = {
+      [SESSION_ID]: [
+        { id: 'q1', status: 'open' },
+        { id: 'q2', status: 'open' },
+      ],
+    };
     render(<SessionCrumbBar />);
 
     fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
     expect(within(menu).getByRole('menuitem', { name: /Questions/ }).textContent).toContain('2');
     expect(within(menu).getByRole('menuitem', { name: /Artifacts/ }).textContent).not.toContain(
+      '2',
+    );
+  });
+
+  it('leaves answered questions out of the destination count', () => {
+    h.crumbs = [
+      { id: 'overview', label: 'Overview', onClick: vi.fn() },
+      { id: 'lens-agents', label: 'Agents' },
+    ];
+    h.state.selectedAgentId = {};
+    h.state.sessionOpenQuestions = {
+      [SESSION_ID]: [
+        { id: 'q1', status: 'open' },
+        { id: 'q2', status: 'answered' },
+      ],
+    };
+    render(<SessionCrumbBar />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
+    const menu = screen.getByRole('menu', { name: 'Switch page' });
+
+    expect(within(menu).getByRole('menuitem', { name: /Questions/ }).textContent).toContain('1');
+    expect(within(menu).getByRole('menuitem', { name: /Questions/ }).textContent).not.toContain(
       '2',
     );
   });

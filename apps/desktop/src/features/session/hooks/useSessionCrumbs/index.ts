@@ -7,7 +7,8 @@ import { workflowKindName } from '../../../workspace/components/WorkspacesSideba
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { ARTIFACT_CREATION_ADAPTERS } from '../../../artifacts/artifactCreationAdapters';
 import { buildSessionBreadcrumb } from '../../components/SessionWorkspace/sessionBreadcrumb';
-import { SIMPLE_LENSES, lensLabelFor } from '../../lens-labels';
+import { lensLabelFor } from '../../lens-labels';
+import { supportedLens } from '../../supportedLens';
 import { openLens } from '../../openLens';
 import { resolveRootAgent } from '../../agent-kind';
 import { useSelectedWorkflowRun } from '../useSelectedWorkflowRun';
@@ -21,10 +22,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
   const sessionId = session.id as SessionId;
   const isBranchless = useIsBranchlessSession({ session });
   const storedActiveLens = useAppStore((s) => s.activeLens[sessionId] ?? null);
-  const lens =
-    isBranchless && storedActiveLens != null && !SIMPLE_LENSES.has(storedActiveLens)
-      ? null
-      : storedActiveLens;
+  const lens = supportedLens({ lens: storedActiveLens, isBranchless });
   const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId[sessionId] ?? null);
   const focusedPlanId = useAppStore((s) => s.focusedPlanId[sessionId] ?? null);
