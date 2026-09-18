@@ -12,8 +12,8 @@ export const ManifestSearchInput = ({ value, onChange }: Props) => (
     <Search size={ICON_SIZE.control} className="shrink-0 text-muted-foreground" aria-hidden />
     <input
       type="search"
-      aria-label="Search manifest scripts"
-      placeholder="Search manifest scripts"
+      aria-label="Search scripts"
+      placeholder="Search scripts"
       value={value}
       onChange={(event) => onChange(event.target.value)}
       onKeyDown={(event) => {

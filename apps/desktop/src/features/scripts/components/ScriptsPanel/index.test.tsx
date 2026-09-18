@@ -114,7 +114,7 @@ const headings = () =>
     (heading) => heading.textContent,
   );
 
-const searchBox = () => screen.getByRole('searchbox', { name: 'Search manifest scripts' });
+const searchBox = () => screen.getByRole('searchbox', { name: 'Search scripts' });
 
 beforeEach(() => {
   localStorage.clear();
@@ -719,7 +719,7 @@ describe('ScriptsPanel', () => {
     renderSettingsPanel();
 
     expect(screen.queryByRole('region', { name: 'Manifest scripts' })).toBeNull();
-    expect(screen.queryByRole('searchbox', { name: 'Search manifest scripts' })).toBeNull();
+    expect(screen.queryByRole('searchbox', { name: 'Search scripts' })).toBeNull();
     expect(screen.getByRole('region', { name: 'Your scripts' })).toBeDefined();
   });
 
