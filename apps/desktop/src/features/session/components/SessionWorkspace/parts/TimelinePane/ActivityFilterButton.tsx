@@ -221,7 +221,7 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
         </button>
       }
     >
-      <div className="flex max-h-[min(70vh,20rem)] flex-col gap-2 overflow-y-auto py-2">
+      <div className="flex max-h-[min(70vh,20rem)] flex-col gap-2 overflow-y-auto py-2 [&::-webkit-scrollbar-thumb]:bg-border/60">
         {ACTIVITY_CATEGORIES.map((category) => {
           const toggles = childTogglesOf({ category });
           return (

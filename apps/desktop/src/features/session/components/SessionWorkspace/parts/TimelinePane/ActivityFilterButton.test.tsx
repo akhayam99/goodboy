@@ -193,12 +193,13 @@ describe('ActivityFilterButton', () => {
     expect(Number(cap?.[1]) * REM_IN_PX + PANEL_FOOTER_HEIGHT).toBe(PANEL_EXPECTED_HEIGHT);
   });
 
-  it('leaves the panel scrollbar visible so a cut row announces itself', () => {
+  it('paints the panel scrollbar at rest so a cut row announces itself before the pointer arrives', () => {
     open();
     const scroller = screen.getAllByRole('menuitemcheckbox')[0]?.closest('.overflow-y-auto');
 
     expect(scroller?.className).not.toContain('[scrollbar-width:none]');
     expect(scroller?.className).not.toContain('[&::-webkit-scrollbar]:hidden');
+    expect(scroller?.className).toContain('[&::-webkit-scrollbar-thumb]:bg-border/60');
   });
 
   it('drops the gradient that used to veil the last row', () => {
