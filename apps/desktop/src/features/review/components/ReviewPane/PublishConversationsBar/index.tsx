@@ -12,13 +12,11 @@ type Props = {
 };
 
 export const PublishConversationsBar = ({ sessionId, draftCount, mode, onSelectMode }: Props) => (
-  <div
-    className={cn('flex flex-wrap items-center justify-between gap-x-4 gap-y-2', PANE_RHYTHM.dock)}
-  >
-    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
-      <ResolvePublishStrip sessionId={sessionId} />
+  <div className={cn('flex flex-wrap items-end justify-between gap-x-4 gap-y-2', PANE_RHYTHM.dock)}>
+    <div className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
+      {mode === 'queue' ? <ResolvePublishStrip sessionId={sessionId} /> : null}
     </div>
-    <div className="flex shrink-0 flex-wrap items-center gap-1">
+    <div className="flex shrink-0 flex-wrap items-end gap-1">
       <GhostActionButton
         icon={PencilLine}
         label={draftCount > 0 ? `Write review (${draftCount})` : 'Write review'}

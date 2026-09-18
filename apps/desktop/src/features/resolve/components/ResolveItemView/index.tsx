@@ -28,6 +28,8 @@ import { ChangeBlock } from './ChangeBlock';
 import { ChecksBlock } from './ChecksBlock';
 import type { ResolveDecisionMode } from '../../resolveItemDraft';
 import { DecisionBlock } from './DecisionBlock';
+import { SharedCandidateNote } from './SharedCandidateNote';
+import type { SharedCandidateMember } from '../../sharedCandidateThreadIds';
 import { ResolveCommitIdentity } from './ResolveCommitIdentity';
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
 import { RunCard } from './RunCard';
@@ -48,6 +50,7 @@ type Props = {
   readonly isBusy: boolean;
   readonly canApprove: boolean;
   readonly approveBlockedReason: string | null;
+  readonly sharedMembers: ReadonlyArray<SharedCandidateMember>;
   readonly refuseBlockedReason: string | null;
   readonly canRunCheck: boolean;
   readonly isCheckRunning: boolean;
@@ -89,6 +92,7 @@ export const ResolveItemView = ({
   isBusy,
   canApprove,
   approveBlockedReason,
+  sharedMembers,
   refuseBlockedReason,
   canRunCheck,
   isCheckRunning,
@@ -120,17 +124,12 @@ export const ResolveItemView = ({
   const isAnswering = row.status === 'agent_asked';
   const fieldId = `resolve-item-${row.thread.threadId}`;
   const nextStep = RESOLVE_QUEUE_NEXT_STEP[row.status];
-  const reviseItems: ReadonlyArray<OverflowMenuItem> = isAnswering
-    ? []
-    : [
-        {
-          kind: 'item',
-          key: 'revise',
-          label: RESOLVE_QUEUE_ACTION_LABEL.askForChanges,
-          disabled: isBusy,
-          onClick: onStartRevise,
-        },
-      ];
+  const approveVerb =
+    proposalKind === 'fix'
+      ? RESOLVE_QUEUE_ACTION_LABEL.approveFix
+      : RESOLVE_QUEUE_ACTION_LABEL.approveReply;
+  const approveLabel =
+    sharedMembers.length === 0 ? approveVerb : `${approveVerb} and ${sharedMembers.length} more`;
   const menuItems: ReadonlyArray<OverflowMenuItem> = isDelivered
     ? [
         {
@@ -142,7 +141,6 @@ export const ResolveItemView = ({
         },
       ]
     : [
-        ...reviseItems,
         {
           kind: 'item',
           key: 'wont-fix',
@@ -175,18 +173,30 @@ export const ResolveItemView = ({
             </Button>
           )}
           {mode === 'reply' && !isDelivered && !isAnswering && (
-            <Tooltip content={approveBlockedReason ?? RESOLVE_QUEUE_ACTION_LABEL.approveFix}>
-              <Button
-                size="sm"
-                variant="primary"
-                disabled={isBusy || !canApprove}
-                onClick={onApprove}
-              >
-                {RESOLVE_QUEUE_ACTION_LABEL.approveFix}
+            <>
+              <Button size="sm" variant="ghost" disabled={isBusy} onClick={onStartRevise}>
+                {RESOLVE_QUEUE_ACTION_LABEL.askForChanges}
               </Button>
-            </Tooltip>
+              <Tooltip content={approveBlockedReason ?? approveLabel}>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  data-resolve-primary
+                  disabled={isBusy || !canApprove}
+                  onClick={onApprove}
+                >
+                  {approveLabel}
+                </Button>
+              </Tooltip>
+            </>
           )}
-          <OverflowMenu items={menuItems} label="Comment actions" align="right" />
+          <OverflowMenu
+            items={menuItems}
+            label="More"
+            align="right"
+            triggerClassName="border border-border-soft px-1.5"
+            trigger={<span className="text-2xs">More</span>}
+          />
         </span>
       </div>
       <Divider />
@@ -203,6 +213,9 @@ export const ResolveItemView = ({
                 className="max-w-[65ch] text-sm text-foreground"
               />
             </div>
+          )}
+          {!isDelivered && mode === 'reply' && !isAnswering && (
+            <SharedCandidateNote members={sharedMembers} />
           )}
           <DecisionBlock
             fieldId={fieldId}

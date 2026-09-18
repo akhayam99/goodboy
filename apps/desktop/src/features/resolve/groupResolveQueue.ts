@@ -1,9 +1,11 @@
 import type { ResolveQueueStatus } from '../../store/slices/resolve/deriveResolveQueueStatus';
 import type { ResolveQueueFilter } from '../../store/slices/session-view';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
+import { isDecidedUnpublished } from './publishCounts';
 
 export type ResolveQueueGroups = {
   readonly needsReview: ReadonlyArray<ResolveQueueRow>;
+  readonly approved: ReadonlyArray<ResolveQueueRow>;
   readonly active: ReadonlyArray<ResolveQueueRow>;
   readonly retryable: ReadonlyArray<ResolveQueueRow>;
   readonly completed: ReadonlyArray<ResolveQueueRow>;
@@ -36,11 +38,24 @@ const RETRYABLE_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set([
 
 const HISTORY_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set(['later', 'pushed']);
 
+const DECIDED_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set(['ready_to_push', 'wont_fix']);
+
 const reviewerTimeOf = ({ row }: { readonly row: ResolveQueueRow }): number =>
   row.reviewerNote?.createdAtMs ?? row.thread.createdAt;
 
 const byReviewerTime = (a: ResolveQueueRow, b: ResolveQueueRow): number =>
   reviewerTimeOf({ row: a }) - reviewerTimeOf({ row: b });
+
+type RankParams = {
+  readonly row: ResolveQueueRow;
+};
+
+const askedRank = ({ row }: RankParams): number => (row.status === 'agent_asked' ? 0 : 1);
+
+const byAgentQuestionThenTime = (a: ResolveQueueRow, b: ResolveQueueRow): number => {
+  const rank = askedRank({ row: a }) - askedRank({ row: b });
+  return rank === 0 ? byReviewerTime(a, b) : rank;
+};
 
 export const groupResolveQueue = ({
   rows,
@@ -49,6 +64,10 @@ export const groupResolveQueue = ({
 }): ResolveQueueGroups => ({
   needsReview: rows
     .filter((row) => NEEDS_REVIEW_STATUSES.has(row.status))
+    .slice()
+    .sort(byAgentQuestionThenTime),
+  approved: rows
+    .filter((row) => DECIDED_STATUSES.has(row.status) && isDecidedUnpublished(row))
     .slice()
     .sort(byReviewerTime),
   active: rows
@@ -109,7 +128,7 @@ export const rowsForResolveFilter = ({
   readonly filter: ResolveQueueFilter;
 }): ReadonlyArray<ResolveQueueRow> => {
   if (filter === 'needs_review') {
-    return groups.needsReview;
+    return [...groups.needsReview, ...groups.approved];
   }
   return filter === 'retryable' ? groups.retryable : groups.active;
 };

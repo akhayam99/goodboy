@@ -14,6 +14,11 @@ import { refuseBlockedReason } from '../../refuseBlockedReason';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import { candidateHeadSha, selectResolveCandidate } from '../../selectResolveCandidate';
 import { selectResolveCheckScript } from '../../selectResolveCheckScript';
+import { sharedCandidateBlocker, sharedCandidateThreadIds } from '../../sharedCandidateThreadIds';
+import {
+  PARTIAL_ACCEPTANCE,
+  PARTIAL_REFUSAL,
+} from '../../../../store/slices/resolve/acceptResolveQueueItem';
 import type { ResolveQueueStatus } from '../../../../store/slices/resolve/deriveResolveQueueStatus';
 import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve/state';
 import { ResolveItemView } from './index';
@@ -22,12 +27,13 @@ type Props = {
   readonly sessionId: SessionId;
   readonly row: ResolveQueueRow;
   readonly allRows: ReadonlyArray<ResolveQueueRow>;
+  readonly nextThreadId: string | null;
   readonly worktreePath: string | null;
   readonly onSelect: (threadId: string | null) => void;
   readonly onAskForChanges: (params: {
     readonly threadId: string;
     readonly instruction: string;
-  }) => void;
+  }) => boolean;
   readonly onOpenInDiff: (params: {
     readonly threadId: string;
     readonly sha: string;
@@ -48,13 +54,33 @@ const APPROVABLE_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set([
   'changed_since_accepted',
 ]);
 
+const COULD_NOT_SEND =
+  'This comment is no longer on the pull request, so the agent cannot be asked about it';
+
+type GuardParams = Readonly<{
+  run: () => Promise<void>;
+  advanceTo?: string | null;
+}>;
+
+type StillSelectedParams = Readonly<{
+  startedOn: string;
+}>;
+
 const approveBlockedReasonFor = ({
   row,
   isApprovable,
+  sharedBlocker,
 }: {
   readonly row: ResolveQueueRow;
   readonly isApprovable: boolean;
+  readonly sharedBlocker: 'deferred' | 'wont_fix' | null;
 }): string | null => {
+  if (sharedBlocker === 'deferred') {
+    return PARTIAL_ACCEPTANCE;
+  }
+  if (sharedBlocker === 'wont_fix') {
+    return PARTIAL_REFUSAL;
+  }
   if (row.status === 'working') {
     return 'The run has to stop first';
   }
@@ -83,6 +109,7 @@ export const ResolveItemContainer = ({
   sessionId,
   row,
   allRows,
+  nextThreadId,
   worktreePath,
   onSelect,
   onAskForChanges,
@@ -119,9 +146,16 @@ export const ResolveItemContainer = ({
 
   const currentThreadIdRef = useRef(threadId);
   currentThreadIdRef.current = threadId;
+  const isOpenRef = useRef(true);
+  useEffect(() => {
+    isOpenRef.current = true;
+    return () => {
+      isOpenRef.current = false;
+    };
+  }, []);
   const isStillSelected = useCallback(
-    ({ startedOn }: { readonly startedOn: string }): boolean =>
-      currentThreadIdRef.current === startedOn,
+    ({ startedOn }: StillSelectedParams): boolean =>
+      isOpenRef.current && currentThreadIdRef.current === startedOn,
     [],
   );
 
@@ -158,6 +192,14 @@ export const ResolveItemContainer = ({
     () => selectResolveCheckScript({ groups: scriptGroups }),
     [scriptGroups],
   );
+  const sharedMembers = useMemo(
+    () => sharedCandidateThreadIds({ queueItemId: row.item.id, candidates, rows: allRows }),
+    [allRows, candidates, row.item.id],
+  );
+  const sharedBlocker = useMemo(
+    () => sharedCandidateBlocker({ members: sharedMembers }),
+    [sharedMembers],
+  );
   const proposalKind = candidate === null ? row.proposalKind : 'fix';
   const isApprovable = proposalKind !== 'none' || reply.trim() !== '';
   const costUsd =
@@ -165,12 +207,15 @@ export const ResolveItemContainer = ({
       ? null
       : (metrics.aggregatesByAgentId.get(row.attempt.agentId)?.estimatedCostUsd ?? null);
 
-  const guard = async ({ run }: { readonly run: () => Promise<void> }): Promise<void> => {
+  const guard = async ({ run, advanceTo }: GuardParams): Promise<void> => {
     const startedOn = threadId;
     setIsBusy(true);
     setError(null);
     try {
       await run();
+      if (advanceTo !== undefined && isStillSelected({ startedOn })) {
+        onSelect(advanceTo);
+      }
     } catch (caught) {
       if (isStillSelected({ startedOn })) {
         setError(formatError(caught));
@@ -184,18 +229,21 @@ export const ResolveItemContainer = ({
 
   const onApprove = (): void => {
     void guard({
-      run: () =>
-        acceptResolveQueueItem({
+      advanceTo: nextThreadId,
+      run: async () => {
+        await acceptResolveQueueItem({
           sessionId,
           itemId: row.item.id,
           revision: row.thread.revision,
           reply,
-        }),
+        });
+      },
     });
   };
 
   const onRefuse = (): void => {
     void guard({
+      advanceTo: nextThreadId,
       run: async () => {
         await refuseResolveQueueItem({
           sessionId,
@@ -210,9 +258,9 @@ export const ResolveItemContainer = ({
 
   const onLater = (): void => {
     void guard({
+      advanceTo: nextThreadId,
       run: async () => {
         await deferResolveQueueItem({ sessionId, itemId: row.item.id });
-        onSelect(null);
       },
     });
   };
@@ -276,8 +324,9 @@ export const ResolveItemContainer = ({
       mode={mode}
       isBusy={isBusy}
       proposalKind={proposalKind}
-      canApprove={APPROVABLE_STATUSES.has(row.status) && isApprovable}
-      approveBlockedReason={approveBlockedReasonFor({ row, isApprovable })}
+      canApprove={APPROVABLE_STATUSES.has(row.status) && isApprovable && sharedBlocker === null}
+      approveBlockedReason={approveBlockedReasonFor({ row, isApprovable, sharedBlocker })}
+      sharedMembers={sharedMembers}
       refuseBlockedReason={refuseBlockedReason({ row })}
       canRunCheck={candidate !== null && checkScript !== null}
       isCheckRunning={isCheckRunning}
@@ -295,9 +344,17 @@ export const ResolveItemContainer = ({
         setMode('reply');
       }}
       onSendToAgent={() => {
-        onAskForChanges({ threadId: row.thread.threadId, instruction: instruction.trim() });
+        const isSent = onAskForChanges({
+          threadId: row.thread.threadId,
+          instruction: instruction.trim(),
+        });
+        if (!isSent) {
+          setError(COULD_NOT_SEND);
+          return;
+        }
         setInstruction('');
         setMode('reply');
+        onSelect(nextThreadId);
       }}
       onLater={onLater}
       onReopen={onReopen}

@@ -54,14 +54,26 @@ const row = ({
   reviewerCreatedAtMs,
   integratedSha = null,
   activeAttemptId = null,
+  approvalState = 'none',
+  deliveredAt = null,
 }: {
   readonly threadId: string;
   readonly status: ResolveQueueStatus;
   readonly reviewerCreatedAtMs: number;
   readonly integratedSha?: string | null;
   readonly activeAttemptId?: string | null;
+  readonly approvalState?: ResolveQueueItem['approvalState'];
+  readonly deliveredAt?: number | null;
 }): ResolveQueueRow => ({
-  item: { ...baseItem, id: `item-${threadId}`, threadId, integratedSha },
+  item: {
+    ...baseItem,
+    id: `item-${threadId}`,
+    threadId,
+    integratedSha,
+    approvalState,
+    approvedRevision: approvalState === 'none' ? null : baseThread.revision,
+    deliveredAt,
+  },
   thread: { ...baseThread, id: `row-${threadId}`, threadId, activeAttemptId },
   commentThread: null,
   status,
@@ -108,6 +120,49 @@ describe('the retryable bucket', () => {
   });
 });
 
+describe('the approved bucket', () => {
+  const rows = [
+    row({ threadId: 'waiting', status: 'fix_ready', reviewerCreatedAtMs: 1 }),
+    row({
+      threadId: 'approved',
+      status: 'ready_to_push',
+      reviewerCreatedAtMs: 2,
+      approvalState: 'accepted',
+    }),
+    row({
+      threadId: 'refused',
+      status: 'wont_fix',
+      reviewerCreatedAtMs: 3,
+      approvalState: 'wont_fix',
+    }),
+    row({
+      threadId: 'sent',
+      status: 'pushed',
+      reviewerCreatedAtMs: 4,
+      approvalState: 'accepted',
+      deliveredAt: 9,
+    }),
+  ];
+  const groups = groupResolveQueue({ rows });
+
+  it('holds what a publish is about to carry, and nothing already sent', () => {
+    expect(groups.approved.map((entry) => entry.thread.threadId)).toEqual(['approved', 'refused']);
+  });
+
+  it('keeps an approved comment in the tab it was approved from', () => {
+    expect(
+      rowsForResolveFilter({ groups, filter: 'needs_review' }).map(
+        (entry) => entry.thread.threadId,
+      ),
+    ).toEqual(['waiting', 'approved', 'refused']);
+  });
+
+  it('never lists a row twice when it is both waiting and decided', () => {
+    const listed = rowsForResolveFilter({ groups, filter: 'needs_review' });
+    expect(new Set(listed.map((entry) => entry.thread.threadId)).size).toBe(listed.length);
+  });
+});
+
 describe('groupResolveQueue', () => {
   it('buckets fix_ready, agent_asked and changed_since_accepted together, ordered oldest first', () => {
     const rows = [
@@ -125,6 +180,34 @@ describe('groupResolveQueue', () => {
       'oldest',
       'middle',
       'newest',
+    ]);
+  });
+
+  it('leads with the question the run is parked on, however late it arrived', () => {
+    const rows = [
+      row({ threadId: 'first', status: 'fix_ready', reviewerCreatedAtMs: 100 }),
+      row({ threadId: 'second', status: 'reply_ready', reviewerCreatedAtMs: 200 }),
+      row({ threadId: 'asked', status: 'agent_asked', reviewerCreatedAtMs: 900 }),
+    ];
+
+    expect(groupResolveQueue({ rows }).needsReview.map((entry) => entry.thread.threadId)).toEqual([
+      'asked',
+      'first',
+      'second',
+    ]);
+  });
+
+  it('keeps two parked questions among themselves in the order they arrived', () => {
+    const rows = [
+      row({ threadId: 'late', status: 'agent_asked', reviewerCreatedAtMs: 900 }),
+      row({ threadId: 'early', status: 'agent_asked', reviewerCreatedAtMs: 100 }),
+      row({ threadId: 'fix', status: 'fix_ready', reviewerCreatedAtMs: 50 }),
+    ];
+
+    expect(groupResolveQueue({ rows }).needsReview.map((entry) => entry.thread.threadId)).toEqual([
+      'early',
+      'late',
+      'fix',
     ]);
   });
 

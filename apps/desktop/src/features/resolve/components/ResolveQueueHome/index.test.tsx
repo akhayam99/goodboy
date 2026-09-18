@@ -19,6 +19,7 @@ const h = vi.hoisted(() => {
     sessionResolveAttempts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionResolvePublications: {} as Record<string, ReadonlyArray<unknown>>,
     resolveQueueView: {} as Record<string, unknown>,
+    activePublicationPreview: {} as Record<string, unknown>,
     reviewTargets: {} as Record<string, unknown>,
     loadResolveSession: vi.fn(async () => undefined),
     deferResolveQueueItem: vi.fn(async () => undefined),
@@ -56,8 +57,22 @@ vi.mock('../../hooks/useResolveDeliveryReceipts', () => ({
 }));
 vi.mock('../../../review/openReview', () => ({ openReview: h.openReview }));
 vi.mock('../ResolveItemView/ResolveItemContainer', () => ({
-  ResolveItemContainer: ({ row }: { readonly row: { thread: { threadId: string } } }) => (
-    <div data-testid="resolve-item">{row.thread.threadId}</div>
+  ResolveItemContainer: ({
+    row,
+    nextThreadId,
+    onSelect,
+  }: {
+    readonly row: { thread: { threadId: string } };
+    readonly nextThreadId: string | null;
+    readonly onSelect: (threadId: string | null) => void;
+  }) => (
+    <div data-testid="resolve-item">
+      <span data-testid="resolve-item-thread">{row.thread.threadId}</span>
+      <button type="button" data-resolve-primary onClick={() => onSelect(nextThreadId)}>
+        Approve fix
+      </button>
+      <textarea aria-label="Reply to reviewer" />
+    </div>
   ),
 }));
 
@@ -313,10 +328,296 @@ describe('the resolve queue home', () => {
     h.state.reviewTargets = { [SESSION_ID]: targetOf({}) };
     render(<ResolveQueueHome session={SESSION} />);
 
-    expect(screen.getByTestId('resolve-item').textContent).toBe('PRRT_1');
+    expect(screen.getByTestId('resolve-item-thread').textContent).toBe('PRRT_1');
     expect(h.state.consumeReviewTarget).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       requestId: 'req-1',
     });
+  });
+});
+
+describe('walking the queue from the keyboard', () => {
+  const twoRows = () => {
+    h.state.sessionGithub = {
+      [SESSION_ID]: {
+        pr: { number: 248, url: 'https://github.com/acme/web/pull/248', state: 'open' },
+        detail: {
+          prNumber: 248,
+          comments: [commentOf('PRRT_1'), commentOf('PRRT_2')],
+          reviews: [],
+          checks: [],
+        },
+        detailLoading: false,
+        detailError: null,
+      },
+    };
+    h.state.sessionResolveQueueItems = {
+      [SESSION_ID]: [
+        entryOf({ item: { id: 'item-1', threadId: 'PRRT_1' }, thread: { threadId: 'PRRT_1' } }),
+        entryOf({ item: { id: 'item-2', threadId: 'PRRT_2' }, thread: { threadId: 'PRRT_2' } }),
+      ],
+    };
+  };
+
+  const rowFor = (threadId: string): HTMLElement => {
+    const row = document.querySelector<HTMLElement>(`[data-thread-id="${threadId}"]`);
+    if (row === null) {
+      throw new Error(`no row for ${threadId}`);
+    }
+    return row;
+  };
+
+  it('moves the selection down and up from the row that has the focus', () => {
+    twoRows();
+    render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.keyDown(rowFor('PRRT_1'), { key: 'ArrowDown' });
+
+    expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      patch: { expandedThreadId: 'PRRT_2', order: ['PRRT_1', 'PRRT_2'] },
+    });
+
+    h.state.setResolveQueueView.mockClear();
+    fireEvent.keyDown(rowFor('PRRT_2'), { key: 'ArrowUp' });
+
+    expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      patch: { expandedThreadId: 'PRRT_1', order: ['PRRT_1', 'PRRT_2'] },
+    });
+  });
+
+  it('stops at the ends rather than wrapping the list around', () => {
+    twoRows();
+    render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.keyDown(rowFor('PRRT_1'), { key: 'ArrowUp' });
+
+    expect(h.state.setResolveQueueView).not.toHaveBeenCalled();
+  });
+
+  it('leaves a control inside a row alone, so its own key handling still runs', () => {
+    twoRows();
+    h.state.resolveQueueView = {
+      [SESSION_ID]: {
+        filter: 'needs_review',
+        expandedThreadId: 'PRRT_1',
+        order: [],
+        scrollTop: 0,
+      },
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    const inner = within(rowFor('PRRT_2')).getAllByRole('button')[0];
+    const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    inner?.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('ignores an arrow pressed with a modifier, which belongs to the app', () => {
+    twoRows();
+    render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.keyDown(rowFor('PRRT_1'), { key: 'ArrowDown', metaKey: true });
+
+    expect(h.state.setResolveQueueView).not.toHaveBeenCalled();
+  });
+
+  it('opens the panel and lands the focus in it on the first Enter', () => {
+    twoRows();
+    const { rerender } = render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.keyDown(rowFor('PRRT_2'), { key: 'Enter' });
+
+    expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      patch: { expandedThreadId: 'PRRT_2', order: ['PRRT_1', 'PRRT_2'] },
+    });
+
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
+    };
+    rerender(<ResolveQueueHome session={SESSION} />);
+
+    expect(document.activeElement).toBe(
+      within(screen.getByTestId('resolve-item')).getByRole('button', { name: 'Approve fix' }),
+    );
+  });
+
+  it('carries the focus into the comment the decision moved on to', () => {
+    twoRows();
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+    };
+    const { rerender } = render(<ResolveQueueHome session={SESSION} />);
+
+    const approve = within(screen.getByTestId('resolve-item')).getByRole('button', {
+      name: 'Approve fix',
+    });
+    approve.focus();
+    fireEvent.click(approve);
+
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
+    };
+    rerender(<ResolveQueueHome session={SESSION} />);
+
+    expect(screen.getByTestId('resolve-item-thread').textContent).toBe('PRRT_2');
+    expect(document.activeElement).toBe(
+      within(screen.getByTestId('resolve-item')).getByRole('button', { name: 'Approve fix' }),
+    );
+  });
+
+  it('leaves the focus where it was when a comment is opened with the mouse', () => {
+    twoRows();
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+    };
+    const { rerender } = render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.click(rowFor('PRRT_2'));
+
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
+    };
+    rerender(<ResolveQueueHome session={SESSION} />);
+
+    expect(screen.getByTestId('resolve-item-thread').textContent).toBe('PRRT_2');
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('stays on a parked comment instead of jumping to the top of the list', () => {
+    twoRows();
+    h.state.sessionResolveQueueItems = {
+      [SESSION_ID]: [
+        entryOf({ item: { id: 'item-1', threadId: 'PRRT_1' }, thread: { threadId: 'PRRT_1' } }),
+        entryOf({
+          item: { id: 'item-2', threadId: 'PRRT_2', approvalState: 'deferred', deferredAt: 3 },
+          thread: { threadId: 'PRRT_2' },
+        }),
+      ],
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show later (1)' }));
+    fireEvent.keyDown(rowFor('PRRT_2'), { key: 'ArrowDown' });
+    fireEvent.keyDown(rowFor('PRRT_2'), { key: 'ArrowUp' });
+
+    expect(h.state.setResolveQueueView).not.toHaveBeenCalled();
+  });
+
+  it('hands Escape back to the reply field the maintainer is typing in', () => {
+    twoRows();
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    const field = screen.getByLabelText('Reply to reviewer');
+    field.focus();
+    fireEvent.keyDown(field, { key: 'Escape' });
+
+    expect(document.activeElement).toBe(field);
+  });
+
+  it('sends Escape from the panel back to the row it belongs to', () => {
+    twoRows();
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    const approve = within(screen.getByTestId('resolve-item')).getByRole('button', {
+      name: 'Approve fix',
+    });
+    approve.focus();
+    fireEvent.keyDown(approve, { key: 'Escape' });
+
+    expect(document.activeElement).toBe(rowFor('PRRT_1'));
+  });
+
+  it('keeps Enter on the open row going straight to the panel', () => {
+    twoRows();
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.keyDown(rowFor('PRRT_1'), { key: 'Enter' });
+
+    expect(document.activeElement).toBe(
+      within(screen.getByTestId('resolve-item')).getByRole('button', { name: 'Approve fix' }),
+    );
+  });
+});
+
+describe('the shape of the queue surface', () => {
+  const twoRows = () => {
+    h.state.sessionGithub = {
+      [SESSION_ID]: {
+        pr: { number: 248, url: 'https://github.com/acme/web/pull/248', state: 'open' },
+        detail: {
+          prNumber: 248,
+          comments: [commentOf('PRRT_1'), commentOf('PRRT_2')],
+          reviews: [],
+          checks: [],
+        },
+        detailLoading: false,
+        detailError: null,
+      },
+    };
+    h.state.sessionResolveQueueItems = {
+      [SESSION_ID]: [
+        entryOf({ item: { id: 'item-1', threadId: 'PRRT_1' }, thread: { threadId: 'PRRT_1' } }),
+        entryOf({ item: { id: 'item-2', threadId: 'PRRT_2' }, thread: { threadId: 'PRRT_2' } }),
+      ],
+    };
+  };
+
+  it('scrolls the rows in their own bounded region, below a header that stays put', () => {
+    twoRows();
+    render(<ResolveQueueHome session={SESSION} />);
+
+    const row = document.querySelector<HTMLElement>('[data-thread-id="PRRT_1"]') as HTMLElement;
+    const viewport = row.closest('.overflow-y-auto') as HTMLElement;
+    const region = viewport.parentElement as HTMLElement;
+
+    expect(region.className).toContain('min-h-0');
+    expect(region.className).toContain('flex-1');
+    expect(region.contains(screen.getByRole('heading', { name: 'Resolve' }))).toBe(false);
+    expect(
+      screen.getByRole('button', { name: 'Start resolve run' }).closest('.overflow-y-auto'),
+    ).toBeNull();
+  });
+
+  it('counts the retryable tab like its siblings once a run fails', () => {
+    twoRows();
+    h.state.sessionResolveQueueItems = {
+      [SESSION_ID]: [
+        entryOf({ item: { id: 'item-1', threadId: 'PRRT_1' }, thread: { threadId: 'PRRT_1' } }),
+        entryOf({
+          item: { id: 'item-2', threadId: 'PRRT_2' },
+          thread: { threadId: 'PRRT_2', activeAttemptId: 'attempt-1' },
+        }),
+      ],
+    };
+    h.state.sessionResolveAttempts = {
+      [SESSION_ID]: [{ id: 'attempt-1', agentId: 'agent-1', phase: 'failed', createdAt: 1 }],
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    expect(screen.getByRole('button', { name: 'Needs review 2' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Active 2' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retryable 1' })).toBeDefined();
+  });
+
+  it('drops the count from every tab that has nothing, the third one included', () => {
+    twoRows();
+    render(<ResolveQueueHome session={SESSION} />);
+
+    expect(screen.getByRole('button', { name: 'Needs review 2' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Active 2' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retryable' })).toBeDefined();
   });
 });

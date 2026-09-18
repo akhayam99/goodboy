@@ -75,6 +75,28 @@ const studioDetail = () => {
   return { header, tabsMeasure, body };
 };
 
+const studioDetailBleedDock = () => {
+  const { unmount } = render(
+    <StudioDetailLayout
+      header={<span>Detail header</span>}
+      fit="bleed"
+      dock={<span>Detail dock</span>}
+    >
+      <p>Detail body</p>
+    </StudioDetailLayout>,
+  );
+  const header = {
+    inset: nearestClasses({ node: screen.getByText('Detail header'), pattern: INSET }),
+    measure: nearestClasses({ node: screen.getByText('Detail header'), pattern: MEASURE }),
+  };
+  const dock = {
+    inset: nearestClasses({ node: screen.getByText('Detail dock'), pattern: INSET }),
+    measure: nearestClasses({ node: screen.getByText('Detail dock'), pattern: MEASURE }),
+  };
+  unmount();
+  return { header, dock };
+};
+
 const studioPanel = () => {
   const { unmount } = render(
     <StudioPanel title="Panel">
@@ -112,6 +134,13 @@ describe('pane rhythm', () => {
     expect(detail.header.measure).toBe(detail.body.measure);
     expect(detail.tabsMeasure).toBe(detail.body.measure);
     expect(detail.header.measure).toBe(PANE_RHYTHM.measure.pane);
+  });
+
+  it('lands the dock on the same column as the header, even over a full-bleed body', () => {
+    const detail = studioDetailBleedDock();
+
+    expect(detail.dock.measure).toBe(detail.header.measure);
+    expect(detail.dock.measure).toBe(PANE_RHYTHM.measure.pane);
   });
 
   it('fills its parent so the studio column centers instead of hugging the left edge', () => {

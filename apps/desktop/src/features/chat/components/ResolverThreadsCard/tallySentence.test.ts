@@ -32,6 +32,20 @@ describe('tallySentence', () => {
     expect(sentence).toBe('1 closed · 1 needs you');
   });
 
+  it('says closed, not fixed, about a fix whose thread the reviewer closed', () => {
+    const sentence = tallySentence({
+      tally: verdictTally({
+        verdicts: [
+          verdict({ kind: 'resolved', isClosed: true }),
+          verdict({ kind: 'wontfix' }),
+          verdict({ kind: 'analyzed' }),
+        ],
+      }),
+    });
+
+    expect(sentence).toBe('1 no change · 1 explained · 1 closed');
+  });
+
   it('reads the same as before on an agent nothing closed', () => {
     const sentence = tallySentence({
       tally: verdictTally({

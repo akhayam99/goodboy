@@ -26,16 +26,16 @@ export const REVIEW_PUBLICATION = 'Review publication';
 export const PUBLICATION_COMPLETE = 'Publication complete';
 
 export const PUBLISH_INTENT_LABEL: Record<ResolvePublishIntent, string> = {
-  publish_fix: 'Publish fix and close',
-  close_without_fix: 'Close without the fix',
+  publish_fix: 'Push fix and resolve threads',
+  close_without_fix: 'Resolve threads without the fix',
   post_replies: 'Post replies',
 };
 
 export const CLOSE_WITHOUT_FIX_CONFIRM = {
-  title: 'Close without the fix',
+  title: 'Resolve threads without the fix',
   description:
     'No commit goes out with this batch. The reviewer threads read as resolved on the pull request and the code stays as it is.',
-  confirmLabel: 'Close them anyway',
+  confirmLabel: 'Resolve them anyway',
   cancelLabel: 'Keep them open',
 } as const;
 
@@ -73,6 +73,11 @@ export const publicationCountsLine = ({
 export const frozenAtLabel = ({ frozenAt }: { readonly frozenAt: number }): string =>
   `as of ${new Date(frozenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
+export const HELD_BACK_REASON: Record<'comment_changed' | 'approval_withdrawn', string> = {
+  comment_changed: 'the comment changed',
+  approval_withdrawn: 'you took the approval back',
+};
+
 export const heldBackNote = ({
   preview,
 }: {
@@ -83,7 +88,9 @@ export const heldBackNote = ({
     return null;
   }
   const reason =
-    held[0]?.kind === 'approval_withdrawn' ? 'you took the approval back' : 'the comment changed';
+    held[0]?.kind === 'approval_withdrawn'
+      ? HELD_BACK_REASON.approval_withdrawn
+      : HELD_BACK_REASON.comment_changed;
   return `${held.length} held back, ${reason}`;
 };
 
@@ -119,8 +126,17 @@ export const driftSentence = ({
   if (remote !== undefined) {
     return `The remote moved from ${remote.before} to ${remote.after}`;
   }
+  if (drift.every((entry) => entry.threadId !== null)) {
+    return null;
+  }
   return drift.length === 0 ? null : 'Something changed while you were looking';
 };
+
+export const heldBackChipLabel = ({
+  kind,
+}: {
+  readonly kind: 'comment_changed' | 'approval_withdrawn';
+}): string => `Held back, ${HELD_BACK_REASON[kind]}`;
 
 export type BlockerCopy = {
   readonly sentence: string;

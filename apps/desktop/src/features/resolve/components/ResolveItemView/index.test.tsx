@@ -137,6 +137,7 @@ const renderView = (overrides: Partial<Parameters<typeof ResolveItemView>[0]> = 
       instruction=""
       mode="reply"
       proposalKind="fix"
+      sharedMembers={[]}
       isBusy={false}
       canApprove
       approveBlockedReason={null}
@@ -386,7 +387,7 @@ describe('the resolve item view', () => {
     const onStartRefuse = vi.fn();
     renderView({ onStartRefuse });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Comment actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Will not fix' }));
 
     expect(onStartRefuse).toHaveBeenCalledOnce();
@@ -395,7 +396,7 @@ describe('the resolve item view', () => {
   it('blocks the refusal with its reason once the fix is already integrated', () => {
     renderView({ refuseBlockedReason: 'Fix already integrated' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Comment actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
 
     const entry = screen.getByRole('menuitem', { name: /Will not fix/ });
     expect(entry.hasAttribute('disabled')).toBe(true);
@@ -435,7 +436,16 @@ describe('the resolve item view', () => {
     });
 
     expect(screen.getByText('No agent reply yet')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Approve fix' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Approve reply' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+  });
+
+  it('names the primary for the reply alone once one is typed on a comment with no fix', () => {
+    renderView({ proposalKind: 'none', reply: 'We answered this in the thread.' });
+
+    expect(screen.getByRole('button', { name: 'Approve reply' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Approve fix' })).toBeNull();
   });
 
   it('marks a deliberate reply without a code change as exactly that', () => {
@@ -443,6 +453,74 @@ describe('the resolve item view', () => {
 
     expect(screen.getByText('Reply only, no code change')).toBeDefined();
     expect(screen.queryByText('No agent reply yet')).toBeNull();
+  });
+
+  it('offers the revise verb next to the primary instead of hiding it in a kebab', () => {
+    const onStartRevise = vi.fn();
+    renderView({ onStartRevise });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ask agent to revise' }));
+
+    expect(onStartRevise).toHaveBeenCalledOnce();
+  });
+
+  it('leaves the rarer verbs behind a menu that says what it is', () => {
+    renderView();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    expect(screen.getByRole('menuitem', { name: 'Will not fix' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'Later' })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: 'Ask agent to revise' })).toBeNull();
+  });
+
+  it('names the comments one approval carries, and counts them on the primary', () => {
+    renderView({
+      sharedMembers: [
+        {
+          queueItemId: 'i-2',
+          threadId: 't-2',
+          title: 'The metric name is wrong.',
+          approvalState: 'none',
+        },
+      ],
+    });
+
+    expect(screen.getByText('Approving this also approves 1 other comment')).toBeDefined();
+    expect(screen.getByText('The metric name is wrong.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Approve fix and 1 more' })).toBeDefined();
+  });
+
+  it('refuses the approval before the click when a sibling was parked', () => {
+    renderView({
+      canApprove: false,
+      approveBlockedReason:
+        'This change also answers comments you left for later. Accept them together, or take those back up first',
+      sharedMembers: [
+        {
+          queueItemId: 'i-2',
+          threadId: 't-2',
+          title: 'The metric name is wrong.',
+          approvalState: 'deferred',
+        },
+      ],
+    });
+
+    expect(
+      screen.getByText(
+        'This change also answers comments you left for later. Accept them together, or take those back up first',
+      ),
+    ).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: 'Approve fix and 1 more' }).hasAttribute('disabled'),
+    ).toBe(true);
+  });
+
+  it('names what the primary approves, a reply when there is no code change', () => {
+    renderView({ proposalKind: 'reply_only' });
+
+    expect(screen.getByRole('button', { name: 'Approve reply' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Approve fix' })).toBeNull();
   });
 
   it('leads with the answer while the agent is waiting on one', () => {

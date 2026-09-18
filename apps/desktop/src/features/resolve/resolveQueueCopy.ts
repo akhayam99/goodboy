@@ -6,12 +6,12 @@ export const RESOLVE_QUEUE_STATUS_LABEL: Record<ResolveQueueStatus, string> = {
   fix_ready: 'Fix ready, on your machine',
   reply_ready: 'Reply ready',
   no_change: 'No change proposed',
-  agent_asked: 'Answer agent',
+  agent_asked: 'Question for you',
   working: 'Working',
   ready_to_push: 'Approved, not published',
   pushed: 'Published',
   later: 'Later',
-  changed_since_accepted: 'Review again',
+  changed_since_accepted: 'Comment changed',
   delivery_failed: 'Delivery failed',
   confirm_delivery: 'Confirm delivery',
   run_failed: 'Run failed',
@@ -42,6 +42,7 @@ export const RESOLVE_QUEUE_ACTION_LABEL = {
   resume: 'Resume',
   later: 'Later',
   approveFix: 'Approve fix',
+  approveReply: 'Approve reply',
   answerAgent: 'Answer agent',
   wontFix: 'Will not fix',
   askForChanges: 'Ask agent to revise',
@@ -61,6 +62,8 @@ export const RESOLVE_HISTORY_LABEL = {
   later: 'later',
   completed: 'completed',
 } as const;
+
+export const RESOLVE_PUBLISH_REPLIES_LABEL = 'replies';
 
 export const RESOLVE_DELIVERY_SUPPORT = {
   replyPending: 'Reply pending',
@@ -85,16 +88,6 @@ export const activeFilterLabel = ({ count }: { readonly count: number }): string
 
 export const retryableFilterLabel = ({ count }: { readonly count: number }): string =>
   countedLabel({ label: 'Retryable', count });
-
-export const RESOLVE_QUEUE_COUNT_LABEL = {
-  queued: 'queued',
-  working: 'working',
-  question: 'question',
-  failed: 'failed',
-  published: 'published',
-} as const;
-
-export const RESOLVE_QUEUE_COUNTS_LABEL = 'Queue counts';
 
 export const RESOLVE_QUEUE_RETRYABLE_EMPTY = 'Nothing to retry right now';
 
