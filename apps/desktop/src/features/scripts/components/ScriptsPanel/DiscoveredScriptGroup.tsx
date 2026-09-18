@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Chip, Eyebrow, tintClasses } from '@goodboy/ui';
+import { Chip, Eyebrow, StatusDot, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { DiscoveredScript, ScriptGroup, ScriptRunRecord } from '../../scripts';
 import { discoveredScriptCwd, discoveredScriptId } from '../../scripts';
@@ -28,6 +28,7 @@ type Props = {
   readonly completedAt: Readonly<Record<string, number>>;
   readonly emptyLabel: string | null;
   readonly isOpen: boolean;
+  readonly isRunning: boolean;
   readonly onToggle: () => void;
   readonly onRun: (params: RunParams) => void;
   readonly onCancel: (params: CancelParams) => void;
@@ -40,6 +41,7 @@ export const DiscoveredScriptGroup = ({
   completedAt,
   emptyLabel,
   isOpen,
+  isRunning,
   onToggle,
   onRun,
   onCancel,
@@ -61,32 +63,37 @@ export const DiscoveredScriptGroup = ({
       className="flex min-w-0 flex-1 flex-col gap-3"
     >
       <header className="flex min-w-0 flex-col gap-1.5">
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={isOpen}
-          className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-        >
-          {isOpen ? (
-            <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-          ) : (
-            <ChevronRight size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-          )}
-          <span
-            role="heading"
-            aria-level={3}
-            className="truncate text-sm font-medium text-foreground"
+        <div className="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={isOpen}
+            className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
           >
-            {group.packageName}
-          </span>
-          {group.relDir !== '' ? (
-            <span className="truncate font-mono text-3xs text-muted-foreground">
-              {group.relDir}
+            {isOpen ? (
+              <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+            ) : (
+              <ChevronRight size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+            )}
+            <span
+              role="heading"
+              aria-level={3}
+              className="truncate text-sm font-medium text-foreground"
+            >
+              {group.packageName}
             </span>
+            {group.relDir !== '' ? (
+              <span className="truncate font-mono text-3xs text-muted-foreground">
+                {group.relDir}
+              </span>
+            ) : null}
+            <Chip tone="neutral" label={group.manager} size="3xs" shape="badge" uppercase />
+            <Chip tone="neutral" label={String(scripts.length)} size="3xs" />
+          </button>
+          {isRunning ? (
+            <StatusDot tone="info" pulsing ariaLabel={`Running script in ${group.packageName}`} />
           ) : null}
-          <Chip tone="neutral" label={group.manager} size="3xs" shape="badge" uppercase />
-          <Chip tone="neutral" label={String(scripts.length)} size="3xs" />
-        </button>
+        </div>
       </header>
       {isOpen && scripts.length === 0 && emptyLabel != null ? (
         <p className="text-xs text-muted-foreground">{emptyLabel}</p>

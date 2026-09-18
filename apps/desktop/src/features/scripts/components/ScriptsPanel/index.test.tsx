@@ -525,6 +525,42 @@ describe('ScriptsPanel', () => {
     expect(state.cancelScript).toHaveBeenCalledWith('session-1', scriptId);
   });
 
+  it('shows the running dot on a package header while the package is collapsed', () => {
+    const scriptId = JSON.stringify(['/tmp/api', 'package-json', 'apps/worker', 'start']);
+    state.discoveredScripts = {
+      'session-1': {
+        '/tmp/api': [
+          {
+            source: 'package-json',
+            packageName: 'root',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [{ name: 'build', command: 'pnpm run build' }],
+          },
+          {
+            source: 'package-json',
+            packageName: 'worker',
+            relDir: 'apps/worker',
+            manager: 'pnpm',
+            scripts: [{ name: 'start', command: 'pnpm run start' }],
+          },
+        ],
+      },
+    };
+    state.scriptRuns = {
+      'session-1': {
+        [scriptId]: { status: 'pending', result: null, runId: 'run-live' },
+      },
+    };
+
+    renderPanel();
+
+    expect(screen.queryByRole('button', { name: /pnpm run start/ })).toBeNull();
+    expect(
+      within(manifestSection()).getByRole('img', { name: 'Running script in worker' }),
+    ).toBeDefined();
+  });
+
   it('shows manifest scan loading, empty, and error states quietly', () => {
     state.discoveredScriptScans = {
       'session-1': { '/tmp/api': { status: 'loading', error: null } },

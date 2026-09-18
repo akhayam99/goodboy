@@ -92,6 +92,7 @@ type SaveExistingParams = {
 type DiscoveredGroupEntry = {
   readonly group: ManifestScriptGroup;
   readonly worktreePath: string;
+  readonly isRunning: boolean;
 };
 
 type RunDiscoveredParams = {
@@ -279,6 +280,15 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
       }),
     [list, matchesSearch, selectedProjectId],
   );
+  const pendingScriptIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const [scriptId, record] of Object.entries(runs ?? {})) {
+      if (record.status === 'pending') {
+        ids.add(scriptId);
+      }
+    }
+    return ids;
+  }, [runs]);
   const manifestGroups = useMemo<ReadonlyArray<ManifestScriptGroup>>(() => {
     if (selectedMount === null) {
       return [];
@@ -299,11 +309,24 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
     if (selectedMount === null) {
       return [];
     }
-    return manifestGroups.map((group) => ({
-      group: { ...group, scripts: group.scripts.filter((script) => matchesSearch(script)) },
-      worktreePath: selectedMount.worktreePath,
-    }));
-  }, [manifestGroups, matchesSearch, selectedMount]);
+    return manifestGroups.map((group) => {
+      const isRunning = group.scripts.some((script) =>
+        pendingScriptIds.has(
+          discoveredScriptId({
+            worktreePath: selectedMount.worktreePath,
+            source: group.source,
+            relDir: group.relDir,
+            name: script.name,
+          }),
+        ),
+      );
+      return {
+        group: { ...group, scripts: group.scripts.filter((script) => matchesSearch(script)) },
+        worktreePath: selectedMount.worktreePath,
+        isRunning,
+      };
+    });
+  }, [manifestGroups, matchesSearch, pendingScriptIds, selectedMount]);
   const userScriptsByProjectId = useMemo(() => {
     const index = new Map<ProjectId, Array<ProjectScript>>();
     for (const script of list) {
@@ -316,15 +339,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
     }
     return index;
   }, [list]);
-  const pendingScriptIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const [scriptId, record] of Object.entries(runs ?? {})) {
-      if (record.status === 'pending') {
-        ids.add(scriptId);
-      }
-    }
-    return ids;
-  }, [runs]);
   const railEntries = useMemo<ReadonlyArray<ProjectRailEntry>>(
     () =>
       projects.map((project) => {
@@ -928,6 +942,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                             normalizedQuery === '' ? 'No scripts in this manifest.' : null
                           }
                           isOpen={isOpen}
+                          isRunning={entry.isRunning}
                           onToggle={() => onToggleManifest({ key, isOpen })}
                           onRun={onRunDiscovered}
                           onCancel={onCancelDiscovered}
