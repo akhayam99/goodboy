@@ -794,9 +794,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                 label="Your scripts"
                 hint="Saved on this workspace. Edit, run, delete."
                 headingLevel={3}
-                action={
-                  <Chip tone="neutral" label={String(selectedUserScripts.length)} size="3xs" />
-                }
+                meta={<Chip tone="neutral" label={String(selectedUserScripts.length)} size="3xs" />}
               />
               {newDraft !== null && newDraft.projectId !== null ? (
                 <NewScriptCard
@@ -880,9 +878,9 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                   label="Manifest scripts"
                   hint="Read from package.json and composer.json at run time. Run only."
                   headingLevel={3}
+                  meta={<Chip tone="neutral" label={String(selectedManifestCount)} size="3xs" />}
                   action={
                     <span className="flex items-center gap-2">
-                      <Chip tone="neutral" label={String(selectedManifestCount)} size="3xs" />
                       <span className="w-52">
                         <ManifestSearchInput value={searchQuery} onChange={setSearchQuery} />
                       </span>

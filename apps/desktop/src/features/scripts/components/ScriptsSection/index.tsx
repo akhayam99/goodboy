@@ -123,9 +123,9 @@ export const ScriptsSection = ({
         />
       )}
       {expanded ? (
-        <>
+        <div className="flex flex-col gap-1.5 pl-2">
           {list.length > 0 ? (
-            <ul className="flex flex-col gap-1 pl-2">
+            <ul className="flex flex-col gap-1">
               {list.map((script) => {
                 const project = projects.find((candidate) => candidate.id === script.projectId);
                 const projectName = project?.name ?? 'Project';
@@ -153,12 +153,12 @@ export const ScriptsSection = ({
           <button
             type="button"
             onClick={openScripts}
-            className="mt-1.5 flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+            className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
           >
             <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             <span className="min-w-0 truncate">Create script</span>
           </button>
-        </>
+        </div>
       ) : (
         <p className="pb-1 pl-2 text-2xs text-muted-foreground/60">
           {list.length === 0

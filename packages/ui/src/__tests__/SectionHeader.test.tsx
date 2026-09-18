@@ -96,4 +96,56 @@ describe('SectionHeader, eyebrow size', () => {
 
     expect(screen.getByRole('heading', { level: 3, name: 'Decisions' })).toBeDefined();
   });
+
+  it('sits the meta slot beside the label rather than out with the action', () => {
+    render(
+      <SectionHeader
+        label="Your scripts"
+        headingLevel={3}
+        meta={<span data-testid="meta">3</span>}
+        action={<button type="button">refresh</button>}
+      />,
+    );
+
+    const heading = screen.getByRole('heading', { level: 3 });
+    const meta = screen.getByTestId('meta');
+
+    expect(heading.parentElement).toBe(meta.parentElement);
+    expect(heading.parentElement?.contains(screen.getByRole('button'))).toBe(false);
+  });
+
+  it('renders nothing extra when the meta slot is absent', () => {
+    render(<SectionHeader label="Manifest scripts" headingLevel={3} />);
+
+    const heading = screen.getByRole('heading', { level: 3 });
+
+    expect(heading.parentElement?.children.length).toBe(1);
+  });
+});
+
+describe('SectionHeader, meta slot on page size', () => {
+  it('sits the meta slot beside the heading rather than out with the action', () => {
+    render(
+      <SectionHeader
+        size="page"
+        label="Decisions"
+        meta={<span data-testid="meta">3</span>}
+        action={<button type="button">refresh</button>}
+      />,
+    );
+
+    const heading = screen.getByRole('heading', { level: 2 });
+    const meta = screen.getByTestId('meta');
+
+    expect(heading.parentElement).toBe(meta.parentElement);
+    expect(heading.parentElement?.contains(screen.getByRole('button'))).toBe(false);
+  });
+
+  it('renders nothing extra when the meta slot is absent', () => {
+    render(<SectionHeader size="page" label="Decisions" />);
+
+    const heading = screen.getByRole('heading', { level: 2 });
+
+    expect(heading.parentElement?.children.length).toBe(1);
+  });
 });

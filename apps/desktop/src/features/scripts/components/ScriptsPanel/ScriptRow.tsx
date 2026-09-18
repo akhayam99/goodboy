@@ -227,7 +227,7 @@ export const ScriptRow = ({
             <OverflowMenu
               label="More"
               align="right"
-              triggerClassName="border border-border-soft px-1.5"
+              triggerClassName="px-1.5"
               trigger={<span className="text-2xs">More</span>}
               items={[
                 {

@@ -136,4 +136,19 @@ describe('ScriptsSection', () => {
     expect(screen.getByText('· API')).toBeDefined();
     expect(screen.getByText('· Web')).toBeDefined();
   });
+
+  it('sits the create-script button on the same inset as the rows above it', () => {
+    render(<ScriptsSection sessionId={'sess-1' as never} workspaceId={'ws-1' as never} />);
+
+    const list = screen.getByRole('list');
+    const createButton = screen.getByText('Create script').closest('button');
+
+    expect(createButton).not.toBeNull();
+    expect(createButton?.parentElement).toBe(list.parentElement);
+    expect(list.className).not.toContain('pl-');
+    expect(createButton?.className).not.toContain('ml-');
+    expect(list.parentElement?.className).toContain('pl-2');
+    expect(list.parentElement?.className).toContain('gap-');
+    expect(createButton?.className).not.toContain('mt-');
+  });
 });

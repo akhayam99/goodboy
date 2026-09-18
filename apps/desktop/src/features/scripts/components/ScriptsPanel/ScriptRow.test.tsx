@@ -185,4 +185,32 @@ describe('ScriptRow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete setup' }));
     expect(onDelete).toHaveBeenCalledOnce();
   });
+
+  it('keeps the More trigger unframed alongside the ghost icon controls', () => {
+    render(
+      <ScriptRow
+        script={script}
+        projects={projects}
+        projectName="API"
+        mountPath="/tmp/api"
+        run={null}
+        completedAt={undefined}
+        expanded={false}
+        runnable
+        canRun
+        runDisabledReason={null}
+        copied={false}
+        onToggle={vi.fn()}
+        onSave={vi.fn()}
+        onRun={vi.fn()}
+        onCancel={vi.fn()}
+        onCopy={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'More' });
+
+    expect(trigger.className).not.toContain('border');
+  });
 });
