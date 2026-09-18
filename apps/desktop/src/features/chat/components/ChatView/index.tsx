@@ -158,6 +158,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
     selectedAgentId ? s.transcripts[selectedAgentId] !== undefined : true,
   );
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const markAgentViewed = useAppStore((s) => s.markAgentViewed);
   const selectedAgentLastFinishedAt = useAppStore((s) =>
     selectedAgentId
@@ -178,6 +179,13 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
     }
     void selectAgent(session.id, selectedAgentId);
   }, [isActive, selectedAgentId, transcriptCached, selectAgent, session.id]);
+
+  useEffect(() => {
+    if (!isActive) {
+      return;
+    }
+    void loadSessionArtifacts(session.id);
+  }, [isActive, loadSessionArtifacts, session.id]);
 
   useEffect(() => {
     if (!isActive || !selectedAgentId || !selectedAgentLastFinishedAt) {

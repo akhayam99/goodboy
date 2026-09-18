@@ -4,6 +4,7 @@ import type {
   Agent,
   AgentId,
   AgentStatus,
+  ArtifactId,
   IsoDateTime,
   MountId,
   OpenQuestion,
@@ -16,6 +17,7 @@ import type {
   ProjectScriptId,
   ProviderRunId,
   Session,
+  SessionArtifact,
   SessionId,
   SessionProjectMount,
   Step,
@@ -82,6 +84,46 @@ const AGENT_TESTS_ID = 'mock-flow-agent-tests' as AgentId;
 const CHAT_AGENT_TRIAGE_ID = 'mock-flow-agent-relay-triage' as AgentId;
 const CHAT_AGENT_BACKOFF_ID = 'mock-flow-agent-relay-backoff' as AgentId;
 const CHAT_AGENT_RESOLVER_ID = 'mock-flow-agent-relay-resolver' as AgentId;
+
+const CHAT_REPORT_RUN_ID = 'mock-flow-provider-run-settlement-report' as ProviderRunId;
+const CHAT_WIREFRAME_RUN_ID = 'mock-flow-provider-run-replay-wireframe' as ProviderRunId;
+
+const CHAT_ARTIFACTS = [
+  {
+    id: 'mock-flow-artifact-settlement-report' as ArtifactId,
+    sessionId: CHAT_SESSION_ID,
+    agentId: CHAT_AGENT_TRIAGE_ID,
+    workflowRunId: null,
+    kind: 'report',
+    schemaVersion: 1,
+    title: 'Where the settlement cents go',
+    sourceFormat: 'markdown',
+    sourceText: '# Where the settlement cents go',
+    metadata: { reportType: 'analysis' },
+    status: 'active',
+    revision: 1,
+    sourceTurnId: CHAT_REPORT_RUN_ID,
+    createdAt: '2026-09-16T10:36:00.000Z' as IsoDateTime,
+    updatedAt: '2026-09-16T10:36:00.000Z' as IsoDateTime,
+  },
+  {
+    id: 'mock-flow-artifact-replay-wireframe' as ArtifactId,
+    sessionId: CHAT_SESSION_ID,
+    agentId: CHAT_AGENT_BACKOFF_ID,
+    workflowRunId: null,
+    kind: 'wireframe',
+    schemaVersion: 1,
+    title: 'Settlement replay review screen',
+    sourceFormat: 'json',
+    sourceText: '{}',
+    metadata: { fidelity: 'low', designProfile: {} },
+    status: 'active',
+    revision: 1,
+    sourceTurnId: CHAT_WIREFRAME_RUN_ID,
+    createdAt: '2026-09-16T10:41:00.000Z' as IsoDateTime,
+    updatedAt: '2026-09-16T10:41:00.000Z' as IsoDateTime,
+  },
+] satisfies ReadonlyArray<SessionArtifact>;
 
 const QUESTION_STORE_ID = 'mock-flow-question-exemption-store' as OpenQuestionId;
 const QUESTION_SIGNALS_ID = 'mock-flow-question-replay-signals' as OpenQuestionId;
@@ -1024,6 +1066,7 @@ const TRANSCRIPT_ROWS: ReadonlyArray<TranscriptRow> = [
       artifactKind: 'report',
       title: 'Where the settlement cents go',
       complete: true,
+      runId: CHAT_REPORT_RUN_ID,
     },
   },
   {
@@ -1035,6 +1078,7 @@ const TRANSCRIPT_ROWS: ReadonlyArray<TranscriptRow> = [
       artifactKind: 'wireframe',
       title: 'Settlement replay review screen',
       complete: true,
+      runId: CHAT_WIREFRAME_RUN_ID,
     },
   },
   {
@@ -1195,6 +1239,7 @@ const seedChatSurfaces = () => {
     sessionOpenQuestions: { [CHAT_SESSION_ID]: OPEN_QUESTIONS },
     selectedAgentId: { [CHAT_SESSION_ID]: CHAT_AGENT_RESOLVER_ID },
     sessionPlans: { [CHAT_SESSION_ID]: CHAT_PLANS },
+    sessionArtifacts: { [CHAT_SESSION_ID]: CHAT_ARTIFACTS },
     sessionResolveThreads: { [CHAT_SESSION_ID]: [] },
     sessionGithub: {
       [CHAT_SESSION_ID]: {

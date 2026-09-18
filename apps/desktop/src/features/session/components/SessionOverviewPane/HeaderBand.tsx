@@ -11,6 +11,7 @@ import { LinkIssueAction } from './LinkIssueAction';
 import { ContextChip } from './ContextChip';
 import { ContextDigest } from './ContextDigest';
 import { LinkedWorkChips } from './LinkedWorkChips';
+import { AttentionChips } from './AttentionChips';
 import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 import { ProjectMountRows } from './ProjectMountRows';
 import { SessionCostChip } from './SessionCostChip';
@@ -102,8 +103,9 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
             <ContextChip sessionId={sessionId} onSelectLens={onSelectLens} />
+            <AttentionChips sessionId={sessionId} onSelectLens={onSelectLens} />
           </div>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />

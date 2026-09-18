@@ -34,6 +34,7 @@ export type TranscriptItem =
       artifactKind: string;
       title: string | null;
       complete: boolean;
+      runId: ProviderRunId | null;
     }
   | {
       kind: 'tool_call';
@@ -136,6 +137,7 @@ type ReduceSnapshot = {
   readonly textBuffer: string;
   readonly textKey: string | null;
   readonly textScan: ArtifactScanState | null;
+  readonly textRunId: ProviderRunId | null;
 };
 
 const snapshots = new WeakMap<TurnEvent, ReduceSnapshot>();
@@ -144,6 +146,7 @@ type AssistantTextItemsParams = {
   readonly key: string;
   readonly text: string;
   readonly scan: ArtifactScanState | null;
+  readonly runId: ProviderRunId | null;
 };
 
 type AssistantTextItemsResult = {
@@ -155,6 +158,7 @@ const assistantTextItems = ({
   key,
   text,
   scan,
+  runId,
 }: AssistantTextItemsParams): AssistantTextItemsResult => {
   if (import.meta.env.DEV) {
     const from = scan === null ? 0 : scan.searched;
@@ -182,6 +186,7 @@ const assistantTextItems = ({
         artifactKind: segment.artifactKind,
         title: segment.title,
         complete: segment.complete,
+        runId,
       });
       artifactCount += 1;
       continue;
@@ -215,14 +220,19 @@ export const reduceTranscript = (
   let textBuffer = resumed !== null ? resumed.textBuffer : '';
   let textKey: string | null = resumed !== null ? resumed.textKey : null;
   let textScan: ArtifactScanState | null = resumed !== null ? resumed.textScan : null;
+  let textRunId: ProviderRunId | null = resumed !== null ? resumed.textRunId : null;
 
   const flushText = () => {
     if (textBuffer.length > 0 && textKey !== null) {
-      items.push(...assistantTextItems({ key: textKey, text: textBuffer, scan: textScan }).items);
+      items.push(
+        ...assistantTextItems({ key: textKey, text: textBuffer, scan: textScan, runId: textRunId })
+          .items,
+      );
     }
     textBuffer = '';
     textKey = null;
     textScan = null;
+    textRunId = null;
   };
 
   for (let i = resumed !== null ? resumed.length : 0; i < events.length; i += 1) {
@@ -233,6 +243,7 @@ export const reduceTranscript = (
     if (event.kind === 'assistant_text') {
       if (textKey === null) {
         textKey = `text-${i}`;
+        textRunId = event.runId;
       }
       textBuffer += event.delta;
       continue;
@@ -431,7 +442,7 @@ export const reduceTranscript = (
 
   const tail =
     textBuffer.length > 0 && textKey !== null
-      ? assistantTextItems({ key: textKey, text: textBuffer, scan: textScan })
+      ? assistantTextItems({ key: textKey, text: textBuffer, scan: textScan, runId: textRunId })
       : null;
   if (tail !== null) {
     textScan = tail.scan;
@@ -447,6 +458,7 @@ export const reduceTranscript = (
       textBuffer,
       textKey,
       textScan,
+      textRunId,
     });
   }
 

@@ -17,6 +17,7 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
     selectedAgentId: {} as Record<string, string | null>,
     transcripts: {} as Record<string, unknown>,
     selectAgent: vi.fn(async () => undefined),
+    loadSessionArtifacts: vi.fn(async () => undefined),
     advanceClusterImplementation: vi.fn(async () => undefined),
     markAgentViewed: vi.fn(async () => undefined),
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
@@ -152,6 +153,7 @@ beforeEach(() => {
   state.clearOpenQuestionScroll.mockClear();
   state.requestOpenQuestionScroll.mockClear();
   state.selectAgent.mockClear();
+  state.loadSessionArtifacts.mockClear();
   state.advanceClusterImplementation.mockClear();
   chatBreadcrumbMock.mockClear();
   diffViewerMock.mockClear();
@@ -222,6 +224,16 @@ describe('ChatView', () => {
     render(<ChatView session={session} />);
     expect(state.loadSessionOpenQuestions).toHaveBeenCalledWith('sess-1');
     expect(state.loadSessionAnsweredQuestions).toHaveBeenCalledWith('sess-1');
+  });
+
+  it('loads the session artifacts when the chat is the active surface', () => {
+    render(<ChatView session={session} isActive />);
+    expect(state.loadSessionArtifacts).toHaveBeenCalledWith('sess-1');
+  });
+
+  it('loads no session artifacts while the chat is not the active surface', () => {
+    render(<ChatView session={session} isActive={false} />);
+    expect(state.loadSessionArtifacts).not.toHaveBeenCalled();
   });
 
   it('consumes a matching scroll target with no painted anchor', () => {

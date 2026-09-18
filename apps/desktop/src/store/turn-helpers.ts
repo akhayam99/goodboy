@@ -684,8 +684,21 @@ export const captureArtifactsFromTurn = async ({
         sourceTurnId,
       });
       const refreshed = await invokeListPlansForSession(sessionId);
+      const refreshedArtifacts = await invokeListArtifactsForSession(sessionId).catch(
+        (err: unknown) => {
+          if (import.meta.env.DEV) {
+            console.warn(
+              `[artifact-capture] artifact refresh failed for session ${sessionId}: ${formatError(err)}`,
+            );
+          }
+          return null;
+        },
+      );
       set((state) => ({
         sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
+        ...(refreshedArtifacts === null
+          ? {}
+          : { sessionArtifacts: { ...state.sessionArtifacts, [sessionId]: refreshedArtifacts } }),
       }));
       const plan =
         refreshed.find((p) => p.title === parsed.title && p.bodyMd === parsed.sourceText) ??

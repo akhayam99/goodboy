@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
 const { store } = vi.hoisted(() => ({
@@ -11,12 +11,24 @@ const { store } = vi.hoisted(() => ({
     clearPendingTitleFocus: vi.fn(),
     sessionGithub: {},
     sessionExternalTasks: {},
+    sessionArtifacts: {} as Record<string, ReadonlyArray<{ readonly kind: string }>>,
+    sessionResolveQueueItems: {} as Record<
+      string,
+      ReadonlyArray<{
+        readonly item: Record<string, unknown>;
+        readonly thread: Record<string, unknown>;
+      }>
+    >,
+    sessionResolveAttempts: {},
+    sessionResolvePublications: {},
+    sessionOpenQuestions: {} as Record<string, ReadonlyArray<unknown>>,
   },
 }));
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
+  useSessionOpenQuestions: (id: string) => store.sessionOpenQuestions[id] ?? [],
 }));
 
 vi.mock('../../hooks/useSessionTitleRename', () => ({
@@ -71,6 +83,70 @@ describe('HeaderBand', () => {
   beforeEach(() => {
     store.pendingTitleFocusSessionId = null;
     store.clearPendingTitleFocus.mockClear();
+    store.sessionArtifacts = {};
+    store.sessionOpenQuestions = {};
+    store.sessionResolveQueueItems = {};
+  });
+
+  it('stays clear of attention chips when nothing is waiting', () => {
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+
+    expect(screen.queryByRole('button', { name: /Artifacts/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Questions/ })).toBeNull();
+  });
+
+  it('counts the artifacts this session wrote and opens their page', () => {
+    store.sessionArtifacts = {
+      'session-1': [{ kind: 'report' }, { kind: 'wireframe' }, { kind: 'plan' }],
+    };
+    store.sessionOpenQuestions = { 'session-1': [{ id: 'q1', status: 'open' }] };
+    const onSelectLens = vi.fn();
+    render(<HeaderBand session={session} onSelectLens={onSelectLens} goal={<div>Goal</div>} />);
+
+    const chip = screen.getByRole('button', { name: /Artifacts/ });
+    expect(chip.textContent).toContain('2');
+
+    fireEvent.click(chip);
+    expect(onSelectLens).toHaveBeenCalledWith('plans');
+
+    fireEvent.click(screen.getByRole('button', { name: /Questions/ }));
+    expect(onSelectLens).toHaveBeenCalledWith('questions');
+  });
+
+  it('counts the review comments waiting on the user and opens their page', () => {
+    store.sessionResolveQueueItems = {
+      'session-1': [
+        {
+          item: {
+            id: 'queue-1',
+            threadId: 'thread-1',
+            approvalState: 'none',
+            approvedRevision: null,
+            integratedSha: 'a1b2c3d',
+            deliveredAt: null,
+          },
+          thread: {
+            id: 'resolve-thread-1',
+            threadId: 'thread-1',
+            state: 'open',
+            revision: 1,
+            activeAttemptId: null,
+            replyDraft: null,
+            commitShas: null,
+            question: null,
+            createdAt: 1_760_000_000_000,
+          },
+        },
+      ],
+    };
+    const onSelectLens = vi.fn();
+    render(<HeaderBand session={session} onSelectLens={onSelectLens} goal={<div>Goal</div>} />);
+
+    const chip = screen.getByRole('button', { name: /Review/ });
+    expect(chip.textContent).toContain('1');
+
+    fireEvent.click(chip);
+    expect(onSelectLens).toHaveBeenCalledWith('review');
   });
 
   it('keeps only archive and delete in the title action zone', () => {

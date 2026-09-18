@@ -17,6 +17,7 @@ import { ArtifactCreationPane } from '../ArtifactCreationPane';
 import { loadArtifactProvenance } from '../../artifactProvenance';
 import { ARTIFACT_RETRY_MISSING_BRIEF, artifactRetryDraft } from '../../artifactRetryDraft';
 import { resolveArtifactGenerations, type ArtifactGeneration } from '../../artifactCollection';
+import { standaloneArtifacts } from '../../standaloneArtifacts';
 import { artifactCounts, artifactGroups } from '../../artifactGroups';
 
 type Props = {
@@ -117,7 +118,7 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
     [agents, artifacts, activeAgentIds, runningAgentIds, verifications],
   );
 
-  const standalone = artifacts.filter((artifact) => artifact.kind !== 'plan');
+  const standalone = standaloneArtifacts({ artifacts });
   const selected = standalone.find((artifact) => artifact.id === focusedArtifactId) ?? null;
   const focusedRun =
     generations.find((generation) => generation.agentId === focusedRunAgentId) ?? null;
