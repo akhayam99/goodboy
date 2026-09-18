@@ -264,9 +264,9 @@ function ScriptRow({
             type="button"
             onClick={onCancel}
             aria-label="Stop script"
-            className="flex size-6 shrink-0 items-center justify-center rounded text-danger transition-colors hover:bg-danger/10"
+            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
-            <Square size={11} fill="currentColor" aria-hidden />
+            <Square size={11} aria-hidden />
           </button>
         </Tooltip>
       ) : (

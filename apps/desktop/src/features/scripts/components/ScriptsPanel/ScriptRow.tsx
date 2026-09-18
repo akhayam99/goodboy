@@ -140,47 +140,55 @@ export const ScriptRow = ({
         )}
       >
         <div className="col-start-1 row-start-1 flex min-w-0 flex-col gap-0.5">
-          {editingField === 'name' ? (
-            <input
-              autoFocus
-              value={nameDraft}
-              onChange={(event) => setNameDraft(event.target.value)}
-              onBlur={() => commit({ field: 'name' })}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') {
-                  event.preventDefault();
-                  cancelEditing({ field: 'name' });
-                }
-                if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-                  event.preventDefault();
-                  event.currentTarget.blur();
-                }
-              }}
-              aria-label="Edit script name"
-              className="min-h-7 rounded-md border border-border bg-background px-2 text-sm font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                if (expanded) {
-                  startEditing({ field: 'name' });
-                  return;
-                }
-                onToggle();
-              }}
-              className="min-w-0 truncate text-left text-sm font-medium text-foreground"
-            >
-              {script.name}
-              {projects.length > 1 ? (
-                <span className="text-xs font-normal text-muted-foreground">
-                  {' · '}
-                  {projectName}
-                </span>
-              ) : null}
-            </button>
-          )}
-          {!expanded && preview !== '' ? (
+          <div className="flex min-w-0 items-center gap-1.5">
+            {editingField === 'name' ? (
+              <input
+                autoFocus
+                value={nameDraft}
+                onChange={(event) => setNameDraft(event.target.value)}
+                onBlur={() => commit({ field: 'name' })}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    cancelEditing({ field: 'name' });
+                  }
+                  if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                    event.preventDefault();
+                    event.currentTarget.blur();
+                  }
+                }}
+                aria-label="Edit script name"
+                className="min-h-7 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-sm font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  if (expanded) {
+                    startEditing({ field: 'name' });
+                    return;
+                  }
+                  onToggle();
+                }}
+                className="min-w-0 truncate text-left text-sm font-medium text-foreground"
+              >
+                {script.name}
+                {projects.length > 1 ? (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    {' · '}
+                    {projectName}
+                  </span>
+                ) : null}
+              </button>
+            )}
+            {copied ? (
+              <span className="inline-flex shrink-0 items-center gap-1 text-2xs text-success">
+                <Check size={ICON_SIZE.row} aria-hidden />
+                Copied
+              </span>
+            ) : null}
+          </div>
+          {!expanded ? (
             <button
               type="button"
               onClick={onToggle}
@@ -202,12 +210,6 @@ export const ScriptRow = ({
           {status === 'pending' ? (
             <StatusDot tone="info" pulsing ariaLabel="Running" className="mt-2" />
           ) : null}
-          {copied ? (
-            <span className="mt-1.5 inline-flex shrink-0 items-center gap-1 text-2xs text-success">
-              <Check size={ICON_SIZE.row} aria-hidden />
-              Copied
-            </span>
-          ) : null}
           <CardActionSlot label="Script lifecycle actions">
             {runnable && status === 'pending' ? (
               <CardAction icon={Square} label="Stop script" size="default" onClick={onCancel} />
@@ -225,7 +227,8 @@ export const ScriptRow = ({
             <OverflowMenu
               label="More"
               align="right"
-              trigger={<span className="px-1 text-2xs">More</span>}
+              triggerClassName="border border-border-soft px-1.5"
+              trigger={<span className="text-2xs">More</span>}
               items={[
                 {
                   kind: 'item',
