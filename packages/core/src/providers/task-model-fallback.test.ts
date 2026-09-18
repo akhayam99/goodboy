@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from './capabilities';
 import { getCheapModel } from './cli-defaults';
-import { planTaskModelFallback, taskModelProviderPool } from './task-model-fallback';
+import { taskModelProviderPool } from './providerFallbackPool';
+import { planTaskModelFallback } from './task-model-fallback';
 
 const ANTHROPIC_CHEAP = {
   providerId: 'anthropic' as ProviderId,

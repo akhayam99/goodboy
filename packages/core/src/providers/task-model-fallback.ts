@@ -1,5 +1,6 @@
 import type { ProviderId, TaskModelPreference } from '@goodboy/types';
 import { alignedProviderPlan, type TurnFailureKind } from './planTurnFallback';
+import { taskModelProviderPool } from './providerFallbackPool';
 
 export const MAX_TASK_MODEL_PROVIDER_ATTEMPTS = 1;
 
@@ -9,13 +10,6 @@ const FALLBACK_FAILURES: ReadonlyArray<TurnFailureKind> = [
   'rate_limit',
 ];
 
-type PoolParams = {
-  readonly provider: ProviderId;
-  readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly enabledProviders: ReadonlyArray<ProviderId> | null;
-  readonly coolingDownProviders: ReadonlyArray<ProviderId>;
-};
-
 type Params = {
   readonly failure: TurnFailureKind;
   readonly taskModel: TaskModelPreference;
@@ -23,23 +17,6 @@ type Params = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly enabledProviders: ReadonlyArray<ProviderId> | null;
   readonly coolingDownProviders: ReadonlyArray<ProviderId>;
-};
-
-export const taskModelProviderPool = ({
-  provider,
-  connectedProviders,
-  enabledProviders,
-  coolingDownProviders,
-}: PoolParams): ReadonlyArray<ProviderId> => {
-  return connectedProviders.filter((candidate) => {
-    if (candidate === provider) {
-      return false;
-    }
-    if (enabledProviders != null && !enabledProviders.includes(candidate)) {
-      return false;
-    }
-    return !coolingDownProviders.includes(candidate);
-  });
 };
 
 export const planTaskModelFallback = ({
@@ -66,6 +43,7 @@ export const planTaskModelFallback = ({
     provider: taskModel.providerId,
     model: taskModel.model,
     candidateProviders: pool,
+    wantsThinker: false,
   });
   if (plan == null) {
     return null;

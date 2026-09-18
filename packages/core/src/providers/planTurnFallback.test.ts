@@ -11,6 +11,9 @@ type Row = {
   readonly model: string;
   readonly attempt: number;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
+  readonly wantsThinker?: boolean;
+  readonly coolingDownProviders?: ReadonlyArray<ProviderId>;
+  readonly enabledProviders?: ReadonlyArray<ProviderId> | null;
   readonly expected: TurnFallbackPlan | null;
 };
 
@@ -97,13 +100,13 @@ const ROWS: ReadonlyArray<Row> = [
     expected: { provider: 'codex', model: 'gpt-6' },
   },
   {
-    name: 'model not available swaps to the nearest sibling on the same provider',
+    name: 'model not available swaps to the nearest sibling an implementer may run',
     failure: 'model_not_available',
     provider: 'anthropic',
     model: 'opus-5',
     attempt: 0,
     connectedProviders: CONNECTED,
-    expected: { provider: 'anthropic', model: 'fable-5' },
+    expected: { provider: 'anthropic', model: 'opus-4.8' },
   },
   {
     name: 'model not available falls back from Astra to Sol on the same provider',
@@ -150,12 +153,86 @@ const ROWS: ReadonlyArray<Row> = [
     connectedProviders: CONNECTED,
     expected: { provider: 'codex', model: 'gpt-5.6-terra' },
   },
+  {
+    name: 'an account usage limit on Astra lands on the strongest anthropic implementer',
+    failure: 'usage_limit',
+    provider: 'codex',
+    model: 'gpt-6',
+    attempt: 0,
+    connectedProviders: ['codex', 'anthropic'],
+    expected: { provider: 'anthropic', model: 'opus-5' },
+  },
+  {
+    name: 'an account usage limit on Astra lands on the top thinker for a planner',
+    failure: 'usage_limit',
+    provider: 'codex',
+    model: 'gpt-6',
+    attempt: 0,
+    connectedProviders: ['codex', 'anthropic'],
+    wantsThinker: true,
+    expected: { provider: 'anthropic', model: 'fable-5.1' },
+  },
+  {
+    name: 'a usage limit on Gemini Pro lands on the strongest anthropic mid model',
+    failure: 'usage_limit',
+    provider: 'gemini',
+    model: 'gemini-3.1-pro',
+    attempt: 0,
+    connectedProviders: ['gemini', 'anthropic'],
+    expected: { provider: 'anthropic', model: 'sonnet-5' },
+  },
+  {
+    name: 'a cooling provider is skipped for the next one in the pool',
+    failure: 'usage_limit',
+    provider: 'codex',
+    model: 'gpt-6',
+    attempt: 0,
+    connectedProviders: ['codex', 'gemini', 'anthropic'],
+    coolingDownProviders: ['gemini'],
+    expected: { provider: 'anthropic', model: 'opus-5' },
+  },
+  {
+    name: 'a provider outside the workspace pool never takes the turn',
+    failure: 'usage_limit',
+    provider: 'codex',
+    model: 'gpt-6',
+    attempt: 0,
+    connectedProviders: ['codex', 'gemini', 'anthropic'],
+    enabledProviders: ['codex', 'gemini'],
+    expected: { provider: 'gemini', model: 'gemini-3.1-pro' },
+  },
+  {
+    name: 'the pool order stays the user order even when a later provider is stronger',
+    failure: 'usage_limit',
+    provider: 'codex',
+    model: 'gpt-6',
+    attempt: 0,
+    connectedProviders: ['codex', 'gemini', 'anthropic'],
+    expected: { provider: 'gemini', model: 'gemini-3.1-pro' },
+  },
 ];
 
 describe('planTurnFallback', () => {
-  it.each(ROWS)('$name', ({ name: _name, expected, ...params }) => {
-    expect(planTurnFallback(params)).toEqual(expected);
-  });
+  it.each(ROWS)(
+    '$name',
+    ({
+      name: _name,
+      expected,
+      wantsThinker,
+      coolingDownProviders,
+      enabledProviders,
+      ...params
+    }) => {
+      expect(
+        planTurnFallback({
+          ...params,
+          wantsThinker: wantsThinker === true,
+          coolingDownProviders: coolingDownProviders ?? [],
+          enabledProviders: enabledProviders ?? null,
+        }),
+      ).toEqual(expected);
+    },
+  );
 
   it('prefers the role fallback over the heuristic on the first attempt', () => {
     expect(
@@ -164,6 +241,7 @@ describe('planTurnFallback', () => {
         provider: 'anthropic',
         model: 'opus-5',
         attempt: 0,
+        wantsThinker: false,
         connectedProviders: CONNECTED,
         preferred: { provider: 'codex', model: 'gpt-5.6-luna' },
       }),
@@ -183,6 +261,7 @@ describe('planTurnFallback', () => {
         provider: 'anthropic',
         model: 'opus-5',
         attempt: 0,
+        wantsThinker: false,
         connectedProviders: CONNECTED,
         preferred: { provider: 'codex', model: 'gpt-5.6-terra' },
       }),
@@ -198,6 +277,7 @@ describe('planTurnFallback', () => {
         provider: 'anthropic',
         model: 'opus-5',
         attempt: 1,
+        wantsThinker: false,
         connectedProviders: CONNECTED,
         preferred: { provider: 'codex', model: 'gpt-5.6-luna' },
       }),
@@ -211,6 +291,7 @@ describe('planTurnFallback', () => {
         provider: 'anthropic',
         model: 'opus-5',
         attempt: 0,
+        wantsThinker: false,
         connectedProviders: ['anthropic', 'codex'],
         preferred: { provider: 'gemini', model: 'gemini-3.1-pro' },
       }),
@@ -224,6 +305,7 @@ describe('planTurnFallback', () => {
         provider: 'anthropic',
         model: 'opus-5',
         attempt: 0,
+        wantsThinker: false,
         connectedProviders: CONNECTED,
         preferred: { provider: 'codex', model: 'gpt-99' },
       }),
@@ -237,6 +319,7 @@ describe('planTurnFallback', () => {
         provider: 'anthropic',
         model: 'opus-5',
         attempt: 0,
+        wantsThinker: false,
         connectedProviders: CONNECTED,
         preferred: { provider: 'anthropic', model: 'opus-5' },
       }),
@@ -250,6 +333,7 @@ describe('planTurnFallback', () => {
         provider: 'anthropic',
         model: 'opus-5',
         attempt: 0,
+        wantsThinker: false,
         connectedProviders: CONNECTED,
         preferred: { provider: 'anthropic', model: 'haiku-4.5' },
       }),
@@ -263,6 +347,7 @@ describe('planTurnFallback', () => {
         provider: 'anthropic',
         model: 'opus-5',
         attempt: 0,
+        wantsThinker: false,
         connectedProviders: CONNECTED,
         preferred: { provider: 'codex', model: 'gpt-5.6-luna' },
       }),
@@ -276,6 +361,7 @@ describe('planTurnFallback', () => {
         provider: 'anthropic',
         model: 'opus-5',
         attempt: 0,
+        wantsThinker: false,
         connectedProviders: CONNECTED,
         preferred: { provider: 'codex', model: 'gpt-5.6' },
       }),
@@ -289,6 +375,7 @@ describe('planTurnFallback', () => {
         provider: 'anthropic',
         model: 'opus-5',
         attempt: 2,
+        wantsThinker: false,
         connectedProviders: CONNECTED,
         preferred: { provider: 'codex', model: 'gpt-5.6' },
       }),
@@ -302,6 +389,7 @@ describe('planTurnFallback', () => {
         provider: 'anthropic',
         model: 'opus-5',
         attempt: 0,
+        wantsThinker: false,
         connectedProviders: ['anthropic'],
         preferred: { provider: 'anthropic', model: 'haiku-4.5' },
       }),
@@ -321,6 +409,7 @@ describe('planTurnFallback', () => {
           provider: 'anthropic',
           model: 'opus-5',
           attempt,
+          wantsThinker: false,
           connectedProviders: CONNECTED,
         }),
       ),
@@ -338,6 +427,7 @@ describe('planTurnFallback, ids that carry combo axes', () => {
         provider: 'anthropic',
         model: 'opus-5',
         attempt: 0,
+        wantsThinker: false,
         connectedProviders: ['anthropic', 'cursor'],
         preferred: { provider: 'cursor', model: 'composer-2.5-fast' },
       }),
@@ -351,6 +441,7 @@ describe('planTurnFallback, ids that carry combo axes', () => {
         provider: 'anthropic',
         model: 'opus-5',
         attempt: 0,
+        wantsThinker: false,
         connectedProviders: ['anthropic', 'cursor'],
         preferred: { provider: 'cursor', model: 'not-a-model' },
       }),
@@ -364,6 +455,7 @@ describe('planTurnFallback, ids that carry combo axes', () => {
         provider: 'cursor',
         model: 'composer-2.5',
         attempt: 0,
+        wantsThinker: false,
         connectedProviders: ['cursor', 'anthropic'],
         preferred: { provider: 'cursor', model: 'composer-2.5' },
       }),
@@ -377,6 +469,7 @@ describe('planTurnFallback, ids that carry combo axes', () => {
         provider: 'cursor',
         model: 'composer-2.5-fast',
         attempt: 0,
+        wantsThinker: false,
         connectedProviders: ['cursor', 'anthropic'],
       }),
     ).toEqual({ provider: 'cursor', model: 'composer-2.5-fast' });
@@ -389,6 +482,7 @@ describe('planTurnFallback, ids that carry combo axes', () => {
         provider: 'cursor',
         model: 'composer-2.5-fast',
         attempt: 1,
+        wantsThinker: false,
         connectedProviders: ['cursor', 'anthropic'],
       }),
     ).toEqual(
@@ -397,6 +491,7 @@ describe('planTurnFallback, ids that carry combo axes', () => {
         provider: 'cursor',
         model: 'composer-2.5',
         attempt: 1,
+        wantsThinker: false,
         connectedProviders: ['cursor', 'anthropic'],
       }),
     );
@@ -408,6 +503,7 @@ describe('planTurnFallback, ids that carry combo axes', () => {
       provider: 'cursor',
       model: 'composer-2.5-fast',
       attempt: 0,
+      wantsThinker: false,
       connectedProviders: ['cursor'],
     });
 
