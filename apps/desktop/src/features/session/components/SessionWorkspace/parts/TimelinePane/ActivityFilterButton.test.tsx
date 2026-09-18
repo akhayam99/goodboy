@@ -167,12 +167,29 @@ describe('ActivityFilterButton', () => {
     const rows = screen.getAllByRole('menuitemcheckbox');
     const first = rows[0];
     const showAll = screen.getByRole('menuitem', { name: 'Show all' });
-    const scroller = first?.closest('.max-h-80') ?? null;
+    const scroller = first?.closest('.overflow-y-auto') ?? null;
 
     expect(scroller).not.toBeNull();
-    expect(menu.className).not.toContain('max-h-80');
+    expect(scroller?.className).toContain('max-h-[min(70vh,30rem)]');
+    expect(menu.className).not.toContain('max-h-');
     expect(rows.every((row) => scroller?.contains(row) === true)).toBe(true);
     expect(scroller?.contains(showAll)).toBe(false);
+  });
+
+  it('leaves the panel scrollbar visible so a cut row announces itself', () => {
+    open();
+    const scroller = screen.getAllByRole('menuitemcheckbox')[0]?.closest('.overflow-y-auto');
+
+    expect(scroller?.className).not.toContain('[scrollbar-width:none]');
+    expect(scroller?.className).not.toContain('[&::-webkit-scrollbar]:hidden');
+  });
+
+  it('drops the gradient that used to veil the last row', () => {
+    open();
+    const menu = screen.getByRole('menu');
+
+    expect(menu.querySelectorAll('[class*="bg-gradient-to-t"]')).toHaveLength(0);
+    expect(menu.querySelectorAll('[class*="bg-gradient-to-b"]')).toHaveLength(0);
   });
 
   it('keeps both bulk actions on one row below the categories', () => {

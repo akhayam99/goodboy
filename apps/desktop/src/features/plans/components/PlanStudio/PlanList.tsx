@@ -41,17 +41,19 @@ export const PlanList = ({
         label="Finished"
         count={finished.length}
         visible={
-          <ul className="flex flex-col gap-2">
-            {visibleFinished.map((plan) => (
-              <li key={plan.id}>
-                <PlanRailCard
-                  plan={plan}
-                  openQuestionCount={openQuestionCount}
-                  onSelect={() => onSelect(plan.id)}
-                />
-              </li>
-            ))}
-          </ul>
+          visibleFinished.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {visibleFinished.map((plan) => (
+                <li key={plan.id}>
+                  <PlanRailCard
+                    plan={plan}
+                    openQuestionCount={openQuestionCount}
+                    onSelect={() => onSelect(plan.id)}
+                  />
+                </li>
+              ))}
+            </ul>
+          ) : null
         }
         earlierCount={earlierFinished.length}
         earlier={
