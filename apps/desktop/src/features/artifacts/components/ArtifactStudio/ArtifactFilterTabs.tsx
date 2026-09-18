@@ -8,14 +8,15 @@ import {
 type Props = {
   readonly value: ArtifactFilter;
   readonly counts: Readonly<Record<ArtifactFilter, number>>;
+  readonly isCompact: boolean;
   readonly onChange: (filter: ArtifactFilter) => void;
 };
 
-export const ArtifactFilterTabs = ({ value, counts, onChange }: Props) => (
+export const ArtifactFilterTabs = ({ value, counts, isCompact, onChange }: Props) => (
   <SegmentedTabs
     ariaLabel="Artifact kind"
     size="sm"
-    className="w-max shrink-0"
+    className={isCompact ? 'shrink-0 flex-wrap' : 'w-max shrink-0'}
     value={value}
     onChange={onChange}
     options={ARTIFACT_FILTERS.map((filter) => ({

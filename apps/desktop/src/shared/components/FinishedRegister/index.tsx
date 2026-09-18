@@ -35,9 +35,9 @@ export const FinishedRegister = ({
       {visible}
       {earlierCount > 0 ? (
         <div className="flex flex-col gap-4">
-          <div className="flex justify-center">
+          <div className="flex min-w-0 items-center">
             <CountToggle
-              label="earlier"
+              label={visible != null ? 'earlier' : label.toLowerCase()}
               count={earlierCount}
               isShown={isEarlierShown}
               icon={ChevronDown}

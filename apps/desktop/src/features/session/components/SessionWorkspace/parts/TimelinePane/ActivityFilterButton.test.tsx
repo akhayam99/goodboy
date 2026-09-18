@@ -9,7 +9,15 @@ import {
   type ActivityFilter,
   type ActivityToggle,
 } from '../../../../timeline/activityFilter';
-import { ActivityFilterButton } from './ActivityFilterButton';
+import {
+  ActivityFilterButton,
+  PANEL_EXPECTED_HEIGHT,
+  PANEL_FOOTER_HEIGHT,
+} from './ActivityFilterButton';
+
+const REM_IN_PX = 16;
+
+const SCROLLER_CAP_CLASS = 'max-h-[min(70vh,20rem)]';
 
 afterEach(cleanup);
 
@@ -167,12 +175,39 @@ describe('ActivityFilterButton', () => {
     const rows = screen.getAllByRole('menuitemcheckbox');
     const first = rows[0];
     const showAll = screen.getByRole('menuitem', { name: 'Show all' });
-    const scroller = first?.closest('.max-h-72') ?? null;
+    const scroller = first?.closest('.overflow-y-auto') ?? null;
 
     expect(scroller).not.toBeNull();
-    expect(menu.className).not.toContain('max-h-72');
+    expect(scroller?.className).toContain(SCROLLER_CAP_CLASS);
+    expect(menu.className).not.toContain('max-h-');
     expect(rows.every((row) => scroller?.contains(row) === true)).toBe(true);
     expect(scroller?.contains(showAll)).toBe(false);
+  });
+
+  it('asks the dropdown for the height the capped scroller and the footer actually take', () => {
+    open();
+    const scroller = screen.getAllByRole('menuitemcheckbox')[0]?.closest('.overflow-y-auto');
+    const cap = /max-h-\[min\(70vh,(\d+)rem\)\]/.exec(scroller?.className ?? '');
+
+    expect(cap).not.toBeNull();
+    expect(Number(cap?.[1]) * REM_IN_PX + PANEL_FOOTER_HEIGHT).toBe(PANEL_EXPECTED_HEIGHT);
+  });
+
+  it('paints the panel scrollbar at rest so a cut row announces itself before the pointer arrives', () => {
+    open();
+    const scroller = screen.getAllByRole('menuitemcheckbox')[0]?.closest('.overflow-y-auto');
+
+    expect(scroller?.className).not.toContain('[scrollbar-width:none]');
+    expect(scroller?.className).not.toContain('[&::-webkit-scrollbar]:hidden');
+    expect(scroller?.className).toContain('[&::-webkit-scrollbar-thumb]:bg-border/60');
+  });
+
+  it('drops the gradient that used to veil the last row', () => {
+    open();
+    const menu = screen.getByRole('menu');
+
+    expect(menu.querySelectorAll('[class*="bg-gradient-to-t"]')).toHaveLength(0);
+    expect(menu.querySelectorAll('[class*="bg-gradient-to-b"]')).toHaveLength(0);
   });
 
   it('keeps both bulk actions on one row below the categories', () => {

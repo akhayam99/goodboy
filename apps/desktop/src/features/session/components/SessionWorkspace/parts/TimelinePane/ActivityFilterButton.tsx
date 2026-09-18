@@ -1,13 +1,5 @@
 import { Check, Eye, EyeOff, ListFilter } from 'lucide-react';
-import {
-  AnchoredPopover,
-  Divider,
-  PopoverFooter,
-  ScrollFade,
-  cn,
-  tintClasses,
-  useDropdown,
-} from '@goodboy/ui';
+import { AnchoredPopover, Divider, PopoverFooter, cn, tintClasses, useDropdown } from '@goodboy/ui';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
@@ -40,7 +32,11 @@ const ACTIVITY_CATEGORY_CONCEPT = {
 
 const PANEL_LABEL = 'Activity filter';
 
-const PANEL_EXPECTED_HEIGHT = 324;
+const PANEL_SCROLLER_HEIGHT = 320;
+
+export const PANEL_FOOTER_HEIGHT = 33;
+
+export const PANEL_EXPECTED_HEIGHT = PANEL_SCROLLER_HEIGHT + PANEL_FOOTER_HEIGHT;
 
 const PANEL_WIDTH = 288;
 
@@ -225,12 +221,7 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
         </button>
       }
     >
-      <ScrollFade
-        className="max-h-72"
-        viewportClassName="flex flex-col gap-2 py-2"
-        fadeSize={12}
-        fadeFrom="subtle"
-      >
+      <div className="flex max-h-[min(70vh,20rem)] flex-col gap-2 overflow-y-auto py-2 [&::-webkit-scrollbar-thumb]:bg-border/60">
         {ACTIVITY_CATEGORIES.map((category) => {
           const toggles = childTogglesOf({ category });
           return (
@@ -247,7 +238,7 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
             </div>
           );
         })}
-      </ScrollFade>
+      </div>
       <Divider />
       <PopoverFooter className="flex items-center gap-1 bg-subtle px-1.5 py-1">
         <button
