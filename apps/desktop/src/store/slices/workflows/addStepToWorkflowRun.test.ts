@@ -371,6 +371,69 @@ describe('addStepToWorkflowRun', () => {
     expect(attached.map((workflow) => workflow.id)).toEqual([run.workflowId]);
   });
 
+  it('keeps the preset name on the clone when the backend only guards preset names', async () => {
+    const livePresetNames = new Set(['Ship it']);
+    invokeWorkflowUpsertSpy.mockImplementation(
+      async (args: {
+        readonly id: WorkflowId;
+        readonly workspaceId: WorkspaceId;
+        readonly name: string;
+        readonly description: string;
+        readonly isPreset: boolean;
+        readonly steps: ReadonlyArray<Record<string, unknown>>;
+      }) => {
+        let name = args.name;
+        if (args.isPreset === true) {
+          let suffix = 2;
+          while (livePresetNames.has(name)) {
+            name = `${args.name} ${suffix}`;
+            suffix += 1;
+          }
+          livePresetNames.add(name);
+        }
+        return {
+          id: args.id,
+          workspaceId: args.workspaceId,
+          name,
+          description: args.description,
+          isPreset: args.isPreset,
+          createdAt: NOW,
+          updatedAt: NOW,
+          steps: args.steps.map((step) => ({ ...step, workflowId: args.id })),
+        };
+      },
+    );
+    const state = baseState({
+      isPreset: true,
+      agents: [
+        makeAgent({ stepId: 'step-1', status: 'completed', ordinal: 0 }),
+        makeAgent({ stepId: 'step-2', status: 'running', ordinal: 1 }),
+      ],
+    });
+    const { add } = harness(state);
+
+    const result = await add({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      name: 'Review',
+      role: 'reviewer',
+    });
+
+    expect(result.kind).toBe('added');
+    const sessions = state['sessions'] as ReadonlyArray<Session>;
+    const run = sessions[0]!.workflowRuns[0]!;
+    const templates = (state['phaseTemplates'] as Record<string, ReadonlyArray<Workflow>>)[
+      WORKSPACE_ID
+    ]!;
+    const clone = templates.find((workflow) => workflow.id === run.workflowId)!;
+    expect(clone.name).toBe('Ship it');
+    expect(templates.find((workflow) => workflow.id === WORKFLOW_ID)!.name).toBe('Ship it');
+    const attached = (state['sessionWorkflows'] as Record<string, ReadonlyArray<Workflow>>)[
+      SESSION_ID
+    ]!;
+    expect(attached.map((workflow) => workflow.name)).toEqual(['Ship it']);
+  });
+
   it('keeps the preset attached when another run still points at it', async () => {
     const state = baseState({
       isPreset: true,
