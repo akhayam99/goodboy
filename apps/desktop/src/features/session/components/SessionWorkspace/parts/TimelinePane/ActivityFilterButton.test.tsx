@@ -9,7 +9,15 @@ import {
   type ActivityFilter,
   type ActivityToggle,
 } from '../../../../timeline/activityFilter';
-import { ActivityFilterButton } from './ActivityFilterButton';
+import {
+  ActivityFilterButton,
+  PANEL_EXPECTED_HEIGHT,
+  PANEL_FOOTER_HEIGHT,
+} from './ActivityFilterButton';
+
+const REM_IN_PX = 16;
+
+const SCROLLER_CAP_CLASS = 'max-h-[min(70vh,20rem)]';
 
 afterEach(cleanup);
 
@@ -170,10 +178,19 @@ describe('ActivityFilterButton', () => {
     const scroller = first?.closest('.overflow-y-auto') ?? null;
 
     expect(scroller).not.toBeNull();
-    expect(scroller?.className).toContain('max-h-[min(70vh,30rem)]');
+    expect(scroller?.className).toContain(SCROLLER_CAP_CLASS);
     expect(menu.className).not.toContain('max-h-');
     expect(rows.every((row) => scroller?.contains(row) === true)).toBe(true);
     expect(scroller?.contains(showAll)).toBe(false);
+  });
+
+  it('asks the dropdown for the height the capped scroller and the footer actually take', () => {
+    open();
+    const scroller = screen.getAllByRole('menuitemcheckbox')[0]?.closest('.overflow-y-auto');
+    const cap = /max-h-\[min\(70vh,(\d+)rem\)\]/.exec(scroller?.className ?? '');
+
+    expect(cap).not.toBeNull();
+    expect(Number(cap?.[1]) * REM_IN_PX + PANEL_FOOTER_HEIGHT).toBe(PANEL_EXPECTED_HEIGHT);
   });
 
   it('leaves the panel scrollbar visible so a cut row announces itself', () => {

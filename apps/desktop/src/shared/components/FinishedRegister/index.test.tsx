@@ -46,6 +46,36 @@ describe('FinishedRegister', () => {
     expect(toggle.textContent).not.toContain('earlier');
   });
 
+  it('starts the toggle at the left edge of the column, with rows above it or without', () => {
+    const { rerender } = render(
+      <FinishedRegister
+        label="Finished"
+        count={5}
+        visible={<p>shown</p>}
+        earlierCount={3}
+        earlier={<p>older</p>}
+      />,
+    );
+
+    const withRows = screen.getByRole('button');
+    expect(withRows.parentElement?.className).not.toContain('justify-center');
+    expect(withRows.parentElement?.firstElementChild).toBe(withRows);
+
+    rerender(
+      <FinishedRegister
+        label="Finished"
+        count={4}
+        visible={null}
+        earlierCount={4}
+        earlier={<p>older</p>}
+      />,
+    );
+
+    const compact = screen.getByRole('button');
+    expect(compact.parentElement?.className).not.toContain('justify-center');
+    expect(compact.parentElement?.firstElementChild).toBe(compact);
+  });
+
   it('keeps the count, the heading and the collapsed default with no visible rows', () => {
     render(
       <FinishedRegister

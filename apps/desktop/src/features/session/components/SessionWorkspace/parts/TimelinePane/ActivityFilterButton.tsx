@@ -32,11 +32,11 @@ const ACTIVITY_CATEGORY_CONCEPT = {
 
 const PANEL_LABEL = 'Activity filter';
 
-const PANEL_SCROLLER_HEIGHT = 480;
+const PANEL_SCROLLER_HEIGHT = 320;
 
-const PANEL_FOOTER_HEIGHT = 33;
+export const PANEL_FOOTER_HEIGHT = 33;
 
-const PANEL_EXPECTED_HEIGHT = PANEL_SCROLLER_HEIGHT + PANEL_FOOTER_HEIGHT;
+export const PANEL_EXPECTED_HEIGHT = PANEL_SCROLLER_HEIGHT + PANEL_FOOTER_HEIGHT;
 
 const PANEL_WIDTH = 288;
 
@@ -221,7 +221,7 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
         </button>
       }
     >
-      <div className="flex max-h-[min(70vh,30rem)] flex-col gap-2 overflow-y-auto py-2">
+      <div className="flex max-h-[min(70vh,20rem)] flex-col gap-2 overflow-y-auto py-2">
         {ACTIVITY_CATEGORIES.map((category) => {
           const toggles = childTogglesOf({ category });
           return (
