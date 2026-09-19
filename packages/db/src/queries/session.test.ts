@@ -1,18 +1,23 @@
-import type { MountId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { IsoDateTime, MountId, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../client';
 import { migrate } from '../migrations/runner';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import {
+  getSessionById,
+  insertSession,
   listArchivedSessionsForWorkspace,
   listSessionsForWorkspace,
   purgeSessionForDelete,
+  updateSessionAutoRun,
   updateSessionWriteDestination,
 } from './session';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
 const sessionId = 'session-1' as SessionId;
 const otherSessionId = 'session-2' as SessionId;
+const NOW = '2026-09-18T00:00:00.000Z' as IsoDateTime;
 
 const countRows = async ({
   db,
@@ -351,5 +356,53 @@ describe('updateSessionWriteDestination', () => {
       active_mount_id: 'mount-legacy',
       active_project_id: null,
     });
+  });
+});
+
+describe('session auto_run', () => {
+  let db: Database;
+
+  const autoRunSessionId = 'session-autorun' as SessionId;
+
+  const makeSession = (autoRun: boolean): Session => ({
+    id: autoRunSessionId,
+    workspaceId,
+    goal: 'Free agents, hands free',
+    state: { kind: 'idle', lastActivityAt: NOW },
+    contextSlots: [],
+    providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+    permissionMode: 'bypassPermissions',
+    workflowRuns: [],
+    autoRun,
+    titleUserEdited: false,
+    createdAt: NOW,
+    updatedAt: NOW,
+  });
+
+  beforeEach(async () => {
+    db = makeTestDatabase();
+    await migrate(db);
+    await db.execute(
+      'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, 1, 1)',
+      [workspaceId, 'Workspace', '/tmp/workspace'],
+    );
+  });
+
+  it('round-trips autorun for a session created without a workflow', async () => {
+    await insertSession(db, makeSession(true));
+    const stored = await getSessionById(db, autoRunSessionId);
+    expect(stored?.workflowRuns).toEqual([]);
+    expect(stored?.autoRun).toBe(true);
+  });
+
+  it('persists a later autorun change', async () => {
+    await insertSession(db, makeSession(false));
+    await expect(getSessionById(db, autoRunSessionId)).resolves.toMatchObject({ autoRun: false });
+
+    await updateSessionAutoRun(db, autoRunSessionId, true, NOW);
+    await expect(getSessionById(db, autoRunSessionId)).resolves.toMatchObject({ autoRun: true });
+
+    await updateSessionAutoRun(db, autoRunSessionId, false, NOW);
+    await expect(getSessionById(db, autoRunSessionId)).resolves.toMatchObject({ autoRun: false });
   });
 });

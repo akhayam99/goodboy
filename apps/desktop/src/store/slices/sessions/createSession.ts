@@ -156,7 +156,8 @@ export const createSession = (set: SetFn, get: GetFn) => {
 
     const now = new Date().toISOString() as IsoDateTime;
     const initialState: TurnState = { kind: 'draft' };
-    const runAutoRun = autoRun === true && workflowId !== undefined;
+    const sessionAutoRun = autoRun === true;
+    const runAutoRun = sessionAutoRun && workflowId !== undefined;
     const workflowRunId =
       workflowId !== undefined ? (crypto.randomUUID() as WorkflowRunId) : undefined;
     const session: Session = {
@@ -182,7 +183,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
               },
             ]
           : [],
-      autoRun: runAutoRun,
+      autoRun: sessionAutoRun,
       titleUserEdited: false,
       createdAt: now,
       updatedAt: now,
