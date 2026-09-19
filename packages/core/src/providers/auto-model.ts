@@ -1,7 +1,7 @@
 import type { ProviderId, RoleModelPreferences } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
-import { MODEL_COST_RANK } from './modelCostRank';
 import { resolveRoleRouting } from './role-models';
+import { strongestModelForTier, tierMatchScore } from './strongestModelForTier';
 
 export type AutoModelChoice = {
   readonly provider: ProviderId;
@@ -36,19 +36,18 @@ export const autoModelForRole = ({
     return { provider: def.provider, model: def.model };
   }
 
-  const tier = PROVIDER_CAPABILITIES[def.provider].models.find((m) => m.id === def.model)?.costTier;
-  const target = MODEL_COST_RANK[tier ?? 'mid'];
+  const tier =
+    PROVIDER_CAPABILITIES[def.provider].models.find((m) => m.id === def.model)?.costTier ?? 'mid';
   const wantsThinker = THINKING_ROLES.has(role);
   let best: { provider: ProviderId; model: string; score: number } | null = null;
   for (const provider of providers) {
-    for (const m of PROVIDER_CAPABILITIES[provider].models) {
-      if (m.thinkerOnly && !wantsThinker) {
-        continue;
-      }
-      const score = -Math.abs(MODEL_COST_RANK[m.costTier] - target) * 1000 + m.weight;
-      if (best === null || score > best.score) {
-        best = { provider, model: m.id, score };
-      }
+    const candidate = strongestModelForTier({ provider, tier, wantsThinker });
+    if (candidate === null) {
+      continue;
+    }
+    const score = tierMatchScore({ model: candidate, tier });
+    if (best === null || score > best.score) {
+      best = { provider, model: candidate.id, score };
     }
   }
   if (best === null) {

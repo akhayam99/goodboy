@@ -1,6 +1,8 @@
 import type { ModelCostTier, ModelDescriptor, ProviderId } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from './capabilities';
+import { taskModelProviderPool } from './providerFallbackPool';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
+import { strongestModelForTier } from './strongestModelForTier';
 
 export type TurnFailureKind =
   'authentication' | 'rate_limit' | 'usage_limit' | 'model_not_available' | 'unreachable' | 'other';
@@ -16,6 +18,9 @@ type Params = {
   readonly model: string;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly attempt: number;
+  readonly wantsThinker: boolean;
+  readonly enabledProviders?: ReadonlyArray<ProviderId> | null;
+  readonly coolingDownProviders?: ReadonlyArray<ProviderId>;
   readonly preferred?: TurnFallbackPlan;
 };
 
@@ -24,6 +29,7 @@ type PreferredParams = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
+  readonly candidateProviders: ReadonlyArray<ProviderId>;
 };
 
 type TierParams = {
@@ -39,21 +45,23 @@ type ClosestParams = {
   readonly provider: ProviderId;
   readonly tier: ModelCostTier;
   readonly weight: number | null;
+  readonly wantsThinker: boolean;
   readonly excludeModel: string | null;
   readonly maxTierIndex: number | null;
 };
 
 type OtherProviderParams = {
   readonly provider: ProviderId;
-  readonly connectedProviders: ReadonlyArray<ProviderId>;
+  readonly candidateProviders: ReadonlyArray<ProviderId>;
   readonly tier: ModelCostTier;
-  readonly weight: number | null;
+  readonly wantsThinker: boolean;
 };
 
 type AlignedParams = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly candidateProviders: ReadonlyArray<ProviderId>;
+  readonly wantsThinker: boolean;
 };
 
 const MAX_ATTEMPTS = 2;
@@ -78,12 +86,16 @@ const pickClosest = ({
   provider,
   tier,
   weight,
+  wantsThinker,
   excludeModel,
   maxTierIndex,
 }: ClosestParams): string | null => {
   const target = tierIndex({ tier });
   const candidates = PROVIDER_CAPABILITIES[provider].models.filter((candidate) => {
     if (excludeModel != null && candidate.id === excludeModel) {
+      return false;
+    }
+    if (candidate.thinkerOnly && !wantsThinker) {
       return false;
     }
     if (maxTierIndex == null) {
@@ -108,38 +120,34 @@ const pickClosest = ({
 
 const otherProviderPlan = ({
   provider,
-  connectedProviders,
+  candidateProviders,
   tier,
-  weight,
+  wantsThinker,
 }: OtherProviderParams): TurnFallbackPlan | null => {
-  const target = connectedProviders.find((candidate) => candidate !== provider);
-  if (target == null) {
-    return null;
+  for (const target of candidateProviders) {
+    if (target === provider) {
+      continue;
+    }
+    const model = strongestModelForTier({ provider: target, tier, wantsThinker });
+    if (model != null) {
+      return { provider: target, model: model.id };
+    }
   }
-  const model = pickClosest({
-    provider: target,
-    tier,
-    weight,
-    excludeModel: null,
-    maxTierIndex: null,
-  });
-  if (model == null) {
-    return null;
-  }
-  return { provider: target, model };
+  return null;
 };
 
 export const alignedProviderPlan = ({
   provider,
   model,
   candidateProviders,
+  wantsThinker,
 }: AlignedParams): TurnFallbackPlan | null => {
   const failed = descriptorFor({ provider, model });
   return otherProviderPlan({
     provider,
-    connectedProviders: candidateProviders,
+    candidateProviders,
     tier: failed?.costTier ?? 'mid',
-    weight: failed?.weight ?? null,
+    wantsThinker,
   });
 };
 
@@ -148,17 +156,22 @@ const preferredPlan = ({
   provider,
   model,
   connectedProviders,
+  candidateProviders,
 }: PreferredParams): TurnFallbackPlan | null => {
   if (preferred == null) {
     return null;
   }
+  const isSameProvider = preferred.provider === provider;
   if (
-    preferred.provider === provider &&
+    isSameProvider &&
     descriptorKey({ provider, model: preferred.model }) === descriptorKey({ provider, model })
   ) {
     return null;
   }
-  if (!connectedProviders.includes(preferred.provider)) {
+  if (isSameProvider && !connectedProviders.includes(preferred.provider)) {
+    return null;
+  }
+  if (!isSameProvider && !candidateProviders.includes(preferred.provider)) {
     return null;
   }
   if (descriptorFor({ provider: preferred.provider, model: preferred.model }) == null) {
@@ -173,13 +186,28 @@ export const planTurnFallback = ({
   model,
   connectedProviders,
   attempt,
+  wantsThinker,
+  enabledProviders,
+  coolingDownProviders,
   preferred,
 }: Params): TurnFallbackPlan | null => {
   if (attempt >= MAX_ATTEMPTS || failure === 'other') {
     return null;
   }
+  const candidateProviders = taskModelProviderPool({
+    provider,
+    connectedProviders,
+    enabledProviders: enabledProviders ?? null,
+    coolingDownProviders: coolingDownProviders ?? [],
+  });
   if (attempt === 0) {
-    const picked = preferredPlan({ preferred, provider, model, connectedProviders });
+    const picked = preferredPlan({
+      preferred,
+      provider,
+      model,
+      connectedProviders,
+      candidateProviders,
+    });
     if (picked != null && (failure !== 'usage_limit' || picked.provider !== provider)) {
       return picked;
     }
@@ -189,10 +217,10 @@ export const planTurnFallback = ({
   const tier = failed?.costTier ?? 'mid';
   const weight = failed?.weight ?? null;
   if (failure === 'usage_limit') {
-    return otherProviderPlan({ provider, connectedProviders, tier, weight });
+    return otherProviderPlan({ provider, candidateProviders, tier, wantsThinker });
   }
   if (failure === 'authentication') {
-    return otherProviderPlan({ provider, connectedProviders, tier, weight });
+    return otherProviderPlan({ provider, candidateProviders, tier, wantsThinker });
   }
   if (failure === 'unreachable' && attempt === 0) {
     return { provider, model };
@@ -202,6 +230,7 @@ export const planTurnFallback = ({
       provider,
       tier,
       weight,
+      wantsThinker,
       excludeModel: failedKey,
       maxTierIndex: Math.max(tierIndex({ tier }) - 1, 0),
     });
@@ -214,6 +243,7 @@ export const planTurnFallback = ({
       provider,
       tier,
       weight,
+      wantsThinker,
       excludeModel: failedKey,
       maxTierIndex: null,
     });
@@ -221,5 +251,5 @@ export const planTurnFallback = ({
       return { provider, model: sibling };
     }
   }
-  return otherProviderPlan({ provider, connectedProviders, tier, weight });
+  return otherProviderPlan({ provider, candidateProviders, tier, wantsThinker });
 };

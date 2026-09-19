@@ -5,6 +5,7 @@ import {
   autoPopulateContext,
   buildStepPrompt,
   extractSpawnModel,
+  fallbackWantsThinker,
   findReusableAgent,
   isFallbackStepOutputSummary,
   planTurnFallback,
@@ -58,7 +59,10 @@ import { composeChildRoutingPrompt } from '../../../features/workflows/composeCh
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
-import { withProviderCooldown } from '../../../features/providers/taskModelRouting';
+import {
+  providersCoolingDown,
+  withProviderCooldown,
+} from '../../../features/providers/taskModelRouting';
 import {
   acquireWorktreeWriter,
   cancelWorktreeWriter,
@@ -1350,8 +1354,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           }),
         }));
       }
+      const fallbackRole = phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind];
       const preferredFallback = resolveRoleRouting({
-        role: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
+        role: fallbackRole,
         prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
       }).fallback;
       const fallbackPlan = cancelledBeforeFailure
@@ -1362,6 +1367,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             model: spawnModel,
             connectedProviders,
             attempt: retry?.attempt ?? 0,
+            wantsThinker: fallbackWantsThinker({ role: fallbackRole }),
+            enabledProviders: session.providerPreference.enabledProviders ?? null,
+            coolingDownProviders: providersCoolingDown({
+              cooldowns: get().providerCooldowns,
+              nowMs: Date.now(),
+            }),
             ...(preferredFallback != null && {
               preferred: {
                 provider: preferredFallback.provider,
