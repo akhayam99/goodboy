@@ -1,11 +1,10 @@
-import { CardActionSlot, SectionHeader, cn } from '@goodboy/ui';
+import { SectionHeader, cn } from '@goodboy/ui';
 import type { Session, WorkflowRunId } from '@goodboy/types';
 import { ScriptsSection } from '../../../../scripts/components/ScriptsSection';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { StandaloneAgentsLane } from '../../../../../features/session/components/StandaloneAgentsLane';
 import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
-import { WorkflowAutorunToggle } from '../../../../workflows/components/WorkflowAutorunToggle';
 import { SectionToggle } from './SectionToggle';
 import { PlanReadySuggestion } from './PlanReadySuggestion';
 import { WorkflowStartButton } from './WorkflowStartButton';
@@ -129,20 +128,13 @@ export const AgentsSection = ({
             icon={<DogMascot size={ICON_SIZE.control} className="shrink-0 text-success" />}
             label="Agents"
             action={
-              <CardActionSlot label="Agents section actions">
-                <WorkflowAutorunToggle
-                  variant="sidebar"
-                  isOn={task.autoRun}
-                  onToggle={() => void section.setSessionAutoRun(task.id, !task.autoRun)}
-                />
-                <SectionToggle
-                  expanded={section.agentsExpanded}
-                  label="agents"
-                  onToggle={() =>
-                    section.setPanelSectionExpanded(task.id, 'agents', !section.agentsExpanded)
-                  }
-                />
-              </CardActionSlot>
+              <SectionToggle
+                expanded={section.agentsExpanded}
+                label="agents"
+                onToggle={() =>
+                  section.setPanelSectionExpanded(task.id, 'agents', !section.agentsExpanded)
+                }
+              />
             }
           />
           {areAgentsExpanded ? (

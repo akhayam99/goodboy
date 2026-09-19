@@ -1,8 +1,23 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
-import type { Session } from '@goodboy/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { Session, SessionId } from '@goodboy/types';
+
+const SESSION_ID = 'sess-1' as SessionId;
+
+const h = vi.hoisted(() => {
+  const state = {
+    sessions: [] as ReadonlyArray<{ readonly id: string; readonly autoRun: boolean }>,
+    setSessionAutoRun: vi.fn(async (..._args: ReadonlyArray<unknown>) => undefined),
+  };
+  const useAppStore = Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
+    getState: () => state,
+  });
+  return { state, useAppStore };
+});
+
+vi.mock('../../../../../store/store', () => ({ useAppStore: h.useAppStore }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@goodboy/ui')>()),
@@ -66,7 +81,16 @@ vi.mock('../../CreateAgentPopover', () => ({
 
 import { AgentsPane } from './AgentsPane';
 
-const SESSION = { id: 'sess-1', workspaceId: 'ws-1' } as unknown as Session;
+const SESSION = { id: SESSION_ID, workspaceId: 'ws-1' } as unknown as Session;
+
+const seedAutoRun = (autoRun: boolean) => {
+  h.state.sessions = [{ id: SESSION_ID, autoRun }];
+};
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  seedAutoRun(false);
+});
 
 afterEach(cleanup);
 
@@ -101,5 +125,37 @@ describe('AgentsPane', () => {
     render(<AgentsPane session={SESSION} meta={undefined} />);
 
     expect(screen.queryByRole('separator', { name: 'Resize inspector panel' })).toBeNull();
+  });
+
+  it('reflects the stored session autorun flag in the pane header', () => {
+    seedAutoRun(true);
+
+    render(<AgentsPane session={SESSION} meta={undefined} />);
+
+    expect(screen.getByTestId('workflow-autorun-toggle').textContent).toBe('Autorun on');
+    expect(screen.getByRole('button', { name: 'Autorun on' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+  });
+
+  it('turns the session autorun flag on from the pane header', () => {
+    seedAutoRun(false);
+
+    render(<AgentsPane session={SESSION} meta={undefined} />);
+
+    expect(screen.getByTestId('workflow-autorun-toggle').textContent).toBe('Autorun off');
+    fireEvent.click(screen.getByRole('button', { name: 'Autorun off' }));
+
+    expect(h.state.setSessionAutoRun).toHaveBeenCalledWith(SESSION_ID, true);
+  });
+
+  it('turns the session autorun flag back off from the pane header', () => {
+    seedAutoRun(true);
+
+    render(<AgentsPane session={SESSION} meta={undefined} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
+
+    expect(h.state.setSessionAutoRun).toHaveBeenCalledWith(SESSION_ID, false);
   });
 });
