@@ -202,6 +202,16 @@ const ROWS: ReadonlyArray<Row> = [
     expected: { provider: 'gemini', model: 'gemini-3.1-pro' },
   },
   {
+    name: 'an empty workspace pool leaves every connected provider eligible',
+    failure: 'usage_limit',
+    provider: 'codex',
+    model: 'gpt-6',
+    attempt: 0,
+    connectedProviders: ['codex', 'gemini', 'anthropic'],
+    enabledProviders: [],
+    expected: { provider: 'gemini', model: 'gemini-3.1-pro' },
+  },
+  {
     name: 'the pool order stays the user order even when a later provider is stronger',
     failure: 'usage_limit',
     provider: 'codex',
@@ -394,6 +404,66 @@ describe('planTurnFallback', () => {
         preferred: { provider: 'anthropic', model: 'haiku-4.5' },
       }),
     ).toEqual({ provider: 'anthropic', model: 'haiku-4.5' });
+  });
+
+  it('refuses a role fallback on a provider that is cooling down', () => {
+    expect(
+      planTurnFallback({
+        failure: 'usage_limit',
+        provider: 'codex',
+        model: 'gpt-6',
+        attempt: 0,
+        wantsThinker: false,
+        connectedProviders: ['codex', 'anthropic', 'gemini'],
+        coolingDownProviders: ['anthropic'],
+        preferred: { provider: 'anthropic', model: 'opus-5' },
+      }),
+    ).toEqual({ provider: 'gemini', model: 'gemini-3.1-pro' });
+  });
+
+  it('refuses a role fallback on a provider outside the session pool', () => {
+    expect(
+      planTurnFallback({
+        failure: 'rate_limit',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 0,
+        wantsThinker: false,
+        connectedProviders: ['anthropic', 'codex', 'gemini'],
+        enabledProviders: ['anthropic', 'codex'],
+        preferred: { provider: 'gemini', model: 'gemini-3.1-pro' },
+      }),
+    ).toEqual({ provider: 'anthropic', model: 'sonnet-5' });
+  });
+
+  it('keeps a same-provider role fallback while another provider cools down', () => {
+    expect(
+      planTurnFallback({
+        failure: 'rate_limit',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 0,
+        wantsThinker: false,
+        connectedProviders: CONNECTED,
+        coolingDownProviders: ['codex'],
+        preferred: { provider: 'anthropic', model: 'haiku-4.5' },
+      }),
+    ).toEqual({ provider: 'anthropic', model: 'haiku-4.5' });
+  });
+
+  it('keeps a role fallback on a connected provider when the session pool is empty', () => {
+    expect(
+      planTurnFallback({
+        failure: 'rate_limit',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 0,
+        wantsThinker: false,
+        connectedProviders: CONNECTED,
+        enabledProviders: [],
+        preferred: { provider: 'codex', model: 'gpt-5.6-luna' },
+      }),
+    ).toEqual({ provider: 'codex', model: 'gpt-5.6-luna' });
   });
 
   it('never proposes the failed pair again outside the unreachable first retry', () => {

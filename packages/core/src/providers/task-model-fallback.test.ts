@@ -30,6 +30,17 @@ describe('taskModelProviderPool', () => {
     ).toEqual(['codex']);
   });
 
+  it('keeps every connected provider when the pool is empty', () => {
+    expect(
+      taskModelProviderPool({
+        provider: 'anthropic',
+        connectedProviders: ['anthropic', 'codex', 'gemini'],
+        enabledProviders: [],
+        coolingDownProviders: ['gemini'],
+      }),
+    ).toEqual(['codex']);
+  });
+
   it('keeps every connected provider when no pool is configured', () => {
     expect(
       taskModelProviderPool({

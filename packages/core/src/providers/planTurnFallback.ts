@@ -29,6 +29,7 @@ type PreferredParams = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
+  readonly candidateProviders: ReadonlyArray<ProviderId>;
 };
 
 type TierParams = {
@@ -155,17 +156,22 @@ const preferredPlan = ({
   provider,
   model,
   connectedProviders,
+  candidateProviders,
 }: PreferredParams): TurnFallbackPlan | null => {
   if (preferred == null) {
     return null;
   }
+  const isSameProvider = preferred.provider === provider;
   if (
-    preferred.provider === provider &&
+    isSameProvider &&
     descriptorKey({ provider, model: preferred.model }) === descriptorKey({ provider, model })
   ) {
     return null;
   }
-  if (!connectedProviders.includes(preferred.provider)) {
+  if (isSameProvider && !connectedProviders.includes(preferred.provider)) {
+    return null;
+  }
+  if (!isSameProvider && !candidateProviders.includes(preferred.provider)) {
     return null;
   }
   if (descriptorFor({ provider: preferred.provider, model: preferred.model }) == null) {
@@ -188,8 +194,20 @@ export const planTurnFallback = ({
   if (attempt >= MAX_ATTEMPTS || failure === 'other') {
     return null;
   }
+  const candidateProviders = taskModelProviderPool({
+    provider,
+    connectedProviders,
+    enabledProviders: enabledProviders ?? null,
+    coolingDownProviders: coolingDownProviders ?? [],
+  });
   if (attempt === 0) {
-    const picked = preferredPlan({ preferred, provider, model, connectedProviders });
+    const picked = preferredPlan({
+      preferred,
+      provider,
+      model,
+      connectedProviders,
+      candidateProviders,
+    });
     if (picked != null && (failure !== 'usage_limit' || picked.provider !== provider)) {
       return picked;
     }
@@ -198,12 +216,6 @@ export const planTurnFallback = ({
   const failedKey = descriptorKey({ provider, model });
   const tier = failed?.costTier ?? 'mid';
   const weight = failed?.weight ?? null;
-  const candidateProviders = taskModelProviderPool({
-    provider,
-    connectedProviders,
-    enabledProviders: enabledProviders ?? null,
-    coolingDownProviders: coolingDownProviders ?? [],
-  });
   if (failure === 'usage_limit') {
     return otherProviderPlan({ provider, candidateProviders, tier, wantsThinker });
   }

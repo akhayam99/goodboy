@@ -17,7 +17,11 @@ export const taskModelProviderPool = ({
     if (candidate === provider) {
       return false;
     }
-    if (enabledProviders != null && !enabledProviders.includes(candidate)) {
+    if (
+      enabledProviders != null &&
+      enabledProviders.length > 0 &&
+      !enabledProviders.includes(candidate)
+    ) {
       return false;
     }
     return !coolingDownProviders.includes(candidate);
