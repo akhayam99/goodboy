@@ -7,7 +7,9 @@ import type {
   Session,
   SessionId,
   StepId,
+  RoleModelPreferences,
   Workflow,
+  WorkflowOrchestrationOutcome,
   WorkflowId,
   WorkflowRunId,
   WorkspaceId,
@@ -117,14 +119,16 @@ type SessionParams = {
   readonly autoRun?: boolean;
   readonly discardedAt?: IsoDateTime;
   readonly siblingRuns?: ReadonlyArray<Session['workflowRuns'][number]>;
-  readonly isDynamicDone?: boolean;
+  readonly dynamicOutcome?: WorkflowOrchestrationOutcome;
+  readonly roleModelOverrides?: RoleModelPreferences;
 };
 
 const makeSession = ({
   autoRun = false,
   discardedAt,
   siblingRuns = [],
-  isDynamicDone = false,
+  dynamicOutcome,
+  roleModelOverrides,
 }: SessionParams = {}): Session => ({
   id: SESSION_ID,
   workspaceId: WORKSPACE_ID,
@@ -141,12 +145,13 @@ const makeSession = ({
       currentStep: 0,
       autoRun,
       triggerMode: 'immediate',
-      executionMode: isDynamicDone ? 'dynamic' : 'static',
-      ...(isDynamicDone && {
-        orchestrationOutcome: 'done' as const,
-        orchestrationReason: 'the goal is met',
+      executionMode: dynamicOutcome == null ? 'static' : 'dynamic',
+      ...(dynamicOutcome != null && {
+        orchestrationOutcome: dynamicOutcome,
+        orchestrationReason: 'the orchestrator said so',
       }),
       ...(discardedAt != null && { discardedAt }),
+      ...(roleModelOverrides != null && { roleModelOverrides }),
     },
     ...siblingRuns,
   ],
@@ -164,7 +169,9 @@ type StateParams = {
   readonly autoRun?: boolean;
   readonly discardedAt?: IsoDateTime;
   readonly siblingRuns?: ReadonlyArray<Session['workflowRuns'][number]>;
-  readonly isDynamicDone?: boolean;
+  readonly dynamicOutcome?: WorkflowOrchestrationOutcome;
+  readonly roleModelOverrides?: RoleModelPreferences;
+  readonly workspaceRoleModels?: RoleModelPreferences;
 };
 
 const baseState = ({
@@ -173,7 +180,9 @@ const baseState = ({
   autoRun = false,
   discardedAt,
   siblingRuns,
-  isDynamicDone = false,
+  dynamicOutcome,
+  roleModelOverrides,
+  workspaceRoleModels,
 }: StateParams = {}): State => {
   const workflow = makeWorkflow({ isPreset });
   return {
@@ -182,11 +191,15 @@ const baseState = ({
         autoRun,
         ...(discardedAt != null && { discardedAt }),
         ...(siblingRuns != null && { siblingRuns }),
-        isDynamicDone,
+        ...(dynamicOutcome != null && { dynamicOutcome }),
+        ...(roleModelOverrides != null && { roleModelOverrides }),
       }),
     ],
     workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
-    providers: [{ id: 'anthropic', connection: 'connected' }],
+    providers: [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'codex', connection: 'connected' },
+    ],
     providerCooldowns: {},
     budgetAlerts: [],
     announcedWorkflowBlocks: {},
@@ -202,7 +215,8 @@ const baseState = ({
         makeAgent({ stepId: 'step-2', status: 'completed', ordinal: 1 }),
       ],
     },
-    workspaceOverrides: {},
+    workspaceOverrides:
+      workspaceRoleModels == null ? {} : { [WORKSPACE_ID]: { roleModels: workspaceRoleModels } },
     transcripts: {},
     agentTurnState: {},
     agentModelOverride: {},
@@ -611,7 +625,7 @@ describe('addStepToWorkflowRun', () => {
   });
 
   it('clears the outcome of a dynamic run that concluded done and does not call orchestrateNextStep', async () => {
-    const state = baseState({ isDynamicDone: true });
+    const state = baseState({ dynamicOutcome: 'done' });
     const { add } = harness(state);
 
     const result = await add({
@@ -631,8 +645,52 @@ describe('addStepToWorkflowRun', () => {
     expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
   });
 
+  it('takes a step on a dynamic run the orchestrator stopped as blocked', async () => {
+    const state = baseState({ dynamicOutcome: 'blocked' });
+    const { add } = harness(state);
+
+    const result = await add({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      name: 'Review',
+      role: 'reviewer',
+    });
+
+    expect(result.kind).toBe('added');
+    const sessions = state['sessions'] as ReadonlyArray<Session>;
+    expect(sessions[0]!.workflowRuns[0]!.orchestrationOutcome).toBeUndefined();
+  });
+
+  it('routes the new agent through the run role override, not the workspace one', async () => {
+    const state = baseState({
+      workspaceRoleModels: {
+        reviewer: { providerId: 'anthropic', model: 'claude-sonnet-4-5', effort: 'medium' },
+      },
+      roleModelOverrides: {
+        reviewer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+      },
+    });
+    const { add } = harness(state);
+
+    const result = await add({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      name: 'Review',
+      role: 'reviewer',
+    });
+
+    expect(result.kind).toBe('added');
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerOverride: 'codex',
+        modelOverride: 'gpt-5.6-sol',
+        effort: 'high',
+      }),
+    );
+  });
+
   it('puts the new agent in state before it clears the outcome', async () => {
-    const state = baseState({ isDynamicDone: true });
+    const state = baseState({ dynamicOutcome: 'done' });
     const seenAgentIds: Array<ReadonlyArray<string>> = [];
     updateOrchestrationOutcomeSpy.mockImplementation(async () => {
       const agents = (state['sessionPhaseRuns'] as Record<string, ReadonlyArray<Agent>>)[
