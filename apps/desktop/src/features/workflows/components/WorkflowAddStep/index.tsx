@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button, GhostActionButton } from '@goodboy/ui';
-import { recommendedModelForRole } from '@goodboy/core';
+import { recommendedModelForRole, resolveRoleRouting } from '@goodboy/core';
 import type { ProviderId, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { WorkflowStepCard } from '../../../session/components/WorkflowStepCard';
 import { ROLE_TO_KIND } from '../../../session/agent-kind';
+import { mergeRoleModels } from '../../mergeRoleModels';
 import { addStep, stepDraftWithModel, type StepDraft } from '../../engine';
 
 type Props = {
@@ -19,8 +20,25 @@ const blankDraft = (): StepDraft => addStep({ steps: [] })[0]!;
 
 export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCount }: Props) => {
   const addStepToWorkflowRun = useAppStore((state) => state.addStepToWorkflowRun);
-  const roleModels = useAppStore(
+  const workspaceRoleModels = useAppStore(
     (state) => state.workspaceOverrides?.[workspaceId]?.roleModels ?? null,
+  );
+  const runRoleModels = useAppStore(
+    (state) =>
+      state.sessions
+        .find((candidate) => candidate.id === sessionId)
+        ?.workflowRuns.find((candidate) => candidate.id === workflowRunId)?.roleModelOverrides ??
+      null,
+  );
+  const sessionProvider = useAppStore((state) => {
+    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    if (session == null) {
+      return null;
+    }
+    return (session.providerOverride ?? session.providerPreference.defaultProvider) as ProviderId;
+  });
+  const isOrchestrating = useAppStore(
+    (state) => state.orchestratingWorkflowRuns?.[workflowRunId] === true,
   );
   const providers = useAppStore((state) => state.providers);
   const [draft, setDraft] = useState<StepDraft | null>(null);
@@ -30,14 +48,19 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
   const connectedProviders = (providers ?? [])
     .filter((provider) => provider.connection === 'connected')
     .map((provider) => provider.id);
-  const defaultProvider: ProviderId = connectedProviders[0] ?? 'anthropic';
+  const roleModels = mergeRoleModels({ workspace: workspaceRoleModels, run: runRoleModels });
 
   if (draft === null) {
     return (
       <GhostActionButton
         icon={Plus}
         label="Add step"
-        title="Append one more agent to this run"
+        title={
+          isOrchestrating
+            ? 'The orchestrator is choosing the next step'
+            : 'Append one more agent to this run'
+        }
+        disabled={isOrchestrating}
         onClick={() => {
           setError(null);
           setDraft(blankDraft());
@@ -46,6 +69,10 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
     );
   }
 
+  const roleRouting = resolveRoleRouting({ role: draft.role, prefs: roleModels });
+  const defaultProvider: ProviderId = roleRouting.isOverride
+    ? roleRouting.provider
+    : (sessionProvider ?? connectedProviders[0] ?? 'anthropic');
   const resolvedProvider: ProviderId = draft.provider !== '' ? draft.provider : defaultProvider;
   const recommendedModel = recommendedModelForRole({
     role: draft.role,
@@ -136,10 +163,15 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
           {error}
         </span>
       ) : null}
+      {error === null && isOrchestrating ? (
+        <span className="text-2xs font-medium text-muted-foreground">
+          the orchestrator is choosing the next step
+        </span>
+      ) : null}
       <div className="flex items-center gap-2">
         <Button
           size="sm"
-          disabled={isBusy || draft.name.trim() === ''}
+          disabled={isBusy || isOrchestrating || draft.name.trim() === ''}
           onClick={() => void submit()}
         >
           {isBusy ? 'Adding' : 'Add step'}
