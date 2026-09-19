@@ -26,6 +26,7 @@ const storeMocks = vi.hoisted(() => ({
   renameWorkflow: vi.fn(async () => undefined),
   orchestratingWorkflowRuns: {} as Record<string, boolean>,
   runSpendUsd: 0,
+  sessions: [] as ReadonlyArray<Record<string, unknown>>,
   sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
 }));
 
@@ -39,6 +40,7 @@ vi.mock('../../../../../store', () => ({
       orchestratingWorkflowRuns: storeMocks.orchestratingWorkflowRuns,
       agentEffortOverride: {},
       sessionMounts: {},
+      sessions: storeMocks.sessions,
       sessionProjectMounts: storeMocks.sessionProjectMounts,
     }),
 }));
@@ -689,6 +691,26 @@ describe('WorkflowRow dynamic runs', () => {
 
     expect(screen.getByText('Completed')).toBeDefined();
     expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
+  });
+
+  it('offers add step on a blocked dynamic run, which the action still accepts', () => {
+    renderDetail({
+      runOverride: {
+        ...dynamicRun,
+        orchestrationOutcome: 'blocked',
+        orchestrationReason: 'it needs a decision',
+      },
+      agentsOverride: doneAgents,
+    });
+
+    expect(screen.getByRole('button', { name: /add step/i })).toBeDefined();
+  });
+
+  it('withholds add step while the orchestrator is choosing the next one', () => {
+    storeMocks.orchestratingWorkflowRuns = { [dynamicRun.id]: true };
+    renderDetail({ runOverride: dynamicRun, agentsOverride: doneAgents });
+
+    expect(screen.getByRole('button', { name: /add step/i }).hasAttribute('disabled')).toBe(true);
   });
 
   it('dims a discarded run with the same token the workflows lens card quotes', () => {

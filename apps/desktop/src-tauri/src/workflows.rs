@@ -678,6 +678,7 @@ fn live_name_taken(
     let mut stmt = conn.prepare(
         "SELECT 1 FROM workflows
          WHERE workspace_id = ?1 AND name = ?2 AND id <> ?3 AND deleted_at IS NULL
+           AND is_preset = 1
          LIMIT 1",
     )?;
     stmt.exists(rusqlite::params![workspace_id, name, id])
@@ -688,7 +689,11 @@ fn resolve_live_name(
     workspace_id: &str,
     requested: &str,
     id: &str,
+    is_preset: bool,
 ) -> Result<String, rusqlite::Error> {
+    if !is_preset {
+        return Ok(requested.to_string());
+    }
     if !live_name_taken(conn, workspace_id, requested, id)? {
         return Ok(requested.to_string());
     }
@@ -719,6 +724,7 @@ pub async fn workflow_upsert(
             let mut stmt = conn.prepare(
                 "SELECT id FROM workflows
                  WHERE workspace_id = ?1 AND name = ?2 AND deleted_at IS NULL
+                   AND is_preset = 1
                  LIMIT 1",
             )?;
             let mut rows = stmt
@@ -733,7 +739,13 @@ pub async fn workflow_upsert(
         existing.unwrap_or_else(crate::util::uuid_v4)
     };
 
-    let name = resolve_live_name(&conn, &input.workspace_id, &input.name, &id)?;
+    let name = resolve_live_name(
+        &conn,
+        &input.workspace_id,
+        &input.name,
+        &id,
+        input.is_preset,
+    )?;
 
     let created_at_ms: i64 = {
         let mut stmt = conn.prepare("SELECT created_at FROM workflows WHERE id = ?1 LIMIT 1")?;
@@ -1621,17 +1633,23 @@ mod tests {
                 goal TEXT, process_text TEXT
             );
             CREATE UNIQUE INDEX idx_workflows_workspace_name_live
-              ON workflows(workspace_id, name) WHERE deleted_at IS NULL;",
+              ON workflows(workspace_id, name) WHERE deleted_at IS NULL AND is_preset = 1;",
         )
         .unwrap();
         conn
     }
 
-    fn insert_workflow(conn: &rusqlite::Connection, id: &str, name: &str, deleted: Option<i64>) {
+    fn insert_workflow(
+        conn: &rusqlite::Connection,
+        id: &str,
+        name: &str,
+        deleted: Option<i64>,
+        is_preset: bool,
+    ) {
         conn.execute(
             "INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at, deleted_at, is_preset)
-             VALUES (?1, 'ws1', ?2, '', '2026-01-01', '2026-01-01', ?3, 0)",
-            rusqlite::params![id, name, deleted],
+             VALUES (?1, 'ws1', ?2, '', '2026-01-01', '2026-01-01', ?3, ?4)",
+            rusqlite::params![id, name, deleted, is_preset as i32],
         )
         .unwrap();
     }
@@ -1639,26 +1657,52 @@ mod tests {
     #[test]
     fn resolve_live_name_keeps_a_free_name() {
         let conn = workflows_table_conn();
-        insert_workflow(&conn, "w1", "Orchestrated workflow", Some(1));
-        let name = resolve_live_name(&conn, "ws1", "Orchestrated workflow", "w2").unwrap();
+        insert_workflow(&conn, "w1", "Orchestrated workflow", Some(1), true);
+        let name = resolve_live_name(&conn, "ws1", "Orchestrated workflow", "w2", true).unwrap();
         assert_eq!(name, "Orchestrated workflow");
     }
 
     #[test]
     fn resolve_live_name_suffixes_against_live_rows() {
         let conn = workflows_table_conn();
-        insert_workflow(&conn, "w1", "Orchestrated workflow", None);
-        insert_workflow(&conn, "w2", "Orchestrated workflow 2", None);
-        let name = resolve_live_name(&conn, "ws1", "Orchestrated workflow", "w3").unwrap();
+        insert_workflow(&conn, "w1", "Orchestrated workflow", None, true);
+        insert_workflow(&conn, "w2", "Orchestrated workflow 2", None, true);
+        let name = resolve_live_name(&conn, "ws1", "Orchestrated workflow", "w3", true).unwrap();
         assert_eq!(name, "Orchestrated workflow 3");
     }
 
     #[test]
     fn resolve_live_name_ignores_the_row_being_updated() {
         let conn = workflows_table_conn();
-        insert_workflow(&conn, "w1", "Ship It", None);
-        let name = resolve_live_name(&conn, "ws1", "Ship It", "w1").unwrap();
+        insert_workflow(&conn, "w1", "Ship It", None, true);
+        let name = resolve_live_name(&conn, "ws1", "Ship It", "w1", true).unwrap();
         assert_eq!(name, "Ship It");
+    }
+
+    #[test]
+    fn resolve_live_name_keeps_the_preset_name_on_a_run_copy() {
+        let conn = workflows_table_conn();
+        insert_workflow(&conn, "w1", "Ship it", None, true);
+        let name = resolve_live_name(&conn, "ws1", "Ship it", "w2", false).unwrap();
+        assert_eq!(name, "Ship it");
+        insert_workflow(&conn, "w2", &name, None, false);
+    }
+
+    #[test]
+    fn resolve_live_name_ignores_live_run_copies_for_a_preset() {
+        let conn = workflows_table_conn();
+        insert_workflow(&conn, "w1", "Ship it", None, false);
+        let name = resolve_live_name(&conn, "ws1", "Ship it", "w2", true).unwrap();
+        assert_eq!(name, "Ship it");
+    }
+
+    #[test]
+    fn resolve_live_name_suffixes_a_run_copy_promoted_to_preset() {
+        let conn = workflows_table_conn();
+        insert_workflow(&conn, "w1", "Ship it", None, true);
+        insert_workflow(&conn, "w2", "Ship it", None, false);
+        let name = resolve_live_name(&conn, "ws1", "Ship it", "w2", true).unwrap();
+        assert_eq!(name, "Ship it 2");
     }
 
     #[test]

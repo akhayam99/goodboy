@@ -1,11 +1,8 @@
 import type { IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
-import {
-  updateSessionWorkflowAutoRun,
-  updateWorkflowRunOrchestrationOutcome,
-  updateWorkflowRunOrchestrationStop,
-} from '@goodboy/db';
+import { updateSessionWorkflowAutoRun } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
+import { clearOrchestrationOutcome } from './clearOrchestrationOutcome';
+import { patchWorkflowRun } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
 
 export const retryWorkflowOrchestration = (set: SetFn, get: GetFn) => {
@@ -16,15 +13,7 @@ export const retryWorkflowOrchestration = (set: SetFn, get: GetFn) => {
       return;
     }
     const restoresAutoRun = run.orchestrationStop?.kind === 'operator' && !run.autoRun;
-    await updateWorkflowRunOrchestrationOutcome(tauriDatabase, workflowRunId, null);
-    await updateWorkflowRunOrchestrationStop(tauriDatabase, workflowRunId, null);
-    patchWorkflowRun({
-      set,
-      sessionId,
-      workflowRunId,
-      patch: (current) =>
-        withoutKeys(current, ['orchestrationOutcome', 'orchestrationReason', 'orchestrationStop']),
-    });
+    await clearOrchestrationOutcome({ set, sessionId, workflowRunId });
     if (restoresAutoRun) {
       const now = new Date().toISOString() as IsoDateTime;
       await updateSessionWorkflowAutoRun(tauriDatabase, sessionId, workflowRunId, true, now);

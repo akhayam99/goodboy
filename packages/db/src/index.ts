@@ -95,6 +95,8 @@ export {
   updateSessionWorkflowStep,
   updateSessionWorkflowAutoRun,
   updateSessionWorkflowTriggerMode,
+  repointWorkflowRunTemplate,
+  type WorkflowRunStepRepoint,
   updateWorkflowRunOrchestrationOutcome,
   updateWorkflowRunOrchestrationStop,
   updateWorkflowRunOrchestratorHints,

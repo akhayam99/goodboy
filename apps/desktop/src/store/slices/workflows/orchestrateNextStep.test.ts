@@ -34,8 +34,10 @@ const {
   insertTelemetrySpy,
   summarizeSessionSpy,
   summarizeWorkspaceSpy,
+  repointWorkflowRunTemplateSpy,
 } = vi.hoisted(() => ({
   decideSpy: vi.fn(),
+  repointWorkflowRunTemplateSpy: vi.fn(async () => undefined),
   invokeWorkflowUpsertSpy: vi.fn(),
   invokeAgentInsertSpy: vi.fn(),
   listOpenQuestionsSpy: vi.fn(async () => [] as ReadonlyArray<OpenQuestion>),
@@ -76,6 +78,7 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 });
 
 vi.mock('@goodboy/db', () => ({
+  repointWorkflowRunTemplate: repointWorkflowRunTemplateSpy,
   listOpenQuestionsForSession: listOpenQuestionsSpy,
   updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
   updateWorkflowRunOrchestrationStop: updateStopSpy,
@@ -97,12 +100,14 @@ vi.mock('../../../features/workflows/workflows', () => ({
 import type { OrchestratorClientDeps, OrchestratorInput } from '@goodboy/core';
 import { OrchestratorClient, ROLE_REGISTRY } from '@goodboy/core';
 import { orchestrateNextStep, persistOrchestrationStop } from './orchestrateNextStep';
+import { addStepToWorkflowRun } from './addStepToWorkflowRun';
 import { continueWorkflowRun } from './continueWorkflowRun';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const SESSION_ID = 'session-1' as SessionId;
 const WORKFLOW_ID = 'workflow-1' as WorkflowId;
+const CLONE_WORKFLOW_ID = 'workflow-2' as WorkflowId;
 const WORKFLOW_RUN_ID = 'workflow-run-1' as WorkflowRunId;
 const AGENT_ID = 'agent-1' as AgentId;
 const NOW = '2026-07-30T00:00:00.000Z' as IsoDateTime;
@@ -462,6 +467,122 @@ describe('orchestrateNextStep', () => {
     expect(listOpenQuestionsSpy).not.toHaveBeenCalled();
     expect(updateStopSpy).not.toHaveBeenCalled();
     expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
+  });
+
+  it('refuses a manual step from the moment it snapshots the workflow', async () => {
+    const gate: { release: (() => void) | null } = { release: null };
+    listOpenQuestionsSpy.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          gate.release = () => resolve([]);
+        }),
+    );
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: { action: 'done', reason: 'all set' },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+    const pending = orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+    await vi.waitFor(() => expect(listOpenQuestionsSpy).toHaveBeenCalledTimes(1));
+
+    const outcome = await addStepToWorkflowRun(
+      set,
+      get,
+    )({
+      sessionId: SESSION_ID,
+      workflowRunId: WORKFLOW_RUN_ID,
+      name: 'Review',
+      role: 'reviewer',
+    });
+    const upsertsDuringDecision = invokeWorkflowUpsertSpy.mock.calls.length;
+
+    if (gate.release == null) {
+      throw new Error('the activation gate was not reached');
+    }
+    gate.release();
+    await pending;
+
+    expect(outcome).toEqual({
+      kind: 'refused',
+      reason: 'the orchestrator is choosing the next step',
+    });
+    expect(upsertsDuringDecision).toBe(0);
+    expect(state['orchestratingWorkflowRuns']).toEqual({ [WORKFLOW_RUN_ID]: false });
+  });
+
+  it('appends to the workflow the run points at now, not the snapshot it started from', async () => {
+    const gate: { release: (() => void) | null } = { release: null };
+    listOpenQuestionsSpy.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          gate.release = () => resolve([]);
+        }),
+    );
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'The implementation is ready.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the mapped change.',
+          expectedOutput: 'A tested implementation.',
+        },
+      },
+    });
+    invokeWorkflowUpsertSpy.mockImplementation(async (input: Record<string, unknown>) => ({
+      ...workflow(),
+      id: input['id'],
+      steps: input['steps'],
+    }));
+    const state = baseState();
+    const { set, get } = harness(state);
+    const pending = orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+    await vi.waitFor(() => expect(listOpenQuestionsSpy).toHaveBeenCalledTimes(1));
+
+    const clone: Workflow = {
+      ...workflow(),
+      id: CLONE_WORKFLOW_ID,
+      isPreset: false,
+      steps: [
+        ...workflow().steps,
+        {
+          id: 'step-manual' as StepId,
+          workflowId: CLONE_WORKFLOW_ID,
+          ordinal: 1,
+          name: 'Review',
+          role: 'reviewer',
+          promptPrefix: 'Check the change.',
+        },
+      ],
+    };
+    const current = state['sessions'] as ReadonlyArray<Session>;
+    state['sessions'] = [
+      {
+        ...current[0]!,
+        workflowRuns: [{ ...current[0]!.workflowRuns[0]!, workflowId: CLONE_WORKFLOW_ID }],
+      },
+    ];
+    state['phaseTemplates'] = { [WORKSPACE_ID]: [clone] };
+
+    if (gate.release == null) {
+      throw new Error('the activation gate was not reached');
+    }
+    gate.release();
+    await pending;
+
+    const upsert = invokeWorkflowUpsertSpy.mock.calls[0]![0] as {
+      readonly id: WorkflowId;
+      readonly steps: ReadonlyArray<Record<string, unknown>>;
+    };
+    expect(upsert.id).toBe(CLONE_WORKFLOW_ID);
+    expect(upsert.steps.map((step) => step['name'])).toEqual(['Scout', 'Review', 'Implement']);
+    const templates = (state['phaseTemplates'] as Record<string, ReadonlyArray<Workflow>>)[
+      WORKSPACE_ID
+    ]!;
+    expect(templates[0]!.steps).toHaveLength(3);
   });
 
   it('appends a real step and agent, emits the decision, and activates it', async () => {

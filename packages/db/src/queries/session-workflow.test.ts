@@ -3,6 +3,7 @@ import type {
   IsoDateTime,
   RoleModelPreferences,
   SessionId,
+  StepId,
   WorkflowId,
   WorkflowRunId,
   WorkspaceId,
@@ -15,6 +16,7 @@ import {
   discardWorkflowInSession,
   listWorkflowsForSession,
   restoreWorkflowInSession,
+  repointWorkflowRunTemplate,
   updateSessionWorkflowTriggerMode,
   updateWorkflowOrder,
   updateWorkflowRunOrchestrationOutcome,
@@ -98,6 +100,47 @@ describe('session_workflows trigger-mode queries', () => {
 
   beforeEach(async () => {
     db = await seed();
+  });
+
+  describe('repointWorkflowRunTemplate', () => {
+    it('moves the run onto a cloned template and carries its agents to the clone steps', async () => {
+      const runId = 'run-1' as WorkflowRunId;
+      await db.execute(
+        'INSERT INTO steps (id, workflow_id, ordinal, name, prompt_prefix) VALUES (?, ?, ?, ?, ?)',
+        ['step-1', workflowId, 0, 'Scout', ''],
+      );
+      await db.execute(
+        'INSERT INTO steps (id, workflow_id, ordinal, name, prompt_prefix) VALUES (?, ?, ?, ?, ?)',
+        ['clone-step-1', workflowId2, 0, 'Scout', ''],
+      );
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: runId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+      await db.execute(
+        'INSERT INTO agents (id, session_id, ordinal, name, status, workflow_run_id, step_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        ['agent-1', sessionId, 0, 'Scout', 'completed', runId, 'step-1'],
+      );
+
+      await repointWorkflowRunTemplate({
+        db,
+        workflowRunId: runId,
+        workflowId: workflowId2,
+        stepRepoints: [{ fromStepId: 'step-1' as StepId, toStepId: 'clone-step-1' as StepId }],
+      });
+
+      const runs = await listWorkflowsForSession(db, sessionId);
+      expect(runs[0]!.workflowId).toBe(workflowId2);
+      const agents = await db.select<{ readonly step_id: string }>(
+        'SELECT step_id FROM agents WHERE id = ?',
+        ['agent-1'],
+      );
+      expect(agents[0]!.step_id).toBe('clone-step-1');
+    });
   });
 
   describe('attachWorkflowToSession + toWorkflowRun mapping', () => {
