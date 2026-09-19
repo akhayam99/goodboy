@@ -945,6 +945,8 @@ const BUILDER_DRAFT: WorkflowBuilderDraft = {
   },
   saveAsPreset: false,
   autoRun: true,
+  customName: '',
+  customNameEdited: false,
   dynamicName: 'Settlement rounding recovery',
   dynamicNameEdited: true,
   orchestratorModel: {
