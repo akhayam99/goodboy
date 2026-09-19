@@ -299,8 +299,20 @@ describe('WorkflowRow detail dashboard', () => {
     ).toBeDefined();
   });
 
-  it('keeps the shared-preset warning off a workflow this session authored', () => {
+  it('warns on a legacy preset that carries no isPreset flag', () => {
     renderDetail();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit workflow name' }));
+
+    expect(
+      screen.getByText(
+        'This preset is shared: the new name shows on every run and every future attach.',
+      ),
+    ).toBeDefined();
+  });
+
+  it('keeps the shared-preset warning off a workflow this session authored', () => {
+    renderDetail({ workflowOverride: { ...workflow, isPreset: false } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit workflow name' }));
 

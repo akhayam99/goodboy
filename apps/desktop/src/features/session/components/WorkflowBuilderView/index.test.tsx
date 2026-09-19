@@ -1576,6 +1576,22 @@ describe('WorkflowBuilderView (workflow name)', () => {
     expect(mockSavePhaseTemplate).not.toHaveBeenCalled();
   });
 
+  it('leaves orchestrated mode its own name field when stale custom steps remain', () => {
+    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+
+    const fields = screen.getAllByLabelText('Workflow name') as ReadonlyArray<HTMLInputElement>;
+    expect(fields).toHaveLength(1);
+    expect(fields[0]!.id).toBe('orchestrated-workflow-name');
+
+    fireEvent.change(fields[0]!, { target: { value: 'Nightly triage' } });
+
+    expect(nameField().value).toBe('Nightly triage');
+  });
+
   it('forks a renamed preset into its own workflow instead of renaming the preset', async () => {
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);

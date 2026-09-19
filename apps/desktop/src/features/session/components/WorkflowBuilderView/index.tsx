@@ -896,7 +896,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const showStepsEmptyState = mode === 'custom' && !showSteps && !planning;
   const showLaunch = showSteps || mode === 'dynamic';
   const customReady = mode === 'custom' && plan !== null;
-  const workflowName = mode === 'dynamic' ? dynamicName : customNameValue;
+  const showNameField = showSteps && mode !== 'dynamic';
   const chainedTriggerOptions: ReadonlyArray<SegmentedTabOption<WorkflowTriggerMode>> =
     activeRuns.length > 0
       ? [
@@ -1291,7 +1291,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                 <>
                   <Divider />
                   <section className="flex flex-col gap-3">
-                    {showSteps ? (
+                    {showNameField ? (
                       <div className="flex items-end justify-between gap-2">
                         <div className="flex min-w-0 flex-1 flex-col gap-1">
                           <label htmlFor="workflow-name" className={SECTION_LABEL_CLS}>
@@ -1299,7 +1299,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           </label>
                           <Input
                             id="workflow-name"
-                            value={workflowName}
+                            value={customNameValue}
                             onChange={(event) => {
                               setCustomName(event.target.value);
                               setCustomNameEdited(true);
