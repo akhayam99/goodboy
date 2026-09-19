@@ -47,6 +47,7 @@ import {
   updateWorkflowRunOrchestratorSummary,
 } from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
+import { mergeRoleModels } from '../../../features/workflows/mergeRoleModels';
 import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
@@ -93,21 +94,6 @@ const setDeciding = ({ set, workflowRunId, isDeciding }: DecidingParams): void =
 type RoleDefaultsParams = {
   readonly provider: ProviderId;
   readonly roleModels: RoleModelPreferences | null;
-};
-
-type MergeRoleModelsParams = {
-  readonly workspace: RoleModelPreferences | null;
-  readonly run: RoleModelPreferences | undefined;
-};
-
-const mergeRoleModels = ({
-  workspace,
-  run,
-}: MergeRoleModelsParams): RoleModelPreferences | null => {
-  if (workspace == null && run == null) {
-    return null;
-  }
-  return { ...(workspace ?? {}), ...(run ?? {}) };
 };
 
 type ConfiguredRoleParams = {
@@ -382,17 +368,42 @@ type AppendParams = {
   };
 };
 
+type LiveWorkflowParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId;
+  readonly snapshot: Workflow;
+};
+
+const liveWorkflowFor = ({
+  get,
+  sessionId,
+  workflowRunId,
+  snapshot,
+}: LiveWorkflowParams): Workflow => {
+  const run = get()
+    .sessions.find((candidate) => candidate.id === sessionId)
+    ?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
+  const targetId = run?.workflowId ?? snapshot.id;
+  return (
+    (get().phaseTemplates[snapshot.workspaceId] ?? []).find(
+      (candidate) => candidate.id === targetId,
+    ) ?? snapshot
+  );
+};
+
 const appendStep = async ({
   set,
   get,
   sessionId,
   workflowRunId,
-  workflow,
+  workflow: snapshot,
   roleModels,
   runRoleModels,
   availability,
   step,
 }: AppendParams): Promise<Agent> => {
+  const workflow = liveWorkflowFor({ get, sessionId, workflowRunId, snapshot });
   const ordinal = workflow.steps.reduce((max, current) => Math.max(max, current.ordinal), -1) + 1;
   const nextStep: Step = {
     id: `step_orchestrator_${crypto.randomUUID()}` as StepId,
@@ -509,6 +520,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
     orchestrationInFlight.add(workflowRunId);
     const operatorNote = options?.extraHints?.trim() ?? '';
     try {
+      setDeciding({ set, workflowRunId, isDeciding: true });
       const session = get().sessions.find((candidate) => candidate.id === sessionId);
       const run = session?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
       if (
@@ -562,7 +574,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           return;
         }
       }
-      setDeciding({ set, workflowRunId, isDeciding: true });
       if (options?.bypassGate !== true) {
         await waitForSessionSummarizer({ get, sessionId });
         const settled = get()
