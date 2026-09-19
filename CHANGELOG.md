@@ -7,6 +7,33 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.9
+
+A workflow takes one more step even after it has finished, a custom workflow gets its name before it starts, and autorun reaches the agents that never belonged to a workflow.
+
+### [#1807] Add a step to a workflow already running
+
+A workflow ran exactly the steps it had when you attached it, and editing the template afterwards never reached a run in flight. You can now append a step to a live run, and to one that has already finished, which was the case that came up most: the workflow is done and you want one more agent on it.
+
+A run started from a preset takes its own copy of the template before the new step lands, so the other runs on that preset and every future attach stay as they were, and the copy keeps the preset's name instead of renaming the workflow under you mid-run.
+
+The request is turned down in three cases: the run was discarded, its template is gone, or the workflow is choosing its own next step at that moment. Follow-up: an add that arrives in the same instant as that choice can still slip past the check.
+
+### [#1805] Name a custom workflow before it starts
+
+A custom workflow took whatever name the planner or the preset it started from happened to carry, and only the orchestrated mode let you type one. The builder now has a Workflow name field for both, showing the computed default until you type over it, and the name you picked survives closing the builder half way. An empty name blocks the start, as it already did.
+
+Renaming a preset you picked in the builder counts as a change now: the run goes out under the new name as a workflow of its own, and the shared preset keeps the name every other run knows it by. Renaming the preset itself, from its own page, warns you while you edit that the new name shows on every run and every future attach.
+
+### [#1804] Autorun covers the agents outside a workflow
+
+Autorun was on and every agent outside a workflow still waited for you to continue it by hand, every child of a fan-out included. The session's own autorun is a real switch now, with a toggle in the Agents pane, covering the agents that run outside a workflow. An agent that already stopped stays stopped: the switch decides what happens next, not what already happened. A workflow attached to a session with autorun on starts with autorun on.
+
+### Fixes
+
+- A turn that hit a usage limit and moved to another provider landed on the weakest model of its class there instead of a peer of the one it lost. It now lands on a peer, and your provider order still decides which provider takes the turn [#1806].
+- A fallback could hand implementation work to a model that only thinks the problem through [#1806].
+
 ## Goodboy v0.3.8
 
 Every part of a session is one click from every other part, a report or a wireframe opens from the message that announced it, and the resolve queue reads as one inbox instead of four tabs that disagreed with each other.
