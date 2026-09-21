@@ -1,9 +1,42 @@
+import type { ArtifactContextInventoryRow } from '../artifacts/artifactContextInventory';
+
+export type ContextAllocationLimits = Readonly<{
+  framing: number;
+  truncationNotes: number;
+  evidence: number;
+  olderAgentReserve: number;
+}>;
+
 export const REPORT_ALLOCATION_LIMITS = {
   framing: 8_000,
   truncationNotes: 2_000,
   evidence: 8_000,
   olderAgentReserve: 600,
-} as const;
+} as const satisfies ContextAllocationLimits;
+
+export const ARTIFACT_SECTION_CUT_NOTE = 'cut at the end to fit the pack budget';
+
+export const ARTIFACT_SECTION_REMOVED_NOTE = 'removed entirely to fit the pack budget';
+
+type ReconcileSectionRowParams = Readonly<{
+  row: ArtifactContextInventoryRow | null;
+  fullLength: number;
+  survivedLength: number;
+}>;
+
+export const reconcileSectionRow = ({
+  row,
+  fullLength,
+  survivedLength,
+}: ReconcileSectionRowParams): ArtifactContextInventoryRow | null => {
+  if (row === null || survivedLength === fullLength) {
+    return row;
+  }
+  if (survivedLength === 0) {
+    return { ...row, state: 'missing', detail: [...row.detail, ARTIFACT_SECTION_REMOVED_NOTE] };
+  }
+  return { ...row, state: 'partial', detail: [...row.detail, ARTIFACT_SECTION_CUT_NOTE] };
+};
 
 const TRUNCATION_MARKER = '...';
 const RETAIN_RATIO = 0.5;
@@ -124,6 +157,7 @@ type AllocateReportContextParams = Readonly<{
   totalCap: number;
   usage: ReportContextUsage;
   agents: ReadonlyArray<ReportAgentCandidate>;
+  limits?: ContextAllocationLimits;
 }>;
 
 const compareRecency = (left: ReportAgentCandidate, right: ReportAgentCandidate): number => {
@@ -142,13 +176,11 @@ export const allocateReportContext = ({
   totalCap,
   usage,
   agents,
+  limits = REPORT_ALLOCATION_LIMITS,
 }: AllocateReportContextParams): ReportContextAllocation => {
-  const reservedFraming = Math.min(usage.framingUsed, REPORT_ALLOCATION_LIMITS.framing);
-  const reservedTruncation = Math.min(
-    usage.truncationNotesUsed,
-    REPORT_ALLOCATION_LIMITS.truncationNotes,
-  );
-  const reservedEvidence = Math.min(usage.evidenceUsed, REPORT_ALLOCATION_LIMITS.evidence);
+  const reservedFraming = Math.min(usage.framingUsed, limits.framing);
+  const reservedTruncation = Math.min(usage.truncationNotesUsed, limits.truncationNotes);
+  const reservedEvidence = Math.min(usage.evidenceUsed, limits.evidence);
   const agentPool = Math.max(0, totalCap - reservedFraming - reservedTruncation - reservedEvidence);
 
   const withText = agents.filter((agent) => agent.textLength > 0);
@@ -164,7 +196,7 @@ export const allocateReportContext = ({
 
   let remainingPool = agentPool;
   const olderReserved = older.map((agent) => {
-    const reserve = Math.min(REPORT_ALLOCATION_LIMITS.olderAgentReserve, agent.textLength);
+    const reserve = Math.min(limits.olderAgentReserve, agent.textLength);
     const given = Math.min(reserve, Math.max(0, remainingPool));
     remainingPool -= given;
     return given;
