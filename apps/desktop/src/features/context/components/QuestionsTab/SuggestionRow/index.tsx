@@ -1,17 +1,18 @@
-import { Check } from 'lucide-react';
+import { useId } from 'react';
 import { cn } from '@goodboy/ui';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { SelectionIndicator } from './SelectionIndicator';
+
+const RECOMMENDED_DESCRIPTION = 'Recommended answer';
 
 type Props = {
-  label: string;
-  selected: boolean;
-  recommended?: boolean;
-  mode?: OpenQuestionSelectMode;
-  onToggle: () => void;
+  readonly label: string;
+  readonly selected: boolean;
+  readonly recommended?: boolean;
+  readonly mode?: OpenQuestionSelectMode;
+  readonly onToggle: () => void;
 };
-
-const isCodeLike = (label: string) => /^\S+$/.test(label) && /[_().:[\]/]/.test(label);
 
 export const SuggestionRow = ({
   label,
@@ -20,34 +21,42 @@ export const SuggestionRow = ({
   mode = 'one',
   onToggle,
 }: Props) => {
+  const descriptionId = useId();
   const role = mode === 'many' ? 'checkbox' : 'radio';
+
   return (
     <button
       type="button"
       role={role}
       aria-checked={selected}
+      aria-label={label}
+      aria-describedby={recommended ? descriptionId : undefined}
       onClick={onToggle}
-      title={recommended ? `${label} (suggested)` : label}
       className={cn(
-        'group flex w-full items-start gap-2 rounded-md border px-2.5 py-1.5 text-left text-xs font-medium',
-        'transition-[color,background-color,border-color,box-shadow] duration-150',
+        'flex w-full items-start justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-sm font-medium',
+        'transition-[color,background-color,border-color] duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-        isCodeLike(label) && 'font-mono text-2xs',
         selected
-          ? 'shadow-inset-primary border-transparent bg-primary/10 text-primary ring-1 ring-primary/30'
-          : recommended
-            ? 'border-warning/40 bg-warning/10 text-foreground ring-1 ring-warning/30 hover:border-warning/60 hover:bg-warning/15'
-            : 'border-border-soft bg-muted/40 text-muted-foreground hover:border-border hover:bg-muted hover:text-foreground',
+          ? 'border-primary/40 bg-primary/10 text-primary'
+          : 'border-border-soft bg-transparent text-foreground hover:border-border hover:bg-muted/40',
       )}
     >
-      <span aria-hidden className="grid w-3.5 shrink-0 translate-y-0.5 place-items-center">
-        {selected ? (
-          <Check size={11} strokeWidth={3} />
-        ) : recommended ? (
-          <CONCEPT_ICONS.suggestion size={11} className="text-info" />
-        ) : null}
+      <span className="flex min-w-0 items-start gap-2">
+        <SelectionIndicator mode={mode} selected={selected} />
+        <span className="min-w-0 whitespace-normal break-words">{label}</span>
       </span>
-      <span className="min-w-0 flex-1 whitespace-normal break-words">{label}</span>
+      {recommended && (
+        <span className="flex shrink-0 translate-y-0.5 items-center">
+          <CONCEPT_ICONS.suggestion
+            size={ICON_SIZE.row}
+            aria-hidden
+            className="text-muted-foreground"
+          />
+          <span id={descriptionId} className="sr-only">
+            {RECOMMENDED_DESCRIPTION}
+          </span>
+        </span>
+      )}
     </button>
   );
 };

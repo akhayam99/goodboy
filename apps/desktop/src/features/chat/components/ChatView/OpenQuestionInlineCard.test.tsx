@@ -97,6 +97,22 @@ describe('OpenQuestionInlineCard', () => {
     expect(screen.getByText('Postgres, because the migration path is shorter')).toBeTruthy();
   });
 
+  it('says an answer came from an agent rather than from the person', () => {
+    const byAgent: OpenQuestion = {
+      ...baseQuestion,
+      status: 'answered',
+      userAnswer: 'Postgres',
+      answerSource: 'agent',
+      answeredAt: '2026-06-13T00:05:00.000Z',
+    } as unknown as OpenQuestion;
+
+    render(<OpenQuestionInlineCard question={byAgent} sessionId={'sess-1' as never} />);
+
+    fireEvent.click(screen.getByRole('button'));
+    expect(screen.getByText('Agent answered:')).toBeTruthy();
+    expect(screen.queryByText('You answered:')).toBeNull();
+  });
+
   it('renders the agent-resolved sentinel as a muted variant', () => {
     const resolved: OpenQuestion = {
       ...baseQuestion,

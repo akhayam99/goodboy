@@ -7,9 +7,10 @@ import { useOpenQuestions } from '../../../context/components/QuestionsTab/useOp
 type Props = {
   readonly question: OpenQuestion;
   readonly sessionId: SessionId;
+  readonly askedByName?: string | null;
 };
 
-export const InteractiveQuestionCard = ({ question, sessionId }: Props) => {
+export const InteractiveQuestionCard = ({ question, sessionId, askedByName = null }: Props) => {
   const {
     drafts,
     justAnswered,
@@ -32,6 +33,7 @@ export const InteractiveQuestionCard = ({ question, sessionId }: Props) => {
       customAnswer={draft?.customAnswer ?? ''}
       showCustomField={draft?.showCustomField ?? false}
       justAnswered={justAnswered.includes(question.id)}
+      askedByName={askedByName}
       onToggleSuggestion={toggleSuggestion}
       onSetCustomAnswer={setCustomAnswer}
       onToggleCustomField={toggleCustomField}

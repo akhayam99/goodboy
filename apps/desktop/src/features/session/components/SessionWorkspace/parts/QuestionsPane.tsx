@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Bot } from 'lucide-react';
 import { Skeleton } from '@goodboy/ui';
 import { LensEmptyState } from '@goodboy/ui';
@@ -27,6 +27,8 @@ import {
   buildQuestionClusters,
   type QuestionCluster,
 } from '../../../../context/components/QuestionsTab/clusters';
+import { resolveStagedFlow } from '../../../../context/components/QuestionsTab/resolveStagedFlow';
+import { summarizeStagedAnswers } from '../../../../context/components/QuestionsTab/summarizeStagedAnswers';
 import {
   deriveDraftAnswer,
   useOpenQuestions,
@@ -82,10 +84,30 @@ const ClusterSection = ({
   onUndo,
   onSubmit,
 }: ClusterSectionProps) => {
+  const [stepIndex, setStepIndex] = useState(0);
+
   const answerablePairs = cluster.questions
     .filter((question) => question.id !== pendingUndoQuestionId)
     .map((q) => ({ id: q.id, text: q.text, answer: deriveDraftAnswer(drafts[q.id]) }));
   const pendingPairs = answerablePairs.filter((pair) => pair.answer.length > 0);
+
+  const flow = resolveStagedFlow({ total: cluster.questions.length, index: stepIndex });
+  const current = cluster.questions[flow.index] ?? null;
+
+  const handleForward = () => {
+    if (flow.action === 'send') {
+      setStepIndex(0);
+      onSubmit(pendingPairs, cluster.ownerAgentId);
+      return;
+    }
+    setStepIndex(flow.index + 1);
+  };
+
+  const handleBack = () => {
+    setStepIndex(flow.index - 1);
+  };
+
+  const showsFooter = flow.showsStepper || pendingPairs.length > 0;
 
   return (
     <div className="flex flex-col gap-2">
@@ -97,32 +119,42 @@ const ClusterSection = ({
           creatorAgentName={cluster.creatorAgentName}
         />
       )}
-      {cluster.questions.map((q) =>
-        q.id === pendingUndoQuestionId ? (
-          <DismissedQuestionUndo key={q.id} onUndo={() => onUndo(q)} />
+      {current !== null &&
+        (current.id === pendingUndoQuestionId ? (
+          <DismissedQuestionUndo key={current.id} onUndo={() => onUndo(current)} />
         ) : (
           <QuestionCard
-            key={q.id}
-            question={q}
-            selectedSuggestions={drafts[q.id]?.selectedSuggestions ?? []}
-            customAnswer={drafts[q.id]?.customAnswer ?? ''}
-            showCustomField={drafts[q.id]?.showCustomField ?? false}
-            justAnswered={justAnswered.includes(q.id)}
+            key={current.id}
+            question={current}
+            selectedSuggestions={drafts[current.id]?.selectedSuggestions ?? []}
+            customAnswer={drafts[current.id]?.customAnswer ?? ''}
+            showCustomField={drafts[current.id]?.showCustomField ?? false}
+            justAnswered={justAnswered.includes(current.id)}
             onToggleSuggestion={onToggleSuggestion}
             onSetCustomAnswer={onSetCustomAnswer}
             onToggleCustomField={onToggleCustomField}
-            onDismiss={() => onDismiss(q)}
+            onDismiss={() => onDismiss(current)}
             onClearJustAnswered={onClearJustAnswered}
           />
-        ),
-      )}
-      {pendingPairs.length > 0 ? (
+        ))}
+      {showsFooter && (
         <AnswerSubmitButton
           answerCount={pendingPairs.length}
           totalCount={answerablePairs.length}
-          onClick={() => onSubmit(pendingPairs, cluster.ownerAgentId)}
+          action={flow.action}
+          stepIndex={flow.index}
+          stepCount={flow.total}
+          canGoBack={flow.canGoBack}
+          onBack={handleBack}
+          onClick={handleForward}
+          disabled={flow.action === 'send' && pendingPairs.length === 0}
+          recap={
+            flow.action === 'send' && flow.showsStepper
+              ? summarizeStagedAnswers({ entries: answerablePairs })
+              : ''
+          }
         />
-      ) : null}
+      )}
     </div>
   );
 };

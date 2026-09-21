@@ -1,9 +1,11 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { Agent, AgentId, OpenQuestion, SessionId, Workflow } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { AnswerSubmitButton } from '../../../context/components/QuestionsTab/AnswerSubmitButton';
 import { QuestionClusterHeader } from '../../../context/components/QuestionsTab/QuestionClusterHeader';
 import { buildQuestionClusters } from '../../../context/components/QuestionsTab/clusters';
+import { resolveStagedFlow } from '../../../context/components/QuestionsTab/resolveStagedFlow';
+import { summarizeStagedAnswers } from '../../../context/components/QuestionsTab/summarizeStagedAnswers';
 import {
   deriveDraftAnswer,
   useOpenQuestions,
@@ -25,6 +27,7 @@ export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null
   const answerOpenQuestions = useAppStore((s) => s.answerOpenQuestions);
   const agents = useAppStore((s) => s.sessionPhaseRuns?.[sessionId] ?? NO_AGENTS);
   const workflows = useAppStore((s) => s.sessionWorkflows?.[sessionId] ?? NO_WORKFLOWS);
+  const [stepIndex, setStepIndex] = useState(0);
 
   const { openQuestions, settled } = useMemo(
     () => ({
@@ -45,10 +48,19 @@ export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null
     return map;
   }, [agents]);
 
-  const answerablePairs = openQuestions.map((q) => ({
-    id: q.id,
-    text: q.text,
-    answer: deriveDraftAnswer(drafts[q.id]),
+  const staged = useMemo(
+    () =>
+      clusters.flatMap((cluster) => cluster.questions.map((question) => ({ cluster, question }))),
+    [clusters],
+  );
+
+  const flow = resolveStagedFlow({ total: staged.length, index: stepIndex });
+  const current = staged[flow.index] ?? null;
+
+  const answerablePairs = staged.map(({ question }) => ({
+    id: question.id,
+    text: question.text,
+    answer: deriveDraftAnswer(drafts[question.id]),
   }));
   const pendingPairs = answerablePairs.filter((pair) => pair.answer.length > 0);
   const targetAgentId = questions[0]?.createdByAgentId ?? null;
@@ -57,40 +69,81 @@ export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null
     if (pendingPairs.length === 0) {
       return;
     }
+    setStepIndex(0);
     flashAnswered(pendingPairs.map((pair) => pair.id));
     await answerOpenQuestions(sessionId, pendingPairs, targetAgentId);
   }, [pendingPairs, flashAnswered, answerOpenQuestions, sessionId, targetAgentId]);
 
+  const handleForward = useCallback(() => {
+    if (flow.action === 'send') {
+      void handleSubmit();
+      return;
+    }
+    setStepIndex(flow.index + 1);
+  }, [flow.action, flow.index, handleSubmit]);
+
+  const handleBack = useCallback(() => {
+    setStepIndex(flow.index - 1);
+  }, [flow.index]);
+
+  const ownerAgent =
+    current?.cluster.ownerAgentId != null
+      ? (agentById.get(current.cluster.ownerAgentId) ?? null)
+      : null;
+  const showsOwner =
+    current !== null &&
+    current.cluster.ownerAgentId != null &&
+    current.cluster.ownerAgentId !== viewerAgentId;
+  const headerName = showsOwner ? current.cluster.ownerAgentName : null;
+  const creatorName =
+    current?.question.createdByAgentId != null
+      ? (agentById.get(current.question.createdByAgentId)?.name ?? null)
+      : null;
+  const creatorIsViewer =
+    current?.question.createdByAgentId != null &&
+    current.question.createdByAgentId === viewerAgentId;
+  const askedByName = creatorIsViewer || creatorName === headerName ? null : creatorName;
+  const showsFooter = flow.showsStepper || pendingPairs.length > 0;
+
   return (
-    <div className="flex min-w-0 flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-2">
       {settled.map((q) => (
         <OpenQuestionInlineCard key={q.id} question={q} sessionId={sessionId} />
       ))}
-      {clusters.map((cluster) => {
-        const ownerAgent =
-          cluster.ownerAgentId != null ? (agentById.get(cluster.ownerAgentId) ?? null) : null;
-        const showsOwner = cluster.ownerAgentId != null && cluster.ownerAgentId !== viewerAgentId;
-        return (
-          <div key={cluster.ownerAgentId ?? '__orphan__'} className="flex min-w-0 flex-col gap-1.5">
-            {showsOwner && (
-              <QuestionClusterHeader
-                sessionId={sessionId}
-                ownerAgent={ownerAgent}
-                ownerAgentName={cluster.ownerAgentName}
-                creatorAgentName={cluster.creatorAgentName}
-              />
-            )}
-            {cluster.questions.map((q) => (
-              <OpenQuestionInlineCard key={q.id} question={q} sessionId={sessionId} />
-            ))}
-          </div>
-        );
-      })}
-      {pendingPairs.length > 0 && (
+      {current !== null && (
+        <div className="flex min-w-0 flex-col gap-2">
+          {showsOwner && (
+            <QuestionClusterHeader
+              sessionId={sessionId}
+              ownerAgent={ownerAgent}
+              ownerAgentName={current.cluster.ownerAgentName}
+              creatorAgentName={current.cluster.creatorAgentName}
+            />
+          )}
+          <OpenQuestionInlineCard
+            key={current.question.id}
+            question={current.question}
+            sessionId={sessionId}
+            askedByName={askedByName}
+          />
+        </div>
+      )}
+      {showsFooter && (
         <AnswerSubmitButton
           answerCount={pendingPairs.length}
           totalCount={answerablePairs.length}
-          onClick={() => void handleSubmit()}
+          action={flow.action}
+          stepIndex={flow.index}
+          stepCount={flow.total}
+          canGoBack={flow.canGoBack}
+          onBack={handleBack}
+          onClick={handleForward}
+          disabled={flow.action === 'send' && pendingPairs.length === 0}
+          recap={
+            flow.action === 'send' && flow.showsStepper
+              ? summarizeStagedAnswers({ entries: answerablePairs })
+              : ''
+          }
         />
       )}
     </div>

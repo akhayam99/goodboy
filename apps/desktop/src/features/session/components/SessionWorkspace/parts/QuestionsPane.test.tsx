@@ -15,7 +15,9 @@ const mockLoadSessionAnsweredQuestions = vi.fn().mockResolvedValue(undefined);
 const mockSelectAgent = vi.fn().mockResolvedValue(undefined);
 const mockFlashAnswered = vi.fn();
 const mockToggleSuggestion = vi.fn();
-const mockSetCustomAnswer = vi.fn();
+const mockSetCustomAnswer = vi.fn((questionId: string, text: string) => {
+  _oqDrafts[questionId] = { selectedSuggestions: [], customAnswer: text, showCustomField: true };
+});
 const mockToggleCustomField = vi.fn();
 const mockClearJustAnswered = vi.fn();
 const mockBeginUndo = vi.fn();
@@ -64,10 +66,17 @@ vi.mock('../../../../context/components/QuestionsTab/useOpenQuestions', () => ({
 vi.mock('../../../../context/components/QuestionsTab/QuestionCard', () => ({
   QuestionCard: (props: {
     question: { id: string; text: string };
+    customAnswer: string;
+    onSetCustomAnswer: (id: string, text: string) => void;
     onDismiss: (id: string) => void;
   }) => (
     <div data-testid={`question-card-${props.question.id}`}>
       <span>{props.question.text}</span>
+      <input
+        aria-label={`answer ${props.question.id}`}
+        value={props.customAnswer}
+        onChange={(event) => props.onSetCustomAnswer(props.question.id, event.target.value)}
+      />
       <button onClick={() => props.onDismiss(props.question.id)}>dismiss</button>
     </div>
   ),
@@ -292,7 +301,13 @@ describe('QuestionsPane', () => {
       expect(screen.getByText('planner')).toBeDefined();
       expect(screen.getByText('implementer')).toBeDefined();
       expect(screen.getByTestId('question-card-q1')).toBeDefined();
+      expect(screen.queryByTestId('question-card-q2')).toBeNull();
+      expect(screen.getByTestId('question-card-q3')).toBeDefined();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
       expect(screen.getByTestId('question-card-q2')).toBeDefined();
+      expect(screen.queryByTestId('question-card-q1')).toBeNull();
       expect(screen.getByTestId('question-card-q3')).toBeDefined();
     });
 
@@ -372,7 +387,7 @@ describe('QuestionsPane', () => {
       render(<QuestionsPane session={BASE_SESSION} />);
 
       expect(screen.getByTestId('question-card-q1')).toBeDefined();
-      expect(screen.getByTestId('question-card-q2')).toBeDefined();
+      expect(screen.queryByTestId('question-card-q2')).toBeNull();
       expect(screen.queryByText(/^via /)).toBeNull();
     });
 
@@ -415,6 +430,85 @@ describe('QuestionsPane', () => {
 
       expect(screen.getByText('agent A')).toBeDefined();
       expect(screen.getByText('agent B')).toBeDefined();
+    });
+  });
+
+  describe('staged answering', () => {
+    it('walks a cluster one question at a time and sends every staged answer at once', () => {
+      const scout = mkAgent('agent_scout', undefined, 'scout');
+
+      setupStore({
+        agents: [scout],
+        workflows: [],
+        openQuestions: [
+          mkQuestion('q1', { createdByAgentId: scout.id }),
+          mkQuestion('q2', { createdByAgentId: scout.id }),
+        ],
+      });
+
+      render(<QuestionsPane session={BASE_SESSION} />);
+
+      expect(screen.getByTestId('question-card-q1')).toBeDefined();
+      expect(screen.queryByTestId('question-card-q2')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Back' }).hasAttribute('disabled')).toBe(true);
+
+      fireEvent.change(screen.getByLabelText('answer q1'), {
+        target: { value: 'first answer' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+      expect(screen.getByTestId('question-card-q2')).toBeDefined();
+      expect(screen.queryByTestId('question-card-q1')).toBeNull();
+      expect(mockAnswerOpenQuestions).not.toHaveBeenCalled();
+
+      fireEvent.change(screen.getByLabelText('answer q2'), {
+        target: { value: 'second answer' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+      expect(screen.getByTestId('question-card-q1')).toBeDefined();
+      expect((screen.getByLabelText('answer q1') as HTMLInputElement).value).toBe('first answer');
+      expect(screen.getByText('2 of 2 answered')).toBeDefined();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+      expect(mockAnswerOpenQuestions).toHaveBeenCalledTimes(1);
+      expect(mockAnswerOpenQuestions).toHaveBeenCalledWith(
+        SESSION_ID,
+        [
+          { id: 'q1', text: 'question q1', answer: 'first answer' },
+          { id: 'q2', text: 'question q2', answer: 'second answer' },
+        ],
+        scout.id,
+      );
+    });
+
+    it('keeps each asking agent cluster on its own step', () => {
+      const scout = mkAgent('agent_scout', undefined, 'scout');
+      const fixer = mkAgent('agent_fixer', undefined, 'fixer');
+
+      setupStore({
+        agents: [scout, fixer],
+        workflows: [],
+        openQuestions: [
+          mkQuestion('q1', { createdByAgentId: scout.id }),
+          mkQuestion('q2', { createdByAgentId: scout.id }),
+          mkQuestion('q3', { createdByAgentId: fixer.id }),
+          mkQuestion('q4', { createdByAgentId: fixer.id }),
+        ],
+      });
+
+      render(<QuestionsPane session={BASE_SESSION} />);
+
+      expect(screen.getByTestId('question-card-q1')).toBeDefined();
+      expect(screen.getByTestId('question-card-q3')).toBeDefined();
+
+      fireEvent.click(screen.getAllByRole('button', { name: 'Continue' })[0]!);
+
+      expect(screen.getByTestId('question-card-q2')).toBeDefined();
+      expect(screen.getByTestId('question-card-q3')).toBeDefined();
+      expect(screen.queryByTestId('question-card-q4')).toBeNull();
     });
   });
 
@@ -511,6 +605,12 @@ describe('QuestionsPane', () => {
       });
 
       render(<QuestionsPane session={BASE_SESSION} />);
+      expect(screen.getByText('2 of 3 answered')).toBeDefined();
+      expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
       expect(screen.getByText('2 of 3 answered')).toBeDefined();
       expect(screen.getByRole('button', { name: 'Send' })).toBeDefined();
     });
