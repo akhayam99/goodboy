@@ -1880,15 +1880,17 @@ pub struct ChangedFilesSummary {
     pub numstat: String,
 }
 
-const LANDED_CHERRY_LIMIT: usize = 100;
+const LANDED_FILE_LIMIT: usize = 400;
 
-/// Whether every commit this branch carries is already in the base branch.
+/// Whether the base branch already carries everything this branch committed.
 ///
-/// True right after the branch is merged: `base..HEAD` is empty for a merge
-/// commit, and `git cherry` recognises a squash or a rebase by patch id. The
-/// caller then measures the working tree against `HEAD` instead of the
-/// merge-base, so a landed branch reads as clean until it is worked on again.
-fn branch_work_landed(cwd: &Path, base_ref: &str) -> bool {
+/// `base..HEAD` is empty once the branch is merged with a merge commit. A
+/// squash or a rebase rewrites the commits, so ancestry says nothing: compare
+/// the files the branch touched instead, and call it landed when the base and
+/// the branch tip agree on every one of them. The caller then measures the
+/// working tree against `HEAD` rather than the merge-base, so a landed branch
+/// reads as clean until it is worked on again.
+fn branch_work_landed(cwd: &Path, base_ref: &str, merge_base: &str) -> bool {
     let Ok(raw) = git(cwd, &["rev-list", "--count", &format!("{base_ref}..HEAD")]) else {
         return false;
     };
@@ -1898,24 +1900,23 @@ fn branch_work_landed(cwd: &Path, base_ref: &str) -> bool {
     if ahead == 0 {
         return true;
     }
-    if ahead > LANDED_CHERRY_LIMIT {
-        return false;
-    }
-    let Ok(cherry) = git(cwd, &["cherry", base_ref, "HEAD"]) else {
+    let Ok(touched) = git(cwd, &["diff", "--name-only", merge_base, "HEAD"]) else {
         return false;
     };
-    let mut seen = false;
-    for line in cherry.lines() {
-        let line = line.trim();
-        if line.is_empty() {
-            continue;
-        }
-        seen = true;
-        if line.starts_with('+') {
-            return false;
-        }
+    let paths: Vec<&str> = touched
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .collect();
+    if paths.is_empty() || paths.len() > LANDED_FILE_LIMIT {
+        return paths.is_empty();
     }
-    seen
+    let mut args: Vec<&str> = vec!["diff", "--name-only", base_ref, "HEAD", "--"];
+    args.extend(paths.iter().copied());
+    let Ok(remaining) = git(cwd, &args) else {
+        return false;
+    };
+    remaining.trim().is_empty()
 }
 
 /// Distinct file paths that differ between the worktree (including uncommitted
@@ -1952,7 +1953,7 @@ fn worktree_changed_files_blocking(
         resolve_base(p, configured_base).ok_or_else(|| WorktreeError::Git {
             message: "cannot resolve base branch merge-base".to_string(),
         })?;
-    let resolved = if branch_work_landed(p, &base_ref) {
+    let resolved = if branch_work_landed(p, &base_ref, &merge_base) {
         "HEAD".to_string()
     } else {
         merge_base
@@ -4486,18 +4487,60 @@ mod changed_files_tests {
     }
 
     #[test]
-    fn reads_a_squashed_branch_as_landed_too() {
+    fn reads_a_squash_of_several_commits_as_landed_too() {
         let root = init_repo("changed-files-squashed");
         git_ok(&root, &["checkout", "-b", "feature"]);
+        std::fs::write(root.join("feature.txt"), "a\nb\n").unwrap();
+        git_ok(&root, &["add", "feature.txt"]);
+        git_ok(&root, &["commit", "-m", "feature one"]);
         std::fs::write(root.join("feature.txt"), "a\nb\nc\n").unwrap();
         git_ok(&root, &["add", "feature.txt"]);
-        git_ok(&root, &["commit", "-m", "feature"]);
+        git_ok(&root, &["commit", "-m", "feature two"]);
         git_ok(&root, &["checkout", "main"]);
         git_ok(&root, &["merge", "--squash", "feature"]);
         git_ok(&root, &["commit", "-m", "feature squashed"]);
         git_ok(&root, &["checkout", "feature"]);
 
         assert_eq!(summary(&root), (0, 0));
+
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn still_counts_a_branch_the_base_only_partly_carries() {
+        let root = init_repo("changed-files-partly-landed");
+        git_ok(&root, &["checkout", "-b", "feature"]);
+        std::fs::write(root.join("feature.txt"), "a\nb\nc\n").unwrap();
+        git_ok(&root, &["add", "feature.txt"]);
+        git_ok(&root, &["commit", "-m", "feature"]);
+        std::fs::write(root.join("later.txt"), "d\ne\n").unwrap();
+        git_ok(&root, &["add", "later.txt"]);
+        git_ok(&root, &["commit", "-m", "later"]);
+        git_ok(&root, &["checkout", "main"]);
+        git_ok(&root, &["checkout", "feature", "--", "feature.txt"]);
+        git_ok(&root, &["add", "feature.txt"]);
+        git_ok(&root, &["commit", "-m", "took only the first file"]);
+        git_ok(&root, &["checkout", "feature"]);
+
+        assert_eq!(summary(&root), (5, 0));
+
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn keeps_counting_a_branch_the_base_changed_further() {
+        let root = init_repo("changed-files-moved-on");
+        git_ok(&root, &["checkout", "-b", "feature"]);
+        std::fs::write(root.join("feature.txt"), "a\nb\nc\n").unwrap();
+        git_ok(&root, &["add", "feature.txt"]);
+        git_ok(&root, &["commit", "-m", "feature"]);
+        git_ok(&root, &["checkout", "main"]);
+        std::fs::write(root.join("feature.txt"), "x\ny\n").unwrap();
+        git_ok(&root, &["add", "feature.txt"]);
+        git_ok(&root, &["commit", "-m", "someone else wrote it first"]);
+        git_ok(&root, &["checkout", "feature"]);
+
+        assert_eq!(summary(&root), (3, 0));
 
         std::fs::remove_dir_all(root).unwrap();
     }
