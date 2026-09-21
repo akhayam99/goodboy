@@ -607,3 +607,17 @@ describe('buildWireframeContext high fidelity theme', () => {
     expect(theme?.state).toBe('missing');
   });
 });
+
+describe('inventory after the final guard', () => {
+  it('never claims a section the returned text does not carry', () => {
+    const context = contextFor({});
+
+    context.inventory
+      .filter((row) => row.state === 'included' || row.state === 'partial')
+      .forEach((row) => {
+        if (row.id === 'plans' || row.id === 'scouts' || row.id === 'theme') {
+          expect(context.text).toContain(`## ${row.id}`);
+        }
+      });
+  });
+});

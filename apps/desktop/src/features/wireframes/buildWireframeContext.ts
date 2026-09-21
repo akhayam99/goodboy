@@ -641,7 +641,7 @@ export const buildWireframeContext = ({
     const row = reconcileSectionRow({
       row: section.row,
       fullLength: section.text.length,
-      survivedLength: pieces[id].length,
+      survivedLength: guarded.includes(pieces[id]) ? pieces[id].length : 0,
     });
     return row === null ? [] : [row];
   });
