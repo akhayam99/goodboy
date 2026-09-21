@@ -216,7 +216,7 @@ describe('ProjectMountRows', () => {
       expect((block as HTMLElement).className).not.toContain('border');
       expect(within(block as HTMLElement).getAllByTestId('project-mount-row')).toHaveLength(1);
     }
-    expect(blocks[0]?.parentElement?.className).toContain('gap-6');
+    expect(blocks[0]?.parentElement?.className).toContain('gap-3');
   });
 
   it('renders one row per branch mount of the same project', () => {

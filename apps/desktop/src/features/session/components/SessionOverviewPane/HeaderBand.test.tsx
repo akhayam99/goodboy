@@ -159,23 +159,22 @@ describe('HeaderBand', () => {
     expect(screen.queryByRole('button', { name: 'Mount a project' })).toBeNull();
   });
 
-  it('renders mounted projects before the goal', () => {
+  it('reads what the session is for before where it runs', () => {
     render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
 
-    const projects = screen.getByRole('region', { name: 'Mounted projects' });
     const goal = screen.getByText('Goal');
-    expect(projects.compareDocumentPosition(goal) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const digest = screen.getByRole('region', { name: 'Context digest' });
+    const projects = screen.getByRole('region', { name: 'Mounted projects' });
+    expect(goal.compareDocumentPosition(digest) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      digest.compareDocumentPosition(projects) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
-  it('closes the title and context zone with one divider before the sections', () => {
+  it('separates the title zone with rhythm instead of a rule', () => {
     render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
 
-    const divider = screen.getByRole('separator');
-    const projects = screen.getByRole('region', { name: 'Mounted projects' });
-    expect(
-      divider.compareDocumentPosition(projects) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(screen.getAllByRole('separator')).toHaveLength(1);
+    expect(screen.queryAllByRole('separator')).toHaveLength(0);
   });
 
   it('renders a backticked title as inline code without the backticks', () => {
