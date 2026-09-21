@@ -6,6 +6,7 @@ import {
   useState,
   type KeyboardEvent,
   type ReactNode,
+  type UIEvent,
 } from 'react';
 import { Button, ErrorStrip, SectionHeader, Skeleton, Tooltip, formatError } from '@goodboy/ui';
 import type {
@@ -22,7 +23,7 @@ import { useToast } from '../../../../app/components/Toast';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
-import { InspectorSplit } from '../../../session/components/SessionWorkspace/parts/InspectorSplit';
+import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { groupThreads } from '../../../github/comment-threads';
 import { kindRouting } from '../../../session/agent-kind';
 import { startFixAttempt } from '../../../review/startFixAttempt';
@@ -65,6 +66,9 @@ import {
 
 type Props = {
   readonly session: Session;
+  readonly header?: ReactNode;
+  readonly eyebrow?: ReactNode;
+  readonly dock?: ReactNode;
 };
 
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
@@ -80,7 +84,6 @@ type FocusRowParams = {
 };
 const EMPTY_CHECKS: ReadonlyArray<PrCheckRun> = [];
 const SKELETON_ROWS = [0, 1, 2];
-const DETAIL_WIDTH = 520;
 
 type TextEntryParams = Readonly<{
   target: EventTarget | null;
@@ -108,7 +111,7 @@ const scrollableAncestor = (node: HTMLElement | null): HTMLElement | null => {
   return null;
 };
 
-export const ResolveQueueHome = ({ session }: Props) => {
+export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null }: Props) => {
   const sessionId = session.id as SessionId;
   const listRef = useRef<HTMLDivElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
@@ -123,7 +126,6 @@ export const ResolveQueueHome = ({ session }: Props) => {
   const view = useAppStore((s) => s.resolveQueueView[sessionId] ?? EMPTY_RESOLVE_QUEUE_VIEW);
   const publicationPreview = useAppStore((s) => s.activePublicationPreview[sessionId] ?? null);
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
-  const deferResolveQueueItem = useAppStore((s) => s.deferResolveQueueItem);
   const takeUpResolveQueueItem = useAppStore((s) => s.takeUpResolveQueueItem);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const setResolveQueueView = useAppStore((s) => s.setResolveQueueView);
@@ -132,6 +134,7 @@ export const ResolveQueueHome = ({ session }: Props) => {
   const openResolveDiff = useAppStore((s) => s.openResolveDiff);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const setAgentConfig = useAppStore((s) => s.setAgentConfig);
+  const openResolvePublication = useAppStore((s) => s.openResolvePublication);
 
   const rows = useResolveQueueRows({ sessionId });
   const repo = useSessionRepo({ sessionId });
@@ -159,10 +162,6 @@ export const ResolveQueueHome = ({ session }: Props) => {
   const heldBack = useMemo(
     () => heldBackByThreadId({ drift: publicationPreview?.drift ?? EMPTY_DRIFT }),
     [publicationPreview],
-  );
-  const nextThreadId = useMemo(
-    () => threadIdAfterDecision({ rows: listed, selectedThreadId: view.expandedThreadId }),
-    [listed, view.expandedThreadId],
   );
   const selectedRow = useMemo(
     () => rows.find((row) => row.thread.threadId === view.expandedThreadId) ?? null,
@@ -192,12 +191,20 @@ export const ResolveQueueHome = ({ session }: Props) => {
       if (reviewTarget !== null) {
         consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
       }
+      const target = rows.find((row) => row.thread.threadId === threadId) ?? null;
       setResolveQueueView({
         sessionId,
-        patch: { expandedThreadId: threadId, order: listed.map((row) => row.thread.threadId) },
+        patch: {
+          expandedThreadId: threadId,
+          order: listed.map((row) => row.thread.threadId),
+          ...(target?.status === 'later' && { isDeferredShown: true }),
+          ...((target?.status === 'pushed' || target?.status === 'wont_fix_sent') && {
+            isCompletedShown: true,
+          }),
+        },
       });
     },
-    [consumeReviewTarget, listed, reviewTarget, sessionId, setResolveQueueView],
+    [consumeReviewTarget, listed, reviewTarget, rows, sessionId, setResolveQueueView],
   );
 
   const targetThreadId =
@@ -220,7 +227,7 @@ export const ResolveQueueHome = ({ session }: Props) => {
     if (!rows.some((row) => row.thread.threadId === targetThreadId)) {
       return;
     }
-    setResolveQueueView({ sessionId, patch: { expandedThreadId: targetThreadId } });
+    onSelect(targetThreadId);
     consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
   }, [
     consumeReviewTarget,
@@ -228,7 +235,7 @@ export const ResolveQueueHome = ({ session }: Props) => {
     rows,
     selectedThreadId,
     sessionId,
-    setResolveQueueView,
+    onSelect,
     targetThreadId,
   ]);
 
@@ -278,49 +285,45 @@ export const ResolveQueueHome = ({ session }: Props) => {
   );
 
   const onAskForChanges = useCallback(
-    ({ threadId, instruction }: AskForChangesParams): boolean => {
+    async ({ threadId, instruction }: AskForChangesParams): Promise<boolean> => {
       const pr = github?.pr ?? null;
       const thread = threadsByThreadId.get(threadId);
-      if (pr === null || thread === undefined || instruction === '') {
+      if (pr === null || thread === undefined) {
         return false;
       }
       const routing = kindRouting({ kind: 'resolver', roleModels });
       const row = rows.find((candidate) => candidate.thread.threadId === threadId) ?? null;
-      void startFixAttempt({
-        sessionId,
-        threads: [thread],
-        pr,
-        choice: {
-          provider: routing.provider,
-          model: routing.model,
-          ...(routing.effort !== undefined &&
-            routing.effort !== null && { effort: routing.effort }),
-        },
-        instructions: instruction,
-        mode: 'retry',
-        priorContext: [
-          {
-            threadId,
-            reply: row?.thread.replyDraft ?? null,
-            ...(row?.thread.commitShas != null && { commitShas: row.thread.commitShas }),
-            intent: 'retry',
+      try {
+        await startFixAttempt({
+          sessionId,
+          threads: [thread],
+          pr,
+          choice: {
+            provider: routing.provider,
+            model: routing.model,
+            ...(routing.effort !== undefined &&
+              routing.effort !== null && { effort: routing.effort }),
           },
-        ],
-        spawnAgent,
-        setAgentConfig,
-      }).catch((error: unknown) => showToast('error', formatError(error)));
-      return true;
+          instructions: instruction,
+          mode: 'retry',
+          priorContext: [
+            {
+              threadId,
+              reply: row?.thread.replyDraft ?? null,
+              ...(row?.thread.commitShas != null && { commitShas: row.thread.commitShas }),
+              intent: 'retry',
+            },
+          ],
+          spawnAgent,
+          setAgentConfig,
+        });
+        return true;
+      } catch (error) {
+        showToast('error', formatError(error));
+        return false;
+      }
     },
     [github, roleModels, rows, sessionId, setAgentConfig, showToast, spawnAgent, threadsByThreadId],
-  );
-
-  const onLater = useCallback(
-    ({ itemId }: { readonly itemId: string }): void => {
-      void deferResolveQueueItem({ sessionId, itemId }).catch((error: unknown) =>
-        showToast('error', formatError(error)),
-      );
-    },
-    [deferResolveQueueItem, sessionId, showToast],
   );
 
   const onResume = useCallback(
@@ -388,11 +391,10 @@ export const ResolveQueueHome = ({ session }: Props) => {
           return;
         }
         event.preventDefault();
-        onSelect(threadId);
         focusRow({ threadId });
         return;
       }
-      if (event.key !== 'Enter') {
+      if (event.key !== 'Enter' && event.key !== ' ') {
         return;
       }
       event.preventDefault();
@@ -415,31 +417,78 @@ export const ResolveQueueHome = ({ session }: Props) => {
     focusPanel();
   }, [focusPanel, selectedRow]);
 
+  useEffect(() => {
+    if (selectedRow === null || view.detailScrollTop === 0) {
+      return;
+    }
+    const viewport =
+      detailRef.current?.querySelector<HTMLElement>('[class*="overflow-y-auto"]') ?? null;
+    if (viewport !== null) {
+      viewport.scrollTop = view.detailScrollTop;
+    }
+  }, [selectedRow, view.detailScrollTop]);
+
+  const onDetailScroll = useCallback(
+    (event: UIEvent<HTMLElement>): void => {
+      if (!(event.target instanceof HTMLElement)) {
+        return;
+      }
+      setResolveQueueView({ sessionId, patch: { detailScrollTop: event.target.scrollTop } });
+    },
+    [sessionId, setResolveQueueView],
+  );
+
   const onAdvanceFromPanel = useCallback(
-    (threadId: string | null): void => {
+    (threadId: string | null, excludedThreadIds: ReadonlyArray<string> = []): void => {
       const panel = detailRef.current;
       const focused = document.activeElement;
       if (threadId !== null && panel !== null && focused !== null && panel.contains(focused)) {
         pendingPanelThreadIdRef.current = threadId;
       }
-      onSelect(threadId);
+      const next =
+        threadId === null
+          ? threadIdAfterDecision({
+              rows: listed,
+              selectedThreadId: view.expandedThreadId,
+              excludedThreadIds,
+              eligibleThreadIds: rows.map((row) => row.thread.threadId),
+            })
+          : threadId;
+      if (next !== null && panel !== null && focused !== null && panel.contains(focused)) {
+        pendingPanelThreadIdRef.current = next;
+      }
+      onSelect(next);
     },
-    [onSelect],
+    [listed, onSelect, rows, view.expandedThreadId],
   );
 
-  const onPanelKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLDivElement>): void => {
-      if (event.key !== 'Escape' || view.expandedThreadId === null) {
+  const closeDetail = useCallback((): void => {
+    const threadId = view.expandedThreadId;
+    if (threadId === null) {
+      return;
+    }
+    onSelect(null);
+    requestAnimationFrame(() => focusRow({ threadId }));
+  }, [focusRow, onSelect, view.expandedThreadId]);
+
+  useEffect(() => {
+    if (view.expandedThreadId === null) {
+      return;
+    }
+    const onKeyDown = (event: globalThis.KeyboardEvent): void => {
+      if (event.key !== 'Escape' || event.defaultPrevented) {
         return;
       }
       if (isTextEntry({ target: event.target })) {
         return;
       }
       event.preventDefault();
-      focusRow({ threadId: view.expandedThreadId });
-    },
-    [focusRow, view.expandedThreadId],
-  );
+      event.stopPropagation();
+      closeDetail();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [closeDetail, view.expandedThreadId]);
 
   const renderRow = useCallback(
     ({ row }: { readonly row: QueueRow }): ReactNode => (
@@ -448,8 +497,10 @@ export const ResolveQueueHome = ({ session }: Props) => {
         row={row}
         isSelected={row.thread.threadId === view.expandedThreadId}
         heldBack={heldBack.get(row.thread.threadId) ?? null}
-        onOpen={() => onSelect(row.thread.threadId)}
-        onLater={() => onLater({ itemId: row.item.id })}
+        onOpen={() => {
+          pendingPanelThreadIdRef.current = row.thread.threadId;
+          onSelect(row.thread.threadId);
+        }}
         onResume={() => onResume({ itemId: row.item.id })}
         onOpenCommit={({ sha }) =>
           onOpenInDiff({
@@ -461,14 +512,20 @@ export const ResolveQueueHome = ({ session }: Props) => {
         }
       />
     ),
-    [heldBack, onLater, onOpenInDiff, onResume, onSelect, view.expandedThreadId],
+    [heldBack, onOpenInDiff, onResume, onSelect, view.expandedThreadId],
+  );
+
+  const inPane = (children: ReactNode): ReactNode => (
+    <StudioDetailLayout header={header} eyebrow={eyebrow} dock={dock} fit="bleed">
+      {children}
+    </StudioDetailLayout>
   );
 
   if (github?.pr == null) {
-    return (
+    return inPane(
       <PaneShell title={RESOLVE_QUEUE_TITLE}>
         <NoResolveTargetState onOpenReview={() => void openReview({ sessionId })} />
-      </PaneShell>
+      </PaneShell>,
     );
   }
 
@@ -479,13 +536,13 @@ export const ResolveQueueHome = ({ session }: Props) => {
   });
 
   if (errorPlacement === 'whole_surface' && refreshError !== null) {
-    return (
+    return inPane(
       <PaneShell title={RESOLVE_QUEUE_TITLE}>
         <ResolveQueueErrorState
           message={refreshError}
           onRetry={() => void refreshSessionPrDetail(sessionId, { force: true })}
         />
-      </PaneShell>
+      </PaneShell>,
     );
   }
 
@@ -493,131 +550,187 @@ export const ResolveQueueHome = ({ session }: Props) => {
   const isRunLive = hasActiveResolveRun({ attempts });
 
   return (
-    <InspectorSplit
-      defaultWidth={DETAIL_WIDTH}
-      open={selectedRow !== null}
-      panel={
-        selectedRow === null ? null : (
-          <div
+    <div className="isolate grid h-full min-h-0 min-w-0 overflow-hidden">
+      <div
+        className="col-start-1 row-start-1 min-h-0 min-w-0"
+        aria-hidden={selectedRow !== null}
+        {...(selectedRow !== null && { inert: true })}
+      >
+        <StudioDetailLayout header={header} eyebrow={eyebrow} dock={dock} fit="bleed">
+          <PaneShell
+            title={RESOLVE_QUEUE_TITLE}
+            scroll="body"
+            actions={
+              isConfiguring ? null : (
+                <Tooltip
+                  content={
+                    isRunLive ? RESOLVE_RUN_IN_PROGRESS : RESOLVE_QUEUE_ACTION_LABEL.startRun
+                  }
+                >
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={isRunLive}
+                    onClick={() => setIsConfiguring(true)}
+                  >
+                    {RESOLVE_QUEUE_ACTION_LABEL.startRun}
+                  </Button>
+                </Tooltip>
+              )
+            }
+          >
+            {isConfiguring ? (
+              <ResolveSpawnSheet
+                value={spawnConfig}
+                onChange={setSpawnConfig}
+                disabled={false}
+                isBusy={isSpawning}
+                onStart={() => void onStartResolveRun()}
+                onCancel={() => setIsConfiguring(false)}
+              />
+            ) : (
+              <div className="flex min-w-0 flex-col gap-4" ref={listRef} onKeyDown={onListKeyDown}>
+                {errorPlacement === 'inline' && refreshError !== null && (
+                  <ErrorStrip
+                    label={RESOLVE_QUEUE_REFRESH_LABEL}
+                    error={new Error(refreshError)}
+                    onRetry={() => void refreshSessionPrDetail(sessionId, { force: true })}
+                  />
+                )}
+                {reviewTarget?.status === 'pending' && (
+                  <p role="status" className="text-2xs text-muted-foreground">
+                    {reviewTargetPending({ hasThread: targetThreadId !== null })}
+                  </p>
+                )}
+                {targetError !== null && (
+                  <ErrorStrip
+                    label={reviewTargetErrorLabel({ hasThread: targetThreadId !== null })}
+                    error={new Error(targetError)}
+                    onRetry={onRetryTarget}
+                  />
+                )}
+                <QueueFilterChips
+                  filter={view.filter}
+                  needsReviewCount={groups.needsReview.length + groups.approved.length}
+                  activeCount={groups.active.length}
+                  retryableCount={groups.retryable.length}
+                  onChange={(filter) => setResolveQueueView({ sessionId, patch: { filter } })}
+                />
+                {isLoading && (
+                  <div className="flex flex-col gap-4">
+                    {SKELETON_ROWS.map((key) => (
+                      <div key={key} className="flex flex-col gap-2 px-3 py-2">
+                        <Skeleton className="h-5 w-full" />
+                        <Skeleton className="h-5 w-3/4" />
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3.5 w-48" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!isLoading && listed.length === 0 && view.filter === 'retryable' && (
+                  <NothingToRetryState />
+                )}
+                {!isLoading && listed.length === 0 && view.filter !== 'retryable' && (
+                  <NothingWaitingState hasOtherActiveWork={groups.active.length > 0} />
+                )}
+                {!isLoading && listed.length > 0 && (
+                  <div className="flex flex-col gap-4">
+                    {listGroups.map((group) => (
+                      <div key={group.key} className="flex min-w-0 flex-col gap-2">
+                        {group.attemptId !== null && (
+                          <SectionHeader
+                            label={sharedRunHeading({ count: group.rows.length })}
+                            headingLevel={3}
+                          />
+                        )}
+                        <ol className="flex flex-col gap-2">
+                          {group.rows.map((row) => renderRow({ row }))}
+                        </ol>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <ResolveQueueFooter
+                  completed={groups.completed}
+                  later={groups.later}
+                  renderRow={renderRow}
+                  isDeferredShown={view.isDeferredShown}
+                  isCompletedShown={view.isCompletedShown}
+                  onDeferredShownChange={(isDeferredShown) =>
+                    setResolveQueueView({ sessionId, patch: { isDeferredShown } })
+                  }
+                  onCompletedShownChange={(isCompletedShown) =>
+                    setResolveQueueView({ sessionId, patch: { isCompletedShown } })
+                  }
+                />
+              </div>
+            )}
+          </PaneShell>
+        </StudioDetailLayout>
+      </div>
+      {selectedRow !== null && (
+        <div className="pointer-events-none col-start-1 row-start-1 z-10 min-h-0 min-w-0 bg-background">
+          <section
             ref={detailRef}
-            onKeyDown={onPanelKeyDown}
-            className="flex h-full min-h-0 min-w-0 flex-col"
+            aria-label="Resolve comment detail"
+            onScrollCapture={onDetailScroll}
+            className="pointer-events-auto flex h-full min-h-0 min-w-0 flex-col"
           >
             <ResolveItemContainer
               key={selectedRow.thread.threadId}
               sessionId={sessionId}
+              prNumber={github.pr.number}
               row={selectedRow}
               allRows={rows}
-              nextThreadId={nextThreadId}
               worktreePath={repo?.worktreePath ?? null}
               onSelect={onAdvanceFromPanel}
-              onAskForChanges={onAskForChanges}
+              onRequestAttempt={onAskForChanges}
               onOpenInDiff={onOpenInDiff}
+              onBack={closeDetail}
+              onPrevious={() => {
+                const threadId = threadIdAtStep({
+                  rows: listed,
+                  selectedThreadId: selectedRow.thread.threadId,
+                  delta: -1,
+                });
+                if (threadId !== null) {
+                  pendingPanelThreadIdRef.current = threadId;
+                  onSelect(threadId);
+                }
+              }}
+              onNext={() => {
+                const threadId = threadIdAtStep({
+                  rows: listed,
+                  selectedThreadId: selectedRow.thread.threadId,
+                  delta: 1,
+                });
+                if (threadId !== null) {
+                  pendingPanelThreadIdRef.current = threadId;
+                  onSelect(threadId);
+                }
+              }}
+              canPrevious={
+                threadIdAtStep({
+                  rows: listed,
+                  selectedThreadId: selectedRow.thread.threadId,
+                  delta: -1,
+                }) !== null
+              }
+              canNext={
+                threadIdAtStep({
+                  rows: listed,
+                  selectedThreadId: selectedRow.thread.threadId,
+                  delta: 1,
+                }) !== null
+              }
+              onReviewPublication={({ threadId, reconcile }) =>
+                openResolvePublication({ sessionId, threadId, reconcile })
+              }
             />
-          </div>
-        )
-      }
-    >
-      <PaneShell
-        title={RESOLVE_QUEUE_TITLE}
-        scroll="body"
-        actions={
-          isConfiguring ? null : (
-            <Tooltip
-              content={isRunLive ? RESOLVE_RUN_IN_PROGRESS : RESOLVE_QUEUE_ACTION_LABEL.startRun}
-            >
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={isRunLive}
-                onClick={() => setIsConfiguring(true)}
-              >
-                {RESOLVE_QUEUE_ACTION_LABEL.startRun}
-              </Button>
-            </Tooltip>
-          )
-        }
-      >
-        {isConfiguring ? (
-          <ResolveSpawnSheet
-            value={spawnConfig}
-            onChange={setSpawnConfig}
-            disabled={false}
-            isBusy={isSpawning}
-            onStart={() => void onStartResolveRun()}
-            onCancel={() => setIsConfiguring(false)}
-          />
-        ) : (
-          <div className="flex min-w-0 flex-col gap-4" ref={listRef} onKeyDown={onListKeyDown}>
-            {errorPlacement === 'inline' && refreshError !== null && (
-              <ErrorStrip
-                label={RESOLVE_QUEUE_REFRESH_LABEL}
-                error={new Error(refreshError)}
-                onRetry={() => void refreshSessionPrDetail(sessionId, { force: true })}
-              />
-            )}
-            {reviewTarget?.status === 'pending' && (
-              <p role="status" className="text-2xs text-muted-foreground">
-                {reviewTargetPending({ hasThread: targetThreadId !== null })}
-              </p>
-            )}
-            {targetError !== null && (
-              <ErrorStrip
-                label={reviewTargetErrorLabel({ hasThread: targetThreadId !== null })}
-                error={new Error(targetError)}
-                onRetry={onRetryTarget}
-              />
-            )}
-            <QueueFilterChips
-              filter={view.filter}
-              needsReviewCount={groups.needsReview.length + groups.approved.length}
-              activeCount={groups.active.length}
-              retryableCount={groups.retryable.length}
-              onChange={(filter) => setResolveQueueView({ sessionId, patch: { filter } })}
-            />
-            {isLoading && (
-              <div className="flex flex-col gap-4">
-                {SKELETON_ROWS.map((key) => (
-                  <div key={key} className="flex flex-col gap-2 px-3 py-2">
-                    <Skeleton className="h-5 w-full" />
-                    <Skeleton className="h-5 w-3/4" />
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3.5 w-48" />
-                  </div>
-                ))}
-              </div>
-            )}
-            {!isLoading && listed.length === 0 && view.filter === 'retryable' && (
-              <NothingToRetryState />
-            )}
-            {!isLoading && listed.length === 0 && view.filter !== 'retryable' && (
-              <NothingWaitingState hasOtherActiveWork={groups.active.length > 0} />
-            )}
-            {!isLoading && listed.length > 0 && (
-              <div className="flex flex-col gap-4">
-                {listGroups.map((group) => (
-                  <div key={group.key} className="flex min-w-0 flex-col gap-2">
-                    {group.attemptId !== null && (
-                      <SectionHeader
-                        label={sharedRunHeading({ count: group.rows.length })}
-                        headingLevel={3}
-                      />
-                    )}
-                    <ol className="flex flex-col gap-2">
-                      {group.rows.map((row) => renderRow({ row }))}
-                    </ol>
-                  </div>
-                ))}
-              </div>
-            )}
-            <ResolveQueueFooter
-              completed={groups.completed}
-              later={groups.later}
-              renderRow={renderRow}
-            />
-          </div>
-        )}
-      </PaneShell>
-    </InspectorSplit>
+          </section>
+        </div>
+      )}
+    </div>
   );
 };

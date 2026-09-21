@@ -19,6 +19,8 @@ export const SESSION_EVICTION = [
   { key: 'reviewTargets', keyedBy: 'session', evictOn: 'archive' },
   { key: 'resolveQueueView', keyedBy: 'session', evictOn: 'archive' },
   { key: 'resolveDiffReturn', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'resolvePublicationReturn', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'resolveAgentReturn', keyedBy: 'session', evictOn: 'archive' },
   { key: 'resolveItemDrafts', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionResolveUncapturedWork', keyedBy: 'session', evictOn: 'archive' },
   { key: 'activePublicationPreview', keyedBy: 'session', evictOn: 'archive' },

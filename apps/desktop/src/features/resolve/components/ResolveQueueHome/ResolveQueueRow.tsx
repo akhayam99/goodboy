@@ -1,5 +1,5 @@
 import type { KeyboardEvent, SyntheticEvent } from 'react';
-import { CalendarClock, ChevronRight, RotateCcw } from 'lucide-react';
+import { ChevronRight, RotateCcw } from 'lucide-react';
 import { CardAction, CardActionSlot, Chip, ClampedProse, Tooltip, cn } from '@goodboy/ui';
 import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
@@ -16,13 +16,9 @@ type Props = {
   readonly isSelected: boolean;
   readonly heldBack: HeldBackKind | null;
   readonly onOpen: () => void;
-  readonly onLater: () => void;
   readonly onResume: () => void;
   readonly onOpenCommit: (params: { readonly sha: string }) => void;
 };
-
-const REVEAL_GROUP =
-  'group-hover/resolve-row:opacity-100 group-focus-within/resolve-row:opacity-100';
 
 const deliveryTimeMs = ({ row }: { readonly row: QueueRow }): number | null =>
   row.delivery === null ? null : (row.delivery.replyPostedAt ?? row.delivery.resolvedAt);
@@ -46,7 +42,6 @@ export const ResolveQueueRow = ({
   isSelected,
   heldBack,
   onOpen,
-  onLater,
   onResume,
   onOpenCommit,
 }: Props) => {
@@ -57,7 +52,6 @@ export const ResolveQueueRow = ({
   const support = deliverySupportLine({ row });
   const integratedSha = item.integratedSha;
   const postedAtMs = deliveryTimeMs({ row });
-  const canDefer = item.approvalState === 'none' && status !== 'working';
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (event.target !== event.currentTarget) {
@@ -161,27 +155,18 @@ export const ResolveQueueRow = ({
           )}
           {support}
         </span>
-        <CardActionSlot
-          label="Comment lifecycle actions"
-          className="col-start-3 row-start-2 self-end"
-        >
-          {status === 'later' && (
+        {status === 'later' && (
+          <CardActionSlot
+            label="Comment lifecycle actions"
+            className="col-start-3 row-start-2 self-end"
+          >
             <CardAction
               icon={RotateCcw}
               label={RESOLVE_QUEUE_ACTION_LABEL.resume}
               onClick={onResume}
             />
-          )}
-          {status !== 'later' && canDefer && (
-            <CardAction
-              icon={CalendarClock}
-              label={RESOLVE_QUEUE_ACTION_LABEL.later}
-              reveal
-              revealGroup={REVEAL_GROUP}
-              onClick={onLater}
-            />
-          )}
-        </CardActionSlot>
+          </CardActionSlot>
+        )}
       </div>
     </li>
   );

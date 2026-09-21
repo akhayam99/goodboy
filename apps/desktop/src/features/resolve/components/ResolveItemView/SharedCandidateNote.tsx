@@ -8,6 +8,7 @@ import { sharedCandidateBlocker, type SharedCandidateMember } from '../../shared
 
 type Props = {
   readonly members: ReadonlyArray<SharedCandidateMember>;
+  readonly onSelectMember: (threadId: string) => void;
 };
 
 type SentenceParams = {
@@ -19,7 +20,7 @@ const sharedCandidateSentence = ({ count }: SentenceParams): string =>
     ? 'Approving this also approves 1 other comment'
     : `Approving this also approves ${count} other comments`;
 
-export const SharedCandidateNote = ({ members }: Props) => {
+export const SharedCandidateNote = ({ members, onSelectMember }: Props) => {
   if (members.length === 0) {
     return null;
   }
@@ -35,11 +36,15 @@ export const SharedCandidateNote = ({ members }: Props) => {
       <ul className="flex min-w-0 flex-col gap-1">
         {members.map((member) => (
           <li key={member.queueItemId} className="flex min-w-0 items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground">
+            <button
+              type="button"
+              onClick={() => onSelectMember(member.threadId)}
+              className="min-w-0 flex-1 truncate rounded text-left text-2xs text-muted-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+            >
               {member.title === null
                 ? member.threadId
                 : stripInlineMarkdown({ text: member.title })}
-            </span>
+            </button>
             {member.approvalState === 'deferred' && (
               <Chip size="3xs" tone="warning" bordered={false} label="Later" />
             )}

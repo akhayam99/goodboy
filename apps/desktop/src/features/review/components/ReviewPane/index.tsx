@@ -334,33 +334,31 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
       />
     ) : mode === 'write_review' ? (
       <WriteReviewMode session={session} listWidth={listWidth} onBack={backToQueue} />
+    ) : null;
+
+  const dock =
+    mode === 'write_review' ? (
+      <PublishBar
+        provider="github"
+        draftCount={openDrafts.length}
+        publishing={isBusy}
+        onPublish={(opts) => void onWriteReviewPublish(opts)}
+      />
     ) : (
-      <ResolveQueueHome session={session} />
+      <PublishConversationsBar
+        sessionId={sessionId}
+        draftCount={openDrafts.length}
+        mode={mode}
+        onSelectMode={setMode}
+      />
     );
 
+  if (mode === 'queue') {
+    return <ResolveQueueHome session={session} header={header} eyebrow={eyebrow} dock={dock} />;
+  }
+
   return (
-    <StudioDetailLayout
-      header={header}
-      eyebrow={eyebrow}
-      fit="bleed"
-      dock={
-        mode === 'write_review' ? (
-          <PublishBar
-            provider="github"
-            draftCount={openDrafts.length}
-            publishing={isBusy}
-            onPublish={(opts) => void onWriteReviewPublish(opts)}
-          />
-        ) : (
-          <PublishConversationsBar
-            sessionId={sessionId}
-            draftCount={openDrafts.length}
-            mode={mode}
-            onSelectMode={setMode}
-          />
-        )
-      }
-    >
+    <StudioDetailLayout header={header} eyebrow={eyebrow} fit="bleed" dock={dock}>
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">{surface}</div>
       </div>

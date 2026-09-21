@@ -20,7 +20,15 @@ import {
   setSessionStudio,
   toggleWorkflowExpand,
 } from './workSurface';
-import { openResolveDiff, returnFromResolveDiff, setResolveQueueView } from './resolveSurface';
+import {
+  openResolveAgent,
+  openResolveDiff,
+  openResolvePublication,
+  returnFromResolveDiff,
+  returnFromResolveAgent,
+  returnFromResolvePublication,
+  setResolveQueueView,
+} from './resolveSurface';
 import { setResolveItemDraft } from './resolveItemDrafts';
 import { beginSessionCreation, endSessionCreation } from './sessionCreation';
 import type { GetFn, SessionViewSlice, SetFn } from './types';
@@ -42,6 +50,8 @@ export type {
   ResolveDiffReturn,
   ResolveQueueFilter,
   ResolveQueueView,
+  ResolveAgentReturn,
+  ResolvePublicationReturn,
   SessionCreation,
   SessionCreationId,
   SessionCreationKind,
@@ -72,6 +82,10 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     setResolveQueueView: setResolveQueueView(set),
     openResolveDiff: openResolveDiff(set, get),
     returnFromResolveDiff: returnFromResolveDiff(set, get),
+    openResolvePublication: openResolvePublication(set),
+    returnFromResolvePublication: returnFromResolvePublication(set),
+    openResolveAgent: openResolveAgent(set, get),
+    returnFromResolveAgent: returnFromResolveAgent(set, get),
     setResolveItemDraft: setResolveItemDraft(set),
     openMountDiff: openMountDiff(set, get),
     openMountTerminal: openMountTerminal(set, get),

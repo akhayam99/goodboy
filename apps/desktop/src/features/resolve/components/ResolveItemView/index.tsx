@@ -1,16 +1,5 @@
-import {
-  Button,
-  Divider,
-  Markdown,
-  OverflowMenu,
-  PANE_RHYTHM,
-  ScrollFade,
-  SectionHeader,
-  Tooltip,
-  cn,
-} from '@goodboy/ui';
-import type { OverflowMenuItem } from '@goodboy/ui';
-import type { FileDiff } from '@goodboy/types';
+import { Button, Divider, Markdown, PANE_RHYTHM, ScrollFade, SectionHeader, cn } from '@goodboy/ui';
+import type { FileDiff, SessionId } from '@goodboy/types';
 import type { ResolveChecksSummary } from '../../checkReceipts';
 import type { ResolveQueueRow } from '../../buildResolveQueueRows';
 import type { ResolveProposalKind } from '../../../../store/slices/resolve/resolveProposalKind';
@@ -23,7 +12,8 @@ import {
   sharedRunHeading,
 } from '../../resolveQueueCopy';
 import { deliverySupportLine } from '../../resolveDeliverySupport';
-import { ResolveStatusBadge } from '../ResolveStatusBadge';
+import { ResolveItemHeader } from '../ResolveItemHeader';
+import type { ResolveItemActionId, ResolveItemActionSet } from '../../resolveItemActions';
 import { ChangeBlock } from './ChangeBlock';
 import { ChecksBlock } from './ChecksBlock';
 import type { ResolveDecisionMode } from '../../resolveItemDraft';
@@ -32,10 +22,12 @@ import { SharedCandidateNote } from './SharedCandidateNote';
 import type { SharedCandidateMember } from '../../sharedCandidateThreadIds';
 import { ResolveCommitIdentity } from './ResolveCommitIdentity';
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
-import { RunCard } from './RunCard';
+import { ResolveAgentActivity } from '../ResolveAgentActivity';
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly row: ResolveQueueRow;
+  readonly prNumber: number;
   readonly coveredRows: ReadonlyArray<ResolveQueueRow>;
   readonly files: ReadonlyArray<FileDiff>;
   readonly isDiffLoading: boolean;
@@ -48,25 +40,25 @@ type Props = {
   readonly mode: ResolveDecisionMode;
   readonly proposalKind: ResolveProposalKind;
   readonly isBusy: boolean;
-  readonly canApprove: boolean;
-  readonly approveBlockedReason: string | null;
   readonly sharedMembers: ReadonlyArray<SharedCandidateMember>;
-  readonly refuseBlockedReason: string | null;
   readonly canRunCheck: boolean;
   readonly isCheckRunning: boolean;
   readonly checksNote: string | null;
   readonly error: string | null;
+  readonly actions: ResolveItemActionSet;
   readonly onChangeReply: (value: string) => void;
   readonly onChangeInstruction: (value: string) => void;
-  readonly onApprove: () => void;
-  readonly onStartRevise: () => void;
+  readonly onEditReply: () => void;
+  readonly onAction: (id: ResolveItemActionId) => void;
   readonly onCancelRevise: () => void;
-  readonly onStartRefuse: () => void;
   readonly onCancelRefuse: () => void;
   readonly onRefuse: () => void;
   readonly onSendToAgent: () => void;
-  readonly onLater: () => void;
-  readonly onReopen: () => void;
+  readonly onBack: () => void;
+  readonly onPrevious: () => void;
+  readonly onNext: () => void;
+  readonly canPrevious: boolean;
+  readonly canNext: boolean;
   readonly onOpenInDiff: () => void;
   readonly onOpenCommit: (params: { readonly sha: string }) => void;
   readonly onRunCheck: () => void;
@@ -77,7 +69,9 @@ type Props = {
 };
 
 export const ResolveItemView = ({
+  sessionId,
   row,
+  prNumber,
   coveredRows,
   files,
   isDiffLoading,
@@ -90,25 +84,25 @@ export const ResolveItemView = ({
   mode,
   proposalKind,
   isBusy,
-  canApprove,
-  approveBlockedReason,
   sharedMembers,
-  refuseBlockedReason,
   canRunCheck,
   isCheckRunning,
   checksNote,
   error,
+  actions,
   onChangeReply,
   onChangeInstruction,
-  onApprove,
-  onStartRevise,
+  onEditReply,
+  onAction,
   onCancelRevise,
-  onStartRefuse,
   onCancelRefuse,
   onRefuse,
   onSendToAgent,
-  onLater,
-  onReopen,
+  onBack,
+  onPrevious,
+  onNext,
+  canPrevious,
+  canNext,
   onOpenInDiff,
   onOpenCommit,
   onRunCheck,
@@ -124,85 +118,30 @@ export const ResolveItemView = ({
   const isAnswering = row.status === 'agent_asked';
   const fieldId = `resolve-item-${row.thread.threadId}`;
   const nextStep = RESOLVE_QUEUE_NEXT_STEP[row.status];
-  const approveVerb =
-    proposalKind === 'fix'
-      ? RESOLVE_QUEUE_ACTION_LABEL.approveFix
-      : RESOLVE_QUEUE_ACTION_LABEL.approveReply;
-  const approveLabel =
-    sharedMembers.length === 0 ? approveVerb : `${approveVerb} and ${sharedMembers.length} more`;
-  const menuItems: ReadonlyArray<OverflowMenuItem> = isDelivered
-    ? [
-        {
-          kind: 'item',
-          key: 'reopen',
-          label: RESOLVE_ITEM_LABEL.reopen,
-          disabled: isBusy,
-          onClick: onReopen,
-        },
-      ]
-    : [
-        {
-          kind: 'item',
-          key: 'wont-fix',
-          label: RESOLVE_QUEUE_ACTION_LABEL.wontFix,
-          disabled: isBusy || refuseBlockedReason !== null,
-          hint: refuseBlockedReason ?? undefined,
-          onClick: onStartRefuse,
-        },
-        {
-          kind: 'item',
-          key: 'later',
-          label: RESOLVE_QUEUE_ACTION_LABEL.later,
-          disabled: isBusy,
-          onClick: onLater,
-        },
-      ];
+  const isEditing = mode !== 'read';
 
   return (
     <div
       data-testid={fieldId}
-      className="flex h-full min-h-0 min-w-0 flex-col bg-elevated text-foreground"
+      className="flex h-full min-h-0 min-w-0 flex-col bg-background text-foreground"
     >
-      <div className="flex min-w-0 shrink-0 items-center gap-4 px-3 py-2">
-        <h2 className="shrink-0 text-sm font-medium leading-5">{RESOLVE_ITEM_LABEL.comment}</h2>
-        <ResolveStatusBadge status={row.status} />
-        <span className="flex flex-1 items-center justify-end gap-2">
-          {mode === 'reply' && !isDelivered && isAnswering && (
-            <Button size="sm" variant="primary" disabled={isBusy} onClick={onStartRevise}>
-              {RESOLVE_QUEUE_ACTION_LABEL.answerAgent}
-            </Button>
-          )}
-          {mode === 'reply' && !isDelivered && !isAnswering && (
-            <>
-              <Button size="sm" variant="ghost" disabled={isBusy} onClick={onStartRevise}>
-                {RESOLVE_QUEUE_ACTION_LABEL.askForChanges}
-              </Button>
-              <Tooltip content={approveBlockedReason ?? approveLabel}>
-                <Button
-                  size="sm"
-                  variant="primary"
-                  data-resolve-primary
-                  disabled={isBusy || !canApprove}
-                  onClick={onApprove}
-                >
-                  {approveLabel}
-                </Button>
-              </Tooltip>
-            </>
-          )}
-          <OverflowMenu
-            items={menuItems}
-            label="More"
-            align="right"
-            triggerClassName="border border-border-soft px-1.5"
-            trigger={<span className="text-2xs">More</span>}
-          />
-        </span>
-      </div>
-      <Divider />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="p-3" fadeFrom="elevated">
+      <ResolveItemHeader
+        title={RESOLVE_ITEM_LABEL.comment}
+        location={row.reviewerNote?.location ?? null}
+        prNumber={prNumber}
+        status={row.status}
+        nextStep={nextStep}
+        actions={actions}
+        isEditing={isEditing}
+        canPrevious={canPrevious}
+        canNext={canNext}
+        onBack={onBack}
+        onPrevious={onPrevious}
+        onNext={onNext}
+        onAction={onAction}
+      />
+      <ScrollFade className="min-h-0 flex-1" viewportClassName="p-3" fadeFrom="background">
         <div className={cn(PANE_RHYTHM.stack, 'min-w-0')}>
-          {nextStep !== null && <p className="text-2xs text-muted-foreground">{nextStep}</p>}
           <ReviewerCommentBlock commentThread={row.commentThread} onOpenUrl={onOpenUrl} />
           {question != null && question !== '' && (
             <div className="flex min-w-0 flex-col gap-2">
@@ -214,8 +153,8 @@ export const ResolveItemView = ({
               />
             </div>
           )}
-          {!isDelivered && mode === 'reply' && !isAnswering && (
-            <SharedCandidateNote members={sharedMembers} />
+          {!isDelivered && mode === 'read' && !isAnswering && (
+            <SharedCandidateNote members={sharedMembers} onSelectMember={onSelectRelated} />
           )}
           <DecisionBlock
             fieldId={fieldId}
@@ -230,28 +169,37 @@ export const ResolveItemView = ({
             isBusy={isBusy}
             onChangeReply={onChangeReply}
             onChangeInstruction={onChangeInstruction}
+            onEditReply={onEditReply}
           />
-          <ResolveCommitIdentity
-            integratedSha={row.item.integratedSha}
-            candidateSha={candidateSha}
-            recordedShas={row.thread.commitShas ?? []}
-            onOpenCommit={onOpenCommit}
-          />
+          {(row.item.integratedSha !== null ||
+            candidateSha !== null ||
+            (row.thread.commitShas?.length ?? 0) > 0) && (
+            <ResolveCommitIdentity
+              integratedSha={row.item.integratedSha}
+              candidateSha={candidateSha}
+              recordedShas={row.thread.commitShas ?? []}
+              onOpenCommit={onOpenCommit}
+            />
+          )}
           {note !== null && <p className="text-2xs text-warning">{note}</p>}
           {error !== null && <p className="text-2xs text-danger">{error}</p>}
-          <ChecksBlock
-            checks={checks}
-            canRunCheck={canRunCheck}
-            isRunning={isCheckRunning}
-            note={checksNote}
-            onRunCheck={onRunCheck}
-          />
-          <ChangeBlock
-            files={files}
-            isLoading={isDiffLoading}
-            error={diffError}
-            onOpenInDiff={onOpenInDiff}
-          />
+          {(canRunCheck || checks.receipts.length > 0) && (
+            <ChecksBlock
+              checks={checks}
+              canRunCheck={canRunCheck}
+              isRunning={isCheckRunning}
+              note={checksNote}
+              onRunCheck={onRunCheck}
+            />
+          )}
+          {(candidateSha !== null || files.length > 0 || isDiffLoading || diffError !== null) && (
+            <ChangeBlock
+              files={files}
+              isLoading={isDiffLoading}
+              error={diffError}
+              onOpenInDiff={onOpenInDiff}
+            />
+          )}
           {coveredRows.length > 0 && (
             <div className="flex min-w-0 flex-col gap-2">
               <SectionHeader
@@ -275,11 +223,16 @@ export const ResolveItemView = ({
             </div>
           )}
           {row.attempt !== null && (
-            <RunCard
+            <ResolveAgentActivity
+              sessionId={sessionId}
               attempt={row.attempt}
               costUsd={costUsd}
+              runThreadCount={row.attempt.threadIds.length}
+              isViewActionShown={
+                actions.primary?.id !== 'view_agent' && actions.secondary?.id !== 'view_agent'
+              }
               onStop={onStopRun}
-              onViewWork={onViewWork}
+              onViewAgent={onViewWork}
             />
           )}
         </div>
@@ -298,16 +251,21 @@ export const ResolveItemView = ({
               <Button
                 size="sm"
                 variant="primary"
+                data-resolve-primary
                 disabled={isBusy || isReplyBlank}
                 onClick={onRefuse}
               >
-                {RESOLVE_QUEUE_ACTION_LABEL.wontFix}
+                Save refusal
               </Button>
             </div>
           </div>
         </>
       )}
-      {mode === 'revise' && (
+      {(mode === 'revise' ||
+        mode === 'answer' ||
+        mode === 'start' ||
+        mode === 'retry' ||
+        mode === 'restart') && (
         <>
           <Divider />
           <div className="flex shrink-0 items-center justify-end gap-2 px-3 py-2">
@@ -317,10 +275,36 @@ export const ResolveItemView = ({
             <Button
               size="sm"
               variant="primary"
-              disabled={isBusy || instruction.trim() === ''}
+              data-resolve-primary
+              disabled={
+                isBusy || ((mode === 'revise' || mode === 'answer') && instruction.trim() === '')
+              }
               onClick={onSendToAgent}
             >
-              {RESOLVE_QUEUE_ACTION_LABEL.send}
+              {mode === 'answer'
+                ? 'Start next attempt'
+                : mode === 'revise'
+                  ? 'Send revision'
+                  : 'Start agent'}
+            </Button>
+          </div>
+        </>
+      )}
+      {mode === 'edit_reply' && (
+        <>
+          <Divider />
+          <div className="flex shrink-0 items-center justify-end gap-2 px-3 py-2">
+            <Button size="sm" variant="ghost" disabled={isBusy} onClick={onCancelRefuse}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant="primary"
+              data-resolve-primary
+              disabled={isBusy || isReplyBlank}
+              onClick={() => onAction('approve')}
+            >
+              {proposalKind === 'fix' ? (actions.primary?.label ?? 'Approve fix') : 'Approve reply'}
             </Button>
           </div>
         </>

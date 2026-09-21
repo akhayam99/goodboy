@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ResolveQueueHome } from '../../../../features/resolve/components/ResolveQueueHome';
+import { ReviewPane } from '../../../../features/review/components/ReviewPane';
 import { SESSION, seedResolveScene } from './resolveSeed';
 
 export const ResolveScene = () => {
@@ -16,7 +16,7 @@ export const ResolveScene = () => {
 
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
-      <ResolveQueueHome session={SESSION} />
+      <ReviewPane session={SESSION} />
     </main>
   );
 };

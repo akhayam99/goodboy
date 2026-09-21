@@ -1,4 +1,4 @@
-import { Markdown, SectionHeader, Textarea } from '@goodboy/ui';
+import { Button, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import type { ResolveProposalKind } from '../../../../store/slices/resolve/resolveProposalKind';
 import type { ResolveDecisionMode } from '../../resolveItemDraft';
@@ -18,6 +18,7 @@ type Props = {
   readonly isBusy: boolean;
   readonly onChangeReply: (value: string) => void;
   readonly onChangeInstruction: (value: string) => void;
+  readonly onEditReply: () => void;
 };
 
 const sectionLabel = ({
@@ -29,6 +30,12 @@ const sectionLabel = ({
 }): string => {
   if (isDelivered) {
     return RESOLVE_ITEM_LABEL.replyPosted;
+  }
+  if (mode === 'answer') {
+    return RESOLVE_ITEM_LABEL.agentAnswer;
+  }
+  if (mode === 'revise' || mode === 'start' || mode === 'retry' || mode === 'restart') {
+    return INSTRUCTION_LABEL;
   }
   return mode === 'refuse' ? RESOLVE_ITEM_LABEL.refusalReply : RESOLVE_ITEM_LABEL.reply;
 };
@@ -78,6 +85,7 @@ export const DecisionBlock = ({
   isBusy,
   onChangeReply,
   onChangeInstruction,
+  onEditReply,
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-2">
     <SectionHeader
@@ -85,7 +93,21 @@ export const DecisionBlock = ({
       hint={sectionHint({ mode, isDelivered, proposalKind })}
       headingLevel={3}
     />
-    {isDelivered ? (
+    {mode === 'revise' ||
+    mode === 'answer' ||
+    mode === 'start' ||
+    mode === 'retry' ||
+    mode === 'restart' ? (
+      <Textarea
+        id={`${fieldId}-instruction`}
+        aria-label={isAnswering ? RESOLVE_ITEM_LABEL.agentAnswer : INSTRUCTION_LABEL}
+        value={instruction}
+        rows={3}
+        disabled={isBusy}
+        className="max-h-48 text-sm"
+        onChange={(event) => onChangeInstruction(event.target.value)}
+      />
+    ) : isDelivered ? (
       <>
         <Markdown
           text={deliveredReply ?? reply}
@@ -96,7 +118,7 @@ export const DecisionBlock = ({
           <p className="text-2xs text-muted-foreground">{deliverySupport}</p>
         )}
       </>
-    ) : (
+    ) : mode === 'edit_reply' || mode === 'refuse' ? (
       <Textarea
         id={`${fieldId}-reply`}
         aria-label={RESOLVE_ITEM_LABEL.replyPreview}
@@ -106,22 +128,12 @@ export const DecisionBlock = ({
         className="max-h-48 text-sm"
         onChange={(event) => onChangeReply(event.target.value)}
       />
-    )}
-    {mode === 'revise' && (
-      <div className="flex min-w-0 flex-col gap-2">
-        <SectionHeader
-          label={isAnswering ? RESOLVE_ITEM_LABEL.agentAnswer : INSTRUCTION_LABEL}
-          headingLevel={3}
-        />
-        <Textarea
-          id={`${fieldId}-instruction`}
-          aria-label={isAnswering ? RESOLVE_ITEM_LABEL.agentAnswer : INSTRUCTION_LABEL}
-          value={instruction}
-          rows={3}
-          disabled={isBusy}
-          className="max-h-48 text-sm"
-          onChange={(event) => onChangeInstruction(event.target.value)}
-        />
+    ) : (
+      <div className="flex min-w-0 flex-col items-start gap-2">
+        <Markdown text={reply} variant="preview" className="max-w-[65ch] text-sm text-foreground" />
+        <Button size="sm" variant="ghost" onClick={onEditReply}>
+          {RESOLVE_ITEM_LABEL.editReply}
+        </Button>
       </div>
     )}
   </div>

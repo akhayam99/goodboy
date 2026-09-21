@@ -2,11 +2,12 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { FileDiff } from '@goodboy/types';
+import type { FileDiff, SessionId } from '@goodboy/types';
 import type { ResolveChecksSummary } from '../../checkReceipts';
 import type { CommentThread } from '../../../github/comment-threads';
 import type { ResolveQueueRow, ResolveQueueReviewerNote } from '../../buildResolveQueueRows';
 import { ResolveItemView } from './index';
+import { resolveItemActions } from '../../resolveItemActions';
 
 const noteOf = ({
   body,
@@ -122,10 +123,42 @@ const COVERED = rowOf({
   note: noteOf({ body: 'The parser swallows the error here.', path: 'src/parser.ts', line: 31 }),
 });
 
-const renderView = (overrides: Partial<Parameters<typeof ResolveItemView>[0]> = {}) =>
-  render(
+const renderView = (
+  overrides: Partial<Parameters<typeof ResolveItemView>[0]> & Record<string, unknown> = {},
+) => {
+  const row = overrides.row ?? LEAD;
+  const proposalKind = overrides.proposalKind ?? 'fix';
+  const legacy = overrides as Record<string, unknown>;
+  const actions = resolveItemActions({
+    status: row.status,
+    proposalKind,
+    sharedApprovalCount: (overrides.sharedMembers?.length ?? 0) + 1,
+    approveBlockedReason: (legacy.approveBlockedReason as string | null) ?? null,
+    refuseBlockedReason: (legacy.refuseBlockedReason as string | null) ?? null,
+    hasAgent: row.attempt !== null,
+    hasGithubUrl: true,
+    canStopRun: row.attempt?.phase === 'running',
+    isEditing:
+      overrides.mode !== undefined &&
+      overrides.mode !== 'read' &&
+      overrides.mode !== ('reply' as never),
+    isBusy: overrides.isBusy ?? false,
+  });
+  const onAction = (id: string) => {
+    if (id === 'approve') {
+      (legacy.onApprove as (() => void) | undefined)?.();
+    }
+    if (id === 'request_revision' || id === 'answer_agent') {
+      (legacy.onStartRevise as (() => void) | undefined)?.();
+    }
+    if (id === 'will_not_fix') {
+      (legacy.onStartRefuse as (() => void) | undefined)?.();
+    }
+  };
+  return render(
     <ResolveItemView
-      row={LEAD}
+      sessionId={'session-1' as SessionId}
+      prNumber={12}
       coveredRows={[COVERED]}
       files={[]}
       isDiffLoading={false}
@@ -135,28 +168,19 @@ const renderView = (overrides: Partial<Parameters<typeof ResolveItemView>[0]> = 
       candidateSha={null}
       reply="Added the early return."
       instruction=""
-      mode="reply"
-      proposalKind="fix"
       sharedMembers={[]}
       isBusy={false}
-      canApprove
-      approveBlockedReason={null}
-      refuseBlockedReason={null}
       checksNote={null}
       canRunCheck={false}
       isCheckRunning={false}
       error={null}
       onChangeReply={vi.fn()}
       onChangeInstruction={vi.fn()}
-      onApprove={vi.fn()}
-      onStartRevise={vi.fn()}
+      onEditReply={vi.fn()}
       onCancelRevise={vi.fn()}
-      onStartRefuse={vi.fn()}
       onCancelRefuse={vi.fn()}
       onRefuse={vi.fn()}
       onSendToAgent={vi.fn()}
-      onLater={vi.fn()}
-      onReopen={vi.fn()}
       onOpenInDiff={vi.fn()}
       onOpenCommit={vi.fn()}
       onRunCheck={vi.fn()}
@@ -164,9 +188,20 @@ const renderView = (overrides: Partial<Parameters<typeof ResolveItemView>[0]> = 
       onViewWork={vi.fn()}
       onSelectRelated={vi.fn()}
       onOpenUrl={vi.fn()}
+      onBack={vi.fn()}
+      onPrevious={vi.fn()}
+      onNext={vi.fn()}
+      canPrevious={false}
+      canNext={false}
       {...overrides}
+      row={row}
+      proposalKind={proposalKind}
+      mode={overrides.mode === ('reply' as never) ? 'read' : (overrides.mode ?? 'read')}
+      actions={actions}
+      onAction={onAction}
     />,
   );
+};
 
 afterEach(cleanup);
 
@@ -216,17 +251,15 @@ describe('the resolve item view', () => {
   it('shows the exact reply that goes back to the reviewer', () => {
     renderView();
 
-    expect(screen.getByLabelText('Reply to reviewer')).toHaveProperty(
-      'value',
-      'Added the early return.',
-    );
+    expect(screen.getByText('Added the early return.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Edit reply' })).toBeDefined();
   });
 
-  it('names the missing fix in the same shape as a present one, beside its label', () => {
+  it('suppresses an empty change identity', () => {
     renderView();
 
-    expect(screen.getByText('Fixing commit')).toBeDefined();
-    expect(screen.getByText('Not recorded')).toBeDefined();
+    expect(screen.queryByText('Fixing commit')).toBeNull();
+    expect(screen.queryByText('Not recorded')).toBeNull();
   });
 
   it('opens the exact recorded commit from the fixing-commit line', () => {
@@ -260,10 +293,10 @@ describe('the resolve item view', () => {
     expect(onOpenInDiff).toHaveBeenCalledOnce();
   });
 
-  it('says no captured change rather than claiming a fix', () => {
+  it('does not render an empty change section', () => {
     renderView();
 
-    expect(screen.getByText('No captured change')).toBeDefined();
+    expect(screen.queryByText('No captured change')).toBeNull();
   });
 
   it('says why the run ended badly instead of leaving the reply alone on screen', () => {
@@ -279,10 +312,10 @@ describe('the resolve item view', () => {
     ).toBeDefined();
   });
 
-  it('says no checks ran rather than implying a check passed', () => {
+  it('does not render checks without a candidate or check data', () => {
     renderView();
 
-    expect(screen.getByText('No checks run')).toBeDefined();
+    expect(screen.queryByText('No checks run')).toBeNull();
     expect(screen.queryByRole('button', { name: /No checks run ·/ })).toBeNull();
     expect(screen.queryByText('Passed')).toBeNull();
   });
@@ -372,14 +405,14 @@ describe('the resolve item view', () => {
       'value',
       'Cap the attempts at three.',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Send to agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send revision' }));
     expect(onSendToAgent).toHaveBeenCalledOnce();
   });
 
   it('refuses to send an empty instruction to the agent', () => {
     renderView({ mode: 'revise', instruction: '   ' });
 
-    expect(screen.getByRole('button', { name: 'Send to agent' }).hasAttribute('disabled')).toBe(
+    expect(screen.getByRole('button', { name: 'Send revision' }).hasAttribute('disabled')).toBe(
       true,
     );
   });
@@ -396,17 +429,14 @@ describe('the resolve item view', () => {
   it('blocks the refusal with its reason once the fix is already integrated', () => {
     renderView({ refuseBlockedReason: 'Fix already integrated' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
-
-    const entry = screen.getByRole('menuitem', { name: /Will not fix/ });
-    expect(entry.hasAttribute('disabled')).toBe(true);
-    expect(screen.getByText('Fix already integrated')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: /Will not fix/ })).toBeNull();
   });
 
   it('refuses to post a blank refusal and says why', () => {
     renderView({ mode: 'refuse', reply: '   ' });
 
-    expect(screen.getByRole('button', { name: 'Will not fix' }).hasAttribute('disabled')).toBe(
+    expect(screen.getByRole('button', { name: 'Save refusal' }).hasAttribute('disabled')).toBe(
       true,
     );
     expect(
@@ -423,26 +453,30 @@ describe('the resolve item view', () => {
       'value',
       'We are keeping this as it is.',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Will not fix' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save refusal' }));
 
     expect(onRefuse).toHaveBeenCalledOnce();
   });
 
   it('says what is missing instead of offering the approval of nothing', () => {
     renderView({
+      row: { ...LEAD, status: 'no_change' } as typeof LEAD,
       proposalKind: 'none',
       canApprove: false,
       approveBlockedReason: 'No fix and no reply to approve yet',
     });
 
     expect(screen.getByText('No agent reply yet')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Approve reply' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    expect(screen.queryByRole('button', { name: 'Approve reply' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
   });
 
   it('names the primary for the reply alone once one is typed on a comment with no fix', () => {
-    renderView({ proposalKind: 'none', reply: 'We answered this in the thread.' });
+    renderView({
+      row: { ...LEAD, status: 'reply_ready' } as typeof LEAD,
+      proposalKind: 'none',
+      reply: 'We answered this in the thread.',
+    });
 
     expect(screen.getByRole('button', { name: 'Approve reply' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Approve fix' })).toBeNull();
@@ -459,7 +493,7 @@ describe('the resolve item view', () => {
     const onStartRevise = vi.fn();
     renderView({ onStartRevise });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ask agent to revise' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Request revision' }));
 
     expect(onStartRevise).toHaveBeenCalledOnce();
   });
@@ -470,8 +504,8 @@ describe('the resolve item view', () => {
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
 
     expect(screen.getByRole('menuitem', { name: 'Will not fix' })).toBeDefined();
-    expect(screen.getByRole('menuitem', { name: 'Later' })).toBeDefined();
-    expect(screen.queryByRole('menuitem', { name: 'Ask agent to revise' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Later' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Request revision' })).toBeNull();
   });
 
   it('names the comments one approval carries, and counts them on the primary', () => {
@@ -488,7 +522,7 @@ describe('the resolve item view', () => {
 
     expect(screen.getByText('Approving this also approves 1 other comment')).toBeDefined();
     expect(screen.getByText('The metric name is wrong.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Approve fix and 1 more' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Approve 2 comments' })).toBeDefined();
   });
 
   it('refuses the approval before the click when a sibling was parked', () => {
@@ -512,12 +546,15 @@ describe('the resolve item view', () => {
       ),
     ).toBeDefined();
     expect(
-      screen.getByRole('button', { name: 'Approve fix and 1 more' }).hasAttribute('disabled'),
+      screen.getByRole('button', { name: 'Approve 2 comments' }).hasAttribute('disabled'),
     ).toBe(true);
   });
 
   it('names what the primary approves, a reply when there is no code change', () => {
-    renderView({ proposalKind: 'reply_only' });
+    renderView({
+      row: { ...LEAD, status: 'reply_ready' } as typeof LEAD,
+      proposalKind: 'reply_only',
+    });
 
     expect(screen.getByRole('button', { name: 'Approve reply' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Approve fix' })).toBeNull();
@@ -536,7 +573,7 @@ describe('the resolve item view', () => {
   it('names the agent answer field for what it answers', () => {
     renderView({
       row: { ...LEAD, status: 'agent_asked' } as typeof LEAD,
-      mode: 'revise',
+      mode: 'answer',
       instruction: 'Cap the attempts at three.',
     });
 

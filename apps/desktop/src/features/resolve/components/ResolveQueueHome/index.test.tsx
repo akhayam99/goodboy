@@ -59,16 +59,14 @@ vi.mock('../../../review/openReview', () => ({ openReview: h.openReview }));
 vi.mock('../ResolveItemView/ResolveItemContainer', () => ({
   ResolveItemContainer: ({
     row,
-    nextThreadId,
     onSelect,
   }: {
     readonly row: { thread: { threadId: string } };
-    readonly nextThreadId: string | null;
     readonly onSelect: (threadId: string | null) => void;
   }) => (
     <div data-testid="resolve-item">
       <span data-testid="resolve-item-thread">{row.thread.threadId}</span>
-      <button type="button" data-resolve-primary onClick={() => onSelect(nextThreadId)}>
+      <button type="button" data-resolve-primary onClick={() => onSelect(null)}>
         Approve fix
       </button>
       <textarea aria-label="Reply to reviewer" />
@@ -196,7 +194,7 @@ describe('the resolve queue home', () => {
 
     expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
-      patch: { expandedThreadId: 'PRRT_1' },
+      patch: { expandedThreadId: 'PRRT_1', order: ['PRRT_1'] },
     });
     expect(h.state.consumeReviewTarget).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
@@ -367,24 +365,20 @@ describe('walking the queue from the keyboard', () => {
     return row;
   };
 
-  it('moves the selection down and up from the row that has the focus', () => {
+  it('moves focus down and up without opening a comment', () => {
     twoRows();
     render(<ResolveQueueHome session={SESSION} />);
 
     fireEvent.keyDown(rowFor('PRRT_1'), { key: 'ArrowDown' });
 
-    expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      patch: { expandedThreadId: 'PRRT_2', order: ['PRRT_1', 'PRRT_2'] },
-    });
+    expect(document.activeElement).toBe(rowFor('PRRT_2'));
+    expect(h.state.setResolveQueueView).not.toHaveBeenCalled();
 
     h.state.setResolveQueueView.mockClear();
     fireEvent.keyDown(rowFor('PRRT_2'), { key: 'ArrowUp' });
 
-    expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      patch: { expandedThreadId: 'PRRT_1', order: ['PRRT_1', 'PRRT_2'] },
-    });
+    expect(document.activeElement).toBe(rowFor('PRRT_1'));
+    expect(h.state.setResolveQueueView).not.toHaveBeenCalled();
   });
 
   it('stops at the ends rather than wrapping the list around', () => {
@@ -408,7 +402,7 @@ describe('walking the queue from the keyboard', () => {
     };
     render(<ResolveQueueHome session={SESSION} />);
 
-    const inner = within(rowFor('PRRT_2')).getAllByRole('button')[0];
+    const inner = within(rowFor('PRRT_2')).getAllByRole('button', { hidden: true })[0];
     const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
     inner?.dispatchEvent(event);
 
@@ -469,7 +463,7 @@ describe('walking the queue from the keyboard', () => {
     );
   });
 
-  it('leaves the focus where it was when a comment is opened with the mouse', () => {
+  it('moves focus into a comment opened with the mouse', () => {
     twoRows();
     h.state.resolveQueueView = {
       [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
@@ -484,7 +478,9 @@ describe('walking the queue from the keyboard', () => {
     rerender(<ResolveQueueHome session={SESSION} />);
 
     expect(screen.getByTestId('resolve-item-thread').textContent).toBe('PRRT_2');
-    expect(document.activeElement).toBe(document.body);
+    expect(document.activeElement).toBe(
+      within(screen.getByTestId('resolve-item')).getByRole('button', { name: 'Approve fix' }),
+    );
   });
 
   it('stays on a parked comment instead of jumping to the top of the list', () => {
@@ -501,10 +497,11 @@ describe('walking the queue from the keyboard', () => {
     render(<ResolveQueueHome session={SESSION} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Show later (1)' }));
-    fireEvent.keyDown(rowFor('PRRT_2'), { key: 'ArrowDown' });
-    fireEvent.keyDown(rowFor('PRRT_2'), { key: 'ArrowUp' });
 
-    expect(h.state.setResolveQueueView).not.toHaveBeenCalled();
+    expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      patch: { isDeferredShown: true },
+    });
   });
 
   it('hands Escape back to the reply field the maintainer is typing in', () => {
@@ -521,7 +518,7 @@ describe('walking the queue from the keyboard', () => {
     expect(document.activeElement).toBe(field);
   });
 
-  it('sends Escape from the panel back to the row it belongs to', () => {
+  it('closes the panel on unhandled Escape', () => {
     twoRows();
     h.state.resolveQueueView = {
       [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
@@ -534,7 +531,10 @@ describe('walking the queue from the keyboard', () => {
     approve.focus();
     fireEvent.keyDown(approve, { key: 'Escape' });
 
-    expect(document.activeElement).toBe(rowFor('PRRT_1'));
+    expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      patch: { expandedThreadId: null, order: ['PRRT_1', 'PRRT_2'] },
+    });
   });
 
   it('keeps Enter on the open row going straight to the panel', () => {
@@ -589,6 +589,41 @@ describe('the shape of the queue surface', () => {
     expect(
       screen.getByRole('button', { name: 'Start resolve run' }).closest('.overflow-y-auto'),
     ).toBeNull();
+  });
+
+  it('keeps the pull request header and the dock on the empty and error states', () => {
+    h.state.sessionGithub = { [SESSION_ID]: { pr: null, detail: null } };
+    const { unmount } = render(
+      <ResolveQueueHome
+        session={SESSION}
+        header={<div>PR header</div>}
+        dock={<div>Publish dock</div>}
+      />,
+    );
+
+    expect(screen.getByText('PR header')).toBeDefined();
+    expect(screen.getByText('Publish dock')).toBeDefined();
+    unmount();
+
+    twoRows();
+    h.state.sessionGithub = {
+      [SESSION_ID]: {
+        pr: { number: 248, url: 'https://github.com/acme/web/pull/248', state: 'open' },
+        detail: null,
+        detailLoading: false,
+        detailError: 'github is unreachable',
+      },
+    };
+    render(
+      <ResolveQueueHome
+        session={SESSION}
+        header={<div>PR header</div>}
+        dock={<div>Publish dock</div>}
+      />,
+    );
+
+    expect(screen.getByText('PR header')).toBeDefined();
+    expect(screen.getByText('Publish dock')).toBeDefined();
   });
 
   it('counts the retryable tab like its siblings once a run fails', () => {

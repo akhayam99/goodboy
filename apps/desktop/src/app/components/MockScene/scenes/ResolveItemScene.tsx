@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
-import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
-import { ResolveQueueHome } from '../../../../features/resolve/components/ResolveQueueHome';
+import { ReviewPane } from '../../../../features/review/components/ReviewPane';
 import { EXPANDED_THREAD_ID, SESSION, seedResolveScene } from './resolveSeed';
 
 export const ResolveItemScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    localStorage.removeItem(STORAGE_KEYS.inspectorPanelWidth);
     seedResolveScene({ expandedThreadId: EXPANDED_THREAD_ID });
     setIsReady(true);
   }, []);
@@ -18,7 +16,7 @@ export const ResolveItemScene = () => {
 
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
-      <ResolveQueueHome session={SESSION} />
+      <ReviewPane session={SESSION} />
     </main>
   );
 };

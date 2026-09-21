@@ -1,6 +1,7 @@
-import { FileText, ListChecks, MessageSquare, PencilLine } from 'lucide-react';
+import { ArrowLeft, FileText, ListChecks, MessageSquare, PencilLine } from 'lucide-react';
 import { GhostActionButton, PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../../store';
 import { ResolvePublishStrip } from '../../../../resolve/components/ResolvePublishStrip';
 import type { ReviewMode } from '../../../reviewMode';
 
@@ -11,36 +12,49 @@ type Props = {
   readonly onSelectMode: (mode: ReviewMode) => void;
 };
 
-export const PublishConversationsBar = ({ sessionId, draftCount, mode, onSelectMode }: Props) => (
-  <div className={cn('flex flex-wrap items-end justify-between gap-x-4 gap-y-2', PANE_RHYTHM.dock)}>
-    <div className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
-      {mode === 'queue' ? <ResolvePublishStrip sessionId={sessionId} /> : null}
+export const PublishConversationsBar = ({ sessionId, draftCount, mode, onSelectMode }: Props) => {
+  const publicationReturn = useAppStore((s) => s.resolvePublicationReturn?.[sessionId] ?? null);
+  const returnFromResolvePublication = useAppStore((s) => s.returnFromResolvePublication);
+  return (
+    <div
+      className={cn('flex flex-wrap items-end justify-between gap-x-4 gap-y-2', PANE_RHYTHM.dock)}
+    >
+      <div className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
+        {mode === 'queue' ? <ResolvePublishStrip sessionId={sessionId} /> : null}
+        {mode === 'queue' && publicationReturn !== null && (
+          <GhostActionButton
+            icon={ArrowLeft}
+            label="Back to comment"
+            onClick={() => returnFromResolvePublication({ sessionId })}
+          />
+        )}
+      </div>
+      <div className="flex shrink-0 flex-wrap items-end gap-1">
+        <GhostActionButton
+          icon={PencilLine}
+          label={draftCount > 0 ? `Write review (${draftCount})` : 'Write review'}
+          pressed={mode === 'write_review'}
+          onClick={() => onSelectMode(mode === 'write_review' ? 'queue' : 'write_review')}
+        />
+        <GhostActionButton
+          icon={FileText}
+          label="PR details"
+          pressed={mode === 'pr_details' || mode === 'create_pr'}
+          onClick={() => onSelectMode(mode === 'pr_details' ? 'queue' : 'pr_details')}
+        />
+        <GhostActionButton
+          icon={MessageSquare}
+          label="PR activity"
+          pressed={mode === 'pr_activity'}
+          onClick={() => onSelectMode(mode === 'pr_activity' ? 'queue' : 'pr_activity')}
+        />
+        <GhostActionButton
+          icon={ListChecks}
+          label="Checks"
+          pressed={mode === 'checks'}
+          onClick={() => onSelectMode(mode === 'checks' ? 'queue' : 'checks')}
+        />
+      </div>
     </div>
-    <div className="flex shrink-0 flex-wrap items-end gap-1">
-      <GhostActionButton
-        icon={PencilLine}
-        label={draftCount > 0 ? `Write review (${draftCount})` : 'Write review'}
-        pressed={mode === 'write_review'}
-        onClick={() => onSelectMode(mode === 'write_review' ? 'queue' : 'write_review')}
-      />
-      <GhostActionButton
-        icon={FileText}
-        label="PR details"
-        pressed={mode === 'pr_details' || mode === 'create_pr'}
-        onClick={() => onSelectMode(mode === 'pr_details' ? 'queue' : 'pr_details')}
-      />
-      <GhostActionButton
-        icon={MessageSquare}
-        label="PR activity"
-        pressed={mode === 'pr_activity'}
-        onClick={() => onSelectMode(mode === 'pr_activity' ? 'queue' : 'pr_activity')}
-      />
-      <GhostActionButton
-        icon={ListChecks}
-        label="Checks"
-        pressed={mode === 'checks'}
-        onClick={() => onSelectMode(mode === 'checks' ? 'queue' : 'checks')}
-      />
-    </div>
-  </div>
-);
+  );
+};
