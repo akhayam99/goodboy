@@ -591,6 +591,41 @@ describe('the shape of the queue surface', () => {
     ).toBeNull();
   });
 
+  it('keeps the pull request header and the dock on the empty and error states', () => {
+    h.state.sessionGithub = { [SESSION_ID]: { pr: null, detail: null } };
+    const { unmount } = render(
+      <ResolveQueueHome
+        session={SESSION}
+        header={<div>PR header</div>}
+        dock={<div>Publish dock</div>}
+      />,
+    );
+
+    expect(screen.getByText('PR header')).toBeDefined();
+    expect(screen.getByText('Publish dock')).toBeDefined();
+    unmount();
+
+    twoRows();
+    h.state.sessionGithub = {
+      [SESSION_ID]: {
+        pr: { number: 248, url: 'https://github.com/acme/web/pull/248', state: 'open' },
+        detail: null,
+        detailLoading: false,
+        detailError: 'github is unreachable',
+      },
+    };
+    render(
+      <ResolveQueueHome
+        session={SESSION}
+        header={<div>PR header</div>}
+        dock={<div>Publish dock</div>}
+      />,
+    );
+
+    expect(screen.getByText('PR header')).toBeDefined();
+    expect(screen.getByText('Publish dock')).toBeDefined();
+  });
+
   it('counts the retryable tab like its siblings once a run fails', () => {
     twoRows();
     h.state.sessionResolveQueueItems = {

@@ -515,11 +515,17 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
     [heldBack, onOpenInDiff, onResume, onSelect, view.expandedThreadId],
   );
 
+  const inPane = (children: ReactNode): ReactNode => (
+    <StudioDetailLayout header={header} eyebrow={eyebrow} dock={dock} fit="bleed">
+      {children}
+    </StudioDetailLayout>
+  );
+
   if (github?.pr == null) {
-    return (
+    return inPane(
       <PaneShell title={RESOLVE_QUEUE_TITLE}>
         <NoResolveTargetState onOpenReview={() => void openReview({ sessionId })} />
-      </PaneShell>
+      </PaneShell>,
     );
   }
 
@@ -530,13 +536,13 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
   });
 
   if (errorPlacement === 'whole_surface' && refreshError !== null) {
-    return (
+    return inPane(
       <PaneShell title={RESOLVE_QUEUE_TITLE}>
         <ResolveQueueErrorState
           message={refreshError}
           onRetry={() => void refreshSessionPrDetail(sessionId, { force: true })}
         />
-      </PaneShell>
+      </PaneShell>,
     );
   }
 
