@@ -1,51 +1,49 @@
-import type { AgentId, OpenQuestionId, SessionId } from '@goodboy/types';
-import { markOpenQuestionAnswered } from '@goodboy/db';
-import { removeQuestionsFromSlot, wrapOpenQuestionAnswers } from '@goodboy/core';
-import { tauriDatabase } from '../../../shared/lib/db';
+import type { AgentId, SessionId } from '@goodboy/types';
+import {
+  persistOpenQuestionAnswers,
+  type OpenQuestionAnswerPair,
+} from './persistOpenQuestionAnswers';
+import { sendAnswersToSettledAgents, type AskingAgentId } from './sendAnswersToSettledAgents';
 import type { GetFn } from './types';
 
-type AnswerPair = {
-  readonly id: OpenQuestionId;
-  readonly text: string;
-  readonly answer: string;
+type ResolveAskingAgentsParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly pairs: ReadonlyArray<OpenQuestionAnswerPair>;
+  readonly targetAgentId: AgentId | null;
 };
 
-function buildBatchPrompt(pairs: ReadonlyArray<AnswerPair>): string {
-  const lines = ['Answers to open questions:'];
-  for (const { text, answer } of pairs) {
-    lines.push(`\n- Q: ${text}`);
-    lines.push(`  A: ${answer}`);
+const resolveAskingAgents = ({
+  get,
+  sessionId,
+  pairs,
+  targetAgentId,
+}: ResolveAskingAgentsParams): ReadonlySet<AskingAgentId> => {
+  const open = get().sessionOpenQuestions[sessionId] ?? [];
+  const askingAgentByQuestionId = new Map<string, AskingAgentId>(
+    open.map((question) => [question.id, question.createdByAgentId ?? null]),
+  );
+  const agents = new Set<AskingAgentId>();
+  for (const pair of pairs) {
+    const known = askingAgentByQuestionId.get(pair.id);
+    agents.add(known === undefined ? targetAgentId : known);
   }
-  return lines.join('\n');
-}
+  return agents;
+};
 
 export const answerOpenQuestions = (get: GetFn) => {
   return async (
     sessionId: SessionId,
-    pairs: ReadonlyArray<AnswerPair>,
+    pairs: ReadonlyArray<OpenQuestionAnswerPair>,
     targetAgentId: AgentId | null,
   ) => {
-    const valid = pairs.filter((p) => p.answer.trim().length > 0);
+    const valid = pairs.filter((pair) => pair.answer.trim().length > 0);
     if (valid.length === 0) {
       return;
     }
 
-    await Promise.all(valid.map((p) => markOpenQuestionAnswered(tauriDatabase, p.id, p.answer)));
-    const slotChanged = await removeQuestionsFromSlot(
-      tauriDatabase,
-      sessionId,
-      valid.map((p) => p.text),
-    );
-    await get().loadSessionOpenQuestions(sessionId);
-    await get().loadSessionAnsweredQuestions(sessionId);
-    if (slotChanged) {
-      await get().loadSessionSlots(sessionId);
-    }
-
-    await get().sendTurn({
-      sessionId,
-      content: wrapOpenQuestionAnswers(buildBatchPrompt(valid)),
-      agentId: targetAgentId ?? undefined,
-    });
+    const askingAgentIds = resolveAskingAgents({ get, sessionId, pairs: valid, targetAgentId });
+    await persistOpenQuestionAnswers({ get, sessionId, pairs: valid });
+    await sendAnswersToSettledAgents({ get, sessionId, askingAgentIds });
   };
 };

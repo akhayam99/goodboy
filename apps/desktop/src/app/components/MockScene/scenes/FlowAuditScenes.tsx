@@ -38,7 +38,10 @@ import type { WorkflowBuilderDraft } from '../../../../store/slices/workflowDraf
 import { WorkflowBuilderView } from '../../../../features/session/components/WorkflowBuilderView';
 import { WorkflowRunDetail } from '../../../../features/session/components/SessionWorkspace/parts/WorkflowRunDetail';
 import { OpenQuestionCluster } from '../../../../features/chat/components/ChatView/OpenQuestionCluster';
-import { useOpenQuestions } from '../../../../features/context/components/QuestionsTab/useOpenQuestions';
+import {
+  PERSON_ANSWERS,
+  useOpenQuestions,
+} from '../../../../features/context/components/QuestionsTab/useOpenQuestions';
 import { ChatImageLoaderProvider } from '../../../../features/chat/components/ChatView/ChatImageLoaderProvider';
 import { TranscriptRows } from '../../../../features/chat/components/ChatView/TranscriptRows';
 import type { TranscriptRow } from '../../../../features/chat/utils/cluster-operations';
@@ -1313,6 +1316,7 @@ const seedChatSurfaces = () => {
         selectedSuggestions: ['Connection resets', 'HTTP 429 with a retry hint'],
         customAnswer: '',
         showCustomField: false,
+        answerIntent: PERSON_ANSWERS,
       },
     },
     justAnswered: [],

@@ -1,12 +1,18 @@
 import { create } from 'zustand';
-import type { OpenQuestion, OpenQuestionId, OpenQuestionSelectMode } from '@goodboy/types';
+import type { AgentId, OpenQuestion, OpenQuestionId, OpenQuestionSelectMode } from '@goodboy/types';
 
 const UNDO_TTL_MS = 5_000;
+
+export type AnswerIntent =
+  { readonly kind: 'person' } | { readonly kind: 'agent'; readonly agentId: AgentId | null };
+
+export const PERSON_ANSWERS: AnswerIntent = { kind: 'person' };
 
 type QuestionDraft = {
   selectedSuggestions: ReadonlyArray<string>;
   customAnswer: string;
   showCustomField: boolean;
+  answerIntent: AnswerIntent;
 };
 
 type PendingUndo = {
@@ -25,6 +31,8 @@ type OpenQuestionsUiState = {
   ) => void;
   setCustomAnswer: (questionId: OpenQuestionId, text: string) => void;
   toggleCustomField: (questionId: OpenQuestionId) => void;
+  setAnswerIntent: (questionId: OpenQuestionId, intent: AnswerIntent) => void;
+  clearDraft: (questionId: OpenQuestionId) => void;
   flashAnswered: (ids: ReadonlyArray<OpenQuestionId>) => void;
   clearJustAnswered: (id: OpenQuestionId) => void;
   beginUndo: (question: OpenQuestion) => void;
@@ -32,7 +40,12 @@ type OpenQuestionsUiState = {
 };
 
 function emptyDraft(): QuestionDraft {
-  return { selectedSuggestions: [], customAnswer: '', showCustomField: false };
+  return {
+    selectedSuggestions: [],
+    customAnswer: '',
+    showCustomField: false,
+    answerIntent: PERSON_ANSWERS,
+  };
 }
 
 export const deriveDraftAnswer = (draft: QuestionDraft | undefined): string =>
@@ -72,6 +85,19 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
     const drafts = { ...get().drafts };
     const draft = drafts[questionId] ?? emptyDraft();
     drafts[questionId] = { ...draft, showCustomField: !draft.showCustomField };
+    set({ drafts });
+  },
+
+  setAnswerIntent: (questionId, intent) => {
+    const drafts = { ...get().drafts };
+    const draft = drafts[questionId] ?? emptyDraft();
+    drafts[questionId] = { ...draft, answerIntent: intent };
+    set({ drafts });
+  },
+
+  clearDraft: (questionId) => {
+    const drafts = { ...get().drafts };
+    delete drafts[questionId];
     set({ drafts });
   },
 

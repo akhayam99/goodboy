@@ -21,6 +21,7 @@ import { m159ArtifactDesignEvidence } from './m159-artifact-design-evidence';
 import { m160ArtifactRunPhase } from './m160-artifact-run-phase';
 import { m161WorkflowPresetNameUnique } from './m161-workflow-preset-name-unique';
 import { m162OpenQuestionBlockingAndProvenance } from './m162-open-question-blocking-and-provenance';
+import { m163OpenQuestionAnswerDelivery } from './m163-open-question-answer-delivery';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -329,4 +330,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 160, sql: m160ArtifactRunPhase },
   { version: 161, sql: m161WorkflowPresetNameUnique },
   { version: 162, sql: m162OpenQuestionBlockingAndProvenance },
+  { version: 163, sql: m163OpenQuestionAnswerDelivery },
 ];

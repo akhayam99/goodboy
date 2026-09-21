@@ -387,6 +387,7 @@ export {
   listOpenQuestionsForSession,
   listResolvedQuestionTextsForSession,
   markOpenQuestionAnswered,
+  markOpenQuestionAnswersDelivered,
   markOpenQuestionDismissed,
   markOpenQuestionsResolvedByText,
   restoreOpenQuestion,
@@ -394,6 +395,7 @@ export {
   type InsertOpenQuestionInput,
   type InsertOpenQuestionResult,
   type OpenQuestionAnswerProvenance,
+  type MarkOpenQuestionAnswersDeliveredParams,
 } from './queries/open-question';
 
 export {
