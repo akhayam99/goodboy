@@ -85,3 +85,37 @@ diagnostic output
     ]);
   });
 });
+
+describe('resynchronisation after a stray brace', () => {
+  it('still reads an event that follows an unmatched brace in a diagnostic line', () => {
+    const stdout = [
+      'warning: shell expansion produced { in the environment',
+      '{"type":"result","subtype":"success","result":"first line\nsecond line"}',
+    ].join('\n');
+
+    const objects = readCursorObjects({ stdout });
+
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.['result']).toBe('first line\nsecond line');
+  });
+
+  it('reads later events when an earlier candidate never closes', () => {
+    const stdout = [
+      '{"type":"assistant","message":{"content":[{"type":"text","text":"truncated',
+      '{"type":"result","subtype":"success","result":"done"}',
+    ].join('\n');
+
+    const objects = readCursorObjects({ stdout });
+
+    expect(objects.map((entry) => entry['type'])).toEqual(['result']);
+  });
+
+  it('ignores a brace that opens prose rather than an object', () => {
+    const stdout = '{ this is not json }\n{"type":"result","result":"ok"}';
+
+    const objects = readCursorObjects({ stdout });
+
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.['result']).toBe('ok');
+  });
+});
