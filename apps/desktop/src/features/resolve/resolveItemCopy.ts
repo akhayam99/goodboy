@@ -21,6 +21,7 @@ export const RESOLVE_ITEM_LABEL = {
   openInDiff: 'Open diff',
   backToResolve: 'Back to Resolve',
   backToComment: 'Back to comment',
+  editReply: 'Edit reply',
   runBothTrees: 'Run checks',
   checkRunning: 'Checking both trees',
   passed: 'Passed',

@@ -129,10 +129,10 @@ export const DecisionBlock = ({
         onChange={(event) => onChangeReply(event.target.value)}
       />
     ) : (
-      <div className="flex min-w-0 flex-col gap-2">
+      <div className="flex min-w-0 flex-col items-start gap-2">
         <Markdown text={reply} variant="preview" className="max-w-[65ch] text-sm text-foreground" />
         <Button size="sm" variant="ghost" onClick={onEditReply}>
-          Edit reply
+          {RESOLVE_ITEM_LABEL.editReply}
         </Button>
       </div>
     )}

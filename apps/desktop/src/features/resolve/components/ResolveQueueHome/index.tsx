@@ -462,9 +462,21 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
     [listed, onSelect, rows, view.expandedThreadId],
   );
 
-  const onPanelKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLDivElement>): void => {
-      if (event.key !== 'Escape' || view.expandedThreadId === null) {
+  const closeDetail = useCallback((): void => {
+    const threadId = view.expandedThreadId;
+    if (threadId === null) {
+      return;
+    }
+    onSelect(null);
+    requestAnimationFrame(() => focusRow({ threadId }));
+  }, [focusRow, onSelect, view.expandedThreadId]);
+
+  useEffect(() => {
+    if (view.expandedThreadId === null) {
+      return;
+    }
+    const onKeyDown = (event: globalThis.KeyboardEvent): void => {
+      if (event.key !== 'Escape' || event.defaultPrevented) {
         return;
       }
       if (isTextEntry({ target: event.target })) {
@@ -472,12 +484,11 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
       }
       event.preventDefault();
       event.stopPropagation();
-      const threadId = view.expandedThreadId;
-      onSelect(null);
-      requestAnimationFrame(() => focusRow({ threadId }));
-    },
-    [focusRow, onSelect, view.expandedThreadId],
-  );
+      closeDetail();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [closeDetail, view.expandedThreadId]);
 
   const renderRow = useCallback(
     ({ row }: { readonly row: QueueRow }): ReactNode => (
@@ -657,7 +668,6 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
           <section
             ref={detailRef}
             aria-label="Resolve comment detail"
-            onKeyDown={onPanelKeyDown}
             onScrollCapture={onDetailScroll}
             className="pointer-events-auto flex h-full min-h-0 min-w-0 flex-col"
           >
@@ -671,11 +681,7 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
               onSelect={onAdvanceFromPanel}
               onRequestAttempt={onAskForChanges}
               onOpenInDiff={onOpenInDiff}
-              onBack={() => {
-                const threadId = selectedRow.thread.threadId;
-                onSelect(null);
-                requestAnimationFrame(() => focusRow({ threadId }));
-              }}
+              onBack={closeDetail}
               onPrevious={() => {
                 const threadId = threadIdAtStep({
                   rows: listed,

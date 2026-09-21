@@ -123,7 +123,7 @@ export const ResolveItemView = ({
   return (
     <div
       data-testid={fieldId}
-      className="flex h-full min-h-0 min-w-0 flex-col bg-elevated text-foreground"
+      className="flex h-full min-h-0 min-w-0 flex-col bg-background text-foreground"
     >
       <ResolveItemHeader
         title={RESOLVE_ITEM_LABEL.comment}
@@ -140,7 +140,7 @@ export const ResolveItemView = ({
         onNext={onNext}
         onAction={onAction}
       />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="p-3" fadeFrom="elevated">
+      <ScrollFade className="min-h-0 flex-1" viewportClassName="p-3" fadeFrom="background">
         <div className={cn(PANE_RHYTHM.stack, 'min-w-0')}>
           <ReviewerCommentBlock commentThread={row.commentThread} onOpenUrl={onOpenUrl} />
           {question != null && question !== '' && (

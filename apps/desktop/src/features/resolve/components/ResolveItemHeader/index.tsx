@@ -1,12 +1,13 @@
 import { Button, Divider, OverflowMenu, Tooltip } from '@goodboy/ui';
 import type { OverflowMenuItem } from '@goodboy/ui';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ResolveQueueStatus } from '../../../../store/slices/resolve/deriveResolveQueueStatus';
 import type {
   ResolveItemAction,
   ResolveItemActionId,
   ResolveItemActionSet,
 } from '../../resolveItemActions';
+import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import { ResolveStatusBadge } from '../ResolveStatusBadge';
 
 type Props = {
@@ -72,9 +73,10 @@ export const ResolveItemHeader = ({
     <>
       <header className="flex min-w-0 shrink-0 flex-col gap-2 px-3 py-2">
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-          <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex min-w-0 flex-col items-start gap-1">
             <Button size="sm" variant="ghost" onClick={onBack}>
-              Back to Resolve
+              <ArrowLeft className="size-3.5" aria-hidden />
+              {RESOLVE_ITEM_LABEL.backToResolve}
             </Button>
             <div className="flex min-w-0 flex-col gap-1">
               <h2
@@ -120,7 +122,7 @@ export const ResolveItemHeader = ({
           </div>
         </div>
         <div className="grid min-w-0 grid-cols-1 items-start gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-          <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex min-w-0 flex-col items-start gap-1">
             <ResolveStatusBadge status={status} />
             {nextStep !== null && <p className="text-2xs text-muted-foreground">{nextStep}</p>}
           </div>
