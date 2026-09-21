@@ -1,24 +1,18 @@
 import type { ResolveQueueStatus } from '../../store/slices/resolve/deriveResolveQueueStatus';
-import type { ResolveProposalKind } from '../../store/slices/resolve/resolveProposalKind';
 
 export type ResolveItemActionId =
-  | 'answer_agent'
-  | 'approve'
+  | 'fix_it'
+  | 'discuss'
+  | 'close'
+  | 'resolve'
   | 'change_decision'
   | 'check_publication'
   | 'open_github'
-  | 'request_revision'
   | 'reopen_locally'
-  | 'restart_agent'
-  | 'retry_agent'
-  | 'review_changed'
-  | 'review_publication'
   | 'resume_comment'
-  | 'start_agent'
+  | 'review_changed'
   | 'stop_run'
-  | 'view_agent'
-  | 'will_not_fix'
-  | 'write_reply';
+  | 'view_agent';
 
 export type ResolveItemAction = {
   readonly id: ResolveItemActionId;
@@ -34,10 +28,10 @@ export type ResolveItemActionSet = {
 
 type Params = {
   readonly status: ResolveQueueStatus;
-  readonly proposalKind: ResolveProposalKind;
   readonly sharedApprovalCount: number;
-  readonly approveBlockedReason: string | null;
-  readonly refuseBlockedReason: string | null;
+  readonly resolveBlockedReason: string | null;
+  readonly closeBlockedReason: string | null;
+  readonly hasQuestion: boolean;
   readonly hasAgent: boolean;
   readonly hasGithubUrl: boolean;
   readonly canStopRun: boolean;
@@ -62,10 +56,10 @@ const empty = (): ResolveItemActionSet => ({ primary: null, secondary: null, ove
 
 export const resolveItemActions = ({
   status,
-  proposalKind,
   sharedApprovalCount,
-  approveBlockedReason,
-  refuseBlockedReason,
+  resolveBlockedReason,
+  closeBlockedReason,
+  hasQuestion,
   hasAgent,
   hasGithubUrl,
   canStopRun,
@@ -77,41 +71,33 @@ export const resolveItemActions = ({
   }
   const make = (id: ResolveItemActionId, label: string, blockedReason?: string | null) =>
     action({ id, label, blockedReason, isBusy });
-  const refuse = make('will_not_fix', 'Will not fix', refuseBlockedReason);
+  const fixIt = make('fix_it', hasQuestion ? 'Answer the agent' : 'Fix it');
+  const discuss = make('discuss', 'Discuss');
+  const close = make('close', 'Close', closeBlockedReason);
+  const resolve = make(
+    'resolve',
+    sharedApprovalCount > 1 ? `Resolve ${sharedApprovalCount} comments` : 'Resolve',
+    resolveBlockedReason,
+  );
   const viewAgent = hasAgent ? make('view_agent', 'View agent') : null;
   const openGithub = make(
     'open_github',
     'Open on GitHub',
     hasGithubUrl ? null : 'GitHub link unavailable',
   );
+  const settleOverflow = closeBlockedReason === null ? [discuss, close] : [discuss];
   switch (status) {
-    case 'fix_ready': {
-      const label =
-        sharedApprovalCount > 1 ? `Approve ${sharedApprovalCount} comments` : 'Approve fix';
-      return {
-        primary: make('approve', label, approveBlockedReason),
-        secondary: make('request_revision', 'Request revision'),
-        overflow: refuseBlockedReason === null ? [refuse] : [],
-      };
-    }
+    case 'fix_ready':
     case 'reply_ready':
-      return {
-        primary: make('approve', 'Approve reply', approveBlockedReason),
-        secondary: make('request_revision', 'Request revision'),
-        overflow: refuseBlockedReason === null ? [refuse] : [],
-      };
+      return { primary: resolve, secondary: fixIt, overflow: settleOverflow };
     case 'no_change':
       return {
-        primary: make('start_agent', 'Start agent'),
-        secondary: make('write_reply', 'Write reply'),
-        overflow: refuseBlockedReason === null ? [refuse] : [],
+        primary: fixIt,
+        secondary: discuss,
+        overflow: closeBlockedReason === null ? [close] : [],
       };
     case 'agent_asked':
-      return {
-        primary: make('answer_agent', 'Answer agent'),
-        secondary: null,
-        overflow: refuseBlockedReason === null ? [refuse] : [],
-      };
+      return { primary: fixIt, secondary: null, overflow: settleOverflow };
     case 'working':
       return {
         primary: viewAgent,
@@ -119,11 +105,7 @@ export const resolveItemActions = ({
         overflow: canStopRun ? [make('stop_run', 'Stop run')] : [],
       };
     case 'ready_to_push':
-      return {
-        primary: make('review_publication', 'Review publication'),
-        secondary: null,
-        overflow: [],
-      };
+      return { primary: resolve, secondary: null, overflow: [] };
     case 'pushed':
       return {
         primary: openGithub,
@@ -139,11 +121,7 @@ export const resolveItemActions = ({
         overflow: [],
       };
     case 'delivery_failed':
-      return {
-        primary: make('review_publication', 'Review publication'),
-        secondary: openGithub,
-        overflow: [],
-      };
+      return { primary: resolve, secondary: openGithub, overflow: [] };
     case 'confirm_delivery':
       return {
         primary: openGithub,
@@ -151,20 +129,11 @@ export const resolveItemActions = ({
         overflow: [],
       };
     case 'run_failed':
-      return {
-        primary: make('retry_agent', 'Retry agent'),
-        secondary: viewAgent,
-        overflow: refuseBlockedReason === null ? [refuse] : [],
-      };
     case 'run_stopped':
-      return {
-        primary: make('restart_agent', 'Restart agent'),
-        secondary: viewAgent,
-        overflow: refuseBlockedReason === null ? [refuse] : [],
-      };
+      return { primary: fixIt, secondary: viewAgent, overflow: settleOverflow };
     case 'wont_fix':
       return {
-        primary: make('review_publication', 'Review publication'),
+        primary: resolve,
         secondary: make('change_decision', 'Change decision'),
         overflow: [],
       };

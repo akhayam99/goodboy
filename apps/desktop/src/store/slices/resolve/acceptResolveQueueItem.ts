@@ -12,6 +12,7 @@ import { withCandidateLock } from './candidateLock';
 import { hashResolveReply } from './hashResolveReply';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
+import { withSavedReplyDraft } from './saveResolveReplyDraft';
 import {
   UNCAPTURED_WORK_ON_BRANCH,
   recoverUncapturedResolveWork,
@@ -26,7 +27,7 @@ type Covered = {
 };
 
 export const PARTIAL_ACCEPTANCE =
-  'This change also answers comments you left for later. Accept them together, or take those back up first';
+  'This change also answers comments you left for later. Resolve them together, or take those back up first';
 export const STALE_APPROVAL = 'Approval revision is stale';
 export const PARTIAL_REFUSAL =
   'This change also answers comments you said you will not fix. Take those back up first';
@@ -44,6 +45,30 @@ export const acceptResolveQueueItem = async ({
   if (pending !== null) {
     throw new Error(UNCAPTURED_WORK_ON_BRANCH);
   }
+  const openItems = await listResolveQueueItems({ db, sessionId });
+  const openTarget = openItems.find((entry) => entry.item.id === itemId);
+  if (openTarget !== undefined) {
+    await withSavedReplyDraft({
+      sessionId,
+      threadId: openTarget.thread.threadId,
+      revision,
+      reply,
+      decide: () => acceptDecidedItem({ set, get, sessionId, itemId, revision, reply }),
+    });
+    return;
+  }
+  await acceptDecidedItem({ set, get, sessionId, itemId, revision, reply });
+};
+
+const acceptDecidedItem = async ({
+  set,
+  get,
+  sessionId,
+  itemId,
+  revision,
+  reply,
+}: Params): Promise<void> => {
+  const db = tauriDatabase;
   const replyHash = await hashResolveReply({ reply });
   const candidate = await getReadyResolveCandidateForItem({ db, queueItemId: itemId });
   if (candidate === null) {

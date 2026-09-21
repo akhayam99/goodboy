@@ -19,8 +19,8 @@ describe('the resolve status badge', () => {
   });
 
   it('never lets a fix that is still on your machine read as closed on the provider', () => {
-    expect(RESOLVE_QUEUE_NEXT_STEP.fix_ready).toContain('publish');
-    expect(RESOLVE_QUEUE_NEXT_STEP.ready_to_push).toContain('Publish');
+    expect(RESOLVE_QUEUE_NEXT_STEP.fix_ready).toContain('still on your machine');
+    expect(RESOLVE_QUEUE_NEXT_STEP.ready_to_push).toContain('still untouched on the pull request');
     expect(resolveStatusAccessibleName({ status: 'fix_ready' })).toBe(
       `${RESOLVE_QUEUE_STATUS_LABEL.fix_ready}. ${RESOLVE_QUEUE_NEXT_STEP.fix_ready ?? ''}`,
     );

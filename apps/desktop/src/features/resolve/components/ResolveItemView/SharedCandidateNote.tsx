@@ -17,8 +17,8 @@ type SentenceParams = {
 
 const sharedCandidateSentence = ({ count }: SentenceParams): string =>
   count === 1
-    ? 'Approving this also approves 1 other comment'
-    : `Approving this also approves ${count} other comments`;
+    ? 'Resolving this also resolves 1 other comment'
+    : `Resolving this also resolves ${count} other comments`;
 
 export const SharedCandidateNote = ({ members, onSelectMember }: Props) => {
   if (members.length === 0) {
@@ -29,7 +29,7 @@ export const SharedCandidateNote = ({ members, onSelectMember }: Props) => {
     blocker === 'deferred' ? PARTIAL_ACCEPTANCE : blocker === 'wont_fix' ? PARTIAL_REFUSAL : null;
 
   return (
-    <div className="flex min-w-0 flex-col gap-1.5 rounded-md bg-muted/40 px-3 py-2">
+    <div className="flex min-w-0 flex-col gap-1.5 border-l-2 border-border-soft py-0.5 pl-3">
       <p className="text-2xs font-medium text-foreground">
         {sharedCandidateSentence({ count: members.length })}
       </p>

@@ -71,7 +71,7 @@ export const ResolveItemHeader = ({
   }));
   return (
     <>
-      <header className="flex min-w-0 shrink-0 flex-col gap-2 px-3 py-2">
+      <header className="flex min-w-0 shrink-0 flex-col gap-2.5 px-5 py-3">
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           <div className="flex min-w-0 flex-col items-start gap-1">
             <Button size="sm" variant="ghost" onClick={onBack}>

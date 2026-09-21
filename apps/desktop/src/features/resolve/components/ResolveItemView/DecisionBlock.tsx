@@ -24,20 +24,22 @@ type Props = {
 const sectionLabel = ({
   mode,
   isDelivered,
+  isAnswering,
 }: {
   readonly mode: ResolveDecisionMode;
   readonly isDelivered: boolean;
+  readonly isAnswering: boolean;
 }): string => {
   if (isDelivered) {
     return RESOLVE_ITEM_LABEL.replyPosted;
   }
-  if (mode === 'answer') {
-    return RESOLVE_ITEM_LABEL.agentAnswer;
+  if (mode === 'fix') {
+    return isAnswering ? RESOLVE_ITEM_LABEL.agentAnswer : INSTRUCTION_LABEL;
   }
-  if (mode === 'revise' || mode === 'start' || mode === 'retry' || mode === 'restart') {
-    return INSTRUCTION_LABEL;
+  if (mode === 'close') {
+    return RESOLVE_ITEM_LABEL.refusalReply;
   }
-  return mode === 'refuse' ? RESOLVE_ITEM_LABEL.refusalReply : RESOLVE_ITEM_LABEL.reply;
+  return mode === 'discuss' ? RESOLVE_ITEM_LABEL.discussionReply : RESOLVE_ITEM_LABEL.reply;
 };
 
 const proposalHint = ({
@@ -63,8 +65,11 @@ const sectionHint = ({
   readonly isDelivered: boolean;
   readonly proposalKind: ResolveProposalKind;
 }): string | undefined => {
-  if (mode === 'refuse') {
+  if (mode === 'close') {
     return RESOLVE_ITEM_LABEL.refusalNote;
+  }
+  if (mode === 'discuss') {
+    return RESOLVE_ITEM_LABEL.discussionNote;
   }
   if (isDelivered) {
     return undefined;
@@ -89,15 +94,11 @@ export const DecisionBlock = ({
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-2">
     <SectionHeader
-      label={sectionLabel({ mode, isDelivered })}
+      label={sectionLabel({ mode, isDelivered, isAnswering })}
       hint={sectionHint({ mode, isDelivered, proposalKind })}
       headingLevel={3}
     />
-    {mode === 'revise' ||
-    mode === 'answer' ||
-    mode === 'start' ||
-    mode === 'retry' ||
-    mode === 'restart' ? (
+    {mode === 'fix' ? (
       <Textarea
         id={`${fieldId}-instruction`}
         aria-label={isAnswering ? RESOLVE_ITEM_LABEL.agentAnswer : INSTRUCTION_LABEL}
@@ -118,7 +119,7 @@ export const DecisionBlock = ({
           <p className="text-2xs text-muted-foreground">{deliverySupport}</p>
         )}
       </>
-    ) : mode === 'edit_reply' || mode === 'refuse' ? (
+    ) : mode === 'edit_reply' || mode === 'close' || mode === 'discuss' ? (
       <Textarea
         id={`${fieldId}-reply`}
         aria-label={RESOLVE_ITEM_LABEL.replyPreview}

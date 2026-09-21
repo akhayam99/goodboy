@@ -14,6 +14,8 @@ import { updateResolveThreads } from './updateResolveThreads';
 import { updateResolveThread } from './updateResolveThread';
 import { acceptResolveQueueItem } from './acceptResolveQueueItem';
 import { refuseResolveQueueItem } from './refuseResolveQueueItem';
+import { discussResolveThread } from './discussResolveThread';
+import { publishResolveThread } from './publishResolveThread';
 import { beginResolveCandidate } from './beginResolveCandidate';
 import { captureResolveCandidate } from './captureResolveCandidate';
 import { runResolveCheck } from './runResolveCheck';
@@ -38,6 +40,8 @@ import type {
   UpdateParams,
   WorktreeDrainParams,
   ItemParams,
+  DiscussParams,
+  ThreadParams,
   ItemRevisionParams,
   CandidateBeginParams,
   CandidateCaptureParams,
@@ -58,6 +62,10 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
       serialize({ run: () => acceptResolveQueueItem({ set, get, ...params }) }),
     refuseResolveQueueItem: (params: ItemRevisionParams) =>
       serialize({ run: () => refuseResolveQueueItem({ set, get, ...params }) }),
+    discussResolveThread: (params: DiscussParams) =>
+      serialize({ run: () => discussResolveThread({ set, get, ...params }) }),
+    publishResolveThread: (params: ThreadParams) =>
+      serialize({ run: () => publishResolveThread({ set, get, ...params }) }),
     deferResolveQueueItem: (params: ItemParams) =>
       serialize({ run: () => deferResolveQueueItem({ set, get, ...params }) }),
     takeUpResolveQueueItem: (params: ItemParams) =>

@@ -96,6 +96,9 @@ export type PublishParams = SessionParams & {
   readonly scopeId?: string;
 };
 
+export type ThreadParams = SessionParams & { readonly threadId: string };
+export type DiscussParams = ThreadParams & { readonly reply: string };
+
 export type EnsureReviewThreadParams = SessionParams & {
   readonly threadId: string;
   readonly prNumber: number;
@@ -114,6 +117,8 @@ export type ResolveActions = {
     params: PreparePublicationParams,
   ) => Promise<ResolvePublicationPreview>;
   readonly publishConversations: (params: PublishParams) => Promise<PublishConversationsResult>;
+  readonly discussResolveThread: (params: DiscussParams) => Promise<void>;
+  readonly publishResolveThread: (params: ThreadParams) => Promise<void>;
   readonly retryPublication: (params: SessionParams) => Promise<ResolvePublicationPreview>;
   readonly cancelPublication: (params: PublishParams) => Promise<void>;
   readonly updateResolveThreads: (params: BatchUpdateParams) => Promise<void>;

@@ -12,6 +12,12 @@ type UpsertParams = {
   readonly row: ResolveThread;
   readonly expectedRevision: number | null;
 };
+type ReplyDraftParams = ListParams & {
+  readonly threadId: string;
+  readonly revision: number;
+  readonly reply: string;
+};
+
 type StateParams = ListParams & {
   readonly threadId: string;
   readonly revision: number;
@@ -102,6 +108,21 @@ export const setResolveThreadState = async ({
     `UPDATE resolve_threads SET state = ?, state_reason = ?, revision = revision + 1, updated_at = ?
      WHERE session_id = ? AND thread_id = ? AND revision = ?`,
     [state, stateReason, Date.now(), sessionId, threadId, revision],
+  );
+  return result.rowsAffected > 0;
+};
+
+export const setResolveThreadReplyDraft = async ({
+  db,
+  sessionId,
+  threadId,
+  revision,
+  reply,
+}: ReplyDraftParams): Promise<boolean> => {
+  const result = await db.execute(
+    `UPDATE resolve_threads SET reply_draft = ?, updated_at = ?
+     WHERE session_id = ? AND thread_id = ? AND revision = ?`,
+    [reply, Date.now(), sessionId, threadId, revision],
   );
   return result.rowsAffected > 0;
 };

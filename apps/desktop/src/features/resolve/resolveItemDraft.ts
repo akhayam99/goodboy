@@ -1,13 +1,4 @@
-export type ResolveDecisionMode =
-  | 'read'
-  | 'edit_reply'
-  | 'start'
-  | 'retry'
-  | 'restart'
-  | 'answer'
-  | 'revise'
-  | 'refuse'
-  | 're_review';
+export type ResolveDecisionMode = 'read' | 'fix' | 'discuss' | 'close' | 'resolve' | 'edit_reply';
 
 export type ResolveItemDraft = {
   readonly reply: string | null;

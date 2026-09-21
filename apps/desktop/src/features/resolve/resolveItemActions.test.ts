@@ -1,65 +1,94 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolveQueueStatus } from '../../store/slices/resolve/deriveResolveQueueStatus';
-import { resolveItemActions } from './resolveItemActions';
+import { resolveItemActions, type ResolveItemActionId } from './resolveItemActions';
 
-const EXPECTED: Record<ResolveQueueStatus, string | null> = {
-  fix_ready: 'approve',
-  reply_ready: 'approve',
-  no_change: 'start_agent',
-  agent_asked: 'answer_agent',
+const DECISIONS: ReadonlySet<ResolveItemActionId> = new Set([
+  'fix_it',
+  'discuss',
+  'close',
+  'resolve',
+]);
+
+const EXPECTED: Record<ResolveQueueStatus, ResolveItemActionId | null> = {
+  fix_ready: 'resolve',
+  reply_ready: 'resolve',
+  no_change: 'fix_it',
+  agent_asked: 'fix_it',
   working: 'view_agent',
-  ready_to_push: 'review_publication',
+  ready_to_push: 'resolve',
   pushed: 'open_github',
   later: 'resume_comment',
   changed_since_accepted: 'review_changed',
-  delivery_failed: 'review_publication',
+  delivery_failed: 'resolve',
   confirm_delivery: 'open_github',
-  run_failed: 'retry_agent',
-  run_stopped: 'restart_agent',
-  wont_fix: 'review_publication',
+  run_failed: 'fix_it',
+  run_stopped: 'fix_it',
+  wont_fix: 'resolve',
   wont_fix_sent: 'open_github',
 };
 
-describe('resolveItemActions', () => {
+const build = (patch: Partial<Parameters<typeof resolveItemActions>[0]> = {}) =>
+  resolveItemActions({
+    status: 'fix_ready',
+    sharedApprovalCount: 1,
+    resolveBlockedReason: null,
+    closeBlockedReason: null,
+    hasQuestion: false,
+    hasAgent: true,
+    hasGithubUrl: true,
+    canStopRun: true,
+    isEditing: false,
+    isBusy: false,
+    ...patch,
+  });
+
+describe('the actions a comment offers', () => {
   for (const [status, primary] of Object.entries(EXPECTED) as ReadonlyArray<
-    [ResolveQueueStatus, string | null]
+    [ResolveQueueStatus, ResolveItemActionId | null]
   >) {
-    it(`selects one primary for ${status}`, () => {
-      const result = resolveItemActions({
-        status,
-        proposalKind: 'fix',
-        sharedApprovalCount: 1,
-        approveBlockedReason: null,
-        refuseBlockedReason: null,
-        hasAgent: true,
-        hasGithubUrl: true,
-        canStopRun: true,
-        isEditing: false,
-        isBusy: false,
-      });
+    it(`offers one primary on ${status}`, () => {
+      const result = build({ status });
 
       expect(result.primary?.id ?? null).toBe(primary);
       expect(result.secondary === null || result.secondary.id !== result.primary?.id).toBe(true);
-      expect(
-        result.overflow.some((action) => action.id === 'resume_comment' && status !== 'later'),
-      ).toBe(false);
     });
   }
 
-  it('removes header decisions while editing', () => {
-    const result = resolveItemActions({
-      status: 'fix_ready',
-      proposalKind: 'fix',
-      sharedApprovalCount: 2,
-      approveBlockedReason: null,
-      refuseBlockedReason: null,
-      hasAgent: true,
-      hasGithubUrl: true,
-      canStopRun: true,
-      isEditing: true,
-      isBusy: false,
-    });
+  it('speaks only the four verbs plus the ways out', () => {
+    for (const status of Object.keys(EXPECTED) as ReadonlyArray<ResolveQueueStatus>) {
+      const result = build({ status });
+      const ids = [result.primary, result.secondary, ...result.overflow].flatMap((entry) =>
+        entry === null ? [] : [entry.id],
+      );
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(ids.length - ids.filter((id) => DECISIONS.has(id)).length).toBeLessThanOrEqual(2);
+      expect(ids.filter((id) => DECISIONS.has(id)).length).toBeLessThanOrEqual(DECISIONS.size);
+    }
+  });
 
-    expect(result).toEqual({ primary: null, secondary: null, overflow: [] });
+  it('names the whole group when one decision settles several comments', () => {
+    expect(build({ sharedApprovalCount: 3 }).primary?.label).toBe('Resolve 3 comments');
+  });
+
+  it('asks the agent to answer its own question first', () => {
+    const result = build({ status: 'agent_asked', hasQuestion: true });
+
+    expect(result.primary?.label).toBe('Answer the agent');
+  });
+
+  it('keeps closing away from a comment whose fix already landed', () => {
+    const result = build({ closeBlockedReason: 'Fix already integrated' });
+
+    expect(result.overflow.some((action) => action.id === 'close')).toBe(false);
+  });
+
+  it('carries the reason a decision cannot be taken', () => {
+    const result = build({ resolveBlockedReason: 'The run has to stop first' });
+
+    expect(result.primary?.disabledReason).toBe('The run has to stop first');
+  });
+
+  it('removes header decisions while an editor is open', () => {
+    expect(build({ isEditing: true })).toEqual({ primary: null, secondary: null, overflow: [] });
   });
 });

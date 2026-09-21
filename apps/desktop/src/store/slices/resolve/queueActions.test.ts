@@ -3,6 +3,7 @@ import { createStore } from 'zustand/vanilla';
 import {
   insertResolveQueueItem,
   listResolveQueueItems,
+  listResolveThreads,
   migrate,
   upsertResolveThread,
   type Database,
@@ -12,11 +13,7 @@ import { deriveResolveQueueStatus } from './deriveResolveQueueStatus';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 import type { ResolveQueueItem, ResolveThread, SessionId } from '@goodboy/types';
 import { createResolveSlice } from './index';
-import {
-  EMPTY_REFUSAL_REPLY,
-  REFUSAL_AFTER_INTEGRATION,
-  REFUSAL_REPLY_OUT_OF_DATE,
-} from './refuseResolveQueueItem';
+import { EMPTY_REFUSAL_REPLY, REFUSAL_AFTER_INTEGRATION } from './refuseResolveQueueItem';
 import { resolveInitialState } from './state';
 import type { GetFn, SetFn } from './types';
 
@@ -157,16 +154,55 @@ describe('resolve queue actions', () => {
     );
   });
 
-  it('refuses to refuse with a reply that drifted from the saved draft', async () => {
+  it('refuses with the reply the maintainer rewrote, and keeps that text', async () => {
     const live = createHarness();
+    await live.actions.refuseResolveQueueItem({
+      sessionId,
+      itemId: item.id,
+      revision: 2,
+      reply: 'We are keeping this as it is',
+    });
+
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe(
+      'wont_fix',
+    );
+    expect((await listResolveThreads({ db, sessionId }))[0]?.replyDraft).toBe(
+      'We are keeping this as it is',
+    );
+  });
+
+  it('accepts with the reply the maintainer rewrote, and keeps that text', async () => {
+    const live = createHarness();
+    await live.actions.acceptResolveQueueItem({
+      sessionId,
+      itemId: item.id,
+      revision: 2,
+      reply: 'Rewrote the reply myself',
+    });
+
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe(
+      'accepted',
+    );
+    expect((await listResolveThreads({ db, sessionId }))[0]?.replyDraft).toBe(
+      'Rewrote the reply myself',
+    );
+  });
+
+  it('puts the reply back when the decision it was written for is refused', async () => {
+    const live = createHarness();
+    const before = (await listResolveThreads({ db, sessionId }))[0]?.replyDraft ?? null;
+    await db.execute('UPDATE resolve_queue_items SET delivered_at = 1 WHERE id = ?', [item.id]);
+
     await expect(
       live.actions.refuseResolveQueueItem({
         sessionId,
         itemId: item.id,
         revision: 2,
-        reply: 'We are keeping this as it is',
+        reply: 'A reply that never lands',
       }),
-    ).rejects.toThrow(REFUSAL_REPLY_OUT_OF_DATE);
+    ).rejects.toThrow();
+
+    expect((await listResolveThreads({ db, sessionId }))[0]?.replyDraft).toBe(before);
     expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe('none');
   });
 
