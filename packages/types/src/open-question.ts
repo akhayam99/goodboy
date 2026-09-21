@@ -31,5 +31,6 @@ export type OpenQuestion = Readonly<{
   status: OpenQuestionStatus;
   createdAt: IsoDateTime;
   answeredAt?: IsoDateTime;
+  answerDeliveredAt?: IsoDateTime;
   dismissedAt?: IsoDateTime;
 }>;

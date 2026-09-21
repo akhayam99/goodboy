@@ -31,6 +31,7 @@ type OpenQuestionRow = {
   answered_by_agent_id?: string | null;
   created_at: number;
   answered_at: number | null;
+  answer_delivered_at: number | null;
   dismissed_at: number | null;
 };
 
@@ -64,6 +65,9 @@ const toDomain = (row: OpenQuestionRow): OpenQuestion => {
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     answeredAt: row.answered_at
       ? (new Date(row.answered_at).toISOString() as IsoDateTime)
+      : undefined,
+    answerDeliveredAt: row.answer_delivered_at
+      ? (new Date(row.answer_delivered_at).toISOString() as IsoDateTime)
       : undefined,
     dismissedAt: row.dismissed_at
       ? (new Date(row.dismissed_at).toISOString() as IsoDateTime)
@@ -202,6 +206,25 @@ export const markOpenQuestionAnswered = async (
   );
 };
 
+export type MarkOpenQuestionAnswersDeliveredParams = {
+  readonly db: Database;
+  readonly ids: ReadonlyArray<OpenQuestionId>;
+};
+
+export const markOpenQuestionAnswersDelivered = async ({
+  db,
+  ids,
+}: MarkOpenQuestionAnswersDeliveredParams): Promise<void> => {
+  if (ids.length === 0) {
+    return;
+  }
+  const placeholders = ids.map(() => '?').join(', ');
+  await db.execute(
+    `UPDATE open_questions SET answer_delivered_at = ? WHERE id IN (${placeholders}) AND answer_delivered_at IS NULL`,
+    [Date.now(), ...ids],
+  );
+};
+
 export const markOpenQuestionDismissed = async (
   db: Database,
   id: OpenQuestionId,
@@ -266,9 +289,9 @@ export const markOpenQuestionsResolvedByText = async (
   for (const id of toResolve) {
     await db.execute(
       `UPDATE open_questions
-       SET status = 'answered', user_answer = ?, answered_at = ?
+       SET status = 'answered', user_answer = ?, answered_at = ?, answer_delivered_at = ?
        WHERE id = ? AND status = 'open'`,
-      ['[resolved by agent]', now, id],
+      ['[resolved by agent]', now, now, id],
     );
   }
   return toResolve.length;
