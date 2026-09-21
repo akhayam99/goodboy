@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import { createSessionViewSlice } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
 
 type SliceState = ReturnType<typeof createSessionViewSlice>;
+
+const selectAgent = vi.fn(async () => undefined);
 
 const buildSlice = (): { readonly actions: SliceState; readonly getState: () => SliceState } => {
   let state = {} as SliceState;
@@ -17,11 +19,17 @@ const buildSlice = (): { readonly actions: SliceState; readonly getState: () => 
     set as Parameters<typeof createSessionViewSlice>[0],
     get as Parameters<typeof createSessionViewSlice>[1],
   );
-  state = { ...actions, selectedAgentId: {}, sessionPhaseRuns: {} } as SliceState;
+  state = {
+    ...actions,
+    selectedAgentId: {},
+    sessionPhaseRuns: {},
+    selectAgent,
+  } as unknown as SliceState;
   return { actions, getState: get };
 };
 
 beforeEach(() => {
+  selectAgent.mockClear();
   const store: Record<string, string> = {};
   vi.stubGlobal('localStorage', {
     getItem: (key: string) => store[key] ?? null,
@@ -115,5 +123,81 @@ describe('the round trip between the resolve queue and the diff', () => {
     });
 
     expect(getState().resolveQueueView['session-2' as SessionId]).toBeUndefined();
+  });
+});
+
+describe('the round trip between the resolve queue and the agent', () => {
+  it('captures the open comment and the queue view, then selects the agent', () => {
+    const { actions, getState } = buildSlice();
+    actions.setResolveQueueView({
+      sessionId: SESSION_ID,
+      patch: { filter: 'everything', order: ['t-parser', 't-client'], scrollTop: 90 },
+    });
+
+    actions.openResolveAgent({
+      sessionId: SESSION_ID,
+      agentId: 'agent-7' as AgentId,
+      threadId: 't-parser',
+      prNumber: 264,
+    });
+
+    expect(selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-7');
+    expect(getState().resolveAgentReturn[SESSION_ID]).toEqual({
+      agentId: 'agent-7',
+      threadId: 't-parser',
+      prNumber: 264,
+      view: {
+        filter: 'everything',
+        expandedThreadId: 't-parser',
+        order: ['t-parser', 't-client'],
+        scrollTop: 90,
+        detailScrollTop: 0,
+        detailFocus: 'primary',
+        isDeferredShown: false,
+        isCompletedShown: false,
+      },
+    });
+  });
+
+  it('puts the maintainer back on the same comment, with the queue as it was', () => {
+    const { actions, getState } = buildSlice();
+    actions.setResolveQueueView({
+      sessionId: SESSION_ID,
+      patch: { filter: 'retryable', order: ['t-parser'], scrollTop: 40, isCompletedShown: true },
+    });
+    actions.openResolveAgent({
+      sessionId: SESSION_ID,
+      agentId: 'agent-7' as AgentId,
+      threadId: 't-parser',
+      prNumber: 264,
+    });
+    actions.setResolveQueueView({
+      sessionId: SESSION_ID,
+      patch: { filter: 'needs_review', expandedThreadId: null, scrollTop: 0 },
+    });
+
+    actions.returnFromResolveAgent({ sessionId: SESSION_ID });
+
+    const state = getState();
+    expect(state.activeLens[SESSION_ID]).toBe('review');
+    expect(state.resolveAgentReturn[SESSION_ID]).toBeNull();
+    expect(state.resolveQueueView[SESSION_ID]).toEqual({
+      filter: 'retryable',
+      expandedThreadId: 't-parser',
+      order: ['t-parser'],
+      scrollTop: 40,
+      detailScrollTop: 0,
+      detailFocus: 'primary',
+      isDeferredShown: false,
+      isCompletedShown: true,
+    });
+  });
+
+  it('does nothing without an origin to return to', () => {
+    const { actions, getState } = buildSlice();
+
+    actions.returnFromResolveAgent({ sessionId: SESSION_ID });
+
+    expect(getState().activeLens[SESSION_ID]).toBeUndefined();
   });
 });

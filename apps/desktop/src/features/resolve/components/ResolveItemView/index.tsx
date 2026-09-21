@@ -1,5 +1,5 @@
 import { Button, Divider, Markdown, PANE_RHYTHM, ScrollFade, SectionHeader, cn } from '@goodboy/ui';
-import type { FileDiff } from '@goodboy/types';
+import type { FileDiff, SessionId } from '@goodboy/types';
 import type { ResolveChecksSummary } from '../../checkReceipts';
 import type { ResolveQueueRow } from '../../buildResolveQueueRows';
 import type { ResolveProposalKind } from '../../../../store/slices/resolve/resolveProposalKind';
@@ -22,9 +22,10 @@ import { SharedCandidateNote } from './SharedCandidateNote';
 import type { SharedCandidateMember } from '../../sharedCandidateThreadIds';
 import { ResolveCommitIdentity } from './ResolveCommitIdentity';
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
-import { RunCard } from './RunCard';
+import { ResolveAgentActivity } from '../ResolveAgentActivity';
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly row: ResolveQueueRow;
   readonly prNumber: number;
   readonly coveredRows: ReadonlyArray<ResolveQueueRow>;
@@ -68,6 +69,7 @@ type Props = {
 };
 
 export const ResolveItemView = ({
+  sessionId,
   row,
   prNumber,
   coveredRows,
@@ -221,14 +223,16 @@ export const ResolveItemView = ({
             </div>
           )}
           {row.attempt !== null && (
-            <RunCard
+            <ResolveAgentActivity
+              sessionId={sessionId}
               attempt={row.attempt}
               costUsd={costUsd}
+              runThreadCount={row.attempt.threadIds.length}
               isViewActionShown={
                 actions.primary?.id !== 'view_agent' && actions.secondary?.id !== 'view_agent'
               }
               onStop={onStopRun}
-              onViewWork={onViewWork}
+              onViewAgent={onViewWork}
             />
           )}
         </div>

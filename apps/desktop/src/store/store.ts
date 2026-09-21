@@ -145,6 +145,7 @@ import type {
   DiffFocus,
   LensKind,
   ResolveQueueView,
+  ResolveAgentReturn,
   ResolvePublicationReturn,
   SessionCreationId,
   SessionCreationKind,
@@ -985,6 +986,13 @@ type AppActions = {
     readonly reconcile: boolean;
   }): void;
   returnFromResolvePublication(params: { readonly sessionId: SessionId }): void;
+  openResolveAgent(params: {
+    readonly sessionId: SessionId;
+    readonly agentId: AgentId;
+    readonly threadId: string;
+    readonly prNumber: number;
+  }): void;
+  returnFromResolveAgent(params: { readonly sessionId: SessionId }): void;
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
   beginSessionCreation(
     sessionId: SessionId,

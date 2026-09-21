@@ -20,13 +20,17 @@ export const RESOLVE_ITEM_LABEL = {
   run: 'Run',
   openInDiff: 'Open diff',
   backToResolve: 'Back to Resolve',
+  backToComment: 'Back to comment',
   runBothTrees: 'Run checks',
   checkRunning: 'Checking both trees',
   passed: 'Passed',
   failed: 'Failed',
   stale: 'Stale',
   stop: 'Stop',
-  viewWork: 'View work',
+  viewWork: 'View agent',
+  latest: 'Latest',
+  waitingOnYou: 'Waiting on you',
+  costUnavailable: 'Cost unavailable',
   reopen: 'Reopen',
   fixingCommit: 'Fixing commit',
   notRecorded: 'Not recorded',
@@ -43,6 +47,14 @@ const ATTEMPT_PHASE_LABEL: Record<ResolveAttempt['phase'], string> = {
   failed: 'Failed',
   cancelled: 'Stopped',
 };
+
+export const sharedRunCostLabel = ({
+  cost,
+  count,
+}: {
+  readonly cost: string;
+  readonly count: number;
+}): string => `${cost} shared across ${count} comments`;
 
 export const attemptPhaseLabel = ({ phase }: { readonly phase: ResolveAttempt['phase'] }): string =>
   ATTEMPT_PHASE_LABEL[phase];

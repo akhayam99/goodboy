@@ -1,4 +1,4 @@
-import type { SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_RESOLVE_QUEUE_VIEW, type GetFn, type ResolveQueueView, type SetFn } from './types';
 
 type ViewParams = {
@@ -17,6 +17,12 @@ type OpenParams = {
 };
 
 type ReturnParams = { readonly sessionId: SessionId };
+type AgentParams = {
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly threadId: string;
+  readonly prNumber: number;
+};
 type PublicationParams = {
   readonly sessionId: SessionId;
   readonly threadId: string;
@@ -102,5 +108,39 @@ export const returnFromResolvePublication = (set: SetFn) => {
         resolvePublicationReturn: { ...s.resolvePublicationReturn, [sessionId]: null },
       };
     });
+  };
+};
+
+export const openResolveAgent = (set: SetFn, get: GetFn) => {
+  return ({ sessionId, agentId, threadId, prNumber }: AgentParams): void => {
+    set((s) => ({
+      resolveAgentReturn: {
+        ...s.resolveAgentReturn,
+        [sessionId]: {
+          agentId,
+          threadId,
+          prNumber,
+          view: {
+            ...(s.resolveQueueView[sessionId] ?? EMPTY_RESOLVE_QUEUE_VIEW),
+            expandedThreadId: threadId,
+          },
+        },
+      },
+    }));
+    void get().selectAgent(sessionId, agentId);
+  };
+};
+
+export const returnFromResolveAgent = (set: SetFn, get: GetFn) => {
+  return ({ sessionId }: ReturnParams): void => {
+    const origin = get().resolveAgentReturn[sessionId] ?? null;
+    if (origin === null) {
+      return;
+    }
+    set((s) => ({
+      resolveQueueView: { ...s.resolveQueueView, [sessionId]: origin.view },
+      resolveAgentReturn: { ...s.resolveAgentReturn, [sessionId]: null },
+    }));
+    get().setActiveLens(sessionId, 'review');
   };
 };

@@ -20,6 +20,7 @@ export const createInitialSessionViewState = ({}: Params) => ({
   terminalMountPath: {},
   resolveQueueView: {},
   resolveDiffReturn: {},
+  resolveAgentReturn: {},
   resolvePublicationReturn: {},
   resolveItemDrafts: {},
   sessionCreations: {},

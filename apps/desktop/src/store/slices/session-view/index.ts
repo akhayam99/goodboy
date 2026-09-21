@@ -21,9 +21,11 @@ import {
   toggleWorkflowExpand,
 } from './workSurface';
 import {
+  openResolveAgent,
   openResolveDiff,
   openResolvePublication,
   returnFromResolveDiff,
+  returnFromResolveAgent,
   returnFromResolvePublication,
   setResolveQueueView,
 } from './resolveSurface';
@@ -48,6 +50,7 @@ export type {
   ResolveDiffReturn,
   ResolveQueueFilter,
   ResolveQueueView,
+  ResolveAgentReturn,
   ResolvePublicationReturn,
   SessionCreation,
   SessionCreationId,
@@ -81,6 +84,8 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     returnFromResolveDiff: returnFromResolveDiff(set, get),
     openResolvePublication: openResolvePublication(set),
     returnFromResolvePublication: returnFromResolvePublication(set),
+    openResolveAgent: openResolveAgent(set, get),
+    returnFromResolveAgent: returnFromResolveAgent(set, get),
     setResolveItemDraft: setResolveItemDraft(set),
     openMountDiff: openMountDiff(set, get),
     openMountTerminal: openMountTerminal(set, get),

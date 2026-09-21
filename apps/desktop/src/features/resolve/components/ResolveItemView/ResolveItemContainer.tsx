@@ -130,7 +130,7 @@ export const ResolveItemContainer = ({
   const reopenResolveQueueItem = useAppStore((s) => s.reopenResolveQueueItem);
   const runResolveCheck = useAppStore((s) => s.runResolveCheck);
   const forceCloseResolver = useAppStore((s) => s.forceCloseResolver);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const openResolveAgent = useAppStore((s) => s.openResolveAgent);
   const loadDiscoveredScripts = useAppStore((s) => s.loadDiscoveredScripts);
   const metrics = useAgentMetrics({ sessionId });
   const threadId = row.thread.threadId;
@@ -353,7 +353,7 @@ export const ResolveItemContainer = ({
       return;
     }
     if (id === 'view_agent' && row.attempt !== null) {
-      void selectAgent(sessionId, row.attempt.agentId);
+      openResolveAgent({ sessionId, agentId: row.attempt.agentId, threadId, prNumber });
       return;
     }
     if (id === 'stop_run' && row.attempt !== null) {
@@ -363,6 +363,7 @@ export const ResolveItemContainer = ({
 
   return (
     <ResolveItemView
+      sessionId={sessionId}
       row={row}
       prNumber={prNumber}
       coveredRows={coveredRows}
@@ -432,7 +433,10 @@ export const ResolveItemContainer = ({
       onStopRun={() =>
         row.attempt !== null && void forceCloseResolver(sessionId, row.attempt.agentId)
       }
-      onViewWork={() => row.attempt !== null && void selectAgent(sessionId, row.attempt.agentId)}
+      onViewWork={() =>
+        row.attempt !== null &&
+        openResolveAgent({ sessionId, agentId: row.attempt.agentId, threadId, prNumber })
+      }
       onSelectRelated={(relatedThreadId) => onSelect(relatedThreadId)}
       onOpenUrl={(url) => void openUrl(url)}
     />

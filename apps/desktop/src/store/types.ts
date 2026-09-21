@@ -100,6 +100,7 @@ import type {
   LensHistory,
   LensKind,
   ResolveDiffReturn,
+  ResolveAgentReturn,
   ResolvePublicationReturn,
   ResolveQueueView,
   SessionCreation,
@@ -392,6 +393,7 @@ export type AppState = AppSliceState & {
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
   readonly resolveDiffReturn: Readonly<Record<SessionId, ResolveDiffReturn | null>>;
   readonly resolvePublicationReturn: Readonly<Record<SessionId, ResolvePublicationReturn | null>>;
+  readonly resolveAgentReturn: Readonly<Record<SessionId, ResolveAgentReturn | null>>;
   readonly resolveItemDrafts: Readonly<
     Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
   >;

@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { FileDiff } from '@goodboy/types';
+import type { FileDiff, SessionId } from '@goodboy/types';
 import type { ResolveChecksSummary } from '../../checkReceipts';
 import type { CommentThread } from '../../../github/comment-threads';
 import type { ResolveQueueRow, ResolveQueueReviewerNote } from '../../buildResolveQueueRows';
@@ -157,6 +157,7 @@ const renderView = (
   };
   return render(
     <ResolveItemView
+      sessionId={'session-1' as SessionId}
       prNumber={12}
       coveredRows={[COVERED]}
       files={[]}
