@@ -1,6 +1,14 @@
 import { useMemo } from 'react';
 import type { Agent, Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionPlans, type LensKind } from '../../../../store';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useSessionAnsweredQuestions,
+  useSessionOpenQuestions,
+  useSessionPlans,
+  type LensKind,
+} from '../../../../store';
+import { clipQuestionText, isQuestionDelegate } from '../../../context/questionDelegate';
 import type { BreadcrumbCrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
 import { useIsBranchlessSession } from '../useIsBranchlessSession';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
@@ -60,6 +68,19 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     return resolveRootAgent({ agents: phaseRuns, agentId: parentAgent.id });
   }, [phaseRuns, parentAgent]);
 
+  const openQuestions = useSessionOpenQuestions(sessionId);
+  const answeredQuestions = useSessionAnsweredQuestions(sessionId);
+  const selectedQuestionLabel = useMemo(() => {
+    if (selectedAgent == null || !isQuestionDelegate({ agent: selectedAgent })) {
+      return null;
+    }
+    const question =
+      [...openQuestions, ...answeredQuestions].find(
+        (candidate) => candidate.id === selectedAgent.sourceThreadId,
+      ) ?? null;
+    return question === null ? null : clipQuestionText({ text: question.text });
+  }, [answeredQuestions, openQuestions, selectedAgent]);
+
   const selectedParentLabel = parentAgent?.name ?? null;
   const selectedRootLabel =
     rootAgent != null && parentAgent != null && rootAgent.id !== parentAgent.id
@@ -100,6 +121,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
         selectedChildHome,
         selectedParentLabel,
         selectedRootLabel,
+        selectedQuestionLabel,
         lensLabel: (kind: LensKind) => lensLabelFor({ lens: kind, isBranchless }),
         handlers: {
           toOverview: () => openLens({ sessionId, lens: null }),
@@ -145,6 +167,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       selectedChildHome,
       selectedParentLabel,
       selectedRootLabel,
+      selectedQuestionLabel,
       parentAgentId,
       rootAgentId,
       isBranchless,

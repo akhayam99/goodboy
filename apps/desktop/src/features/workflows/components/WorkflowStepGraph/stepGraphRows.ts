@@ -1,4 +1,5 @@
 import type { Agent, Step } from '@goodboy/types';
+import { isQuestionDelegate } from '../../../context/questionDelegate';
 import {
   TIMELINE_RHYTHM,
   markerCenterY,
@@ -20,6 +21,7 @@ export type StepGraphRow = {
   readonly step: Step | null;
   readonly childCount: number;
   readonly doneChildCount: number;
+  readonly answersForStepName: string | null;
 };
 
 type Params = {
@@ -32,6 +34,7 @@ type WalkParams = {
   readonly agents: ReadonlyArray<Agent>;
   readonly depth: number;
   readonly prefix: string;
+  readonly parentStepName: string | null;
 };
 
 const isSettled = ({ agent }: { readonly agent: Agent }): boolean =>
@@ -44,13 +47,14 @@ export const buildStepGraphRows = ({
 }: Params): ReadonlyArray<StepGraphRow> => {
   const rows: StepGraphRow[] = [];
 
-  const walk = ({ agents, depth, prefix }: WalkParams): void => {
+  const walk = ({ agents, depth, prefix, parentStepName }: WalkParams): void => {
     const ordered = [...agents].sort((first, second) => first.ordinal - second.ordinal);
     ordered.forEach((run, index) => {
       const marker = `${prefix}${index + 1}`;
       const children = childrenByParentId.get(run.id) ?? [];
       const hasBranch = children.length > 0 && depth < MAX_DEPTH;
-      const step = depth > 0 || run.stepId == null ? null : (stepById.get(run.stepId) ?? null);
+      const ownStep = run.stepId == null ? null : (stepById.get(run.stepId) ?? null);
+      const step = depth > 0 ? null : ownStep;
       rows.push({
         run,
         marker,
@@ -58,13 +62,19 @@ export const buildStepGraphRows = ({
         step,
         childCount: hasBranch ? children.length : 0,
         doneChildCount: children.filter((child) => isSettled({ agent: child })).length,
+        answersForStepName: isQuestionDelegate({ agent: run }) ? parentStepName : null,
       });
       if (hasBranch) {
-        walk({ agents: children, depth: depth + 1, prefix: `${marker}.` });
+        walk({
+          agents: children,
+          depth: depth + 1,
+          prefix: `${marker}.`,
+          parentStepName: ownStep?.name ?? run.name,
+        });
       }
     });
   };
 
-  walk({ agents: runs, depth: 0, prefix: '' });
+  walk({ agents: runs, depth: 0, prefix: '', parentStepName: null });
   return rows;
 };

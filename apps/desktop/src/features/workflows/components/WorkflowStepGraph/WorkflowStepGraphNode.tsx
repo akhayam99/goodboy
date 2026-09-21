@@ -15,6 +15,7 @@ type Props = {
   readonly marker: string;
   readonly childCount: number;
   readonly doneChildCount: number;
+  readonly answersForStepName: string | null;
   readonly isSelected: boolean;
   readonly onSelect: () => void;
 };
@@ -29,6 +30,7 @@ export const WorkflowStepGraphNode = ({
   marker,
   childCount,
   doneChildCount,
+  answersForStepName,
   isSelected,
   onSelect,
 }: Props) => (
@@ -47,6 +49,14 @@ export const WorkflowStepGraphNode = ({
       <span className="min-w-0 flex-1 truncate text-2xs font-medium text-foreground">
         {run.name}
       </span>
+      {answersForStepName !== null ? (
+        <span
+          data-testid={`answers-for-${run.id}`}
+          className="max-w-40 shrink-0 truncate text-3xs text-muted-foreground"
+        >
+          answering for {answersForStepName}
+        </span>
+      ) : null}
       <RoutingBadge
         provider={provider}
         model={model}

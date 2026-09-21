@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { OpenQuestion } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
@@ -9,6 +9,14 @@ const { state } = vi.hoisted(() => ({
     answerOpenQuestions: vi.fn(async () => undefined),
     dismissOpenQuestion: vi.fn(async () => undefined),
     selectAgent: vi.fn(async () => undefined),
+    spawnQuestionDelegates: vi.fn(
+      async ({ requests }: { requests: ReadonlyArray<{ question: { id: string } }> }) =>
+        requests.map((request) => ({
+          questionId: request.question.id,
+          agentId: 'child-1',
+          kind: 'spawned' as const,
+        })),
+    ),
     sessionPhaseRuns: {
       'sess-1': [
         { id: 'agent-1', name: 'scout', status: 'completed' },
@@ -68,6 +76,7 @@ beforeEach(() => {
   state.answerOpenQuestions.mockClear();
   state.dismissOpenQuestion.mockClear();
   state.selectAgent.mockClear();
+  state.spawnQuestionDelegates.mockClear();
   useOpenQuestions.setState({ drafts: {}, justAnswered: [], pendingUndo: null });
 });
 afterEach(cleanup);
@@ -405,5 +414,98 @@ describe('OpenQuestionCluster', () => {
     expect(
       screen.getByText('Use Postgres or SQLite? → Postgres · Redis or Memcached? → Redis'),
     ).toBeDefined();
+  });
+});
+
+describe('OpenQuestionCluster delegation', () => {
+  const chooseDelegate = () => fireEvent.click(screen.getByText('let an agent answer'));
+
+  it('spawns nothing while the choice is only staged', () => {
+    render(<OpenQuestionCluster questions={[dbQuestion]} sessionId={'sess-1' as never} />);
+
+    chooseDelegate();
+
+    expect(state.spawnQuestionDelegates).not.toHaveBeenCalled();
+    expect(state.answerOpenQuestions).not.toHaveBeenCalled();
+  });
+
+  it('keeps Send reachable with the hints left empty', () => {
+    render(<OpenQuestionCluster questions={[dbQuestion]} sessionId={'sess-1' as never} />);
+
+    chooseDelegate();
+
+    const send = screen.getByRole('button', { name: 'Send' });
+    expect(send.hasAttribute('disabled')).toBe(false);
+    expect(
+      (screen.getByLabelText('Hints for the delegated agent') as HTMLTextAreaElement).value,
+    ).toBe('');
+  });
+
+  it('spawns the delegate on Send, carrying the hints the user wrote', () => {
+    render(<OpenQuestionCluster questions={[dbQuestion]} sessionId={'sess-1' as never} />);
+
+    chooseDelegate();
+    fireEvent.change(screen.getByLabelText('Hints for the delegated agent'), {
+      target: { value: 'weigh the migration cost' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(state.spawnQuestionDelegates).toHaveBeenCalledTimes(1);
+    const call = state.spawnQuestionDelegates.mock.calls[0]?.[0] as {
+      sessionId: string;
+      requests: ReadonlyArray<{ question: { id: string }; hints: string; model: string }>;
+    };
+    expect(call.sessionId).toBe('sess-1');
+    expect(call.requests).toHaveLength(1);
+    expect(call.requests[0]?.question.id).toBe('oq-1');
+    expect(call.requests[0]?.hints).toBe('weigh the migration cost');
+    expect(call.requests[0]?.model).not.toBe('');
+  });
+
+  it('spawns only the delegated half of a mixed batch, persisting the rest as answers', async () => {
+    render(
+      <OpenQuestionCluster questions={[dbQuestion, cacheQuestion]} sessionId={'sess-1' as never} />,
+    );
+
+    fireEvent.click(screen.getByText('Postgres'));
+    goForward();
+    chooseDelegate();
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    const call = state.spawnQuestionDelegates.mock.calls[0]?.[0] as {
+      requests: ReadonlyArray<{ question: { id: string } }>;
+    };
+    expect(call.requests.map((request) => request.question.id)).toEqual(['oq-2']);
+    await waitFor(() =>
+      expect(state.answerOpenQuestions).toHaveBeenCalledWith(
+        'sess-1',
+        [{ id: 'oq-1', text: 'Use Postgres or SQLite?', answer: 'Postgres' }],
+        'agent-1',
+      ),
+    );
+  });
+
+  it('counts a delegated question as staged, so Send says two of two', () => {
+    render(
+      <OpenQuestionCluster questions={[dbQuestion, cacheQuestion]} sessionId={'sess-1' as never} />,
+    );
+
+    fireEvent.click(screen.getByText('Postgres'));
+    goForward();
+    chooseDelegate();
+
+    expect(screen.getByText('2 of 2 answered')).toBeDefined();
+  });
+
+  it('drops a typed answer once the question is handed to an agent', async () => {
+    render(<OpenQuestionCluster questions={[dbQuestion]} sessionId={'sess-1' as never} />);
+
+    fireEvent.click(screen.getByText('Postgres'));
+    chooseDelegate();
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() =>
+      expect(state.answerOpenQuestions).toHaveBeenCalledWith('sess-1', [], 'agent-1'),
+    );
   });
 });

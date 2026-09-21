@@ -14,7 +14,10 @@ const {
   rows,
   markOpenQuestionAnswered,
   markOpenQuestionAnswersDelivered,
+  markOpenQuestionDismissed,
   removeQuestionsFromSlot,
+  invokeAgentList,
+  invokeAgentUpdateStatus,
 } = vi.hoisted(() => {
   const rows: Row[] = [];
   return {
@@ -36,16 +39,32 @@ const {
         }
       },
     ),
+    markOpenQuestionDismissed: vi.fn(async (_db: unknown, id: string) => {
+      const row = rows.find((r) => r.id === id);
+      if (row) {
+        row.status = 'dismissed';
+      }
+    }),
     removeQuestionsFromSlot: vi.fn(async () => false),
+    invokeAgentList: vi.fn(async () => []),
+    invokeAgentUpdateStatus: vi.fn(async () => undefined),
   };
 });
 
-vi.mock('@goodboy/db', () => ({ markOpenQuestionAnswered, markOpenQuestionAnswersDelivered }));
+vi.mock('@goodboy/db', () => ({
+  markOpenQuestionAnswered,
+  markOpenQuestionAnswersDelivered,
+  markOpenQuestionDismissed,
+}));
 vi.mock('@goodboy/core', () => ({
   removeQuestionsFromSlot,
   wrapOpenQuestionAnswers: (body: string) => `<<oq-answers>>\n${body}\n<</oq-answers>>`,
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
+vi.mock('../../../features/workflows/workflows', () => ({
+  invokeAgentList,
+  invokeAgentUpdateStatus,
+}));
 
 import { answerOpenQuestions } from './answerOpenQuestions';
 
@@ -65,6 +84,9 @@ const toQuestion = (row: Row): OpenQuestion =>
   }) as unknown as OpenQuestion;
 
 const deps = {
+  sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+  cancelCurrentTurn: vi.fn(async () => undefined),
+  loadSessionDismissedQuestions: vi.fn(async () => undefined),
   sessionOpenQuestions: {} as Record<string, ReadonlyArray<OpenQuestion>>,
   sessionAnsweredQuestions: {} as Record<string, ReadonlyArray<OpenQuestion>>,
   loadSessionOpenQuestions: vi.fn(async () => {
@@ -84,7 +106,11 @@ const deps = {
 };
 
 const get = (() => deps) as never;
-const run = answerOpenQuestions(get);
+const set = ((update: unknown) => {
+  const patch = typeof update === 'function' ? (update as (s: unknown) => object)(deps) : update;
+  Object.assign(deps, patch);
+}) as never;
+const run = answerOpenQuestions(set, get);
 
 const seed = async (seeded: ReadonlyArray<Row>) => {
   rows.splice(0, rows.length, ...seeded.map((row) => ({ ...row })));
@@ -105,6 +131,7 @@ beforeEach(() => {
   removeQuestionsFromSlot.mockResolvedValue(false);
   deps.sessionOpenQuestions = {};
   deps.sessionAnsweredQuestions = {};
+  deps.sessionPhaseRuns = {};
 });
 afterEach(() => vi.restoreAllMocks());
 
@@ -354,5 +381,75 @@ describe('answerOpenQuestions', () => {
     await run(sessionId, [{ id: 'oq-1' as OpenQuestionId, text: 'Q1?', answer: 'A1' }], null);
 
     expect(lastTurn().agentId).toBeUndefined();
+  });
+
+  it('cancels and skips the running delegate when the user answers by hand', async () => {
+    await seed([
+      { id: 'oq-1', text: 'Q1?', createdByAgentId: 'agent-1', status: 'open', userAnswer: null },
+      {
+        id: 'oq-child',
+        text: 'which region?',
+        createdByAgentId: 'child-1',
+        status: 'open',
+        userAnswer: null,
+      },
+    ]);
+    deps.sessionPhaseRuns = {
+      [sessionId]: [
+        {
+          id: 'child-1',
+          sessionId,
+          ordinal: 1,
+          name: 'answer: Q1?',
+          status: 'running',
+          sourceKind: 'open_question',
+          sourceThreadId: 'oq-1',
+          parentAgentId: 'agent-1',
+        },
+      ],
+    };
+
+    await run(
+      sessionId,
+      [{ id: 'oq-1' as OpenQuestionId, text: 'Q1?', answer: 'A1' }],
+      'agent-1' as AgentId,
+    );
+
+    expect(deps.cancelCurrentTurn).toHaveBeenCalledWith(sessionId, 'child-1');
+    expect(invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      'child-1',
+      expect.objectContaining({ status: 'skipped' }),
+    );
+    expect(markOpenQuestionDismissed).toHaveBeenCalledWith(expect.anything(), 'oq-child');
+    expect(markOpenQuestionAnswered).toHaveBeenCalledWith(expect.anything(), 'oq-1', 'A1');
+  });
+
+  it('leaves a settled delegate alone when the user answers by hand', async () => {
+    await seed([
+      { id: 'oq-1', text: 'Q1?', createdByAgentId: 'agent-1', status: 'open', userAnswer: null },
+    ]);
+    deps.sessionPhaseRuns = {
+      [sessionId]: [
+        {
+          id: 'child-1',
+          sessionId,
+          ordinal: 1,
+          name: 'answer: Q1?',
+          status: 'failed',
+          sourceKind: 'open_question',
+          sourceThreadId: 'oq-1',
+          parentAgentId: 'agent-1',
+        },
+      ],
+    };
+
+    await run(
+      sessionId,
+      [{ id: 'oq-1' as OpenQuestionId, text: 'Q1?', answer: 'A1' }],
+      'agent-1' as AgentId,
+    );
+
+    expect(deps.cancelCurrentTurn).not.toHaveBeenCalled();
+    expect(invokeAgentUpdateStatus).not.toHaveBeenCalled();
   });
 });

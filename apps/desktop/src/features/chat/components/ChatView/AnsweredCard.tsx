@@ -9,11 +9,15 @@ import { TranscriptRowHeader } from '../TranscriptRowHeader';
 
 type Props = {
   readonly question: OpenQuestion;
+  readonly answeredByName?: string | null;
 };
 
 const RESOLVED_BY_AGENT = '[resolved by agent]';
 
-export const AnsweredCard = ({ question }: Props) => {
+const agentAnsweredLabel = ({ name }: { readonly name: string | null }): string =>
+  name === null || name.trim() === '' ? 'Agent answered:' : `${name} answered for you:`;
+
+export const AnsweredCard = ({ question, answeredByName = null }: Props) => {
   const [open, setOpen] = useState(false);
   const resolvedByAgent = question.userAnswer === RESOLVED_BY_AGENT;
   const answeredByAgent = resolvedByAgent || question.answerSource === 'agent';
@@ -53,7 +57,7 @@ export const AnsweredCard = ({ question }: Props) => {
       ) : (
         <div className="flex flex-col gap-2">
           <span className="text-2xs font-medium text-muted-foreground">
-            {answeredByAgent ? 'Agent answered:' : 'You answered:'}
+            {answeredByAgent ? agentAnsweredLabel({ name: answeredByName }) : 'You answered:'}
           </span>
           <Markdown
             text={question.userAnswer ?? ''}

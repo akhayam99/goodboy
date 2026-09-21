@@ -76,6 +76,7 @@ export const WorkflowStepGraphRow = ({
         marker={row.marker}
         childCount={row.childCount}
         doneChildCount={row.doneChildCount}
+        answersForStepName={row.answersForStepName}
         isSelected={selectedAgentId === run.id}
         onSelect={() => onSelect(run.id)}
       />

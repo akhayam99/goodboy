@@ -359,6 +359,37 @@ describe('advanceScoutTree split decision', () => {
     expect(sendTurn.mock.calls[0]?.[0]?.content).toContain('the model summary');
   });
 
+  it('consolidates the parent even while a delegated answer is still running beside the scouts', async () => {
+    const parent = scoutAgent({ id: 'delegating-parent' as AgentId, name: 'parent' });
+    const child = scoutAgent({
+      id: 'scout-child' as AgentId,
+      name: 'child',
+      parentAgentId: 'delegating-parent' as AgentId,
+    });
+    const delegate = scoutAgent({
+      id: 'delegate-child' as AgentId,
+      name: 'answer: pick a database',
+      ordinal: 1,
+      status: 'running',
+      parentAgentId: 'delegating-parent' as AgentId,
+      sourceKind: 'open_question',
+      sourceThreadId: 'oq-1',
+    });
+    const { get, set, sendTurn } = makeAdvanceStore([parent, child, delegate], true);
+    hoisted.invokeAgentList.mockResolvedValue([
+      parent,
+      { ...child, status: 'completed', outputSummary: 'the model summary' },
+      delegate,
+    ]);
+
+    await advanceScoutTree(set, get)(SID, child.id, 'the raw finding');
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    const content = sendTurn.mock.calls[0]?.[0]?.content ?? '';
+    expect(content).toContain('the model summary');
+    expect(content).not.toContain('answer: pick a database');
+  });
+
   it('keeps a wireframe scout on its own report path, away from the generic summarizer', async () => {
     const root = scoutAgent({ id: 'wireframe-root' as AgentId, kind: 'wireframe' });
     const child = scoutAgent({

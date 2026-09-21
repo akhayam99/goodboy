@@ -1,10 +1,11 @@
 import type { AgentId, SessionId } from '@goodboy/types';
+import { cancelQuestionDelegates } from './cancelQuestionDelegates';
 import {
   persistOpenQuestionAnswers,
   type OpenQuestionAnswerPair,
 } from './persistOpenQuestionAnswers';
 import { sendAnswersToSettledAgents, type AskingAgentId } from './sendAnswersToSettledAgents';
-import type { GetFn } from './types';
+import type { GetFn, SetFn } from './types';
 
 type ResolveAskingAgentsParams = {
   readonly get: GetFn;
@@ -31,7 +32,7 @@ const resolveAskingAgents = ({
   return agents;
 };
 
-export const answerOpenQuestions = (get: GetFn) => {
+export const answerOpenQuestions = (set: SetFn, get: GetFn) => {
   return async (
     sessionId: SessionId,
     pairs: ReadonlyArray<OpenQuestionAnswerPair>,
@@ -43,6 +44,12 @@ export const answerOpenQuestions = (get: GetFn) => {
     }
 
     const askingAgentIds = resolveAskingAgents({ get, sessionId, pairs: valid, targetAgentId });
+    await cancelQuestionDelegates({
+      set,
+      get,
+      sessionId,
+      questionIds: valid.map((pair) => pair.id),
+    });
     await persistOpenQuestionAnswers({ get, sessionId, pairs: valid });
     await sendAnswersToSettledAgents({ get, sessionId, askingAgentIds });
   };

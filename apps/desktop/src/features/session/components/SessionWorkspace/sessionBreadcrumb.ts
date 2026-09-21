@@ -25,6 +25,7 @@ export type SessionBreadcrumbInput = {
   selectedChildHome: AgentHomeLens | null;
   selectedParentLabel: string | null;
   selectedRootLabel: string | null;
+  selectedQuestionLabel: string | null;
   lensLabel: (lens: LensKind) => string;
   handlers: SessionBreadcrumbHandlers;
 };
@@ -48,6 +49,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     selectedChildHome,
     selectedParentLabel,
     selectedRootLabel,
+    selectedQuestionLabel,
     lensLabel,
     handlers,
   } = input;
@@ -100,6 +102,10 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
   }
 
   if (selectedChildLabel != null && selectedChildHome != null) {
+    const question: BreadcrumbCrumb[] =
+      selectedQuestionLabel == null
+        ? []
+        : [{ id: 'selected-question', label: selectedQuestionLabel }];
     const selectedChild: BreadcrumbCrumb = { id: 'selected-child', label: selectedChildLabel };
     const ancestors: BreadcrumbCrumb[] = [];
     if (selectedRootLabel != null) {
@@ -128,11 +134,12 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
         },
         ...ancestors,
         selectedChild,
+        ...question,
       ]);
     }
 
     if (selectedChildWorkflowName == null) {
-      return sealLast([overview, workflowsList, ...ancestors, selectedChild]);
+      return sealLast([overview, workflowsList, ...ancestors, selectedChild, ...question]);
     }
 
     return sealLast([
@@ -145,6 +152,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
       },
       ...ancestors,
       selectedChild,
+      ...question,
     ]);
   }
 

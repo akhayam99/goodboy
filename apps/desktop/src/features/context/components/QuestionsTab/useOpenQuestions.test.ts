@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { AgentId, OpenQuestionId } from '@goodboy/types';
-import { useOpenQuestions } from './useOpenQuestions';
+import type { OpenQuestionId } from '@goodboy/types';
+import { deriveDraftAnswer, useOpenQuestions, type DelegateRouting } from './useOpenQuestions';
+
+const routing: DelegateRouting = { provider: 'anthropic', model: 'sonnet-5', effort: 'medium' };
 
 const qid = 'q1' as OpenQuestionId;
 const other = 'q2' as OpenQuestionId;
@@ -75,23 +77,36 @@ describe('useOpenQuestions answering intent', () => {
     expect(useOpenQuestions.getState().drafts[qid]?.answerIntent).toEqual({ kind: 'person' });
   });
 
-  it('carries a delegated agent when the intent is set to one', () => {
+  it('carries the hints and the routing when the intent is set to an agent', () => {
     const { setAnswerIntent, setCustomAnswer } = useOpenQuestions.getState();
-    setAnswerIntent(qid, { kind: 'agent', agentId: 'agent-1' as AgentId });
+    setAnswerIntent(qid, { kind: 'agent', hints: 'weigh the migration cost', routing });
     setCustomAnswer(qid, 'drafted anyway');
 
     const draft = useOpenQuestions.getState().drafts[qid];
-    expect(draft?.answerIntent).toEqual({ kind: 'agent', agentId: 'agent-1' });
+    expect(draft?.answerIntent).toEqual({
+      kind: 'agent',
+      hints: 'weigh the migration cost',
+      routing,
+    });
     expect(draft?.customAnswer).toBe('drafted anyway');
   });
 
   it('keeps the answering intent across suggestion edits', () => {
     const { setAnswerIntent, toggleSuggestion } = useOpenQuestions.getState();
-    setAnswerIntent(qid, { kind: 'agent', agentId: null });
+    setAnswerIntent(qid, { kind: 'agent', hints: '', routing });
     toggleSuggestion(qid, 'a');
     expect(useOpenQuestions.getState().drafts[qid]?.answerIntent).toEqual({
       kind: 'agent',
-      agentId: null,
+      hints: '',
+      routing,
     });
+  });
+
+  it('withholds a typed answer once the question is handed to an agent', () => {
+    const { setAnswerIntent, setCustomAnswer } = useOpenQuestions.getState();
+    setCustomAnswer(qid, 'mine');
+    setAnswerIntent(qid, { kind: 'agent', hints: '', routing });
+
+    expect(deriveDraftAnswer(useOpenQuestions.getState().drafts[qid])).toBe('');
   });
 });

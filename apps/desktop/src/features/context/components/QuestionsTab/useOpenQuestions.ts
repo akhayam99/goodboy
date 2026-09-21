@@ -1,19 +1,35 @@
 import { create } from 'zustand';
-import type { AgentId, OpenQuestion, OpenQuestionId, OpenQuestionSelectMode } from '@goodboy/types';
+import type {
+  ModelEffort,
+  OpenQuestion,
+  OpenQuestionId,
+  OpenQuestionSelectMode,
+  ProviderId,
+} from '@goodboy/types';
 
 const UNDO_TTL_MS = 5_000;
 
+export type DelegateRouting = {
+  readonly provider: ProviderId | '';
+  readonly model: string;
+  readonly effort: ModelEffort;
+};
+
 export type AnswerIntent =
-  { readonly kind: 'person' } | { readonly kind: 'agent'; readonly agentId: AgentId | null };
+  | { readonly kind: 'person' }
+  | { readonly kind: 'agent'; readonly hints: string; readonly routing: DelegateRouting };
 
 export const PERSON_ANSWERS: AnswerIntent = { kind: 'person' };
 
-type QuestionDraft = {
+export type QuestionDraft = {
   selectedSuggestions: ReadonlyArray<string>;
   customAnswer: string;
   showCustomField: boolean;
   answerIntent: AnswerIntent;
 };
+
+export const isDelegatedDraft = (draft: QuestionDraft | undefined): boolean =>
+  draft?.answerIntent.kind === 'agent';
 
 type PendingUndo = {
   question: OpenQuestion;
@@ -48,10 +64,14 @@ function emptyDraft(): QuestionDraft {
   };
 }
 
-export const deriveDraftAnswer = (draft: QuestionDraft | undefined): string =>
-  (draft?.customAnswer.trim().length ?? 0) > 0
+export const deriveDraftAnswer = (draft: QuestionDraft | undefined): string => {
+  if (isDelegatedDraft(draft)) {
+    return '';
+  }
+  return (draft?.customAnswer.trim().length ?? 0) > 0
     ? draft!.customAnswer.trim()
     : (draft?.selectedSuggestions ?? []).join(', ');
+};
 
 export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
   drafts: {},

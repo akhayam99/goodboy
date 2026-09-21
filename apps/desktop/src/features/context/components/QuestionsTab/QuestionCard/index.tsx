@@ -1,13 +1,22 @@
 import { useEffect, useId, useState } from 'react';
 import { Check, MessageCircleQuestion, X } from 'lucide-react';
 import { cn, Markdown, tintClasses, Tooltip } from '@goodboy/ui';
-import type { OpenQuestion, OpenQuestionId, OpenQuestionSelectMode } from '@goodboy/types';
+import type {
+  OpenQuestion,
+  OpenQuestionId,
+  OpenQuestionSelectMode,
+  ProviderId,
+} from '@goodboy/types';
 import { CONCEPT_TONE, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { TranscriptShell } from '../../../../chat/components/TranscriptShell';
+import type { DelegateRowState } from '../../../questionDelegate';
 import { SuggestionRow } from '../SuggestionRow';
 import { CustomAnswerField } from '../CustomAnswerField';
+import { DelegateAnswerRow } from '../DelegateAnswerRow';
+import { DelegateAnswerPanel } from '../DelegateAnswerPanel';
 import { deriveSuggestions } from '../deriveSuggestions';
 import { orderSuggestions } from '../orderSuggestions';
+import type { DelegateRouting } from '../useOpenQuestions';
 
 const warningTint = tintClasses(CONCEPT_TONE.questions);
 
@@ -29,6 +38,14 @@ type Props = {
   readonly onToggleCustomField: (questionId: OpenQuestionId) => void;
   readonly onDismiss: (id: OpenQuestionId) => void;
   readonly onClearJustAnswered: (id: OpenQuestionId) => void;
+  readonly delegateState: DelegateRowState;
+  readonly delegateHints: string;
+  readonly delegateRouting: DelegateRouting;
+  readonly connectedProviders: ReadonlyArray<ProviderId>;
+  readonly onChooseDelegate: () => void;
+  readonly onCancelDelegate: () => void;
+  readonly onDelegateHints: (hints: string) => void;
+  readonly onDelegateRouting: (routing: DelegateRouting) => void;
 };
 
 export const QuestionCard = ({
@@ -43,6 +60,14 @@ export const QuestionCard = ({
   onToggleCustomField,
   onDismiss,
   onClearJustAnswered,
+  delegateState,
+  delegateHints,
+  delegateRouting,
+  connectedProviders,
+  onChooseDelegate,
+  onCancelDelegate,
+  onDelegateHints,
+  onDelegateRouting,
 }: Props) => {
   const [animate, setAnimate] = useState(false);
   const blockingId = useId();
@@ -74,6 +99,7 @@ export const QuestionCard = ({
   const groupRole = mode === 'many' ? 'group' : 'radiogroup';
   const groupLabel = mode === 'many' ? 'Pick one or more answers' : 'Pick one answer';
   const customFilled = customAnswer.trim().length > 0;
+  const isDelegating = delegateState === 'chosen';
   const hasMeta =
     question.isBlocking || question.ownedByStepOrdinal != null || askedByName !== null;
 
@@ -150,31 +176,46 @@ export const QuestionCard = ({
         className="flex flex-col gap-2"
         aria-describedby={question.isBlocking ? blockingId : undefined}
       >
-        {suggestions.length > 0 && (
-          <div
-            role={groupRole}
-            aria-label={groupLabel}
-            aria-describedby={question.isBlocking ? blockingId : undefined}
-            className="flex flex-col gap-2"
-          >
-            {suggestions.map((suggestion) => (
-              <SuggestionRow
-                key={suggestion}
-                label={suggestion}
-                mode={mode}
-                selected={!customFilled && selectedSuggestions.includes(suggestion)}
-                recommended={recommended.length > 0 && suggestion === recommended}
-                onToggle={() => onToggleSuggestion(question.id, suggestion, mode)}
-              />
-            ))}
-          </div>
+        {isDelegating ? (
+          <DelegateAnswerPanel
+            hiddenOptionCount={suggestions.length + 1}
+            hints={delegateHints}
+            routing={delegateRouting}
+            connectedProviders={connectedProviders}
+            onHints={onDelegateHints}
+            onRouting={onDelegateRouting}
+            onCancel={onCancelDelegate}
+          />
+        ) : (
+          <>
+            {suggestions.length > 0 && (
+              <div
+                role={groupRole}
+                aria-label={groupLabel}
+                aria-describedby={question.isBlocking ? blockingId : undefined}
+                className="flex flex-col gap-2"
+              >
+                {suggestions.map((suggestion) => (
+                  <SuggestionRow
+                    key={suggestion}
+                    label={suggestion}
+                    mode={mode}
+                    selected={!customFilled && selectedSuggestions.includes(suggestion)}
+                    recommended={recommended.length > 0 && suggestion === recommended}
+                    onToggle={() => onToggleSuggestion(question.id, suggestion, mode)}
+                  />
+                ))}
+              </div>
+            )}
+            <CustomAnswerField
+              value={customAnswer}
+              open={showCustomField}
+              onToggle={() => onToggleCustomField(question.id)}
+              onChange={(text) => onSetCustomAnswer(question.id, text)}
+            />
+          </>
         )}
-        <CustomAnswerField
-          value={customAnswer}
-          open={showCustomField}
-          onToggle={() => onToggleCustomField(question.id)}
-          onChange={(text) => onSetCustomAnswer(question.id, text)}
-        />
+        <DelegateAnswerRow state={delegateState} onChoose={onChooseDelegate} />
         {question.isBlocking && (
           <span id={blockingId} className="sr-only">
             {BLOCKING_DESCRIPTION}

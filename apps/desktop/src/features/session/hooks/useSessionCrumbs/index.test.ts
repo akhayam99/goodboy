@@ -15,7 +15,11 @@ import { LENS_ICON } from '../../lens-labels';
 type StoreState = Record<string, unknown>;
 
 const { store, actions } = vi.hoisted(() => {
-  const store: { state: StoreState } = { state: {} };
+  const store: {
+    state: StoreState;
+    openQuestions: ReadonlyArray<Record<string, unknown>>;
+    answeredQuestions: ReadonlyArray<Record<string, unknown>>;
+  } = { state: {}, openQuestions: [], answeredQuestions: [] };
   const actions = {
     setActiveLens: vi.fn(),
     setScriptsLensScope: vi.fn(),
@@ -32,6 +36,8 @@ vi.mock('../../../../store', () => ({
     getState: () => store.state,
   }),
   useSessionPlans: () => [],
+  useSessionOpenQuestions: () => store.openQuestions,
+  useSessionAnsweredQuestions: () => store.answeredQuestions,
 }));
 
 import { useSessionCrumbs } from './index';
@@ -83,6 +89,17 @@ const resolverAgent = agentOf({
   kind: 'resolver',
 });
 
+const DELEGATE_ID = 'agent-delegate' as AgentId;
+const delegateAgent = agentOf({
+  id: DELEGATE_ID,
+  name: 'answer: pick a database',
+  kind: 'scout',
+  parentAgentId: STEP_AGENT_ID,
+  workflowRunId: RUN_ID,
+  sourceKind: 'open_question',
+  sourceThreadId: 'oq-1',
+});
+
 type SurfaceParams = {
   readonly lens: LensKind | null;
   readonly selectedAgentId: AgentId;
@@ -111,7 +128,9 @@ beforeEach(() => {
     focusedPlanId: {},
     artifactCreation: {},
     selectedAgentId: {},
-    sessionPhaseRuns: { [SESSION_ID]: [stepAgent, adHocAgent, resolverAgent, clusterChild] },
+    sessionPhaseRuns: {
+      [SESSION_ID]: [stepAgent, adHocAgent, resolverAgent, clusterChild, delegateAgent],
+    },
     agentKindOverride: {},
     phaseTemplates: { 'workspace-1': [workflow] },
     sessionWorkflows: {},
@@ -119,6 +138,8 @@ beforeEach(() => {
     workspaces: [{ id: 'workspace-1', kind: 'repo' }],
     ...actions,
   };
+  store.openQuestions = [];
+  store.answeredQuestions = [];
 });
 
 describe('useSessionCrumbs', () => {
@@ -189,6 +210,41 @@ describe('useSessionCrumbs', () => {
 
     expect(result.current.map((crumb) => crumb.id)).not.toContain('selected-parent');
     expect(result.current.map((crumb) => crumb.id)).not.toContain('selected-root');
+  });
+
+  it('ends a delegate trail on the question it answers', () => {
+    store.openQuestions = [{ id: 'oq-1', text: 'pick a database' }];
+
+    expect(labelsOf(null, DELEGATE_ID)).toEqual([
+      'Overview',
+      'Workflows',
+      'refactor',
+      'Implement',
+      'answer: pick a database',
+      'pick a database',
+    ]);
+  });
+
+  it('reads the question off the answered list once the delegate has settled it', () => {
+    store.answeredQuestions = [{ id: 'oq-1', text: 'pick a database' }];
+
+    expect(labelsOf(null, DELEGATE_ID).at(-1)).toBe('pick a database');
+  });
+
+  it('leaves the delegate trail short when the question is gone', () => {
+    expect(labelsOf(null, DELEGATE_ID)).toEqual([
+      'Overview',
+      'Workflows',
+      'refactor',
+      'Implement',
+      'answer: pick a database',
+    ]);
+  });
+
+  it('adds no question crumb to an agent that is not a delegate', () => {
+    store.openQuestions = [{ id: 'oq-1', text: 'pick a database' }];
+
+    expect(labelsOf(null, CLUSTER_CHILD_ID).at(-1)).toBe('area alpha');
   });
 
   it('navigates from the run crumb to that run, and from Workflows to the list', () => {

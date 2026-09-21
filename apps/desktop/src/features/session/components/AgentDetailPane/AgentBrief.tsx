@@ -3,13 +3,21 @@ import { useShallow } from 'zustand/react/shallow';
 import { fallbackStepOutputSummary, stripControlMarkers } from '@goodboy/core';
 import { Markdown, SectionSurface, StatusDot } from '@goodboy/ui';
 import type { Agent, Session, TurnState } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useSessionAnsweredQuestions,
+  useSessionOpenQuestions,
+} from '../../../../store';
 import { useTranscript } from '../../../../store/transcript';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { reduceTranscript } from '../../../chat/utils/transcript-items';
+import { isQuestionDelegate } from '../../../context/questionDelegate';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
 import { AgentMetaLine } from './AgentMetaLine';
+import { AgentAnsweringFor } from './AgentAnsweringFor';
+import { AgentBriefDelegates } from './AgentBriefDelegates';
 import { AgentBriefChildren } from './AgentBriefChildren';
 import { AgentBriefPlans } from './AgentBriefPlans';
 import { AgentBriefQuestions } from './AgentBriefQuestions';
@@ -45,6 +53,8 @@ export const AgentBrief = ({ session, agent }: Props) => {
       return states;
     }),
   );
+  const openQuestions = useSessionOpenQuestions(session.id);
+  const answeredQuestions = useSessionAnsweredQuestions(session.id);
   const attachedRuns = useAttachedWorkflowRuns({ session });
   const metrics = useAgentMetrics({ sessionId: session.id });
   const children = useMemo(
@@ -60,10 +70,33 @@ export const AgentBrief = ({ session, agent }: Props) => {
       }),
     [children, kind],
   );
+  const delegates = useMemo(
+    () => children.map((child) => child.agent).filter((agent) => isQuestionDelegate({ agent })),
+    [children],
+  );
   const laneChildren = useMemo(() => {
     const followUpIds = new Set(followUps.map((entry) => entry.child.agent.id));
-    return children.filter((child) => !followUpIds.has(child.agent.id));
+    return children.filter(
+      (child) => !followUpIds.has(child.agent.id) && !isQuestionDelegate({ agent: child.agent }),
+    );
   }, [children, followUps]);
+  const sessionQuestions = useMemo(
+    () => [...openQuestions, ...answeredQuestions],
+    [openQuestions, answeredQuestions],
+  );
+  const answeredQuestion = useMemo(() => {
+    if (!isQuestionDelegate({ agent })) {
+      return null;
+    }
+    return sessionQuestions.find((question) => question.id === agent.sourceThreadId) ?? null;
+  }, [agent, sessionQuestions]);
+  const asker = useMemo(() => {
+    const parentId = agent.parentAgentId;
+    if (parentId == null) {
+      return null;
+    }
+    return runs.find((run) => run.id === parentId) ?? null;
+  }, [agent.parentAgentId, runs]);
   const step = useMemo(() => {
     if (agent.workflowRunId == null || agent.stepId == null) {
       return null;
@@ -95,6 +128,7 @@ export const AgentBrief = ({ session, agent }: Props) => {
 
   return (
     <div className="flex flex-col gap-4">
+      <AgentAnsweringFor sessionId={session.id} question={answeredQuestion} asker={asker} />
       <AgentBriefQuestions session={session} agent={agent} />
       {summary !== '' ? (
         <SectionSurface label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
@@ -133,6 +167,11 @@ export const AgentBrief = ({ session, agent }: Props) => {
           [...plans].reverse().find((plan) => plan.agentId === agent.id && plan.status === 'active')
             ?.id ?? null
         }
+      />
+      <AgentBriefDelegates
+        sessionId={session.id}
+        delegates={delegates}
+        questions={sessionQuestions}
       />
       <AgentBriefChildren session={session} kind={kind} children={laneChildren} />
       <AgentMetaLine
