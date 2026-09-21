@@ -128,6 +128,7 @@ const seedShellChrome = () => {
           suggestedAnswers: ['Customer', 'Marketplace account'],
           userAnswer: null,
           status: 'open',
+          isBlocking: false,
           createdAt: '2026-08-25T17:52:00.000Z' as IsoDateTime,
         },
       ],

@@ -32,6 +32,8 @@ const SCOUT_SPLIT_OPEN = '<<scout-split>>';
 const SCOUT_SPLIT_CLOSE = '<</scout-split>>';
 const QUESTION_OPEN_RE = /<<ctx-question((?:\s+[\w-]+="[^"]*")*)\s*>>/g;
 const QUESTION_CLOSE = '<</ctx-question>>';
+const OPEN_QUESTION_ANSWER_OPEN = '<<oq-answer>>';
+const OPEN_QUESTION_ANSWER_CLOSE = '<</oq-answer>>';
 const QUESTION_ATTR_RE = /(?<![\w-])([\w-]+)="([^"]*)"/g;
 const HANDOFF_OPEN = '<<handoff';
 const COMMENT_ANALYSIS_OPEN = '<<comment-analysis';
@@ -120,6 +122,7 @@ type ExtractedQuestion = {
   readonly suggestedAnswers: ReadonlyArray<string>;
   readonly recommendedAnswer: string | null;
   readonly selectMode: 'one' | 'many' | null;
+  readonly isBlocking: boolean;
 };
 
 export const extractMarkers = (
@@ -177,10 +180,39 @@ function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
       suggestedAnswers,
       recommendedAnswer: recommended.length > 0 ? recommended : null,
       selectMode,
+      isBlocking: attrs.blocking === 'true',
     });
   }
   return out;
 }
+
+type AssistantTextParams = {
+  readonly assistantText: string;
+};
+
+export const hasBlockingQuestion = ({ assistantText }: AssistantTextParams): boolean =>
+  extractQuestions(assistantText).some((question) => question.isBlocking);
+
+export const extractOpenQuestionAnswer = ({
+  assistantText,
+}: AssistantTextParams): string | null => {
+  let searchFrom = 0;
+  let lastAnswer: string | null = null;
+  while (true) {
+    const start = assistantText.indexOf(OPEN_QUESTION_ANSWER_OPEN, searchFrom);
+    if (start === -1) {
+      return lastAnswer;
+    }
+    const contentStart = start + OPEN_QUESTION_ANSWER_OPEN.length;
+    const end = assistantText.indexOf(OPEN_QUESTION_ANSWER_CLOSE, contentStart);
+    if (end === -1) {
+      return lastAnswer;
+    }
+    const answer = assistantText.slice(contentStart, end).trim();
+    lastAnswer = answer.length > 0 ? answer : null;
+    searchFrom = end + OPEN_QUESTION_ANSWER_CLOSE.length;
+  }
+};
 
 export type ExtractedPlan = {
   readonly title: string;
@@ -875,7 +907,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 };
 
 const BLOCK_MARKER_ALT =
-  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply';
+  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer';
 const SELF_MARKER_ALT =
   'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done|scout-domains|materialize:';
 

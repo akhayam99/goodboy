@@ -213,6 +213,7 @@ const makeOpenQuestion = (overrides: Partial<OpenQuestion> = {}): OpenQuestion =
   workflowRunId: RUN_ID,
   text: 'which database?',
   suggestedAnswers: [],
+  isBlocking: false,
   userAnswer: null,
   status: 'open',
   createdAt: NOW,

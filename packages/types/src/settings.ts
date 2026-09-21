@@ -13,6 +13,7 @@ export type AuxTaskId =
   | 'prose_polish'
   | 'agent_naming'
   | 'workflow_orchestrator'
+  | 'question_delegate'
   | 'pr_draft'
   | 'rebase';
 
@@ -51,6 +52,11 @@ export const TASKS: ReadonlyArray<{
     label: 'Workflow orchestrator',
     description:
       'Reads each finished step of a dynamic workflow and picks the next one, or ends the run',
+  },
+  {
+    id: 'question_delegate',
+    label: 'Delegated answers',
+    description: 'Answers an open question on your behalf when you hand it to an agent',
   },
   {
     id: 'pr_draft',

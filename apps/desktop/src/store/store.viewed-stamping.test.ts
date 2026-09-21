@@ -431,6 +431,7 @@ describe('markAllAgentsSeen', () => {
     createdByAgentId: AGENT_ID,
     text: 'Which implementation should I use?',
     suggestedAnswers: [],
+    isBlocking: false,
     userAnswer: null,
     status: 'open',
     createdAt: T1,

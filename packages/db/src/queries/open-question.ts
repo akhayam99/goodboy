@@ -26,6 +26,9 @@ type OpenQuestionRow = {
   user_answer: string | null;
   turn_ordinal: number | null;
   status: string;
+  is_blocking?: number;
+  answer_source?: 'user' | 'agent' | null;
+  answered_by_agent_id?: string | null;
   created_at: number;
   answered_at: number | null;
   dismissed_at: number | null;
@@ -38,7 +41,7 @@ const toSelectMode = (raw: string | null): OpenQuestionSelectMode | undefined =>
   return undefined;
 };
 
-function toDomain(row: OpenQuestionRow): OpenQuestion {
+const toDomain = (row: OpenQuestionRow): OpenQuestion => {
   return {
     id: row.id as OpenQuestionId,
     sessionId: row.session_id as SessionId,
@@ -51,7 +54,11 @@ function toDomain(row: OpenQuestionRow): OpenQuestion {
     suggestedAnswers: JSON.parse(row.suggested_answers) as ReadonlyArray<string>,
     recommendedAnswer: row.recommended_answer ?? undefined,
     selectMode: toSelectMode(row.select_mode),
+    isBlocking: row.is_blocking === 1,
     userAnswer: row.user_answer,
+    answerSource: row.answer_source ?? undefined,
+    answeredByAgentId:
+      row.answered_by_agent_id != null ? (row.answered_by_agent_id as AgentId) : undefined,
     turnOrdinal: row.turn_ordinal ?? undefined,
     status: row.status as OpenQuestionStatus,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
@@ -62,7 +69,7 @@ function toDomain(row: OpenQuestionRow): OpenQuestion {
       ? (new Date(row.dismissed_at).toISOString() as IsoDateTime)
       : undefined,
   };
-}
+};
 
 export type InsertOpenQuestionInput = {
   readonly id: OpenQuestionId;
@@ -76,6 +83,7 @@ export type InsertOpenQuestionInput = {
   readonly suggestedAnswers: ReadonlyArray<string>;
   readonly recommendedAnswer?: string;
   readonly selectMode?: OpenQuestionSelectMode;
+  readonly isBlocking?: boolean;
   readonly turnOrdinal?: number;
 };
 
@@ -92,8 +100,9 @@ export const insertOpenQuestion = async (
   await db.execute(
     `INSERT OR IGNORE INTO open_questions
        (id, session_id, workflow_id, workflow_run_id, created_by_step_ordinal, owned_by_step_ordinal,
-        created_by_agent_id, text, suggested_answers, recommended_answer, select_mode, turn_ordinal, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)`,
+        created_by_agent_id, text, suggested_answers, recommended_answer, select_mode, is_blocking,
+        turn_ordinal, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)`,
     [
       input.id,
       input.sessionId,
@@ -106,6 +115,7 @@ export const insertOpenQuestion = async (
       JSON.stringify(input.suggestedAnswers),
       input.recommendedAnswer ?? null,
       input.selectMode ?? null,
+      input.isBlocking === true ? 1 : 0,
       input.turnOrdinal ?? null,
       now,
     ],
@@ -155,15 +165,40 @@ export const listResolvedQuestionTextsForSession = async (
   return rows.map((r) => r.text);
 };
 
+type GetOpenQuestionByIdParams = {
+  readonly db: Database;
+  readonly id: OpenQuestionId;
+};
+
+export const getOpenQuestionById = async ({
+  db,
+  id,
+}: GetOpenQuestionByIdParams): Promise<OpenQuestion | null> => {
+  const rows = await db.select<OpenQuestionRow>('SELECT * FROM open_questions WHERE id = ?', [id]);
+  const row = rows[0];
+  return row === undefined ? null : toDomain(row);
+};
+
+export type OpenQuestionAnswerProvenance = Readonly<{
+  source: 'user' | 'agent';
+  agentId?: AgentId;
+}>;
+
 export const markOpenQuestionAnswered = async (
   db: Database,
   id: OpenQuestionId,
   userAnswer: string,
+  provenance?: OpenQuestionAnswerProvenance,
 ): Promise<void> => {
   const now = Date.now();
+  const source = provenance?.source ?? 'user';
+  const answeredByAgentId = source === 'agent' ? (provenance?.agentId ?? null) : null;
   await db.execute(
-    `UPDATE open_questions SET status = 'answered', user_answer = ?, answered_at = ? WHERE id = ?`,
-    [userAnswer, now, id],
+    `UPDATE open_questions
+     SET status = 'answered', user_answer = ?, answered_at = ?, answer_source = ?,
+         answered_by_agent_id = ?
+     WHERE id = ?`,
+    [userAnswer, now, source, answeredByAgentId, id],
   );
 };
 

@@ -16,6 +16,7 @@ type OpenQuestionRowSnapshot = {
   readonly status: OpenQuestionStatus;
   readonly suggested_answers: string;
   readonly user_answer: string | null;
+  readonly is_blocking: number;
 };
 
 type OpenQuestionTargetRow = {
@@ -147,19 +148,20 @@ describe('autoPopulateContext', () => {
       db,
       sessionId,
       filesEdited: [],
-      assistantText: '<<ctx-question suggestions="a | b">>foo<</ctx-question>>',
+      assistantText: '<<ctx-question suggestions="a | b" blocking="true">>foo<</ctx-question>>',
     });
 
     expect(result.openQuestionsChanged).toBe(true);
 
     const rows = await db.select<OpenQuestionRowSnapshot>(
-      'SELECT text, status, suggested_answers, user_answer FROM open_questions WHERE session_id = ?',
+      'SELECT text, status, suggested_answers, user_answer, is_blocking FROM open_questions WHERE session_id = ?',
       [sessionId],
     );
     expect(rows).toHaveLength(1);
     expect(rows[0]?.text).toBe('foo');
     expect(rows[0]?.status).toBe('open');
     expect(JSON.parse(rows[0]?.suggested_answers ?? '[]')).toEqual(['a', 'b']);
+    expect(rows[0]?.is_blocking).toBe(1);
   });
 
   it('dedups identical open questions across turns', async () => {

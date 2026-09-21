@@ -26,6 +26,7 @@ const question = (id: string, workflowRunId?: WorkflowRunId): OpenQuestion => ({
   sessionId: SESSION_ID,
   text: id,
   suggestedAnswers: [],
+  isBlocking: false,
   userAnswer: null,
   status: 'open',
   createdAt: NOW,

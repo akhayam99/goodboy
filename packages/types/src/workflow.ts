@@ -34,7 +34,7 @@ export type AgentRole =
 
 export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
-export type AgentSourceKind = 'review_comment' | 'issue_comment' | 'diff_comment';
+export type AgentSourceKind = 'review_comment' | 'issue_comment' | 'diff_comment' | 'open_question';
 
 export type StepDef = Readonly<{
   id: StepDefId;

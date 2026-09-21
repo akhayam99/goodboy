@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { OpenQuestionId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { AgentId, OpenQuestionId, SessionId, WorkspaceId } from '@goodboy/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from '../migrations/runner';
 import {
+  getOpenQuestionById,
   insertOpenQuestion,
   listOpenQuestionsForSession,
   markOpenQuestionAnswered,
@@ -40,6 +41,28 @@ describe('open_questions queries', () => {
     const open = await listOpenQuestionsForSession(db, sessionId, 'open');
     expect(open).toHaveLength(1);
     expect(open[0]!.turnOrdinal).toBe(3);
+  });
+
+  it('isBlocking round-trips and defaults to false', async () => {
+    const db = await seed();
+    await insertOpenQuestion(db, {
+      id: 'oq_blocking' as OpenQuestionId,
+      sessionId,
+      text: 'must answer',
+      suggestedAnswers: [],
+      isBlocking: true,
+    });
+    await insertOpenQuestion(db, {
+      id: 'oq_nonblocking' as OpenQuestionId,
+      sessionId,
+      text: 'can default',
+      suggestedAnswers: [],
+    });
+
+    const blocking = await getOpenQuestionById({ db, id: 'oq_blocking' as OpenQuestionId });
+    const nonblocking = await getOpenQuestionById({ db, id: 'oq_nonblocking' as OpenQuestionId });
+    expect(blocking?.isBlocking).toBe(true);
+    expect(nonblocking?.isBlocking).toBe(false);
   });
 
   it('omitted turnOrdinal stores null and reads undefined', async () => {
@@ -122,5 +145,42 @@ describe('open_questions queries', () => {
     expect(answered).toHaveLength(1);
     expect(answered[0]!.turnOrdinal).toBe(5);
     expect(answered[0]!.userAnswer).toBe('yes');
+    expect(answered[0]!.answerSource).toBe('user');
+    expect(answered[0]!.answeredByAgentId).toBeUndefined();
+  });
+
+  it('stores agent answer provenance with the agent id', async () => {
+    const db = await seed();
+    const agentId = 'agent_answerer' as AgentId;
+    await db.execute(
+      `INSERT INTO agents (id, session_id, ordinal, name, status) VALUES (?, ?, ?, ?, ?)`,
+      [agentId, sessionId, 0, 'delegate', 'completed'],
+    );
+    await insertOpenQuestion(db, {
+      id: 'oq_agent_answered' as OpenQuestionId,
+      sessionId,
+      text: 'delegate me',
+      suggestedAnswers: [],
+    });
+
+    await markOpenQuestionAnswered(db, 'oq_agent_answered' as OpenQuestionId, 'agent answer', {
+      source: 'agent',
+      agentId,
+    });
+
+    const answered = await getOpenQuestionById({
+      db,
+      id: 'oq_agent_answered' as OpenQuestionId,
+    });
+    expect(answered?.answerSource).toBe('agent');
+    expect(answered?.answeredByAgentId).toBe(agentId);
+  });
+
+  it('returns null for a missing id', async () => {
+    const db = await seed();
+
+    await expect(
+      getOpenQuestionById({ db, id: 'missing_question' as OpenQuestionId }),
+    ).resolves.toBeNull();
   });
 });

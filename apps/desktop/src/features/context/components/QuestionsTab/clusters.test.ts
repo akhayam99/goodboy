@@ -62,6 +62,7 @@ function question(
     sessionId: SESSION,
     text: `q ${id}`,
     suggestedAnswers: [],
+    isBlocking: false,
     userAnswer: null,
     status: 'open',
     createdAt: NOW,
