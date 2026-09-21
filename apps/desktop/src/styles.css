@@ -393,7 +393,7 @@ body,
   #root {
     height: auto;
     overflow: visible;
-    background: #ffffff;
+    background: var(--color-elevated);
   }
 }
 
