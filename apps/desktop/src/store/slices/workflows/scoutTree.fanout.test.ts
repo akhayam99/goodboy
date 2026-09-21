@@ -20,8 +20,14 @@ import type { GetFn, SetFn } from './types';
 
 const hoisted = vi.hoisted(() => {
   const insertArgs: Array<Record<string, unknown>> = [];
+  const calls: Array<string> = [];
   return {
     insertArgs,
+    calls,
+    summarizeWorkflowAgentOutput: vi.fn(async () => {
+      calls.push('summarize');
+      return 'the model summary';
+    }),
     invokeAgentInsertBatch: vi.fn(
       async ({
         children,
@@ -37,7 +43,10 @@ const hoisted = vi.hoisted(() => {
       },
     ),
     invokeAgentList: vi.fn(async () => [] as Agent[]),
-    invokeAgentUpdateStatus: vi.fn(async () => undefined),
+    invokeAgentUpdateStatus: vi.fn(async () => {
+      calls.push('persist');
+      return undefined;
+    }),
     invokeWorkflowNodeRoutingUpdate: vi.fn(async () => undefined),
   };
 });
@@ -47,6 +56,10 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentList: hoisted.invokeAgentList,
   invokeAgentUpdateStatus: hoisted.invokeAgentUpdateStatus,
   invokeWorkflowNodeRoutingUpdate: hoisted.invokeWorkflowNodeRoutingUpdate,
+}));
+
+vi.mock('./summarizeWorkflowAgentOutput', () => ({
+  summarizeWorkflowAgentOutput: hoisted.summarizeWorkflowAgentOutput,
 }));
 
 import { FAN_OUT_MAX_CHILDREN, advanceScoutTree, fanOutScouts } from './scoutTree';
@@ -99,6 +112,7 @@ function makeStore(c: Agent) {
 
 afterEach(() => {
   hoisted.insertArgs.length = 0;
+  hoisted.calls.length = 0;
   vi.unstubAllEnvs();
   vi.clearAllMocks();
 });
@@ -309,41 +323,59 @@ describe('advanceScoutTree split decision', () => {
     expect(hoisted.insertArgs).toHaveLength(0);
   });
 
-  it('stores deterministic head and tail output for a completed scout', async () => {
+  it('summarizes an ordinary completed scout before persisting its findings', async () => {
     const scout = scoutAgent({ id: 'summary-scout' as AgentId, name: 'summary-scout' });
     const assistantText = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
-    const { get, set, emitNotification } = makeAdvanceStore([scout], true);
+    const { get, set } = makeAdvanceStore([scout], true);
 
     await advanceScoutTree(set, get)(SID, scout.id, assistantText);
 
+    expect(hoisted.summarizeWorkflowAgentOutput).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: SID, output: assistantText }),
+    );
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
       scout.id,
-      expect.objectContaining({
-        outputSummary: `[unsummarized step output, carried whole]\n${assistantText}`,
-      }),
-    );
-    expect(emitNotification).toHaveBeenCalledWith(
-      'summarizer-degraded',
-      'warning',
-      expect.stringContaining('summary-scout'),
-      expect.any(String),
-      {
-        sessionId: SID,
-        action: { kind: 'retry-step-summary', sessionId: SID, agentId: scout.id },
-        coalesceKey: `step-summary-degraded:${scout.id}`,
-      },
+      expect.objectContaining({ outputSummary: 'the model summary' }),
     );
   });
 
-  it('notifies the degraded summary only once for the same scout (dedupe)', async () => {
-    const scout = scoutAgent({ id: 'dedupe-scout' as AgentId });
-    const { get, set, emitNotification } = makeAdvanceStore([scout], true);
-    const advance = advanceScoutTree(set, get);
+  it('starts the parent synthesis only after the child summary is persisted', async () => {
+    const parent = scoutAgent({ id: 'parent' as AgentId, name: 'parent' });
+    const child = scoutAgent({
+      id: 'child' as AgentId,
+      name: 'child',
+      parentAgentId: 'parent' as AgentId,
+    });
+    const { get, set, sendTurn } = makeAdvanceStore([parent, child], true);
+    hoisted.invokeAgentList.mockResolvedValue([
+      parent,
+      { ...child, status: 'completed', outputSummary: 'the model summary' },
+    ]);
 
-    await advance(SID, scout.id, 'raw output');
-    await advance(SID, scout.id, 'raw output again');
+    await advanceScoutTree(set, get)(SID, child.id, 'the raw finding');
 
-    expect(emitNotification).toHaveBeenCalledTimes(1);
+    expect(hoisted.calls).toEqual(['summarize', 'persist']);
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(sendTurn.mock.calls[0]?.[0]?.content).toContain('the model summary');
+  });
+
+  it('keeps a wireframe scout on its own report path, away from the generic summarizer', async () => {
+    const root = scoutAgent({ id: 'wireframe-root' as AgentId, kind: 'wireframe' });
+    const child = scoutAgent({
+      id: 'wireframe-child' as AgentId,
+      parentAgentId: 'wireframe-root' as AgentId,
+    });
+    const { get, set } = makeAdvanceStore([root, child], true);
+
+    await advanceScoutTree(set, get)(SID, child.id, 'cited `src/app.tsx` in the report');
+
+    expect(hoisted.summarizeWorkflowAgentOutput).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      child.id,
+      expect.objectContaining({
+        outputSummary: expect.stringContaining('cited `src/app.tsx` in the report'),
+      }),
+    );
   });
 });
 

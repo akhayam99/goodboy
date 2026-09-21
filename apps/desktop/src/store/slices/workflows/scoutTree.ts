@@ -6,12 +6,7 @@ import type {
   SessionId,
   WorkflowRoutingProposal,
 } from '@goodboy/types';
-import {
-  extractFanOut,
-  fanOutCapabilityForRole,
-  fallbackStepOutputSummary,
-  type ExtractedFanOutArea,
-} from '@goodboy/core';
+import { extractFanOut, fanOutCapabilityForRole, type ExtractedFanOutArea } from '@goodboy/core';
 import {
   invokeAgentInsertBatch,
   invokeAgentList,
@@ -30,6 +25,7 @@ import { clampWireframeScoutReport } from '../../../features/wireframes/wirefram
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
 import { openTurnStartWindow } from '../turn/turnStartWindow';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
+import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 import type { GetFn, SetFn } from './types';
 
 export const SCOUT_DEPTH_CAP = 2;
@@ -561,31 +557,14 @@ const settleAgent = async ({
   get,
   sessionId,
   agentId,
-  agentName,
   summary,
-  isDegradedNoticeSuppressed = false,
 }: {
   readonly set: SetFn;
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
-  readonly agentName: string;
   readonly summary: string;
-  readonly isDegradedNoticeSuppressed?: boolean;
 }): Promise<void> => {
-  if (isDegradedNoticeSuppressed === false) {
-    void get().emitNotification(
-      'summarizer-degraded',
-      'warning',
-      `step summary degraded: ${agentName}`,
-      'fan-out branch summaries skip the LLM summarizer, showing raw output instead.',
-      {
-        sessionId,
-        action: { kind: 'retry-step-summary', sessionId, agentId },
-        coalesceKey: `step-summary-degraded:${agentId}`,
-      },
-    );
-  }
   await invokeAgentUpdateStatus(agentId, {
     status: 'completed',
     outputSummary: summary,
@@ -614,9 +593,7 @@ export const advanceScoutTree = (set: SetFn, get: GetFn) => {
         get,
         sessionId,
         agentId,
-        agentName: agent.name,
         summary: clampWireframeScoutReport({ text: assistantText }),
-        isDegradedNoticeSuppressed: true,
       });
       return;
     }
@@ -665,8 +642,13 @@ export const advanceScoutTree = (set: SetFn, get: GetFn) => {
       get,
       sessionId,
       agentId,
-      agentName: agent.name,
-      summary: fallbackStepOutputSummary({ output: assistantText }),
+      summary: await summarizeWorkflowAgentOutput({
+        set,
+        get,
+        sessionId,
+        agent,
+        output: assistantText,
+      }),
     });
   };
 };

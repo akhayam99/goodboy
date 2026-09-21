@@ -52,6 +52,10 @@ vi.mock('./AgentFollowUps', () => ({
   AgentFollowUps: () => null,
 }));
 
+const { invokeSpy } = vi.hoisted(() => ({ invokeSpy: vi.fn() }));
+
+vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeSpy }));
+
 import { SECTION_SURFACE_CLASS } from '@goodboy/ui';
 import { AgentBrief } from './AgentBrief';
 
@@ -114,6 +118,15 @@ describe('AgentBrief summary', () => {
     const { container } = render(<AgentBrief session={session} agent={agent} />);
 
     expect(container.textContent).toContain('[unsummarized step output, carried whole]');
+  });
+
+  it('starts no provider work while rendering the excerpt', () => {
+    const agent = makeAgent({ outputSummary: '' });
+    transcriptItems.items = [{ kind: 'assistant_text', text: 'here is the last reply' }];
+
+    render(<AgentBrief session={session} agent={agent} />);
+
+    expect(invokeSpy).not.toHaveBeenCalled();
   });
 
   it('falls back to the last assistant reply when outputSummary is absent', () => {
