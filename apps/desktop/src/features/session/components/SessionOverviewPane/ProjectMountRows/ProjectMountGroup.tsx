@@ -65,7 +65,7 @@ export const ProjectMountGroup = ({
   );
 
   return (
-    <div className="flex min-w-0 flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-0.5">
       <div className="flex min-h-8 w-full items-center gap-2 px-2">
         <GlyphIcon
           size={ICON_SIZE.control}
@@ -103,7 +103,7 @@ export const ProjectMountGroup = ({
           />
         </div>
       </div>
-      <ul aria-label={`${group.projectName} branch mounts`} className="flex flex-col gap-1 pl-2">
+      <ul aria-label={`${group.projectName} branch mounts`} className="flex flex-col gap-0.5 pl-2">
         {group.rows.map(renderRow)}
         {isCompletedShown ? group.completedRows.map(renderRow) : null}
       </ul>

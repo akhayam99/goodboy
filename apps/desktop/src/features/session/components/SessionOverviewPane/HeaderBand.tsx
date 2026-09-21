@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { Divider, Input, PANE_RHYTHM, Tooltip } from '@goodboy/ui';
+import { Input, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
@@ -57,7 +57,7 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
   const titleText = sessionTitle({ session });
 
   return (
-    <div className={PANE_RHYTHM.stack}>
+    <div className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           {rename.editing ? (
@@ -114,10 +114,11 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
           </div>
         </div>
       </div>
-      <Divider />
+      <div className="flex min-w-0 flex-col gap-2">
+        {goal}
+        <ContextDigest sessionId={sessionId} onSelectLens={onSelectLens} />
+      </div>
       <ProjectMountRows session={session} onSelectLens={onSelectLens} />
-      {goal}
-      <ContextDigest sessionId={sessionId} onSelectLens={onSelectLens} />
     </div>
   );
 };
