@@ -7,6 +7,34 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.10
+
+Resolving a pull request comment is one surface with four moves, the reply you write is the one the reviewer reads, and a branch that has landed stops claiming it still carries work.
+
+### [#1811] Four verbs on a comment, and the reply you edit is the one that ships
+
+The reply the agent proposed was editable and the edit went nowhere: approval stored a hash of your text and published the agent's original, while a refusal rejected any reply that differed from it. The reply you choose is now saved with the decision, so rewriting it works in both directions.
+
+A comment offers four moves instead of a fixed row of buttons. Fix it sends an agent back in with your instructions, or with none, which tells it to read the comment again. Discuss posts a reply and leaves the comment open, which there was no way to do before: the only path that posted a reply also passed judgement. Close settles it as will not fix. Resolve pushes, posts the reply and resolves the thread for that one comment, confirmed in its own footer, with no batch to assemble first. The batch is still there in the dock for when you want it.
+
+Publishing one comment still pushes the branch, because git pushes branches and not comments. The reply and the thread resolution are scoped to the comment you acted on.
+
+The surface itself is two columns now: the conversation at a reading measure, and commit, changes, checks, run and related comments as a quiet rail beside it.
+
+### [#1809] The resolve surface opens over the whole pane
+
+Opening a comment squeezed a fixed column beside the queue, under a pull request header that stayed put, and the panel's own toolbar was wider than the column it sat in, so its menu fell off the edge of the pane. A comment now covers the whole Review pane, header and publish dock included, and the controls wrap instead of leaving.
+
+Every state offers one primary action derived from where the comment actually is, rather than the same approve and revise pair with everything else behind a kebab. Later is gone: it cleared the approval and hid the comment with no date, no reminder and no way back other than finding it again. Moving to another comment does that job. Comments already deferred keep their Resume.
+
+View agent carries the comment with it. The agent surface says which comment sent you there and takes you back to it with the queue as you left it, and the comment shows the run's phase, its last reply and its cost without leaving.
+
+### [#1810] A merged branch stops counting its own diff
+
+A branch measured its changes against the point it forked from, so it kept showing the same additions and deletions after it had been merged, with nothing left to land. Once the base carries the work, by merge, squash or rebase, the branch reads clean and only what you start on it afterwards counts.
+
+The session overview reads top down: what the session is for, what has been decided, then where it runs. Projects and their branch mounts sit closer together, and the rule under the title is gone.
+
 ## Goodboy v0.3.9
 
 A workflow takes one more step even after it has finished, a custom workflow gets its name before it starts, and autorun reaches the agents that never belonged to a workflow.
