@@ -81,6 +81,7 @@ export const autoPopulateContext = async (
       suggestedAnswers: q.suggestedAnswers,
       recommendedAnswer: q.recommendedAnswer ?? undefined,
       selectMode: q.selectMode ?? undefined,
+      isBlocking: q.isBlocking,
       turnOrdinal: input.agentContext?.turnOrdinal,
     });
     if (res.inserted) {

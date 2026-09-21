@@ -148,6 +148,22 @@ describe('resolveTaskModel', () => {
     }
   });
 
+  it('uses a mid model for delegated question answers', () => {
+    for (const providerId of PROVIDER_IDS) {
+      const resolved = resolveTaskModel({
+        task: 'question_delegate',
+        preferences: null,
+        workspaceDefaultProviderId: providerId,
+        sessionDefaultProviderId: 'anthropic',
+      });
+      const descriptor = PROVIDER_CAPABILITIES[providerId].models.find(
+        (model) => model.id === resolved.model,
+      );
+
+      expect(descriptor?.costTier).toBe('mid');
+    }
+  });
+
   it('prefers the current workspace provider over a captured session provider', () => {
     expect(
       resolveTaskModel({

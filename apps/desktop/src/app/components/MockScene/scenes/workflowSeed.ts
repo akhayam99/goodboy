@@ -420,6 +420,7 @@ const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [
     text: 'Which error shape does checkout expect for rejected orders?',
     suggestedAnswers: ['Keep the current code and message shape', 'Adopt problem details'],
     recommendedAnswer: 'Keep the current code and message shape',
+    isBlocking: false,
     userAnswer: 'Keep the current code and message shape so the existing toast still works.',
     status: 'answered',
     createdAt: '2026-08-25T17:31:00.000Z' as IsoDateTime,

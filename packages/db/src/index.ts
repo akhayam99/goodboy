@@ -383,6 +383,7 @@ export {
 } from './queries/project-script';
 export {
   insertOpenQuestion,
+  getOpenQuestionById,
   listOpenQuestionsForSession,
   listResolvedQuestionTextsForSession,
   markOpenQuestionAnswered,
@@ -392,6 +393,7 @@ export {
   transferOpenQuestionOwnership,
   type InsertOpenQuestionInput,
   type InsertOpenQuestionResult,
+  type OpenQuestionAnswerProvenance,
 } from './queries/open-question';
 
 export {

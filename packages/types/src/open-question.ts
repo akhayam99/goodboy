@@ -23,7 +23,10 @@ export type OpenQuestion = Readonly<{
   suggestedAnswers: ReadonlyArray<string>;
   recommendedAnswer?: string;
   selectMode?: OpenQuestionSelectMode;
+  isBlocking: boolean;
   userAnswer: string | null;
+  answerSource?: 'user' | 'agent';
+  answeredByAgentId?: AgentId;
   turnOrdinal?: number;
   status: OpenQuestionStatus;
   createdAt: IsoDateTime;

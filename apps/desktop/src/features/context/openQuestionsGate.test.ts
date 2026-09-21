@@ -22,6 +22,7 @@ function q(id: string, opts: Partial<OpenQuestion> = {}): OpenQuestion {
     sessionId: SESSION,
     text: id,
     suggestedAnswers: [],
+    isBlocking: false,
     userAnswer: null,
     status: 'open',
     createdAt: NOW,

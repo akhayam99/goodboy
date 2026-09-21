@@ -73,6 +73,7 @@ const openQuestion = (): OpenQuestion => ({
   workflowRunId: RUN_ID,
   text: 'which database?',
   suggestedAnswers: [],
+  isBlocking: false,
   userAnswer: null,
   status: 'open',
   createdAt: '2025-01-01T00:00:00.000Z' as IsoDateTime,

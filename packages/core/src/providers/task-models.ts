@@ -32,7 +32,7 @@ const automaticModelForTask = ({ task, providerId }: AutomaticParams): string =>
   if (task === 'rebase') {
     return providerId === 'anthropic' ? 'sonnet-5' : getDefaultTurnModel({ id: providerId });
   }
-  if (task === 'workflow_orchestrator') {
+  if (task === 'workflow_orchestrator' || task === 'question_delegate') {
     return getMidModel(providerId);
   }
   return getCheapModel(providerId);

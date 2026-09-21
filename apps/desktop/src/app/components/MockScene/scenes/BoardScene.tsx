@@ -460,6 +460,7 @@ const OPEN_QUESTION: OpenQuestion = {
   text: 'Should the relay retry with a fixed delay or exponential backoff?',
   suggestedAnswers: ['Fixed delay', 'Exponential backoff'],
   recommendedAnswer: 'Exponential backoff',
+  isBlocking: false,
   userAnswer: null,
   status: 'open',
   createdAt: isoAgo(5 * HOUR + 10 * MINUTE),

@@ -16,11 +16,13 @@ import {
   extractHandoff,
   extractMarkers,
   extractMaterializeRequests,
+  extractOpenQuestionAnswer,
   extractPlanFromMarker,
   extractReviewComments,
   extractScoutDomains,
   extractScoutSplit,
   extractStepDone,
+  hasBlockingQuestion,
   isOpenQuestionAnswerText,
   isReviewThreadId,
   mergeIntoSlot,
@@ -95,6 +97,7 @@ describe('extractMarkers', () => {
         suggestedAnswers: [],
         recommendedAnswer: null,
         selectMode: null,
+        isBlocking: false,
       },
     ]);
   });
@@ -109,6 +112,7 @@ describe('extractMarkers', () => {
         suggestedAnswers: ['yes', 'no', 'maybe'],
         recommendedAnswer: null,
         selectMode: null,
+        isBlocking: false,
       },
     ]);
   });
@@ -121,6 +125,7 @@ describe('extractMarkers', () => {
         suggestedAnswers: [],
         recommendedAnswer: null,
         selectMode: null,
+        isBlocking: false,
       },
     ]);
   });
@@ -134,6 +139,7 @@ describe('extractMarkers', () => {
         suggestedAnswers: ['yes', 'no'],
         recommendedAnswer: 'yes',
         selectMode: null,
+        isBlocking: false,
       },
     ]);
   });
@@ -148,6 +154,7 @@ describe('extractMarkers', () => {
         suggestedAnswers: ['a', 'b'],
         recommendedAnswer: null,
         selectMode: 'one',
+        isBlocking: false,
       },
     ]);
     const multi = extractMarkers(
@@ -159,6 +166,7 @@ describe('extractMarkers', () => {
         suggestedAnswers: ['a', 'b', 'c'],
         recommendedAnswer: null,
         selectMode: 'many',
+        isBlocking: false,
       },
     ]);
   });
@@ -168,6 +176,27 @@ describe('extractMarkers', () => {
       '<<ctx-question select="lots" suggestions="a | b">>anything<</ctx-question>>',
     );
     expect(out.questions[0]?.selectMode).toBeNull();
+  });
+
+  it('reads only the exact true blocking attribute as blocking', () => {
+    const marked = extractMarkers(
+      '<<ctx-question blocking="true">>needs a person<</ctx-question>>',
+    );
+    const falseMarked = extractMarkers(
+      '<<ctx-question blocking="false">>has a default<</ctx-question>>',
+    );
+    const absent = extractMarkers('<<ctx-question>>ordinary question<</ctx-question>>');
+
+    expect(marked.questions[0]?.isBlocking).toBe(true);
+    expect(falseMarked.questions[0]?.isBlocking).toBe(false);
+    expect(absent.questions[0]?.isBlocking).toBe(false);
+  });
+
+  it('does not treat blocking text in the question body as an attribute', () => {
+    const assistantText =
+      '<<ctx-question>>Should the copy include blocking="true"?<</ctx-question>>';
+
+    expect(hasBlockingQuestion({ assistantText })).toBe(false);
   });
 
   it('trims whitespace inside markers', () => {
@@ -1106,6 +1135,25 @@ world`;
 });
 
 describe('open-question answer markers', () => {
+  it('extracts the last delegated answer block', () => {
+    const assistantText =
+      '<<oq-answer>>first answer<</oq-answer>> between <<oq-answer>>  final answer  <</oq-answer>>';
+
+    expect(extractOpenQuestionAnswer({ assistantText })).toBe('final answer');
+  });
+
+  it('returns null when the last delegated answer block is empty', () => {
+    const assistantText = '<<oq-answer>>first answer<</oq-answer>><<oq-answer>>   <</oq-answer>>';
+
+    expect(extractOpenQuestionAnswer({ assistantText })).toBeNull();
+  });
+
+  it('strips delegated answer blocks from rendered text', () => {
+    const text = 'before <<oq-answer>>machine answer<</oq-answer>> after';
+
+    expect(stripControlMarkers(text)).toBe('before  after');
+  });
+
   it('wraps a body between oq-answers markers', () => {
     const wrapped = wrapOpenQuestionAnswers('Q1: yes\nQ2: no');
     expect(wrapped).toBe('<<oq-answers>>\nQ1: yes\nQ2: no\n<</oq-answers>>');

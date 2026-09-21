@@ -182,6 +182,7 @@ const openQuestion = (): OpenQuestion => ({
   workflowRunId: WORKFLOW_RUN_ID,
   text: 'which database?',
   suggestedAnswers: [],
+  isBlocking: false,
   userAnswer: null,
   status: 'open',
   createdAt: NOW,

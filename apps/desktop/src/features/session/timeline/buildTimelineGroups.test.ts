@@ -128,6 +128,7 @@ const question = ({
   ...(createdByStepOrdinal != null ? { createdByStepOrdinal } : {}),
   text: id,
   suggestedAnswers: [],
+  isBlocking: false,
   userAnswer: null,
   status: 'answered',
   createdAt: typedString<IsoDateTime>({ value: '2026-08-17T09:00:00Z' }),
