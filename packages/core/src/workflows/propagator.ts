@@ -1,4 +1,6 @@
 const EARLIER_STEP_PREVIEW_LENGTH = 280;
+const OLDER_STEP_PREVIEW_LENGTH = 120;
+const OMISSION_MARKER = '...';
 const PARALLEL_BRANCH_PREVIEW_LENGTH = 600;
 const PARALLEL_BRANCH_DEGRADED_LENGTH = 280;
 const PARALLEL_HANDOFF_MAX_LENGTH = 3000;
@@ -37,6 +39,18 @@ type RenderParallelParams = {
   readonly groupName: string;
   readonly branches: ReadonlyArray<NormalizedParallelBranch>;
   readonly bodyLength: number;
+};
+
+type OlderStepPreviewParams = {
+  readonly summary: string;
+};
+
+const olderStepPreview = ({ summary }: OlderStepPreviewParams): string => {
+  const firstLine = summary.split(/\r?\n/, 1)[0] ?? '';
+  if (firstLine.length <= OLDER_STEP_PREVIEW_LENGTH) {
+    return firstLine;
+  }
+  return `${firstLine.slice(0, OLDER_STEP_PREVIEW_LENGTH - OMISSION_MARKER.length)}${OMISSION_MARKER}`;
 };
 
 const renderParallelCarryForward = ({
@@ -87,8 +101,8 @@ export const buildChainCarryForward = ({ steps }: ChainParams): string => {
       return;
     }
     const preview =
-      index === 0 ? summary.slice(0, EARLIER_STEP_PREVIEW_LENGTH) : summary.split(/\r?\n/, 1)[0];
-    lines.push(`- step ${step.ordinal} ${step.name}: ${preview ?? ''}`);
+      index === 0 ? summary.slice(0, EARLIER_STEP_PREVIEW_LENGTH) : olderStepPreview({ summary });
+    lines.push(`- step ${step.ordinal} ${step.name}: ${preview}`);
   });
   return lines.join('\n');
 };

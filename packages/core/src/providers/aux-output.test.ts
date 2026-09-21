@@ -80,6 +80,36 @@ describe('extractAuxOutput, cursor stream-json', () => {
     expect(extractAuxOutput({ providerId: 'cursor', stdout }).text).toBe('branch-slug-here');
   });
 
+  it('decodes literal newlines in a result event with usage', () => {
+    const stdout = `{"type":"system","subtype":"init"}
+{"type":"result","subtype":"success","result":"Implemented the parser.
+
+- Preserved multiline output","usage":{"input_tokens":17,"output_tokens":8}}`;
+    const out = extractAuxOutput({ providerId: 'cursor', stdout });
+
+    expect(out.text).toBe('Implemented the parser.\n\n- Preserved multiline output');
+    expect(out.usage.inputTokens).toBe(17);
+    expect(out.usage.outputTokens).toBe(8);
+  });
+
+  it('decodes a multiline assistant event when no result event arrives', () => {
+    const stdout = `{"type":"assistant","message":{"content":[{"type":"text","text":"Drafted the fix.
+- Added coverage"}]}}`;
+
+    expect(extractAuxOutput({ providerId: 'cursor', stdout }).text).toBe(
+      'Drafted the fix.\n- Added coverage',
+    );
+  });
+
+  it('reports an error result event', () => {
+    const stdout =
+      '{"type":"result","subtype":"error_during_execution","is_error":true,"error":"model failed"}';
+    const out = extractAuxOutput({ providerId: 'cursor', stdout });
+
+    expect(out.isError).toBe(true);
+    expect(out.errorMessage).toBe('model failed');
+  });
+
   it('passes plain stdout through untouched', () => {
     const out = extractAuxOutput({ providerId: 'cursor', stdout: 'Implemented auth flow.' });
 

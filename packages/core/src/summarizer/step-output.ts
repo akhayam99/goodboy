@@ -5,7 +5,6 @@ import { getDefaultBinary } from '../providers/cli-defaults';
 import { SummarizerParseError, SummarizerSpawnError, type SummarizerDeps } from './client';
 
 const MAX_SUMMARY_LENGTH = 1200;
-const MAX_FIRST_LINE_LENGTH = 120;
 const FALLBACK_HEAD_LENGTH = 1500;
 const FALLBACK_TAIL_LENGTH = 400;
 const FALLBACK_JOINER = '\n...\n';
@@ -67,8 +66,9 @@ type ClampParams = {
 const clampToSummaryBudget = ({ summary }: ClampParams): string => {
   const [outcomeLine = '', ...remainingLines] = summary.split(/\r?\n/);
   const budget = MAX_SUMMARY_LENGTH - CLAMP_NOTICE.length;
-  const kept = [outcomeLine];
-  let used = outcomeLine.length;
+  const boundedOutcomeLine = outcomeLine.slice(0, budget);
+  const kept = [boundedOutcomeLine];
+  let used = boundedOutcomeLine.length;
   for (const line of remainingLines) {
     const grown = used + line.length + 1;
     if (grown > budget) {
@@ -129,8 +129,7 @@ export const summarizeStepOutput = async ({
     );
   }
   const summary = extracted.text.trim();
-  const firstLine = summary.split(/\r?\n/, 1)[0] ?? '';
-  if (summary.length === 0 || firstLine.length > MAX_FIRST_LINE_LENGTH) {
+  if (summary.length === 0) {
     throw new SummarizerParseError('step output summary violated the response contract', summary);
   }
   if (summary.length > MAX_SUMMARY_LENGTH) {
