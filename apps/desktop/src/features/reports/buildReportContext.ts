@@ -12,8 +12,11 @@ import type {
 import { redactSecrets } from '../../shared/utils/redactSecrets';
 import {
   allocateReportContext,
+  ARTIFACT_SECTION_CUT_NOTE,
+  ARTIFACT_SECTION_REMOVED_NOTE,
   clipToBoundary,
   fitWithinBudget,
+  reconcileSectionRow,
   REPORT_ALLOCATION_LIMITS,
   type BudgetBlock,
   type ReportAgentCandidate,
@@ -56,9 +59,9 @@ export const REPORT_SESSION_TITLE_CLIP_NOTE = `session title cut at ${formatBrie
   value: REPORT_CONTEXT_LIMITS.sessionTitle,
 })} characters`;
 
-export const REPORT_SECTION_CUT_NOTE = 'cut at the end to fit the pack budget';
+export const REPORT_SECTION_CUT_NOTE = ARTIFACT_SECTION_CUT_NOTE;
 
-export const REPORT_SECTION_REMOVED_NOTE = 'removed entirely to fit the pack budget';
+export const REPORT_SECTION_REMOVED_NOTE = ARTIFACT_SECTION_REMOVED_NOTE;
 
 export type ReportDiffUnavailableReason = 'no-mount' | 'unreadable';
 
@@ -603,16 +606,12 @@ const reconcileSection = ({
 }: {
   readonly section: EvidenceSection;
   readonly survived: string;
-}): ArtifactContextInventoryRow | null => {
-  const { row } = section;
-  if (row === null || survived.length === section.text.length) {
-    return row;
-  }
-  if (survived.length === 0) {
-    return { ...row, state: 'missing', detail: [...row.detail, REPORT_SECTION_REMOVED_NOTE] };
-  }
-  return { ...row, state: 'partial', detail: [...row.detail, REPORT_SECTION_CUT_NOTE] };
-};
+}): ArtifactContextInventoryRow | null =>
+  reconcileSectionRow({
+    row: section.row,
+    fullLength: section.text.length,
+    survivedLength: survived.length,
+  });
 
 type BoundAttachments = Readonly<{
   text: string;

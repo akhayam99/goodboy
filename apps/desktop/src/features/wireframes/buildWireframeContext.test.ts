@@ -12,6 +12,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { ARTIFACT_BRIEF_CLIP_NOTE, ARTIFACT_BRIEF_LIMITS } from '../artifacts/artifactBrief';
+import type { ArtifactAttachment } from '../artifacts/artifactAttachments';
 import {
   SESSION_GOAL_CLIP_NOTE,
   SESSION_GOAL_LIMITS,
@@ -304,6 +305,174 @@ describe('buildWireframeContext', () => {
   });
 });
 
+describe('buildWireframeContext agent budgets', () => {
+  const agentAt = ({ id, ordinal }: { readonly id: string; readonly ordinal: number }): Agent => ({
+    id: id as AgentId,
+    sessionId: SESSION_ID,
+    ordinal,
+    name: `scout ${ordinal}`,
+    status: 'completed',
+  });
+
+  const turnsWith = ({
+    text,
+    at,
+  }: {
+    readonly text: string;
+    readonly at: IsoDateTime;
+  }): ReadonlyArray<TurnEvent> => [
+    { kind: 'assistant_text', runId: 'run-1' as ProviderRunId, delta: text, at },
+  ];
+
+  const packWith = ({
+    agents,
+    messages,
+    brief = null,
+    scoutSection = null,
+    attachments = [],
+  }: {
+    readonly agents: ReadonlyArray<Agent>;
+    readonly messages: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
+    readonly brief?: string | null;
+    readonly scoutSection?: string | null;
+    readonly attachments?: ReadonlyArray<ArtifactAttachment>;
+  }): WireframeContext => {
+    const session = sessionWith({ goal: 'ship the wireframe role' });
+    return buildWireframeContext({
+      brief,
+      attachments,
+      fidelity: 'low',
+      target: 'both',
+      session,
+      goal: sessionGoalText({ slots: [], session }),
+      agents,
+      transcripts: messages,
+      artifacts: [planWith({ title: 'Ship it' })],
+      designEvidence: { source: 'none' },
+      scoutSection,
+      capturedAt: NOW,
+    });
+  };
+
+  const messageFor = ({
+    text,
+    agentId,
+  }: {
+    readonly text: string;
+    readonly agentId: string;
+  }): string => text.split(`(${agentId})\n\n`)[1]?.split(/\n\n#/)[0] ?? '';
+
+  const sentences = ({ word, count }: { readonly word: string; readonly count: number }): string =>
+    `${word} runs the inbox and settles the ledger. `.repeat(count).trim();
+
+  it('sends a lone long final message whole instead of cutting it at a flat character limit', () => {
+    const long = sentences({ word: 'alpha', count: 400 });
+    expect(long.length).toBeGreaterThan(900);
+    const context = packWith({
+      agents: [agentAt({ id: 'agent-long', ordinal: 0 })],
+      messages: { 'agent-long': turnsWith({ text: long, at: NOW }) },
+    });
+    expect(context.text).toContain(long);
+    expect(context.truncations).not.toContain('agent agent-long: final message truncated');
+  });
+
+  it('serves the newest final message before it expands an older one', () => {
+    const newest = sentences({ word: 'newest', count: 3_000 });
+    const older = sentences({ word: 'older', count: 3_000 });
+    const context = packWith({
+      agents: [
+        agentAt({ id: 'agent-older', ordinal: 0 }),
+        agentAt({ id: 'agent-newest', ordinal: 1 }),
+      ],
+      messages: {
+        'agent-older': turnsWith({ text: older, at: '2026-09-01T00:00:00.000Z' as IsoDateTime }),
+        'agent-newest': turnsWith({ text: newest, at: '2026-09-02T00:00:00.000Z' as IsoDateTime }),
+      },
+    });
+    const keptNewest = messageFor({ text: context.text, agentId: 'agent-newest' });
+    const keptOlder = messageFor({ text: context.text, agentId: 'agent-older' });
+    expect(keptOlder.length).toBeGreaterThan(0);
+    expect(keptOlder.length).toBeLessThanOrEqual(WIREFRAME_CONTEXT_LIMITS.olderAgentReserve);
+    expect(keptNewest.length).toBeGreaterThan(keptOlder.length * 10);
+  });
+
+  it('cuts a message too large for the whole allowance on a boundary and discloses it', () => {
+    const huge = sentences({ word: 'alpha', count: 4_000 });
+    expect(huge.length).toBeGreaterThan(WIREFRAME_CONTEXT_LIMITS.total);
+    const context = packWith({
+      agents: [agentAt({ id: 'agent-huge', ordinal: 0 })],
+      messages: { 'agent-huge': turnsWith({ text: huge, at: NOW }) },
+    });
+    const kept = messageFor({ text: context.text, agentId: 'agent-huge' });
+    expect(kept.endsWith('...')).toBe(true);
+    expect(kept.slice(0, -3).endsWith('.')).toBe(true);
+    expect(context.truncations).toContain('agent agent-huge: final message truncated');
+    expect(context.text).toContain('agent agent-huge: final message truncated');
+  });
+
+  it('keeps the complete returned text within the total, request and question contract included', () => {
+    const agents = Array.from({ length: 10 }, (_, index) =>
+      agentAt({ id: `agent-${index}`, ordinal: index }),
+    );
+    const messages = Object.fromEntries(
+      agents.map((agent, index) => [
+        agent.id,
+        turnsWith({
+          text: sentences({ word: `agent${index}`, count: 2_000 }),
+          at: `2026-09-0${index % 9}T00:00:00.000Z` as IsoDateTime,
+        }),
+      ]),
+    );
+    const context = packWith({
+      agents,
+      messages,
+      brief: 'Harborline '.repeat(WIREFRAME_CONTEXT_LIMITS.total),
+      scoutSection: `## scouts\n\n${sentences({ word: 'scout', count: 2_000 })}`,
+    });
+    expect(context.text.length).toBeLessThanOrEqual(WIREFRAME_CONTEXT_LIMITS.total);
+    expect(context.text).toContain('# user request');
+    expect(context.text).toContain('## questions');
+    expect(context.text).toContain('## document contract');
+    expect(context.inventory.find((row) => row.id === 'size')?.state).toBe('partial');
+  });
+
+  it('drops the whole row of an agent whose budget is gone and says so', () => {
+    const agents = Array.from({ length: 8 }, (_, index) =>
+      agentAt({ id: `agent-${index}`, ordinal: index }),
+    );
+    const messages = Object.fromEntries(
+      agents.map((agent, index) => [
+        agent.id,
+        turnsWith({
+          text: sentences({ word: `agent${index}`, count: 60 }),
+          at: `2026-09-0${index + 1}T00:00:00.000Z` as IsoDateTime,
+        }),
+      ]),
+    );
+    const context = packWith({
+      agents,
+      messages,
+      attachments: Array.from({ length: 500 }, (_, index) => ({
+        id: `att-${index}`,
+        fileName: `screen-${index}.png`,
+        mimeType: 'image/png',
+        relPath: `.goodboy/attachments/att-${index}-a-very-long-screen-name-for-the-budget.png`,
+      })),
+    });
+    const dropped = context.truncations.filter((note) => note.endsWith('dropped to fit'));
+    expect(dropped.length).toBeGreaterThan(0);
+    dropped.forEach((note) => {
+      const id = note.split(':')[0]?.replace('agent ', '') ?? '';
+      expect(context.text).not.toContain(`(${id})`);
+      expect(context.sourceIds).not.toContain(id);
+    });
+    expect(context.inventory.find((row) => row.id === 'agents')?.detail).toContain(
+      `${dropped.length} did not fit and were dropped`,
+    );
+    expect(context.text.length).toBeLessThanOrEqual(WIREFRAME_CONTEXT_LIMITS.total);
+  });
+});
+
 describe('buildWireframeContext session goal', () => {
   const LONG_GOAL = [
     'Northwind settles ledger-core postings twice a day and the second pass rounds the residual away.',
@@ -436,5 +605,19 @@ describe('buildWireframeContext high fidelity theme', () => {
     const theme = context.inventory.find((row) => row.id === 'theme');
     expect(theme?.summary).toBe('no repository is mounted, so no design file was read');
     expect(theme?.state).toBe('missing');
+  });
+});
+
+describe('inventory after the final guard', () => {
+  it('never claims a section the returned text does not carry', () => {
+    const context = contextFor({});
+
+    context.inventory
+      .filter((row) => row.state === 'included' || row.state === 'partial')
+      .forEach((row) => {
+        if (row.id === 'plans' || row.id === 'scouts' || row.id === 'theme') {
+          expect(context.text).toContain(`## ${row.id}`);
+        }
+      });
   });
 });
