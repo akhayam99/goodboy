@@ -30,6 +30,20 @@ describe('SuggestionRow', () => {
     expect(btn.getAttribute('aria-checked')).toBe('true');
   });
 
+  it('draws a circle for one answer and a square for many', () => {
+    const single = render(
+      <SuggestionRow label="yes" selected={false} onToggle={() => undefined} />,
+    );
+    const circle = single.getByRole('radio', { name: 'yes' }).querySelector('span[aria-hidden]');
+    expect(circle?.className).toContain('rounded-full');
+    single.unmount();
+
+    render(<SuggestionRow label="yes" selected={false} mode="many" onToggle={() => undefined} />);
+    const square = screen.getByRole('checkbox', { name: 'yes' }).querySelector('span[aria-hidden]');
+    expect(square?.className).toContain('rounded-[4px]');
+    expect(square?.className).not.toContain('rounded-full');
+  });
+
   it('takes a full row of its own rather than sizing to its text', () => {
     render(<SuggestionRow label="yes" selected={false} onToggle={() => undefined} />);
     const btn = screen.getByRole('radio', { name: 'yes' });
@@ -41,20 +55,30 @@ describe('SuggestionRow', () => {
   it('carries a long answer whole and wraps it instead of truncating', () => {
     render(<SuggestionRow label={longAnswer} selected={false} onToggle={() => undefined} />);
     const btn = screen.getByRole('radio', { name: longAnswer });
-    const text = btn.querySelector('span:last-child');
 
-    expect(text?.textContent).toBe(longAnswer);
-    expect(text?.className).toContain('whitespace-normal');
-    expect(text?.className).toContain('break-words');
+    expect(btn.textContent).toBe(longAnswer);
+    expect(btn.innerHTML).toContain('whitespace-normal');
+    expect(btn.innerHTML).toContain('break-words');
     expect(btn.innerHTML).not.toContain('truncate');
     expect(btn.innerHTML).not.toContain('line-clamp');
   });
 
-  it('keeps the suggested glyph and its emphasis on the recommended answer', () => {
+  it('marks the recommended answer with an icon and a description, not a colour', () => {
     render(<SuggestionRow label="yes" selected={false} recommended onToggle={() => undefined} />);
-    const btn = screen.getByTitle('yes (suggested)');
+    const btn = screen.getByRole('radio', { name: 'yes', description: 'Recommended answer' });
 
-    expect(btn.className).toContain('border-warning/40');
     expect(btn.querySelector('svg')).not.toBeNull();
+    expect(btn.className).not.toContain('bg-warning');
+    expect(btn.className).not.toContain('border-warning');
+    expect(btn.className).not.toContain('bg-primary');
+  });
+
+  it('keeps one type size and family whatever the answer looks like', () => {
+    render(<SuggestionRow label="pnpm run build()" selected={false} onToggle={() => undefined} />);
+    const btn = screen.getByRole('radio', { name: 'pnpm run build()' });
+
+    expect(btn.className).toContain('text-sm');
+    expect(btn.className).not.toContain('font-mono');
+    expect(btn.className).not.toContain('text-2xs');
   });
 });

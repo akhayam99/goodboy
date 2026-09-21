@@ -20,6 +20,7 @@ const baseQuestion = {
   createdAt: new Date().toISOString(),
   ownedByStepOrdinal: null,
   workflowId: null,
+  isBlocking: false,
 } as unknown as OpenQuestion;
 
 const baseProps = {
@@ -77,18 +78,42 @@ describe('QuestionCard', () => {
     render(
       <QuestionCard {...baseProps} question={question} onToggleSuggestion={onToggleSuggestion} />,
     );
-    fireEvent.click(screen.getByTitle('sqlite (suggested)'));
+    fireEvent.click(screen.getByRole('radio', { name: 'sqlite' }));
     expect(onToggleSuggestion).toHaveBeenCalledWith('q1', 'sqlite', 'one');
   });
 
-  it('prepends a free-form recommendation as a marked chip when it is not a suggestion', () => {
+  it('prepends a free-form recommendation as a marked row when it is not a suggestion', () => {
     const onToggleSuggestion = vi.fn();
     const question = { ...baseQuestion, recommendedAnswer: 'use both' } as OpenQuestion;
     render(
       <QuestionCard {...baseProps} question={question} onToggleSuggestion={onToggleSuggestion} />,
     );
-    fireEvent.click(screen.getByTitle('use both (suggested)'));
+    fireEvent.click(
+      screen.getByRole('radio', { name: 'use both', description: 'Recommended answer' }),
+    );
     expect(onToggleSuggestion).toHaveBeenCalledWith('q1', 'use both', 'one');
+  });
+
+  it('names the recommended option by its answer text and describes the recommendation apart', () => {
+    const question = { ...baseQuestion, recommendedAnswer: 'sqlite' } as OpenQuestion;
+    render(<QuestionCard {...baseProps} question={question} />);
+
+    const recommended = screen.getByRole('radio', {
+      name: 'sqlite',
+      description: 'Recommended answer',
+    });
+    expect(recommended.querySelector('svg')).not.toBeNull();
+  });
+
+  it('leaves an unselected recommendation with no primary or warning fill', () => {
+    const question = { ...baseQuestion, recommendedAnswer: 'sqlite' } as OpenQuestion;
+    render(<QuestionCard {...baseProps} question={question} />);
+
+    const recommended = screen.getByRole('radio', { name: 'sqlite' });
+    expect(recommended.className).not.toContain('bg-warning');
+    expect(recommended.className).not.toContain('border-warning');
+    expect(recommended.className).not.toContain('bg-primary');
+    expect(recommended.className).not.toContain('ring-warning');
   });
 
   it('exposes chips as radios in a radiogroup for a single-choice question', () => {
@@ -152,12 +177,12 @@ describe('QuestionCard', () => {
     expect(screen.getByRole('radio', { name: LONG_OPTION }).textContent).toBe(LONG_OPTION);
   });
 
-  it('keeps the "other" trigger on its own row after the options', () => {
+  it('keeps the "other" row after the options, in the same full-width frame', () => {
     render(<QuestionCard {...baseProps} />);
     const other = screen.getByRole('button', { name: /other/i });
     const lastOption = screen.getByRole('radio', { name: 'postgres' });
 
-    expect(other.className).toContain('self-start');
+    expect(other.className).toContain('w-full');
     expect(lastOption.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
@@ -172,7 +197,7 @@ describe('QuestionCard', () => {
     render(<QuestionCard {...baseProps} question={question} />);
 
     expect(screen.getAllByRole('radio').map((option) => option.textContent)).toEqual([
-      'sqlite',
+      'sqliteRecommended answer',
       'postgres',
       'duckdb',
     ]);
@@ -190,5 +215,88 @@ describe('QuestionCard', () => {
       'sqlite',
       'duckdb',
     ]);
+  });
+
+  it('renders radios for a single-answer question and checkboxes for a multi-answer one', () => {
+    const single = render(<QuestionCard {...baseProps} />);
+    expect(single.getAllByRole('radio')).toHaveLength(2);
+    expect(single.queryAllByRole('checkbox')).toHaveLength(0);
+    single.unmount();
+
+    const many = { ...baseQuestion, selectMode: 'many' } as OpenQuestion;
+    render(<QuestionCard {...baseProps} question={many} />);
+    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
+    expect(screen.queryAllByRole('radio')).toHaveLength(0);
+  });
+
+  it('marks a blocking question with a filled chip and drops the dismiss control', () => {
+    const question = { ...baseQuestion, isBlocking: true } as OpenQuestion;
+    const { container } = render(<QuestionCard {...baseProps} question={question} />);
+    const chip = screen.getByText('Blocking');
+
+    expect(chip.className).toContain(tintClasses('warning').solid);
+    expect(screen.queryByRole('button', { name: /dismiss question/i })).toBeNull();
+    expect(container.querySelector('[data-testid="question-header"]')!.className).toContain(
+      'grid-cols-[minmax(0,1fr)_28px]',
+    );
+  });
+
+  it('tells a screen reader why a blocking question cannot wait', () => {
+    const question = { ...baseQuestion, isBlocking: true } as OpenQuestion;
+    render(<QuestionCard {...baseProps} question={question} />);
+
+    expect(
+      screen.getByRole('radiogroup', {
+        name: /pick one answer/i,
+        description: /required before the artifact or plan/i,
+      }),
+    ).toBeDefined();
+  });
+
+  it('keeps the header column when the question is not blocking', () => {
+    const { container } = render(<QuestionCard {...baseProps} />);
+
+    expect(container.querySelector('[data-testid="question-header"]')!.className).toContain(
+      'grid-cols-[minmax(0,1fr)_28px]',
+    );
+    expect(screen.getByRole('button', { name: /dismiss question/i })).toBeDefined();
+  });
+
+  it('reads the suggestions as unchecked while a custom answer is written', () => {
+    render(
+      <QuestionCard
+        {...baseProps}
+        selectedSuggestions={['sqlite']}
+        customAnswer="use Neon"
+        showCustomField
+      />,
+    );
+
+    expect(screen.getByRole('radio', { name: 'sqlite' }).getAttribute('aria-checked')).toBe(
+      'false',
+    );
+    expect(screen.getByDisplayValue('use Neon').closest('div')!.className).toContain(
+      'bg-primary/10',
+    );
+  });
+
+  it('renders no option group at all when the question carries no answers', () => {
+    const question = {
+      ...baseQuestion,
+      text: 'anything else worth knowing',
+      suggestedAnswers: [],
+    } as unknown as OpenQuestion;
+    render(<QuestionCard {...baseProps} question={question} />);
+
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+    expect(screen.getByRole('button', { name: /other/i })).toBeDefined();
+  });
+
+  it('names who asked and which step owns the question, without chips', () => {
+    const question = { ...baseQuestion, ownedByStepOrdinal: 2 } as unknown as OpenQuestion;
+    render(<QuestionCard {...baseProps} question={question} askedByName="scout" />);
+
+    expect(screen.getByText('step 2')).toBeDefined();
+    expect(screen.getByText('asked by scout')).toBeDefined();
   });
 });
