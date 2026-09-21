@@ -137,9 +137,10 @@ describe('summarizeStepOutput', () => {
     ).resolves.toBe('Review passed.\n- No blockers');
   });
 
-  it('rejects a summary whose outcome line runs past its own budget', async () => {
+  it('accepts a summary whose outcome line runs past its requested budget', async () => {
+    const summary = 'x'.repeat(121);
     const invokeFn: SummarizerDeps['invokeFn'] = async <T>(): Promise<T> => {
-      return { stdout: 'x'.repeat(121), stderr: '', exitCode: 0 } as T;
+      return { stdout: summary, stderr: '', exitCode: 0 } as T;
     };
 
     await expect(
@@ -149,8 +150,27 @@ describe('summarizeStepOutput', () => {
         invokeFn,
         output: 'raw',
       }),
-    ).rejects.toBeInstanceOf(SummarizerParseError);
+    ).resolves.toBe(summary);
   });
+
+  it.each([101, 109, 111, 129, 132, 148])(
+    'accepts a measured outcome line of %i characters',
+    async (firstLineLength) => {
+      const summary = `${'x'.repeat(firstLineLength)}\n- Preserved detail`;
+      const invokeFn: SummarizerDeps['invokeFn'] = async <T>(): Promise<T> => {
+        return { stdout: summary, stderr: '', exitCode: 0 } as T;
+      };
+
+      await expect(
+        summarizeStepOutput({
+          providerId: 'cursor',
+          model: 'composer-2-fast',
+          invokeFn,
+          output: 'raw',
+        }),
+      ).resolves.toBe(summary);
+    },
+  );
 
   it('rejects an empty summary', async () => {
     const invokeFn: SummarizerDeps['invokeFn'] = async <T>(): Promise<T> => {
@@ -211,6 +231,23 @@ describe('summarizeStepOutput', () => {
     expect(kept).toContain(bullets[0]);
     expect(kept).not.toContain(bullets[39]);
     expect(kept.split('\n').every((line) => overBudget.split('\n').includes(line))).toBe(true);
+  });
+
+  it('bounds a first line that alone exceeds the summary budget', async () => {
+    const overBudget = 'x'.repeat(1300);
+    const invokeFn: SummarizerDeps['invokeFn'] = async <T>(): Promise<T> => {
+      return { stdout: overBudget, stderr: '', exitCode: 0 } as T;
+    };
+
+    const result = await summarizeStepOutput({
+      providerId: 'cursor',
+      model: 'composer-2-fast',
+      invokeFn,
+      output: 'raw',
+    });
+
+    expect(result.length).toBeLessThanOrEqual(1200);
+    expect(result).toContain('clamped to the handoff budget');
   });
 });
 

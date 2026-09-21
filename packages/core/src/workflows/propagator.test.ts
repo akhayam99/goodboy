@@ -47,6 +47,24 @@ describe('buildChainCarryForward', () => {
     expect(result).toContain('### step 2 output: Implement\n(no output captured)');
     expect(result).toContain('- step 1 Plan: (no output captured)');
   });
+
+  it('keeps the immediate summary and bounds a shortened older outcome preview', () => {
+    const immediateOutcome = 'i'.repeat(132);
+    const olderOutcome = 'o'.repeat(132);
+    const result = buildChainCarryForward({
+      steps: [
+        { ordinal: 1, name: 'Plan', outputSummary: `${olderOutcome}\nOlder details.` },
+        { ordinal: 2, name: 'Implement', outputSummary: 'Implemented the plan.' },
+        { ordinal: 3, name: 'Review', outputSummary: `${immediateOutcome}\nNo blockers.` },
+      ],
+    });
+    const olderLine = result.split('\n').find((line) => line.startsWith('- step 1 Plan: '));
+    const olderPreview = olderLine?.slice('- step 1 Plan: '.length) ?? '';
+
+    expect(result).toContain(`### step 3 output: Review\n${immediateOutcome}\nNo blockers.`);
+    expect(olderPreview.length).toBeLessThanOrEqual(120);
+    expect(olderPreview.endsWith('...')).toBe(true);
+  });
 });
 
 describe('buildParallelCarryForward', () => {

@@ -1,4 +1,5 @@
 import type { ProviderId } from '@goodboy/types';
+import { readCursorObjects } from './readCursorObjects';
 
 export type AuxUsage = {
   readonly inputTokens: number;
@@ -298,7 +299,7 @@ export const extractAuxOutput = ({ providerId, stdout }: Params): AuxOutput => {
     case 'gemini':
       return plainText({ text: trimmed, envelopeDecoded: true });
     case 'cursor': {
-      const lines = readJsonLines(trimmed);
+      const lines = readCursorObjects({ stdout: trimmed });
       if (!hasEventOfType(lines, CURSOR_EVENT_TYPES)) {
         return plainText({ text: trimmed, envelopeDecoded: true });
       }
