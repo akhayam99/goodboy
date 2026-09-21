@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Tooltip } from '@goodboy/ui';
+import { SectionHeader, Tooltip } from '@goodboy/ui';
 import { RESOLVE_ITEM_LABEL, shortSha } from '../../resolveItemCopy';
 
 type Props = {
@@ -28,9 +28,9 @@ const shaLink = ({
 );
 
 const identityRow = ({ label, value }: { readonly label: string; readonly value: ReactNode }) => (
-  <span className="flex min-w-0 items-baseline gap-2">
-    <span className="w-32 shrink-0 text-2xs text-muted-foreground">{label}</span>
-    <span className="flex min-w-0 flex-wrap items-baseline gap-2">{value}</span>
+  <span className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2">
+    <span className="min-w-0 truncate text-2xs text-muted-foreground">{label}</span>
+    <span className="flex min-w-0 flex-wrap items-baseline justify-end gap-2">{value}</span>
   </span>
 );
 
@@ -41,6 +41,7 @@ export const ResolveCommitIdentity = ({
   onOpenCommit,
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-2">
+    <SectionHeader label={RESOLVE_ITEM_LABEL.commit} headingLevel={3} />
     {identityRow({
       label: RESOLVE_ITEM_LABEL.fixingCommit,
       value:

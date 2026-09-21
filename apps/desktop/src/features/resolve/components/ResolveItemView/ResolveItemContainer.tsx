@@ -82,21 +82,6 @@ const approveBlockedReasonFor = ({
     : 'This comment is not ready for approval';
 };
 
-type AttemptModeParams = { readonly id: ResolveItemActionId };
-
-const attemptModeFor = ({ id }: AttemptModeParams): ResolveDecisionMode => {
-  if (id === 'answer_agent') {
-    return 'answer';
-  }
-  if (id === 'request_revision') {
-    return 'revise';
-  }
-  if (id === 'retry_agent') {
-    return 'retry';
-  }
-  return id === 'restart_agent' ? 'restart' : 'start';
-};
-
 export const ResolveItemContainer = ({
   sessionId,
   prNumber = 0,
@@ -126,6 +111,8 @@ export const ResolveItemContainer = ({
   );
   const acceptResolveQueueItem = useAppStore((s) => s.acceptResolveQueueItem);
   const refuseResolveQueueItem = useAppStore((s) => s.refuseResolveQueueItem);
+  const discussResolveThread = useAppStore((s) => s.discussResolveThread);
+  const publishResolveThread = useAppStore((s) => s.publishResolveThread);
   const takeUpResolveQueueItem = useAppStore((s) => s.takeUpResolveQueueItem);
   const reopenResolveQueueItem = useAppStore((s) => s.reopenResolveQueueItem);
   const runResolveCheck = useAppStore((s) => s.runResolveCheck);
@@ -251,6 +238,39 @@ export const ResolveItemContainer = ({
       },
     });
   };
+  const onResolve = (): void => {
+    void guard({
+      run: async () => {
+        if (row.item.approvalState === 'none' || row.item.approvalState === 'deferred') {
+          await acceptResolveQueueItem({
+            sessionId,
+            itemId: row.item.id,
+            revision: row.thread.revision,
+            reply,
+          });
+        }
+        await publishResolveThread({ sessionId, threadId });
+      },
+      onSuccess: () => {
+        setMode('read');
+        if (nextThreadId !== undefined) {
+          onSelect(nextThreadId);
+          return;
+        }
+        const excluded = sharedMembers.map((member) => member.threadId);
+        onSelect(null, excluded.length === 0 ? undefined : excluded);
+      },
+    });
+  };
+  const onDiscuss = (): void => {
+    void guard({
+      run: () => discussResolveThread({ sessionId, threadId, reply }),
+      onSuccess: () => {
+        setReply('');
+        setMode('read');
+      },
+    });
+  };
   const onRefuse = (): void => {
     void guard({
       run: () =>
@@ -294,55 +314,81 @@ export const ResolveItemContainer = ({
 
   const actions = resolveItemActions({
     status: row.status,
-    proposalKind,
     sharedApprovalCount: sharedMembers.length + 1,
-    approveBlockedReason: hasSiblingDraft
-      ? 'Finish or revert the edited reply on every shared comment before approving'
+    hasQuestion: row.status === 'agent_asked',
+    resolveBlockedReason: hasSiblingDraft
+      ? 'Finish or revert the edited reply on every shared comment before resolving'
       : approveBlockedReasonFor({ row, isApprovable, sharedBlocker }),
-    refuseBlockedReason: refuseBlockedReason({ row }),
+    closeBlockedReason: refuseBlockedReason({ row }),
     hasAgent: row.attempt !== null,
     hasGithubUrl: row.commentThread?.head.url != null,
     canStopRun: row.attempt?.phase === 'running',
     isEditing: mode !== 'read',
     isBusy,
   });
+  const onSendToAgent = (): void => {
+    const params = { threadId, instruction: instruction.trim() };
+    const request =
+      onRequestAttempt === undefined
+        ? Promise.resolve(onAskForChanges?.(params) ?? false)
+        : onRequestAttempt(params);
+    void request.then((isSent) => {
+      if (!isSent) {
+        setError(COULD_NOT_SEND);
+        return;
+      }
+      setInstruction('');
+      setMode('read');
+    });
+  };
+
+  const onCommitEditing = (): void => {
+    if (mode === 'fix') {
+      onSendToAgent();
+      return;
+    }
+    if (mode === 'discuss') {
+      onDiscuss();
+      return;
+    }
+    if (mode === 'close') {
+      onRefuse();
+      return;
+    }
+    if (mode === 'resolve') {
+      onResolve();
+      return;
+    }
+    setMode('read');
+  };
+
   const onAction = (id: ResolveItemActionId): void => {
-    if (id === 'approve') {
-      onApprove();
+    if (id === 'fix_it') {
+      setMode('fix');
       return;
     }
-    if (
-      id === 'request_revision' ||
-      id === 'answer_agent' ||
-      id === 'start_agent' ||
-      id === 'retry_agent' ||
-      id === 'restart_agent'
-    ) {
-      setMode(attemptModeFor({ id }));
+    if (id === 'discuss') {
+      setMode('discuss');
       return;
     }
-    if (id === 'write_reply') {
-      setMode('edit_reply');
+    if (id === 'close') {
+      setMode('close');
       return;
     }
-    if (id === 'will_not_fix') {
-      setMode('refuse');
+    if (id === 'resolve') {
+      setMode('resolve');
       return;
     }
     if (id === 'resume_comment' || id === 'change_decision') {
       void guard({ run: () => takeUpResolveQueueItem({ sessionId, itemId: row.item.id }) });
       return;
     }
-    if (id === 'review_changed') {
+    if (id === 'review_changed' || id === 'reopen_locally') {
       onReopen();
       return;
     }
-    if (id === 'reopen_locally') {
-      onReopen();
-      return;
-    }
-    if (id === 'review_publication' || id === 'check_publication') {
-      onReviewPublication({ threadId, reconcile: id === 'check_publication' });
+    if (id === 'check_publication') {
+      onReviewPublication({ threadId, reconcile: true });
       return;
     }
     if (id === 'open_github') {
@@ -388,24 +434,8 @@ export const ResolveItemContainer = ({
       onChangeInstruction={setInstruction}
       onEditReply={() => setMode('edit_reply')}
       onAction={onAction}
-      onCancelRefuse={() => setMode('read')}
-      onRefuse={onRefuse}
-      onCancelRevise={() => setMode('read')}
-      onSendToAgent={() => {
-        const params = { threadId, instruction: instruction.trim() };
-        const request =
-          onRequestAttempt === undefined
-            ? Promise.resolve(onAskForChanges?.(params) ?? false)
-            : onRequestAttempt(params);
-        void request.then((isSent) => {
-          if (!isSent) {
-            setError(COULD_NOT_SEND);
-            return;
-          }
-          setInstruction('');
-          setMode('read');
-        });
-      }}
+      onCancelEditing={() => setMode('read')}
+      onCommitEditing={onCommitEditing}
       onBack={onBack}
       onPrevious={onPrevious}
       onNext={onNext}

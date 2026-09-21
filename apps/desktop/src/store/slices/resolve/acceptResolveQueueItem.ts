@@ -12,6 +12,7 @@ import { withCandidateLock } from './candidateLock';
 import { hashResolveReply } from './hashResolveReply';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
+import { saveResolveReplyDraft } from './saveResolveReplyDraft';
 import {
   UNCAPTURED_WORK_ON_BRANCH,
   recoverUncapturedResolveWork,
@@ -26,7 +27,7 @@ type Covered = {
 };
 
 export const PARTIAL_ACCEPTANCE =
-  'This change also answers comments you left for later. Accept them together, or take those back up first';
+  'This change also answers comments you left for later. Resolve them together, or take those back up first';
 export const STALE_APPROVAL = 'Approval revision is stale';
 export const PARTIAL_REFUSAL =
   'This change also answers comments you said you will not fix. Take those back up first';
@@ -43,6 +44,16 @@ export const acceptResolveQueueItem = async ({
   const pending = await recoverUncapturedResolveWork({ set, get, sessionId });
   if (pending !== null) {
     throw new Error(UNCAPTURED_WORK_ON_BRANCH);
+  }
+  const openItems = await listResolveQueueItems({ db, sessionId });
+  const openTarget = openItems.find((entry) => entry.item.id === itemId);
+  if (openTarget !== undefined) {
+    await saveResolveReplyDraft({
+      sessionId,
+      threadId: openTarget.thread.threadId,
+      revision,
+      reply,
+    });
   }
   const replyHash = await hashResolveReply({ reply });
   const candidate = await getReadyResolveCandidateForItem({ db, queueItemId: itemId });

@@ -29,8 +29,8 @@ const DraftHarness = ({ threadId, proposal }: HarnessProps) => {
         onChange={(event) => draft.setInstruction(event.target.value)}
       />
       <span data-testid="mode">{draft.mode}</span>
-      <button type="button" onClick={() => draft.setMode('refuse')}>
-        Will not fix
+      <button type="button" onClick={() => draft.setMode('close')}>
+        Close
       </button>
     </div>
   );
@@ -123,9 +123,9 @@ describe('the reply a maintainer is writing to a reviewer', () => {
     fireEvent.change(screen.getByLabelText('Instructions for agent'), {
       target: { value: 'Cap the attempts at three.' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Will not fix' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
 
-    expect(screen.getByTestId('mode').textContent).toBe('refuse');
+    expect(screen.getByTestId('mode').textContent).toBe('close');
 
     fireEvent.click(screen.getByRole('button', { name: 'Open parser' }));
 
@@ -134,7 +134,7 @@ describe('the reply a maintainer is writing to a reviewer', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open retry' }));
 
-    expect(screen.getByTestId('mode').textContent).toBe('refuse');
+    expect(screen.getByTestId('mode').textContent).toBe('close');
     expect((screen.getByLabelText('Instructions for agent') as HTMLTextAreaElement).value).toBe(
       'Cap the attempts at three.',
     );

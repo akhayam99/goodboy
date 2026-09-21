@@ -4,7 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
 
-const { acceptResolveQueueItem } = vi.hoisted(() => ({ acceptResolveQueueItem: vi.fn() }));
+const { acceptResolveQueueItem, publishResolveThread } = vi.hoisted(() => ({
+  acceptResolveQueueItem: vi.fn(),
+  publishResolveThread: vi.fn(async () => undefined),
+}));
 
 vi.mock('../../../../store', async () => {
   const { create } = await import('zustand');
@@ -19,6 +22,10 @@ vi.mock('../../../../store', async () => {
       discoveredScripts: {},
       resolveItemDrafts: {},
       acceptResolveQueueItem,
+      publishResolveThread,
+      discussResolveThread: vi.fn(async () => undefined),
+      takeUpResolveQueueItem: vi.fn(async () => undefined),
+      openResolveAgent: vi.fn(),
       refuseResolveQueueItem: vi.fn(),
       deferResolveQueueItem: vi.fn(),
       reopenResolveQueueItem: vi.fn(),
@@ -131,8 +138,15 @@ const renderContainer = ({ row, nextThreadId = null, onSelect = vi.fn() }: Rende
     />,
   );
 
+const confirmResolve = (): void => {
+  fireEvent.click(screen.getByRole('button', { name: /^Resolve/ }));
+  fireEvent.click(screen.getAllByRole('button', { name: /^Resolve/ }).at(-1) as HTMLElement);
+};
+
 beforeEach(() => {
   acceptResolveQueueItem.mockReset();
+  publishResolveThread.mockReset();
+  publishResolveThread.mockImplementation(async () => undefined);
 });
 
 afterEach(cleanup);
@@ -148,7 +162,7 @@ describe('an asynchronous resolve decision', () => {
     );
     renderContainer({ row: RETRY });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Approve fix' }));
+    confirmResolve();
     fail(new Error('The branch moved under the approval'));
     await vi.waitFor(() =>
       expect(screen.getByText('The branch moved under the approval')).toBeDefined(),
@@ -165,7 +179,7 @@ describe('an asynchronous resolve decision', () => {
     );
     const view = renderContainer({ row: RETRY });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Approve fix' }));
+    confirmResolve();
     view.rerender(
       <ResolveItemContainer
         sessionId={sessionId}
@@ -190,7 +204,7 @@ describe('an asynchronous resolve decision', () => {
     const onSelect = vi.fn();
     renderContainer({ row: RETRY, nextThreadId: 't-parser', onSelect });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Approve fix' }));
+    confirmResolve();
 
     await vi.waitFor(() => expect(onSelect).toHaveBeenCalledWith('t-parser'));
   });
@@ -200,7 +214,7 @@ describe('an asynchronous resolve decision', () => {
     const onSelect = vi.fn();
     renderContainer({ row: RETRY, nextThreadId: null, onSelect });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Approve fix' }));
+    confirmResolve();
 
     await vi.waitFor(() => expect(onSelect).toHaveBeenCalledWith(null));
   });
@@ -216,7 +230,7 @@ describe('an asynchronous resolve decision', () => {
     const onSelect = vi.fn();
     const view = renderContainer({ row: RETRY, nextThreadId: 't-parser', onSelect });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Approve fix' }));
+    confirmResolve();
     view.rerender(
       <ResolveItemContainer
         sessionId={sessionId}
@@ -247,7 +261,7 @@ describe('an asynchronous resolve decision', () => {
     const onSelect = vi.fn();
     const view = renderContainer({ row: RETRY, nextThreadId: 't-parser', onSelect });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Approve fix' }));
+    confirmResolve();
     view.unmount();
     land();
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -260,7 +274,7 @@ describe('an asynchronous resolve decision', () => {
     const onSelect = vi.fn();
     renderContainer({ row: RETRY, nextThreadId: 't-parser', onSelect });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Approve fix' }));
+    confirmResolve();
 
     await vi.waitFor(() =>
       expect(screen.getByText('The branch moved under the approval')).toBeDefined(),

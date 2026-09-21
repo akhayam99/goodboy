@@ -394,7 +394,11 @@ export {
   type InsertOpenQuestionResult,
 } from './queries/open-question';
 
-export { listResolveThreads, upsertResolveThread } from './queries/resolve-thread';
+export {
+  listResolveThreads,
+  setResolveThreadReplyDraft,
+  upsertResolveThread,
+} from './queries/resolve-thread';
 export {
   insertResolveQueueItem,
   listResolveQueueItems,

@@ -16,9 +16,9 @@ it('keeps traversal, back, overflow and the primary action reachable', () => {
       status="fix_ready"
       nextStep="Approved changes stay local"
       actions={{
-        primary: { id: 'approve', label: 'Approve fix', disabledReason: null },
-        secondary: { id: 'request_revision', label: 'Request revision', disabledReason: null },
-        overflow: [{ id: 'will_not_fix', label: 'Will not fix', disabledReason: null }],
+        primary: { id: 'resolve', label: 'Resolve', disabledReason: null },
+        secondary: { id: 'fix_it', label: 'Fix it', disabledReason: null },
+        overflow: [{ id: 'close', label: 'Close', disabledReason: null }],
       }}
       isEditing={false}
       canPrevious={false}
@@ -34,9 +34,9 @@ it('keeps traversal, back, overflow and the primary action reachable', () => {
     true,
   );
   expect(screen.getByRole('button', { name: 'Next comment' }).hasAttribute('disabled')).toBe(false);
-  expect(
-    screen.getByRole('button', { name: 'Approve fix' }).hasAttribute('data-resolve-primary'),
-  ).toBe(true);
+  expect(screen.getByRole('button', { name: 'Resolve' }).hasAttribute('data-resolve-primary')).toBe(
+    true,
+  );
   fireEvent.click(screen.getByRole('button', { name: 'More' }));
-  expect(screen.getByRole('menuitem', { name: 'Will not fix' })).toBeDefined();
+  expect(screen.getByRole('menuitem', { name: 'Close' })).toBeDefined();
 });

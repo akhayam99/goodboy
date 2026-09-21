@@ -3,6 +3,7 @@ import { createStore } from 'zustand/vanilla';
 import {
   insertResolveQueueItem,
   listResolveQueueItems,
+  listResolveThreads,
   migrate,
   upsertResolveThread,
   type Database,
@@ -12,11 +13,7 @@ import { deriveResolveQueueStatus } from './deriveResolveQueueStatus';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 import type { ResolveQueueItem, ResolveThread, SessionId } from '@goodboy/types';
 import { createResolveSlice } from './index';
-import {
-  EMPTY_REFUSAL_REPLY,
-  REFUSAL_AFTER_INTEGRATION,
-  REFUSAL_REPLY_OUT_OF_DATE,
-} from './refuseResolveQueueItem';
+import { EMPTY_REFUSAL_REPLY, REFUSAL_AFTER_INTEGRATION } from './refuseResolveQueueItem';
 import { resolveInitialState } from './state';
 import type { GetFn, SetFn } from './types';
 
@@ -157,17 +154,38 @@ describe('resolve queue actions', () => {
     );
   });
 
-  it('refuses to refuse with a reply that drifted from the saved draft', async () => {
+  it('refuses with the reply the maintainer rewrote, and keeps that text', async () => {
     const live = createHarness();
-    await expect(
-      live.actions.refuseResolveQueueItem({
-        sessionId,
-        itemId: item.id,
-        revision: 2,
-        reply: 'We are keeping this as it is',
-      }),
-    ).rejects.toThrow(REFUSAL_REPLY_OUT_OF_DATE);
-    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe('none');
+    await live.actions.refuseResolveQueueItem({
+      sessionId,
+      itemId: item.id,
+      revision: 2,
+      reply: 'We are keeping this as it is',
+    });
+
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe(
+      'wont_fix',
+    );
+    expect((await listResolveThreads({ db, sessionId }))[0]?.replyDraft).toBe(
+      'We are keeping this as it is',
+    );
+  });
+
+  it('accepts with the reply the maintainer rewrote, and keeps that text', async () => {
+    const live = createHarness();
+    await live.actions.acceptResolveQueueItem({
+      sessionId,
+      itemId: item.id,
+      revision: 2,
+      reply: 'Rewrote the reply myself',
+    });
+
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe(
+      'accepted',
+    );
+    expect((await listResolveThreads({ db, sessionId }))[0]?.replyDraft).toBe(
+      'Rewrote the reply myself',
+    );
   });
 
   it('will not refuse a comment whose fix is already on the branch', async () => {
