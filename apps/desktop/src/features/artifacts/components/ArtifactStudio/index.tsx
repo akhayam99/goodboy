@@ -32,7 +32,8 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
   );
   const session = useAppStore((s) => s.sessions.find((entry) => entry.id === sessionId) ?? null);
   const plans = useSessionPlans(sessionId);
-  const openQuestionCount = useSessionOpenQuestions(sessionId).length;
+  const openQuestions = useSessionOpenQuestions(sessionId);
+  const openQuestionCount = openQuestions.length;
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
   const focusedPlanId = useAppStore((s) => s.focusedPlanId[sessionId] ?? null);
@@ -113,9 +114,10 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
         artifacts,
         activeAgentIds: new Set<AgentId>(activeAgentIds),
         runningAgentIds: new Set<AgentId>(runningAgentIds),
+        openQuestions,
         verifications,
       }),
-    [agents, artifacts, activeAgentIds, runningAgentIds, verifications],
+    [agents, artifacts, activeAgentIds, runningAgentIds, openQuestions, verifications],
   );
 
   const standalone = standaloneArtifacts({ artifacts });
@@ -174,7 +176,7 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
   };
 
   const selectGeneration = (generation: ArtifactGeneration) => {
-    if (generation.state !== 'generating') {
+    if (generation.state === 'unproduced') {
       void selectAgent(sessionId, generation.agentId);
       return;
     }

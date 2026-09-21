@@ -66,7 +66,7 @@ const deleteProjectScriptSpy = vi.fn(async () => undefined);
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
-  purgeAgentForDelete: vi.fn(async () => undefined),
+  purgeAgentForDelete: vi.fn(async () => [] as ReadonlyArray<string>),
   setSetting: dbSetSettingSpy,
   insertMessage: vi.fn(async () => undefined),
   insertProviderRun: vi.fn(async () => undefined),

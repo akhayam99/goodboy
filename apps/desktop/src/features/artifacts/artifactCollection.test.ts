@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import type { Agent, AgentId, SessionArtifact } from '@goodboy/types';
+import type { Agent, AgentId, OpenQuestion, SessionArtifact } from '@goodboy/types';
 import { resolveArtifactGenerations } from './artifactCollection';
+
+const openQuestion = (patch: Partial<OpenQuestion>): OpenQuestion =>
+  ({
+    id: 'question-1',
+    sessionId: 'sess-1',
+    text: 'renew the expired key?',
+    suggestedAnswers: ['renew', 'drop'],
+    isBlocking: true,
+    userAnswer: null,
+    status: 'open',
+    createdAt: '2026-01-02T03:04:05.000Z',
+    ...patch,
+  }) as OpenQuestion;
 
 const agent = (patch: Partial<Agent>): Agent =>
   ({
@@ -133,6 +146,50 @@ describe('resolveArtifactGenerations', () => {
     });
     expect(rows[0]?.kind).toBe('wireframe');
     expect(rows[0]?.state).toBe('unproduced');
+  });
+
+  it('reports a finished agent holding its own open question as waiting', () => {
+    const rows = resolveArtifactGenerations({
+      agents: [agent({})],
+      artifacts: [],
+      activeAgentIds: noneActive,
+      runningAgentIds: noneActive,
+      openQuestions: [openQuestion({ createdByAgentId: 'agent-1' as AgentId })],
+    });
+    expect(rows[0]?.state).toBe('waiting');
+  });
+
+  it('leaves an agent unproduced when the open question belongs to another agent', () => {
+    const rows = resolveArtifactGenerations({
+      agents: [agent({})],
+      artifacts: [],
+      activeAgentIds: noneActive,
+      runningAgentIds: noneActive,
+      openQuestions: [openQuestion({ createdByAgentId: 'agent-2' as AgentId })],
+    });
+    expect(rows[0]?.state).toBe('unproduced');
+  });
+
+  it('ignores a question the user already answered', () => {
+    const rows = resolveArtifactGenerations({
+      agents: [agent({})],
+      artifacts: [],
+      activeAgentIds: noneActive,
+      runningAgentIds: noneActive,
+      openQuestions: [openQuestion({ createdByAgentId: 'agent-1' as AgentId, status: 'answered' })],
+    });
+    expect(rows[0]?.state).toBe('unproduced');
+  });
+
+  it('keeps a running agent generating even while its question waits', () => {
+    const rows = resolveArtifactGenerations({
+      agents: [agent({ status: 'running' })],
+      artifacts: [],
+      activeAgentIds: noneActive,
+      runningAgentIds: noneActive,
+      openQuestions: [openQuestion({ createdByAgentId: 'agent-1' as AgentId })],
+    });
+    expect(rows[0]?.state).toBe('generating');
   });
 
   it('skips a deleted agent', () => {

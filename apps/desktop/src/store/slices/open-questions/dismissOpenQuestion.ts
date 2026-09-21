@@ -4,8 +4,21 @@ import { removeQuestionsFromSlot } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 
+export const BLOCKING_DISMISSAL_REFUSAL =
+  'The agent stopped on this one because it cannot decide it for you. Answer it to let the step carry on.';
+
 export const dismissOpenQuestion = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, question: OpenQuestion) => {
+    if (question.isBlocking) {
+      void get().emitNotification(
+        'error',
+        'warning',
+        'This question cannot be discarded',
+        BLOCKING_DISMISSAL_REFUSAL,
+        { sessionId, coalesceKey: `blocking-question:${question.id}` },
+      );
+      return;
+    }
     await markOpenQuestionDismissed(tauriDatabase, question.id);
     set((state) => ({
       sessionOpenQuestions: {

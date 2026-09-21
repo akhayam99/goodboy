@@ -3,6 +3,7 @@ import type {
   AgentId,
   ArtifactKind,
   IsoDateTime,
+  OpenQuestion,
   ProviderId,
   SessionArtifact,
 } from '@goodboy/types';
@@ -32,7 +33,7 @@ export const GENERATED_ARTIFACT_KINDS: ReadonlyArray<GeneratedArtifactKind> = [
   'wireframe',
 ];
 
-export type ArtifactGenerationState = 'generating' | 'unproduced';
+export type ArtifactGenerationState = 'generating' | 'waiting' | 'unproduced';
 
 export type ArtifactGeneration = Readonly<{
   agentId: AgentId;
@@ -54,12 +55,20 @@ const GENERATING: StatePresentation = {
   icon: CONCEPT_ICONS.runPending,
 };
 
+const WAITING: StatePresentation = {
+  label: 'needs you',
+  reason: 'the agent stopped on a question it cannot answer for you',
+  tone: 'warning',
+  icon: CONCEPT_ICONS.questions,
+};
+
 export const ARTIFACT_GENERATION_PRESENTATION: Record<
   GeneratedArtifactKind,
   Record<ArtifactGenerationState, StatePresentation>
 > = {
   report: {
     generating: GENERATING,
+    waiting: WAITING,
     unproduced: {
       label: 'no report produced',
       reason: 'the turn ended without a report to read',
@@ -69,6 +78,7 @@ export const ARTIFACT_GENERATION_PRESENTATION: Record<
   },
   wireframe: {
     generating: GENERATING,
+    waiting: WAITING,
     unproduced: {
       label: 'wireframe could not be read',
       reason: 'the turn ended without a wireframe to read',
@@ -95,11 +105,24 @@ const isGenerating = ({ agent, activeAgentIds }: ProgressParams): boolean => {
   return agent.status === 'pending' && agent.lastFinishedAt == null;
 };
 
+type WaitingParams = Readonly<{
+  agent: Agent;
+  openQuestions: ReadonlyArray<OpenQuestion>;
+}>;
+
+const isWaitingOnUser = ({ agent, openQuestions }: WaitingParams): boolean =>
+  openQuestions.some(
+    (question) => question.status === 'open' && question.createdByAgentId === agent.id,
+  );
+
+const NO_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
+
 export type ArtifactGenerationsParams = Readonly<{
   agents: ReadonlyArray<Agent>;
   artifacts: ReadonlyArray<SessionArtifact>;
   activeAgentIds: ReadonlySet<AgentId>;
   runningAgentIds: ReadonlySet<AgentId>;
+  openQuestions?: ReadonlyArray<OpenQuestion>;
   verifications?: Readonly<Record<string, WireframeScoutVerification>>;
 }>;
 
@@ -108,6 +131,7 @@ export const resolveArtifactGenerations = ({
   artifacts,
   activeAgentIds,
   runningAgentIds,
+  openQuestions = NO_QUESTIONS,
   verifications = {},
 }: ArtifactGenerationsParams): ReadonlyArray<ArtifactGeneration> => {
   const produced = new Set(artifacts.map((artifact) => artifact.agentId));
@@ -125,7 +149,11 @@ export const resolveArtifactGenerations = ({
       agentId: agent.id,
       kind,
       title: agent.name,
-      state: isGenerating({ agent, activeAgentIds }) ? 'generating' : 'unproduced',
+      state: isGenerating({ agent, activeAgentIds })
+        ? 'generating'
+        : isWaitingOnUser({ agent, openQuestions })
+          ? 'waiting'
+          : 'unproduced',
       startedAt: agent.startedAt ?? null,
       provider: agent.providerOverride ?? null,
       model: agent.modelOverride ?? null,

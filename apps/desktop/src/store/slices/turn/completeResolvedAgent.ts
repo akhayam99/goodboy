@@ -4,6 +4,7 @@ import {
   extractReviewComments,
   fanOutCapabilityForRole,
   fallbackStepOutputSummary,
+  hasBlockingQuestion,
 } from '@goodboy/core';
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
@@ -65,7 +66,9 @@ export const completeResolvedAgent = async ({
   if (!!ranAgent?.stepId && !!ranAgent?.workflowRunId) {
     const captured = captureArtifactFromTurnText({ assistantText, emittingProvider });
     const planCapturedThisTurn =
-      captured.status === 'captured' && captured.artifact.kind === 'plan';
+      captured.status === 'captured' &&
+      captured.artifact.kind === 'plan' &&
+      !hasBlockingQuestion({ assistantText });
     const { shouldAutoAdvance } = await get().finalizeWorkflowStep(
       sessionId,
       resolvedAgentId,

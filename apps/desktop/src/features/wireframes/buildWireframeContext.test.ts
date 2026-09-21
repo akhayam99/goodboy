@@ -142,10 +142,27 @@ describe('buildWireframeContext question contract', () => {
     const text = textFor();
     expect(text).toContain('## questions');
     expect(text).toContain(
-      '<<ctx-question suggestions="first option|second option" recommended="first option" select="one">>the question<</ctx-question>>',
+      '<<ctx-question suggestions="first option|second option" recommended="first option" select="one" blocking="true">>the question<</ctx-question>>',
     );
     expect(text).toContain(`at most ${ARTIFACT_QUESTION_LIMIT} questions`);
-    expect(text).toContain('put the questions before the artifact block, in the same turn');
+    expect(text).toContain(
+      'when no question is blocking, put the questions before the artifact block, in the same turn',
+    );
+  });
+
+  it('stops the turn at the questions when one of them blocks', () => {
+    const text = textFor();
+    expect(text).toContain(
+      'when any question is blocking, send the questions and nothing else: no artifact block in that turn',
+    );
+    expect(text).toContain('the answers come back to you as a new turn');
+  });
+
+  it('teaches when a question earns the blocking mark', () => {
+    const text = textFor();
+    expect(text).toContain('mark a question blocking="true" only when both of these hold');
+    expect(text).toContain('the answer changes what the wireframe says rather than how it says it');
+    expect(text).toContain('a preference with a defensible default is never blocking');
   });
 
   it('keeps the contract out of the capped evidence so a long pack never drops it', () => {

@@ -1,5 +1,6 @@
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { purgeAgentForDelete, updateSessionState } from '@goodboy/db';
+import { removeQuestionsFromSlot } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn, deleteAttachment } from '../../../features/chat/turn';
 import { abandonWorktreeWriter } from '../../../features/worktree/worktree';
@@ -37,12 +38,24 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
     }
 
     purgedAgentIds.add(agentId);
+    let removedQuestions: ReadonlyArray<string> = [];
     try {
-      await purgeAgentForDelete({ db: tauriDatabase, id: agentId });
+      removedQuestions = await purgeAgentForDelete({ db: tauriDatabase, id: agentId });
     } catch (error) {
       purgedAgentIds.delete(agentId);
       throw error;
     }
+    if (removedQuestions.length > 0) {
+      const slotChanged = await removeQuestionsFromSlot(
+        tauriDatabase,
+        sessionId,
+        removedQuestions,
+      ).catch(() => false);
+      if (slotChanged) {
+        await get().loadSessionSlots(sessionId);
+      }
+    }
+    await get().loadSessionOpenQuestions(sessionId);
     if (!runStopped) {
       void get()
         .emitNotification(

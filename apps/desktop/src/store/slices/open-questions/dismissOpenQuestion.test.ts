@@ -24,7 +24,7 @@ vi.mock('@goodboy/core', () => ({
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
-import { dismissOpenQuestion } from './dismissOpenQuestion';
+import { BLOCKING_DISMISSAL_REFUSAL, dismissOpenQuestion } from './dismissOpenQuestion';
 import { restoreDismissedOpenQuestion } from './restoreDismissedOpenQuestion';
 
 type RecordedEvent = {
@@ -39,7 +39,18 @@ type TestState = {
   loadSessionDismissedQuestions: (sessionId: SessionId) => Promise<void>;
   maybeAutoAdvanceWorkflow: (sessionId: SessionId) => Promise<void>;
   recordSessionEvent: (event: RecordedEvent) => Promise<void>;
+  emitNotification: (...args: ReadonlyArray<unknown>) => Promise<void>;
 };
+
+const makeStore = (questions: ReadonlyArray<OpenQuestion>) =>
+  createStore<TestState>(() => ({
+    sessionOpenQuestions: { [sessionId]: questions },
+    loadSessionSlots: vi.fn(async () => undefined),
+    loadSessionDismissedQuestions: vi.fn(async () => undefined),
+    maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
+    recordSessionEvent: vi.fn(async () => undefined),
+    emitNotification: vi.fn(async () => undefined),
+  }));
 
 const sessionId = 'sess-1' as SessionId;
 const question = {
@@ -59,13 +70,7 @@ describe('dismissed open question restoration', () => {
   });
 
   it('round-trips a dismissed question through persistence and store state', async () => {
-    const store = createStore<TestState>(() => ({
-      sessionOpenQuestions: { [sessionId]: [question] },
-      loadSessionSlots: vi.fn(async () => undefined),
-      loadSessionDismissedQuestions: vi.fn(async () => undefined),
-      maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
-      recordSessionEvent: vi.fn(async () => undefined),
-    }));
+    const store = makeStore([question]);
     const dismiss = dismissOpenQuestion(store.setState as never, store.getState as never);
     const restore = restoreDismissedOpenQuestion(store.setState as never, store.getState as never);
 
@@ -82,13 +87,7 @@ describe('dismissed open question restoration', () => {
   });
 
   it('writes the discard and the recovery to the session timeline', async () => {
-    const store = createStore<TestState>(() => ({
-      sessionOpenQuestions: { [sessionId]: [question] },
-      loadSessionSlots: vi.fn(async () => undefined),
-      loadSessionDismissedQuestions: vi.fn(async () => undefined),
-      maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
-      recordSessionEvent: vi.fn(async () => undefined),
-    }));
+    const store = makeStore([question]);
     const dismiss = dismissOpenQuestion(store.setState as never, store.getState as never);
     const restore = restoreDismissedOpenQuestion(store.setState as never, store.getState as never);
 
@@ -105,5 +104,52 @@ describe('dismissed open question restoration', () => {
       kind: 'question_restored',
       payload: { questionId: question.id, title: question.text },
     });
+  });
+});
+
+describe('blocking question dismissal', () => {
+  const blocking = { ...question, id: 'oq-2' as OpenQuestionId, isBlocking: true };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('refuses a blocking question, keeps it on screen and advances no workflow', async () => {
+    const store = makeStore([blocking]);
+    const dismiss = dismissOpenQuestion(store.setState as never, store.getState as never);
+
+    await dismiss(sessionId, blocking);
+
+    expect(markOpenQuestionDismissed).not.toHaveBeenCalled();
+    expect(removeQuestionsFromSlot).not.toHaveBeenCalled();
+    expect(store.getState().sessionOpenQuestions[sessionId]).toEqual([blocking]);
+    expect(store.getState().maybeAutoAdvanceWorkflow).not.toHaveBeenCalled();
+    expect(store.getState().recordSessionEvent).not.toHaveBeenCalled();
+  });
+
+  it('says why instead of failing silently', async () => {
+    const store = makeStore([blocking]);
+    const dismiss = dismissOpenQuestion(store.setState as never, store.getState as never);
+
+    await dismiss(sessionId, blocking);
+
+    expect(store.getState().emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'This question cannot be discarded',
+      BLOCKING_DISMISSAL_REFUSAL,
+      { sessionId, coalesceKey: `blocking-question:${blocking.id}` },
+    );
+  });
+
+  it('still dismisses a non blocking question', async () => {
+    const store = makeStore([question]);
+    const dismiss = dismissOpenQuestion(store.setState as never, store.getState as never);
+
+    await dismiss(sessionId, question);
+
+    expect(markOpenQuestionDismissed).toHaveBeenCalledWith(expect.anything(), question.id);
+    expect(store.getState().sessionOpenQuestions[sessionId]).toEqual([]);
+    expect(store.getState().maybeAutoAdvanceWorkflow).toHaveBeenCalledWith(sessionId);
   });
 });

@@ -26,9 +26,12 @@ const hoisted = vi.hoisted(() => ({
     waiting: [],
   })),
   execute: vi.fn(async () => undefined),
-  purgeAgentForDelete: vi.fn(async () => undefined),
+  purgeAgentForDelete: vi.fn(async () => [] as ReadonlyArray<string>),
+  removeQuestionsFromSlot: vi.fn(async () => false),
   listLiveRunIds: vi.fn(async () => new Set<string>()),
   emitNotification: vi.fn(async () => undefined),
+  loadSessionOpenQuestions: vi.fn(async () => undefined),
+  loadSessionSlots: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../features/chat/turn', () => ({
@@ -43,6 +46,9 @@ vi.mock('@goodboy/db', () => ({
   updateSessionState: hoisted.updateSessionState,
   listResolveAttempts: hoisted.listResolveAttempts,
   purgeAgentForDelete: hoisted.purgeAgentForDelete,
+}));
+vi.mock('@goodboy/core', () => ({
+  removeQuestionsFromSlot: hoisted.removeQuestionsFromSlot,
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: { execute: hoisted.execute } }));
 vi.mock('../../../features/worktree/worktree', () => ({
@@ -151,6 +157,8 @@ const makeStore = ({ isMounted = true }: { readonly isMounted?: boolean } = {}) 
       { id: SID, workspaceId: WID, activeProjectId: 'project-1', state: { kind: 'idle' } },
     ],
     emitNotification: hoisted.emitNotification,
+    loadSessionOpenQuestions: hoisted.loadSessionOpenQuestions,
+    loadSessionSlots: hoisted.loadSessionSlots,
   };
   const get = (() => state) as unknown as GetFn;
   const set = ((u: unknown) => {
@@ -167,7 +175,9 @@ beforeEach(() => {
   hoisted.listLiveRunIds.mockReset();
   hoisted.listLiveRunIds.mockResolvedValue(new Set<string>());
   hoisted.purgeAgentForDelete.mockReset();
-  hoisted.purgeAgentForDelete.mockResolvedValue(undefined);
+  hoisted.purgeAgentForDelete.mockResolvedValue([]);
+  hoisted.removeQuestionsFromSlot.mockReset();
+  hoisted.removeQuestionsFromSlot.mockResolvedValue(false);
 });
 
 afterEach(() => {
@@ -258,6 +268,33 @@ describe('deleteAgent', () => {
     });
     expect(hoisted.execute).not.toHaveBeenCalled();
   });
+  it('reloads the session questions so the dead agent question leaves the screen', async () => {
+    const { get, set } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([]);
+    hoisted.purgeAgentForDelete.mockResolvedValue(['renew the expired key?']);
+    hoisted.removeQuestionsFromSlot.mockResolvedValue(true);
+
+    await deleteAgent(set, get)(SID, DOOMED);
+
+    expect(hoisted.removeQuestionsFromSlot).toHaveBeenCalledWith(expect.anything(), SID, [
+      'renew the expired key?',
+    ]);
+    expect(hoisted.loadSessionSlots).toHaveBeenCalledWith(SID);
+    expect(hoisted.loadSessionOpenQuestions).toHaveBeenCalledWith(SID);
+  });
+
+  it('leaves the context slot alone when the agent held no open question', async () => {
+    const { get, set } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([]);
+
+    await deleteAgent(set, get)(SID, DOOMED);
+
+    expect(hoisted.removeQuestionsFromSlot).not.toHaveBeenCalled();
+    expect(hoisted.loadSessionOpenQuestions).toHaveBeenCalledWith(SID);
+  });
+
   it('waits for the run to stop before it purges the transcript', async () => {
     const { get, set } = makeStore();
     hoisted.invokeAgentList.mockResolvedValue([]);
@@ -271,6 +308,7 @@ describe('deleteAgent', () => {
     });
     hoisted.purgeAgentForDelete.mockImplementation(async () => {
       order.push('purge');
+      return [];
     });
 
     await deleteAgent(set, get)(SID, DOOMED);
@@ -314,6 +352,7 @@ describe('deleteAgent', () => {
     let gaggedDuringPurge = false;
     hoisted.purgeAgentForDelete.mockImplementation(async () => {
       gaggedDuringPurge = purgedAgentIds.has(DOOMED);
+      return [];
     });
 
     await deleteAgent(set, get)(SID, DOOMED);

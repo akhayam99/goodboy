@@ -6,6 +6,7 @@ import {
   extractHandoff,
   extractMaterializeRequests,
   extractScoutDomains,
+  hasBlockingQuestion,
   planTaskModelFallback,
   resolveTaskModel,
   SLOT_BUDGETS,
@@ -663,6 +664,9 @@ export const captureArtifactsFromTurn = async ({
   sourceTurnId,
   workflowRunId,
 }: CaptureArtifactsParams): Promise<CapturedArtifacts> => {
+  if (hasBlockingQuestion({ assistantText })) {
+    return NOTHING_CAPTURED;
+  }
   await recordArtifactAssumptions({ agentId, assistantText });
   const captured = captureArtifactFromTurnText({ assistantText, emittingProvider });
   if (captured.status === 'none') {
