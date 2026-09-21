@@ -7,6 +7,43 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.11
+
+A question the agent cannot settle on its own now holds the work until you answer it, every answer in a batch travels on one send, and a question you cannot answer can go to an agent that answers in your place.
+
+### [#1816, #1820, #1821, #1822] Answer the questions before the document is written
+
+A plan or a report used to arrive with its open questions attached and their answers already assumed inside it, so you spent the next minutes answering questions whose answers had shipped. An agent can now mark a question as blocking: the document is not produced until you answer, and a blocking question cannot be dismissed. Questions that merely pick between defensible defaults still ride along with the work, answered by the agent with the assumption recorded.
+
+Answers are staged. Continue walks a cluster without touching anything, Send is the only moment something leaves, and until then you can go back and change your mind. An agent gets its turn when nothing it asked is still open, so answering one of two questions no longer wakes it up holding half of what it needed. An agent parked on you says needs you, and its questions open where you answer them.
+
+The card is redesigned around two colours instead of four: the answer you picked is the only one that carries any, and a recommended answer no longer reads as a warning. A radio or a checkbox now says up front whether one answer is expected or several.
+
+### [#1824] Let an agent answer a question in your place
+
+The hand over sits last among the answers, after the free text row. Pick it and the options fold away into a panel with room for a hint and the model to run it on, and nothing spawns until Send, so you can still change who answers what.
+
+The answer counts as yours: the asking agent unblocks on it, while the card keeps saying a machine wrote it. The delegate shows up as a child agent everywhere children already do, down to the breadcrumb. It can put a question to you, and it cannot hand that question on again.
+
+### [#1813, #1818] Step handoffs arrive whole
+
+A workflow step reading the previous step's output kept getting text cut mid sentence, and agents said so in their own output. Above two thousand characters, seven handoffs in ten were degraded. Cursor output decodes now, a good summary is no longer thrown away over a long opening line, scouts and standalone runs are summarized where before they were excerpted, and when there is genuinely no summary to be had the next agent gets a far longer excerpt that says what it is.
+
+A summarizer model your account cannot reach now moves to another provider instead of dying on every step, and one notification names the model, the one that took over and where to change it.
+
+### [#1819, #1823] Reports and wireframes are built from the newest evidence
+
+Every agent's final message was cut to the same short length while most of the pack's budget went unspent, so a report was written from a dozen mutilated messages and pointed that out in its own text. The newest message is served whole first now, older ones hold a small reserve, and whatever is left over is shared out. Where a cut is still needed it lands on a paragraph, a line or a sentence.
+
+### [#1817] The artifact PDF is typeset, not printed
+
+An exported report or wireframe comes out as an A4 document: one type scale throughout, horizontal rules in place of table grids, callouts tinted by tone, prose held at a reading measure while tables and code run the full width. The dead Load image card no longer reaches the paper.
+
+### Fixes
+
+- A question asked by an agent you then delete goes with it, instead of staying open with nobody left to answer it [#1820]
+- Answers an agent has already received are not sent to it again on a later round [#1821]
+
 ## Goodboy v0.3.10
 
 Resolving a pull request comment is one surface with four moves, the reply you write is the one the reviewer reads, and a branch that has landed stops claiming it still carries work.
