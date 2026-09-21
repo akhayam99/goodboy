@@ -244,22 +244,29 @@ const renderAgents = ({
   const notes: Array<string> = [];
   let silent = 0;
   let clippedCount = 0;
-  const rows = kept.map((agent) => {
+  let droppedCount = 0;
+  const rows = kept.flatMap((agent) => {
     const name = redactSecrets({ text: agent.name });
     const message = messages.get(agent.id);
     if (message === null || message === undefined) {
       silent += 1;
-      return `### ${name} (agent ${agent.id}, ${agent.status})\n\nno assistant output recorded.`;
+      return [`### ${name} (agent ${agent.id}, ${agent.status})\n\nno assistant output recorded.`];
     }
     const budget = budgets.get(agent.id) ?? 0;
+    if (budget <= 0) {
+      droppedCount += 1;
+      notes.push(`agent ${agent.id}: final message dropped to fit`);
+      return [];
+    }
     const clipped = clipToBoundary({ text: message.text, limit: budget });
     if (clipped.isClipped) {
       clippedCount += 1;
       notes.push(`agent ${agent.id}: final message truncated`);
     }
-    return `### ${name} (agent ${agent.id}, ${agent.status})\n\n${clipped.text}`;
+    return [`### ${name} (agent ${agent.id}, ${agent.status})\n\n${clipped.text}`];
   });
-  const state = kept.length < totalAgentCount || clippedCount > 0 ? 'partial' : 'included';
+  const state =
+    kept.length < totalAgentCount || clippedCount > 0 || droppedCount > 0 ? 'partial' : 'included';
   return {
     text: `## agents\n\n${rows.join('\n\n')}`,
     row: {
@@ -272,6 +279,7 @@ const renderAgents = ({
           ? [`only the last ${REPORT_CONTEXT_LIMITS.agents} fit, earlier agents are missing`]
           : []),
         ...(silent > 0 ? [`${silent} had no output recorded`] : []),
+        ...(droppedCount > 0 ? [`${droppedCount} did not fit and were dropped`] : []),
         ...(clippedCount > 0
           ? [`${clippedCount} final message(s) were shortened to fit the budget`]
           : []),
@@ -844,10 +852,8 @@ export const buildReportContext = ({
   const requestSection =
     request.text.length > 0 ? `# user request\n\n${redactSecrets({ text: request.text })}` : '';
 
-  const assemble = ({ body, notes }: { readonly body: string; readonly notes: string }): string => {
-    const tail = `${body}\n\n${notes}\n\n${questions}`;
-    return requestSection.length > 0 ? `${requestSection}\n\n${tail}` : tail;
-  };
+  const assemble = ({ body, notes }: { readonly body: string; readonly notes: string }): string =>
+    [requestSection, body, notes, questions].filter((piece) => piece.length > 0).join('\n\n');
 
   let pieces: BodyPieces = {
     header,

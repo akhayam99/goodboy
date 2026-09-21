@@ -20,7 +20,10 @@ import {
   SESSION_GOAL_LIMITS,
   sessionGoalText,
 } from '../artifacts/sessionGoalText';
-import { ARTIFACT_QUESTION_LIMIT } from '../artifacts/artifactQuestionContract';
+import {
+  ARTIFACT_QUESTION_LIMIT,
+  artifactQuestionContract,
+} from '../artifacts/artifactQuestionContract';
 import { REDACTED } from '../../shared/utils/redactSecrets';
 import {
   buildReportContext,
@@ -762,18 +765,21 @@ describe('buildReportContext agent budget allocation', () => {
     expect(context.text.length).toBeLessThanOrEqual(REPORT_CONTEXT_LIMITS.total);
     expect(bodyOf({ id: NEWEST_ID, name: 'newest' })).toBe(newestMessage.trim());
     expect(context.truncations).not.toContain(`agent ${NEWEST_ID}: final message truncated`);
-    expect(bodyOf({ id: 'agent-older-0' as AgentId, name: 'older 0' })).toBe('');
+    expect(context.text).not.toContain('### older 0 (agent agent-older-0, completed)');
+    expect(context.truncations).toContain('agent agent-older-0: final message dropped to fit');
+    expect(context.inventory.find((entry) => entry.id === 'agents')?.detail).toContain(
+      '1 did not fit and were dropped',
+    );
   });
 
   it('cuts the newest message on a boundary and says so when nothing else can give room', () => {
     const NEWEST_ID = 'agent-newest' as AgentId;
-    const olderIds = Array.from({ length: 11 }, (_, index) => `agent-older-${index}` as AgentId);
-    const longName = 'n'.repeat(600);
-    const newestMessage = 'Harborline shipped the ledger fix. '.repeat(1_200);
+    const olderIds = Array.from({ length: 3 }, (_, index) => `agent-older-${index}` as AgentId);
+    const newestMessage = 'Harborline shipped the ledger fix. '.repeat(2_000);
     const context = buildReportContext({
       ...baseParams,
       agents: [
-        ...olderIds.map((id, index) => agent({ id, ordinal: index, name: `${longName}-${index}` })),
+        ...olderIds.map((id, index) => agent({ id, ordinal: index, name: `older ${index}` })),
         agent({ id: NEWEST_ID, ordinal: olderIds.length, name: 'newest' }),
       ],
       transcripts: {
@@ -801,6 +807,7 @@ describe('buildReportContext agent budget allocation', () => {
     const shown =
       context.text.split(`### newest (agent ${NEWEST_ID}, completed)\n\n`)[1]?.split('\n\n')[0] ??
       '';
+    expect(newestMessage.length).toBeGreaterThan(REPORT_CONTEXT_LIMITS.total);
     expect(context.text.length).toBeLessThanOrEqual(REPORT_CONTEXT_LIMITS.total);
     expect(context.truncations).toContain(`agent ${NEWEST_ID}: final message truncated`);
     expect(shown.length).toBeGreaterThan(0);
@@ -888,9 +895,7 @@ describe('buildReportContext budget honesty', () => {
     expect(context.text.length).toBeLessThanOrEqual(REPORT_CONTEXT_LIMITS.total);
     expect(context.text).toContain('# user request\n\nexplain the Harborline rollout risks');
     expect(context.text).toContain('## questions');
-    expect(context.text).toContain(
-      '<<ctx-question suggestions="first option|second option" recommended="first option" select="one">>the question<</ctx-question>>',
-    );
+    expect(context.text).toContain(artifactQuestionContract({ kind: 'report' }));
     expect(context.truncations).toContain(REPORT_SESSION_TITLE_CLIP_NOTE);
     const row = context.inventory.find((entry) => entry.id === 'attachments');
     expect(row?.state).toBe('partial');
