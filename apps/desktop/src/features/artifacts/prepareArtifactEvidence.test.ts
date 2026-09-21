@@ -71,7 +71,7 @@ const state = {
         kind: 'assistant_text',
         runId: 'turn-1',
         at: NOW,
-        delta: 'x'.repeat(REPORT_CONTEXT_LIMITS.agentText + 1),
+        delta: 'x'.repeat(REPORT_CONTEXT_LIMITS.total + 1_000),
       },
     ],
   },

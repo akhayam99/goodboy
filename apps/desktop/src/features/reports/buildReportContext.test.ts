@@ -61,6 +61,21 @@ const assistantTurn = ({ runId, delta }: { runId: string; delta: string }): Turn
   at: NOW,
 });
 
+const assistantTurnAt = ({
+  runId,
+  delta,
+  at,
+}: {
+  runId: string;
+  delta: string;
+  at: IsoDateTime;
+}): TurnEvent => ({
+  kind: 'assistant_text',
+  runId: runId as TurnEvent['runId'],
+  delta,
+  at,
+});
+
 const reportArtifact = (overrides: Partial<ReportArtifact>): ReportArtifact => ({
   id: 'artifact-1' as ArtifactId,
   sessionId: SESSION_ID,
@@ -235,7 +250,9 @@ describe('buildReportContext', () => {
     const agents = context.inventory.find((row) => row.id === 'agents');
     const excluded = context.inventory.find((row) => row.id === 'excluded');
     const size = context.inventory.find((row) => row.id === 'size');
-    expect(agents?.summary).toContain('agents, last message of each up to 1200 characters');
+    expect(agents?.summary).toContain(
+      'agents, most recent final message given priority within a shared budget',
+    );
     expect(excluded?.summary).toContain('tool calls');
     expect(size?.state).toBe('included');
   });
@@ -286,13 +303,14 @@ describe('buildReportContext', () => {
   });
 
   it('records truncation when an agent message exceeds the bound', () => {
-    const long = 'x'.repeat(REPORT_CONTEXT_LIMITS.agentText + 200);
+    const long = 'x'.repeat(REPORT_CONTEXT_LIMITS.total + 1_000);
     const context = buildReportContext({
       ...baseParams,
       transcripts: { [AGENT_ID]: [assistantTurn({ runId: 'r1', delta: long })] },
     });
     expect(context.truncations.some((note) => note.includes('truncated'))).toBe(true);
     expect(context.text).toContain('## truncation');
+    expect(context.text.length).toBeLessThanOrEqual(REPORT_CONTEXT_LIMITS.total);
   });
 
   it('summarizes the diff at the recorded commit ids', () => {
@@ -558,6 +576,156 @@ describe('buildReportContext', () => {
     expect(context.text).toContain('- test: error, exit 1');
     expect(context.text).toContain('pr_created');
     expect(context.sourceIds).toContain('artifact-1');
+  });
+});
+
+describe('buildReportContext agent budget allocation', () => {
+  it('keeps a lone 7,600 character final message whole', () => {
+    const long = 'x'.repeat(7_600);
+    const context = buildReportContext({
+      ...baseParams,
+      transcripts: { [AGENT_ID]: [assistantTurn({ runId: 'r1', delta: long })] },
+    });
+    expect(context.text).toContain(long);
+    expect(context.truncations.some((note) => note.includes('agent-1'))).toBe(false);
+  });
+
+  it('keeps a 20,000 character newest message whole alongside older agents', () => {
+    const NEWER_AGENT_ID = 'agent-3' as AgentId;
+    const long = 'y'.repeat(20_000);
+    const context = buildReportContext({
+      ...baseParams,
+      agents: [
+        agent({ id: AGENT_ID, ordinal: 0, name: 'earlier' }),
+        agent({ id: NEWER_AGENT_ID, ordinal: 1, name: 'closer' }),
+      ],
+      transcripts: {
+        [AGENT_ID]: [assistantTurnAt({ runId: 'r1', delta: 'older final message', at: NOW })],
+        [NEWER_AGENT_ID]: [
+          assistantTurnAt({
+            runId: 'r2',
+            delta: long,
+            at: '2026-09-15T11:00:00.000Z' as IsoDateTime,
+          }),
+        ],
+      },
+    });
+    expect(context.text).toContain(long);
+    expect(context.text).toContain('older final message');
+    expect(context.text.length).toBeLessThanOrEqual(REPORT_CONTEXT_LIMITS.total);
+  });
+
+  it('lets a recent rerun of a lower ordinal win over a stale higher ordinal', () => {
+    const STALE_ID = 'agent-stale' as AgentId;
+    const FRESH_ID = 'agent-fresh' as AgentId;
+    const freshMessage = 'z'.repeat(20_000);
+    const context = buildReportContext({
+      ...baseParams,
+      agents: [
+        agent({ id: STALE_ID, ordinal: 5, name: 'stale' }),
+        agent({ id: FRESH_ID, ordinal: 2, name: 'fresh' }),
+      ],
+      transcripts: {
+        [STALE_ID]: [
+          assistantTurnAt({
+            runId: 'r1',
+            delta: 'stale summary',
+            at: '2026-09-14T10:00:00.000Z' as IsoDateTime,
+          }),
+        ],
+        [FRESH_ID]: [
+          assistantTurnAt({
+            runId: 'r2',
+            delta: freshMessage,
+            at: '2026-09-15T12:00:00.000Z' as IsoDateTime,
+          }),
+        ],
+      },
+    });
+    expect(context.text).toContain(freshMessage);
+    expect(context.truncations.some((note) => note.includes('agent-fresh'))).toBe(false);
+  });
+
+  it('cuts a message larger than the whole allowance on a boundary and discloses it', () => {
+    const long = 'Harborline shipped the ledger fix. '.repeat(2_000);
+    const context = buildReportContext({
+      ...baseParams,
+      transcripts: { [AGENT_ID]: [assistantTurn({ runId: 'r1', delta: long })] },
+    });
+    expect(context.text).not.toContain(long);
+    expect(context.text).toContain('...');
+    expect(context.truncations).toContain('agent agent-1: final message truncated');
+    expect(context.text.length).toBeLessThanOrEqual(REPORT_CONTEXT_LIMITS.total);
+  });
+
+  it('never lets the complete returned text exceed 48,000 characters, however much evidence is offered', () => {
+    const manyAgents = Array.from({ length: REPORT_CONTEXT_LIMITS.agents }, (_, index) => ({
+      id: `agent-many-${index}` as AgentId,
+      ordinal: index,
+    }));
+    const context = buildReportContext({
+      ...baseParams,
+      agents: manyAgents.map(({ id, ordinal }) => agent({ id, ordinal, name: `agent ${ordinal}` })),
+      transcripts: Object.fromEntries(
+        manyAgents.map(({ id }, index) => [
+          id,
+          [
+            assistantTurnAt({
+              runId: `r-${index}`,
+              delta: 'Harborline settlement notes. '.repeat(500),
+              at: `2026-09-15T${String(10 + index).padStart(2, '0')}:00:00.000Z` as IsoDateTime,
+            }),
+          ],
+        ]),
+      ),
+      diff: {
+        mountName: 'goodboy',
+        baseBranch: 'main',
+        headSha: 'abc1234',
+        commits: Array.from({ length: 20 }, (_, index) => ({
+          sha: `commit-${index}`,
+          subject: `chore: change number ${index}`,
+        })),
+        additions: 400,
+        deletions: 120,
+        paths: Array.from({ length: 40 }, (_, index) => `apps/desktop/src/file-${index}.ts`),
+      },
+    });
+    expect(context.text.length).toBeLessThanOrEqual(REPORT_CONTEXT_LIMITS.total);
+  });
+
+  it('builds sourceIds and the agents inventory row from what was actually retained', () => {
+    const manyAgents = Array.from({ length: 15 }, (_, index) => ({
+      id: `agent-drop-${index}` as AgentId,
+      ordinal: index,
+    }));
+    const context = buildReportContext({
+      ...baseParams,
+      agents: manyAgents.map(({ id, ordinal }) => agent({ id, ordinal, name: `agent ${ordinal}` })),
+      transcripts: Object.fromEntries(
+        manyAgents.map(({ id }, index) => [
+          id,
+          [assistantTurn({ runId: `r-${index}`, delta: `output from ${id}` })],
+        ]),
+      ),
+    });
+    const droppedIds = manyAgents.slice(0, 3).map(({ id }) => id);
+    const keptIds = manyAgents.slice(3).map(({ id }) => id);
+    droppedIds.forEach((id) => expect(context.sourceIds).not.toContain(id));
+    keptIds.forEach((id) => expect(context.sourceIds).toContain(id));
+    const row = context.inventory.find((entry) => entry.id === 'agents');
+    expect(row?.state).toBe('partial');
+    expect(row?.summary).toContain(`${keptIds.length} of ${manyAgents.length} agents`);
+  });
+
+  it('still redacts a credential in a final message long enough to be clipped', () => {
+    const long = `api_key=harborline-secret-value ${'padding text '.repeat(3_000)}`;
+    const context = buildReportContext({
+      ...baseParams,
+      transcripts: { [AGENT_ID]: [assistantTurn({ runId: 'r1', delta: long })] },
+    });
+    expect(context.text).not.toContain('harborline-secret-value');
+    expect(context.text).toContain('[redacted]');
   });
 });
 
