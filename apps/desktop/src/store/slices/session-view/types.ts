@@ -85,6 +85,16 @@ export type ResolveQueueView = {
   readonly expandedThreadId: string | null;
   readonly order: ReadonlyArray<string>;
   readonly scrollTop: number;
+  readonly detailScrollTop: number;
+  readonly detailFocus: 'heading' | 'primary';
+  readonly isDeferredShown: boolean;
+  readonly isCompletedShown: boolean;
+};
+
+export type ResolvePublicationReturn = {
+  readonly threadId: string;
+  readonly reconcile: boolean;
+  readonly requestId: number;
 };
 
 export type ResolveDiffReturn = {
@@ -98,6 +108,10 @@ export const EMPTY_RESOLVE_QUEUE_VIEW: ResolveQueueView = {
   expandedThreadId: null,
   order: [],
   scrollTop: 0,
+  detailScrollTop: 0,
+  detailFocus: 'primary',
+  isDeferredShown: false,
+  isCompletedShown: false,
 };
 
 export type SessionStudio =
@@ -184,6 +198,7 @@ type SessionViewSliceState = {
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
   readonly resolveDiffReturn: Readonly<Record<SessionId, ResolveDiffReturn | null>>;
+  readonly resolvePublicationReturn: Readonly<Record<SessionId, ResolvePublicationReturn | null>>;
   readonly resolveItemDrafts: Readonly<
     Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
   >;
@@ -235,6 +250,12 @@ type SessionViewSliceActions = {
     readonly scrollTop: number;
   }): void;
   returnFromResolveDiff(params: { readonly sessionId: SessionId }): void;
+  openResolvePublication(params: {
+    readonly sessionId: SessionId;
+    readonly threadId: string;
+    readonly reconcile: boolean;
+  }): void;
+  returnFromResolvePublication(params: { readonly sessionId: SessionId }): void;
   setResolveItemDraft(params: {
     readonly sessionId: SessionId;
     readonly threadId: string;

@@ -21,10 +21,10 @@ export const RESOLVE_QUEUE_STATUS_LABEL: Record<ResolveQueueStatus, string> = {
 };
 
 export const RESOLVE_QUEUE_NEXT_STEP: Record<ResolveQueueStatus, string | null> = {
-  fix_ready: 'Nothing left your machine yet. Approve the fix, then publish it',
-  reply_ready: 'The agent wrote a reply and no code change. Approve it, then publish it',
+  fix_ready: 'Approved changes and replies stay local until you publish.',
+  reply_ready: 'Approved changes and replies stay local until you publish.',
   no_change: 'No fix and no reply on this one yet. Start a run, or write the reply yourself',
-  agent_asked: 'The run is parked on a question. Answer it to let the run carry on',
+  agent_asked: 'Your answer starts a new attempt for this comment.',
   working: 'A run is holding this comment. Wait for it to end',
   ready_to_push: 'Approved here, still untouched on the pull request. Publish it',
   pushed: null,

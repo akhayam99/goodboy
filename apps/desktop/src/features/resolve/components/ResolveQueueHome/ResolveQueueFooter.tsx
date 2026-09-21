@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { CalendarClock, CheckCheck } from 'lucide-react';
 import { CountToggle } from '@goodboy/ui';
 import { RESOLVE_HISTORY_LABEL } from '../../resolveQueueCopy';
@@ -8,11 +8,21 @@ type Props = {
   readonly completed: ReadonlyArray<ResolveQueueRow>;
   readonly later: ReadonlyArray<ResolveQueueRow>;
   readonly renderRow: (params: { readonly row: ResolveQueueRow }) => ReactNode;
+  readonly isDeferredShown: boolean;
+  readonly isCompletedShown: boolean;
+  readonly onDeferredShownChange: (isShown: boolean) => void;
+  readonly onCompletedShownChange: (isShown: boolean) => void;
 };
 
-export const ResolveQueueFooter = ({ completed, later, renderRow }: Props) => {
-  const [isLaterShown, setIsLaterShown] = useState(false);
-  const [isCompletedShown, setIsCompletedShown] = useState(false);
+export const ResolveQueueFooter = ({
+  completed,
+  later,
+  renderRow,
+  isDeferredShown,
+  isCompletedShown,
+  onDeferredShownChange,
+  onCompletedShownChange,
+}: Props) => {
   if (completed.length === 0 && later.length === 0) {
     return null;
   }
@@ -22,19 +32,19 @@ export const ResolveQueueFooter = ({ completed, later, renderRow }: Props) => {
         <CountToggle
           label={RESOLVE_HISTORY_LABEL.later}
           count={later.length}
-          isShown={isLaterShown}
+          isShown={isDeferredShown}
           icon={CalendarClock}
-          onChange={setIsLaterShown}
+          onChange={onDeferredShownChange}
         />
         <CountToggle
           label={RESOLVE_HISTORY_LABEL.completed}
           count={completed.length}
           isShown={isCompletedShown}
           icon={CheckCheck}
-          onChange={setIsCompletedShown}
+          onChange={onCompletedShownChange}
         />
       </div>
-      {isLaterShown && later.length > 0 && (
+      {isDeferredShown && later.length > 0 && (
         <ol aria-label={RESOLVE_HISTORY_LABEL.later} className="flex flex-col gap-2">
           {later.map((row) => renderRow({ row }))}
         </ol>

@@ -47,7 +47,6 @@ const renderRow = ({
         isSelected={false}
         heldBack={heldBack}
         onOpen={onOpen}
-        onLater={vi.fn()}
         onResume={vi.fn()}
         onOpenCommit={vi.fn()}
       />
@@ -83,6 +82,7 @@ describe('the resolve queue row', () => {
     fireEvent.click(screen.getByText('Cap the attempts.'));
 
     expect(onOpen).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Later' })).toBeNull();
   });
 
   it('says on the row itself that a publish left this comment behind', () => {

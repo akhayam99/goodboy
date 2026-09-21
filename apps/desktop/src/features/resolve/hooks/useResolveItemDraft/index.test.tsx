@@ -129,7 +129,7 @@ describe('the reply a maintainer is writing to a reviewer', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open parser' }));
 
-    expect(screen.getByTestId('mode').textContent).toBe('reply');
+    expect(screen.getByTestId('mode').textContent).toBe('read');
     expect((screen.getByLabelText('Instructions for agent') as HTMLTextAreaElement).value).toBe('');
 
     fireEvent.click(screen.getByRole('button', { name: 'Open retry' }));

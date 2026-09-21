@@ -54,6 +54,10 @@ describe('the round trip between the resolve queue and the diff', () => {
       expandedThreadId: 't-parser',
       order: ['t-retry', 't-parser', 't-client'],
       scrollTop: 240,
+      detailScrollTop: 0,
+      detailFocus: 'primary',
+      isDeferredShown: false,
+      isCompletedShown: false,
     });
     expect(state.resolveDiffReturn[SESSION_ID]).toEqual({
       threadId: 't-parser',
@@ -91,6 +95,10 @@ describe('the round trip between the resolve queue and the diff', () => {
       expandedThreadId: 't-parser',
       order: ['t-retry', 't-parser'],
       scrollTop: 120,
+      detailScrollTop: 0,
+      detailFocus: 'primary',
+      isDeferredShown: false,
+      isCompletedShown: false,
     });
   });
 

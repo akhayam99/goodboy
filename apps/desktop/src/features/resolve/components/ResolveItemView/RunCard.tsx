@@ -8,12 +8,19 @@ type Props = {
   readonly costUsd: number | null;
   readonly onStop: () => void;
   readonly onViewWork: () => void;
+  readonly isViewActionShown?: boolean;
 };
 
 const REVEAL_GROUP =
   'group-hover/resolve-run:opacity-100 group-focus-within/resolve-run:opacity-100';
 
-export const RunCard = ({ attempt, costUsd, onStop, onViewWork }: Props) => {
+export const RunCard = ({
+  attempt,
+  costUsd,
+  onStop,
+  onViewWork,
+  isViewActionShown = true,
+}: Props) => {
   const isRunning = attempt.phase === 'running';
   return (
     <div className="group/resolve-run flex min-w-0 flex-col gap-2">
@@ -22,13 +29,15 @@ export const RunCard = ({ attempt, costUsd, onStop, onViewWork }: Props) => {
         headingLevel={3}
         action={
           <CardActionSlot label="Run actions">
-            <CardAction
-              icon={Activity}
-              label={RESOLVE_ITEM_LABEL.viewWork}
-              reveal
-              revealGroup={REVEAL_GROUP}
-              onClick={onViewWork}
-            />
+            {isViewActionShown && (
+              <CardAction
+                icon={Activity}
+                label={RESOLVE_ITEM_LABEL.viewWork}
+                reveal
+                revealGroup={REVEAL_GROUP}
+                onClick={onViewWork}
+              />
+            )}
             {isRunning && (
               <CardAction icon={Square} label={RESOLVE_ITEM_LABEL.stop} onClick={onStop} />
             )}

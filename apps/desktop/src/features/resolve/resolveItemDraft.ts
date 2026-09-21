@@ -1,4 +1,13 @@
-export type ResolveDecisionMode = 'reply' | 'revise' | 'refuse';
+export type ResolveDecisionMode =
+  | 'read'
+  | 'edit_reply'
+  | 'start'
+  | 'retry'
+  | 'restart'
+  | 'answer'
+  | 'revise'
+  | 'refuse'
+  | 're_review';
 
 export type ResolveItemDraft = {
   readonly reply: string | null;
@@ -9,7 +18,7 @@ export type ResolveItemDraft = {
 export const EMPTY_RESOLVE_ITEM_DRAFT: ResolveItemDraft = {
   reply: null,
   instruction: '',
-  mode: 'reply',
+  mode: 'read',
 };
 
 export const draftReplyText = ({

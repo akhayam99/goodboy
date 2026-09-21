@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, GhostActionButton, InlineConfirm, formatError } from '@goodboy/ui';
 import { Activity, AlertTriangle, GitCommit, RefreshCw, RotateCw } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -65,8 +65,11 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const openDiffLens = useAppStore((s) => s.openDiffLens);
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const publicationReturn = useAppStore((s) => s.resolvePublicationReturn?.[sessionId] ?? null);
   const [isBusy, setIsBusy] = useState(false);
   const [isArmed, setIsArmed] = useState(false);
+  const entryRef = useRef<HTMLButtonElement | null>(null);
+  const handledRequestRef = useRef<number | null>(null);
 
   const counts =
     preview === null
@@ -91,6 +94,19 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
       setIsArmed(false);
     }
   }, [preview]);
+
+  useEffect(() => {
+    if (publicationReturn === null || handledRequestRef.current === publicationReturn.requestId) {
+      return;
+    }
+    handledRequestRef.current = publicationReturn.requestId;
+    entryRef.current?.focus();
+    if (publicationReturn.reconcile) {
+      void retryPublication({ sessionId }).catch((error: unknown) =>
+        showToast('error', formatError(error)),
+      );
+    }
+  }, [publicationReturn, retryPublication, sessionId, showToast]);
 
   const run = useCallback(
     async (work: () => Promise<void>): Promise<void> => {
@@ -242,6 +258,7 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
           </Button>
         )}
         <Button
+          ref={entryRef}
           size="sm"
           variant="primary"
           isBusy={isBusy}

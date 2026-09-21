@@ -36,7 +36,11 @@ const RETRYABLE_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set([
   'delivery_failed',
 ]);
 
-const HISTORY_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set(['later', 'pushed']);
+const HISTORY_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set([
+  'later',
+  'pushed',
+  'wont_fix_sent',
+]);
 
 const DECIDED_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set(['ready_to_push', 'wont_fix']);
 
@@ -79,7 +83,7 @@ export const groupResolveQueue = ({
     .slice()
     .sort(byReviewerTime),
   completed: rows
-    .filter((row) => row.status === 'pushed')
+    .filter((row) => row.status === 'pushed' || row.status === 'wont_fix_sent')
     .slice()
     .sort(byReviewerTime),
   later: rows

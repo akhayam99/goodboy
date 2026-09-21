@@ -17,6 +17,11 @@ type OpenParams = {
 };
 
 type ReturnParams = { readonly sessionId: SessionId };
+type PublicationParams = {
+  readonly sessionId: SessionId;
+  readonly threadId: string;
+  readonly reconcile: boolean;
+};
 
 export const setResolveQueueView = (set: SetFn) => {
   return ({ sessionId, patch }: ViewParams): void => {
@@ -54,5 +59,48 @@ export const returnFromResolveDiff = (set: SetFn, get: GetFn) => {
   return ({ sessionId }: ReturnParams): void => {
     set((s) => ({ resolveDiffReturn: { ...s.resolveDiffReturn, [sessionId]: null } }));
     get().setActiveLens(sessionId, 'review');
+  };
+};
+
+export const openResolvePublication = (set: SetFn) => {
+  return ({ sessionId, threadId, reconcile }: PublicationParams): void => {
+    set((s) => ({
+      resolveQueueView: {
+        ...s.resolveQueueView,
+        [sessionId]: {
+          ...(s.resolveQueueView[sessionId] ?? EMPTY_RESOLVE_QUEUE_VIEW),
+          expandedThreadId: null,
+        },
+      },
+      resolvePublicationReturn: {
+        ...s.resolvePublicationReturn,
+        [sessionId]: {
+          threadId,
+          reconcile,
+          requestId: (s.resolvePublicationReturn[sessionId]?.requestId ?? 0) + 1,
+        },
+      },
+    }));
+  };
+};
+
+export const returnFromResolvePublication = (set: SetFn) => {
+  return ({ sessionId }: ReturnParams): void => {
+    set((s) => {
+      const target = s.resolvePublicationReturn[sessionId] ?? null;
+      if (target === null) {
+        return s;
+      }
+      return {
+        resolveQueueView: {
+          ...s.resolveQueueView,
+          [sessionId]: {
+            ...(s.resolveQueueView[sessionId] ?? EMPTY_RESOLVE_QUEUE_VIEW),
+            expandedThreadId: target.threadId,
+          },
+        },
+        resolvePublicationReturn: { ...s.resolvePublicationReturn, [sessionId]: null },
+      };
+    });
   };
 };

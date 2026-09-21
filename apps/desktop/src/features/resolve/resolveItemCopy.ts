@@ -12,7 +12,7 @@ export const RESOLVE_ITEM_LABEL = {
   replyPreview: 'Reply to reviewer',
   replyPosted: 'Reply posted',
   refusalReply: 'Reply the reviewer will read',
-  refusalNote: 'The reviewer thread stays open',
+  refusalNote: 'This reply will be published later. The reviewer thread stays open.',
   noProposal: 'No agent reply yet',
   replyOnlyProposal: 'Reply only, no code change',
   nothingToApprove: 'No fix and no reply to approve yet',

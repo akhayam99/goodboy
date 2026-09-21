@@ -107,7 +107,18 @@ vi.mock('../../../github/usePrDraftAgentRunning', () => ({
   usePrDraftAgentRunning: () => false,
 }));
 vi.mock('../../../resolve/components/ResolveQueueHome', () => ({
-  ResolveQueueHome: () => <div data-testid="resolve-queue" />,
+  ResolveQueueHome: ({
+    header,
+    dock,
+  }: {
+    readonly header: React.ReactNode;
+    readonly dock: React.ReactNode;
+  }) => (
+    <div data-testid="resolve-queue">
+      {header}
+      {dock}
+    </div>
+  ),
 }));
 vi.mock('./WriteReview', () => ({ WriteReview: () => <div data-testid="write-review" /> }));
 vi.mock('../../../../shared/lib/editor', () => ({ openUrl: vi.fn(async () => undefined) }));
