@@ -146,7 +146,10 @@ export const QuestionCard = ({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div
+        className="flex flex-col gap-2"
+        aria-describedby={question.isBlocking ? blockingId : undefined}
+      >
         {suggestions.length > 0 && (
           <div
             role={groupRole}

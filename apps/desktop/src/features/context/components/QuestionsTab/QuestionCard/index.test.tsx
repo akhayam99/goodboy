@@ -300,3 +300,19 @@ describe('QuestionCard', () => {
     expect(screen.getByText('asked by scout')).toBeDefined();
   });
 });
+
+describe('blocking description without suggestions', () => {
+  it('still describes why the question blocks when there is nothing to pick', () => {
+    render(
+      <QuestionCard
+        {...baseProps}
+        question={{ ...baseQuestion, isBlocking: true, suggestedAnswers: [] }}
+      />,
+    );
+
+    const described = document.querySelector('[aria-describedby]');
+    expect(described).not.toBeNull();
+    const id = described?.getAttribute('aria-describedby') ?? '';
+    expect(document.getElementById(id)?.textContent).toContain('required before the artifact');
+  });
+});

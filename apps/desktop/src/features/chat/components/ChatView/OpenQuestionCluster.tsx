@@ -99,7 +99,10 @@ export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null
     current?.question.createdByAgentId != null
       ? (agentById.get(current.question.createdByAgentId)?.name ?? null)
       : null;
-  const askedByName = creatorName === headerName ? null : creatorName;
+  const creatorIsViewer =
+    current?.question.createdByAgentId != null &&
+    current.question.createdByAgentId === viewerAgentId;
+  const askedByName = creatorIsViewer || creatorName === headerName ? null : creatorName;
   const showsFooter = flow.showsStepper || pendingPairs.length > 0;
 
   return (
