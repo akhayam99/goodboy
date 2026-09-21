@@ -29,6 +29,7 @@ const base = (
   selectedChildHome: null,
   selectedParentLabel: null,
   selectedRootLabel: null,
+  selectedQuestionLabel: null,
   lensLabel,
   handlers,
   ...overrides,
@@ -361,6 +362,73 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
     expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'Create']);
+  });
+
+  it('ends the trail on the question a delegate is answering, six levels deep', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          lens: 'workflows',
+          selectedChildHome: 'workflows',
+          selectedChildWorkflowName: 'refactor',
+          selectedParentLabel: 'Implement',
+          selectedChildLabel: 'answer: pick a database',
+          selectedQuestionLabel: 'pick a database',
+        },
+        h,
+      ),
+    );
+
+    expect(labels(crumbs)).toEqual([
+      'Overview',
+      'Workflows',
+      'refactor',
+      'Implement',
+      'answer: pick a database',
+      'pick a database',
+    ]);
+    expect(last(crumbs)?.id).toBe('selected-question');
+    expect(last(crumbs)?.onClick).toBeUndefined();
+  });
+
+  it('carries the question crumb on a non-workflow home too', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          lens: 'agents',
+          selectedChildHome: 'agents',
+          selectedChildLabel: 'answer: pick a database',
+          selectedQuestionLabel: 'pick a database',
+        },
+        h,
+      ),
+    );
+
+    expect(labels(crumbs)).toEqual([
+      'Overview',
+      'agents',
+      'answer: pick a database',
+      'pick a database',
+    ]);
+    expect(last(crumbs)?.id).toBe('selected-question');
+  });
+
+  it('leaves the trail ending on the agent when no question is in view', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          lens: 'agents',
+          selectedChildHome: 'agents',
+          selectedChildLabel: 'scout one',
+        },
+        h,
+      ),
+    );
+
+    expect(last(crumbs)?.id).toBe('selected-child');
   });
 
   it('renders Overview > Artifacts > Create report while creation is open', () => {

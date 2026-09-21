@@ -525,6 +525,52 @@ describe('completeResolvedAgent', () => {
     );
   });
 
+  it('routes a question delegate to its own branch, above the fan-out branch', async () => {
+    const { state, set, get } = createHarness({});
+    const resolveQuestionDelegate = vi.fn(async () => undefined);
+    const advanceScoutTree = vi.fn(async () => undefined);
+    const advanceClusterImplementation = vi.fn(async () => undefined);
+    Object.assign(state, {
+      resolveQuestionDelegate,
+      advanceScoutTree,
+      advanceClusterImplementation,
+    });
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        {
+          ...agent,
+          kind: 'scout',
+          name: 'answer: pick a database',
+          parentAgentId: 'asker-1' as AgentId,
+          sourceKind: 'open_question',
+          sourceThreadId: 'oq-1',
+          sourceThreadIds: undefined,
+        },
+      ],
+    };
+    const assistantText =
+      '<<fan-out>>\n- area: a\n- area: b\n<</fan-out>>\n<<oq-answer>>Postgres<</oq-answer>>';
+
+    const advance = await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText,
+      now: () => NOW,
+    });
+
+    expect(resolveQuestionDelegate).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText,
+    });
+    expect(advanceScoutTree).not.toHaveBeenCalled();
+    expect(advanceClusterImplementation).not.toHaveBeenCalled();
+    expect(h.invokeAgentUpdateStatus).not.toHaveBeenCalled();
+    expect(advance).toBeNull();
+  });
+
   it('leaves a thread the agent does not own out of its rows', async () => {
     const { state, set, get } = createHarness({});
     await completeResolvedAgent({

@@ -94,6 +94,11 @@ import { createNudgesSlice } from './slices/nudges';
 import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts';
 import { createPlansSlice } from './slices/plans';
 import { createOpenQuestionsSlice } from './slices/open-questions';
+import type {
+  QuestionDelegateOutcome,
+  SpawnQuestionDelegatesParams,
+} from './slices/open-questions/spawnQuestionDelegates';
+import type { ResolveQuestionDelegateParams } from './slices/open-questions/resolveQuestionDelegate';
 import { createBudgetSlice } from './slices/budget';
 import { createSkillsSlice } from './slices/skills';
 import { createStorageSlice } from './slices/storage';
@@ -917,6 +922,10 @@ type AppActions = {
   ): Promise<void>;
   dismissOpenQuestion(sessionId: SessionId, question: OpenQuestion): Promise<void>;
   restoreDismissedOpenQuestion(sessionId: SessionId, question: OpenQuestion): Promise<void>;
+  spawnQuestionDelegates(
+    params: SpawnQuestionDelegatesParams,
+  ): Promise<ReadonlyArray<QuestionDelegateOutcome>>;
+  resolveQuestionDelegate(params: ResolveQuestionDelegateParams): Promise<void>;
   loadSessionPlans(sessionId: SessionId): Promise<void>;
   setPlanStatus(sessionId: SessionId, planId: PlanId, status: PlanStatus): Promise<void>;
   updatePlanBody(

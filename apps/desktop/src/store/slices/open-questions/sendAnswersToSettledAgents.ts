@@ -14,11 +14,17 @@ export type SendAnswersToSettledAgentsParams = {
 
 const askingAgentOf = (question: OpenQuestion): AskingAgentId => question.createdByAgentId ?? null;
 
+const AGENT_PROVENANCE =
+  "  Source: an agent answered this on the user's behalf. Treat it as the user's own answer.";
+
 const buildBatchPrompt = (questions: ReadonlyArray<OpenQuestion>): string => {
   const lines = ['Answers to open questions:'];
   for (const question of questions) {
     lines.push(`\n- Q: ${question.text}`);
     lines.push(`  A: ${question.userAnswer ?? ''}`);
+    if (question.answerSource === 'agent') {
+      lines.push(AGENT_PROVENANCE);
+    }
   }
   return lines.join('\n');
 };

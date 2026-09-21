@@ -21,8 +21,8 @@ import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { AnsweredCard } from '../../../../chat/components/ChatView/AnsweredCard';
 import { AnswerSubmitButton } from '../../../../context/components/QuestionsTab/AnswerSubmitButton';
 import { DismissedQuestionUndo } from '../../../../context/components/QuestionsTab/DismissedQuestionUndo';
-import { QuestionCard } from '../../../../context/components/QuestionsTab/QuestionCard';
 import { QuestionClusterHeader } from '../../../../context/components/QuestionsTab/QuestionClusterHeader';
+import { QuestionsPaneCard } from './QuestionsPaneCard';
 import {
   buildQuestionClusters,
   type QuestionCluster,
@@ -33,6 +33,8 @@ import {
   deriveDraftAnswer,
   useOpenQuestions,
 } from '../../../../context/components/QuestionsTab/useOpenQuestions';
+import type { QuestionDelegateRequest } from '../../../../../store/slices/open-questions/spawnQuestionDelegates';
+import { QUESTION_DELEGATE_COPY } from '../../../../context/questionDelegate';
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import {
@@ -66,8 +68,35 @@ type ClusterSectionProps = {
   readonly onDismiss: (question: OpenQuestion) => void;
   readonly pendingUndoQuestionId: OpenQuestionId | null;
   readonly onUndo: (question: OpenQuestion) => void;
-  readonly onSubmit: (pairs: ReadonlyArray<AnswerPair>, ownerAgentId: AgentId | null) => void;
+  readonly onSubmit: (
+    pairs: ReadonlyArray<AnswerPair>,
+    requests: ReadonlyArray<QuestionDelegateRequest>,
+    ownerAgentId: AgentId | null,
+  ) => void;
 };
+
+const delegateRequestsFor = ({
+  questions,
+  drafts,
+}: {
+  readonly questions: ReadonlyArray<OpenQuestion>;
+  readonly drafts: ReturnType<typeof useOpenQuestions.getState>['drafts'];
+}): ReadonlyArray<QuestionDelegateRequest> =>
+  questions.flatMap((question): ReadonlyArray<QuestionDelegateRequest> => {
+    const intent = drafts[question.id]?.answerIntent;
+    if (intent?.kind !== 'agent') {
+      return [];
+    }
+    return [
+      {
+        question,
+        hints: intent.hints,
+        provider: intent.routing.provider,
+        model: intent.routing.model,
+        effort: intent.routing.effort,
+      },
+    ];
+  });
 
 const ClusterSection = ({
   cluster,
@@ -86,10 +115,22 @@ const ClusterSection = ({
 }: ClusterSectionProps) => {
   const [stepIndex, setStepIndex] = useState(0);
 
-  const answerablePairs = cluster.questions
-    .filter((question) => question.id !== pendingUndoQuestionId)
-    .map((q) => ({ id: q.id, text: q.text, answer: deriveDraftAnswer(drafts[q.id]) }));
+  const answerableQuestions = cluster.questions.filter(
+    (question) => question.id !== pendingUndoQuestionId,
+  );
+  const answerablePairs = answerableQuestions.map((q) => ({
+    id: q.id,
+    text: q.text,
+    answer: deriveDraftAnswer(drafts[q.id]),
+  }));
   const pendingPairs = answerablePairs.filter((pair) => pair.answer.length > 0);
+  const delegateRequests = delegateRequestsFor({ questions: answerableQuestions, drafts });
+  const stagedCount = pendingPairs.length + delegateRequests.length;
+  const delegatedIds = new Set(delegateRequests.map((request) => request.question.id));
+  const recapEntries = answerablePairs.map((pair) => ({
+    text: pair.text,
+    answer: delegatedIds.has(pair.id) ? QUESTION_DELEGATE_COPY.recap : pair.answer,
+  }));
 
   const flow = resolveStagedFlow({ total: cluster.questions.length, index: stepIndex });
   const current = cluster.questions[flow.index] ?? null;
@@ -97,7 +138,7 @@ const ClusterSection = ({
   const handleForward = () => {
     if (flow.action === 'send') {
       setStepIndex(0);
-      onSubmit(pendingPairs, cluster.ownerAgentId);
+      onSubmit(pendingPairs, delegateRequests, cluster.ownerAgentId);
       return;
     }
     setStepIndex(flow.index + 1);
@@ -107,7 +148,7 @@ const ClusterSection = ({
     setStepIndex(flow.index - 1);
   };
 
-  const showsFooter = flow.showsStepper || pendingPairs.length > 0;
+  const showsFooter = flow.showsStepper || stagedCount > 0;
 
   return (
     <div className="flex flex-col gap-2">
@@ -123,9 +164,10 @@ const ClusterSection = ({
         (current.id === pendingUndoQuestionId ? (
           <DismissedQuestionUndo key={current.id} onUndo={() => onUndo(current)} />
         ) : (
-          <QuestionCard
+          <QuestionsPaneCard
             key={current.id}
             question={current}
+            sessionId={sessionId}
             selectedSuggestions={drafts[current.id]?.selectedSuggestions ?? []}
             customAnswer={drafts[current.id]?.customAnswer ?? ''}
             showCustomField={drafts[current.id]?.showCustomField ?? false}
@@ -139,7 +181,7 @@ const ClusterSection = ({
         ))}
       {showsFooter && (
         <AnswerSubmitButton
-          answerCount={pendingPairs.length}
+          answerCount={stagedCount}
           totalCount={answerablePairs.length}
           action={flow.action}
           stepIndex={flow.index}
@@ -147,10 +189,10 @@ const ClusterSection = ({
           canGoBack={flow.canGoBack}
           onBack={handleBack}
           onClick={handleForward}
-          disabled={flow.action === 'send' && pendingPairs.length === 0}
+          disabled={flow.action === 'send' && stagedCount === 0}
           recap={
             flow.action === 'send' && flow.showsStepper
-              ? summarizeStagedAnswers({ entries: answerablePairs })
+              ? summarizeStagedAnswers({ entries: recapEntries })
               : ''
           }
         />
@@ -291,6 +333,8 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
   const toggleCustomField = useOpenQuestions((s) => s.toggleCustomField);
   const clearJustAnswered = useOpenQuestions((s) => s.clearJustAnswered);
   const flashAnswered = useOpenQuestions((s) => s.flashAnswered);
+  const clearDraft = useOpenQuestions((s) => s.clearDraft);
+  const spawnQuestionDelegates = useAppStore((s) => s.spawnQuestionDelegates);
   const pendingUndo = useOpenQuestions((s) => s.pendingUndo);
   const beginUndo = useOpenQuestions((s) => s.beginUndo);
   const clearUndo = useOpenQuestions((s) => s.clearUndo);
@@ -334,14 +378,26 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
   );
 
   const handleSubmit = useCallback(
-    async (pairs: ReadonlyArray<AnswerPair>, ownerAgentId: AgentId | null) => {
-      if (pairs.length === 0) {
+    async (
+      pairs: ReadonlyArray<AnswerPair>,
+      requests: ReadonlyArray<QuestionDelegateRequest>,
+      ownerAgentId: AgentId | null,
+    ) => {
+      if (pairs.length === 0 && requests.length === 0) {
         return;
       }
       flashAnswered(pairs.map((pair) => pair.id));
+      if (requests.length > 0) {
+        const outcomes = await spawnQuestionDelegates({ sessionId, requests });
+        for (const outcome of outcomes) {
+          if (outcome.kind === 'spawned' || outcome.kind === 'already-running') {
+            clearDraft(outcome.questionId);
+          }
+        }
+      }
       await answerOpenQuestions(sessionId, pairs, ownerAgentId);
     },
-    [flashAnswered, answerOpenQuestions, sessionId],
+    [flashAnswered, clearDraft, spawnQuestionDelegates, answerOpenQuestions, sessionId],
   );
 
   const handleDismiss = useCallback(
@@ -445,7 +501,9 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
             onDismiss={(question) => void handleDismiss(question)}
             pendingUndoQuestionId={pendingUndoQuestion?.id ?? null}
             onUndo={(question) => void handleUndo(question)}
-            onSubmit={(pairs, ownerAgentId) => void handleSubmit(pairs, ownerAgentId)}
+            onSubmit={(pairs, requests, ownerAgentId) =>
+              void handleSubmit(pairs, requests, ownerAgentId)
+            }
           />
         ))}
         <FinishedRegister

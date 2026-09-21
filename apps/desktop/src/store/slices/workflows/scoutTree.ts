@@ -22,6 +22,7 @@ import {
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { clampWireframeScoutReport } from '../../../features/wireframes/wireframeScoutReports';
+import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
 import { openTurnStartWindow } from '../turn/turnStartWindow';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
@@ -40,7 +41,9 @@ const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 const TERMINAL: ReadonlyArray<Agent['status']> = ['completed', 'failed', 'skipped'];
 
 const childrenOf = (runs: ReadonlyArray<Agent>, parentId: AgentId): ReadonlyArray<Agent> => {
-  return runs.filter((r) => r.parentAgentId === parentId).sort((a, b) => a.ordinal - b.ordinal);
+  return runs
+    .filter((r) => r.parentAgentId === parentId && !isQuestionDelegate({ agent: r }))
+    .sort((a, b) => a.ordinal - b.ordinal);
 };
 
 export const scoutDepth = (runs: ReadonlyArray<Agent>, agentId: AgentId): number => {

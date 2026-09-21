@@ -3,6 +3,7 @@ import type { OpenQuestion, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { QuestionCard } from '../../../context/components/QuestionsTab/QuestionCard';
 import { useOpenQuestions } from '../../../context/components/QuestionsTab/useOpenQuestions';
+import { useQuestionDelegateControls } from '../../../context/hooks/useQuestionDelegateControls';
 
 type Props = {
   readonly question: OpenQuestion;
@@ -20,6 +21,7 @@ export const InteractiveQuestionCard = ({ question, sessionId, askedByName = nul
     clearJustAnswered,
   } = useOpenQuestions();
   const dismissOpenQuestion = useAppStore((state) => state.dismissOpenQuestion);
+  const delegate = useQuestionDelegateControls({ sessionId, question });
   const draft = drafts[question.id];
 
   const handleDismiss = useCallback(() => {
@@ -39,6 +41,14 @@ export const InteractiveQuestionCard = ({ question, sessionId, askedByName = nul
       onToggleCustomField={toggleCustomField}
       onDismiss={handleDismiss}
       onClearJustAnswered={clearJustAnswered}
+      delegateState={delegate.delegateState}
+      delegateHints={delegate.delegateHints}
+      delegateRouting={delegate.delegateRouting}
+      connectedProviders={delegate.connectedProviders}
+      onChooseDelegate={delegate.onChooseDelegate}
+      onCancelDelegate={delegate.onCancelDelegate}
+      onDelegateHints={delegate.onDelegateHints}
+      onDelegateRouting={delegate.onDelegateRouting}
     />
   );
 };

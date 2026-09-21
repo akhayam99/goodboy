@@ -10,6 +10,9 @@ const { state } = vi.hoisted(() => ({
   state: {
     answerOpenQuestions: vi.fn(async () => undefined),
     dismissOpenQuestion: vi.fn(async () => undefined),
+    sessionPhaseRuns: {
+      'sess-1': [{ id: 'child-1', name: 'answer: Use Postgres or SQLite?' }],
+    } as Record<string, ReadonlyArray<{ id: string; name: string }>>,
   },
 }));
 
@@ -111,6 +114,39 @@ describe('OpenQuestionInlineCard', () => {
     fireEvent.click(screen.getByRole('button'));
     expect(screen.getByText('Agent answered:')).toBeTruthy();
     expect(screen.queryByText('You answered:')).toBeNull();
+  });
+
+  it('names the agent that answered on the user behalf', () => {
+    const byDelegate: OpenQuestion = {
+      ...baseQuestion,
+      status: 'answered',
+      userAnswer: 'Postgres',
+      answerSource: 'agent',
+      answeredByAgentId: 'child-1',
+      answeredAt: '2026-06-13T00:05:00.000Z',
+    } as unknown as OpenQuestion;
+
+    render(<OpenQuestionInlineCard question={byDelegate} sessionId={'sess-1' as never} />);
+
+    fireEvent.click(screen.getByRole('button'));
+    expect(screen.getByText('answer: Use Postgres or SQLite? answered for you:')).toBeTruthy();
+    expect(screen.queryByText('You answered:')).toBeNull();
+  });
+
+  it('falls back to a generic agent label when the delegate row is gone', () => {
+    const byDelegate: OpenQuestion = {
+      ...baseQuestion,
+      status: 'answered',
+      userAnswer: 'Postgres',
+      answerSource: 'agent',
+      answeredByAgentId: 'deleted-1',
+      answeredAt: '2026-06-13T00:05:00.000Z',
+    } as unknown as OpenQuestion;
+
+    render(<OpenQuestionInlineCard question={byDelegate} sessionId={'sess-1' as never} />);
+
+    fireEvent.click(screen.getByRole('button'));
+    expect(screen.getByText('Agent answered:')).toBeTruthy();
   });
 
   it('renders the agent-resolved sentinel as a muted variant', () => {

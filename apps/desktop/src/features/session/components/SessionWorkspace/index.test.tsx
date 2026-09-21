@@ -95,6 +95,7 @@ const { store, hooks } = vi.hoisted(() => ({
   hooks: {
     agentHome: 'workflows' as LensKind,
     openQuestions: [] as ReadonlyArray<{ readonly createdByAgentId?: string }>,
+    answeredQuestions: [] as ReadonlyArray<{ readonly createdByAgentId?: string }>,
     agentsLaneMounts: 0,
     agentsLaneUnmounts: 0,
     remoteKind: null as 'github' | 'gitlab' | 'other' | null,
@@ -131,6 +132,7 @@ vi.mock('../../../../store', () => ({
   useSessionLastTurnFinishedAt: () => null,
   useSessionPlans: () => [],
   useSessionOpenQuestions: () => hooks.openQuestions,
+  useSessionAnsweredQuestions: () => hooks.answeredQuestions,
   useDiffComments: () => [],
 }));
 
@@ -293,6 +295,7 @@ beforeEach(() => {
   store.loadSessionPlans.mockClear();
   hooks.agentHome = 'workflows';
   hooks.openQuestions = [];
+  hooks.answeredQuestions = [];
   hooks.agentsLaneMounts = 0;
   hooks.agentsLaneUnmounts = 0;
   hooks.remoteKind = null;

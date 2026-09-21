@@ -256,4 +256,26 @@ describe('WorkflowStepGraph', () => {
     expect(chip.outerHTML).toContain(brandColor('cursor'));
     expect(chip.outerHTML).not.toContain(brandColor('codex'));
   });
+
+  it('says a delegate row is answering for the step that asked', () => {
+    const delegate = agent({
+      id: 'delegate-1' as AgentId,
+      parentAgentId: scout.id,
+      ordinal: 0,
+      name: 'answer: pick a database',
+      status: 'running',
+      sourceKind: 'open_question',
+      sourceThreadId: 'oq-1',
+    });
+
+    renderGraph(new Map([[scout.id, [delegate]]]));
+
+    expect(screen.getByTestId('answers-for-delegate-1').textContent).toBe('answering for Scout');
+  });
+
+  it('leaves an ordinary sub-agent row without an answering line', () => {
+    renderGraph(new Map([[scout.id, [subScout(0, 'running')]]]));
+
+    expect(screen.queryByTestId('answers-for-child-0')).toBeNull();
+  });
 });

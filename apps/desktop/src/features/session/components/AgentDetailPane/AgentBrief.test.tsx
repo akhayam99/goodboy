@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, OpenQuestion, Session, SessionId } from '@goodboy/types';
 
 const state = vi.hoisted(() => ({
@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
   agentKindOverride: {} as Record<string, unknown>,
   sessionPlans: {} as Record<string, ReadonlyArray<unknown>>,
   openQuestions: [] as ReadonlyArray<OpenQuestion>,
+  answeredQuestions: [] as ReadonlyArray<OpenQuestion>,
   selectAgent: async () => undefined,
   answerOpenQuestions: async () => undefined,
   dismissOpenQuestion: async () => undefined,
@@ -25,6 +26,7 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
   useSessionOpenQuestions: () => state.openQuestions,
+  useSessionAnsweredQuestions: () => state.answeredQuestions,
 }));
 
 vi.mock('../../../../store/transcript', () => ({
@@ -85,6 +87,7 @@ beforeEach(() => {
     agentKindOverride: {},
     sessionPlans: {},
     openQuestions: [],
+    answeredQuestions: [],
   });
   transcriptItems.items = [];
 });
@@ -238,6 +241,114 @@ describe('AgentBrief type scale', () => {
 
     expect(line?.className).toContain('text-xs');
     expect(line?.className).not.toContain('text-sm');
+  });
+});
+
+describe('AgentBrief delegated answers', () => {
+  const delegateId = 'child-1' as AgentId;
+
+  const delegate = (over: Partial<Agent> = {}): Agent =>
+    makeAgent({
+      id: delegateId,
+      ordinal: 1,
+      name: 'answer: pick a database',
+      kind: 'scout',
+      status: 'running',
+      parentAgentId: agentId,
+      sourceKind: 'open_question',
+      sourceThreadId: 'oq-1',
+      ...over,
+    });
+
+  const question = {
+    id: 'oq-1',
+    sessionId,
+    text: 'pick a database',
+    suggestedAnswers: [],
+    isBlocking: false,
+    userAnswer: null,
+    status: 'open',
+    createdByAgentId: agentId,
+    createdAt: '2026-09-21T00:00:00.000Z',
+  } as unknown as OpenQuestion;
+
+  it('lists the delegate on the asker, with the question and its status', () => {
+    state.sessionPhaseRuns = { [sessionId]: [makeAgent({}), delegate()] };
+    state.openQuestions = [question];
+
+    render(<AgentBrief session={session} agent={makeAgent({})} />);
+
+    expect(screen.getByText('Delegated answers')).toBeTruthy();
+    const row = screen.getByTestId(`delegate-brief-row-${delegateId}`);
+    expect(row.textContent).toContain('pick a database');
+    expect(row.textContent).toContain('running');
+  });
+
+  it('opens the delegate from its row', () => {
+    const selectAgent = vi.fn(async () => undefined);
+    state.selectAgent = selectAgent;
+    state.sessionPhaseRuns = { [sessionId]: [makeAgent({}), delegate()] };
+    state.openQuestions = [question];
+
+    render(<AgentBrief session={session} agent={makeAgent({})} />);
+    fireEvent.click(screen.getByTestId(`delegate-brief-row-${delegateId}`));
+
+    expect(selectAgent).toHaveBeenCalledWith(sessionId, delegateId);
+  });
+
+  it('keeps the delegate out of the generic children lane, so it is not listed twice', () => {
+    state.sessionPhaseRuns = {
+      [sessionId]: [
+        makeAgent({}),
+        delegate(),
+        makeAgent({
+          id: 'child-2' as AgentId,
+          ordinal: 2,
+          name: 'cluster one',
+          parentAgentId: agentId,
+        }),
+      ],
+    };
+    state.openQuestions = [question];
+
+    render(<AgentBrief session={session} agent={makeAgent({})} />);
+
+    expect(screen.getByText('Clusters')).toBeTruthy();
+    expect(screen.getByText('cluster one')).toBeTruthy();
+    expect(screen.queryByText('answer: pick a database')).toBeNull();
+  });
+
+  it('says nothing about delegates when the agent spawned none', () => {
+    state.sessionPhaseRuns = { [sessionId]: [makeAgent({})] };
+
+    render(<AgentBrief session={session} agent={makeAgent({})} />);
+
+    expect(screen.queryByText('Delegated answers')).toBeNull();
+  });
+
+  it('quotes the question on the delegate itself, with a way back to the asker', () => {
+    const selectAgent = vi.fn(async () => undefined);
+    state.selectAgent = selectAgent;
+    state.sessionPhaseRuns = { [sessionId]: [makeAgent({ name: 'plan the work' }), delegate()] };
+    state.answeredQuestions = [
+      { ...question, status: 'answered', userAnswer: 'Postgres' } as unknown as OpenQuestion,
+    ];
+
+    render(<AgentBrief session={session} agent={delegate()} />);
+
+    expect(screen.getByText('Answering for')).toBeTruthy();
+    expect(screen.getByText('pick a database')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'asked by plan the work' }));
+    expect(selectAgent).toHaveBeenCalledWith(sessionId, agentId);
+  });
+
+  it('says nothing about answering for on an agent that is not a delegate', () => {
+    state.sessionPhaseRuns = { [sessionId]: [makeAgent({})] };
+    state.openQuestions = [question];
+
+    render(<AgentBrief session={session} agent={makeAgent({})} />);
+
+    expect(screen.queryByText('Answering for')).toBeNull();
   });
 });
 

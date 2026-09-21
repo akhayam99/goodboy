@@ -8,6 +8,7 @@ import {
 } from '@goodboy/core';
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { summarizeWorkflowAgentOutput } from '../workflows/summarizeWorkflowAgentOutput';
 import {
   inferAgentKindFromName,
@@ -37,6 +38,10 @@ export const completeResolvedAgent = async ({
   now,
 }: Params): Promise<boolean | null> => {
   const ranAgent = get().sessionPhaseRuns[sessionId]?.find((run) => run.id === resolvedAgentId);
+  if (ranAgent !== undefined && isQuestionDelegate({ agent: ranAgent })) {
+    await get().resolveQuestionDelegate({ sessionId, agentId: resolvedAgentId, assistantText });
+    return null;
+  }
   const ranKind = ranAgent
     ? ((ranAgent.kind as AgentKind | undefined) ??
       get().agentKindOverride[resolvedAgentId] ??

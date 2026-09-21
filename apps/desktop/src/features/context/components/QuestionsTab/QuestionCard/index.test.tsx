@@ -3,8 +3,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { tintClasses } from '@goodboy/ui';
-import type { OpenQuestion } from '@goodboy/types';
+import type { OpenQuestion, ProviderId } from '@goodboy/types';
 import { CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import type { DelegateRowState } from '../../../questionDelegate';
+import type { DelegateRouting } from '../useOpenQuestions';
 import { QuestionCard } from '.';
 
 afterEach(cleanup);
@@ -34,6 +36,18 @@ const baseProps = {
   onToggleCustomField: vi.fn(),
   onDismiss: vi.fn(),
   onClearJustAnswered: vi.fn(),
+  delegateState: 'available' as DelegateRowState,
+  delegateHints: '',
+  delegateRouting: {
+    provider: 'anthropic',
+    model: 'sonnet-5',
+    effort: 'medium',
+  } satisfies DelegateRouting,
+  connectedProviders: ['anthropic'] as ReadonlyArray<ProviderId>,
+  onChooseDelegate: vi.fn(),
+  onCancelDelegate: vi.fn(),
+  onDelegateHints: vi.fn(),
+  onDelegateRouting: vi.fn(),
 };
 
 describe('QuestionCard', () => {
@@ -298,6 +312,73 @@ describe('QuestionCard', () => {
 
     expect(screen.getByText('step 2')).toBeDefined();
     expect(screen.getByText('asked by scout')).toBeDefined();
+  });
+});
+
+describe('QuestionCard delegation', () => {
+  it('appends the hand-over as the last row, after the free text one', () => {
+    const { container } = render(<QuestionCard {...baseProps} />);
+    const rows = [...container.querySelectorAll('button')];
+    const other = rows.findIndex((node) => node.textContent?.trim() === 'other');
+    const handOver = rows.findIndex(
+      (node) => node.getAttribute('data-testid') === 'delegate-answer-row',
+    );
+
+    expect(other).toBeGreaterThan(-1);
+    expect(handOver).toBeGreaterThan(other);
+  });
+
+  it('keeps the options in place while nothing is handed over', () => {
+    render(<QuestionCard {...baseProps} />);
+
+    expect(screen.getByRole('radio', { name: 'sqlite' })).toBeDefined();
+    expect(screen.queryByTestId('delegate-answer-panel')).toBeNull();
+    expect(screen.queryByTestId('delegate-hidden-options')).toBeNull();
+  });
+
+  it('collapses the options into one line and opens the panel once delegation is chosen', () => {
+    render(<QuestionCard {...baseProps} delegateState="chosen" />);
+
+    expect(screen.queryByRole('radio', { name: 'sqlite' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /other/i })).toBeNull();
+    expect(screen.getByTestId('delegate-hidden-options').textContent).toBe('3 options hidden');
+    expect(screen.getByTestId('delegate-answer-panel')).toBeDefined();
+  });
+
+  it('gives the panel the border of a chosen answer, because that is what it is', () => {
+    render(<QuestionCard {...baseProps} delegateState="chosen" />);
+
+    expect(screen.getByTestId('delegate-answer-panel').className).toContain('border-primary/40');
+  });
+
+  it('offers a way back to answering it yourself', () => {
+    const onCancelDelegate = vi.fn();
+    render(
+      <QuestionCard {...baseProps} delegateState="chosen" onCancelDelegate={onCancelDelegate} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'answer it yourself' }));
+    expect(onCancelDelegate).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves the hints empty and editable, never gating the hand-over on them', () => {
+    const onDelegateHints = vi.fn();
+    render(
+      <QuestionCard {...baseProps} delegateState="chosen" onDelegateHints={onDelegateHints} />,
+    );
+
+    const hints = screen.getByLabelText('Hints for the delegated agent') as HTMLTextAreaElement;
+    expect(hints.value).toBe('');
+    expect(hints.hasAttribute('disabled')).toBe(false);
+    fireEvent.change(hints, { target: { value: 'weigh the cost' } });
+    expect(onDelegateHints).toHaveBeenCalledWith('weigh the cost');
+  });
+
+  it('keeps the options reachable while a delegate is running, so the user can still answer', () => {
+    render(<QuestionCard {...baseProps} delegateState="running" />);
+
+    expect(screen.getByRole('radio', { name: 'sqlite' })).toBeDefined();
+    expect(screen.getByTestId('delegate-answer-row').hasAttribute('disabled')).toBe(true);
   });
 });
 
