@@ -17,7 +17,7 @@ export const PrintWireframeSheet = ({ artifact, document, page }: Props) => {
   const fidelity = asWireframeFidelity({ value: artifact.metadata.fidelity }) ?? 'low';
   const palette = wireframePalette({ theme: document.theme, fidelity });
   return (
-    <article data-testid="print-wireframe-sheet" data-page={page}>
+    <article className="print-document" data-testid="print-wireframe-sheet" data-page={page}>
       <PrintLetterhead
         kind={artifact.kind}
         title={artifact.title}

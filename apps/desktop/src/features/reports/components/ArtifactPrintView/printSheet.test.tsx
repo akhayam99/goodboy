@@ -151,15 +151,8 @@ const styleOf = ({ selector }: { readonly selector: string }): CSSStyleDeclarati
   return globalThis.getComputedStyle(element);
 };
 
-type PxParams = {
-  readonly selector: string;
-  readonly property: 'paddingLeft';
-};
-
-const pxOf = ({ selector, property }: PxParams): number => {
-  const parsed = Number.parseFloat(styleOf({ selector })[property]);
-  return Number.isNaN(parsed) ? 0 : parsed;
-};
+const A4_WIDTH = '793.401px';
+const A4_HEIGHT = '1122.0957px';
 
 afterEach(() => {
   cleanup();
@@ -184,13 +177,13 @@ describe('print sheet styling', () => {
     adoptSheet({ css: SHEET_CSS });
     await renderSheet();
 
-    expect(styleOf({ selector: '.print-sheet' }).paddingLeft).toBe('36px');
-    expect(styleOf({ selector: '.print-sheet' }).maxWidth).toBe('672px');
+    expect(styleOf({ selector: '.print-sheet' }).maxWidth).toBe(A4_WIDTH);
+    expect(styleOf({ selector: '.print-sheet' }).minHeight).toBe(A4_HEIGHT);
     expect(styleOf({ selector: '.print-eyebrow' }).display).toBe('flex');
     expect(styleOf({ selector: '.print-meta' }).display).toBe('flex');
     expect(styleOf({ selector: '.print-title' }).fontWeight).toBe('600');
-    expect(styleOf({ selector: '.print-contents-list' }).listStyle).toBe('decimal');
-    expect(pxOf({ selector: '.print-contents-list', property: 'paddingLeft' })).toBeGreaterThan(0);
+    expect(styleOf({ selector: '.print-contents-list' }).listStyle).toBe('none');
+    expect(styleOf({ selector: '.print-contents' }).display).toBe('flex');
   });
 
   it('beats the app chip background on inline code, so a report prints flat', async () => {
@@ -210,10 +203,10 @@ describe('print sheet styling', () => {
     adoptSheet({ css: APP_CSS });
     await renderSheet();
 
-    expect(styleOf({ selector: '.print-sheet' }).paddingLeft).not.toBe('36px');
+    expect(styleOf({ selector: '.print-sheet' }).maxWidth).not.toBe(A4_WIDTH);
     expect(styleOf({ selector: '.print-meta' }).display).not.toBe('flex');
-    expect(styleOf({ selector: '.print-contents-list' }).listStyle).not.toBe('decimal');
-    expect(pxOf({ selector: '.print-contents-list', property: 'paddingLeft' })).toBe(0);
+    expect(styleOf({ selector: '.print-contents-list' }).listStyle).not.toBe('none');
+    expect(styleOf({ selector: '.print-contents' }).display).not.toBe('flex');
   });
 
   it('widens the sheet for a landscape wireframe from the same stylesheet', async () => {
@@ -225,7 +218,7 @@ describe('print sheet styling', () => {
     });
 
     expect(screen.getByTestId('artifact-print-view').getAttribute('data-page')).toBe('landscape');
-    expect(styleOf({ selector: '.print-sheet' }).maxWidth).toBe('1024px');
+    expect(styleOf({ selector: '.print-sheet' }).maxWidth).toBe(A4_HEIGHT);
   });
 
   it('carries no style element of its own, which a stylesheet nonce would strip', async () => {
@@ -248,7 +241,12 @@ describe('print sheet styling', () => {
     expect(SHEET_CSS).toContain('var(--color-warning)');
     expect(SHEET_CSS).toContain('var(--color-info)');
     expect(SHEET_CSS).toMatch(/\[data-block='chip'\] \{[^}]*background: none/);
-    expect(SHEET_CSS).toMatch(/\[data-block='callout'\] \{[^}]*background: none/);
+    expect(SHEET_CSS).toMatch(
+      /\[data-block='callout'\] \{[^}]*background: color-mix\(in srgb, var\(--print-tone\) 6%/,
+    );
+    expect(SHEET_CSS).toMatch(
+      /\[data-block='callout'\] \{[^}]*border-left: 1\.5pt solid var\(--print-tone\)/,
+    );
   });
 
   it('runs a paragraph and a list item at the same leading', async () => {
@@ -257,7 +255,7 @@ describe('print sheet styling', () => {
 
     const paragraph = styleOf({ selector: '.print-body p' }).lineHeight;
     const item = styleOf({ selector: '.print-body li' }).lineHeight;
-    expect(paragraph).toBe('1.5');
+    expect(paragraph).toBe('1.45');
     expect(item).toBe(paragraph);
   });
   it('keeps the callout label a flex row while its wrappers stay blocks', async () => {
@@ -265,14 +263,14 @@ describe('print sheet styling', () => {
     await renderArtifact({ artifact: reportWithCallout });
 
     expect(styleOf({ selector: "[data-block='callout-label']" }).display).toBe('flex');
-    expect(styleOf({ selector: "[data-block='callout-label']" }).alignItems).toBe('baseline');
+    expect(styleOf({ selector: "[data-block='callout-label']" }).alignItems).toBe('center');
     expect(styleOf({ selector: "[data-block='callout']" }).display).toBe('block');
     expect(styleOf({ selector: '.print-body > div > div' }).display).toBe('block');
   });
   it('pins the paper so a dialog default cannot redraw the layout', () => {
     expect(SHEET_CSS).toMatch(/@page \{[^@]*size: A4;/);
     expect(SHEET_CSS).toContain('size: A4 landscape');
-    expect(SHEET_CSS).toMatch(/@page \{[^@]*margin: 16mm 22\.5mm 18mm;/);
+    expect(SHEET_CSS).toMatch(/@page \{[^@]*margin: 13mm 14mm 14mm;/);
   });
 
   it('lets the page margin alone set the text block, with no clamp to fight it', () => {
@@ -280,11 +278,35 @@ describe('print sheet styling', () => {
     expect(SHEET_CSS).not.toContain('max-width: 150mm');
   });
 
-  it('scales prose to one body size and holds the monospace blocks still', () => {
-    expect(SHEET_CSS).toMatch(/\.print-body p \{[^}]*font-size: 13pt;/);
-    expect(SHEET_CSS).toMatch(/\.print-body li \{[^}]*font-size: 13pt;/);
-    expect(SHEET_CSS).toMatch(/\.print-body pre \{[^}]*font-size: 8\.5pt;/);
-    expect(SHEET_CSS).toMatch(/\[data-block='tree'\] \{[^}]*font-size: 8pt;/);
+  it('scales the whole document from one body size on a single ratio', () => {
+    expect(SHEET_CSS).toMatch(/--print-body: 9\.5pt;/);
+    expect(SHEET_CSS).toMatch(/--print-ratio: 1\.18;/);
+    expect(SHEET_CSS).toMatch(
+      /--print-small: calc\(var\(--print-body\) \/ var\(--print-ratio\)\);/,
+    );
+    expect(SHEET_CSS).toMatch(/--print-h3: calc\(var\(--print-body\) \* var\(--print-ratio\)\);/);
+    expect(SHEET_CSS).toMatch(/\.print-body p \{[^}]*font-size: var\(--print-body\);/);
+    expect(SHEET_CSS).toMatch(/\.print-body li \{[^}]*font-size: var\(--print-body\);/);
+    expect(SHEET_CSS).toMatch(/\.print-body pre \{[^}]*font-size: var\(--print-small\);/);
+    expect(SHEET_CSS).toMatch(/\[data-block='tree'\] \{[^}]*font-size: var\(--print-small\);/);
+  });
+
+  it('takes every colour from a token, so the sheet follows the light theme', () => {
+    expect(SHEET_CSS).toMatch(/--print-ink: var\(--color-foreground\);/);
+    expect(SHEET_CSS).toMatch(/--print-paper: var\(--color-elevated\);/);
+    expect(SHEET_CSS).toMatch(/--print-accent: var\(--color-primary\);/);
+    expect(SHEET_CSS).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+  });
+
+  it('keeps a printed link legible instead of leaving it to the app stylesheet', () => {
+    expect(SHEET_CSS).toMatch(/\.print-body a \{[^}]*text-decoration: underline;/);
+    expect(SHEET_CSS).toMatch(/\.print-body a \{[^}]*color: var\(--print-accent\);/);
+  });
+
+  it('drops the image loader card, so no dead button reaches the paper', () => {
+    expect(SHEET_CSS).toContain('lucide-image-off');
+    expect(SHEET_CSS).toMatch(/content: 'Image omitted: ';/);
+    expect(SHEET_CSS).toMatch(/\.print-body button \{\s*display: none;/);
   });
 
   it('hangs a wrapped ascii tree line under the branch it continues', () => {

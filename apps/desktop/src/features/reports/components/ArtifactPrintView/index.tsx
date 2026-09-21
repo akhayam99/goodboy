@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { parseWireframeSource, type WireframeDocument } from '@goodboy/core';
-import { Markdown, formatError } from '@goodboy/ui';
+import { formatError } from '@goodboy/ui';
 import type { SessionArtifact, WireframeArtifact } from '@goodboy/types';
 import { listArtifactsForSession } from '../../../artifacts/artifacts';
 import type { ArtifactPrintRequest } from '../../artifactPrintRequest';
 import { artifactMetaFields } from './artifactMetaFields';
 import { closePrintWindow } from './closePrintWindow';
-import { CONTENTS_MIN_SECTIONS, documentOutline } from './documentOutline';
-import { dropLeadingTitleHeading } from './dropLeadingTitleHeading';
-import { PrintContents } from './PrintContents';
+import { PrintDocument } from './PrintDocument';
 import { PrintLetterhead } from './PrintLetterhead';
 import { PrintWireframeSheet } from './PrintWireframeSheet';
 import { printPage } from './printPage';
@@ -29,7 +27,11 @@ type Status =
 const PRINT_UNSUPPORTED_COPY =
   'this wireframe does not match the schema, so the print sheet has no page to lay out';
 
-const artifactStatus = ({ artifact }: { readonly artifact: SessionArtifact }): Status => {
+type ArtifactStatusParams = {
+  readonly artifact: SessionArtifact;
+};
+
+const artifactStatus = ({ artifact }: ArtifactStatusParams): Status => {
   if (artifact.sourceFormat === 'markdown') {
     return { kind: 'ready', artifact };
   }
@@ -38,27 +40,6 @@ const artifactStatus = ({ artifact }: { readonly artifact: SessionArtifact }): S
     return { kind: 'unsupported', artifact };
   }
   return { kind: 'wireframe', artifact, document: parsed.document };
-};
-
-const PrintDocument = ({ artifact }: { readonly artifact: SessionArtifact }) => {
-  const body = dropLeadingTitleHeading({
-    sourceText: artifact.sourceText,
-    title: artifact.title,
-  });
-  const sections = documentOutline({ sourceText: body });
-  return (
-    <article>
-      <PrintLetterhead
-        kind={artifact.kind}
-        title={artifact.title}
-        fields={artifactMetaFields({ artifact })}
-      />
-      {sections.length >= CONTENTS_MIN_SECTIONS ? <PrintContents sections={sections} /> : null}
-      <div className="print-body">
-        <Markdown text={body} />
-      </div>
-    </article>
-  );
 };
 
 export const ArtifactPrintView = ({ request }: Props) => {
@@ -140,7 +121,7 @@ export const ArtifactPrintView = ({ request }: Props) => {
         </p>
       ) : null}
       {status.kind === 'unsupported' ? (
-        <article>
+        <article className="print-document">
           <PrintLetterhead
             kind={status.artifact.kind}
             title={status.artifact.title}
