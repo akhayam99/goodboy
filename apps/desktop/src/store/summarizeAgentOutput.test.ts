@@ -65,7 +65,10 @@ describe('summarizeAgentOutput', () => {
     const spawnedRunId = callsFor('summarize_session')[0]?.[1].args?.runId;
     expect(spawnedRunId).toBeTypeOf('string');
     expect(callsFor('summarize_cancel')).toEqual([['summarize_cancel', { runId: spawnedRunId }]]);
-    expect(result).toMatchObject({ summary: 'raw step output', degraded: true });
+    expect(result).toMatchObject({
+      summary: '[unsummarized step output, carried whole]\nraw step output',
+      degraded: true,
+    });
   });
 
   it('joins a concurrent request for the same agent instead of running it twice', async () => {

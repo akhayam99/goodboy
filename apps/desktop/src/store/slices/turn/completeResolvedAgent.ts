@@ -7,6 +7,7 @@ import {
 } from '@goodboy/core';
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { summarizeWorkflowAgentOutput } from '../workflows/summarizeWorkflowAgentOutput';
 import {
   inferAgentKindFromName,
   KIND_TO_ROLE,
@@ -75,7 +76,16 @@ export const completeResolvedAgent = async ({
     return shouldAutoAdvance;
   }
 
-  const outputSummary = fallbackStepOutputSummary({ output: assistantText });
+  const outputSummary =
+    ranAgent === undefined
+      ? fallbackStepOutputSummary({ output: assistantText })
+      : await summarizeWorkflowAgentOutput({
+          set,
+          get,
+          sessionId,
+          agent: ranAgent,
+          output: assistantText,
+        });
   await invokeAgentUpdateStatus(resolvedAgentId, {
     status: 'completed',
     outputSummary,

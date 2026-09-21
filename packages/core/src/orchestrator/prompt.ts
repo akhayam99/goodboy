@@ -1,4 +1,8 @@
 import { sessionLanguageRule } from '../language/sessionLanguage';
+import {
+  annotateFallbackStepOutputSummary,
+  previewStepOutputSummary,
+} from '../summarizer/step-output';
 import { ROLE_REGISTRY, SELECTABLE_AGENT_ROLES } from '../roles';
 import { formatWorkflowModelMenu } from './formatWorkflowModelMenu';
 import type { OrchestratorInput } from './types';
@@ -120,7 +124,9 @@ export const buildOrchestratorUserPrompt = ({
     completedSteps.forEach((step, index) => {
       const summary = step.outputSummary?.trim() ?? '';
       const isLatest = index === completedSteps.length - 1;
-      const rendered = isLatest ? summary : summary.slice(0, OLDER_SUMMARY_PREVIEW_LENGTH);
+      const rendered = isLatest
+        ? annotateFallbackStepOutputSummary({ summary })
+        : previewStepOutputSummary({ summary, length: OLDER_SUMMARY_PREVIEW_LENGTH });
       lines.push(
         `${index + 1}. ${step.name}`,
         rendered.length > 0 ? rendered : '(no output captured)',

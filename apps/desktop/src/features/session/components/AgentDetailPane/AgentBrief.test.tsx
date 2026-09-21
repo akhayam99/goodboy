@@ -52,6 +52,10 @@ vi.mock('./AgentFollowUps', () => ({
   AgentFollowUps: () => null,
 }));
 
+const { invokeSpy } = vi.hoisted(() => ({ invokeSpy: vi.fn() }));
+
+vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeSpy }));
+
 import { SECTION_SURFACE_CLASS } from '@goodboy/ui';
 import { AgentBrief } from './AgentBrief';
 
@@ -100,21 +104,39 @@ describe('AgentBrief summary', () => {
     const agent = makeAgent({ outputSummary: '' });
     transcriptItems.items = [{ kind: 'assistant_text', text: 'here is the last reply' }];
 
-    render(<AgentBrief session={session} agent={agent} />);
+    const { container } = render(<AgentBrief session={session} agent={agent} />);
 
     expect(screen.getByText('Latest')).toBeDefined();
-    expect(screen.getByText('here is the last reply')).toBeDefined();
+    expect(container.textContent).toContain('here is the last reply');
     expect(screen.getByText('from the last reply')).toBeDefined();
+  });
+
+  it('labels the excerpt it renders as unsummarized rather than as a summary', () => {
+    const agent = makeAgent({ outputSummary: '' });
+    transcriptItems.items = [{ kind: 'assistant_text', text: 'here is the last reply' }];
+
+    const { container } = render(<AgentBrief session={session} agent={agent} />);
+
+    expect(container.textContent).toContain('[unsummarized step output, carried whole]');
+  });
+
+  it('starts no provider work while rendering the excerpt', () => {
+    const agent = makeAgent({ outputSummary: '' });
+    transcriptItems.items = [{ kind: 'assistant_text', text: 'here is the last reply' }];
+
+    render(<AgentBrief session={session} agent={agent} />);
+
+    expect(invokeSpy).not.toHaveBeenCalled();
   });
 
   it('falls back to the last assistant reply when outputSummary is absent', () => {
     const agent = makeAgent({ outputSummary: undefined });
     transcriptItems.items = [{ kind: 'assistant_text', text: 'still working from the transcript' }];
 
-    render(<AgentBrief session={session} agent={agent} />);
+    const { container } = render(<AgentBrief session={session} agent={agent} />);
 
     expect(screen.getByText('Latest')).toBeDefined();
-    expect(screen.getByText('still working from the transcript')).toBeDefined();
+    expect(container.textContent).toContain('still working from the transcript');
   });
 });
 

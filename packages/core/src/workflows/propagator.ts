@@ -1,3 +1,9 @@
+import {
+  annotateFallbackStepOutputSummary,
+  fallbackStepOutputMarker,
+  previewStepOutputSummary,
+} from '../summarizer/step-output';
+
 const EARLIER_STEP_PREVIEW_LENGTH = 280;
 const OLDER_STEP_PREVIEW_LENGTH = 120;
 const OMISSION_MARKER = '...';
@@ -46,11 +52,16 @@ type OlderStepPreviewParams = {
 };
 
 const olderStepPreview = ({ summary }: OlderStepPreviewParams): string => {
-  const firstLine = summary.split(/\r?\n/, 1)[0] ?? '';
-  if (firstLine.length <= OLDER_STEP_PREVIEW_LENGTH) {
-    return firstLine;
+  const annotated = annotateFallbackStepOutputSummary({ summary });
+  const marker = fallbackStepOutputMarker({ summary: annotated });
+  const prefix = marker === null ? '' : `${marker} `;
+  const body = marker === null ? annotated : annotated.slice(marker.length).trimStart();
+  const firstLine = body.split(/\r?\n/, 1)[0] ?? '';
+  const room = OLDER_STEP_PREVIEW_LENGTH - prefix.length;
+  if (firstLine.length <= room) {
+    return `${prefix}${firstLine}`;
   }
-  return `${firstLine.slice(0, OLDER_STEP_PREVIEW_LENGTH - OMISSION_MARKER.length)}${OMISSION_MARKER}`;
+  return `${prefix}${firstLine.slice(0, Math.max(room - OMISSION_MARKER.length, 0))}${OMISSION_MARKER}`;
 };
 
 const renderParallelCarryForward = ({
@@ -82,7 +93,9 @@ export const buildChainCarryForward = ({ steps }: ChainParams): string => {
     return '';
   }
 
-  const immediateSummary = immediateStep.outputSummary.trim();
+  const immediateSummary = annotateFallbackStepOutputSummary({
+    summary: immediateStep.outputSummary.trim(),
+  });
   const lines = [
     '## workflow handoff',
     `### step ${immediateStep.ordinal} output: ${immediateStep.name}`,
@@ -101,7 +114,9 @@ export const buildChainCarryForward = ({ steps }: ChainParams): string => {
       return;
     }
     const preview =
-      index === 0 ? summary.slice(0, EARLIER_STEP_PREVIEW_LENGTH) : olderStepPreview({ summary });
+      index === 0
+        ? previewStepOutputSummary({ summary, length: EARLIER_STEP_PREVIEW_LENGTH })
+        : olderStepPreview({ summary });
     lines.push(`- step ${step.ordinal} ${step.name}: ${preview}`);
   });
   return lines.join('\n');
@@ -113,7 +128,9 @@ export const buildParallelCarryForward = ({ groupName, branches }: ParallelParam
     .map((branch) => {
       const isFailed = branch.status !== 'completed';
       const outputSummary =
-        typeof branch.outputSummary === 'string' ? branch.outputSummary.trim() : '';
+        typeof branch.outputSummary === 'string'
+          ? annotateFallbackStepOutputSummary({ summary: branch.outputSummary.trim() })
+          : '';
       const error = typeof branch.error === 'string' ? branch.error.trim() : '';
       const firstErrorLine = error.split(/\r?\n/, 1)[0] ?? '';
       return {

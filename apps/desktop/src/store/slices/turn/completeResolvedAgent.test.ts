@@ -3,11 +3,15 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  ProviderId,
   ResolveThread,
+  Session,
   SessionId,
   StepId,
   WorkflowRunId,
+  WorkspaceId,
 } from '@goodboy/types';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import { createResolveSlice } from '../resolve';
 import { resolveInitialState } from '../resolve/state';
 import { buildResolutionReplyBody } from '../github/buildResolutionReplyBody';
@@ -17,7 +21,15 @@ import type { GetFn, SetFn } from './types';
 const h = vi.hoisted(() => ({
   invokeAgentList: vi.fn(async () => [] as ReadonlyArray<Agent>),
   invokeAgentUpdateStatus: vi.fn(async () => undefined),
+  summarizeStepOutput: vi.fn(async () => 'the model summary'),
 }));
+
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
+
+vi.mock('@goodboy/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core')>();
+  return { ...actual, summarizeStepOutput: h.summarizeStepOutput };
+});
 
 const resolveMockState = vi.hoisted(() => ({ reset: (): void => {} }));
 beforeEach(() => resolveMockState.reset());
@@ -42,6 +54,7 @@ import { completeResolvedAgent } from './completeResolvedAgent';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const NOW = '2026-07-30T00:00:00.000Z' as IsoDateTime;
 
 const agent: Agent = {
@@ -52,6 +65,21 @@ const agent: Agent = {
   kind: 'resolver',
   status: 'running',
   sourceThreadIds: ['PRRT_1'],
+};
+
+const session: Session = {
+  id: SESSION_ID,
+  workspaceId: WORKSPACE_ID,
+  goal: 'resolve the review threads',
+  state: { kind: 'idle', lastActivityAt: NOW },
+  contextSlots: [],
+  providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
+  permissionMode: 'default',
+  workflowRuns: [],
+  autoRun: false,
+  titleUserEdited: false,
+  createdAt: NOW,
+  updatedAt: NOW,
 };
 
 const plannerStepAgent: Agent = {
@@ -81,9 +109,26 @@ const createHarness = ({}: HarnessParams): Harness => {
   const state = {
     ...resolveInitialState,
     sessionActiveProject: {},
+    sessionProjectMounts: {},
     sessionGithub: {},
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
     agentKindOverride: {},
+    sessions: [session],
+    projects: [],
+    providers: [
+      {
+        id: 'anthropic' as ProviderId,
+        binary: 'claude',
+        capabilities: PROVIDER_CAPABILITIES.anthropic,
+        connection: 'connected' as const,
+        version: null,
+        identity: null,
+      },
+    ],
+    providerCooldowns: {},
+    workspaceOverrides: {},
+    phaseTemplates: {},
+    sessionWorkflows: {},
     refreshUnreadWorkspaces: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
   };
@@ -272,7 +317,34 @@ describe('completeResolvedAgent', () => {
     });
   });
 
-  it('completes a plain non-workflow agent via raw fallback without notifying the inbox', async () => {
+  it('persists the model summary of a plain non-workflow agent without notifying the inbox', async () => {
+    const { state, set, get } = createHarness({});
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [{ ...agent, kind: 'implementer', sourceThreadIds: undefined }],
+    };
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: 'did the thing, no markers here',
+      now: () => NOW,
+    });
+
+    expect(h.summarizeStepOutput).toHaveBeenCalledWith(
+      expect.objectContaining({ output: 'did the thing, no markers here' }),
+    );
+    expect(h.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({ status: 'completed', outputSummary: 'the model summary' }),
+    );
+    expect(state.emitNotification).not.toHaveBeenCalled();
+  });
+
+  it('persists a marked fallback when the summarizer fails', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    h.summarizeStepOutput.mockRejectedValueOnce(new Error('provider unavailable'));
     const { state, set, get } = createHarness({});
     state.sessionPhaseRuns = {
       [SESSION_ID]: [{ ...agent, kind: 'implementer', sourceThreadIds: undefined }],
@@ -289,9 +361,62 @@ describe('completeResolvedAgent', () => {
 
     expect(h.invokeAgentUpdateStatus).toHaveBeenCalledWith(
       AGENT_ID,
-      expect.objectContaining({ status: 'completed' }),
+      expect.objectContaining({
+        outputSummary: '[unsummarized step output, carried whole]\ndid the thing, no markers here',
+      }),
     );
-    expect(state.emitNotification).not.toHaveBeenCalled();
+  });
+
+  it('keeps resolver marker processing on the original assistant text', async () => {
+    const { state, set, get } = createHarness({});
+    const assistantText =
+      '<<comment-resolved threadId="PRRT_1" commitSha="abcdef1234567890">> <<comment-analysis threadId="PRRT_1" verdict="fixed" summary="rewrote the guard">>';
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText,
+      now: () => NOW,
+    });
+
+    expect(outcomeFor({ state, threadId: 'PRRT_1' })).toEqual({
+      kind: 'resolved',
+      commitSha: 'abcdef1234567890',
+    });
+    expect(h.summarizeStepOutput).toHaveBeenCalledWith(
+      expect.objectContaining({ output: assistantText }),
+    );
+  });
+
+  it('queues review comments read from the original assistant text', async () => {
+    const { state, set, get } = createHarness({});
+    const queueAgentReviewComments = vi.fn(async () => undefined);
+    Object.assign(state, { queueAgentReviewComments });
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [{ ...agent, kind: 'pr-reviewer', sourceThreadIds: undefined }],
+    };
+    const assistantText =
+      'reviewed it\n<<review-comment path="src/auth.ts" line="12" body="guard the null case">>';
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText,
+      now: () => NOW,
+    });
+
+    expect(queueAgentReviewComments).toHaveBeenCalledWith(
+      SESSION_ID,
+      AGENT_ID,
+      expect.arrayContaining([expect.objectContaining({ path: 'src/auth.ts' })]),
+    );
+    expect(h.summarizeStepOutput).toHaveBeenCalledWith(
+      expect.objectContaining({ output: assistantText }),
+    );
   });
   it('counts a plan artifact envelope as the workflow step output', async () => {
     const { state, set, get } = createHarness({});

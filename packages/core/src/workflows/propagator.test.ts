@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { fallbackStepOutputSummary, isFallbackStepOutputSummary } from '../summarizer/step-output';
 import { buildChainCarryForward, buildParallelCarryForward } from './propagator';
 
 describe('buildChainCarryForward', () => {
@@ -64,6 +65,34 @@ describe('buildChainCarryForward', () => {
     expect(result).toContain(`### step 3 output: Review\n${immediateOutcome}\nNo blockers.`);
     expect(olderPreview.length).toBeLessThanOrEqual(120);
     expect(olderPreview.endsWith('...')).toBe(true);
+  });
+
+  it('tells the next step when a legacy fallback carries the predecessor output', () => {
+    const legacy = `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`;
+
+    const result = buildChainCarryForward({
+      steps: [{ ordinal: 1, name: 'Implement', outputSummary: legacy }],
+    });
+
+    expect(result).toContain('### step 1 output: Implement\n[unsummarized step output');
+    expect(result.endsWith(legacy)).toBe(true);
+  });
+
+  it('keeps the fallback marker on an earlier step that is only previewed', () => {
+    const marked = fallbackStepOutputSummary({ output: 'a'.repeat(9000) });
+
+    const result = buildChainCarryForward({
+      steps: [
+        { ordinal: 1, name: 'Scout', outputSummary: marked },
+        { ordinal: 2, name: 'Plan', outputSummary: 'Picked option A.' },
+      ],
+    });
+    const previewLine = result.split('\n').find((line) => line.startsWith('- step 1 Scout: '));
+
+    expect(previewLine).toContain('[unsummarized step output, excerpt]');
+    expect(
+      isFallbackStepOutputSummary({ summary: previewLine?.slice('- step 1 Scout: '.length) ?? '' }),
+    ).toBe(true);
   });
 });
 

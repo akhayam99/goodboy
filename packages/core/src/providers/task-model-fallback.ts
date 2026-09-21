@@ -8,6 +8,7 @@ const FALLBACK_FAILURES: ReadonlyArray<TurnFailureKind> = [
   'usage_limit',
   'authentication',
   'rate_limit',
+  'model_not_available',
 ];
 
 type Params = {
