@@ -48,8 +48,17 @@ export const REPORT_CONTEXT_LIMITS = {
   commits: 20,
   paths: 40,
   scriptRuns: 10,
+  sessionTitle: 400,
   total: 48_000,
 } as const;
+
+export const REPORT_SESSION_TITLE_CLIP_NOTE = `session title cut at ${formatBriefCount({
+  value: REPORT_CONTEXT_LIMITS.sessionTitle,
+})} characters`;
+
+export const REPORT_SECTION_CUT_NOTE = 'cut at the end to fit the pack budget';
+
+export const REPORT_SECTION_REMOVED_NOTE = 'removed entirely to fit the pack budget';
 
 export type ReportDiffUnavailableReason = 'no-mount' | 'unreadable';
 
@@ -153,28 +162,24 @@ const scopedArtifacts = ({
   return artifacts.filter((artifact) => artifact.workflowRunId === workflowRunId);
 };
 
-type PreparedAgents =
-  | Readonly<{ kind: 'empty' }>
-  | Readonly<{
-      kind: 'ready';
-      kept: ReadonlyArray<Agent>;
-      messages: ReadonlyMap<AgentId, AssistantMessage | null>;
-      candidates: ReadonlyArray<ReportAgentCandidate>;
-    }>;
+type PreparedAgents = Readonly<{
+  kept: ReadonlyArray<Agent>;
+  messages: ReadonlyMap<AgentId, AssistantMessage | null>;
+  candidates: ReadonlyArray<ReportAgentCandidate>;
+  ids: ReadonlyArray<string>;
+}>;
 
 const prepareAgents = ({
   agents,
   transcripts,
   truncations,
-  sourceIds,
 }: {
   readonly agents: ReadonlyArray<Agent>;
   readonly transcripts: ReportContextParams['transcripts'];
   readonly truncations: Array<string>;
-  readonly sourceIds: Array<string>;
 }): PreparedAgents => {
   if (agents.length === 0) {
-    return { kind: 'empty' };
+    return { kept: [], messages: new Map(), candidates: [], ids: [] };
   }
   const kept = agents.slice(-REPORT_CONTEXT_LIMITS.agents);
   if (kept.length < agents.length) {
@@ -184,7 +189,6 @@ const prepareAgents = ({
   }
   const messages = new Map<AgentId, AssistantMessage | null>();
   kept.forEach((agent) => {
-    sourceIds.push(agent.id);
     const events = transcripts[agent.id] ?? [];
     const message = lastAssistantMessage({ events });
     messages.set(
@@ -205,23 +209,26 @@ const prepareAgents = ({
       textLength: message.text.length,
     });
   });
-  return { kind: 'ready', kept, messages, candidates };
+  return { kept, messages, candidates, ids: kept.map((agent) => agent.id) };
 };
 
-type RenderedAgents = Readonly<{ text: string; row: ArtifactContextInventoryRow }>;
+type RenderedAgents = Readonly<{
+  text: string;
+  row: ArtifactContextInventoryRow;
+  notes: ReadonlyArray<string>;
+}>;
 
 const renderAgents = ({
   prepared,
   totalAgentCount,
   budgets,
-  truncations,
 }: {
   readonly prepared: PreparedAgents;
   readonly totalAgentCount: number;
   readonly budgets: ReadonlyMap<string, number>;
-  readonly truncations: Array<string>;
 }): RenderedAgents => {
-  if (prepared.kind === 'empty') {
+  const { kept, messages } = prepared;
+  if (kept.length === 0) {
     return {
       text: '## agents\n\nno agents ran in this scope.',
       row: {
@@ -231,9 +238,10 @@ const renderAgents = ({
         state: 'missing',
         detail: [],
       },
+      notes: [],
     };
   }
-  const { kept, messages } = prepared;
+  const notes: Array<string> = [];
   let silent = 0;
   let clippedCount = 0;
   const rows = kept.map((agent) => {
@@ -247,7 +255,7 @@ const renderAgents = ({
     const clipped = clipToBoundary({ text: message.text, limit: budget });
     if (clipped.isClipped) {
       clippedCount += 1;
-      truncations.push(`agent ${agent.id}: final message truncated`);
+      notes.push(`agent ${agent.id}: final message truncated`);
     }
     return `### ${name} (agent ${agent.id}, ${agent.status})\n\n${clipped.text}`;
   });
@@ -269,6 +277,7 @@ const renderAgents = ({
           : []),
       ],
     },
+    notes,
   };
 };
 
@@ -340,26 +349,35 @@ const artifactExcerpt = ({ artifact }: ArtifactExcerptParams): ArtifactExcerpt =
   };
 };
 
+type EvidenceSectionId = 'artifacts' | 'diff' | 'scouts' | 'checks' | 'events';
+
+type EvidenceSection = Readonly<{
+  id: EvidenceSectionId;
+  text: string;
+  row: ArtifactContextInventoryRow | null;
+  ids: ReadonlyArray<string>;
+}>;
+
 const artifactSection = ({
   artifacts,
   truncations,
-  sourceIds,
-  inventory,
 }: {
   readonly artifacts: ReadonlyArray<SessionArtifact>;
   readonly truncations: Array<string>;
-  readonly sourceIds: Array<string>;
-  readonly inventory: Array<ArtifactContextInventoryRow>;
-}): string => {
+}): EvidenceSection => {
   if (artifacts.length === 0) {
-    inventory.push({
+    return {
       id: 'artifacts',
-      label: 'artifacts',
-      summary: 'no plan, report or wireframe in this scope',
-      state: 'missing',
-      detail: [],
-    });
-    return '## artifacts\n\nno plans, reports or wireframes were captured in this scope.';
+      text: '## artifacts\n\nno plans, reports or wireframes were captured in this scope.',
+      row: {
+        id: 'artifacts',
+        label: 'artifacts',
+        summary: 'no plan, report or wireframe in this scope',
+        state: 'missing',
+        detail: [],
+      },
+      ids: [],
+    };
   }
   const kept = artifacts.slice(-REPORT_CONTEXT_LIMITS.artifacts);
   if (kept.length < artifacts.length) {
@@ -370,7 +388,6 @@ const artifactSection = ({
   const detail: Array<string> = [];
   let hasClippedExcerpt = false;
   const rows = kept.map((artifact) => {
-    sourceIds.push(artifact.id);
     const excerpt = artifactExcerpt({ artifact });
     detail.push(`${artifact.kind} ${artifact.id}: ${excerpt.summary}`);
     if (excerpt.isClipped) {
@@ -380,41 +397,47 @@ const artifactSection = ({
     const title = redactSecrets({ text: artifact.title });
     return `- ${artifact.kind} ${artifact.id} rev ${artifact.revision} (${artifact.status}) "${title}"\n  ${excerpt.text.replace(/\n/g, '\n  ')}`;
   });
-  inventory.push({
+  return {
     id: 'artifacts',
-    label: 'artifacts',
-    summary: `${kept.length} of ${artifacts.length} artifacts, wireframe screens and transitions, report headings, source excerpts otherwise, discarded ones included`,
-    state: hasClippedExcerpt
-      ? 'partial'
-      : keptRowState({ kept: kept.length, total: artifacts.length }),
-    detail: [
-      ...detail,
-      ...(kept.length < artifacts.length
-        ? [`only the last ${REPORT_CONTEXT_LIMITS.artifacts} fit, earlier artifacts are missing`]
-        : []),
-    ],
-  });
-  return `## artifacts\n\n${rows.join('\n')}`;
+    text: `## artifacts\n\n${rows.join('\n')}`,
+    row: {
+      id: 'artifacts',
+      label: 'artifacts',
+      summary: `${kept.length} of ${artifacts.length} artifacts, wireframe screens and transitions, report headings, source excerpts otherwise, discarded ones included`,
+      state: hasClippedExcerpt
+        ? 'partial'
+        : keptRowState({ kept: kept.length, total: artifacts.length }),
+      detail: [
+        ...detail,
+        ...(kept.length < artifacts.length
+          ? [`only the last ${REPORT_CONTEXT_LIMITS.artifacts} fit, earlier artifacts are missing`]
+          : []),
+      ],
+    },
+    ids: kept.map((artifact) => artifact.id),
+  };
 };
 
 const diffSection = ({
   diff,
   reason,
-  inventory,
 }: {
   readonly diff: ReportDiffEvidence | null;
   readonly reason: ReportDiffUnavailableReason | null;
-  readonly inventory: Array<ArtifactContextInventoryRow>;
-}): string => {
+}): EvidenceSection => {
   if (diff === null) {
-    inventory.push({
+    return {
       id: 'diff',
-      label: 'local change',
-      summary: reason === 'unreadable' ? 'the worktree could not be read' : 'no mounted project',
-      state: 'missing',
-      detail: [],
-    });
-    return '## diff\n\nno mount diff was available at capture time.';
+      text: '## diff\n\nno mount diff was available at capture time.',
+      row: {
+        id: 'diff',
+        label: 'local change',
+        summary: reason === 'unreadable' ? 'the worktree could not be read' : 'no mounted project',
+        state: 'missing',
+        detail: [],
+      },
+      ids: [],
+    };
   }
   const commits = diff.commits
     .slice(0, REPORT_CONTEXT_LIMITS.commits)
@@ -425,31 +448,33 @@ const diffSection = ({
     .map((path) => `- ${path}`)
     .join('\n');
   const head = diff.headSha ?? 'unknown';
-  inventory.push({
+  return {
     id: 'diff',
-    label: 'local change',
-    summary: `${diff.mountName} against ${diff.baseBranch}: ${diff.commits.length} commits, ${diff.paths.length} files, +${diff.additions} -${diff.deletions}`,
-    state: 'included',
-    detail: ['file paths and commit subjects only, no file contents'],
-  });
-  return [
-    '## diff',
-    '',
-    `mount ${redactSecrets({ text: diff.mountName })}, base ${redactSecrets({ text: diff.baseBranch })}, head ${head}, +${diff.additions} -${diff.deletions}, ${diff.paths.length} files`,
-    '',
-    commits.length === 0 ? 'no commits recorded.' : `commits:\n${commits}`,
-    '',
-    paths.length === 0 ? 'no changed files recorded.' : `changed files:\n${paths}`,
-  ].join('\n');
+    text: [
+      '## diff',
+      '',
+      `mount ${redactSecrets({ text: diff.mountName })}, base ${redactSecrets({ text: diff.baseBranch })}, head ${head}, +${diff.additions} -${diff.deletions}, ${diff.paths.length} files`,
+      '',
+      commits.length === 0 ? 'no commits recorded.' : `commits:\n${commits}`,
+      '',
+      paths.length === 0 ? 'no changed files recorded.' : `changed files:\n${paths}`,
+    ].join('\n'),
+    row: {
+      id: 'diff',
+      label: 'local change',
+      summary: `${diff.mountName} against ${diff.baseBranch}: ${diff.commits.length} commits, ${diff.paths.length} files, +${diff.additions} -${diff.deletions}`,
+      state: 'included',
+      detail: ['file paths and commit subjects only, no file contents'],
+    },
+    ids: [],
+  };
 };
 
 const scriptSection = ({
   scriptRuns,
-  inventory,
 }: {
   readonly scriptRuns: ReportContextParams['scriptRuns'];
-  readonly inventory: Array<ArtifactContextInventoryRow>;
-}): string => {
+}): EvidenceSection => {
   const rows = Object.entries(scriptRuns)
     .filter(([, record]) => record.status === 'ok' || record.status === 'error')
     .slice(0, REPORT_CONTEXT_LIMITS.scriptRuns)
@@ -459,43 +484,53 @@ const scriptSection = ({
       return `- ${redactSecrets({ text: record.name ?? scriptId })}: ${record.status}, ${exit}`;
     });
   if (rows.length === 0) {
-    inventory.push({
+    return {
+      id: 'checks',
+      text: '## checks\n\nno script or test run outcome was recorded in this session.',
+      row: {
+        id: 'checks',
+        label: 'checks',
+        summary: 'no script run recorded',
+        state: 'missing',
+        detail: [],
+      },
+      ids: [],
+    };
+  }
+  return {
+    id: 'checks',
+    text: `## checks\n\n${rows.join('\n')}`,
+    row: {
       id: 'checks',
       label: 'checks',
-      summary: 'no script run recorded',
-      state: 'missing',
-      detail: [],
-    });
-    return '## checks\n\nno script or test run outcome was recorded in this session.';
-  }
-  inventory.push({
-    id: 'checks',
-    label: 'checks',
-    summary: `${rows.length} script runs with an outcome, exit codes only`,
-    state: 'included',
-    detail: ['scripts you ran from this session, not CI'],
-  });
-  return `## checks\n\n${rows.join('\n')}`;
+      summary: `${rows.length} script runs with an outcome, exit codes only`,
+      state: 'included',
+      detail: ['scripts you ran from this session, not CI'],
+    },
+    ids: [],
+  };
 };
 
 const eventSection = ({
   events,
   truncations,
-  inventory,
 }: {
   readonly events: ReadonlyArray<SessionEvent>;
   readonly truncations: Array<string>;
-  readonly inventory: Array<ArtifactContextInventoryRow>;
-}): string => {
+}): EvidenceSection => {
   if (events.length === 0) {
-    inventory.push({
+    return {
       id: 'events',
-      label: 'session events',
-      summary: 'no session event recorded',
-      state: 'missing',
-      detail: [],
-    });
-    return '## session events\n\nno session events were recorded.';
+      text: '## session events\n\nno session events were recorded.',
+      row: {
+        id: 'events',
+        label: 'session events',
+        summary: 'no session event recorded',
+        state: 'missing',
+        detail: [],
+      },
+      ids: [],
+    };
   }
   const kept = events.slice(-REPORT_CONTEXT_LIMITS.events);
   if (kept.length < events.length) {
@@ -504,44 +539,128 @@ const eventSection = ({
     );
   }
   const rows = kept.map((event) => `- ${event.createdAt} ${event.kind}`);
-  inventory.push({
+  return {
     id: 'events',
-    label: 'session events',
-    summary: `last ${kept.length} of ${events.length} session events, kind and time only`,
-    state: keptRowState({ kept: kept.length, total: events.length }),
-    detail: [],
-  });
-  return `## session events\n\n${rows.join('\n')}`;
+    text: `## session events\n\n${rows.join('\n')}`,
+    row: {
+      id: 'events',
+      label: 'session events',
+      summary: `last ${kept.length} of ${events.length} session events, kind and time only`,
+      state: keptRowState({ kept: kept.length, total: events.length }),
+      detail: [],
+    },
+    ids: [],
+  };
 };
 
-const scoutBlock = ({
+const scoutSection = ({
   scouts,
-  inventory,
 }: {
   readonly scouts: ReportScoutEvidence | null;
-  readonly inventory: Array<ArtifactContextInventoryRow>;
-}): ReadonlyArray<string> => {
+}): EvidenceSection => {
   if (scouts === null) {
-    return [];
+    return { id: 'scouts', text: '', row: null, ids: [] };
   }
   if (scouts.section === null) {
-    inventory.push({
+    return {
+      id: 'scouts',
+      text: '',
+      row: {
+        id: 'scouts',
+        label: 'scouts',
+        summary: scouts.note ?? REPORT_NO_SCOUT_COPY,
+        state: 'missing',
+        detail: ['the report is written from the evidence in this pack alone'],
+      },
+      ids: [],
+    };
+  }
+  return {
+    id: 'scouts',
+    text: scouts.section,
+    row: {
       id: 'scouts',
       label: 'scouts',
-      summary: scouts.note ?? REPORT_NO_SCOUT_COPY,
-      state: 'missing',
-      detail: ['the report is written from the evidence in this pack alone'],
-    });
-    return [];
+      summary: `${scouts.names.length} scouts read the diff context in parallel, one turn each: ${scouts.names.join(', ')}`,
+      state: 'included',
+      detail: [],
+    },
+    ids: [],
+  };
+};
+
+const reconcileSection = ({
+  section,
+  survived,
+}: {
+  readonly section: EvidenceSection;
+  readonly survived: string;
+}): ArtifactContextInventoryRow | null => {
+  const { row } = section;
+  if (row === null || survived.length === section.text.length) {
+    return row;
   }
-  inventory.push({
-    id: 'scouts',
-    label: 'scouts',
-    summary: `${scouts.names.length} scouts read the diff context in parallel, one turn each: ${scouts.names.join(', ')}`,
-    state: 'included',
-    detail: [],
-  });
-  return [scouts.section];
+  if (survived.length === 0) {
+    return { ...row, state: 'missing', detail: [...row.detail, REPORT_SECTION_REMOVED_NOTE] };
+  }
+  return { ...row, state: 'partial', detail: [...row.detail, REPORT_SECTION_CUT_NOTE] };
+};
+
+type BoundAttachments = Readonly<{
+  text: string;
+  kept: ReadonlyArray<ArtifactAttachment>;
+}>;
+
+const boundAttachments = ({
+  attachments,
+  budget,
+}: {
+  readonly attachments: ReadonlyArray<ArtifactAttachment>;
+  readonly budget: number;
+}): BoundAttachments => {
+  const section = artifactAttachmentsSection({ attachments });
+  if (section === null) {
+    return { text: '', kept: attachments };
+  }
+  if (section.length <= budget) {
+    return { text: section, kept: attachments };
+  }
+  const lines = attachments.map((attachment) => `- ${attachment.relPath}`);
+  const overhead = section.length - lines.join('\n').length;
+  let used = overhead;
+  let count = 0;
+  for (const [index, line] of lines.entries()) {
+    const cost = index === 0 ? line.length : line.length + 1;
+    if (used + cost > budget) {
+      break;
+    }
+    used += cost;
+    count = index + 1;
+  }
+  const kept = attachments.slice(0, count);
+  return { text: artifactAttachmentsSection({ attachments: kept }) ?? '', kept };
+};
+
+const attachmentsRow = ({
+  attachments,
+  kept,
+}: {
+  readonly attachments: ReadonlyArray<ArtifactAttachment>;
+  readonly kept: ReadonlyArray<ArtifactAttachment>;
+}): ArtifactContextInventoryRow => {
+  const row = attachmentsInventoryRow({ attachments });
+  const dropped = attachments.length - kept.length;
+  if (dropped === 0) {
+    return row;
+  }
+  return {
+    ...row,
+    state: kept.length === 0 ? 'missing' : 'partial',
+    detail: [
+      ...kept.map((attachment) => attachment.fileName),
+      `${dropped} of ${attachments.length} paths did not fit the framing budget`,
+    ],
+  };
 };
 
 const renderTruncationNotes = (notes: ReadonlyArray<string>): string =>
@@ -549,16 +668,7 @@ const renderTruncationNotes = (notes: ReadonlyArray<string>): string =>
     ? '## truncation\n\nnothing was truncated.'
     : `## truncation\n\n${notes.map((note) => `- ${note}`).join('\n')}`;
 
-type BodyPieceId =
-  | 'header'
-  | 'goal'
-  | 'attachments'
-  | 'agents'
-  | 'artifacts'
-  | 'diff'
-  | 'scouts'
-  | 'checks'
-  | 'events';
+type BodyPieceId = 'header' | 'goal' | 'attachments' | 'agents' | EvidenceSectionId;
 
 type BodyPieces = Readonly<Record<BodyPieceId, string>>;
 
@@ -574,15 +684,20 @@ const BODY_ORDER: ReadonlyArray<BodyPieceId> = [
   'events',
 ];
 
-const FALLBACK_NOTE_MARGIN = 200;
-
-const SHRINK_ORDER: ReadonlyArray<BodyPieceId> = [
+const EVIDENCE_SHRINK_ORDER: ReadonlyArray<EvidenceSectionId> = [
   'events',
   'checks',
   'artifacts',
   'diff',
   'scouts',
-  'agents',
+];
+
+const INVENTORY_EVIDENCE_ORDER: ReadonlyArray<EvidenceSectionId> = [
+  'artifacts',
+  'diff',
+  'scouts',
+  'checks',
+  'events',
 ];
 
 const renderBody = (pieces: BodyPieces): string =>
@@ -608,8 +723,7 @@ export const buildReportContext = ({
   capturedAt,
 }: ReportContextParams): ReportContext => {
   const truncations: Array<string> = [];
-  const sourceIds: Array<string> = [session.id];
-  const inventory: Array<ArtifactContextInventoryRow> = [];
+  const baseIds: Array<string> = [session.id];
   const request = clipBrief({ text: brief ?? '' });
   if (request.isClipped) {
     truncations.push(ARTIFACT_BRIEF_CLIP_NOTE);
@@ -620,38 +734,62 @@ export const buildReportContext = ({
   const scopedAgentList = scopedAgents({ agents, workflowRunId });
   const scopedArtifactList = scopedArtifacts({ artifacts, workflowRunId });
   const scope = workflowRunId === null ? 'the whole session' : `workflow run ${workflowRunId}`;
+  const sessionTitle = clipToBoundary({
+    text: redactSecrets({ text: session.goal }),
+    limit: REPORT_CONTEXT_LIMITS.sessionTitle,
+  });
+  if (sessionTitle.isClipped) {
+    truncations.push(REPORT_SESSION_TITLE_CLIP_NOTE);
+  }
   const header = [
     `# evidence pack: ${REPORT_TYPE_LABEL[reportType]}`,
     '',
     REPORT_DEFAULT_REQUEST({ reportType }),
     `scope: ${scope}. captured at ${capturedAt}.`,
-    `session ${session.id}: ${redactSecrets({ text: session.goal })}`,
+    `session ${session.id}: ${sessionTitle.text}`,
     '',
     'this pack is the only evidence you have. it carries final agent messages, not tool calls or tool output. never invent a fact that is not here; say plainly what is missing.',
   ].join('\n');
 
   const goalBlockText = goal.isDetailed ? `## goal\n\n${goal.packText}` : '';
+  const questions = artifactQuestionContract({ kind: 'report' });
 
   if (workflowRunId !== null) {
-    sourceIds.push(workflowRunId);
+    baseIds.push(workflowRunId);
   }
 
-  inventory.push(briefInventoryRow({ brief: request.text }));
-  inventory.push(attachmentsInventoryRow({ attachments }));
-  inventory.push({
-    id: 'goal',
-    label: 'goal',
-    summary: 'the session goal and the report type',
-    state: goal.isClipped ? 'partial' : 'included',
-    detail: goal.isDetailed
-      ? [`the goal you wrote, ${formatBriefCount({ value: goal.packText.length })} characters`]
-      : [],
+  const bounded = boundAttachments({
+    attachments,
+    budget: Math.max(
+      0,
+      REPORT_ALLOCATION_LIMITS.framing -
+        header.length -
+        goalBlockText.length -
+        request.text.length -
+        questions.length,
+    ),
   });
+  const attachmentsBlockText = bounded.text;
+  const droppedAttachments = attachments.length - bounded.kept.length;
+  if (droppedAttachments > 0) {
+    truncations.push(
+      `attachments: ${droppedAttachments} of ${attachments.length} paths did not fit the framing budget`,
+    );
+  }
 
-  const agentsInventoryIndex = inventory.length;
-
-  const attachmentsBlockText = artifactAttachmentsSection({ attachments }) ?? '';
-  const questions = artifactQuestionContract({ kind: 'report' });
+  const framingRows: ReadonlyArray<ArtifactContextInventoryRow> = [
+    briefInventoryRow({ brief: request.text }),
+    attachmentsRow({ attachments, kept: bounded.kept }),
+    {
+      id: 'goal',
+      label: 'goal',
+      summary: 'the session goal and the report type',
+      state: goal.isClipped ? 'partial' : 'included',
+      detail: goal.isDetailed
+        ? [`the goal you wrote, ${formatBriefCount({ value: goal.packText.length })} characters`]
+        : [],
+    },
+  ];
 
   const framingUsed =
     header.length +
@@ -660,141 +798,194 @@ export const buildReportContext = ({
     request.text.length +
     questions.length;
 
-  const artifactsText = artifactSection({
-    artifacts: scopedArtifactList,
-    truncations,
-    sourceIds,
-    inventory,
-  });
-  const diffText = diffSection({ diff, reason: diffUnavailableReason, inventory });
-  const scoutsText = scoutBlock({ scouts, inventory }).join('\n\n');
-  const checksText = scriptSection({ scriptRuns, inventory });
-  const eventsText = eventSection({ events, truncations, inventory });
-
-  const evidenceBlocks: ReadonlyArray<BudgetBlock> = [
-    { id: 'scouts', text: scoutsText },
-    { id: 'diff', text: diffText },
-    { id: 'checks', text: checksText },
-    { id: 'artifacts', text: artifactsText },
-    { id: 'events', text: eventsText },
+  const sections: ReadonlyArray<EvidenceSection> = [
+    scoutSection({ scouts }),
+    diffSection({ diff, reason: diffUnavailableReason }),
+    scriptSection({ scriptRuns }),
+    artifactSection({ artifacts: scopedArtifactList, truncations }),
+    eventSection({ events, truncations }),
   ];
+  const sectionById = new Map(sections.map((section) => [section.id, section]));
+
+  const evidenceBlocks: ReadonlyArray<BudgetBlock> = sections.map((section) => ({
+    id: section.id,
+    text: section.text,
+  }));
   const fittedEvidence = fitWithinBudget({
     blocks: evidenceBlocks,
     budget: REPORT_ALLOCATION_LIMITS.evidence,
   });
-  fittedEvidence.clippedIds.forEach((id) => {
-    truncations.push(`evidence pack: ${id} section shortened to fit the evidence budget`);
-  });
   const evidenceById = new Map(fittedEvidence.blocks.map((block) => [block.id, block.text]));
+  fittedEvidence.clippedIds.forEach((id) => {
+    const kept = evidenceById.get(id) ?? '';
+    truncations.push(
+      kept.length === 0
+        ? `evidence pack: ${id} section removed to fit the evidence budget`
+        : `evidence pack: ${id} section shortened to fit the evidence budget`,
+    );
+  });
   const evidenceUsed = fittedEvidence.blocks.reduce((sum, block) => sum + block.text.length, 0);
 
-  const agentsPrepared = prepareAgents({
-    agents: scopedAgentList,
-    transcripts,
-    truncations,
-    sourceIds,
-  });
-  const candidates = agentsPrepared.kind === 'ready' ? agentsPrepared.candidates : [];
-
-  const notesUsedSoFar = renderTruncationNotes(truncations).length;
+  const agentsPrepared = prepareAgents({ agents: scopedAgentList, transcripts, truncations });
 
   const allocation = allocateReportContext({
     totalCap: REPORT_CONTEXT_LIMITS.total,
     usage: {
       framingUsed,
-      truncationNotesUsed: notesUsedSoFar,
+      truncationNotesUsed: renderTruncationNotes(truncations).length,
       evidenceUsed,
     },
-    agents: candidates,
+    agents: agentsPrepared.candidates,
   });
-  const budgets = new Map(allocation.agents.map((agent) => [agent.id, agent.budget]));
+  const messageLengths = new Map(
+    agentsPrepared.candidates.map((candidate) => [candidate.id, candidate.textLength]),
+  );
 
-  const renderedAgents = renderAgents({
-    prepared: agentsPrepared,
-    totalAgentCount: scopedAgentList.length,
-    budgets,
-    truncations,
-  });
-  const agentSectionText = renderedAgents.text;
-  inventory.splice(agentsInventoryIndex, 0, renderedAgents.row);
+  const requestSection =
+    request.text.length > 0 ? `# user request\n\n${redactSecrets({ text: request.text })}` : '';
+
+  const assemble = ({ body, notes }: { readonly body: string; readonly notes: string }): string => {
+    const tail = `${body}\n\n${notes}\n\n${questions}`;
+    return requestSection.length > 0 ? `${requestSection}\n\n${tail}` : tail;
+  };
 
   let pieces: BodyPieces = {
     header,
     goal: goalBlockText,
     attachments: attachmentsBlockText,
-    agents: agentSectionText,
+    agents: '',
     artifacts: evidenceById.get('artifacts') ?? '',
     diff: evidenceById.get('diff') ?? '',
     scouts: evidenceById.get('scouts') ?? '',
     checks: evidenceById.get('checks') ?? '',
     events: evidenceById.get('events') ?? '',
   };
+  let agentBudgets: ReadonlyMap<string, number> = new Map(
+    allocation.agents.map((allocated) => [allocated.id, allocated.budget]),
+  );
+  const shrunkIds = new Set<EvidenceSectionId>();
 
-  const requestSection =
-    request.text.length > 0 ? `# user request\n\n${redactSecrets({ text: request.text })}` : '';
-
-  const render = ({
-    pieces: currentPieces,
-    notes,
-  }: {
-    readonly pieces: BodyPieces;
-    readonly notes: string;
-  }): string => {
-    const body = renderBody(currentPieces);
-    const tail = `${body}\n\n${notes}\n\n${questions}`;
-    return requestSection.length > 0 ? `${requestSection}\n\n${tail}` : tail;
+  const compose = (): Readonly<{ rendered: RenderedAgents; body: string; notes: string }> => {
+    const rendered = renderAgents({
+      prepared: agentsPrepared,
+      totalAgentCount: scopedAgentList.length,
+      budgets: agentBudgets,
+    });
+    const notes = renderTruncationNotes([
+      ...truncations,
+      ...rendered.notes,
+      ...(shrunkIds.size === 0
+        ? []
+        : [`evidence pack: shortened ${[...shrunkIds].join(', ')} further to fit the total cap`]),
+    ]);
+    return {
+      rendered,
+      body: renderBody({ ...pieces, agents: rendered.text }),
+      notes,
+    };
   };
 
-  const notes0 = renderTruncationNotes(truncations);
-  let finalText = render({ pieces, notes: notes0 });
-  const shrinkTarget = REPORT_CONTEXT_LIMITS.total - FALLBACK_NOTE_MARGIN;
-  const shrunkIds = new Set<BodyPieceId>();
-  let shrinkIndex = 0;
-  while (finalText.length > shrinkTarget && shrinkIndex < SHRINK_ORDER.length) {
-    const id = SHRINK_ORDER[shrinkIndex];
-    if (id === undefined) {
-      break;
+  let current = compose();
+  let isCapped = false;
+
+  EVIDENCE_SHRINK_ORDER.forEach((id) => {
+    const composed = assemble({ body: current.body, notes: current.notes });
+    if (composed.length <= REPORT_CONTEXT_LIMITS.total) {
+      return;
     }
-    const current = pieces[id];
-    if (current.length === 0) {
-      shrinkIndex += 1;
-      continue;
+    const piece = pieces[id];
+    if (piece.length === 0) {
+      return;
     }
-    const overshoot = finalText.length - shrinkTarget;
-    const target = Math.max(0, current.length - overshoot);
-    const clipped = clipToBoundary({ text: current, limit: target });
-    if (clipped.text.length === current.length) {
-      shrinkIndex += 1;
-      continue;
+    const clipped = clipToBoundary({
+      text: piece,
+      limit: Math.max(0, piece.length - (composed.length - REPORT_CONTEXT_LIMITS.total)),
+    });
+    if (clipped.text.length === piece.length) {
+      return;
     }
     pieces = { ...pieces, [id]: clipped.text };
     shrunkIds.add(id);
-    finalText = render({ pieces, notes: notes0 });
-    shrinkIndex += 1;
-  }
-  const shrunkFurther = shrunkIds.size > 0;
-  let notes = notes0;
-  if (shrunkFurther) {
-    truncations.push(
-      `evidence pack: shortened ${[...shrunkIds].join(', ')} further to fit the total cap`,
-    );
-    notes = renderTruncationNotes(truncations);
-    finalText = render({ pieces, notes });
-  }
+    isCapped = true;
+    current = compose();
+  });
 
-  inventory.push(excludedInventoryRow({ summary: REPORT_EXCLUDED_COPY }));
-  inventory.push(
-    sizeInventoryRow({
-      size: finalText.length,
-      cap: REPORT_CONTEXT_LIMITS.total,
-      isCapped: shrunkFurther,
-    }),
-  );
+  [...allocation.agents]
+    .map((allocated) => allocated.id)
+    .reverse()
+    .forEach((id) => {
+      const composed = assemble({ body: current.body, notes: current.notes });
+      if (composed.length <= REPORT_CONTEXT_LIMITS.total) {
+        return;
+      }
+      const shown = Math.min(agentBudgets.get(id) ?? 0, messageLengths.get(id) ?? 0);
+      if (shown <= 0) {
+        return;
+      }
+      const next = new Map(agentBudgets);
+      next.set(id, Math.max(0, shown - (composed.length - REPORT_CONTEXT_LIMITS.total)));
+      agentBudgets = next;
+      isCapped = true;
+      current = compose();
+    });
+
+  const composed = assemble({ body: current.body, notes: current.notes });
+  const guarded = ((): string => {
+    if (composed.length <= REPORT_CONTEXT_LIMITS.total) {
+      return composed;
+    }
+    isCapped = true;
+    const bodyLimit = Math.max(
+      0,
+      current.body.length - (composed.length - REPORT_CONTEXT_LIMITS.total),
+    );
+    const body = clipToBoundary({ text: current.body, limit: bodyLimit }).text;
+    const withBody = assemble({ body, notes: current.notes });
+    if (withBody.length <= REPORT_CONTEXT_LIMITS.total) {
+      return withBody;
+    }
+    const notesLimit = Math.max(
+      0,
+      current.notes.length - (withBody.length - REPORT_CONTEXT_LIMITS.total),
+    );
+    return assemble({
+      body,
+      notes: clipToBoundary({ text: current.notes, limit: notesLimit }).text,
+    });
+  })();
+
+  const evidenceRows = INVENTORY_EVIDENCE_ORDER.flatMap((id) => {
+    const section = sectionById.get(id);
+    if (section === undefined) {
+      return [];
+    }
+    const row = reconcileSection({ section, survived: pieces[id] });
+    return row === null ? [] : [row];
+  });
+
+  const artifactsSection = sectionById.get('artifacts');
+  const keptArtifactIds = (artifactsSection?.ids ?? []).filter((id) => guarded.includes(id));
 
   return {
-    text: finalText,
-    sourceIds,
-    truncations,
-    inventory,
+    text: guarded,
+    sourceIds: [...baseIds, ...keptArtifactIds, ...agentsPrepared.ids],
+    truncations: [
+      ...truncations,
+      ...current.rendered.notes,
+      ...(shrunkIds.size === 0
+        ? []
+        : [`evidence pack: shortened ${[...shrunkIds].join(', ')} further to fit the total cap`]),
+    ],
+    inventory: [
+      ...framingRows,
+      current.rendered.row,
+      ...evidenceRows,
+      excludedInventoryRow({ summary: REPORT_EXCLUDED_COPY }),
+      sizeInventoryRow({
+        size: guarded.length,
+        cap: REPORT_CONTEXT_LIMITS.total,
+        isCapped,
+      }),
+    ],
   };
 };

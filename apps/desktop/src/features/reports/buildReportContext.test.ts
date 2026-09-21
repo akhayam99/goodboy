@@ -22,7 +22,13 @@ import {
 } from '../artifacts/sessionGoalText';
 import { ARTIFACT_QUESTION_LIMIT } from '../artifacts/artifactQuestionContract';
 import { REDACTED } from '../../shared/utils/redactSecrets';
-import { buildReportContext, REPORT_CONTEXT_LIMITS } from './buildReportContext';
+import {
+  buildReportContext,
+  REPORT_CONTEXT_LIMITS,
+  REPORT_SECTION_CUT_NOTE,
+  REPORT_SECTION_REMOVED_NOTE,
+  REPORT_SESSION_TITLE_CLIP_NOTE,
+} from './buildReportContext';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -718,6 +724,91 @@ describe('buildReportContext agent budget allocation', () => {
     expect(row?.summary).toContain(`${keptIds.length} of ${manyAgents.length} agents`);
   });
 
+  it('gives up the oldest agent first when formatting overhead overflows the cap', () => {
+    const NEWEST_ID = 'agent-newest' as AgentId;
+    const olderIds = Array.from({ length: 11 }, (_, index) => `agent-older-${index}` as AgentId);
+    const newestMessage = 'Harborline closed the ledger gap. '.repeat(150);
+    const olderMessage = 'Older agent notes on the ledger pass. '.repeat(540);
+    const context = buildReportContext({
+      ...baseParams,
+      agents: [
+        ...olderIds.map((id, index) => agent({ id, ordinal: index, name: `older ${index}` })),
+        agent({ id: NEWEST_ID, ordinal: olderIds.length, name: 'newest' }),
+      ],
+      transcripts: {
+        ...Object.fromEntries(
+          olderIds.map((id, index) => [
+            id,
+            [
+              assistantTurnAt({
+                runId: `r-${index}`,
+                delta: olderMessage,
+                at: `2026-09-15T${String(10 + index).padStart(2, '0')}:00:00.000Z` as IsoDateTime,
+              }),
+            ],
+          ]),
+        ),
+        [NEWEST_ID]: [
+          assistantTurnAt({
+            runId: 'r-newest',
+            delta: newestMessage,
+            at: '2026-09-15T23:00:00.000Z' as IsoDateTime,
+          }),
+        ],
+      },
+    });
+    const bodyOf = ({ id, name }: { readonly id: AgentId; readonly name: string }) =>
+      context.text.split(`### ${name} (agent ${id}, completed)\n\n`)[1]?.split('\n\n')[0] ?? '';
+    expect(context.text.length).toBeLessThanOrEqual(REPORT_CONTEXT_LIMITS.total);
+    expect(bodyOf({ id: NEWEST_ID, name: 'newest' })).toBe(newestMessage.trim());
+    expect(context.truncations).not.toContain(`agent ${NEWEST_ID}: final message truncated`);
+    expect(bodyOf({ id: 'agent-older-0' as AgentId, name: 'older 0' })).toBe('');
+  });
+
+  it('cuts the newest message on a boundary and says so when nothing else can give room', () => {
+    const NEWEST_ID = 'agent-newest' as AgentId;
+    const olderIds = Array.from({ length: 11 }, (_, index) => `agent-older-${index}` as AgentId);
+    const longName = 'n'.repeat(600);
+    const newestMessage = 'Harborline shipped the ledger fix. '.repeat(1_200);
+    const context = buildReportContext({
+      ...baseParams,
+      agents: [
+        ...olderIds.map((id, index) => agent({ id, ordinal: index, name: `${longName}-${index}` })),
+        agent({ id: NEWEST_ID, ordinal: olderIds.length, name: 'newest' }),
+      ],
+      transcripts: {
+        ...Object.fromEntries(
+          olderIds.map((id, index) => [
+            id,
+            [
+              assistantTurnAt({
+                runId: `r-${index}`,
+                delta: 'tiny note',
+                at: `2026-09-15T${String(10 + index).padStart(2, '0')}:00:00.000Z` as IsoDateTime,
+              }),
+            ],
+          ]),
+        ),
+        [NEWEST_ID]: [
+          assistantTurnAt({
+            runId: 'r-newest',
+            delta: newestMessage,
+            at: '2026-09-15T23:00:00.000Z' as IsoDateTime,
+          }),
+        ],
+      },
+    });
+    const shown =
+      context.text.split(`### newest (agent ${NEWEST_ID}, completed)\n\n`)[1]?.split('\n\n')[0] ??
+      '';
+    expect(context.text.length).toBeLessThanOrEqual(REPORT_CONTEXT_LIMITS.total);
+    expect(context.truncations).toContain(`agent ${NEWEST_ID}: final message truncated`);
+    expect(shown.length).toBeGreaterThan(0);
+    expect(shown.endsWith('...')).toBe(true);
+    expect(shown.slice(0, -3)).toMatch(/ledger fix\.$/);
+    expect(newestMessage.startsWith(shown.slice(0, -3))).toBe(true);
+  });
+
   it('still redacts a credential in a final message long enough to be clipped', () => {
     const long = `api_key=harborline-secret-value ${'padding text '.repeat(3_000)}`;
     const context = buildReportContext({
@@ -726,6 +817,86 @@ describe('buildReportContext agent budget allocation', () => {
     });
     expect(context.text).not.toContain('harborline-secret-value');
     expect(context.text).toContain('[redacted]');
+  });
+});
+
+describe('buildReportContext budget honesty', () => {
+  it('drops the ids and reports the loss when the evidence budget removes the artifacts block', () => {
+    const context = buildReportContext({
+      ...baseParams,
+      artifacts: [reportArtifact({})],
+      scouts: {
+        names: ['scout-a'],
+        section: `## scouts\n\n${'Harborline scout finding on the ledger. '.repeat(400)}`,
+        note: null,
+      },
+    });
+    expect(context.text).not.toContain('artifact-1');
+    expect(context.sourceIds).not.toContain('artifact-1');
+    expect(context.truncations).toContain(
+      'evidence pack: artifacts section removed to fit the evidence budget',
+    );
+    const row = context.inventory.find((entry) => entry.id === 'artifacts');
+    expect(row?.state).toBe('missing');
+    expect(row?.detail).toContain(REPORT_SECTION_REMOVED_NOTE);
+  });
+
+  it('keeps only the artifact ids that survived an artifacts block the evidence budget cut', () => {
+    const planArtifact = (id: string) => ({
+      ...reportArtifact({ id: id as ArtifactId, sourceText: 'ledger walkthrough. '.repeat(20) }),
+      kind: 'plan' as const,
+      metadata: {},
+    });
+    const context = buildReportContext({
+      ...baseParams,
+      artifacts: [
+        planArtifact('artifact-1'),
+        planArtifact('artifact-2'),
+        planArtifact('artifact-3'),
+      ],
+      scouts: {
+        names: ['scout-a'],
+        section: `## scouts\n\n${'Harborline scout finding. '.repeat(280)}`,
+        note: null,
+      },
+    });
+    expect(context.truncations).toContain(
+      'evidence pack: artifacts section shortened to fit the evidence budget',
+    );
+    expect(context.sourceIds).toContain('artifact-1');
+    expect(context.sourceIds).not.toContain('artifact-3');
+    const row = context.inventory.find((entry) => entry.id === 'artifacts');
+    expect(row?.state).toBe('partial');
+    expect(row?.detail).toContain(REPORT_SECTION_CUT_NOTE);
+  });
+
+  it('holds the cap when the session title and the attachment list are far past the framing reservation', () => {
+    const attachments = Array.from({ length: 300 }, (_, index) => ({
+      id: `attachment-${index}`,
+      fileName: `file-${index}.png`,
+      mimeType: 'image/png',
+      relPath: `${'nested-folder/'.repeat(10)}file-${index}.png`,
+    }));
+    const hugeSession: Session = { ...session, goal: 'Harborline '.repeat(6_000) };
+    const context = buildReportContext({
+      ...baseParams,
+      session: hugeSession,
+      attachments,
+      brief: 'explain the Harborline rollout risks',
+    });
+    expect(hugeSession.goal.length).toBeGreaterThan(60_000);
+    expect(context.text.length).toBeLessThanOrEqual(REPORT_CONTEXT_LIMITS.total);
+    expect(context.text).toContain('# user request\n\nexplain the Harborline rollout risks');
+    expect(context.text).toContain('## questions');
+    expect(context.text).toContain(
+      '<<ctx-question suggestions="first option|second option" recommended="first option" select="one">>the question<</ctx-question>>',
+    );
+    expect(context.truncations).toContain(REPORT_SESSION_TITLE_CLIP_NOTE);
+    const row = context.inventory.find((entry) => entry.id === 'attachments');
+    expect(row?.state).toBe('partial');
+    expect(context.inventory.find((entry) => entry.id === 'size')?.summary).toContain(
+      context.text.length.toLocaleString('en-US'),
+    );
   });
 });
 
