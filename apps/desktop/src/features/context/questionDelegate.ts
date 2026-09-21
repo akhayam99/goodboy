@@ -7,6 +7,7 @@ export const QUESTION_DELEGATE_COPY = {
   running: 'an agent is answering this',
   retry: 'the agent could not answer. hand it over again',
   blocked: "a delegated agent can't delegate again. this one is yours to answer",
+  recap: 'an agent answers',
   panelTitle: 'an agent answers for you',
   panelHint: 'the answer counts as yours. hints are optional.',
   hintsPlaceholder: 'what to weigh, what to rule out. leave empty and the agent decides.',

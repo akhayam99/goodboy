@@ -1,5 +1,6 @@
 import type { IsoDateTime, OpenQuestionId, SessionId } from '@goodboy/types';
 import { markOpenQuestionDismissed } from '@goodboy/db';
+import { removeQuestionsFromSlot } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { liveQuestionDelegate } from '../../../features/context/questionDelegate';
@@ -19,7 +20,7 @@ export const cancelQuestionDelegates = async ({
   questionIds,
 }: CancelQuestionDelegatesParams): Promise<void> => {
   let cancelled = false;
-  let dismissed = false;
+  const dismissedTexts: string[] = [];
 
   for (const questionId of questionIds) {
     const agents = get().sessionPhaseRuns[sessionId] ?? [];
@@ -38,7 +39,7 @@ export const cancelQuestionDelegates = async ({
     );
     for (const question of ownQuestions) {
       await markOpenQuestionDismissed(tauriDatabase, question.id);
-      dismissed = true;
+      dismissedTexts.push(question.text);
     }
   }
 
@@ -49,8 +50,13 @@ export const cancelQuestionDelegates = async ({
   set((state) => ({
     sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshed },
   }));
-  if (dismissed) {
-    await get().loadSessionOpenQuestions(sessionId);
-    await get().loadSessionDismissedQuestions(sessionId);
+  if (dismissedTexts.length === 0) {
+    return;
+  }
+  await get().loadSessionOpenQuestions(sessionId);
+  await get().loadSessionDismissedQuestions(sessionId);
+  const slotChanged = await removeQuestionsFromSlot(tauriDatabase, sessionId, dismissedTexts);
+  if (slotChanged) {
+    await get().loadSessionSlots(sessionId);
   }
 };

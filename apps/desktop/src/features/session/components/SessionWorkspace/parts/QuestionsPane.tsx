@@ -34,6 +34,7 @@ import {
   useOpenQuestions,
 } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import type { QuestionDelegateRequest } from '../../../../../store/slices/open-questions/spawnQuestionDelegates';
+import { QUESTION_DELEGATE_COPY } from '../../../../context/questionDelegate';
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import {
@@ -114,12 +115,22 @@ const ClusterSection = ({
 }: ClusterSectionProps) => {
   const [stepIndex, setStepIndex] = useState(0);
 
-  const answerablePairs = cluster.questions
-    .filter((question) => question.id !== pendingUndoQuestionId)
-    .map((q) => ({ id: q.id, text: q.text, answer: deriveDraftAnswer(drafts[q.id]) }));
+  const answerableQuestions = cluster.questions.filter(
+    (question) => question.id !== pendingUndoQuestionId,
+  );
+  const answerablePairs = answerableQuestions.map((q) => ({
+    id: q.id,
+    text: q.text,
+    answer: deriveDraftAnswer(drafts[q.id]),
+  }));
   const pendingPairs = answerablePairs.filter((pair) => pair.answer.length > 0);
-  const delegateRequests = delegateRequestsFor({ questions: cluster.questions, drafts });
+  const delegateRequests = delegateRequestsFor({ questions: answerableQuestions, drafts });
   const stagedCount = pendingPairs.length + delegateRequests.length;
+  const delegatedIds = new Set(delegateRequests.map((request) => request.question.id));
+  const recapEntries = answerablePairs.map((pair) => ({
+    text: pair.text,
+    answer: delegatedIds.has(pair.id) ? QUESTION_DELEGATE_COPY.recap : pair.answer,
+  }));
 
   const flow = resolveStagedFlow({ total: cluster.questions.length, index: stepIndex });
   const current = cluster.questions[flow.index] ?? null;
@@ -181,7 +192,7 @@ const ClusterSection = ({
           disabled={flow.action === 'send' && stagedCount === 0}
           recap={
             flow.action === 'send' && flow.showsStepper
-              ? summarizeStagedAnswers({ entries: answerablePairs })
+              ? summarizeStagedAnswers({ entries: recapEntries })
               : ''
           }
         />

@@ -222,6 +222,24 @@ describe('resolveQuestionDelegate', () => {
     expect(state.emitNotification).toHaveBeenCalled();
   });
 
+  it('records the answer and wakes nobody when no agent asked the question', async () => {
+    seed([{ id: QUESTION_ID, text: 'pick a database', status: 'open', userAnswer: null }]);
+    const { state, run } = createHarness();
+
+    await run({
+      sessionId: SESSION_ID,
+      agentId: CHILD_ID,
+      assistantText: '<<oq-answer>>Postgres<</oq-answer>>',
+    });
+
+    expect(h.markOpenQuestionAnswered).toHaveBeenCalledWith({}, QUESTION_ID, 'Postgres', {
+      source: 'agent',
+      agentId: CHILD_ID,
+    });
+    expect(statusOf(CHILD_ID)).toBe('completed');
+    expect(state.sendTurn).not.toHaveBeenCalled();
+  });
+
   it('skips the child when the question was already answered by hand', async () => {
     seed([
       {

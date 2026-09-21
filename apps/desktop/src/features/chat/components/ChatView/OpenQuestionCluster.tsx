@@ -11,11 +11,11 @@ import {
   useOpenQuestions,
 } from '../../../context/components/QuestionsTab/useOpenQuestions';
 import type { QuestionDelegateRequest } from '../../../../store/slices/open-questions/spawnQuestionDelegates';
+import { QUESTION_DELEGATE_COPY } from '../../../context/questionDelegate';
 import { OpenQuestionInlineCard } from './OpenQuestionInlineCard';
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
 const NO_WORKFLOWS: ReadonlyArray<Workflow> = [];
-const DELEGATED_RECAP = 'an agent answers';
 
 type Props = {
   questions: ReadonlyArray<OpenQuestion>;
@@ -88,7 +88,7 @@ export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null
   const delegatedIds = new Set(delegateRequests.map((request) => request.question.id));
   const recapEntries = answerablePairs.map((pair) => ({
     text: pair.text,
-    answer: delegatedIds.has(pair.id) ? DELEGATED_RECAP : pair.answer,
+    answer: delegatedIds.has(pair.id) ? QUESTION_DELEGATE_COPY.recap : pair.answer,
   }));
   const targetAgentId = questions[0]?.createdByAgentId ?? null;
 

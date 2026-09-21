@@ -30,6 +30,14 @@ describe('DelegateAnswerRow', () => {
     expect(row().dataset['state']).toBe('chosen');
   });
 
+  it('takes no second click once chosen, so the staged hints survive', () => {
+    const onChoose = vi.fn();
+    render(<DelegateAnswerRow state="chosen" onChoose={onChoose} />);
+    fireEvent.click(row());
+    expect(onChoose).not.toHaveBeenCalled();
+    expect(row().hasAttribute('disabled')).toBe(true);
+  });
+
   it('says an agent is already answering, and takes no second click', () => {
     render(<DelegateAnswerRow state="running" onChoose={vi.fn()} />);
     expect(screen.getByText(QUESTION_DELEGATE_COPY.running)).toBeTruthy();

@@ -76,10 +76,14 @@ export const resolveQuestionDelegate = (set: SetFn, get: GetFn) => {
       if (slotChanged) {
         await get().loadSessionSlots(sessionId);
       }
+      const askingAgentId = question.createdByAgentId ?? null;
+      if (askingAgentId === null) {
+        return;
+      }
       await sendAnswersToSettledAgents({
         get,
         sessionId,
-        askingAgentIds: new Set([question.createdByAgentId ?? null]),
+        askingAgentIds: new Set([askingAgentId]),
       });
       return;
     }

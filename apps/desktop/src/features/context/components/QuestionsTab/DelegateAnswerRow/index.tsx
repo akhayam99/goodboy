@@ -21,7 +21,7 @@ const LABEL: Readonly<Record<DelegateRowState, string>> = {
 
 export const DelegateAnswerRow = ({ state, onChoose }: Props) => {
   const isBlocked = state === 'blocked';
-  const isInert = isBlocked || state === 'running';
+  const isInert = isBlocked || state === 'running' || state === 'chosen';
 
   const row = (
     <button

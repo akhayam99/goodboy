@@ -517,6 +517,63 @@ describe('QuestionsPane', () => {
     });
   });
 
+  describe('delegated answers', () => {
+    const delegatedDraft = {
+      selectedSuggestions: [],
+      customAnswer: '',
+      showCustomField: false,
+      answerIntent: {
+        kind: 'agent',
+        hints: 'weigh the cost',
+        routing: { provider: 'anthropic', model: 'sonnet-5', effort: 'medium' },
+      },
+    };
+
+    it('spawns nothing for a question the user just dismissed', () => {
+      const scout = mkAgent('agent_scout', undefined, 'scout');
+      const dismissed = mkQuestion('q2', { createdByAgentId: scout.id });
+
+      setupStore({
+        agents: [scout],
+        workflows: [],
+        openQuestions: [mkQuestion('q1', { createdByAgentId: scout.id })],
+        pendingUndoQuestion: dismissed,
+        drafts: {
+          q1: { selectedSuggestions: ['yes'], customAnswer: '', showCustomField: false },
+          q2: delegatedDraft,
+        },
+      });
+
+      render(<QuestionsPane session={BASE_SESSION} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+      expect(mockSpawnQuestionDelegates).not.toHaveBeenCalled();
+    });
+
+    it('recaps a delegated question as an agent answering it', () => {
+      const scout = mkAgent('agent_scout', undefined, 'scout');
+
+      setupStore({
+        agents: [scout],
+        workflows: [],
+        openQuestions: [
+          mkQuestion('q1', { createdByAgentId: scout.id }),
+          mkQuestion('q2', { createdByAgentId: scout.id }),
+        ],
+        drafts: {
+          q1: { selectedSuggestions: ['yes'], customAnswer: '', showCustomField: false },
+          q2: delegatedDraft,
+        },
+      });
+
+      render(<QuestionsPane session={BASE_SESSION} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+      expect(screen.getByText('question q1 → yes · question q2 → an agent answers')).toBeDefined();
+    });
+  });
+
   describe('pane description', () => {
     it('singular "question" for 1 open question', () => {
       setupStore({ openQuestions: [mkQuestion('q1')] });

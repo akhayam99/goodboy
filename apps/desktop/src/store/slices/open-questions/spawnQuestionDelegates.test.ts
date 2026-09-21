@@ -1,5 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Agent, AgentId, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
+
+const h = vi.hoisted(() => ({
+  invokeAgentList: vi.fn(async () => [] as ReadonlyArray<Agent>),
+  invokeAgentUpdateStatus: vi.fn(async () => undefined),
+}));
+
+vi.mock('../../../features/workflows/workflows', () => ({
+  invokeAgentList: h.invokeAgentList,
+  invokeAgentUpdateStatus: h.invokeAgentUpdateStatus,
+}));
+
 import { spawnQuestionDelegates, type QuestionDelegateRequest } from './spawnQuestionDelegates';
 import type { GetFn } from './types';
 
@@ -208,5 +219,56 @@ describe('spawnQuestionDelegates', () => {
       { questionId: 'oq-2', agentId: 'child-2', kind: 'spawned' },
     ]);
     expect(state.emitNotification).toHaveBeenCalled();
+  });
+
+  it('spawns once when two sends race on the same question', async () => {
+    const { state, run } = createHarness({ agents: [asker] });
+    const releases: Array<(agentId: AgentId) => void> = [];
+    state.spawnAgent.mockImplementation(
+      () =>
+        new Promise<AgentId>((resolve) => {
+          releases.push(resolve);
+        }),
+    );
+    const racing = question('oq-1', 'pick a database');
+
+    const first = run({ sessionId: SESSION_ID, requests: [request(racing)] });
+    const second = run({ sessionId: SESSION_ID, requests: [request(racing)] });
+    for (const release of releases) {
+      release('child-1' as AgentId);
+    }
+    const [firstOutcomes, secondOutcomes] = await Promise.all([first, second]);
+
+    expect(state.spawnAgent).toHaveBeenCalledTimes(1);
+    expect(firstOutcomes).toEqual([{ questionId: 'oq-1', agentId: 'child-1', kind: 'spawned' }]);
+    expect(secondOutcomes).toEqual([
+      { questionId: 'oq-1', agentId: null, kind: 'already-running' },
+    ]);
+  });
+
+  it('settles a half-inserted delegate as failed, so the question stays retryable', async () => {
+    const { state, run } = createHarness({ agents: [asker] });
+    state.spawnAgent.mockRejectedValueOnce(new Error('config write failed'));
+    const stranded = {
+      id: 'child-1' as AgentId,
+      sessionId: SESSION_ID,
+      ordinal: 1,
+      name: 'answer: pick a database',
+      status: 'pending',
+      sourceKind: 'open_question',
+      sourceThreadId: 'oq-1',
+    } as unknown as Agent;
+    h.invokeAgentList.mockResolvedValueOnce([stranded]);
+
+    const outcomes = await run({
+      sessionId: SESSION_ID,
+      requests: [request(question('oq-1', 'pick a database'))],
+    });
+
+    expect(outcomes).toEqual([{ questionId: 'oq-1', agentId: null, kind: 'failed' }]);
+    expect(h.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      'child-1',
+      expect.objectContaining({ status: 'failed' }),
+    );
   });
 });

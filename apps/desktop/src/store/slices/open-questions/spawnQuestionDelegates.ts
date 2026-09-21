@@ -1,6 +1,7 @@
 import type {
   Agent,
   AgentId,
+  IsoDateTime,
   ModelEffort,
   OpenQuestion,
   OpenQuestionId,
@@ -12,8 +13,11 @@ import {
   canDelegateQuestion,
   composeDelegateKickoff,
   delegateAgentName,
+  isLiveDelegate,
   liveQuestionDelegate,
+  questionDelegates,
 } from '../../../features/context/questionDelegate';
+import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import type { GetFn } from './types';
 
 export type QuestionDelegateRequest = {
@@ -33,6 +37,36 @@ export type QuestionDelegateOutcome = {
 export type SpawnQuestionDelegatesParams = {
   readonly sessionId: SessionId;
   readonly requests: ReadonlyArray<QuestionDelegateRequest>;
+};
+
+const SPAWN_FAILED_SUMMARY = 'the delegated agent never started';
+
+const inFlight = new Set<OpenQuestionId>();
+
+type StrandedParams = {
+  readonly sessionId: SessionId;
+  readonly questionId: OpenQuestionId;
+};
+
+const settleStrandedDelegates = async ({
+  sessionId,
+  questionId,
+}: StrandedParams): Promise<void> => {
+  try {
+    const listed = await invokeAgentList(sessionId);
+    const stranded = questionDelegates({ agents: listed, questionId }).filter((agent) =>
+      isLiveDelegate({ agent }),
+    );
+    for (const agent of stranded) {
+      await invokeAgentUpdateStatus(agent.id, {
+        status: 'failed',
+        outputSummary: SPAWN_FAILED_SUMMARY,
+        completedAt: new Date().toISOString() as IsoDateTime,
+      });
+    }
+  } catch {
+    return;
+  }
 };
 
 const askerOf = ({
@@ -78,6 +112,12 @@ export const spawnQuestionDelegates = (get: GetFn) => {
         continue;
       }
 
+      if (inFlight.has(question.id)) {
+        outcomes.push({ questionId: question.id, agentId: null, kind: 'already-running' });
+        continue;
+      }
+      inFlight.add(question.id);
+
       try {
         const agentId = await get().spawnAgent(sessionId, {
           kindOverride: 'scout',
@@ -97,6 +137,7 @@ export const spawnQuestionDelegates = (get: GetFn) => {
         });
         outcomes.push({ questionId: question.id, agentId, kind: 'spawned' });
       } catch (error) {
+        await settleStrandedDelegates({ sessionId, questionId: question.id });
         outcomes.push({ questionId: question.id, agentId: null, kind: 'failed' });
         void get().emitNotification(
           'agent-auto-spawn',
@@ -105,6 +146,8 @@ export const spawnQuestionDelegates = (get: GetFn) => {
           `${question.text} stays open. Answer it yourself or hand it over again. ${String(error)}`,
           { sessionId, coalesceKey: `question-delegate:${question.id}` },
         );
+      } finally {
+        inFlight.delete(question.id);
       }
     }
 
