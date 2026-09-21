@@ -40,9 +40,13 @@
   min-height: 210mm;
 }
 .print-sheet .print-document {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  display: block;
+}
+.print-sheet .print-document > * {
+  margin-bottom: 14px;
+}
+.print-sheet .print-document > :last-child {
+  margin-bottom: 0;
 }
 .print-sheet .print-letterhead {
   break-inside: avoid;
@@ -134,14 +138,26 @@
 }
 .print-sheet .print-body > div {
   color: var(--print-ink);
+  display: block;
   font-size: var(--print-body);
   line-height: 1.45;
-  gap: 12px;
 }
 .print-sheet .print-body > div > div {
-  gap: 7px;
-  min-width: 0;
+  margin-bottom: 12px;
+}
+.print-sheet .print-body > div > div:last-child {
+  margin-bottom: 0;
+}
+.print-sheet .print-body > div > div {
   break-inside: auto;
+  display: block;
+  min-width: 0;
+}
+.print-sheet .print-body > div > div > * {
+  margin-bottom: 7px;
+}
+.print-sheet .print-body > div > div > :last-child {
+  margin-bottom: 0;
 }
 .print-sheet .print-body > div > div:has(> h1) {
   margin-top: 16px;
@@ -205,8 +221,15 @@
 }
 .print-sheet .print-body :is(ul, ol) {
   break-inside: auto;
-  gap: 3px;
+  display: block;
   padding-left: 1.15em;
+}
+.print-sheet .print-body li {
+  display: list-item;
+  margin-bottom: 3px;
+}
+.print-sheet .print-body li:last-child {
+  margin-bottom: 0;
 }
 .print-sheet .print-body ul ul {
   list-style-type: circle;
@@ -228,9 +251,13 @@
   font-size: 0.8em;
 }
 .print-sheet .print-body li > div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: block;
+}
+.print-sheet .print-body li > div > * {
+  margin-bottom: 4px;
+}
+.print-sheet .print-body li > div > :last-child {
+  margin-bottom: 0;
 }
 .print-sheet .print-body a {
   color: var(--print-accent);
@@ -344,10 +371,16 @@
   border-left: 1pt solid var(--print-rule);
   break-inside: avoid;
   color: var(--print-muted);
+  display: block;
   font-size: var(--print-body);
   line-height: 1.45;
   padding-left: 12px;
-  gap: 4px;
+}
+.print-sheet .print-body blockquote p {
+  margin-bottom: 4px;
+}
+.print-sheet .print-body blockquote p:last-child {
+  margin-bottom: 0;
 }
 .print-sheet .print-body blockquote p {
   font-size: inherit;
@@ -376,11 +409,14 @@
   border-left: 1.5pt solid var(--print-tone);
   border-radius: 0 4px 4px 0;
   break-inside: avoid;
+  display: block;
   color: var(--print-ink);
   font-size: var(--print-body);
   line-height: 1.45;
   padding: 8px 10px;
-  gap: 4px;
+}
+.print-sheet .print-body [data-block='callout'] > div:first-child {
+  margin-bottom: 4px;
 }
 .print-sheet .print-body [data-block='callout-label'] {
   align-items: center;
@@ -502,8 +538,13 @@
     max-width: none;
     min-height: 0;
   }
+  .print-sheet .print-screens,
   .print-sheet .print-frames {
-    display: flex;
-    gap: 24px;
+    display: block;
+  }
+  .print-sheet .print-frame {
+    display: inline-flex;
+    margin: 0 24px 24px 0;
+    vertical-align: top;
   }
 }
