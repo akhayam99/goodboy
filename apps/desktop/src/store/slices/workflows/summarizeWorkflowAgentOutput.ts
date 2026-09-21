@@ -28,8 +28,41 @@ type NotifyParams = {
   readonly reason: string;
 };
 
+type UnavailableParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly agent: Agent;
+  readonly unavailable: TaskModelPreference;
+  readonly replacement: TaskModelPreference | null;
+};
+
 const modelLabelFor = (taskModel: TaskModelPreference): string =>
   `${taskModel.providerId}/${shortModel(taskModel.model)}`;
+
+const notifyModelUnavailable = ({
+  get,
+  sessionId,
+  agent,
+  unavailable,
+  replacement,
+}: UnavailableParams): void => {
+  const label = modelLabelFor(unavailable);
+  const outcome =
+    replacement === null
+      ? 'no other provider could take over, so the step output was carried unsummarized'
+      : `${modelLabelFor(replacement)} summarized this step instead`;
+  void get().emitNotification(
+    'summarizer-degraded',
+    'warning',
+    `summarizer model unavailable: ${label}`,
+    `${label} is not available to this account and ${outcome}. change the summarizer model in Providers then Defaults.`,
+    {
+      sessionId,
+      action: { kind: 'retry-step-summary', sessionId, agentId: agent.id as AgentId },
+      coalesceKey: `summarizer-model-unavailable:${unavailable.providerId}:${unavailable.model}`,
+    },
+  );
+};
 
 const notifyDegraded = ({ get, sessionId, agent, modelLabel, reason }: NotifyParams): void => {
   const workflowRunId = agent.workflowRunId;
@@ -132,9 +165,11 @@ export const summarizeWorkflowAgentOutput = async ({
   }
 
   const message = result.error ?? '';
+  const failure = classifyProviderError({ message });
+  const isModelUnavailable = failure.kind === 'model_not_available';
   recordCooldown(taskModel, message);
   const fallback = planTaskModelFallback({
-    failure: classifyProviderError({ message }).kind,
+    failure: failure.kind,
     taskModel,
     attempt: 0,
     connectedProviders,
@@ -145,6 +180,10 @@ export const summarizeWorkflowAgentOutput = async ({
     }),
   });
   if (fallback === null) {
+    if (isModelUnavailable) {
+      notifyModelUnavailable({ get, sessionId, agent, unavailable: taskModel, replacement: null });
+      return result.summary;
+    }
     notifyDegraded({
       get,
       sessionId,
@@ -156,6 +195,19 @@ export const summarizeWorkflowAgentOutput = async ({
   }
 
   const retried = await runOnce(fallback);
+  if (isModelUnavailable) {
+    if (retried.degraded) {
+      recordCooldown(fallback, retried.error ?? '');
+    }
+    notifyModelUnavailable({
+      get,
+      sessionId,
+      agent,
+      unavailable: taskModel,
+      replacement: retried.degraded ? null : fallback,
+    });
+    return retried.summary;
+  }
   if (!retried.degraded) {
     return retried.summary;
   }

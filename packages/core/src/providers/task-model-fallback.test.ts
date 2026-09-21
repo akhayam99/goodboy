@@ -3,7 +3,7 @@ import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from './capabilities';
 import { getCheapModel } from './cli-defaults';
 import { taskModelProviderPool } from './providerFallbackPool';
-import { planTaskModelFallback } from './task-model-fallback';
+import { MAX_TASK_MODEL_PROVIDER_ATTEMPTS, planTaskModelFallback } from './task-model-fallback';
 
 const ANTHROPIC_CHEAP = {
   providerId: 'anthropic' as ProviderId,
@@ -79,6 +79,59 @@ describe('planTaskModelFallback', () => {
     });
 
     expect(plan?.providerId).toBe('codex');
+  });
+
+  it('moves an unavailable model to an allowed alternative provider', () => {
+    const plan = planTaskModelFallback({
+      failure: 'model_not_available',
+      taskModel: ANTHROPIC_CHEAP,
+      attempt: 0,
+      connectedProviders: ['anthropic', 'codex'],
+      enabledProviders: null,
+      coolingDownProviders: [],
+    });
+
+    expect(plan?.providerId).toBe('codex');
+    expect(costTierOf({ providerId: 'codex', model: plan?.model ?? '' })).toBe('cheap');
+  });
+
+  it('returns no plan for an unavailable model when the pool is exhausted', () => {
+    expect(
+      planTaskModelFallback({
+        failure: 'model_not_available',
+        taskModel: ANTHROPIC_CHEAP,
+        attempt: 0,
+        connectedProviders: ['anthropic', 'codex'],
+        enabledProviders: null,
+        coolingDownProviders: ['codex'],
+      }),
+    ).toBeNull();
+  });
+
+  it('returns no plan for an unavailable model when the pool excludes every alternative', () => {
+    expect(
+      planTaskModelFallback({
+        failure: 'model_not_available',
+        taskModel: ANTHROPIC_CHEAP,
+        attempt: 0,
+        connectedProviders: ['anthropic', 'codex'],
+        enabledProviders: ['anthropic'],
+        coolingDownProviders: [],
+      }),
+    ).toBeNull();
+  });
+
+  it('stops at the attempt ceiling for an unavailable model too', () => {
+    expect(
+      planTaskModelFallback({
+        failure: 'model_not_available',
+        taskModel: ANTHROPIC_CHEAP,
+        attempt: MAX_TASK_MODEL_PROVIDER_ATTEMPTS,
+        connectedProviders: ['anthropic', 'codex', 'gemini'],
+        enabledProviders: null,
+        coolingDownProviders: [],
+      }),
+    ).toBeNull();
   });
 
   it('stops at the attempt ceiling', () => {

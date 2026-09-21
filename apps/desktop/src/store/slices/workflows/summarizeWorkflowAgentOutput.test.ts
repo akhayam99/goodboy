@@ -244,6 +244,73 @@ describe('summarizeWorkflowAgentOutput', () => {
     expect(summarizeStepOutputSpy.mock.calls.map((args) => args[0]?.providerId)).toEqual(['codex']);
   });
 
+  it('summarizes on another provider when the preferred model is not available there', async () => {
+    summarizeStepOutputSpy
+      .mockRejectedValueOnce(
+        new Error(
+          "The 'gpt-5.6-luna' model is not supported when using Codex with a ChatGPT account",
+        ),
+      )
+      .mockResolvedValueOnce('three files touched, suite green');
+    const { call, state } = buildHarness({
+      connected: ['anthropic', 'codex'],
+      defaultProviderId: 'codex',
+    });
+
+    const summary = await call();
+
+    expect(summary).toBe('three files touched, suite green');
+    expect(summarizeStepOutputSpy.mock.calls.map((args) => args[0]?.providerId)).toEqual([
+      'codex',
+      'anthropic',
+    ]);
+    expect(state.providerCooldowns).toEqual({});
+  });
+
+  it('reports the broken preference even when the alternative model succeeds', async () => {
+    summarizeStepOutputSpy
+      .mockRejectedValueOnce(
+        new Error(
+          "The 'gpt-5.6-luna' model is not supported when using Codex with a ChatGPT account",
+        ),
+      )
+      .mockResolvedValueOnce('three files touched, suite green');
+    const { call, emitNotification } = buildHarness({
+      connected: ['anthropic', 'codex'],
+      defaultProviderId: 'codex',
+    });
+
+    await call();
+
+    expect(emitNotification).toHaveBeenCalledTimes(1);
+    const [, , title, body, opts] = emitNotification.mock.calls[0] ?? [];
+    expect(String(title)).toContain('codex/');
+    expect(String(body)).toContain('anthropic/');
+    expect(String(body)).toContain('Providers then Defaults');
+    expect(opts).toMatchObject({
+      coalesceKey: 'summarizer-model-unavailable:codex:gpt-5.6-luna',
+    });
+  });
+
+  it('says the output was carried unsummarized when no alternative exists', async () => {
+    summarizeStepOutputSpy.mockRejectedValue(
+      new Error(
+        "The 'gpt-5.6-luna' model is not supported when using Codex with a ChatGPT account",
+      ),
+    );
+    const { call, emitNotification } = buildHarness({
+      connected: ['codex'],
+      defaultProviderId: 'codex',
+    });
+
+    const summary = await call();
+
+    expect(summarizeStepOutputSpy).toHaveBeenCalledTimes(1);
+    expect(summary).toContain('the step wrote three files');
+    expect(emitNotification).toHaveBeenCalledTimes(1);
+    expect(String(emitNotification.mock.calls[0]?.[3])).toContain('carried unsummarized');
+  });
+
   it('truncates and notifies once when no other provider can take over', async () => {
     summarizeStepOutputSpy.mockRejectedValue(new Error('Claude usage limit reached'));
     const { call, emitNotification } = buildHarness({ connected: ['anthropic'] });
