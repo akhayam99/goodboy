@@ -71,3 +71,24 @@ describe('m162 open question blocking and provenance', () => {
     ).rejects.toThrow();
   });
 });
+
+describe('answer provenance backfill', () => {
+  it('keeps an agent resolved answer as agent and the rest as user', async () => {
+    const db = await seed();
+    await db.execute(
+      `INSERT INTO open_questions
+         (id, session_id, text, status, user_answer, created_at, answered_at)
+       VALUES ('resolved-by-agent', 'session', 'Settled upstream?', 'answered', '[resolved by agent]', 1, 2)`,
+    );
+    await migrate(db, migrations);
+
+    const rows = await db.select<QuestionRow>(
+      `SELECT id, is_blocking, answer_source, answered_by_agent_id
+       FROM open_questions ORDER BY id`,
+    );
+    const sources = new Map(rows.map((row) => [row.id, row.answer_source]));
+    expect(sources.get('resolved-by-agent')).toBe('agent');
+    expect(sources.get('answered')).toBe('user');
+    expect(sources.get('open')).toBeNull();
+  });
+});

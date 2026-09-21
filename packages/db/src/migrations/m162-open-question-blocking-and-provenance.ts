@@ -5,5 +5,8 @@ ALTER TABLE open_questions ADD COLUMN answer_source TEXT
   CHECK (answer_source IS NULL OR answer_source IN ('user', 'agent'));
 ALTER TABLE open_questions ADD COLUMN answered_by_agent_id TEXT
   REFERENCES agents(id) ON DELETE SET NULL;
-UPDATE open_questions SET answer_source = 'user' WHERE status = 'answered';
+UPDATE open_questions SET answer_source = 'agent'
+  WHERE status = 'answered' AND user_answer = '[resolved by agent]';
+UPDATE open_questions SET answer_source = 'user'
+  WHERE status = 'answered' AND answer_source IS NULL;
 `;

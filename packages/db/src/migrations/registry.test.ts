@@ -218,7 +218,7 @@ const SHIPPED_MIGRATION_SQL_SHA256: Readonly<Record<number, string>> = {
   159: '60fb32d7acecd56ddd0f9f47a895d2ebdfe943d061b44a6015e87350e9ad8f02',
   160: '3516eca4aefb75215d1127df50fdf0873fcba7f44ffc3e05eaca4659a985069c',
   161: '14236550cf4da8065b563eafd1f1be9ea2c81c10fcbcc453075ab0a89a6a7dfc',
-  162: 'fc13737334e8dd0acab106d1f4a5cbd523dec23592ed5f42fd2f17a00ffa140c',
+  162: '2ecebfbfa4d09389670ec1d74df4c3507a0cd0c2cddf6b84292c3a785f1e8c00',
 };
 
 const MIN_CONVERGENCE_SAMPLE_POINTS = 10;
