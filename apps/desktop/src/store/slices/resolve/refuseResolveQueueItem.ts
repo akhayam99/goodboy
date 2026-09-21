@@ -2,7 +2,7 @@ import { listResolveQueueItems, refuseResolveQueueItem as refuseItem } from '@go
 import { tauriDatabase } from '../../../shared/lib/db';
 import { STALE_APPROVAL } from './acceptResolveQueueItem';
 import { hashResolveReply } from './hashResolveReply';
-import { saveResolveReplyDraft } from './saveResolveReplyDraft';
+import { withSavedReplyDraft } from './saveResolveReplyDraft';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
 import type { ItemRevisionParams, SliceParams } from './types';
 
@@ -27,18 +27,23 @@ export const refuseResolveQueueItem = async ({
   if (target !== undefined && target.item.integratedSha !== null) {
     throw new Error(REFUSAL_AFTER_INTEGRATION);
   }
-  if (target !== undefined) {
-    await saveResolveReplyDraft({
+  const replyHash = await hashResolveReply({ reply });
+  const decide = async (): Promise<void> => {
+    const refused = await refuseItem({ db, sessionId, itemId, revision, replyHash });
+    if (!refused) {
+      throw new Error(STALE_APPROVAL);
+    }
+  };
+  if (target === undefined) {
+    await decide();
+  } else {
+    await withSavedReplyDraft({
       sessionId,
       threadId: target.thread.threadId,
       revision,
       reply,
+      decide,
     });
-  }
-  const replyHash = await hashResolveReply({ reply });
-  const refused = await refuseItem({ db, sessionId, itemId, revision, replyHash });
-  if (!refused) {
-    throw new Error(STALE_APPROVAL);
   }
   await loadResolveQueueItemsInto({ set, sessionId });
 };

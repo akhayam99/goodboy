@@ -9,17 +9,28 @@ type Params = {
   readonly reply: string;
 };
 
-export const saveResolveReplyDraft = async ({
+type DecideParams = Params & { readonly decide: () => Promise<void> };
+
+export const withSavedReplyDraft = async ({
   sessionId,
   threadId,
   revision,
   reply,
-}: Params): Promise<boolean> => {
+  decide,
+}: DecideParams): Promise<void> => {
   const db = tauriDatabase;
   const rows = await listResolveThreads({ db, sessionId });
   const row = rows.find((candidate) => candidate.threadId === threadId) ?? null;
-  if (row === null || (row.replyDraft ?? '') === reply) {
-    return true;
+  const previous = row?.replyDraft ?? '';
+  const isChanged = row !== null && previous !== reply;
+  const isSaved =
+    isChanged && (await setResolveThreadReplyDraft({ db, sessionId, threadId, revision, reply }));
+  try {
+    await decide();
+  } catch (error) {
+    if (isSaved) {
+      await setResolveThreadReplyDraft({ db, sessionId, threadId, revision, reply: previous });
+    }
+    throw error;
   }
-  return setResolveThreadReplyDraft({ db, sessionId, threadId, revision, reply });
 };

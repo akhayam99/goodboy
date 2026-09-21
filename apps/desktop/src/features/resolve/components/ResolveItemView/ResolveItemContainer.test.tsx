@@ -152,6 +152,42 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('an asynchronous resolve decision', () => {
+  it('carries a rewritten reply into the publication of a comment already settled', async () => {
+    const settled = {
+      ...RETRY,
+      status: 'ready_to_push',
+      item: { ...RETRY.item, approvalState: 'accepted' },
+      thread: { ...RETRY.thread, replyDraft: 'The reply the agent wrote.' },
+    } as unknown as ResolveQueueRow;
+    acceptResolveQueueItem.mockImplementation(async () => undefined);
+    renderContainer({ row: settled });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit reply' }));
+    fireEvent.change(screen.getByLabelText('Reply to reviewer'), {
+      target: { value: 'The reply I wrote myself.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save reply' }));
+    confirmResolve();
+
+    await vi.waitFor(() => expect(publishResolveThread).toHaveBeenCalledOnce());
+    expect(acceptResolveQueueItem).toHaveBeenCalledWith(
+      expect.objectContaining({ reply: 'The reply I wrote myself.' }),
+    );
+  });
+
+  it('leaves a settled comment alone when its reply was not touched', async () => {
+    const settled = {
+      ...PARSER,
+      status: 'ready_to_push',
+      item: { ...PARSER.item, approvalState: 'accepted' },
+      thread: { ...PARSER.thread, replyDraft: 'Added the early return.' },
+    } as unknown as ResolveQueueRow;
+    renderContainer({ row: settled });
+    confirmResolve();
+
+    await vi.waitFor(() => expect(publishResolveThread).toHaveBeenCalledOnce());
+    expect(acceptResolveQueueItem).not.toHaveBeenCalled();
+  });
+
   it('reports its failure onto the comment it was started from', async () => {
     let fail: (error: Error) => void = () => undefined;
     acceptResolveQueueItem.mockImplementation(

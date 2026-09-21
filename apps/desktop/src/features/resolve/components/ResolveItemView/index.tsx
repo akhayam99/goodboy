@@ -163,7 +163,7 @@ export const ResolveItemView = ({
       ? (actions.primary?.label ?? RESOLVE_ITEM_LABEL.resolve)
       : COMMIT_LABEL({ mode, isAnswering });
   const isCommitBlocked =
-    (mode === 'fix' && instruction.trim() === '') ||
+    (mode === 'fix' && isAnswering && instruction.trim() === '') ||
     ((mode === 'discuss' || mode === 'close') && isReplyBlank);
 
   return (

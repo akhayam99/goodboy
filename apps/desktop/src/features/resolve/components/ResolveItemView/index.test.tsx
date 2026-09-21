@@ -407,12 +407,24 @@ describe('the resolve item view', () => {
     expect(onCommitEditing).toHaveBeenCalledOnce();
   });
 
-  it('refuses to send an empty instruction to the agent', () => {
+  it('lets the agent read the comment again with no instruction of your own', () => {
     renderView({ mode: 'fix', instruction: '   ' });
 
     expect(screen.getByRole('button', { name: 'Send to agent' }).hasAttribute('disabled')).toBe(
-      true,
+      false,
     );
+  });
+
+  it('refuses to answer the agent with nothing', () => {
+    renderView({
+      row: { ...LEAD, status: 'agent_asked' } as typeof LEAD,
+      mode: 'fix',
+      instruction: '   ',
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'Start next attempt' }).hasAttribute('disabled'),
+    ).toBe(true);
   });
   it('offers the refusal from the overflow menu and edits the reviewer reply in place', () => {
     const onStartRefuse = vi.fn();

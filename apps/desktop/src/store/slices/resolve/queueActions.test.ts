@@ -188,6 +188,24 @@ describe('resolve queue actions', () => {
     );
   });
 
+  it('puts the reply back when the decision it was written for is refused', async () => {
+    const live = createHarness();
+    const before = (await listResolveThreads({ db, sessionId }))[0]?.replyDraft ?? null;
+    await db.execute('UPDATE resolve_queue_items SET delivered_at = 1 WHERE id = ?', [item.id]);
+
+    await expect(
+      live.actions.refuseResolveQueueItem({
+        sessionId,
+        itemId: item.id,
+        revision: 2,
+        reply: 'A reply that never lands',
+      }),
+    ).rejects.toThrow();
+
+    expect((await listResolveThreads({ db, sessionId }))[0]?.replyDraft).toBe(before);
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe('none');
+  });
+
   it('will not refuse a comment whose fix is already on the branch', async () => {
     const live = createHarness();
     await db.execute("UPDATE resolve_queue_items SET integrated_sha = 'abc' WHERE id = ?", [

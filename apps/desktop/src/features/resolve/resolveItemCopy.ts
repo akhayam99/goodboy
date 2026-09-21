@@ -20,6 +20,7 @@ export const RESOLVE_ITEM_LABEL = {
   resolveNote: 'Pushes the commit, posts the reply and resolves the thread on GitHub',
   closeNote: 'Closes the comment here. The reply goes out when you resolve it',
   fixNote: 'Tell the agent what to change, or leave it empty to let it read the comment again',
+  rereadInstruction: 'Read this comment again and propose a fix.',
   answerNote: 'Your answer starts a new attempt for this comment',
   sendReply: 'Send reply',
   closeComment: 'Close comment',

@@ -11,6 +11,7 @@ import type { ResolveQueueRow } from '../../buildResolveQueueRows';
 import { useResolveCandidateDiff } from '../../hooks/useResolveCandidateDiff';
 import { useResolveItemDraft } from '../../hooks/useResolveItemDraft';
 import { refuseBlockedReason } from '../../refuseBlockedReason';
+import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import { candidateHeadSha, selectResolveCandidate } from '../../selectResolveCandidate';
 import { selectResolveCheckScript } from '../../selectResolveCheckScript';
 import { sharedCandidateBlocker, sharedCandidateThreadIds } from '../../sharedCandidateThreadIds';
@@ -57,17 +58,26 @@ const EMPTY_ITEM_DRAFTS: Readonly<Record<string, ResolveItemDraft>> = {};
 const COULD_NOT_SEND =
   'This comment is no longer on the pull request, so the agent cannot be asked about it';
 type GuardParams = Readonly<{ run: () => Promise<void>; onSuccess?: () => void }>;
-type ApproveBlockerParams = {
+type ResolveBlockerParams = {
   readonly row: ResolveQueueRow;
   readonly isApprovable: boolean;
   readonly sharedBlocker: 'deferred' | 'wont_fix' | null;
 };
 
-const approveBlockedReasonFor = ({
+const SETTLED_STATUSES: ReadonlySet<string> = new Set([
+  'ready_to_push',
+  'wont_fix',
+  'delivery_failed',
+]);
+
+const resolveBlockedReasonFor = ({
   row,
   isApprovable,
   sharedBlocker,
-}: ApproveBlockerParams): string | null => {
+}: ResolveBlockerParams): string | null => {
+  if (SETTLED_STATUSES.has(row.status)) {
+    return null;
+  }
   if (sharedBlocker === 'deferred') {
     return PARTIAL_ACCEPTANCE;
   }
@@ -75,11 +85,11 @@ const approveBlockedReasonFor = ({
     return PARTIAL_REFUSAL;
   }
   if (!isApprovable) {
-    return 'There is no fix or reply to approve';
+    return 'There is no fix or reply to send';
   }
   return row.status === 'fix_ready' || row.status === 'reply_ready'
     ? null
-    : 'This comment is not ready for approval';
+    : 'This comment is not ready to resolve';
 };
 
 export const ResolveItemContainer = ({
@@ -241,13 +251,14 @@ export const ResolveItemContainer = ({
   const onResolve = (): void => {
     void guard({
       run: async () => {
-        if (row.item.approvalState === 'none' || row.item.approvalState === 'deferred') {
-          await acceptResolveQueueItem({
-            sessionId,
-            itemId: row.item.id,
-            revision: row.thread.revision,
-            reply,
-          });
+        const decision = { sessionId, itemId: row.item.id, revision: row.thread.revision, reply };
+        const isRewritten = reply !== (row.thread.replyDraft ?? '');
+        if (row.item.approvalState === 'wont_fix') {
+          if (isRewritten) {
+            await refuseResolveQueueItem(decision);
+          }
+        } else if (row.item.approvalState !== 'accepted' || isRewritten) {
+          await acceptResolveQueueItem(decision);
         }
         await publishResolveThread({ sessionId, threadId });
       },
@@ -318,7 +329,7 @@ export const ResolveItemContainer = ({
     hasQuestion: row.status === 'agent_asked',
     resolveBlockedReason: hasSiblingDraft
       ? 'Finish or revert the edited reply on every shared comment before resolving'
-      : approveBlockedReasonFor({ row, isApprovable, sharedBlocker }),
+      : resolveBlockedReasonFor({ row, isApprovable, sharedBlocker }),
     closeBlockedReason: refuseBlockedReason({ row }),
     hasAgent: row.attempt !== null,
     hasGithubUrl: row.commentThread?.head.url != null,
@@ -327,7 +338,11 @@ export const ResolveItemContainer = ({
     isBusy,
   });
   const onSendToAgent = (): void => {
-    const params = { threadId, instruction: instruction.trim() };
+    const typed = instruction.trim();
+    const params = {
+      threadId,
+      instruction: typed === '' ? RESOLVE_ITEM_LABEL.rereadInstruction : typed,
+    };
     const request =
       onRequestAttempt === undefined
         ? Promise.resolve(onAskForChanges?.(params) ?? false)
