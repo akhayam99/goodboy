@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ArrowLeft, Square } from 'lucide-react';
 import { Button, Chip, Divider, PANE_RHYTHM, ScrollFade, SectionHeader, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -5,6 +6,8 @@ import {
   ARTIFACT_GENERATION_PRESENTATION,
   type ArtifactGeneration,
 } from '../../artifactCollection';
+import { useSessionOpenQuestions } from '../../../../store';
+import { OpenQuestionCluster } from '../../../chat/components/ChatView/OpenQuestionCluster';
 import { ArtifactScouts } from './ArtifactScouts';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
@@ -26,6 +29,15 @@ export const ArtifactRunDetail = ({
 }: Props) => {
   const presentation = ARTIFACT_GENERATION_PRESENTATION[generation.kind][generation.state];
   const Icon = presentation.icon;
+  const sessionQuestions = useSessionOpenQuestions(sessionId);
+  const questions = useMemo(
+    () =>
+      sessionQuestions.filter(
+        (question) =>
+          question.status === 'open' && question.createdByAgentId === generation.agentId,
+      ),
+    [sessionQuestions, generation.agentId],
+  );
 
   return (
     <div
@@ -74,6 +86,16 @@ export const ArtifactRunDetail = ({
         fadeSize={24}
       >
         <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.pane, 'flex flex-col gap-2')}>
+          {questions.length > 0 && (
+            <div data-testid="artifact-run-questions" className="flex min-w-0 flex-col gap-2">
+              <SectionHeader label="Answer this before it can produce" />
+              <OpenQuestionCluster
+                questions={questions}
+                sessionId={sessionId}
+                viewerAgentId={generation.agentId}
+              />
+            </div>
+          )}
           <SectionHeader label="Agents on this run" />
           <ArtifactScouts
             sessionId={sessionId}

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type {
   AgentId,
+  OpenQuestionId,
   PlanConsumptionId,
   PlanId,
   SessionId,
@@ -22,6 +23,11 @@ import {
   updateAgentRouting,
 } from './agent';
 import { addPlanConsumption, listConsumptionsForPlan, upsertPlan } from './plan';
+import {
+  insertOpenQuestion,
+  listOpenQuestionsForSession,
+  markOpenQuestionAnswered,
+} from './open-question';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
 const sessionId = 'session-1' as SessionId;
@@ -102,6 +108,44 @@ describe('agent queries', () => {
     ).toEqual([{ id: 'plan-1', agent_id: agentId }]);
     const consumptions = await listConsumptionsForPlan(db, plan.id);
     expect(consumptions.map((consumption) => consumption.id)).toEqual(['consumption-1']);
+  });
+
+  it('purgeAgentForDelete takes the open questions the agent asked and leaves the settled ones', async () => {
+    await seedAgent(agentId, 0);
+    const survivorId = 'agent-2' as AgentId;
+    await seedAgent(survivorId, 1);
+    await insertOpenQuestion(db, {
+      id: 'question-open' as OpenQuestionId,
+      sessionId,
+      createdByAgentId: agentId,
+      text: 'renew the expired key?',
+      suggestedAnswers: ['renew', 'drop'],
+      isBlocking: true,
+    });
+    await insertOpenQuestion(db, {
+      id: 'question-answered' as OpenQuestionId,
+      sessionId,
+      createdByAgentId: agentId,
+      text: 'which surface leads?',
+      suggestedAnswers: ['desktop', 'mobile'],
+    });
+    await markOpenQuestionAnswered(db, 'question-answered' as OpenQuestionId, 'desktop');
+    await insertOpenQuestion(db, {
+      id: 'question-other' as OpenQuestionId,
+      sessionId,
+      createdByAgentId: survivorId,
+      text: 'what happens to the legacy route?',
+      suggestedAnswers: ['keep', 'drop'],
+    });
+
+    const removed = await purgeAgentForDelete({ db, id: agentId });
+
+    expect(removed).toEqual(['renew the expired key?']);
+    const left = await listOpenQuestionsForSession(db, sessionId);
+    expect(left.map((question) => question.id).sort()).toEqual([
+      'question-answered',
+      'question-other',
+    ]);
   });
 
   it('hides a tombstoned agent from the listings but keeps it reachable by id', async () => {

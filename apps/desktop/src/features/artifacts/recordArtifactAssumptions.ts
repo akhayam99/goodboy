@@ -38,7 +38,8 @@ export const recordArtifactAssumptions = async ({
     return 0;
   }
   const { questions } = extractMarkers(assistantText);
-  if (questions.length === 0) {
+  const assumed = questions.filter((question) => !question.isBlocking);
+  if (assumed.length === 0) {
     return 0;
   }
   const provenance = await loadArtifactProvenance(agentId).catch(() => null);
@@ -46,7 +47,7 @@ export const recordArtifactAssumptions = async ({
     return 0;
   }
   let recorded = 0;
-  for (const question of questions) {
+  for (const question of assumed) {
     await appendArtifactProvenanceOmission({
       agentId,
       note: artifactAssumptionNote({

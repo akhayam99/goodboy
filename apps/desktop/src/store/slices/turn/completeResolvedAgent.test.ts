@@ -470,6 +470,37 @@ describe('completeResolvedAgent', () => {
     );
   });
 
+  it('leaves the step open when the plan arrives with a blocking question', async () => {
+    const { state, set, get } = createHarness({});
+    const finalizeWorkflowStep = vi.fn(async () => ({ shouldAutoAdvance: false }));
+    Object.assign(state, { finalizeWorkflowStep });
+    state.sessionPhaseRuns = { [SESSION_ID]: [plannerStepAgent] };
+    const body = JSON.stringify({
+      title: 'Ship it',
+      format: 'markdown',
+      content: 'step one',
+    });
+    const question =
+      '<<ctx-question suggestions="renew the key|drop the provider" recommended="renew the key" select="one" blocking="true">>renew the expired key?<</ctx-question>>';
+
+    const advance = await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: `${question}\n<<artifact v=1 kind=plan>>\n${body}\n<</artifact>>`,
+      now: () => NOW,
+    });
+
+    expect(finalizeWorkflowStep).toHaveBeenCalledWith(
+      SESSION_ID,
+      AGENT_ID,
+      expect.any(String),
+      false,
+    );
+    expect(advance).toBe(false);
+  });
+
   it('does not let a report envelope stand in for the plan a step owes', async () => {
     const { state, set, get } = createHarness({});
     const finalizeWorkflowStep = vi.fn(async () => ({ shouldAutoAdvance: false }));

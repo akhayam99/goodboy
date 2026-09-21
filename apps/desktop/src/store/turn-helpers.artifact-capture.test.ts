@@ -359,6 +359,9 @@ const QUESTIONS = [
   '<<ctx-question suggestions="keep the old route|drop it" recommended="keep the old route" select="one">>what happens to the legacy route?<</ctx-question>>',
 ].join('\n');
 
+const BLOCKING_QUESTION =
+  '<<ctx-question suggestions="renew the key|drop the provider" recommended="renew the key" select="one" blocking="true">>the pro.ip-api.com key expired, renew it or drop the provider?<</ctx-question>>';
+
 const priorReport = (overrides: Readonly<Record<string, unknown>>) => ({
   id: 'artifact-0',
   agentId: AGENT_ID,
@@ -410,6 +413,58 @@ describe('captureArtifactsFromTurn questions', () => {
   it('leaves a turn without questions alone', async () => {
     loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
     await run(REPORT_TURN('## Outcome'));
+
+    expect(appendArtifactProvenanceOmission).not.toHaveBeenCalled();
+  });
+});
+
+describe('captureArtifactsFromTurn blocking gate', () => {
+  it('holds the report the agent shipped alongside a blocking question', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    const { patches, result } = await run(`${BLOCKING_QUESTION}\n${REPORT_TURN('## Outcome')}`);
+
+    expect(result).toEqual({ plan: null, artifact: null, error: null });
+    expect(createArtifact).not.toHaveBeenCalled();
+    expect(updateArtifactSource).not.toHaveBeenCalled();
+    expect(patches).toEqual([]);
+  });
+
+  it('holds a plan the same way', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    const body = JSON.stringify({
+      title: 'Envelope plan',
+      format: 'markdown',
+      content: 'step one',
+    });
+
+    const { result } = await run(
+      `${BLOCKING_QUESTION}\n<<artifact v=1 kind=plan>>\n${body}\n<</artifact>>`,
+    );
+
+    expect(result).toEqual({ plan: null, artifact: null, error: null });
+    expect(upsertPlan).not.toHaveBeenCalled();
+  });
+
+  it('holds the legacy plan marker too', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+
+    await run(`${BLOCKING_QUESTION}\n<<plan>>\nShip it\nstep one\n<</plan>>`);
+
+    expect(upsertPlan).not.toHaveBeenCalled();
+  });
+
+  it('stores the report when every question is non blocking', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    const { result } = await run(`${QUESTIONS}\n${REPORT_TURN('## Outcome')}`);
+
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+    expect(result.artifact).not.toBeNull();
+  });
+
+  it('assumes nothing for a question it refused to answer for the user', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+
+    await run(`${BLOCKING_QUESTION}\n${QUESTIONS}\n${REPORT_TURN('## Outcome')}`);
 
     expect(appendArtifactProvenanceOmission).not.toHaveBeenCalled();
   });

@@ -250,16 +250,25 @@ export const purgeAgentForDelete = async ({
 }: {
   readonly db: Database;
   readonly id: AgentId;
-}): Promise<void> => {
+}): Promise<ReadonlyArray<string>> => {
   await db.exec('BEGIN');
   try {
     await db.execute('DELETE FROM messages WHERE agent_id = ?', [id]);
     await db.execute('DELETE FROM turn_events WHERE agent_id = ?', [id]);
+    const openQuestions = await db.select<{ text: string }>(
+      "SELECT text FROM open_questions WHERE created_by_agent_id = ? AND status = 'open'",
+      [id],
+    );
+    await db.execute(
+      "DELETE FROM open_questions WHERE created_by_agent_id = ? AND status = 'open'",
+      [id],
+    );
     await db.execute('UPDATE agents SET deleted_at = ?, output_summary = NULL WHERE id = ?', [
       Date.now(),
       id,
     ]);
     await db.exec('COMMIT');
+    return openQuestions.map((row) => row.text);
   } catch (error) {
     await db.exec('ROLLBACK');
     throw error;
