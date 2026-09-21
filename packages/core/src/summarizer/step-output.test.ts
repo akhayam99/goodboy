@@ -351,3 +351,22 @@ describe('previewStepOutputSummary', () => {
     expect(previewStepOutputSummary({ summary: 'abcdef', length: 3 })).toBe('abc');
   });
 });
+
+describe('preview length with a marker', () => {
+  it('never runs past the requested length when a fallback is marked', () => {
+    const fallback = fallbackStepOutputSummary({ output: 'paragraph of filler.\n\n'.repeat(600) });
+    for (const length of [12, 40, 120, 280]) {
+      expect(previewStepOutputSummary({ summary: fallback, length }).length).toBeLessThanOrEqual(
+        length,
+      );
+    }
+  });
+
+  it('never runs past the requested length for a legacy fallback', () => {
+    const body = 'x'.repeat(9000);
+    const legacy = `${body.slice(0, 1500)}\n...\n${body.slice(-400)}`;
+    expect(previewStepOutputSummary({ summary: legacy, length: 280 }).length).toBeLessThanOrEqual(
+      280,
+    );
+  });
+});

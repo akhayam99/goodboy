@@ -295,5 +295,9 @@ export const previewStepOutputSummary = ({ summary, length }: PreviewParams): st
   if (marker === null) {
     return annotated.slice(0, length);
   }
-  return `${marker} ${annotated.slice(marker.length).trimStart().slice(0, length)}`;
+  const room = length - marker.length - 1;
+  if (room <= 0) {
+    return marker.slice(0, length);
+  }
+  return `${marker} ${annotated.slice(marker.length).trimStart().slice(0, room)}`;
 };
