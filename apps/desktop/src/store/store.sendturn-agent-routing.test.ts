@@ -835,7 +835,7 @@ describe('sendTurn, agent routing', () => {
       AGENT_A,
       expect.objectContaining({
         status: 'completed',
-        outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
+        outputSummary: `[unsummarized step output, carried whole]\n${assistantText}`,
       }),
     );
     expect(JSON.stringify(invokeSpy.mock.calls)).not.toContain(

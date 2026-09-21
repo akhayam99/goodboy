@@ -197,9 +197,15 @@ describe('finalizeWorkflowStep output summary', () => {
     expect(result).toEqual({ shouldAutoAdvance: false });
   });
 
-  it('stores deterministic head and tail fallback when summarization fails', async () => {
-    const assistantText = `${'h'.repeat(1500)}${'m'.repeat(100)}${'t'.repeat(400)}`;
-    const expectedSummary = `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`;
+  it('stores a marked bounded excerpt when summarization fails', async () => {
+    const assistantText = [
+      'Head passage: touched `src/auth.ts`.',
+      ...Array.from(
+        { length: 40 },
+        (_value, index) => `Middle passage ${index}. ${'m'.repeat(200)}`,
+      ),
+      'Tail passage: the migration lock is still held.',
+    ].join('\n\n');
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     summarizeStepOutputSpy.mockRejectedValue(new Error('provider unavailable'));
     const state = {
@@ -225,10 +231,15 @@ describe('finalizeWorkflowStep output summary', () => {
 
     await finalize(SESSION_ID, AGENT_ID, assistantText, false, { force: true });
 
-    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
-      AGENT_ID,
-      expect.objectContaining({ outputSummary: expectedSummary }),
-    );
+    const stored = (
+      invokeAgentUpdateStatusSpy.mock.calls[0]?.[1] as { readonly outputSummary: string }
+    ).outputSummary;
+
+    expect(stored.split('\n')[0]).toBe('[unsummarized step output, excerpt]');
+    expect(stored.length).toBeLessThanOrEqual(4000);
+    expect(stored).toContain('Head passage: touched `src/auth.ts`.');
+    expect(stored).toContain('Tail passage: the migration lock is still held.');
+    expect(stored).toContain('[middle dropped, the full text is in the step transcript]');
     expect(warnSpy).toHaveBeenCalledWith(
       '[step-output] summarization failed, using deterministic fallback: provider unavailable',
     );
@@ -295,7 +306,9 @@ describe('finalizeWorkflowStep output summary', () => {
     await completion;
     expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
       AGENT_ID,
-      expect.objectContaining({ outputSummary: 'timeout output' }),
+      expect.objectContaining({
+        outputSummary: '[unsummarized step output, carried whole]\ntimeout output',
+      }),
     );
   });
 
@@ -365,7 +378,7 @@ describe('finalizeWorkflowStep output summary', () => {
   });
 
   it('completes with deterministic fallback when the session row is missing', async () => {
-    const assistantText = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
+    const assistantText = 'the step wrote three files';
     const finalize = buildHarness({ sessions: [] });
 
     const result = await finalize(SESSION_ID, AGENT_ID, assistantText, false, { force: true });
@@ -375,7 +388,7 @@ describe('finalizeWorkflowStep output summary', () => {
       AGENT_ID,
       expect.objectContaining({
         status: 'completed',
-        outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
+        outputSummary: `[unsummarized step output, carried whole]\n${assistantText}`,
       }),
     );
     expect(result).toEqual({ shouldAutoAdvance: true });

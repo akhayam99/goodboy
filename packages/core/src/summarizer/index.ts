@@ -17,7 +17,10 @@ export {
   type GoalRewriteInput,
 } from './goal-rewrite';
 export {
+  annotateFallbackStepOutputSummary,
+  fallbackStepOutputMarker,
   fallbackStepOutputSummary,
   isFallbackStepOutputSummary,
+  previewStepOutputSummary,
   summarizeStepOutput,
 } from './step-output';

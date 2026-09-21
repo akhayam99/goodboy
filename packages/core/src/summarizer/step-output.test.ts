@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { SummarizerDeps } from './client';
 import { SummarizerParseError } from './client';
 import {
+  annotateFallbackStepOutputSummary,
   fallbackStepOutputSummary,
   isFallbackStepOutputSummary,
+  previewStepOutputSummary,
   summarizeStepOutput,
 } from './step-output';
 
@@ -252,13 +254,100 @@ describe('summarizeStepOutput', () => {
 });
 
 describe('fallbackStepOutputSummary', () => {
-  it('keeps short output and joins the exact long-output head and tail', () => {
-    const longOutput = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
-    const fallback = `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`;
+  const paragraph = (index: number): string =>
+    `Paragraph ${index} touched src/module-${index}.ts and left the suite green. ${'filler words here '.repeat(12)}`.trim();
+  const longOutput = [
+    ...Array.from({ length: 30 }, (_value, index) => paragraph(index)),
+    'Blocker: the migration lock is still held by the previous run.',
+  ].join('\n\n');
 
-    expect(fallbackStepOutputSummary({ output: 'short' })).toBe('short');
-    expect(fallbackStepOutputSummary({ output: longOutput })).toBe(fallback);
-    expect(isFallbackStepOutputSummary({ summary: fallback })).toBe(true);
+  it('carries a short output whole under a reserved first line', () => {
+    const result = fallbackStepOutputSummary({ output: 'short outcome' });
+
+    expect(result.split('\n')[0]).toBe('[unsummarized step output, carried whole]');
+    expect(result.endsWith('short outcome')).toBe(true);
+    expect(isFallbackStepOutputSummary({ summary: result })).toBe(true);
+  });
+
+  it('marks an empty output as nothing captured', () => {
+    const result = fallbackStepOutputSummary({ output: '   \n ' });
+
+    expect(result).toBe('[unsummarized step output, no output captured]');
+    expect(isFallbackStepOutputSummary({ summary: result })).toBe(true);
+  });
+
+  it('keeps whole head and tail passages inside the handoff budget', () => {
+    const result = fallbackStepOutputSummary({ output: longOutput });
+
+    expect(result.length).toBeLessThanOrEqual(4000);
+    expect(result.split('\n')[0]).toBe('[unsummarized step output, excerpt]');
+    expect(result).toContain('[middle dropped, the full text is in the step transcript]');
+    expect(result).toContain(paragraph(0));
+    expect(result).not.toContain(paragraph(15));
+    expect(isFallbackStepOutputSummary({ summary: result })).toBe(true);
+  });
+
+  it('keeps a blocker sentence sitting at the very end', () => {
+    const result = fallbackStepOutputSummary({ output: longOutput });
+
+    expect(result.endsWith('Blocker: the migration lock is still held by the previous run.')).toBe(
+      true,
+    );
+  });
+
+  it('splits a token only when one token alone cannot fit', () => {
+    const result = fallbackStepOutputSummary({ output: 'x'.repeat(12_000) });
+
+    expect(result.length).toBeLessThanOrEqual(4000);
+    expect(result.split('\n')[0]).toBe('[unsummarized step output, excerpt]');
+  });
+
+  it('still detects a legacy 1905 character signature', () => {
+    const legacy = `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`;
+
+    expect(legacy.length).toBe(1905);
+    expect(isFallbackStepOutputSummary({ summary: legacy })).toBe(true);
+  });
+
+  it('does not read an ordinary summary as a fallback', () => {
     expect(isFallbackStepOutputSummary({ summary: 'short\n...\nsummary' })).toBe(false);
+    expect(isFallbackStepOutputSummary({ summary: 'Wired the handoff.\n- `src/auth.ts`' })).toBe(
+      false,
+    );
+  });
+});
+
+describe('annotateFallbackStepOutputSummary', () => {
+  it('labels a legacy fallback that carries no marker of its own', () => {
+    const legacy = `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`;
+
+    const annotated = annotateFallbackStepOutputSummary({ summary: legacy });
+
+    expect(annotated.split('\n')[0]).toBe('[unsummarized step output, legacy excerpt]');
+    expect(annotated.endsWith(legacy)).toBe(true);
+  });
+
+  it('leaves a marked fallback and an ordinary summary untouched', () => {
+    const marked = fallbackStepOutputSummary({ output: 'short outcome' });
+
+    expect(annotateFallbackStepOutputSummary({ summary: marked })).toBe(marked);
+    expect(annotateFallbackStepOutputSummary({ summary: 'Wired the handoff.' })).toBe(
+      'Wired the handoff.',
+    );
+  });
+});
+
+describe('previewStepOutputSummary', () => {
+  it('keeps the marker in front of a previewed fallback', () => {
+    const marked = fallbackStepOutputSummary({ output: 'a'.repeat(9000) });
+
+    const preview = previewStepOutputSummary({ summary: marked, length: 80 });
+
+    expect(preview.startsWith('[unsummarized step output, excerpt] ')).toBe(true);
+    expect(isFallbackStepOutputSummary({ summary: preview })).toBe(true);
+  });
+
+  it('previews an ordinary summary by plain length', () => {
+    expect(previewStepOutputSummary({ summary: 'abcdef', length: 3 })).toBe('abc');
   });
 });

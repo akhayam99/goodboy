@@ -319,7 +319,7 @@ describe('advanceScoutTree split decision', () => {
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
       scout.id,
       expect.objectContaining({
-        outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
+        outputSummary: `[unsummarized step output, carried whole]\n${assistantText}`,
       }),
     );
     expect(emitNotification).toHaveBeenCalledWith(

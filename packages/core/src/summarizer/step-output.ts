@@ -5,9 +5,19 @@ import { getDefaultBinary } from '../providers/cli-defaults';
 import { SummarizerParseError, SummarizerSpawnError, type SummarizerDeps } from './client';
 
 const MAX_SUMMARY_LENGTH = 1200;
-const FALLBACK_HEAD_LENGTH = 1500;
-const FALLBACK_TAIL_LENGTH = 400;
-const FALLBACK_JOINER = '\n...\n';
+const FALLBACK_TOTAL_BUDGET = 4000;
+const FALLBACK_HEAD_SHARE = 0.6;
+const FALLBACK_BOUNDARY_KEEP_RATIO = 0.7;
+const FALLBACK_MARKER_PREFIX = '[unsummarized step output';
+const FALLBACK_WHOLE_MARKER = `${FALLBACK_MARKER_PREFIX}, carried whole]`;
+const FALLBACK_EXCERPT_MARKER = `${FALLBACK_MARKER_PREFIX}, excerpt]`;
+const FALLBACK_EMPTY_MARKER = `${FALLBACK_MARKER_PREFIX}, no output captured]`;
+const FALLBACK_LEGACY_MARKER = `${FALLBACK_MARKER_PREFIX}, legacy excerpt]`;
+const FALLBACK_GAP_NOTICE = '\n\n[middle dropped, the full text is in the step transcript]\n\n';
+const LEGACY_FALLBACK_HEAD_LENGTH = 1500;
+const LEGACY_FALLBACK_TAIL_LENGTH = 400;
+const LEGACY_FALLBACK_JOINER = '\n...\n';
+const SENTENCE_END_CHARS = '.!?';
 const MAX_SUMMARIZER_INPUT_LENGTH = 120_000;
 const SUMMARIZER_INPUT_HEAD_LENGTH = 100_000;
 const SUMMARIZER_INPUT_JOINER =
@@ -57,6 +67,18 @@ const stepOutputSystemPrompt = ({
 
 type FallbackDetection = {
   readonly summary: string;
+};
+
+type PreviewParams = FallbackDetection & {
+  readonly length: number;
+};
+
+type TextParams = {
+  readonly text: string;
+};
+
+type CutParams = TextParams & {
+  readonly limit: number;
 };
 
 type ClampParams = {
@@ -138,14 +160,140 @@ export const summarizeStepOutput = async ({
   return summary;
 };
 
-export const fallbackStepOutputSummary = ({ output }: Params): string => {
-  if (output.length <= FALLBACK_HEAD_LENGTH + FALLBACK_TAIL_LENGTH) {
-    return output;
+const lastSentenceEnd = ({ text }: TextParams): number => {
+  let found = -1;
+  for (let index = 0; index < text.length; index += 1) {
+    if (!SENTENCE_END_CHARS.includes(text[index] ?? '')) {
+      continue;
+    }
+    const next = text[index + 1];
+    if (next === undefined || /\s/.test(next)) {
+      found = index + 1;
+    }
   }
-  return `${output.slice(0, FALLBACK_HEAD_LENGTH)}${FALLBACK_JOINER}${output.slice(-FALLBACK_TAIL_LENGTH)}`;
+  return found;
+};
+
+const firstSentenceEnd = ({ text }: TextParams): number => {
+  for (let index = 0; index < text.length; index += 1) {
+    if (!SENTENCE_END_CHARS.includes(text[index] ?? '')) {
+      continue;
+    }
+    const next = text[index + 1];
+    if (next === undefined || /\s/.test(next)) {
+      return index + 1;
+    }
+  }
+  return -1;
+};
+
+const lastWhitespace = ({ text }: TextParams): number => {
+  for (let index = text.length - 1; index >= 0; index -= 1) {
+    if (/\s/.test(text[index] ?? '')) {
+      return index;
+    }
+  }
+  return -1;
+};
+
+const firstWhitespace = ({ text }: TextParams): number => {
+  for (let index = 0; index < text.length; index += 1) {
+    if (/\s/.test(text[index] ?? '')) {
+      return index;
+    }
+  }
+  return -1;
+};
+
+const headCut = ({ text, limit }: CutParams): string => {
+  if (text.length <= limit) {
+    return text;
+  }
+  const window = text.slice(0, limit);
+  const floor = Math.floor(limit * FALLBACK_BOUNDARY_KEEP_RATIO);
+  const candidates = [
+    window.lastIndexOf('\n\n'),
+    window.lastIndexOf('\n'),
+    lastSentenceEnd({ text: window }),
+    lastWhitespace({ text: window }),
+  ];
+  for (const candidate of candidates) {
+    if (candidate >= floor) {
+      return window.slice(0, candidate);
+    }
+  }
+  return window;
+};
+
+const tailCut = ({ text, limit }: CutParams): string => {
+  if (text.length <= limit) {
+    return text;
+  }
+  const window = text.slice(text.length - limit);
+  const ceiling = Math.ceil(limit * (1 - FALLBACK_BOUNDARY_KEEP_RATIO));
+  const paragraph = window.indexOf('\n\n');
+  const line = window.indexOf('\n');
+  const sentence = firstSentenceEnd({ text: window });
+  const whitespace = firstWhitespace({ text: window });
+  const candidates = [
+    paragraph < 0 ? -1 : paragraph + 2,
+    line < 0 ? -1 : line + 1,
+    sentence,
+    whitespace < 0 ? -1 : whitespace + 1,
+  ];
+  for (const candidate of candidates) {
+    if (candidate >= 0 && candidate <= ceiling) {
+      return window.slice(candidate);
+    }
+  }
+  return window;
+};
+
+const isLegacyFallback = ({ summary }: FallbackDetection): boolean =>
+  summary.length ===
+    LEGACY_FALLBACK_HEAD_LENGTH + LEGACY_FALLBACK_JOINER.length + LEGACY_FALLBACK_TAIL_LENGTH &&
+  summary.slice(
+    LEGACY_FALLBACK_HEAD_LENGTH,
+    LEGACY_FALLBACK_HEAD_LENGTH + LEGACY_FALLBACK_JOINER.length,
+  ) === LEGACY_FALLBACK_JOINER;
+
+export const fallbackStepOutputSummary = ({ output }: Params): string => {
+  const text = output.trim();
+  if (text.length === 0) {
+    return FALLBACK_EMPTY_MARKER;
+  }
+  const wholeAllowance = FALLBACK_TOTAL_BUDGET - FALLBACK_WHOLE_MARKER.length - 1;
+  if (text.length <= wholeAllowance) {
+    return `${FALLBACK_WHOLE_MARKER}\n${text}`;
+  }
+  const allowance =
+    FALLBACK_TOTAL_BUDGET - FALLBACK_EXCERPT_MARKER.length - 1 - FALLBACK_GAP_NOTICE.length;
+  const headLimit = Math.floor(allowance * FALLBACK_HEAD_SHARE);
+  const head = headCut({ text, limit: headLimit }).trimEnd();
+  const tail = tailCut({ text, limit: allowance - headLimit }).trimStart();
+  return `${FALLBACK_EXCERPT_MARKER}\n${head}${FALLBACK_GAP_NOTICE}${tail}`;
+};
+
+export const fallbackStepOutputMarker = ({ summary }: FallbackDetection): string | null => {
+  const firstLine = summary.split(/\r?\n/, 1)[0] ?? '';
+  return firstLine.startsWith(FALLBACK_MARKER_PREFIX) ? firstLine : null;
 };
 
 export const isFallbackStepOutputSummary = ({ summary }: FallbackDetection): boolean =>
-  summary.length === FALLBACK_HEAD_LENGTH + FALLBACK_JOINER.length + FALLBACK_TAIL_LENGTH &&
-  summary.slice(FALLBACK_HEAD_LENGTH, FALLBACK_HEAD_LENGTH + FALLBACK_JOINER.length) ===
-    FALLBACK_JOINER;
+  fallbackStepOutputMarker({ summary }) !== null || isLegacyFallback({ summary });
+
+export const annotateFallbackStepOutputSummary = ({ summary }: FallbackDetection): string => {
+  if (fallbackStepOutputMarker({ summary }) !== null || !isLegacyFallback({ summary })) {
+    return summary;
+  }
+  return `${FALLBACK_LEGACY_MARKER}\n${summary}`;
+};
+
+export const previewStepOutputSummary = ({ summary, length }: PreviewParams): string => {
+  const annotated = annotateFallbackStepOutputSummary({ summary });
+  const marker = fallbackStepOutputMarker({ summary: annotated });
+  if (marker === null) {
+    return annotated.slice(0, length);
+  }
+  return `${marker} ${annotated.slice(marker.length).trimStart().slice(0, length)}`;
+};
