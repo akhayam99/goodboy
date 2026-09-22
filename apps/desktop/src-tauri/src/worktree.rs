@@ -640,9 +640,21 @@ fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, Worktre
                     .map_err(|error| with_fetch_cause(error, fetch_failure.as_deref()))?;
                 }
                 _ => {
-                    return Err(WorktreeError::BranchNotFound {
-                        branch: name.to_string(),
-                    });
+                    match fetch_failure.as_deref() {
+                        Some(cause) if !remote_ref_is_absent(&repo_path, cause) => {
+                            return Err(with_fetch_cause(
+                                WorktreeError::Git {
+                                    message: format!("could not look up origin/{name}"),
+                                },
+                                Some(cause),
+                            ));
+                        }
+                        _ => {
+                            return Err(WorktreeError::BranchNotFound {
+                                branch: name.to_string(),
+                            });
+                        }
+                    }
                 }
             }
         }
@@ -3081,6 +3093,14 @@ fn try_fetch_origin(repo_path: &Path, base: &str) -> Option<String> {
         .map(|error| error.to_string())
 }
 
+/// Tell "origin has no such branch" apart from "origin could not be reached".
+/// Only the first one lets a caller cut the branch itself: an outage that
+/// silently became a fresh branch would diverge from the real one.
+fn remote_ref_is_absent(repo_path: &Path, fetch_failure: &str) -> bool {
+    fetch_failure.contains("couldn't find remote ref")
+        || git(repo_path, &["remote", "get-url", "origin"]).is_err()
+}
+
 fn with_fetch_cause(error: WorktreeError, fetch_failure: Option<&str>) -> WorktreeError {
     let Some(cause) = fetch_failure else {
         return error;
@@ -3920,6 +3940,40 @@ mod rewrite_tests {
         assert_eq!(branch, "ak/second-half");
         assert_eq!(wire["kind"], "branch_not_found");
         assert!(wire["message"].as_str().unwrap().contains("ak/second-half"));
+        assert!(!parent_dir.join("second").exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn keeps_adoption_failing_when_origin_cannot_be_reached() {
+        let root = std::fs::canonicalize(init_repo("adopt-unreachable")).unwrap();
+        commit(&root, "a.txt", "a\n", "first");
+        git_ok(
+            &root,
+            &[
+                "remote",
+                "add",
+                "origin",
+                "https://127.0.0.1:1/nothing/here.git",
+            ],
+        );
+        let parent_dir = root.join(".goodboy").join("worktrees");
+        std::fs::create_dir_all(&parent_dir).unwrap();
+
+        let error = worktree_create_blocking(CreateArgs {
+            repo_path: root.to_string_lossy().into_owned(),
+            branch_prefix: "ak".to_string(),
+            slug: "second-half".to_string(),
+            parent_dir: Some(parent_dir.to_string_lossy().into_owned()),
+            existing_branch: Some("ak/second-half".to_string()),
+            fallback_ref: None,
+            base_branch: None,
+            dir_name: Some("second".to_string()),
+        })
+        .unwrap_err();
+
+        let wire = serde_json::to_value(&error).unwrap();
+        assert_eq!(wire["kind"], "git");
         assert!(!parent_dir.join("second").exists());
         std::fs::remove_dir_all(root).unwrap();
     }

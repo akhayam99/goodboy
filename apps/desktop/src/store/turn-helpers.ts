@@ -91,6 +91,7 @@ import {
   proposeMaterialization,
   runMaterializationBatch,
 } from './materializationGate';
+import { sessionAwaitsPullRequest } from './slices/github/sessionAwaitsPullRequest';
 import { selectMountById } from './slices/project-mounts/selectors';
 import { mountContinuationRefusal, queueMountContinuation } from './slices/turn/mountContinuations';
 
@@ -424,7 +425,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
     }
 
     if (
-      !get().sessionGithub[sessionId]?.pr &&
+      sessionAwaitsPullRequest({ state: get(), sessionId }) &&
       result.delta.upserts.some((u) => /github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/.test(u.value))
     ) {
       void get()
