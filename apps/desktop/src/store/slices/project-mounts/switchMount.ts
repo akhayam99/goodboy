@@ -71,7 +71,7 @@ export const switchMount = (set: SetFn, get: GetFn) => {
             createNew,
           });
         } catch (error) {
-          const taken = branchInUseError({ error, mountId, branch: target });
+          const taken = branchInUseError({ error, mountId });
           await failMountOperation({
             operation,
             errorCode: taken === null ? 'branch-missing' : 'branch-taken',

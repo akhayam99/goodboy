@@ -24,6 +24,10 @@ pub enum WorktreeError {
         "branch {branch} is already checked out at {path}. switch that worktree to another branch, or fork a new one instead"
     )]
     BranchInUse { branch: String, path: String },
+    #[error(
+        "branch {branch} exists neither in this repository nor on origin, so there is nothing to adopt. cut it as a new branch instead"
+    )]
+    BranchNotFound { branch: String },
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
     #[error("invalid utf-8 in git output")]
@@ -40,6 +44,7 @@ impl WorktreeError {
             WorktreeError::NoCommit(_) => "no_commit",
             WorktreeError::Git { .. } => "git",
             WorktreeError::BranchInUse { .. } => "branch_in_use",
+            WorktreeError::BranchNotFound { .. } => "branch_not_found",
             WorktreeError::Io(_) => "io",
             WorktreeError::InvalidUtf8 => "invalid_utf8",
         }
@@ -619,7 +624,7 @@ fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, Worktre
                         ],
                     )?;
                 }
-                _ => {
+                _ if remote_exists => {
                     git(
                         &repo_path,
                         &[
@@ -633,6 +638,11 @@ fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, Worktre
                         ],
                     )
                     .map_err(|error| with_fetch_cause(error, fetch_failure.as_deref()))?;
+                }
+                _ => {
+                    return Err(WorktreeError::BranchNotFound {
+                        branch: name.to_string(),
+                    });
                 }
             }
         }
@@ -3880,6 +3890,36 @@ mod rewrite_tests {
             .as_str()
             .unwrap()
             .contains(holder.to_string_lossy().as_ref()));
+        assert!(!parent_dir.join("second").exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn adopting_a_branch_that_exists_nowhere_names_the_branch() {
+        let root = std::fs::canonicalize(init_repo("adopt-missing")).unwrap();
+        commit(&root, "a.txt", "a\n", "first");
+        let parent_dir = root.join(".goodboy").join("worktrees");
+        std::fs::create_dir_all(&parent_dir).unwrap();
+
+        let error = worktree_create_blocking(CreateArgs {
+            repo_path: root.to_string_lossy().into_owned(),
+            branch_prefix: "ak".to_string(),
+            slug: "second-half".to_string(),
+            parent_dir: Some(parent_dir.to_string_lossy().into_owned()),
+            existing_branch: Some("ak/second-half".to_string()),
+            fallback_ref: None,
+            base_branch: None,
+            dir_name: Some("second".to_string()),
+        })
+        .unwrap_err();
+
+        let wire = serde_json::to_value(&error).unwrap();
+        let super::WorktreeError::BranchNotFound { branch } = error else {
+            panic!("expected a branch-not-found error, found {error:?}");
+        };
+        assert_eq!(branch, "ak/second-half");
+        assert_eq!(wire["kind"], "branch_not_found");
+        assert!(wire["message"].as_str().unwrap().contains("ak/second-half"));
         assert!(!parent_dir.join("second").exists());
         std::fs::remove_dir_all(root).unwrap();
     }
