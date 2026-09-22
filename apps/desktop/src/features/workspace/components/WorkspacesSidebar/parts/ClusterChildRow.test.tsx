@@ -62,7 +62,7 @@ describe('ClusterChildRow unread border', () => {
       isSelected: false,
     });
     expect(button.className).toContain('border-warning/70');
-    expect(button.className).toContain('bg-warning/5');
+    expect(button.className).not.toContain('bg-warning/5');
   });
 
   it('hides the warning border when the child is selected (currently viewed)', () => {

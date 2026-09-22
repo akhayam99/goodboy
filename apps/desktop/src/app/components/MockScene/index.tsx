@@ -36,6 +36,7 @@ import {
   ArtifactsLensShellScene,
 } from './scenes/SurfaceAuditScenes';
 import { LensSwitcherClosedScene, LensSwitcherScene } from './scenes/LensSwitcherScenes';
+import { CardRailsScene } from './scenes/CardRailsScene';
 
 const SCENES = {
   workspace: WorkspaceScene,
@@ -66,6 +67,7 @@ const SCENES = {
   'resolve-queue-shell': ResolveQueueShellScene,
   'resolve-publish-blocked': ResolvePublishBlockedScene,
   'artifacts-lens-shell': ArtifactsLensShellScene,
+  'card-rails': CardRailsScene,
   'lens-switcher': LensSwitcherScene,
   'lens-switcher-closed': LensSwitcherClosedScene,
 };

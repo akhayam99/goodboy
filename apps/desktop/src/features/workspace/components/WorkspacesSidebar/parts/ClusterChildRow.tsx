@@ -53,7 +53,7 @@ export const ClusterChildRow = ({
       onMouseLeave={hoverMarkViewed.onMouseLeave}
       className={cn(
         'flex w-full items-center gap-2 rounded border-l-2 border-transparent px-2 py-1 text-2xs font-medium transition-colors',
-        hasUnread && !isSelected && 'border-warning/70 bg-warning/5',
+        hasUnread && !isSelected && 'border-warning/70',
         isSelected
           ? 'bg-elevated text-foreground'
           : 'text-foreground/70 hover:bg-muted/60 hover:text-foreground',

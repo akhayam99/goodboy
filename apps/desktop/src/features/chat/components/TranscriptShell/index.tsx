@@ -36,9 +36,8 @@ export const TranscriptShell = ({
 }: Props) => {
   const accent = tintClasses(tone);
   const shellClassName = cn(
-    variant === 'boxed' && 'rounded-lg border px-3 py-2',
+    variant === 'boxed' && 'rounded-r-md border-l-2 py-2 pl-3 pr-3',
     variant === 'boxed' && (emphasis ? accent.border : accent.borderSoft),
-    variant === 'boxed' && (emphasis ? accent.bg : accent.bgSoft),
     variant === 'leftBorder' &&
       (nested ? 'border-l-2 py-2 pl-2 pr-2' : 'rounded-r-md border-l-2 py-1 pl-2 pr-2'),
     variant === 'leftBorder' && (nested ? accent.borderSoft : accent.border),

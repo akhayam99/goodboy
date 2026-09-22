@@ -255,7 +255,7 @@ export const WorkflowStepRow = ({
         </div>
       </div>
       {pendingConfirm && blockReason !== null ? (
-        <div className="flex items-center gap-2 rounded-md bg-warning/5 px-2.5 py-1.5 text-xs">
+        <div className="flex items-center gap-2 rounded-r-md border-l-2 border-warning/40 py-1.5 pl-2.5 pr-2.5 text-xs">
           <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0 text-warning" />
           <span className="min-w-0 flex-1 truncate text-foreground">
             {WORKFLOW_BLOCK_COPY[blockReason]}

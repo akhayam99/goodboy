@@ -61,8 +61,8 @@ export const UserText = ({ text, at, attachments, provider, model, workingDir = 
   return (
     <TranscriptShell
       tone="neutral"
-      variant="boxed"
-      className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 bg-elevated ring-1 ring-border-soft"
+      variant="plain"
+      className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-lg bg-elevated px-3 py-2 ring-1 ring-border-soft"
     >
       {atts.length > 0 && (
         <div className="flex flex-wrap justify-end gap-1.5">

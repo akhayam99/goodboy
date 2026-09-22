@@ -528,7 +528,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
             variant="warning"
             emphasis="outline"
             size="sm"
-            className="border-warning/20 bg-warning/5 px-3"
+            className="border-warning/20 px-3"
             onClick={() => {
               void selectAgent(session.id, otherAgentId);
               requestOpenQuestionScroll({

@@ -346,7 +346,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   Disconnect
                 </Button>
               ) : (
-                <div className="flex items-center gap-2 rounded-md bg-danger/5 px-2 py-1.5">
+                <div className="flex items-center gap-2 rounded-r-md border-l-2 border-danger/40 py-1.5 pl-2 pr-2">
                   <Button
                     variant="ghost"
                     size="sm"
