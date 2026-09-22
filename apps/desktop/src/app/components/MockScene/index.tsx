@@ -21,6 +21,7 @@ import {
   ArtifactCreateWireframeScene,
 } from './scenes/ArtifactCreationScenes';
 import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
+import { ActivityRunScene } from './scenes/ActivityRunScene';
 import {
   WorkflowBuilderScene,
   WorkflowRunScene,
@@ -37,6 +38,8 @@ import {
 } from './scenes/SurfaceAuditScenes';
 import { LensSwitcherClosedScene, LensSwitcherScene } from './scenes/LensSwitcherScenes';
 import { CardRailsScene } from './scenes/CardRailsScene';
+import { ProvidersScene } from './scenes/ProvidersScene';
+import { ImpactScene } from './scenes/ImpactScene';
 
 const SCENES = {
   workspace: WorkspaceScene,
@@ -57,6 +60,7 @@ const SCENES = {
   'artifact-create-wireframe': ArtifactCreateWireframeScene,
   activity: ActivityTimelineScene,
   'activity-filter': ActivityFilterScene,
+  'activity-run': ActivityRunScene,
   'workflow-builder': WorkflowBuilderScene,
   'workflow-run': WorkflowRunScene,
   'open-questions': OpenQuestionsScene,
@@ -70,6 +74,8 @@ const SCENES = {
   'card-rails': CardRailsScene,
   'lens-switcher': LensSwitcherScene,
   'lens-switcher-closed': LensSwitcherClosedScene,
+  providers: ProvidersScene,
+  impact: ImpactScene,
 };
 
 export const MockScene = () => {

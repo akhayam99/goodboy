@@ -47,8 +47,13 @@ import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
 const WORKSPACE_ID = 'ws-target' as WorkspaceId;
 
 const conflict = {
-  project: { id: 'proj-known', name: 'app-web', rootPath: '/repos/app-web', kind: 'repo' },
-  sourceWorkspace: { id: 'ws-legacy', name: 'app-web' },
+  project: {
+    id: 'proj-known',
+    name: 'storefront-web',
+    rootPath: '/repos/storefront-web',
+    kind: 'repo',
+  },
+  sourceWorkspace: { id: 'ws-legacy', name: 'storefront-web' },
   sessionCount: 4,
   isShell: true,
 };
@@ -70,17 +75,17 @@ describe('WorkspaceProjectsSection', () => {
     state.addProject.mockResolvedValueOnce({ kind: 'conflict', conflict });
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    await addPath('/repos/app-web');
+    await addPath('/repos/storefront-web');
 
-    await waitFor(() => screen.getByText('already in app-web with 4 sessions'));
+    await waitFor(() => screen.getByText('already in storefront-web with 4 sessions'));
     expect(showToast).not.toHaveBeenCalled();
   });
 
   it('adopts the project into this workspace through Move it here', async () => {
     state.addProject.mockResolvedValueOnce({ kind: 'conflict', conflict });
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
-    await addPath('/repos/app-web');
-    await waitFor(() => screen.getByText('already in app-web with 4 sessions'));
+    await addPath('/repos/storefront-web');
+    await waitFor(() => screen.getByText('already in storefront-web with 4 sessions'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Move it here' }));
 
@@ -91,20 +96,20 @@ describe('WorkspaceProjectsSection', () => {
       }),
     );
     await waitFor(() =>
-      expect(screen.queryByText('already in app-web with 4 sessions')).toBeNull(),
+      expect(screen.queryByText('already in storefront-web with 4 sessions')).toBeNull(),
     );
-    expect(showToast).toHaveBeenCalledWith('success', 'moved app-web here');
+    expect(showToast).toHaveBeenCalledWith('success', 'moved storefront-web here');
   });
 
   it('dismisses the conflict row through Keep there without adopting', async () => {
     state.addProject.mockResolvedValueOnce({ kind: 'conflict', conflict });
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
-    await addPath('/repos/app-web');
-    await waitFor(() => screen.getByText('already in app-web with 4 sessions'));
+    await addPath('/repos/storefront-web');
+    await waitFor(() => screen.getByText('already in storefront-web with 4 sessions'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Keep there' }));
 
-    expect(screen.queryByText('already in app-web with 4 sessions')).toBeNull();
+    expect(screen.queryByText('already in storefront-web with 4 sessions')).toBeNull();
     expect(state.adoptProject).not.toHaveBeenCalled();
   });
 

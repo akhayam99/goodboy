@@ -38,18 +38,22 @@ vi.mock('../features/worktree/worktree', async () =>
 );
 vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
 
-const APP_WEB_WS = 'ws-app-web' as WorkspaceId;
+const STOREFRONT_WEB_WS = 'ws-storefront-web' as WorkspaceId;
 const API_WS = 'ws-api' as WorkspaceId;
-const APP_WEB_PROJECT = 'project-app-web' as ProjectId;
+const STOREFRONT_WEB_PROJECT = 'project-storefront-web' as ProjectId;
 const API_PROJECT = 'project-api' as ProjectId;
 
-const appWebShell = buildStoryWorkspace({ id: APP_WEB_WS, name: 'app-web', slug: 'app-web' });
+const storefrontWebShell = buildStoryWorkspace({
+  id: STOREFRONT_WEB_WS,
+  name: 'storefront-web',
+  slug: 'storefront-web',
+});
 const apiShell = buildStoryWorkspace({ id: API_WS, name: 'api', slug: 'api' });
-const appWebProject = buildStoryProject({
-  id: APP_WEB_PROJECT,
-  workspaceId: APP_WEB_WS,
-  name: 'app-web',
-  rootPath: '/repos/app-web',
+const storefrontWebProject = buildStoryProject({
+  id: STOREFRONT_WEB_PROJECT,
+  workspaceId: STOREFRONT_WEB_WS,
+  name: 'storefront-web',
+  rootPath: '/repos/storefront-web',
 });
 const apiProject = buildStoryProject({
   id: API_PROJECT,
@@ -109,12 +113,12 @@ beforeEach(() => {
   fakeSessions.length = 0;
   fakeWorkspaces.clear();
   fakeProjectWorkspace.clear();
-  fakeWorkspaces.set(appWebShell.id, appWebShell);
+  fakeWorkspaces.set(storefrontWebShell.id, storefrontWebShell);
   fakeWorkspaces.set(apiShell.id, apiShell);
-  fakeProjectWorkspace.set(APP_WEB_PROJECT, APP_WEB_WS);
+  fakeProjectWorkspace.set(STOREFRONT_WEB_PROJECT, STOREFRONT_WEB_WS);
   fakeProjectWorkspace.set(API_PROJECT, API_WS);
   for (let index = 0; index < 4; index += 1) {
-    seedFakeSession({ id: `sess-web-${index}`, workspaceId: APP_WEB_WS });
+    seedFakeSession({ id: `sess-web-${index}`, workspaceId: STOREFRONT_WEB_WS });
   }
   for (let index = 0; index < 4; index += 1) {
     seedFakeSession({ id: `sess-api-${index}`, workspaceId: API_WS });
@@ -128,8 +132,11 @@ beforeEach(() => {
     error: null,
   }));
   vi.mocked(dbMock.findProjectByRootPath).mockImplementation(async ({ rootPath }) => {
-    if (rootPath === '/repos/app-web') {
-      return { ...appWebProject, workspaceId: fakeProjectWorkspace.get(APP_WEB_PROJECT)! };
+    if (rootPath === '/repos/storefront-web') {
+      return {
+        ...storefrontWebProject,
+        workspaceId: fakeProjectWorkspace.get(STOREFRONT_WEB_PROJECT)!,
+      };
     }
     if (rootPath === '/repos/api') {
       return { ...apiProject, workspaceId: fakeProjectWorkspace.get(API_PROJECT)! };
@@ -179,13 +186,13 @@ beforeEach(() => {
   }: {
     readonly workspaceId: WorkspaceId;
   }) =>
-    [appWebProject, apiProject]
+    [storefrontWebProject, apiProject]
       .filter((project) => fakeProjectWorkspace.get(project.id) === workspaceId)
       .map((project) => ({ ...project, workspaceId }))) as never);
 
   useAppStore.setState({
-    workspaces: [appWebShell, apiShell],
-    projects: [appWebProject, apiProject],
+    workspaces: [storefrontWebShell, apiShell],
+    projects: [storefrontWebProject, apiProject],
     currentWorkspaceId: null,
     sessions: [],
     archivedSessions: {},
@@ -200,18 +207,18 @@ describe('story: two migrated shells fuse into one workspace board', () => {
 
     const first = await useAppStore
       .getState()
-      .addProject({ workspaceId: acme.id, rootPath: '/repos/app-web' });
+      .addProject({ workspaceId: acme.id, rootPath: '/repos/storefront-web' });
     expect(first.kind).toBe('conflict');
     if (first.kind !== 'conflict') {
       throw new Error('expected conflict result');
     }
-    expect(first.conflict.sourceWorkspace.id).toBe(APP_WEB_WS);
+    expect(first.conflict.sourceWorkspace.id).toBe(STOREFRONT_WEB_WS);
     expect(first.conflict.sessionCount).toBe(4);
     expect(first.conflict.isShell).toBe(true);
 
     const firstAdoption = await useAppStore
       .getState()
-      .adoptProject({ projectId: APP_WEB_PROJECT, targetWorkspaceId: acme.id });
+      .adoptProject({ projectId: STOREFRONT_WEB_PROJECT, targetWorkspaceId: acme.id });
     expect(firstAdoption.mergedWorkspace).toBe(true);
     expect(useAppStore.getState().sessions).toHaveLength(4);
 
@@ -238,6 +245,6 @@ describe('story: two migrated shells fuse into one workspace board', () => {
     const archived = useAppStore.getState().archivedSessions[acme.id] ?? [];
     expect(archived).toHaveLength(1);
     expect(useAppStore.getState().sessions.length + archived.length).toBe(9);
-    expect(useAppStore.getState().archivedSessions[APP_WEB_WS] ?? []).toHaveLength(0);
+    expect(useAppStore.getState().archivedSessions[STOREFRONT_WEB_WS] ?? []).toHaveLength(0);
   });
 });

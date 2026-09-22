@@ -81,7 +81,7 @@ the top-level props. A hook one level down needing a key you didn't seed
 does not crash; it silently renders empty, which looks like a bug in the
 component instead of a gap in the mock.
 
-## Gotchas hit while building the five current scenes
+## Gotchas hit while building the scenes
 
 - **The same "role" badge is computed two different ways depending on
   which component you're in.** `useWorkspaceRuns`'s `kindOf` reads
@@ -115,6 +115,15 @@ ToastProvider`.** The real app tree wraps everything in `ToastProvider`
   code is needed to add the real session sidebar or the real app footer to a
   scene; pass the components into those two props.
 
+- **A studio can reach `invoke()` through a hook you never render.** The rule
+  above is about the render never depending on the Tauri runtime, and
+  `ImpactStudio` keeps it: its `useImpactMetrics` queries the database
+  directly, fails, and catches its own error, and the provider scope the
+  scene opens on renders nothing from it. Seeding cannot reach that hook,
+  because it does not go through a store action. When a scene mounts a studio,
+  open it on the scope whose panels are store-backed and check the console
+  before trusting a full-looking screenshot.
+
 ## Capture the actual image, not a browser-pane screenshot
 
 An interactive browser pane's own screenshot tool adds its own chrome (a tab
@@ -126,7 +135,7 @@ Chrome against the same localhost URL:
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --headless=new --disable-gpu --no-sandbox --hide-scrollbars \
   --force-device-scale-factor=2 --window-size=1440,900 --virtual-time-budget=4000 \
-  --screenshot=out.png "http://localhost:1421/?scene=orchestrator"
+  --screenshot=out.png "http://localhost:1421/?scene=board-shell"
 ```
 
 `--window-size=1440,900` matches the Tauri window's fixed default size in
@@ -145,11 +154,15 @@ only for easy tasks.
 
 ## What already exists
 
-`apps/desktop/src/app/components/MockScene/` and
-`apps/desktop/src/store/mock-data.ts` currently hold five scenes: board,
-overview (with the full sidebar and footer), orchestrator (multi-provider
-fan-out), resolve, and per-role model routing. As of this writing they are
-uncommitted in a local worktree. They cost nothing at runtime when
-`VITE_GOODBOY_MOCK` is unset, so committing them behind the flag (instead of
-rebuilding from scratch next time) is worth doing the next time this comes
-up.
+`apps/desktop/src/app/components/MockScene/` holds one scene component per
+screenshot, registered by key in the `SCENES` map, seeded from
+`apps/desktop/src/store/mock-data.ts` and from a per-scene seed module. Read
+the map before building anything: the surface you need is often already
+there, and the keys are the `?scene=` values. They cost nothing at runtime
+when `VITE_GOODBOY_MOCK` is unset.
+
+The README's feature guide is captured from these scenes, and the images live
+in `docs/images/`, named after the scene that produced them, so a re-capture
+is one command with no lookup. A shorter `--window-size` height than 900 is
+the way to crop a short surface: the layout keeps its own proportions and the
+footer stays pinned.

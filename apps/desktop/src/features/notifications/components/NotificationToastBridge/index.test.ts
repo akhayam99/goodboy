@@ -63,12 +63,14 @@ describe('pickFreshFailures', () => {
 });
 
 describe('notificationContext', () => {
-  const workspaces = [{ id: 'w1' as WorkspaceId, name: 'app-web' } as Workspace];
+  const workspaces = [{ id: 'w1' as WorkspaceId, name: 'storefront-web' } as Workspace];
   const sessions = [{ id: 's1' as SessionId, goal: 'GRW-902 change therapist' } as Session];
 
   it('joins workspace name and session goal', () => {
     const n = notif({ id: 'n', workspaceId: 'w1' as WorkspaceId, sessionId: 's1' as SessionId });
-    expect(notificationContext(n, sessions, workspaces)).toBe('app-web · GRW-902 change therapist');
+    expect(notificationContext(n, sessions, workspaces)).toBe(
+      'storefront-web · GRW-902 change therapist',
+    );
   });
 
   it('falls back to a placeholder for a blank goal', () => {

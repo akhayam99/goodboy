@@ -228,14 +228,14 @@ const FLOW_MOUNTS: ReadonlyArray<SessionProjectMount> = [
     sessionId: FLOW_SESSION_ID,
     projectId: LEDGER_PROJECT_ID,
     mountName: 'ledger-core',
-    branch: 'ak/fix-settlement-rounding',
+    branch: 'nw/fix-settlement-rounding',
     suffix: 'settlement',
   }),
   mountOf({
     sessionId: FLOW_SESSION_ID,
     projectId: PAYMENTS_PROJECT_ID,
     mountName: 'payments-api',
-    branch: 'ak/fix-settlement-rounding',
+    branch: 'nw/fix-settlement-rounding',
     suffix: 'settlement',
   }),
 ];
@@ -245,7 +245,7 @@ const CHAT_MOUNTS: ReadonlyArray<SessionProjectMount> = [
     sessionId: CHAT_SESSION_ID,
     projectId: RELAY_PROJECT_ID,
     mountName: 'notify-relay',
-    branch: 'ak/fix-retry-storm',
+    branch: 'nw/fix-retry-storm',
     suffix: 'storm',
   }),
 ];
@@ -1119,10 +1119,10 @@ const seedFlowAuditBase = () => {
       [CHAT_SESSION_ID]: CHAT_MOUNTS.map((mount) => mount.worktreePath),
     },
     sessionBranches: {
-      [FLOW_SESSION_ID]: 'ak/fix-settlement-rounding',
-      [CHAT_SESSION_ID]: 'ak/fix-retry-storm',
-      [EXPORT_SESSION_ID]: 'ak/feat-monthly-ledger-export',
-      [PRICING_SESSION_ID]: 'ak/refactor-rate-table',
+      [FLOW_SESSION_ID]: 'nw/fix-settlement-rounding',
+      [CHAT_SESSION_ID]: 'nw/fix-retry-storm',
+      [EXPORT_SESSION_ID]: 'nw/feat-monthly-ledger-export',
+      [PRICING_SESSION_ID]: 'nw/refactor-rate-table',
     },
     sessionWorktreeRecords: {
       [FLOW_SESSION_ID]: FLOW_MOUNTS.map((mount, index) => ({
