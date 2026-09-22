@@ -14,11 +14,11 @@ No account, no server.
 ## Open the app and see what needs you
 
 Four terminals open and no idea which one is waiting on an answer. Goodboy's
-home is a board with five columns, needs you, running, in review, building and
+home is a board with five columns, building, running, needs you, in review and
 done, plus an archive at the end. Each card is a session, Goodboy's word for a
 task; open it for the plan, the questions and the diff.
 
-![The Goodboy board for a workspace: cards under needs you, running, in review and building, with the done and archived columns folded at the end](./docs/images/board-shell.png)
+![The Goodboy board for a workspace: cards under building, running, needs you and in review, with the done and archived columns folded at the end](./docs/images/board-shell.png)
 
 ## Pick up a task cold
 
@@ -66,7 +66,7 @@ shows the pull request, its checks and every comment thread. Resolve hands a
 comment to an agent, which comes back with a local commit and a drafted reply,
 and nothing reaches the pull request until you resolve it yourself.
 
-![The Resolve queue for a pull request: comment threads listed with their state, one with a fix ready on your machine, one with a question for you, one still working](./docs/images/resolve.png)
+![The Resolve queue for a pull request: comment threads with their state, two replies ready to post, one question for you, one settled but not published](./docs/images/resolve.png)
 
 ## The plan is a page, not a message
 
@@ -84,7 +84,7 @@ somebody decides. Each question comes with suggested answers to pick or
 overwrite. If it is not worth your minute, hand it to another agent with a hint
 or two: the answer counts as yours.
 
-![Two open questions from agents, each with suggested answers, a free-text field and a let an agent answer option, and one question already answered](./docs/images/open-questions.png)
+![An open question from an agent with its suggested answers, a free-text field and a let an agent answer option, under the question it already answered](./docs/images/open-questions.png)
 
 ## Also in the box
 
