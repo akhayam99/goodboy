@@ -41,6 +41,7 @@ export const WorkflowStepGraph = ({
 }: Props) => {
   const stepById = new Map<string, Step>(workflow.steps.map((step) => [step.id, step]));
   const rows = buildStepGraphRows({ runs, childrenByParentId, stepById });
+  const visibleAgentIds = new Set(rows.map((row) => row.run.id));
   const rail = layoutBranchRail({
     rows: rows.map((row) => ({
       id: row.run.id,
@@ -74,6 +75,7 @@ export const WorkflowStepGraph = ({
             roleModels={roleModels}
             sessionProvider={sessionProvider}
             sessionEffort={sessionEffort}
+            visibleAgentIds={visibleAgentIds}
             selectedAgentId={selectedAgentId}
             onSelect={onSelect}
           />
