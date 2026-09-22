@@ -137,6 +137,36 @@ describe('ArtifactPrintView', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
+  it('prints the lead before the contents, as the cover of the document', async () => {
+    listSpy.mockResolvedValueOnce([
+      {
+        ...report,
+        sourceText: [
+          '<<summary>>',
+          'the key expired',
+          '<</summary>>',
+          '',
+          '## One',
+          'a',
+          '## Two',
+          'b',
+          '## Three',
+          'c',
+        ].join('\n'),
+      },
+    ]);
+    render(<ArtifactPrintView request={request} />);
+    await waitFor(() => {
+      expect(screen.getByText('the key expired')).toBeDefined();
+    });
+    const lead = document.querySelector('.print-lead');
+    const contents = document.querySelector('.print-contents');
+    expect(lead?.nextElementSibling).toBe(contents);
+    expect(document.querySelector('.print-body:not(.print-lead)')?.textContent).not.toContain(
+      'the key expired',
+    );
+  });
+
   it('keeps a leading heading that is not the title', async () => {
     listSpy.mockResolvedValueOnce([{ ...report, sourceText: '# Outcome\n\nwhat landed' }]);
     render(<ArtifactPrintView request={request} />);

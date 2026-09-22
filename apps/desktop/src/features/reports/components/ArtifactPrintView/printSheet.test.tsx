@@ -235,7 +235,9 @@ describe('print sheet styling', () => {
   });
 
   it('writes callout and chip tones as tokens, which happy-dom cannot resolve', () => {
-    expect(SHEET_CSS).toContain("[data-tone='goal']");
+    expect(SHEET_CSS).toContain("[data-color='primary']");
+    expect(SHEET_CSS).toContain("[data-color='danger']");
+    expect(SHEET_CSS).toContain('var(--color-danger)');
     expect(SHEET_CSS).toContain('var(--color-primary)');
     expect(SHEET_CSS).toContain('var(--color-success)');
     expect(SHEET_CSS).toContain('var(--color-warning)');
@@ -256,7 +258,9 @@ describe('print sheet styling', () => {
     await renderArtifact({ artifact: reportWithList });
 
     expect(styleOf({ selector: '.print-body ul' }).listStyle).toBe('none');
-    expect(SHEET_CSS).toMatch(/ol > li::before \{[^}]*content: counter\(print-item\) '\.'/);
+    expect(SHEET_CSS).toMatch(
+      /ol:not\(\[data-block\]\) > li::before \{[^}]*content: counter\(print-item\) '\.'/,
+    );
     expect(SHEET_CSS).toMatch(/ol:has\(> li:nth-child\(10\)\) > li \{/);
     expect(SHEET_CSS).toMatch(/ul > li::before \{[^}]*border-radius: 50%/);
     expect(SHEET_CSS).not.toContain('::marker');
@@ -276,6 +280,21 @@ describe('print sheet styling', () => {
     expect(SHEET_CSS).toContain(
       ":has(> [role='separator']:only-child):has(+ div > :is(h1, h2):first-child)",
     );
+  });
+
+  it('prints the report kit blocks as a page layout, not app chrome', () => {
+    expect(SHEET_CSS).toMatch(/\[data-block='facts'\] \{[^}]*display: grid/);
+    expect(SHEET_CSS).toMatch(/\[data-block='metrics'\] \{[^}]*break-inside: avoid/);
+    expect(SHEET_CSS).toMatch(/\[data-block='metric-value'\] \{[^}]*font-size: var\(--print-h1\)/);
+    expect(SHEET_CSS).toMatch(/\[data-block='timeline-dot'\] \{[^}]*var\(--print-accent\)/);
+    expect(SHEET_CSS).toMatch(/\[data-block='pagebreak'\] \{[^}]*break-after: page/);
+    expect(SHEET_CSS).toMatch(/\[data-tone='summary'\] \{[^}]*border-left-width: 2pt/);
+    expect(SHEET_CSS).toContain('.print-lead + .print-contents');
+  });
+
+  it('keeps the section rule on the heading, so it moves to the next page with it', () => {
+    expect(SHEET_CSS).toMatch(/> div > div > h2 \{[^}]*border-top: 0\.5pt solid/);
+    expect(SHEET_CSS).not.toMatch(/div:has\(> h2\) \{[^}]*border-top/);
   });
 
   it('runs a paragraph and a list item at the same leading', async () => {
