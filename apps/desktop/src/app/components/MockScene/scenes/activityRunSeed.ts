@@ -650,19 +650,18 @@ const WIREFRAME_DOCUMENT = {
       viewport: 'desktop',
       root: {
         id: 'deliveries-stack',
-        type: 'stack',
-        direction: 'vertical',
+        kind: 'stack',
+        direction: 'column',
         gap: 'md',
         children: [
-          { id: 'deliveries-title', type: 'text', variant: 'heading', text: 'Deliveries' },
+          { id: 'deliveries-title', kind: 'text', text: 'Deliveries', variant: 'title' },
           {
-            id: 'deliveries-table',
-            type: 'table',
-            columns: ['Event', 'Attempts', 'State'],
-            rows: [
-              ['evt_1KpQ', '1', 'credited'],
-              ['evt_1KpR', '4', 'stuck'],
-              ['evt_1KpS', '2', 'deduped'],
+            id: 'deliveries-list',
+            kind: 'list',
+            items: [
+              { id: 'delivery-credited', title: 'evt_1KpQ', subtitle: '1 attempt, credited' },
+              { id: 'delivery-stuck', title: 'evt_1KpR', subtitle: '4 attempts, stuck' },
+              { id: 'delivery-deduped', title: 'evt_1KpS', subtitle: '2 attempts, deduped' },
             ],
           },
         ],
@@ -674,22 +673,22 @@ const WIREFRAME_DOCUMENT = {
       viewport: 'desktop',
       root: {
         id: 'stuck-stack',
-        type: 'stack',
-        direction: 'vertical',
+        kind: 'stack',
+        direction: 'column',
         gap: 'md',
         children: [
           {
             id: 'stuck-banner',
-            type: 'text',
-            variant: 'body',
+            kind: 'text',
             text: 'evt_1KpR has been retried 4 times in the last hour.',
+            variant: 'body',
           },
-          { id: 'stuck-replay', type: 'button', label: 'Replay once', variant: 'primary' },
+          { id: 'stuck-replay', kind: 'button', label: 'Replay once', variant: 'primary' },
         ],
       },
     },
   ],
-  transitions: [{ fromNodeId: 'deliveries-table', toScreenId: 'stuck', label: 'open a stuck row' }],
+  transitions: [{ fromNodeId: 'delivery-stuck', toScreenId: 'stuck', label: 'open a stuck row' }],
 };
 
 const WIREFRAME_ARTIFACT: WireframeArtifact = {
@@ -897,7 +896,7 @@ const PR = ({
   title,
   url: `https://example.invalid/cascadia/${repo}/pull/${number}`,
   state,
-  mergeable: state === 'open',
+  mergeable: state === 'open' ? true : null,
   checks,
   baseBranch: 'main',
   headBranch,
