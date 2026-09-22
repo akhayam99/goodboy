@@ -1,5 +1,6 @@
 import type {
   Agent,
+  ClusterCompletionHold,
   IsoDateTime,
   MountId,
   ProjectId,
@@ -28,6 +29,7 @@ import { isMainWindow } from '../../../features/workspace/window';
 import { invokeBudgetAlertsList, invokeBudgetRuleList } from '../../../features/budget/budget';
 import { invokeSkillList } from '../../../features/skills/skills';
 import {
+  invokeClusterCompletionHolds,
   invokeWorkflowList,
   invokeWorkflowsForSession,
   invokeStepDefList,
@@ -119,11 +121,18 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         now: recoveryNow,
       });
       const sessionIds = sessions.map((s) => s.id);
-      const [loadedWorktreesBySession, agentsBySession, externalTasks] = await Promise.all([
-        listWorktreesForSessions(tauriDatabase, sessionIds),
-        listAgentsForSessions(tauriDatabase, sessionIds),
-        listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
-      ]);
+      const [loadedWorktreesBySession, agentsBySession, externalTasks, completionHoldEntries] =
+        await Promise.all([
+          listWorktreesForSessions(tauriDatabase, sessionIds),
+          listAgentsForSessions(tauriDatabase, sessionIds),
+          listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
+          Promise.all(
+            sessionIds.map(async (sessionId) => ({
+              sessionId,
+              holds: await invokeClusterCompletionHolds({ sessionId }),
+            })),
+          ),
+        ]);
       const worktreesBySession = loadedWorktreesBySession;
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionWorktreeRecords: Record<string, ReadonlyArray<SessionWorktree>> = {};
@@ -132,9 +141,13 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       const sessionActiveMount: Record<string, MountId | null> = {};
       const sessionBranches: Record<string, string> = {};
       const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};
+      const clusterCompletionHolds: Record<string, ReadonlyArray<ClusterCompletionHold>> = {};
       const kindOverridesFromDb: Record<string, AgentKind> = {};
       const invalidActiveMountSessionIds = new Set<string>();
       const repairedWriteDestinations = new Map<string, RepairedDestination>();
+      for (const entry of completionHoldEntries) {
+        clusterCompletionHolds[entry.sessionId] = entry.holds;
+      }
       for (const s of sessions) {
         const rows = await verifyAvailableWorktrees({
           sessionId: s.id,
@@ -228,6 +241,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessionActiveMount,
         sessionBranches,
         sessionPhaseRuns,
+        clusterCompletionHolds,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
         sessionExternalTasks: { ...state.sessionExternalTasks, ...externalTasksMap },
       }));

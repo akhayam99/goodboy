@@ -18,6 +18,7 @@ type Props = {
   readonly childCount: number;
   readonly doneChildCount: number;
   readonly answersForStepName: string | null;
+  readonly visibleAgentIds: ReadonlySet<string>;
   readonly isSelected: boolean;
   readonly onSelect: () => void;
 };
@@ -33,15 +34,24 @@ export const WorkflowStepGraphNode = ({
   childCount,
   doneChildCount,
   answersForStepName,
+  visibleAgentIds,
   isSelected,
   onSelect,
 }: Props) => {
-  const completionHold = useAppStore(
-    (state) =>
-      state.clusterCompletionHolds?.[run.sessionId]?.find(
-        (hold) => hold.sourceAgentId === run.id && hold.state === 'open',
-      ) ?? null,
-  );
+  const completionHold = useAppStore((state) => {
+    const openHolds = (state.clusterCompletionHolds?.[run.sessionId] ?? []).filter(
+      (hold) => hold.state === 'open',
+    );
+    const sourceHold = openHolds.find((hold) => hold.sourceAgentId === run.id);
+    if (sourceHold !== undefined) {
+      return sourceHold;
+    }
+    return (
+      openHolds.find(
+        (hold) => hold.containerAgentId === run.id && !visibleAgentIds.has(hold.sourceAgentId),
+      ) ?? null
+    );
+  });
   return (
     <div className="flex min-w-0 flex-1 items-center gap-1.5">
       <button

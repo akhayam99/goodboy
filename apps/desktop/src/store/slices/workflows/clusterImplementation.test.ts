@@ -1481,6 +1481,44 @@ describe('advanceClusterImplementation', () => {
     );
   });
 
+  it('advances from a held child that was tombstoned', async () => {
+    const next = childAgent({ id: 'orphan-next', ordinal: 1, status: 'pending' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), next] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterCompletionHolds: {
+        [SID]: [
+          {
+            id: 'hold-orphaned',
+            sessionId: SID,
+            workflowRunId: null,
+            containerAgentId: PARENT,
+            sourceAgentId: 'deleted-child' as AgentId,
+            sourceTurnId: 'turn-deleted',
+            reason: 'missing-outcome',
+            findings: [],
+            state: 'open',
+            resolutionEvidence: null,
+            resolvedAt: null,
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([container({ status: 'running' }), next]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, 'deleted-child' as AgentId, '', {
+      force: true,
+      resolvedHoldId: 'hold-orphaned',
+    });
+
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
+    expect(store.sendTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: next.id, content: expect.stringContaining('do 1') }),
+    );
+  });
+
   it('kicks off the next cluster with its instructions even after the plan flipped to consumed', async () => {
     const c0 = childAgent({ id: 'cu0', ordinal: 0 });
     const c1 = childAgent({ id: 'cu1', ordinal: 1 });
