@@ -19,7 +19,11 @@ import {
 import { ROLE_TO_KIND, inferAgentKindFromName } from '../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../../features/workflows/resolveStepRouting';
 import { revalidateStepRouting } from '../../../features/workflows/revalidateStepRouting';
-import { invokeAgentInsert } from '../../../features/workflows/workflows';
+import {
+  invokeAgentGenerationBind,
+  invokeAgentGenerationReserve,
+  invokeAgentInsert,
+} from '../../../features/workflows/workflows';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -118,6 +122,18 @@ export const preSpawnWorkflowAgents = async ({
     });
     const provider = routing.provider;
     const model = resolveModelIdForProvider({ provider, modelId: routing.model });
+    const reservation = await invokeAgentGenerationReserve({
+      reservationId: `generation:workflow-step:${workflowRunId ?? sessionId}:${step.id}`,
+      sessionId,
+      workflowRunId: workflowRunId ?? null,
+      parentAgentId: null,
+      creationPath: 'workflow-step',
+      count: 1,
+    });
+    if (reservation.kind === 'refused') {
+      blocked.push({ stepId: step.id, stepName: step.name, reason: reservation.reason });
+      continue;
+    }
     const agent = await invokeAgentInsert({
       sessionId,
       stepId: step.id,
@@ -134,6 +150,12 @@ export const preSpawnWorkflowAgents = async ({
       routingLock: effectiveStep.routingLock ?? null,
       routingDecision: effectiveStep.routingDecision ?? null,
       taskProfile: effectiveStep.taskProfile ?? null,
+    });
+    await invokeAgentGenerationBind({
+      bindings: reservation.reservations.map((entry) => ({
+        reservationId: entry.reservationId,
+        agentId: agent.id,
+      })),
     });
     providerOverrides[agent.id] = provider;
     modelOverrides[agent.id] = model;

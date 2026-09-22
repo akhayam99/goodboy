@@ -12,7 +12,8 @@ export type CapabilityNeedRejection =
   | 'foreign-agent'
   | 'empty-question'
   | 'capability-denied'
-  | 'unsupported-continuation';
+  | 'unsupported-continuation'
+  | 'stale-inventory';
 
 export type CapabilityNeedValidation =
   | Readonly<{ kind: 'none' }>
@@ -24,6 +25,7 @@ type ValidateCapabilityNeedParams = {
   readonly emittingProvider: ProviderId | null;
   readonly requesterAgentId: string;
   readonly requesterRole: string;
+  readonly inventoryRevision: string;
 };
 
 export const validateCapabilityNeed = ({
@@ -31,6 +33,7 @@ export const validateCapabilityNeed = ({
   emittingProvider,
   requesterAgentId,
   requesterRole,
+  inventoryRevision,
 }: ValidateCapabilityNeedParams): CapabilityNeedValidation => {
   const extraction = extractCapabilityNeed({ assistantText, emittingProvider });
   if (extraction.kind === 'none') {
@@ -45,6 +48,13 @@ export const validateCapabilityNeed = ({
       kind: 'rejected',
       rejection: 'foreign-agent',
       reason: 'the need names an agent that did not emit it',
+    };
+  }
+  if (need.inventoryRevision !== inventoryRevision) {
+    return {
+      kind: 'rejected',
+      rejection: 'stale-inventory',
+      reason: `the need was formed against inventory revision ${need.inventoryRevision.length === 0 ? '(none)' : need.inventoryRevision}, the current one is ${inventoryRevision}`,
     };
   }
   if (need.question.length === 0) {

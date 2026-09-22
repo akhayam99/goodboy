@@ -352,6 +352,8 @@ pub struct CapabilityRequestRow {
     pub continuation: String,
     #[serde(rename = "routingProposal")]
     pub routing_proposal: Option<String>,
+    #[serde(rename = "inventoryRevision")]
+    pub inventory_revision: String,
     #[serde(rename = "createdAt")]
     pub created_at: String,
 }
@@ -417,6 +419,134 @@ pub struct CapabilityNeedInput {
     pub continuation: String,
     #[serde(rename = "routingProposal")]
     pub routing_proposal: Option<String>,
+    #[serde(rename = "inventoryRevision")]
+    pub inventory_revision: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EvidenceInventoryRow {
+    pub id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "workflowRunId")]
+    pub workflow_run_id: Option<String>,
+    #[serde(rename = "agentId")]
+    pub agent_id: String,
+    pub revision: String,
+    #[serde(rename = "entriesJson")]
+    pub entries_json: String,
+    #[serde(rename = "omittedCount")]
+    pub omitted_count: i64,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct EvidenceInventoryInput {
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "workflowRunId")]
+    pub workflow_run_id: Option<String>,
+    #[serde(rename = "agentId")]
+    pub agent_id: String,
+    pub revision: String,
+    #[serde(rename = "entriesJson")]
+    pub entries_json: String,
+    #[serde(rename = "omittedCount")]
+    pub omitted_count: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EvidenceDeliveryReceiptRow {
+    pub id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "agentId")]
+    pub agent_id: String,
+    #[serde(rename = "sourceTurnId")]
+    pub source_turn_id: String,
+    #[serde(rename = "inventoryRevision")]
+    pub inventory_revision: String,
+    #[serde(rename = "sourceId")]
+    pub source_id: String,
+    #[serde(rename = "requestedRange")]
+    pub requested_range: Option<String>,
+    pub outcome: String,
+    #[serde(rename = "deliveredChars")]
+    pub delivered_chars: i64,
+    pub reason: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct EvidenceDeliveryEntry {
+    #[serde(rename = "sourceId")]
+    pub source_id: String,
+    #[serde(rename = "requestedRange")]
+    pub requested_range: Option<String>,
+    pub outcome: String,
+    #[serde(rename = "deliveredChars")]
+    pub delivered_chars: i64,
+    pub reason: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct EvidenceDeliveryInput {
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "agentId")]
+    pub agent_id: String,
+    #[serde(rename = "sourceTurnId")]
+    pub source_turn_id: String,
+    #[serde(rename = "inventoryRevision")]
+    pub inventory_revision: String,
+    pub receipts: Vec<EvidenceDeliveryEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GenerationReservationInput {
+    #[serde(rename = "reservationId")]
+    pub reservation_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "workflowRunId")]
+    pub workflow_run_id: Option<String>,
+    #[serde(rename = "parentAgentId")]
+    pub parent_agent_id: Option<String>,
+    #[serde(rename = "creationPath")]
+    pub creation_path: String,
+    pub count: i64,
+    #[serde(rename = "obligationId")]
+    pub obligation_id: Option<String>,
+    pub purpose: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GenerationReservationRow {
+    #[serde(rename = "reservationId")]
+    pub reservation_id: String,
+    pub depth: i64,
+    #[serde(rename = "causalRootAgentId")]
+    pub causal_root_agent_id: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GenerationReservationOutcome {
+    pub kind: String,
+    pub reservations: Vec<GenerationReservationRow>,
+    pub limit: Option<String>,
+    pub reason: Option<String>,
+    #[serde(rename = "isFirstRefusal")]
+    pub is_first_refusal: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GenerationBindingInput {
+    #[serde(rename = "reservationId")]
+    pub reservation_id: String,
+    #[serde(rename = "agentId")]
+    pub agent_id: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1498,7 +1628,7 @@ pub async fn cluster_completion_hold_record(
 }
 
 const CAPABILITY_REQUEST_COLUMNS: &str =
-    "id, session_id, workflow_run_id, obligation_id, requester_agent_id, source_turn_id, target_role, purpose, question, scope_json, evidence_json, gap, expected_output, continuation, routing_proposal, created_at";
+    "id, session_id, workflow_run_id, obligation_id, requester_agent_id, source_turn_id, target_role, purpose, question, scope_json, evidence_json, gap, expected_output, continuation, routing_proposal, inventory_revision, created_at";
 
 const CAPABILITY_OBLIGATION_COLUMNS: &str =
     "id, session_id, workflow_run_id, identity, requester_agent_id, target_role, purpose, state, owner_agent_id, decision, child_agent_id, delivered_at, delivery_receipt, created_at, updated_at";
@@ -1520,7 +1650,8 @@ fn capability_request_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Capa
         expected_output: row.get(12)?,
         continuation: row.get(13)?,
         routing_proposal: row.get(14)?,
-        created_at: crate::util::ms_to_iso(row.get(15)?),
+        inventory_revision: row.get(15)?,
+        created_at: crate::util::ms_to_iso(row.get(16)?),
     })
 }
 
@@ -1670,8 +1801,8 @@ fn record_capability_need(
         "INSERT OR IGNORE INTO capability_requests
            (id, session_id, workflow_run_id, obligation_id, requester_agent_id, source_turn_id,
             target_role, purpose, question, scope_json, evidence_json, gap, expected_output,
-            continuation, routing_proposal, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+            continuation, routing_proposal, inventory_revision, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
         rusqlite::params![
             input.request_id,
             input.session_id,
@@ -1688,6 +1819,7 @@ fn record_capability_need(
             input.expected_output,
             input.continuation,
             input.routing_proposal,
+            input.inventory_revision,
             now,
         ],
     )?;
@@ -1702,6 +1834,454 @@ pub async fn capability_need_record(
 ) -> Result<CapabilityObligationRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     record_capability_need(&conn, input)
+}
+
+const GENERATION_DEPTH_CAP: i64 = 3;
+const GENERATION_ROOT_DESCENDANT_CAP: i64 = 20;
+const GENERATION_RUN_CAP: i64 = 32;
+const GENERATION_REPAIR_ATTEMPT_CAP: i64 = 2;
+const GENERATION_STRUCTURAL_REPLAN_CAP: i64 = 1;
+const ANCESTRY_WALK_CAP: usize = 64;
+
+const EVIDENCE_INVENTORY_COLUMNS: &str =
+    "id, session_id, workflow_run_id, agent_id, revision, entries_json, omitted_count, created_at";
+
+const EVIDENCE_RECEIPT_COLUMNS: &str =
+    "id, session_id, agent_id, source_turn_id, inventory_revision, source_id, requested_range, outcome, delivered_chars, reason, created_at";
+
+fn evidence_inventory_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<EvidenceInventoryRow> {
+    Ok(EvidenceInventoryRow {
+        id: row.get(0)?,
+        session_id: row.get(1)?,
+        workflow_run_id: row.get(2)?,
+        agent_id: row.get(3)?,
+        revision: row.get(4)?,
+        entries_json: row.get(5)?,
+        omitted_count: row.get(6)?,
+        created_at: crate::util::ms_to_iso(row.get(7)?),
+    })
+}
+
+fn evidence_receipt_from_row(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<EvidenceDeliveryReceiptRow> {
+    Ok(EvidenceDeliveryReceiptRow {
+        id: row.get(0)?,
+        session_id: row.get(1)?,
+        agent_id: row.get(2)?,
+        source_turn_id: row.get(3)?,
+        inventory_revision: row.get(4)?,
+        source_id: row.get(5)?,
+        requested_range: row.get(6)?,
+        outcome: row.get(7)?,
+        delivered_chars: row.get(8)?,
+        reason: row.get(9)?,
+        created_at: crate::util::ms_to_iso(row.get(10)?),
+    })
+}
+
+fn record_evidence_inventory(
+    conn: &rusqlite::Connection,
+    input: EvidenceInventoryInput,
+) -> Result<EvidenceInventoryRow, PhaseError> {
+    let id = format!("evidence-inventory:{}:{}", input.agent_id, input.revision);
+    conn.execute(
+        "INSERT OR IGNORE INTO evidence_inventories
+           (id, session_id, workflow_run_id, agent_id, revision, entries_json, omitted_count, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        rusqlite::params![
+            id,
+            input.session_id,
+            input.workflow_run_id,
+            input.agent_id,
+            input.revision,
+            input.entries_json,
+            input.omitted_count,
+            crate::util::now_ms(),
+        ],
+    )?;
+    let sql = format!(
+        "SELECT {EVIDENCE_INVENTORY_COLUMNS} FROM evidence_inventories WHERE agent_id = ?1 AND revision = ?2"
+    );
+    conn.query_row(
+        &sql,
+        rusqlite::params![input.agent_id, input.revision],
+        evidence_inventory_from_row,
+    )
+    .map_err(PhaseError::Db)
+}
+
+#[tauri::command]
+pub async fn evidence_inventory_record(
+    state: State<'_, Db>,
+    input: EvidenceInventoryInput,
+) -> Result<EvidenceInventoryRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    record_evidence_inventory(&conn, input)
+}
+
+fn list_evidence_receipts(
+    conn: &rusqlite::Connection,
+    agent_id: &str,
+) -> Result<Vec<EvidenceDeliveryReceiptRow>, PhaseError> {
+    let sql = format!(
+        "SELECT {EVIDENCE_RECEIPT_COLUMNS} FROM evidence_delivery_receipts WHERE agent_id = ?1 ORDER BY created_at ASC"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(rusqlite::params![agent_id], evidence_receipt_from_row)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
+}
+
+fn record_evidence_delivery(
+    conn: &rusqlite::Connection,
+    input: EvidenceDeliveryInput,
+) -> Result<Vec<EvidenceDeliveryReceiptRow>, PhaseError> {
+    let now = crate::util::now_ms();
+    for receipt in input.receipts.iter() {
+        let id = format!(
+            "evidence-receipt:{}:{}:{}",
+            input.agent_id, input.source_turn_id, receipt.source_id
+        );
+        conn.execute(
+            "INSERT OR IGNORE INTO evidence_delivery_receipts
+               (id, session_id, agent_id, source_turn_id, inventory_revision, source_id,
+                requested_range, outcome, delivered_chars, reason, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            rusqlite::params![
+                id,
+                input.session_id,
+                input.agent_id,
+                input.source_turn_id,
+                input.inventory_revision,
+                receipt.source_id,
+                receipt.requested_range,
+                receipt.outcome,
+                receipt.delivered_chars,
+                receipt.reason,
+                now,
+            ],
+        )?;
+    }
+    list_evidence_receipts(conn, &input.agent_id)
+}
+
+#[tauri::command]
+pub async fn evidence_delivery_record(
+    state: State<'_, Db>,
+    input: EvidenceDeliveryInput,
+) -> Result<Vec<EvidenceDeliveryReceiptRow>, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    record_evidence_delivery(&conn, input)
+}
+
+enum LineageResolution {
+    Resolved {
+        causal_root_agent_id: Option<String>,
+        parent_depth: i64,
+    },
+    Invalid(String),
+}
+
+fn resolve_lineage(
+    conn: &rusqlite::Connection,
+    session_id: &str,
+    parent_agent_id: Option<&str>,
+) -> Result<LineageResolution, PhaseError> {
+    let Some(parent) = parent_agent_id else {
+        return Ok(LineageResolution::Resolved {
+            causal_root_agent_id: None,
+            parent_depth: -1,
+        });
+    };
+    let mut seen: Vec<String> = Vec::new();
+    let mut cursor = parent.to_string();
+    let mut root = parent.to_string();
+    for step in 0..ANCESTRY_WALK_CAP {
+        if seen.iter().any(|entry| entry == &cursor) {
+            return Ok(LineageResolution::Invalid(
+                "the parent lineage contains a cycle".to_string(),
+            ));
+        }
+        seen.push(cursor.clone());
+        let found = conn
+            .query_row(
+                "SELECT id, session_id, parent_agent_id FROM agents WHERE id = ?1",
+                rusqlite::params![cursor],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, Option<String>>(2)?,
+                    ))
+                },
+            )
+            .optional()?;
+        let Some((id, row_session_id, parent_of_cursor)) = found else {
+            return Ok(LineageResolution::Invalid(format!(
+                "ancestor {cursor} is not on record"
+            )));
+        };
+        if row_session_id != session_id {
+            return Ok(LineageResolution::Invalid(format!(
+                "ancestor {cursor} belongs to another session"
+            )));
+        }
+        root = id;
+        match parent_of_cursor {
+            None => break,
+            Some(next) => {
+                if step == ANCESTRY_WALK_CAP - 1 {
+                    return Ok(LineageResolution::Invalid(
+                        "the parent lineage is deeper than the walk cap".to_string(),
+                    ));
+                }
+                cursor = next;
+            }
+        }
+    }
+    let parent_depth = conn
+        .query_row(
+            "SELECT depth FROM agent_generation_ledger WHERE agent_id = ?1 ORDER BY created_at DESC LIMIT 1",
+            rusqlite::params![parent],
+            |row| row.get::<_, i64>(0),
+        )
+        .optional()?
+        .unwrap_or(0);
+    Ok(LineageResolution::Resolved {
+        causal_root_agent_id: Some(root),
+        parent_depth,
+    })
+}
+
+fn count_of(
+    conn: &rusqlite::Connection,
+    sql: &str,
+    value: &str,
+) -> Result<i64, PhaseError> {
+    conn.query_row(sql, rusqlite::params![value], |row| row.get::<_, i64>(0))
+        .map_err(PhaseError::Db)
+}
+
+fn record_generation_refusal(
+    conn: &rusqlite::Connection,
+    input: &GenerationReservationInput,
+    causal_root_agent_id: Option<&str>,
+    limit: &str,
+    reason: &str,
+) -> Result<bool, PhaseError> {
+    let changed = conn.execute(
+        "INSERT OR IGNORE INTO generation_refusals
+           (id, session_id, workflow_run_id, parent_agent_id, causal_root_agent_id, obligation_id,
+            limit_name, reason, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        rusqlite::params![
+            format!("generation-refusal:{}:{}", input.reservation_id, limit),
+            input.session_id,
+            input.workflow_run_id,
+            input.parent_agent_id.clone().unwrap_or_else(|| "none".to_string()),
+            causal_root_agent_id,
+            input.obligation_id,
+            limit,
+            reason,
+            crate::util::now_ms(),
+        ],
+    )?;
+    Ok(changed > 0)
+}
+
+fn refused(
+    conn: &rusqlite::Connection,
+    input: &GenerationReservationInput,
+    causal_root_agent_id: Option<&str>,
+    limit: &str,
+    reason: String,
+) -> Result<GenerationReservationOutcome, PhaseError> {
+    let is_first_refusal =
+        record_generation_refusal(conn, input, causal_root_agent_id, limit, &reason)?;
+    Ok(GenerationReservationOutcome {
+        kind: "refused".to_string(),
+        reservations: Vec::new(),
+        limit: Some(limit.to_string()),
+        reason: Some(reason),
+        is_first_refusal,
+    })
+}
+
+fn reserve_agent_generation(
+    conn: &mut rusqlite::Connection,
+    input: GenerationReservationInput,
+) -> Result<GenerationReservationOutcome, PhaseError> {
+    let tx = conn.transaction()?;
+    let lineage = resolve_lineage(&tx, &input.session_id, input.parent_agent_id.as_deref())?;
+    let (causal_root, parent_depth) = match lineage {
+        LineageResolution::Invalid(reason) => {
+            let outcome = refused(&tx, &input, None, "lineage", reason)?;
+            tx.commit()?;
+            return Ok(outcome);
+        }
+        LineageResolution::Resolved {
+            causal_root_agent_id,
+            parent_depth,
+        } => (causal_root_agent_id, parent_depth),
+    };
+    let depth = parent_depth + 1;
+    if depth > GENERATION_DEPTH_CAP {
+        let outcome = refused(
+            &tx,
+            &input,
+            causal_root.as_deref(),
+            "depth",
+            format!("capability generation depth {depth} is past the cap of {GENERATION_DEPTH_CAP}"),
+        )?;
+        tx.commit()?;
+        return Ok(outcome);
+    }
+    let root_descendants = match causal_root.as_deref() {
+        None => 0,
+        Some(root) => count_of(
+            &tx,
+            "SELECT COUNT(*) FROM agent_generation_ledger WHERE causal_root_agent_id = ?1 AND depth > 0",
+            root,
+        )?,
+    };
+    if root_descendants + input.count > GENERATION_ROOT_DESCENDANT_CAP {
+        let outcome = refused(
+            &tx,
+            &input,
+            causal_root.as_deref(),
+            "root-descendants",
+            format!("this causal root already generated {root_descendants} of {GENERATION_ROOT_DESCENDANT_CAP} agents"),
+        )?;
+        tx.commit()?;
+        return Ok(outcome);
+    }
+    let run_descendants = match input.workflow_run_id.as_deref() {
+        None => 0,
+        Some(run) => count_of(
+            &tx,
+            "SELECT COUNT(*) FROM agent_generation_ledger WHERE workflow_run_id = ?1",
+            run,
+        )?,
+    };
+    if run_descendants + input.count > GENERATION_RUN_CAP {
+        let outcome = refused(
+            &tx,
+            &input,
+            causal_root.as_deref(),
+            "run-descendants",
+            format!("this run already generated {run_descendants} of {GENERATION_RUN_CAP} agents"),
+        )?;
+        tx.commit()?;
+        return Ok(outcome);
+    }
+    if let Some(obligation) = input.obligation_id.as_deref() {
+        let attempts = count_of(
+            &tx,
+            "SELECT COUNT(*) FROM agent_generation_ledger WHERE obligation_id = ?1",
+            obligation,
+        )?;
+        if attempts + input.count > GENERATION_REPAIR_ATTEMPT_CAP {
+            let outcome = refused(
+                &tx,
+                &input,
+                causal_root.as_deref(),
+                "repair-attempts",
+                format!("this obligation already took {attempts} of {GENERATION_REPAIR_ATTEMPT_CAP} automatic attempts"),
+            )?;
+            tx.commit()?;
+            return Ok(outcome);
+        }
+    }
+    if input.purpose.as_deref() == Some("replan") {
+        if let Some(run) = input.workflow_run_id.as_deref() {
+            let replans = count_of(
+                &tx,
+                "SELECT COUNT(*) FROM agent_generation_ledger WHERE workflow_run_id = ?1 AND purpose = 'replan'",
+                run,
+            )?;
+            if replans + input.count > GENERATION_STRUCTURAL_REPLAN_CAP {
+                let outcome = refused(
+                    &tx,
+                    &input,
+                    causal_root.as_deref(),
+                    "structural-replans",
+                    format!("this run already took {replans} of {GENERATION_STRUCTURAL_REPLAN_CAP} automatic structural replans"),
+                )?;
+                tx.commit()?;
+                return Ok(outcome);
+            }
+        }
+    }
+    let now = crate::util::now_ms();
+    let mut reservations: Vec<GenerationReservationRow> = Vec::new();
+    for index in 0..input.count {
+        let id = format!("{}:{index}", input.reservation_id);
+        tx.execute(
+            "INSERT OR IGNORE INTO agent_generation_ledger
+               (id, session_id, workflow_run_id, parent_agent_id, causal_root_agent_id, agent_id,
+                depth, creation_path, obligation_id, purpose, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, NULL, ?6, ?7, ?8, ?9, ?10)",
+            rusqlite::params![
+                id,
+                input.session_id,
+                input.workflow_run_id,
+                input.parent_agent_id,
+                causal_root.clone().unwrap_or_else(|| id.clone()),
+                depth,
+                input.creation_path,
+                input.obligation_id,
+                input.purpose,
+                now,
+            ],
+        )?;
+        reservations.push(GenerationReservationRow {
+            reservation_id: id,
+            depth,
+            causal_root_agent_id: causal_root.clone(),
+        });
+    }
+    tx.commit()?;
+    Ok(GenerationReservationOutcome {
+        kind: "granted".to_string(),
+        reservations,
+        limit: None,
+        reason: None,
+        is_first_refusal: false,
+    })
+}
+
+#[tauri::command]
+pub async fn agent_generation_reserve(
+    state: State<'_, Db>,
+    input: GenerationReservationInput,
+) -> Result<GenerationReservationOutcome, PhaseError> {
+    let mut conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    reserve_agent_generation(&mut conn, input)
+}
+
+fn bind_agent_generation(
+    conn: &rusqlite::Connection,
+    bindings: Vec<GenerationBindingInput>,
+) -> Result<(), PhaseError> {
+    for binding in bindings.iter() {
+        conn.execute(
+            "UPDATE agent_generation_ledger
+                SET agent_id = ?1,
+                    causal_root_agent_id = CASE WHEN parent_agent_id IS NULL THEN ?1 ELSE causal_root_agent_id END
+              WHERE id = ?2",
+            rusqlite::params![binding.agent_id, binding.reservation_id],
+        )?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn agent_generation_bind(
+    state: State<'_, Db>,
+    bindings: Vec<GenerationBindingInput>,
+) -> Result<(), PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    bind_agent_generation(&conn, bindings)
 }
 
 fn capability_purpose_for_finding_target(target: &str) -> Option<&'static str> {
@@ -2400,6 +2980,7 @@ mod tests {
                 expected_output TEXT NOT NULL,
                 continuation TEXT NOT NULL,
                 routing_proposal TEXT,
+                inventory_revision TEXT NOT NULL DEFAULT '',
                 created_at INTEGER NOT NULL,
                 UNIQUE (requester_agent_id, source_turn_id)
             );
@@ -2432,6 +3013,7 @@ mod tests {
             expected_output: "the guard back with a regression test".to_string(),
             continuation: "handoff".to_string(),
             routing_proposal: None,
+            inventory_revision: "rabc123".to_string(),
         }
     }
 
@@ -2964,4 +3546,228 @@ mod tests {
             vec!["c3"]
         );
     }
+
+    fn generation_conn() -> rusqlite::Connection {
+        let conn = agents_table_conn();
+        conn.execute_batch(
+            "CREATE TABLE agent_generation_ledger (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                workflow_run_id TEXT,
+                parent_agent_id TEXT,
+                causal_root_agent_id TEXT NOT NULL,
+                agent_id TEXT,
+                depth INTEGER NOT NULL,
+                creation_path TEXT NOT NULL,
+                obligation_id TEXT,
+                purpose TEXT,
+                created_at INTEGER NOT NULL
+            );
+            CREATE TABLE generation_refusals (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                workflow_run_id TEXT,
+                parent_agent_id TEXT NOT NULL,
+                causal_root_agent_id TEXT,
+                obligation_id TEXT,
+                limit_name TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                UNIQUE (parent_agent_id, limit_name)
+            );
+            CREATE TABLE evidence_inventories (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                workflow_run_id TEXT,
+                agent_id TEXT NOT NULL,
+                revision TEXT NOT NULL,
+                entries_json TEXT NOT NULL,
+                omitted_count INTEGER NOT NULL,
+                created_at INTEGER NOT NULL,
+                UNIQUE (agent_id, revision)
+            );
+            CREATE TABLE evidence_delivery_receipts (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                agent_id TEXT NOT NULL,
+                source_turn_id TEXT NOT NULL,
+                inventory_revision TEXT NOT NULL,
+                source_id TEXT NOT NULL,
+                requested_range TEXT,
+                outcome TEXT NOT NULL,
+                delivered_chars INTEGER NOT NULL,
+                reason TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                UNIQUE (agent_id, source_turn_id, source_id)
+            );",
+        )
+        .unwrap();
+        conn
+    }
+
+    fn seed_agent(conn: &rusqlite::Connection, id: &str, parent: Option<&str>, session: &str) {
+        conn.execute(
+            "INSERT INTO agents (id, session_id, ordinal, name, status, parent_agent_id) VALUES (?1, ?2, 0, ?1, 'running', ?3)",
+            rusqlite::params![id, session, parent],
+        )
+        .unwrap();
+    }
+
+    fn reservation_input(reservation_id: &str, parent: Option<&str>) -> GenerationReservationInput {
+        GenerationReservationInput {
+            reservation_id: reservation_id.to_string(),
+            session_id: "session".to_string(),
+            workflow_run_id: None,
+            parent_agent_id: parent.map(|value| value.to_string()),
+            creation_path: "capability".to_string(),
+            count: 1,
+            obligation_id: None,
+            purpose: None,
+        }
+    }
+
+    fn generate(conn: &mut rusqlite::Connection, parent: &str, child: &str) -> GenerationReservationOutcome {
+        let outcome =
+            reserve_agent_generation(conn, reservation_input(&format!("reservation:{child}"), Some(parent)))
+                .unwrap();
+        if outcome.kind == "granted" {
+            seed_agent(conn, child, Some(parent), "session");
+            bind_agent_generation(
+                conn,
+                vec![GenerationBindingInput {
+                    reservation_id: outcome.reservations[0].reservation_id.clone(),
+                    agent_id: child.to_string(),
+                }],
+            )
+            .unwrap();
+        }
+        outcome
+    }
+
+    #[test]
+    fn generation_allows_depth_three_and_refuses_depth_four() {
+        let mut conn = generation_conn();
+        seed_agent(&conn, "root", None, "session");
+
+        assert_eq!(generate(&mut conn, "root", "g1").reservations[0].depth, 1);
+        assert_eq!(generate(&mut conn, "g1", "g2").reservations[0].depth, 2);
+        assert_eq!(generate(&mut conn, "g2", "g3").reservations[0].depth, 3);
+        let fourth = generate(&mut conn, "g3", "g4");
+
+        assert_eq!(fourth.kind, "refused");
+        assert_eq!(fourth.limit.as_deref(), Some("depth"));
+    }
+
+    #[test]
+    fn generation_refuses_the_twenty_first_descendant_and_notifies_once() {
+        let mut conn = generation_conn();
+        seed_agent(&conn, "root", None, "session");
+        for index in 0..20 {
+            assert_eq!(generate(&mut conn, "root", &format!("child-{index}")).kind, "granted");
+        }
+
+        let overflow =
+            reserve_agent_generation(&mut conn, reservation_input("reservation:overflow", Some("root")))
+                .unwrap();
+        let again =
+            reserve_agent_generation(&mut conn, reservation_input("reservation:again", Some("root")))
+                .unwrap();
+
+        assert_eq!(overflow.limit.as_deref(), Some("root-descendants"));
+        assert!(overflow.is_first_refusal);
+        assert!(!again.is_first_refusal);
+        let refusals: i64 = conn
+            .query_row("SELECT COUNT(*) FROM generation_refusals", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(refusals, 1);
+    }
+
+    #[test]
+    fn generation_survives_deletion_without_refunding() {
+        let mut conn = generation_conn();
+        seed_agent(&conn, "root", None, "session");
+        for index in 0..20 {
+            generate(&mut conn, "root", &format!("child-{index}"));
+        }
+        conn.execute("DELETE FROM agents WHERE id LIKE 'child-%'", []).unwrap();
+
+        let after =
+            reserve_agent_generation(&mut conn, reservation_input("reservation:after", Some("root")))
+                .unwrap();
+
+        assert_eq!(after.kind, "refused");
+    }
+
+    #[test]
+    fn generation_rejects_cycles_missing_ancestors_and_foreign_sessions() {
+        let mut conn = generation_conn();
+        seed_agent(&conn, "loop-a", Some("loop-b"), "session");
+        seed_agent(&conn, "loop-b", Some("loop-a"), "session");
+        seed_agent(&conn, "foreign", None, "other-session");
+
+        let cycle =
+            reserve_agent_generation(&mut conn, reservation_input("reservation:cycle", Some("loop-a")))
+                .unwrap();
+        let missing =
+            reserve_agent_generation(&mut conn, reservation_input("reservation:missing", Some("ghost")))
+                .unwrap();
+        let foreign =
+            reserve_agent_generation(&mut conn, reservation_input("reservation:foreign", Some("foreign")))
+                .unwrap();
+
+        assert_eq!(cycle.limit.as_deref(), Some("lineage"));
+        assert!(missing.reason.unwrap().contains("not on record"));
+        assert!(foreign.reason.unwrap().contains("another session"));
+    }
+
+    #[test]
+    fn evidence_delivery_records_one_receipt_per_source_and_turn() {
+        let conn = generation_conn();
+        record_evidence_inventory(
+            &conn,
+            EvidenceInventoryInput {
+                session_id: "session".to_string(),
+                workflow_run_id: None,
+                agent_id: "agent-1".to_string(),
+                revision: "r1".to_string(),
+                entries_json: "[]".to_string(),
+                omitted_count: 0,
+            },
+        )
+        .unwrap();
+
+        let entry = || EvidenceDeliveryEntry {
+            source_id: "task:agent-1".to_string(),
+            requested_range: None,
+            outcome: "delivered".to_string(),
+            delivered_chars: 12,
+            reason: String::new(),
+        };
+        record_evidence_delivery(
+            &conn,
+            EvidenceDeliveryInput {
+                session_id: "session".to_string(),
+                agent_id: "agent-1".to_string(),
+                source_turn_id: "turn-1".to_string(),
+                inventory_revision: "r1".to_string(),
+                receipts: vec![entry()],
+            },
+        )
+        .unwrap();
+        let receipts = record_evidence_delivery(
+            &conn,
+            EvidenceDeliveryInput {
+                session_id: "session".to_string(),
+                agent_id: "agent-1".to_string(),
+                source_turn_id: "turn-1".to_string(),
+                inventory_revision: "r1".to_string(),
+                receipts: vec![entry()],
+            },
+        )
+        .unwrap();
+
+        assert_eq!(receipts.len(), 1);
+        assert_eq!(receipts[0].delivered_chars, 12);
+    }
+
 }

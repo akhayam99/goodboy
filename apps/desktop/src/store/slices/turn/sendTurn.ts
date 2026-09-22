@@ -138,6 +138,12 @@ import {
 } from './turnWritableRoots';
 import { createResolveCandidateWriter } from './createResolveCandidateWriter';
 import { captureCapabilityNeed, needBlocksCompletion } from './captureCapabilityNeed';
+import {
+  issueAgentInventory,
+  persistAgentInventory,
+  renderInventoryBlock,
+} from './agentEvidenceInventory';
+import { contextReadBlocksCompletion, serveContextRead } from './serveContextRead';
 import { completeResolvedAgent } from './completeResolvedAgent';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
 import { resolveSkillPrompt } from './resolveSkillPrompt';
@@ -812,6 +818,15 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       resolvedPrompt = `${contextPreamble}\n\n${resolvedPrompt}`;
     }
 
+    const { inventory } = issueAgentInventory({ get, sessionId, agentId: activeAgentId });
+    void persistAgentInventory({
+      sessionId,
+      workflowRunId: agentRowEarly?.workflowRunId ?? null,
+      agentId: activeAgentId,
+      inventory,
+    });
+    resolvedPrompt = `${renderInventoryBlock({ inventory })}\n\n${resolvedPrompt}`;
+
     if (workflowRoutingFlags().isChildModelSelectionEnabled === true) {
       const childRoutingBlock = composeChildRoutingPrompt({
         role: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
@@ -1205,7 +1220,23 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               runId,
               assistantText,
             });
-      if (resolvedAgentId && !wasCancelled && !needBlocksCompletion({ capture: needCapture })) {
+      const contextReadService =
+        wasCancelled || assistantText.length === 0 || needBlocksCompletion({ capture: needCapture })
+          ? { kind: 'none' as const }
+          : await serveContextRead({
+              set,
+              get,
+              sessionId,
+              agentId: activeAgentId,
+              runId,
+              assistantText,
+            });
+      if (
+        resolvedAgentId &&
+        !wasCancelled &&
+        !needBlocksCompletion({ capture: needCapture }) &&
+        !contextReadBlocksCompletion({ service: contextReadService })
+      ) {
         const shouldAutoAdvance = await completeResolvedAgent({
           set,
           get,

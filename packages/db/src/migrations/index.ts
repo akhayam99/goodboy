@@ -25,6 +25,7 @@ import { m163OpenQuestionAnswerDelivery } from './m163-open-question-answer-deli
 import { m164ClusterCompletionHolds } from './m164-cluster-completion-holds';
 import { m165ClusterExecutionGraphs } from './m165-cluster-execution-graphs';
 import { m166CapabilityObligations } from './m166-capability-obligations';
+import { m167EvidenceInventoryGeneration } from './m167-evidence-inventory-generation';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -337,4 +338,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 164, sql: m164ClusterCompletionHolds },
   { version: 165, sql: m165ClusterExecutionGraphs },
   { version: 166, sql: m166CapabilityObligations },
+  { version: 167, sql: m167EvidenceInventoryGeneration },
 ];

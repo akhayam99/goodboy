@@ -25,6 +25,7 @@ import { clampWireframeScoutReport } from '../../../features/wireframes/wirefram
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
 import { openTurnStartWindow } from '../turn/turnStartWindow';
+import { bindGeneration, reserveGeneration } from '../agents/reserveGeneration';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 import type { GetFn, SetFn } from './types';
@@ -359,6 +360,20 @@ export const startFanOutChildren = async ({
     return { kind: 'blocked', reason: batch.reason };
   }
 
+  const reservation = await reserveGeneration({
+    get,
+    sessionId,
+    workflowRunId: container.workflowRunId ?? null,
+    parentAgentId: container.id,
+    creationPath: 'fan-out',
+    reservationKey: `${container.id}:${specs.length}`,
+    count: specs.length,
+    label: container.name,
+  });
+  if (reservation.kind === 'refused') {
+    return { kind: 'blocked', reason: reservation.reason };
+  }
+
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
   const baseOrdinal = runs.reduce((m, r) => Math.max(m, r.ordinal), -1) + 1;
 
@@ -388,6 +403,7 @@ export const startFanOutChildren = async ({
     return { kind: 'skipped' };
   }
   const childIds: AgentId[] = materialized.agents.map((agent) => agent.id);
+  await bindGeneration({ reservations: reservation.reservations, agentIds: childIds });
 
   synthesisStarted.delete(container.id);
   await invokeAgentUpdateStatus(container.id, { status: 'running' });

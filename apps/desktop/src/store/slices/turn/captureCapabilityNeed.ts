@@ -7,6 +7,7 @@ import {
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
+import { issuedAgentInventory } from './agentEvidenceInventory';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -46,11 +47,13 @@ export const captureCapabilityNeed = async ({
     get().agentKindOverride[agentId] ??
     inferAgentKindFromName(agent.name);
   const requesterRole = KIND_TO_ROLE[kind];
+  const { inventory } = issuedAgentInventory({ get, sessionId, agentId });
   const validation = validateCapabilityNeed({
     assistantText,
     emittingProvider: agentEmittingProvider({ state: get(), sessionId, agentId }),
     requesterAgentId: agentId,
     requesterRole,
+    inventoryRevision: inventory.revision,
   });
   if (validation.kind === 'none') {
     return { kind: 'none' };
@@ -88,6 +91,7 @@ export const captureCapabilityNeed = async ({
     expectedOutput: need.expectedOutput,
     continuation: need.continuation,
     routingProposal: need.routingProposal,
+    inventoryRevision: need.inventoryRevision,
   });
   set((state) => ({
     capabilityObligations: {

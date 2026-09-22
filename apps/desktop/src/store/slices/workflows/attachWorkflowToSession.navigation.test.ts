@@ -22,6 +22,17 @@ const { attachInDbSpy, invokeAgentInsertSpy } = vi.hoisted(() => ({
 vi.mock('@goodboy/db', () => ({ attachWorkflowToSession: attachInDbSpy }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/workflows/workflows', () => ({
+  invokeAgentGenerationReserve: async ({ count }: { readonly count: number }) => ({
+    kind: 'granted' as const,
+    reservations: Array.from({ length: count }, (_, index) => ({
+      reservationId: `reservation:${index}`,
+      depth: 1,
+      causalRootAgentId: null,
+    })),
+  }),
+  invokeAgentGenerationBind: async () => undefined,
+  invokeEvidenceInventoryRecord: async () => undefined,
+  invokeEvidenceDeliveryRecord: async () => undefined,
   invokeAgentInsert: invokeAgentInsertSpy,
 }));
 

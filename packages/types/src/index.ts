@@ -246,6 +246,24 @@ export {
   WORKFLOW_ORIGINS,
 } from './workflow';
 export type {
+  ContextReadOutcome,
+  EvidenceAvailability,
+  EvidenceEntry,
+  EvidenceInventory,
+  EvidenceSourceKind,
+  GenerationCreationPath,
+  GenerationLimitName,
+} from './evidence';
+export {
+  EVIDENCE_SOURCE_KINDS,
+  GENERATION_CREATION_PATHS,
+  GENERATION_DEPTH_CAP,
+  GENERATION_REPAIR_ATTEMPT_CAP,
+  GENERATION_ROOT_DESCENDANT_CAP,
+  GENERATION_RUN_CAP,
+  GENERATION_STRUCTURAL_REPLAN_CAP,
+} from './evidence';
+export type {
   AuxTaskId,
   GlobalSettings,
   OverrideSettings,

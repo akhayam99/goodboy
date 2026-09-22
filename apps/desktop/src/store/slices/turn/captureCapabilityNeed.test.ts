@@ -16,10 +16,22 @@ const h = vi.hoisted(() => ({
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
 vi.mock('../../../features/workflows/workflows', () => ({
+  invokeAgentGenerationReserve: async ({ count }: { readonly count: number }) => ({
+    kind: 'granted' as const,
+    reservations: Array.from({ length: count }, (_, index) => ({
+      reservationId: `reservation:${index}`,
+      depth: 1,
+      causalRootAgentId: null,
+    })),
+  }),
+  invokeAgentGenerationBind: async () => undefined,
+  invokeEvidenceInventoryRecord: async () => undefined,
+  invokeEvidenceDeliveryRecord: async () => undefined,
   invokeCapabilityNeedRecord: h.invokeCapabilityNeedRecord,
 }));
 
 import { captureCapabilityNeed, needBlocksCompletion } from './captureCapabilityNeed';
+import { issuedAgentInventory } from './agentEvidenceInventory';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -37,6 +49,9 @@ const reviewer: Agent = {
 
 const needBody = (fields: Record<string, unknown>): string =>
   `<<need>>${JSON.stringify(fields)}<</need>>`;
+
+const revisionOf = (get: GetFn): string =>
+  issuedAgentInventory({ get, sessionId: SESSION_ID, agentId: AGENT_ID }).inventory.revision;
 
 const repairNeed = {
   v: 1,
@@ -108,7 +123,7 @@ describe('captureCapabilityNeed', () => {
       sessionId: SESSION_ID,
       agentId: AGENT_ID,
       runId: RUN_ID,
-      assistantText: `${needBody(repairNeed)}\n<<cluster-done id="${AGENT_ID}">>`,
+      assistantText: `${needBody({ ...repairNeed, inventoryRevision: revisionOf(get) })}\n<<cluster-done id="${AGENT_ID}">>`,
     });
 
     expect(capture).toEqual({ kind: 'captured', obligationId: obligation.id });
@@ -135,7 +150,11 @@ describe('captureCapabilityNeed', () => {
       sessionId: SESSION_ID,
       agentId: AGENT_ID,
       runId: RUN_ID,
-      assistantText: needBody({ ...repairNeed, agent: 'agent-9' }),
+      assistantText: needBody({
+        ...repairNeed,
+        agent: 'agent-9',
+        inventoryRevision: revisionOf(get),
+      }),
     });
 
     expect(capture.kind).toBe('rejected');
@@ -153,7 +172,12 @@ describe('captureCapabilityNeed', () => {
       sessionId: SESSION_ID,
       agentId: AGENT_ID,
       runId: RUN_ID,
-      assistantText: needBody({ ...repairNeed, target: 'scout', purpose: 'discovery' }),
+      assistantText: needBody({
+        ...repairNeed,
+        target: 'scout',
+        purpose: 'discovery',
+        inventoryRevision: revisionOf(get),
+      }),
     });
 
     expect(capture).toEqual({
@@ -176,5 +200,23 @@ describe('captureCapabilityNeed', () => {
         assistantText: 'the review is finished.',
       }),
     ).toEqual({ kind: 'none' });
+  });
+
+  it('refuses a need formed against a stale inventory revision', async () => {
+    const { state, set, get } = createHarness();
+
+    const capture = await captureCapabilityNeed({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      runId: RUN_ID,
+      assistantText: needBody({ ...repairNeed, inventoryRevision: 'rstale' }),
+    });
+
+    expect(capture.kind).toBe('rejected');
+    expect(capture.kind === 'rejected' ? capture.reason : '').toContain('inventory revision');
+    expect(h.invokeCapabilityNeedRecord).not.toHaveBeenCalled();
+    expect(state.capabilityObligations[SESSION_ID]).toBeUndefined();
   });
 });

@@ -11,6 +11,27 @@ export { runDatabaseHygiene, type DatabaseHygieneResult } from './maintenance/ru
 export { NotFoundError, UniqueViolationError } from './shared/errors';
 
 export {
+  claimCapabilityObligationOwner,
+  type CapabilityObligationClaim,
+} from './queries/capability-obligation';
+export {
+  bindAgentGeneration,
+  listGenerationRefusals,
+  reserveAgentGeneration,
+  type GenerationRefusal,
+  type GenerationReservation,
+  type GenerationReservationResult,
+} from './queries/agent-generation';
+export {
+  latestEvidenceInventory,
+  listEvidenceDeliveryReceipts,
+  recordEvidenceDelivery,
+  recordEvidenceInventory,
+  type EvidenceDeliveryReceipt,
+  type EvidenceInventoryRecord,
+} from './queries/evidence-inventory';
+
+export {
   insertWorkspace,
   getWorkspaceById,
   listWorkspaces,

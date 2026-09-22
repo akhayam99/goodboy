@@ -4,6 +4,7 @@ import { migrate } from '../migrations/runner';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import {
   associateCapabilityObligationHold,
+  claimCapabilityObligationOwner,
   listCapabilityObligations,
   recordCapabilityNeed,
   type CapabilityNeedRecord,
@@ -56,6 +57,7 @@ const need = {
   expectedOutput: 'the guard back with a regression test',
   continuation: 'handoff',
   routingProposal: null,
+  inventoryRevision: 'rabc123',
 } satisfies CapabilityNeedRecord;
 
 describe('capability obligation queries', () => {
@@ -109,5 +111,47 @@ describe('capability obligation queries', () => {
     expect(obligations).toHaveLength(1);
     expect(obligations[0]?.holdIds).toEqual(['hold-1']);
     expect(obligations[0]?.requests).toHaveLength(1);
+  });
+});
+
+describe('capability obligation ownership', () => {
+  it('gives one owner and one attachment when two requests race for one identity', async () => {
+    const db = await seed();
+    await db.execute(
+      "INSERT INTO agents (id, session_id, ordinal, name, status) VALUES ('owner-a', 'session', 2, 'Owner A', 'pending')",
+    );
+    await db.execute(
+      "INSERT INTO agents (id, session_id, ordinal, name, status) VALUES ('owner-b', 'session', 3, 'Owner B', 'pending')",
+    );
+    await recordCapabilityNeed({ db, need });
+
+    const [left, right] = await Promise.all([
+      claimCapabilityObligationOwner({
+        db,
+        identity: need.identity,
+        ownerAgentId: 'owner-a' as AgentId,
+        childAgentId: null,
+      }),
+      claimCapabilityObligationOwner({
+        db,
+        identity: need.identity,
+        ownerAgentId: 'owner-b' as AgentId,
+        childAgentId: null,
+      }),
+    ]);
+
+    const owned = [left, right].filter((claim) => claim.kind === 'owned');
+    const attached = [left, right].filter((claim) => claim.kind === 'attached');
+    expect(owned).toHaveLength(1);
+    expect(attached).toHaveLength(1);
+    expect(attached[0]?.kind === 'attached' ? attached[0].ownerAgentId : null).toBe(
+      owned[0]?.kind === 'owned' ? owned[0].ownerAgentId : null,
+    );
+
+    const obligations = await listCapabilityObligations({ db, sessionId });
+    expect(obligations).toHaveLength(1);
+    expect(obligations[0]?.ownerAgentId).toBe(
+      owned[0]?.kind === 'owned' ? owned[0].ownerAgentId : null,
+    );
   });
 });

@@ -37,6 +37,10 @@ import type {
   ClusterExecutionGraph,
   ClusterExecutionNode,
   ClusterGraphNode,
+  ContextReadOutcome,
+  EvidenceInventory,
+  GenerationCreationPath,
+  GenerationLimitName,
   PlanClusterRole,
   VerbosityLevel,
   Workflow,
@@ -582,6 +586,7 @@ type RawCapabilityRequestRow = {
   readonly expectedOutput: string;
   readonly continuation: CapabilityContinuation;
   readonly routingProposal: string | null;
+  readonly inventoryRevision: string;
   readonly createdAt: string;
 };
 
@@ -629,6 +634,7 @@ const capabilityRequestFromRow = ({
     isValid: isWorkflowRoutingProposal,
     field: 'routing proposal',
   }),
+  inventoryRevision: row.inventoryRevision,
   createdAt: row.createdAt,
 });
 
@@ -684,6 +690,7 @@ export type RecordCapabilityNeedParams = {
   readonly expectedOutput: string;
   readonly continuation: CapabilityContinuation;
   readonly routingProposal: WorkflowRoutingProposal | null;
+  readonly inventoryRevision: string;
 };
 
 export const invokeCapabilityNeedRecord = async (
@@ -711,9 +718,141 @@ export const invokeCapabilityNeedRecord = async (
         isValid: isWorkflowRoutingProposal,
         field: 'routing proposal',
       }),
+      inventoryRevision: need.inventoryRevision,
     },
   });
   return capabilityObligationFromRow({ row });
+};
+
+export type RecordEvidenceInventoryParams = {
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly agentId: AgentId;
+  readonly inventory: EvidenceInventory;
+};
+
+export const invokeEvidenceInventoryRecord = async ({
+  sessionId,
+  workflowRunId,
+  agentId,
+  inventory,
+}: RecordEvidenceInventoryParams): Promise<void> => {
+  await invoke('evidence_inventory_record', {
+    input: {
+      sessionId,
+      workflowRunId,
+      agentId,
+      revision: inventory.revision,
+      entriesJson: JSON.stringify(inventory.entries),
+      omittedCount: inventory.omittedCount,
+    },
+  });
+};
+
+export type EvidenceDeliveryEntry = Readonly<{
+  sourceId: string;
+  requestedRange: string | null;
+  outcome: ContextReadOutcome;
+  deliveredChars: number;
+  reason: string;
+}>;
+
+export type RecordEvidenceDeliveryParams = {
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly sourceTurnId: string;
+  readonly inventoryRevision: string;
+  readonly receipts: ReadonlyArray<EvidenceDeliveryEntry>;
+};
+
+export const invokeEvidenceDeliveryRecord = async ({
+  sessionId,
+  agentId,
+  sourceTurnId,
+  inventoryRevision,
+  receipts,
+}: RecordEvidenceDeliveryParams): Promise<void> => {
+  await invoke('evidence_delivery_record', {
+    input: { sessionId, agentId, sourceTurnId, inventoryRevision, receipts },
+  });
+};
+
+export type GenerationReservation = Readonly<{
+  reservationId: string;
+  depth: number;
+  causalRootAgentId: AgentId | null;
+}>;
+
+type RawGenerationReservationOutcome = {
+  readonly kind: string;
+  readonly reservations: ReadonlyArray<GenerationReservation>;
+  readonly limit: GenerationLimitName | null;
+  readonly reason: string | null;
+  readonly isFirstRefusal: boolean;
+};
+
+export type GenerationReservationOutcome =
+  | Readonly<{ kind: 'granted'; reservations: ReadonlyArray<GenerationReservation> }>
+  | Readonly<{
+      kind: 'refused';
+      limit: GenerationLimitName;
+      reason: string;
+      isFirstRefusal: boolean;
+    }>;
+
+export type ReserveAgentGenerationParams = {
+  readonly reservationId: string;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly parentAgentId: AgentId | null;
+  readonly creationPath: GenerationCreationPath;
+  readonly count: number;
+  readonly obligationId?: string | null;
+  readonly purpose?: string | null;
+};
+
+export const invokeAgentGenerationReserve = async ({
+  reservationId,
+  sessionId,
+  workflowRunId,
+  parentAgentId,
+  creationPath,
+  count,
+  obligationId = null,
+  purpose = null,
+}: ReserveAgentGenerationParams): Promise<GenerationReservationOutcome> => {
+  const outcome = await invoke<RawGenerationReservationOutcome>('agent_generation_reserve', {
+    input: {
+      reservationId,
+      sessionId,
+      workflowRunId,
+      parentAgentId,
+      creationPath,
+      count,
+      obligationId,
+      purpose,
+    },
+  });
+  if (outcome.kind === 'granted') {
+    return { kind: 'granted', reservations: outcome.reservations };
+  }
+  return {
+    kind: 'refused',
+    limit: outcome.limit ?? 'lineage',
+    reason: outcome.reason ?? 'the generation ledger refused this creation',
+    isFirstRefusal: outcome.isFirstRefusal,
+  };
+};
+
+export const invokeAgentGenerationBind = async ({
+  bindings,
+}: {
+  readonly bindings: ReadonlyArray<Readonly<{ reservationId: string; agentId: AgentId }>>;
+}): Promise<void> => {
+  if (bindings.length === 0) {
+    return;
+  }
+  await invoke('agent_generation_bind', { bindings });
 };
 
 type RawClusterExecutionNodeRow = {

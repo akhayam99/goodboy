@@ -61,6 +61,8 @@ const CLUSTER_OUTCOME_OPEN = '<<cluster-outcome>>';
 const CLUSTER_OUTCOME_CLOSE = '<</cluster-outcome>>';
 const NEED_OPEN = '<<need>>';
 const NEED_CLOSE = '<</need>>';
+const CONTEXT_READ_OPEN = '<<context-read>>';
+const CONTEXT_READ_CLOSE = '<</context-read>>';
 const SCOUT_DOMAINS_OPEN = '<<scout-domains';
 const REVIEW_COMMENT_OPEN = '<<review-comment';
 const MATERIALIZE_OPEN = '<<materialize:';
@@ -860,6 +862,7 @@ export type ExtractedCapabilityNeed = Readonly<{
   expectedOutput: string;
   continuation: CapabilityContinuation;
   routingProposal: WorkflowRoutingProposal | null;
+  inventoryRevision: string;
 }>;
 
 export type CapabilityNeedExtraction =
@@ -951,8 +954,76 @@ export const extractCapabilityNeed = ({
       expectedOutput: trimmedString({ value: value.expectedOutput }),
       continuation,
       routingProposal,
+      inventoryRevision: trimmedString({ value: value.inventoryRevision }),
     },
   };
+};
+
+export type ExtractedContextReadSource = Readonly<{
+  id: string;
+  range: string | null;
+}>;
+
+export type ExtractedContextRead = Readonly<{
+  version: 1;
+  inventoryRevision: string;
+  sources: ReadonlyArray<ExtractedContextReadSource>;
+}>;
+
+export type ContextReadExtraction =
+  | Readonly<{ kind: 'none' }>
+  | Readonly<{ kind: 'malformed'; reason: string }>
+  | Readonly<{ kind: 'valid'; request: ExtractedContextRead }>;
+
+export const extractContextRead = ({
+  assistantText,
+}: {
+  readonly assistantText: string;
+}): ContextReadExtraction => {
+  const blocks = extractBlockContents(assistantText, CONTEXT_READ_OPEN, CONTEXT_READ_CLOSE);
+  if (blocks.length === 0) {
+    return { kind: 'none' };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stripJsonFences(blocks[blocks.length - 1]!));
+  } catch {
+    return { kind: 'malformed', reason: 'the context-read body is not valid json' };
+  }
+  if (!isUnknownRecord(parsed)) {
+    return { kind: 'malformed', reason: 'the context-read body is not a json object' };
+  }
+  const value = parsed;
+  if (value.v !== 1) {
+    return { kind: 'malformed', reason: 'the context-read body declares an unsupported version' };
+  }
+  const inventoryRevision = trimmedString({ value: value.inventoryRevision });
+  if (inventoryRevision.length === 0) {
+    return { kind: 'malformed', reason: 'the context-read body names no inventory revision' };
+  }
+  if (!Array.isArray(value.sources)) {
+    return { kind: 'malformed', reason: 'the context-read body lists no sources' };
+  }
+  const sources: ExtractedContextReadSource[] = [];
+  for (const source of value.sources) {
+    if (typeof source === 'string') {
+      const id = source.trim();
+      if (id.length > 0) {
+        sources.push({ id, range: null });
+      }
+      continue;
+    }
+    if (!isUnknownRecord(source)) {
+      return { kind: 'malformed', reason: 'a context-read source is not a json object' };
+    }
+    const id = trimmedString({ value: source.id });
+    if (id.length === 0) {
+      return { kind: 'malformed', reason: 'a context-read source names no id' };
+    }
+    const range = trimmedString({ value: source.range });
+    sources.push({ id, range: range.length === 0 ? null : range });
+  }
+  return { kind: 'valid', request: { version: 1, inventoryRevision, sources } };
 };
 
 export type ExtractedMaterializeRequest = {
@@ -1183,7 +1254,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 };
 
 const BLOCK_MARKER_ALT =
-  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer|cluster-outcome|need';
+  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer|cluster-outcome|need|context-read';
 const SELF_MARKER_ALT =
   'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done|scout-domains|materialize:';
 

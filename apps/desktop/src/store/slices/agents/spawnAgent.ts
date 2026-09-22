@@ -2,6 +2,7 @@ import type {
   AgentExecutionPurpose,
   AgentId,
   AgentSourceKind,
+  GenerationCreationPath,
   IsoDateTime,
   MountId,
   PlanId,
@@ -35,6 +36,7 @@ import {
   fanOutClusters,
   selectFanOutPlan,
 } from '../workflows/clusterImplementation';
+import { bindGeneration, reserveGeneration } from './reserveGeneration';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { GetFn, SetFn } from './types';
@@ -111,6 +113,30 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
   const roleModels = state.workspaceOverrides[session.workspaceId]?.roleModels;
   const routing = kindRouting({ kind: resolvedKind, roleModels });
   const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
+  const generationPath: GenerationCreationPath | null =
+    args.sourceKind === 'open_question'
+      ? 'question-delegate'
+      : args.parentAgentId !== undefined
+        ? 'capability'
+        : args.stepId !== undefined
+          ? 'workflow-step'
+          : null;
+  const reservation =
+    generationPath === null
+      ? null
+      : await reserveGeneration({
+          get,
+          sessionId,
+          workflowRunId: args.workflowRunId ?? null,
+          parentAgentId: args.parentAgentId ?? null,
+          creationPath: generationPath,
+          reservationKey: `${args.parentAgentId ?? 'root'}:${nextOrdinal}:${resolvedName}`,
+          count: 1,
+          label: resolvedName,
+        });
+  if (reservation !== null && reservation.kind === 'refused') {
+    throw new Error(reservation.reason);
+  }
   const inserted = await invokeAgentInsert({
     sessionId,
     ...(args.stepId !== undefined && { stepId: args.stepId }),
@@ -130,6 +156,9 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     ...(args.sourceKind !== undefined && { sourceKind: args.sourceKind }),
     ...(args.parentAgentId !== undefined && { parentAgentId: args.parentAgentId }),
   });
+  if (reservation !== null && reservation.kind === 'granted') {
+    await bindGeneration({ reservations: reservation.reservations, agentIds: [inserted.id] });
+  }
   const resolvedProvider = args.provider ?? routing.provider;
   const resolvedModel = args.model ?? routing.model;
   const resolvedEffort = EFFORT_LEVELS.find((level) => level === args.effort) ?? routing.effort;

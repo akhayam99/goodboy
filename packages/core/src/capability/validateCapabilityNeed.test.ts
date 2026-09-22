@@ -20,7 +20,10 @@ const repairNeed = {
   gap: 'the failing path was never executed',
   expectedOutput: 'the guard back with a regression test',
   continuation: 'handoff',
+  inventoryRevision: 'rabc123',
 };
+
+const CURRENT_REVISION = 'rabc123';
 
 describe('capability need validation', () => {
   it('accepts a reviewer asking an implementer for a repair', () => {
@@ -29,6 +32,7 @@ describe('capability need validation', () => {
       emittingProvider: null,
       requesterAgentId: 'agent-1',
       requesterRole: 'reviewer',
+      inventoryRevision: CURRENT_REVISION,
     });
 
     expect(outcome.kind).toBe('valid');
@@ -42,6 +46,7 @@ describe('capability need validation', () => {
       emittingProvider: null,
       requesterAgentId: 'agent-1',
       requesterRole: 'reviewer',
+      inventoryRevision: CURRENT_REVISION,
     });
 
     expect(outcome).toEqual({
@@ -57,6 +62,7 @@ describe('capability need validation', () => {
       emittingProvider: null,
       requesterAgentId: 'agent-1',
       requesterRole: 'planner',
+      inventoryRevision: CURRENT_REVISION,
     });
 
     expect(outcome.kind).toBe('rejected');
@@ -72,6 +78,7 @@ describe('capability need validation', () => {
       emittingProvider: null,
       requesterAgentId: 'agent-1',
       requesterRole: 'reviewer',
+      inventoryRevision: CURRENT_REVISION,
     });
 
     expect(outcome.kind).toBe('rejected');
@@ -84,6 +91,7 @@ describe('capability need validation', () => {
       emittingProvider: null,
       requesterAgentId: 'agent-1',
       requesterRole: 'reviewer',
+      inventoryRevision: CURRENT_REVISION,
     });
 
     expect(outcome.kind).toBe('rejected');
@@ -96,6 +104,7 @@ describe('capability need validation', () => {
       emittingProvider: null,
       requesterAgentId: 'agent-1',
       requesterRole: 'reviewer',
+      inventoryRevision: CURRENT_REVISION,
     });
 
     expect(outcome.kind).toBe('rejected');
@@ -109,6 +118,7 @@ describe('capability need validation', () => {
         emittingProvider: null,
         requesterAgentId: 'agent-1',
         requesterRole: 'reviewer',
+        inventoryRevision: CURRENT_REVISION,
       }),
     ).toEqual({ kind: 'none' });
   });
@@ -124,6 +134,7 @@ describe('capability need validation', () => {
       emittingProvider: null,
       requesterAgentId: 'agent-1',
       requesterRole: 'reviewer',
+      inventoryRevision: CURRENT_REVISION,
     });
 
     expect(outcome.kind === 'valid' ? outcome.need.targetRole : null).toBe('investigator');
@@ -146,6 +157,19 @@ describe('capability need validation', () => {
       kind: 'malformed',
       reason: 'the need body is not a json object',
     });
+  });
+
+  it('rejects a need formed against a stale inventory revision', () => {
+    const outcome = validateCapabilityNeed({
+      assistantText: needBody({ ...repairNeed, inventoryRevision: 'rstale' }),
+      emittingProvider: null,
+      requesterAgentId: 'agent-1',
+      requesterRole: 'reviewer',
+      inventoryRevision: CURRENT_REVISION,
+    });
+
+    expect(outcome.kind).toBe('rejected');
+    expect(outcome.kind === 'rejected' ? outcome.rejection : null).toBe('stale-inventory');
   });
 
   it('maps completion finding targets onto obligation purposes', () => {

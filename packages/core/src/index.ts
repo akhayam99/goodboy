@@ -16,6 +16,17 @@ export {
 } from './capability';
 
 export {
+  buildEvidenceInventory,
+  evidenceEntryFor,
+  inventoryRevisionOf,
+  planContextRead,
+  renderEvidenceInventory,
+  type ContextReadPlan,
+  type ContextReadResolution,
+  type EvidenceInventoryInput,
+} from './inventory';
+
+export {
   checkProviderBudget,
   checkSessionBudget,
   emitBudgetAlerts,
@@ -76,6 +87,7 @@ export {
   serializeSlotsBudgeted,
   serializeSummaryDocument,
   extractCapabilityNeed,
+  extractContextRead,
   stripControlMarkers,
   SUMMARY_SECTION_KEYS,
   SUMMARY_SECTION_TITLES,
@@ -89,6 +101,9 @@ export {
   type ClusterMarkerExtraction,
   type CapabilityNeedExtraction,
   type ExtractedCapabilityNeed,
+  type ExtractedContextRead,
+  type ExtractedContextReadSource,
+  type ContextReadExtraction,
   type ClusterOutcomeExtraction,
   type ExtractedClusterOutcome,
   type ExtractedFanOutArea,

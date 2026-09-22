@@ -23,12 +23,17 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-const { invokeAgentInsertSpy } = vi.hoisted(() => ({
-  invokeAgentInsertSpy: vi.fn(),
-}));
+const { invokeAgentInsertSpy, invokeAgentGenerationReserveSpy, invokeAgentGenerationBindSpy } =
+  vi.hoisted(() => ({
+    invokeAgentInsertSpy: vi.fn(),
+    invokeAgentGenerationReserveSpy: vi.fn(),
+    invokeAgentGenerationBindSpy: vi.fn(),
+  }));
 
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,
+  invokeAgentGenerationReserve: invokeAgentGenerationReserveSpy,
+  invokeAgentGenerationBind: invokeAgentGenerationBindSpy,
 }));
 
 import { agentReferenceRouting } from '../turn/agentReferenceRouting';
@@ -50,6 +55,11 @@ const step = (patch: Partial<Step> = {}): Step =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  invokeAgentGenerationReserveSpy.mockResolvedValue({
+    kind: 'granted',
+    reservations: [{ reservationId: 'reservation:0', depth: 0, causalRootAgentId: null }],
+  });
+  invokeAgentGenerationBindSpy.mockResolvedValue(undefined);
   invokeAgentInsertSpy.mockImplementation(async (input: Record<string, unknown>) => ({
     id: 'agent-1' as AgentId,
     sessionId: input['sessionId'] as SessionId,

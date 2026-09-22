@@ -112,6 +112,7 @@ export type CapabilityRequest = Readonly<{
   expectedOutput: string;
   continuation: CapabilityContinuation;
   routingProposal: WorkflowRoutingProposal | null;
+  inventoryRevision: string;
   createdAt: string;
 }>;
 

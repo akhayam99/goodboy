@@ -30,6 +30,7 @@ import {
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
 import { composeClusterOutcomeBoundary, composeKickoff, composeUnitBoundary } from '../../kickoff';
+import { bindGeneration, reserveGeneration } from '../agents/reserveGeneration';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { revalidateChildRouting } from './revalidateChildRouting';
 import { isHandsFree } from './handsFree';
@@ -406,6 +407,27 @@ export const fanOutClusters = async (
     return;
   }
 
+  const reservation = await reserveGeneration({
+    get,
+    sessionId,
+    workflowRunId: container.workflowRunId ?? null,
+    parentAgentId: container.id,
+    creationPath: 'cluster',
+    reservationKey: `${container.id}:${nodes.length}`,
+    count: nodes.length,
+    label: container.name,
+  });
+  if (reservation.kind === 'refused') {
+    void get().emitNotification(
+      'error',
+      'warning',
+      `cluster blocked: ${container.name}`,
+      reservation.reason,
+      { sessionId },
+    );
+    return;
+  }
+
   const baseOrdinal =
     (get().sessionPhaseRuns[sessionId] ?? []).reduce((m, r) => Math.max(m, r.ordinal), -1) + 1;
   const materialized = await invokeAgentInsertBatch({
@@ -434,6 +456,7 @@ export const fanOutClusters = async (
     return;
   }
   const childIds: AgentId[] = materialized.agents.map((agent) => agent.id);
+  await bindGeneration({ reservations: reservation.reservations, agentIds: childIds });
 
   const bindings: ReadonlyArray<ClusterExecutionNode> = nodes.map((node, index) => ({
     nodeId: node.id,

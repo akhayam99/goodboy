@@ -48,6 +48,7 @@ type CapabilityRequestRow = {
   readonly expected_output: string;
   readonly continuation: CapabilityContinuation;
   readonly routing_proposal: string | null;
+  readonly inventory_revision: string;
   readonly created_at: number;
 };
 
@@ -73,6 +74,7 @@ export type CapabilityNeedRecord = Readonly<{
   expectedOutput: string;
   continuation: CapabilityContinuation;
   routingProposal: WorkflowRoutingProposal | null;
+  inventoryRevision: string;
 }>;
 
 type RecordCapabilityNeedParams = {
@@ -151,6 +153,7 @@ const requestToDomain = ({ row }: { readonly row: CapabilityRequestRow }): Capab
   expectedOutput: row.expected_output,
   continuation: row.continuation,
   routingProposal: parseRoutingProposal({ value: row.routing_proposal }),
+  inventoryRevision: row.inventory_revision,
   createdAt: new Date(row.created_at).toISOString(),
 });
 
@@ -249,8 +252,8 @@ export const recordCapabilityNeed = async ({
     `INSERT OR IGNORE INTO capability_requests
        (id, session_id, workflow_run_id, obligation_id, requester_agent_id, source_turn_id,
         target_role, purpose, question, scope_json, evidence_json, gap, expected_output,
-        continuation, routing_proposal, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        continuation, routing_proposal, inventory_revision, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       need.requestId,
       need.sessionId,
@@ -267,6 +270,7 @@ export const recordCapabilityNeed = async ({
       need.expectedOutput,
       need.continuation,
       need.routingProposal === null ? null : JSON.stringify(need.routingProposal),
+      need.inventoryRevision,
       now,
     ],
   );
@@ -309,6 +313,54 @@ export const associateCapabilityObligationHold = async ({
     requests: requests.map((row) => requestToDomain({ row })),
     holdIds: holds.map((row) => row.hold_id),
   });
+};
+
+export type ClaimCapabilityObligationOwnerParams = {
+  readonly db: Database;
+  readonly identity: string;
+  readonly ownerAgentId: AgentId;
+  readonly childAgentId: AgentId | null;
+};
+
+export type CapabilityObligationClaim =
+  | Readonly<{ kind: 'owned'; obligationId: string; ownerAgentId: AgentId }>
+  | Readonly<{ kind: 'attached'; obligationId: string; ownerAgentId: AgentId }>
+  | Readonly<{ kind: 'unknown-obligation' }>;
+
+export const claimCapabilityObligationOwner = async ({
+  db,
+  identity,
+  ownerAgentId,
+  childAgentId,
+}: ClaimCapabilityObligationOwnerParams): Promise<CapabilityObligationClaim> => {
+  const claimed = await db.execute(
+    `UPDATE capability_obligations
+        SET owner_agent_id = ?, child_agent_id = ?, state = 'granted', decision = 'granted',
+            updated_at = ?
+      WHERE identity = ? AND owner_agent_id IS NULL`,
+    [ownerAgentId, childAgentId, Date.now(), identity],
+  );
+  const rows = await db.select<CapabilityObligationRow>(
+    'SELECT * FROM capability_obligations WHERE identity = ?',
+    [identity],
+  );
+  const row = rows[0];
+  if (row === undefined) {
+    return { kind: 'unknown-obligation' };
+  }
+  const owner = row.owner_agent_id;
+  if (owner === null) {
+    return { kind: 'unknown-obligation' };
+  }
+  if (claimed.rowsAffected > 0) {
+    return { kind: 'owned', obligationId: row.id, ownerAgentId: owner };
+  }
+  await db.execute(
+    `UPDATE capability_obligations SET decision = 'attached', updated_at = ?
+      WHERE identity = ? AND decision IS NULL`,
+    [Date.now(), identity],
+  );
+  return { kind: 'attached', obligationId: row.id, ownerAgentId: owner };
 };
 
 export const listCapabilityObligations = async ({
