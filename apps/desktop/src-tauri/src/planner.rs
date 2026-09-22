@@ -73,6 +73,7 @@ pub async fn planner_run(
                 purpose: "planner".to_string(),
                 is_heavyweight: false,
                 limits: crate::invocation_admission::InvocationLimits::default(),
+                spend_reservation: None,
             }
         });
         let mut permit = admission.admit(database, invocation.request(&args.provider_id))?;

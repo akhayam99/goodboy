@@ -33,6 +33,8 @@ describe('checkProviderBudget', () => {
       pct: 0,
       exceeded: false,
       overThreshold: false,
+      measuredUsd: 0,
+      committedUsd: 0,
     });
   });
 
@@ -49,7 +51,7 @@ describe('checkProviderBudget', () => {
           created_at: '2026-05-01T00:00:00.000Z',
         },
       ])
-      .mockResolvedValueOnce([{ total: 0 }]);
+      .mockResolvedValueOnce([{ measured: 0, committed: 0 }]);
 
     const db = makeDb({ select: selectMock });
     const result = await checkProviderBudget(db, 'anthropic', 'monthly');
@@ -72,7 +74,7 @@ describe('checkProviderBudget', () => {
           created_at: '2026-05-01T00:00:00.000Z',
         },
       ])
-      .mockResolvedValueOnce([{ total: 50 }]);
+      .mockResolvedValueOnce([{ measured: 50, committed: 0 }]);
 
     const db = makeDb({ select: selectMock });
     const result = await checkProviderBudget(db, 'anthropic', 'monthly');
@@ -95,7 +97,7 @@ describe('checkProviderBudget', () => {
           created_at: '2026-05-01T00:00:00.000Z',
         },
       ])
-      .mockResolvedValueOnce([{ total: 99 }]);
+      .mockResolvedValueOnce([{ measured: 99, committed: 0 }]);
 
     const db = makeDb({ select: selectMock });
     const result = await checkProviderBudget(db, 'anthropic', 'monthly');
@@ -117,7 +119,7 @@ describe('checkProviderBudget', () => {
           created_at: '2026-05-01T00:00:00.000Z',
         },
       ])
-      .mockResolvedValueOnce([{ total: 100 }]);
+      .mockResolvedValueOnce([{ measured: 100, committed: 0 }]);
 
     const db = makeDb({ select: selectMock });
     const result = await checkProviderBudget(db, 'anthropic', 'monthly');
@@ -139,7 +141,7 @@ describe('checkProviderBudget', () => {
           created_at: '2026-05-01T00:00:00.000Z',
         },
       ])
-      .mockResolvedValueOnce([{ total: 101 }]);
+      .mockResolvedValueOnce([{ measured: 101, committed: 0 }]);
 
     const db = makeDb({ select: selectMock });
     const result = await checkProviderBudget(db, 'anthropic', 'monthly');
@@ -163,7 +165,7 @@ describe('checkProviderBudget', () => {
           created_at: '2026-05-01T00:00:00.000Z',
         },
       ])
-      .mockResolvedValueOnce([{ total: 80 }]);
+      .mockResolvedValueOnce([{ measured: 80, committed: 0 }]);
 
     const db = makeDb({ select: selectMock });
     const result = await checkProviderBudget(db, 'anthropic', 'monthly');
@@ -186,7 +188,7 @@ describe('checkProviderBudget', () => {
           created_at: '2026-05-01T00:00:00.000Z',
         },
       ])
-      .mockResolvedValueOnce([{ total: 60 }]);
+      .mockResolvedValueOnce([{ measured: 60, committed: 0 }]);
 
     const db = makeDb({ select: selectMock });
     const result = await checkProviderBudget(db, 'anthropic', 'monthly');
@@ -208,7 +210,7 @@ describe('checkProviderBudget', () => {
           created_at: '2026-05-01T00:00:00.000Z',
         },
       ])
-      .mockResolvedValueOnce([{ total: 79.99 }]);
+      .mockResolvedValueOnce([{ measured: 79.99, committed: 0 }]);
 
     const db = makeDb({ select: selectMock });
     const result = await checkProviderBudget(db, 'anthropic', 'monthly');
@@ -227,6 +229,8 @@ describe('checkSessionBudget', () => {
       pct: 0,
       exceeded: false,
       overThreshold: false,
+      measuredUsd: 0,
+      committedUsd: 0,
     });
   });
 
@@ -255,5 +259,57 @@ describe('checkSessionBudget', () => {
 
     expect(result.remainingUsd).toBe(-10);
     expect(result.exceeded).toBe(true);
+  });
+});
+
+describe('checkProviderBudget reservations', () => {
+  it('keeps a reserved estimate distinguishable from measured usage while both bind the cap', async () => {
+    const selectMock = vi
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          id: 'r1',
+          provider: 'anthropic',
+          period: 'monthly',
+          cap_usd: 100,
+          alert_threshold_pct: 80,
+          created_at: '2026-05-01T00:00:00.000Z',
+        },
+      ])
+      .mockResolvedValueOnce([{ measured: 30, committed: 55 }]);
+
+    const db = makeDb({ select: selectMock });
+    const result = await checkProviderBudget(db, 'anthropic', 'monthly');
+
+    expect(result.measuredUsd).toBe(30);
+    expect(result.committedUsd).toBe(55);
+    expect(result.remainingUsd).toBe(15);
+    expect(result.overThreshold).toBe(true);
+    expect(result.exceeded).toBe(false);
+  });
+
+  it('reads reservations from the ticket ledger for the same provider and period', async () => {
+    const selectMock = vi
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          id: 'r1',
+          provider: 'codex',
+          period: 'monthly',
+          cap_usd: 10,
+          alert_threshold_pct: 80,
+          created_at: '2026-05-01T00:00:00.000Z',
+        },
+      ])
+      .mockResolvedValueOnce([{ measured: 0, committed: 0 }]);
+
+    const db = makeDb({ select: selectMock });
+    await checkProviderBudget(db, 'codex', 'monthly');
+
+    const costQuery: string = selectMock.mock.calls[1]?.[0];
+    expect(costQuery).toContain('invocation_tickets');
+    expect(costQuery).toContain('budget_identity');
+    expect(selectMock.mock.calls[1]?.[1]?.[0]).toBe('codex');
+    expect(selectMock.mock.calls[1]?.[1]?.[3]).toBe('codex');
   });
 });

@@ -138,6 +138,7 @@ export type {
   InvocationPurpose,
   InvocationContext,
   InvocationLimits,
+  SpendReservation,
   TelemetryKind,
   TelemetryRecord,
   UsageAttributionStatus,

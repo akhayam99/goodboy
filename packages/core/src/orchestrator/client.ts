@@ -5,6 +5,7 @@ import { cliModelId } from '../providers/cliModelId';
 import { getDefaultBinary } from '../providers/cli-defaults';
 import { parseOrchestratorDecision } from './parser';
 import { buildOrchestratorUserPrompt, ORCHESTRATOR_SYSTEM_PROMPT } from './prompt';
+import { estimateSpendReservation } from '../budget/reservation';
 import type { OrchestratorDecision, OrchestratorInput } from './types';
 
 export type OrchestratorUsage = {
@@ -107,7 +108,17 @@ export class OrchestratorClient {
             toolsDisabled: true,
             ...(this.effort != null && { effort: this.effort }),
             ...(this.workingDir != null && { workingDir: this.workingDir }),
-            ...(this.invocation != null && { invocation: this.invocation }),
+            ...(this.invocation != null && {
+              invocation: {
+                ...this.invocation,
+                spendReservation: estimateSpendReservation({
+                  providerId: this.providerId,
+                  model: this.model,
+                  prompt: `${ORCHESTRATOR_SYSTEM_PROMPT}\n\n${userMessage}`,
+                  allowOverBudget: this.invocation.spendReservation?.allowOverBudget === true,
+                }),
+              },
+            }),
           },
         }),
         timeout,

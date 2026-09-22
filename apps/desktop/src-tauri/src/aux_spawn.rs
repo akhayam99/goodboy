@@ -2,6 +2,17 @@ use std::process::Command;
 
 pub const CLAUDE_SETTING_SOURCES: &str = "project,local";
 
+pub const CLAUDE_READ_ONLY_SETTING_SOURCES: &str = "local";
+
+pub const CLAUDE_READ_ONLY_TOOLS: &str = "Read,Glob,Grep";
+
+pub fn claude_setting_sources(is_read_only: bool) -> &'static str {
+    match is_read_only {
+        true => CLAUDE_READ_ONLY_SETTING_SOURCES,
+        false => CLAUDE_SETTING_SOURCES,
+    }
+}
+
 pub fn push_claude_mcp_deny(args: &mut Vec<String>) {
     args.push("--disallowedTools".to_string());
     args.push("mcp__*".to_string());

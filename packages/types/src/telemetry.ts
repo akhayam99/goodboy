@@ -22,6 +22,11 @@ export type InvocationLimits = Readonly<{
   heavyweight: number;
 }>;
 
+export type SpendReservation = Readonly<{
+  estimatedSpendUsd: number;
+  allowOverBudget: boolean;
+}>;
+
 export type InvocationContext = Readonly<{
   invocationId: string;
   workspaceId?: string;
@@ -32,6 +37,7 @@ export type InvocationContext = Readonly<{
   purpose: InvocationPurpose;
   isHeavyweight: boolean;
   limits: InvocationLimits;
+  spendReservation?: SpendReservation;
   providerId?: ProviderId;
 }>;
 

@@ -90,6 +90,24 @@ export const insertTelemetry = async (db: Database, record: TelemetryRecord): Pr
       record.attributionStatus ?? 'unattributed',
     ],
   );
+  if (record.invocationId == null) {
+    return;
+  }
+  await db.execute(
+    `UPDATE invocation_tickets
+        SET measured_spend_usd = (
+              SELECT COALESCE(SUM(estimated_cost_usd), 0)
+                FROM telemetry_records
+               WHERE invocation_id = ?
+            ),
+            measurement_status = CASE
+              WHEN reservation_status = 'settled' THEN 'measured'
+              ELSE measurement_status
+            END,
+            updated_at = ?
+      WHERE id = ? AND reservation_status IN ('reserved', 'settled')`,
+    [record.invocationId, Date.parse(record.recordedAt), record.invocationId],
+  );
 };
 
 export const listTelemetryForSession = async (

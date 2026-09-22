@@ -175,9 +175,13 @@ pub struct BudgetCheckResult {
     pub exceeded: bool,
     #[serde(rename = "overThreshold")]
     pub over_threshold: bool,
+    #[serde(rename = "measuredUsd")]
+    pub measured_usd: f64,
+    #[serde(rename = "committedUsd")]
+    pub committed_usd: f64,
 }
 
-fn current_month_window_ms() -> (i64, i64) {
+pub(crate) fn current_month_window_ms() -> (i64, i64) {
     use std::time::{SystemTime, UNIX_EPOCH};
     let now_ms = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -378,17 +382,37 @@ fn provider_budget_status(
             pct: 0.0,
             exceeded: false,
             over_threshold: false,
+            measured_usd: 0.0,
+            committed_usd: 0.0,
         });
     };
 
     let (start_ms, end_ms) = current_month_window_ms();
 
-    let spent: f64 = conn.query_row(
+    let measured: f64 = conn.query_row(
         "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM telemetry_records
           WHERE provider = ?1 AND recorded_at >= ?2 AND recorded_at <= ?3",
         rusqlite::params![provider, start_ms, end_ms],
         |row| row.get(0),
     )?;
+    let committed: f64 = conn.query_row(
+        "SELECT COALESCE(SUM(
+           CASE
+             WHEN ticket.reservation_status = 'reserved' THEN MAX(ticket.estimated_spend_usd - COALESCE((
+               SELECT SUM(usage.estimated_cost_usd) FROM telemetry_records usage WHERE usage.invocation_id = ticket.id
+             ), 0), 0)
+             WHEN ticket.reservation_status = 'settled' AND ticket.measurement_status = 'unknown' THEN ticket.estimated_spend_usd
+             ELSE 0
+           END
+         ), 0)
+         FROM invocation_tickets ticket
+         WHERE ticket.budget_identity = ?1
+           AND ticket.budget_period_start = ?2
+           AND ticket.budget_period_end = ?3",
+        rusqlite::params![provider, start_ms, end_ms],
+        |row| row.get(0),
+    )?;
+    let spent = measured + committed;
 
     let remaining = cap_usd - spent;
     let pct = if cap_usd > 0.0 {
@@ -403,6 +427,8 @@ fn provider_budget_status(
         pct,
         exceeded,
         over_threshold: !exceeded && pct >= threshold_pct,
+        measured_usd: measured,
+        committed_usd: committed,
     })
 }
 
@@ -428,7 +454,14 @@ mod tests {
                 cap_usd REAL, alert_threshold_pct REAL
             );
             CREATE TABLE telemetry_records (
-                id TEXT PRIMARY KEY, provider TEXT, estimated_cost_usd REAL, recorded_at INTEGER
+                id TEXT PRIMARY KEY, provider TEXT, estimated_cost_usd REAL, recorded_at INTEGER,
+                invocation_id TEXT
+            );
+            CREATE TABLE invocation_tickets (
+                id TEXT PRIMARY KEY, budget_identity TEXT, budget_period_start INTEGER,
+                budget_period_end INTEGER, estimated_spend_usd REAL, measured_spend_usd REAL,
+                reservation_status TEXT NOT NULL DEFAULT 'none',
+                measurement_status TEXT NOT NULL DEFAULT 'none'
             );",
         )
         .unwrap();
@@ -534,5 +567,84 @@ mod tests {
 
         assert_eq!(result.pct, 0.0);
         assert!(!result.over_threshold);
+    }
+
+    fn insert_reservation(
+        conn: &rusqlite::Connection,
+        id: &str,
+        estimated_spend_usd: f64,
+        reservation_status: &str,
+        measurement_status: &str,
+    ) {
+        let (start_ms, end_ms) = current_month_window_ms();
+        conn.execute(
+            "INSERT INTO invocation_tickets
+             (id, budget_identity, budget_period_start, budget_period_end, estimated_spend_usd,
+              reservation_status, measurement_status)
+             VALUES (?1, 'anthropic', ?2, ?3, ?4, ?5, ?6)",
+            rusqlite::params![
+                id,
+                start_ms,
+                end_ms,
+                estimated_spend_usd,
+                reservation_status,
+                measurement_status
+            ],
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn a_reservation_commits_against_the_cap_without_passing_as_measured_usage() {
+        let conn = budget_conn();
+        insert_rule(&conn, 100.0, 80.0);
+        insert_spend(&conn, "t1", 30.0);
+        insert_reservation(&conn, "ticket-1", 55.0, "reserved", "pending");
+
+        let result = provider_budget_status(&conn, "anthropic", "monthly").unwrap();
+
+        assert_eq!(result.measured_usd, 30.0);
+        assert_eq!(result.committed_usd, 55.0);
+        assert_eq!(result.remaining_usd, 15.0);
+        assert!(result.over_threshold);
+        assert!(!result.exceeded);
+    }
+
+    #[test]
+    fn a_settled_reservation_with_measured_usage_stops_committing_its_estimate() {
+        let conn = budget_conn();
+        insert_rule(&conn, 100.0, 80.0);
+        insert_spend(&conn, "t1", 10.0);
+        insert_reservation(&conn, "ticket-1", 50.0, "settled", "measured");
+
+        let result = provider_budget_status(&conn, "anthropic", "monthly").unwrap();
+
+        assert_eq!(result.committed_usd, 0.0);
+        assert_eq!(result.remaining_usd, 90.0);
+    }
+
+    #[test]
+    fn a_settled_reservation_whose_usage_never_arrived_keeps_its_estimate_committed() {
+        let conn = budget_conn();
+        insert_rule(&conn, 100.0, 80.0);
+        insert_reservation(&conn, "ticket-1", 50.0, "settled", "unknown");
+
+        let result = provider_budget_status(&conn, "anthropic", "monthly").unwrap();
+
+        assert_eq!(result.measured_usd, 0.0);
+        assert_eq!(result.committed_usd, 50.0);
+        assert_eq!(result.remaining_usd, 50.0);
+    }
+
+    #[test]
+    fn a_released_reservation_commits_nothing() {
+        let conn = budget_conn();
+        insert_rule(&conn, 100.0, 80.0);
+        insert_reservation(&conn, "ticket-1", 50.0, "released", "none");
+
+        let result = provider_budget_status(&conn, "anthropic", "monthly").unwrap();
+
+        assert_eq!(result.committed_usd, 0.0);
+        assert_eq!(result.remaining_usd, 100.0);
     }
 }

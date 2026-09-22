@@ -5,7 +5,11 @@ vi.mock('../../../features/worktree/worktree', () => ({
   gitCommonDirectory: vi.fn(async () => null),
 }));
 
-import { buildTurnWritableRoots, repoRootsForTurn } from './turnWritableRoots';
+import {
+  buildManagedCheckouts,
+  buildTurnWritableRoots,
+  repoRootsForTurn,
+} from './turnWritableRoots';
 
 const mount = (overrides: Partial<SessionProjectMount> = {}): SessionProjectMount => ({
   mountId: 'mount-api' as MountId,
@@ -90,5 +94,42 @@ describe('repoRootsForTurn', () => {
     });
 
     expect(roots).toEqual(['/repo/api']);
+  });
+});
+
+describe('buildManagedCheckouts', () => {
+  it('binds every writable checkout to its repository and shared git directory', () => {
+    const checkouts = buildManagedCheckouts({
+      mounts: [first, second],
+      gitDirs: new Map([['/repo/api', '/repo/api/.git']]),
+    });
+
+    expect(checkouts).toEqual([
+      {
+        repoRoot: '/repo/api',
+        worktreePath: '/repo/api/.goodboy/worktrees/first',
+        gitDir: '/repo/api/.git',
+      },
+      {
+        repoRoot: '/repo/api',
+        worktreePath: '/repo/api/.goodboy/worktrees/second',
+        gitDir: '/repo/api/.git',
+      },
+    ]);
+  });
+
+  it('falls back to the conventional git directory and drops detached mounts', () => {
+    const checkouts = buildManagedCheckouts({
+      mounts: [first, mount({ worktreePath: '/repo/api/detached', isAttached: false })],
+      gitDirs: new Map(),
+    });
+
+    expect(checkouts).toEqual([
+      {
+        repoRoot: '/repo/api',
+        worktreePath: '/repo/api/.goodboy/worktrees/first',
+        gitDir: '/repo/api/.git',
+      },
+    ]);
   });
 });

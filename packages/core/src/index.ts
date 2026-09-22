@@ -32,6 +32,7 @@ export {
   emitBudgetAlerts,
   getCurrentPeriodKey,
   getPeriodWindow,
+  estimateSpendReservation,
   type AlertEmitterDeps,
 } from './budget';
 
@@ -133,6 +134,7 @@ export {
   isDelegationContinuationSupported,
   isDelegationGranted,
   isAgentRole,
+  isReadOnlyRole,
   normalizeAgentRole,
   normalizeSelectableAgentRole,
   presentationKeyForRole,

@@ -1,5 +1,6 @@
 import type { InvocationContext, ModelEffort, ProviderId } from '@goodboy/types';
 import { cliModelId } from './cliModelId';
+import { estimateSpendReservation } from '../budget/reservation';
 
 export type AuxSpawnResult = {
   readonly stdout: string;
@@ -42,6 +43,16 @@ export const runAuxOneShot = async ({
       systemPrompt,
       ...(workingDir != null && { workingDir }),
       ...(runId != null && { runId }),
-      ...(invocation != null && { invocation }),
+      ...(invocation != null && {
+        invocation: {
+          ...invocation,
+          spendReservation: estimateSpendReservation({
+            providerId,
+            model,
+            prompt: `${systemPrompt}\n\n${userMessage}`,
+            allowOverBudget: invocation.spendReservation?.allowOverBudget === true,
+          }),
+        },
+      }),
     },
   });

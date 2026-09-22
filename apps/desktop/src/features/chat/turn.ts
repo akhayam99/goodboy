@@ -82,6 +82,12 @@ const isJsonProviderFrame = ({ line }: Params): boolean => {
   }
 };
 
+export type ManagedCheckout = {
+  readonly repoRoot: string;
+  readonly worktreePath: string;
+  readonly gitDir?: string;
+};
+
 type ClaudePermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
 
 type SpawnArgs = {
@@ -110,6 +116,8 @@ type SpawnArgs = {
     readonly token: string;
   };
   readonly invocation?: InvocationContext;
+  readonly managedCheckouts?: ReadonlyArray<ManagedCheckout>;
+  readonly isReadOnlyRole?: boolean;
 };
 
 type RawTurnEnvelope =

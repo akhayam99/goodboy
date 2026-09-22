@@ -4,10 +4,12 @@ import {
   buildChainCarryForward,
   autoPopulateContext,
   buildStepPrompt,
+  estimateSpendReservation,
   extractSpawnModel,
   fallbackWantsThinker,
   findReusableAgent,
   isFallbackStepOutputSummary,
+  isReadOnlyRole,
   planTurnFallback,
   PROVIDER_ARG_FLAGS,
   resolveModelArgs,
@@ -136,6 +138,7 @@ import {
   takeMountContinuation,
 } from './mountContinuations';
 import {
+  buildManagedCheckouts,
   buildTurnWritableRoots,
   repoRootsForTurn,
   resolveGitCommonDirs,
@@ -1044,6 +1047,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       workingDir,
       gitDirs,
     });
+    const managedCheckouts = buildManagedCheckouts({ mounts: scopeMounts, gitDirs });
+    const turnRole = phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind];
 
     if (provider !== 'anthropic') {
       resolvedPrompt = `${guards}\n\n${
@@ -1062,6 +1067,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         model: spawnModel,
         workingDir,
         writableRoots,
+        managedCheckouts,
+        isReadOnlyRole: isReadOnlyRole({ role: turnRole }),
         prompt: resolvedPrompt,
         binary: providerInfo?.binary,
         workspaceId: session.workspaceId,
@@ -1091,6 +1098,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           limits: resolveInvocationLimits({
             providerId: provider,
             workspaceOverride: get().workspaceOverrides[session.workspaceId],
+          }),
+          spendReservation: estimateSpendReservation({
+            providerId: provider,
+            model: spawnModel,
+            prompt: `${fullSystemPrompt}\n\n${resolvedPrompt}`,
+            allowOverBudget: force === true,
           }),
         },
         ...claudeFlags,
