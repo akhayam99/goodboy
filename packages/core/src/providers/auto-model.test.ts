@@ -91,10 +91,10 @@ describe('autoModelForRole', () => {
       };
       expect(autoModelForRole({ role: 'implementer', providers: ['anthropic'], prefs })).toEqual({
         provider: 'anthropic',
-        model: 'opus-5',
+        model: 'opus-5.5',
       });
       expect(recommendedModelForRole({ role: 'implementer', provider: 'anthropic', prefs })).toBe(
-        'opus-5',
+        'opus-5.5',
       );
     });
 
@@ -113,11 +113,14 @@ describe('autoModelForRole', () => {
       const fable = anthropic.find((model) => model.id === 'fable-5');
       const fable51 = anthropic.find((model) => model.id === 'fable-5.1');
       const opus = anthropic.find((model) => model.id === 'opus-5');
+      const opus55 = anthropic.find((model) => model.id === 'opus-5.5');
       expect(fable51?.weight ?? 0).toBeGreaterThan(fable?.weight ?? 0);
-      expect(fable?.weight ?? 0).toBeGreaterThan(opus?.weight ?? 0);
+      expect(fable?.weight ?? 0).toBeGreaterThan(opus55?.weight ?? 0);
+      expect(opus55?.weight ?? 0).toBeGreaterThan(opus?.weight ?? 0);
       expect(fable?.thinkerOnly).toBe(true);
       expect(fable51?.thinkerOnly).toBe(true);
       expect(opus?.thinkerOnly).toBe(false);
+      expect(opus55?.thinkerOnly).toBe(false);
     });
   });
 });

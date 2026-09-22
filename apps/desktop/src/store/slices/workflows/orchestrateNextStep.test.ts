@@ -801,6 +801,9 @@ describe('orchestrateNextStep', () => {
       'Codes: exp=exploration, pln=planning, imp=implementation, dbg=debugging, rev=review, tst=testing, wrt=writing, gen=general; lt=light, st=standard, hv=heavy, uk=unknown.',
     );
     expect(prompt).toContain(
+      'anthropic/opus-5.5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25',
+    );
+    expect(prompt).toContain(
       'anthropic/opus-5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25',
     );
     expect(prompt).toContain(
@@ -814,7 +817,7 @@ describe('orchestrateNextStep', () => {
     const menuLines = prompt
       .split('\n')
       .filter((line) => line.startsWith('anthropic/') || line.startsWith('codex/'));
-    expect(menuLines).toHaveLength(15);
+    expect(menuLines).toHaveLength(16);
     for (const line of menuLines) {
       expect(line).toContain('unassessed');
       expect(line).toMatch(/ ctx \d+k \$[\d.]+\/\$[\d.]+$/);

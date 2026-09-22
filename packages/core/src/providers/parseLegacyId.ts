@@ -7,6 +7,7 @@ type Params = {
 };
 
 const LEGACY_SELECTIONS: Readonly<Record<string, ModelSelection>> = {
+  'anthropic:claude-opus-5-5': { key: 'opus-5.5' },
   'anthropic:claude-opus-5': { key: 'opus-5' },
   'anthropic:claude-fable-5-1': { key: 'fable-5.1' },
   'anthropic:claude-fable-5': { key: 'fable-5' },

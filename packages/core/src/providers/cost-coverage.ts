@@ -12,8 +12,13 @@ type Params = {
 
 export const costCoverage = ({ provider, model }: Params): CostCoverage => {
   switch (provider) {
-    case 'anthropic':
-      return CLAUDE_PRICES[model] != null ? 'measured' : 'approximate';
+    case 'anthropic': {
+      const price = CLAUDE_PRICES[model];
+      if (price == null) {
+        return 'approximate';
+      }
+      return price.assumed === true ? 'approximate' : 'measured';
+    }
     case 'codex':
       return CODEX_PRICES[model] != null ? 'measured' : 'unpriced';
     case 'gemini': {
