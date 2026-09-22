@@ -92,7 +92,7 @@ or two: the answer counts as yours.
 - A command palette for sessions, lenses and studios
 - Open the worktree in VS Code or Cursor when you want to type yourself
 - Pair a phone to follow a session away from the desk
-- An Inbox for what GitHub, Linear, Jira, Sentry and Slack send you
+- One Inbox for what your connected issue trackers and review tools send you
 - Impact: what the workspace spent, by provider, model and session
 
 ## Install
