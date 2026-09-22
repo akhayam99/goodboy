@@ -75,6 +75,8 @@ export const deleteWorkspace = (set: SetFn, get: GetFn) => {
               sessionPhaseRuns: {},
               clusterCompletionHolds: {},
               clusterExecutionGraphs: {},
+              capabilityObligations: {},
+              capabilityGrants: {},
               selectedAgentId: {},
               agentRunHistory: {},
               agentTurnState: {},

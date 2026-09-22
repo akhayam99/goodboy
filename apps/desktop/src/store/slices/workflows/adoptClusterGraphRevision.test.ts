@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, AgentId, ClusterExecutionGraph, IsoDateTime, SessionId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  ClusterCompletionHold,
+  ClusterExecutionGraph,
+  IsoDateTime,
+  SessionId,
+} from '@goodboy/types';
 import type { GetFn, SetFn } from './types';
 
 const h = vi.hoisted(() => ({
@@ -128,13 +135,16 @@ const proposal = ({ baseRevision }: { readonly baseRevision: number }): string =
 const makeStore = ({
   graph,
   agents,
+  holds = [],
 }: {
   readonly graph: ClusterExecutionGraph | null;
   readonly agents: ReadonlyArray<Agent>;
+  readonly holds?: ReadonlyArray<ClusterCompletionHold>;
 }) => {
   const state: Record<string, unknown> = {
     sessionPhaseRuns: { [SESSION_ID]: agents },
     clusterExecutionGraphs: { [SESSION_ID]: graph === null ? [] : [graph] },
+    clusterCompletionHolds: { [SESSION_ID]: holds },
     agentKindOverride: {},
     emitNotification: vi.fn(async () => undefined),
     refreshUnreadWorkspaces: vi.fn(async () => undefined),
@@ -275,6 +285,43 @@ describe('adoptClusterGraphRevision', () => {
     expect(h.refuseRevision).toHaveBeenCalledWith(
       expect.objectContaining({ containerAgentId: CONTAINER_ID, fromRevision: 2 }),
     );
+  });
+
+  it('treats a released node as completed, so a revision cannot replace it', async () => {
+    const releasedHold: ClusterCompletionHold = {
+      id: 'hold-impl',
+      sessionId: SESSION_ID,
+      workflowRunId: null,
+      containerAgentId: CONTAINER_ID,
+      sourceAgentId: 'a-impl' as AgentId,
+      sourceTurnId: 'turn-impl',
+      reason: 'missing-outcome',
+      findings: [],
+      state: 'resolved',
+      resolutionEvidence: 'checked by hand',
+      resolvedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+    };
+    const { set, get } = makeStore({
+      graph: graphOf(),
+      agents: [agentOf({ id: 'a-discovery', status: 'completed' })],
+      holds: [releasedHold],
+    });
+
+    const outcome = await adoptClusterGraphRevision({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      containerAgentId: CONTAINER_ID,
+      obligationId: 'obligation-1',
+      proposalText: proposal({ baseRevision: 1 }),
+      reason: 'the planner split the rewrite',
+    });
+
+    expect(outcome.kind).toBe('refused');
+    expect(outcome.kind === 'refused' ? outcome.reason : '').toContain('"impl" already completed');
+    expect(h.adopt).not.toHaveBeenCalled();
   });
 
   it('refuses a planner turn that carries no revision', async () => {

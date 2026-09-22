@@ -1531,6 +1531,44 @@ describe('advanceClusterImplementation', () => {
     );
   });
 
+  it('advances from a held child that was tombstoned', async () => {
+    const next = childAgent({ id: 'orphan-next', ordinal: 1, status: 'pending' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), next] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterCompletionHolds: {
+        [SID]: [
+          {
+            id: 'hold-orphaned',
+            sessionId: SID,
+            workflowRunId: null,
+            containerAgentId: PARENT,
+            sourceAgentId: 'deleted-child' as AgentId,
+            sourceTurnId: 'turn-deleted',
+            reason: 'missing-outcome',
+            findings: [],
+            state: 'open',
+            resolutionEvidence: null,
+            resolvedAt: null,
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([container({ status: 'running' }), next]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, 'deleted-child' as AgentId, '', {
+      force: true,
+      resolvedHoldId: 'hold-orphaned',
+    });
+
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
+    expect(store.sendTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: next.id, content: expect.stringContaining('do 1') }),
+    );
+  });
+
   it('kicks off the next cluster with its instructions even after the plan flipped to consumed', async () => {
     const c0 = childAgent({ id: 'cu0', ordinal: 0 });
     const c1 = childAgent({ id: 'cu1', ordinal: 1 });
@@ -2286,6 +2324,97 @@ describe('cluster roles and dependencies', () => {
     expect(call.content).toContain('**Role** scout');
     expect(call.content).toContain('map it');
   });
+
+  const tombstonedGraph = () =>
+    executionGraph({
+      nodes: [
+        {
+          id: 'impl',
+          ordinal: 0,
+          title: 'rewrite the resolver',
+          instructions: 'do it',
+          role: 'implementer',
+          dependsOn: [],
+        },
+        {
+          id: 'review',
+          ordinal: 1,
+          title: 'review the change',
+          instructions: 'audit it',
+          role: 'reviewer',
+          dependsOn: ['impl'],
+        },
+      ],
+      bindings: [
+        { nodeId: 'impl', agentId: 'gone-impl' },
+        { nodeId: 'review', agentId: 'kept-review' },
+      ],
+    });
+
+  const tombstonedHold = (state: 'open' | 'resolved') => ({
+    id: 'hold-gone-impl',
+    sessionId: SID,
+    workflowRunId: null,
+    containerAgentId: PARENT,
+    sourceAgentId: 'gone-impl' as AgentId,
+    sourceTurnId: 'turn-gone',
+    reason: 'missing-outcome' as const,
+    findings: [],
+    state,
+    resolutionEvidence: state === 'resolved' ? 'checked by hand' : null,
+    resolvedAt: state === 'resolved' ? '2026-01-01T00:00:00.000Z' : null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  });
+
+  it('releases a dependent node when the hold on its tombstoned dependency is resolved', async () => {
+    const review = childAgent({ id: 'kept-review', ordinal: 1, name: 'review the change' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), review] },
+      clusterExecutionGraphs: { [SID]: [tombstonedGraph()] },
+      clusterCompletionHolds: { [SID]: [tombstonedHold('open')] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([container({ status: 'running' }), review]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, 'gone-impl' as AgentId, '', {
+      force: true,
+      resolvedHoldId: 'hold-gone-impl',
+    });
+
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as {
+      agentId: AgentId;
+      content: string;
+    };
+    expect(call.agentId).toBe('kept-review');
+    expect(call.content).toContain('**Role** reviewer');
+    expect(call.content).toContain('audit it');
+  });
+
+  it('resumes past a tombstoned node whose hold was already resolved', async () => {
+    const c = container({ status: 'running' });
+    const review = childAgent({ id: 'kept-review', ordinal: 1, name: 'review the change' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [c, review] },
+      clusterExecutionGraphs: { [SID]: [tombstonedGraph()] },
+      clusterCompletionHolds: { [SID]: [tombstonedHold('resolved')] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([c, review]);
+
+    const resumed = await resumeClusterChildren({
+      set: store.set,
+      get: store.get,
+      sessionId: SID,
+      container: c,
+    });
+
+    expect(resumed).toBe(true);
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as {
+      agentId: AgentId;
+      content: string;
+    };
+    expect(call.agentId).toBe('kept-review');
+  });
 });
 
 const revisedGraph = ({
@@ -2485,6 +2614,161 @@ describe('a frozen cluster execution', () => {
     expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
       PARENT,
       expect.objectContaining({ status: 'completed' }),
+    );
+  });
+
+  const resolvedHoldOn = ({
+    id,
+    sourceAgentId,
+    state,
+  }: {
+    readonly id: string;
+    readonly sourceAgentId: string;
+    readonly state: 'open' | 'resolved';
+  }) => ({
+    id,
+    sessionId: SID,
+    workflowRunId: null,
+    containerAgentId: PARENT,
+    sourceAgentId: sourceAgentId as AgentId,
+    sourceTurnId: `turn-${sourceAgentId}`,
+    reason: 'missing-outcome' as const,
+    findings: [],
+    state,
+    resolutionEvidence: state === 'resolved' ? 'checked by hand' : null,
+    resolvedAt: state === 'resolved' ? '2026-01-01T00:00:00.000Z' : null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  });
+
+  it('never counts a released source bound to a superseded node as progress', async () => {
+    const first = childAgent({ id: 'child-1', ordinal: 0, status: 'running' });
+    const second = childAgent({ id: 'child-2', ordinal: 1, status: 'pending' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), first, second] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: {
+        [SID]: [revisedGraph({ frozenReason: null, supersededAgentId: 'gone-stale' })],
+      },
+      clusterCompletionHolds: {
+        [SID]: [
+          resolvedHoldOn({ id: 'hold-stale', sourceAgentId: 'gone-stale', state: 'resolved' }),
+        ],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      { ...first, status: 'completed' },
+      second,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, first.id, done('child-1'));
+
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      PARENT,
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId };
+    expect(call.agentId).toBe('child-2');
+  });
+
+  it('keeps a released node retained by a revision settled and never starts it', async () => {
+    const released = revisedGraph({ frozenReason: null, supersededAgentId: null });
+    const graph = {
+      ...released,
+      revision: 2,
+      nodes: released.nodes.map((node) =>
+        node.nodeId === 'c0' ? { ...node, agentId: 'gone-impl' as AgentId, revision: 2 } : node,
+      ),
+    };
+    const c = container({ status: 'running' });
+    const second = childAgent({ id: 'child-2', ordinal: 1, status: 'pending' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [c, second] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: { [SID]: [graph] },
+      clusterCompletionHolds: {
+        [SID]: [resolvedHoldOn({ id: 'hold-gone', sourceAgentId: 'gone-impl', state: 'resolved' })],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([c, second]);
+
+    const resumed = await resumeClusterChildren({
+      set: store.set,
+      get: store.get,
+      sessionId: SID,
+      container: c,
+    });
+
+    expect(resumed).toBe(true);
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId };
+    expect(call.agentId).toBe('child-2');
+  });
+
+  it('never completes a container through a released node beside a transferred one', async () => {
+    const released = revisedGraph({ frozenReason: null, supersededAgentId: null });
+    const graph = {
+      ...released,
+      nodes: released.nodes.map((node) =>
+        node.nodeId === 'c0' ? { ...node, agentId: 'gone-impl' as AgentId } : node,
+      ),
+    };
+    const transferred = childAgent({ id: 'child-2', ordinal: 1, status: 'transferred' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), transferred] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: { [SID]: [graph] },
+      clusterCompletionHolds: {
+        [SID]: [resolvedHoldOn({ id: 'hold-gone', sourceAgentId: 'gone-impl', state: 'open' })],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([container({ status: 'running' }), transferred]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, 'gone-impl' as AgentId, '', {
+      force: true,
+      resolvedHoldId: 'hold-gone',
+    });
+
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      PARENT,
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(store.sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('keeps an explicitly resolved tombstoned child out of a frozen plan', async () => {
+    const second = childAgent({ id: 'child-2', ordinal: 1, status: 'pending' });
+    const released = revisedGraph({ frozenReason: 'a structural defect', supersededAgentId: null });
+    const graph = {
+      ...released,
+      nodes: released.nodes.map((node) =>
+        node.nodeId === 'c0' ? { ...node, agentId: 'gone-impl' as AgentId } : node,
+      ),
+    };
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), second] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: { [SID]: [graph] },
+      clusterCompletionHolds: {
+        [SID]: [resolvedHoldOn({ id: 'hold-gone', sourceAgentId: 'gone-impl', state: 'open' })],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([container({ status: 'running' }), second]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, 'gone-impl' as AgentId, '', {
+      force: true,
+      resolvedHoldId: 'hold-gone',
+    });
+
+    expect(store.sendTurn).not.toHaveBeenCalled();
+    expect(store.emitNotification).toHaveBeenCalledWith(
+      'error',
+      'info',
+      'cluster kept out of a frozen plan: gone-impl',
+      expect.stringContaining('a structural defect'),
+      { sessionId: SID },
     );
   });
 });

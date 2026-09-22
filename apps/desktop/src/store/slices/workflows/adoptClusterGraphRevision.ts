@@ -20,6 +20,7 @@ import {
 } from '../../../features/workflows/workflows';
 import { bindGeneration, reserveGeneration } from '../agents/reserveGeneration';
 import { childRoutingBatch } from './childRoutingBatch';
+import { releasedSourceIds } from './releasedClusterSources';
 import type { GetFn, SetFn } from './types';
 
 export type GraphRevisionOutcome =
@@ -59,15 +60,18 @@ const childrenOf = ({
 const progressFor = ({
   graph,
   children,
+  released,
 }: {
   readonly graph: ClusterExecutionGraph;
   readonly children: ReadonlyArray<Agent>;
+  readonly released: ReadonlySet<AgentId>;
 }): ReadonlyArray<ClusterAdoptionProgress> =>
   graph.nodes.map((binding) => {
     const agent = children.find((child) => child.id === binding.agentId) ?? null;
+    const isReleased = agent === null && binding.agentId !== null && released.has(binding.agentId);
     return {
       nodeId: binding.nodeId,
-      isCompleted: agent?.status === 'completed',
+      isCompleted: isReleased || agent?.status === 'completed',
       isRunning: agent !== null && agent.status === 'running',
     };
   });
@@ -174,7 +178,17 @@ export const adoptClusterGraphRevision = async ({
   const children = childrenOf({ get, sessionId, containerAgentId });
   const outcome = adoptGraphRevision({
     active: { revision: graph.revision, graph: graph.graph, nodes: graph.nodes },
-    progress: progressFor({ graph, children }),
+    progress: progressFor({
+      graph,
+      children,
+      released: releasedSourceIds({
+        get,
+        sessionId,
+        containerId: containerAgentId,
+        children,
+        resolvingHoldId: null,
+      }),
+    }),
     proposal: extraction.proposal,
   });
   if (outcome.kind === 'refused') {

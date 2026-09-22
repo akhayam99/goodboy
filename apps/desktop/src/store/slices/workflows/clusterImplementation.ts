@@ -35,6 +35,7 @@ import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../
 import { composeClusterOutcomeBoundary, composeKickoff, composeUnitBoundary } from '../../kickoff';
 import { bindGeneration, reserveGeneration } from '../agents/reserveGeneration';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
+import { releasedSourceIds } from './releasedClusterSources';
 import { revalidateChildRouting } from './revalidateChildRouting';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
@@ -93,12 +94,22 @@ type ClusterExecution = Readonly<{
   bindings: ReadonlyArray<ClusterExecutionNode>;
 }>;
 
+type ClusterNodeSlot = Readonly<{
+  agent: Agent | null;
+  isReleased: boolean;
+}>;
+
 type ClusterNodePair = Readonly<{
   node: ClusterGraphNode;
   agent: Agent | null;
+  isReleased: boolean;
 }>;
 
 const EMPTY_GRAPH: ClusterGraph = { executionVersion: 1, nodes: [] };
+
+const NO_RELEASED_SOURCES: ReadonlySet<AgentId> = new Set();
+
+const RELEASED_SLOT: ClusterNodeSlot = { agent: null, isReleased: true };
 
 const orderedNodes = ({
   graph,
@@ -107,25 +118,55 @@ const orderedNodes = ({
 }): ReadonlyArray<ClusterGraphNode> =>
   [...graph.nodes].sort((left, right) => left.ordinal - right.ordinal);
 
+const unboundSlots = ({
+  children,
+  releasedCount,
+}: {
+  readonly children: ReadonlyArray<Agent>;
+  readonly releasedCount: number;
+}): ReadonlyArray<ClusterNodeSlot> => {
+  const firstUnsettled = children.findIndex((child) => isSettledChild(child) === false);
+  const cut = firstUnsettled === -1 ? children.length : firstUnsettled;
+  const toSlot = (agent: Agent): ClusterNodeSlot => ({ agent, isReleased: false });
+  return [
+    ...children.slice(0, cut).map(toSlot),
+    ...Array.from({ length: releasedCount }, () => RELEASED_SLOT),
+    ...children.slice(cut).map(toSlot),
+  ];
+};
+
 const pairClusterNodes = ({
   execution,
   children,
+  released,
 }: {
   readonly execution: ClusterExecution;
   readonly children: ReadonlyArray<Agent>;
+  readonly released: ReadonlySet<AgentId>;
 }): ReadonlyArray<ClusterNodePair> => {
   const boundAgentId = new Map(
     execution.bindings.map((binding) => [binding.nodeId, binding.agentId]),
   );
+  const boundIds = new Set(execution.bindings.map((binding) => binding.agentId));
+  const slots = unboundSlots({
+    children,
+    releasedCount: [...released].filter((agentId) => boundIds.has(agentId) === false).length,
+  });
   return orderedNodes({ graph: execution.graph }).map((node, index) => {
     const bound = boundAgentId.get(node.id);
     if (bound === undefined) {
-      return { node, agent: children[index] ?? null };
+      const slot = slots[index] ?? null;
+      return {
+        node,
+        agent: slot?.agent ?? null,
+        isReleased: slot?.isReleased === true,
+      };
     }
     if (bound === null) {
-      return { node, agent: null };
+      return { node, agent: null, isReleased: false };
     }
-    return { node, agent: children.find((child) => child.id === bound) ?? null };
+    const agent = children.find((child) => child.id === bound) ?? null;
+    return { node, agent, isReleased: agent === null && released.has(bound) };
   });
 };
 
@@ -136,9 +177,10 @@ const clusterProgress = ({
 }): ReadonlyArray<ClusterNodeProgress> =>
   pairs.map((pair) => ({
     nodeId: pair.node.id,
-    isSettled: pair.agent !== null && isSettledChild(pair.agent),
-    isCompleted: pair.agent?.status === 'completed',
-    isStartable: pair.agent === null || pair.agent.status === 'pending',
+    isSettled: pair.isReleased || (pair.agent !== null && isSettledChild(pair.agent)),
+    isCompleted: pair.isReleased || pair.agent?.status === 'completed',
+    isStartable:
+      pair.isReleased === false && (pair.agent === null || pair.agent.status === 'pending'),
   }));
 
 const nextClusterPair = ({
@@ -152,7 +194,7 @@ const nextClusterPair = ({
 }): ClusterNodePair | null => {
   if (execution.graph.nodes.length === 0) {
     const fallback = children.find((child) => child.status === 'pending') ?? null;
-    return fallback === null ? null : { node: UNREADABLE_NODE, agent: fallback };
+    return fallback === null ? null : { node: UNREADABLE_NODE, agent: fallback, isReleased: false };
   }
   const ready = selectReadyClusterNode({
     graph: execution.graph,
@@ -161,7 +203,13 @@ const nextClusterPair = ({
   if (ready === null) {
     return null;
   }
-  return pairs.find((pair) => pair.node.id === ready.id) ?? { node: ready, agent: null };
+  return (
+    pairs.find((pair) => pair.node.id === ready.id) ?? {
+      node: ready,
+      agent: null,
+      isReleased: false,
+    }
+  );
 };
 
 const UNREADABLE_NODE: ClusterGraphNode = {
@@ -531,7 +579,7 @@ export const fanOutClusters = async (
     bindings: snapshot.nodes,
   };
   const children = materialized.agents;
-  const pairs = pairClusterNodes({ execution, children });
+  const pairs = pairClusterNodes({ execution, children, released: NO_RELEASED_SOURCES });
   const first = nextClusterPair({ execution, pairs, children });
   if (first?.agent != null) {
     startChild({
@@ -757,7 +805,17 @@ export const resumeClusterChildren = async ({
     containerId: container.id,
     workflowRunId: container.workflowRunId,
   });
-  const pairs = pairClusterNodes({ execution, children });
+  const pairs = pairClusterNodes({
+    execution,
+    children,
+    released: releasedSourceIds({
+      get,
+      sessionId,
+      containerId: container.id,
+      children,
+      resolvingHoldId: null,
+    }),
+  });
   const target = nextClusterPair({ execution, pairs, children });
   const next = target?.agent ?? null;
   if (target === null || next === null) {
@@ -908,17 +966,22 @@ export const freezeClusterExecution = async ({
   return frozen;
 };
 
+type OpenCompletionHoldForContainerParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly containerId: AgentId;
+  readonly ignoredHoldId: string | null;
+};
+
 const openCompletionHoldForContainer = ({
   get,
   sessionId,
   containerId,
-}: {
-  readonly get: GetFn;
-  readonly sessionId: SessionId;
-  readonly containerId: AgentId;
-}) =>
+  ignoredHoldId,
+}: OpenCompletionHoldForContainerParams) =>
   (get().clusterCompletionHolds?.[sessionId] ?? []).find(
-    (hold) => hold.containerAgentId === containerId && hold.state === 'open',
+    (hold) =>
+      hold.containerAgentId === containerId && hold.state === 'open' && hold.id !== ignoredHoldId,
   ) ?? null;
 
 const sourceTurnIdForChild = ({
@@ -1052,26 +1115,50 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     opts?: { readonly force?: boolean; readonly resolvedHoldId?: string },
   ) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
-    const child = runs.find((r) => r.id === childAgentId);
-    if (!child || !child.parentAgentId) {
+    const resolvedHold =
+      opts?.resolvedHoldId === undefined
+        ? null
+        : ((get().clusterCompletionHolds?.[sessionId] ?? []).find(
+            (hold) =>
+              hold.id === opts.resolvedHoldId &&
+              hold.sourceAgentId === childAgentId &&
+              (hold.state === 'open' || hold.state === 'resolved'),
+          ) ?? null);
+    const isExplicitResolution = opts?.force === true && resolvedHold !== null;
+    const child = runs.find((run) => run.id === childAgentId);
+    if (child === undefined && !isExplicitResolution) {
       return;
     }
-    const containerId = child.parentAgentId;
+    if (child !== undefined && child.parentAgentId === undefined) {
+      return;
+    }
+    const containerId = child?.parentAgentId ?? resolvedHold?.containerAgentId;
+    if (containerId === undefined) {
+      return;
+    }
     const execution = await resolveClusterExecution({
       set,
       get,
       sessionId,
       containerId,
-      workflowRunId: child.workflowRunId,
+      workflowRunId: child?.workflowRunId ?? resolvedHold?.workflowRunId ?? undefined,
     });
+    const currentChildren = childrenOf(runs, containerId);
     const currentPairs = pairClusterNodes({
       execution,
-      children: childrenOf(runs, containerId),
+      children: currentChildren,
+      released: releasedSourceIds({
+        get,
+        sessionId,
+        containerId,
+        children: currentChildren,
+        resolvingHoldId: resolvedHold?.id ?? null,
+      }),
     });
     const currentNode = currentPairs.find((pair) => pair.agent?.id === childAgentId)?.node ?? null;
 
     const doneMarker = extractClusterDone(assistantText);
-    if (opts?.force !== true && doneMarker?.id !== childAgentId) {
+    if (child !== undefined && opts?.force !== true && doneMarker?.id !== childAgentId) {
       const handsFree = isHandsFree(get, sessionId, child.workflowRunId);
       const attempts = continueAttempts.get(childAgentId) ?? 0;
       if (handsFree && attempts < MAX_CONTINUE) {
@@ -1103,17 +1190,10 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    const resolvedHold =
-      opts?.resolvedHoldId === undefined
-        ? null
-        : ((get().clusterCompletionHolds?.[sessionId] ?? []).find(
-            (hold) =>
-              hold.id === opts.resolvedHoldId &&
-              hold.sourceAgentId === childAgentId &&
-              hold.state === 'resolved',
-          ) ?? null);
-    const isExplicitResolution = opts?.force === true && resolvedHold !== null;
     if (!isExplicitResolution) {
+      if (child === undefined) {
+        return;
+      }
       const extraction = extractClusterOutcome({ assistantText });
       const reason: ClusterCompletionHoldReason | null =
         extraction.kind === 'missing'
@@ -1142,14 +1222,21 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
         });
         return;
       }
-      if (openCompletionHoldForContainer({ get, sessionId, containerId }) !== null) {
+      if (
+        openCompletionHoldForContainer({
+          get,
+          sessionId,
+          containerId,
+          ignoredHoldId: null,
+        }) !== null
+      ) {
         return;
       }
     }
 
     continueAttempts.delete(childAgentId);
     const outputSummary =
-      assistantText.length > 0
+      child !== undefined && assistantText.length > 0
         ? await summarizeWorkflowAgentOutput({
             set,
             get,
@@ -1172,20 +1259,23 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       void get().emitNotification(
         'error',
         'info',
-        `cluster kept out of a frozen plan: ${child.name}`,
+        `cluster kept out of a frozen plan: ${child?.name ?? childAgentId}`,
         `${frozen.frozenReason ?? 'the execution is frozen'}. its result is kept, nothing queued starts and nothing publishes until a revised plan is adopted.`,
         { sessionId },
       );
       return;
     }
 
-    const superseded = supersededBindingForAgent({
-      get,
-      sessionId,
-      containerId,
-      agentId: childAgentId,
-    });
-    if (superseded !== null) {
+    const superseded =
+      child === undefined
+        ? null
+        : supersededBindingForAgent({
+            get,
+            sessionId,
+            containerId,
+            agentId: childAgentId,
+          });
+    if (child !== undefined && superseded !== null) {
       void get().refreshUnreadWorkspaces();
       void get().emitNotification(
         'error',
@@ -1197,20 +1287,32 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     }
 
     const children = childrenOf(refreshed, containerId);
-    const pairs = pairClusterNodes({ execution, children });
+    const released = releasedSourceIds({
+      get,
+      sessionId,
+      containerId,
+      children,
+      resolvingHoldId: resolvedHold?.id ?? null,
+    });
+    const pairs = pairClusterNodes({ execution, children, released });
     const hasGraph = execution.graph.nodes.length > 0;
-    const completedCount = hasGraph
-      ? pairs.filter((pair) => pair.agent?.status === 'completed').length
-      : children.filter((c) => c.status === 'completed').length;
-    const total = hasGraph ? execution.graph.nodes.length : children.length;
+    const completedProgress = hasGraph
+      ? pairs.filter((pair) => pair.isReleased || pair.agent?.status === 'completed').length
+      : children.filter((c) => c.status === 'completed').length + released.size;
+    const total = hasGraph ? execution.graph.nodes.length : children.length + released.size;
 
     if (
-      completedCount >= total &&
-      openCompletionHoldForContainer({ get, sessionId, containerId }) === null
+      completedProgress >= total &&
+      openCompletionHoldForContainer({
+        get,
+        sessionId,
+        containerId,
+        ignoredHoldId: isExplicitResolution ? resolvedHold.id : null,
+      }) === null
     ) {
       await invokeAgentUpdateStatus(containerId, {
         status: 'completed',
-        outputSummary: `completed ${completedCount} clusters`,
+        outputSummary: `completed ${completedProgress} clusters`,
         completedAt: nowIso(),
       });
       refreshed = await invokeAgentList(sessionId);
@@ -1220,7 +1322,14 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    if (openCompletionHoldForContainer({ get, sessionId, containerId }) !== null) {
+    if (
+      openCompletionHoldForContainer({
+        get,
+        sessionId,
+        containerId,
+        ignoredHoldId: isExplicitResolution ? resolvedHold.id : null,
+      }) !== null
+    ) {
       return;
     }
 
