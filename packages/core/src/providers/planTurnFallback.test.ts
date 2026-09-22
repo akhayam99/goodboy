@@ -106,7 +106,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'opus-5',
     attempt: 0,
     connectedProviders: CONNECTED,
-    expected: { provider: 'anthropic', model: 'opus-4.8' },
+    expected: { provider: 'anthropic', model: 'opus-5.5' },
   },
   {
     name: 'model not available falls back from Astra to Sol on the same provider',
@@ -160,7 +160,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'gpt-6',
     attempt: 0,
     connectedProviders: ['codex', 'anthropic'],
-    expected: { provider: 'anthropic', model: 'opus-5' },
+    expected: { provider: 'anthropic', model: 'opus-5.5' },
   },
   {
     name: 'an account usage limit on Astra lands on the top thinker for a planner',
@@ -189,7 +189,7 @@ const ROWS: ReadonlyArray<Row> = [
     attempt: 0,
     connectedProviders: ['codex', 'gemini', 'anthropic'],
     coolingDownProviders: ['gemini'],
-    expected: { provider: 'anthropic', model: 'opus-5' },
+    expected: { provider: 'anthropic', model: 'opus-5.5' },
   },
   {
     name: 'a provider outside the workspace pool never takes the turn',

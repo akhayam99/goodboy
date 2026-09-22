@@ -494,7 +494,7 @@ describe('RoutingPicker', () => {
       within(screen.getByRole('group', { name: 'Model Version' }))
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['4.6', '4.7', '4.8', '5']);
+    ).toEqual(['4.6', '4.7', '4.8', '5', '5.5']);
   });
 
   it('selects an authored version without parsing the model id', () => {
