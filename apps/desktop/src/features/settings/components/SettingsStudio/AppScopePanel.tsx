@@ -297,7 +297,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
               {wipeState === 'done' ? (
                 <span className="text-xs text-success">Wiped. Restart the app to start fresh.</span>
               ) : wipeState === 'confirm' || wipeState === 'wiping' ? (
-                <span className="flex items-center gap-2 rounded-md bg-danger/5 px-2 py-1.5">
+                <span className="flex items-center gap-2 rounded-r-md border-l-2 border-danger/40 py-1.5 pl-2 pr-2">
                   <span className="text-xs font-medium text-danger">Irreversible.</span>
                   <Button
                     variant="ghost"

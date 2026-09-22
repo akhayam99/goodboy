@@ -10,7 +10,7 @@ type VariantCase = readonly [
 ];
 
 const VARIANT_CASES: ReadonlyArray<VariantCase> = [
-  ['boxed', ['rounded-lg', 'border', 'px-3', 'py-2']],
+  ['boxed', ['rounded-r-md', 'border-l-2', 'py-2', 'pl-3', 'pr-3']],
   ['leftBorder', ['rounded-r-md', 'border-l-2', 'py-1', 'pl-2', 'pr-2']],
   ['pill', ['rounded-full', 'border', 'px-2.5', 'py-1']],
 ];
@@ -27,21 +27,21 @@ describe('TranscriptShell', () => {
     );
   });
 
-  it('uses soft and emphasized boxed backgrounds from the tone', () => {
+  it('carries the tone on the rail and never on the surface', () => {
     const { rerender } = render(
       <TranscriptShell tone="success" variant="boxed">
         content
       </TranscriptShell>,
     );
     expect(screen.getByText('content').className).toContain('border-success/20');
-    expect(screen.getByText('content').className).toContain('bg-success/5');
+    expect(screen.getByText('content').className).not.toContain('bg-success');
     rerender(
       <TranscriptShell tone="success" variant="boxed" emphasis>
         content
       </TranscriptShell>,
     );
     expect(screen.getByText('content').className).toContain('border-success/40');
-    expect(screen.getByText('content').className).toContain('bg-success/10');
+    expect(screen.getByText('content').className).not.toContain('bg-success');
   });
 
   it('keeps a softened rail on nested left borders', () => {

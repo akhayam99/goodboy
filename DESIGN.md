@@ -184,6 +184,14 @@ lies about its effect is a worse defect than one that reads badly.
 - **The stage palette tracks the life of the work**, not its mood. Done borrows
   the merged purple on purpose: a finished session is almost always a merged
   pull request, and one outcome must not read as two colors.
+- **A card says what it is with a rail, never with a fill.** The kind of an
+  element lives in the left border and in its icon: warning for a question,
+  info for a file, danger for a failure. The surface behind it stays the app
+  background, so a column of cards reads as one dark page with a colored edge
+  per row, not a stack of tinted blocks. Three things still take a fill: the
+  neutral elevation ramp (`bg-elevated` panels and insets), a choice the user
+  made (the picked answer), and a badge or pill small enough to read as a
+  label.
 
 ## Status & signals
 

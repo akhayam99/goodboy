@@ -40,7 +40,7 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
       footer={<Button onClick={onClose}>Close</Button>}
     >
       {error ? (
-        <div className="flex items-start gap-2 rounded-md bg-danger/5 p-3">
+        <div className="flex items-start gap-2 rounded-r-md border-l-2 border-danger/40 p-3">
           <AlertCircle
             size={ICON_SIZE.control}
             aria-hidden

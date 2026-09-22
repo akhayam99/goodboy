@@ -35,7 +35,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
     >
       <div className="flex flex-wrap items-center gap-2">
         <ShieldAlert size={ICON_SIZE.control} aria-hidden className={warningTint.icon} />
-        <span className="rounded-md bg-background px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="rounded-md bg-elevated px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
           approval needed
         </span>
         <code className="font-mono text-foreground">{item.toolName}</code>
@@ -53,7 +53,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
         <ClampedProse
           text={inputPreview}
           lines={4}
-          className="min-w-0 break-words rounded-md bg-background/60 px-2 py-1 font-mono text-2xs text-muted-foreground"
+          className="min-w-0 break-words rounded-md bg-elevated px-2 py-1 font-mono text-2xs text-muted-foreground"
         />
       )}
       {showPicker ? (

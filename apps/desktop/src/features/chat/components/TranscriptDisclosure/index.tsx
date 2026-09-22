@@ -25,12 +25,7 @@ export const TranscriptDisclosure = ({
   return (
     <div
       data-testid={testId}
-      className={cn(
-        'flex min-w-0 flex-col rounded-r-md border-l-2',
-        accent.border,
-        open && accent.bgSoft,
-        className,
-      )}
+      className={cn('flex min-w-0 flex-col rounded-r-md border-l-2', accent.border, className)}
     >
       {header}
       {open && children != null ? (
