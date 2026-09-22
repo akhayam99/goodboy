@@ -182,6 +182,7 @@ export {
 } from './queries/workflow';
 export {
   isWorkflowRoutingDecision,
+  isWorkflowRoutingProposal,
   isWorkflowRoutingLock,
   isWorkflowTaskProfile,
   legacyAgentRoutingDecision,
@@ -203,6 +204,12 @@ export {
   getAgentById,
   type AgentConfigUpdate,
 } from './queries/agent';
+export {
+  associateCapabilityObligationHold,
+  listCapabilityObligations,
+  recordCapabilityNeed,
+  type CapabilityNeedRecord,
+} from './queries/capability-obligation';
 export {
   listClusterCompletionHolds,
   recordClusterCompletionHold,

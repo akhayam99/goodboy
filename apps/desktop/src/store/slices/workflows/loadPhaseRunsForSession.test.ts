@@ -63,6 +63,9 @@ const respondWith = ({
     if (command === 'cluster_execution_graphs_for_session') {
       return [];
     }
+    if (command === 'capability_obligations_for_session') {
+      return [];
+    }
     return agents;
   });
 };

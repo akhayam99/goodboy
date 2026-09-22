@@ -1113,6 +1113,7 @@ export const initialState: AppState = {
   stepLibrary: {},
   sessionWorkflows: {},
   sessionPhaseRuns: {},
+  capabilityObligations: {},
   clusterCompletionHolds: {},
   clusterExecutionGraphs: {},
   orchestratingWorkflowRuns: {},

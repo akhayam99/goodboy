@@ -3,6 +3,7 @@ import { normalizeAgentRole } from '@goodboy/core';
 import {
   isWorkflowRoutingDecision,
   isWorkflowRoutingLock,
+  isWorkflowRoutingProposal,
   isWorkflowTaskProfile,
   legacyAgentRoutingDecision,
   legacyStepRoutingLock,
@@ -19,8 +20,15 @@ import type {
   StepDefId,
   StepId,
   Agent,
+  AgentExecutionPurpose,
   AgentId,
   AgentStatus,
+  CapabilityContinuation,
+  CapabilityObligation,
+  CapabilityObligationDecision,
+  CapabilityObligationState,
+  CapabilityPurpose,
+  CapabilityRequest,
   ClusterCompletionFinding,
   ClusterCompletionFindingTarget,
   ClusterCompletionHold,
@@ -40,10 +48,11 @@ import type {
   WorkspaceId,
   WorkflowRoutingDecision,
   WorkflowRoutingLock,
+  WorkflowRoutingProposal,
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
-import { PLAN_CLUSTER_ROLES, WORKFLOW_ORIGINS } from '@goodboy/types';
+import { AGENT_EXECUTION_PURPOSES, PLAN_CLUSTER_ROLES, WORKFLOW_ORIGINS } from '@goodboy/types';
 
 type RawWorkflowStepRow = {
   readonly id: string;
@@ -178,6 +187,7 @@ type RawAgentRow = {
   readonly lastViewedAt: string | null;
   readonly doneAt: string | null;
   readonly kind: string | null;
+  readonly executionPurpose: string | null;
   readonly verbosity: string | null;
   readonly effort: string | null;
   readonly modelOverride: string | null;
@@ -339,6 +349,8 @@ function rowToAgent(row: RawAgentRow): Agent {
     ...(row.lastViewedAt != null && { lastViewedAt: row.lastViewedAt as IsoDateTime }),
     ...(row.doneAt != null && { doneAt: row.doneAt as IsoDateTime }),
     ...(row.kind != null && { kind: row.kind }),
+    executionPurpose:
+      AGENT_EXECUTION_PURPOSES.find((purpose) => purpose === row.executionPurpose) ?? null,
     ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
     ...(row.effort != null && { effort: row.effort as AgentEffort }),
     ...(row.modelOverride != null && { modelOverride: row.modelOverride }),
@@ -554,6 +566,156 @@ export const invokeClusterCompletionHoldRecord = async ({
   return completionHoldFromRow({ row });
 };
 
+type RawCapabilityRequestRow = {
+  readonly id: string;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly obligationId: string;
+  readonly requesterAgentId: AgentId;
+  readonly sourceTurnId: string;
+  readonly targetRole: string;
+  readonly purpose: CapabilityPurpose;
+  readonly question: string;
+  readonly scopeJson: string;
+  readonly evidenceJson: string;
+  readonly gap: string;
+  readonly expectedOutput: string;
+  readonly continuation: CapabilityContinuation;
+  readonly routingProposal: string | null;
+  readonly createdAt: string;
+};
+
+type RawCapabilityObligationRow = {
+  readonly id: string;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly identity: string;
+  readonly requesterAgentId: AgentId;
+  readonly targetRole: string;
+  readonly purpose: CapabilityPurpose;
+  readonly state: CapabilityObligationState;
+  readonly ownerAgentId: AgentId | null;
+  readonly decision: CapabilityObligationDecision | null;
+  readonly childAgentId: AgentId | null;
+  readonly deliveredAt: string | null;
+  readonly deliveryReceipt: string | null;
+  readonly requests: ReadonlyArray<RawCapabilityRequestRow>;
+  readonly holdIds: ReadonlyArray<string>;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+};
+
+const capabilityRequestFromRow = ({
+  row,
+}: {
+  readonly row: RawCapabilityRequestRow;
+}): CapabilityRequest => ({
+  id: row.id,
+  sessionId: row.sessionId,
+  workflowRunId: row.workflowRunId,
+  obligationId: row.obligationId,
+  requesterAgentId: row.requesterAgentId,
+  sourceTurnId: row.sourceTurnId,
+  targetRole: normalizeAgentRole({ role: row.targetRole }),
+  purpose: row.purpose,
+  question: row.question,
+  scope: parseStringArray({ value: row.scopeJson }),
+  evidenceRefs: parseStringArray({ value: row.evidenceJson }),
+  gap: row.gap,
+  expectedOutput: row.expectedOutput,
+  continuation: row.continuation,
+  routingProposal: parseRoutingJson({
+    value: row.routingProposal,
+    isValid: isWorkflowRoutingProposal,
+    field: 'routing proposal',
+  }),
+  createdAt: row.createdAt,
+});
+
+const capabilityObligationFromRow = ({
+  row,
+}: {
+  readonly row: RawCapabilityObligationRow;
+}): CapabilityObligation => ({
+  id: row.id,
+  sessionId: row.sessionId,
+  workflowRunId: row.workflowRunId,
+  identity: row.identity,
+  requesterAgentId: row.requesterAgentId,
+  targetRole: normalizeAgentRole({ role: row.targetRole }),
+  purpose: row.purpose,
+  state: row.state,
+  ownerAgentId: row.ownerAgentId,
+  decision: row.decision,
+  childAgentId: row.childAgentId,
+  deliveredAt: row.deliveredAt,
+  deliveryReceipt: row.deliveryReceipt,
+  requests: row.requests.map((request) => capabilityRequestFromRow({ row: request })),
+  holdIds: row.holdIds,
+  createdAt: row.createdAt,
+  updatedAt: row.updatedAt,
+});
+
+export const invokeCapabilityObligations = async ({
+  sessionId,
+}: {
+  readonly sessionId: SessionId;
+}): Promise<ReadonlyArray<CapabilityObligation>> => {
+  const rows = await invoke<RawCapabilityObligationRow[]>('capability_obligations_for_session', {
+    sessionId,
+  });
+  return rows.map((row) => capabilityObligationFromRow({ row }));
+};
+
+export type RecordCapabilityNeedParams = {
+  readonly requestId: string;
+  readonly obligationId: string;
+  readonly identity: string;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly requesterAgentId: AgentId;
+  readonly sourceTurnId: string;
+  readonly targetRole: AgentRole;
+  readonly purpose: CapabilityPurpose;
+  readonly question: string;
+  readonly scope: ReadonlyArray<string>;
+  readonly evidenceRefs: ReadonlyArray<string>;
+  readonly gap: string;
+  readonly expectedOutput: string;
+  readonly continuation: CapabilityContinuation;
+  readonly routingProposal: WorkflowRoutingProposal | null;
+};
+
+export const invokeCapabilityNeedRecord = async (
+  need: RecordCapabilityNeedParams,
+): Promise<CapabilityObligation> => {
+  const row = await invoke<RawCapabilityObligationRow>('capability_need_record', {
+    input: {
+      requestId: need.requestId,
+      obligationId: need.obligationId,
+      identity: need.identity,
+      sessionId: need.sessionId,
+      workflowRunId: need.workflowRunId,
+      requesterAgentId: need.requesterAgentId,
+      sourceTurnId: need.sourceTurnId,
+      targetRole: need.targetRole,
+      purpose: need.purpose,
+      question: need.question,
+      scopeJson: JSON.stringify(need.scope),
+      evidenceJson: JSON.stringify(need.evidenceRefs),
+      gap: need.gap,
+      expectedOutput: need.expectedOutput,
+      continuation: need.continuation,
+      routingProposal: stringifyRoutingJson({
+        value: need.routingProposal,
+        isValid: isWorkflowRoutingProposal,
+        field: 'routing proposal',
+      }),
+    },
+  });
+  return capabilityObligationFromRow({ row });
+};
+
 type RawClusterExecutionNodeRow = {
   readonly nodeId: string;
   readonly agentId: AgentId | null;
@@ -706,6 +868,7 @@ export type AgentInsertArgs = {
   readonly startedAt?: IsoDateTime;
   readonly completedAt?: IsoDateTime;
   readonly kind?: string;
+  readonly executionPurpose?: AgentExecutionPurpose;
   readonly verbosity?: VerbosityLevel;
   readonly effort?: AgentEffort;
   readonly modelOverride?: string;
@@ -734,6 +897,7 @@ const toAgentInsertPayload = ({ run }: { readonly run: AgentInsertArgs }) => ({
   startedAt: run.startedAt ?? null,
   completedAt: run.completedAt ?? null,
   kind: run.kind ?? null,
+  executionPurpose: run.executionPurpose ?? null,
   verbosity: run.verbosity ?? null,
   effort: run.effort ?? null,
   modelOverride: run.modelOverride ?? null,

@@ -419,6 +419,7 @@ export const fanOutClusters = async (
         ordinal: baseOrdinal + index,
         name: node.title,
         status: 'pending',
+        executionPurpose: 'cluster',
         kind: presentationKeyForRole({ role: node.role }),
         ...(fields.providerOverride !== null && { providerOverride: fields.providerOverride }),
         ...(fields.modelOverride !== null && { modelOverride: fields.modelOverride }),

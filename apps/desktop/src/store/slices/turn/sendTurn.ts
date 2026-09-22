@@ -137,6 +137,7 @@ import {
   resolveGitCommonDirs,
 } from './turnWritableRoots';
 import { createResolveCandidateWriter } from './createResolveCandidateWriter';
+import { captureCapabilityNeed, needBlocksCompletion } from './captureCapabilityNeed';
 import { completeResolvedAgent } from './completeResolvedAgent';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
 import { resolveSkillPrompt } from './resolveSkillPrompt';
@@ -1193,7 +1194,18 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           boundMountId: turnMountId,
         });
       }
-      if (resolvedAgentId && !wasCancelled) {
+      const needCapture =
+        wasCancelled || assistantText.length === 0
+          ? { kind: 'none' as const }
+          : await captureCapabilityNeed({
+              set,
+              get,
+              sessionId,
+              agentId: activeAgentId,
+              runId,
+              assistantText,
+            });
+      if (resolvedAgentId && !wasCancelled && !needBlocksCompletion({ capture: needCapture })) {
         const shouldAutoAdvance = await completeResolvedAgent({
           set,
           get,

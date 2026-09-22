@@ -6,7 +6,7 @@ import {
   fallbackStepOutputSummary,
   hasBlockingQuestion,
 } from '@goodboy/core';
-import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { summarizeWorkflowAgentOutput } from '../workflows/summarizeWorkflowAgentOutput';
@@ -17,6 +17,49 @@ import {
 } from '../../../features/session/agent-kind';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
 import type { GetFn, SetFn } from './types';
+
+type HoldAmbiguousChildParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly agent: Agent;
+  readonly assistantText: string;
+  readonly now: () => IsoDateTime;
+};
+
+const holdAmbiguousChild = async ({
+  set,
+  get,
+  sessionId,
+  agent,
+  assistantText,
+  now,
+}: HoldAmbiguousChildParams): Promise<void> => {
+  const outputSummary = await summarizeWorkflowAgentOutput({
+    set,
+    get,
+    sessionId,
+    agent,
+    output: assistantText,
+  });
+  await invokeAgentUpdateStatus(agent.id, {
+    status: 'completed',
+    outputSummary,
+    completedAt: now(),
+  });
+  const refreshed = await invokeAgentList(sessionId);
+  set((state) => ({
+    sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshed },
+  }));
+  void get().refreshUnreadWorkspaces();
+  void get().emitNotification(
+    'error',
+    'warning',
+    `lineage unknown: ${agent.name}`,
+    'this child was created before execution purposes were persisted, so nothing advances on its completion. open it and continue the run manually.',
+    { sessionId },
+  );
+};
 
 type Params = {
   readonly set: SetFn;
@@ -38,7 +81,11 @@ export const completeResolvedAgent = async ({
   now,
 }: Params): Promise<boolean | null> => {
   const ranAgent = get().sessionPhaseRuns[sessionId]?.find((run) => run.id === resolvedAgentId);
-  if (ranAgent !== undefined && isQuestionDelegate({ agent: ranAgent })) {
+  const executionPurpose = ranAgent?.executionPurpose ?? null;
+  if (
+    executionPurpose === 'question-delegate' ||
+    (executionPurpose === null && ranAgent !== undefined && isQuestionDelegate({ agent: ranAgent }))
+  ) {
     await get().resolveQuestionDelegate({ sessionId, agentId: resolvedAgentId, assistantText });
     return null;
   }
@@ -55,17 +102,25 @@ export const completeResolvedAgent = async ({
     agentId: resolvedAgentId,
   });
   const extractedFanOut = extractFanOut({ assistantText, emittingProvider });
-  const isFanOutNode =
+  const isUnclaimedFanOutRoot =
+    executionPurpose === null &&
     capability.mode !== 'never' &&
-    (ranAgent?.parentAgentId != null || (extractedFanOut != null && extractedFanOut.length >= 2));
+    ranAgent?.parentAgentId == null &&
+    extractedFanOut != null &&
+    extractedFanOut.length >= 2;
 
-  if (isFanOutNode) {
+  if (executionPurpose === 'fan-out' || isUnclaimedFanOutRoot) {
     await get().advanceScoutTree(sessionId, resolvedAgentId, assistantText);
     return null;
   }
 
-  if (ranAgent?.parentAgentId) {
+  if (executionPurpose === 'cluster') {
     await get().advanceClusterImplementation(sessionId, resolvedAgentId, assistantText);
+    return null;
+  }
+
+  if (executionPurpose === null && ranAgent?.parentAgentId != null) {
+    await holdAmbiguousChild({ set, get, sessionId, agent: ranAgent, assistantText, now });
     return null;
   }
 

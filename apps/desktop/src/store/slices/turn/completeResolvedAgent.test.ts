@@ -571,6 +571,124 @@ describe('completeResolvedAgent', () => {
     expect(advance).toBeNull();
   });
 
+  it('dispatches a cluster child, a fan-out child and a capability child through their own paths', async () => {
+    const { state, set, get } = createHarness({});
+    const advanceScoutTree = vi.fn(async () => undefined);
+    const advanceClusterImplementation = vi.fn(async () => undefined);
+    Object.assign(state, { advanceScoutTree, advanceClusterImplementation });
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        {
+          ...agent,
+          id: 'cluster-child' as AgentId,
+          kind: 'implementer',
+          name: 'apply the change',
+          parentAgentId: 'container-1' as AgentId,
+          executionPurpose: 'cluster',
+          sourceThreadIds: undefined,
+        },
+        {
+          ...agent,
+          id: 'fan-out-child' as AgentId,
+          kind: 'scout',
+          name: 'survey the auth area',
+          parentAgentId: 'container-1' as AgentId,
+          executionPurpose: 'fan-out',
+          sourceThreadIds: undefined,
+        },
+        {
+          ...agent,
+          id: 'capability-child' as AgentId,
+          kind: 'implementer',
+          name: 'repair the guard',
+          parentAgentId: 'reviewer-1' as AgentId,
+          executionPurpose: 'capability',
+          sourceThreadIds: undefined,
+        },
+      ],
+    };
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: 'cluster-child' as AgentId,
+      assistantText: 'the cluster is done',
+      now: () => NOW,
+    });
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: 'fan-out-child' as AgentId,
+      assistantText: 'the area is surveyed',
+      now: () => NOW,
+    });
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: 'capability-child' as AgentId,
+      assistantText: 'the guard is back',
+      now: () => NOW,
+    });
+
+    expect(advanceClusterImplementation).toHaveBeenCalledWith(
+      SESSION_ID,
+      'cluster-child',
+      'the cluster is done',
+    );
+    expect(advanceScoutTree).toHaveBeenCalledWith(
+      SESSION_ID,
+      'fan-out-child',
+      'the area is surveyed',
+    );
+    expect(advanceClusterImplementation).toHaveBeenCalledTimes(1);
+    expect(advanceScoutTree).toHaveBeenCalledTimes(1);
+    expect(h.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      'capability-child',
+      expect.objectContaining({ status: 'completed' }),
+    );
+  });
+
+  it('holds an ambiguous legacy child instead of guessing its lineage', async () => {
+    const { state, set, get } = createHarness({});
+    const advanceScoutTree = vi.fn(async () => undefined);
+    const advanceClusterImplementation = vi.fn(async () => undefined);
+    Object.assign(state, { advanceScoutTree, advanceClusterImplementation });
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        {
+          ...agent,
+          id: 'legacy-child' as AgentId,
+          kind: 'scout',
+          name: 'survey the auth area',
+          parentAgentId: 'container-1' as AgentId,
+          sourceThreadIds: undefined,
+        },
+      ],
+    };
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: 'legacy-child' as AgentId,
+      assistantText: 'the area is surveyed',
+      now: () => NOW,
+    });
+
+    expect(advanceScoutTree).not.toHaveBeenCalled();
+    expect(advanceClusterImplementation).not.toHaveBeenCalled();
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'lineage unknown: survey the auth area',
+      expect.any(String),
+      { sessionId: SESSION_ID },
+    );
+  });
+
   it('leaves a thread the agent does not own out of its rows', async () => {
     const { state, set, get } = createHarness({});
     await completeResolvedAgent({

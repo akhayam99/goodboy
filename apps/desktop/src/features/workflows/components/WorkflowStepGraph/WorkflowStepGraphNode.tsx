@@ -5,6 +5,7 @@ import { AgentKindChip } from '../../../session/components/AgentKindChip';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { WorkflowStepStatus } from '../WorkflowStepStatus';
 import { useAppStore } from '../../../../store';
+import { CapabilityObligationAction } from '../../../../shared/components/CapabilityObligationAction';
 import { ClusterCompletionHoldAction } from '../../../../shared/components/ClusterCompletionHoldAction';
 import { useClusterNode } from '../../useClusterNode';
 
@@ -42,6 +43,12 @@ export const WorkflowStepGraphNode = ({
     (state) =>
       state.clusterCompletionHolds?.[run.sessionId]?.find(
         (hold) => hold.sourceAgentId === run.id && hold.state === 'open',
+      ) ?? null,
+  );
+  const obligation = useAppStore(
+    (state) =>
+      state.capabilityObligations?.[run.sessionId]?.find(
+        (candidate) => candidate.requesterAgentId === run.id && candidate.state === 'open',
       ) ?? null,
   );
   return (
@@ -95,6 +102,7 @@ export const WorkflowStepGraphNode = ({
         </span>
       ) : null}
       {completionHold === null ? null : <ClusterCompletionHoldAction hold={completionHold} />}
+      {obligation === null ? null : <CapabilityObligationAction obligation={obligation} />}
     </div>
   );
 };

@@ -372,6 +372,7 @@ export const startFanOutChildren = async ({
         ordinal: baseOrdinal + index,
         name: spec.name,
         status: 'pending',
+        executionPurpose: 'fan-out',
         kind: childKind,
         ...(container.workflowRunId != null && { workflowRunId: container.workflowRunId }),
         ...(fields.providerOverride !== null && { providerOverride: fields.providerOverride }),

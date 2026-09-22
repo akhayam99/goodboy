@@ -24,6 +24,7 @@ import { m162OpenQuestionBlockingAndProvenance } from './m162-open-question-bloc
 import { m163OpenQuestionAnswerDelivery } from './m163-open-question-answer-delivery';
 import { m164ClusterCompletionHolds } from './m164-cluster-completion-holds';
 import { m165ClusterExecutionGraphs } from './m165-cluster-execution-graphs';
+import { m166CapabilityObligations } from './m166-capability-obligations';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -335,4 +336,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 163, sql: m163OpenQuestionAnswerDelivery },
   { version: 164, sql: m164ClusterCompletionHolds },
   { version: 165, sql: m165ClusterExecutionGraphs },
+  { version: 166, sql: m166CapabilityObligations },
 ];

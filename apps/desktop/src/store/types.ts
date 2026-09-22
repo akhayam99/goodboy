@@ -10,6 +10,7 @@ import type { Notification, NotificationCounts, TelemetrySummary } from '@goodbo
 import type {
   Agent,
   AgentId,
+  CapabilityObligation,
   ClusterCompletionHold,
   ClusterExecutionGraph,
   ArtifactId,
@@ -314,6 +315,7 @@ export type AppState = AppSliceState & {
   readonly stepLibrary: Readonly<Record<WorkspaceId, ReadonlyArray<StepDef>>>;
   readonly sessionWorkflows: Readonly<Record<SessionId, ReadonlyArray<Workflow>>>;
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>;
+  readonly capabilityObligations: Readonly<Record<SessionId, ReadonlyArray<CapabilityObligation>>>;
   readonly clusterCompletionHolds: Readonly<
     Record<SessionId, ReadonlyArray<ClusterCompletionHold>>
   >;

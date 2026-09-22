@@ -125,6 +125,7 @@ export const preSpawnWorkflowAgents = async ({
       ordinal: baseOrdinal + agents.length,
       name: step.name,
       status: 'pending',
+      executionPurpose: 'standalone',
       kind,
       ...(defaultVerbosity != null && { verbosity: defaultVerbosity }),
       providerOverride: provider,

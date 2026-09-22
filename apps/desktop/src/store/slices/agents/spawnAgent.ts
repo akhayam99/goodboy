@@ -1,4 +1,5 @@
 import type {
+  AgentExecutionPurpose,
   AgentId,
   AgentSourceKind,
   IsoDateTime,
@@ -55,6 +56,7 @@ type SpawnArgs = {
   sourceKind?: AgentSourceKind;
   focus?: SpawnFocus;
   parentAgentId?: AgentId;
+  executionPurpose?: AgentExecutionPurpose;
 };
 
 type Params = {
@@ -116,6 +118,10 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     ordinal: nextOrdinal,
     name: resolvedName,
     status: 'pending',
+    executionPurpose:
+      args.sourceKind === 'open_question'
+        ? 'question-delegate'
+        : (args.executionPurpose ?? 'standalone'),
     kind: resolvedKind,
     ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
     ...(sourceThreadId !== undefined && { sourceThreadId }),

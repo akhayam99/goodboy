@@ -8,6 +8,14 @@ export {
 } from './clusters';
 
 export {
+  capabilityObligationIdentity,
+  capabilityPurposeForFindingTarget,
+  validateCapabilityNeed,
+  type CapabilityNeedRejection,
+  type CapabilityNeedValidation,
+} from './capability';
+
+export {
   checkProviderBudget,
   checkSessionBudget,
   emitBudgetAlerts,
@@ -67,6 +75,7 @@ export {
   serializeSlots,
   serializeSlotsBudgeted,
   serializeSummaryDocument,
+  extractCapabilityNeed,
   stripControlMarkers,
   SUMMARY_SECTION_KEYS,
   SUMMARY_SECTION_TITLES,
@@ -78,6 +87,8 @@ export {
   type DecisionsDocument,
   type ExtractedCluster,
   type ClusterMarkerExtraction,
+  type CapabilityNeedExtraction,
+  type ExtractedCapabilityNeed,
   type ClusterOutcomeExtraction,
   type ExtractedClusterOutcome,
   type ExtractedFanOutArea,
@@ -102,7 +113,10 @@ export {
   ROLE_REGISTRY,
   SELECTABLE_AGENT_ROLES,
   defaultsForRole,
+  delegationCapabilityForRole,
   fanOutCapabilityForRole,
+  isDelegationContinuationSupported,
+  isDelegationGranted,
   isAgentRole,
   normalizeAgentRole,
   normalizeSelectableAgentRole,

@@ -1,9 +1,14 @@
 import type {
+  AgentRole,
+  CapabilityContinuation,
+  CapabilityPurpose,
   PlanClusterRole,
   ProviderId,
   TurnEvent,
   WorkflowRoutingProposal,
 } from '@goodboy/types';
+import { CAPABILITY_CONTINUATIONS, CAPABILITY_PURPOSES } from '@goodboy/types';
+import { isAgentRole, normalizeAgentRole } from '../roles';
 import type { AgentKindLabel } from '../first-turn-classifier';
 import {
   normalizeClusterGraph,
@@ -54,6 +59,8 @@ const COMMENT_REPLY_CLOSE = '<</comment-reply>>';
 const CLUSTER_DONE_OPEN = '<<cluster-done';
 const CLUSTER_OUTCOME_OPEN = '<<cluster-outcome>>';
 const CLUSTER_OUTCOME_CLOSE = '<</cluster-outcome>>';
+const NEED_OPEN = '<<need>>';
+const NEED_CLOSE = '<</need>>';
 const SCOUT_DOMAINS_OPEN = '<<scout-domains';
 const REVIEW_COMMENT_OPEN = '<<review-comment';
 const MATERIALIZE_OPEN = '<<materialize:';
@@ -841,6 +848,113 @@ export const extractClusterOutcome = ({
   return { kind: 'valid', outcome: { version: 1, id, status: 'unresolved', findings } };
 };
 
+export type ExtractedCapabilityNeed = Readonly<{
+  version: 1;
+  agentId: string;
+  targetRole: AgentRole;
+  purpose: CapabilityPurpose;
+  question: string;
+  scope: ReadonlyArray<string>;
+  evidenceRefs: ReadonlyArray<string>;
+  gap: string;
+  expectedOutput: string;
+  continuation: CapabilityContinuation;
+  routingProposal: WorkflowRoutingProposal | null;
+}>;
+
+export type CapabilityNeedExtraction =
+  | Readonly<{ kind: 'none' }>
+  | Readonly<{ kind: 'malformed'; reason: string }>
+  | Readonly<{ kind: 'valid'; need: ExtractedCapabilityNeed }>;
+
+const stringList = ({ value }: { readonly value: unknown }): ReadonlyArray<string> => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const entries: string[] = [];
+  for (const entry of value) {
+    const text = typeof entry === 'string' ? entry.trim() : '';
+    if (text.length > 0) {
+      entries.push(text);
+    }
+  }
+  return entries;
+};
+
+const trimmedString = ({ value }: { readonly value: unknown }): string =>
+  typeof value === 'string' ? value.trim() : '';
+
+type ExtractCapabilityNeedParams = {
+  readonly assistantText: string;
+  readonly emittingProvider: ProviderId | null;
+};
+
+export const extractCapabilityNeed = ({
+  assistantText,
+  emittingProvider,
+}: ExtractCapabilityNeedParams): CapabilityNeedExtraction => {
+  const blocks = extractBlockContents(assistantText, NEED_OPEN, NEED_CLOSE);
+  if (blocks.length === 0) {
+    return { kind: 'none' };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stripJsonFences(blocks[blocks.length - 1]!));
+  } catch {
+    return { kind: 'malformed', reason: 'the need body is not valid json' };
+  }
+  if (!isUnknownRecord(parsed)) {
+    return { kind: 'malformed', reason: 'the need body is not a json object' };
+  }
+  const value = parsed;
+  if (value.v !== 1) {
+    return { kind: 'malformed', reason: 'the need body declares an unsupported version' };
+  }
+  const agentId = trimmedString({ value: value.agent });
+  if (agentId.length === 0) {
+    return { kind: 'malformed', reason: 'the need body names no emitting agent' };
+  }
+  const declaredTarget = trimmedString({ value: value.target });
+  const targetRole = normalizeAgentRole({ role: declaredTarget });
+  if (declaredTarget.length === 0 || (!isAgentRole(declaredTarget) && targetRole === 'custom')) {
+    return { kind: 'malformed', reason: 'the need body names no known target role' };
+  }
+  const purpose = CAPABILITY_PURPOSES.find(
+    (candidate) => candidate === trimmedString({ value: value.purpose }),
+  );
+  if (purpose === undefined) {
+    return { kind: 'malformed', reason: 'the need body names no known purpose' };
+  }
+  if (typeof value.question !== 'string') {
+    return { kind: 'malformed', reason: 'the need body carries no question' };
+  }
+  const continuation = CAPABILITY_CONTINUATIONS.find(
+    (candidate) => candidate === trimmedString({ value: value.continuation }),
+  );
+  if (continuation === undefined) {
+    return { kind: 'malformed', reason: 'the need body names no known continuation' };
+  }
+  const routingProposal = isUnknownRecord(value.routing)
+    ? childRoutingProposal({ entry: value.routing, emittingProvider })
+    : null;
+  return {
+    kind: 'valid',
+    need: {
+      version: 1,
+      agentId,
+      targetRole,
+      purpose,
+      question: value.question.trim(),
+      scope: stringList({ value: value.scope }),
+      evidenceRefs: stringList({ value: value.evidence }),
+      gap: trimmedString({ value: value.gap }),
+      expectedOutput: trimmedString({ value: value.expectedOutput }),
+      continuation,
+      routingProposal,
+    },
+  };
+};
+
 export type ExtractedMaterializeRequest = {
   readonly projectName: string;
   readonly reason: string;
@@ -1069,7 +1183,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 };
 
 const BLOCK_MARKER_ALT =
-  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer|cluster-outcome';
+  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer|cluster-outcome|need';
 const SELF_MARKER_ALT =
   'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done|scout-domains|materialize:';
 

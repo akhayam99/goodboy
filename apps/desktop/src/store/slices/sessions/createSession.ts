@@ -318,6 +318,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
           ordinal: 0,
           name: 'agent 1',
           status: 'pending',
+          executionPurpose: 'standalone',
           ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
         });
         prespawnedRuns = [fallback];
@@ -330,6 +331,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
         ordinal: 0,
         name: agentName,
         status: 'pending',
+        executionPurpose: 'standalone',
         kind: firstAgentKind,
         ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
       });

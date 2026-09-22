@@ -41,6 +41,7 @@ export const resolvePhaseAgent = async ({
     ordinal: definition.ordinal,
     name: definition.name,
     status: 'running',
+    executionPurpose: 'standalone',
     providerRunId,
     startedAt: now(),
     kind: inferAgentKindFromName(definition.name),

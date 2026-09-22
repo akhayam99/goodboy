@@ -3,7 +3,10 @@ import {
   ROLE_REGISTRY,
   SELECTABLE_AGENT_ROLES,
   defaultsForRole,
+  delegationCapabilityForRole,
   fanOutCapabilityForRole,
+  isDelegationContinuationSupported,
+  isDelegationGranted,
   isAgentRole,
   normalizeAgentRole,
   normalizeSelectableAgentRole,
@@ -228,5 +231,65 @@ describe('fanOutCapabilityForRole', () => {
 
   it('falls back to custom for unknown roles', () => {
     expect(fanOutCapabilityForRole('unknown')).toEqual(ROLE_REGISTRY.custom.fanOut);
+  });
+});
+
+const GRANTED_PAIRS = [
+  { requester: 'planner', target: 'scout', purpose: 'discovery' },
+  { requester: 'implementer', target: 'scout', purpose: 'discovery' },
+  { requester: 'implementer', target: 'investigator', purpose: 'diagnosis' },
+  { requester: 'implementer', target: 'planner', purpose: 'replan' },
+  { requester: 'reviewer', target: 'implementer', purpose: 'repair' },
+  { requester: 'reviewer', target: 'planner', purpose: 'replan' },
+  { requester: 'reviewer', target: 'investigator', purpose: 'diagnosis' },
+  { requester: 'reviewer', target: 'tester', purpose: 'test' },
+  { requester: 'tester', target: 'implementer', purpose: 'repair' },
+  { requester: 'tester', target: 'investigator', purpose: 'diagnosis' },
+  { requester: 'tester', target: 'planner', purpose: 'replan' },
+  { requester: 'investigator', target: 'scout', purpose: 'discovery' },
+  { requester: 'investigator', target: 'planner', purpose: 'replan' },
+] as const;
+
+const UNGRANTED_ROLES = ['scout', 'resolver', 'docs', 'report', 'wireframe', 'custom'] as const;
+
+describe('delegationCapabilityForRole', () => {
+  it('grants every pair in the initial table', () => {
+    for (const pair of GRANTED_PAIRS) {
+      expect(isDelegationGranted(pair)).toBe(true);
+    }
+  });
+
+  it('denies a pair outside the table', () => {
+    expect(
+      isDelegationGranted({ requester: 'reviewer', target: 'scout', purpose: 'discovery' }),
+    ).toBe(false);
+    expect(
+      isDelegationGranted({ requester: 'planner', target: 'implementer', purpose: 'repair' }),
+    ).toBe(false);
+  });
+
+  it('grants nothing to the roles outside the table', () => {
+    for (const role of UNGRANTED_ROLES) {
+      expect(delegationCapabilityForRole(role).grants).toEqual([]);
+    }
+  });
+
+  it('resolves the debugger alias onto the canonical investigator', () => {
+    expect(
+      isDelegationGranted({ requester: 'debugger', target: 'scout', purpose: 'discovery' }),
+    ).toBe(true);
+    expect(
+      isDelegationGranted({ requester: 'reviewer', target: 'debugger', purpose: 'diagnosis' }),
+    ).toBe(true);
+    expect(delegationCapabilityForRole('debugger')).toEqual(ROLE_REGISTRY.investigator.delegation);
+  });
+
+  it('keeps a reviewer on handoff continuation only', () => {
+    expect(
+      isDelegationContinuationSupported({ requester: 'reviewer', continuation: 'handoff' }),
+    ).toBe(true);
+    expect(
+      isDelegationContinuationSupported({ requester: 'reviewer', continuation: 'resume' }),
+    ).toBe(false);
   });
 });
