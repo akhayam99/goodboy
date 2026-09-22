@@ -29,7 +29,7 @@ Two automatic picks move with them: the planner on Cursor goes to Fable 5.1, whi
 
 ### [#1841] Three more Kimi models
 
-Moonshot serves Kimi K2.7 Code, its high speed twin and Kimi K2.6 alongside K3. All four are in the catalog, priced from Moonshot's own rates rather than a reseller's.
+Moonshot serves Kimi K2.7 Code, its high speed twin and Kimi K2.6 alongside K3. All four are in the catalog and each reports its own cost. Follow-up: the rates come from the public model index rather than from Moonshot directly, and the high speed line is the one to question first if a figure ever looks wrong.
 
 ### Fixes
 
