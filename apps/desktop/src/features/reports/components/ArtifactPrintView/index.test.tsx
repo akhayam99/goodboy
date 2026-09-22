@@ -122,6 +122,21 @@ describe('ArtifactPrintView', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
+  it('drops a leading heading that is the title minus a suffix', async () => {
+    listSpy.mockResolvedValueOnce([
+      {
+        ...report,
+        title: 'ACME-412: checkout card missing on start, final report',
+        sourceText: '# ACME-412 checkout card missing on /start\n\nwhat landed',
+      },
+    ]);
+    render(<ArtifactPrintView request={request} />);
+    await waitFor(() => {
+      expect(screen.getByText('what landed')).toBeDefined();
+    });
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  });
+
   it('keeps a leading heading that is not the title', async () => {
     listSpy.mockResolvedValueOnce([{ ...report, sourceText: '# Outcome\n\nwhat landed' }]);
     render(<ArtifactPrintView request={request} />);

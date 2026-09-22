@@ -1,10 +1,11 @@
 import { Fragment, memo, useMemo, type ReactNode } from 'react';
+import { Square, SquareCheck, SquareMinus, type LucideIcon } from 'lucide-react';
 import { cn } from '../../cn';
 import { RemoteImage } from '../RemoteImage';
 import { LocalImage } from '../LocalImage';
 import { ctxStyleForTag, ctxTagLabel } from './ctxTagStyle';
 import { parseInline, type InlineNode } from './parseInline';
-import { parseMarkdown, type Block, type CellAlign } from './parseMarkdown';
+import { parseMarkdown, type Block, type CellAlign, type TaskState } from './parseMarkdown';
 import { tokenizeCode, type CodeToken, type CodeTokenKind } from './tokenizeCode';
 
 type MarkdownVariant = 'document' | 'preview';
@@ -185,6 +186,34 @@ const HEADING_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
   6: 'text-2xs font-semibold uppercase leading-snug tracking-eyebrow text-muted-foreground',
 };
 
+const TASK_ICON: Record<TaskState, LucideIcon> = {
+  open: Square,
+  done: SquareCheck,
+  partial: SquareMinus,
+};
+
+const TASK_ICON_CLASS: Record<TaskState, string> = {
+  open: 'text-muted-foreground',
+  done: 'text-success',
+  partial: 'text-warning',
+};
+
+type TaskMarkParams = {
+  readonly task: TaskState;
+};
+
+const renderTaskMark = ({ task }: TaskMarkParams): ReactNode => {
+  const Icon = TASK_ICON[task];
+  return (
+    <Icon
+      size={13}
+      aria-hidden
+      data-block="task-mark"
+      className={cn('absolute -left-5 top-[0.3em]', TASK_ICON_CLASS[task])}
+    />
+  );
+};
+
 const PREVIEW_LINE_CLASS = 'truncate font-mono text-xs text-muted-foreground';
 
 const alignClass = (align: CellAlign | undefined): string => {
@@ -266,7 +295,15 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
           className={cn(block.ordered ? 'list-decimal' : 'list-disc', listClass(variant, depth))}
         >
           {block.items.map((item, j) => (
-            <li key={`${key}-${j}`} className="leading-relaxed wrap-anywhere">
+            <li
+              key={`${key}-${j}`}
+              data-task={item.task ?? undefined}
+              className={cn(
+                'leading-relaxed wrap-anywhere',
+                item.task !== null && 'relative list-none',
+              )}
+            >
+              {item.task !== null && renderTaskMark({ task: item.task })}
               {item.children.length === 0 ? (
                 renderInline(item.content, `${key}-${j}`, variant)
               ) : (

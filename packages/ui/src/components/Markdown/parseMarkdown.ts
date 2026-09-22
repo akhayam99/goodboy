@@ -15,8 +15,11 @@ export type Block =
   | { kind: 'callout'; tag: string; content: string }
   | { kind: 'paragraph'; content: string; isTree: boolean };
 
+export type TaskState = 'open' | 'done' | 'partial';
+
 type ListItem = {
   readonly content: string;
+  readonly task: TaskState | null;
   readonly children: ReadonlyArray<Block>;
 };
 
@@ -30,6 +33,28 @@ const TABLE_ROW_RE = /^\s*\|.*\|\s*$/;
 const TABLE_DIVIDER_RE = /^\s*\|?\s*:?-{2,}:?(\s*\|\s*:?-{2,}:?)*\s*\|?\s*$/;
 const CALLOUT_OPEN_RE = /^<<([a-zA-Z][a-zA-Z0-9_-]*)>>(.*)$/;
 const TREE_RE = /[├└│┌┐┘┤┬┼]/;
+const TASK_RE = /^\[([ xX~-])\]\s+(.*)$/;
+const LABEL_LINE_RE = /^\*\*[^*\n]{1,60}?(?::\*\*|\*\*:)/;
+
+const TASK_STATES: Readonly<Record<string, TaskState>> = {
+  ' ': 'open',
+  x: 'done',
+  X: 'done',
+  '~': 'partial',
+  '-': 'partial',
+};
+
+type TaskParams = {
+  readonly content: string;
+};
+
+const splitTask = ({ content }: TaskParams): Pick<ListItem, 'content' | 'task'> => {
+  const match = content.match(TASK_RE);
+  if (match === null) {
+    return { content, task: null };
+  }
+  return { content: match[2] ?? '', task: TASK_STATES[match[1] ?? ' '] ?? null };
+};
 
 type Params = {
   readonly lines: ReadonlyArray<string>;
@@ -51,6 +76,10 @@ const joinParagraphLines = ({ lines }: Params): string => {
     }
     if (line.endsWith('\\')) {
       content += `${line.slice(0, -1)}\n`;
+      continue;
+    }
+    if (LABEL_LINE_RE.test(lines[lineIndex + 1] ?? '')) {
+      content += `${line}\n`;
       continue;
     }
     content += `${line} `;
@@ -125,6 +154,7 @@ const collectListItems = ({ raws, cursor, indent, ordered }: CollectParams): Lis
       }
       items[items.length - 1] = {
         content: last.content,
+        task: last.task,
         children: [...last.children, { kind: 'list', ordered: raw.ordered, items: nested }],
       };
       continue;
@@ -132,7 +162,7 @@ const collectListItems = ({ raws, cursor, indent, ordered }: CollectParams): Lis
     if (raw.ordered !== ordered) {
       break;
     }
-    items.push({ content: raw.content, children: [] });
+    items.push({ ...splitTask({ content: raw.content }), children: [] });
     cursor.index++;
   }
 
@@ -283,6 +313,7 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
         buf.push(firstLineRest);
       }
       i++;
+      const hasClose = lines.slice(i).some((rest) => closeRe.test(rest));
       let closed = false;
       while (i < lines.length) {
         const cur = lines[i] ?? '';
@@ -291,6 +322,9 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
           buf.push(cur.slice(0, m.index));
           i++;
           closed = true;
+          break;
+        }
+        if (!hasClose && cur.trim().length === 0) {
           break;
         }
         buf.push(cur);

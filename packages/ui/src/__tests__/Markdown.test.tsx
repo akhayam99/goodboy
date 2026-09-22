@@ -83,6 +83,25 @@ describe('Markdown html handling', () => {
     expect(callout?.textContent).not.toContain('<');
   });
 
+  it('ends an unclosed callout at the first blank line, not at the end of the document', () => {
+    const { container } = render(
+      <Markdown text={['<<ctx-decision>> renew the key', '', '## Next', 'body'].join('\n')} />,
+    );
+    const callout = container.querySelector('[data-block="callout"]');
+    expect(callout?.textContent).toContain('renew the key');
+    expect(callout?.textContent).not.toContain('body');
+    expect(container.querySelector('h2')?.textContent).toBe('Next');
+  });
+
+  it('keeps blank lines inside a callout that is closed further down', () => {
+    const { container } = render(
+      <Markdown text={['<<goal>>', 'first', '', 'second', '<</goal>>'].join('\n')} />,
+    );
+    const callout = container.querySelector('[data-block="callout"]');
+    expect(callout?.textContent).toContain('first');
+    expect(callout?.textContent).toContain('second');
+  });
+
   it('closes a multi line callout without leaking a bracket onto its last line', () => {
     const { container } = render(
       <Markdown text={['<<goal>>', 'ship the print sheet', '<</goal>>'].join('\n')} />,
@@ -190,6 +209,30 @@ describe('Markdown lists', () => {
     expect(container.querySelectorAll('ul')).toHaveLength(1);
     expect(container.querySelectorAll('ol')).toHaveLength(1);
     expect(container.querySelector('ul li ol')).not.toBeNull();
+  });
+
+  it('renders task items as boxes with their state, not as bracket text', () => {
+    const { container } = render(
+      <Markdown text={['- [ ] open', '- [x] done', '- [~] partial', '- plain'].join('\n')} />,
+    );
+    const items = [...container.querySelectorAll('li')];
+    expect(items.map((item) => item.getAttribute('data-task'))).toEqual([
+      'open',
+      'done',
+      'partial',
+      null,
+    ]);
+    expect(container.querySelectorAll('[data-block="task-mark"]')).toHaveLength(3);
+    expect(container.textContent).not.toContain('[');
+  });
+
+  it('keeps a run of bold label lines on their own lines', () => {
+    const { container } = render(
+      <Markdown text={['**Date:** today', '**Source:** the session', 'plain tail'].join('\n')} />,
+    );
+    const paragraph = container.querySelector('p');
+    expect(paragraph?.querySelectorAll('br')).toHaveLength(1);
+    expect(paragraph?.textContent).toContain('the session plain tail');
   });
 
   it('splits sibling lists when the marker type changes at the same indent', () => {
