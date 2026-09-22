@@ -60,9 +60,12 @@ const PLANNER_AGENT_ID = 'mock-run-agent-planner' as AgentId;
 const KEY_COLUMN_AGENT_ID = 'mock-run-agent-key-column' as AgentId;
 const DEDUPE_AGENT_ID = 'mock-run-agent-dedupe' as AgentId;
 const TESTER_AGENT_ID = 'mock-run-agent-tester' as AgentId;
-const STRIPE_SEMANTICS_AGENT_ID = 'mock-run-agent-stripe-semantics' as AgentId;
 const BACKFILL_AGENT_ID = 'mock-run-agent-backfill' as AgentId;
 const WIREFRAME_AGENT_ID = 'mock-run-agent-wireframe' as AgentId;
+const DEDUPE_TXN_AGENT_ID = 'mock-run-agent-dedupe-txn' as AgentId;
+const DEDUPE_CREDIT_AGENT_ID = 'mock-run-agent-dedupe-credit' as AgentId;
+const DEDUPE_REPLAY_AGENT_ID = 'mock-run-agent-dedupe-replay' as AgentId;
+const DEDUPE_ANSWER_AGENT_ID = 'mock-run-agent-dedupe-answer' as AgentId;
 const CONSOLE_STORE_AGENT_ID = 'mock-run-agent-console-store' as AgentId;
 const CONSOLE_BANNER_AGENT_ID = 'mock-run-agent-console-banner' as AgentId;
 const CONSOLE_TESTS_AGENT_ID = 'mock-run-agent-console-tests' as AgentId;
@@ -415,22 +418,6 @@ const AGENTS: ReadonlyArray<Agent> = [
     modelOverride: 'composer-2.5',
   },
   {
-    id: WIREFRAME_AGENT_ID,
-    sessionId: SESSION_ID,
-    ordinal: 0.5,
-    name: 'Draw the stuck-delivery banner',
-    kind: 'wireframe',
-    status: 'completed',
-    outputSummary: 'Two screens: the delivery list with a stuck row, and the banner expanded.',
-    startedAt: at({ day: DAY_ONE, time: '09:30:00' }),
-    completedAt: at({ day: DAY_ONE, time: '09:38:00' }),
-    lastFinishedAt: at({ day: DAY_ONE, time: '09:38:00' }),
-    lastViewedAt: NOW,
-    doneAt: at({ day: DAY_ONE, time: '09:38:00' }),
-    providerOverride: 'anthropic',
-    modelOverride: 'claude-sonnet-5',
-  },
-  {
     id: PLANNER_AGENT_ID,
     sessionId: SESSION_ID,
     stepId: CONTRACT_STEP_ID,
@@ -448,6 +435,21 @@ const AGENTS: ReadonlyArray<Agent> = [
     doneAt: at({ day: DAY_ONE, time: '09:47:00' }),
     providerOverride: 'anthropic',
     modelOverride: 'claude-opus-5',
+  },
+  {
+    id: WIREFRAME_AGENT_ID,
+    sessionId: SESSION_ID,
+    parentAgentId: PLANNER_AGENT_ID,
+    ordinal: 1.1,
+    name: 'draw the stuck-delivery banner',
+    kind: 'wireframe',
+    status: 'completed',
+    outputSummary: 'Two screens: the delivery list with a stuck row, and the banner expanded.',
+    startedAt: at({ day: DAY_ONE, time: '09:41:00' }),
+    completedAt: at({ day: DAY_ONE, time: '09:46:00' }),
+    lastFinishedAt: at({ day: DAY_ONE, time: '09:46:00' }),
+    providerOverride: 'anthropic',
+    modelOverride: 'claude-sonnet-5',
   },
   {
     id: KEY_COLUMN_AGENT_ID,
@@ -488,6 +490,67 @@ const AGENTS: ReadonlyArray<Agent> = [
     modelOverride: 'gpt-5.6-sol',
   },
   {
+    id: DEDUPE_TXN_AGENT_ID,
+    sessionId: SESSION_ID,
+    parentAgentId: DEDUPE_AGENT_ID,
+    ordinal: 3.1,
+    name: 'move the check inside the transaction',
+    kind: 'implementer',
+    status: 'completed',
+    outputSummary:
+      'The insert and the credit now share one transaction, so a crash rolls both back.',
+    startedAt: at({ day: DAY_ONE, time: '10:24:00' }),
+    completedAt: at({ day: DAY_ONE, time: '10:38:00' }),
+    lastFinishedAt: at({ day: DAY_ONE, time: '10:38:00' }),
+    providerOverride: 'codex',
+    modelOverride: 'gpt-5.6-sol',
+  },
+  {
+    id: DEDUPE_CREDIT_AGENT_ID,
+    sessionId: SESSION_ID,
+    parentAgentId: DEDUPE_AGENT_ID,
+    ordinal: 3.2,
+    name: 'reject a redelivered event',
+    kind: 'implementer',
+    status: 'completed',
+    outputSummary: 'A second delivery of the same event id returns 200 and writes nothing.',
+    startedAt: at({ day: DAY_ONE, time: '10:26:00' }),
+    completedAt: at({ day: DAY_ONE, time: '10:52:00' }),
+    lastFinishedAt: at({ day: DAY_ONE, time: '10:52:00' }),
+    providerOverride: 'anthropic',
+    modelOverride: 'claude-sonnet-4-5',
+  },
+  {
+    id: DEDUPE_REPLAY_AGENT_ID,
+    sessionId: SESSION_ID,
+    parentAgentId: DEDUPE_AGENT_ID,
+    ordinal: 3.3,
+    name: 'keep the replay endpoint working',
+    kind: 'implementer',
+    status: 'completed',
+    outputSummary: 'A deliberate replay still writes, because it carries its own event id.',
+    startedAt: at({ day: DAY_ONE, time: '10:28:00' }),
+    completedAt: at({ day: DAY_ONE, time: '10:44:00' }),
+    lastFinishedAt: at({ day: DAY_ONE, time: '10:44:00' }),
+    providerOverride: 'cursor',
+    modelOverride: 'composer-2.5',
+  },
+  {
+    id: DEDUPE_ANSWER_AGENT_ID,
+    sessionId: SESSION_ID,
+    parentAgentId: DEDUPE_CREDIT_AGENT_ID,
+    ordinal: 3.35,
+    name: 'answer: key on the event id, the payload changes between retries',
+    kind: 'implementer',
+    status: 'completed',
+    outputSummary: 'Stripe keeps the event id stable across retries and rewrites the payload.',
+    startedAt: at({ day: DAY_ONE, time: '10:40:00' }),
+    completedAt: at({ day: DAY_ONE, time: '10:46:00' }),
+    lastFinishedAt: at({ day: DAY_ONE, time: '10:46:00' }),
+    providerOverride: 'codex',
+    modelOverride: 'gpt-5.6-terra',
+  },
+  {
     id: TESTER_AGENT_ID,
     sessionId: SESSION_ID,
     stepId: TEST_STEP_ID,
@@ -505,23 +568,6 @@ const AGENTS: ReadonlyArray<Agent> = [
     doneAt: at({ day: DAY_ONE, time: '11:26:00' }),
     providerOverride: 'anthropic',
     modelOverride: 'claude-haiku-4-5',
-  },
-  {
-    id: STRIPE_SEMANTICS_AGENT_ID,
-    sessionId: SESSION_ID,
-    ordinal: 4.5,
-    name: "Confirm Stripe's webhook retry-after header",
-    kind: 'scout',
-    status: 'completed',
-    outputSummary:
-      'Stripe does not send a retry-after header; the three day window is fixed and undocumented outside their changelog.',
-    startedAt: at({ day: DAY_ONE, time: '11:28:00' }),
-    completedAt: at({ day: DAY_ONE, time: '11:34:00' }),
-    lastFinishedAt: at({ day: DAY_ONE, time: '11:34:00' }),
-    lastViewedAt: NOW,
-    doneAt: at({ day: DAY_ONE, time: '11:34:00' }),
-    providerOverride: 'cursor',
-    modelOverride: 'composer-2.5',
   },
   {
     id: BACKFILL_AGENT_ID,
@@ -695,7 +741,7 @@ const WIREFRAME_ARTIFACT: WireframeArtifact = {
   id: WIREFRAME_ARTIFACT_ID,
   sessionId: SESSION_ID,
   agentId: WIREFRAME_AGENT_ID,
-  workflowRunId: null,
+  workflowRunId: WORKFLOW_RUN_ID,
   kind: 'wireframe',
   schemaVersion: 1,
   title: 'Stuck delivery in web-console',
@@ -705,8 +751,8 @@ const WIREFRAME_ARTIFACT: WireframeArtifact = {
   status: 'active',
   revision: 1,
   sourceTurnId: 'mock-run-turn-wireframe',
-  createdAt: at({ day: DAY_ONE, time: '09:38:00' }),
-  updatedAt: at({ day: DAY_ONE, time: '09:38:00' }),
+  createdAt: at({ day: DAY_ONE, time: '09:46:00' }),
+  updatedAt: at({ day: DAY_ONE, time: '09:46:00' }),
 };
 
 const PLANS: ReadonlyArray<PlanWithCount> = [
@@ -782,18 +828,19 @@ const ANSWERED_QUESTIONS: ReadonlyArray<OpenQuestion> = [
     id: QUESTION_ORDER_ID,
     sessionId: SESSION_ID,
     workflowRunId: WORKFLOW_RUN_ID,
-    createdByAgentId: BACKFILL_AGENT_ID,
-    text: 'Does the backfill replay in event-id order or in settlement order?',
-    suggestedAnswers: ['Settlement order, it matches the ledger', 'Event-id order, it is cheaper'],
-    recommendedAnswer: 'Settlement order, it matches the ledger',
+    createdByAgentId: DEDUPE_CREDIT_AGENT_ID,
+    text: 'Key the dedupe check on the event id or on a hash of the payload?',
+    suggestedAnswers: ['The event id, it survives a retry', 'A payload hash, it needs no column'],
+    recommendedAnswer: 'The event id, it survives a retry',
     selectMode: 'one',
     isBlocking: true,
-    userAnswer: 'Settlement order, it matches the ledger',
-    answerSource: 'user',
+    userAnswer: 'The event id, it survives a retry',
+    answerSource: 'agent',
+    answeredByAgentId: DEDUPE_ANSWER_AGENT_ID,
     status: 'answered',
-    createdAt: at({ day: DAY_ONE, time: '12:05:00' }),
-    answeredAt: at({ day: DAY_ONE, time: '12:12:00' }),
-    answerDeliveredAt: at({ day: DAY_ONE, time: '12:12:00' }),
+    createdAt: at({ day: DAY_ONE, time: '10:36:00' }),
+    answeredAt: at({ day: DAY_ONE, time: '10:46:00' }),
+    answerDeliveredAt: at({ day: DAY_ONE, time: '10:46:00' }),
   },
 ];
 
@@ -827,13 +874,6 @@ const SESSION_EVENTS = [
     createdAt: at({ day: DAY_ONE, time: '09:12:00' }),
   },
   {
-    id: 'mock-run-event-decisions' as SessionEventId,
-    sessionId: SESSION_ID,
-    kind: 'decisions_changed',
-    payload: { added: 4, removed: 0 },
-    createdAt: at({ day: DAY_ONE, time: '09:48:00' }),
-  },
-  {
     id: 'mock-run-event-pr' as SessionEventId,
     sessionId: SESSION_ID,
     kind: 'pr_created',
@@ -845,13 +885,6 @@ const SESSION_EVENTS = [
     createdAt: at({ day: DAY_ONE, time: '11:30:00' }),
   },
   {
-    id: 'mock-run-event-console-branch' as SessionEventId,
-    sessionId: SESSION_ID,
-    kind: 'branch_created',
-    payload: { branch: CONSOLE_MOUNT.branch, projectName: CONSOLE_MOUNT.mountName },
-    createdAt: at({ day: DAY_ONE, time: '11:06:00' }),
-  },
-  {
     id: 'mock-run-event-pr-merged' as SessionEventId,
     sessionId: SESSION_ID,
     kind: 'pr_merged',
@@ -861,17 +894,6 @@ const SESSION_EVENTS = [
       url: 'https://example.invalid/cascadia/payments-api/pull/612',
     },
     createdAt: at({ day: DAY_TWO, time: '09:25:00' }),
-  },
-  {
-    id: 'mock-run-event-console-pr' as SessionEventId,
-    sessionId: SESSION_ID,
-    kind: 'pr_created',
-    payload: {
-      number: 48,
-      title: 'Show retry state on the deliveries screen',
-      url: 'https://example.invalid/cascadia/web-console/pull/48',
-    },
-    createdAt: at({ day: DAY_TWO, time: '09:45:00' }),
   },
 ] as unknown as ReadonlyArray<SessionEvent>;
 

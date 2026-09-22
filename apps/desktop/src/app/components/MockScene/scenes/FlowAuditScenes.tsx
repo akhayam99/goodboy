@@ -670,8 +670,8 @@ const FLOW_AGENT_KINDS: Readonly<Record<string, AgentKind>> = {
 
 const FLOW_AGENT_MODELS: Readonly<Record<string, string>> = {
   [AGENT_SCOUT_ID]: 'composer-2.5',
-  [AGENT_SCOUT_LEDGER_ID]: 'composer-2.5',
-  [AGENT_SCOUT_REPORTS_ID]: 'composer-2.5',
+  [AGENT_SCOUT_LEDGER_ID]: 'claude-haiku-4-5',
+  [AGENT_SCOUT_REPORTS_ID]: 'gpt-5.6-terra',
   [AGENT_SCOUT_RELAY_ID]: 'composer-2.5',
   [AGENT_PLAN_ID]: 'claude-opus-5',
   [AGENT_ROUNDING_ID]: 'gpt-5.6-sol',
@@ -681,8 +681,8 @@ const FLOW_AGENT_MODELS: Readonly<Record<string, string>> = {
 
 const FLOW_AGENT_PROVIDERS: Readonly<Record<string, ProviderInfo['id']>> = {
   [AGENT_SCOUT_ID]: 'cursor',
-  [AGENT_SCOUT_LEDGER_ID]: 'cursor',
-  [AGENT_SCOUT_REPORTS_ID]: 'cursor',
+  [AGENT_SCOUT_LEDGER_ID]: 'anthropic',
+  [AGENT_SCOUT_REPORTS_ID]: 'codex',
   [AGENT_SCOUT_RELAY_ID]: 'cursor',
   [AGENT_PLAN_ID]: 'anthropic',
   [AGENT_ROUNDING_ID]: 'codex',
@@ -737,22 +737,22 @@ const FLOW_TELEMETRY: ReadonlyArray<TelemetryRecord> = [
   telemetryOf({
     id: 'mock-flow-telemetry-scout-ledger',
     runId: 'mock-flow-provider-run-scout-ledger' as ProviderRunId,
-    provider: 'cursor',
-    model: 'composer-2.5',
+    provider: 'anthropic',
+    model: 'claude-haiku-4-5',
     recordedAt: '2026-09-16T09:24:00.000Z',
     inputTokens: 21_050,
     outputTokens: 2_980,
-    estimatedCostUsd: 0.018,
+    estimatedCostUsd: 0.024,
   }),
   telemetryOf({
     id: 'mock-flow-telemetry-scout-reports',
     runId: 'mock-flow-provider-run-scout-reports' as ProviderRunId,
-    provider: 'cursor',
-    model: 'composer-2.5',
+    provider: 'codex',
+    model: 'gpt-5.6-terra',
     recordedAt: '2026-09-16T09:26:00.000Z',
     inputTokens: 18_640,
     outputTokens: 2_410,
-    estimatedCostUsd: 0.016,
+    estimatedCostUsd: 0.058,
   }),
   telemetryOf({
     id: 'mock-flow-telemetry-scout-relay',
