@@ -1,5 +1,4 @@
 import { useEffect, type ReactNode } from 'react';
-import { Sparkles } from 'lucide-react';
 import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { AgentId, IsoDateTime, OpenQuestion, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../../features/chat/utils/transcript-items';
@@ -12,7 +11,7 @@ import { UserText } from '../../../../features/chat/components/TranscriptCards/U
 import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
 import { QuestionCard } from '../../../../features/context/components/QuestionsTab/QuestionCard';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const NOW = '2026-09-22T09:12:00.000Z' as IsoDateTime;
 const noop = () => undefined;
@@ -138,7 +137,7 @@ export const CardRailsScene = () => {
         <Row label="nudge">
           <NudgeCard
             severity="warning"
-            icon={<Sparkles size={ICON_SIZE.control} aria-hidden />}
+            icon={<CONCEPT_ICONS.autorun size={ICON_SIZE.control} aria-hidden />}
             title="This step has been running for eleven minutes"
             body="The implementer has not written anything since the rebase."
             primary={{ label: 'Open the agent', onClick: noop }}
