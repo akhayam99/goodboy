@@ -7,6 +7,37 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.13
+
+The model catalogs caught up with what the CLIs actually serve: Claude Opus 5.5, eleven more Cursor families, three more Kimi models, and an OpenRouter list that no longer offers models nobody can run.
+
+### [#1837] Claude Opus 5.5 is selectable
+
+Opus 5.5 sits in the Anthropic catalog one step above Opus 5. It is not the default, and Opus 5 still is, because Opus 5.5 needs Claude CLI 2.1.280 or newer and an older CLI gets turned down by the API. Pick it on an older CLI and Goodboy tells you to update instead of handing you the raw refusal, and the turn goes to Opus 5 rather than stopping.
+
+Its price is an estimate carried over from Opus 5, not a published rate, so every cost it reports reads as approximate.
+
+### [#1839] OpenRouter goes from 8 models to 37
+
+Three entries had been withdrawn upstream, so anything that picked Gemini 3.1 Pro, DeepSeek V4 or Grok 4 through OpenRouter failed the moment it ran. All three point at a model that exists again, and 29 more arrive beside them across Anthropic, OpenAI, Google, DeepSeek, Moonshot, Z.ai and xAI, each at the price OpenRouter publishes for it. The list is grouped by family, so the picker shows version ladders instead of 37 flat rows.
+
+### [#1840] Eleven more Cursor families
+
+The Cursor CLI lists families the catalog never carried: Opus 5.5 and Opus 4.8, Fable 5.1 and Fable 5, Grok 4.7, four Gemini Flash lines, Gemini 3.1 Pro and Kimi K2.7 Code. Twenty eight combinations in all, each with its own rate, and the ones Cursor keeps behind Max Mode are marked as such.
+
+Two automatic picks move with them: the planner on Cursor goes to Fable 5.1, which Cursor did not offer before, and the mid tier goes to Gemini 3.1 Pro. Follow-up: the new Gemini, Grok and Kimi entries still read as flat rows in the picker, where Opus, Sonnet and GPT collapse into a ladder.
+
+### [#1841] Three more Kimi models
+
+Moonshot serves Kimi K2.7 Code, its high speed twin and Kimi K2.6 alongside K3. All four are in the catalog and each reports its own cost. Follow-up: the rates come from the public model index rather than from Moonshot directly, and the high speed line is the one to question first if a figure ever looks wrong.
+
+### Fixes
+
+- A model saved against one of the three withdrawn OpenRouter ids used to fall back to the provider default. It resolves to the replacement model now [#1839]
+- A model both a direct provider and OpenRouter ship, Kimi K3 and Grok among them, stays with the direct provider instead of going to the aggregator [#1839]
+- A turn refused because the installed CLI is too old for the model now says which version it wants, and retries on the closest model in the same family instead of failing outright [#1837]
+- Every Cursor combination the picker can offer carries a price, so none of them is billed at the most expensive rate Goodboy knows [#1840]
+
 ## Goodboy v0.3.12
 
 A question an agent is answering for you stops asking, the transcript drops the tinted blocks, and splitting one pull request across two mounts works from one call.
