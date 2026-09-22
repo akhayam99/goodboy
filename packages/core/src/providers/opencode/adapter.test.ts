@@ -114,8 +114,16 @@ describe('OpenCodeAdapter', () => {
   it('reports the moonshot catalog, never the opencode free tier', async () => {
     const adapter = new OpenCodeAdapter({ providerId: 'moonshot', now: () => AT });
     expect(adapter.id).toBe('moonshot');
-    expect(adapter.capabilities.availableModels).toEqual(['kimi-k3']);
+    expect(adapter.capabilities.availableModels).toEqual([
+      'kimi-k3',
+      'kimi-k2.7-code-highspeed',
+      'kimi-k2.7-code',
+      'kimi-k2.6',
+    ]);
     expect(adapter.capabilities.defaultModel).toBe('kimi-k3');
+    expect(adapter.capabilities.availableModels.some((model) => model.includes('free'))).toBe(
+      false,
+    );
   });
 
   it('sends the moonshot cli id without an openrouter prefix', async () => {
