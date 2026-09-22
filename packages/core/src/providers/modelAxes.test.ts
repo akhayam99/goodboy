@@ -19,6 +19,7 @@ describe('modelAxes', () => {
     const axes = modelAxes({ model, selection: { key: model.key, variant: 'astra' } });
     expect(axes.model.options).toContainEqual({ id: 'GPT', label: 'GPT', modelKey: 'gpt-6' });
     expect(axes.version?.options).toContainEqual({ id: '6', label: '6', modelKey: 'gpt-6' });
+    expect(axes.checkpoint).toBeNull();
     expect(axes.effort?.levels).toEqual([
       { level: 'low', available: true },
       { level: 'medium', available: true },
@@ -70,10 +71,42 @@ describe('modelAxes', () => {
     ).toEqual([{ id: 'thinking', label: 'Thinking', active: false, canToggle: true }]);
   });
 
-  it('renders no variant row for codex, where one key is one spawnable model', () => {
+  it('offers the gpt-5.6 checkpoints as a Variant row, one key each', () => {
+    const model = CODEX_CATALOG.find((candidate) => candidate.key === 'gpt-5.6-terra');
+    if (model == null) {
+      throw new Error('missing codex gpt-5.6-terra');
+    }
+    const axes = modelAxes({ model, selection: { key: model.key } });
+    expect(axes.checkpoint?.label).toBe('Variant');
+    expect(axes.checkpoint?.options).toEqual([
+      { id: 'Luna', label: 'Luna', modelKey: 'gpt-5.6-luna' },
+      { id: 'Terra', label: 'Terra', modelKey: 'gpt-5.6-terra' },
+      { id: 'Sol', label: 'Sol', modelKey: 'gpt-5.6-sol' },
+    ]);
+    expect(axes.checkpoint?.activeId).toBe('Terra');
+  });
+
+  it('keeps the cli variant row empty, because one key is one spawnable model', () => {
     for (const model of CODEX_CATALOG) {
       expect(modelAxes({ model, selection: { key: model.key } }).variant).toBeNull();
     }
+  });
+
+  it('carries the chosen checkpoint to a version that still ships it', () => {
+    const terra = CODEX_CATALOG.find((candidate) => candidate.key === 'gpt-5.6-terra');
+    const luna = CODEX_CATALOG.find((candidate) => candidate.key === 'gpt-5.6-luna');
+    if (terra == null || luna == null) {
+      throw new Error('missing codex gpt-5.6 checkpoints');
+    }
+    const fromTerra = modelAxes({ model: terra, selection: { key: terra.key } });
+    const fromLuna = modelAxes({ model: luna, selection: { key: luna.key } });
+    expect(fromTerra.version?.options.find((option) => option.id === '5.6')?.modelKey).toBe(
+      'gpt-5.6-terra',
+    );
+    expect(fromLuna.version?.options.find((option) => option.id === '5.6')?.modelKey).toBe(
+      'gpt-5.6-luna',
+    );
+    expect(fromTerra.version?.options.find((option) => option.id === '6')?.modelKey).toBe('gpt-6');
   });
 
   it('gives each gpt checkpoint its own version chip, so cost is selectable', () => {
@@ -84,12 +117,10 @@ describe('modelAxes', () => {
     const axes = modelAxes({ model, selection: { key: model.key } });
     expect(axes.version?.options).toEqual([
       { id: '5.5', label: '5.5', modelKey: 'gpt-5.5' },
-      { id: '5.6 Luna', label: '5.6 Luna', modelKey: 'gpt-5.6-luna' },
-      { id: '5.6 Terra', label: '5.6 Terra', modelKey: 'gpt-5.6-terra' },
-      { id: '5.6 Sol', label: '5.6 Sol', modelKey: 'gpt-5.6-sol' },
+      { id: '5.6', label: '5.6', modelKey: 'gpt-5.6-luna' },
       { id: '6', label: '6', modelKey: 'gpt-6' },
     ]);
-    expect(axes.version?.activeId).toBe('5.6 Luna');
+    expect(axes.version?.activeId).toBe('5.6');
   });
 
   it('marks unsupported anthropic effort levels as unavailable instead of hiding them', () => {
@@ -220,7 +251,15 @@ describe('modelAxes', () => {
           continue;
         }
         const picked = version.options.find((option) => option.id === version.activeId);
-        expect(picked?.modelKey, `${provider}/${model.key} is unreachable from its family`).toBe(
+        const checkpoint = axes.checkpoint;
+        if (checkpoint == null) {
+          expect(picked?.modelKey, `${provider}/${model.key} is unreachable from its family`).toBe(
+            model.key,
+          );
+          continue;
+        }
+        const variant = checkpoint.options.find((option) => option.id === checkpoint.activeId);
+        expect(variant?.modelKey, `${provider}/${model.key} is unreachable from its version`).toBe(
           model.key,
         );
       }

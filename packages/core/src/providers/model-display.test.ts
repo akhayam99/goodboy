@@ -8,7 +8,7 @@ describe('provider model display', () => {
       id: 'gpt-6',
       label: 'Astra',
       family: 'gpt',
-      variantLabel: '6',
+      variantLabel: '6 Astra',
       contextWindow: 1_000_000,
       costTier: 'expensive',
     });

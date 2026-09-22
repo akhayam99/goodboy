@@ -306,16 +306,29 @@ describe('RoutingPicker', () => {
     expect(screen.getByRole('dialog')).toBeDefined();
   });
 
-  it('shows Codex checkpoints as version chips, one per billable model', () => {
+  it('splits Codex checkpoints into a version and a variant row', () => {
     const onModel = vi.fn();
     render(
       <RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-terra" onModel={onModel} />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('button', { name: '5.6 Terra' }).getAttribute('aria-pressed')).toBe(
+    const versions = within(screen.getByRole('group', { name: 'Version' }));
+    expect(versions.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      '5.5',
+      '5.6',
+      '6',
+    ]);
+    expect(versions.getByRole('button', { name: '5.6' }).getAttribute('aria-pressed')).toBe('true');
+    const variants = within(screen.getByRole('group', { name: 'Variant' }));
+    expect(variants.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Luna',
+      'Terra',
+      'Sol',
+    ]);
+    expect(variants.getByRole('button', { name: 'Terra' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
-    fireEvent.click(screen.getByRole('button', { name: '5.6 Luna' }));
+    fireEvent.click(variants.getByRole('button', { name: 'Luna' }));
     expect(onModel).toHaveBeenCalledWith('gpt-5.6-luna');
   });
 
@@ -341,19 +354,26 @@ describe('RoutingPicker', () => {
     expect(onChange).toHaveBeenCalledWith('max');
   });
 
-  it('leaves Codex no variant row, because one key is now one spawnable model', () => {
+  it('offers a variant row only for a version that ships more than one checkpoint', () => {
     const view = render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-sol" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.queryByRole('group', { name: 'Variant' })).toBeNull();
-    for (const label of ['5.6 Sol', '5.6 Terra', '5.6 Luna']) {
-      expect(screen.getByRole('button', { name: label })).toBeDefined();
-    }
+    expect(
+      within(screen.getByRole('group', { name: 'Variant' }))
+        .getByRole('button', { name: 'Sol' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
 
     view.unmount();
-    render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.5" />);
+    const bareView = render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.5" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     expect(screen.queryByRole('group', { name: 'Variant' })).toBeNull();
     expect(screen.getByRole('button', { name: '5.5' }).getAttribute('aria-pressed')).toBe('true');
+
+    bareView.unmount();
+    render(<RoutingPicker {...baseProps} provider="codex" model="gpt-6-astra" />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    expect(screen.queryByRole('group', { name: 'Variant' })).toBeNull();
+    expect(screen.getByRole('button', { name: '6' }).getAttribute('aria-pressed')).toBe('true');
   });
 
   it('clamps Cursor effort after a toggle invalidates it and announces the adjustment', () => {

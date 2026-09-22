@@ -32,7 +32,7 @@ export const AxesSection = ({
   onToggle,
 }: Props) => {
   const toggleRowLabel = 'Modes';
-  const selectionAxes = axes.version == null ? [axes.model] : [axes.model, axes.version];
+  const selectionAxes = [axes.model, axes.version, axes.checkpoint].filter((axis) => axis != null);
   const variantAxis = axes.variant;
   return (
     <section aria-label="Model options" className="flex flex-col gap-2.5 p-3">

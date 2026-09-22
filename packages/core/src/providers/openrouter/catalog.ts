@@ -273,7 +273,8 @@ export const OPENROUTER_CATALOG = [
     presentation: {
       family: 'gpt',
       group: 'GPT',
-      version: '6 Astra',
+      version: '6',
+      checkpoint: 'Astra',
       order: 65,
       costTier: 'expensive',
     },
@@ -290,7 +291,8 @@ export const OPENROUTER_CATALOG = [
     presentation: {
       family: 'gpt',
       group: 'GPT',
-      version: '5.6 Sol',
+      version: '5.6',
+      checkpoint: 'Sol',
       order: 64,
       costTier: 'mid',
     },
@@ -307,7 +309,8 @@ export const OPENROUTER_CATALOG = [
     presentation: {
       family: 'gpt',
       group: 'GPT',
-      version: '5.6 Terra',
+      version: '5.6',
+      checkpoint: 'Terra',
       order: 63,
       costTier: 'mid',
     },
@@ -324,7 +327,8 @@ export const OPENROUTER_CATALOG = [
     presentation: {
       family: 'gpt',
       group: 'GPT',
-      version: '5.6 Luna',
+      version: '5.6',
+      checkpoint: 'Luna',
       order: 62,
       costTier: 'cheap',
     },

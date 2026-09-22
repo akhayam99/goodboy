@@ -125,7 +125,8 @@ export const CURSOR_CATALOG = [
     presentation: {
       family: 'gpt',
       group: 'GPT',
-      version: '5.6 Sol',
+      version: '5.6',
+      checkpoint: 'Sol',
       order: 61,
       costTier: 'expensive',
     },
@@ -245,7 +246,8 @@ export const CURSOR_CATALOG = [
     presentation: {
       family: 'gpt',
       group: 'GPT',
-      version: '5.6 Terra',
+      version: '5.6',
+      checkpoint: 'Terra',
       order: 60,
       costTier: 'mid',
     },
@@ -275,7 +277,8 @@ export const CURSOR_CATALOG = [
     presentation: {
       family: 'gpt',
       group: 'GPT',
-      version: '5.6 Luna',
+      version: '5.6',
+      checkpoint: 'Luna',
       order: 59,
       costTier: 'cheap',
     },

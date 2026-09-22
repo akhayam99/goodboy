@@ -63,7 +63,7 @@ const effortAxis = ({ label, efforts }: EffortParams): EffortAxis | null => {
 };
 
 const selectionAxes = ({ model }: SelectionAxesParams) => {
-  const catalog = [...MODEL_CATALOGS[model.provider]].sort(
+  const catalog: ReadonlyArray<CatalogModel> = [...MODEL_CATALOGS[model.provider]].sort(
     (left, right) => left.presentation.order - right.presentation.order,
   );
   const groupModels = new Map<string, CatalogModel>();
@@ -71,11 +71,27 @@ const selectionAxes = ({ model }: SelectionAxesParams) => {
     groupModels.set(candidate.presentation.group, candidate);
   }
   const activeGroup = model.presentation.group;
+  const activeCheckpoint = model.presentation.checkpoint;
   const members = catalog.filter((candidate) => candidate.presentation.group === activeGroup);
   const versionModels = new Map<string, CatalogModel>();
   for (const member of members) {
+    const current = versionModels.get(member.presentation.version);
+    const keepsCheckpoint =
+      current != null &&
+      current.presentation.checkpoint === activeCheckpoint &&
+      member.presentation.checkpoint !== activeCheckpoint;
+    if (keepsCheckpoint) {
+      continue;
+    }
     versionModels.set(member.presentation.version, member);
   }
+  const checkpointOptions = members.flatMap((candidate) => {
+    const checkpoint = candidate.presentation.checkpoint;
+    if (checkpoint == null || candidate.presentation.version !== model.presentation.version) {
+      return [];
+    }
+    return [{ id: checkpoint, label: checkpoint, modelKey: candidate.key }];
+  });
   return {
     model: {
       label: 'Model',
@@ -97,6 +113,14 @@ const selectionAxes = ({ model }: SelectionAxesParams) => {
               modelKey: candidate.key,
             })),
             activeId: model.presentation.version,
+          },
+    checkpoint:
+      checkpointOptions.length <= 1
+        ? null
+        : {
+            label: 'Variant',
+            options: checkpointOptions,
+            activeId: model.presentation.checkpoint ?? null,
           },
   };
 };

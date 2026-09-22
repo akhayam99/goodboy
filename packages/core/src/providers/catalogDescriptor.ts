@@ -61,6 +61,11 @@ const effortFor = ({ model }: Params) => {
   }
 };
 
+const variantLabelFor = ({ model }: Params): string => {
+  const { version, checkpoint } = model.presentation;
+  return checkpoint == null ? version : `${version} ${checkpoint}`;
+};
+
 export const catalogDescriptor = ({ model }: Params): ModelDescriptor => {
   const family = model.presentation.family;
   return {
@@ -70,7 +75,7 @@ export const catalogDescriptor = ({ model }: Params): ModelDescriptor => {
     family,
     subfamily: model.presentation.group,
     label: model.label,
-    variantLabel: model.presentation.version,
+    variantLabel: variantLabelFor({ model }),
     costTier: model.presentation.costTier,
     weight: WEIGHT_BY_KEY[model.key] ?? 10,
     effort: effortFor({ model }),
