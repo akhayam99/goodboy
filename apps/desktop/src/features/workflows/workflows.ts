@@ -26,6 +26,10 @@ import type {
   ClusterCompletionHold,
   ClusterCompletionHoldReason,
   ClusterCompletionHoldState,
+  ClusterExecutionGraph,
+  ClusterExecutionNode,
+  ClusterGraphNode,
+  PlanClusterRole,
   VerbosityLevel,
   Workflow,
   WorkflowId,
@@ -39,7 +43,7 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
-import { WORKFLOW_ORIGINS } from '@goodboy/types';
+import { PLAN_CLUSTER_ROLES, WORKFLOW_ORIGINS } from '@goodboy/types';
 
 type RawWorkflowStepRow = {
   readonly id: string;
@@ -548,6 +552,132 @@ export const invokeClusterCompletionHoldRecord = async ({
     },
   });
   return completionHoldFromRow({ row });
+};
+
+type RawClusterExecutionNodeRow = {
+  readonly nodeId: string;
+  readonly agentId: AgentId | null;
+  readonly ordinal: number;
+  readonly role: string;
+};
+
+type RawClusterExecutionGraphRow = {
+  readonly containerAgentId: AgentId;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly planId: string | null;
+  readonly goalTitle: string;
+  readonly executionVersion: number;
+  readonly graphJson: string;
+  readonly createdAt: string;
+  readonly nodes: ReadonlyArray<RawClusterExecutionNodeRow>;
+};
+
+const toPlanClusterRole = ({ value }: { readonly value: string }): PlanClusterRole =>
+  PLAN_CLUSTER_ROLES.find((role) => role === value) ?? 'implementer';
+
+const parseGraphNodes = ({
+  value,
+}: {
+  readonly value: string;
+}): ReadonlyArray<ClusterGraphNode> => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) {
+    return [];
+  }
+  const nodes: ClusterGraphNode[] = [];
+  for (const entry of parsed) {
+    if (!isRecord(entry) || typeof entry.id !== 'string' || entry.id.length === 0) {
+      continue;
+    }
+    nodes.push({
+      id: entry.id,
+      ordinal: typeof entry.ordinal === 'number' ? entry.ordinal : nodes.length,
+      title: typeof entry.title === 'string' ? entry.title : '',
+      instructions: typeof entry.instructions === 'string' ? entry.instructions : '',
+      role: toPlanClusterRole({ value: typeof entry.role === 'string' ? entry.role : '' }),
+      dependsOn: Array.isArray(entry.dependsOn)
+        ? entry.dependsOn.filter((dep): dep is string => typeof dep === 'string')
+        : [],
+      expectedOutput: typeof entry.expectedOutput === 'string' ? entry.expectedOutput : null,
+    });
+  }
+  return nodes;
+};
+
+const executionGraphFromRow = ({
+  row,
+}: {
+  readonly row: RawClusterExecutionGraphRow;
+}): ClusterExecutionGraph => ({
+  containerAgentId: row.containerAgentId,
+  sessionId: row.sessionId,
+  workflowRunId: row.workflowRunId,
+  planId: row.planId,
+  goalTitle: row.goalTitle,
+  graph: {
+    executionVersion: row.executionVersion,
+    nodes: parseGraphNodes({ value: row.graphJson }),
+  },
+  nodes: row.nodes.map((node) => ({
+    nodeId: node.nodeId,
+    agentId: node.agentId,
+    ordinal: node.ordinal,
+    role: toPlanClusterRole({ value: node.role }),
+  })),
+  createdAt: row.createdAt as IsoDateTime,
+});
+
+export const invokeClusterExecutionGraphs = async ({
+  sessionId,
+}: {
+  readonly sessionId: SessionId;
+}): Promise<ReadonlyArray<ClusterExecutionGraph>> => {
+  const rows = await invoke<RawClusterExecutionGraphRow[]>('cluster_execution_graphs_for_session', {
+    sessionId,
+  });
+  return rows.map((row) => executionGraphFromRow({ row }));
+};
+
+type RecordClusterExecutionGraphParams = {
+  readonly containerAgentId: AgentId;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly planId: string | null;
+  readonly goalTitle: string;
+  readonly executionVersion: number;
+  readonly graphNodes: ReadonlyArray<ClusterGraphNode>;
+  readonly nodes: ReadonlyArray<ClusterExecutionNode>;
+};
+
+export const invokeClusterExecutionGraphRecord = async ({
+  containerAgentId,
+  sessionId,
+  workflowRunId,
+  planId,
+  goalTitle,
+  executionVersion,
+  graphNodes,
+  nodes,
+}: RecordClusterExecutionGraphParams): Promise<ClusterExecutionGraph> => {
+  const row = await invoke<RawClusterExecutionGraphRow>('cluster_execution_graph_record', {
+    input: {
+      containerAgentId,
+      sessionId,
+      workflowRunId,
+      planId,
+      goalTitle,
+      executionVersion,
+      graphJson: JSON.stringify(graphNodes),
+      nodes,
+    },
+  });
+  return executionGraphFromRow({ row });
 };
 
 export const invokeClusterCompletionHoldResolve = async ({

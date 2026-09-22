@@ -1,5 +1,15 @@
-import type { ProviderId, TurnEvent, WorkflowRoutingProposal } from '@goodboy/types';
+import type {
+  PlanClusterRole,
+  ProviderId,
+  TurnEvent,
+  WorkflowRoutingProposal,
+} from '@goodboy/types';
 import type { AgentKindLabel } from '../first-turn-classifier';
+import {
+  normalizeClusterGraph,
+  resolvePlanClusterRole,
+  unsupportedClusterRoleReason,
+} from '../clusters';
 import { parseWorkflowRoutingProposal } from '../orchestrator/parseWorkflowRoutingProposal';
 
 export const extractFilesTouched = (events: ReadonlyArray<TurnEvent>): ReadonlyArray<string> => {
@@ -583,9 +593,59 @@ export const extractReviewComments = (
 const STEP_DONE_RE = /<<step-done\s([^<>]*)>>/g;
 
 export type ExtractedCluster = {
+  readonly id?: string;
   readonly title: string;
   readonly instructions: string;
+  readonly role?: PlanClusterRole;
+  readonly dependsOn?: ReadonlyArray<string>;
+  readonly expectedOutput?: string;
   readonly routingProposal?: WorkflowRoutingProposal | null;
+};
+
+export type ClusterMarkerExtraction =
+  | Readonly<{ kind: 'none' }>
+  | Readonly<{ kind: 'invalid'; reason: string }>
+  | Readonly<{ kind: 'valid'; clusters: ReadonlyArray<ExtractedCluster> }>;
+
+type ClusterGraphFieldsResult =
+  | Readonly<{
+      kind: 'valid';
+      fields: Pick<ExtractedCluster, 'id' | 'role' | 'dependsOn' | 'expectedOutput'>;
+    }>
+  | Readonly<{ kind: 'invalid'; reason: string }>;
+
+const clusterGraphFields = ({
+  entry,
+  label,
+}: {
+  readonly entry: Record<string, unknown>;
+  readonly label: string;
+}): ClusterGraphFieldsResult => {
+  const id = typeof entry.id === 'string' ? entry.id.trim() : '';
+  const expectedOutput =
+    typeof entry.expectedOutput === 'string' ? entry.expectedOutput.trim() : '';
+  if (entry.dependsOn !== undefined && !Array.isArray(entry.dependsOn)) {
+    return { kind: 'invalid', reason: `cluster ${label} declares dependsOn that is not an array` };
+  }
+  const dependsOn = Array.isArray(entry.dependsOn)
+    ? entry.dependsOn.map((value) => (typeof value === 'string' ? value.trim() : ''))
+    : undefined;
+  const role = resolvePlanClusterRole({ role: entry.role });
+  if (role.kind === 'invalid') {
+    return {
+      kind: 'invalid',
+      reason: unsupportedClusterRoleReason({ label, declared: role.declared }),
+    };
+  }
+  return {
+    kind: 'valid',
+    fields: {
+      ...(id.length > 0 && { id }),
+      ...(entry.role !== undefined && { role: role.role }),
+      ...(dependsOn !== undefined && { dependsOn }),
+      ...(expectedOutput.length > 0 && { expectedOutput }),
+    },
+  };
 };
 
 type ChildRoutingParams = {
@@ -622,13 +682,13 @@ type ExtractClustersParams = {
   readonly emittingProvider: ProviderId | null;
 };
 
-export const extractClustersFromMarker = ({
+export const extractClusterGraphFromMarker = ({
   assistantText,
   emittingProvider,
-}: ExtractClustersParams): ReadonlyArray<ExtractedCluster> | null => {
+}: ExtractClustersParams): ClusterMarkerExtraction => {
   const blocks = extractBlockContents(assistantText, CLUSTERS_OPEN, CLUSTERS_CLOSE);
   if (blocks.length === 0) {
-    return null;
+    return { kind: 'none' };
   }
   const raw = blocks[blocks.length - 1]!;
 
@@ -639,16 +699,16 @@ export const extractClustersFromMarker = ({
   } catch {
     const arr = extractJsonArray(json);
     if (arr === null) {
-      return null;
+      return { kind: 'none' };
     }
     try {
       parsed = JSON.parse(arr);
     } catch {
-      return null;
+      return { kind: 'none' };
     }
   }
   if (!Array.isArray(parsed)) {
-    return null;
+    return { kind: 'none' };
   }
 
   const out: ExtractedCluster[] = [];
@@ -656,16 +716,40 @@ export const extractClustersFromMarker = ({
     if (typeof entry !== 'object' || entry === null) {
       continue;
     }
-    const e = entry as Record<string, unknown>;
+    const e: Record<string, unknown> = { ...entry };
     const title = typeof e.title === 'string' ? e.title.trim() : '';
     const instructions = typeof e.instructions === 'string' ? e.instructions.trim() : '';
     if (title.length === 0 || instructions.length === 0) {
       continue;
     }
+    const graphFields = clusterGraphFields({ entry: e, label: `"${title}"` });
+    if (graphFields.kind === 'invalid') {
+      return { kind: 'invalid', reason: graphFields.reason };
+    }
     const routingProposal = childRoutingProposal({ entry: e, emittingProvider });
-    out.push({ title, instructions, ...(routingProposal !== null && { routingProposal }) });
+    out.push({
+      title,
+      instructions,
+      ...graphFields.fields,
+      ...(routingProposal !== null && { routingProposal }),
+    });
   }
-  return out.length > 0 ? out : null;
+  if (out.length === 0) {
+    return { kind: 'none' };
+  }
+  const normalized = normalizeClusterGraph({ clusters: out });
+  if (normalized.kind === 'invalid') {
+    return { kind: 'invalid', reason: normalized.reason };
+  }
+  return { kind: 'valid', clusters: out };
+};
+
+export const extractClustersFromMarker = ({
+  assistantText,
+  emittingProvider,
+}: ExtractClustersParams): ReadonlyArray<ExtractedCluster> | null => {
+  const extraction = extractClusterGraphFromMarker({ assistantText, emittingProvider });
+  return extraction.kind === 'valid' ? extraction.clusters : null;
 };
 
 export const extractClusterDone = (assistantText: string): { readonly id: string } | null => {

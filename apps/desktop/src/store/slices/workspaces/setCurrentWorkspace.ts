@@ -82,6 +82,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       sessionExternalTasks: {},
       sessionPhaseRuns: {},
       clusterCompletionHolds: {},
+      clusterExecutionGraphs: {},
       selectedAgentId: {},
       agentRunHistory: {},
       agentTurnState: {},

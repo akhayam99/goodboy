@@ -328,6 +328,56 @@ pub struct ClusterCompletionHoldResolutionInput {
     pub resolution_evidence: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClusterExecutionNodeRow {
+    #[serde(rename = "nodeId")]
+    pub node_id: String,
+    #[serde(rename = "agentId")]
+    pub agent_id: Option<String>,
+    pub ordinal: i64,
+    pub role: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ClusterExecutionGraphRow {
+    #[serde(rename = "containerAgentId")]
+    pub container_agent_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "workflowRunId")]
+    pub workflow_run_id: Option<String>,
+    #[serde(rename = "planId")]
+    pub plan_id: Option<String>,
+    #[serde(rename = "goalTitle")]
+    pub goal_title: String,
+    #[serde(rename = "executionVersion")]
+    pub execution_version: i64,
+    #[serde(rename = "graphJson")]
+    pub graph_json: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    pub nodes: Vec<ClusterExecutionNodeRow>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClusterExecutionGraphInput {
+    #[serde(rename = "containerAgentId")]
+    pub container_agent_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "workflowRunId")]
+    pub workflow_run_id: Option<String>,
+    #[serde(rename = "planId")]
+    pub plan_id: Option<String>,
+    #[serde(rename = "goalTitle")]
+    pub goal_title: String,
+    #[serde(rename = "executionVersion")]
+    pub execution_version: i64,
+    #[serde(rename = "graphJson")]
+    pub graph_json: String,
+    pub nodes: Vec<ClusterExecutionNodeRow>,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct WorkflowNodeRoutingUpdateInput {
     #[serde(rename = "nodeKind")]
@@ -1372,6 +1422,131 @@ pub async fn cluster_completion_hold_resolve(
     resolve_cluster_completion_hold(&conn, input)
 }
 
+const CLUSTER_EXECUTION_GRAPH_COLUMNS: &str =
+    "container_agent_id, session_id, workflow_run_id, plan_id, goal_title, execution_version, graph_json, created_at";
+
+fn cluster_execution_graph_from_row(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<ClusterExecutionGraphRow> {
+    Ok(ClusterExecutionGraphRow {
+        container_agent_id: row.get(0)?,
+        session_id: row.get(1)?,
+        workflow_run_id: row.get(2)?,
+        plan_id: row.get(3)?,
+        goal_title: row.get(4)?,
+        execution_version: row.get(5)?,
+        graph_json: row.get(6)?,
+        created_at: crate::util::ms_to_iso(row.get(7)?),
+        nodes: Vec::new(),
+    })
+}
+
+fn cluster_execution_nodes(
+    conn: &rusqlite::Connection,
+    container_agent_id: &str,
+) -> Result<Vec<ClusterExecutionNodeRow>, PhaseError> {
+    let mut stmt = conn.prepare(
+        "SELECT node_id, agent_id, ordinal, role FROM cluster_execution_nodes WHERE container_agent_id = ?1 ORDER BY ordinal ASC",
+    )?;
+    let rows = stmt.query_map(rusqlite::params![container_agent_id], |row| {
+        Ok(ClusterExecutionNodeRow {
+            node_id: row.get(0)?,
+            agent_id: row.get(1)?,
+            ordinal: row.get(2)?,
+            role: row.get(3)?,
+        })
+    })?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
+}
+
+fn list_cluster_execution_graphs(
+    conn: &rusqlite::Connection,
+    session_id: &str,
+) -> Result<Vec<ClusterExecutionGraphRow>, PhaseError> {
+    let sql = format!(
+        "SELECT {CLUSTER_EXECUTION_GRAPH_COLUMNS} FROM cluster_execution_graphs WHERE session_id = ?1 ORDER BY created_at ASC"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(
+        rusqlite::params![session_id],
+        cluster_execution_graph_from_row,
+    )?;
+    let mut graphs = rows
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(PhaseError::Db)?;
+    for graph in graphs.iter_mut() {
+        graph.nodes = cluster_execution_nodes(conn, &graph.container_agent_id)?;
+    }
+    Ok(graphs)
+}
+
+#[tauri::command]
+pub async fn cluster_execution_graphs_for_session(
+    state: State<'_, Db>,
+    session_id: String,
+) -> Result<Vec<ClusterExecutionGraphRow>, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    list_cluster_execution_graphs(&conn, &session_id)
+}
+
+fn record_cluster_execution_graph(
+    conn: &rusqlite::Connection,
+    input: ClusterExecutionGraphInput,
+) -> Result<ClusterExecutionGraphRow, PhaseError> {
+    let now = crate::util::now_ms();
+    conn.execute(
+        "INSERT OR IGNORE INTO cluster_execution_graphs
+           (container_agent_id, session_id, workflow_run_id, plan_id, goal_title,
+            execution_version, graph_json, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        rusqlite::params![
+            input.container_agent_id,
+            input.session_id,
+            input.workflow_run_id,
+            input.plan_id,
+            input.goal_title,
+            input.execution_version,
+            input.graph_json,
+            now,
+        ],
+    )?;
+    for node in input.nodes.iter() {
+        conn.execute(
+            "INSERT OR IGNORE INTO cluster_execution_nodes
+               (container_agent_id, node_id, agent_id, ordinal, role)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            rusqlite::params![
+                input.container_agent_id,
+                node.node_id,
+                node.agent_id,
+                node.ordinal,
+                node.role,
+            ],
+        )?;
+    }
+    let sql = format!(
+        "SELECT {CLUSTER_EXECUTION_GRAPH_COLUMNS} FROM cluster_execution_graphs WHERE container_agent_id = ?1"
+    );
+    let mut graph = conn
+        .query_row(
+            &sql,
+            rusqlite::params![input.container_agent_id],
+            cluster_execution_graph_from_row,
+        )
+        .map_err(PhaseError::Db)?;
+    graph.nodes = cluster_execution_nodes(conn, &graph.container_agent_id)?;
+    Ok(graph)
+}
+
+#[tauri::command]
+pub async fn cluster_execution_graph_record(
+    state: State<'_, Db>,
+    input: ClusterExecutionGraphInput,
+) -> Result<ClusterExecutionGraphRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    record_cluster_execution_graph(&conn, input)
+}
+
 const AGENT_INSERT_SQL: &str = "INSERT INTO agents
    (id, session_id, step_id, ordinal, name, status,
     provider_run_id, output_summary, started_at, last_finished_at, kind, verbosity,
@@ -1858,6 +2033,66 @@ mod tests {
         assert_eq!(first.id, "hold-1");
         assert_eq!(duplicate.id, "hold-1");
         assert_eq!(rows.len(), 1);
+    }
+
+    fn execution_graphs_conn() -> rusqlite::Connection {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE cluster_execution_graphs (
+                container_agent_id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                workflow_run_id TEXT,
+                plan_id TEXT,
+                goal_title TEXT NOT NULL,
+                execution_version INTEGER NOT NULL,
+                graph_json TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            );
+            CREATE TABLE cluster_execution_nodes (
+                container_agent_id TEXT NOT NULL,
+                node_id TEXT NOT NULL,
+                agent_id TEXT,
+                ordinal INTEGER NOT NULL,
+                role TEXT NOT NULL,
+                PRIMARY KEY (container_agent_id, node_id)
+            );",
+        )
+        .unwrap();
+        conn
+    }
+
+    fn execution_graph_input(graph_json: &str) -> ClusterExecutionGraphInput {
+        ClusterExecutionGraphInput {
+            container_agent_id: "container".to_string(),
+            session_id: "session".to_string(),
+            workflow_run_id: Some("run".to_string()),
+            plan_id: Some("plan".to_string()),
+            goal_title: "goal".to_string(),
+            execution_version: 2,
+            graph_json: graph_json.to_string(),
+            nodes: vec![ClusterExecutionNodeRow {
+                node_id: "discovery".to_string(),
+                agent_id: Some("agent-1".to_string()),
+                ordinal: 0,
+                role: "scout".to_string(),
+            }],
+        }
+    }
+
+    #[test]
+    fn cluster_execution_graph_snapshot_is_immutable_once_recorded() {
+        let conn = execution_graphs_conn();
+        record_cluster_execution_graph(&conn, execution_graph_input("[{\"id\":\"discovery\"}]"))
+            .unwrap();
+        let second =
+            record_cluster_execution_graph(&conn, execution_graph_input("[{\"id\":\"edited\"}]"))
+                .unwrap();
+        let rows = list_cluster_execution_graphs(&conn, "session").unwrap();
+
+        assert_eq!(second.graph_json, "[{\"id\":\"discovery\"}]");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].nodes.len(), 1);
+        assert_eq!(rows[0].nodes[0].role, "scout");
     }
 
     #[test]

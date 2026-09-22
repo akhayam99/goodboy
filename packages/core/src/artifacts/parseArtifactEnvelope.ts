@@ -5,6 +5,11 @@ import type {
   ReportArtifactMetadata,
   WireframeArtifactMetadata,
 } from '@goodboy/types';
+import {
+  normalizeClusterGraph,
+  resolvePlanClusterRole,
+  unsupportedClusterRoleReason,
+} from '../clusters';
 import { ARTIFACT_MAX_BYTES, ARTIFACT_SCHEMA_VERSION, extractArtifactBlocks } from './grammar';
 import type { ArtifactCaptureError, ArtifactCaptureResult, ParsedArtifact } from './types';
 import { parseWireframeSource, type WireframeIssue } from './wireframe';
@@ -37,21 +42,85 @@ const envelopeVersion = (raw: string | undefined): number | null => {
   return Number.parseInt(raw, 10);
 };
 
-const isCluster = (value: unknown): value is ImplementationCluster =>
+type PlanMetadataResult =
+  | Readonly<{ kind: 'valid'; metadata: PlanArtifactMetadata }>
+  | Readonly<{ kind: 'invalid'; reason: string }>;
+
+const hasClusterBody = (value: unknown): boolean =>
   isRecord(value) &&
   typeof value['title'] === 'string' &&
-  typeof value['instructions'] === 'string';
+  value['title'].trim().length > 0 &&
+  typeof value['instructions'] === 'string' &&
+  value['instructions'].trim().length > 0;
 
-const planMetadata = (value: unknown): PlanArtifactMetadata => {
+const toCluster = (
+  value: Readonly<Record<string, unknown>>,
+):
+  | Readonly<{ kind: 'valid'; cluster: ImplementationCluster }>
+  | Readonly<{
+      kind: 'invalid';
+      reason: string;
+    }> => {
+  const title = String(value['title']).trim();
+  const label = `"${title}"`;
+  const rawId = value['id'];
+  const id = typeof rawId === 'string' ? rawId.trim() : '';
+  const rawDependsOn = value['dependsOn'];
+  if (rawDependsOn !== undefined && !Array.isArray(rawDependsOn)) {
+    return { kind: 'invalid', reason: `cluster ${label} declares dependsOn that is not an array` };
+  }
+  const dependsOn = Array.isArray(rawDependsOn)
+    ? rawDependsOn.map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    : undefined;
+  const rawExpected = value['expectedOutput'];
+  const expectedOutput = typeof rawExpected === 'string' ? rawExpected.trim() : '';
+  const role = resolvePlanClusterRole({ role: value['role'] });
+  if (role.kind === 'invalid') {
+    return {
+      kind: 'invalid',
+      reason: unsupportedClusterRoleReason({ label, declared: role.declared }),
+    };
+  }
+  return {
+    kind: 'valid',
+    cluster: {
+      ...(id.length > 0 && { id }),
+      title,
+      instructions: String(value['instructions']).trim(),
+      ...(value['role'] !== undefined && { role: role.role }),
+      ...(dependsOn !== undefined && { dependsOn }),
+      ...(expectedOutput.length > 0 && { expectedOutput }),
+    },
+  };
+};
+
+const planMetadata = (value: unknown): PlanMetadataResult => {
   if (!isRecord(value)) {
-    return {};
+    return { kind: 'valid', metadata: {} };
   }
   const clusters = value['clusters'];
   if (!Array.isArray(clusters)) {
-    return {};
+    return { kind: 'valid', metadata: {} };
   }
-  const valid = clusters.filter(isCluster);
-  return valid.length > 0 ? { clusters: valid } : {};
+  const parsed: ImplementationCluster[] = [];
+  for (const entry of clusters) {
+    if (!isRecord(entry) || !hasClusterBody(entry)) {
+      continue;
+    }
+    const cluster = toCluster(entry);
+    if (cluster.kind === 'invalid') {
+      return { kind: 'invalid', reason: cluster.reason };
+    }
+    parsed.push(cluster.cluster);
+  }
+  if (parsed.length === 0) {
+    return { kind: 'valid', metadata: {} };
+  }
+  const normalized = normalizeClusterGraph({ clusters: parsed });
+  if (normalized.kind === 'invalid') {
+    return { kind: 'invalid', reason: normalized.reason };
+  }
+  return { kind: 'valid', metadata: { clusters: parsed } };
 };
 
 const reportMetadata = (value: unknown): ReportArtifactMetadata => {
@@ -189,6 +258,10 @@ export const parseArtifactEnvelope = (assistantText: string): ArtifactCaptureRes
   if (sourceText === null) {
     return fail('invalid_payload', `the ${kind} content must be a non-empty markdown string`);
   }
+  const plan = planMetadata(payload['metadata']);
+  if (kind === 'plan' && plan.kind === 'invalid') {
+    return fail('invalid_payload', `the plan clusters are not a valid graph: ${plan.reason}`);
+  }
   const artifact: ParsedArtifact =
     kind === 'plan'
       ? {
@@ -197,7 +270,7 @@ export const parseArtifactEnvelope = (assistantText: string): ArtifactCaptureRes
           title,
           sourceFormat: 'markdown',
           sourceText,
-          metadata: planMetadata(payload['metadata']),
+          metadata: plan.kind === 'valid' ? plan.metadata : {},
           origin: 'envelope',
         }
       : {

@@ -1,5 +1,5 @@
 import type { ProviderId } from '@goodboy/types';
-import { extractClustersFromMarker, extractPlanFromMarker } from '../context';
+import { extractClusterGraphFromMarker, extractPlanFromMarker } from '../context';
 import { ARTIFACT_SCHEMA_VERSION } from './grammar';
 import { parseArtifactEnvelope } from './parseArtifactEnvelope';
 import type { ArtifactCaptureResult } from './types';
@@ -17,7 +17,14 @@ export const parseLegacyPlanMarkers = ({
   if (extracted === null) {
     return { status: 'none' };
   }
-  const clusters = extractClustersFromMarker({ assistantText, emittingProvider });
+  const clusters = extractClusterGraphFromMarker({ assistantText, emittingProvider });
+  if (clusters.kind === 'invalid') {
+    return {
+      status: 'error',
+      code: 'invalid_payload',
+      message: `the plan clusters are not a valid graph: ${clusters.reason}`,
+    };
+  }
   return {
     status: 'captured',
     artifact: {
@@ -26,7 +33,7 @@ export const parseLegacyPlanMarkers = ({
       title: extracted.title,
       sourceFormat: 'markdown',
       sourceText: extracted.bodyMd,
-      metadata: clusters !== null && clusters.length > 0 ? { clusters } : {},
+      metadata: clusters.kind === 'valid' ? { clusters: clusters.clusters } : {},
       origin: 'legacy',
     },
   };

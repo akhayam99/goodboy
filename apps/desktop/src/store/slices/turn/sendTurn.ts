@@ -828,7 +828,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
     }
 
-    const isClusterChild = !!agentRowEarly?.parentAgentId && earlyAgentKind === 'implementer';
+    const isClusterGraphChild = (get().clusterExecutionGraphs?.[sessionId] ?? []).some(
+      (graph) =>
+        graph.containerAgentId === agentRowEarly?.parentAgentId &&
+        graph.nodes.some((node) => node.agentId === activeAgentId),
+    );
+    const isClusterChild =
+      !!agentRowEarly?.parentAgentId &&
+      (isClusterGraphChild === true || earlyAgentKind === 'implementer');
     if (isClusterChild && !resolvedPrompt.includes(clusterBoundaryMarker(activeAgentId))) {
       resolvedPrompt = `${composeClusterBoundary(activeAgentId)}\n\n${resolvedPrompt}`;
     }

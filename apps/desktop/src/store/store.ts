@@ -1114,6 +1114,7 @@ export const initialState: AppState = {
   sessionWorkflows: {},
   sessionPhaseRuns: {},
   clusterCompletionHolds: {},
+  clusterExecutionGraphs: {},
   orchestratingWorkflowRuns: {},
   pendingOrchestrations: {},
   pendingAdvanceSessions: new Set<SessionId>(),

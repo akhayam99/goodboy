@@ -60,6 +60,9 @@ const respondWith = ({
     if (command === 'cluster_completion_holds_for_session') {
       return holds;
     }
+    if (command === 'cluster_execution_graphs_for_session') {
+      return [];
+    }
     return agents;
   });
 };

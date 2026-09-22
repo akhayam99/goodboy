@@ -312,14 +312,24 @@ export type {
   ArtifactScoutPlanEntry,
   ArtifactSourceFormat,
   ArtifactStatus,
+  ClusterExecutionGraph,
+  ClusterExecutionNode,
+  ClusterGraph,
+  ClusterGraphNode,
   ImplementationCluster,
   PlanArtifact,
   PlanArtifactMetadata,
+  PlanClusterRole,
   ReportArtifact,
   ReportArtifactMetadata,
   SessionArtifact,
   WireframeArtifact,
   WireframeArtifactMetadata,
+} from './artifact';
+export {
+  CLUSTER_EXECUTION_VERSION_GRAPH,
+  CLUSTER_EXECUTION_VERSION_LEGACY,
+  PLAN_CLUSTER_ROLES,
 } from './artifact';
 export type {
   Plan,

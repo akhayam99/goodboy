@@ -3,18 +3,29 @@ import type {
   AgentId,
   ClusterCompletionFinding,
   ClusterCompletionHoldReason,
+  ClusterExecutionNode,
+  ClusterGraph,
+  ClusterGraphNode,
   ImplementationCluster,
   IsoDateTime,
   PlanWithCount,
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
-import { extractClusterDone, extractClusterOutcome } from '@goodboy/core';
+import {
+  extractClusterDone,
+  extractClusterOutcome,
+  normalizeClusterGraph,
+  presentationKeyForRole,
+  selectReadyClusterNode,
+  type ClusterNodeProgress,
+} from '@goodboy/core';
 import {
   invokeAgentInsertBatch,
   invokeAgentList,
   invokeAgentUpdateStatus,
   invokeClusterCompletionHoldRecord,
+  invokeClusterExecutionGraphRecord,
   type AgentInsertArgs,
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
@@ -72,36 +83,150 @@ export const composeClusterBoundary = (childId: AgentId): string =>
     composeClusterOutcomeBoundary({ agentId: childId }),
   ].join(' ');
 
-function composeClusterKickoff(
-  childId: AgentId,
-  goalTitle: string,
-  clusters: ReadonlyArray<ImplementationCluster>,
-  index: number,
-): string {
-  const cluster = clusters[index];
-  const priorTitles = clusters.slice(0, index).map((c, i) => `${i + 1}. ${c.title}`);
+type ClusterExecution = Readonly<{
+  goalTitle: string;
+  graph: ClusterGraph;
+  bindings: ReadonlyArray<ClusterExecutionNode>;
+}>;
+
+type ClusterNodePair = Readonly<{
+  node: ClusterGraphNode;
+  agent: Agent | null;
+}>;
+
+const EMPTY_GRAPH: ClusterGraph = { executionVersion: 1, nodes: [] };
+
+const orderedNodes = ({
+  graph,
+}: {
+  readonly graph: ClusterGraph;
+}): ReadonlyArray<ClusterGraphNode> =>
+  [...graph.nodes].sort((left, right) => left.ordinal - right.ordinal);
+
+const pairClusterNodes = ({
+  execution,
+  children,
+}: {
+  readonly execution: ClusterExecution;
+  readonly children: ReadonlyArray<Agent>;
+}): ReadonlyArray<ClusterNodePair> => {
+  const boundAgentId = new Map(
+    execution.bindings.map((binding) => [binding.nodeId, binding.agentId]),
+  );
+  return orderedNodes({ graph: execution.graph }).map((node, index) => {
+    const bound = boundAgentId.get(node.id) ?? null;
+    const agent =
+      bound === null
+        ? (children[index] ?? null)
+        : (children.find((child) => child.id === bound) ?? null);
+    return { node, agent };
+  });
+};
+
+const clusterProgress = ({
+  pairs,
+}: {
+  readonly pairs: ReadonlyArray<ClusterNodePair>;
+}): ReadonlyArray<ClusterNodeProgress> =>
+  pairs.map((pair) => ({
+    nodeId: pair.node.id,
+    isSettled: pair.agent !== null && isSettledChild(pair.agent),
+    isCompleted: pair.agent?.status === 'completed',
+    isStartable: pair.agent === null || pair.agent.status === 'pending',
+  }));
+
+const nextClusterPair = ({
+  execution,
+  pairs,
+  children,
+}: {
+  readonly execution: ClusterExecution;
+  readonly pairs: ReadonlyArray<ClusterNodePair>;
+  readonly children: ReadonlyArray<Agent>;
+}): ClusterNodePair | null => {
+  if (execution.graph.nodes.length === 0) {
+    const fallback = children.find((child) => child.status === 'pending') ?? null;
+    return fallback === null ? null : { node: UNREADABLE_NODE, agent: fallback };
+  }
+  const ready = selectReadyClusterNode({
+    graph: execution.graph,
+    progress: clusterProgress({ pairs }),
+  });
+  if (ready === null) {
+    return null;
+  }
+  return pairs.find((pair) => pair.node.id === ready.id) ?? { node: ready, agent: null };
+};
+
+const UNREADABLE_NODE: ClusterGraphNode = {
+  id: 'unreadable',
+  ordinal: 0,
+  title: '',
+  instructions: '',
+  role: 'implementer',
+  dependsOn: [],
+  expectedOutput: null,
+};
+
+const hasInstructions = ({ node }: { readonly node: ClusterGraphNode }): boolean =>
+  node.instructions.trim().length > 0;
+
+const dependencyTitles = ({
+  node,
+  pairs,
+}: {
+  readonly node: ClusterGraphNode;
+  readonly pairs: ReadonlyArray<ClusterNodePair>;
+}): ReadonlyArray<string> =>
+  node.dependsOn.flatMap((dependency) => {
+    const match = pairs.find((pair) => pair.node.id === dependency);
+    return match === undefined ? [] : [match.node.title];
+  });
+
+function composeClusterKickoff({
+  childId,
+  execution,
+  pairs,
+  target,
+}: {
+  readonly childId: AgentId;
+  readonly execution: ClusterExecution;
+  readonly pairs: ReadonlyArray<ClusterNodePair>;
+  readonly target: ClusterGraphNode;
+}): string {
+  const total = pairs.length > 0 ? pairs.length : 1;
+  const priorTitles = pairs
+    .filter((pair) => pair.node.ordinal < target.ordinal)
+    .map((pair) => `${pair.node.ordinal + 1}. ${pair.node.title}`);
   const priorBlock =
     priorTitles.length > 0
       ? `**Done before you** ${priorTitles.join(', ')} (changes already on disk)`
       : '';
+  const dependencies = dependencyTitles({ node: target, pairs });
+  const dependencyBlock =
+    execution.graph.executionVersion > 1 && dependencies.length > 0
+      ? `**Depends on** ${dependencies.join(', ')}`
+      : '';
+  const roleBlock =
+    target.role === 'implementer' ? '' : `**Role** ${target.role}: stay inside its boundaries.`;
+  const expectedBlock =
+    target.expectedOutput === null ? '' : `**Expected output** ${target.expectedOutput}`;
   return composeKickoff(
-    `**Goal** ${goalTitle}`,
+    `**Goal** ${execution.goalTitle}`,
     priorBlock,
-    `**Cluster ${index + 1}/${clusters.length}** ${cluster?.title ?? ''}`,
-    cluster?.instructions ?? '',
+    `**Cluster ${target.ordinal + 1}/${total}** ${target.title}`,
+    roleBlock,
+    dependencyBlock,
+    expectedBlock,
+    target.instructions,
     composeClusterBoundary(childId),
   );
 }
 
-const hasInstructions = (cluster: ImplementationCluster | undefined): boolean =>
-  (cluster?.instructions ?? '').trim().length > 0;
-
-function composeContinuePrompt(
-  childId: AgentId,
-  cluster: ImplementationCluster | undefined,
-): string {
+function composeContinuePrompt(childId: AgentId, node: ClusterGraphNode | null): string {
+  const title = node === null || node.title.length === 0 ? '' : ` ${node.title}`;
   return composeKickoff(
-    `**Resume**${cluster ? ` ${cluster.title}` : ''}: finish the remaining items now.`,
+    `**Resume**${title}: finish the remaining items now.`,
     composeClusterBoundary(childId),
   );
 }
@@ -245,15 +370,29 @@ export const fanOutClusters = async (
     return;
   }
 
+  const normalized = normalizeClusterGraph({ clusters });
+  if (normalized.kind === 'invalid') {
+    void get().emitNotification(
+      'error',
+      'warning',
+      `cluster blocked: ${container.name}`,
+      `the plan clusters are not a valid graph: ${normalized.reason}`,
+      { sessionId },
+    );
+    return;
+  }
+  const nodes = orderedNodes({ graph: normalized.graph });
+
   const batch = childRoutingBatch({
     state: get(),
     sessionId,
     workflowRunId: container.workflowRunId ?? null,
     role: 'implementer',
-    requests: clusters.map((cluster) => ({
-      proposal: cluster.routingProposal ?? null,
-      promptText: `${cluster.title}\n${cluster.instructions}`,
+    requests: nodes.map((node, index) => ({
+      proposal: clusters[index]?.routingProposal ?? null,
+      promptText: `${node.title}\n${node.instructions}`,
       childLock: null,
+      role: node.role,
     })),
   });
   if (batch.kind === 'blocked') {
@@ -271,16 +410,16 @@ export const fanOutClusters = async (
     (get().sessionPhaseRuns[sessionId] ?? []).reduce((m, r) => Math.max(m, r.ordinal), -1) + 1;
   const materialized = await invokeAgentInsertBatch({
     parentAgentId: container.id,
-    children: clusters.map((cluster, index): AgentInsertArgs => {
+    children: nodes.map((node, index): AgentInsertArgs => {
       const fields = batch.entries[index]!;
       return {
         sessionId,
         parentAgentId: container.id,
         ...(container.workflowRunId != null && { workflowRunId: container.workflowRunId }),
         ordinal: baseOrdinal + index,
-        name: cluster.title,
+        name: node.title,
         status: 'pending',
-        kind: 'implementer',
+        kind: presentationKeyForRole({ role: node.role }),
         ...(fields.providerOverride !== null && { providerOverride: fields.providerOverride }),
         ...(fields.modelOverride !== null && { modelOverride: fields.modelOverride }),
         ...(fields.effort !== null && { effort: fields.effort }),
@@ -294,6 +433,24 @@ export const fanOutClusters = async (
     return;
   }
   const childIds: AgentId[] = materialized.agents.map((agent) => agent.id);
+
+  const bindings: ReadonlyArray<ClusterExecutionNode> = nodes.map((node, index) => ({
+    nodeId: node.id,
+    agentId: childIds[index] ?? null,
+    ordinal: node.ordinal,
+    role: node.role,
+  }));
+  const snapshot = await invokeClusterExecutionGraphRecord({
+    containerAgentId: container.id,
+    sessionId,
+    workflowRunId: container.workflowRunId ?? null,
+    planId:
+      selectClustersPlan(get().sessionPlans[sessionId] ?? [], container.workflowRunId)?.id ?? null,
+    goalTitle,
+    executionVersion: normalized.graph.executionVersion,
+    graphNodes: nodes,
+    nodes: bindings,
+  });
 
   await invokeAgentUpdateStatus(container.id, { status: 'running' });
 
@@ -310,7 +467,7 @@ export const fanOutClusters = async (
       const fields: ChildRoutingFields = batch.entries[i]!;
       transcripts[id] = transcripts[id] ?? [];
       agentTurnState[id] = { kind: 'idle', lastActivityAt: nowIso() };
-      agentKindOverride[id] = 'implementer';
+      agentKindOverride[id] = presentationKeyForRole({ role: nodes[i]!.role });
       if (fields.modelOverride !== null) {
         agentModelOverride[id] = fields.modelOverride;
       }
@@ -321,8 +478,15 @@ export const fanOutClusters = async (
         agentEffortOverride[id] = fields.effort;
       }
     }
+    const sessionGraphs = (s.clusterExecutionGraphs?.[sessionId] ?? []).filter(
+      (graph) => graph.containerAgentId !== container.id,
+    );
     return {
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
+      clusterExecutionGraphs: {
+        ...(s.clusterExecutionGraphs ?? {}),
+        [sessionId]: [...sessionGraphs, snapshot],
+      },
       transcripts,
       agentTurnState,
       agentKindOverride,
@@ -332,15 +496,27 @@ export const fanOutClusters = async (
     };
   });
 
-  const first = childIds[0];
-  if (first) {
+  const execution: ClusterExecution = {
+    goalTitle,
+    graph: snapshot.graph,
+    bindings: snapshot.nodes,
+  };
+  const children = materialized.agents;
+  const pairs = pairClusterNodes({ execution, children });
+  const first = nextClusterPair({ execution, pairs, children });
+  if (first?.agent != null) {
     startChild({
       set,
       get,
       sessionId,
       containerId: container.id,
-      childId: first,
-      content: composeClusterKickoff(first, goalTitle, clusters, 0),
+      childId: first.agent.id,
+      content: composeClusterKickoff({
+        childId: first.agent.id,
+        execution,
+        pairs,
+        target: first.node,
+      }),
     });
   }
 };
@@ -479,6 +655,36 @@ const resolveClustersPlan = async ({
 const isSettledChild = (agent: Agent): boolean =>
   agent.status === 'completed' || agent.status === 'skipped';
 
+const resolveClusterExecution = async ({
+  set,
+  get,
+  sessionId,
+  containerId,
+  workflowRunId,
+}: ResolveClustersPlanParams): Promise<ClusterExecution> => {
+  const snapshot = (get().clusterExecutionGraphs?.[sessionId] ?? []).find(
+    (graph) => graph.containerAgentId === containerId,
+  );
+  if (snapshot !== undefined) {
+    return {
+      goalTitle: snapshot.goalTitle,
+      graph: snapshot.graph,
+      bindings: snapshot.nodes,
+    };
+  }
+  const plan = await resolveClustersPlan({ set, get, sessionId, containerId, workflowRunId });
+  const goalTitle = plan?.title ?? 'the plan';
+  const clusters = plan?.clusters ?? [];
+  if (clusters.length === 0) {
+    return { goalTitle, graph: EMPTY_GRAPH, bindings: [] };
+  }
+  const normalized = normalizeClusterGraph({ clusters });
+  if (normalized.kind === 'invalid') {
+    return { goalTitle, graph: EMPTY_GRAPH, bindings: [] };
+  }
+  return { goalTitle, graph: normalized.graph, bindings: [] };
+};
+
 export const unsettledClusterChildren = (
   runs: ReadonlyArray<Agent>,
   containerId: AgentId,
@@ -506,20 +712,26 @@ export const resumeClusterChildren = async ({
   }
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
   const children = childrenOf(runs, container.id);
-  const next = children.find((child) => !isSettledChild(child));
-  if (next == null || next.status !== 'pending') {
+  const isInFlight = children.some(
+    (child) => isSettledChild(child) === false && child.status !== 'pending',
+  );
+  if (isInFlight === true) {
     return false;
   }
-  const index = children.indexOf(next);
-  const plan = await resolveClustersPlan({
+  const execution = await resolveClusterExecution({
     set,
     get,
     sessionId,
     containerId: container.id,
     workflowRunId: container.workflowRunId,
   });
-  const clusters = plan?.clusters ?? [];
-  if (!hasInstructions(clusters[index])) {
+  const pairs = pairClusterNodes({ execution, children });
+  const target = nextClusterPair({ execution, pairs, children });
+  const next = target?.agent ?? null;
+  if (target === null || next === null) {
+    return false;
+  }
+  if (hasInstructions({ node: target.node }) === false) {
     await invokeAgentUpdateStatus(next.id, { status: 'failed', completedAt: nowIso() });
     const blocked = await invokeAgentList(sessionId);
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
@@ -538,8 +750,8 @@ export const resumeClusterChildren = async ({
     get,
     sessionId,
     child: next,
-    role: 'implementer',
-    promptText: `${next.name}\n${clusters[index]?.instructions ?? ''}`,
+    role: target.node.role,
+    promptText: `${next.name}\n${target.node.instructions}`,
   });
   if (revalidated.kind === 'blocked') {
     void get().emitNotification(
@@ -560,7 +772,12 @@ export const resumeClusterChildren = async ({
     sessionId,
     containerId: container.id,
     childId: next.id,
-    content: composeClusterKickoff(next.id, plan?.title ?? 'the plan', clusters, index),
+    content: composeClusterKickoff({
+      childId: next.id,
+      execution,
+      pairs,
+      target: target.node,
+    }),
   });
   return true;
 };
@@ -715,19 +932,18 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
     const containerId = child.parentAgentId;
-    const plan = await resolveClustersPlan({
+    const execution = await resolveClusterExecution({
       set,
       get,
       sessionId,
       containerId,
       workflowRunId: child.workflowRunId,
     });
-    const clusters = plan?.clusters ?? [];
-    const goalTitle = plan?.title ?? 'the plan';
-    const index = Math.max(
-      0,
-      childrenOf(runs, containerId).findIndex((c) => c.id === childAgentId),
-    );
+    const currentPairs = pairClusterNodes({
+      execution,
+      children: childrenOf(runs, containerId),
+    });
+    const currentNode = currentPairs.find((pair) => pair.agent?.id === childAgentId)?.node ?? null;
 
     const doneMarker = extractClusterDone(assistantText);
     if (opts?.force !== true && doneMarker?.id !== childAgentId) {
@@ -741,7 +957,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
           sessionId,
           containerId,
           childId: childAgentId,
-          content: composeContinuePrompt(childAgentId, clusters[index]),
+          content: composeContinuePrompt(childAgentId, currentNode),
         });
       } else {
         continueAttempts.delete(childAgentId);
@@ -826,8 +1042,9 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
 
     const children = childrenOf(refreshed, containerId);
+    const pairs = pairClusterNodes({ execution, children });
     const completedCount = children.filter((c) => c.status === 'completed').length;
-    const total = clusters.length > 0 ? clusters.length : children.length;
+    const total = execution.graph.nodes.length > 0 ? execution.graph.nodes.length : children.length;
 
     if (
       completedCount >= total &&
@@ -849,8 +1066,25 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    const next = children[completedCount];
-    if (!next) {
+    const target = nextClusterPair({ execution, pairs, children });
+    if (target === null) {
+      const waiting = pairs.filter(
+        (pair) => pair.agent !== null && isSettledChild(pair.agent) === false,
+      );
+      if (waiting.length === 0) {
+        return;
+      }
+      void get().emitNotification(
+        'error',
+        'warning',
+        `cluster blocked: ${waiting[0]!.node.title}`,
+        'every remaining cluster waits on a dependency that did not complete. resolve the failed cluster, then continue this implementation.',
+        { sessionId },
+      );
+      return;
+    }
+    const next = target.agent;
+    if (next === null) {
       await invokeAgentUpdateStatus(containerId, { status: 'failed', completedAt: nowIso() });
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
@@ -864,7 +1098,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       );
       return;
     }
-    if (!hasInstructions(clusters[completedCount])) {
+    if (hasInstructions({ node: target.node }) === false) {
       await invokeAgentUpdateStatus(next.id, { status: 'failed', completedAt: nowIso() });
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
@@ -883,8 +1117,8 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       get,
       sessionId,
       child: next,
-      role: 'implementer',
-      promptText: `${next.name}\n${clusters[completedCount]?.instructions ?? ''}`,
+      role: target.node.role,
+      promptText: `${next.name}\n${target.node.instructions}`,
     });
     if (revalidated.kind === 'blocked') {
       const held = await invokeAgentList(sessionId);
@@ -905,7 +1139,12 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       sessionId,
       containerId,
       childId: next.id,
-      content: composeClusterKickoff(next.id, goalTitle, clusters, completedCount),
+      content: composeClusterKickoff({
+        childId: next.id,
+        execution,
+        pairs,
+        target: target.node,
+      }),
     });
   };
 };

@@ -343,6 +343,8 @@ pub fn run() {
             workflows::cluster_completion_holds_for_session,
             workflows::cluster_completion_hold_record,
             workflows::cluster_completion_hold_resolve,
+            workflows::cluster_execution_graphs_for_session,
+            workflows::cluster_execution_graph_record,
             workflows::agent_insert,
             workflows::agent_insert_batch,
             workflows::workflow_node_routing_update,

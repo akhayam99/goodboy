@@ -18,6 +18,7 @@ export type ChildRoutingRequest = Readonly<{
   proposal: WorkflowRoutingProposal | null;
   promptText: string;
   childLock: WorkflowRoutingLock | null;
+  role?: AgentRole;
 }>;
 
 export type ChildRoutingFields = Readonly<{
@@ -81,7 +82,7 @@ export const resolveOneChildRouting = ({
     state,
     sessionId,
     workflowRunId,
-    role,
+    role: request.role ?? role,
     childLock: request.childLock,
     proposal: isChildSelectionEnabled === true ? request.proposal : null,
     promptText: request.promptText,

@@ -23,6 +23,7 @@ import { m161WorkflowPresetNameUnique } from './m161-workflow-preset-name-unique
 import { m162OpenQuestionBlockingAndProvenance } from './m162-open-question-blocking-and-provenance';
 import { m163OpenQuestionAnswerDelivery } from './m163-open-question-answer-delivery';
 import { m164ClusterCompletionHolds } from './m164-cluster-completion-holds';
+import { m165ClusterExecutionGraphs } from './m165-cluster-execution-graphs';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -333,4 +334,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 162, sql: m162OpenQuestionBlockingAndProvenance },
   { version: 163, sql: m163OpenQuestionAnswerDelivery },
   { version: 164, sql: m164ClusterCompletionHolds },
+  { version: 165, sql: m165ClusterExecutionGraphs },
 ];

@@ -11,6 +11,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import {
   invokeAgentList,
   invokeClusterCompletionHolds,
+  invokeClusterExecutionGraphs,
 } from '../../../features/workflows/workflows';
 import { listPlansForSession as invokeListPlansForSession } from '../../../features/plans/plans';
 import type { AgentKind } from '../../../features/session/agent-kind';
@@ -167,8 +168,9 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
         invokeAgentList(id).finally(() => endPhaseRunList()),
         listAgentRunIdsForSession(tauriDatabase, id).finally(() => endRunIds()),
         invokeClusterCompletionHolds({ sessionId: id }),
+        invokeClusterExecutionGraphs({ sessionId: id }),
       ])
-        .then(([agents, agentRunIds, completionHolds]) => {
+        .then(([agents, agentRunIds, completionHolds, executionGraphs]) => {
           const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
           const seededTurnState: Record<string, TurnState> = {};
           const session = get().sessions.find((s) => s.id === id);
@@ -215,6 +217,10 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
             clusterCompletionHolds: {
               ...state.clusterCompletionHolds,
               [id]: completionHolds,
+            },
+            clusterExecutionGraphs: {
+              ...state.clusterExecutionGraphs,
+              [id]: executionGraphs,
             },
             agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
             agentTurnState: { ...state.agentTurnState, ...seededTurnState },
