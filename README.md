@@ -43,9 +43,10 @@ A chat makes you scroll back to find out what was decided.
 
 The Overview holds the goal, the decisions and the repositories the session
 touches. Under it, Activity replays what happened: every step, the agents a
-step fanned out into, the plans, the branches, the pull requests.
+step fanned out into, the plans, the branches, the pull requests. Start a
+second workflow before the first one ends and the feed keeps the two apart.
 
-![The Overview of a session: the goal with its decisions and summary, two mounted projects on their branches, and an Activity feed where two workflow steps fan out into sub-agents](./docs/images/activity-run.png)
+![The Overview of a session: the goal with its decisions and summary, two repositories on their branches, and an Activity feed where a finished workflow and a running one overlap, with the wireframe, the plan, the report, a merged pull request and an open question in between](./docs/images/activity-run.png)
 
 <br>
 
@@ -58,7 +59,7 @@ A workflow is a sequence of steps, and each step gets its own provider, model
 and effort, plus a fresh agent with a short brief. Pick a workflow, or
 describe the goal and let the orchestrator build one for you.
 
-![A workflow run in progress: scout, planner, implementer and tester steps in sequence, each with its provider and model, the second implementer step still running](./docs/images/workflow-run.png)
+![A workflow run in progress: four scouts on a cheap model, a planner that asked for one provider and ran on another, an implementer done, a second implementer still running, and a tester queued](./docs/images/workflow-run.png)
 
 <br>
 

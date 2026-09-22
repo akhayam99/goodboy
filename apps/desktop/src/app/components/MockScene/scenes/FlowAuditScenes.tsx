@@ -669,30 +669,32 @@ const FLOW_AGENT_KINDS: Readonly<Record<string, AgentKind>> = {
 };
 
 const FLOW_AGENT_MODELS: Readonly<Record<string, string>> = {
-  [AGENT_SCOUT_ID]: 'gpt-5.6-luna',
-  [AGENT_SCOUT_LEDGER_ID]: 'gpt-5.6-luna',
-  [AGENT_SCOUT_REPORTS_ID]: 'gpt-5.6-luna',
-  [AGENT_SCOUT_RELAY_ID]: 'gpt-5.6-luna',
-  [AGENT_PLAN_ID]: 'gpt-6-astra',
+  [AGENT_SCOUT_ID]: 'composer-2.5',
+  [AGENT_SCOUT_LEDGER_ID]: 'composer-2.5',
+  [AGENT_SCOUT_REPORTS_ID]: 'composer-2.5',
+  [AGENT_SCOUT_RELAY_ID]: 'composer-2.5',
+  [AGENT_PLAN_ID]: 'claude-opus-5',
   [AGENT_ROUNDING_ID]: 'gpt-5.6-sol',
-  [AGENT_BACKFILL_ID]: 'gpt-5.6-sol',
-  [AGENT_TESTS_ID]: 'composer-2.5-fast',
+  [AGENT_BACKFILL_ID]: 'kimi-k3',
+  [AGENT_TESTS_ID]: 'claude-haiku-4-5',
 };
 
 const FLOW_AGENT_PROVIDERS: Readonly<Record<string, ProviderInfo['id']>> = {
-  [AGENT_SCOUT_ID]: 'codex',
-  [AGENT_SCOUT_LEDGER_ID]: 'codex',
-  [AGENT_SCOUT_REPORTS_ID]: 'codex',
-  [AGENT_SCOUT_RELAY_ID]: 'codex',
-  [AGENT_PLAN_ID]: 'codex',
+  [AGENT_SCOUT_ID]: 'cursor',
+  [AGENT_SCOUT_LEDGER_ID]: 'cursor',
+  [AGENT_SCOUT_REPORTS_ID]: 'cursor',
+  [AGENT_SCOUT_RELAY_ID]: 'cursor',
+  [AGENT_PLAN_ID]: 'anthropic',
   [AGENT_ROUNDING_ID]: 'codex',
-  [AGENT_BACKFILL_ID]: 'codex',
-  [AGENT_TESTS_ID]: 'cursor',
+  [AGENT_BACKFILL_ID]: 'cursor',
+  [AGENT_TESTS_ID]: 'anthropic',
 };
 
 type TelemetrySeedParams = Readonly<{
   id: string;
   runId: ProviderRunId;
+  provider: ProviderInfo['id'];
+  model: string;
   recordedAt: string;
   inputTokens: number;
   outputTokens: number;
@@ -702,6 +704,8 @@ type TelemetrySeedParams = Readonly<{
 const telemetryOf = ({
   id,
   runId,
+  provider,
+  model,
   recordedAt,
   inputTokens,
   outputTokens,
@@ -711,8 +715,8 @@ const telemetryOf = ({
   runId,
   sessionId: FLOW_SESSION_ID,
   kind: 'turn',
-  provider: 'codex',
-  model: 'gpt-5.6-sol',
+  provider,
+  model,
   recordedAt: recordedAt as IsoDateTime,
   inputTokens,
   outputTokens,
@@ -723,46 +727,58 @@ const FLOW_TELEMETRY: ReadonlyArray<TelemetryRecord> = [
   telemetryOf({
     id: 'mock-flow-telemetry-scout',
     runId: 'mock-flow-provider-run-scout' as ProviderRunId,
+    provider: 'cursor',
+    model: 'composer-2.5',
     recordedAt: '2026-09-16T09:29:00.000Z',
     inputTokens: 38_420,
     outputTokens: 5_120,
-    estimatedCostUsd: 0.412,
+    estimatedCostUsd: 0.031,
   }),
   telemetryOf({
     id: 'mock-flow-telemetry-scout-ledger',
     runId: 'mock-flow-provider-run-scout-ledger' as ProviderRunId,
+    provider: 'cursor',
+    model: 'composer-2.5',
     recordedAt: '2026-09-16T09:24:00.000Z',
     inputTokens: 21_050,
     outputTokens: 2_980,
-    estimatedCostUsd: 0.221,
+    estimatedCostUsd: 0.018,
   }),
   telemetryOf({
     id: 'mock-flow-telemetry-scout-reports',
     runId: 'mock-flow-provider-run-scout-reports' as ProviderRunId,
+    provider: 'cursor',
+    model: 'composer-2.5',
     recordedAt: '2026-09-16T09:26:00.000Z',
     inputTokens: 18_640,
     outputTokens: 2_410,
-    estimatedCostUsd: 0.196,
+    estimatedCostUsd: 0.016,
   }),
   telemetryOf({
     id: 'mock-flow-telemetry-scout-relay',
     runId: 'mock-flow-provider-run-scout-relay' as ProviderRunId,
+    provider: 'cursor',
+    model: 'composer-2.5',
     recordedAt: '2026-09-16T09:27:00.000Z',
     inputTokens: 14_880,
     outputTokens: 1_960,
-    estimatedCostUsd: 0.158,
+    estimatedCostUsd: 0.012,
   }),
   telemetryOf({
     id: 'mock-flow-telemetry-plan',
     runId: 'mock-flow-provider-run-plan' as ProviderRunId,
+    provider: 'codex',
+    model: 'gpt-6-astra',
     recordedAt: '2026-09-16T09:41:00.000Z',
     inputTokens: 26_310,
     outputTokens: 4_470,
-    estimatedCostUsd: 0.508,
+    estimatedCostUsd: 1.284,
   }),
   telemetryOf({
     id: 'mock-flow-telemetry-rounding',
     runId: 'mock-flow-provider-run-rounding' as ProviderRunId,
+    provider: 'codex',
+    model: 'gpt-5.6-sol',
     recordedAt: '2026-09-16T10:31:00.000Z',
     inputTokens: 92_740,
     outputTokens: 16_220,
@@ -771,10 +787,12 @@ const FLOW_TELEMETRY: ReadonlyArray<TelemetryRecord> = [
   telemetryOf({
     id: 'mock-flow-telemetry-backfill',
     runId: 'mock-flow-provider-run-backfill' as ProviderRunId,
+    provider: 'cursor',
+    model: 'kimi-k3',
     recordedAt: '2026-09-16T11:18:00.000Z',
     inputTokens: 61_180,
     outputTokens: 9_340,
-    estimatedCostUsd: 1.117,
+    estimatedCostUsd: 0.392,
   }),
 ];
 
