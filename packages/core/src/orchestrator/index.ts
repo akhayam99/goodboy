@@ -36,11 +36,15 @@ export {
   type OrchestratorUsage,
 } from './client';
 export type {
+  OrchestratorAllowances,
   OrchestratorCompletedStep,
   OrchestratorDecision,
   OrchestratorInput,
   OrchestratorModelOption,
+  OrchestratorNeedDisposition,
+  OrchestratorNeedRequest,
   OrchestratorRoleDefault,
   OrchestratorStep,
+  OrchestratorUnresolvedObligation,
   RunSummary,
 } from './types';

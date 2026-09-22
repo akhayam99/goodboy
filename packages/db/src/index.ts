@@ -229,8 +229,14 @@ export {
 } from './queries/agent';
 export {
   associateCapabilityObligationHold,
+  claimCapabilityGrant,
+  decideCapabilityObligation,
+  listCapabilityGrants,
   listCapabilityObligations,
   recordCapabilityNeed,
+  settleCapabilityObligation,
+  updateCapabilityGrant,
+  type CapabilityGrantClaim,
   type CapabilityNeedRecord,
 } from './queries/capability-obligation';
 export {

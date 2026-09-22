@@ -289,6 +289,7 @@ const invokeWorkflowsForSessionSpy = vi.fn(async () => [] as ReadonlyArray<unkno
 
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeCapabilityObligations: vi.fn(async () => []),
+  invokeCapabilityGrants: vi.fn(async () => []),
   invokeClusterCompletionHolds: vi.fn(async () => []),
   invokeClusterExecutionGraphs: vi.fn(async () => []),
   invokeWorkflowList: invokeWorkflowListSpy,

@@ -77,6 +77,8 @@ const obligation = {
   state: 'open',
   ownerAgentId: null,
   decision: null,
+  decisionReason: null,
+  satisfiedRevision: null,
   childAgentId: null,
   deliveredAt: null,
   deliveryReceipt: null,
@@ -96,6 +98,7 @@ const createHarness = () => {
     agentProviderOverride: {},
     sessionSlots: {},
     emitNotification: vi.fn(async () => undefined),
+    decideCapabilityNeed: vi.fn(async () => ({ kind: 'unavailable', reason: 'stub' })),
   };
   const set = ((update: unknown) => {
     if (typeof update === 'function') {
@@ -139,6 +142,10 @@ describe('captureCapabilityNeed', () => {
     );
     expect(state.capabilityObligations[SESSION_ID]).toEqual([obligation]);
     expect(needBlocksCompletion({ capture })).toBe(true);
+    expect(state.decideCapabilityNeed).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      obligationId: obligation.id,
+    });
   });
 
   it('refuses a need that names another agent and records no obligation', async () => {
@@ -159,6 +166,7 @@ describe('captureCapabilityNeed', () => {
 
     expect(capture.kind).toBe('rejected');
     expect(needBlocksCompletion({ capture })).toBe(false);
+    expect(state.decideCapabilityNeed).not.toHaveBeenCalled();
     expect(h.invokeCapabilityNeedRecord).not.toHaveBeenCalled();
     expect(state.capabilityObligations[SESSION_ID]).toBeUndefined();
   });

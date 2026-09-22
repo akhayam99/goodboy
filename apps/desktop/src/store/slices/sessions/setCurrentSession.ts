@@ -10,6 +10,7 @@ import {
 import { tauriDatabase } from '../../../shared/lib/db';
 import {
   invokeAgentList,
+  invokeCapabilityGrants,
   invokeCapabilityObligations,
   invokeClusterCompletionHolds,
   invokeClusterExecutionGraphs,
@@ -171,8 +172,9 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
         invokeClusterCompletionHolds({ sessionId: id }),
         invokeClusterExecutionGraphs({ sessionId: id }),
         invokeCapabilityObligations({ sessionId: id }),
+        invokeCapabilityGrants({ sessionId: id }),
       ])
-        .then(([agents, agentRunIds, completionHolds, executionGraphs, obligations]) => {
+        .then(([agents, agentRunIds, completionHolds, executionGraphs, obligations, grants]) => {
           const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
           const seededTurnState: Record<string, TurnState> = {};
           const session = get().sessions.find((s) => s.id === id);
@@ -223,6 +225,10 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
             capabilityObligations: {
               ...state.capabilityObligations,
               [id]: obligations,
+            },
+            capabilityGrants: {
+              ...state.capabilityGrants,
+              [id]: grants,
             },
             clusterExecutionGraphs: {
               ...state.clusterExecutionGraphs,

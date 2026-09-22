@@ -24,9 +24,12 @@ import type {
   AgentId,
   AgentStatus,
   CapabilityContinuation,
+  CapabilityGrant,
+  CapabilityGrantState,
   CapabilityObligation,
   CapabilityObligationDecision,
   CapabilityObligationState,
+  CapabilityParentOutcome,
   CapabilityPurpose,
   CapabilityRequest,
   ClusterCompletionFinding,
@@ -601,6 +604,8 @@ type RawCapabilityObligationRow = {
   readonly state: CapabilityObligationState;
   readonly ownerAgentId: AgentId | null;
   readonly decision: CapabilityObligationDecision | null;
+  readonly decisionReason: string | null;
+  readonly satisfiedRevision: string | null;
   readonly childAgentId: AgentId | null;
   readonly deliveredAt: string | null;
   readonly deliveryReceipt: string | null;
@@ -653,6 +658,8 @@ const capabilityObligationFromRow = ({
   state: row.state,
   ownerAgentId: row.ownerAgentId,
   decision: row.decision,
+  decisionReason: row.decisionReason,
+  satisfiedRevision: row.satisfiedRevision,
   childAgentId: row.childAgentId,
   deliveredAt: row.deliveredAt,
   deliveryReceipt: row.deliveryReceipt,
@@ -721,6 +728,128 @@ export const invokeCapabilityNeedRecord = async (
       inventoryRevision: need.inventoryRevision,
     },
   });
+  return capabilityObligationFromRow({ row });
+};
+
+type RawCapabilityGrantRow = {
+  readonly id: string;
+  readonly obligationId: string;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly grantedRole: string;
+  readonly purpose: CapabilityPurpose;
+  readonly continuation: CapabilityContinuation;
+  readonly parentOutcome: CapabilityParentOutcome;
+  readonly childAgentId: AgentId | null;
+  readonly replacementAgentId: AgentId | null;
+  readonly verificationAgentId: AgentId | null;
+  readonly transferredWork: string | null;
+  readonly state: CapabilityGrantState;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+};
+
+const capabilityGrantFromRow = ({
+  row,
+}: {
+  readonly row: RawCapabilityGrantRow;
+}): CapabilityGrant => ({
+  id: row.id,
+  obligationId: row.obligationId,
+  sessionId: row.sessionId,
+  workflowRunId: row.workflowRunId,
+  grantedRole: normalizeAgentRole({ role: row.grantedRole }),
+  purpose: row.purpose,
+  continuation: row.continuation,
+  parentOutcome: row.parentOutcome,
+  childAgentId: row.childAgentId,
+  replacementAgentId: row.replacementAgentId,
+  verificationAgentId: row.verificationAgentId,
+  transferredWork: row.transferredWork,
+  state: row.state,
+  createdAt: row.createdAt,
+  updatedAt: row.updatedAt,
+});
+
+export const invokeCapabilityGrants = async ({
+  sessionId,
+}: {
+  readonly sessionId: SessionId;
+}): Promise<ReadonlyArray<CapabilityGrant>> => {
+  const rows = await invoke<RawCapabilityGrantRow[]>('capability_grants_for_session', {
+    sessionId,
+  });
+  return rows.map((row) => capabilityGrantFromRow({ row }));
+};
+
+export type ClaimCapabilityGrantParams = {
+  readonly id: string;
+  readonly obligationId: string;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly grantedRole: AgentRole;
+  readonly purpose: CapabilityPurpose;
+  readonly continuation: CapabilityContinuation;
+  readonly parentOutcome: CapabilityParentOutcome;
+  readonly transferredWork: string | null;
+};
+
+export type CapabilityGrantClaim = Readonly<{
+  grant: CapabilityGrant;
+  isFirstDelivery: boolean;
+}>;
+
+export const invokeCapabilityGrantClaim = async (
+  input: ClaimCapabilityGrantParams,
+): Promise<CapabilityGrantClaim> => {
+  const claim = await invoke<{
+    readonly grant: RawCapabilityGrantRow;
+    readonly isFirstDelivery: boolean;
+  }>('capability_grant_claim', { input });
+  return {
+    grant: capabilityGrantFromRow({ row: claim.grant }),
+    isFirstDelivery: claim.isFirstDelivery,
+  };
+};
+
+export type UpdateCapabilityGrantParams = {
+  readonly obligationId: string;
+  readonly state: CapabilityGrantState;
+  readonly childAgentId: AgentId | null;
+  readonly replacementAgentId: AgentId | null;
+  readonly verificationAgentId: AgentId | null;
+};
+
+export const invokeCapabilityGrantUpdate = async (
+  input: UpdateCapabilityGrantParams,
+): Promise<CapabilityGrant> => {
+  const row = await invoke<RawCapabilityGrantRow>('capability_grant_update', { input });
+  return capabilityGrantFromRow({ row });
+};
+
+export type DecideCapabilityObligationParams = {
+  readonly obligationId: string;
+  readonly decision: CapabilityObligationDecision;
+  readonly reason: string;
+};
+
+export const invokeCapabilityObligationDecide = async (
+  input: DecideCapabilityObligationParams,
+): Promise<CapabilityObligation> => {
+  const row = await invoke<RawCapabilityObligationRow>('capability_obligation_decide', { input });
+  return capabilityObligationFromRow({ row });
+};
+
+export type SettleCapabilityObligationParams = {
+  readonly obligationId: string;
+  readonly verifiedRevision: string;
+  readonly deliveryReceipt: string;
+};
+
+export const invokeCapabilityObligationSettle = async (
+  input: SettleCapabilityObligationParams,
+): Promise<CapabilityObligation> => {
+  const row = await invoke<RawCapabilityObligationRow>('capability_obligation_settle', { input });
   return capabilityObligationFromRow({ row });
 };
 

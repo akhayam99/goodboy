@@ -375,6 +375,10 @@ pub struct CapabilityObligationRow {
     #[serde(rename = "ownerAgentId")]
     pub owner_agent_id: Option<String>,
     pub decision: Option<String>,
+    #[serde(rename = "decisionReason")]
+    pub decision_reason: Option<String>,
+    #[serde(rename = "satisfiedRevision")]
+    pub satisfied_revision: Option<String>,
     #[serde(rename = "childAgentId")]
     pub child_agent_id: Option<String>,
     #[serde(rename = "deliveredAt")]
@@ -388,6 +392,93 @@ pub struct CapabilityObligationRow {
     pub created_at: String,
     #[serde(rename = "updatedAt")]
     pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CapabilityGrantRow {
+    pub id: String,
+    #[serde(rename = "obligationId")]
+    pub obligation_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "workflowRunId")]
+    pub workflow_run_id: Option<String>,
+    #[serde(rename = "grantedRole")]
+    pub granted_role: String,
+    pub purpose: String,
+    pub continuation: String,
+    #[serde(rename = "parentOutcome")]
+    pub parent_outcome: String,
+    #[serde(rename = "childAgentId")]
+    pub child_agent_id: Option<String>,
+    #[serde(rename = "replacementAgentId")]
+    pub replacement_agent_id: Option<String>,
+    #[serde(rename = "verificationAgentId")]
+    pub verification_agent_id: Option<String>,
+    #[serde(rename = "transferredWork")]
+    pub transferred_work: Option<String>,
+    pub state: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CapabilityGrantClaim {
+    pub grant: CapabilityGrantRow,
+    #[serde(rename = "isFirstDelivery")]
+    pub is_first_delivery: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CapabilityGrantInput {
+    pub id: String,
+    #[serde(rename = "obligationId")]
+    pub obligation_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "workflowRunId")]
+    pub workflow_run_id: Option<String>,
+    #[serde(rename = "grantedRole")]
+    pub granted_role: String,
+    pub purpose: String,
+    pub continuation: String,
+    #[serde(rename = "parentOutcome")]
+    pub parent_outcome: String,
+    #[serde(rename = "transferredWork")]
+    pub transferred_work: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CapabilityGrantUpdateInput {
+    #[serde(rename = "obligationId")]
+    pub obligation_id: String,
+    pub state: String,
+    #[serde(rename = "childAgentId")]
+    pub child_agent_id: Option<String>,
+    #[serde(rename = "replacementAgentId")]
+    pub replacement_agent_id: Option<String>,
+    #[serde(rename = "verificationAgentId")]
+    pub verification_agent_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CapabilityDecisionInput {
+    #[serde(rename = "obligationId")]
+    pub obligation_id: String,
+    pub decision: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CapabilitySettlementInput {
+    #[serde(rename = "obligationId")]
+    pub obligation_id: String,
+    #[serde(rename = "verifiedRevision")]
+    pub verified_revision: String,
+    #[serde(rename = "deliveryReceipt")]
+    pub delivery_receipt: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1631,7 +1722,10 @@ const CAPABILITY_REQUEST_COLUMNS: &str =
     "id, session_id, workflow_run_id, obligation_id, requester_agent_id, source_turn_id, target_role, purpose, question, scope_json, evidence_json, gap, expected_output, continuation, routing_proposal, inventory_revision, created_at";
 
 const CAPABILITY_OBLIGATION_COLUMNS: &str =
-    "id, session_id, workflow_run_id, identity, requester_agent_id, target_role, purpose, state, owner_agent_id, decision, child_agent_id, delivered_at, delivery_receipt, created_at, updated_at";
+    "id, session_id, workflow_run_id, identity, requester_agent_id, target_role, purpose, state, owner_agent_id, decision, decision_reason, satisfied_revision, child_agent_id, delivered_at, delivery_receipt, created_at, updated_at";
+
+const CAPABILITY_GRANT_COLUMNS: &str =
+    "id, obligation_id, session_id, workflow_run_id, granted_role, purpose, continuation, parent_outcome, child_agent_id, replacement_agent_id, verification_agent_id, transferred_work, state, created_at, updated_at";
 
 fn capability_request_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<CapabilityRequestRow> {
     Ok(CapabilityRequestRow {
@@ -1669,13 +1763,15 @@ fn capability_obligation_from_row(
         state: row.get(7)?,
         owner_agent_id: row.get(8)?,
         decision: row.get(9)?,
-        child_agent_id: row.get(10)?,
-        delivered_at: crate::util::optional_ms_to_iso(row.get(11)?),
-        delivery_receipt: row.get(12)?,
+        decision_reason: row.get(10)?,
+        satisfied_revision: row.get(11)?,
+        child_agent_id: row.get(12)?,
+        delivered_at: crate::util::optional_ms_to_iso(row.get(13)?),
+        delivery_receipt: row.get(14)?,
         requests: Vec::new(),
         hold_ids: Vec::new(),
-        created_at: crate::util::ms_to_iso(row.get(13)?),
-        updated_at: crate::util::ms_to_iso(row.get(14)?),
+        created_at: crate::util::ms_to_iso(row.get(15)?),
+        updated_at: crate::util::ms_to_iso(row.get(16)?),
     })
 }
 
@@ -1834,6 +1930,220 @@ pub async fn capability_need_record(
 ) -> Result<CapabilityObligationRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     record_capability_need(&conn, input)
+}
+
+fn capability_grant_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<CapabilityGrantRow> {
+    Ok(CapabilityGrantRow {
+        id: row.get(0)?,
+        obligation_id: row.get(1)?,
+        session_id: row.get(2)?,
+        workflow_run_id: row.get(3)?,
+        granted_role: row.get(4)?,
+        purpose: row.get(5)?,
+        continuation: row.get(6)?,
+        parent_outcome: row.get(7)?,
+        child_agent_id: row.get(8)?,
+        replacement_agent_id: row.get(9)?,
+        verification_agent_id: row.get(10)?,
+        transferred_work: row.get(11)?,
+        state: row.get(12)?,
+        created_at: crate::util::ms_to_iso(row.get(13)?),
+        updated_at: crate::util::ms_to_iso(row.get(14)?),
+    })
+}
+
+fn capability_grant_for_obligation(
+    conn: &rusqlite::Connection,
+    obligation_id: &str,
+) -> Result<CapabilityGrantRow, PhaseError> {
+    let sql =
+        format!("SELECT {CAPABILITY_GRANT_COLUMNS} FROM capability_grants WHERE obligation_id = ?1");
+    conn.query_row(
+        &sql,
+        rusqlite::params![obligation_id],
+        capability_grant_from_row,
+    )
+    .map_err(PhaseError::Db)
+}
+
+fn list_capability_grants(
+    conn: &rusqlite::Connection,
+    session_id: &str,
+) -> Result<Vec<CapabilityGrantRow>, PhaseError> {
+    let sql = format!(
+        "SELECT {CAPABILITY_GRANT_COLUMNS} FROM capability_grants WHERE session_id = ?1 ORDER BY created_at ASC"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(rusqlite::params![session_id], capability_grant_from_row)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
+}
+
+#[tauri::command]
+pub async fn capability_grants_for_session(
+    state: State<'_, Db>,
+    session_id: String,
+) -> Result<Vec<CapabilityGrantRow>, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    list_capability_grants(&conn, &session_id)
+}
+
+fn claim_capability_grant(
+    conn: &rusqlite::Connection,
+    input: CapabilityGrantInput,
+) -> Result<CapabilityGrantClaim, PhaseError> {
+    let now = crate::util::now_ms();
+    let inserted = conn.execute(
+        "INSERT OR IGNORE INTO capability_grants
+           (id, obligation_id, session_id, workflow_run_id, granted_role, purpose, continuation,
+            parent_outcome, transferred_work, state, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10, ?10)",
+        rusqlite::params![
+            input.id,
+            input.obligation_id,
+            input.session_id,
+            input.workflow_run_id,
+            input.granted_role,
+            input.purpose,
+            input.continuation,
+            input.parent_outcome,
+            input.transferred_work,
+            now,
+        ],
+    )?;
+    let grant = capability_grant_for_obligation(conn, &input.obligation_id)?;
+    Ok(CapabilityGrantClaim {
+        grant,
+        is_first_delivery: inserted > 0,
+    })
+}
+
+#[tauri::command]
+pub async fn capability_grant_claim(
+    state: State<'_, Db>,
+    input: CapabilityGrantInput,
+) -> Result<CapabilityGrantClaim, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    claim_capability_grant(&conn, input)
+}
+
+fn update_capability_grant(
+    conn: &rusqlite::Connection,
+    input: CapabilityGrantUpdateInput,
+) -> Result<CapabilityGrantRow, PhaseError> {
+    conn.execute(
+        "UPDATE capability_grants
+            SET state = ?1,
+                child_agent_id = COALESCE(?2, child_agent_id),
+                replacement_agent_id = COALESCE(?3, replacement_agent_id),
+                verification_agent_id = COALESCE(?4, verification_agent_id),
+                updated_at = ?5
+          WHERE obligation_id = ?6",
+        rusqlite::params![
+            input.state,
+            input.child_agent_id,
+            input.replacement_agent_id,
+            input.verification_agent_id,
+            crate::util::now_ms(),
+            input.obligation_id,
+        ],
+    )?;
+    capability_grant_for_obligation(conn, &input.obligation_id)
+}
+
+#[tauri::command]
+pub async fn capability_grant_update(
+    state: State<'_, Db>,
+    input: CapabilityGrantUpdateInput,
+) -> Result<CapabilityGrantRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    update_capability_grant(&conn, input)
+}
+
+fn obligation_state_for_decision(decision: &str) -> &'static str {
+    match decision {
+        "granted" => "granted",
+        "attached" => "granted",
+        "refused" => "refused",
+        _ => "open",
+    }
+}
+
+fn obligation_by_id(
+    conn: &rusqlite::Connection,
+    obligation_id: &str,
+) -> Result<CapabilityObligationRow, PhaseError> {
+    let sql =
+        format!("SELECT {CAPABILITY_OBLIGATION_COLUMNS} FROM capability_obligations WHERE id = ?1");
+    let mut obligation = conn
+        .query_row(
+            &sql,
+            rusqlite::params![obligation_id],
+            capability_obligation_from_row,
+        )
+        .map_err(PhaseError::Db)?;
+    hydrate_capability_obligation(conn, &mut obligation)?;
+    Ok(obligation)
+}
+
+fn decide_capability_obligation(
+    conn: &rusqlite::Connection,
+    input: CapabilityDecisionInput,
+) -> Result<CapabilityObligationRow, PhaseError> {
+    conn.execute(
+        "UPDATE capability_obligations
+            SET decision = ?1, decision_reason = ?2, state = ?3, updated_at = ?4
+          WHERE id = ?5",
+        rusqlite::params![
+            input.decision,
+            input.reason,
+            obligation_state_for_decision(&input.decision),
+            crate::util::now_ms(),
+            input.obligation_id,
+        ],
+    )?;
+    obligation_by_id(conn, &input.obligation_id)
+}
+
+#[tauri::command]
+pub async fn capability_obligation_decide(
+    state: State<'_, Db>,
+    input: CapabilityDecisionInput,
+) -> Result<CapabilityObligationRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    decide_capability_obligation(&conn, input)
+}
+
+fn settle_capability_obligation(
+    conn: &rusqlite::Connection,
+    input: CapabilitySettlementInput,
+) -> Result<CapabilityObligationRow, PhaseError> {
+    let now = crate::util::now_ms();
+    conn.execute(
+        "UPDATE capability_obligations
+            SET state = 'satisfied', satisfied_revision = ?1, delivery_receipt = ?2,
+                delivered_at = COALESCE(delivered_at, ?3), updated_at = ?3
+          WHERE id = ?4 AND state <> 'satisfied'",
+        rusqlite::params![
+            input.verified_revision,
+            input.delivery_receipt,
+            now,
+            input.obligation_id,
+        ],
+    )?;
+    conn.execute(
+        "UPDATE capability_grants SET state = 'settled', updated_at = ?1 WHERE obligation_id = ?2",
+        rusqlite::params![now, input.obligation_id],
+    )?;
+    obligation_by_id(conn, &input.obligation_id)
+}
+
+#[tauri::command]
+pub async fn capability_obligation_settle(
+    state: State<'_, Db>,
+    input: CapabilitySettlementInput,
+) -> Result<CapabilityObligationRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    settle_capability_obligation(&conn, input)
 }
 
 const GENERATION_DEPTH_CAP: i64 = 3;
@@ -2958,9 +3268,28 @@ mod tests {
                 state TEXT NOT NULL,
                 owner_agent_id TEXT,
                 decision TEXT,
+                decision_reason TEXT,
+                satisfied_revision TEXT,
                 child_agent_id TEXT,
                 delivered_at INTEGER,
                 delivery_receipt TEXT,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
+            CREATE TABLE capability_grants (
+                id TEXT PRIMARY KEY,
+                obligation_id TEXT NOT NULL UNIQUE,
+                session_id TEXT NOT NULL,
+                workflow_run_id TEXT,
+                granted_role TEXT NOT NULL,
+                purpose TEXT NOT NULL,
+                continuation TEXT NOT NULL,
+                parent_outcome TEXT NOT NULL,
+                child_agent_id TEXT,
+                replacement_agent_id TEXT,
+                verification_agent_id TEXT,
+                transferred_work TEXT,
+                state TEXT NOT NULL,
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL
             );
@@ -3015,6 +3344,169 @@ mod tests {
             routing_proposal: None,
             inventory_revision: "rabc123".to_string(),
         }
+    }
+
+    fn capability_grant_input() -> CapabilityGrantInput {
+        CapabilityGrantInput {
+            id: "capability-grant:capability-obligation:source:implementer:repair".to_string(),
+            obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+            session_id: "session".to_string(),
+            workflow_run_id: Some("run".to_string()),
+            granted_role: "implementer".to_string(),
+            purpose: "repair".to_string(),
+            continuation: "handoff".to_string(),
+            parent_outcome: "handed-off".to_string(),
+            transferred_work: None,
+        }
+    }
+
+    #[test]
+    fn capability_grant_claim_delivers_once_per_obligation() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+
+        let first = claim_capability_grant(&conn, capability_grant_input()).unwrap();
+        let mut second_input = capability_grant_input();
+        second_input.id = "capability-grant:duplicate".to_string();
+        let second = claim_capability_grant(&conn, second_input).unwrap();
+
+        assert!(first.is_first_delivery);
+        assert!(!second.is_first_delivery);
+        assert_eq!(second.grant.id, first.grant.id);
+    }
+
+    #[test]
+    fn capability_grants_are_listed_for_the_session_after_a_reload() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+        claim_capability_grant(&conn, capability_grant_input()).unwrap();
+        update_capability_grant(
+            &conn,
+            CapabilityGrantUpdateInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                state: "delivered".to_string(),
+                child_agent_id: Some("child".to_string()),
+                replacement_agent_id: None,
+                verification_agent_id: None,
+            },
+        )
+        .unwrap();
+
+        let grants = list_capability_grants(&conn, "session").unwrap();
+
+        assert_eq!(grants.len(), 1);
+        assert_eq!(
+            grants[0].obligation_id,
+            "capability-obligation:source:implementer:repair"
+        );
+        assert_eq!(grants[0].child_agent_id, Some("child".to_string()));
+        assert_eq!(grants[0].state, "delivered");
+        assert!(list_capability_grants(&conn, "other-session")
+            .unwrap()
+            .is_empty());
+    }
+
+    #[test]
+    fn capability_grant_update_binds_the_child_and_its_verifier() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+        claim_capability_grant(&conn, capability_grant_input()).unwrap();
+
+        update_capability_grant(
+            &conn,
+            CapabilityGrantUpdateInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                state: "delivered".to_string(),
+                child_agent_id: Some("child".to_string()),
+                replacement_agent_id: None,
+                verification_agent_id: None,
+            },
+        )
+        .unwrap();
+        let grant = update_capability_grant(
+            &conn,
+            CapabilityGrantUpdateInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                state: "delivered".to_string(),
+                child_agent_id: None,
+                replacement_agent_id: None,
+                verification_agent_id: Some("verifier".to_string()),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(grant.child_agent_id, Some("child".to_string()));
+        assert_eq!(grant.verification_agent_id, Some("verifier".to_string()));
+    }
+
+    #[test]
+    fn a_refused_obligation_keeps_its_reason_and_stays_unowned() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+
+        let obligation = decide_capability_obligation(
+            &conn,
+            CapabilityDecisionInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                decision: "refused".to_string(),
+                reason: "no generation allowance is left".to_string(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(obligation.state, "refused");
+        assert_eq!(obligation.owner_agent_id, None);
+        assert_eq!(
+            obligation.decision_reason,
+            Some("no generation allowance is left".to_string())
+        );
+    }
+
+    #[test]
+    fn a_refinement_leaves_the_obligation_open() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+
+        let obligation = decide_capability_obligation(
+            &conn,
+            CapabilityDecisionInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                decision: "refinement".to_string(),
+                reason: "name the failing test first".to_string(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(obligation.state, "open");
+        assert_eq!(obligation.decision, Some("refinement".to_string()));
+    }
+
+    #[test]
+    fn settlement_closes_the_obligation_against_the_verified_revision() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+        claim_capability_grant(&conn, capability_grant_input()).unwrap();
+
+        let obligation = settle_capability_obligation(
+            &conn,
+            CapabilitySettlementInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                verified_revision: "sha-verified".to_string(),
+                delivery_receipt: "verified by a focused review".to_string(),
+            },
+        )
+        .unwrap();
+        let grant =
+            capability_grant_for_obligation(&conn, "capability-obligation:source:implementer:repair")
+                .unwrap();
+
+        assert_eq!(obligation.state, "satisfied");
+        assert_eq!(
+            obligation.satisfied_revision,
+            Some("sha-verified".to_string())
+        );
+        assert!(obligation.delivered_at.is_some());
+        assert_eq!(grant.state, "settled");
     }
 
     fn completion_hold_input(id: &str) -> ClusterCompletionHoldInput {

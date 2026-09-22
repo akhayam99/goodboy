@@ -52,9 +52,11 @@ const makeStore = (initial: Partial<AppStore>) => {
 const respondWith = ({
   agents,
   holds,
+  grants = [],
 }: {
   readonly agents: ReadonlyArray<unknown>;
   readonly holds: ReadonlyArray<unknown>;
+  readonly grants?: ReadonlyArray<unknown>;
 }) => {
   invokeSpy.mockImplementation(async (command: string) => {
     if (command === 'cluster_completion_holds_for_session') {
@@ -65,6 +67,9 @@ const respondWith = ({
     }
     if (command === 'capability_obligations_for_session') {
       return [];
+    }
+    if (command === 'capability_grants_for_session') {
+      return grants;
     }
     return agents;
   });
@@ -114,6 +119,42 @@ describe('loadPhaseRunsForSession', () => {
     expect(getState().agentModelOverride).toEqual({ 'agent-new': 'claude-sonnet-4-6' });
     expect(getState().agentProviderOverride).toEqual({ 'agent-new': 'cursor' });
     expect(getState().agentEffortOverride).toEqual({ 'agent-new': 'low' });
+  });
+
+  it('restores a capability grant when the session reloads', async () => {
+    respondWith({
+      agents: [agentRow('agent-new')],
+      holds: [],
+      grants: [
+        {
+          id: 'grant-1',
+          obligationId: 'obligation-1',
+          sessionId: SESSION_ID,
+          workflowRunId: null,
+          grantedRole: 'implementer',
+          purpose: 'repair',
+          continuation: 'handoff',
+          parentOutcome: 'handed-off',
+          childAgentId: 'agent-new',
+          replacementAgentId: null,
+          verificationAgentId: null,
+          transferredWork: null,
+          state: 'delivered',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+    const { set, getState } = makeStore({ sessionPhaseRuns: {}, capabilityGrants: {} });
+
+    await loadPhaseRunsForSession(set)(SESSION_ID);
+
+    expect(getState().capabilityGrants?.[SESSION_ID]?.[0]).toMatchObject({
+      id: 'grant-1',
+      obligationId: 'obligation-1',
+      childAgentId: 'agent-new',
+      state: 'delivered',
+    });
   });
 
   it('restores completion holds when the session reloads', async () => {

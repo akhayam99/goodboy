@@ -1,5 +1,8 @@
 import type {
   AgentRole,
+  CapabilityContinuation,
+  CapabilityPurpose,
+  EvidenceEntry,
   ModelEffort,
   ProviderId,
   WorkflowTaskDifficulty,
@@ -31,6 +34,25 @@ export type RunSummary =
       readonly text: string;
     };
 
+export type OrchestratorNeedDisposition =
+  | {
+      readonly kind: 'grant';
+      readonly step: OrchestratorStep;
+    }
+  | {
+      readonly kind: 'reuse';
+      readonly evidenceRefs: ReadonlyArray<string>;
+    }
+  | {
+      readonly kind: 'attach';
+    }
+  | {
+      readonly kind: 'refine';
+    }
+  | {
+      readonly kind: 'refuse';
+    };
+
 export type OrchestratorDecision =
   | {
       readonly action: 'next';
@@ -47,6 +69,13 @@ export type OrchestratorDecision =
       readonly action: 'blocked';
       readonly reason: string;
       readonly runSummary?: RunSummary;
+    }
+  | {
+      readonly action: 'need';
+      readonly reason: string;
+      readonly runSummary?: RunSummary;
+      readonly obligationId: string;
+      readonly disposition: OrchestratorNeedDisposition;
     };
 
 export type OrchestratorCompletedStep = {
@@ -72,6 +101,37 @@ export type OrchestratorRoleDefault = {
   readonly effort: ModelEffort;
 };
 
+export type OrchestratorNeedRequest = {
+  readonly obligationId: string;
+  readonly requesterName: string;
+  readonly requesterRole: AgentRole;
+  readonly targetRole: AgentRole;
+  readonly purpose: CapabilityPurpose;
+  readonly question: string;
+  readonly gap: string;
+  readonly scope: ReadonlyArray<string>;
+  readonly expectedOutput: string;
+  readonly continuation: CapabilityContinuation;
+  readonly evidenceRefs: ReadonlyArray<string>;
+  readonly inventoryRevision: string;
+};
+
+export type OrchestratorUnresolvedObligation = {
+  readonly obligationId: string;
+  readonly identity: string;
+  readonly targetRole: AgentRole;
+  readonly purpose: CapabilityPurpose;
+  readonly state: string;
+  readonly ownerName: string | null;
+};
+
+export type OrchestratorAllowances = {
+  readonly generationRemaining: number;
+  readonly repairAttemptsRemaining: number;
+  readonly structuralReplansRemaining: number;
+  readonly spendRemainingUsd: number | null;
+};
+
 export type OrchestratorInput = {
   readonly goal: string;
   readonly processText: string;
@@ -85,4 +145,9 @@ export type OrchestratorInput = {
   readonly isModelMetadataEnabled?: boolean;
   readonly spendLimitUsd?: number;
   readonly spentUsd?: number;
+  readonly pendingRequest?: OrchestratorNeedRequest;
+  readonly evidenceExcerpts?: ReadonlyArray<EvidenceEntry>;
+  readonly unresolvedObligations?: ReadonlyArray<OrchestratorUnresolvedObligation>;
+  readonly graphRevision?: string;
+  readonly allowances?: OrchestratorAllowances;
 };

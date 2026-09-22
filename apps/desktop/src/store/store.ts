@@ -13,6 +13,7 @@ import {
 } from '@goodboy/db';
 import type {
   AgentId,
+  AgentExecutionPurpose,
   AgentSourceKind,
   ArtifactId,
   BudgetAlert,
@@ -99,6 +100,7 @@ import type {
   SpawnQuestionDelegatesParams,
 } from './slices/open-questions/spawnQuestionDelegates';
 import type { ResolveQuestionDelegateParams } from './slices/open-questions/resolveQuestionDelegate';
+import type { NeedDispositionOutcome } from './slices/workflows/applyNeedDisposition';
 import type { TakeQuestionBackParams } from './slices/open-questions/takeQuestionBack';
 import { createBudgetSlice } from './slices/budget';
 import { createSkillsSlice } from './slices/skills';
@@ -567,6 +569,10 @@ type AppActions = {
     readonly holdId: string;
     readonly resolutionEvidence: string;
   }): Promise<void>;
+  decideCapabilityNeed(params: {
+    readonly sessionId: SessionId;
+    readonly obligationId: string;
+  }): Promise<NeedDispositionOutcome>;
   finalizeWorkflowStep(
     sessionId: SessionId,
     agentId: AgentId,
@@ -710,6 +716,7 @@ type AppActions = {
       sourceKind?: AgentSourceKind;
       focus?: SpawnFocus;
       parentAgentId?: AgentId;
+      executionPurpose?: AgentExecutionPurpose;
     },
   ): Promise<AgentId>;
   forceCloseResolver(sessionId: SessionId, agentId: AgentId): Promise<void>;
@@ -1114,6 +1121,7 @@ export const initialState: AppState = {
   sessionWorkflows: {},
   sessionPhaseRuns: {},
   capabilityObligations: {},
+  capabilityGrants: {},
   clusterCompletionHolds: {},
   clusterExecutionGraphs: {},
   orchestratingWorkflowRuns: {},

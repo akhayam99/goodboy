@@ -111,5 +111,6 @@ export const captureCapabilityNeed = async ({
     `${need.targetRole} for ${need.purpose}: ${need.question}`,
     { sessionId },
   );
+  void get().decideCapabilityNeed({ sessionId, obligationId: obligation.id });
   return { kind: 'captured', obligationId: obligation.id };
 };

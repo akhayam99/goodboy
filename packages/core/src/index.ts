@@ -8,11 +8,17 @@ export {
 } from './clusters';
 
 export {
+  canAssumeRemainder,
   capabilityObligationIdentity,
   capabilityPurposeForFindingTarget,
+  resolveContinuationEligibility,
+  resolveGrantExecution,
   validateCapabilityNeed,
+  verificationRoleForGrant,
   type CapabilityNeedRejection,
   type CapabilityNeedValidation,
+  type ContinuationEligibility,
+  type GrantExecutionPlan,
 } from './capability';
 
 export {
@@ -296,6 +302,10 @@ export { workflowModelProfile } from './providers/workflowModelProfiles';
 
 export { getCheapModel, getDefaultBinary } from './providers/cli-defaults';
 export {
+  launcherResumptionSupport,
+  type LauncherResumptionSupport,
+} from './providers/launcherResumption';
+export {
   planTurnFallback,
   type TurnFailureKind,
   type TurnFallbackPlan,
@@ -520,13 +530,17 @@ export {
   OrchestratorClient,
   OrchestratorClientSpawnError,
   OrchestratorProviderError,
+  type OrchestratorAllowances,
   type OrchestratorClientDeps,
   type OrchestratorClientResult,
   type OrchestratorCompletedStep,
   type OrchestratorDecision,
   type OrchestratorInput,
   type OrchestratorModelOption,
+  type OrchestratorNeedDisposition,
+  type OrchestratorNeedRequest,
   type OrchestratorRoleDefault,
+  type OrchestratorUnresolvedObligation,
   type OrchestratorStep,
   type OrchestratorUsage,
   type WorkflowMissingProposalPolicy,
