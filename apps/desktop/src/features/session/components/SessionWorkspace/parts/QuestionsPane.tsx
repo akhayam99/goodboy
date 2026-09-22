@@ -34,7 +34,10 @@ import {
   useOpenQuestions,
 } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import type { QuestionDelegateRequest } from '../../../../../store/slices/open-questions/spawnQuestionDelegates';
-import { QUESTION_DELEGATE_COPY } from '../../../../context/questionDelegate';
+import {
+  partitionDelegatedQuestions,
+  QUESTION_DELEGATE_COPY,
+} from '../../../../context/questionDelegate';
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import {
@@ -359,9 +362,13 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
     return [...open, pendingUndoQuestion].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   }, [open, pendingUndoQuestion]);
 
+  const { waiting, answerable } = useMemo(
+    () => partitionDelegatedQuestions({ questions: displayedOpen, agents }),
+    [displayedOpen, agents],
+  );
   const clusters = useMemo(
-    () => buildQuestionClusters({ questions: displayedOpen, agents, workflows }),
-    [displayedOpen, agents, workflows],
+    () => buildQuestionClusters({ questions: answerable, agents, workflows }),
+    [answerable, agents, workflows],
   );
 
   const agentById = useMemo(() => {
@@ -480,12 +487,32 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
       title="Questions"
       eyebrow={eyebrow}
       description={
-        open.length > 0
-          ? `${open.length} open ${open.length === 1 ? 'question' : 'questions'} waiting on you.`
+        answerable.length > 0
+          ? `${answerable.length} open ${answerable.length === 1 ? 'question' : 'questions'} waiting on you.`
           : 'Decisions agents need from you to keep going.'
       }
     >
       <div className="flex flex-col gap-4">
+        {waiting.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {waiting.map((question) => (
+              <QuestionsPaneCard
+                key={question.id}
+                question={question}
+                sessionId={sessionId}
+                selectedSuggestions={EMPTY_ARRAY}
+                customAnswer=""
+                showCustomField={false}
+                justAnswered={false}
+                onToggleSuggestion={toggleSuggestion}
+                onSetCustomAnswer={setCustomAnswer}
+                onToggleCustomField={toggleCustomField}
+                onDismiss={() => void handleDismiss(question)}
+                onClearJustAnswered={clearJustAnswered}
+              />
+            ))}
+          </div>
+        )}
         {clusters.map((cluster) => (
           <ClusterSection
             key={cluster.ownerAgentId ?? '__orphan__'}

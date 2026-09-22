@@ -14,6 +14,7 @@ import { SuggestionRow } from '../SuggestionRow';
 import { CustomAnswerField } from '../CustomAnswerField';
 import { DelegateAnswerRow } from '../DelegateAnswerRow';
 import { DelegateAnswerPanel } from '../DelegateAnswerPanel';
+import { DelegateWaitingRow } from '../DelegateWaitingRow';
 import { deriveSuggestions } from '../deriveSuggestions';
 import { orderSuggestions } from '../orderSuggestions';
 import type { DelegateRouting } from '../useOpenQuestions';
@@ -46,6 +47,8 @@ type Props = {
   readonly onCancelDelegate: () => void;
   readonly onDelegateHints: (hints: string) => void;
   readonly onDelegateRouting: (routing: DelegateRouting) => void;
+  readonly onOpenDelegate?: (() => void) | null;
+  readonly onTakeBackDelegate?: (() => void) | null;
 };
 
 export const QuestionCard = ({
@@ -68,6 +71,8 @@ export const QuestionCard = ({
   onCancelDelegate,
   onDelegateHints,
   onDelegateRouting,
+  onOpenDelegate = null,
+  onTakeBackDelegate = null,
 }: Props) => {
   const [animate, setAnimate] = useState(false);
   const blockingId = useId();
@@ -100,6 +105,7 @@ export const QuestionCard = ({
   const groupLabel = mode === 'many' ? 'Pick one or more answers' : 'Pick one answer';
   const customFilled = customAnswer.trim().length > 0;
   const isDelegating = delegateState === 'chosen';
+  const isWaiting = delegateState === 'running';
   const hasMeta =
     question.isBlocking || question.ownedByStepOrdinal != null || askedByName !== null;
 
@@ -148,7 +154,7 @@ export const QuestionCard = ({
           )}
         </div>
         <div className="flex justify-end">
-          {!question.isBlocking && (
+          {!question.isBlocking && !isWaiting && (
             <Tooltip content="Dismiss question">
               <button
                 type="button"
@@ -176,7 +182,7 @@ export const QuestionCard = ({
         className="flex flex-col gap-2"
         aria-describedby={question.isBlocking ? blockingId : undefined}
       >
-        {isDelegating ? (
+        {isDelegating && (
           <DelegateAnswerPanel
             hiddenOptionCount={suggestions.length + 1}
             hints={delegateHints}
@@ -186,7 +192,8 @@ export const QuestionCard = ({
             onRouting={onDelegateRouting}
             onCancel={onCancelDelegate}
           />
-        ) : (
+        )}
+        {!isDelegating && !isWaiting && (
           <>
             {suggestions.length > 0 && (
               <div
@@ -215,7 +222,11 @@ export const QuestionCard = ({
             />
           </>
         )}
-        <DelegateAnswerRow state={delegateState} onChoose={onChooseDelegate} />
+        {isWaiting ? (
+          <DelegateWaitingRow onOpen={onOpenDelegate} onTakeBack={onTakeBackDelegate} />
+        ) : (
+          <DelegateAnswerRow state={delegateState} onChoose={onChooseDelegate} />
+        )}
         {question.isBlocking && (
           <span id={blockingId} className="sr-only">
             {BLOCKING_DESCRIPTION}

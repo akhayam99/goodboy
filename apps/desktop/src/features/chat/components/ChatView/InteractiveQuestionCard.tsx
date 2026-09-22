@@ -49,6 +49,8 @@ export const InteractiveQuestionCard = ({ question, sessionId, askedByName = nul
       onCancelDelegate={delegate.onCancelDelegate}
       onDelegateHints={delegate.onDelegateHints}
       onDelegateRouting={delegate.onDelegateRouting}
+      onOpenDelegate={delegate.onOpenDelegate}
+      onTakeBackDelegate={delegate.onTakeBackDelegate}
     />
   );
 };

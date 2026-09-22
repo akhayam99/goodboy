@@ -220,7 +220,7 @@ describe('useSessionCrumbs', () => {
       'Workflows',
       'refactor',
       'Implement',
-      'answer: pick a database',
+      'Answers',
       'pick a database',
     ]);
   });

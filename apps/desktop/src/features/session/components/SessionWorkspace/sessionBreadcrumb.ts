@@ -106,7 +106,10 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
       selectedQuestionLabel == null
         ? []
         : [{ id: 'selected-question', label: selectedQuestionLabel }];
-    const selectedChild: BreadcrumbCrumb = { id: 'selected-child', label: selectedChildLabel };
+    const selectedChild: BreadcrumbCrumb =
+      selectedQuestionLabel == null
+        ? { id: 'selected-child', label: selectedChildLabel }
+        : { id: 'delegated-answers', label: 'Answers', icon: CONCEPT_ICONS.agents };
     const ancestors: BreadcrumbCrumb[] = [];
     if (selectedRootLabel != null) {
       ancestors.push({

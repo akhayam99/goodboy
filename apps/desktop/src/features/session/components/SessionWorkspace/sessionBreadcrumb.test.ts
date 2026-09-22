@@ -364,7 +364,7 @@ describe('buildSessionBreadcrumb', () => {
     expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'Create']);
   });
 
-  it('ends the trail on the question a delegate is answering, six levels deep', () => {
+  it('names the delegate step Answers instead of repeating the question', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(
       base(
@@ -385,9 +385,10 @@ describe('buildSessionBreadcrumb', () => {
       'Workflows',
       'refactor',
       'Implement',
-      'answer: pick a database',
+      'Answers',
       'pick a database',
     ]);
+    expect(crumbs[4]?.onClick).toBeUndefined();
     expect(last(crumbs)?.id).toBe('selected-question');
     expect(last(crumbs)?.onClick).toBeUndefined();
   });
@@ -406,12 +407,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual([
-      'Overview',
-      'agents',
-      'answer: pick a database',
-      'pick a database',
-    ]);
+    expect(labels(crumbs)).toEqual(['Overview', 'agents', 'Answers', 'pick a database']);
     expect(last(crumbs)?.id).toBe('selected-question');
   });
 
