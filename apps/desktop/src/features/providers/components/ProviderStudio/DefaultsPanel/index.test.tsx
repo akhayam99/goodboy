@@ -338,7 +338,7 @@ describe('DefaultsPanel', () => {
     openRolesTab();
 
     expect(screen.getByRole('button', { name: 'Planner routing model' }).textContent).toBe(
-      'opus-5.5',
+      'opus-5',
     );
   });
 

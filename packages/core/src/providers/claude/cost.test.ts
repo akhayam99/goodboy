@@ -18,7 +18,7 @@ describe('computeCostUsd', () => {
     expect(computeCostUsd({ usage, model: 'claude-opus-4-7' })).toBeCloseTo(5 + 25);
   });
 
-  it('opus-5-5 is priced as opus, not the sonnet fallback', () => {
+  it('opus-5-5 carries the assumed opus rate, not the sonnet fallback', () => {
     expect(computeCostUsd({ usage, model: 'claude-opus-5-5' })).toBeCloseTo(5 + 25);
   });
 

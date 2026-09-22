@@ -119,7 +119,7 @@ describe('getCapabilities', () => {
   });
 
   it('getDefaultTurnModel for anthropic returns the newest opus', () => {
-    expect(getDefaultTurnModel({ id: 'anthropic' })).toBe('opus-5.5');
+    expect(getDefaultTurnModel({ id: 'anthropic' })).toBe('opus-5');
   });
 
   it('getDefaultTurnModel for cursor returns the composer turn model', () => {

@@ -4,6 +4,7 @@ type ModelPrice = {
   readonly inputPerMtok: number;
   readonly outputPerMtok: number;
   readonly cachedInputPerMtok: number;
+  readonly assumed?: true;
 };
 
 const FABLE_PRICE: ModelPrice = {
@@ -21,6 +22,10 @@ const OPUS_PRICE: ModelPrice = {
   outputPerMtok: 25,
   cachedInputPerMtok: 0.5,
 };
+const OPUS_55_PRICE: ModelPrice = {
+  ...OPUS_PRICE,
+  assumed: true,
+};
 const SONNET_PRICE: ModelPrice = {
   inputPerMtok: 3,
   outputPerMtok: 15,
@@ -35,7 +40,7 @@ const SONNET_5_PRICE: ModelPrice = {
 export const CLAUDE_PRICES: Record<string, ModelPrice> = {
   'claude-fable-5-1': FABLE_51_PRICE,
   'claude-fable-5': FABLE_PRICE,
-  'claude-opus-5-5': OPUS_PRICE,
+  'claude-opus-5-5': OPUS_55_PRICE,
   'claude-opus-5': OPUS_PRICE,
   'claude-opus-4-8': OPUS_PRICE,
   'claude-opus-4-7': OPUS_PRICE,

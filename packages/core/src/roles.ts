@@ -102,7 +102,7 @@ export const ROLE_REGISTRY = {
     selectionEligible: true,
     pickerEligible: true,
     provider: 'anthropic',
-    model: 'opus-5.5',
+    model: 'opus-5',
     effort: 'high',
     description: 'design the change; produce an ordered plan',
     fanOut: {

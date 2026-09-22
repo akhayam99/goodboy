@@ -12,7 +12,7 @@ describe('autoModelForRole', () => {
     it('keeps the curated default for a high-tier role', () => {
       expect(autoModelForRole({ role: 'planner', providers: ['anthropic'] })).toEqual({
         provider: 'anthropic',
-        model: 'opus-5.5',
+        model: 'opus-5',
       });
     });
 
@@ -26,7 +26,7 @@ describe('autoModelForRole', () => {
     it('prefers the default provider even when other providers are enabled', () => {
       expect(autoModelForRole({ role: 'planner', providers: ['gemini', 'anthropic'] })).toEqual({
         provider: 'anthropic',
-        model: 'opus-5.5',
+        model: 'opus-5',
       });
     });
   });

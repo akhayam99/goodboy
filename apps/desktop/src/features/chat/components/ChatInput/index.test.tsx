@@ -463,8 +463,8 @@ describe('ChatInput, input wiring', () => {
       expect.objectContaining({
         override: expect.objectContaining({
           providerId: 'anthropic',
-          model: 'opus-5.5',
-          selection: expect.objectContaining({ key: 'opus-5.5' }),
+          model: 'opus-5',
+          selection: expect.objectContaining({ key: 'opus-5' }),
         }),
       }),
     );

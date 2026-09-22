@@ -109,6 +109,15 @@ const ROWS: ReadonlyArray<Row> = [
     expected: { provider: 'anthropic', model: 'opus-5.5' },
   },
   {
+    name: 'a model the installed cli cannot run falls back to the nearest sibling it can',
+    failure: 'cli_too_old',
+    provider: 'anthropic',
+    model: 'opus-5.5',
+    attempt: 0,
+    connectedProviders: CONNECTED,
+    expected: { provider: 'anthropic', model: 'opus-5' },
+  },
+  {
     name: 'model not available falls back from Astra to Sol on the same provider',
     failure: 'model_not_available',
     provider: 'codex',
@@ -263,6 +272,7 @@ describe('planTurnFallback', () => {
       'authentication',
       'rate_limit',
       'model_not_available',
+      'cli_too_old',
       'unreachable',
     ];
     const plans = failures.map((failure) =>
@@ -471,6 +481,7 @@ describe('planTurnFallback', () => {
       'authentication',
       'rate_limit',
       'model_not_available',
+      'cli_too_old',
     ];
     const plans = failures.flatMap((failure) =>
       [0, 1].map((attempt) =>
