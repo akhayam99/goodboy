@@ -1,6 +1,20 @@
-# Goodboy
+<div align="center">
 
-**Stop re-explaining yourself.**
+<img src=".github/readme-banner.png" alt="Goodboy, stop re-explaining yourself" width="760">
+
+[![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&label=ci&color=06b6d4)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/akhayam99/goodboy?label=release&color=06b6d4)](https://github.com/akhayam99/goodboy/releases/latest)
+[![stars](https://img.shields.io/github/stars/akhayam99/goodboy?label=stars&color=06b6d4)](https://github.com/akhayam99/goodboy/stargazers)
+[![license](https://img.shields.io/github/license/akhayam99/goodboy?color=06b6d4)](./LICENSE)
+
+[![providers](https://img.shields.io/badge/providers-Claude%20%C2%B7%20Cursor%20%C2%B7%20Codex%20%C2%B7%20Gemini%20%C2%B7%20OpenCode%20%C2%B7%20OpenRouter%20%C2%B7%20Moonshot-06b6d4)](#providers-and-integrations)
+[![built with](https://img.shields.io/badge/built%20with-Tauri%202%20%C2%B7%20React%2019%20%C2%B7%20TypeScript%20%C2%B7%20SQLite-111111)](#run-from-source)
+[![platform](https://img.shields.io/badge/macOS-Intel%20%26%20Apple%20Silicon-111111)](#install)
+[![platform](https://img.shields.io/badge/Linux-AppImage%20%C2%B7%20deb%20%C2%B7%20rpm-111111)](#install)
+
+[Install](#install) · [Providers](#providers-and-integrations) · [Concepts](./docs/concepts.md) · [Documentation](./docs/README.md) · [goodboy-ai.dev](https://goodboy-ai.dev)
+
+</div>
 
 Goodboy is a free, open-source desktop app for macOS and Linux that runs coding
 agents on your work. You describe a task once. The goal, the decisions and the
@@ -8,8 +22,6 @@ running summary stay on your disk, outside any provider's chat, so you can stop
 Claude halfway, hand the task to Codex and come back tomorrow without briefing
 anyone again. It runs on the Claude, Codex or Cursor plan you already pay for.
 No account, no server.
-
-[Get a release](https://github.com/akhayam99/goodboy/releases/latest) · [goodboy-ai.dev](https://goodboy-ai.dev) · [Read the documentation](./docs/README.md) · [CI](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
 
 ## Open the app and see what needs you
 
