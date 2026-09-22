@@ -49,6 +49,15 @@ the chat says which one and why.
 
 ![The provider settings: seven providers with their connection state, the default provider, the routing pool Goodboy can pick from, and a model chosen per task](./docs/images/providers.png)
 
+## See what the work cost
+
+Agents spend money while you are looking somewhere else. Impact keeps the
+running total for the workspace, broken down by provider, by model and by
+session, next to the monthly cap and the threshold that moves the next turn
+elsewhere. You can tell which model earned its price and which one did not.
+
+![The Impact studio: the workspace total, spend per provider against its monthly cap, and the cost broken down by model and by session](./docs/images/impact.png)
+
 ## Agents work in a worktree, not in your checkout
 
 Two agents editing the same checkout is a merge conflict waiting for you. Each
@@ -93,7 +102,6 @@ or two: the answer counts as yours.
 - Open the worktree in VS Code or Cursor when you want to type yourself
 - Pair a phone to follow a session away from the desk
 - One Inbox for what your connected issue trackers and review tools send you
-- Impact: what the workspace spent, by provider, model and session
 
 ## Install
 
@@ -138,14 +146,6 @@ workspace. Each integration covers part of its service, not its whole API.
 Keys are stored in the operating system credential store. Agents reach these
 services through the documented [query bridge](./docs/query-bridge.md).
 
-## Current limits
-
-- Workflow steps run sequentially. Scout fan-out does not make workflow steps
-  run in parallel.
-- Linear can write descriptions and comments, but it cannot assign issues or
-  change their status. Sentry is read-only. Slack has contract tests, but has
-  not been exercised against a live workspace.
-
 ## Local data and network use
 
 No account, no server. The task context, settings and local usage records live
@@ -155,7 +155,7 @@ The app carries no telemetry.
 Provider calls and connected services still leave the machine. Prompts and
 responses go to the provider you choose, and requests to GitHub, Linear or
 another connected service go to that service. A release build checks GitHub
-for updates. If the app stops rendering, it can open an opt-in crash-report
+for updates. If something goes wrong, it can open an opt-in crash-report
 prefill link in your browser. Nothing is filed unless you submit the issue.
 
 [SECURITY.md](./SECURITY.md) documents credentials, diagnostics, update checks,
@@ -195,6 +195,9 @@ Before changing code, read [AGENTS.md](./AGENTS.md) and
 [CONVENTIONS.md](./CONVENTIONS.md).
 
 ## Contributors
+
+[<img src="https://github.com/akhayam99.png?size=64" width="64" height="64" alt="Amin Khayam">](https://github.com/akhayam99)
+[<img src="https://github.com/teckperry.png?size=64" width="64" height="64" alt="Luca Laudiero">](https://github.com/teckperry)
 
 [Amin Khayam](https://github.com/akhayam99) · [Luca Laudiero](https://github.com/teckperry)
 
