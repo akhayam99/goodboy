@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use rusqlite::{params, TransactionBehavior};
+use rusqlite::{params, OptionalExtension, TransactionBehavior};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -522,6 +522,115 @@ pub fn unknown_leases(db: &Db) -> Result<Vec<UnknownWriterLease>, WriterLeaseErr
     Ok(result)
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum UnknownLeaseRelease {
+    Released {
+        id: String,
+        holder: String,
+        #[serde(rename = "releasedBy")]
+        released_by: String,
+        resources: Vec<String>,
+    },
+    NotFound {
+        id: String,
+    },
+    NotStranded {
+        id: String,
+        state: String,
+    },
+    OwnerAlive {
+        id: String,
+        #[serde(rename = "processId")]
+        process_id: u32,
+    },
+    EvidenceMissing {
+        id: String,
+    },
+}
+
+fn live_owner(owner_process_id: u32, process_id: Option<u32>) -> Option<u32> {
+    if let Some(pid) = process_id {
+        if crate::invocation_admission::process_is_alive(pid) {
+            return Some(pid);
+        }
+    }
+    match crate::invocation_admission::process_is_alive(owner_process_id) {
+        true => Some(owner_process_id),
+        false => None,
+    }
+}
+
+pub fn release_unknown(
+    db: &Db,
+    lease_id: &str,
+    released_by: &str,
+    evidence: &str,
+) -> Result<UnknownLeaseRelease, WriterLeaseError> {
+    if released_by.trim().is_empty() || evidence.trim().is_empty() {
+        return Ok(UnknownLeaseRelease::EvidenceMissing {
+            id: lease_id.to_string(),
+        });
+    }
+    let mut conn = db.0.lock().map_err(|_| WriterLeaseError::Poisoned)?;
+    let transaction = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    let found = transaction
+        .query_row(
+            "SELECT holder, state, owner_process_id, process_id FROM writer_leases WHERE id = ?1",
+            params![lease_id],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, u32>(2)?,
+                    row.get::<_, Option<u32>>(3)?,
+                ))
+            },
+        )
+        .optional()?;
+    let Some((holder, state, owner_process_id, process_id)) = found else {
+        transaction.commit()?;
+        return Ok(UnknownLeaseRelease::NotFound {
+            id: lease_id.to_string(),
+        });
+    };
+    if state != "unknown" {
+        transaction.commit()?;
+        return Ok(UnknownLeaseRelease::NotStranded {
+            id: lease_id.to_string(),
+            state,
+        });
+    }
+    if let Some(process_id) = live_owner(owner_process_id, process_id) {
+        transaction.commit()?;
+        return Ok(UnknownLeaseRelease::OwnerAlive {
+            id: lease_id.to_string(),
+            process_id,
+        });
+    }
+    let now = crate::util::now_ms();
+    transaction.execute(
+        "UPDATE writer_leases SET state = 'released', released_at = ?1, updated_at = ?1,
+                released_by = ?2, release_evidence = ?3
+          WHERE id = ?4 AND state = 'unknown'",
+        params![now, released_by, evidence, lease_id],
+    )?;
+    let resources = {
+        let mut statement = transaction.prepare(
+            "SELECT resource FROM writer_lease_resources WHERE lease_id = ?1 ORDER BY resource ASC",
+        )?;
+        let rows = statement.query_map(params![lease_id], |row| row.get::<_, String>(0))?;
+        rows.collect::<Result<Vec<_>, _>>()?
+    };
+    transaction.commit()?;
+    Ok(UnknownLeaseRelease::Released {
+        id: lease_id.to_string(),
+        holder,
+        released_by: released_by.to_string(),
+        resources,
+    })
+}
+
 fn uuid_like() -> String {
     use std::sync::atomic::{AtomicU64, Ordering};
     static COUNTER: AtomicU64 = AtomicU64::new(1);
@@ -552,6 +661,16 @@ pub fn writer_lease_release(
 }
 
 #[tauri::command]
+pub fn writer_lease_release_unknown(
+    database: tauri::State<'_, Db>,
+    lease_id: String,
+    released_by: String,
+    evidence: String,
+) -> Result<UnknownLeaseRelease, WriterLeaseError> {
+    release_unknown(database.inner(), &lease_id, &released_by, &evidence)
+}
+
+#[tauri::command]
 pub fn writer_lease_unknown(
     database: tauri::State<'_, Db>,
 ) -> Result<Vec<UnknownWriterLease>, WriterLeaseError> {
@@ -578,7 +697,9 @@ mod tests {
                run_id TEXT,
                created_at INTEGER NOT NULL,
                updated_at INTEGER NOT NULL,
-               released_at INTEGER
+               released_at INTEGER,
+               released_by TEXT,
+               release_evidence TEXT
              );
              CREATE TABLE writer_lease_resources (
                lease_id TEXT NOT NULL,
@@ -912,6 +1033,167 @@ mod tests {
         assert_eq!(surfaced.len(), 1);
         assert_eq!(surfaced[0].holder, "agent-1");
         assert_eq!(surfaced[0].resources, resources);
+    }
+
+    fn strand(db: &Db) {
+        {
+            let conn = db.0.lock().expect("lock");
+            conn.execute(
+                "UPDATE writer_leases SET owner_process_id = 999998",
+                params![],
+            )
+            .expect("simulate restart");
+        }
+        reconcile(db).expect("reconcile");
+    }
+
+    #[test]
+    fn a_stranded_unknown_lease_is_released_explicitly_and_the_release_is_recorded() {
+        let db = test_db();
+        let resources = vec![repository_resource("/repos/app")];
+        acquire(&db, "agent-1", &resources, Some("run-1")).expect("granted");
+        strand(&db);
+        let stranded = unknown_leases(&db).expect("unknown");
+        let lease_id = stranded[0].id.clone();
+
+        let released = release_unknown(
+            &db,
+            &lease_id,
+            "the user",
+            "inspected the holder and confirmed nothing is writing",
+        )
+        .expect("release");
+
+        assert_eq!(
+            released,
+            UnknownLeaseRelease::Released {
+                id: lease_id.clone(),
+                holder: "agent-1".to_string(),
+                released_by: "the user".to_string(),
+                resources: resources.clone(),
+            }
+        );
+        assert!(unknown_leases(&db).expect("unknown").is_empty());
+        let recorded: (String, String, String) = {
+            let conn = db.0.lock().expect("lock");
+            conn.query_row(
+                "SELECT state, released_by, release_evidence FROM writer_leases WHERE id = ?1",
+                params![lease_id],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
+            .expect("row")
+        };
+        assert_eq!(recorded.0, "released");
+        assert_eq!(recorded.1, "the user");
+        assert_eq!(
+            recorded.2,
+            "inspected the holder and confirmed nothing is writing"
+        );
+        let next = acquire(&db, "agent-2", &resources, Some("run-2")).expect("next");
+        assert!(next.is_granted);
+    }
+
+    #[test]
+    fn releasing_a_lease_whose_owner_is_alive_is_refused() {
+        let db = test_db();
+        let resources = vec![repository_resource("/repos/app")];
+        acquire(&db, "agent-1", &resources, Some("run-1")).expect("granted");
+        let lease_id: String = {
+            let conn = db.0.lock().expect("lock");
+            conn.execute(
+                "UPDATE writer_leases SET state = 'unknown'",
+                params![],
+            )
+            .expect("simulate a stale unknown row");
+            conn.query_row("SELECT id FROM writer_leases", params![], |row| row.get(0))
+                .expect("id")
+        };
+
+        let refused = release_unknown(&db, &lease_id, "the user", "looks stuck").expect("refusal");
+
+        assert_eq!(
+            refused,
+            UnknownLeaseRelease::OwnerAlive {
+                id: lease_id.clone(),
+                process_id: std::process::id(),
+            }
+        );
+        let state: String = {
+            let conn = db.0.lock().expect("lock");
+            conn.query_row(
+                "SELECT state FROM writer_leases WHERE id = ?1",
+                params![lease_id],
+                |row| row.get(0),
+            )
+            .expect("row")
+        };
+        assert_eq!(state, "unknown");
+        let denied = acquire(&db, "agent-2", &resources, Some("run-2")).expect("next");
+        assert!(!denied.is_granted);
+    }
+
+    #[test]
+    fn releasing_an_active_lease_through_the_stranded_path_is_refused() {
+        let db = test_db();
+        let resources = vec![repository_resource("/repos/app")];
+        let granted = acquire(&db, "agent-1", &resources, Some("run-1")).expect("granted");
+        let lease_id = granted.id.clone().expect("id");
+
+        let refused =
+            release_unknown(&db, &lease_id, "the user", "looks stuck").expect("refusal");
+
+        assert_eq!(
+            refused,
+            UnknownLeaseRelease::NotStranded {
+                id: lease_id,
+                state: "active".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn releasing_a_stranded_lease_without_evidence_is_refused() {
+        let db = test_db();
+        let resources = vec![repository_resource("/repos/app")];
+        acquire(&db, "agent-1", &resources, Some("run-1")).expect("granted");
+        strand(&db);
+        let lease_id = unknown_leases(&db).expect("unknown")[0].id.clone();
+
+        assert_eq!(
+            release_unknown(&db, &lease_id, "the user", "   ").expect("refusal"),
+            UnknownLeaseRelease::EvidenceMissing {
+                id: lease_id.clone()
+            }
+        );
+        assert_eq!(unknown_leases(&db).expect("unknown").len(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_waiter_proceeds_once_a_stranded_lease_is_released_explicitly() {
+        let db = test_db();
+        let queue = WriterLeaseQueue::with_ceiling(Duration::from_secs(30));
+        let resources = vec![repository_resource("/repos/app")];
+        acquire(&db, "agent-1", &resources, Some("run-1")).expect("granted");
+        strand(&db);
+        let lease_id = unknown_leases(&db).expect("unknown")[0].id.clone();
+
+        let waiting = {
+            let db = db.clone();
+            let queue = queue.clone();
+            let resources = resources.clone();
+            tokio::spawn(async move {
+                acquire_waiting(&db, &queue, "run-2", &resources, Some("run-2")).await
+            })
+        };
+        assert!(settle_until(|| queue.is_waiting("run-2")).await);
+        release_unknown(&db, &lease_id, "the user", "confirmed the holder is gone")
+            .expect("release");
+
+        let waited = waiting.await.expect("join").expect("result");
+        let WriterLeaseWait::Granted(grant) = waited else {
+            panic!("the waiter should have taken the freed resource");
+        };
+        assert!(grant.is_granted);
     }
 
     #[test]

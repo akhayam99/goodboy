@@ -19,6 +19,7 @@ const STATES = [
   'deciding',
   'pending',
   'skipped',
+  'transferred',
   'needsUser',
   'question',
 ] satisfies ReadonlyArray<TimelineMarkerState>;
@@ -32,6 +33,7 @@ const LABELS: Record<TimelineMarkerState, string> = {
   deciding: ORCHESTRATOR_DECIDING_SENTENCE,
   pending: 'Not started',
   skipped: 'Skipped',
+  transferred: 'Transferred',
   needsUser: 'Needs you',
   question: 'Waiting on your answer',
 };
@@ -139,6 +141,7 @@ describe('TimelineMarker', () => {
       'failed',
       'pending',
       'skipped',
+      'transferred',
     ] satisfies ReadonlyArray<TimelineMarkerState>) {
       expect(rootOf({ state }).className).not.toContain('spin-border');
       cleanup();
@@ -183,6 +186,7 @@ describe('TimelineMarker', () => {
       'deciding',
       'pending',
       'skipped',
+      'transferred',
       'needsUser',
       'question',
     ] satisfies ReadonlyArray<TimelineMarkerState>) {

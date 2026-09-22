@@ -40,6 +40,7 @@ import {
   type TransferPacket,
 } from './composeCapabilityKickoff';
 import { freezeClusterExecution } from './clusterImplementation';
+import { deliverEvidenceSources, undeliveredReason } from '../turn/deliverEvidenceSources';
 import type { GetFn, SetFn } from './types';
 
 export type NeedDispositionOutcome =
@@ -254,20 +255,60 @@ export const applyNeedDisposition = async ({
   }
 
   if (disposition.kind === 'reuse') {
+    const delivery = await deliverEvidenceSources({
+      set,
+      get,
+      sessionId,
+      agentId: requester.id,
+      sourceTurnId: request.sourceTurnId,
+      inventoryRevision: null,
+      sources: disposition.evidenceRefs.map((id) => ({ id, range: null })),
+      heading: `## evidence you already hold (retrieved by the host, no agent was created)\n\n${reason}`,
+    });
+    if (delivery.kind === 'refused') {
+      void get().emitNotification(
+        'error',
+        'warning',
+        `need not answered from evidence: ${requester.name}`,
+        `${delivery.reason}. the obligation stays open.`,
+        { sessionId },
+      );
+      return { kind: 'unavailable', reason: delivery.reason };
+    }
+    const deliveredRefs = delivery.receipts
+      .filter((receipt) => receipt.outcome === 'delivered')
+      .map((receipt) => receipt.sourceId);
+    const unmet = undeliveredReason({ receipts: delivery.receipts });
+    if (deliveredRefs.length === 0) {
+      void get().emitNotification(
+        'error',
+        'warning',
+        `need not answered from evidence: ${requester.name}`,
+        `none of the named sources reached ${requester.name} (${unmet}), so the obligation stays open.`,
+        { sessionId },
+      );
+      return {
+        kind: 'unavailable',
+        reason: `none of the named sources could be delivered (${unmet})`,
+      };
+    }
     const settled = await invokeCapabilityObligationSettle({
       obligationId: obligation.id,
-      verifiedRevision: request.inventoryRevision,
-      deliveryReceipt: `answered from existing evidence: ${disposition.evidenceRefs.join(', ')}`,
+      verifiedRevision: delivery.inventoryRevision,
+      deliveryReceipt:
+        unmet.length === 0
+          ? `answered from existing evidence: ${deliveredRefs.join(', ')}`
+          : `answered from existing evidence: ${deliveredRefs.join(', ')}; not supplied: ${unmet}`,
     });
     refreshObligation({ set, sessionId, obligation: settled });
     void get().emitNotification(
       'error',
       'info',
       `need answered from evidence: ${requester.name}`,
-      `${reason} sources: ${disposition.evidenceRefs.join(', ')}`,
+      `${reason} sources delivered: ${deliveredRefs.join(', ')}`,
       { sessionId },
     );
-    return { kind: 'reused', evidenceRefs: disposition.evidenceRefs };
+    return { kind: 'reused', evidenceRefs: deliveredRefs };
   }
 
   const grantedRole = disposition.step.role;
@@ -410,7 +451,7 @@ export const applyNeedDisposition = async ({
 
   if (plan.kind === 'transfer') {
     await invokeAgentUpdateStatus(requester.id, {
-      status: 'failed',
+      status: 'transferred',
       outputSummary: transferredParentSummary({
         grantedRole,
         purpose: obligation.purpose,

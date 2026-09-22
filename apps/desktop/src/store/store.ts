@@ -263,6 +263,8 @@ import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
 import { createWorktreesSlice } from './slices/worktrees';
+import { createWriterLeasesSlice } from './slices/writer-leases';
+import type { UnknownWriterLeaseRelease } from '../features/worktree/writerLease';
 import type { ReconcileSessionBranchInput } from './slices/worktrees/reconcileSessionBranch';
 import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
@@ -1035,6 +1037,12 @@ type AppActions = {
     workspaceId: WorkspaceId;
     paths: ReadonlyArray<string>;
   }): Promise<void>;
+  refreshStrandedWriterLeases(): Promise<void>;
+  releaseStrandedWriterLease(params: {
+    leaseId: string;
+    releasedBy: string;
+    releaseEvidence: string;
+  }): Promise<UnknownWriterLeaseRelease>;
 };
 
 export type AppStore = AppState &
@@ -1045,6 +1053,7 @@ export type AppStore = AppState &
   ReturnType<typeof createPrWritesSlice>;
 
 export const initialState: AppState = {
+  strandedWriterLeases: [],
   ...initialUpdaterState,
   ...initialChangelogState,
   ...initialBugReportDraftState,
@@ -1242,6 +1251,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),
+  ...createWriterLeasesSlice(set, get),
   ...createBootSlice(set, get),
   ...createUpdaterSlice(set, get),
   ...createChangelogSlice(set, get),

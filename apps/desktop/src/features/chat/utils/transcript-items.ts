@@ -12,6 +12,7 @@ import type {
 } from '@goodboy/types';
 import { isOpenQuestionAnswerText, type ArtifactScanState } from '@goodboy/core';
 import { decodeAuthRequiredMessage } from '../turn';
+import { matchStrandedWriterLease } from '../../worktree/strandedWriterLeaseError';
 import { isWorkflowKickoff, parseWorkflowKickoff } from './parse-workflow-kickoff';
 import { parseResolverKickoff, type ResolverKickoffThread } from './parse-resolver-kickoff';
 import { splitArtifactText } from './split-artifact-blocks';
@@ -64,6 +65,13 @@ export type TranscriptItem =
       runId: ProviderRunId;
     }
   | { kind: 'auth_required'; key: string; providerId: ProviderId; identity: string | null }
+  | {
+      kind: 'stranded_writer_lease';
+      key: string;
+      holder: string;
+      resource: string;
+      waitedMs: number;
+    }
   | { kind: 'skill_invocation'; key: string; skillName: string; args: ReadonlyArray<string> }
   | {
       kind: 'step_transition';
@@ -339,6 +347,7 @@ export const reduceTranscript = (
         break;
       case 'error': {
         const authPayload = decodeAuthRequiredMessage(event.message);
+        const stranded = matchStrandedWriterLease({ message: event.message });
         if (authPayload) {
           items.push({
             kind: 'auth_required',
@@ -346,15 +355,25 @@ export const reduceTranscript = (
             providerId: authPayload.providerId,
             identity: authPayload.identity,
           });
-        } else {
-          items.push({
-            kind: 'error',
-            key: `error-${i}`,
-            message: event.message,
-            runId: event.runId,
-            retryable: event.retryable,
-          });
+          break;
         }
+        if (stranded !== null) {
+          items.push({
+            kind: 'stranded_writer_lease',
+            key: `stranded-lease-${i}`,
+            holder: stranded.holder,
+            resource: stranded.resource,
+            waitedMs: stranded.waitedMs,
+          });
+          break;
+        }
+        items.push({
+          kind: 'error',
+          key: `error-${i}`,
+          message: event.message,
+          runId: event.runId,
+          retryable: event.retryable,
+        });
         break;
       }
       case 'decision_note':

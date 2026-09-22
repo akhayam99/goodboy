@@ -2,6 +2,7 @@ import type { ArtifactsState } from './slices/artifacts/state';
 import type { ResolveState } from './slices/resolve/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
 import type { OrphanWorktree } from '../features/worktree/worktree';
+import type { UnknownWriterLease } from '../features/worktree/writerLease';
 import type { StorageStats } from './slices/storage';
 import type { MountCleanupState } from './slices/mount-cleanup/state';
 import type { PrSeriesState } from './slices/pr-series/state';
@@ -277,6 +278,7 @@ export type AppState = AppSliceState & {
   readonly sessionWorktrees: Readonly<Record<string, ReadonlyArray<string>>>;
   readonly sessionWorktreeRecords?: Readonly<Record<string, ReadonlyArray<SessionWorktree>>>;
   readonly orphanWorktrees: Readonly<Record<string, ReadonlyArray<OrphanWorktree>>>;
+  readonly strandedWriterLeases: ReadonlyArray<UnknownWriterLease>;
   readonly sessionProjectMounts: Readonly<Record<string, ReadonlyArray<SessionProjectMount>>>;
   readonly sessionMounts: Readonly<Record<string, ReadonlyArray<SessionMountView>>>;
   readonly mountBranchObservations: Readonly<Record<string, ReadonlyArray<MountBranchObservation>>>;

@@ -15,6 +15,7 @@ const TABLE: ReadonlyArray<Row> = [
   { status: 'running', hasOpenQuestion: false, needsUser: false, expected: 'running' },
   { status: 'pending', hasOpenQuestion: false, needsUser: false, expected: 'pending' },
   { status: 'skipped', hasOpenQuestion: false, needsUser: false, expected: 'skipped' },
+  { status: 'transferred', hasOpenQuestion: false, needsUser: false, expected: 'transferred' },
   { status: 'pending', hasOpenQuestion: false, needsUser: true, expected: 'needsUser' },
   { status: 'completed', hasOpenQuestion: true, needsUser: false, expected: 'question' },
 ];

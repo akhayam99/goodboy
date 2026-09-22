@@ -4,6 +4,9 @@ import type {
   AgentId,
   CapabilityGrant,
   CapabilityObligation,
+  IsoDateTime,
+  PlanId,
+  PlanWithCount,
   ProviderId,
   SessionId,
   WorkflowRunId,
@@ -21,6 +24,7 @@ const h = vi.hoisted(() => ({
   claimOwner: vi.fn(),
   workflowUpsert: vi.fn(),
   freeze: vi.fn(),
+  deliveryRecord: vi.fn(),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -34,6 +38,8 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeCapabilityObligationDecide: h.decide,
   invokeCapabilityObligationSettle: h.settle,
   invokeWorkflowUpsert: h.workflowUpsert,
+  invokeEvidenceInventoryRecord: async () => undefined,
+  invokeEvidenceDeliveryRecord: h.deliveryRecord,
 }));
 vi.mock('./clusterImplementation', () => ({ freezeClusterExecution: h.freeze }));
 
@@ -136,12 +142,34 @@ const grantDecision = (
   },
 });
 
-const createHarness = ({ requester }: { readonly requester: Agent }) => {
+const planOf = (): PlanWithCount => ({
+  id: 'report-4' as PlanId,
+  sessionId: SESSION_ID,
+  agentId: 'agent-9' as AgentId,
+  title: 'scout report on the null guard',
+  bodyMd: 'the guard was dropped in the routing rewrite',
+  status: 'active',
+  consumptionCount: 0,
+  createdAt: '2026-07-30T00:00:00.000Z' as IsoDateTime,
+  updatedAt: '2026-07-30T00:00:00.000Z' as IsoDateTime,
+});
+
+const createHarness = ({
+  requester,
+  plans = [],
+}: {
+  readonly requester: Agent;
+  readonly plans?: ReadonlyArray<PlanWithCount>;
+}) => {
   const spawnAgent = vi.fn(async () => 'child-1' as AgentId);
+  const sendTurn = vi.fn(async (_args: { readonly content: string }) => undefined);
   const state = {
     sessionPhaseRuns: { [SESSION_ID]: [requester] },
     agentKindOverride: {},
     agentProviderOverride: {},
+    agentTurnState: {},
+    sessionPlans: { [SESSION_ID]: plans },
+    sendTurn,
     capabilityObligations: {} as Record<SessionId, ReadonlyArray<CapabilityObligation>>,
     capabilityGrants: {} as Record<SessionId, ReadonlyArray<CapabilityGrant>>,
     clusterExecutionGraphs: {},
@@ -156,7 +184,7 @@ const createHarness = ({ requester }: { readonly requester: Agent }) => {
     Object.assign(state, update);
   }) as SetFn;
   const get = (() => state) as unknown as GetFn;
-  return { state, set, get, spawnAgent };
+  return { state, set, get, spawnAgent, sendTurn };
 };
 
 describe('applyNeedDisposition', () => {
@@ -171,6 +199,7 @@ describe('applyNeedDisposition', () => {
     h.agentList.mockImplementation(async () => []);
     h.claimOwner.mockImplementation(async () => ({ kind: 'owned' }));
     h.freeze.mockImplementation(async () => null);
+    h.deliveryRecord.mockImplementation(async () => undefined);
   });
 
   it("grants a reviewer's repair to an implementer and hands the obligation to the run", async () => {
@@ -355,7 +384,7 @@ describe('applyNeedDisposition', () => {
     expect(h.updateStatus).toHaveBeenCalledWith(
       REQUESTER_ID,
       expect.objectContaining({
-        status: 'failed',
+        status: 'transferred',
         outputSummary: expect.stringContaining('partial, transferred'),
       }),
     );
@@ -382,30 +411,102 @@ describe('applyNeedDisposition', () => {
     expect(h.claimOwner).not.toHaveBeenCalled();
   });
 
-  it('answers a need from existing evidence without creating an agent', async () => {
+  const reuseDecision = (
+    evidenceRefs: ReadonlyArray<string>,
+  ): Extract<OrchestratorDecision, { readonly action: 'need' }> => ({
+    action: 'need',
+    reason: 'the scout report already lists them',
+    obligationId: obligationOf().id,
+    disposition: { kind: 'reuse', evidenceRefs },
+  });
+
+  it('answers a need by handing the named evidence to the requester and recording what it delivered', async () => {
     const requester = agentOf({});
-    const { set, get, spawnAgent } = createHarness({ requester });
+    const { set, get, spawnAgent, sendTurn } = createHarness({
+      requester,
+      plans: [planOf()],
+    });
 
     const outcome = await applyNeedDisposition({
       set,
       get,
       sessionId: SESSION_ID,
       obligation: obligationOf(),
-      decision: {
-        action: 'need',
-        reason: 'the scout report already lists them',
-        obligationId: obligationOf().id,
-        disposition: { kind: 'reuse', evidenceRefs: ['artifact:report-4'] },
-      },
+      decision: reuseDecision(['artifact:report-4']),
     });
 
     expect(outcome).toEqual({ kind: 'reused', evidenceRefs: ['artifact:report-4'] });
     expect(spawnAgent).not.toHaveBeenCalled();
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    const content = sendTurn.mock.calls[0]?.[0]?.content ?? '';
+    expect(content).toContain('artifact:report-4');
+    expect(content).toContain('the guard was dropped in the routing rewrite');
+    expect(h.deliveryRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentId: REQUESTER_ID,
+        sourceTurnId: 'run-1',
+        receipts: [
+          expect.objectContaining({ sourceId: 'artifact:report-4', outcome: 'delivered' }),
+        ],
+      }),
+    );
     expect(h.settle).toHaveBeenCalledWith(
       expect.objectContaining({
         deliveryReceipt: 'answered from existing evidence: artifact:report-4',
       }),
     );
+  });
+
+  it('leaves the obligation open when no named source can be retrieved', async () => {
+    const requester = agentOf({});
+    const { set, get, sendTurn } = createHarness({ requester });
+
+    const outcome = await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation: obligationOf(),
+      decision: reuseDecision(['artifact:report-4']),
+    });
+
+    expect(outcome.kind).toBe('unavailable');
+    expect(outcome).toEqual(
+      expect.objectContaining({
+        reason: expect.stringContaining('no source with that id is in your inventory'),
+      }),
+    );
+    expect(h.settle).not.toHaveBeenCalled();
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(sendTurn.mock.calls[0]?.[0]?.content ?? '').toContain('not supplied');
+  });
+
+  it('refuses an unauthorized source instead of delivering it', async () => {
+    const requester = agentOf({});
+    const { set, get, sendTurn } = createHarness({ requester });
+    const parent = agentOf({
+      id: 'agent-parent' as AgentId,
+      name: 'implement the change',
+      kind: 'implementer',
+    });
+    set(() => ({
+      sessionPhaseRuns: {
+        [SESSION_ID]: [{ ...requester, parentAgentId: parent.id }, parent],
+      },
+    }));
+
+    const outcome = await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation: obligationOf(),
+      decision: reuseDecision([`parent:${parent.id}`]),
+    });
+
+    expect(outcome.kind).toBe('unavailable');
+    expect(h.settle).not.toHaveBeenCalled();
+    const content = sendTurn.mock.calls[0]?.[0]?.content ?? '';
+    expect(content).toContain('that source is not authorized for you');
+    expect(content).not.toContain('implement the change');
   });
 
   it('attaches a second need to the running owner instead of a second agent', async () => {
@@ -498,6 +599,7 @@ describe('a structural escalation', () => {
     h.agentList.mockImplementation(async () => []);
     h.claimOwner.mockImplementation(async () => ({ kind: 'owned' }));
     h.freeze.mockImplementation(async () => null);
+    h.deliveryRecord.mockImplementation(async () => undefined);
   });
 
   const replanObligation = (overrides: Partial<CapabilityObligation> = {}) =>

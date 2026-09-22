@@ -7,6 +7,7 @@ const TONE: Record<AgentStatus, Tone> = {
   completed: 'success',
   failed: 'danger',
   skipped: 'neutral',
+  transferred: 'neutral',
 };
 
 type Props = {
@@ -20,6 +21,8 @@ export const AgentStatusBadge = ({ status }: Props) => (
     uppercase
     bordered={false}
     label={status}
-    className={status === 'skipped' ? 'shrink-0 opacity-70' : 'shrink-0'}
+    className={
+      status === 'skipped' || status === 'transferred' ? 'shrink-0 opacity-70' : 'shrink-0'
+    }
   />
 );

@@ -198,6 +198,7 @@ export const NON_SESSION_STATE_KEYS = [
   'slackThreadHeads',
   'slackThreads',
   'retainedWorktreePaths',
+  'strandedWriterLeases',
   'prWriteClaims',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 

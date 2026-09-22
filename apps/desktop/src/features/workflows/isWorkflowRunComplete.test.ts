@@ -112,6 +112,26 @@ describe('isWorkflowRunComplete', () => {
       }),
     ).toBe(true);
   });
+
+  it('does not let a transferred cluster child complete its container', () => {
+    expect(
+      isWorkflowRunComplete({
+        run: run(),
+        workflow,
+        agents: [stepAgent('completed'), clusterChild(1, 'transferred')],
+      }),
+    ).toBe(false);
+  });
+
+  it('does not let a transferred step agent satisfy its step', () => {
+    expect(
+      isWorkflowRunComplete({
+        run: run(),
+        workflow,
+        agents: [stepAgent('transferred')],
+      }),
+    ).toBe(false);
+  });
 });
 
 describe('splitWorkflowRuns', () => {

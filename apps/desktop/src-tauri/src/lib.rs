@@ -291,6 +291,7 @@ pub fn run() {
             writer_lease::writer_lease_acquire,
             writer_lease::writer_lease_release,
             writer_lease::writer_lease_unknown,
+            writer_lease::writer_lease_release_unknown,
             query_bridge::query_bridge_serving,
             query_bridge::project::project_materialize_result,
             query_bridge::mount::mount_command_result,

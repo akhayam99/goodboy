@@ -80,3 +80,47 @@ export const releaseWriterLease = async ({ token }: { readonly token: string }):
 
 export const listUnknownWriterLeases = async (): Promise<ReadonlyArray<UnknownWriterLease>> =>
   invoke<ReadonlyArray<UnknownWriterLease>>('writer_lease_unknown').catch(() => []);
+
+export type UnknownWriterLeaseRelease =
+  | { readonly kind: 'released'; readonly id: string; readonly holder: string }
+  | { readonly kind: 'not-found'; readonly id: string }
+  | { readonly kind: 'not-stranded'; readonly id: string; readonly state: string }
+  | { readonly kind: 'owner-alive'; readonly id: string; readonly processId: number }
+  | { readonly kind: 'evidence-missing'; readonly id: string }
+  | { readonly kind: 'unavailable'; readonly id: string };
+
+const RELEASE_KINDS: ReadonlyArray<UnknownWriterLeaseRelease['kind']> = [
+  'released',
+  'not-found',
+  'not-stranded',
+  'owner-alive',
+  'evidence-missing',
+];
+
+const isReleaseShape = (value: unknown): value is UnknownWriterLeaseRelease => {
+  if (value === null || typeof value !== 'object') {
+    return false;
+  }
+  const candidate: Record<string, unknown> = { ...value };
+  return RELEASE_KINDS.some((kind) => kind === candidate.kind);
+};
+
+export const releaseUnknownWriterLease = async ({
+  leaseId,
+  releasedBy,
+  evidence,
+}: {
+  readonly leaseId: string;
+  readonly releasedBy: string;
+  readonly evidence: string;
+}): Promise<UnknownWriterLeaseRelease> => {
+  const raw = await invoke<unknown>('writer_lease_release_unknown', {
+    leaseId,
+    releasedBy,
+    evidence,
+  }).catch(() => null);
+  if (!isReleaseShape(raw)) {
+    return { kind: 'unavailable', id: leaseId };
+  }
+  return raw;
+};

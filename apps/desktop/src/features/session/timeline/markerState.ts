@@ -1,7 +1,15 @@
 import type { Agent } from '@goodboy/types';
 
 export type TimelineMarkerState =
-  'done' | 'failed' | 'running' | 'deciding' | 'pending' | 'skipped' | 'needsUser' | 'question';
+  | 'done'
+  | 'failed'
+  | 'running'
+  | 'deciding'
+  | 'pending'
+  | 'skipped'
+  | 'transferred'
+  | 'needsUser'
+  | 'question';
 
 type Params = {
   readonly status: Agent['status'];
@@ -32,6 +40,8 @@ export const resolveMarkerState = ({
       return 'pending';
     case 'skipped':
       return 'skipped';
+    case 'transferred':
+      return 'transferred';
     default: {
       const exhaustive: never = status;
       return exhaustive;

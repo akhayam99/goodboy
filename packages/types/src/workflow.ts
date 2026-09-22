@@ -33,7 +33,8 @@ export type AgentRole =
   | 'wireframe'
   | 'custom';
 
-export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+export type AgentStatus =
+  'pending' | 'running' | 'completed' | 'failed' | 'skipped' | 'transferred';
 
 export type ClusterCompletionFindingTarget = 'implementer' | 'planner' | 'investigator' | 'tester';
 

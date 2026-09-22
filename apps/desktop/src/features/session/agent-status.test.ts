@@ -21,6 +21,16 @@ describe('describeAgentStatus', () => {
     expect(describeAgentStatus({ status: 'skipped' }).tone).toBe('neutral');
   });
 
+  it('keeps a transferred attempt apart from both a failure and a success', () => {
+    const transferred = describeAgentStatus({ status: 'transferred' });
+
+    expect(transferred.tone).not.toBe('danger');
+    expect(transferred.tone).not.toBe('success');
+    expect(transferred.label).not.toBe(describeAgentStatus({ status: 'failed' }).label);
+    expect(transferred.label).not.toBe(describeAgentStatus({ status: 'completed' }).label);
+    expect(transferred.reason).toContain('moved to another agent');
+  });
+
   it('reads as a sentence rather than a bare enum value', () => {
     expect(stateDescription({ presentation: describeAgentStatus({ status: 'skipped' }) })).toBe(
       'Skipped, nothing ran for this step',

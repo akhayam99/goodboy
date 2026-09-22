@@ -4,6 +4,7 @@ import type { TranscriptItem } from '../../utils/transcript-items';
 import { ArtifactBlockCard } from '../ArtifactBlockCard';
 import { ArtifactCaptureNoticeCard } from '../ArtifactCaptureNoticeCard';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
+import { StrandedWriterLeaseCallout } from '../StrandedWriterLeaseCallout';
 import { SkillInvocationCard } from '../SkillInvocationCard';
 import { PhaseTransitionCard } from '../PhaseTransitionCard';
 import { OrchestratorDecisionCard } from '../OrchestratorDecisionCard';
@@ -91,6 +92,14 @@ function TranscriptCardImpl({
           providerId={item.providerId}
           identity={item.identity}
           onRefresh={onRefreshAuth ?? (() => undefined)}
+        />
+      );
+    case 'stranded_writer_lease':
+      return (
+        <StrandedWriterLeaseCallout
+          holder={item.holder}
+          resource={item.resource}
+          waitedMs={item.waitedMs}
         />
       );
     case 'skill_invocation':

@@ -585,3 +585,41 @@ describe('reduceTranscript artifact scan reuse', () => {
     expect(reduceTranscriptTrace.textScanRestarts).toBe(events.length + 1);
   });
 });
+
+describe('reduceTranscript writer lease errors', () => {
+  const leaseError = ({ message }: { readonly message: string }): TurnEvent => ({
+    kind: 'error',
+    runId: RUN,
+    message,
+    at: AT,
+  });
+
+  it('turns a stranded lease timeout into an item that can offer the release', () => {
+    const items = reduceTranscript([
+      leaseError({
+        message:
+          'gave up after waiting 1800000ms for a writer lease on repo:/repos/app, held by agent-1 in state unknown',
+      }),
+    ]);
+
+    expect(items).toEqual([
+      expect.objectContaining({
+        kind: 'stranded_writer_lease',
+        holder: 'agent-1',
+        resource: 'repo:/repos/app',
+        waitedMs: 1800000,
+      }),
+    ]);
+  });
+
+  it('leaves a lease held by a live writer as an ordinary error', () => {
+    const items = reduceTranscript([
+      leaseError({
+        message:
+          'gave up after waiting 1800000ms for a writer lease on repo:/repos/app, held by agent-1 in state active',
+      }),
+    ]);
+
+    expect(items).toEqual([expect.objectContaining({ kind: 'error' })]);
+  });
+});

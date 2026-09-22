@@ -33,6 +33,12 @@ export const AGENT_STATUS_PRESENTATION = {
     tone: 'neutral',
     icon: CONCEPT_ICONS.runCancelled,
   },
+  transferred: {
+    label: 'Transferred',
+    reason: 'it stopped without finishing and its remaining work moved to another agent',
+    tone: 'neutral',
+    icon: CONCEPT_ICONS.nextSteps,
+  },
 } satisfies Record<AgentStatus, StatePresentation>;
 
 type Params = {
