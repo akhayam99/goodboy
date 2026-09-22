@@ -32,7 +32,11 @@ const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   'gemini-3.8-flash': 5,
   'gemini-3.7-flash': 5,
   'gemini-3.6-flash': 5,
+  'gemini-3.5-flash': 5,
+  'gemini-3-flash': 5,
   'kimi-k3': 12,
+  'kimi-k2.7-code': 11,
+  'grok-4.7': 14,
   'grok-4.6': 13,
   'glm-5.2': 11,
 };

@@ -45,6 +45,9 @@ describe('resolveModelForProvider', () => {
       'sonnet-4.6',
     );
     expect(resolveModelForProvider({ provider: 'cursor', modelId: 'claude-opus-4-8' })).toBe(
+      'opus-4.8',
+    );
+    expect(resolveModelForProvider({ provider: 'cursor', modelId: 'claude-opus-4-6' })).toBe(
       'composer-2.5',
     );
   });
