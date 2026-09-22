@@ -17,8 +17,8 @@ export const MOONSHOT_CATALOG = [
     contextWindow: 1_048_576,
     presentation: {
       family: 'other',
-      group: null,
-      version: 'Kimi K3',
+      group: 'Kimi',
+      version: 'K3',
       order: 10,
       costTier: 'mid',
     },
@@ -34,8 +34,8 @@ export const MOONSHOT_CATALOG = [
     contextWindow: 262_144,
     presentation: {
       family: 'other',
-      group: null,
-      version: 'Kimi K2.7 Code HighSpeed',
+      group: 'Kimi',
+      version: 'K2.7 Code HighSpeed',
       order: 9,
       costTier: 'mid',
     },
@@ -51,8 +51,8 @@ export const MOONSHOT_CATALOG = [
     contextWindow: 262_144,
     presentation: {
       family: 'other',
-      group: null,
-      version: 'Kimi K2.7 Code',
+      group: 'Kimi',
+      version: 'K2.7 Code',
       order: 8,
       costTier: 'cheap',
     },
@@ -68,8 +68,8 @@ export const MOONSHOT_CATALOG = [
     contextWindow: 262_144,
     presentation: {
       family: 'other',
-      group: null,
-      version: 'Kimi K2.6',
+      group: 'Kimi',
+      version: 'K2.6',
       order: 7,
       costTier: 'cheap',
     },

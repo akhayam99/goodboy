@@ -6,7 +6,7 @@ export type ModelKey = string;
 
 export type ModelPresentation = {
   readonly family: ModelFamily;
-  readonly group: string | null;
+  readonly group: string;
   readonly version: string;
   readonly order: number;
   readonly costTier: ModelCostTier;

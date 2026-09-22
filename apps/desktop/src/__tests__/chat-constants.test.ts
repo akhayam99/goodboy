@@ -207,7 +207,7 @@ describe('parseModelId', () => {
   it('cursor auto', () => {
     expect(parseModelId('auto')).toEqual({
       family: 'cursor-auto',
-      subfamily: null,
+      subfamily: 'Auto',
       variantLabel: 'Auto',
     });
   });

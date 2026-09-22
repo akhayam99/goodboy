@@ -433,11 +433,14 @@ describe('RoutingPicker', () => {
     expect(within(modelOptions).getByRole('group', { name: 'Effort' })).toBeDefined();
   });
 
-  it('omits the version row for a model without a version axis', () => {
+  it('omits the version row for a family that ships a single model', () => {
     render(<RoutingPicker {...baseProps} provider="cursor" model="auto" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const modelOptions = screen.getByRole('region', { name: 'Model options' });
-    expect(within(modelOptions).queryByRole('group', { name: 'Model Version' })).toBeNull();
+    expect(
+      within(modelOptions).getByRole('button', { name: 'Auto' }).getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(within(modelOptions).queryByRole('group', { name: 'Version' })).toBeNull();
   });
 
   it('shows a Max Mode advisory after failure and clears it after success', () => {
@@ -491,7 +494,7 @@ describe('RoutingPicker', () => {
     ).toEqual(['Haiku', 'Sonnet', 'Opus', 'Fable']);
     fireEvent.click(within(models).getByRole('button', { name: 'Opus' }));
     expect(
-      within(screen.getByRole('group', { name: 'Model Version' }))
+      within(screen.getByRole('group', { name: 'Version' }))
         .getAllByRole('button')
         .map((button) => button.textContent),
     ).toEqual(['4.6', '4.7', '4.8', '5', '5.5']);
@@ -525,7 +528,7 @@ describe('RoutingPicker', () => {
     render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-terra" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const model = screen.getByRole('group', { name: 'Model' });
-    const version = screen.getByRole('group', { name: 'Model Version' });
+    const version = screen.getByRole('group', { name: 'Version' });
     const effort = screen.getByRole('group', { name: 'Effort' });
     expect(
       [model, version, effort].every((group) => group?.className.includes('justify-end')),

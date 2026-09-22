@@ -120,15 +120,26 @@ describe('model catalogs', () => {
       const familyByGroup = new Map<string, ModelFamily>();
       for (const model of catalog) {
         const group = model.presentation.group;
-        if (group == null) {
-          continue;
-        }
         const family = familyByGroup.get(group);
         if (family != null) {
           expect(model.presentation.family).toBe(family);
           continue;
         }
         familyByGroup.set(group, model.presentation.family);
+      }
+    }
+  });
+
+  it('keeps every group member reachable by a distinct version chip', () => {
+    for (const provider of PROVIDER_IDS) {
+      const claimed = new Map<string, string>();
+      for (const model of MODEL_CATALOGS[provider]) {
+        const chip = `${model.presentation.group} · ${model.presentation.version}`;
+        expect(
+          claimed.get(chip),
+          `${provider}: "${chip}" is claimed by both ${claimed.get(chip)} and ${model.key}`,
+        ).toBeUndefined();
+        claimed.set(chip, model.key);
       }
     }
   });

@@ -68,10 +68,14 @@ const selectionAxes = ({ model }: SelectionAxesParams) => {
   );
   const groupModels = new Map<string, CatalogModel>();
   for (const candidate of catalog) {
-    const group = candidate.presentation.group ?? candidate.presentation.version;
-    groupModels.set(group, candidate);
+    groupModels.set(candidate.presentation.group, candidate);
   }
-  const activeGroup = model.presentation.group ?? model.presentation.version;
+  const activeGroup = model.presentation.group;
+  const members = catalog.filter((candidate) => candidate.presentation.group === activeGroup);
+  const versionModels = new Map<string, CatalogModel>();
+  for (const member of members) {
+    versionModels.set(member.presentation.version, member);
+  }
   return {
     model: {
       label: 'Model',
@@ -83,21 +87,16 @@ const selectionAxes = ({ model }: SelectionAxesParams) => {
       activeId: activeGroup,
     },
     version:
-      model.presentation.group == null
+      versionModels.size <= 1
         ? null
         : {
-            label: 'Model Version',
-            options: catalog
-              .filter(
-                (candidate) =>
-                  (candidate.presentation.group ?? candidate.presentation.version) === activeGroup,
-              )
-              .map((candidate) => ({
-                id: candidate.key,
-                label: candidate.presentation.version,
-                modelKey: candidate.key,
-              })),
-            activeId: model.key,
+            label: 'Version',
+            options: [...versionModels.entries()].map(([label, candidate]) => ({
+              id: label,
+              label,
+              modelKey: candidate.key,
+            })),
+            activeId: model.presentation.version,
           },
   };
 };

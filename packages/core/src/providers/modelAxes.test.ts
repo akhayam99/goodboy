@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ModelSelection } from '@goodboy/types';
+import { PROVIDER_IDS } from '@goodboy/types';
+import { MODEL_CATALOGS } from './catalogs';
 import { ANTHROPIC_CATALOG } from './claude/catalog';
 import { CODEX_CATALOG } from './codex/catalog';
 import { CURSOR_CATALOG } from './cursor/catalog';
@@ -16,7 +18,7 @@ describe('modelAxes', () => {
     }
     const axes = modelAxes({ model, selection: { key: model.key, variant: 'astra' } });
     expect(axes.model.options).toContainEqual({ id: 'GPT', label: 'GPT', modelKey: 'gpt-6' });
-    expect(axes.version?.options).toContainEqual({ id: 'gpt-6', label: '6', modelKey: 'gpt-6' });
+    expect(axes.version?.options).toContainEqual({ id: '6', label: '6', modelKey: 'gpt-6' });
     expect(axes.effort?.levels).toEqual([
       { level: 'low', available: true },
       { level: 'medium', available: true },
@@ -74,20 +76,20 @@ describe('modelAxes', () => {
     }
   });
 
-  it('gives each gpt-5.6 model its own version chip, so cost is selectable', () => {
+  it('gives each gpt checkpoint its own version chip, so cost is selectable', () => {
     const model = CODEX_CATALOG.find((candidate) => candidate.key === 'gpt-5.6-luna');
     if (model == null) {
       throw new Error('missing codex gpt-5.6-luna');
     }
     const axes = modelAxes({ model, selection: { key: model.key } });
-    expect(axes.version?.options.map((option) => option.id)).toEqual([
-      'gpt-5.5',
-      'gpt-5.6-luna',
-      'gpt-5.6-terra',
-      'gpt-5.6-sol',
-      'gpt-6',
+    expect(axes.version?.options).toEqual([
+      { id: '5.5', label: '5.5', modelKey: 'gpt-5.5' },
+      { id: '5.6 Luna', label: '5.6 Luna', modelKey: 'gpt-5.6-luna' },
+      { id: '5.6 Terra', label: '5.6 Terra', modelKey: 'gpt-5.6-terra' },
+      { id: '5.6 Sol', label: '5.6 Sol', modelKey: 'gpt-5.6-sol' },
+      { id: '6', label: '6', modelKey: 'gpt-6' },
     ]);
-    expect(axes.version?.activeId).toBe('gpt-5.6-luna');
+    expect(axes.version?.activeId).toBe('5.6 Luna');
   });
 
   it('marks unsupported anthropic effort levels as unavailable instead of hiding them', () => {
@@ -122,7 +124,7 @@ describe('modelAxes', () => {
     const options = modelAxes({ model, selection: { key: model.key } }).model.options;
     const newestByGroup = new Map<string, string>();
     for (const candidate of ANTHROPIC_CATALOG) {
-      const group = candidate.presentation.group ?? candidate.presentation.version;
+      const group = candidate.presentation.group;
       const current = ANTHROPIC_CATALOG.find((entry) => entry.key === newestByGroup.get(group));
       if (current == null || candidate.presentation.order > current.presentation.order) {
         newestByGroup.set(group, candidate.key);
@@ -135,12 +137,14 @@ describe('modelAxes', () => {
     expect(options.find((option) => option.id === 'Opus')?.modelKey).not.toBe('opus-4.6');
   });
 
-  it('omits the version axis when the catalog declares no model group', () => {
+  it('omits the version axis for a family that ships a single model', () => {
     const model = CURSOR_CATALOG.find((candidate) => candidate.key === 'auto');
     if (model == null) {
       throw new Error('missing cursor auto');
     }
-    expect(modelAxes({ model, selection: { key: model.key } }).version).toBeNull();
+    const axes = modelAxes({ model, selection: { key: model.key } });
+    expect(axes.model.activeId).toBe('Auto');
+    expect(axes.version).toBeNull();
   });
 
   it('uses Effort as the effort axis label across providers', () => {
@@ -159,7 +163,7 @@ describe('modelAxes', () => {
     }
   });
 
-  it('represents each cursor group by its newest version, GPT led by Sol', () => {
+  it('gives cursor one chip per family, each led by its newest version', () => {
     const model = CURSOR_CATALOG.find((candidate) => candidate.key === 'sonnet-5');
     if (model == null) {
       throw new Error('missing cursor sonnet-5');
@@ -173,19 +177,54 @@ describe('modelAxes', () => {
       { id: 'Fable', label: 'Fable', modelKey: 'fable-5.1' },
       { id: 'Codex', label: 'Codex', modelKey: 'gpt-5.3-codex' },
       { id: 'GPT', label: 'GPT', modelKey: 'gpt-5.6' },
-      { id: 'Grok 4.6', label: 'Grok 4.6', modelKey: 'grok-4.6' },
-      { id: 'Grok 4.7', label: 'Grok 4.7', modelKey: 'grok-4.7' },
-      { id: 'Gemini 3.1 Pro', label: 'Gemini 3.1 Pro', modelKey: 'gemini-3.1-pro' },
-      { id: 'Gemini 3.8 Flash', label: 'Gemini 3.8 Flash', modelKey: 'gemini-3.8-flash' },
-      { id: 'Gemini 3.7 Flash', label: 'Gemini 3.7 Flash', modelKey: 'gemini-3.7-flash' },
-      { id: 'Gemini 3.6 Flash', label: 'Gemini 3.6 Flash', modelKey: 'gemini-3.6-flash' },
-      { id: 'Gemini 3.5 Flash', label: 'Gemini 3.5 Flash', modelKey: 'gemini-3.5-flash' },
-      { id: 'Gemini 3 Flash', label: 'Gemini 3 Flash', modelKey: 'gemini-3-flash' },
-      { id: 'Muse Spark 1.3', label: 'Muse Spark 1.3', modelKey: 'muse-spark-1.3' },
-      { id: 'Kimi K3', label: 'Kimi K3', modelKey: 'kimi-k3' },
-      { id: 'Kimi K2.7 Code', label: 'Kimi K2.7 Code', modelKey: 'kimi-k2.7-code' },
-      { id: 'GLM 5.2', label: 'GLM 5.2', modelKey: 'glm-5.2' },
+      { id: 'Grok', label: 'Grok', modelKey: 'grok-4.7' },
+      { id: 'Gemini', label: 'Gemini', modelKey: 'gemini-3.1-pro' },
+      { id: 'Muse Spark', label: 'Muse Spark', modelKey: 'muse-spark-1.3' },
+      { id: 'Kimi', label: 'Kimi', modelKey: 'kimi-k3' },
+      { id: 'GLM', label: 'GLM', modelKey: 'glm-5.2' },
     ]);
+  });
+
+  it('splits a cursor family into its version chips, newest last', () => {
+    const model = CURSOR_CATALOG.find((candidate) => candidate.key === 'gemini-3.6-flash');
+    if (model == null) {
+      throw new Error('missing cursor gemini-3.6-flash');
+    }
+    const axes = modelAxes({ model, selection: { key: model.key } });
+    expect(axes.model.activeId).toBe('Gemini');
+    expect(axes.version?.label).toBe('Version');
+    expect(axes.version?.options).toEqual([
+      { id: '3 Flash', label: '3 Flash', modelKey: 'gemini-3-flash' },
+      { id: '3.5 Flash', label: '3.5 Flash', modelKey: 'gemini-3.5-flash' },
+      { id: '3.6 Flash', label: '3.6 Flash', modelKey: 'gemini-3.6-flash' },
+      { id: '3.7 Flash', label: '3.7 Flash', modelKey: 'gemini-3.7-flash' },
+      { id: '3.8 Flash', label: '3.8 Flash', modelKey: 'gemini-3.8-flash' },
+      { id: '3.1 Pro', label: '3.1 Pro', modelKey: 'gemini-3.1-pro' },
+    ]);
+    expect(axes.version?.activeId).toBe('3.6 Flash');
+  });
+
+  it('reaches every catalog model by walking its own chips', () => {
+    for (const provider of PROVIDER_IDS) {
+      for (const model of MODEL_CATALOGS[provider]) {
+        const axes = modelAxes({ model, selection: { key: model.key } });
+        const group = axes.model.options.find((option) => option.id === axes.model.activeId);
+        expect(group?.id, `${provider}/${model.key} has no chip of its own`).toBe(
+          model.presentation.group,
+        );
+        const version = axes.version;
+        if (version == null) {
+          expect(group?.modelKey, `${provider}/${model.key} is shadowed by its own family`).toBe(
+            model.key,
+          );
+          continue;
+        }
+        const picked = version.options.find((option) => option.id === version.activeId);
+        expect(picked?.modelKey, `${provider}/${model.key} is unreachable from its family`).toBe(
+          model.key,
+        );
+      }
+    }
   });
 
   it('reports Max Mode from the resolved cursor combo', () => {
