@@ -227,6 +227,15 @@ describe('Markdown lists', () => {
     expect(container.textContent).not.toContain('[');
   });
 
+  it('reads a bare task marker with no text as a task, and names its state', () => {
+    const { container } = render(<Markdown text={['- [ ]', '- [x]'].join('\n')} />);
+    const marks = container.querySelectorAll('[data-block="task-mark"]');
+    expect(marks).toHaveLength(2);
+    expect(marks[0]?.getAttribute('aria-label')).toBe('open task');
+    expect(marks[1]?.getAttribute('aria-label')).toBe('done task');
+    expect(container.textContent).not.toContain('[');
+  });
+
   it('keeps a run of bold label lines on their own lines', () => {
     const { container } = render(
       <Markdown text={['**Date:** today', '**Source:** the session', 'plain tail'].join('\n')} />,

@@ -199,6 +199,12 @@ const TASK_ICON: Record<TaskState, LucideIcon> = {
   partial: SquareMinus,
 };
 
+const TASK_LABEL: Record<TaskState, string> = {
+  open: 'open task',
+  done: 'done task',
+  partial: 'partly done task',
+};
+
 const TASK_ICON_CLASS: Record<TaskState, string> = {
   open: 'text-muted-foreground',
   done: 'text-success',
@@ -214,7 +220,8 @@ const renderTaskMark = ({ task }: TaskMarkParams): ReactNode => {
   return (
     <Icon
       size={13}
-      aria-hidden
+      role="img"
+      aria-label={TASK_LABEL[task]}
       data-block="task-mark"
       className={cn('absolute -left-5 top-[0.3em]', TASK_ICON_CLASS[task])}
     />

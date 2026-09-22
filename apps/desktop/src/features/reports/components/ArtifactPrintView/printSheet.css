@@ -299,10 +299,10 @@
   white-space: nowrap;
   width: 1.15em;
 }
-.print-sheet .print-body ol:has(> li:nth-child(10)) > li {
+.print-sheet .print-body ol:has(> li:nth-child(10)) > li:not([data-task]) {
   padding-left: 2.05em;
 }
-.print-sheet .print-body ol:has(> li:nth-child(10)) > li::before {
+.print-sheet .print-body ol:has(> li:nth-child(10)) > li:not([data-task])::before {
   width: 1.6em;
 }
 .print-sheet .print-body li[data-task] {

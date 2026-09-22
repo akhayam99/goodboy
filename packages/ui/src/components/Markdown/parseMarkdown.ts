@@ -111,7 +111,7 @@ const calloutBlock = ({ tag, content }: CalloutParams): Block => {
   return { kind: 'callout', tag, content, blocks: parseBlocks(content) };
 };
 
-const TASK_RE = /^\[([ xX~-])\]\s+(.*)$/;
+const TASK_RE = /^\[([ xX~-])\](?:\s+(.*))?$/;
 const LABEL_LINE_RE = /^\*\*[^*\n]{1,60}?(?::\*\*|\*\*:)/;
 
 const TASK_STATES: Readonly<Record<string, TaskState>> = {

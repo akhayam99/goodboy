@@ -261,7 +261,7 @@ describe('print sheet styling', () => {
     expect(SHEET_CSS).toMatch(
       /ol:not\(\[data-block\]\) > li::before \{[^}]*content: counter\(print-item\) '\.'/,
     );
-    expect(SHEET_CSS).toMatch(/ol:has\(> li:nth-child\(10\)\) > li \{/);
+    expect(SHEET_CSS).toMatch(/ol:has\(> li:nth-child\(10\)\) > li:not\(\[data-task\]\) \{/);
     expect(SHEET_CSS).toMatch(/ul > li::before \{[^}]*border-radius: 50%/);
     expect(SHEET_CSS).not.toContain('::marker');
   });
