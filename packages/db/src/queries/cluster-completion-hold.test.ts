@@ -7,6 +7,7 @@ import {
   recordClusterCompletionHold,
   resolveClusterCompletionHold,
 } from './cluster-completion-hold';
+import { softDeleteAgent } from './agent';
 
 const sessionId = 'session' as SessionId;
 const workflowRunId = 'run' as WorkflowRunId;
@@ -63,5 +64,35 @@ describe('cluster completion hold queries', () => {
     const [resolved] = await listClusterCompletionHolds({ db, sessionId });
     expect(resolved?.state).toBe('resolved');
     expect(resolved?.resolutionEvidence).toBe('verified by the user');
+  });
+
+  it('keeps an open hold available after its source child is tombstoned', async () => {
+    const db = await seed();
+    await recordClusterCompletionHold({
+      db,
+      hold: {
+        id: 'hold-orphaned',
+        sessionId,
+        workflowRunId,
+        containerAgentId,
+        sourceAgentId,
+        sourceTurnId: 'turn-orphaned',
+        reason: 'missing-outcome',
+        findings: [],
+      },
+    });
+
+    await softDeleteAgent(db, sourceAgentId);
+    const [openHold] = await listClusterCompletionHolds({ db, sessionId });
+    expect(openHold?.state).toBe('open');
+    expect(openHold?.containerAgentId).toBe(containerAgentId);
+
+    await resolveClusterCompletionHold({
+      db,
+      id: 'hold-orphaned',
+      resolutionEvidence: 'verified the deleted child output',
+    });
+    const [resolvedHold] = await listClusterCompletionHolds({ db, sessionId });
+    expect(resolvedHold?.state).toBe('resolved');
   });
 });
