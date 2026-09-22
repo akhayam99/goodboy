@@ -739,8 +739,18 @@ describe('extractClusterOutcome', () => {
     });
   });
 
-  it('distinguishes missing and malformed outcomes', () => {
+  it('keeps an absent outcome missing and treats incomplete outcome blocks as malformed', () => {
     expect(extractClusterOutcome({ assistantText: 'legacy prose' })).toEqual({ kind: 'missing' });
+    expect(
+      extractClusterOutcome({
+        assistantText: '<<cluster-outcome>>{"v":1,"id":"c2","status":"clear"}',
+      }),
+    ).toEqual({ kind: 'malformed' });
+    expect(
+      extractClusterOutcome({
+        assistantText: '<<cluster-outcome>>   <</cluster-outcome>>',
+      }),
+    ).toEqual({ kind: 'malformed' });
     expect(
       extractClusterOutcome({
         assistantText: '<<cluster-outcome>>{"v":1,"status":<</cluster-outcome>>',

@@ -1,5 +1,9 @@
 import type {
   Agent,
+  CapabilityGrant,
+  CapabilityObligation,
+  ClusterCompletionHold,
+  ClusterExecutionGraph,
   IsoDateTime,
   MountId,
   ProjectId,
@@ -28,6 +32,10 @@ import { isMainWindow } from '../../../features/workspace/window';
 import { invokeBudgetAlertsList, invokeBudgetRuleList } from '../../../features/budget/budget';
 import { invokeSkillList } from '../../../features/skills/skills';
 import {
+  invokeCapabilityGrants,
+  invokeCapabilityObligations,
+  invokeClusterCompletionHolds,
+  invokeClusterExecutionGraphs,
   invokeWorkflowList,
   invokeWorkflowsForSession,
   invokeStepDefList,
@@ -83,6 +91,8 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       sessionPhaseRuns: {},
       clusterCompletionHolds: {},
       clusterExecutionGraphs: {},
+      capabilityObligations: {},
+      capabilityGrants: {},
       selectedAgentId: {},
       agentRunHistory: {},
       agentTurnState: {},
@@ -120,11 +130,23 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         now: recoveryNow,
       });
       const sessionIds = sessions.map((s) => s.id);
-      const [loadedWorktreesBySession, agentsBySession, externalTasks] = await Promise.all([
-        listWorktreesForSessions(tauriDatabase, sessionIds),
-        listAgentsForSessions(tauriDatabase, sessionIds),
-        listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
-      ]);
+      const [loadedWorktreesBySession, agentsBySession, externalTasks, clusterEntries] =
+        await Promise.all([
+          listWorktreesForSessions(tauriDatabase, sessionIds),
+          listAgentsForSessions(tauriDatabase, sessionIds),
+          listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
+          Promise.all(
+            sessionIds.map(async (sessionId) => {
+              const [holds, graphs, obligations, grants] = await Promise.all([
+                invokeClusterCompletionHolds({ sessionId }),
+                invokeClusterExecutionGraphs({ sessionId }),
+                invokeCapabilityObligations({ sessionId }),
+                invokeCapabilityGrants({ sessionId }),
+              ]);
+              return { sessionId, holds, graphs, obligations, grants };
+            }),
+          ),
+        ]);
       const worktreesBySession = loadedWorktreesBySession;
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionWorktreeRecords: Record<string, ReadonlyArray<SessionWorktree>> = {};
@@ -133,9 +155,19 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       const sessionActiveMount: Record<string, MountId | null> = {};
       const sessionBranches: Record<string, string> = {};
       const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};
+      const clusterCompletionHolds: Record<string, ReadonlyArray<ClusterCompletionHold>> = {};
+      const clusterExecutionGraphs: Record<string, ReadonlyArray<ClusterExecutionGraph>> = {};
+      const capabilityObligations: Record<string, ReadonlyArray<CapabilityObligation>> = {};
+      const capabilityGrants: Record<string, ReadonlyArray<CapabilityGrant>> = {};
       const kindOverridesFromDb: Record<string, AgentKind> = {};
       const invalidActiveMountSessionIds = new Set<string>();
       const repairedWriteDestinations = new Map<string, RepairedDestination>();
+      for (const entry of clusterEntries) {
+        clusterCompletionHolds[entry.sessionId] = entry.holds;
+        clusterExecutionGraphs[entry.sessionId] = entry.graphs;
+        capabilityObligations[entry.sessionId] = entry.obligations;
+        capabilityGrants[entry.sessionId] = entry.grants;
+      }
       for (const s of sessions) {
         const rows = await verifyAvailableWorktrees({
           sessionId: s.id,
@@ -229,6 +261,10 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessionActiveMount,
         sessionBranches,
         sessionPhaseRuns,
+        clusterCompletionHolds,
+        clusterExecutionGraphs,
+        capabilityObligations,
+        capabilityGrants,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
         sessionExternalTasks: { ...state.sessionExternalTasks, ...externalTasksMap },
       }));
