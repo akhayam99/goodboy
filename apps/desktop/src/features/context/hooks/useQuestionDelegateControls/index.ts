@@ -119,7 +119,7 @@ export const useQuestionDelegateControls = ({
 
   const onTakeBackDelegate = useCallback(() => {
     setAnswerIntent(question.id, PERSON_ANSWERS);
-    void takeQuestionBack(sessionId, question.id);
+    void takeQuestionBack({ sessionId, questionId: question.id });
   }, [question.id, sessionId, setAnswerIntent, takeQuestionBack]);
 
   return {

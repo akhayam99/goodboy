@@ -99,6 +99,7 @@ import type {
   SpawnQuestionDelegatesParams,
 } from './slices/open-questions/spawnQuestionDelegates';
 import type { ResolveQuestionDelegateParams } from './slices/open-questions/resolveQuestionDelegate';
+import type { TakeQuestionBackParams } from './slices/open-questions/takeQuestionBack';
 import { createBudgetSlice } from './slices/budget';
 import { createSkillsSlice } from './slices/skills';
 import { createStorageSlice } from './slices/storage';
@@ -926,7 +927,7 @@ type AppActions = {
     params: SpawnQuestionDelegatesParams,
   ): Promise<ReadonlyArray<QuestionDelegateOutcome>>;
   resolveQuestionDelegate(params: ResolveQuestionDelegateParams): Promise<void>;
-  takeQuestionBack(sessionId: SessionId, questionId: OpenQuestionId): Promise<void>;
+  takeQuestionBack(params: TakeQuestionBackParams): Promise<void>;
   loadSessionPlans(sessionId: SessionId): Promise<void>;
   setPlanStatus(sessionId: SessionId, planId: PlanId, status: PlanStatus): Promise<void>;
   updatePlanBody(
