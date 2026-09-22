@@ -1,4 +1,4 @@
-import type { Agent, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { Agent, ClusterCompletionHold, SessionId, WorkflowRunId } from '@goodboy/types';
 import { listOpenQuestionsForSession } from '@goodboy/db';
 import { classifyWorkflowChain, findReusableAgent, runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -27,6 +27,14 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
+const runHasOpenCompletionHold = ({
+  holds,
+  workflowRunId,
+}: {
+  readonly holds: ReadonlyArray<ClusterCompletionHold>;
+  readonly workflowRunId: WorkflowRunId;
+}): boolean => holds.some((hold) => hold.workflowRunId === workflowRunId && hold.state === 'open');
+
 const startChainedRuns = async ({ get, sessionId }: Params): Promise<void> => {
   const state = get();
   const session = state.sessions.find((s) => s.id === sessionId);
@@ -35,6 +43,7 @@ const startChainedRuns = async ({ get, sessionId }: Params): Promise<void> => {
   }
   const templates = state.phaseTemplates[session.workspaceId] ?? [];
   const runs = state.sessionPhaseRuns[sessionId] ?? [];
+  const completionHolds = state.clusterCompletionHolds?.[sessionId] ?? [];
   for (const candidate of session.workflowRuns) {
     if (
       candidate.discardedAt != null ||
@@ -45,6 +54,9 @@ const startChainedRuns = async ({ get, sessionId }: Params): Promise<void> => {
     }
     const predecessor = session.workflowRuns.find((r) => r.id === candidate.chainAfterId);
     if (predecessor == null || predecessor.discardedAt != null) {
+      continue;
+    }
+    if (runHasOpenCompletionHold({ holds: completionHolds, workflowRunId: predecessor.id })) {
       continue;
     }
     const predTemplate = templates.find((t) => t.id === predecessor.workflowId);
@@ -84,6 +96,14 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   }
   const runnableRuns: typeof activeRuns = [];
   for (const run of activeRuns) {
+    if (
+      runHasOpenCompletionHold({
+        holds: state.clusterCompletionHolds?.[sessionId] ?? [],
+        workflowRunId: run.id,
+      })
+    ) {
+      continue;
+    }
     const spendStop = sessionBlocked ? null : resolveSpendLimitStop({ get, sessionId, run });
     const blockMessage = sessionBlocked
       ? BUDGET_BLOCK_MESSAGE

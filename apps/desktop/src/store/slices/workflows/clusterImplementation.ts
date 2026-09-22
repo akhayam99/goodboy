@@ -1,21 +1,24 @@
 import type {
   Agent,
   AgentId,
+  ClusterCompletionFinding,
+  ClusterCompletionHoldReason,
   ImplementationCluster,
   IsoDateTime,
   PlanWithCount,
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
-import { extractClusterDone } from '@goodboy/core';
+import { extractClusterDone, extractClusterOutcome } from '@goodboy/core';
 import {
   invokeAgentInsertBatch,
   invokeAgentList,
   invokeAgentUpdateStatus,
+  invokeClusterCompletionHoldRecord,
   type AgentInsertArgs,
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
-import { composeKickoff, composeUnitBoundary } from '../../kickoff';
+import { composeClusterOutcomeBoundary, composeKickoff, composeUnitBoundary } from '../../kickoff';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { revalidateChildRouting } from './revalidateChildRouting';
 import { isHandsFree } from './handsFree';
@@ -64,7 +67,10 @@ export const clusterBoundaryMarker = (childId: AgentId): string =>
   `<<cluster-done id="${childId}">>`;
 
 export const composeClusterBoundary = (childId: AgentId): string =>
-  composeUnitBoundary({ unit: 'cluster', marker: clusterBoundaryMarker(childId) });
+  [
+    composeUnitBoundary({ unit: 'cluster', marker: clusterBoundaryMarker(childId) }),
+    composeClusterOutcomeBoundary({ agentId: childId }),
+  ].join(' ');
 
 function composeClusterKickoff(
   childId: AgentId,
@@ -491,6 +497,13 @@ export const resumeClusterChildren = async ({
   sessionId,
   container,
 }: ResumeClusterChildrenParams): Promise<boolean> => {
+  if (
+    (get().clusterCompletionHolds?.[sessionId] ?? []).some(
+      (hold) => hold.containerAgentId === container.id && hold.state === 'open',
+    )
+  ) {
+    return false;
+  }
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
   const children = childrenOf(runs, container.id);
   const next = children.find((child) => !isSettledChild(child));
@@ -566,12 +579,135 @@ export const selectFanOutPlan = (
   return findClustersPlan(get, sessionId, opts.workflowRunId);
 };
 
+const openCompletionHoldForContainer = ({
+  get,
+  sessionId,
+  containerId,
+}: {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly containerId: AgentId;
+}) =>
+  (get().clusterCompletionHolds?.[sessionId] ?? []).find(
+    (hold) => hold.containerAgentId === containerId && hold.state === 'open',
+  ) ?? null;
+
+const sourceTurnIdForChild = ({
+  get,
+  child,
+}: {
+  readonly get: GetFn;
+  readonly child: Agent;
+}): string => {
+  if (child.runId != null) {
+    return child.runId;
+  }
+  const events = get().transcripts[child.id] ?? [];
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (event?.kind === 'assistant_text') {
+      return event.runId;
+    }
+  }
+  return `unidentified-turn:${child.id}`;
+};
+
+type PersistCompletionHoldParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly child: Agent;
+  readonly containerId: AgentId;
+  readonly assistantText: string;
+  readonly reason: ClusterCompletionHoldReason;
+  readonly findings: ReadonlyArray<ClusterCompletionFinding>;
+};
+
+const completionHoldMessage = ({
+  reason,
+  findings,
+}: {
+  readonly reason: ClusterCompletionHoldReason;
+  readonly findings: ReadonlyArray<ClusterCompletionFinding>;
+}): string => {
+  if (reason === 'unresolved-outcome') {
+    return findings.map((finding) => `${finding.reason} (${finding.target})`).join('; ');
+  }
+  if (reason === 'missing-outcome') {
+    return 'the agent emitted the cluster boundary without a completion outcome. inspect its output, then resolve the hold explicitly.';
+  }
+  if (reason === 'malformed-outcome') {
+    return 'the agent emitted a malformed completion outcome. inspect its output, then resolve the hold explicitly.';
+  }
+  return 'the completion outcome belongs to another agent. inspect its output, then resolve the hold explicitly.';
+};
+
+const persistCompletionHold = async ({
+  set,
+  get,
+  sessionId,
+  child,
+  containerId,
+  assistantText,
+  reason,
+  findings,
+}: PersistCompletionHoldParams): Promise<void> => {
+  const sourceTurnId = sourceTurnIdForChild({ get, child });
+  const existing = (get().clusterCompletionHolds?.[sessionId] ?? []).find(
+    (hold) => hold.sourceAgentId === child.id && hold.sourceTurnId === sourceTurnId,
+  );
+  if (existing !== undefined) {
+    return;
+  }
+  const outputSummary =
+    assistantText.length > 0
+      ? await summarizeWorkflowAgentOutput({
+          set,
+          get,
+          sessionId,
+          agent: child,
+          output: assistantText,
+        })
+      : 'cluster held for explicit resolution';
+  const hold = await invokeClusterCompletionHoldRecord({
+    id: `cluster-completion:${child.id}:${sourceTurnId}`,
+    sessionId,
+    workflowRunId: child.workflowRunId ?? null,
+    containerAgentId: containerId,
+    sourceAgentId: child.id,
+    sourceTurnId,
+    reason,
+    findings,
+  });
+  await invokeAgentUpdateStatus(child.id, {
+    status: 'failed',
+    outputSummary,
+    completedAt: nowIso(),
+  });
+  const refreshed = await invokeAgentList(sessionId);
+  set((state) => ({
+    sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshed },
+    clusterCompletionHolds: {
+      ...(state.clusterCompletionHolds ?? {}),
+      [sessionId]: [...(state.clusterCompletionHolds?.[sessionId] ?? []), hold],
+    },
+  }));
+  void get().refreshUnreadWorkspaces();
+  void get().emitNotification(
+    'error',
+    'warning',
+    `cluster held: ${child.name}`,
+    completionHoldMessage({ reason, findings }),
+    { sessionId },
+  );
+};
+
 export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
   return async (
     sessionId: SessionId,
     childAgentId: AgentId,
     assistantText: string,
-    opts?: { readonly force?: boolean },
+    opts?: { readonly force?: boolean; readonly resolvedHoldId?: string },
   ) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const child = runs.find((r) => r.id === childAgentId);
@@ -593,7 +729,8 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       childrenOf(runs, containerId).findIndex((c) => c.id === childAgentId),
     );
 
-    if (!opts?.force && !extractClusterDone(assistantText)) {
+    const doneMarker = extractClusterDone(assistantText);
+    if (opts?.force !== true && doneMarker?.id !== childAgentId) {
       const handsFree = isHandsFree(get, sessionId, child.workflowRunId);
       const attempts = continueAttempts.get(childAgentId) ?? 0;
       if (handsFree && attempts < MAX_CONTINUE) {
@@ -625,6 +762,50 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
 
+    const resolvedHold =
+      opts?.resolvedHoldId === undefined
+        ? null
+        : ((get().clusterCompletionHolds?.[sessionId] ?? []).find(
+            (hold) =>
+              hold.id === opts.resolvedHoldId &&
+              hold.sourceAgentId === childAgentId &&
+              hold.state === 'resolved',
+          ) ?? null);
+    const isExplicitResolution = opts?.force === true && resolvedHold !== null;
+    if (!isExplicitResolution) {
+      const extraction = extractClusterOutcome({ assistantText });
+      const reason: ClusterCompletionHoldReason | null =
+        extraction.kind === 'missing'
+          ? 'missing-outcome'
+          : extraction.kind === 'malformed'
+            ? 'malformed-outcome'
+            : extraction.outcome.id !== childAgentId
+              ? 'foreign-outcome'
+              : extraction.outcome.status === 'unresolved'
+                ? 'unresolved-outcome'
+                : null;
+      if (reason !== null) {
+        const findings =
+          extraction.kind === 'valid' && extraction.outcome.status === 'unresolved'
+            ? extraction.outcome.findings
+            : [];
+        await persistCompletionHold({
+          set,
+          get,
+          sessionId,
+          child,
+          containerId,
+          assistantText,
+          reason,
+          findings,
+        });
+        return;
+      }
+      if (openCompletionHoldForContainer({ get, sessionId, containerId }) !== null) {
+        return;
+      }
+    }
+
     continueAttempts.delete(childAgentId);
     const outputSummary =
       assistantText.length > 0
@@ -648,7 +829,10 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     const completedCount = children.filter((c) => c.status === 'completed').length;
     const total = clusters.length > 0 ? clusters.length : children.length;
 
-    if (completedCount >= total) {
+    if (
+      completedCount >= total &&
+      openCompletionHoldForContainer({ get, sessionId, containerId }) === null
+    ) {
       await invokeAgentUpdateStatus(containerId, {
         status: 'completed',
         outputSummary: `completed ${completedCount} clusters`,
@@ -658,6 +842,10 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
       void get().refreshUnreadWorkspaces();
       void get().maybeAutoAdvanceWorkflow(sessionId);
+      return;
+    }
+
+    if (openCompletionHoldForContainer({ get, sessionId, containerId }) !== null) {
       return;
     }
 

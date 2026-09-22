@@ -7,6 +7,14 @@ import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 vi.mock('@goodboy/ui', () => ({
   cn: (...a: unknown[]) => a.filter(Boolean).join(' '),
   StatusDot: () => null,
+  Button: () => null,
+  BitbucketIcon: () => null,
+  GithubIcon: () => null,
+  GitlabIcon: () => null,
+  JiraIcon: () => null,
+  LinearIcon: () => null,
+  SentryIcon: () => null,
+  SlackIcon: () => null,
 }));
 
 vi.mock('../../../../../store', () => ({

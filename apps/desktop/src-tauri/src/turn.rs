@@ -1011,7 +1011,10 @@ mod tests {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
         let cli = build_provider_cli_args("agy", &args);
-        let index = cli.iter().position(|arg| arg == "--model").expect("--model");
+        let index = cli
+            .iter()
+            .position(|arg| arg == "--model")
+            .expect("--model");
         assert_eq!(cli[index + 1], "claude-3");
         assert!(!cli.iter().any(|arg| arg == "-m"));
     }

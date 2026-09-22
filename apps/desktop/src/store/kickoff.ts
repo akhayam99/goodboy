@@ -40,6 +40,9 @@ type BoundaryParams = {
 export const composeUnitBoundary = ({ unit, marker }: BoundaryParams): string =>
   `**Scope** this ${unit} only, never a later one. Emit \`${marker}\` on its own line once it is truly done.`;
 
+export const composeClusterOutcomeBoundary = ({ agentId }: { readonly agentId: AgentId }): string =>
+  `**Outcome** emit one line \`<<cluster-outcome>>{"v":1,"id":"${agentId}","status":"clear"}<</cluster-outcome>>\` when no work remains for another agent. If you found work that still needs an owner, emit one line \`<<cluster-outcome>>{"v":1,"id":"${agentId}","status":"unresolved","findings":[{"reason":"short reason","target":"implementer"}]}<</cluster-outcome>>\` instead. Each target is implementer, planner, investigator, or tester. Emit the outcome beside the cluster boundary even when this cluster is review work.`;
+
 const stepBoundaryMarker = (agentId: AgentId): string => `<<step-done id="${agentId}">>`;
 
 export const composeStepBoundary = (agentId: AgentId): string =>

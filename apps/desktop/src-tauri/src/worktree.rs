@@ -406,7 +406,10 @@ fn worktree_quarantine_candidate_blocking(
             base_sha: base,
         });
     }
-    git(path, &["update-ref", &candidate_ref(&args.candidate_id), &tip])?;
+    git(
+        path,
+        &["update-ref", &candidate_ref(&args.candidate_id), &tip],
+    )?;
     git(path, &["update-ref", "HEAD", &base, &tip])?;
     git(path, &["reset", "--hard", "--quiet", &base])?;
     Ok(QuarantinedCandidate {
@@ -2184,9 +2187,11 @@ pub async fn worktree_remote_head(
     worktree_path: String,
     branch: String,
 ) -> Result<Option<String>, WorktreeError> {
-    tauri::async_runtime::spawn_blocking(move || worktree_remote_head_blocking(worktree_path, branch))
-        .await
-        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+    tauri::async_runtime::spawn_blocking(move || {
+        worktree_remote_head_blocking(worktree_path, branch)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
 fn worktree_remote_head_blocking(
@@ -3943,7 +3948,10 @@ mod rewrite_tests {
         })
         .unwrap();
 
-        assert_eq!(git_ok(&mover, &["rev-parse", "--abbrev-ref", "HEAD"]), "ak/free");
+        assert_eq!(
+            git_ok(&mover, &["rev-parse", "--abbrev-ref", "HEAD"]),
+            "ak/free"
+        );
         worktree_change_branch_blocking(ChangeBranchArgs {
             repo_path: root.to_string_lossy().into_owned(),
             worktree_path: mover.to_string_lossy().into_owned(),
@@ -4461,7 +4469,10 @@ mod changed_files_tests {
         git_ok(&root, &["add", "feature.txt"]);
         git_ok(&root, &["commit", "-m", "feature"]);
         git_ok(&root, &["checkout", "main"]);
-        git_ok(&root, &["merge", "--no-ff", "-m", "merge feature", "feature"]);
+        git_ok(
+            &root,
+            &["merge", "--no-ff", "-m", "merge feature", "feature"],
+        );
         git_ok(&root, &["checkout", "feature"]);
 
         assert_eq!(summary(&root), (0, 0));
@@ -4477,7 +4488,10 @@ mod changed_files_tests {
         git_ok(&root, &["add", "feature.txt"]);
         git_ok(&root, &["commit", "-m", "feature"]);
         git_ok(&root, &["checkout", "main"]);
-        git_ok(&root, &["merge", "--no-ff", "-m", "merge feature", "feature"]);
+        git_ok(
+            &root,
+            &["merge", "--no-ff", "-m", "merge feature", "feature"],
+        );
         git_ok(&root, &["checkout", "feature"]);
         std::fs::write(root.join("feature.txt"), "a\nb\nc\nd\n").unwrap();
 
@@ -5728,7 +5742,11 @@ mod candidate_tests {
 
         assert_eq!(head(&root), accepted);
         assert!(
-            super::git(&root, &["merge-base", "--is-ancestor", &deferred, &accepted]).is_err(),
+            super::git(
+                &root,
+                &["merge-base", "--is-ancestor", &deferred, &accepted]
+            )
+            .is_err(),
             "the deferred candidate is reachable from the branch tip"
         );
         assert!(!root.join("b.txt").exists(), "deferred work is in the tree");

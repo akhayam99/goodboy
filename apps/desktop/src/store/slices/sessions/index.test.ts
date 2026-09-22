@@ -288,6 +288,7 @@ const invokeWorkspacesWithUnreadSpy = vi.fn(async () => [] as ReadonlyArray<Work
 const invokeWorkflowsForSessionSpy = vi.fn(async () => [] as ReadonlyArray<unknown>);
 
 vi.mock('../../../features/workflows/workflows', () => ({
+  invokeClusterCompletionHolds: vi.fn(async () => []),
   invokeWorkflowList: invokeWorkflowListSpy,
   invokeWorkflowUpsert: invokeWorkflowUpsertSpy,
   invokeWorkflowDelete: invokeWorkflowDeleteSpy,

@@ -8,7 +8,10 @@ import {
   summarizeSessionTelemetry,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { invokeAgentList } from '../../../features/workflows/workflows';
+import {
+  invokeAgentList,
+  invokeClusterCompletionHolds,
+} from '../../../features/workflows/workflows';
 import { listPlansForSession as invokeListPlansForSession } from '../../../features/plans/plans';
 import type { AgentKind } from '../../../features/session/agent-kind';
 import { SETTING_LAST_SESSION_ID } from '../../../features/settings/settings';
@@ -163,8 +166,9 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
       void Promise.all([
         invokeAgentList(id).finally(() => endPhaseRunList()),
         listAgentRunIdsForSession(tauriDatabase, id).finally(() => endRunIds()),
+        invokeClusterCompletionHolds({ sessionId: id }),
       ])
-        .then(([agents, agentRunIds]) => {
+        .then(([agents, agentRunIds, completionHolds]) => {
           const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
           const seededTurnState: Record<string, TurnState> = {};
           const session = get().sessions.find((s) => s.id === id);
@@ -208,6 +212,10 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
           }
           set((state) => ({
             sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
+            clusterCompletionHolds: {
+              ...state.clusterCompletionHolds,
+              [id]: completionHolds,
+            },
             agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
             agentTurnState: { ...state.agentTurnState, ...seededTurnState },
             agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },

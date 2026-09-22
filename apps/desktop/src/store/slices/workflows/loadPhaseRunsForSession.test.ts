@@ -49,9 +49,24 @@ const makeStore = (initial: Partial<AppStore>) => {
   return { set, getState: () => state };
 };
 
+const respondWith = ({
+  agents,
+  holds,
+}: {
+  readonly agents: ReadonlyArray<unknown>;
+  readonly holds: ReadonlyArray<unknown>;
+}) => {
+  invokeSpy.mockImplementation(async (command: string) => {
+    if (command === 'cluster_completion_holds_for_session') {
+      return holds;
+    }
+    return agents;
+  });
+};
+
 describe('loadPhaseRunsForSession', () => {
   it('preserves a spawned agent provider, model and effort after a refresh', async () => {
-    invokeSpy.mockResolvedValueOnce([agentRow('agent-new')]);
+    respondWith({ agents: [agentRow('agent-new')], holds: [] });
     const { set, getState } = makeStore({ sessionPhaseRuns: {} });
 
     await loadPhaseRunsForSession(set)(SESSION_ID);
@@ -64,7 +79,7 @@ describe('loadPhaseRunsForSession', () => {
   });
 
   it('seeds the agent override maps from the persisted rows', async () => {
-    invokeSpy.mockResolvedValueOnce([agentRow('agent-new')]);
+    respondWith({ agents: [agentRow('agent-new')], holds: [] });
     const { set, getState } = makeStore({
       sessionPhaseRuns: {},
       agentModelOverride: {},
@@ -80,7 +95,7 @@ describe('loadPhaseRunsForSession', () => {
   });
 
   it('keeps fresher in-memory overrides over the persisted rows', async () => {
-    invokeSpy.mockResolvedValueOnce([agentRow('agent-new')]);
+    respondWith({ agents: [agentRow('agent-new')], holds: [] });
     const { set, getState } = makeStore({
       sessionPhaseRuns: {},
       agentModelOverride: { ['agent-new' as AgentId]: 'claude-sonnet-4-6' },
@@ -93,5 +108,40 @@ describe('loadPhaseRunsForSession', () => {
     expect(getState().agentModelOverride).toEqual({ 'agent-new': 'claude-sonnet-4-6' });
     expect(getState().agentProviderOverride).toEqual({ 'agent-new': 'cursor' });
     expect(getState().agentEffortOverride).toEqual({ 'agent-new': 'low' });
+  });
+
+  it('restores completion holds when the session reloads', async () => {
+    respondWith({
+      agents: [agentRow('agent-new')],
+      holds: [
+        {
+          id: 'hold-1',
+          sessionId: SESSION_ID,
+          workflowRunId: null,
+          containerAgentId: 'container',
+          sourceAgentId: 'agent-new',
+          sourceTurnId: 'turn-1',
+          reason: 'missing-outcome',
+          findingsJson: '[]',
+          state: 'open',
+          resolutionEvidence: null,
+          resolvedAt: null,
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+    const { set, getState } = makeStore({
+      sessionPhaseRuns: {},
+      clusterCompletionHolds: {},
+    });
+
+    await loadPhaseRunsForSession(set)(SESSION_ID);
+
+    expect(getState().clusterCompletionHolds?.[SESSION_ID]?.[0]).toMatchObject({
+      id: 'hold-1',
+      state: 'open',
+      reason: 'missing-outcome',
+    });
   });
 });

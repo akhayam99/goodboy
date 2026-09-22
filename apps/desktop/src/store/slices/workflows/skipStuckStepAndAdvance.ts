@@ -21,6 +21,13 @@ const runSkipAndAdvance = async ({
   workflowRunId,
   onlyWhenBlocked,
 }: SkipParams): Promise<void> => {
+  if (
+    (get().clusterCompletionHolds?.[sessionId] ?? []).some(
+      (hold) => hold.workflowRunId === workflowRunId && hold.state === 'open',
+    )
+  ) {
+    return;
+  }
   const session = get().sessions.find((s) => s.id === sessionId);
   if (!session) {
     return;

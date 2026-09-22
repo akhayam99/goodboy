@@ -7,6 +7,7 @@ import {
   extractAllCommentResolved,
   extractAllCommentWontfix,
   extractClusterDone,
+  extractClusterOutcome,
   extractClustersFromMarker,
   extractCommentAnalysis,
   extractCommentResolved,
@@ -714,6 +715,39 @@ describe('extractClusterDone', () => {
   });
 });
 
+describe('extractClusterOutcome', () => {
+  it('parses a versioned clear outcome tied to the child', () => {
+    const text = '<<cluster-outcome>>{"v":1,"id":"c2","status":"clear"}<</cluster-outcome>>';
+    expect(extractClusterOutcome({ assistantText: text })).toEqual({
+      kind: 'valid',
+      outcome: { version: 1, id: 'c2', status: 'clear' },
+    });
+  });
+
+  it('parses unresolved findings with repair targets', () => {
+    const text =
+      '<<cluster-outcome>>{"v":1,"id":"c2","status":"unresolved","findings":[{"reason":"network proof is missing","target":"tester"}]}<</cluster-outcome>>';
+    expect(extractClusterOutcome({ assistantText: text })).toEqual({
+      kind: 'valid',
+      outcome: {
+        version: 1,
+        id: 'c2',
+        status: 'unresolved',
+        findings: [{ reason: 'network proof is missing', target: 'tester' }],
+      },
+    });
+  });
+
+  it('distinguishes missing and malformed outcomes', () => {
+    expect(extractClusterOutcome({ assistantText: 'legacy prose' })).toEqual({ kind: 'missing' });
+    expect(
+      extractClusterOutcome({
+        assistantText: '<<cluster-outcome>>{"v":1,"status":<</cluster-outcome>>',
+      }),
+    ).toEqual({ kind: 'malformed' });
+  });
+});
+
 describe('extractScoutSplit', () => {
   it('returns null when no marker present', () => {
     expect(
@@ -1003,6 +1037,11 @@ describe('stripControlMarkers', () => {
   it('strips block markers (plan, clusters, fan-out, scout-split, ctx-*)', () => {
     const text = 'before <<plan>>some plan<</plan>> middle <<clusters>>json<</clusters>> after';
     expect(stripControlMarkers(text)).toBe('before  middle  after');
+  });
+
+  it('strips the cluster outcome block', () => {
+    const text = 'done <<cluster-outcome>>{"v":1,"id":"c1","status":"clear"}<</cluster-outcome>>';
+    expect(stripControlMarkers(text)).toBe('done');
   });
 
   it('strips self-closing markers (handoff, comment-resolved, comment-wontfix, cluster-done)', () => {

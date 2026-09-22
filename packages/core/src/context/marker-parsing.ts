@@ -42,6 +42,8 @@ const COMMENT_WONTFIX_OPEN = '<<comment-wontfix';
 const COMMENT_REPLY_OPEN_RE = /<<comment-reply((?:\s+[\w-]+="[^"]*")*)\s*>>/g;
 const COMMENT_REPLY_CLOSE = '<</comment-reply>>';
 const CLUSTER_DONE_OPEN = '<<cluster-done';
+const CLUSTER_OUTCOME_OPEN = '<<cluster-outcome>>';
+const CLUSTER_OUTCOME_CLOSE = '<</cluster-outcome>>';
 const SCOUT_DOMAINS_OPEN = '<<scout-domains';
 const REVIEW_COMMENT_OPEN = '<<review-comment';
 const MATERIALIZE_OPEN = '<<materialize:';
@@ -679,6 +681,82 @@ export const extractClusterDone = (assistantText: string): { readonly id: string
   return last;
 };
 
+export type ExtractedClusterOutcome =
+  | { readonly version: 1; readonly id: string; readonly status: 'clear' }
+  | {
+      readonly version: 1;
+      readonly id: string;
+      readonly status: 'unresolved';
+      readonly findings: ReadonlyArray<{
+        readonly reason: string;
+        readonly target: 'implementer' | 'planner' | 'investigator' | 'tester';
+      }>;
+    };
+
+export type ClusterOutcomeExtraction =
+  | { readonly kind: 'missing' }
+  | { readonly kind: 'malformed' }
+  | { readonly kind: 'valid'; readonly outcome: ExtractedClusterOutcome };
+
+type ClusterFindingTarget = 'implementer' | 'planner' | 'investigator' | 'tester';
+
+const isClusterFindingTarget = (value: string): value is ClusterFindingTarget =>
+  value === 'implementer' || value === 'planner' || value === 'investigator' || value === 'tester';
+
+const isUnknownRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+export const extractClusterOutcome = ({
+  assistantText,
+}: {
+  readonly assistantText: string;
+}): ClusterOutcomeExtraction => {
+  const blocks = extractBlockContents(assistantText, CLUSTER_OUTCOME_OPEN, CLUSTER_OUTCOME_CLOSE);
+  if (blocks.length === 0) {
+    return { kind: 'missing' };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(blocks[blocks.length - 1]!);
+  } catch {
+    return { kind: 'malformed' };
+  }
+  if (!isUnknownRecord(parsed)) {
+    return { kind: 'malformed' };
+  }
+  const value = parsed;
+  const id = typeof value.id === 'string' ? value.id.trim() : '';
+  if (value.v !== 1 || id.length === 0) {
+    return { kind: 'malformed' };
+  }
+  if (value.status === 'clear') {
+    return { kind: 'valid', outcome: { version: 1, id, status: 'clear' } };
+  }
+  if (value.status !== 'unresolved' || !Array.isArray(value.findings)) {
+    return { kind: 'malformed' };
+  }
+  const findings: Array<{
+    readonly reason: string;
+    readonly target: 'implementer' | 'planner' | 'investigator' | 'tester';
+  }> = [];
+  for (const finding of value.findings) {
+    if (!isUnknownRecord(finding)) {
+      return { kind: 'malformed' };
+    }
+    const entry = finding;
+    const reason = typeof entry.reason === 'string' ? entry.reason.trim() : '';
+    const target = typeof entry.target === 'string' ? entry.target : '';
+    if (reason.length === 0 || !isClusterFindingTarget(target)) {
+      return { kind: 'malformed' };
+    }
+    findings.push({ reason, target });
+  }
+  if (findings.length === 0) {
+    return { kind: 'malformed' };
+  }
+  return { kind: 'valid', outcome: { version: 1, id, status: 'unresolved', findings } };
+};
+
 export type ExtractedMaterializeRequest = {
   readonly projectName: string;
   readonly reason: string;
@@ -907,7 +985,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 };
 
 const BLOCK_MARKER_ALT =
-  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer';
+  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer|cluster-outcome';
 const SELF_MARKER_ALT =
   'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done|scout-domains|materialize:';
 

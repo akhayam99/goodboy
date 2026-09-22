@@ -4,6 +4,8 @@ import type { AgentKind } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../session/components/AgentKindChip';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { WorkflowStepStatus } from '../WorkflowStepStatus';
+import { useAppStore } from '../../../../store';
+import { ClusterCompletionHoldAction } from '../../../../shared/components/ClusterCompletionHoldAction';
 
 type Props = {
   readonly run: Agent;
@@ -33,46 +35,55 @@ export const WorkflowStepGraphNode = ({
   answersForStepName,
   isSelected,
   onSelect,
-}: Props) => (
-  <div className="flex min-w-0 flex-1 items-center gap-1.5">
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={isSelected}
-      className={cn(
-        'flex min-h-8 min-w-0 flex-1 items-center gap-1.5 rounded-lg border bg-muted/30 px-2 py-1 text-left transition-colors hover:bg-muted/60',
-        isSelected ? 'border-primary/50 bg-primary/[0.06]' : 'border-border-soft',
-      )}
-    >
-      <span className="sr-only">{marker}</span>
-      <AgentKindChip kind={kind} />
-      <span className="min-w-0 flex-1 truncate text-2xs font-medium text-foreground">
-        {run.name}
-      </span>
-      {answersForStepName !== null ? (
+}: Props) => {
+  const completionHold = useAppStore(
+    (state) =>
+      state.clusterCompletionHolds?.[run.sessionId]?.find(
+        (hold) => hold.sourceAgentId === run.id && hold.state === 'open',
+      ) ?? null,
+  );
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-1.5">
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-pressed={isSelected}
+        className={cn(
+          'flex min-h-8 min-w-0 flex-1 items-center gap-1.5 rounded-lg border bg-muted/30 px-2 py-1 text-left transition-colors hover:bg-muted/60',
+          isSelected ? 'border-primary/50 bg-primary/[0.06]' : 'border-border-soft',
+        )}
+      >
+        <span className="sr-only">{marker}</span>
+        <AgentKindChip kind={kind} />
+        <span className="min-w-0 flex-1 truncate text-2xs font-medium text-foreground">
+          {run.name}
+        </span>
+        {answersForStepName !== null ? (
+          <span
+            data-testid={`answers-for-${run.id}`}
+            className="max-w-40 shrink-0 truncate text-3xs text-muted-foreground"
+          >
+            answering for {answersForStepName}
+          </span>
+        ) : null}
+        <RoutingBadge
+          provider={provider}
+          model={model}
+          planned={{ provider: plannedProvider, model: plannedModel }}
+          glyphPlacement="trailing"
+          className="max-w-40 shrink-0"
+        />
+        <WorkflowStepStatus status={run.status} label={run.name} />
+      </button>
+      {childCount > 0 ? (
         <span
-          data-testid={`answers-for-${run.id}`}
-          className="max-w-40 shrink-0 truncate text-3xs text-muted-foreground"
+          title={`${doneChildCount} of ${childCount} agents under ${run.name} are done`}
+          className="shrink-0 px-1 py-1 font-mono text-2xs tabular-nums text-muted-foreground/70"
         >
-          answering for {answersForStepName}
+          {doneChildCount}/{childCount}
         </span>
       ) : null}
-      <RoutingBadge
-        provider={provider}
-        model={model}
-        planned={{ provider: plannedProvider, model: plannedModel }}
-        glyphPlacement="trailing"
-        className="max-w-40 shrink-0"
-      />
-      <WorkflowStepStatus status={run.status} label={run.name} />
-    </button>
-    {childCount > 0 ? (
-      <span
-        title={`${doneChildCount} of ${childCount} agents under ${run.name} are done`}
-        className="shrink-0 px-1 py-1 font-mono text-2xs tabular-nums text-muted-foreground/70"
-      >
-        {doneChildCount}/{childCount}
-      </span>
-    ) : null}
-  </div>
-);
+      {completionHold === null ? null : <ClusterCompletionHoldAction hold={completionHold} />}
+    </div>
+  );
+};
