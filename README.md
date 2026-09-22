@@ -1,20 +1,19 @@
 <div align="center">
 
-<img src=".github/readme-banner.png" alt="Goodboy, stop re-explaining yourself" width="760">
+<img src=".github/readme-hero.png" alt="Goodboy, stop re-explaining yourself" width="880">
 
-[![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&label=ci&color=06b6d4)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/akhayam99/goodboy?label=release&color=06b6d4)](https://github.com/akhayam99/goodboy/releases/latest)
-[![stars](https://img.shields.io/github/stars/akhayam99/goodboy?label=stars&color=06b6d4)](https://github.com/akhayam99/goodboy/stargazers)
-[![license](https://img.shields.io/github/license/akhayam99/goodboy?color=06b6d4)](./LICENSE)
+[![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&style=flat-square&label=ci&labelColor=15181b)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/akhayam99/goodboy?style=flat-square&label=release&labelColor=15181b&color=0e9aa4)](https://github.com/akhayam99/goodboy/releases/latest)
+[![stars](https://img.shields.io/github/stars/akhayam99/goodboy?style=flat-square&label=stars&labelColor=15181b&color=3d444d)](https://github.com/akhayam99/goodboy/stargazers)
+[![license](https://img.shields.io/github/license/akhayam99/goodboy?style=flat-square&label=license&labelColor=15181b&color=3d444d)](./LICENSE)
 
-[![providers](https://img.shields.io/badge/providers-Claude%20%C2%B7%20Cursor%20%C2%B7%20Codex%20%C2%B7%20Gemini%20%C2%B7%20OpenCode%20%C2%B7%20OpenRouter%20%C2%B7%20Moonshot-06b6d4)](#providers-and-integrations)
-[![built with](https://img.shields.io/badge/built%20with-Tauri%202%20%C2%B7%20React%2019%20%C2%B7%20TypeScript%20%C2%B7%20SQLite-111111)](#run-from-source)
-[![platform](https://img.shields.io/badge/macOS-Intel%20%26%20Apple%20Silicon-111111)](#install)
-[![platform](https://img.shields.io/badge/Linux-AppImage%20%C2%B7%20deb%20%C2%B7%20rpm-111111)](#install)
+[Install](#install) &nbsp;·&nbsp; [Providers](#providers-and-integrations) &nbsp;·&nbsp; [Concepts](./docs/concepts.md) &nbsp;·&nbsp; [Documentation](./docs/README.md) &nbsp;·&nbsp; [goodboy-ai.dev](https://goodboy-ai.dev)
 
-[Install](#install) · [Providers](#providers-and-integrations) · [Concepts](./docs/concepts.md) · [Documentation](./docs/README.md) · [goodboy-ai.dev](https://goodboy-ai.dev)
+<sub>Tauri 2 &nbsp;·&nbsp; React 19 &nbsp;·&nbsp; TypeScript &nbsp;·&nbsp; SQLite</sub>
 
 </div>
+
+<br>
 
 Goodboy is a free, open-source desktop app for macOS and Linux that runs coding
 agents on your work. You describe a task once. The goal, the decisions and the
@@ -146,17 +145,24 @@ source build.
 
 ## Providers and integrations
 
-Goodboy connects to Claude, Cursor, Codex, Gemini through Antigravity,
-OpenCode, OpenRouter and Moonshot. Claude, Cursor and Codex log in with the CLI
-you already use. OpenCode ships models that need no key. OpenRouter and
+<div align="center">
+  <img src=".github/providers.png" alt="Claude, Codex, Cursor, Gemini, OpenCode, OpenRouter and Moonshot" width="860">
+</div>
+
+Claude, Cursor and Codex log in with the CLI you already use, and Gemini arrives
+through Antigravity. OpenCode ships models that need no key. OpenRouter and
 Moonshot take an API key, and one `opencode` binary serves all three.
 Installation, authentication and provider-specific behavior are in
 [the provider guide](./docs/providers.md).
 
-GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack can connect to the
-workspace. Each integration covers part of its service, not its whole API.
-Keys are stored in the operating system credential store. Agents reach these
-services through the documented [query bridge](./docs/query-bridge.md).
+<div align="center">
+  <img src=".github/integrations.png" alt="GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack" width="860">
+</div>
+
+These seven services connect to the workspace, and each integration covers part
+of its service, not its whole API. Keys are stored in the operating system
+credential store. Agents reach the services through the documented
+[query bridge](./docs/query-bridge.md).
 
 ## Local data and network use
 
@@ -201,16 +207,16 @@ cover [concepts](./docs/concepts.md), [workflows](./docs/workflows.md),
 [providers](./docs/providers.md), the [query bridge](./docs/query-bridge.md) and
 [architecture](./docs/architecture.md).
 
-If something breaks, feels off or is missing, [open an issue](https://github.com/akhayam99/goodboy/issues/new).
-Half-formed thoughts welcome, and "this feels wrong" is a valid bug report.
-Before changing code, read [AGENTS.md](./AGENTS.md) and
-[CONVENTIONS.md](./CONVENTIONS.md).
+If something breaks, feels off or is missing,
+[open an issue](https://github.com/akhayam99/goodboy/issues/new). Half-formed
+thoughts welcome, and "this feels wrong" is a valid bug report. Before changing
+code, read [AGENTS.md](./AGENTS.md) and [CONVENTIONS.md](./CONVENTIONS.md).
 
 ## Contributors
 
-[<img src=".github/contributor-akhayam99.png" width="72" height="72" alt="Amin Khayam">](https://github.com/akhayam99)
+[<img src=".github/contributor-akhayam99.png" width="56" height="56" alt="Amin Khayam">](https://github.com/akhayam99)
 &nbsp;
-[<img src=".github/contributor-teckperry.png" width="72" height="72" alt="Luca Laudiero">](https://github.com/teckperry)
+[<img src=".github/contributor-teckperry.png" width="56" height="56" alt="Luca Laudiero">](https://github.com/teckperry)
 
 [Amin Khayam](https://github.com/akhayam99) &nbsp;·&nbsp; [Luca Laudiero](https://github.com/teckperry)
 
