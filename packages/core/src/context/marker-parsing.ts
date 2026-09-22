@@ -795,9 +795,12 @@ export const extractClusterOutcome = ({
 }: {
   readonly assistantText: string;
 }): ClusterOutcomeExtraction => {
+  if (!assistantText.includes(CLUSTER_OUTCOME_OPEN)) {
+    return { kind: 'missing' };
+  }
   const blocks = extractBlockContents(assistantText, CLUSTER_OUTCOME_OPEN, CLUSTER_OUTCOME_CLOSE);
   if (blocks.length === 0) {
-    return { kind: 'missing' };
+    return { kind: 'malformed' };
   }
   let parsed: unknown;
   try {
