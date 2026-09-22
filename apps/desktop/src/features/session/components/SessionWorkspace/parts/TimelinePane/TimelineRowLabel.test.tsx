@@ -73,7 +73,7 @@ const mountEntry = (): TimelineStreamEntry =>
       kind: 'project_materialized',
       payload: {
         projectId: 'project-1',
-        projectName: 'app-web',
+        projectName: 'storefront-web',
         branch: 'goodboy/untitled',
         reason: 'step "migrazione cluster 1 modali legacy": 7. Apertura imperativa da file .ts',
       },
@@ -112,7 +112,7 @@ const branchEntry = (): TimelineStreamEntry =>
       worktreePath: '/tmp/wt',
       branch: 'ak/feat-tokens',
       parallelIndex: 1,
-      mountName: 'app-web',
+      mountName: 'storefront-web',
       createdAt: 0,
     },
   }) as unknown as TimelineStreamEntry;
@@ -201,7 +201,7 @@ describe('TimelineRowLabel', () => {
   it('renders the mounted project and its branch as value tokens, not as prose', () => {
     render(<TimelineRowLabel item={itemOf({ entry: mountEntry() })} />);
 
-    for (const value of ['app-web', 'goodboy/untitled']) {
+    for (const value of ['storefront-web', 'goodboy/untitled']) {
       expect(screen.getByText(value).className).toContain('font-mono');
     }
     expect(screen.getByText('Mounted').className).not.toContain('font-mono');
@@ -217,7 +217,7 @@ describe('TimelineRowLabel', () => {
     render(<TimelineRowLabel item={itemOf({ entry: branchEntry() })} />);
 
     expect(screen.getByText('ak/feat-tokens').className).toContain('font-mono');
-    expect(screen.getByText('app-web').className).toContain('font-mono');
+    expect(screen.getByText('storefront-web').className).toContain('font-mono');
     expect(screen.getByText('created')).toBeDefined();
   });
 
@@ -254,12 +254,12 @@ describe('TimelineRowLabel', () => {
     render(
       <TimelineRowLabel
         item={itemOf({
-          entry: projectRunEntry({ mounted: ['api'], detached: ['app-web', 'infra'] }),
+          entry: projectRunEntry({ mounted: ['api'], detached: ['storefront-web', 'infra'] }),
         })}
       />,
     );
 
-    for (const value of ['api', 'app-web', 'infra']) {
+    for (const value of ['api', 'storefront-web', 'infra']) {
       expect(screen.getByText(value).className).toContain('font-mono');
     }
     expect(screen.getByText('Mounted').className).not.toContain('font-mono');
@@ -267,13 +267,13 @@ describe('TimelineRowLabel', () => {
   });
 
   it('names every project in the tooltip, even the ones the row counts', () => {
-    const detached = ['api', 'app-web', 'infra', 'db', 'edge'];
+    const detached = ['api', 'storefront-web', 'infra', 'db', 'edge'];
     const { container } = render(
       <TimelineRowLabel item={itemOf({ entry: projectRunEntry({ mounted: [], detached }) })} />,
     );
 
     expect(container.querySelector('[title]')?.getAttribute('title')).toBe(
-      'Detached api, app-web, infra, db and edge',
+      'Detached api, storefront-web, infra, db and edge',
     );
     expect(screen.getByText('and 2 more')).toBeDefined();
   });
@@ -281,7 +281,9 @@ describe('TimelineRowLabel', () => {
   it('drops the single detach note from a collapsed run, which no longer speaks for one', () => {
     render(
       <TimelineRowLabel
-        item={itemOf({ entry: projectRunEntry({ mounted: [], detached: ['api', 'app-web'] }) })}
+        item={itemOf({
+          entry: projectRunEntry({ mounted: [], detached: ['api', 'storefront-web'] }),
+        })}
       />,
     );
 

@@ -108,7 +108,7 @@ const LEDGER_MOUNT: SessionProjectMount = {
   mountName: 'ledger-core',
   worktreePath: '/mock/harborline/ledger-core-rounding',
   repoRoot: '/mock/harborline/ledger-core',
-  branch: 'ak/fix-posting-rounding',
+  branch: 'nw/fix-posting-rounding',
   mountId: 'mock-artifact-mount-ledger' as MountId,
   sessionId: SESSION_ID,
   lastWorktreePath: null,
@@ -124,7 +124,7 @@ const RELAY_MOUNT: SessionProjectMount = {
   mountName: 'notify-relay',
   worktreePath: '/mock/harborline/notify-relay-backoff',
   repoRoot: '/mock/harborline/notify-relay',
-  branch: 'ak/fix-retry-backoff',
+  branch: 'nw/fix-retry-backoff',
   mountId: 'mock-artifact-mount-relay' as MountId,
   sessionId: SESSION_ID,
   lastWorktreePath: null,
@@ -376,7 +376,7 @@ worktrees on disk: nothing has been pushed and nothing has been reviewed.
 
 ## ledger-core
 
-Branch \`ak/fix-posting-rounding\` off \`main\`, 3 commits ahead, head \`a41f9c2\`.
+Branch \`nw/fix-posting-rounding\` off \`main\`, 3 commits ahead, head \`a41f9c2\`.
 
 | Commit | Subject |
 | --- | --- |
@@ -389,7 +389,7 @@ per batch. The backfill script is committed but no scheduler calls it.
 
 ## notify-relay
 
-Branch \`ak/fix-retry-backoff\` off \`main\`, 1 commit ahead, head \`7b30e15\`.
+Branch \`nw/fix-retry-backoff\` off \`main\`, 1 commit ahead, head \`7b30e15\`.
 
 4 files changed, 74 additions, 31 deletions. Retries now read batch state before
 scheduling the next attempt.

@@ -312,7 +312,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
   });
 
   it('does not mount projects merely mentioned by a writing workflow step', async () => {
-    const projects = ['api', 'data', 'app-web'].map(
+    const projects = ['api', 'data', 'storefront-web'].map(
       (name, index) =>
         ({
           id: `project-${index}` as ProjectId,
@@ -325,7 +325,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     const { activate, ensureProjectMounted } = buildHarness({
       agent: makeAgent('implementer', 'Implement'),
       workflow: makeWorkflow('Implement'),
-      plans: [makePlan({ bodyMd: 'Read api and data, then edit app-web.' })],
+      plans: [makePlan({ bodyMd: 'Read api and data, then edit storefront-web.' })],
       projects,
     });
 

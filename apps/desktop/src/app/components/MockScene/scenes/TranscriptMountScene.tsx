@@ -23,7 +23,7 @@ const SESSION_ID = 'mock-transcript-session' as SessionId;
 const AGENT_ID = 'mock-transcript-agent' as AgentId;
 const RUN_ID = 'mock-transcript-run' as ProviderRunId;
 const API_ID = 'mock-transcript-project-api' as ProjectId;
-const APP_WEB_ID = 'mock-transcript-project-app-web' as ProjectId;
+const STOREFRONT_WEB_ID = 'mock-transcript-project-storefront-web' as ProjectId;
 const NOW = '2026-09-07T09:12:00.000Z' as IsoDateTime;
 
 const OVERRIDES = {
@@ -62,10 +62,10 @@ const PROJECTS: ReadonlyArray<Project> = [
     updatedAt: NOW,
   },
   {
-    id: APP_WEB_ID,
+    id: STOREFRONT_WEB_ID,
     workspaceId: WORKSPACE_ID,
-    name: 'app-web',
-    rootPath: '/mock/harborline/app-web',
+    name: 'storefront-web',
+    rootPath: '/mock/harborline/storefront-web',
     kind: 'repo',
     overrides: OVERRIDES,
     createdAt: NOW,
@@ -137,8 +137,8 @@ const PROPOSAL: SessionEvent = {
   sessionId: SESSION_ID,
   kind: 'project_materialization_proposed',
   payload: {
-    projectId: APP_WEB_ID,
-    projectName: 'app-web',
+    projectId: STOREFRONT_WEB_ID,
+    projectName: 'storefront-web',
     reason: 'the statement banner renders the corrected total, so the fix has to land there too',
     agentId: AGENT_ID,
     turnRunId: RUN_ID,
@@ -158,13 +158,13 @@ const TRANSCRIPT = [
     kind: 'assistant_text' as const,
     runId: RUN_ID,
     delta:
-      'The duplicate comes from the retry path in ledger-core: a corrected statement re-enters the queue without its idempotency key. I have the fix locally. The same total is also rendered by the statement banner in app-web, so that copy needs the corrected value too.',
+      'The duplicate comes from the retry path in ledger-core: a corrected statement re-enters the queue without its idempotency key. I have the fix locally. The same total is also rendered by the statement banner in storefront-web, so that copy needs the corrected value too.',
     at: NOW,
   },
   {
     kind: 'decision_note' as const,
     runId: RUN_ID,
-    message: 'Mount deferred for app-web.',
+    message: 'Mount deferred for storefront-web.',
     at: NOW,
   },
   {

@@ -17,7 +17,7 @@ import { useAppStore } from '../../../../store';
 const WORKSPACE_ID = 'mock-workspace-northwind' as WorkspaceId;
 const SESSION_ID = 'mock-session-multi-project' as SessionId;
 const API_ID = 'mock-project-api' as ProjectId;
-const APP_WEB_ID = 'mock-project-app-web' as ProjectId;
+const STOREFRONT_WEB_ID = 'mock-project-storefront-web' as ProjectId;
 const WEBSITE_ID = 'mock-project-website' as ProjectId;
 const NOW = '2026-08-25T10:30:00.000Z' as IsoDateTime;
 
@@ -57,10 +57,10 @@ const PROJECTS: ReadonlyArray<Project> = [
     updatedAt: NOW,
   },
   {
-    id: APP_WEB_ID,
+    id: STOREFRONT_WEB_ID,
     workspaceId: WORKSPACE_ID,
-    name: 'app-web',
-    rootPath: '/mock/northwind/app-web',
+    name: 'storefront-web',
+    rootPath: '/mock/northwind/storefront-web',
     kind: 'repo',
     overrides: OVERRIDES,
     createdAt: NOW,
@@ -78,11 +78,11 @@ const PROJECTS: ReadonlyArray<Project> = [
   },
 ];
 
-const APP_WEB_MOUNT: SessionProjectMount = {
-  projectId: APP_WEB_ID,
-  mountName: 'app-web',
-  worktreePath: '/mock/northwind/app-web',
-  repoRoot: '/mock/northwind/app-web',
+const STOREFRONT_WEB_MOUNT: SessionProjectMount = {
+  projectId: STOREFRONT_WEB_ID,
+  mountName: 'storefront-web',
+  worktreePath: '/mock/northwind/storefront-web',
+  repoRoot: '/mock/northwind/storefront-web',
   branch: 'feat/workspace-project-switcher',
   mountId: 'mount-fixture-3' as MountId,
   sessionId: SESSION_ID,
@@ -123,7 +123,7 @@ const WEBSITE_MOUNT: SessionProjectMount = {
   diskState: 'present',
   revision: 0,
 };
-const MOUNTS = [APP_WEB_MOUNT, API_MOUNT, WEBSITE_MOUNT];
+const MOUNTS = [STOREFRONT_WEB_MOUNT, API_MOUNT, WEBSITE_MOUNT];
 
 const SESSION: Session = {
   id: SESSION_ID,
@@ -136,7 +136,7 @@ const SESSION: Session = {
   workflowRuns: [],
   autoRun: false,
   titleUserEdited: true,
-  activeProjectId: APP_WEB_ID,
+  activeProjectId: STOREFRONT_WEB_ID,
   createdAt: NOW,
   updatedAt: NOW,
 };
@@ -187,7 +187,7 @@ export const WorkspaceScene = () => {
       sessions: [SESSION],
       currentSessionId: SESSION_ID,
       sessionProjectMounts: { [SESSION_ID]: MOUNTS },
-      sessionActiveProject: { [SESSION_ID]: APP_WEB_ID },
+      sessionActiveProject: { [SESSION_ID]: STOREFRONT_WEB_ID },
       sessionWorktrees: { [SESSION_ID]: MOUNTS.map((mount) => mount.worktreePath) },
       sessionWorktreeRecords: {
         [SESSION_ID]: MOUNTS.map((mount, index) => ({
@@ -235,17 +235,17 @@ export const WorkspaceScene = () => {
           pr: PR({
             number: 214,
             title: 'Mount several projects in one session',
-            headBranch: APP_WEB_MOUNT.branch,
+            headBranch: STOREFRONT_WEB_MOUNT.branch,
           }),
         },
       },
       sessionProjectPrs: {
         [SESSION_ID]: {
-          [APP_WEB_ID]: [
+          [STOREFRONT_WEB_ID]: [
             PR({
               number: 214,
               title: 'Add the multi-project session header',
-              headBranch: APP_WEB_MOUNT.branch,
+              headBranch: STOREFRONT_WEB_MOUNT.branch,
             }),
           ],
           [API_ID]: [
@@ -279,7 +279,7 @@ export const WorkspaceScene = () => {
     }
     const openProjects = () => {
       const trigger = document.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]');
-      if (trigger?.textContent?.includes('app-web') !== true) {
+      if (trigger?.textContent?.includes('storefront-web') !== true) {
         return false;
       }
       if (trigger.getAttribute('aria-expanded') !== 'true') {
