@@ -23,11 +23,11 @@ task; open it for the plan, the questions and the diff.
 ## Pick up a task cold
 
 A chat makes you scroll back to find out what was decided. A session's Overview
-keeps the goal, the mounted projects and an Activity feed: every agent run,
-plan, report, branch and pull request in the order it happened, with a filter to
-hide what you do not need right now.
+keeps the goal, the decisions, the mounted projects and an Activity feed: every
+step, the sub-agents a step fanned out into, the plans, the branches and the
+pull requests, in the order they happened, with a filter for the rest.
 
-![The Overview of a session: the goal at the top, two mounted projects, and the Activity feed listing agent runs, a plan, reports, a new branch and a pull request](./docs/images/activity.png)
+![The Overview of a session: the goal with its decisions and summary, two mounted projects on their branches, and an Activity feed where two workflow steps fan out into sub-agents](./docs/images/activity-run.png)
 
 ## Scout on a cheap model, plan on a big one
 

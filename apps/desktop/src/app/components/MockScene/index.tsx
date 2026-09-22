@@ -21,6 +21,7 @@ import {
   ArtifactCreateWireframeScene,
 } from './scenes/ArtifactCreationScenes';
 import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
+import { ActivityRunScene } from './scenes/ActivityRunScene';
 import {
   WorkflowBuilderScene,
   WorkflowRunScene,
@@ -59,6 +60,7 @@ const SCENES = {
   'artifact-create-wireframe': ArtifactCreateWireframeScene,
   activity: ActivityTimelineScene,
   'activity-filter': ActivityFilterScene,
+  'activity-run': ActivityRunScene,
   'workflow-builder': WorkflowBuilderScene,
   'workflow-run': WorkflowRunScene,
   'open-questions': OpenQuestionsScene,

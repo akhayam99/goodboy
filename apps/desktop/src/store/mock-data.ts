@@ -13,6 +13,8 @@ const MOCK_MOUNT_DIFF_STATS = new Map([
   ['/mock/harborline/ledger-core-postings', { additions: 187, deletions: 42 }],
   ['/mock/harborline/ledger-core-backfill', { additions: 96, deletions: 23 }],
   ['/mock/harborline/notify-relay-backoff', { additions: 74, deletions: 31 }],
+  ['/mock/cascadia/payments-api-idempotency', { additions: 224, deletions: 58 }],
+  ['/mock/cascadia/web-console-retry-state', { additions: 41, deletions: 6 }],
 ]);
 
 export const readMockMountDiffStat = (worktreePath: string) =>
