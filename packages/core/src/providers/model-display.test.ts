@@ -52,4 +52,13 @@ describe('provider model display', () => {
     expect(getModelProvider('grok-4.6')).toBe('cursor');
     expect(getModelProvider('opus-5')).toBe('anthropic');
   });
+
+  it('leaves an aggregated key with the direct provider and keeps the openrouter-only ones', () => {
+    expect(getModelProvider('fable-5.1')).toBe('anthropic');
+    expect(getModelProvider('gpt-5.6-sol')).toBe('codex');
+    expect(getModelProvider('gemini-3.7-flash')).toBe('gemini');
+    expect(getModelProvider('glm-5.3')).toBe('openrouter');
+    expect(getModelProvider('deepseek-v4-pro')).toBe('openrouter');
+    expect(getModelProvider('grok-4.7')).toBe('openrouter');
+  });
 });
