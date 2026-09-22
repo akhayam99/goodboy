@@ -146,6 +146,17 @@ describe('ArtifactPrintView', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(2);
   });
 
+  it('prints the mark as a plain image, since WebKit drops a css mask on paper', async () => {
+    listSpy.mockResolvedValueOnce([report]);
+    render(<ArtifactPrintView request={request} />);
+    await waitFor(() => {
+      expect(screen.getByRole('img', { name: 'Goodboy' })).toBeDefined();
+    });
+    const mark = screen.getByRole('img', { name: 'Goodboy' }).querySelector('.print-mark');
+    expect(mark?.tagName).toBe('IMG');
+    expect(mark?.getAttribute('style') ?? '').not.toContain('mask');
+  });
+
   it('lays the facts out as labelled fields, with a human date and no raw timestamp', async () => {
     listSpy.mockResolvedValueOnce([report]);
     render(<ArtifactPrintView request={request} />);

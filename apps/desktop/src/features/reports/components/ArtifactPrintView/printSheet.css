@@ -91,6 +91,12 @@
   font-weight: 600;
   letter-spacing: -0.02em;
 }
+.print-sheet .print-mark {
+  display: block;
+  flex-shrink: 0;
+  height: 14px;
+  width: 14px;
+}
 .print-sheet .print-title {
   color: var(--color-brand);
   font-size: var(--print-display);
