@@ -72,7 +72,13 @@ const goForward = () => {
   fireEvent.click(next ?? screen.getByRole('button', { name: 'Send' }));
 };
 
+const BASE_RUNS: ReadonlyArray<unknown> = [
+  { id: 'agent-1', name: 'scout', status: 'completed' },
+  { id: 'agent-2', name: 'implementer', status: 'running' },
+];
+
 beforeEach(() => {
+  state.sessionPhaseRuns['sess-1'] = BASE_RUNS;
   state.answerOpenQuestions.mockClear();
   state.dismissOpenQuestion.mockClear();
   state.selectAgent.mockClear();
@@ -495,6 +501,32 @@ describe('OpenQuestionCluster delegation', () => {
     chooseDelegate();
 
     expect(screen.getByText('2 of 2 answered')).toBeDefined();
+  });
+
+  it('pulls a question with a live delegate out of the stepper and waits on it', () => {
+    state.sessionPhaseRuns['sess-1'] = [
+      ...BASE_RUNS,
+      {
+        id: 'delegate-1',
+        name: 'answer: Use Postgres or SQLite?',
+        status: 'running',
+        ordinal: 5,
+        sourceKind: 'open_question',
+        sourceThreadId: 'oq-1',
+      },
+    ];
+
+    render(
+      <OpenQuestionCluster questions={[dbQuestion, cacheQuestion]} sessionId={'sess-1' as never} />,
+    );
+
+    expect(screen.getByTestId('delegate-waiting-row')).toBeDefined();
+    expect(screen.queryByText('Postgres')).toBeNull();
+    expect(screen.getByText('Redis')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+
+    fireEvent.click(screen.getByTestId('delegate-waiting-row'));
+    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'delegate-1');
   });
 
   it('drops a typed answer once the question is handed to an agent', async () => {

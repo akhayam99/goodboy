@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Agent, AgentId, OpenQuestionId, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import {
   canDelegateQuestion,
   clipQuestionText,
@@ -9,6 +9,7 @@ import {
   isQuestionDelegate,
   latestQuestionDelegate,
   liveQuestionDelegate,
+  partitionDelegatedQuestions,
 } from './questionDelegate';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -124,5 +125,30 @@ describe('composeDelegateKickoff', () => {
     expect(composeDelegateKickoff({ questionText: 'q', hints: 'weigh the cost' })).toContain(
       '**Hints from the user** weigh the cost',
     );
+  });
+});
+
+describe('partitionDelegatedQuestions', () => {
+  const question = (id: string): OpenQuestion =>
+    ({ id: id as OpenQuestionId, text: id, status: 'open' }) as OpenQuestion;
+
+  it('holds back only the questions a live delegate is answering', () => {
+    const questions = [question('oq-1'), question('oq-2')];
+    const agents = [delegate({ id: 'd1', status: 'running' })];
+
+    const { waiting, answerable } = partitionDelegatedQuestions({ questions, agents });
+
+    expect(waiting.map((entry) => entry.id)).toEqual(['oq-1']);
+    expect(answerable.map((entry) => entry.id)).toEqual(['oq-2']);
+  });
+
+  it('gives a question back once its delegate has settled', () => {
+    const questions = [question('oq-1')];
+    const agents = [delegate({ id: 'd1', status: 'failed' })];
+
+    const { waiting, answerable } = partitionDelegatedQuestions({ questions, agents });
+
+    expect(waiting).toHaveLength(0);
+    expect(answerable).toHaveLength(1);
   });
 });

@@ -60,6 +60,8 @@ export const QuestionsPaneCard = ({
       onCancelDelegate={delegate.onCancelDelegate}
       onDelegateHints={delegate.onDelegateHints}
       onDelegateRouting={delegate.onDelegateRouting}
+      onOpenDelegate={delegate.onOpenDelegate}
+      onTakeBackDelegate={delegate.onTakeBackDelegate}
     />
   );
 };

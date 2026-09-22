@@ -1,4 +1,10 @@
-import type { Agent, AgentSourceKind, AgentStatus, OpenQuestionId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentSourceKind,
+  AgentStatus,
+  OpenQuestion,
+  OpenQuestionId,
+} from '@goodboy/types';
 
 export const QUESTION_DELEGATE_SOURCE_KIND: AgentSourceKind = 'open_question';
 
@@ -65,6 +71,32 @@ export const liveQuestionDelegate = ({ agents, questionId }: DelegatesParams): A
     isLiveDelegate({ agent }),
   );
   return live[live.length - 1] ?? null;
+};
+
+type PartitionParams = {
+  readonly questions: ReadonlyArray<OpenQuestion>;
+  readonly agents: ReadonlyArray<Agent>;
+};
+
+export type DelegatedPartition = {
+  readonly waiting: ReadonlyArray<OpenQuestion>;
+  readonly answerable: ReadonlyArray<OpenQuestion>;
+};
+
+export const partitionDelegatedQuestions = ({
+  questions,
+  agents,
+}: PartitionParams): DelegatedPartition => {
+  const waiting: OpenQuestion[] = [];
+  const answerable: OpenQuestion[] = [];
+  for (const question of questions) {
+    if (liveQuestionDelegate({ agents, questionId: question.id }) === null) {
+      answerable.push(question);
+    } else {
+      waiting.push(question);
+    }
+  }
+  return { waiting, answerable };
 };
 
 export const canDelegateQuestion = ({ asker }: { readonly asker: Agent | null }): boolean =>

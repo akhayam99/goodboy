@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { tintClasses } from '@goodboy/ui';
 import type { OpenQuestion, ProviderId } from '@goodboy/types';
 import { CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import type { DelegateRowState } from '../../../questionDelegate';
+import { QUESTION_DELEGATE_COPY, type DelegateRowState } from '../../../questionDelegate';
 import type { DelegateRouting } from '../useOpenQuestions';
 import { QuestionCard } from '.';
 
@@ -374,11 +374,36 @@ describe('QuestionCard delegation', () => {
     expect(onDelegateHints).toHaveBeenCalledWith('weigh the cost');
   });
 
-  it('keeps the options reachable while a delegate is running, so the user can still answer', () => {
+  it('collapses to a waiting row while a delegate is running, asking for nothing', () => {
+    const onOpenDelegate = vi.fn();
+    render(<QuestionCard {...baseProps} delegateState="running" onOpenDelegate={onOpenDelegate} />);
+
+    expect(screen.queryByRole('radio', { name: 'sqlite' })).toBeNull();
+    expect(screen.queryByTestId('delegate-answer-row')).toBeNull();
+    expect(screen.getByText(QUESTION_DELEGATE_COPY.running)).toBeTruthy();
+
+    fireEvent.click(screen.getByTestId('delegate-waiting-row'));
+    expect(onOpenDelegate).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands the question back from a running delegate', () => {
+    const onTakeBackDelegate = vi.fn();
+    render(
+      <QuestionCard
+        {...baseProps}
+        delegateState="running"
+        onTakeBackDelegate={onTakeBackDelegate}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('delegate-take-back'));
+    expect(onTakeBackDelegate).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides the dismiss control while a delegate is running', () => {
     render(<QuestionCard {...baseProps} delegateState="running" />);
 
-    expect(screen.getByRole('radio', { name: 'sqlite' })).toBeDefined();
-    expect(screen.getByTestId('delegate-answer-row').hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByLabelText('Dismiss question')).toBeNull();
   });
 });
 

@@ -926,6 +926,7 @@ type AppActions = {
     params: SpawnQuestionDelegatesParams,
   ): Promise<ReadonlyArray<QuestionDelegateOutcome>>;
   resolveQuestionDelegate(params: ResolveQuestionDelegateParams): Promise<void>;
+  takeQuestionBack(sessionId: SessionId, questionId: OpenQuestionId): Promise<void>;
   loadSessionPlans(sessionId: SessionId): Promise<void>;
   setPlanStatus(sessionId: SessionId, planId: PlanId, status: PlanStatus): Promise<void>;
   updatePlanBody(

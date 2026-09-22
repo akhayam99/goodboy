@@ -11,7 +11,10 @@ import {
   useOpenQuestions,
 } from '../../../context/components/QuestionsTab/useOpenQuestions';
 import type { QuestionDelegateRequest } from '../../../../store/slices/open-questions/spawnQuestionDelegates';
-import { QUESTION_DELEGATE_COPY } from '../../../context/questionDelegate';
+import {
+  partitionDelegatedQuestions,
+  QUESTION_DELEGATE_COPY,
+} from '../../../context/questionDelegate';
 import { OpenQuestionInlineCard } from './OpenQuestionInlineCard';
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
@@ -40,9 +43,13 @@ export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null
     }),
     [questions],
   );
+  const { waiting, answerable } = useMemo(
+    () => partitionDelegatedQuestions({ questions: openQuestions, agents }),
+    [openQuestions, agents],
+  );
   const clusters = useMemo(
-    () => buildQuestionClusters({ questions: openQuestions, agents, workflows }),
-    [openQuestions, agents, workflows],
+    () => buildQuestionClusters({ questions: answerable, agents, workflows }),
+    [answerable, agents, workflows],
   );
   const agentById = useMemo(() => {
     const map = new Map<AgentId, Agent>();
@@ -153,6 +160,9 @@ export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null
   return (
     <div className="flex min-w-0 flex-col gap-2">
       {settled.map((q) => (
+        <OpenQuestionInlineCard key={q.id} question={q} sessionId={sessionId} />
+      ))}
+      {waiting.map((q) => (
         <OpenQuestionInlineCard key={q.id} question={q} sessionId={sessionId} />
       ))}
       {current !== null && (

@@ -29,6 +29,8 @@ export type QuestionDelegateControls = {
   readonly onCancelDelegate: () => void;
   readonly onDelegateHints: (hints: string) => void;
   readonly onDelegateRouting: (routing: DelegateRouting) => void;
+  readonly onOpenDelegate: (() => void) | null;
+  readonly onTakeBackDelegate: () => void;
 };
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
@@ -38,6 +40,8 @@ export const useQuestionDelegateControls = ({
   question,
 }: Params): QuestionDelegateControls => {
   const setAnswerIntent = useOpenQuestions((state) => state.setAnswerIntent);
+  const selectAgent = useAppStore((state) => state.selectAgent);
+  const takeQuestionBack = useAppStore((state) => state.takeQuestionBack);
   const intent = useOpenQuestions(
     (state) => state.drafts[question.id]?.answerIntent ?? PERSON_ANSWERS,
   );
@@ -105,6 +109,19 @@ export const useQuestionDelegateControls = ({
     [delegateHints, question.id, setAnswerIntent],
   );
 
+  const delegateId = delegate?.id ?? null;
+  const onOpenDelegate = useCallback(() => {
+    if (delegateId === null) {
+      return;
+    }
+    void selectAgent(sessionId, delegateId);
+  }, [delegateId, selectAgent, sessionId]);
+
+  const onTakeBackDelegate = useCallback(() => {
+    setAnswerIntent(question.id, PERSON_ANSWERS);
+    void takeQuestionBack(sessionId, question.id);
+  }, [question.id, sessionId, setAnswerIntent, takeQuestionBack]);
+
   return {
     delegateState,
     delegateHints,
@@ -114,5 +131,7 @@ export const useQuestionDelegateControls = ({
     onCancelDelegate,
     onDelegateHints,
     onDelegateRouting,
+    onOpenDelegate: delegateId === null ? null : onOpenDelegate,
+    onTakeBackDelegate,
   };
 };
