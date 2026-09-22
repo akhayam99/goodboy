@@ -15,7 +15,7 @@ import type {
   ProviderId,
   SessionId,
 } from '@goodboy/types';
-import { PROVIDER_IDS } from '@goodboy/types';
+import { GENERATION_STRUCTURAL_REPLAN_CAP, PROVIDER_IDS } from '@goodboy/types';
 import {
   invokeAgentList,
   invokeAgentUpdateStatus,
@@ -35,8 +35,11 @@ import {
 import {
   composeCapabilityKickoff,
   transferredParentSummary,
+  type PlanRevisionBrief,
+  type PlanRevisionNodeBrief,
   type TransferPacket,
 } from './composeCapabilityKickoff';
+import { freezeClusterExecution } from './clusterImplementation';
 import type { GetFn, SetFn } from './types';
 
 export type NeedDispositionOutcome =
@@ -150,6 +153,48 @@ const transferPacketFor = ({
   };
 };
 
+const planRevisionBrief = ({
+  get,
+  sessionId,
+  containerId,
+}: {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly containerId: AgentId | null;
+}): PlanRevisionBrief | null => {
+  if (containerId === null) {
+    return null;
+  }
+  const graph = (get().clusterExecutionGraphs?.[sessionId] ?? []).find(
+    (candidate) => candidate.containerAgentId === containerId,
+  );
+  if (graph === undefined) {
+    return null;
+  }
+  const agents = get().sessionPhaseRuns[sessionId] ?? [];
+  const nodes = graph.graph.nodes.map((node): PlanRevisionNodeBrief => {
+    const bindingAgentId =
+      graph.nodes.find((binding) => binding.nodeId === node.id)?.agentId ?? null;
+    const agent = agents.find((candidate) => candidate.id === bindingAgentId) ?? null;
+    const isSuperseded =
+      graph.nodes.find((binding) => binding.nodeId === node.id)?.state === 'superseded';
+    return {
+      id: node.id,
+      title: node.title,
+      role: node.role,
+      state: isSuperseded
+        ? 'superseded'
+        : agent?.status === 'completed'
+          ? 'completed'
+          : agent?.status === 'running'
+            ? 'running'
+            : 'unstarted',
+      expectedOutput: node.expectedOutput,
+    };
+  });
+  return { goalTitle: graph.goalTitle, revision: graph.revision, nodes };
+};
+
 export const applyNeedDisposition = async ({
   set,
   get,
@@ -247,6 +292,39 @@ export const applyNeedDisposition = async ({
     };
   }
 
+  if (obligation.purpose === 'replan') {
+    const spent = (get().capabilityGrants[sessionId] ?? []).filter(
+      (grant) => grant.purpose === 'replan' && grant.obligationId !== obligation.id,
+    ).length;
+    if (spent >= GENERATION_STRUCTURAL_REPLAN_CAP) {
+      const exhausted = `this run already took ${spent} of ${GENERATION_STRUCTURAL_REPLAN_CAP} automatic structural replans, so the escalation is refused and the obligation stays open`;
+      const refused = await invokeCapabilityObligationDecide({
+        obligationId: obligation.id,
+        decision: 'refused',
+        reason: exhausted,
+      });
+      refreshObligation({ set, sessionId, obligation: refused });
+      void get().emitNotification(
+        'error',
+        'warning',
+        `replan refused: ${requester.name}`,
+        `${exhausted}. the finding stays visible and the plan in flight stays frozen.`,
+        { sessionId },
+      );
+      return { kind: 'refused', reason: exhausted };
+    }
+    if (requester.parentAgentId != null) {
+      await freezeClusterExecution({
+        set,
+        get,
+        sessionId,
+        containerId: requester.parentAgentId,
+        reason: `a replan was granted for ${obligation.identity}`,
+        obligationId: obligation.id,
+      });
+    }
+  }
+
   const stepProvider = knownProvider({ id: disposition.step.provider });
   const provider = requester.providerOverride ?? get().agentProviderOverride[requester.id] ?? null;
   const eligibility = resolveContinuationEligibility({
@@ -302,6 +380,10 @@ export const applyNeedDisposition = async ({
       requesterName: requester.name,
       promptPrefix: disposition.step.promptPrefix,
       transfer,
+      planRevision:
+        obligation.purpose === 'replan'
+          ? planRevisionBrief({ get, sessionId, containerId: requester.parentAgentId ?? null })
+          : null,
     }),
   });
 

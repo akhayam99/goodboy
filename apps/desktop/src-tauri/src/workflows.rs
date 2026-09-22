@@ -655,6 +655,26 @@ pub struct ClusterExecutionNodeRow {
     pub agent_id: Option<String>,
     pub ordinal: i64,
     pub role: String,
+    #[serde(default = "default_node_state")]
+    pub state: String,
+    #[serde(rename = "supersededBy", default)]
+    pub superseded_by: Option<String>,
+    #[serde(default = "default_node_revision")]
+    pub revision: i64,
+    #[serde(rename = "resultState", default = "default_node_result_state")]
+    pub result_state: String,
+}
+
+fn default_node_state() -> String {
+    "active".to_string()
+}
+
+fn default_node_revision() -> i64 {
+    1
+}
+
+fn default_node_result_state() -> String {
+    "pending".to_string()
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -673,9 +693,63 @@ pub struct ClusterExecutionGraphRow {
     pub execution_version: i64,
     #[serde(rename = "graphJson")]
     pub graph_json: String,
+    pub revision: i64,
+    #[serde(rename = "frozenReason")]
+    pub frozen_reason: Option<String>,
+    #[serde(rename = "frozenObligationId")]
+    pub frozen_obligation_id: Option<String>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
     pub nodes: Vec<ClusterExecutionNodeRow>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClusterGraphFreezeInput {
+    #[serde(rename = "containerAgentId")]
+    pub container_agent_id: String,
+    pub reason: String,
+    #[serde(rename = "obligationId")]
+    pub obligation_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClusterGraphRevisionInput {
+    pub id: String,
+    #[serde(rename = "containerAgentId")]
+    pub container_agent_id: String,
+    #[serde(rename = "obligationId")]
+    pub obligation_id: Option<String>,
+    #[serde(rename = "fromRevision")]
+    pub from_revision: i64,
+    #[serde(rename = "toRevision")]
+    pub to_revision: i64,
+    #[serde(rename = "executionVersion")]
+    pub execution_version: i64,
+    #[serde(rename = "graphJson")]
+    pub graph_json: String,
+    pub reason: String,
+    pub nodes: Vec<ClusterExecutionNodeRow>,
+    #[serde(default)]
+    pub agents: Vec<PhaseRunInsertInput>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClusterGraphRefusalInput {
+    pub id: String,
+    #[serde(rename = "containerAgentId")]
+    pub container_agent_id: String,
+    #[serde(rename = "obligationId")]
+    pub obligation_id: Option<String>,
+    #[serde(rename = "fromRevision")]
+    pub from_revision: i64,
+    pub reason: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ClusterGraphRevisionOutcome {
+    pub adopted: bool,
+    pub graph: ClusterExecutionGraphRow,
+    pub agents: Vec<SessionRow>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -2674,7 +2748,7 @@ pub async fn cluster_completion_hold_resolve(
 }
 
 const CLUSTER_EXECUTION_GRAPH_COLUMNS: &str =
-    "container_agent_id, session_id, workflow_run_id, plan_id, goal_title, execution_version, graph_json, created_at";
+    "container_agent_id, session_id, workflow_run_id, plan_id, goal_title, execution_version, graph_json, revision, frozen_reason, frozen_obligation_id, created_at";
 
 fn cluster_execution_graph_from_row(
     row: &rusqlite::Row<'_>,
@@ -2687,7 +2761,10 @@ fn cluster_execution_graph_from_row(
         goal_title: row.get(4)?,
         execution_version: row.get(5)?,
         graph_json: row.get(6)?,
-        created_at: crate::util::ms_to_iso(row.get(7)?),
+        revision: row.get(7)?,
+        frozen_reason: row.get(8)?,
+        frozen_obligation_id: row.get(9)?,
+        created_at: crate::util::ms_to_iso(row.get(10)?),
         nodes: Vec::new(),
     })
 }
@@ -2697,7 +2774,7 @@ fn cluster_execution_nodes(
     container_agent_id: &str,
 ) -> Result<Vec<ClusterExecutionNodeRow>, PhaseError> {
     let mut stmt = conn.prepare(
-        "SELECT node_id, agent_id, ordinal, role FROM cluster_execution_nodes WHERE container_agent_id = ?1 ORDER BY ordinal ASC",
+        "SELECT node_id, agent_id, ordinal, role, state, superseded_by, revision, result_state FROM cluster_execution_nodes WHERE container_agent_id = ?1 ORDER BY ordinal ASC",
     )?;
     let rows = stmt.query_map(rusqlite::params![container_agent_id], |row| {
         Ok(ClusterExecutionNodeRow {
@@ -2705,6 +2782,10 @@ fn cluster_execution_nodes(
             agent_id: row.get(1)?,
             ordinal: row.get(2)?,
             role: row.get(3)?,
+            state: row.get(4)?,
+            superseded_by: row.get(5)?,
+            revision: row.get(6)?,
+            result_state: row.get(7)?,
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
@@ -2764,8 +2845,9 @@ fn record_cluster_execution_graph(
     for node in input.nodes.iter() {
         conn.execute(
             "INSERT OR IGNORE INTO cluster_execution_nodes
-               (container_agent_id, node_id, agent_id, ordinal, role)
-             VALUES (?1, ?2, ?3, ?4, ?5)",
+               (container_agent_id, node_id, agent_id, ordinal, role, state, superseded_by,
+                revision, result_state)
+             VALUES (?1, ?2, ?3, ?4, ?5, 'active', NULL, 1, 'pending')",
             rusqlite::params![
                 input.container_agent_id,
                 node.node_id,
@@ -2789,6 +2871,7 @@ fn record_cluster_execution_graph(
     Ok(graph)
 }
 
+
 #[tauri::command]
 pub async fn cluster_execution_graph_record(
     state: State<'_, Db>,
@@ -2796,6 +2879,173 @@ pub async fn cluster_execution_graph_record(
 ) -> Result<ClusterExecutionGraphRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     record_cluster_execution_graph(&conn, input)
+}
+
+fn read_cluster_execution_graph(
+    conn: &rusqlite::Connection,
+    container_agent_id: &str,
+) -> Result<ClusterExecutionGraphRow, PhaseError> {
+    let sql = format!(
+        "SELECT {CLUSTER_EXECUTION_GRAPH_COLUMNS} FROM cluster_execution_graphs WHERE container_agent_id = ?1"
+    );
+    let mut graph = conn
+        .query_row(
+            &sql,
+            rusqlite::params![container_agent_id],
+            cluster_execution_graph_from_row,
+        )
+        .map_err(PhaseError::Db)?;
+    graph.nodes = cluster_execution_nodes(conn, &graph.container_agent_id)?;
+    Ok(graph)
+}
+
+fn freeze_cluster_graph(
+    conn: &rusqlite::Connection,
+    input: ClusterGraphFreezeInput,
+) -> Result<ClusterExecutionGraphRow, PhaseError> {
+    conn.execute(
+        "UPDATE cluster_execution_graphs
+            SET frozen_reason = ?2, frozen_obligation_id = COALESCE(?3, frozen_obligation_id)
+          WHERE container_agent_id = ?1 AND frozen_reason IS NULL",
+        rusqlite::params![input.container_agent_id, input.reason, input.obligation_id],
+    )?;
+    read_cluster_execution_graph(conn, &input.container_agent_id)
+}
+
+#[tauri::command]
+pub async fn cluster_graph_freeze(
+    state: State<'_, Db>,
+    input: ClusterGraphFreezeInput,
+) -> Result<ClusterExecutionGraphRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    freeze_cluster_graph(&conn, input)
+}
+
+fn adopt_cluster_graph_revision(
+    conn: &mut rusqlite::Connection,
+    input: ClusterGraphRevisionInput,
+) -> Result<ClusterGraphRevisionOutcome, PhaseError> {
+    for agent in input.agents.iter() {
+        validate_routing_values(
+            agent.routing_lock.as_ref(),
+            agent.routing_decision.as_ref(),
+            agent.task_profile.as_ref(),
+        )?;
+    }
+    let now = crate::util::now_ms();
+    let transaction = conn.transaction()?;
+    let claimed = transaction.execute(
+        "UPDATE cluster_execution_graphs
+            SET graph_json = ?2, execution_version = ?3, revision = ?4, frozen_reason = NULL,
+                frozen_obligation_id = NULL
+          WHERE container_agent_id = ?1 AND revision = ?5",
+        rusqlite::params![
+            input.container_agent_id,
+            input.graph_json,
+            input.execution_version,
+            input.to_revision,
+            input.from_revision,
+        ],
+    )?;
+    if claimed == 0 {
+        drop(transaction);
+        return Ok(ClusterGraphRevisionOutcome {
+            adopted: false,
+            graph: read_cluster_execution_graph(conn, &input.container_agent_id)?,
+            agents: Vec::new(),
+        });
+    }
+    let mut agents = Vec::with_capacity(input.agents.len());
+    for agent in input.agents {
+        agents.push(insert_agent_row(&transaction, agent)?);
+    }
+    for node in input.nodes.iter() {
+        transaction.execute(
+            "INSERT INTO cluster_execution_nodes
+               (container_agent_id, node_id, agent_id, ordinal, role, state, superseded_by,
+                revision, result_state)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+             ON CONFLICT (container_agent_id, node_id) DO UPDATE SET
+               agent_id = excluded.agent_id,
+               ordinal = excluded.ordinal,
+               role = excluded.role,
+               state = excluded.state,
+               superseded_by = excluded.superseded_by,
+               revision = excluded.revision,
+               result_state = excluded.result_state",
+            rusqlite::params![
+                input.container_agent_id,
+                node.node_id,
+                node.agent_id,
+                node.ordinal,
+                node.role,
+                node.state,
+                node.superseded_by,
+                node.revision,
+                node.result_state,
+            ],
+        )?;
+    }
+    transaction.execute(
+        "INSERT OR IGNORE INTO cluster_graph_revisions
+           (id, container_agent_id, obligation_id, from_revision, to_revision, state, reason,
+            created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, 'adopted', ?6, ?7)",
+        rusqlite::params![
+            input.id,
+            input.container_agent_id,
+            input.obligation_id,
+            input.from_revision,
+            input.to_revision,
+            input.reason,
+            now,
+        ],
+    )?;
+    transaction.commit()?;
+    Ok(ClusterGraphRevisionOutcome {
+        adopted: true,
+        graph: read_cluster_execution_graph(conn, &input.container_agent_id)?,
+        agents,
+    })
+}
+
+#[tauri::command]
+pub async fn cluster_graph_revision_adopt(
+    state: State<'_, Db>,
+    input: ClusterGraphRevisionInput,
+) -> Result<ClusterGraphRevisionOutcome, PhaseError> {
+    let mut conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    adopt_cluster_graph_revision(&mut conn, input)
+}
+
+fn refuse_cluster_graph_revision(
+    conn: &rusqlite::Connection,
+    input: ClusterGraphRefusalInput,
+) -> Result<ClusterExecutionGraphRow, PhaseError> {
+    conn.execute(
+        "INSERT OR IGNORE INTO cluster_graph_revisions
+           (id, container_agent_id, obligation_id, from_revision, to_revision, state, reason,
+            created_at)
+         VALUES (?1, ?2, ?3, ?4, ?4, 'refused', ?5, ?6)",
+        rusqlite::params![
+            input.id,
+            input.container_agent_id,
+            input.obligation_id,
+            input.from_revision,
+            input.reason,
+            crate::util::now_ms(),
+        ],
+    )?;
+    read_cluster_execution_graph(conn, &input.container_agent_id)
+}
+
+#[tauri::command]
+pub async fn cluster_graph_revision_refuse(
+    state: State<'_, Db>,
+    input: ClusterGraphRefusalInput,
+) -> Result<ClusterExecutionGraphRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    refuse_cluster_graph_revision(&conn, input)
 }
 
 const AGENT_INSERT_SQL: &str = "INSERT INTO agents
@@ -3576,6 +3826,9 @@ mod tests {
                 goal_title TEXT NOT NULL,
                 execution_version INTEGER NOT NULL,
                 graph_json TEXT NOT NULL,
+                revision INTEGER NOT NULL DEFAULT 1,
+                frozen_reason TEXT,
+                frozen_obligation_id TEXT,
                 created_at INTEGER NOT NULL
             );
             CREATE TABLE cluster_execution_nodes (
@@ -3584,11 +3837,38 @@ mod tests {
                 agent_id TEXT,
                 ordinal INTEGER NOT NULL,
                 role TEXT NOT NULL,
+                state TEXT NOT NULL DEFAULT 'active',
+                superseded_by TEXT,
+                revision INTEGER NOT NULL DEFAULT 1,
+                result_state TEXT NOT NULL DEFAULT 'pending',
                 PRIMARY KEY (container_agent_id, node_id)
+            );
+            CREATE TABLE cluster_graph_revisions (
+                id TEXT PRIMARY KEY,
+                container_agent_id TEXT NOT NULL,
+                obligation_id TEXT,
+                from_revision INTEGER NOT NULL,
+                to_revision INTEGER NOT NULL,
+                state TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                created_at INTEGER NOT NULL
             );",
         )
         .unwrap();
         conn
+    }
+
+    fn execution_node(node_id: &str, state: &str, result_state: &str) -> ClusterExecutionNodeRow {
+        ClusterExecutionNodeRow {
+            node_id: node_id.to_string(),
+            agent_id: Some("agent-1".to_string()),
+            ordinal: 0,
+            role: "scout".to_string(),
+            state: state.to_string(),
+            superseded_by: None,
+            revision: 1,
+            result_state: result_state.to_string(),
+        }
     }
 
     fn execution_graph_input(graph_json: &str) -> ClusterExecutionGraphInput {
@@ -3600,12 +3880,27 @@ mod tests {
             goal_title: "goal".to_string(),
             execution_version: 2,
             graph_json: graph_json.to_string(),
-            nodes: vec![ClusterExecutionNodeRow {
-                node_id: "discovery".to_string(),
-                agent_id: Some("agent-1".to_string()),
-                ordinal: 0,
-                role: "scout".to_string(),
-            }],
+            nodes: vec![execution_node("discovery", "active", "pending")],
+        }
+    }
+
+    fn revision_input(
+        id: &str,
+        from_revision: i64,
+        nodes: Vec<ClusterExecutionNodeRow>,
+        agents: Vec<PhaseRunInsertInput>,
+    ) -> ClusterGraphRevisionInput {
+        ClusterGraphRevisionInput {
+            id: id.to_string(),
+            container_agent_id: "container".to_string(),
+            obligation_id: Some("obligation-1".to_string()),
+            from_revision,
+            to_revision: from_revision + 1,
+            execution_version: 2,
+            graph_json: "[{\"id\":\"discovery-2\"}]".to_string(),
+            reason: "the planner split the discovery".to_string(),
+            nodes,
+            agents,
         }
     }
 
@@ -3623,6 +3918,198 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].nodes.len(), 1);
         assert_eq!(rows[0].nodes[0].role, "scout");
+    }
+
+    #[test]
+    fn cluster_graph_freeze_keeps_the_first_reason() {
+        let conn = execution_graphs_conn();
+        record_cluster_execution_graph(&conn, execution_graph_input("[]")).unwrap();
+        freeze_cluster_graph(
+            &conn,
+            ClusterGraphFreezeInput {
+                container_agent_id: "container".to_string(),
+                reason: "a structural defect".to_string(),
+                obligation_id: Some("obligation-1".to_string()),
+            },
+        )
+        .unwrap();
+        let graph = freeze_cluster_graph(
+            &conn,
+            ClusterGraphFreezeInput {
+                container_agent_id: "container".to_string(),
+                reason: "a second escalation".to_string(),
+                obligation_id: Some("obligation-2".to_string()),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(graph.frozen_reason.as_deref(), Some("a structural defect"));
+        assert_eq!(graph.frozen_obligation_id.as_deref(), Some("obligation-1"));
+        assert_eq!(graph.revision, 1);
+    }
+
+    #[test]
+    fn cluster_graph_revision_supersedes_and_unfreezes() {
+        let mut conn = execution_graphs_conn();
+        record_cluster_execution_graph(&conn, execution_graph_input("[]")).unwrap();
+        freeze_cluster_graph(
+            &conn,
+            ClusterGraphFreezeInput {
+                container_agent_id: "container".to_string(),
+                reason: "a structural defect".to_string(),
+                obligation_id: Some("obligation-1".to_string()),
+            },
+        )
+        .unwrap();
+        let mut superseded = execution_node("discovery", "superseded", "quarantined");
+        superseded.superseded_by = Some("discovery-2".to_string());
+        superseded.revision = 2;
+        let mut replacement = execution_node("discovery-2", "active", "pending");
+        replacement.agent_id = None;
+        replacement.revision = 2;
+        let outcome = adopt_cluster_graph_revision(
+            &mut conn,
+            revision_input("revision-1", 1, vec![superseded, replacement], Vec::new()),
+        )
+        .unwrap();
+
+        assert!(outcome.adopted);
+        assert_eq!(outcome.graph.revision, 2);
+        assert!(outcome.graph.frozen_reason.is_none());
+        let retired = outcome
+            .graph
+            .nodes
+            .iter()
+            .find(|node| node.node_id == "discovery")
+            .unwrap();
+        assert_eq!(retired.state, "superseded");
+        assert_eq!(retired.result_state, "quarantined");
+        assert_eq!(retired.agent_id.as_deref(), Some("agent-1"));
+        assert_eq!(retired.superseded_by.as_deref(), Some("discovery-2"));
+    }
+
+    #[test]
+    fn cluster_graph_revision_formed_against_an_older_revision_is_refused() {
+        let mut conn = execution_graphs_conn();
+        record_cluster_execution_graph(&conn, execution_graph_input("[]")).unwrap();
+        adopt_cluster_graph_revision(
+            &mut conn,
+            revision_input(
+                "revision-1",
+                1,
+                vec![execution_node("discovery", "active", "pending")],
+                Vec::new(),
+            ),
+        )
+        .unwrap();
+        let stale = adopt_cluster_graph_revision(
+            &mut conn,
+            revision_input(
+                "revision-2",
+                1,
+                vec![execution_node("discovery", "superseded", "quarantined")],
+                Vec::new(),
+            ),
+        )
+        .unwrap();
+
+        assert!(!stale.adopted);
+        assert_eq!(stale.graph.revision, 2);
+        let node = stale
+            .graph
+            .nodes
+            .iter()
+            .find(|node| node.node_id == "discovery")
+            .unwrap();
+        assert_eq!(node.state, "active");
+    }
+
+    #[test]
+    fn a_revision_that_fails_part_way_applies_nothing() {
+        let mut conn = execution_graphs_conn();
+        record_cluster_execution_graph(&conn, execution_graph_input("[]")).unwrap();
+        let mut replacement = execution_node("discovery-2", "active", "pending");
+        replacement.agent_id = None;
+        let broken = adopt_cluster_graph_revision(
+            &mut conn,
+            revision_input(
+                "revision-1",
+                1,
+                vec![replacement],
+                vec![PhaseRunInsertInput {
+                    id: Some("agent-2".to_string()),
+                    session_id: "session".to_string(),
+                    step_id: None,
+                    ordinal: 1,
+                    name: "replacement".to_string(),
+                    status: "pending".to_string(),
+                    provider_run_id: None,
+                    output_summary: None,
+                    started_at: None,
+                    completed_at: None,
+                    kind: None,
+                    execution_purpose: Some("cluster".to_string()),
+                    verbosity: None,
+                    effort: None,
+                    model_override: None,
+                    provider_override: None,
+                    parent_agent_id: Some("container".to_string()),
+                    workflow_run_id: None,
+                    source_thread_id: None,
+                    source_thread_ids: None,
+                    source_comment_url: None,
+                    source_kind: None,
+                    domains_json: None,
+                    routing_lock: None,
+                    routing_decision: None,
+                    task_profile: None,
+                }],
+            ),
+        );
+
+        assert!(broken.is_err());
+        let graph = read_cluster_execution_graph(&conn, "container").unwrap();
+        assert_eq!(graph.revision, 1);
+        assert_eq!(graph.graph_json, "[]");
+        assert_eq!(graph.nodes.len(), 1);
+        assert_eq!(graph.nodes[0].node_id, "discovery");
+    }
+
+    #[test]
+    fn a_refused_revision_leaves_the_graph_frozen_with_its_reason() {
+        let conn = execution_graphs_conn();
+        record_cluster_execution_graph(&conn, execution_graph_input("[]")).unwrap();
+        freeze_cluster_graph(
+            &conn,
+            ClusterGraphFreezeInput {
+                container_agent_id: "container".to_string(),
+                reason: "a structural defect".to_string(),
+                obligation_id: Some("obligation-1".to_string()),
+            },
+        )
+        .unwrap();
+        let graph = refuse_cluster_graph_revision(
+            &conn,
+            ClusterGraphRefusalInput {
+                id: "revision-1".to_string(),
+                container_agent_id: "container".to_string(),
+                obligation_id: Some("obligation-1".to_string()),
+                from_revision: 1,
+                reason: "the proposal replaces a cluster that already completed".to_string(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(graph.revision, 1);
+        assert_eq!(graph.frozen_reason.as_deref(), Some("a structural defect"));
+        let reason: String = conn
+            .query_row(
+                "SELECT reason FROM cluster_graph_revisions WHERE id = ?1 AND state = 'refused'",
+                rusqlite::params!["revision-1"],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(reason, "the proposal replaces a cluster that already completed");
     }
 
     #[test]

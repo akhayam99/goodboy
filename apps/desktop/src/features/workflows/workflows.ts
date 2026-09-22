@@ -40,6 +40,8 @@ import type {
   ClusterExecutionGraph,
   ClusterExecutionNode,
   ClusterGraphNode,
+  ClusterNodeResultState,
+  ClusterNodeState,
   ContextReadOutcome,
   EvidenceInventory,
   GenerationCreationPath,
@@ -59,7 +61,13 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
-import { AGENT_EXECUTION_PURPOSES, PLAN_CLUSTER_ROLES, WORKFLOW_ORIGINS } from '@goodboy/types';
+import {
+  AGENT_EXECUTION_PURPOSES,
+  CLUSTER_NODE_RESULT_STATES,
+  CLUSTER_NODE_STATES,
+  PLAN_CLUSTER_ROLES,
+  WORKFLOW_ORIGINS,
+} from '@goodboy/types';
 
 type RawWorkflowStepRow = {
   readonly id: string;
@@ -989,6 +997,10 @@ type RawClusterExecutionNodeRow = {
   readonly agentId: AgentId | null;
   readonly ordinal: number;
   readonly role: string;
+  readonly state: string;
+  readonly supersededBy: string | null;
+  readonly revision: number;
+  readonly resultState: string;
 };
 
 type RawClusterExecutionGraphRow = {
@@ -999,12 +1011,21 @@ type RawClusterExecutionGraphRow = {
   readonly goalTitle: string;
   readonly executionVersion: number;
   readonly graphJson: string;
+  readonly revision: number;
+  readonly frozenReason: string | null;
+  readonly frozenObligationId: string | null;
   readonly createdAt: string;
   readonly nodes: ReadonlyArray<RawClusterExecutionNodeRow>;
 };
 
 const toPlanClusterRole = ({ value }: { readonly value: string }): PlanClusterRole =>
   PLAN_CLUSTER_ROLES.find((role) => role === value) ?? 'implementer';
+
+const toClusterNodeState = ({ value }: { readonly value: string }): ClusterNodeState =>
+  CLUSTER_NODE_STATES.find((state) => state === value) ?? 'active';
+
+const toClusterNodeResultState = ({ value }: { readonly value: string }): ClusterNodeResultState =>
+  CLUSTER_NODE_RESULT_STATES.find((state) => state === value) ?? 'pending';
 
 const parseGraphNodes = ({
   value,
@@ -1059,7 +1080,14 @@ const executionGraphFromRow = ({
     agentId: node.agentId,
     ordinal: node.ordinal,
     role: toPlanClusterRole({ value: node.role }),
+    state: toClusterNodeState({ value: node.state }),
+    supersededBy: node.supersededBy,
+    revision: node.revision,
+    resultState: toClusterNodeResultState({ value: node.resultState }),
   })),
+  revision: row.revision,
+  frozenReason: row.frozenReason,
+  frozenObligationId: row.frozenObligationId,
   createdAt: row.createdAt as IsoDateTime,
 });
 
@@ -1074,6 +1102,13 @@ export const invokeClusterExecutionGraphs = async ({
   return rows.map((row) => executionGraphFromRow({ row }));
 };
 
+export type ClusterExecutionNodeSeed = Readonly<{
+  nodeId: string;
+  agentId: AgentId | null;
+  ordinal: number;
+  role: PlanClusterRole;
+}>;
+
 type RecordClusterExecutionGraphParams = {
   readonly containerAgentId: AgentId;
   readonly sessionId: SessionId;
@@ -1082,7 +1117,7 @@ type RecordClusterExecutionGraphParams = {
   readonly goalTitle: string;
   readonly executionVersion: number;
   readonly graphNodes: ReadonlyArray<ClusterGraphNode>;
-  readonly nodes: ReadonlyArray<ClusterExecutionNode>;
+  readonly nodes: ReadonlyArray<ClusterExecutionNodeSeed>;
 };
 
 export const invokeClusterExecutionGraphRecord = async ({
@@ -1343,4 +1378,98 @@ export const invokeAgentSetDone = async (
 export const invokeWorkspacesWithUnread = async (): Promise<ReadonlyArray<WorkspaceId>> => {
   const ids = await invoke<string[]>('workspaces_with_unread');
   return ids as ReadonlyArray<string> as ReadonlyArray<WorkspaceId>;
+};
+
+export type FreezeClusterGraphParams = {
+  readonly containerAgentId: AgentId;
+  readonly reason: string;
+  readonly obligationId: string | null;
+};
+
+export const invokeClusterGraphFreeze = async ({
+  containerAgentId,
+  reason,
+  obligationId,
+}: FreezeClusterGraphParams): Promise<ClusterExecutionGraph> => {
+  const row = await invoke<RawClusterExecutionGraphRow>('cluster_graph_freeze', {
+    input: { containerAgentId, reason, obligationId },
+  });
+  return executionGraphFromRow({ row });
+};
+
+export type AdoptClusterGraphRevisionParams = {
+  readonly id: string;
+  readonly containerAgentId: AgentId;
+  readonly obligationId: string | null;
+  readonly fromRevision: number;
+  readonly toRevision: number;
+  readonly executionVersion: number;
+  readonly graphNodes: ReadonlyArray<ClusterGraphNode>;
+  readonly reason: string;
+  readonly nodes: ReadonlyArray<ClusterExecutionNode>;
+  readonly agents: ReadonlyArray<AgentInsertArgs>;
+};
+
+export type ClusterGraphRevisionOutcome = Readonly<{
+  adopted: boolean;
+  graph: ClusterExecutionGraph;
+  agents: ReadonlyArray<Agent>;
+}>;
+
+export const invokeClusterGraphRevisionAdopt = async ({
+  id,
+  containerAgentId,
+  obligationId,
+  fromRevision,
+  toRevision,
+  executionVersion,
+  graphNodes,
+  reason,
+  nodes,
+  agents,
+}: AdoptClusterGraphRevisionParams): Promise<ClusterGraphRevisionOutcome> => {
+  const outcome = await invoke<{
+    readonly adopted: boolean;
+    readonly graph: RawClusterExecutionGraphRow;
+    readonly agents: ReadonlyArray<RawAgentRow>;
+  }>('cluster_graph_revision_adopt', {
+    input: {
+      id,
+      containerAgentId,
+      obligationId,
+      fromRevision,
+      toRevision,
+      executionVersion,
+      graphJson: JSON.stringify(graphNodes),
+      reason,
+      nodes,
+      agents,
+    },
+  });
+  return {
+    adopted: outcome.adopted,
+    graph: executionGraphFromRow({ row: outcome.graph }),
+    agents: outcome.agents.map((row) => rowToAgent(row)),
+  };
+};
+
+export type RefuseClusterGraphRevisionParams = {
+  readonly id: string;
+  readonly containerAgentId: AgentId;
+  readonly obligationId: string | null;
+  readonly fromRevision: number;
+  readonly reason: string;
+};
+
+export const invokeClusterGraphRevisionRefuse = async ({
+  id,
+  containerAgentId,
+  obligationId,
+  fromRevision,
+  reason,
+}: RefuseClusterGraphRevisionParams): Promise<ClusterExecutionGraph> => {
+  const row = await invoke<RawClusterExecutionGraphRow>('cluster_graph_revision_refuse', {
+    input: { id, containerAgentId, obligationId, fromRevision, reason },
+  });
+  return executionGraphFromRow({ row });
 };

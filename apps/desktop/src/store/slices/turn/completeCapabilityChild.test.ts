@@ -22,6 +22,9 @@ const h = vi.hoisted(() => ({
   loadObligations: vi.fn(),
   loadHolds: vi.fn(),
   loadGraphs: vi.fn(),
+  decide: vi.fn(),
+  adoptRevision: vi.fn(),
+  resumeClusters: vi.fn(),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -30,6 +33,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentUpdateStatus: h.updateStatus,
   invokeCapabilityGrantUpdate: h.grantUpdate,
   invokeCapabilityObligationSettle: h.settle,
+  invokeCapabilityObligationDecide: h.decide,
   invokeCapabilityGrants: h.loadGrants,
   invokeCapabilityObligations: h.loadObligations,
   invokeClusterCompletionHolds: h.loadHolds,
@@ -41,6 +45,12 @@ vi.mock('../workflows/summarizeWorkflowAgentOutput', () => ({
 }));
 vi.mock('../worktrees/getSessionRepo', () => ({
   getSessionRepo: () => ({ worktreePath: '/repo' }),
+}));
+vi.mock('../workflows/adoptClusterGraphRevision', () => ({
+  adoptClusterGraphRevision: h.adoptRevision,
+}));
+vi.mock('../workflows/clusterImplementation', () => ({
+  resumeClusterChildren: h.resumeClusters,
 }));
 
 import { completeCapabilityChild } from './completeCapabilityChild';
@@ -273,15 +283,86 @@ describe('completeCapabilityChild', () => {
     expect(state.capabilityObligations[SESSION_ID]?.[0]?.state).toBe('satisfied');
   });
 
-  it('leaves the active graph frozen when a replan reports back', async () => {
+  it('adopts the revision a replan delivered and releases the held successor', async () => {
     const planner: Agent = { ...child, name: 'replan the cluster', kind: 'planner' };
-    const { set, get, spawnAgent, state } = createHarness({
+    const requester: Agent = {
+      ...child,
+      id: REQUESTER_ID,
+      name: 'review the change',
+      kind: 'reviewer',
+      parentAgentId: 'container-1' as AgentId,
+    };
+    const { set, get, spawnAgent, resolveClusterCompletionHold, state } = createHarness({
       obligation: obligationOf({ purpose: 'replan', targetRole: 'planner' }),
       grant: grantOf({ purpose: 'replan', grantedRole: 'planner' }),
       agent: planner,
     });
+    state.sessionPhaseRuns = { [SESSION_ID]: [planner, requester] };
+    h.agentList.mockImplementation(async () => [planner, requester]);
     h.settle.mockImplementation(async () =>
       obligationOf({ purpose: 'replan', state: 'satisfied', satisfiedRevision: 'sha-verified' }),
+    );
+    h.adoptRevision.mockImplementation(async () => ({
+      kind: 'adopted',
+      revision: 2,
+      superseded: ['impl'],
+      quarantined: [],
+      appended: ['impl-split'],
+    }));
+
+    const outcome = await completeCapabilityChild({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      child: planner,
+      assistantText: '<<plan-revision>>{"baseRevision":1,"nodes":[]}<</plan-revision>>',
+      now,
+    });
+
+    expect(outcome).toEqual({ kind: 'revision-adopted', revision: 2 });
+    expect(h.adoptRevision).toHaveBeenCalledWith(
+      expect.objectContaining({
+        containerAgentId: 'container-1',
+        obligationId: OBLIGATION_ID,
+        proposalText: '<<plan-revision>>{"baseRevision":1,"nodes":[]}<</plan-revision>>',
+      }),
+    );
+    expect(spawnAgent).not.toHaveBeenCalled();
+    expect(resolveClusterCompletionHold).toHaveBeenCalledWith(
+      expect.objectContaining({ holdId: 'hold-1' }),
+    );
+  });
+
+  it('leaves the old graph frozen and the finding open when the revision is refused', async () => {
+    const planner: Agent = { ...child, name: 'replan the cluster', kind: 'planner' };
+    const requester: Agent = {
+      ...child,
+      id: REQUESTER_ID,
+      name: 'review the change',
+      kind: 'reviewer',
+      parentAgentId: 'container-1' as AgentId,
+    };
+    const { set, get, resolveClusterCompletionHold, state } = createHarness({
+      obligation: obligationOf({ purpose: 'replan', targetRole: 'planner' }),
+      grant: grantOf({ purpose: 'replan', grantedRole: 'planner' }),
+      agent: planner,
+    });
+    state.sessionPhaseRuns = { [SESSION_ID]: [planner, requester] };
+    h.agentList.mockImplementation(async () => [planner, requester]);
+    h.adoptRevision.mockImplementation(async () => ({
+      kind: 'refused',
+      reason: 'the proposal was formed against revision 1',
+    }));
+    h.decide.mockImplementation(async () =>
+      obligationOf({
+        purpose: 'replan',
+        state: 'refused',
+        decision: 'refused',
+        decisionReason: 'the proposal was formed against revision 1',
+      }),
+    );
+    h.grantUpdate.mockImplementation(async () =>
+      grantOf({ purpose: 'replan', grantedRole: 'planner', state: 'failed' }),
     );
 
     const outcome = await completeCapabilityChild({
@@ -289,19 +370,20 @@ describe('completeCapabilityChild', () => {
       get,
       sessionId: SESSION_ID,
       child: planner,
-      assistantText: 'a revised plan follows.',
+      assistantText: 'a stale revision.',
       now,
     });
 
-    expect(outcome).toEqual({ kind: 'proposal-pending' });
-    expect(spawnAgent).not.toHaveBeenCalled();
-    expect(state.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'replan proposal pending: replan the cluster',
-      expect.stringContaining('stays frozen'),
-      { sessionId: SESSION_ID },
+    expect(outcome).toEqual({
+      kind: 'revision-refused',
+      reason: 'the proposal was formed against revision 1',
+    });
+    expect(h.settle).not.toHaveBeenCalled();
+    expect(resolveClusterCompletionHold).not.toHaveBeenCalled();
+    expect(h.decide).toHaveBeenCalledWith(
+      expect.objectContaining({ obligationId: OBLIGATION_ID, decision: 'refused' }),
     );
+    expect(state.capabilityObligations[SESSION_ID]?.[0]?.state).toBe('refused');
   });
 
   it('resumes a parent only under a grant that recorded a resumption', async () => {

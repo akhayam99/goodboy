@@ -53,11 +53,30 @@ export type ClusterGraph = Readonly<{
   nodes: ReadonlyArray<ClusterGraphNode>;
 }>;
 
+export type ClusterNodeState = 'active' | 'superseded';
+
+export const CLUSTER_NODE_STATES = [
+  'active',
+  'superseded',
+] as const satisfies ReadonlyArray<ClusterNodeState>;
+
+export type ClusterNodeResultState = 'pending' | 'retained' | 'quarantined';
+
+export const CLUSTER_NODE_RESULT_STATES = [
+  'pending',
+  'retained',
+  'quarantined',
+] as const satisfies ReadonlyArray<ClusterNodeResultState>;
+
 export type ClusterExecutionNode = Readonly<{
   nodeId: string;
   agentId: AgentId | null;
   ordinal: number;
   role: PlanClusterRole;
+  state: ClusterNodeState;
+  supersededBy: string | null;
+  revision: number;
+  resultState: ClusterNodeResultState;
 }>;
 
 export type ClusterExecutionGraph = Readonly<{
@@ -68,6 +87,9 @@ export type ClusterExecutionGraph = Readonly<{
   goalTitle: string;
   graph: ClusterGraph;
   nodes: ReadonlyArray<ClusterExecutionNode>;
+  revision: number;
+  frozenReason: string | null;
+  frozenObligationId: string | null;
   createdAt: IsoDateTime;
 }>;
 

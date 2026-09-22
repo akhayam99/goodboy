@@ -25,7 +25,7 @@ const stateLabel = ({ obligation }: Props): string => {
     return 'attached to the owner';
   }
   if (obligation.state === 'satisfied') {
-    return obligation.purpose === 'replan' ? 'proposal pending, graph frozen' : 'closed';
+    return obligation.purpose === 'replan' ? 'revision adopted' : 'closed';
   }
   if (obligation.state === 'granted') {
     return 'granted';

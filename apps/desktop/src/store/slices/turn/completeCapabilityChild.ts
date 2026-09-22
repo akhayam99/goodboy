@@ -12,11 +12,14 @@ import {
   invokeAgentList,
   invokeAgentUpdateStatus,
   invokeCapabilityGrantUpdate,
+  invokeCapabilityObligationDecide,
   invokeCapabilityObligationSettle,
 } from '../../../features/workflows/workflows';
 import { ROLE_TO_KIND } from '../../../features/session/agent-kind';
 import { worktreeStatus } from '../../../features/worktree/worktree';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
+import { adoptClusterGraphRevision } from '../workflows/adoptClusterGraphRevision';
+import { resumeClusterChildren } from '../workflows/clusterImplementation';
 import { releaseCapabilityHolds } from '../workflows/releaseCapabilityHolds';
 import { summarizeWorkflowAgentOutput } from '../workflows/summarizeWorkflowAgentOutput';
 import type { GetFn, SetFn } from './types';
@@ -27,7 +30,8 @@ export type CapabilityCompletionOutcome =
   | Readonly<{ kind: 'replacement-started'; replacementAgentId: AgentId }>
   | Readonly<{ kind: 'parent-resumed' }>
   | Readonly<{ kind: 'settled'; verifiedRevision: string }>
-  | Readonly<{ kind: 'proposal-pending' }>;
+  | Readonly<{ kind: 'revision-adopted'; revision: number }>
+  | Readonly<{ kind: 'revision-refused'; reason: string }>;
 
 type Binding = Readonly<{
   obligation: CapabilityObligation;
@@ -172,6 +176,124 @@ const settleAndRelease = async ({
   return revision;
 };
 
+type AdoptProposalParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly child: Agent;
+  readonly assistantText: string;
+  readonly binding: Binding;
+  readonly outputSummary: string;
+};
+
+type RefuseRevisionParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly child: Agent;
+  readonly obligationId: string;
+  readonly reason: string;
+};
+
+const refuseRevision = async ({
+  set,
+  get,
+  sessionId,
+  child,
+  obligationId,
+  reason,
+}: RefuseRevisionParams): Promise<CapabilityCompletionOutcome> => {
+  const failed = await invokeCapabilityGrantUpdate({
+    obligationId,
+    state: 'failed',
+    childAgentId: null,
+    replacementAgentId: null,
+    verificationAgentId: null,
+  });
+  rememberGrant({ set, sessionId, grant: failed });
+  const refused = await invokeCapabilityObligationDecide({
+    obligationId,
+    decision: 'refused',
+    reason,
+  });
+  rememberObligation({ set, sessionId, obligation: refused });
+  void get().emitNotification(
+    'error',
+    'warning',
+    `plan revision not adopted: ${child.name}`,
+    `${reason}. the plan in flight stays frozen, the finding stays open and nothing was superseded.`,
+    { sessionId },
+  );
+  return { kind: 'revision-refused', reason };
+};
+
+const adoptProposal = async ({
+  set,
+  get,
+  sessionId,
+  child,
+  assistantText,
+  binding,
+  outputSummary,
+}: AdoptProposalParams): Promise<CapabilityCompletionOutcome> => {
+  const { obligation } = binding;
+  const requester =
+    (get().sessionPhaseRuns[sessionId] ?? []).find(
+      (agent) => agent.id === obligation.requesterAgentId,
+    ) ?? null;
+  const containerAgentId = requester?.parentAgentId ?? null;
+  if (containerAgentId === null) {
+    return refuseRevision({
+      set,
+      get,
+      sessionId,
+      child,
+      obligationId: obligation.id,
+      reason: 'the requester belongs to no cluster execution, so there is no graph to revise',
+    });
+  }
+  const outcome = await adoptClusterGraphRevision({
+    set,
+    get,
+    sessionId,
+    containerAgentId,
+    obligationId: obligation.id,
+    proposalText: assistantText,
+    reason: `${child.name} revised the plan: ${outputSummary}`,
+  });
+  if (outcome.kind !== 'adopted') {
+    return refuseRevision({
+      set,
+      get,
+      sessionId,
+      child,
+      obligationId: obligation.id,
+      reason: outcome.reason,
+    });
+  }
+  await settleAndRelease({
+    set,
+    get,
+    sessionId,
+    binding,
+    receipt: `revision ${outcome.revision} adopted from ${child.name}`,
+  });
+  void get().emitNotification(
+    'error',
+    'info',
+    `plan revision adopted: ${child.name}`,
+    `the execution now runs revision ${outcome.revision}. superseded: ${outcome.superseded.length}, quarantined results: ${outcome.quarantined.length}, appended: ${outcome.appended.length}.`,
+    { sessionId },
+  );
+  const container =
+    (get().sessionPhaseRuns[sessionId] ?? []).find((agent) => agent.id === containerAgentId) ??
+    null;
+  if (container !== null) {
+    await resumeClusterChildren({ set, get, sessionId, container });
+  }
+  return { kind: 'revision-adopted', revision: outcome.revision };
+};
+
 type Params = {
   readonly set: SetFn;
   readonly get: GetFn;
@@ -223,21 +345,7 @@ export const completeCapabilityChild = async ({
   }
 
   if (obligation.purpose === 'replan') {
-    await settleAndRelease({
-      set,
-      get,
-      sessionId,
-      binding,
-      receipt: `a plan proposal is pending from ${child.name}`,
-    });
-    void get().emitNotification(
-      'error',
-      'warning',
-      `replan proposal pending: ${child.name}`,
-      'the planner delivered a proposal. the plan in flight stays frozen and nothing is superseded: adopt the proposal by hand to change the graph.',
-      { sessionId },
-    );
-    return { kind: 'proposal-pending' };
+    return adoptProposal({ set, get, sessionId, child, assistantText, binding, outputSummary });
   }
 
   const verificationRole = verificationRoleForGrant({ purpose: obligation.purpose });

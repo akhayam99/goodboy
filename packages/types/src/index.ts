@@ -358,6 +358,8 @@ export type {
   ClusterExecutionNode,
   ClusterGraph,
   ClusterGraphNode,
+  ClusterNodeResultState,
+  ClusterNodeState,
   ImplementationCluster,
   PlanArtifact,
   PlanArtifactMetadata,
@@ -371,6 +373,8 @@ export type {
 export {
   CLUSTER_EXECUTION_VERSION_GRAPH,
   CLUSTER_EXECUTION_VERSION_LEGACY,
+  CLUSTER_NODE_RESULT_STATES,
+  CLUSTER_NODE_STATES,
   PLAN_CLUSTER_ROLES,
 } from './artifact';
 export type {

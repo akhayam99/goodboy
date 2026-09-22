@@ -20,6 +20,7 @@ const h = vi.hoisted(() => ({
   agentList: vi.fn(),
   claimOwner: vi.fn(),
   workflowUpsert: vi.fn(),
+  freeze: vi.fn(),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -34,6 +35,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeCapabilityObligationSettle: h.settle,
   invokeWorkflowUpsert: h.workflowUpsert,
 }));
+vi.mock('./clusterImplementation', () => ({ freezeClusterExecution: h.freeze }));
 
 import { applyNeedDisposition } from './applyNeedDisposition';
 
@@ -116,7 +118,7 @@ const grantOf = (overrides: Partial<CapabilityGrant> = {}): CapabilityGrant => (
 
 const grantDecision = (
   overrides: Partial<{
-    readonly role: 'implementer' | 'scout' | 'investigator';
+    readonly role: 'implementer' | 'scout' | 'investigator' | 'planner';
     readonly provider: ProviderId;
   }> = {},
 ): Extract<OrchestratorDecision, { readonly action: 'need' }> => ({
@@ -168,6 +170,7 @@ describe('applyNeedDisposition', () => {
     h.settle.mockImplementation(async () => obligationOf({ state: 'satisfied' }));
     h.agentList.mockImplementation(async () => []);
     h.claimOwner.mockImplementation(async () => ({ kind: 'owned' }));
+    h.freeze.mockImplementation(async () => null);
   });
 
   it("grants a reviewer's repair to an implementer and hands the obligation to the run", async () => {
@@ -481,5 +484,98 @@ describe('applyNeedDisposition', () => {
     expect(h.decide).toHaveBeenLastCalledWith(
       expect.objectContaining({ decision: 'refinement', reason: 'name the failing test' }),
     );
+  });
+});
+
+describe('a structural escalation', () => {
+  beforeEach(() => {
+    Object.values(h).forEach((mock) => mock.mockReset());
+    h.claim.mockImplementation(async () => ({ grant: grantOf(), isFirstDelivery: true }));
+    h.update.mockImplementation(async () => grantOf({ childAgentId: 'child-1' as AgentId }));
+    h.decide.mockImplementation(async () =>
+      obligationOf({ state: 'granted', decision: 'granted' }),
+    );
+    h.agentList.mockImplementation(async () => []);
+    h.claimOwner.mockImplementation(async () => ({ kind: 'owned' }));
+    h.freeze.mockImplementation(async () => null);
+  });
+
+  const replanObligation = (overrides: Partial<CapabilityObligation> = {}) =>
+    obligationOf({
+      identity: 'agent-1:planner:replan',
+      targetRole: 'planner',
+      purpose: 'replan',
+      requests: [
+        {
+          ...obligationOf().requests[0]!,
+          targetRole: 'planner',
+          purpose: 'replan',
+          question: 'the plan assumed one writer and the work needs two',
+        },
+      ],
+      ...overrides,
+    });
+
+  it('freezes the execution the requester belongs to before the planner starts', async () => {
+    const requester = agentOf({ parentAgentId: 'container-1' as AgentId });
+    const { set, get, spawnAgent } = createHarness({ requester });
+    const obligation = replanObligation();
+    h.claim.mockImplementation(async () => ({
+      grant: grantOf({ purpose: 'replan', grantedRole: 'planner' }),
+      isFirstDelivery: true,
+    }));
+
+    const outcome = await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation,
+      decision: { ...grantDecision({ role: 'planner' }), obligationId: obligation.id },
+    });
+
+    expect(outcome.kind).toBe('granted');
+    expect(h.freeze).toHaveBeenCalledWith(
+      expect.objectContaining({ containerId: 'container-1', obligationId: obligation.id }),
+    );
+    expect(spawnAgent).toHaveBeenCalledWith(
+      SESSION_ID,
+      expect.objectContaining({ kindOverride: 'planner' }),
+    );
+  });
+
+  it('refuses the escalation once the structural replan allowance is spent', async () => {
+    const requester = agentOf({ parentAgentId: 'container-1' as AgentId });
+    const { set, get, spawnAgent, state } = createHarness({ requester });
+    const obligation = replanObligation();
+    state.capabilityGrants = {
+      [SESSION_ID]: [
+        grantOf({
+          id: 'capability-grant:earlier',
+          obligationId: 'capability-obligation:earlier',
+          purpose: 'replan',
+          grantedRole: 'planner',
+        }),
+      ],
+    };
+    h.decide.mockImplementation(async () =>
+      replanObligation({ state: 'refused', decision: 'refused' }),
+    );
+
+    const outcome = await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation,
+      decision: { ...grantDecision({ role: 'planner' }), obligationId: obligation.id },
+    });
+
+    expect(outcome.kind).toBe('refused');
+    expect(outcome.kind === 'refused' ? outcome.reason : '').toContain(
+      'automatic structural replans',
+    );
+    expect(spawnAgent).not.toHaveBeenCalled();
+    expect(h.claim).not.toHaveBeenCalled();
+    expect(h.freeze).not.toHaveBeenCalled();
+    expect(state.capabilityObligations[SESSION_ID]?.[0]?.state).toBe('refused');
   });
 });

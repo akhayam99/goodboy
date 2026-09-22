@@ -3,6 +3,7 @@ import type {
   AgentId,
   ClusterCompletionFinding,
   ClusterCompletionHoldReason,
+  ClusterExecutionGraph,
   ClusterExecutionNode,
   ClusterGraph,
   ClusterGraphNode,
@@ -26,7 +27,9 @@ import {
   invokeAgentUpdateStatus,
   invokeClusterCompletionHoldRecord,
   invokeClusterExecutionGraphRecord,
+  invokeClusterGraphFreeze,
   type AgentInsertArgs,
+  type ClusterExecutionNodeSeed,
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
 import { composeClusterOutcomeBoundary, composeKickoff, composeUnitBoundary } from '../../kickoff';
@@ -115,12 +118,14 @@ const pairClusterNodes = ({
     execution.bindings.map((binding) => [binding.nodeId, binding.agentId]),
   );
   return orderedNodes({ graph: execution.graph }).map((node, index) => {
-    const bound = boundAgentId.get(node.id) ?? null;
-    const agent =
-      bound === null
-        ? (children[index] ?? null)
-        : (children.find((child) => child.id === bound) ?? null);
-    return { node, agent };
+    const bound = boundAgentId.get(node.id);
+    if (bound === undefined) {
+      return { node, agent: children[index] ?? null };
+    }
+    if (bound === null) {
+      return { node, agent: null };
+    }
+    return { node, agent: children.find((child) => child.id === bound) ?? null };
   });
 };
 
@@ -458,7 +463,7 @@ export const fanOutClusters = async (
   const childIds: AgentId[] = materialized.agents.map((agent) => agent.id);
   await bindGeneration({ reservations: reservation.reservations, agentIds: childIds });
 
-  const bindings: ReadonlyArray<ClusterExecutionNode> = nodes.map((node, index) => ({
+  const bindings: ReadonlyArray<ClusterExecutionNodeSeed> = nodes.map((node, index) => ({
     nodeId: node.id,
     agentId: childIds[index] ?? null,
     ordinal: node.ordinal,
@@ -727,6 +732,9 @@ export const resumeClusterChildren = async ({
   sessionId,
   container,
 }: ResumeClusterChildrenParams): Promise<boolean> => {
+  if (frozenClusterGraph({ get, sessionId, containerId: container.id }) !== null) {
+    return false;
+  }
   if (
     (get().clusterCompletionHolds?.[sessionId] ?? []).some(
       (hold) => hold.containerAgentId === container.id && hold.state === 'open',
@@ -820,6 +828,86 @@ export const selectFanOutPlan = (
   return findClustersPlan(get, sessionId, opts.workflowRunId);
 };
 
+const freezeReasonOf = ({ graph }: { readonly graph: ClusterExecutionGraph }): string | null =>
+  typeof graph.frozenReason === 'string' && graph.frozenReason.length > 0
+    ? graph.frozenReason
+    : null;
+
+export const frozenClusterGraph = ({
+  get,
+  sessionId,
+  containerId,
+}: {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly containerId: AgentId;
+}): ClusterExecutionGraph | null =>
+  (get().clusterExecutionGraphs?.[sessionId] ?? []).find(
+    (graph) => graph.containerAgentId === containerId && freezeReasonOf({ graph }) !== null,
+  ) ?? null;
+
+const supersededBindingForAgent = ({
+  get,
+  sessionId,
+  containerId,
+  agentId,
+}: {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly containerId: AgentId;
+  readonly agentId: AgentId;
+}): ClusterExecutionNode | null => {
+  const graph = (get().clusterExecutionGraphs?.[sessionId] ?? []).find(
+    (candidate) => candidate.containerAgentId === containerId,
+  );
+  return (
+    graph?.nodes.find((node) => node.agentId === agentId && node.state === 'superseded') ?? null
+  );
+};
+
+export const freezeClusterExecution = async ({
+  set,
+  get,
+  sessionId,
+  containerId,
+  reason,
+  obligationId,
+}: {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly containerId: AgentId;
+  readonly reason: string;
+  readonly obligationId: string | null;
+}): Promise<ClusterExecutionGraph | null> => {
+  const known = (get().clusterExecutionGraphs?.[sessionId] ?? []).find(
+    (candidate) => candidate.containerAgentId === containerId,
+  );
+  if (known === undefined) {
+    return null;
+  }
+  const frozen = await invokeClusterGraphFreeze({
+    containerAgentId: containerId,
+    reason,
+    obligationId,
+  }).catch(() => null);
+  if (frozen === null) {
+    return null;
+  }
+  set((state) => ({
+    clusterExecutionGraphs: {
+      ...(state.clusterExecutionGraphs ?? {}),
+      [sessionId]: [
+        ...(state.clusterExecutionGraphs?.[sessionId] ?? []).filter(
+          (candidate) => candidate.containerAgentId !== containerId,
+        ),
+        frozen,
+      ],
+    },
+  }));
+  return frozen;
+};
+
 const openCompletionHoldForContainer = ({
   get,
   sessionId,
@@ -910,6 +998,7 @@ const persistCompletionHold = async ({
           output: assistantText,
         })
       : 'cluster held for explicit resolution';
+  const isStructural = findings.some((finding) => finding.target === 'planner');
   const hold = await invokeClusterCompletionHoldRecord({
     id: `cluster-completion:${child.id}:${sourceTurnId}`,
     sessionId,
@@ -933,12 +1022,24 @@ const persistCompletionHold = async ({
       [sessionId]: [...(state.clusterCompletionHolds?.[sessionId] ?? []), hold],
     },
   }));
+  if (isStructural) {
+    await freezeClusterExecution({
+      set,
+      get,
+      sessionId,
+      containerId,
+      reason: `a structural defect was found in ${child.name}`,
+      obligationId: null,
+    });
+  }
   void get().refreshUnreadWorkspaces();
   void get().emitNotification(
     'error',
     'warning',
     `cluster held: ${child.name}`,
-    completionHoldMessage({ reason, findings }),
+    isStructural
+      ? `${completionHoldMessage({ reason, findings })}. the execution is frozen: nothing queued starts and nothing publishes until a revised plan is adopted.`
+      : completionHoldMessage({ reason, findings }),
     { sessionId },
   );
 };
@@ -1065,10 +1166,43 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     let refreshed = await invokeAgentList(sessionId);
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
 
+    const frozen = frozenClusterGraph({ get, sessionId, containerId });
+    if (frozen !== null) {
+      void get().refreshUnreadWorkspaces();
+      void get().emitNotification(
+        'error',
+        'info',
+        `cluster kept out of a frozen plan: ${child.name}`,
+        `${frozen.frozenReason ?? 'the execution is frozen'}. its result is kept, nothing queued starts and nothing publishes until a revised plan is adopted.`,
+        { sessionId },
+      );
+      return;
+    }
+
+    const superseded = supersededBindingForAgent({
+      get,
+      sessionId,
+      containerId,
+      agentId: childAgentId,
+    });
+    if (superseded !== null) {
+      void get().refreshUnreadWorkspaces();
+      void get().emitNotification(
+        'error',
+        'warning',
+        `late result quarantined: ${child.name}`,
+        'this attempt was superseded by a revised plan while it ran, so its result is quarantined rather than counted. revalidate it explicitly if it still holds.',
+        { sessionId },
+      );
+    }
+
     const children = childrenOf(refreshed, containerId);
     const pairs = pairClusterNodes({ execution, children });
-    const completedCount = children.filter((c) => c.status === 'completed').length;
-    const total = execution.graph.nodes.length > 0 ? execution.graph.nodes.length : children.length;
+    const hasGraph = execution.graph.nodes.length > 0;
+    const completedCount = hasGraph
+      ? pairs.filter((pair) => pair.agent?.status === 'completed').length
+      : children.filter((c) => c.status === 'completed').length;
+    const total = hasGraph ? execution.graph.nodes.length : children.length;
 
     if (
       completedCount >= total &&

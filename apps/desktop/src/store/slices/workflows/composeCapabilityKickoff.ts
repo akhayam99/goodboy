@@ -14,7 +14,71 @@ const PURPOSE_HEADLINE: Readonly<Record<CapabilityPurpose, string>> = {
   repair: 'You were granted a bounded repair for a recorded finding.',
   test: 'You were granted a test pass for a recorded finding.',
   replan:
-    'You were granted a replan. The plan in flight stays frozen and nothing is superseded yet.',
+    'You were granted a replan. The plan in flight is frozen: nothing queued starts and nothing publishes until your revision is adopted or refused.',
+};
+
+export type PlanRevisionNodeBrief = Readonly<{
+  id: string;
+  title: string;
+  role: string;
+  state: 'completed' | 'running' | 'unstarted' | 'superseded';
+  expectedOutput: string | null;
+}>;
+
+export type PlanRevisionBrief = Readonly<{
+  goalTitle: string;
+  revision: number;
+  nodes: ReadonlyArray<PlanRevisionNodeBrief>;
+}>;
+
+const planRevisionBlock = ({ brief }: { readonly brief: PlanRevisionBrief }): string => {
+  const rows = brief.nodes.map(
+    (node) =>
+      `- ${node.id} (${node.role}, ${node.state}): ${node.title}${node.expectedOutput === null ? '' : ` [accepts: ${node.expectedOutput}]`}`,
+  );
+  return [
+    `The plan you are revising is "${brief.goalTitle}" at revision ${brief.revision}.`,
+    ...rows,
+    '',
+    'A completed result is reused only where its acceptance criteria and its dependency revisions still hold. A result from an attempt that is still running is quarantined when you supersede it. A completed node cannot be replaced.',
+    '',
+    'Emit exactly one revision and say what happens to every node above:',
+    '<<plan-revision>>',
+    JSON.stringify(
+      {
+        baseRevision: brief.revision,
+        nodes: [
+          { disposition: 'retain', id: 'a-node-you-keep' },
+          {
+            disposition: 'replace',
+            id: 'a-node-you-drop',
+            node: {
+              id: 'its-replacement',
+              title: 'what it does',
+              instructions: 'what the agent must do',
+              role: 'implementer',
+              dependsOn: ['a-node-you-keep'],
+              expectedOutput: 'what proves it done',
+            },
+          },
+          {
+            disposition: 'append',
+            node: {
+              id: 'a-new-node',
+              title: 'what it does',
+              instructions: 'what the agent must do',
+              role: 'tester',
+              dependsOn: ['its-replacement'],
+              expectedOutput: 'what proves it done',
+            },
+          },
+        ],
+      },
+      null,
+      2,
+    ),
+    '<</plan-revision>>',
+  ].join('\n');
 };
 
 type KickoffParams = {
@@ -22,6 +86,7 @@ type KickoffParams = {
   readonly requesterName: string;
   readonly promptPrefix: string;
   readonly transfer: TransferPacket | null;
+  readonly planRevision: PlanRevisionBrief | null;
 };
 
 export const composeCapabilityKickoff = ({
@@ -29,6 +94,7 @@ export const composeCapabilityKickoff = ({
   requesterName,
   promptPrefix,
   transfer,
+  planRevision,
 }: KickoffParams): string => {
   const lines = [
     PURPOSE_HEADLINE[request.purpose],
@@ -48,6 +114,9 @@ export const composeCapabilityKickoff = ({
   }
   if (request.evidenceRefs.length > 0) {
     lines.push(`Evidence already referenced: ${request.evidenceRefs.join(', ')}`);
+  }
+  if (planRevision !== null) {
+    lines.push('', planRevisionBlock({ brief: planRevision }));
   }
   if (transfer !== null) {
     lines.push(

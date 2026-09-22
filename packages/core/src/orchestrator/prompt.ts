@@ -69,7 +69,7 @@ Judge only what needs judgement. The runtime already checks the request identity
 
 A repair goes to an implementer and a production test failure goes to an implementer too. A reviewer that found the defect never fixes it, and a tester never fixes production code. Do not make an implementer delegate what it can already fix inside its own scope: a delegation costs a dispatch and a fresh context, so grant one only when the requester genuinely cannot do the work itself.
 
-A replan grant runs a planner and leaves its proposal pending. The plan in flight stays frozen and nothing is superseded by the proposal in this run, so say that in reason rather than promising the graph will change.
+A replan grant freezes the plan in flight: nothing queued starts and nothing publishes. The planner emits one revision that says what happens to every node, and the runtime adopts it as a whole or refuses it as a whole and leaves the old graph frozen. Grant one only for a defect that changes the shape of the work, and say in reason what the revision has to settle.
 
 After the decision, on its own line, emit the running recap of the whole run as one JSON object on a single line:
 <<run-summary>>{"done":["one entry per thing the run has actually landed"],"left":["one entry per thing still open"]}<</run-summary>>

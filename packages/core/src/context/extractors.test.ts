@@ -7,6 +7,7 @@ import {
   extractAllCommentResolved,
   extractAllCommentWontfix,
   extractClusterDone,
+  extractClusterGraphRevision,
   extractClusterOutcome,
   extractClustersFromMarker,
   extractCommentAnalysis,
@@ -1295,5 +1296,93 @@ describe('marker parsing, ReDoS hardening', () => {
     expect(extractMarkers(dashes).questions[0]?.text).toBe('body');
     const fences = '<<clusters>>```' + '\t'.repeat(200_000) + '<</clusters>>';
     expect(extractClustersFromMarker({ assistantText: fences, emittingProvider: null })).toBeNull();
+  });
+});
+
+describe('extractClusterGraphRevision', () => {
+  it('reads a revision that retains, replaces and appends', () => {
+    const text = [
+      'Here is the revised plan.',
+      '<<plan-revision>>',
+      JSON.stringify({
+        baseRevision: 1,
+        nodes: [
+          { disposition: 'retain', id: 'discovery' },
+          {
+            disposition: 'replace',
+            id: 'impl',
+            node: {
+              id: 'impl-split',
+              title: 'Rewrite in two passes',
+              instructions: 'split it',
+              role: 'implementer',
+              dependsOn: ['discovery'],
+              expectedOutput: 'two commits',
+            },
+          },
+          {
+            disposition: 'append',
+            node: { id: 'verify', title: 'Verify', instructions: 'check it' },
+          },
+        ],
+      }),
+      '<</plan-revision>>',
+    ].join('\n');
+    const extraction = extractClusterGraphRevision({ assistantText: text });
+    expect(extraction).toEqual({
+      kind: 'valid',
+      proposal: {
+        baseRevision: 1,
+        entries: [
+          { disposition: 'retain', id: 'discovery' },
+          {
+            disposition: 'replace',
+            id: 'impl',
+            node: {
+              id: 'impl-split',
+              title: 'Rewrite in two passes',
+              instructions: 'split it',
+              role: 'implementer',
+              dependsOn: ['discovery'],
+              expectedOutput: 'two commits',
+            },
+          },
+          {
+            disposition: 'append',
+            node: { id: 'verify', title: 'Verify', instructions: 'check it', dependsOn: [] },
+          },
+        ],
+      },
+    });
+  });
+
+  it('reports no revision when the planner emitted none', () => {
+    expect(extractClusterGraphRevision({ assistantText: 'no marker here' })).toEqual({
+      kind: 'none',
+    });
+  });
+
+  it('reports a malformed revision rather than dropping its nodes', () => {
+    const broken =
+      '<<plan-revision>>{"baseRevision": 1, "nodes": [{"id": "impl"}]}<</plan-revision>>';
+    expect(extractClusterGraphRevision({ assistantText: broken })).toEqual({
+      kind: 'malformed',
+      reason: 'the plan revision body carries a node that is not a retain, replace or append',
+    });
+    const unparsed = '<<plan-revision>>not json<</plan-revision>>';
+    expect(extractClusterGraphRevision({ assistantText: unparsed })).toEqual({
+      kind: 'malformed',
+      reason: 'the plan revision body is not valid json',
+    });
+    const unbased = '<<plan-revision>>{"nodes": []}<</plan-revision>>';
+    expect(extractClusterGraphRevision({ assistantText: unbased })).toEqual({
+      kind: 'malformed',
+      reason: 'the plan revision body names no base revision',
+    });
+  });
+
+  it('strips the revision marker from what the user reads', () => {
+    const text = 'Done.\n<<plan-revision>>{"baseRevision":1,"nodes":[]}<</plan-revision>>';
+    expect(stripControlMarkers(text)).toBe('Done.');
   });
 });

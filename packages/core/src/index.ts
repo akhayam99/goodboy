@@ -1,10 +1,18 @@
 export { IllegalTurnTransitionError, turnReducer, type TurnLifecycleEvent } from './turn';
 
 export {
+  adoptGraphRevision,
   normalizeClusterGraph,
   selectReadyClusterNode,
+  type ClusterAdoptionParams,
+  type ClusterAdoptionProgress,
+  type ClusterAdoptionResult,
   type ClusterGraphResult,
+  type ClusterGraphRevisionProposal,
   type ClusterNodeProgress,
+  type ClusterRevisionEntry,
+  type ClusterRevisionNode,
+  type ClusterSupersession,
 } from './clusters';
 
 export {
@@ -59,6 +67,7 @@ export {
   extractAllCommentWontfix,
   extractClusterDone,
   extractClusterGraphFromMarker,
+  extractClusterGraphRevision,
   extractClusterOutcome,
   extractClustersFromMarker,
   extractCommentAnalysis,

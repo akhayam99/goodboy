@@ -49,9 +49,9 @@ describe('the need decision contract', () => {
     );
   });
 
-  it('says a replan grant leaves the running plan frozen', () => {
-    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('leaves its proposal pending');
-    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('stays frozen');
+  it('says a replan grant freezes the running plan and is adopted whole or not at all', () => {
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('freezes the plan in flight');
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('adopts it as a whole or refuses it as a whole');
   });
 });
 
