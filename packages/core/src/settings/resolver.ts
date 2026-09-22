@@ -47,5 +47,8 @@ export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings =
       project?.defaultVerbosity ??
       ws?.defaultVerbosity ??
       g.defaultVerbosity,
+    invocationGlobalLimit: ws?.invocationGlobalLimit ?? g.invocationGlobalLimit ?? 4,
+    invocationProviderLimit: ws?.invocationProviderLimit ?? g.invocationProviderLimit ?? 2,
+    invocationHeavyweightLimit: ws?.invocationHeavyweightLimit ?? g.invocationHeavyweightLimit ?? 1,
   };
 };

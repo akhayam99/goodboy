@@ -3,6 +3,7 @@ export type {
   CredentialId,
   FileVersionId,
   IntegrationCredentialId,
+  InvocationId,
   IsoDateTime,
   MessageId,
   MountId,
@@ -133,7 +134,14 @@ export type {
   TurnPermissionFlags,
   TurnRequest,
 } from './adapter';
-export type { TelemetryKind, TelemetryRecord } from './telemetry';
+export type {
+  InvocationPurpose,
+  InvocationContext,
+  InvocationLimits,
+  TelemetryKind,
+  TelemetryRecord,
+  UsageAttributionStatus,
+} from './telemetry';
 export type {
   ModelCostTier,
   ModelDescriptor,

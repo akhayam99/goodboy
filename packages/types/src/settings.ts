@@ -105,6 +105,9 @@ export type OverrideSettings = Readonly<{
   parallelAgents: boolean | null;
   providerPool: ReadonlyArray<ProviderId> | null;
   attributionFooter: boolean | null;
+  invocationGlobalLimit?: number | null;
+  invocationProviderLimit?: number | null;
+  invocationHeavyweightLimit?: number | null;
 }>;
 
 export type ResolvedSettings = Readonly<{
@@ -113,6 +116,9 @@ export type ResolvedSettings = Readonly<{
   defaultBranchPrefix: string;
   parallelEnabled: boolean;
   defaultVerbosity: VerbosityLevel;
+  invocationGlobalLimit: number;
+  invocationProviderLimit: number;
+  invocationHeavyweightLimit: number;
 }>;
 
 export type GlobalSettings = Readonly<{
@@ -121,6 +127,9 @@ export type GlobalSettings = Readonly<{
   defaultBranchPrefix: string;
   parallelEnabled: boolean;
   defaultVerbosity: VerbosityLevel;
+  invocationGlobalLimit?: number;
+  invocationProviderLimit?: number;
+  invocationHeavyweightLimit?: number;
 }>;
 
 export type SettingsScope =

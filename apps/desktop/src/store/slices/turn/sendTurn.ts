@@ -87,6 +87,10 @@ import {
 } from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
+import {
+  isHeavyweightInvocation,
+  resolveInvocationLimits,
+} from '../../../shared/lib/invocationAdmission';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
@@ -1069,6 +1073,26 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ...(resolvedModel.maxMode === true && { cursorMaxMode: true }),
         ...(writerLease !== undefined && { writerLease }),
         ...(apiKeyBinding ?? {}),
+        invocation: {
+          invocationId: runId,
+          workspaceId: session.workspaceId,
+          sessionId,
+          ...(agentRowEarly?.workflowRunId != null && {
+            workflowRunId: agentRowEarly.workflowRunId,
+          }),
+          agentId: activeAgentId,
+          ...(apiKeyBinding?.credentialId != null
+            ? { providerIdentity: apiKeyBinding.credentialId }
+            : authState?.identity != null
+              ? { providerIdentity: authState.identity }
+              : {}),
+          purpose: 'agent_turn',
+          isHeavyweight: isHeavyweightInvocation({ effort: effortFlag }),
+          limits: resolveInvocationLimits({
+            providerId: provider,
+            workspaceOverride: get().workspaceOverrides[session.workspaceId],
+          }),
+        },
         ...claudeFlags,
       })) {
         const maxModeFailure =
@@ -1150,6 +1174,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             runId,
             sessionId,
             now,
+            agentId: activeAgentId,
+            workflowRunId: agentRowEarly?.workflowRunId ?? null,
           });
         }
 
@@ -1606,6 +1632,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         turnInput: resolvedPrompt,
         turnOutput: assistantText,
         workingDir,
+        agentId: activeAgentId,
+        ...(agentRowEarly?.workflowRunId != null && {
+          workflowRunId: agentRowEarly.workflowRunId,
+        }),
       });
       const captured = await captureArtifactsFromTurn({
         set,

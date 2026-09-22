@@ -52,6 +52,7 @@ import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { resolveInvocationLimits } from '../../../shared/lib/invocationAdmission';
 import {
   BUDGET_BLOCK_MESSAGE,
   isBudgetBlocked,
@@ -635,10 +636,39 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       });
       const modelMenu = orchestratorModelPool({ availability });
       const isModelMetadataEnabled = workflowRoutingFlags().isModelMetadataEnabled;
+      const orchestratorInvocationId = crypto.randomUUID();
+      const providerIdentity =
+        get().workspaceOverrides[session.workspaceId]?.providerBindings?.[routing.providerId] ??
+        get().authResults?.[routing.providerId]?.identity ??
+        null;
       const client = new OrchestratorClient({
         ...routing,
         invokeFn: invoke,
         ...(worktreePath != null && { workingDir: worktreePath }),
+        invocation: {
+          invocationId: orchestratorInvocationId,
+          workspaceId: session.workspaceId,
+          sessionId,
+          workflowRunId,
+          ...(providerIdentity != null && { providerIdentity }),
+          purpose: 'orchestrator',
+          isHeavyweight: false,
+          limits: resolveInvocationLimits({
+            providerId: routing.providerId,
+            workspaceOverride: get().workspaceOverrides[session.workspaceId],
+          }),
+        },
+        onUsage: (usage) =>
+          recordOrchestratorUsage({
+            set,
+            get,
+            sessionId,
+            agentId: null,
+            workflowRunId,
+            provider: routing.providerId,
+            model: usage.model ?? routing.model,
+            usage,
+          }),
       });
       let result: Awaited<ReturnType<typeof client.decide>> | null = null;
       try {

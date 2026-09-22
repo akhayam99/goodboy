@@ -1,6 +1,7 @@
 use std::process::Stdio;
 
 use serde::{Deserialize, Serialize};
+use tauri::State;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -9,6 +10,8 @@ pub enum PlannerError {
     Io(#[from] std::io::Error),
     #[error("unknown provider: {0}")]
     UnknownProvider(String),
+    #[error("invocation admission error: {0}")]
+    Admission(#[from] crate::invocation_admission::AdmissionError),
 }
 
 crate::util::impl_error_serialize!(PlannerError);
@@ -18,6 +21,7 @@ impl PlannerError {
         match self {
             PlannerError::Io(_) => "io",
             PlannerError::UnknownProvider(_) => "unknown_provider",
+            PlannerError::Admission(_) => "admission",
         }
     }
 }
@@ -36,6 +40,8 @@ pub struct PlannerArgs {
     pub tools_disabled: bool,
     #[serde(default)]
     pub effort: Option<String>,
+    #[serde(default)]
+    pub invocation: Option<crate::invocation_admission::InvocationContext>,
 }
 
 #[derive(Debug, Serialize)]
@@ -47,9 +53,29 @@ pub struct PlannerResult {
 }
 
 #[tauri::command]
-pub async fn planner_run(args: PlannerArgs) -> Result<PlannerResult, PlannerError> {
+pub async fn planner_run(
+    admission: State<'_, crate::invocation_admission::InvocationAdmission>,
+    database: State<'_, crate::db::Db>,
+    args: PlannerArgs,
+) -> Result<PlannerResult, PlannerError> {
+    let admission = admission.inner().clone();
+    let database = database.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
         let cli_args = build_cli_args(&args)?;
+        let invocation = args.invocation.clone().unwrap_or_else(|| {
+            crate::invocation_admission::InvocationContext {
+                invocation_id: format!("planner-{}-{}", std::process::id(), crate::util::now_ms()),
+                workspace_id: None,
+                session_id: None,
+                workflow_run_id: None,
+                agent_id: None,
+                provider_identity: None,
+                purpose: "planner".to_string(),
+                is_heavyweight: false,
+                limits: crate::invocation_admission::InvocationLimits::default(),
+            }
+        });
+        let mut permit = admission.admit(database, invocation.request(&args.provider_id))?;
 
         let mut command = crate::path_env::command(&args.binary);
         crate::aux_spawn::scrub_nested_session_env(&mut command);
@@ -59,16 +85,25 @@ pub async fn planner_run(args: PlannerArgs) -> Result<PlannerResult, PlannerErro
             }
         }
 
-        let output = command
+        let child = command
             .args(&cli_args)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
-            .output()?;
+            .spawn()?;
+        permit.bind_process(child.id())?;
+        let output = child.wait_with_output()?;
+        let exit_code = output.status.code();
+        let reason = if exit_code == Some(0) {
+            "completed"
+        } else {
+            "non_zero_exit"
+        };
+        permit.release(reason, exit_code)?;
 
         Ok(PlannerResult {
             stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
             stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-            exit_code: output.status.code(),
+            exit_code,
         })
     })
     .await
@@ -168,6 +203,7 @@ mod tests {
             working_dir: None,
             tools_disabled: false,
             effort: None,
+            invocation: None,
         }
     }
 

@@ -71,8 +71,15 @@ export const recordOrchestratorUsage = async ({
   if (usage.inputTokens + usage.outputTokens === 0) {
     return;
   }
+  const invocationId = usage.invocationId ?? crypto.randomUUID();
+  const isRecorded = (get().sessionTelemetry[sessionId] ?? []).some(
+    (record) => record.invocationId === invocationId && record.usageEventId === 'usage',
+  );
+  if (isRecorded) {
+    return;
+  }
   const attributedAgentId = agentId ?? latestRunAgentId({ get, sessionId, workflowRunId });
-  const runId = crypto.randomUUID() as ProviderRunId;
+  const runId = invocationId as ProviderRunId;
   const startedAt = new Date().toISOString() as IsoDateTime;
   await insertProviderRun(tauriDatabase, {
     id: runId,
@@ -97,6 +104,12 @@ export const recordOrchestratorUsage = async ({
     cacheCreationInputTokens: usage.cacheCreationInputTokens,
     estimatedCostUsd: usage.estimatedCostUsd,
     recordedAt: finishedAt,
+    invocationId,
+    workflowRunId,
+    ...(attributedAgentId != null && { agentId: attributedAgentId }),
+    purpose: 'orchestrator',
+    usageEventId: 'usage',
+    attributionStatus: 'attributed',
   };
   await insertTelemetry(tauriDatabase, record);
   set((state) => ({

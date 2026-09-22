@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use rusqlite::types::{Value, ValueRef};
 use rusqlite::{params_from_iter, Connection};
@@ -43,7 +43,8 @@ impl DbError {
     }
 }
 
-pub struct Db(pub Mutex<Connection>, pub PathBuf);
+#[derive(Clone)]
+pub struct Db(pub Arc<Mutex<Connection>>, pub PathBuf);
 
 pub fn open() -> Result<Db, DbError> {
     let path = resolve_db_path()?;
@@ -52,7 +53,7 @@ pub fn open() -> Result<Db, DbError> {
     }
     let conn = Connection::open(&path)?;
     conn.execute_batch("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;")?;
-    Ok(Db(Mutex::new(conn), path))
+    Ok(Db(Arc::new(Mutex::new(conn)), path))
 }
 
 #[tauri::command]

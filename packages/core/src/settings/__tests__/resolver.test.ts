@@ -33,6 +33,25 @@ describe('resolveSettings', () => {
     expect(result.defaultBranchPrefix).toBe('kay');
     expect(result.parallelEnabled).toBe(false);
     expect(result.defaultWorkflowId).toBeNull();
+    expect(result.invocationGlobalLimit).toBe(4);
+    expect(result.invocationProviderLimit).toBe(2);
+    expect(result.invocationHeavyweightLimit).toBe(1);
+  });
+
+  it('resolves workspace invocation limits without allowing narrower scopes to replace them', () => {
+    const result = resolveSettings({
+      global: { ...GLOBAL, invocationGlobalLimit: 5 },
+      workspaceOverride: {
+        ...NULL_OVERRIDE,
+        invocationGlobalLimit: 7,
+        invocationProviderLimit: 3,
+        invocationHeavyweightLimit: 1,
+      },
+      sessionOverride: { ...NULL_OVERRIDE, invocationGlobalLimit: 20 },
+    });
+    expect(result.invocationGlobalLimit).toBe(7);
+    expect(result.invocationProviderLimit).toBe(3);
+    expect(result.invocationHeavyweightLimit).toBe(1);
   });
 
   it('null/value/null → workspace wins', () => {

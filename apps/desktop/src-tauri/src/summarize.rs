@@ -14,6 +14,8 @@ pub enum SummarizeError {
     Io(#[from] std::io::Error),
     #[error("unknown provider: {0}")]
     UnknownProvider(String),
+    #[error("invocation admission error: {0}")]
+    Admission(#[from] crate::invocation_admission::AdmissionError),
 }
 
 crate::util::impl_error_serialize!(SummarizeError);
@@ -23,6 +25,7 @@ impl SummarizeError {
         match self {
             SummarizeError::Io(_) => "io",
             SummarizeError::UnknownProvider(_) => "unknown_provider",
+            SummarizeError::Admission(_) => "admission",
         }
     }
 }
@@ -53,6 +56,8 @@ pub struct SummarizeArgs {
     pub effort: Option<String>,
     #[serde(default)]
     pub run_id: Option<String>,
+    #[serde(default)]
+    pub invocation: Option<crate::invocation_admission::InvocationContext>,
 }
 
 #[derive(Debug, Serialize)]
@@ -66,12 +71,18 @@ pub struct SummarizeResult {
 #[tauri::command]
 pub async fn summarize_session(
     state: State<'_, SummarizeRegistry>,
+    admission: State<'_, crate::invocation_admission::InvocationAdmission>,
+    database: State<'_, crate::db::Db>,
     args: SummarizeArgs,
 ) -> Result<SummarizeResult, SummarizeError> {
     let registry = Arc::clone(&state.0);
-    tauri::async_runtime::spawn_blocking(move || run_summarize(&registry, args))
-        .await
-        .map_err(|e| SummarizeError::Io(std::io::Error::other(e.to_string())))?
+    let admission = admission.inner().clone();
+    let database = database.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        run_summarize(&registry, &admission, database, args)
+    })
+    .await
+    .map_err(|e| SummarizeError::Io(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]
@@ -85,9 +96,32 @@ pub fn summarize_cancel(
 
 fn run_summarize(
     registry: &ChildRegistry,
+    admission: &crate::invocation_admission::InvocationAdmission,
+    database: crate::db::Db,
     args: SummarizeArgs,
 ) -> Result<SummarizeResult, SummarizeError> {
     let cli_args = build_cli_args(&args)?;
+    let invocation =
+        args.invocation
+            .clone()
+            .unwrap_or_else(|| crate::invocation_admission::InvocationContext {
+                invocation_id: args.run_id.clone().unwrap_or_else(|| {
+                    format!(
+                        "summarizer-{}-{}",
+                        std::process::id(),
+                        crate::util::now_ms()
+                    )
+                }),
+                workspace_id: None,
+                session_id: None,
+                workflow_run_id: None,
+                agent_id: None,
+                provider_identity: None,
+                purpose: "summarizer".to_string(),
+                is_heavyweight: false,
+                limits: crate::invocation_admission::InvocationLimits::default(),
+            });
+    let mut permit = admission.admit(database, invocation.request(&args.provider_id))?;
 
     let mut command = crate::path_env::command(&args.binary);
     crate::aux_spawn::scrub_nested_session_env(&mut command);
@@ -102,6 +136,7 @@ fn run_summarize(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
+    permit.bind_process(child.id())?;
     let stdout = child
         .stdout
         .take()
@@ -124,6 +159,12 @@ fn run_summarize(
     let stdout_buf = stdout_handle.join().unwrap_or_default();
     let stderr_buf = stderr_handle.join().unwrap_or_default();
     let exit_code = wait_and_remove(&slot, registry, run_id.as_deref());
+    let reason = if exit_code == Some(0) {
+        "completed"
+    } else {
+        "non_zero_exit"
+    };
+    permit.release(reason, exit_code)?;
 
     Ok(SummarizeResult {
         stdout: stdout_buf,
@@ -267,6 +308,7 @@ mod tests {
             working_dir: None,
             effort: None,
             run_id: None,
+            invocation: None,
         }
     }
 

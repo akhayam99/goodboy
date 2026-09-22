@@ -173,6 +173,8 @@ export {
   summarizeWorkspaceTelemetry,
   summarizeProviderTelemetry,
   summarizeWorkspaceProviderTelemetry,
+  summarizeWorkflowRunTelemetry,
+  summarizeUnattributedTelemetry,
   type TelemetrySummary,
   type ProviderTelemetrySummary,
 } from './queries/telemetry';

@@ -381,6 +381,7 @@ export {
   type SummarizerDeps,
   type SummarizerResult,
   type SummarizerUsage,
+  type StepOutputUsage,
 } from './summarizer';
 
 export {

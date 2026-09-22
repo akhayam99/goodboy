@@ -18,6 +18,8 @@ pub enum TurnError {
     WriterLeaseNotOwned,
     #[error("turn not found: {0}")]
     NotFound(String),
+    #[error("invocation admission error: {0}")]
+    Admission(#[from] crate::invocation_admission::AdmissionError),
 }
 
 crate::util::impl_error_serialize!(TurnError);
@@ -29,6 +31,7 @@ impl TurnError {
             TurnError::Poisoned => "poisoned",
             TurnError::WriterLeaseNotOwned => "writer_lease_not_owned",
             TurnError::NotFound(_) => "not_found",
+            TurnError::Admission(_) => "admission",
         }
     }
 }
@@ -50,6 +53,8 @@ impl TurnRegistry {
 pub struct SpawnArgs {
     pub run_id: String,
     pub model: String,
+    #[serde(alias = "provider")]
+    pub provider_id: String,
     pub working_dir: String,
     #[serde(default)]
     pub writable_roots: Vec<String>,
@@ -86,6 +91,8 @@ pub struct SpawnArgs {
     pub cursor_max_mode: bool,
     #[serde(default)]
     pub writer_lease: Option<WriterLeaseBinding>,
+    #[serde(default)]
+    pub invocation: Option<crate::invocation_admission::InvocationContext>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -367,6 +374,7 @@ fn spawn_one(
     registry: &ChildRegistry,
     leases: &crate::worktree_writer::WriterLeaseRegistry,
     args: SpawnOneArgs<'_>,
+    mut invocation_permit: crate::invocation_admission::InvocationPermit,
 ) -> Result<String, TurnError> {
     let mut command = crate::path_env::command(args.binary);
     command.current_dir(args.working_dir);
@@ -422,6 +430,7 @@ fn spawn_one(
             }
         },
     )?;
+    invocation_permit.bind_process(child.id())?;
 
     let stdout = child
         .stdout
@@ -452,6 +461,12 @@ fn spawn_one(
         forward_lines(&app_clone, &run_id_owned, stdout);
         let stderr_buf = stderr_handle.join().unwrap_or_default();
         let exit_code = wait_and_remove(&slot, &registry_clone, &run_id_owned);
+        let reason = if exit_code == Some(0) {
+            "completed"
+        } else {
+            "non_zero_exit"
+        };
+        let _ = invocation_permit.release(reason, exit_code);
         let _ = app_clone.emit(
             EVENT_NAME,
             TurnEventEnvelope {
@@ -473,6 +488,8 @@ pub async fn turn_spawn(
     app: AppHandle,
     state: State<'_, TurnRegistry>,
     leases: State<'_, crate::worktree_writer::WriterLeases>,
+    admission: State<'_, crate::invocation_admission::InvocationAdmission>,
+    database: State<'_, crate::db::Db>,
     args: SpawnArgs,
 ) -> Result<String, TurnError> {
     let binary = args.binary.as_deref().unwrap_or("claude");
@@ -481,6 +498,27 @@ pub async fn turn_spawn(
         .as_deref()
         .unwrap_or("default")
         .to_string();
+    let invocation =
+        args.invocation
+            .clone()
+            .unwrap_or_else(|| crate::invocation_admission::InvocationContext {
+                invocation_id: args.run_id.clone(),
+                workspace_id: args.workspace_id.clone(),
+                session_id: args.session_id.clone(),
+                workflow_run_id: None,
+                agent_id: None,
+                provider_identity: args.credential_id.clone(),
+                purpose: "agent_turn".to_string(),
+                is_heavyweight: matches!(
+                    args.effort.as_deref(),
+                    Some("high" | "xhigh" | "max" | "ultra")
+                ),
+                limits: crate::invocation_admission::InvocationLimits::default(),
+            });
+    let invocation_permit = admission.admit(
+        database.inner().clone(),
+        invocation.request(&args.provider_id),
+    )?;
 
     spawn_one(
         &app,
@@ -512,6 +550,7 @@ pub async fn turn_spawn(
             cursor_max_mode: args.cursor_max_mode,
             writer_lease: args.writer_lease.as_ref(),
         },
+        invocation_permit,
     )
 }
 

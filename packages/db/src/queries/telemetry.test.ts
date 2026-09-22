@@ -6,10 +6,16 @@ import type {
   TelemetryRecord,
   TelemetryRecordId,
   WorkspaceId,
+  WorkflowRunId,
 } from '@goodboy/types';
 import { migrate } from '../migrations/runner';
 import { makeTestDatabase } from '../test-helpers/test-db';
-import { insertTelemetry, listTelemetryForSession } from './telemetry';
+import {
+  insertTelemetry,
+  listTelemetryForSession,
+  summarizeUnattributedTelemetry,
+  summarizeWorkflowRunTelemetry,
+} from './telemetry';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
 const sessionId = 'session-1' as SessionId;
@@ -58,7 +64,9 @@ describe('telemetry queries', () => {
 
     await insertTelemetry(database, record);
 
-    expect(await listTelemetryForSession(database, sessionId)).toEqual([record]);
+    expect(await listTelemetryForSession(database, sessionId)).toEqual([
+      { ...record, attributionStatus: 'unattributed' },
+    ]);
   });
 
   it('persists zero defaults for records without cache fields', async () => {
@@ -82,5 +90,58 @@ describe('telemetry queries', () => {
     expect(stored?.cachedInputTokens).toBe(0);
     expect(stored?.cacheCreationInputTokens).toBe(0);
     expect(stored?.contextTokens).toBeUndefined();
+  });
+
+  it('counts the same invocation usage event once', async () => {
+    const database = await databaseWithRun({});
+    const workflowRunId = 'workflow-run-1' as WorkflowRunId;
+    const record: TelemetryRecord = {
+      id: 'telemetry-first' as TelemetryRecordId,
+      runId,
+      sessionId,
+      kind: 'summarizer',
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-6',
+      inputTokens: 10,
+      outputTokens: 5,
+      estimatedCostUsd: 0.25,
+      recordedAt,
+      invocationId: 'invocation-1',
+      workflowRunId,
+      purpose: 'summarizer',
+      usageEventId: 'usage',
+      attributionStatus: 'attributed',
+    };
+    await insertTelemetry(database, record);
+    await insertTelemetry(database, {
+      ...record,
+      id: 'telemetry-duplicate' as TelemetryRecordId,
+    });
+
+    const summary = await summarizeWorkflowRunTelemetry(database, workflowRunId);
+
+    expect(summary.estimatedCostUsd).toBe(0.25);
+    expect(summary.recordCount).toBe(1);
+  });
+
+  it('keeps historical ownership gaps in the unattributed bucket', async () => {
+    const database = await databaseWithRun({});
+    await insertTelemetry(database, {
+      id: 'telemetry-unknown' as TelemetryRecordId,
+      runId,
+      sessionId,
+      kind: 'turn',
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-6',
+      inputTokens: 10,
+      outputTokens: 5,
+      estimatedCostUsd: 0.5,
+      recordedAt,
+    });
+
+    const summary = await summarizeUnattributedTelemetry(database);
+
+    expect(summary.estimatedCostUsd).toBe(0.5);
+    expect(summary.recordCount).toBe(1);
   });
 });

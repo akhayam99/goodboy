@@ -8,7 +8,13 @@ import {
   parseOpenCodeJsonLine,
   type ParseContext,
 } from '@goodboy/core';
-import type { IsoDateTime, ProviderId, ProviderRunId, TurnEvent } from '@goodboy/types';
+import type {
+  InvocationContext,
+  IsoDateTime,
+  ProviderId,
+  ProviderRunId,
+  TurnEvent,
+} from '@goodboy/types';
 import { classifyProviderError } from './classifyProviderError';
 
 function parseForProvider(
@@ -103,6 +109,7 @@ type SpawnArgs = {
     readonly holder: string;
     readonly token: string;
   };
+  readonly invocation?: InvocationContext;
 };
 
 type RawTurnEnvelope =
@@ -226,7 +233,7 @@ export async function* runTurn(
     }
   });
 
-  await invoke<string>('turn_spawn', { args });
+  await invoke<string>('turn_spawn', { args: { ...args, providerId: args.provider } });
 
   try {
     while (true) {

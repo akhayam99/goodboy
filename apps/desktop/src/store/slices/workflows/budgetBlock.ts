@@ -58,8 +58,6 @@ export const spentUsdForRun = ({ get, sessionId, run }: SpendLimitParams): numbe
   const state = get();
   return runSpendUsd({
     records: state.sessionTelemetry[sessionId] ?? [],
-    agents: state.sessionPhaseRuns[sessionId] ?? [],
-    agentRunHistory: state.agentRunHistory,
     workflowRunId: run.id,
   });
 };

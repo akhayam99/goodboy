@@ -1,4 +1,4 @@
-import type { ContextSlot, ModelEffort, ProviderId } from '@goodboy/types';
+import type { ContextSlot, InvocationContext, ModelEffort, ProviderId } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
 import { computeProviderCostUsd } from '../providers/provider-cost';
@@ -20,6 +20,8 @@ export type SummarizerUsage = {
   readonly cachedInputTokens: number;
   readonly cacheCreationInputTokens: number;
   readonly estimatedCostUsd: number;
+  readonly invocationId?: string;
+  readonly model: string;
 };
 
 export type SummarizeInput = {
@@ -43,6 +45,8 @@ export type SummarizerDeps = {
   readonly effort?: ModelEffort;
   readonly workingDir?: string;
   readonly invokeFn: InvokeFn;
+  readonly invocation?: InvocationContext;
+  readonly onUsage?: (usage: SummarizerUsage) => Promise<void>;
 };
 
 export class SummarizerSpawnError extends Error {
@@ -82,6 +86,8 @@ export class Summarizer {
   private readonly effort: ModelEffort | undefined;
   private readonly workingDir: string | undefined;
   private readonly invokeFn: InvokeFn;
+  private readonly invocation: InvocationContext | undefined;
+  private readonly onUsage: ((usage: SummarizerUsage) => Promise<void>) | undefined;
 
   constructor(deps: SummarizerDeps) {
     this.providerId = deps.providerId;
@@ -93,6 +99,8 @@ export class Summarizer {
     this.effort = deps.effort;
     this.workingDir = deps.workingDir;
     this.invokeFn = deps.invokeFn;
+    this.invocation = deps.invocation;
+    this.onUsage = deps.onUsage;
   }
 
   async summarize(input: SummarizeInput): Promise<SummarizerResult> {
@@ -106,6 +114,7 @@ export class Summarizer {
       systemPrompt: SUMMARIZER_SYSTEM_PROMPT,
       ...(this.effort != null && { effort: this.effort }),
       ...(this.workingDir != null && { workingDir: this.workingDir }),
+      ...(this.invocation != null && { invocation: this.invocation }),
       invokeFn: this.invokeFn,
     });
 
@@ -114,11 +123,9 @@ export class Summarizer {
     }
 
     const output = extractAuxOutput({ providerId: this.providerId, stdout: result.stdout });
-    if (output.isError) {
-      throw new SummarizerCliError(output.errorMessage ?? 'unknown error', result.stdout);
-    }
     const usage: SummarizerUsage = {
       ...output.usage,
+      ...(this.invocation != null && { invocationId: this.invocation.invocationId }),
       estimatedCostUsd: computeProviderCostUsd({
         providerId: this.providerId,
         usage: {
@@ -127,7 +134,14 @@ export class Summarizer {
         },
         model: this.model,
       }),
+      model: this.model,
     };
+    if (this.onUsage != null) {
+      await this.onUsage(usage);
+    }
+    if (output.isError) {
+      throw new SummarizerCliError(output.errorMessage ?? 'unknown error', result.stdout);
+    }
     const delta = parseDelta(output.text);
     return { delta, usage, model: this.model };
   }

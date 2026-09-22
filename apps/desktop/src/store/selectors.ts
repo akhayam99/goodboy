@@ -77,8 +77,6 @@ export const useRunSpendUsd = (sessionId: SessionId, workflowRunId: WorkflowRunI
   useAppStore((state) =>
     runSpendUsd({
       records: state.sessionTelemetry[sessionId] ?? EMPTY_TELEMETRY,
-      agents: state.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS,
-      agentRunHistory: state.agentRunHistory,
       workflowRunId,
     }),
   );

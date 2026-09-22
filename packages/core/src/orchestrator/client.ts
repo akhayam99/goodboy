@@ -1,4 +1,4 @@
-import type { ModelEffort, ProviderId } from '@goodboy/types';
+import type { InvocationContext, ModelEffort, ProviderId } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { computeProviderCostUsd } from '../providers/provider-cost';
 import { cliModelId } from '../providers/cliModelId';
@@ -13,6 +13,8 @@ export type OrchestratorUsage = {
   readonly cachedInputTokens: number;
   readonly cacheCreationInputTokens: number;
   readonly estimatedCostUsd: number;
+  readonly invocationId?: string;
+  readonly model?: string;
 };
 
 export type OrchestratorClientResult = {
@@ -31,6 +33,8 @@ export type OrchestratorClientDeps = {
   readonly workingDir?: string;
   readonly timeoutMs?: number;
   readonly invokeFn: InvokeFn;
+  readonly invocation?: InvocationContext;
+  readonly onUsage?: (usage: OrchestratorUsage) => Promise<void>;
 };
 
 export class OrchestratorProviderError extends Error {
@@ -66,6 +70,8 @@ export class OrchestratorClient {
   private readonly workingDir: string | undefined;
   private readonly timeoutMs: number;
   private readonly invokeFn: InvokeFn;
+  private readonly invocation: InvocationContext | undefined;
+  private readonly onUsage: ((usage: OrchestratorUsage) => Promise<void>) | undefined;
 
   constructor(deps: OrchestratorClientDeps) {
     this.providerId = deps.providerId;
@@ -75,6 +81,8 @@ export class OrchestratorClient {
     this.workingDir = deps.workingDir;
     this.timeoutMs = deps.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.invokeFn = deps.invokeFn;
+    this.invocation = deps.invocation;
+    this.onUsage = deps.onUsage;
   }
 
   async decide(input: OrchestratorInput): Promise<OrchestratorClientResult> {
@@ -99,6 +107,7 @@ export class OrchestratorClient {
             toolsDisabled: true,
             ...(this.effort != null && { effort: this.effort }),
             ...(this.workingDir != null && { workingDir: this.workingDir }),
+            ...(this.invocation != null && { invocation: this.invocation }),
           },
         }),
         timeout,
@@ -112,11 +121,10 @@ export class OrchestratorClient {
       throw new OrchestratorClientSpawnError(result.exitCode, result.stderr);
     }
     const extracted = extractAuxOutput({ providerId: this.providerId, stdout: result.stdout });
-    if (extracted.isError) {
-      throw new OrchestratorProviderError(extracted.errorMessage ?? 'provider reported an error');
-    }
     const usage: OrchestratorUsage = {
       ...extracted.usage,
+      ...(this.invocation != null && { invocationId: this.invocation.invocationId }),
+      model: this.model,
       estimatedCostUsd: computeProviderCostUsd({
         providerId: this.providerId,
         usage: {
@@ -126,6 +134,12 @@ export class OrchestratorClient {
         model: this.model,
       }),
     };
+    if (this.onUsage != null) {
+      await this.onUsage(usage);
+    }
+    if (extracted.isError) {
+      throw new OrchestratorProviderError(extracted.errorMessage ?? 'provider reported an error');
+    }
     return {
       decision: parseOrchestratorDecision({ raw: extracted.text, provider: this.providerId }),
       usage,

@@ -15,6 +15,7 @@ mod file_versions;
 mod github;
 mod gitlab;
 mod integration_credentials;
+mod invocation_admission;
 mod jira;
 mod linear;
 mod local_image;
@@ -113,6 +114,7 @@ pub fn run() {
     let script_registry = scripts::ScriptRegistry::new();
     let terminal_registry = terminal::TerminalRegistry::new();
     let writer_leases = worktree_writer::WriterLeases::new();
+    let invocation_admission = invocation_admission::InvocationAdmission::new();
     let provider_lifecycle_registry = provider_lifecycle::ProviderLifecycleRegistry::new();
     let linear_token_cache = linear::LinearTokenCache::new();
     let sentry_token_cache = sentry::SentryTokenCache::new();
@@ -155,6 +157,7 @@ pub fn run() {
         .manage(detection_gate)
         .manage(turn_registry)
         .manage(writer_leases)
+        .manage(invocation_admission)
         .manage(summarize_registry)
         .manage(script_registry)
         .manage(terminal_registry)

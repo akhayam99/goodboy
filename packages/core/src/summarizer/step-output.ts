@@ -2,7 +2,13 @@ import type { ModelEffort } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
 import { getDefaultBinary } from '../providers/cli-defaults';
-import { SummarizerParseError, SummarizerSpawnError, type SummarizerDeps } from './client';
+import { computeProviderCostUsd } from '../providers/provider-cost';
+import {
+  SummarizerParseError,
+  SummarizerSpawnError,
+  type SummarizerDeps,
+  type SummarizerUsage,
+} from './client';
 
 const MAX_SUMMARY_LENGTH = 1200;
 const FALLBACK_TOTAL_BUDGET = 4000;
@@ -47,7 +53,10 @@ type SummarizeParams = Params & {
   readonly effort?: ModelEffort;
   readonly expectedOutput?: string;
   readonly runId?: string;
+  readonly onUsage?: (usage: StepOutputUsage) => Promise<void>;
 };
+
+export type StepOutputUsage = SummarizerUsage;
 
 const stepOutputSystemPrompt = ({
   expectedOutput,
@@ -121,6 +130,8 @@ export const summarizeStepOutput = async ({
   model,
   expectedOutput,
   runId,
+  invocation,
+  onUsage,
 }: SummarizeParams & SummarizerDeps): Promise<string> => {
   const result = await runAuxOneShot({
     providerId,
@@ -131,6 +142,7 @@ export const summarizeStepOutput = async ({
     ...(effort != null && { effort }),
     ...(workingDir != null && { workingDir }),
     ...(runId != null && { runId }),
+    ...(invocation != null && { invocation }),
     invokeFn,
   });
   if ((result.exitCode ?? 0) !== 0) {
@@ -138,6 +150,23 @@ export const summarizeStepOutput = async ({
   }
 
   const extracted = extractAuxOutput({ providerId, stdout: result.stdout });
+  if (onUsage != null) {
+    await onUsage({
+      ...extracted.usage,
+      cachedInputTokens: extracted.usage.cachedInputTokens ?? 0,
+      cacheCreationInputTokens: extracted.usage.cacheCreationInputTokens ?? 0,
+      estimatedCostUsd: computeProviderCostUsd({
+        providerId,
+        usage: {
+          ...extracted.usage,
+          estimatedCostUsd: extracted.usage.estimatedCostUsd ?? 0,
+        },
+        model,
+      }),
+      model,
+      ...(invocation != null && { invocationId: invocation.invocationId }),
+    });
+  }
   if (extracted.isError) {
     throw new SummarizerParseError(
       `step output summary provider error: ${extracted.errorMessage ?? 'unknown error'}`,

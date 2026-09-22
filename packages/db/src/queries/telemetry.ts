@@ -1,11 +1,15 @@
 import type {
   IsoDateTime,
+  AgentId,
+  InvocationPurpose,
   ProviderName,
   ProviderRunId,
   SessionId,
   TelemetryKind,
   TelemetryRecord,
   TelemetryRecordId,
+  UsageAttributionStatus,
+  WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
@@ -24,6 +28,12 @@ type TelemetryRow = {
   context_tokens: number | null;
   estimated_cost_usd: number;
   recorded_at: number;
+  invocation_id: string | null;
+  workflow_run_id: string | null;
+  agent_id: string | null;
+  purpose: InvocationPurpose | null;
+  usage_event_id: string | null;
+  attribution_status: UsageAttributionStatus;
 };
 
 function toDomain(row: TelemetryRow): TelemetryRecord {
@@ -41,14 +51,23 @@ function toDomain(row: TelemetryRow): TelemetryRecord {
     ...(row.context_tokens != null && { contextTokens: row.context_tokens }),
     estimatedCostUsd: row.estimated_cost_usd,
     recordedAt: new Date(row.recorded_at).toISOString() as IsoDateTime,
+    ...(row.invocation_id != null && { invocationId: row.invocation_id }),
+    ...(row.workflow_run_id != null && {
+      workflowRunId: row.workflow_run_id as WorkflowRunId,
+    }),
+    ...(row.agent_id != null && { agentId: row.agent_id as AgentId }),
+    ...(row.purpose != null && { purpose: row.purpose }),
+    ...(row.usage_event_id != null && { usageEventId: row.usage_event_id }),
+    attributionStatus: row.attribution_status,
   };
 }
 
 export const insertTelemetry = async (db: Database, record: TelemetryRecord): Promise<void> => {
   await db.execute(
     `INSERT INTO telemetry_records
-      (id, run_id, session_id, kind, provider, model, input_tokens, output_tokens, cached_input_tokens, cache_creation_input_tokens, context_tokens, estimated_cost_usd, recorded_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, run_id, session_id, kind, provider, model, input_tokens, output_tokens, cached_input_tokens, cache_creation_input_tokens, context_tokens, estimated_cost_usd, recorded_at, invocation_id, workflow_run_id, agent_id, purpose, usage_event_id, attribution_status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT DO NOTHING`,
     [
       record.id,
       record.runId,
@@ -63,6 +82,12 @@ export const insertTelemetry = async (db: Database, record: TelemetryRecord): Pr
       record.contextTokens ?? null,
       record.estimatedCostUsd,
       Date.parse(record.recordedAt),
+      record.invocationId ?? null,
+      record.workflowRunId ?? null,
+      record.agentId ?? null,
+      record.purpose ?? null,
+      record.usageEventId ?? null,
+      record.attributionStatus ?? 'unattributed',
     ],
   );
 };
@@ -140,6 +165,28 @@ export const summarizeProviderTelemetry = async (
   const rows = await db.select<SummaryRow>(
     `SELECT ${SUMMARY_SELECT} FROM telemetry_records WHERE provider = ?`,
     [provider],
+  );
+  return toSummary(rows[0]);
+};
+
+export const summarizeWorkflowRunTelemetry = async (
+  db: Database,
+  workflowRunId: WorkflowRunId,
+): Promise<TelemetrySummary> => {
+  const rows = await db.select<SummaryRow>(
+    `SELECT ${SUMMARY_SELECT}
+       FROM telemetry_records
+      WHERE workflow_run_id = ? AND attribution_status = 'attributed'`,
+    [workflowRunId],
+  );
+  return toSummary(rows[0]);
+};
+
+export const summarizeUnattributedTelemetry = async (db: Database): Promise<TelemetrySummary> => {
+  const rows = await db.select<SummaryRow>(
+    `SELECT ${SUMMARY_SELECT}
+       FROM telemetry_records
+      WHERE attribution_status = 'unattributed'`,
   );
   return toSummary(rows[0]);
 };

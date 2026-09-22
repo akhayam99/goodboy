@@ -1,4 +1,4 @@
-import type { ModelEffort, ProviderId } from '@goodboy/types';
+import type { InvocationContext, ModelEffort, ProviderId } from '@goodboy/types';
 import { cliModelId } from './cliModelId';
 
 export type AuxSpawnResult = {
@@ -16,6 +16,7 @@ type Params = {
   readonly systemPrompt: string;
   readonly workingDir?: string;
   readonly runId?: string;
+  readonly invocation?: InvocationContext;
   readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 };
 
@@ -28,6 +29,7 @@ export const runAuxOneShot = async ({
   systemPrompt,
   workingDir,
   runId,
+  invocation,
   invokeFn,
 }: Params): Promise<AuxSpawnResult> =>
   invokeFn<AuxSpawnResult>('summarize_session', {
@@ -40,5 +42,6 @@ export const runAuxOneShot = async ({
       systemPrompt,
       ...(workingDir != null && { workingDir }),
       ...(runId != null && { runId }),
+      ...(invocation != null && { invocation }),
     },
   });
