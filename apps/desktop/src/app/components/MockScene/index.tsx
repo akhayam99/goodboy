@@ -38,6 +38,7 @@ import {
 import { LensSwitcherClosedScene, LensSwitcherScene } from './scenes/LensSwitcherScenes';
 import { CardRailsScene } from './scenes/CardRailsScene';
 import { ProvidersScene } from './scenes/ProvidersScene';
+import { ImpactScene } from './scenes/ImpactScene';
 
 const SCENES = {
   workspace: WorkspaceScene,
@@ -72,6 +73,7 @@ const SCENES = {
   'lens-switcher': LensSwitcherScene,
   'lens-switcher-closed': LensSwitcherClosedScene,
   providers: ProvidersScene,
+  impact: ImpactScene,
 };
 
 export const MockScene = () => {

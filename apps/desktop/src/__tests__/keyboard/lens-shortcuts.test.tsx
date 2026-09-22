@@ -118,6 +118,7 @@ vi.mock('../../store', () => {
     { getState: () => state },
   );
   return {
+    EMPTY_ARRAY: [],
     useAppStore,
     useCurrentSession: () => state.sessions.find((s) => s.id === state.currentSessionId) ?? null,
     useCurrentWorkspace: () => null,

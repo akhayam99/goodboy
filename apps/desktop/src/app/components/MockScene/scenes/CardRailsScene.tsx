@@ -149,7 +149,7 @@ export const CardRailsScene = () => {
         <Row label="provider signed out">
           <AuthRequiredCallout
             providerId="anthropic"
-            identity="dana@example.dev"
+            identity="dana@example.invalid"
             onRefresh={noop}
           />
         </Row>
