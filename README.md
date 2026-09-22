@@ -56,15 +56,15 @@ running total for the workspace, broken down by provider, by model and by
 session, next to the monthly cap and the threshold that moves the next turn
 elsewhere. You can tell which model earned its price and which one did not.
 
-![The Impact studio: the workspace total, spend per provider against its monthly cap, and the cost broken down by model and by session](./docs/images/impact.png)
+![The Impact studio: spend per provider and per session in the rail, one provider against its monthly cap and alert threshold, and its cost broken down by model](./docs/images/impact.png)
 
 ## Agents work in a worktree, not in your checkout
 
 Two agents editing the same checkout is a merge conflict waiting for you. Each
-project a session touches gets its own git worktree and branch, with the reason
-recorded, so several sessions run at once without touching each other's files. A
-session can mount more than one project, and each mounted project carries its
-own branch and pull request.
+repository a session touches gets its own git worktree and branch, with the
+reason recorded, so several sessions run at once without touching each other's
+files. A session can mount more than one project, and each mounted repository
+carries its own branch and pull request.
 
 ![The Projects section of a session: two repositories mounted, each with its branch and worktree, and a series of pull requests split out of one rewrite](./docs/images/mounts.png)
 

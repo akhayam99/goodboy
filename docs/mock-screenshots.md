@@ -115,6 +115,15 @@ ToastProvider`.** The real app tree wraps everything in `ToastProvider`
   code is needed to add the real session sidebar or the real app footer to a
   scene; pass the components into those two props.
 
+- **A studio can reach `invoke()` through a hook you never render.** The rule
+  above is about the render never depending on the Tauri runtime, and
+  `ImpactStudio` keeps it: its `useImpactMetrics` queries the database
+  directly, fails, and catches its own error, and the provider scope the
+  scene opens on renders nothing from it. Seeding cannot reach that hook,
+  because it does not go through a store action. When a scene mounts a studio,
+  open it on the scope whose panels are store-backed and check the console
+  before trusting a full-looking screenshot.
+
 ## Capture the actual image, not a browser-pane screenshot
 
 An interactive browser pane's own screenshot tool adds its own chrome (a tab
