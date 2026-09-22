@@ -101,6 +101,7 @@ import { stepSummaryDegraded } from '../../summarizeAgentOutput';
 import { clearMaterializationBatch } from '../../materializationGate';
 import { decisionsDelta } from '../session-events';
 import { flushTurnEvents } from '../transcripts/buffer';
+import { sessionAwaitsPullRequest } from '../github/sessionAwaitsPullRequest';
 import {
   beginTurnFileVersionCapture,
   finalizeTurnFileVersionCapture,
@@ -1605,7 +1606,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         );
       }
       if (
-        !get().sessionGithub[sessionId]?.pr &&
+        sessionAwaitsPullRequest({ state: get(), sessionId }) &&
         /github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/.test(assistantText)
       ) {
         void get()
