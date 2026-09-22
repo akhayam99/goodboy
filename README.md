@@ -149,8 +149,8 @@ source build.
 Goodboy connects to Claude, Cursor, Codex, Gemini through Antigravity,
 OpenCode, OpenRouter and Moonshot. Claude, Cursor and Codex log in with the CLI
 you already use. OpenCode ships models that need no key. OpenRouter and
-Moonshot take an API key, and one `opencode` binary serves all three. Installation,
-authentication and provider-specific behavior are in
+Moonshot take an API key, and one `opencode` binary serves all three.
+Installation, authentication and provider-specific behavior are in
 [the provider guide](./docs/providers.md).
 
 GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack can connect to the
@@ -208,10 +208,11 @@ Before changing code, read [AGENTS.md](./AGENTS.md) and
 
 ## Contributors
 
-[<img src="https://github.com/akhayam99.png?size=64" width="64" height="64" alt="Amin Khayam">](https://github.com/akhayam99)
-[<img src="https://github.com/teckperry.png?size=64" width="64" height="64" alt="Luca Laudiero">](https://github.com/teckperry)
+[<img src=".github/contributor-akhayam99.png" width="72" height="72" alt="Amin Khayam">](https://github.com/akhayam99)
+&nbsp;
+[<img src=".github/contributor-teckperry.png" width="72" height="72" alt="Luca Laudiero">](https://github.com/teckperry)
 
-[Amin Khayam](https://github.com/akhayam99) · [Luca Laudiero](https://github.com/teckperry)
+[Amin Khayam](https://github.com/akhayam99) &nbsp;·&nbsp; [Luca Laudiero](https://github.com/teckperry)
 
 ## License
 
