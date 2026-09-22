@@ -7,6 +7,27 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.12
+
+A question an agent is answering for you stops asking, the transcript drops the tinted blocks, and splitting one pull request across two mounts works from one call.
+
+### [#1826] A question waits while its delegate answers
+
+Handing a question to an agent left the card exactly as it was: radios, a free text row and a slot in the stepper, with one dim dashed line as the only sign somebody was on it. The question still counted as yours, and the agent was reachable only once it had finished.
+
+A question with a live delegate now shows a single row saying an agent is answering it, and nothing to fill in. It leaves the queue, so the stepper walks only what is still yours and a cluster whose questions are all delegated stops asking for a send. The row opens the agent, from the transcript, the Questions lens and the brief alike, and next to it answer it yourself takes the question back.
+
+The trail no longer repeats the question text twice at the end of the breadcrumb.
+
+### [#1827] The kind of a card reads from its rail, not its fill
+
+A column of transcript cards read as a stack of tinted blocks, and an expanded answer sat on a yellow field. Colour now lives in the left rail and the icon, where a question card already kept it, and the surface behind stays the app background. The answer you picked keeps its fill, because it is the one thing on a question card that should carry colour, and your own message keeps its bubble.
+
+### Fixes
+
+- Putting the second half of a split on its own branch and its own worktree was refused outright when that branch did not exist yet. It is cut from the base instead [#1830]
+- A branch held by another worktree said so without saying which one, including when the holder was one of your own mounts. The refusal names the path now [#1830]
+
 ## Goodboy v0.3.11
 
 A question the agent cannot settle on its own now holds the work until you answer it, every answer in a batch travels on one send, and a question you cannot answer can go to an agent that answers in your place.
