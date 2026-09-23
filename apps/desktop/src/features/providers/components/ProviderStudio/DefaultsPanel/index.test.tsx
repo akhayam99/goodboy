@@ -232,7 +232,7 @@ describe('DefaultsPanel', () => {
     expect(screen.getByLabelText('Step summaries routing status: auto').textContent).toBe('auto');
 
     openRolesTab();
-    expect(screen.getByLabelText('Planner routing status: default').textContent).toBe('default');
+    expect(screen.queryByLabelText(/Planner routing status/)).toBeNull();
   });
 
   it('marks a task override as custom and resets it to auto', async () => {
@@ -341,7 +341,7 @@ describe('DefaultsPanel', () => {
     expect(screen.getByRole('button', { name: 'Resolver routing model' }).textContent).toBe(
       'sonnet-5',
     );
-    expect(screen.getByLabelText('Resolver routing status: default').textContent).toBe('default');
+    expect(screen.queryByLabelText(/Resolver routing status/)).toBeNull();
   });
 
   it('persists a resolver role model of its own', () => {
@@ -612,7 +612,7 @@ describe('DefaultsPanel', () => {
     );
 
     rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    expect(screen.getByLabelText('Reviewer routing status: default')).toBeDefined();
+    expect(screen.queryByLabelText(/Reviewer routing status/)).toBeNull();
     expect(screen.getByRole('button', { name: 'Reviewer routing provider' }).textContent).toBe(
       'cursor',
     );
@@ -694,7 +694,7 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByRole('tab', { name: 'Task models (1)' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Task models, 1 custom' })).toBeDefined();
     expect(screen.queryByText('Branch naming')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing auto' }));
@@ -720,7 +720,7 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByRole('tab', { name: 'Task models (1)' })).toBeDefined();
-    expect(screen.getByRole('tab', { name: 'Agent roles (2)' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Task models, 1 custom' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Agent roles, 2 custom' })).toBeDefined();
   });
 });

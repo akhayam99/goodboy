@@ -80,7 +80,7 @@ describe('WorkspaceIdentityRow', () => {
     const spy = vi.fn();
     window.addEventListener('goodboy:open-settings', spy);
 
-    fireEvent.click(screen.getByLabelText('Preferences'));
+    fireEvent.click(screen.getByLabelText('Workspace settings'));
 
     expect(spy).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:open-settings', spy);

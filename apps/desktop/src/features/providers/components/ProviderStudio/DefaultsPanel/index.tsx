@@ -68,8 +68,8 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
   const taskOverrideCount = TASKS.filter((task) => overrides.taskModels?.[task.id] != null).length;
   const roleOverrideCount = Object.keys(overrides.roleModels ?? {}).length;
   const groupOptions = [
-    { value: 'task' as const, label: `Task models (${taskOverrideCount})` },
-    { value: 'role' as const, label: `Agent roles (${roleOverrideCount})` },
+    { value: 'task' as const, label: `Task models, ${taskOverrideCount} custom` },
+    { value: 'role' as const, label: `Agent roles, ${roleOverrideCount} custom` },
   ];
 
   const onDefaultProvider = ({ providerId }: ProviderParams) => {
@@ -135,7 +135,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
               size="inline"
             />
           ) : (
-            <div className="flex max-w-64 flex-wrap justify-end gap-1">
+            <div className="flex max-w-64 flex-wrap justify-start gap-1">
               {connectedProviderIds.map((providerId) => {
                 const isDefaultProvider = providerId === defaultProviderId;
                 return (

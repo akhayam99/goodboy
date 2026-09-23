@@ -6,7 +6,7 @@ type Props = {
   readonly isCustom: boolean;
   readonly disabled: boolean;
   readonly onReset: () => void;
-  readonly idleLabel?: string;
+  readonly idleLabel?: string | null;
   readonly resetLabel?: string;
 };
 
@@ -15,9 +15,12 @@ export const RoutingStatusControl = ({
   isCustom,
   disabled,
   onReset,
-  idleLabel = 'default',
+  idleLabel = null,
   resetLabel = 'Reset to default',
 }: Props) => {
+  if (!isCustom && idleLabel === null) {
+    return null;
+  }
   const status = isCustom ? 'custom' : idleLabel;
 
   return (

@@ -68,7 +68,7 @@ export const WorkspaceIdentityRow = () => {
       >
         <WorkspaceSwitcher onClose={dropdown.close} />
       </AnchoredPopover>
-      <Tooltip content="Preferences" side="bottom">
+      <Tooltip content="Workspace settings" side="bottom">
         <button
           type="button"
           onClick={() =>
@@ -76,7 +76,7 @@ export const WorkspaceIdentityRow = () => {
               new CustomEvent('goodboy:open-settings', { detail: { scope: 'workspace' } }),
             )
           }
-          aria-label="Preferences"
+          aria-label="Workspace settings"
           className="flex shrink-0 items-center justify-center rounded-md p-1 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
         >
           <SlidersHorizontal size={ICON_SIZE.row} aria-hidden />

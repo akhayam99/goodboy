@@ -211,7 +211,9 @@ describe('WorkspaceScopePanel', () => {
 
     const input = screen.getByLabelText(/display name/i);
     expect((input as HTMLInputElement).value).toBe('billing');
-    expect(screen.getByText(/the folder on disk stays the workspace folder/i)).toBeDefined();
+    expect(
+      screen.getByText('Only the label changes. Project folders stay where they are.'),
+    ).toBeDefined();
 
     fireEvent.change(input, { target: { value: 'Billing platform' } });
     fireEvent.blur(input);

@@ -24,7 +24,6 @@ import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
-import { primaryProjectRoot } from '../../../../features/workspace/primaryProjectRoot';
 import { useSectionAnchors } from '../../hooks/useSectionAnchors';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
@@ -50,7 +49,6 @@ type Props = {
 export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose }: Props) => {
   const disconnect = useAppStore((s) => s.deleteWorkspace);
   const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId) ?? null);
-  const projectRoot = useAppStore((s) => primaryProjectRoot({ projects: s.projects, workspaceId }));
   const renameWorkspace = useAppStore((s) => s.renameWorkspace);
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const patchWorkspaceOverrides = useAppStore((s) => s.patchWorkspaceOverrides);
@@ -161,8 +159,6 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       .replace(/^-+/, '')
       .slice(0, 16);
 
-  const folderName = projectRoot?.split('/').filter(Boolean).at(-1) ?? 'the workspace folder';
-
   return (
     <ScrollFade className="h-full w-full" viewportClassName={PANE_RHYTHM.body}>
       <div className={`flex flex-col ${PANE_RHYTHM.column} ${PANE_RHYTHM.measure.reading}`}>
@@ -178,7 +174,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   label="Workspace"
                   hint="How this workspace is labelled across the app."
                 />
-                <FieldRow label="Display name" help={`The folder on disk stays ${folderName}.`}>
+                <FieldRow
+                  label="Display name"
+                  help="Only the label changes. Project folders stay where they are."
+                >
                   <Input
                     type="text"
                     value={displayName}
@@ -192,7 +191,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                         setDisplayName(workspace.name);
                       }
                     }}
-                    placeholder={folderName}
+                    placeholder={workspace.slug}
                     disabled={renaming}
                     maxLength={60}
                     aria-label="Display name"
@@ -220,7 +219,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
           <section id="general" ref={anchor({ id: 'general' })} className="flex flex-col gap-4">
             <SectionHeader
               label="Session defaults"
-              hint="Applied to every new agent you spawn in this workspace."
+              hint="Applied to new sessions and agents in this workspace."
             />
             <div className="flex flex-col">
               <FieldRow label="Branch prefix" help="Prefixes every new session branch.">

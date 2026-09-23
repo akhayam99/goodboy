@@ -143,7 +143,7 @@ describe('AppTopBar', () => {
 
     expect(screen.queryByRole('button', { name: /^open settings/i })).toBeNull();
     expect(screen.queryByTestId('update-indicator')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Preferences' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Workspace settings' })).toBeDefined();
   });
 
   it('flips the real theme state from the top bar', () => {
