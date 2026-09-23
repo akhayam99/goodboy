@@ -20,7 +20,6 @@ import { ROLE_TO_KIND, inferAgentKindFromName } from '../../../features/session/
 import { resolveStepRouting } from '../../../features/workflows/resolveStepRouting';
 import { revalidateStepRouting } from '../../../features/workflows/revalidateStepRouting';
 import {
-  invokeAgentGenerationBind,
   invokeAgentGenerationReserve,
   invokeAgentInsert,
 } from '../../../features/workflows/workflows';
@@ -150,12 +149,7 @@ export const preSpawnWorkflowAgents = async ({
       routingLock: effectiveStep.routingLock ?? null,
       routingDecision: effectiveStep.routingDecision ?? null,
       taskProfile: effectiveStep.taskProfile ?? null,
-    });
-    await invokeAgentGenerationBind({
-      bindings: reservation.reservations.map((entry) => ({
-        reservationId: entry.reservationId,
-        agentId: agent.id,
-      })),
+      generationReservationId: reservation.reservations[0]!.reservationId,
     });
     providerOverrides[agent.id] = provider;
     modelOverrides[agent.id] = model;

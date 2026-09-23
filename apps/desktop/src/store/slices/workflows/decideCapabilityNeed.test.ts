@@ -4,6 +4,7 @@ import type {
   AgentId,
   CapabilityGrant,
   CapabilityObligation,
+  ClusterExecutionGraph,
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
@@ -14,6 +15,8 @@ const h = vi.hoisted(() => ({
   countAttempts: vi.fn(),
   agentById: vi.fn(),
   apply: vi.fn(),
+  clientOptions: [] as Array<Record<string, unknown>>,
+  recordUsage: vi.fn(),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -23,6 +26,9 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   return {
     ...actual,
     OrchestratorClient: class {
+      constructor(options: Record<string, unknown>) {
+        h.clientOptions.push(options);
+      }
       decide = h.decide;
     },
   };
@@ -31,8 +37,12 @@ vi.mock('@goodboy/db', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/db')>();
   return { ...actual, countObligationAttempts: h.countAttempts, getAgentById: h.agentById };
 });
+vi.mock('./recordOrchestratorUsage', () => ({ recordOrchestratorUsage: h.recordUsage }));
 vi.mock('./applyNeedDisposition', () => ({ applyNeedDisposition: h.apply }));
 vi.mock('../worktrees/getSessionRepo', () => ({ getSessionRepo: () => null }));
+vi.mock('../turn/agentEvidenceInventory', () => ({
+  issuedAgentInventory: () => ({ inventory: { revision: 'inv-1', entries: [] } }),
+}));
 vi.mock('./buildNeedPacket', () => ({
   buildNeedRequest: () => ({ evidenceRefs: [] }),
   buildEvidenceExcerpts: () => [],
@@ -43,6 +53,7 @@ import { decideCapabilityNeed } from './decideCapabilityNeed';
 
 const SESSION_ID = 'session-1' as SessionId;
 const REQUESTER_ID = 'agent-1' as AgentId;
+const CONTAINER_ID = 'container-1' as AgentId;
 const RUN_ID = 'workflow-run-1' as WorkflowRunId;
 const OBLIGATION_ID = 'capability-obligation:agent-1:implementer:repair';
 
@@ -97,9 +108,27 @@ const failedGrant: CapabilityGrant = {
   updatedAt: '2026-07-30T00:00:00.000Z',
 };
 
-const createHarness = () => {
+const graph = {
+  containerAgentId: CONTAINER_ID,
+  sessionId: SESSION_ID,
+  workflowRunId: RUN_ID,
+  planId: 'plan-1',
+  goalTitle: 'restore the guard',
+  graph: { executionVersion: 2, nodes: [] },
+  nodes: [],
+  revision: 4,
+  frozenReason: null,
+  frozenObligationId: null,
+} as unknown as ClusterExecutionGraph;
+
+type HarnessOptions = {
+  readonly agent?: Agent;
+  readonly graphs?: ReadonlyArray<ClusterExecutionGraph>;
+};
+
+const createHarness = ({ agent = requester, graphs = [] }: HarnessOptions = {}) => {
   const state = {
-    sessionPhaseRuns: { [SESSION_ID]: [requester] },
+    sessionPhaseRuns: { [SESSION_ID]: [agent] },
     sessions: [
       {
         id: SESSION_ID,
@@ -111,7 +140,8 @@ const createHarness = () => {
     ],
     capabilityObligations: { [SESSION_ID]: [obligation] },
     capabilityGrants: { [SESSION_ID]: [failedGrant] },
-    clusterExecutionGraphs: {},
+    clusterExecutionGraphs: { [SESSION_ID]: graphs },
+    authResults: {},
     providers: [],
     providerCooldowns: {},
     budgetAlerts: [],
@@ -141,9 +171,13 @@ const allowancesSent = (): { readonly repairAttemptsRemaining: number } =>
 
 describe('decideCapabilityNeed', () => {
   beforeEach(() => {
-    Object.values(h).forEach((mock) => mock.mockReset());
+    [h.decide, h.countAttempts, h.agentById, h.apply, h.recordUsage].forEach((mock) =>
+      mock.mockReset(),
+    );
+    h.clientOptions.length = 0;
     h.decide.mockImplementation(async () => ({ decision: null }));
     h.agentById.mockImplementation(async () => null);
+    h.countAttempts.mockImplementation(async () => 0);
   });
 
   it('tells the orchestrator no repair attempt is left once the ledger holds two', async () => {
@@ -185,5 +219,48 @@ describe('decideCapabilityNeed', () => {
     });
 
     expect(allowancesSent().repairAttemptsRemaining).toBe(0);
+  });
+
+  it('runs the decision through invocation admission and records its usage', async () => {
+    const { set, get } = createHarness();
+
+    await decideCapabilityNeed({ set, get })({
+      sessionId: SESSION_ID,
+      obligationId: OBLIGATION_ID,
+    });
+
+    const options = h.clientOptions[0] as {
+      readonly invocation?: Record<string, unknown>;
+      readonly onUsage?: (usage: Record<string, unknown>) => unknown;
+    };
+    expect(options.invocation).toMatchObject({
+      purpose: 'orchestrator',
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      agentId: REQUESTER_ID,
+    });
+    options.onUsage?.({ inputTokens: 10, outputTokens: 5 });
+    expect(h.recordUsage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: SESSION_ID,
+        agentId: REQUESTER_ID,
+        workflowRunId: RUN_ID,
+      }),
+    );
+  });
+
+  it('tells the orchestrator the persisted graph revision, not the plan version', async () => {
+    const { set, get } = createHarness({
+      agent: { ...requester, status: 'running', parentAgentId: CONTAINER_ID },
+      graphs: [graph],
+    });
+
+    await decideCapabilityNeed({ set, get })({
+      sessionId: SESSION_ID,
+      obligationId: OBLIGATION_ID,
+    });
+
+    const packet = h.decide.mock.calls[0]?.[0] as { readonly graphRevision?: string };
+    expect(packet.graphRevision).toBe(`${CONTAINER_ID}@r4`);
   });
 });

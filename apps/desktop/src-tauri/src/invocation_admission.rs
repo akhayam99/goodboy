@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
 
@@ -10,6 +11,7 @@ use crate::db::Db;
 const DEFAULT_GLOBAL_LIMIT: u32 = 4;
 const DEFAULT_PROVIDER_LIMIT: u32 = 2;
 const DEFAULT_HEAVYWEIGHT_LIMIT: u32 = 1;
+const ADOPTED_POLL_INTERVAL: Duration = Duration::from_millis(1000);
 
 #[derive(Debug, Error)]
 pub enum AdmissionError {
@@ -23,6 +25,8 @@ pub enum AdmissionError {
         requested_usd: f64,
         remaining_usd: f64,
     },
+    #[error("the invocation was cancelled while it waited for admission")]
+    Cancelled,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -127,9 +131,25 @@ pub struct AdmissionRequest {
     pub spend_reservation: Option<SpendReservation>,
 }
 
-#[derive(Clone, Default)]
+#[derive(Default)]
+struct AdmissionQueue {
+    waiting: HashSet<String>,
+    cancelled: HashSet<String>,
+}
+
+#[derive(Clone)]
 pub struct InvocationAdmission {
-    signal: Arc<(Mutex<()>, Condvar)>,
+    signal: Arc<(Mutex<AdmissionQueue>, Condvar)>,
+    ceilings: InvocationLimits,
+}
+
+impl Default for InvocationAdmission {
+    fn default() -> Self {
+        Self {
+            signal: Arc::new((Mutex::new(AdmissionQueue::default()), Condvar::new())),
+            ceilings: InvocationLimits::default(),
+        }
+    }
 }
 
 pub struct InvocationPermit {
@@ -145,30 +165,78 @@ impl InvocationAdmission {
         Self::default()
     }
 
+    #[cfg(test)]
+    pub fn with_ceilings(ceilings: InvocationLimits) -> Self {
+        Self {
+            ceilings,
+            ..Self::default()
+        }
+    }
+
     pub fn admit(
         &self,
         db: Db,
         request: AdmissionRequest,
+        cancel_key: &str,
     ) -> Result<InvocationPermit, AdmissionError> {
         self.enqueue(&db, &request)?;
         let (mutex, wake) = &*self.signal;
-        let mut signal = mutex.lock().map_err(|_| AdmissionError::Poisoned)?;
-        loop {
-            self.reconcile(&db)?;
-            if self.try_claim(&db, &request)? {
-                return Ok(InvocationPermit {
-                    admission: self.clone(),
-                    db,
-                    id: request.id,
-                    is_released: false,
-                    has_bound_process: false,
-                });
+        let mut queue = mutex.lock().map_err(|_| AdmissionError::Poisoned)?;
+        queue.cancelled.remove(cancel_key);
+        queue.waiting.insert(cancel_key.to_string());
+        let outcome = loop {
+            if queue.cancelled.contains(cancel_key) {
+                break self
+                    .release_queued(&db, &request.id)
+                    .and(Err(AdmissionError::Cancelled));
             }
-            let waited = wake
-                .wait_timeout(signal, Duration::from_millis(100))
-                .map_err(|_| AdmissionError::Poisoned)?;
-            signal = waited.0;
+            let claimed = self
+                .reconcile(&db)
+                .and_then(|_| self.try_claim(&db, &request));
+            match claimed {
+                Err(error) => break Err(error),
+                Ok(true) => break Ok(()),
+                Ok(false) => {}
+            }
+            let Ok(waited) = wake.wait_timeout(queue, Duration::from_millis(100)) else {
+                return Err(AdmissionError::Poisoned);
+            };
+            queue = waited.0;
+        };
+        queue.waiting.remove(cancel_key);
+        queue.cancelled.remove(cancel_key);
+        drop(queue);
+        outcome.map(|_| InvocationPermit {
+            admission: self.clone(),
+            db,
+            id: request.id,
+            is_released: false,
+            has_bound_process: false,
+        })
+    }
+
+    pub fn cancel(&self, cancel_key: &str) -> bool {
+        let (mutex, wake) = &*self.signal;
+        let Ok(mut queue) = mutex.lock() else {
+            return false;
+        };
+        if queue.waiting.contains(cancel_key) == false {
+            return false;
         }
+        queue.cancelled.insert(cancel_key.to_string());
+        wake.notify_all();
+        true
+    }
+
+    fn release_queued(&self, db: &Db, id: &str) -> Result<(), AdmissionError> {
+        let conn = db.0.lock().map_err(|_| AdmissionError::Poisoned)?;
+        conn.execute(
+            "UPDATE invocation_tickets
+             SET status = 'released', release_reason = 'cancelled', released_at = ?1, updated_at = ?1
+             WHERE id = ?2 AND status = 'queued'",
+            params![crate::util::now_ms(), id],
+        )?;
+        Ok(())
     }
 
     fn enqueue(&self, db: &Db, request: &AdmissionRequest) -> Result<(), AdmissionError> {
@@ -213,9 +281,16 @@ impl InvocationAdmission {
             params![request.provider_identity],
             |row| row.get(0),
         )?;
-        let has_capacity = active_global < request.limits.global.max(1)
-            && active_provider < request.limits.provider.max(1)
-            && (!request.is_heavyweight || active_heavyweight < request.limits.heavyweight.max(1));
+        let global = request.limits.global.min(self.ceilings.global).max(1);
+        let provider = request.limits.provider.min(self.ceilings.provider).max(1);
+        let heavyweight = request
+            .limits
+            .heavyweight
+            .min(self.ceilings.heavyweight)
+            .max(1);
+        let has_capacity = active_global < global
+            && active_provider < provider
+            && (!request.is_heavyweight || active_heavyweight < heavyweight);
         if !has_capacity {
             transaction.commit()?;
             return Ok(false);
@@ -309,29 +384,63 @@ impl InvocationAdmission {
     }
 
     pub fn reconcile(&self, db: &Db) -> Result<(), AdmissionError> {
+        let current = std::process::id();
         let conn = db.0.lock().map_err(|_| AdmissionError::Poisoned)?;
         let mut statement = conn.prepare(
-            "SELECT id, process_id FROM invocation_tickets
+            "SELECT id, owner_process_id, process_id FROM invocation_tickets
              WHERE status IN ('admitted','running') AND owner_process_id != ?1",
         )?;
-        let rows = statement.query_map(params![std::process::id()], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, Option<u32>>(1)?))
+        let rows = statement.query_map(params![current], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, u32>(1)?,
+                row.get::<_, Option<u32>>(2)?,
+            ))
         })?;
-        let stale = rows
+        let orphaned = rows
             .filter_map(Result::ok)
-            .filter(|(_, process_id)| process_id.map_or(true, |pid| !process_is_alive(pid)))
-            .map(|(id, _)| id)
+            .filter(|(_, owner_process_id, _)| !process_is_alive(*owner_process_id))
             .collect::<Vec<_>>();
         drop(statement);
         let now = crate::util::now_ms();
-        let did_release = stale.is_empty() == false;
-        for id in stale {
-            settle_or_release(&conn, &id, "restart_reconcile", None, now)?;
+        let mut did_release = false;
+        for (id, owner_process_id, process_id) in orphaned {
+            let Some(child) = process_id.filter(|pid| process_is_alive(*pid)) else {
+                settle_or_release(&conn, &id, "restart_reconcile", None, now)?;
+                did_release = true;
+                continue;
+            };
+            let adopted = conn.execute(
+                "UPDATE invocation_tickets SET owner_process_id = ?1, updated_at = ?2
+                 WHERE id = ?3 AND owner_process_id = ?4 AND status IN ('admitted','running')",
+                params![current, now, id, owner_process_id],
+            )?;
+            if adopted == 1 {
+                self.watch_adopted(db.clone(), id, child);
+            }
         }
         if did_release {
             self.signal.1.notify_all();
         }
         Ok(())
+    }
+
+    fn watch_adopted(&self, db: Db, id: String, process_id: u32) {
+        let admission = self.clone();
+        std::thread::spawn(move || {
+            while process_is_alive(process_id) {
+                std::thread::sleep(ADOPTED_POLL_INTERVAL);
+            }
+            let Ok(conn) = db.0.lock() else {
+                return;
+            };
+            let released =
+                settle_or_release(&conn, &id, "adopted_exit", None, crate::util::now_ms());
+            drop(conn);
+            if matches!(released, Ok(1)) {
+                admission.signal.1.notify_all();
+            }
+        });
     }
 }
 
@@ -686,26 +795,143 @@ mod tests {
         assert_eq!(status(&db, "one"), "released");
     }
 
-    #[test]
-    fn restart_releases_gone_processes_and_keeps_live_processes() {
-        let db = database();
-        let admission = InvocationAdmission::new();
-        let now = crate::util::now_ms();
+    fn dead_process_id() -> u32 {
+        let mut child = std::process::Command::new("true")
+            .spawn()
+            .expect("spawn true");
+        let process_id = child.id();
+        child.wait().expect("reap true");
+        process_id
+    }
+
+    fn owner_of(db: &Db, id: &str) -> u32 {
+        db.0.lock()
+            .expect("lock")
+            .query_row(
+                "SELECT owner_process_id FROM invocation_tickets WHERE id = ?1",
+                params![id],
+                |row| row.get(0),
+            )
+            .expect("owner")
+    }
+
+    fn insert_running(db: &Db, id: &str, process_id: u32, owner_process_id: u32) {
         db.0.lock()
             .expect("lock")
             .execute(
                 "INSERT INTO invocation_tickets
                  (id, provider, provider_identity, purpose, is_heavyweight, status, process_id, owner_process_id, created_at, updated_at)
-                 VALUES ('gone', 'codex', 'codex:a', 'agent_turn', 1, 'running', 4294967294, 0, ?1, ?1),
-                        ('live', 'codex', 'codex:b', 'agent_turn', 1, 'running', ?2, 0, ?1, ?1)",
-                params![now, std::process::id()],
+                 VALUES (?1, 'codex', ?1, 'agent_turn', 1, 'running', ?2, ?3, ?4, ?4)",
+                params![id, process_id, owner_process_id, crate::util::now_ms()],
             )
-            .expect("insert tickets");
+            .expect("insert ticket");
+    }
+
+    #[test]
+    fn restart_releases_gone_processes_and_keeps_live_processes() {
+        let db = database();
+        let admission = InvocationAdmission::new();
+        let dead_owner = dead_process_id();
+        insert_running(&db, "gone", dead_process_id(), dead_owner);
+        insert_running(&db, "live", std::process::id(), dead_owner);
 
         admission.reconcile(&db).expect("reconcile");
 
         assert_eq!(status(&db, "gone"), "released");
         assert_eq!(status(&db, "live"), "running");
+    }
+
+    #[test]
+    fn a_live_child_of_a_dead_app_is_adopted_and_settled_when_it_exits() {
+        let db = database();
+        let admission = InvocationAdmission::new();
+        let mut child = std::process::Command::new("sleep")
+            .arg("30")
+            .spawn()
+            .expect("spawn sleep");
+        insert_running(&db, "orphan", child.id(), dead_process_id());
+
+        admission.reconcile(&db).expect("reconcile");
+
+        assert_eq!(owner_of(&db, "orphan"), std::process::id());
+        assert_eq!(status(&db, "orphan"), "running");
+        child.kill().expect("kill sleep");
+        child.wait().expect("reap sleep");
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        while status(&db, "orphan") != "released" && std::time::Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert_eq!(status(&db, "orphan"), "released");
+    }
+
+    #[test]
+    fn tickets_of_a_live_app_instance_are_left_to_it() {
+        let db = database();
+        let admission = InvocationAdmission::new();
+        let mut owner = std::process::Command::new("sleep")
+            .arg("30")
+            .spawn()
+            .expect("spawn owner");
+        insert_running(&db, "foreign", dead_process_id(), owner.id());
+
+        admission.reconcile(&db).expect("reconcile");
+
+        assert_eq!(status(&db, "foreign"), "running");
+        assert_eq!(owner_of(&db, "foreign"), owner.id());
+        owner.kill().expect("kill owner");
+        owner.wait().expect("reap owner");
+    }
+
+    #[test]
+    fn a_request_cannot_raise_the_application_ceiling() {
+        let db = database();
+        let admission = InvocationAdmission::with_ceilings(InvocationLimits {
+            global: 1,
+            provider: 1,
+            heavyweight: 1,
+        });
+        let mut first = request("one", "codex:first", false);
+        first.limits.global = 8;
+        first.limits.provider = 8;
+        let mut second = request("two", "codex:second", false);
+        second.limits.global = 8;
+        second.limits.provider = 8;
+        admission.enqueue(&db, &first).expect("enqueue first");
+        admission.enqueue(&db, &second).expect("enqueue second");
+
+        assert!(admission.try_claim(&db, &first).expect("claim first"));
+        assert!(!admission.try_claim(&db, &second).expect("claim second"));
+    }
+
+    #[test]
+    fn cancelling_a_queued_invocation_releases_its_ticket() {
+        let db = database();
+        let admission = InvocationAdmission::with_ceilings(InvocationLimits {
+            global: 1,
+            provider: 1,
+            heavyweight: 1,
+        });
+        let holder = admission
+            .admit(db.clone(), request("holder", "codex:account", false), "holder")
+            .expect("admit holder");
+        let waiter = {
+            let admission = admission.clone();
+            let db = db.clone();
+            std::thread::spawn(move || {
+                admission.admit(db, request("queued", "codex:account", false), "run-queued")
+            })
+        };
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        while !admission.cancel("run-queued") && std::time::Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(10));
+        }
+
+        let outcome = waiter.join().expect("join waiter");
+
+        assert!(matches!(outcome, Err(AdmissionError::Cancelled)));
+        assert_eq!(status(&db, "queued"), "released");
+        assert!(!admission.cancel("run-queued"));
+        drop(holder);
     }
 
     fn reserving(id: &str, estimated_spend_usd: f64) -> AdmissionRequest {

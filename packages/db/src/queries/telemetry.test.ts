@@ -112,14 +112,16 @@ describe('telemetry queries', () => {
       usageEventId: 'usage',
       attributionStatus: 'attributed',
     };
-    await insertTelemetry(database, record);
-    await insertTelemetry(database, {
+    const isFirstInserted = await insertTelemetry(database, record);
+    const isDuplicateInserted = await insertTelemetry(database, {
       ...record,
       id: 'telemetry-duplicate' as TelemetryRecordId,
     });
 
     const summary = await summarizeWorkflowRunTelemetry(database, workflowRunId);
 
+    expect(isFirstInserted).toBe(true);
+    expect(isDuplicateInserted).toBe(false);
     expect(summary.estimatedCostUsd).toBe(0.25);
     expect(summary.recordCount).toBe(1);
   });

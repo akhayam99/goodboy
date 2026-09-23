@@ -35,6 +35,7 @@ export type CapabilityCompletionOutcome =
   | Readonly<{ kind: 'replacement-started'; replacementAgentId: AgentId }>
   | Readonly<{ kind: 'parent-resumed' }>
   | Readonly<{ kind: 'settled'; verifiedRevision: string }>
+  | Readonly<{ kind: 'unverified'; reason: string }>
   | Readonly<{ kind: 'revision-adopted'; revision: number }>
   | Readonly<{ kind: 'revision-refused'; reason: string }>;
 
@@ -110,14 +111,17 @@ const verifiedRevision = async ({
 }: {
   readonly get: GetFn;
   readonly sessionId: SessionId;
-}): Promise<string> => {
+}): Promise<string | null> => {
   const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
   if (worktreePath === null) {
-    return 'unknown-revision';
+    return null;
   }
   const status = await worktreeStatus({ worktreePath }).catch(() => null);
-  return status?.head ?? 'unknown-revision';
+  return status?.head ?? null;
 };
+
+const UNREAD_REVISION =
+  'the revision that was checked could not be read, so the obligation stays open and nothing was released';
 
 const rememberGrant = ({
   set,
@@ -179,8 +183,18 @@ const settleAndRelease = async ({
   binding,
   receipt,
   isRequesterContinuing,
-}: SettleParams): Promise<string> => {
+}: SettleParams): Promise<string | null> => {
   const revision = await verifiedRevision({ get, sessionId });
+  if (revision === null) {
+    void get().emitNotification(
+      'error',
+      'warning',
+      `${binding.obligation.purpose} not closed`,
+      `${UNREAD_REVISION}. ${receipt}`,
+      { sessionId },
+    );
+    return null;
+  }
   const settled = await invokeCapabilityObligationSettle({
     obligationId: binding.obligation.id,
     verifiedRevision: revision,
@@ -196,6 +210,48 @@ const settleAndRelease = async ({
   });
 
   return revision;
+};
+
+type FinishRequesterParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly obligationId: string;
+  readonly output: string;
+};
+
+const finishHandedOffRequester = async ({
+  get,
+  sessionId,
+  obligationId,
+  output,
+}: FinishRequesterParams): Promise<void> => {
+  const obligation = (get().capabilityObligations[sessionId] ?? []).find(
+    (candidate) => candidate.id === obligationId,
+  );
+  if (obligation?.state !== 'satisfied' || obligation.holdIds.length > 0) {
+    return;
+  }
+  const requester = (get().sessionPhaseRuns[sessionId] ?? []).find(
+    (agent) => agent.id === obligation.requesterAgentId,
+  );
+  if (
+    requester === undefined ||
+    !requester.stepId ||
+    !requester.workflowRunId ||
+    requester.status === 'completed'
+  ) {
+    return;
+  }
+  const { shouldAutoAdvance } = await get().finalizeWorkflowStep(
+    sessionId,
+    requester.id,
+    output,
+    false,
+    { force: true },
+  );
+  if (shouldAutoAdvance) {
+    void get().maybeAutoAdvanceWorkflow(sessionId);
+  }
 };
 
 type AdoptProposalParams = {
@@ -553,6 +609,7 @@ const startReplacement = async ({
     kindOverride: ROLE_TO_KIND[role],
     parentAgentId: obligation.requesterAgentId,
     executionPurpose: 'capability',
+    obligationId: obligation.id,
     ...(obligation.workflowRunId !== null && { workflowRunId: obligation.workflowRunId }),
     initialPrompt: [
       'You are taking over work that was transferred, not resumed. None of the earlier context survives.',
@@ -571,6 +628,51 @@ const startReplacement = async ({
   });
   rememberGrant({ set, sessionId, grant: updated });
   return { kind: 'replacement-started', replacementAgentId };
+};
+
+type FailParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly message: string;
+};
+
+export const failCapabilityChild = async ({
+  set,
+  get,
+  sessionId,
+  agentId,
+  message,
+}: FailParams): Promise<boolean> => {
+  const binding = capabilityBindingFor({ get, sessionId, agentId });
+  if (binding === null || binding.obligation.state !== 'granted') {
+    return false;
+  }
+  const { obligation } = binding;
+  const failed = await invokeCapabilityGrantUpdate({
+    obligationId: obligation.id,
+    state: 'failed',
+    childAgentId: null,
+    replacementAgentId: null,
+    verificationAgentId: null,
+  });
+  rememberGrant({ set, sessionId, grant: failed });
+  const reason = `the agent granted for this ${obligation.purpose} failed before it reported back: ${message}`;
+  const refused = await invokeCapabilityObligationDecide({
+    obligationId: obligation.id,
+    decision: 'refused',
+    reason,
+  });
+  rememberObligation({ set, sessionId, obligation: refused });
+  void get().emitNotification(
+    'error',
+    'warning',
+    `${obligation.purpose} failed`,
+    `${reason}. the obligation is closed as refused and nothing was released.`,
+    { sessionId },
+  );
+  return true;
 };
 
 type Params = {
@@ -672,6 +774,9 @@ export const completeCapabilityChild = async ({
       receipt: `${obligation.purpose} verified by ${child.name}: ${outputSummary}`,
       isRequesterContinuing: true,
     });
+    if (revision === null) {
+      return { kind: 'unverified', reason: UNREAD_REVISION };
+    }
     resumeRequesterAfterVerification({
       get,
       sessionId,
@@ -691,6 +796,15 @@ export const completeCapabilityChild = async ({
       binding,
       receipt: `${obligation.purpose} verified by ${child.name}: ${outputSummary}`,
       isRequesterContinuing: false,
+    });
+    if (revision === null) {
+      return { kind: 'unverified', reason: UNREAD_REVISION };
+    }
+    await finishHandedOffRequester({
+      get,
+      sessionId,
+      obligationId: obligation.id,
+      output: `The ${grant.grantedRole} this step handed off to finished and ${child.name} verified it: ${outputSummary}`,
     });
     return { kind: 'settled', verifiedRevision: revision };
   }
@@ -747,7 +861,7 @@ export const completeCapabilityChild = async ({
   }
 
   if (grant.parentOutcome === 'resumed') {
-    await settleAndRelease({
+    const revision = await settleAndRelease({
       set,
       get,
       sessionId,
@@ -755,6 +869,9 @@ export const completeCapabilityChild = async ({
       receipt: `${obligation.purpose} answered by ${child.name}`,
       isRequesterContinuing: true,
     });
+    if (revision === null) {
+      return { kind: 'unverified', reason: UNREAD_REVISION };
+    }
     void get().sendTurn({
       sessionId,
       agentId: obligation.requesterAgentId,
@@ -776,6 +893,15 @@ export const completeCapabilityChild = async ({
     binding,
     receipt: `${obligation.purpose} answered by ${child.name}`,
     isRequesterContinuing: false,
+  });
+  if (revision === null) {
+    return { kind: 'unverified', reason: UNREAD_REVISION };
+  }
+  await finishHandedOffRequester({
+    get,
+    sessionId,
+    obligationId: obligation.id,
+    output: assistantText,
   });
   return { kind: 'settled', verifiedRevision: revision };
 };

@@ -26,7 +26,10 @@ import {
 } from '../../../features/workflows/workflows';
 import { claimCapabilityObligationOwner } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { releaseCapabilityHolds } from './releaseCapabilityHolds';
+import {
+  releaseCapabilityHolds,
+  releaseHoldsForContinuingRequester,
+} from './releaseCapabilityHolds';
 import { resolveObligationRequester } from './resolveObligationRequester';
 import {
   inferAgentKindFromName,
@@ -135,11 +138,13 @@ const refreshObligation = ({
 const transferPacketFor = ({
   requester,
   replacementRole,
+  evidenceRefs,
   get,
   sessionId,
 }: {
   readonly requester: Agent;
   readonly replacementRole: string | null;
+  readonly evidenceRefs: ReadonlyArray<string>;
   readonly get: GetFn;
   readonly sessionId: SessionId;
 }): TransferPacket => {
@@ -154,7 +159,7 @@ const transferPacketFor = ({
     replacementRole,
     completedWork: requester.outputSummary ?? 'nothing was summarized before the attempt ended',
     remainingCriteria: node?.expectedOutput ?? 'the acceptance criteria of the assignment it held',
-    evidenceRefs: [],
+    evidenceRefs,
     executionTarget: requester.providerSessionId ?? null,
   };
 };
@@ -227,6 +232,13 @@ export const applyNeedDisposition = async ({
       reason,
     });
     refreshObligation({ set, sessionId, obligation: recorded });
+    await releaseHoldsForContinuingRequester({
+      set,
+      get,
+      sessionId,
+      holdIds: recorded.holdIds,
+      resolutionEvidence: `${disposition.kind === 'refuse' ? 'need refused' : 'need sent back for narrowing'}, so the requester continues without it: ${reason}`,
+    });
     void get().emitNotification(
       'error',
       'warning',
@@ -236,6 +248,21 @@ export const applyNeedDisposition = async ({
       reason,
       { sessionId },
     );
+    void get().sendTurn({
+      sessionId,
+      agentId: requester.id,
+      content: [
+        disposition.kind === 'refuse'
+          ? `Your request for a ${obligation.targetRole} (${obligation.purpose}) was refused.`
+          : `Your request for a ${obligation.targetRole} (${obligation.purpose}) is too broad to grant as asked.`,
+        '',
+        `Reason: ${reason}`,
+        '',
+        disposition.kind === 'refuse'
+          ? 'Continue your assignment without it and report what you could not do.'
+          : 'Narrow the request and raise it again, or continue your assignment without it.',
+      ].join('\n'),
+    });
     return disposition.kind === 'refuse'
       ? { kind: 'refused', reason }
       : { kind: 'refined', reason };
@@ -277,7 +304,7 @@ export const applyNeedDisposition = async ({
       sources: disposition.evidenceRefs.map((id) => ({ id, range: null })),
       heading: `## evidence you already hold (retrieved by the host, no agent was created)\n\n${reason}`,
     });
-    if (delivery.kind === 'refused') {
+    if (delivery.kind === 'refused' || delivery.kind === 'held') {
       void get().emitNotification(
         'error',
         'warning',
@@ -304,13 +331,23 @@ export const applyNeedDisposition = async ({
         reason: `none of the named sources could be delivered (${unmet})`,
       };
     }
+    if (unmet.length > 0) {
+      void get().emitNotification(
+        'error',
+        'warning',
+        `need only partly answered from evidence: ${requester.name}`,
+        `${deliveredRefs.join(', ')} reached ${requester.name}, but not every named source did (${unmet}), so the obligation stays open.`,
+        { sessionId },
+      );
+      return {
+        kind: 'unavailable',
+        reason: `not every named source could be delivered (${unmet})`,
+      };
+    }
     const settled = await invokeCapabilityObligationSettle({
       obligationId: obligation.id,
       verifiedRevision: delivery.inventoryRevision,
-      deliveryReceipt:
-        unmet.length === 0
-          ? `answered from existing evidence: ${deliveredRefs.join(', ')}`
-          : `answered from existing evidence: ${deliveredRefs.join(', ')}; not supplied: ${unmet}`,
+      deliveryReceipt: `answered from existing evidence: ${deliveredRefs.join(', ')}`,
     });
     refreshObligation({ set, sessionId, obligation: settled });
     await releaseCapabilityHolds({
@@ -374,7 +411,7 @@ export const applyNeedDisposition = async ({
       return { kind: 'refused', reason: exhausted };
     }
     if (requester.parentAgentId != null) {
-      await freezeClusterExecution({
+      const frozen = await freezeClusterExecution({
         set,
         get,
         sessionId,
@@ -382,17 +419,38 @@ export const applyNeedDisposition = async ({
         reason: `a replan was granted for ${obligation.identity}`,
         obligationId: obligation.id,
       });
+      if (frozen === null) {
+        const unfrozen =
+          'the execution graph could not be frozen, so a replan would run while queued nodes stay runnable';
+        const refused = await invokeCapabilityObligationDecide({
+          obligationId: obligation.id,
+          decision: 'refused',
+          reason: unfrozen,
+        });
+        refreshObligation({ set, sessionId, obligation: refused });
+        void get().emitNotification(
+          'error',
+          'warning',
+          `replan refused: ${requester.name}`,
+          `${unfrozen}. no planner was started.`,
+          { sessionId },
+        );
+        return { kind: 'refused', reason: unfrozen };
+      }
     }
   }
 
   const stepProvider = knownProvider({ id: disposition.step.provider });
-  const provider = requester.providerOverride ?? get().agentProviderOverride[requester.id] ?? null;
+  const provider =
+    requester.providerOverride ??
+    get().agentProviderOverride[requester.id] ??
+    requester.providerSessionProviderId ??
+    null;
   const eligibility = resolveContinuationEligibility({
     providerId: provider ?? 'anthropic',
     binary: null,
     providerSessionId: isRequesterRemoved ? null : (requester.providerSessionId ?? null),
-    providerSessionProviderId:
-      provider === null ? null : (requester.providerSessionProviderId ?? null),
+    providerSessionProviderId: requester.providerSessionProviderId ?? null,
   });
   const plan = resolveGrantExecution({
     requesterRole,
@@ -405,6 +463,7 @@ export const applyNeedDisposition = async ({
       ? transferPacketFor({
           requester,
           replacementRole: plan.replacementRole,
+          evidenceRefs: request.evidenceRefs,
           get,
           sessionId,
         })
@@ -433,6 +492,7 @@ export const applyNeedDisposition = async ({
       parentAgentId: requester.id,
       executionPurpose: 'capability',
       obligationId: obligation.id,
+      generationPurpose: obligation.purpose,
       ...(obligation.workflowRunId !== null && { workflowRunId: obligation.workflowRunId }),
       ...(stepProvider !== null && { provider: stepProvider }),
       ...(disposition.step.model !== undefined && { model: disposition.step.model }),

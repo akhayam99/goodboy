@@ -49,7 +49,6 @@ const {
 
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentGenerationReserve: generationReserveSpy,
-  invokeAgentGenerationBind: async () => undefined,
   invokeEvidenceInventoryRecord: async () => undefined,
   invokeEvidenceDeliveryRecord: async () => undefined,
   invokeAgentInsert: invokeAgentInsertSpy,
@@ -285,6 +284,34 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     );
   });
 
+  it('records a parented spawn as a capability child bound to its reservation', async () => {
+    const { spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, { name: 'handoff', parentAgentId: 'agent-parent' as AgentId });
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        executionPurpose: 'capability',
+        parentAgentId: 'agent-parent',
+        generationReservationId: 'reservation:0',
+      }),
+    );
+  });
+
+  it('keeps an explicit purpose on a parented spawn', async () => {
+    const { spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, {
+      name: 'handoff',
+      parentAgentId: 'agent-parent' as AgentId,
+      executionPurpose: 'standalone',
+    });
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ executionPurpose: 'standalone' }),
+    );
+  });
+
   it('seeds routing overrides from the workspace role model', async () => {
     const { getState, spawn } = buildHarness([]);
 
@@ -398,6 +425,21 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
         creationPath: 'capability',
         obligationId: 'capability-obligation:requester-1:implementer:repair',
       }),
+    );
+  });
+
+  it('counts a replan attempt against the structural replan cap in the generation ledger', async () => {
+    const { spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, {
+      kindOverride: 'planner',
+      parentAgentId: 'requester-1' as AgentId,
+      executionPurpose: 'capability',
+      generationPurpose: 'replan',
+    });
+
+    expect(generationReserveSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ creationPath: 'capability', purpose: 'replan' }),
     );
   });
 

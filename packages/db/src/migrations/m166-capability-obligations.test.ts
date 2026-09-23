@@ -36,7 +36,7 @@ describe('m166 capability obligations', () => {
     await db.execute(
       `INSERT INTO agents (id, session_id, ordinal, name, status, kind, parent_agent_id, source_kind)
        VALUES ('root', 's1', 0, 'root', 'completed', 'planner', NULL, NULL),
-              ('child-cluster', 's1', 1, 'cluster child', 'completed', 'implementer', 'root', NULL),
+              ('child-implementer', 's1', 1, 'handoff child', 'completed', 'implementer', 'root', NULL),
               ('child-delegate', 's1', 2, 'delegate', 'completed', 'scout', 'root', 'open_question'),
               ('child-ambiguous', 's1', 3, 'scout child', 'completed', 'scout', 'root', NULL)`,
     );
@@ -48,7 +48,7 @@ describe('m166 capability obligations', () => {
     }>('SELECT id, execution_purpose FROM agents ORDER BY ordinal');
     expect(rows).toEqual([
       { id: 'root', execution_purpose: 'standalone' },
-      { id: 'child-cluster', execution_purpose: 'cluster' },
+      { id: 'child-implementer', execution_purpose: null },
       { id: 'child-delegate', execution_purpose: 'question-delegate' },
       { id: 'child-ambiguous', execution_purpose: null },
     ]);

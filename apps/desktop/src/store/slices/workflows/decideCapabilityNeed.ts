@@ -30,7 +30,9 @@ import {
   buildNeedRequest,
   buildUnresolvedObligations,
 } from './buildNeedPacket';
+import { resolveInvocationLimits } from '../../../shared/lib/invocationAdmission';
 import { spentUsdForRun } from './budgetBlock';
+import { recordOrchestratorUsage } from './recordOrchestratorUsage';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -125,10 +127,39 @@ export const decideCapabilityNeed = ({
     const graph = (get().clusterExecutionGraphs?.[sessionId] ?? []).find(
       (candidate) => candidate.containerAgentId === requester.parentAgentId,
     );
+    const providerIdentity =
+      get().workspaceOverrides[session.workspaceId]?.providerBindings?.[routing.providerId] ??
+      get().authResults?.[routing.providerId]?.identity ??
+      null;
     const client = new OrchestratorClient({
       ...routing,
       invokeFn: invoke,
       ...(worktreePath !== null && { workingDir: worktreePath }),
+      invocation: {
+        invocationId: crypto.randomUUID(),
+        workspaceId: session.workspaceId,
+        sessionId,
+        ...(obligation.workflowRunId !== null && { workflowRunId: obligation.workflowRunId }),
+        agentId: requester.id,
+        ...(providerIdentity != null && { providerIdentity }),
+        purpose: 'orchestrator',
+        isHeavyweight: false,
+        limits: resolveInvocationLimits({
+          providerId: routing.providerId,
+          workspaceOverride: get().workspaceOverrides[session.workspaceId],
+        }),
+      },
+      onUsage: (usage) =>
+        recordOrchestratorUsage({
+          set,
+          get,
+          sessionId,
+          agentId: requester.id,
+          workflowRunId: obligation.workflowRunId,
+          provider: routing.providerId,
+          model: usage.model ?? routing.model,
+          usage,
+        }),
     });
     const allowances = await allowancesFor({ get, sessionId, obligationId });
     let decision: OrchestratorDecision | null = null;
@@ -153,7 +184,7 @@ export const decideCapabilityNeed = ({
           excludeObligationId: obligation.id,
         }),
         ...(graph !== undefined && {
-          graphRevision: `${graph.containerAgentId}@v${graph.graph.executionVersion}`,
+          graphRevision: `${graph.containerAgentId}@r${graph.revision}`,
         }),
         allowances: {
           ...allowances,

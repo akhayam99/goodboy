@@ -18,7 +18,7 @@ export const renderEvidenceInventory = ({
   readonly inventory: EvidenceInventory;
 }): string => {
   const header = `## evidence inventory (revision ${inventory.revision})`;
-  if (inventory.entries.length === 0) {
+  if (inventory.entries.length === 0 && inventory.omittedCount === 0) {
     return [
       header,
       'nothing is on record for you yet. there is nothing more to ask for.',

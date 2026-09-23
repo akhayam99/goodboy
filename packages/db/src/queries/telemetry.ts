@@ -62,8 +62,8 @@ function toDomain(row: TelemetryRow): TelemetryRecord {
   };
 }
 
-export const insertTelemetry = async (db: Database, record: TelemetryRecord): Promise<void> => {
-  await db.execute(
+export const insertTelemetry = async (db: Database, record: TelemetryRecord): Promise<boolean> => {
+  const inserted = await db.execute(
     `INSERT INTO telemetry_records
       (id, run_id, session_id, kind, provider, model, input_tokens, output_tokens, cached_input_tokens, cache_creation_input_tokens, context_tokens, estimated_cost_usd, recorded_at, invocation_id, workflow_run_id, agent_id, purpose, usage_event_id, attribution_status)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -90,8 +90,9 @@ export const insertTelemetry = async (db: Database, record: TelemetryRecord): Pr
       record.attributionStatus ?? 'unattributed',
     ],
   );
+  const isInserted = inserted.rowsAffected > 0;
   if (record.invocationId == null) {
-    return;
+    return isInserted;
   }
   await db.execute(
     `UPDATE invocation_tickets
@@ -108,6 +109,7 @@ export const insertTelemetry = async (db: Database, record: TelemetryRecord): Pr
       WHERE id = ? AND reservation_status IN ('reserved', 'settled')`,
     [record.invocationId, Date.parse(record.recordedAt), record.invocationId],
   );
+  return isInserted;
 };
 
 export const listTelemetryForSession = async (

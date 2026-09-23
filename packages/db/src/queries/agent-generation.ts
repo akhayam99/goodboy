@@ -133,6 +133,7 @@ const resolveLineage = async ({
   const seen = new Set<AgentId>();
   let cursor: AgentId = parentAgentId;
   let root: AgentId = parentAgentId;
+  let structuralDepth = 0;
   for (let step = 0; step < ANCESTRY_WALK_CAP; step++) {
     if (seen.has(cursor)) {
       return { kind: 'invalid', reason: 'the parent lineage contains a cycle' };
@@ -154,6 +155,7 @@ const resolveLineage = async ({
       break;
     }
     cursor = row.parent_agent_id;
+    structuralDepth += 1;
     if (step === ANCESTRY_WALK_CAP - 1) {
       return { kind: 'invalid', reason: 'the parent lineage is deeper than the walk cap' };
     }
@@ -165,7 +167,7 @@ const resolveLineage = async ({
   return {
     kind: 'resolved',
     causalRootAgentId: root,
-    parentDepth: depthRows[0]?.depth ?? 0,
+    parentDepth: Math.max(depthRows[0]?.depth ?? 0, structuralDepth),
   };
 };
 
@@ -182,9 +184,24 @@ const countOf = async ({
   return rows[0]?.total ?? 0;
 };
 
+const generationRefusalScope = ({
+  parentAgentId,
+  workflowRunId,
+}: {
+  readonly parentAgentId: AgentId | null;
+  readonly workflowRunId: WorkflowRunId | null;
+}): string => {
+  if (parentAgentId !== null) {
+    return `agent:${parentAgentId}`;
+  }
+  if (workflowRunId !== null) {
+    return `run:${workflowRunId}`;
+  }
+  return 'session';
+};
+
 const recordRefusal = async ({
   db,
-  reservationId,
   sessionId,
   workflowRunId,
   parentAgentId,
@@ -194,7 +211,6 @@ const recordRefusal = async ({
   reason,
 }: {
   readonly db: Database;
-  readonly reservationId: string;
   readonly sessionId: SessionId;
   readonly workflowRunId: WorkflowRunId | null;
   readonly parentAgentId: AgentId | null;
@@ -205,14 +221,15 @@ const recordRefusal = async ({
 }): Promise<boolean> => {
   const result = await db.execute(
     `INSERT OR IGNORE INTO generation_refusals
-       (id, session_id, workflow_run_id, parent_agent_id, causal_root_agent_id, obligation_id,
-        limit_name, reason, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, session_id, workflow_run_id, parent_agent_id, scope_key, causal_root_agent_id,
+        obligation_id, limit_name, reason, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      `generation-refusal:${reservationId}:${limit}`,
+      `generation-refusal:${crypto.randomUUID()}`,
       sessionId,
       workflowRunId,
-      parentAgentId ?? 'none',
+      parentAgentId,
+      generationRefusalScope({ parentAgentId, workflowRunId }),
       causalRootAgentId,
       obligationId,
       limit,
@@ -241,7 +258,6 @@ export const reserveAgentGeneration = async ({
   if (lineage.kind === 'invalid') {
     const isFirstRefusal = await recordRefusal({
       db,
-      reservationId,
       sessionId,
       workflowRunId,
       parentAgentId,
@@ -297,7 +313,6 @@ export const reserveAgentGeneration = async ({
   if (verdict.kind === 'refused') {
     const isFirstRefusal = await recordRefusal({
       db,
-      reservationId,
       sessionId,
       workflowRunId,
       parentAgentId,
@@ -309,9 +324,10 @@ export const reserveAgentGeneration = async ({
     return { kind: 'refused', limit: verdict.limit, reason: verdict.reason, isFirstRefusal };
   }
   const now = Date.now();
+  const attempt = `${reservationId}:${crypto.randomUUID()}`;
   const reservations: GenerationReservation[] = [];
   for (let index = 0; index < count; index++) {
-    const id = `${reservationId}:${index}`;
+    const id = `${attempt}:${index}`;
     const result = await db.execute(
       `INSERT INTO agent_generation_ledger
          (id, session_id, workflow_run_id, parent_agent_id, causal_root_agent_id, agent_id, depth,
@@ -367,7 +383,6 @@ export const reserveAgentGeneration = async ({
       const raceReason = 'another path took the remaining generation allowance first';
       const isFirstRefusal = await recordRefusal({
         db,
-        reservationId,
         sessionId,
         workflowRunId,
         parentAgentId,
@@ -398,13 +413,18 @@ export const bindAgentGeneration = async ({
   bindings,
 }: BindAgentGenerationParams): Promise<void> => {
   for (const binding of bindings) {
-    await db.execute(
+    const result = await db.execute(
       `UPDATE agent_generation_ledger
           SET agent_id = ?,
               causal_root_agent_id = CASE WHEN parent_agent_id IS NULL THEN ? ELSE causal_root_agent_id END
-        WHERE id = ?`,
+        WHERE id = ? AND agent_id IS NULL`,
       [binding.agentId, binding.agentId, binding.reservationId],
     );
+    if (result.rowsAffected === 0) {
+      throw new Error(
+        `reservation ${binding.reservationId} is missing or already bound to an agent`,
+      );
+    }
   }
 };
 
@@ -426,7 +446,7 @@ export type GenerationRefusal = Readonly<{
   id: string;
   sessionId: SessionId;
   workflowRunId: WorkflowRunId | null;
-  parentAgentId: string;
+  parentAgentId: AgentId | null;
   causalRootAgentId: AgentId | null;
   obligationId: string | null;
   limitName: GenerationLimitName;
@@ -438,7 +458,7 @@ type RefusalRow = {
   readonly id: string;
   readonly session_id: SessionId;
   readonly workflow_run_id: WorkflowRunId | null;
-  readonly parent_agent_id: string;
+  readonly parent_agent_id: AgentId | null;
   readonly causal_root_agent_id: AgentId | null;
   readonly obligation_id: string | null;
   readonly limit_name: GenerationLimitName;

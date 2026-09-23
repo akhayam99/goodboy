@@ -154,6 +154,39 @@ describe('capability grant delivery', () => {
     expect(grants[0]?.state).toBe('delivered');
   });
 
+  it('unbinds the verifier of the earlier attempt once a replacement is bound', async () => {
+    const db = await seed();
+    await db.execute(
+      "INSERT INTO agents (id, session_id, ordinal, name, status, workflow_run_id) VALUES ('verifier', 'session', 2, 'Verify', 'completed', 'run')",
+    );
+    await db.execute(
+      "INSERT INTO agents (id, session_id, ordinal, name, status, workflow_run_id) VALUES ('replacement', 'session', 3, 'Resume', 'running', 'run')",
+    );
+    await recordCapabilityNeed({ db, need });
+    await claimCapabilityGrant({ db, grant: grantSeed });
+    await updateCapabilityGrant({
+      db,
+      obligationId: need.obligationId,
+      state: 'delivered',
+      childAgentId,
+      replacementAgentId: null,
+      verificationAgentId: 'verifier' as AgentId,
+    });
+
+    const replaced = await updateCapabilityGrant({
+      db,
+      obligationId: need.obligationId,
+      state: 'delivered',
+      childAgentId: null,
+      replacementAgentId: 'replacement' as AgentId,
+      verificationAgentId: null,
+    });
+
+    expect(replaced?.childAgentId).toBe(childAgentId);
+    expect(replaced?.replacementAgentId).toBe('replacement');
+    expect(replaced?.verificationAgentId).toBeNull();
+  });
+
   it('keeps a refused obligation visible and unowned with its reason', async () => {
     const db = await seed();
     await recordCapabilityNeed({ db, need });

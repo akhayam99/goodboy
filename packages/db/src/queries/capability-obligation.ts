@@ -381,6 +381,7 @@ export type ClaimCapabilityObligationOwnerParams = {
 export type CapabilityObligationClaim =
   | Readonly<{ kind: 'owned'; obligationId: string; ownerAgentId: AgentId }>
   | Readonly<{ kind: 'attached'; obligationId: string; ownerAgentId: AgentId }>
+  | Readonly<{ kind: 'not-claimable'; obligationId: string; state: CapabilityObligationState }>
   | Readonly<{ kind: 'unknown-obligation' }>;
 
 export const claimCapabilityObligationOwner = async ({
@@ -393,7 +394,10 @@ export const claimCapabilityObligationOwner = async ({
     `UPDATE capability_obligations
         SET owner_agent_id = ?, child_agent_id = ?, state = 'granted', decision = 'granted',
             updated_at = ?
-      WHERE identity = ? AND owner_agent_id IS NULL`,
+      WHERE identity = ?
+        AND owner_agent_id IS NULL
+        AND state = 'open'
+        AND (decision IS NULL OR decision = 'refinement')`,
     [ownerAgentId, childAgentId, Date.now(), identity],
   );
   const rows = await db.select<CapabilityObligationRow>(
@@ -406,7 +410,7 @@ export const claimCapabilityObligationOwner = async ({
   }
   const owner = row.owner_agent_id;
   if (owner === null) {
-    return { kind: 'unknown-obligation' };
+    return { kind: 'not-claimable', obligationId: row.id, state: row.state };
   }
   if (claimed.rowsAffected > 0) {
     return { kind: 'owned', obligationId: row.id, ownerAgentId: owner };
@@ -567,10 +571,22 @@ export const updateCapabilityGrant = async ({
         SET state = ?,
             child_agent_id = COALESCE(?, child_agent_id),
             replacement_agent_id = COALESCE(?, replacement_agent_id),
-            verification_agent_id = COALESCE(?, verification_agent_id),
+            verification_agent_id = CASE
+              WHEN ? IS NOT NULL THEN ?
+              ELSE COALESCE(?, verification_agent_id)
+            END,
             updated_at = ?
       WHERE obligation_id = ?`,
-    [state, childAgentId, replacementAgentId, verificationAgentId, Date.now(), obligationId],
+    [
+      state,
+      childAgentId,
+      replacementAgentId,
+      replacementAgentId,
+      verificationAgentId,
+      verificationAgentId,
+      Date.now(),
+      obligationId,
+    ],
   );
   const rows = await db.select<CapabilityGrantRow>(
     'SELECT * FROM capability_grants WHERE obligation_id = ?',

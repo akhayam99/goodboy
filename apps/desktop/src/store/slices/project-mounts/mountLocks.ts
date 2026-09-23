@@ -1,5 +1,5 @@
 import {
-  acquireWriterLease,
+  acquireWriterLeaseWaiting,
   releaseWriterLease,
   repositoryWriterResource,
 } from '../../../features/worktree/writerLease';
@@ -38,7 +38,7 @@ const withRepositoryWriterLease = async <T>({
   mountKey,
   run,
 }: RepoLockParams<T>): Promise<T> => {
-  const lease = await acquireWriterLease({
+  const lease = await acquireWriterLeaseWaiting({
     holder: `mount:${mountKey}`,
     resources: [repositoryWriterResource({ repoRoot })],
   });
