@@ -47,5 +47,6 @@ coverage/
 .goodboy/
 
 # refactor plan stays local
-REFACTOR_PLAN.md
+/*_PLAN.md
+/*_PROMPT.md
 SCOUT_FANOUT_DESIGN.md
