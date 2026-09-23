@@ -72,8 +72,31 @@ const readPalette = (block: string): Palette => {
   for (const match of block.matchAll(pattern)) {
     palette[String(match[1])] = oklchToSrgb(Number(match[2]), Number(match[3]), Number(match[4]));
   }
+  const hexPattern = /--color-([a-z0-9-]+):\s*#([0-9a-f]{6})\s*;/gi;
+  for (const match of block.matchAll(hexPattern)) {
+    const value = String(match[2]);
+    palette[String(match[1])] = [
+      Number.parseInt(value.slice(0, 2), 16) / 255,
+      Number.parseInt(value.slice(2, 4), 16) / 255,
+      Number.parseInt(value.slice(4, 6), 16) / 255,
+    ];
+  }
   return palette;
 };
+
+const composite = ({
+  foreground,
+  background,
+  alpha,
+}: {
+  foreground: Rgb;
+  background: Rgb;
+  alpha: number;
+}): Rgb => [
+  foreground[0] * alpha + background[0] * (1 - alpha),
+  foreground[1] * alpha + background[1] * (1 - alpha),
+  foreground[2] * alpha + background[2] * (1 - alpha),
+];
 
 const readThemes = (): Readonly<Record<'dark' | 'light', Palette>> => {
   const css = readFileSync(STYLES, 'utf8');
@@ -110,6 +133,49 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     expect(contrast(swatch(palette, 'border'), swatch(palette, surface))).toBeGreaterThanOrEqual(
       LARGE_FLOOR,
     );
+  });
+
+  it.each(SURFACES)('keeps tone text readable on its tint over %s', (surface) => {
+    const failures = TONES.map((tone) => ({
+      tone,
+      ratio: contrast(
+        swatch(palette, tone),
+        composite({
+          foreground: swatch(palette, tone),
+          background: swatch(palette, surface),
+          alpha: 0.1,
+        }),
+      ),
+    })).filter(({ ratio }) => ratio < BODY_FLOOR);
+    expect(failures).toEqual([]);
+  });
+
+  it.each(SURFACES)('keeps agent labels readable on %s', (surface) => {
+    const failures = Object.keys(palette)
+      .filter((token) => token.startsWith('agent-'))
+      .map((token) => ({
+        token,
+        ratio: contrast(swatch(palette, token), swatch(palette, surface)),
+      }))
+      .filter(({ ratio }) => ratio < BODY_FLOOR);
+    expect(failures).toEqual([]);
+  });
+
+  it.each(SURFACES)('keeps provider glyphs visible on %s', (surface) => {
+    const failures = Object.keys(palette)
+      .filter((token) => token.startsWith('provider-'))
+      .map((token) => ({
+        token,
+        ratio: contrast(swatch(palette, token), swatch(palette, surface)),
+      }))
+      .filter(({ ratio }) => ratio < LARGE_FLOOR);
+    expect(failures).toEqual([]);
+  });
+
+  it('separates the soft border from the elevated surface', () => {
+    expect(
+      contrast(swatch(palette, 'border-soft'), swatch(palette, 'elevated')),
+    ).toBeGreaterThanOrEqual(1.2);
   });
 
   it.each(SURFACES)('keeps the focus ring visible at 3:1 on %s', (surface) => {
