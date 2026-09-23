@@ -1,6 +1,6 @@
 use serde::Serialize;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
@@ -21,7 +21,9 @@ fn codex_home() -> Option<PathBuf> {
 
 fn sorted_children_desc(dir: &Path) -> Vec<PathBuf> {
     let mut children: Vec<PathBuf> = match std::fs::read_dir(dir) {
-        Ok(entries) => entries.filter_map(|entry| entry.ok().map(|e| e.path())).collect(),
+        Ok(entries) => entries
+            .filter_map(|entry| entry.ok().map(|e| e.path()))
+            .collect(),
         Err(_) => Vec::new(),
     };
     children.sort();
@@ -64,7 +66,10 @@ fn context_from_line(line: &str) -> Option<CodexRolloutContext> {
         Some(total) => total,
         None => {
             let input = last.get("input_tokens").and_then(|v| v.as_u64())?;
-            let output = last.get("output_tokens").and_then(|v| v.as_u64()).unwrap_or(0);
+            let output = last
+                .get("output_tokens")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0);
             input + output
         }
     };
@@ -74,12 +79,34 @@ fn context_from_line(line: &str) -> Option<CodexRolloutContext> {
     })
 }
 
-fn last_context<R: BufRead>(reader: R) -> Option<CodexRolloutContext> {
-    reader
-        .lines()
-        .map_while(Result::ok)
-        .filter_map(|line| context_from_line(&line))
-        .last()
+const TAIL_CHUNK: u64 = 64 * 1024;
+
+fn context_from_bytes(line: &[u8]) -> Option<CodexRolloutContext> {
+    context_from_line(std::str::from_utf8(line).ok()?)
+}
+
+fn last_context<R: Read + Seek>(mut reader: R) -> Option<CodexRolloutContext> {
+    let mut end = reader.seek(SeekFrom::End(0)).ok()?;
+    let mut carry: Vec<u8> = Vec::new();
+    while end > 0 {
+        let start = end.saturating_sub(TAIL_CHUNK);
+        let mut chunk = vec![0u8; (end - start) as usize];
+        reader.seek(SeekFrom::Start(start)).ok()?;
+        reader.read_exact(&mut chunk).ok()?;
+        chunk.extend_from_slice(&carry);
+        let mut lines = chunk.split(|byte| *byte == b'\n').collect::<Vec<_>>();
+        let head = if start > 0 {
+            lines.remove(0).to_vec()
+        } else {
+            Vec::new()
+        };
+        if let Some(context) = lines.iter().rev().find_map(|line| context_from_bytes(line)) {
+            return Some(context);
+        }
+        carry = head;
+        end = start;
+    }
+    None
 }
 
 fn rollout_context(thread_id: &str) -> Option<CodexRolloutContext> {
@@ -91,7 +118,7 @@ fn rollout_context(thread_id: &str) -> Option<CodexRolloutContext> {
         return None;
     }
     let path = find_rollout(&codex_home()?.join("sessions"), thread_id)?;
-    last_context(BufReader::new(File::open(path).ok()?))
+    last_context(File::open(path).ok()?)
 }
 
 #[tauri::command]
@@ -121,6 +148,24 @@ mod tests {
                 context_tokens: 55612,
                 context_window: Some(258400),
             })
+        );
+    }
+
+    #[test]
+    fn reads_the_last_request_across_chunk_boundaries() {
+        let filler = format!(
+            "{{\"type\":\"response_item\",\"text\":\"{}\"}}",
+            "x".repeat(200_000)
+        );
+        let rollout = [TOKEN_COUNT_EARLY, &filler, TOKEN_COUNT_LATE, &filler].join("\n");
+        assert_eq!(
+            last_context(Cursor::new(rollout)).map(|c| c.context_tokens),
+            Some(55612)
+        );
+        let only_early = [TOKEN_COUNT_EARLY, &filler, &filler].join("\n");
+        assert_eq!(
+            last_context(Cursor::new(only_early)).map(|c| c.context_tokens),
+            Some(1010)
         );
     }
 

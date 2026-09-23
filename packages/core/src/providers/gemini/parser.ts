@@ -72,7 +72,7 @@ const readNumber = ({ payload, key }: ReadNumberParams): number | undefined => {
   return value;
 };
 
-const LAST_REQUEST_CONTEXT = new Map<ProviderRunId, number>();
+const LAST_REQUEST_CONTEXT = new WeakMap<ParseContext, number>();
 
 const requestContextTokens = ({ raw }: RequestContextParams): number | undefined => {
   const totalTokens = readNumber({ payload: raw, key: 'total_tokens' });
@@ -169,7 +169,7 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
       }
       const stepContext = requestContextTokens({ raw: toRecord({ value: stepUpdate['usage'] }) });
       if (stepContext != null) {
-        LAST_REQUEST_CONTEXT.set(ctx.runId, stepContext);
+        LAST_REQUEST_CONTEXT.set(ctx, stepContext);
       }
       const delta = stepUpdate['text_delta'];
       if (typeof delta !== 'string' || delta.length === 0) {
@@ -181,8 +181,8 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
     case 'result': {
       const result = toRecord({ value: payload.result });
       const rawUsage = toRecord({ value: result?.['usage'] });
-      const lastRequest = LAST_REQUEST_CONTEXT.get(ctx.runId);
-      LAST_REQUEST_CONTEXT.delete(ctx.runId);
+      const lastRequest = LAST_REQUEST_CONTEXT.get(ctx);
+      LAST_REQUEST_CONTEXT.delete(ctx);
       const isSingleRequest = result?.['num_turns'] === 1;
       const contextTokens = isSingleRequest ? requestContextTokens({ raw: rawUsage }) : lastRequest;
       const events: TurnEvent[] = [

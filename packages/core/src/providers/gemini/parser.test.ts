@@ -173,10 +173,11 @@ describe('parseJsonLine (gemini stream-json)', () => {
           },
         },
       });
-    parse({ line: step(12000) });
-    parse({ line: step(18000) });
-    const events = parse({
-      line: JSON.stringify({
+    const turnContext: ParseContext = { ...ctx };
+    parseJsonLine(step(12000), turnContext);
+    parseJsonLine(step(18000), turnContext);
+    const events = parseJsonLine(
+      JSON.stringify({
         event: 'result',
         result: {
           conversation_id: 'fe3759b4',
@@ -185,7 +186,8 @@ describe('parseJsonLine (gemini stream-json)', () => {
           usage: { input_tokens: 30000, output_tokens: 20, total_tokens: 30020 },
         },
       }),
-    });
+      turnContext,
+    );
     const usage = events.find((event) => event.kind === 'usage');
     expect(usage?.kind === 'usage' && usage.usage.contextTokens).toBe(18010);
     expect(usage?.kind === 'usage' && usage.usage.inputTokens).toBe(30000);
