@@ -48,12 +48,12 @@ export const ArtifactIdentityBand = ({
         <ArrowLeft size={ICON_SIZE.row} aria-hidden />
         All artifacts
       </Button>
-      <h1
+      <h2
         data-testid="artifact-title"
         className="min-w-0 shrink truncate text-sm font-semibold leading-snug text-foreground"
       >
         {artifact.title}
-      </h1>
+      </h2>
       <ArtifactStatusChip kind={artifact.kind} status={artifact.status} />
       {stateChip}
       <IconButton

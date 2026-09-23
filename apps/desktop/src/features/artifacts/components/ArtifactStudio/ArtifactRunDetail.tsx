@@ -55,9 +55,9 @@ export const ArtifactRunDetail = ({
           <ArrowLeft size={ICON_SIZE.row} aria-hidden />
           All artifacts
         </Button>
-        <h1 className="min-w-0 shrink truncate text-sm font-semibold leading-snug text-foreground">
+        <h2 className="min-w-0 shrink truncate text-sm font-semibold leading-snug text-foreground">
           {generation.title}
-        </h1>
+        </h2>
         <Chip
           tone={presentation.tone}
           size="xs"

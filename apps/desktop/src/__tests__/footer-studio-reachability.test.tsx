@@ -127,13 +127,9 @@ vi.mock('../features/integrations/github/useGithubConnection', () => ({
 }));
 
 vi.mock('../features/inbox/components/InboxStudio', () => ({
-  InboxStudio: ({
-    workspaceName,
-    initialProvider,
-  }: {
-    workspaceName: string;
-    initialProvider: string | null;
-  }) => <div data-testid="inbox-studio">{`${workspaceName}:${initialProvider ?? 'all'}`}</div>,
+  InboxStudio: ({ initialProvider }: { initialProvider: string | null }) => (
+    <div data-testid="inbox-studio">{initialProvider ?? 'all'}</div>
+  ),
 }));
 
 vi.mock('../features/session/components/CommandPalette', () => ({
@@ -198,26 +194,18 @@ vi.mock('../features/workspace/components/WorkspaceSwitcher', () => ({
 vi.mock('../features/workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('../features/workflows/components/WorkflowStudio', () => ({ WorkflowStudio: () => null }));
 vi.mock('../features/impact/components/ImpactStudio', () => ({
-  ImpactStudio: ({
-    workspaceName,
-    initialScope,
-  }: {
-    workspaceName: string;
-    initialScope?: { kind: string; sessionId?: string };
-  }) => (
+  ImpactStudio: ({ initialScope }: { initialScope?: { kind: string; sessionId?: string } }) => (
     <div
       data-testid="impact-studio"
       data-scope={initialScope?.kind ?? 'none'}
       data-session={initialScope?.sessionId ?? ''}
     >
-      {workspaceName}
+      Impact
     </div>
   ),
 }));
 vi.mock('../features/changelog/components/ChangelogStudio', () => ({
-  ChangelogStudio: ({ workspaceName }: { workspaceName: string }) => (
-    <div data-testid="changelog-studio">{workspaceName}</div>
-  ),
+  ChangelogStudio: () => <div data-testid="changelog-studio">Changelog</div>,
 }));
 vi.mock('../features/permissions/components/DiffViewerDialog', () => ({
   DiffViewerDialog: () => null,
@@ -284,7 +272,7 @@ describe('Slack studio reachability', () => {
     expect(screen.queryByTestId('inbox-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Launch a session from a Slack thread' }));
 
-    expect((await screen.findByTestId('inbox-studio')).textContent).toBe('Workspace:slack');
+    expect((await screen.findByTestId('inbox-studio')).textContent).toBe('slack');
   });
 
   it('opens Tools settings when slack is not connected', async () => {
@@ -362,7 +350,7 @@ describe('Bitbucket studio reachability', () => {
       screen.getByRole('button', { name: 'Review pull requests across this workspace' }),
     );
 
-    expect(screen.getByTestId('inbox-studio').textContent).toBe('Workspace:bitbucket');
+    expect(screen.getByTestId('inbox-studio').textContent).toBe('bitbucket');
   });
 
   it('still opens the studio when bitbucket is not connected, so the connect form is reachable', () => {
@@ -414,7 +402,7 @@ describe('Footer to settings and more-popover reachability', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open impact' }));
 
     const studio = await screen.findByTestId('impact-studio');
-    expect(studio.textContent).toBe('Workspace');
+    expect(studio.textContent).toBe('Impact');
     expect(studio.getAttribute('data-scope')).toBe('none');
   });
 
@@ -435,7 +423,7 @@ describe('Footer to settings and more-popover reachability', () => {
     expect(screen.queryByTestId('changelog-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open changelog' }));
 
-    expect((await screen.findByTestId('changelog-studio')).textContent).toBe('Workspace');
+    expect((await screen.findByTestId('changelog-studio')).textContent).toBe('Changelog');
   });
 });
 
@@ -515,7 +503,7 @@ describe('Linear connection routing', () => {
     state.workspaceIntegrations = { 'workspace-1': [{ provider: 'linear' }] };
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Open Linear' }));
-    expect(screen.getByTestId('inbox-studio').textContent).toBe('Workspace:linear');
+    expect(screen.getByTestId('inbox-studio').textContent).toBe('linear');
     expect(screen.queryByTestId('settings-studio')).toBeNull();
   });
 });

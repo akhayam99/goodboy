@@ -394,7 +394,7 @@ describe('ArtifactStudio', () => {
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('Session report'));
     const detail = screen.getByTestId('artifact-detail');
-    expect(screen.getByRole('heading', { level: 1, name: 'Session report' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'Session report' })).toBeDefined();
     expect(within(detail).queryByText('reporter')).toBeNull();
     expect(within(detail).queryByText('rev 2')).toBeNull();
     fireEvent.click(screen.getByTestId('artifact-details-toggle'));
