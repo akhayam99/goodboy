@@ -76,6 +76,7 @@ Rules around slices:
 - `store/store.ts` only composes slices. No domain logic.
 - The shared `SetFn`/`GetFn` live in `store/slice-types.ts` (typed against `AppStore`).
 - A helper shared between files inside a slice is exported through the slice's `index.ts` only when code outside the slice needs it. Otherwise, import it straight from its source file.
+- Runtime memory keyed by session, agent or workflow run lives in `AppState` and is registered in `SESSION_EVICTION` (`store/sessionEviction.ts`). The type guard there fails until every state key says how it is torn down. Slices read these counters through `get()`, never through a component selector. A module-level collection is allowed only in three cases: in-flight promise dedup that deletes itself in `finally`, a tombstone that must outlive its agent (`purgedAgentIds`), or a per-key queue that drops its key once drained (`shared/utils/keyedQueue.ts`).
 
 ## Test file placement
 

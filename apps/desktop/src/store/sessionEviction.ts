@@ -108,6 +108,8 @@ export const SESSION_EVICTION = [
   { key: 'agentTurnState', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentTurnDestination', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'clusterStartAttempts', keyedBy: 'agent', evictOn: 'delete' },
+  { key: 'clusterStepStartAttempts', keyedBy: 'agent', evictOn: 'delete' },
+  { key: 'workflowContinueAttempts', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentModelOverride', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentProviderOverride', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentEffortOverride', keyedBy: 'agent', evictOn: 'delete' },

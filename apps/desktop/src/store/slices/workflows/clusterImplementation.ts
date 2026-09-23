@@ -18,11 +18,9 @@ import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../
 import { composeKickoff, composeUnitBoundary } from '../../kickoff';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { revalidateChildRouting } from './revalidateChildRouting';
-import { isHandsFree } from './handsFree';
+import { continueOrPause, resetContinueAttempts } from './autoContinue';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
-
-const MAX_CONTINUE = 1;
 
 const MAX_START_ATTEMPTS = 3;
 
@@ -37,12 +35,6 @@ const DETERMINISTIC_START_FAILURES: ReadonlyArray<RegExp> = [
   /resolved model args omit/i,
   /agent not found/i,
 ];
-
-const continueAttempts = new Map<string, number>();
-
-const childStartAttempts = new Map<string, number>();
-
-const stepStartAttempts = new Map<string, number>();
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
@@ -107,6 +99,7 @@ type StartChildParams = {
   readonly containerId: AgentId;
   readonly childId: AgentId;
   readonly content: string;
+  readonly attempt?: number;
 };
 
 const failChildStart = async ({
@@ -151,10 +144,11 @@ const handleChildStartFailure = async ({
   error,
 }: StartChildParams & { readonly error: unknown }): Promise<void> => {
   const message = error instanceof Error ? error.message : String(error);
-  const failures = (childStartAttempts.get(childId) ?? 0) + 1;
-  const stepFailures = (stepStartAttempts.get(containerId) ?? 0) + 1;
-  childStartAttempts.set(childId, failures);
-  stepStartAttempts.set(containerId, stepFailures);
+  const failures = get().clusterStartAttempts[childId] ?? 1;
+  const stepFailures = (get().clusterStepStartAttempts[containerId] ?? 0) + 1;
+  set((s) => ({
+    clusterStepStartAttempts: { ...s.clusterStepStartAttempts, [containerId]: stepFailures },
+  }));
 
   if (producedWork(get, childId) || !isTransientStartFailure(error)) {
     await failChildStart({ set, get, sessionId, childId, reason: `${message}.` });
@@ -195,7 +189,7 @@ const handleChildStartFailure = async ({
     if (turn?.kind === 'running' || turn?.kind === 'starting') {
       return;
     }
-    startChild({ set, get, sessionId, containerId, childId, content });
+    startChild({ set, get, sessionId, containerId, childId, content, attempt: failures + 1 });
   }, delayMs);
 };
 
@@ -206,8 +200,8 @@ function startChild({
   containerId,
   childId,
   content,
+  attempt = get().clusterStartAttempts[childId] ?? 1,
 }: StartChildParams): void {
-  const attempt = (childStartAttempts.get(childId) ?? 0) + 1;
   set((s) => ({
     agentTurnState: {
       ...s.agentTurnState,
@@ -608,38 +602,27 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     );
 
     if (!opts?.force && !extractClusterDone(assistantText)) {
-      const handsFree = isHandsFree(get, sessionId, child.workflowRunId);
-      const attempts = continueAttempts.get(childAgentId) ?? 0;
-      if (handsFree && attempts < MAX_CONTINUE) {
-        continueAttempts.set(childAgentId, attempts + 1);
-        startChild({
-          set,
-          get,
-          sessionId,
-          containerId,
-          childId: childAgentId,
-          content: composeContinuePrompt(childAgentId, clusters[index]),
-        });
-      } else {
-        continueAttempts.delete(childAgentId);
-        await invokeAgentUpdateStatus(childAgentId, { status: 'failed', completedAt: nowIso() });
-        const stalled = await invokeAgentList(sessionId);
-        set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: stalled } }));
-        void get().refreshUnreadWorkspaces();
-        void get().emitNotification(
-          'error',
-          'warning',
-          `cluster paused: ${child.name}`,
-          handsFree
-            ? 'the implementer stopped before completing this cluster. open the agent and continue manually.'
-            : 'autorun is off, so this cluster will not continue on its own. open the agent and continue manually, or enable autorun.',
-          { sessionId },
-        );
-      }
+      await continueOrPause({
+        set,
+        get,
+        sessionId,
+        agent: child,
+        workflowRunId: child.workflowRunId,
+        unit: 'cluster',
+        restart: () =>
+          startChild({
+            set,
+            get,
+            sessionId,
+            containerId,
+            childId: childAgentId,
+            content: composeContinuePrompt(childAgentId, clusters[index]),
+          }),
+      });
       return;
     }
 
-    continueAttempts.delete(childAgentId);
+    resetContinueAttempts({ set, get, agentId: childAgentId });
     const outputSummary =
       assistantText.length > 0
         ? await summarizeWorkflowAgentOutput({

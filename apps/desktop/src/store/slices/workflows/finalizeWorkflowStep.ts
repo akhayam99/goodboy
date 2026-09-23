@@ -5,14 +5,10 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { composeStepBoundary } from '../../kickoff';
 import { resumeClusterChildren, unsettledClusterChildren } from './clusterImplementation';
-import { isHandsFree } from './handsFree';
+import { continueOrPause, resetContinueAttempts } from './autoContinue';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 import { pendingMountContinuations } from '../turn/mountContinuations';
-
-const MAX_CONTINUE = 1;
-
-const continueAttempts = new Map<string, number>();
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
@@ -79,34 +75,22 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
     if (!satisfied) {
       const askedQuestion = extractMarkers(assistantText).questions.length > 0;
       if (askedQuestion) {
-        continueAttempts.delete(agentId);
+        resetContinueAttempts({ set, get, agentId });
         return { shouldAutoAdvance: false };
       }
-      const handsFree = isHandsFree(get, sessionId, agent.workflowRunId);
-      const attempts = continueAttempts.get(agentId) ?? 0;
-      if (handsFree && attempts < MAX_CONTINUE) {
-        continueAttempts.set(agentId, attempts + 1);
-        startStep(set, get, sessionId, agentId, composeStepContinue(agentId));
-      } else {
-        continueAttempts.delete(agentId);
-        await invokeAgentUpdateStatus(agentId, { status: 'failed', completedAt: nowIso() });
-        const stalled = await invokeAgentList(sessionId);
-        set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: stalled } }));
-        void get().refreshUnreadWorkspaces();
-        void get().emitNotification(
-          'error',
-          'warning',
-          `step paused: ${agent.name}`,
-          handsFree
-            ? 'the agent stopped before emitting a step-done marker. open the agent and continue manually.'
-            : 'autorun is off, so this step will not continue on its own. open the agent and continue manually, or enable autorun.',
-          { sessionId },
-        );
-      }
+      await continueOrPause({
+        set,
+        get,
+        sessionId,
+        agent,
+        workflowRunId: agent.workflowRunId,
+        unit: 'step',
+        restart: () => startStep(set, get, sessionId, agentId, composeStepContinue(agentId)),
+      });
       return { shouldAutoAdvance: false };
     }
 
-    continueAttempts.delete(agentId);
+    resetContinueAttempts({ set, get, agentId });
     const outputSummary = await summarizeWorkflowAgentOutput({
       set,
       get,

@@ -122,10 +122,19 @@ const buildHarness = ({ sessions = [session], agents = [agent] }: Params = {}) =
     refreshUnreadWorkspaces: vi.fn(),
     emitNotification: vi.fn(),
     sendTurn: vi.fn(),
+    agentTurnState: {},
+    workflowContinueAttempts: {},
   };
-  const set = vi.fn();
+  const set = vi.fn((update: unknown) => {
+    const patch = typeof update === 'function' ? update(state) : update;
+    Object.assign(state, patch);
+  });
   const get = (() => state) as unknown as Parameters<typeof finalizeWorkflowStep>[1];
-  return finalizeWorkflowStep(set as unknown as Parameters<typeof finalizeWorkflowStep>[0], get);
+  const finalize = finalizeWorkflowStep(
+    set as unknown as Parameters<typeof finalizeWorkflowStep>[0],
+    get,
+  );
+  return Object.assign(finalize, { state });
 };
 
 describe('finalizeWorkflowStep output summary', () => {
@@ -209,6 +218,7 @@ describe('finalizeWorkflowStep output summary', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     summarizeStepOutputSpy.mockRejectedValue(new Error('provider unavailable'));
     const state = {
+      workflowContinueAttempts: {},
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       sessions: [session],
       workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
@@ -257,6 +267,7 @@ describe('finalizeWorkflowStep output summary', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     summarizeStepOutputSpy.mockRejectedValue(new Error('timeout'));
     const state = {
+      workflowContinueAttempts: {},
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       sessions: [session],
       workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
@@ -347,6 +358,54 @@ describe('finalizeWorkflowStep output summary', () => {
     );
 
     expect(result).toEqual({ shouldAutoAdvance: false });
+    expect(finalize.state.sendTurn).toHaveBeenCalledTimes(1);
+    expect(finalize.state.sendTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: SESSION_ID,
+        agentId: AGENT_ID,
+        origin: 'workflow',
+        content: expect.stringContaining('<<step-done id="agent-1">>'),
+      }),
+    );
+    expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
+  });
+
+  it('pauses the step with a notification once the single continue is spent', async () => {
+    const finalize = buildHarness();
+
+    await finalize(SESSION_ID, AGENT_ID, 'stopped early', false);
+    const result = await finalize(SESSION_ID, AGENT_ID, 'stopped again', false);
+
+    expect(result).toEqual({ shouldAutoAdvance: false });
+    expect(finalize.state.sendTurn).toHaveBeenCalledTimes(1);
+    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({ status: 'failed' }),
+    );
+    expect(finalize.state.emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'step paused: Implement',
+      expect.stringContaining('step-done marker'),
+      { sessionId: SESSION_ID },
+    );
+    expect(finalize.state.workflowContinueAttempts).toEqual({});
+  });
+
+  it('gives the continue back after the agent asks a question', async () => {
+    const finalize = buildHarness();
+
+    await finalize(SESSION_ID, AGENT_ID, 'stopped early', false);
+    await finalize(
+      SESSION_ID,
+      AGENT_ID,
+      '<<ctx-question>>which flow types?<</ctx-question>>',
+      false,
+    );
+    await finalize(SESSION_ID, AGENT_ID, 'stopped again', false);
+
+    expect(finalize.state.sendTurn).toHaveBeenCalledTimes(2);
+    expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
   });
 
   it('accepts a step-done marker whose id matches no known agent', async () => {
@@ -417,6 +476,8 @@ describe('finalizeWorkflowStep output summary', () => {
       ],
     };
     const state = {
+      workflowContinueAttempts: {},
+      clusterStartAttempts: {},
       sessionPhaseRuns: { [SESSION_ID]: [agent, child] },
       sessions: [session],
       sessionPlans: { [SESSION_ID]: [plan] },
@@ -468,6 +529,7 @@ describe('finalizeWorkflowStep output summary', () => {
       status: 'failed',
     };
     const state = {
+      workflowContinueAttempts: {},
       sessionPhaseRuns: { [SESSION_ID]: [agent, child] },
       sessions: [session],
       sessionPlans: {},
@@ -512,6 +574,7 @@ describe('finalizeWorkflowStep output summary', () => {
 
   it('does not notify the inbox for the session-missing guard fallback (excluded from I6)', async () => {
     const state = {
+      workflowContinueAttempts: {},
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       sessions: [],
       workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],

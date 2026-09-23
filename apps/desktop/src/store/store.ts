@@ -1108,6 +1108,8 @@ export const initialState: AppState = {
   runRouting: {},
   agentTurnState: {},
   clusterStartAttempts: {},
+  clusterStepStartAttempts: {},
+  workflowContinueAttempts: {},
   unknownPayloadCounts: {},
   detectedEditors: [],
   workspaceOverrides: {},

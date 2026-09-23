@@ -59,6 +59,9 @@ export const discardWorkflow = (set: SetFn, get: GetFn) => {
     }
     const chainedSet = new Set(chainedIds);
 
+    const ownIds = new Set<string>(ownRuns.map((r) => r.id));
+    const withoutOwn = (counters: Readonly<Record<AgentId, number>>) =>
+      Object.fromEntries(Object.entries(counters).filter(([agentId]) => !ownIds.has(agentId)));
     let derived: TurnState | null = null;
     set((s) => {
       const nextTurnState = { ...s.agentTurnState, ...frozen };
@@ -69,6 +72,8 @@ export const discardWorkflow = (set: SetFn, get: GetFn) => {
       derived = deriveSessionState(survivorStates, now);
       return {
         agentTurnState: nextTurnState,
+        workflowContinueAttempts: withoutOwn(s.workflowContinueAttempts),
+        clusterStepStartAttempts: withoutOwn(s.clusterStepStartAttempts),
         sessions: s.sessions.map((sess) =>
           sess.id === sessionId
             ? {

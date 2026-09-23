@@ -464,6 +464,9 @@ function makeStore(initial: Record<string, unknown>) {
     refreshUnreadWorkspaces,
     maybeAutoAdvanceWorkflow,
     loadSessionPlans,
+    clusterStartAttempts: {},
+    clusterStepStartAttempts: {},
+    workflowContinueAttempts: {},
     ...initial,
   };
   const get = (() => state) as unknown as GetFn;
@@ -1767,7 +1770,7 @@ describe('cluster child start retry', () => {
     vi.useFakeTimers();
     withUniqueChildIds('retry-a');
     const c = container({ id: 'container-a' as AgentId });
-    const { get, set, sendTurn, emitNotification } = makeStore({
+    const { get, set, sendTurn, emitNotification, state } = makeStore({
       sessionPhaseRuns: { [SID]: [c] },
       clusterStartAttempts: {},
     });
@@ -1796,6 +1799,8 @@ describe('cluster child start retry', () => {
       expect.any(String),
       { sessionId: SID },
     );
+    expect(state.clusterStepStartAttempts).toEqual({ 'container-a': 3 });
+    expect(state.clusterStartAttempts).toEqual({ 'retry-a-1': 3 });
   });
 
   it('stops retrying a child once its workflow run is discarded', async () => {
