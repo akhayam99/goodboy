@@ -176,27 +176,17 @@ export type {
   WorkflowTaskProfile,
   WorkflowTaskType,
 } from './workflow-routing';
-export { PROVIDER_API_KEY_ENV, PROVIDER_IDS } from './provider-registry';
+export { PROVIDER_IDS } from './provider-registry';
 export type { OpenCodeRouting, ProviderKind } from './provider-catalog';
-export {
-  OPENCODE_ROUTING,
-  PROVIDER_KIND,
-  isApiProvider,
-  opencodeModelArg,
-} from './provider-catalog';
 export type { ProviderCredential } from './provider-credential';
-export { CLI_CREDENTIAL } from './provider-credential';
 export type {
   ProviderLifecycleAction,
   ProviderLifecycleCommands,
   ProviderPlatform,
   ProviderPlatformCommands,
 } from './provider-commands';
-export { PROVIDER_LIFECYCLE_COMMANDS } from './provider-commands';
 export type { ProviderConnectCapability, ProviderConnectTier } from './provider-connect';
-export { PROVIDER_CONNECT_CAPABILITIES } from './provider-connect';
 export type { SessionProviderPreference, TurnProviderOverride } from './provider-preference';
-export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './provider-preference';
 export type { Skill, SkillFrontmatter, SkillInvocation, SlashCommand } from './skill';
 export type {
   BudgetRule,
@@ -235,7 +225,6 @@ export type {
   TaskModelPreferences,
   VerbosityLevel,
 } from './settings';
-export { TASKS } from './settings';
 export type {
   BranchCommit,
   BranchIntegration,

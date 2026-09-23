@@ -189,6 +189,18 @@ export { PROVIDER_ID_TO_NAME, resolveProvider, type ResolveProviderInput } from 
 
 export { computeCostUsd, priceFor } from './providers/claude/cost';
 export { getProviderModelPrice } from './providers/model-price';
+export {
+  OPENCODE_ROUTING,
+  PROVIDER_KIND,
+  isApiProvider,
+  opencodeModelArg,
+} from './providers/provider-catalog';
+export { PROVIDER_LIFECYCLE_COMMANDS } from './providers/provider-commands';
+export { PROVIDER_CONNECT_CAPABILITIES } from './providers/provider-connect';
+export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './providers/provider-preference';
+export { CLI_CREDENTIAL } from './providers/provider-credential';
+export { PROVIDER_API_KEY_ENV } from './providers/provider-api-key-env';
+export { TASKS } from './settings/tasks';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
 export {

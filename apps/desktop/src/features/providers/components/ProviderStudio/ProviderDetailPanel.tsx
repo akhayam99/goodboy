@@ -1,3 +1,4 @@
+import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider } from '@goodboy/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Button,
@@ -10,7 +11,7 @@ import {
   tintClasses,
 } from '@goodboy/ui';
 import { RotateCw, Unplug, type LucideIcon } from 'lucide-react';
-import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider, type ProviderId } from '@goodboy/types';
+import { type ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';

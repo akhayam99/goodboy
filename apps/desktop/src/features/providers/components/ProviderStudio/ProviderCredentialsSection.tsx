@@ -1,3 +1,4 @@
+import { PROVIDER_API_KEY_ENV } from '@goodboy/core';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Button,
@@ -11,7 +12,7 @@ import {
   tintClasses,
 } from '@goodboy/ui';
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
-import { PROVIDER_API_KEY_ENV, type CredentialId, type ProviderId } from '@goodboy/types';
+import { type CredentialId, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';

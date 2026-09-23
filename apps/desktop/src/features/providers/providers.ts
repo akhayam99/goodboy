@@ -1,10 +1,10 @@
+import { isApiProvider } from '@goodboy/core';
 import { invoke } from '@tauri-apps/api/core';
 import type {
   ProviderConnectionState,
   ProviderInfo as ProviderInfoBase,
   ProviderId,
 } from '@goodboy/types';
-import { isApiProvider } from '@goodboy/types';
 
 type AuthStateKind = 'connected' | 'disconnected' | 'unknown';
 

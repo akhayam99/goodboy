@@ -1,7 +1,8 @@
+import { PROVIDER_CONNECT_CAPABILITIES } from '@goodboy/core';
 import { useEffect, useRef } from 'react';
 import { Button, Collapsible, cn } from '@goodboy/ui';
 import { CheckCircle2 } from 'lucide-react';
-import { PROVIDER_CONNECT_CAPABILITIES, type ProviderId } from '@goodboy/types';
+import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openUrl } from '../../../../shared/lib/editor';
 import { PROVIDER_LABEL_LOWER } from '../../providers';

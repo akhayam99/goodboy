@@ -1,6 +1,7 @@
+import { isApiProvider } from '@goodboy/core';
 import { useEffect } from 'react';
 import { Button, ScrollFade } from '@goodboy/ui';
-import { isApiProvider, type ProviderId } from '@goodboy/types';
+import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
 import { ProviderConnect } from '../ProviderConnect';

@@ -1,5 +1,11 @@
-import type { IsoDateTime, MountId, Session, SessionId, WorkspaceId } from '@goodboy/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  MountId,
+  Session,
+  SessionId,
+  SessionProviderPreference,
+  WorkspaceId,
+} from '@goodboy/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
@@ -12,6 +18,11 @@ import {
   updateSessionAutoRun,
   updateSessionWriteDestination,
 } from './session';
+
+const PROVIDER_PREFERENCE = {
+  defaultProvider: 'anthropic',
+  allowTurnOverride: true,
+} satisfies SessionProviderPreference;
 
 const workspaceId = 'workspace-1' as WorkspaceId;
 const sessionId = 'session-1' as SessionId;
@@ -367,7 +378,7 @@ describe('session auto_run', () => {
     goal: 'Free agents, hands free',
     state: { kind: 'idle', lastActivityAt: NOW },
     contextSlots: [],
-    providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+    providerPreference: PROVIDER_PREFERENCE,
     permissionMode: 'bypassPermissions',
     workflowRuns: [],
     autoRun,

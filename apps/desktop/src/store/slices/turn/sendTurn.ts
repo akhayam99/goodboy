@@ -16,6 +16,9 @@ import {
   runsForWorkflowRun,
   turnReducer,
   type ClaudeFlagSet,
+  CLI_CREDENTIAL,
+  PROVIDER_API_KEY_ENV,
+  isApiProvider,
 } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import {
@@ -50,8 +53,6 @@ import type {
   Workflow,
   WorkflowRunId,
 } from '@goodboy/types';
-import { CLI_CREDENTIAL, PROVIDER_API_KEY_ENV } from '@goodboy/types';
-import { isApiProvider } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokePermissionRuleList } from '../../../features/permissions/permissions';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';

@@ -1,3 +1,4 @@
+import type { SessionProviderPreference } from '@goodboy/types';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -17,7 +18,6 @@ import type {
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import type { Database } from '../client';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
@@ -32,6 +32,11 @@ import {
   listWorktreesForSession,
   deleteWorktreesForSession,
 } from '../queries/session-worktree';
+
+const PROVIDER_PREFERENCE = {
+  defaultProvider: 'anthropic',
+  allowTurnOverride: true,
+} satisfies SessionProviderPreference;
 
 const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 const preProjectMigrations = migrations.filter((migration) => migration.version <= 116);
@@ -687,7 +692,7 @@ describe('migrate', () => {
       goal: 'refactor auth',
       state: { kind: 'idle', lastActivityAt: now() },
       contextSlots: [],
-      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      providerPreference: PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,
@@ -760,7 +765,7 @@ describe('migrate', () => {
       goal: 'test workflow',
       state: { kind: 'draft' },
       contextSlots: [],
-      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      providerPreference: PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,
@@ -887,7 +892,7 @@ describe('migrate', () => {
       goal: 'worktree test',
       state: { kind: 'draft' },
       contextSlots: [],
-      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      providerPreference: PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,

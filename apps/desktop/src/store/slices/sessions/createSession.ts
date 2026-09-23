@@ -1,3 +1,4 @@
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
 import type {
   Agent,
   AttachmentInput,
@@ -15,7 +16,6 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import {
   deleteSession,
   insertSession,

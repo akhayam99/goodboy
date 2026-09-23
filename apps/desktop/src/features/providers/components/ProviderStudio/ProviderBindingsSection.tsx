@@ -1,7 +1,8 @@
+import { CLI_CREDENTIAL, isApiProvider } from '@goodboy/core';
 import { useMemo } from 'react';
 import { SectionHeader, Select } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
-import { CLI_CREDENTIAL, isApiProvider, type ProviderId } from '@goodboy/types';
+import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 

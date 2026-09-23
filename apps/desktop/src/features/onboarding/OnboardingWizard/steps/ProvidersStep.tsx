@@ -1,7 +1,8 @@
+import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider } from '@goodboy/core';
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { Button } from '@goodboy/ui';
-import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider, type ProviderId } from '@goodboy/types';
+import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PROVIDER_LABEL_LOWER, type ProviderInfo } from '../../../providers/providers';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';

@@ -209,7 +209,7 @@ The timers live in `apps/desktop/src/store/slices/providers/connectProvider.ts`:
 ### Connect tiers
 
 Each provider's connect options live in one table, not in UI code. The table is
-`PROVIDER_CONNECT_CAPABILITIES` in `packages/types/src/provider-connect.ts`.
+`PROVIDER_CONNECT_CAPABILITIES` in `packages/core/src/providers/provider-connect.ts`.
 
 | Provider                       | Tier        | Why                              |
 | ------------------------------ | ----------- | -------------------------------- |
@@ -228,7 +228,7 @@ Each provider's connect options live in one table, not in UI code. The table is
 ### Commands per provider
 
 The exact commands Goodboy runs live in `PROVIDER_LIFECYCLE_COMMANDS` in
-`@goodboy/types` (`packages/types/src/provider-commands.ts`). If this page and that
+`@goodboy/core` (`packages/core/src/providers/provider-commands.ts`). If this page and that
 constant disagree, the constant is right.
 
 | Provider                       | Connect                        | Disconnect                | Sign-in check         |
