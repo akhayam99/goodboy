@@ -109,7 +109,7 @@ export const Hero = () => (
           </a>
         </div>
         <p className="reassure rvi" style={delay(240)}>
-          <b>Free and open source (MIT), every feature included.</b> It lives on your computer, no
+          <b>Free and source-available, every feature included.</b> It lives on your computer, no
           account.
         </p>
         <p className="reassure rvi" style={delay(300)}>

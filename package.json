@@ -3,7 +3,7 @@
   "version": "0.3.15",
   "private": true,
   "description": "AI workspace orchestrator. Local-first, provider-agnostic.",
-  "license": "MIT",
+  "license": "FSL-1.1-MIT",
   "author": "Amin Khayam <amin@khayam.dev>",
   "repository": {
     "type": "git",

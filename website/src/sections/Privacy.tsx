@@ -32,7 +32,7 @@ export const Privacy = () => (
       </p>
       <div className="pledge rv" style={delay(220)}>
         <span>every feature free</span>
-        <span>open source (MIT)</span>
+        <span>source-available (FSL)</span>
         <span>delete the file and the data is gone</span>
       </div>
       <a className="more rv" style={delay(260)} href={SITE.privacy}>
