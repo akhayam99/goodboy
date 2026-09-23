@@ -36,7 +36,7 @@ Apart from signing in to a provider, Goodboy goes online in two cases:
 
 ### Pairing a phone
 
-Pairing a phone opens a listener on your local network, and only when you open the pairing studio. It listens on every network interface, on a random port, until you quit or press **Disconnect**. A phone joins by scanning a one-time code that expires after 60 seconds, then completing an encrypted Noise XK handshake. Paired phones are kept in an allow list on this machine. A paired phone can send messages, start agents and workflows, resolve review comments and merge pull requests, so pairing a phone lets it run agents on this machine. **Disconnect** forgets every paired phone at once. Details are in [docs/companion.md](./docs/companion.md).
+Pairing a phone opens a listener on your local network, and only when you open the pairing studio. It listens on every network interface, on a random port. If you close the studio with no phone paired, the listener stops. Once a phone is paired, it stays up until you quit or press **Disconnect**. A phone joins by scanning a one-time code that expires after 60 seconds, then completing an encrypted Noise XK handshake. Paired phones are kept in an allow list on this machine. A paired phone can send messages, start agents and workflows, resolve review comments and merge pull requests, so pairing a phone lets it run agents on this machine. **Disconnect** forgets every paired phone at once. Details are in [docs/companion.md](./docs/companion.md).
 
 ## Releases
 

@@ -7,6 +7,7 @@ import {
   bridgeRevoke,
   bridgeStart,
   bridgeStatus,
+  bridgeStop,
   type BridgeStatus,
   type QrInfo,
 } from '../../bridge';
@@ -72,6 +73,13 @@ export const CompanionStudio = ({ onClose }: Props) => {
   }, [mint]);
 
   const enrolled = status?.enrolledCount ?? 0;
+
+  const close = useCallback(() => {
+    if (enrolled === 0) {
+      void bridgeStop().catch(() => undefined);
+    }
+    onClose();
+  }, [enrolled, onClose]);
   const isPaired = enrolled > 0;
   const isLoadingStatus = loading && status === null;
   const showsCode = !isPaired || isPairingAnother || error !== null;
@@ -101,7 +109,7 @@ export const CompanionStudio = ({ onClose }: Props) => {
       title="Pair device"
       workspaceName="Connect Goodboy mobile"
       closeLabel="Close pairing"
-      onClose={onClose}
+      onClose={close}
     >
       {() => (
         <ScrollFade

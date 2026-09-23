@@ -88,6 +88,29 @@ describe('CompanionStudio', () => {
     expect(await screen.findByTestId('pairing-qr')).toBeTruthy();
   });
 
+  it('stops the listener on close when no device is paired', async () => {
+    const onClose = vi.fn();
+    render(<CompanionStudio onClose={onClose} />);
+    await screen.findByTestId('pairing-qr');
+
+    fireEvent.click(screen.getByRole('button', { name: /Close pairing/ }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(invokedCommands()).toContain('bridge_stop');
+  });
+
+  it('keeps the listener on close while a device is paired', async () => {
+    mocks.enrolledCount = 1;
+    const onClose = vi.fn();
+    render(<CompanionStudio onClose={onClose} />);
+    await screen.findByText('1 paired device');
+
+    fireEvent.click(screen.getByRole('button', { name: /Close pairing/ }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(invokedCommands()).not.toContain('bridge_stop');
+  });
+
   it('cancelling the confirm keeps every device paired', async () => {
     mocks.enrolledCount = 1;
     render(<CompanionStudio onClose={() => undefined} />);

@@ -54,9 +54,10 @@ merges from the phone like it does on the desktop.
 
 ## Listener lifetime
 
-- Nothing listens at boot. The listener starts when the pairing studio opens
-  and then stays up until the app quits or Disconnect runs, whether or not a
-  phone is paired.
+- Nothing listens at boot. The listener starts when the pairing studio opens.
+  Closing the studio with no phone paired stops it; with at least one phone
+  paired it stays up so that phone can reconnect, until the app quits or
+  Disconnect runs.
 - It binds a random TCP port on all network interfaces, while the QR advertises
   only the primary LAN IPv4. A handshake without a live token or a known key
   is refused, but the port answers on every interface while it is open.

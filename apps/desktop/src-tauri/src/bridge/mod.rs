@@ -214,6 +214,12 @@ pub async fn bridge_revoke(state: State<'_, BridgeState>) -> Result<(), BridgeEr
 }
 
 #[tauri::command]
+pub async fn bridge_stop(state: State<'_, BridgeState>) -> Result<(), BridgeError> {
+    state.stop().await;
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn bridge_status(state: State<'_, BridgeState>) -> Result<BridgeStatus, BridgeError> {
     let inner = state.inner.lock().await;
     let enrolled_count = state.identity.lock().await.allow_list.len();
