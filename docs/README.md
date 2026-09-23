@@ -70,6 +70,8 @@ Below is the full index. Other docs and agents use it to find their way.
   check which glyph a concept already owns.
 - [brand.md](brand.md): when you draw the mascot, the logo with its name,
   an app icon or a social image.
+- [website/README.md](../website/README.md): when you change, build or
+  check the landing page.
 - [providers.md](providers.md): when you install, connect or manage a
   provider CLI.
 - [typescript/data.md](typescript/data.md): when you declare a type or a

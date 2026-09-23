@@ -14,7 +14,7 @@ These are the base rules for the Goodboy monorepo. Each workspace has its own `C
 
 - Every import must be declared in that package's `package.json`. No phantom deps (packages you import but never declared).
 - Never auto-update the lockfile in CI.
-- `website/` keeps its own `website/pnpm-lock.yaml`. Any change to `website/package.json` must regenerate it with `pnpm install --ignore-workspace`, run from `website/`. A plain root `pnpm install` never touches that lockfile. Vercel installs with `--frozen-lockfile`, so a stale lockfile fails every website build.
+- `website/` keeps its own `website/pnpm-lock.yaml`. Any change to `website/package.json` must regenerate it with `pnpm install --ignore-workspace`, run from `website/`. A plain root `pnpm install` never touches that lockfile. Vercel installs with `--frozen-lockfile`, so a stale lockfile fails every website build. How to build and check the site is in [website/README.md](./website/README.md).
 
 ## TypeScript config
 
