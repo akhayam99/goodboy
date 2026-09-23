@@ -210,7 +210,7 @@ export type {
   Workflow,
   WorkflowOrigin,
 } from './workflow';
-export { WORKFLOW_ORIGINS } from './workflow';
+export { WORKFLOW_ORIGINS, isWorkflowOrigin } from './workflow';
 export type {
   AuxTaskId,
   GlobalSettings,

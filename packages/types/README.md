@@ -2,7 +2,7 @@
 
 > **Read this when** you need the shared types, or the parts of the turn event contract that are easy to get wrong. **Not for** the detailed rules. See `CONVENTIONS.md`.
 
-Shared TypeScript types for the Goodboy monorepo. Zero runtime code, types only. `src/index.ts` is the catalogue. Read it to see every type.
+Shared TypeScript types for the Goodboy monorepo. The only runtime is the literal tables that derive a union and their one-line guards (see `CONVENTIONS.md`). `src/index.ts` is the catalogue. Read it to see every type.
 
 What you cannot tell from the code, and should know before touching the turn event contract:
 

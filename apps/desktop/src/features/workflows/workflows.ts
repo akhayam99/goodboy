@@ -34,7 +34,7 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
-import { WORKFLOW_ORIGINS } from '@goodboy/types';
+import { isWorkflowOrigin } from '@goodboy/types';
 
 type RawWorkflowStepRow = {
   readonly id: string;
@@ -183,9 +183,6 @@ function rowToStepDef(row: RawStepDefRow): StepDef {
     }),
   };
 }
-
-const isWorkflowOrigin = (value: string | null): value is WorkflowOrigin =>
-  value != null && (WORKFLOW_ORIGINS as ReadonlyArray<string>).includes(value);
 
 function rowToWorkflow(row: RawWorkflowRow): Workflow {
   return {

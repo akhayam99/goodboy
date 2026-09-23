@@ -9,10 +9,9 @@ import type {
   VerbosityLevel,
   Workflow,
   WorkflowId,
-  WorkflowOrigin,
   WorkspaceId,
 } from '@goodboy/types';
-import { WORKFLOW_ORIGINS } from '@goodboy/types';
+import { isWorkflowOrigin } from '@goodboy/types';
 import type { Database, PlainStatement } from '../client';
 import {
   isWorkflowRoutingDecision,
@@ -92,9 +91,6 @@ function toStep(row: StepRow): Step {
     taskProfile: routing.taskProfile,
   };
 }
-
-const isWorkflowOrigin = (value: string | null | undefined): value is WorkflowOrigin =>
-  value != null && (WORKFLOW_ORIGINS as ReadonlyArray<string>).includes(value);
 
 function toWorkflow(row: WorkflowRow, steps: ReadonlyArray<Step>): Workflow {
   return {

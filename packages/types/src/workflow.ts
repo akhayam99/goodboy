@@ -71,13 +71,12 @@ export type Step = Readonly<{
   deletedAt?: IsoDateTime;
 }>;
 
-export type WorkflowOrigin = 'library' | 'custom' | 'orchestrated';
+export const WORKFLOW_ORIGINS = ['library', 'custom', 'orchestrated'] as const;
 
-export const WORKFLOW_ORIGINS: ReadonlyArray<WorkflowOrigin> = [
-  'library',
-  'custom',
-  'orchestrated',
-];
+export type WorkflowOrigin = (typeof WORKFLOW_ORIGINS)[number];
+
+export const isWorkflowOrigin = (value: unknown): value is WorkflowOrigin =>
+  typeof value === 'string' && WORKFLOW_ORIGINS.some((origin) => origin === value);
 
 export type Workflow = Readonly<{
   id: WorkflowId;
