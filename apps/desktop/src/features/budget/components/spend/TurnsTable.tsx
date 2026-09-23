@@ -6,7 +6,9 @@ import {
   formatTokens,
   formatUsd,
   formatUsdPrecise,
+  SegmentedTabs,
   Tooltip,
+  type SegmentedTabOption,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
@@ -15,7 +17,6 @@ import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { StudioWidget } from '@goodboy/ui';
 import { sortTurns, type SortKey, type WorkspaceTurn } from './lib';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { SortChip } from './SortChip';
 
 type Props = {
   readonly turns: ReadonlyArray<WorkspaceTurn>;
@@ -29,6 +30,10 @@ type HandleSortKeyParams = {
 };
 
 const SORT_KEY_STORAGE = STORAGE_KEYS.pricingSortKey;
+const SORT_OPTIONS: ReadonlyArray<SegmentedTabOption<SortKey>> = [
+  { value: 'recent', label: 'Recent' },
+  { value: 'expensive', label: 'Most expensive' },
+];
 const PAGE_SIZE = 10;
 
 export const TurnsTable = ({
@@ -54,18 +59,13 @@ export const TurnsTable = ({
   };
 
   const action = (
-    <div className="flex gap-1">
-      <SortChip
-        active={sortKey === 'recent'}
-        onClick={() => handleSortKey({ key: 'recent' })}
-        label="recent"
-      />
-      <SortChip
-        active={sortKey === 'expensive'}
-        onClick={() => handleSortKey({ key: 'expensive' })}
-        label="expensive"
-      />
-    </div>
+    <SegmentedTabs
+      ariaLabel="Sort turns"
+      size="sm"
+      value={sortKey}
+      onChange={(key) => handleSortKey({ key })}
+      options={SORT_OPTIONS}
+    />
   );
 
   return (

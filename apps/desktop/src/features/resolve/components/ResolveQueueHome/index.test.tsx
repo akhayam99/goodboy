@@ -645,17 +645,17 @@ describe('the shape of the queue surface', () => {
     };
     render(<ResolveQueueHome session={SESSION} />);
 
-    expect(screen.getByRole('button', { name: 'Needs review 2' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Active 2' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Retryable 1' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Needs review\s*2$/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Active\s*2$/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Retryable\s*1$/ })).toBeDefined();
   });
 
   it('drops the count from every tab that has nothing, the third one included', () => {
     twoRows();
     render(<ResolveQueueHome session={SESSION} />);
 
-    expect(screen.getByRole('button', { name: 'Needs review 2' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Active 2' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Retryable' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Needs review\s*2$/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Active\s*2$/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Retryable' })).toBeDefined();
   });
 });

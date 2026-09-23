@@ -15,12 +15,12 @@ const counts = {
 } satisfies Record<ArtifactFilter, number>;
 
 describe('ArtifactFilterTabs', () => {
-  it('wraps the strip onto a second line in the compact rail', () => {
+  it('keeps one line in the compact rail and lets the section eyebrows carry counts', () => {
     render(<ArtifactFilterTabs value="all" counts={counts} isCompact onChange={() => {}} />);
     const tablist = screen.getByRole('tablist', { name: 'Artifact kind' });
 
-    expect(tablist.className).toContain('flex-wrap');
-    expect(tablist.className).not.toContain('w-max');
+    expect(tablist.className).not.toContain('flex-wrap');
+    expect(screen.getByRole('tab', { name: 'Plans' }).textContent).toBe('Plans');
   });
 
   it('keeps the max-content strip in the wide pane', () => {

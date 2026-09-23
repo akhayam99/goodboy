@@ -40,12 +40,12 @@ const renderGroups = ({ isCompact }: RenderParams) =>
   );
 
 describe('ArtifactGroups', () => {
-  it('hands the compact rail a wrapping strip with no horizontal scroller around it', () => {
+  it('hands the compact rail a one-line strip with no horizontal scroller around it', () => {
     renderGroups({ isCompact: true });
     const tablist = screen.getByRole('tablist', { name: 'Artifact kind' });
 
     expect(tablist.closest('.overflow-x-auto')).toBeNull();
-    expect(tablist.className).toContain('flex-wrap');
+    expect(tablist.className).not.toContain('flex-wrap');
   });
 
   it('keeps the wide pane strip inside the horizontal scroller', () => {

@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn, Divider, Popover, ScrollFade, SectionHeader, Tooltip, tintClasses } from '@goodboy/ui';
+import {
+  cn,
+  Divider,
+  Popover,
+  ScrollFade,
+  SectionHeader,
+  StatusDot,
+  Tooltip,
+  tintClasses,
+} from '@goodboy/ui';
 import type {
   MountId,
   SessionId,
@@ -13,6 +22,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { ScriptRunRecord, ScriptRunResult, ScriptRunStatus } from '../../scripts';
 import { MountPicker } from './MountPicker';
+import { SCRIPT_RUN_PRESENTATION } from '../ScriptsPanel/scriptRunPresentation';
 
 type ScriptsSectionProps = {
   readonly sessionId: SessionId;
@@ -229,7 +239,14 @@ function ScriptRow({
         isPending && cn(tintClasses('info').border),
       )}
     >
-      <StatusDot status={status} />
+      <StatusDot
+        tone={SCRIPT_RUN_PRESENTATION[status].dotTone}
+        pulsing={status === 'pending'}
+        {...(SCRIPT_RUN_PRESENTATION[status].dotLabel === null
+          ? {}
+          : { ariaLabel: SCRIPT_RUN_PRESENTATION[status].dotLabel })}
+        className="shrink-0"
+      />
       <span className="flex min-w-0 flex-1 items-baseline gap-1 text-xs">
         <span className="min-w-0 truncate font-medium text-foreground">{script.name}</span>
         {showProjectName ? (
@@ -394,35 +411,4 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
     </Popover>,
     document.body,
   );
-}
-
-function StatusDot({ status }: { readonly status: ScriptRunStatus }) {
-  if (status === 'ok') {
-    return (
-      <span
-        className="size-2 shrink-0 rounded-full bg-success"
-        aria-label="Last run ok"
-        role="img"
-      />
-    );
-  }
-  if (status === 'error') {
-    return (
-      <span
-        className="size-2 shrink-0 rounded-full bg-danger"
-        aria-label="Last run failed"
-        role="img"
-      />
-    );
-  }
-  if (status === 'cancelled') {
-    return (
-      <span
-        className="size-2 shrink-0 rounded-full bg-muted-foreground/50"
-        aria-label="Last run cancelled"
-        role="img"
-      />
-    );
-  }
-  return <span className="size-2 shrink-0 rounded-full bg-border" aria-hidden />;
 }

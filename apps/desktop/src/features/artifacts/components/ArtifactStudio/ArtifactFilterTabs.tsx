@@ -16,13 +16,13 @@ export const ArtifactFilterTabs = ({ value, counts, isCompact, onChange }: Props
   <SegmentedTabs
     ariaLabel="Artifact kind"
     size="sm"
-    className={isCompact ? 'shrink-0 flex-wrap' : 'w-max shrink-0'}
+    className="w-max shrink-0"
     value={value}
     onChange={onChange}
     options={ARTIFACT_FILTERS.map((filter) => ({
       value: filter,
       label: ARTIFACT_FILTER_LABEL[filter],
-      ...(counts[filter] > 0 && { badge: counts[filter] }),
+      ...(!isCompact && counts[filter] > 0 && { badge: counts[filter] }),
     }))}
   />
 );
