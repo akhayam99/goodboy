@@ -2206,7 +2206,10 @@ fn update_capability_grant(
             SET state = ?1,
                 child_agent_id = COALESCE(?2, child_agent_id),
                 replacement_agent_id = COALESCE(?3, replacement_agent_id),
-                verification_agent_id = COALESCE(?4, verification_agent_id),
+                verification_agent_id = CASE
+                    WHEN ?3 IS NOT NULL THEN ?4
+                    ELSE COALESCE(?4, verification_agent_id)
+                END,
                 updated_at = ?5
           WHERE obligation_id = ?6",
         rusqlite::params![
@@ -3914,6 +3917,40 @@ mod tests {
 
         assert_eq!(grant.child_agent_id, Some("child".to_string()));
         assert_eq!(grant.verification_agent_id, Some("verifier".to_string()));
+    }
+
+    #[test]
+    fn binding_a_replacement_unbinds_the_verifier_of_the_earlier_attempt() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+        claim_capability_grant(&conn, capability_grant_input()).unwrap();
+        update_capability_grant(
+            &conn,
+            CapabilityGrantUpdateInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                state: "delivered".to_string(),
+                child_agent_id: Some("child".to_string()),
+                replacement_agent_id: None,
+                verification_agent_id: Some("verifier".to_string()),
+            },
+        )
+        .unwrap();
+
+        let grant = update_capability_grant(
+            &conn,
+            CapabilityGrantUpdateInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                state: "delivered".to_string(),
+                child_agent_id: None,
+                replacement_agent_id: Some("replacement".to_string()),
+                verification_agent_id: None,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(grant.child_agent_id, Some("child".to_string()));
+        assert_eq!(grant.replacement_agent_id, Some("replacement".to_string()));
+        assert_eq!(grant.verification_agent_id, None);
     }
 
     #[test]

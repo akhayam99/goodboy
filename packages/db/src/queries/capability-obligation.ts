@@ -567,10 +567,22 @@ export const updateCapabilityGrant = async ({
         SET state = ?,
             child_agent_id = COALESCE(?, child_agent_id),
             replacement_agent_id = COALESCE(?, replacement_agent_id),
-            verification_agent_id = COALESCE(?, verification_agent_id),
+            verification_agent_id = CASE
+              WHEN ? IS NOT NULL THEN ?
+              ELSE COALESCE(?, verification_agent_id)
+            END,
             updated_at = ?
       WHERE obligation_id = ?`,
-    [state, childAgentId, replacementAgentId, verificationAgentId, Date.now(), obligationId],
+    [
+      state,
+      childAgentId,
+      replacementAgentId,
+      replacementAgentId,
+      verificationAgentId,
+      verificationAgentId,
+      Date.now(),
+      obligationId,
+    ],
   );
   const rows = await db.select<CapabilityGrantRow>(
     'SELECT * FROM capability_grants WHERE obligation_id = ?',
