@@ -225,6 +225,12 @@ Right: the launchers reached by name and a `More` popover for the rest.
 - Exactly one integration control has the active fill. It sits on the open
   glyph, or on the link action when that integration is disconnected. Opening
   any studio closes the others.
+- **Before any workspace exists, the footer keeps its app half**: Providers,
+  Settings, the beta pill and the update pip. The integration strip, Inbox,
+  Workflows and More belong to a workspace and wait for one. Settings then
+  lists only App and Providers & models, and Providers opens on an account
+  instead of on the workspace defaults. Precedent: VS Code keeps its status bar
+  and Manage gear with no folder open.
 
 ## Shortcuts
 

@@ -100,6 +100,7 @@ const targetFor = ({ overlay, connected = NONE_CONNECTED }: TargetParams) =>
   footerTarget({ overlay, connected });
 
 const footerProps = ({ overrides = {} }: Params = {}): FooterProps => ({
+  scope: 'workspace',
   target: null,
   connected: NONE_CONNECTED,
   onOpenIntegration: vi.fn(),
@@ -235,6 +236,25 @@ describe('AppFooter', () => {
       SETTINGS_LABEL,
       REST_MORE_LABEL,
     ]);
+  });
+
+  it('keeps only providers, settings and the update control without a workspace', () => {
+    storeState.updaterStatus = 'available';
+    render(
+      <AppFooter
+        {...footerProps({ overrides: { scope: 'app', connected: connectedWith(['github']) } })}
+      />,
+    );
+
+    const row = footerRow();
+    const names = Array.from(row?.children[2]?.querySelectorAll('button') ?? []).map(
+      (button) => button.getAttribute('aria-label') ?? button.textContent,
+    );
+
+    expect(names).toEqual(['Connect and manage your provider accounts', SETTINGS_LABEL]);
+    expect(screen.queryByRole('group', { name: 'Connected integrations' })).toBeNull();
+    expect(row?.children[1]?.contains(screen.getByTestId('update-indicator'))).toBe(true);
+    expect(row?.children[1]?.contains(screen.getByTestId('beta-badge-trigger'))).toBe(true);
   });
 
   it('parks the update call to action next to the beta pill', () => {

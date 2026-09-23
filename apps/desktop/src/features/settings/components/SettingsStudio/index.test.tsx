@@ -147,6 +147,35 @@ describe('SettingsStudio', () => {
     expect(screen.getByRole('button', { name: 'Providers & models' })).toBeDefined();
   });
 
+  it('lists only App and Providers without a workspace, and lands providers on an account', () => {
+    const { rerender } = render(
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'workspace' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const rail = screen.getByRole('navigation', { name: /settings scopes/i });
+    expect(
+      within(rail)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['App', 'Providers & models']);
+    expect(screen.getByRole('button', { name: 'App' }).getAttribute('aria-current')).toBe('true');
+
+    rerender(
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'providers' }}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Provider settings content')).toBeDefined();
+  });
+
   it('reports a rail click as a scope change instead of switching on its own', () => {
     const onScopeChange = vi.fn();
     render(

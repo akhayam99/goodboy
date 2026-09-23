@@ -119,27 +119,26 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
           )
         }
         footer={
-          arrangement.hasFooter ? (
-            <AppFooter
-              target={null}
-              connected={{
-                github: true,
-                linear: true,
-                jira: true,
-                sentry: true,
-                gitlab: false,
-                bitbucket: false,
-                slack: true,
-              }}
-              onOpenIntegration={noop}
-              onOpenInbox={noop}
-              onOpenWorkflows={noop}
-              onOpenProviders={noop}
-              onOpenSettings={noop}
-              onOpenImpact={noop}
-              onOpenChangelog={noop}
-            />
-          ) : undefined
+          <AppFooter
+            scope={arrangement.footer}
+            target={null}
+            connected={{
+              github: true,
+              linear: true,
+              jira: true,
+              sentry: true,
+              gitlab: false,
+              bitbucket: false,
+              slack: true,
+            }}
+            onOpenIntegration={noop}
+            onOpenInbox={noop}
+            onOpenWorkflows={noop}
+            onOpenProviders={noop}
+            onOpenSettings={noop}
+            onOpenImpact={noop}
+            onOpenChangelog={noop}
+          />
         }
         main={
           <div className="flex h-full w-full min-w-0 flex-col">

@@ -195,19 +195,18 @@ export const App = () => {
       <AppShell
         topBar={<AppTopBar onOpenSpend={openSpend} />}
         footer={
-          arrangement.hasFooter ? (
-            <AppFooter
-              target={footer}
-              connected={connected}
-              onOpenIntegration={openIntegration}
-              onOpenInbox={openInbox}
-              onOpenWorkflows={openWorkflows}
-              onOpenProviders={openProviders}
-              onOpenSettings={openSettings}
-              onOpenImpact={openImpact}
-              onOpenChangelog={openChangelog}
-            />
-          ) : undefined
+          <AppFooter
+            scope={arrangement.footer}
+            target={footer}
+            connected={connected}
+            onOpenIntegration={openIntegration}
+            onOpenInbox={openInbox}
+            onOpenWorkflows={openWorkflows}
+            onOpenProviders={openProviders}
+            onOpenSettings={openSettings}
+            onOpenImpact={openImpact}
+            onOpenChangelog={openChangelog}
+          />
         }
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}

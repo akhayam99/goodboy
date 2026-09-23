@@ -11,7 +11,7 @@ import { DefaultsPanel } from './DefaultsPanel';
 import { PROVIDER_ORDER } from './providerOrder';
 
 type Props = {
-  readonly workspaceId: WorkspaceId;
+  readonly workspaceId: WorkspaceId | null;
   readonly initialFocus?: ProviderId | null;
   readonly initialAction?: ProviderLifecycleAction | null;
 };
@@ -19,13 +19,15 @@ type Props = {
 export const ProviderSettingsScope = ({ workspaceId, initialFocus, initialAction }: Props) => {
   const providers = useAppStore((s) => s.providers);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
-  const [focused, setFocused] = useState<ProviderId | 'defaults'>(initialFocus ?? 'defaults');
+  const landing: ProviderId | 'defaults' =
+    initialFocus ?? (workspaceId === null ? (PROVIDER_ORDER[0] ?? 'defaults') : 'defaults');
+  const [focused, setFocused] = useState<ProviderId | 'defaults'>(landing);
   const [autoConnect, setAutoConnect] = useState(initialFocus != null && initialAction != null);
 
   useEffect(() => {
-    setFocused(initialFocus ?? 'defaults');
+    setFocused(landing);
     setAutoConnect(initialFocus != null && initialAction != null);
-  }, [initialAction, initialFocus]);
+  }, [initialAction, landing]);
 
   const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
     (p): p is ProviderDisplayInfo => p !== undefined,
@@ -59,15 +61,19 @@ export const ProviderSettingsScope = ({ workspaceId, initialFocus, initialAction
             providers={ordered}
             focusedId={focused}
             onSelect={onSelect}
-            onSelectDefaults={() => {
-              setAutoConnect(false);
-              setFocused('defaults');
-            }}
+            onSelectDefaults={
+              workspaceId === null
+                ? undefined
+                : () => {
+                    setAutoConnect(false);
+                    setFocused('defaults');
+                  }
+            }
           />
         </ScrollFade>
       }
       detail={
-        focused === 'defaults' ? (
+        focused === 'defaults' && workspaceId !== null ? (
           <DefaultsPanel workspaceId={workspaceId} />
         ) : (
           <ProviderDetailPanel

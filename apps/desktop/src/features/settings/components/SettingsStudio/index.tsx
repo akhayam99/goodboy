@@ -5,7 +5,7 @@ import { ProviderSettingsScope } from '../../../providers/components/ProviderStu
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { AppScopePanel } from './AppScopePanel';
-import { SettingsRail } from './SettingsRail';
+import { SettingsRail, settingsScopeAvailable } from './SettingsRail';
 import type { SettingsFocus, SettingsStudioScope } from './types';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
 
@@ -17,7 +17,10 @@ type Props = {
 };
 
 export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose }: Props) => {
-  const availableScope = currentWorkspace === null && focus.scope !== 'app' ? 'app' : focus.scope;
+  const hasWorkspace = currentWorkspace !== null;
+  const availableScope = settingsScopeAvailable({ scope: focus.scope, hasWorkspace })
+    ? focus.scope
+    : 'app';
 
   return (
     <StudioShell
@@ -37,6 +40,7 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
               <SettingsRail
                 scope={availableScope}
                 workspaceName={currentWorkspace?.name ?? null}
+                hasWorkspace={hasWorkspace}
                 onSelect={onScopeChange}
               />
             </ScrollFade>
@@ -50,9 +54,9 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
                 initialSection={focus.section}
                 requestClose={requestClose}
               />
-            ) : availableScope === 'providers' && currentWorkspace !== null ? (
+            ) : availableScope === 'providers' ? (
               <ProviderSettingsScope
-                workspaceId={currentWorkspace.id}
+                workspaceId={currentWorkspace?.id ?? null}
                 initialFocus={focus.provider}
                 initialAction={focus.action}
               />

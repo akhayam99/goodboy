@@ -107,7 +107,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
         className={actionClass}
       >
         <Plus size={ICON_SIZE.row} aria-hidden />
-        New workspace
+        Add workspace
       </button>
       <button
         type="button"

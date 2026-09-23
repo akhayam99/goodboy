@@ -158,7 +158,7 @@ export const WorkspaceLauncher = () => {
 
         <Button variant="secondary" onClick={addWorkspace} className="w-fit">
           <Plus size={ICON_SIZE.control} aria-hidden />
-          New workspace
+          Add workspace
         </Button>
 
         <Checkbox

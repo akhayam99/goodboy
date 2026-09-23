@@ -60,27 +60,26 @@ const BoardShellSceneContent = () => {
       leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
       leftSidebar={undefined}
       footer={
-        arrangement.hasFooter ? (
-          <AppFooter
-            target={null}
-            connected={{
-              github: true,
-              linear: true,
-              jira: true,
-              sentry: true,
-              gitlab: false,
-              bitbucket: false,
-              slack: false,
-            }}
-            onOpenIntegration={noop}
-            onOpenInbox={noop}
-            onOpenWorkflows={noop}
-            onOpenProviders={noop}
-            onOpenSettings={noop}
-            onOpenImpact={noop}
-            onOpenChangelog={noop}
-          />
-        ) : undefined
+        <AppFooter
+          scope={arrangement.footer}
+          target={null}
+          connected={{
+            github: true,
+            linear: true,
+            jira: true,
+            sentry: true,
+            gitlab: false,
+            bitbucket: false,
+            slack: false,
+          }}
+          onOpenIntegration={noop}
+          onOpenInbox={noop}
+          onOpenWorkflows={noop}
+          onOpenProviders={noop}
+          onOpenSettings={noop}
+          onOpenImpact={noop}
+          onOpenChangelog={noop}
+        />
       }
       main={<StageBoard workspaceId={WORKSPACE_ID} sessions={sessions} />}
     />

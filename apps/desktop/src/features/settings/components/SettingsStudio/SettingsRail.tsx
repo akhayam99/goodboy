@@ -6,19 +6,33 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 type Props = {
   readonly scope: SettingsStudioScope;
   readonly workspaceName: string | null;
+  readonly hasWorkspace: boolean;
   readonly onSelect: (params: { readonly scope: SettingsStudioScope }) => void;
 };
 
 const ITEMS = [
-  { scope: 'app', label: 'App', icon: Settings },
-  { scope: 'workspace', label: 'Workspace', icon: Wrench },
-  { scope: 'providers', label: 'Providers & models', icon: Boxes },
-  { scope: 'tools', label: 'Tools', icon: CONCEPT_ICONS.integrations },
-] satisfies ReadonlyArray<{ scope: SettingsStudioScope; label: string; icon: typeof Settings }>;
+  { scope: 'app', label: 'App', icon: Settings, needsWorkspace: false },
+  { scope: 'workspace', label: 'Workspace', icon: Wrench, needsWorkspace: true },
+  { scope: 'providers', label: 'Providers & models', icon: Boxes, needsWorkspace: false },
+  { scope: 'tools', label: 'Tools', icon: CONCEPT_ICONS.integrations, needsWorkspace: true },
+] satisfies ReadonlyArray<{
+  scope: SettingsStudioScope;
+  label: string;
+  icon: typeof Settings;
+  needsWorkspace: boolean;
+}>;
 
-export const SettingsRail = ({ scope, workspaceName, onSelect }: Props) => (
+export const settingsScopeAvailable = ({
+  scope,
+  hasWorkspace,
+}: {
+  readonly scope: SettingsStudioScope;
+  readonly hasWorkspace: boolean;
+}): boolean => hasWorkspace || ITEMS.some((item) => item.scope === scope && !item.needsWorkspace);
+
+export const SettingsRail = ({ scope, workspaceName, hasWorkspace, onSelect }: Props) => (
   <nav aria-label="Settings scopes" className={`flex flex-col gap-1 ${PANE_RHYTHM.navRail.body}`}>
-    {ITEMS.map((item) => {
+    {ITEMS.filter((item) => hasWorkspace || !item.needsWorkspace).map((item) => {
       const Icon = item.icon;
       const subtitle = item.scope === 'workspace' ? workspaceName : null;
       return (

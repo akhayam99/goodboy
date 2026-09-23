@@ -22,6 +22,12 @@ vi.mock('./DefaultsPanel', () => ({
   DefaultsPanel: () => <h1>Defaults</h1>,
 }));
 
+vi.mock('./ProviderDetailPanel', () => ({
+  ProviderDetailPanel: ({ info }: { info: { id: string } | null }) => (
+    <h1>{`detail ${info?.id ?? 'none'}`}</h1>
+  ),
+}));
+
 import { ProviderSettingsScope } from './index';
 
 afterEach(cleanup);
@@ -37,5 +43,14 @@ describe('ProviderSettingsScope', () => {
     expect(wrapper).not.toBeNull();
     expect(wrapper?.classList.contains('flex')).toBe(true);
     expect(Array.from(wrapper?.children ?? []).some((child) => child.contains(heading))).toBe(true);
+  });
+
+  it('hides Defaults without a workspace and opens the first provider instead', () => {
+    state.providers = [{ id: 'anthropic', connection: 'connected' }];
+    render(<ProviderSettingsScope workspaceId={null} />);
+
+    expect(screen.queryByRole('button', { name: 'Defaults' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Defaults' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'detail anthropic' })).toBeDefined();
   });
 });

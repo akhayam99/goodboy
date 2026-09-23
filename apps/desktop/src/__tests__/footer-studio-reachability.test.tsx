@@ -68,6 +68,7 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
 type FooterProvider = 'linear' | 'slack' | 'bitbucket' | 'github';
 
 type FooterProps = {
+  readonly scope: 'workspace' | 'app';
   readonly target: string | null;
   readonly connected: Readonly<Record<FooterProvider, boolean>>;
   readonly onOpenIntegration: (params: { readonly provider: FooterProvider }) => void;
@@ -86,6 +87,7 @@ const FOOTER_LABELS: ReadonlyArray<readonly [FooterProvider, string, string]> = 
 
 vi.mock('../app/components/AppFooter', () => ({
   AppFooter: ({
+    scope,
     target,
     connected,
     onOpenIntegration,
@@ -94,7 +96,7 @@ vi.mock('../app/components/AppFooter', () => ({
     onOpenImpact,
     onOpenChangelog,
   }: FooterProps) => (
-    <div data-testid="footer" data-target={target ?? ''}>
+    <div data-testid="footer" data-scope={scope} data-target={target ?? ''}>
       {FOOTER_LABELS.map(([provider, openLabel, connectLabel]) => (
         <button key={provider} type="button" onClick={() => onOpenIntegration({ provider })}>
           {connected[provider] ? openLabel : connectLabel}
@@ -251,7 +253,7 @@ vi.mock('../store', () => {
   return {
     useAppStore,
     useCurrentSession: () => null,
-    useCurrentWorkspace: () => workspace,
+    useCurrentWorkspace: () => (state.currentWorkspaceId === null ? null : workspace),
     useSessionById: () => null,
     useSessions: () => state.sessions,
     useWorkspaces: () => state.workspaces,
@@ -265,6 +267,8 @@ import { REPORT_ISSUE_STUDIO_EVENT } from '../features/settings/reportIssueStudi
 
 beforeEach(() => {
   state.workspaceIntegrations = {};
+  state.workspaces = [workspace];
+  state.currentWorkspaceId = 'workspace-1';
   githubAuth.isAuthenticated = false;
 });
 
@@ -369,6 +373,27 @@ describe('Bitbucket studio reachability', () => {
     expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('tools');
     expect(screen.getByTestId('settings-studio').getAttribute('data-tool')).toBe('bitbucket');
     expect(screen.queryByTestId('inbox-studio')).toBeNull();
+  });
+});
+
+describe('No workspace yet', () => {
+  it('keeps the app footer, so settings and providers stay one click away', () => {
+    state.workspaces = [];
+    state.currentWorkspaceId = null;
+    render(<App />);
+
+    expect(screen.getByTestId('footer').getAttribute('data-scope')).toBe('app');
+    fireEvent.click(screen.getByRole('button', { name: 'Open settings' }));
+    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('app');
+  });
+
+  it('opens providers from the app footer', () => {
+    state.workspaces = [];
+    state.currentWorkspaceId = null;
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open providers' }));
+    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('providers');
   });
 });
 
