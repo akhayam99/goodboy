@@ -1,7 +1,8 @@
 # Mounts
 
 > **Read this when** changing where a session writes on disk, how a mount is
-> attached, removed or recovered, or what the mount operation log records.
+> attached, removed or recovered, what the mount operation log records, or
+> what a bridge mount verb does.
 > **Not for** the product meaning of a session or project
 > ([concepts.md](concepts.md)) or the migration rules
 > ([architecture.md](architecture.md)).
@@ -121,6 +122,59 @@ keep settles it. Paths that
 outlive their row move to `retained_worktree_paths` and are probed later;
 anything a worktree scan finds that no row, retained path or unsettled
 operation owns is reported as an orphan.
+
+## Driving mounts from an agent
+
+A turn drives its mounts through the bridge's `mount` and `series` verbs and
+the two request-create verbs. The transport, the refusal codes and the rule
+that a mount is named, never guessed, are
+[query-bridge.md](query-bridge.md#a-mount-is-named-never-guessed)'s. A spawned
+turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
+`GOODBOY_MOUNT_ID` and `GOODBOY_RUN_ID`; `--mount` addresses any other mount.
+
+- **Read before writing.** `mount list` returns each mount's id, project,
+  branch, base, path, attachment, disk state and revision. `mount inspect`
+  adds the observed head, the removal safety with its blockers and, on
+  request, the size. A turn checks that the head matches the mount before
+  changing files, and that removal is safe before asking for it.
+- **Fork keeps both lines of work.** The new branch is cut from the named
+  base; the source mount, directory, branch and request links do not change.
+  The answer asks for a new turn: the current one stops, and Goodboy queues
+  one continuation turn bound to the new mount, told that uncommitted source
+  files are absent so it cherry-picks what it needs.
+- **Switch moves one line of work.** The mount keeps its id and path, and
+  request links on the previous branch stay as history. `mount activate`
+  changes only the mount the next turn uses; a running or queued git or
+  provider action keeps the mount id and revision it captured when queued.
+- **A mismatch is resolved by intent.** A raw checkout, switch or detached
+  HEAD never rewrites stored ownership: inspection records the mismatch and
+  mount-scoped writes refuse until `mount resolve` names an intent. `switch`
+  adopts the observed branch on the existing mount; `fork` adopts it on the
+  existing directory and creates a second mount for the recorded branch. An
+  in-progress merge, rebase or cherry-pick is finished first.
+- **Requests are created per mount.** Creation refreshes the provider first,
+  so a retry after the remote accepted a request attaches the existing one
+  instead of opening a duplicate. GitHub and GitLab requests open as drafts
+  unless the turn asks for ready.
+- **A series is declared, never inferred.** `series create` names the split
+  and its size; `series set-member` places a mount at a position, or reserves
+  a planned position when no mount is given. Generated request text carries
+  a "Part of" line with the work item and the position, never a closing
+  reference for the series.
+- **Retry reuses the request id.** After a timeout the turn reads the
+  operation back before acting again; recovery reconciles what the disk and
+  the database reached.
+- **Directories go through unmount.** An agent unmounts through the bridge
+  instead of deleting a folder and gets back `removed`, `missing` or `kept`
+  with a reason. Archive, delete, storage settings, merge cleanup, unmount and
+  orphan cleanup share one refusal policy: a running agent, a bound terminal,
+  a writer lease, a lock, a git operation in progress, or dirty tracked or
+  untracked work. The local branch always survives, and `mount attach`
+  recreates a worktree from it.
+- **Request identity is verified, never guessed.** A request missing from the
+  database is attached to a mount only after a provider lookup confirms its
+  provider, host, repository, number and head branch. A branch name alone
+  does not prove earlier intent.
 
 ## Rendered view is not the row
 
