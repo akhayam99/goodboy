@@ -7,7 +7,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { AppScopePanel } from './AppScopePanel';
 import { SettingsRail } from './SettingsRail';
-import type { SettingsFocus, SettingsScope } from './types';
+import type { SettingsFocus, SettingsStudioScope } from './types';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
 
 type Props = {
@@ -17,7 +17,7 @@ type Props = {
 };
 
 export const SettingsStudio = ({ currentWorkspace, initialFocus, onClose }: Props) => {
-  const [scope, setScope] = useState<SettingsScope>(initialFocus.scope);
+  const [scope, setScope] = useState<SettingsStudioScope>(initialFocus.scope);
 
   useEffect(() => setScope(initialFocus.scope), [initialFocus]);
 

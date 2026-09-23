@@ -4,7 +4,7 @@ import { Check } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { PROVIDER_LABEL_LOWER, type ProviderInfo } from '../../../providers/providers';
+import { PROVIDER_LABEL_LOWER, type ProviderDisplayInfo } from '../../../providers/providers';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
 import { StatusPill } from '../../../providers/components/ProviderLifecycleTile/StatusPill';
 import { ProviderConnectModal } from '../../../providers/components/ProviderConnectModal';
@@ -29,7 +29,7 @@ export const ProvidersStep = () => {
   const providers = useAppStore((s) => s.providers);
   const [connectTarget, setConnectTarget] = useState<ProviderId | null>(null);
   const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
-    (p): p is ProviderInfo => p !== undefined,
+    (p): p is ProviderDisplayInfo => p !== undefined,
   );
 
   return (
@@ -58,7 +58,7 @@ function ProviderRow({
   info,
   onConnect,
 }: {
-  info: ProviderInfo;
+  info: ProviderDisplayInfo;
   onConnect: (providerId: ProviderId) => void;
 }) {
   const Icon = PROVIDER_BRAND[info.id].icon;

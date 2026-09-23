@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { SectionHeader, Tooltip } from '@goodboy/ui';
 import { CircleCheck, RotateCw, TriangleAlert } from 'lucide-react';
-import type { ProviderInfo } from '../../../../features/providers/providers';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
@@ -10,7 +10,7 @@ import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
-  readonly info: ProviderInfo;
+  readonly info: ProviderDisplayInfo;
 };
 
 export const ApiProviderDetail = ({ info }: Props) => {

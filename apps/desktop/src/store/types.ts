@@ -77,7 +77,7 @@ import type { SessionBitbucketPrEntry } from './slices/bitbucket-pr/state';
 import type { SlackThreadsSliceState } from './slices/slack-threads/state';
 import type {
   ProviderAuthResults,
-  ProviderInfo,
+  ProviderDisplayInfo,
   ProviderStatus,
 } from '../features/providers/providers';
 import type { ProviderCooldowns } from '../features/providers/routing';
@@ -262,7 +262,7 @@ export type AppState = AppSliceState & {
   readonly codexStatus: ProviderStatus | null;
   readonly geminiStatus: ProviderStatus | null;
   readonly authResults: ProviderAuthResults | null;
-  readonly providers: ReadonlyArray<ProviderInfo>;
+  readonly providers: ReadonlyArray<ProviderDisplayInfo>;
   readonly providerLifecycle: ProviderLifecycleMap;
   readonly providerConnect: ProviderConnectMap;
   readonly providerCredentials: ReadonlyArray<ProviderCredential>;

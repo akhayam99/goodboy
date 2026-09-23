@@ -12,7 +12,7 @@ import {
 } from '@goodboy/ui';
 import { RotateCw, Unplug, type LucideIcon } from 'lucide-react';
 import { type ProviderId } from '@goodboy/types';
-import type { ProviderInfo } from '../../../../features/providers/providers';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { PROVIDER_BRAND } from '../provider-brand';
@@ -24,7 +24,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/compo
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 
 type Props = {
-  readonly info: ProviderInfo | null;
+  readonly info: ProviderDisplayInfo | null;
   readonly autoConnect: boolean;
 };
 
@@ -53,7 +53,7 @@ function Detail({
   info,
   autoConnect,
 }: {
-  readonly info: ProviderInfo;
+  readonly info: ProviderDisplayInfo;
   readonly autoConnect: boolean;
 }) {
   const id = info.id as ProviderId;

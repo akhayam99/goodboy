@@ -16,12 +16,12 @@ import { SessionNavSidebar } from '../../../../features/session/components/Sessi
 import { CollapsedRail } from '../../../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SessionCrumbBar } from '../../../../features/session/components/SessionCrumbBar';
 import { useAppStore, type LensKind } from '../../../../store';
-import type { ProviderInfo } from '../../../../features/providers/providers';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { shellArrangement } from '../../../shellArrangement';
 
 const noop = () => undefined;
 
-const CLAUDE_PROVIDER: ProviderInfo = {
+const CLAUDE_PROVIDER: ProviderDisplayInfo = {
   id: 'anthropic',
   binary: 'claude',
   capabilities: {

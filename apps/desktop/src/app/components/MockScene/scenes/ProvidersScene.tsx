@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { IsoDateTime, OverrideSettings, WorkspaceId } from '@goodboy/types';
 import { SettingsStudio } from '../../../../features/settings/components/SettingsStudio';
-import type { ProviderInfo } from '../../../../features/providers/providers';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { StudioFrame, mockWorkspace, seedStudioChrome } from './shellChrome';
 
@@ -14,7 +14,7 @@ const CAPABILITIES = {
   supportsCheapModel: true,
 };
 
-const PROVIDERS: ReadonlyArray<ProviderInfo> = [
+const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
   {
     id: 'anthropic',
     binary: 'claude',

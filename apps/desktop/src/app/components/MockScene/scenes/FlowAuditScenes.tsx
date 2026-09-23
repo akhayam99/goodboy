@@ -32,7 +32,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import type { ProviderInfo } from '../../../../features/providers/providers';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import type { AgentKind } from '../../../../features/session/agent-kind';
 import type { WorkflowBuilderDraft } from '../../../../store/slices/workflowDrafts/types';
 import { WorkflowBuilderView } from '../../../../features/session/components/WorkflowBuilderView';
@@ -252,7 +252,7 @@ const CHAT_MOUNTS: ReadonlyArray<SessionProjectMount> = [
   }),
 ];
 
-const PROVIDERS: ReadonlyArray<ProviderInfo> = [
+const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
   {
     id: 'anthropic',
     binary: 'claude',
@@ -701,7 +701,7 @@ const FLOW_AGENT_MODELS: Readonly<Record<string, string>> = {
   [AGENT_TESTS_ID]: 'claude-haiku-4-5',
 };
 
-const FLOW_AGENT_PROVIDERS: Readonly<Record<string, ProviderInfo['id']>> = {
+const FLOW_AGENT_PROVIDERS: Readonly<Record<string, ProviderDisplayInfo['id']>> = {
   [AGENT_SCOUT_ID]: 'cursor',
   [AGENT_SCOUT_LEDGER_ID]: 'anthropic',
   [AGENT_SCOUT_REPORTS_ID]: 'codex',
@@ -715,7 +715,7 @@ const FLOW_AGENT_PROVIDERS: Readonly<Record<string, ProviderInfo['id']>> = {
 type TelemetrySeedParams = Readonly<{
   id: string;
   runId: ProviderRunId;
-  provider: ProviderInfo['id'];
+  provider: ProviderDisplayInfo['id'];
   model: string;
   recordedAt: string;
   inputTokens: number;

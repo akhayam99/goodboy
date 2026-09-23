@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ScrollFade } from '@goodboy/ui';
 import type { ProviderId, ProviderLifecycleAction, WorkspaceId } from '@goodboy/types';
-import type { ProviderInfo } from '../../../../features/providers/providers';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { StudioRailLayout } from '@goodboy/ui';
 import { isConnectRunning } from '../ProviderConnect/isConnectRunning';
@@ -28,7 +28,7 @@ export const ProviderSettingsScope = ({ workspaceId, initialFocus, initialAction
   }, [initialAction, initialFocus]);
 
   const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
-    (p): p is ProviderInfo => p !== undefined,
+    (p): p is ProviderDisplayInfo => p !== undefined,
   );
 
   const selected = ordered.find((p) => p.id === focused) ?? null;

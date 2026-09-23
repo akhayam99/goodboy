@@ -23,7 +23,7 @@ export type ProviderStatus = {
   readonly error: string | null;
 };
 
-export type ProviderInfo = ProviderInfoBase & {
+export type ProviderDisplayInfo = ProviderInfoBase & {
   readonly label: string;
   readonly error: string | null;
   readonly docsUrl: string;
@@ -143,7 +143,7 @@ function providerInfoFromStatus(
   id: ProviderId,
   status: ProviderStatus | null,
   auth: AuthState | null,
-): ProviderInfo {
+): ProviderDisplayInfo {
   const base = {
     id,
     label: PROVIDER_LABEL_LOWER[id],
@@ -180,7 +180,7 @@ type ApiInfoParams = {
   readonly hasCredential: boolean;
 };
 
-const apiProviderInfo = ({ id, status, hasCredential }: ApiInfoParams): ProviderInfo => {
+const apiProviderInfo = ({ id, status, hasCredential }: ApiInfoParams): ProviderDisplayInfo => {
   const isAvailable = status?.available === true;
   return {
     id,
@@ -209,7 +209,7 @@ export const buildProviderList = (
   statuses: ProviderStatuses,
   auth?: ProviderAuthResults,
   credentialProviderIds: ReadonlySet<ProviderId> = new Set(),
-): ReadonlyArray<ProviderInfo> => {
+): ReadonlyArray<ProviderDisplayInfo> => {
   const ids: ProviderId[] = [
     'anthropic',
     'cursor',

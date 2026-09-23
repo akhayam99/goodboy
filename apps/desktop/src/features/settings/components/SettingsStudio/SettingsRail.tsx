@@ -1,12 +1,12 @@
 import { PANE_RHYTHM, SelectableRow } from '@goodboy/ui';
 import { Boxes, Settings, Wrench } from 'lucide-react';
-import type { SettingsScope } from './types';
+import type { SettingsStudioScope } from './types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
-  readonly scope: SettingsScope;
+  readonly scope: SettingsStudioScope;
   readonly workspaceName: string | null;
-  readonly onSelect: (scope: SettingsScope) => void;
+  readonly onSelect: (scope: SettingsStudioScope) => void;
 };
 
 const ITEMS = [
@@ -14,7 +14,7 @@ const ITEMS = [
   { scope: 'workspace', label: 'Workspace', icon: Wrench },
   { scope: 'providers', label: 'Providers & models', icon: Boxes },
   { scope: 'tools', label: 'Tools', icon: CONCEPT_ICONS.integrations },
-] satisfies ReadonlyArray<{ scope: SettingsScope; label: string; icon: typeof Settings }>;
+] satisfies ReadonlyArray<{ scope: SettingsStudioScope; label: string; icon: typeof Settings }>;
 
 export const SettingsRail = ({ scope, workspaceName, onSelect }: Props) => (
   <nav aria-label="Settings scopes" className={`flex flex-col gap-1 ${PANE_RHYTHM.navRail.body}`}>

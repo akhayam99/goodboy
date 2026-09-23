@@ -16,7 +16,7 @@ import type { ImpactScope } from '../../../features/impact/lib';
 import { IMPACT_STUDIO_EVENT } from '../../../features/impact/openImpactStudio';
 import type {
   SettingsFocus,
-  SettingsScope,
+  SettingsStudioScope,
 } from '../../../features/settings/components/SettingsStudio/types';
 import {
   INBOX_KINDS,
@@ -52,7 +52,7 @@ type EventValueParams = {
 
 type OpenSettingsEventParams = {
   readonly event: Event;
-  readonly fallbackScope: SettingsScope;
+  readonly fallbackScope: SettingsStudioScope;
 };
 
 const eventValue = ({ event, key }: EventValueParams): unknown => {
@@ -308,7 +308,7 @@ export const useAppOverlays = ({
       const provider =
         eventValue({ event, key: 'provider' }) ?? eventValue({ event, key: 'providerId' });
       const action = eventValue({ event, key: 'action' });
-      const scope: SettingsScope =
+      const scope: SettingsStudioScope =
         requestedScope === 'app' ||
         requestedScope === 'workspace' ||
         requestedScope === 'providers' ||

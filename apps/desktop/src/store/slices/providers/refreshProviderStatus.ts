@@ -1,6 +1,6 @@
 import {
   buildProviderList,
-  type ProviderInfo,
+  type ProviderDisplayInfo,
   type ProviderStatus,
   type ProviderStatuses,
 } from '../../../features/providers/providers';
@@ -8,7 +8,7 @@ import type { ProviderId } from '@goodboy/types';
 import type { SetFn } from './types';
 
 type StatusParams = {
-  readonly providers: ReadonlyArray<ProviderInfo>;
+  readonly providers: ReadonlyArray<ProviderDisplayInfo>;
   readonly id: ProviderId;
 };
 

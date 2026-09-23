@@ -1,12 +1,12 @@
 import { Eyebrow, SelectableRow, StatusRailItem, type Tone } from '@goodboy/ui';
 import { type ProviderConnectionState, type ProviderId } from '@goodboy/types';
-import type { ProviderInfo } from '../../../../features/providers/providers';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { SlidersHorizontal } from 'lucide-react';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
-  readonly providers: ReadonlyArray<ProviderInfo>;
+  readonly providers: ReadonlyArray<ProviderDisplayInfo>;
   readonly focusedId: ProviderId | 'defaults';
   readonly onSelect: (id: ProviderId) => void;
   readonly onSelectDefaults: () => void;

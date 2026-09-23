@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { ProviderInfo } from '../../../../features/providers/providers';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -40,7 +40,7 @@ const info = {
   identity: 'dev@acme.test',
   error: null,
   docsUrl: 'https://docs.claude.com',
-} as unknown as ProviderInfo;
+} as unknown as ProviderDisplayInfo;
 
 describe('ProviderDetailPanel', () => {
   it('signs the provider out only after the row confirm', () => {
