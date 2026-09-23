@@ -7,6 +7,7 @@ import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates'
 
 const { store, hooks, spies } = vi.hoisted(() => ({
   store: {
+    githubStatus: null as { readonly mode: string; readonly user?: string } | null,
     workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
     projects: [] as ReadonlyArray<unknown>,
     sessionExternalTasks: {} as Record<

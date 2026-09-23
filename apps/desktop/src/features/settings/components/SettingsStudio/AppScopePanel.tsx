@@ -13,7 +13,6 @@ import {
   Select,
   tintClasses,
 } from '@goodboy/ui';
-import { GithubPanel } from '../../../../features/github/components/Panel';
 import { ImportConfigDialog } from '../ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@goodboy/types';
 import {
@@ -177,17 +176,6 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
 
           <section id="shortcuts" ref={anchor({ id: 'shortcuts' })}>
             <ShortcutsSection initiallyExpanded={initialSection === 'shortcuts'} />
-          </section>
-
-          <Divider />
-
-          <section
-            id="integrations"
-            ref={anchor({ id: 'integrations' })}
-            className="flex flex-col gap-4"
-          >
-            <SectionHeader label="GitHub" hint="Global fallback token used by every workspace." />
-            <GithubPanel hideSectionHeader />
           </section>
 
           <Divider />

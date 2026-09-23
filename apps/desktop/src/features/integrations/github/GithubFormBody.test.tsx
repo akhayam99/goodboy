@@ -76,17 +76,17 @@ describe('GithubFormBody', () => {
       await waitFor(() => expect(ghStatusMock).toHaveBeenCalledWith(WS_ID));
     });
 
-    it('mentions the system gh fallback only when one is signed in', async () => {
+    it('mentions the all-workspaces connection only when one is signed in', async () => {
       ghStatusMock.mockResolvedValue({ scoped: false, user: 'octocat' });
       render(<GithubFormBody workspaceId={WS_ID} />);
-      expect(await screen.findByText(/system gh CLI, connected as octocat/i)).toBeDefined();
+      expect(await screen.findByText(/all-workspaces connection as octocat/i)).toBeDefined();
 
       cleanup();
       useAppStore.setState({ githubWorkspaceStatus: {} });
       ghStatusMock.mockResolvedValue({ scoped: false, user: null });
       render(<GithubFormBody workspaceId={WS_ID} />);
       await screen.findByLabelText(/personal API key/i);
-      expect(screen.queryByText(/system gh CLI/i)).toBeNull();
+      expect(screen.queryByText(/all-workspaces connection/i)).toBeNull();
     });
 
     it('disables Connect until a non-empty token is entered', async () => {

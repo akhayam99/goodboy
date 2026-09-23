@@ -10,7 +10,7 @@ import {
 import { FORM_BODIES } from '../../formBodies';
 import { toolIdentity } from './toolIdentity';
 import type { GithubConnection } from '../../github/useGithubConnection';
-import { GithubToolConnection } from './GithubToolConnection';
+import { GithubAccountRows } from './GithubAccountRows';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -18,14 +18,22 @@ type Props = {
   readonly isConnected: boolean;
   readonly binding: IntegrationBinding | undefined;
   readonly github: GithubConnection;
+  readonly githubIdentity: string | null;
 };
 
-export const ToolDetailPanel = ({ workspaceId, provider, isConnected, binding, github }: Props) => {
+export const ToolDetailPanel = ({
+  workspaceId,
+  provider,
+  isConnected,
+  binding,
+  github,
+  githubIdentity,
+}: Props) => {
   const FormBody = provider === 'github' ? null : FORM_BODIES[provider];
   const title = integrationLabel({ provider });
   const subtitle = isConnected
     ? provider === 'github'
-      ? (github.user ?? 'connected')
+      ? (githubIdentity ?? 'connected')
       : toolIdentity({ binding })
     : FOOTER_INTEGRATIONS.find((entry) => entry.provider === provider)?.connectLabel;
   return (
@@ -37,7 +45,7 @@ export const ToolDetailPanel = ({ workspaceId, provider, isConnected, binding, g
       <section className="flex flex-col gap-2">
         <SectionHeader label="Account" />
         {FormBody === null ? (
-          <GithubToolConnection workspaceId={workspaceId} connection={github} />
+          <GithubAccountRows workspaceId={workspaceId} connection={github} />
         ) : (
           <FormBody workspaceId={workspaceId} shouldAutoFocus={!isConnected} />
         )}

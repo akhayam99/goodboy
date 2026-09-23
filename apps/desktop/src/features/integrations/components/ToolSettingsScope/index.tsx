@@ -13,7 +13,7 @@ type Props = {
 };
 
 export const ToolSettingsScope = ({ workspaceId, initialFocus }: Props) => {
-  const { integrations, connected, github } = useToolConnections({ workspaceId });
+  const { integrations, connected, github, githubIdentity } = useToolConnections({ workspaceId });
   const [focused, setFocused] = useState<IntegrationGlyphProvider | null>(initialFocus ?? null);
   useEffect(() => setFocused(initialFocus ?? null), [initialFocus]);
   const defaultSelection =
@@ -41,7 +41,7 @@ export const ToolSettingsScope = ({ workspaceId, initialFocus }: Props) => {
             onSelect={setFocused}
             integrations={integrations}
             connected={connected}
-            githubIdentity={github.user}
+            githubIdentity={githubIdentity}
           />
         </ScrollFade>
       }
@@ -53,6 +53,7 @@ export const ToolSettingsScope = ({ workspaceId, initialFocus }: Props) => {
             provider={selected}
             isConnected={connected[selected]}
             github={github}
+            githubIdentity={githubIdentity}
             binding={integrations.find((binding) => binding.provider === selected)}
           />
         )

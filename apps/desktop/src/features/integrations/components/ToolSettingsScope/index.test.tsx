@@ -77,8 +77,17 @@ const readGithubStatus = async ({ workspaceId }: GithubWriteParams): Promise<voi
   }));
 };
 
+const readGlobalGithubStatus = async (): Promise<void> => {
+  const status = await invoke('gh_status', {});
+  store.setState({
+    githubStatus: github.scoped ? { mode: 'absent', available: true, scopes: [] } : status,
+  });
+};
+
 const store = create(() => ({
   currentWorkspaceId: WORKSPACE_ID,
+  githubStatus: null as unknown,
+  refreshGithubStatus: readGlobalGithubStatus,
   githubWorkspaceStatus: {} as GithubStatusMap,
   refreshGithubConnection: readGithubStatus,
   setGithubToken: async ({
@@ -110,7 +119,9 @@ vi.mock('../../../../store', () => ({
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(async (command: string) => (command === 'gh_status' ? { ...github } : true)),
+  invoke: vi.fn(async (command: string) =>
+    command === 'gh_status' ? { ...github, available: true } : true,
+  ),
 }));
 
 beforeEach(() => {
@@ -118,7 +129,7 @@ beforeEach(() => {
   github.scoped = false;
   github.user = null;
   vi.mocked(invoke).mockClear();
-  store.setState({ workspaceIntegrations: {}, githubWorkspaceStatus: {} });
+  store.setState({ workspaceIntegrations: {}, githubWorkspaceStatus: {}, githubStatus: null });
   store.getState().connectLinear.mockReset();
   store.getState().disconnectIntegration.mockReset();
 });
@@ -325,32 +336,46 @@ describe('ToolSettingsScope', () => {
     await act(async () => {
       render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="github" />);
     });
-    fireEvent.change(screen.getByLabelText('Personal API key'), { target: { value: 'test-key' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Use a different key' }));
+    const field = document.getElementById('github-workspace-pat');
+    if (field === null) {
+      throw new Error('the workspace key field did not open');
+    }
+    fireEvent.change(field, { target: { value: 'test-key' } });
     github.mode = 'pat';
     github.user = 'Ada';
     github.scoped = true;
-    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+    const form = field.closest('form');
+    if (form === null) {
+      throw new Error('the workspace key field sits outside a form');
+    }
+    fireEvent.click(within(form).getByRole('button', { name: 'Connect' }));
     expect(await screen.findByText('workspace key')).toBeDefined();
     expect(invoke).toHaveBeenCalledWith('gh_set_token', {
       token: 'test-key',
       workspaceId: WORKSPACE_ID,
     });
     expect(screen.getByText('Connected as Ada')).toBeDefined();
-    expect(screen.queryByLabelText('Personal API key')).toBeNull();
+    expect(document.getElementById('github-workspace-pat')).toBeNull();
     expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
       'GitHub',
     ]);
   });
 
-  it('honors a global GitHub key and identifies its source', async () => {
+  it('names a global GitHub key on the all workspaces row, with its own disconnect', async () => {
     github.mode = 'pat';
     github.user = 'Ada';
     await act(async () => {
       render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="github" />);
     });
-    expect(screen.getByText('Connected as Ada via the global GitHub key')).toBeDefined();
+    expect(await screen.findByText('Connected as Ada with a personal API key')).toBeDefined();
+    expect(screen.getByText('Uses the all-workspaces connection')).toBeDefined();
     expect(screen.queryByLabelText('Personal API key')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Disconnect GitHub' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitHub' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitHub' }));
+    await waitFor(() =>
+      expect(invoke).toHaveBeenCalledWith('gh_clear_token', { workspaceId: null }),
+    );
   });
 
   it('defaults to the first tool when every tool is connected', async () => {
@@ -360,7 +385,8 @@ describe('ToolSettingsScope', () => {
     await act(async () => {
       render(<ToolSettingsScope workspaceId={WORKSPACE_ID} />);
     });
-    expect(await screen.findByText('Connected as Ada via the system gh CLI')).toBeDefined();
+    expect(await screen.findByText('Connected as Ada through the gh CLI')).toBeDefined();
+    expect(screen.getByText('Run gh auth logout to sign out')).toBeDefined();
     expect(screen.getByRole('button', { name: 'GitHub Ada' }).getAttribute('aria-current')).toBe(
       'true',
     );
@@ -372,13 +398,21 @@ describe('ToolSettingsScope', () => {
     await act(async () => {
       render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="github" />);
     });
-    expect(await screen.findByText('GitHub is not connected')).toBeDefined();
-    expect(screen.getByText('gh auth login')).toBeDefined();
+    expect(await screen.findByText('gh auth login')).toBeDefined();
     expect(screen.getByLabelText('Personal API key').id).toBe('github-pat');
     github.mode = 'gh-cli';
     github.user = 'Ada';
-    fireEvent.click(screen.getByRole('button', { name: 'Check connection' }));
-    expect(await screen.findByText('Connected as Ada via the system gh CLI')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Check the GitHub connection' }));
+    expect(await screen.findByText('Connected as Ada through the gh CLI')).toBeDefined();
+  });
+
+  it('says so in one line when the gh CLI is missing', async () => {
+    store.setState({ githubStatus: { mode: 'absent', available: false, scopes: [] } });
+    await act(async () => {
+      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="github" />);
+    });
+    expect(await screen.findByText('The GitHub CLI is not installed.')).toBeDefined();
+    expect(screen.queryByLabelText('Personal API key')).toBeNull();
   });
 
   it('preserves the existing scoped GitHub disconnect action', async () => {
@@ -398,13 +432,14 @@ describe('ToolSettingsScope', () => {
     );
   });
 
-  it('shares the resolved GitHub status with its token form', async () => {
+  it('reads the global and the workspace status once each', async () => {
     await act(async () => {
       render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="github" />);
     });
     expect(screen.getByLabelText('Personal API key')).toBeDefined();
-    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(invoke).toHaveBeenCalledTimes(2);
     expect(invoke).toHaveBeenCalledWith('gh_status', { workspaceId: WORKSPACE_ID });
+    expect(invoke).toHaveBeenCalledWith('gh_status', {});
   });
 
   it('reaches a connection form using the keyboard', async () => {
@@ -412,7 +447,7 @@ describe('ToolSettingsScope', () => {
     await act(async () => {
       render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="github" />);
     });
-    await screen.findByText('GitHub is not connected');
+    await screen.findByRole('button', { name: 'Use a different key' });
     screen.getByRole('button', { name: 'GitHub not connected' }).focus();
     await user.tab();
     await user.keyboard('{Enter}');

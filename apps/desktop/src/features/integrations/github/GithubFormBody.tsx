@@ -6,7 +6,7 @@ import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
 import { useGithubConnection } from './useGithubConnection';
 
 type Props = {
-  readonly workspaceId: WorkspaceId;
+  readonly workspaceId: WorkspaceId | null;
   readonly onConnected?: () => void;
   readonly shouldAutoFocus?: boolean;
 };
@@ -35,14 +35,14 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
 
   return (
     <ConnectForm
-      tokenId="github-pat"
+      tokenId={workspaceId === null ? 'github-pat' : 'github-workspace-pat'}
       tokenLabel="Personal API key"
       tokenPlaceholder="ghp_…"
       tokenLink={{ label: 'Get a personal access token from GitHub', href: TOKEN_CREATE_URL }}
       guide={
         status?.user != null ? (
           <p className="text-2xs leading-relaxed text-muted-foreground">
-            Already covered by your system gh CLI, connected as {status.user}. A key pasted here
+            Already covered by the all-workspaces connection as {status.user}. A key pasted here
             overrides it for this workspace only.
           </p>
         ) : null

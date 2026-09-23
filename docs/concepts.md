@@ -348,8 +348,10 @@ A connection to a tool lives on the **workspace**. Goodboy calls it a
 
 - A project that needs a different account or setup gets its own override.
   Goodboy uses it before the workspace binding.
-- GitHub works the same way. A workspace with no GitHub login of its own uses
-  your `gh` CLI login.
+- GitHub works the same way. A workspace with no GitHub key of its own uses
+  the key for all workspaces, then your `gh` CLI login. Both are set in one
+  place, **Settings > Tools > GitHub**, in an **All workspaces** row and a
+  **This workspace** row. App settings have no GitHub section.
 - Secrets stay inside Goodboy. Agents reach your tools only through the
   [query bridge](query-bridge.md).
 

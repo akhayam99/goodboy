@@ -11,6 +11,8 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
       'workspace-1': { available: false, mode: 'absent', scoped: false },
     } as Record<string, unknown>,
     refreshGithubConnection: vi.fn(async () => undefined),
+    githubStatus: { available: true, mode: 'absent', scopes: [] } as unknown,
+    refreshGithubStatus: vi.fn(async () => undefined),
     loadSetting: vi.fn(async () => null),
     saveSetting: vi.fn(async () => undefined),
     exportConfig: vi.fn(async () => null),
@@ -56,10 +58,6 @@ vi.mock('./WorkspaceScopePanel', () => ({
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
-}));
-
-vi.mock('../../../../features/github/components/Panel', () => ({
-  GithubPanel: () => <div>GitHub token controls</div>,
 }));
 
 vi.mock('../ImportConfigDialog', () => ({
@@ -129,10 +127,10 @@ describe('SettingsStudio', () => {
     );
 
     expect(
-      ['Editor', 'Shortcuts', 'GitHub', 'Config backup', 'Help', 'Danger zone'].map(
+      ['Editor', 'Shortcuts', 'Config backup', 'Help', 'Danger zone'].map(
         (label) => screen.getByText(label).textContent,
       ),
-    ).toEqual(['Editor', 'Shortcuts', 'GitHub', 'Config backup', 'Help', 'Danger zone']);
+    ).toEqual(['Editor', 'Shortcuts', 'Config backup', 'Help', 'Danger zone']);
     expect(screen.getByRole('navigation', { name: /settings scopes/i })).toBeDefined();
     expect(screen.getByRole('button', { name: 'App' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Providers & models' })).toBeDefined();
@@ -170,15 +168,13 @@ describe('SettingsStudio', () => {
     expect(scrollIntoViewMock.mock.contexts.at(-1)).toBe(document.getElementById('shortcuts'));
   });
 
-  it('explains the scope of the GitHub token in one line', () => {
+  it('leaves GitHub to Tools settings', () => {
     render(
       <SettingsStudio currentWorkspace={null} initialFocus={{ scope: 'app' }} onClose={vi.fn()} />,
     );
 
-    expect(screen.getByText('Global fallback token used by every workspace.')).toBeDefined();
-    expect(
-      screen.queryByText('Per-workspace overrides live in Workspace settings, Integrations.'),
-    ).toBeNull();
+    expect(screen.queryByText('GitHub')).toBeNull();
+    expect(screen.queryByText('Global fallback token used by every workspace.')).toBeNull();
   });
 
   it('wipes only after the row confirm and offers a restart', async () => {
@@ -223,18 +219,15 @@ describe('SettingsStudio', () => {
     window.removeEventListener(REPORT_ISSUE_STUDIO_EVENT, listener);
   });
 
-  it.each(['editor', 'integrations', 'advanced', 'initialization'])(
-    'resolves the %s deep link',
-    (section) => {
-      render(
-        <SettingsStudio
-          currentWorkspace={null}
-          initialFocus={{ scope: 'app', section }}
-          onClose={vi.fn()}
-        />,
-      );
+  it.each(['editor', 'advanced', 'initialization'])('resolves the %s deep link', (section) => {
+    render(
+      <SettingsStudio
+        currentWorkspace={null}
+        initialFocus={{ scope: 'app', section }}
+        onClose={vi.fn()}
+      />,
+    );
 
-      expect(scrollIntoViewMock.mock.contexts.at(-1)).toBe(document.getElementById(section));
-    },
-  );
+    expect(scrollIntoViewMock.mock.contexts.at(-1)).toBe(document.getElementById(section));
+  });
 });
