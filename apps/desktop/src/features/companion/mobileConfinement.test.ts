@@ -72,65 +72,77 @@ describe('isMergeMethod', () => {
   });
 });
 
-describe('evaluateMobileMerge (server-side gate)', () => {
-  it('permits a merge only when approved + green + open + mergeable', () => {
-    expect(evaluateMobileMerge(eligiblePr(), 'squash')).toEqual({ ok: true });
-    expect(evaluateMobileMerge(eligiblePr({ state: 'open' }), 'merge')).toEqual({ ok: true });
-    expect(evaluateMobileMerge(eligiblePr(), 'rebase')).toEqual({ ok: true });
+describe('evaluateMobileMerge', () => {
+  it('permits an approved, green, mergeable PR with every supported method', () => {
+    const pr = eligiblePr();
+    expect(evaluateMobileMerge({ pr, method: 'squash' })).toEqual({
+      ok: true,
+      pr,
+      method: 'squash',
+    });
+    expect(evaluateMobileMerge({ pr, method: 'merge' }).ok).toBe(true);
+    expect(evaluateMobileMerge({ pr, method: 'rebase' }).ok).toBe(true);
+  });
+
+  it('permits a repo with no required review and no CI', () => {
+    const gate = evaluateMobileMerge({
+      pr: eligiblePr({ reviewDecision: null, checks: null }),
+      method: 'squash',
+    });
+    expect(gate.ok).toBe(true);
   });
 
   it('refuses an unsupported method even when the PR is eligible', () => {
-    const gate = evaluateMobileMerge(eligiblePr(), 'fast-forward');
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/method/i);
+    expect(evaluateMobileMerge({ pr: eligiblePr(), method: 'fast-forward' })).toEqual({
+      ok: false,
+      reason: 'unsupported merge method: fast-forward',
+    });
   });
 
   it('refuses when there is no PR for the session', () => {
-    expect(evaluateMobileMerge(null, 'squash').ok).toBe(false);
-    expect(evaluateMobileMerge(undefined, 'squash').ok).toBe(false);
+    expect(evaluateMobileMerge({ pr: null, method: 'squash' }).ok).toBe(false);
+    expect(evaluateMobileMerge({ pr: undefined, method: 'squash' }).ok).toBe(false);
   });
 
-  it('refuses a draft PR', () => {
-    const gate = evaluateMobileMerge(eligiblePr({ isDraft: true }), 'squash');
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/draft/i);
-  });
-
-  it('refuses an already-merged or closed PR', () => {
-    expect(evaluateMobileMerge(eligiblePr({ state: 'merged' }), 'squash').ok).toBe(false);
-    expect(evaluateMobileMerge(eligiblePr({ state: 'closed' }), 'squash').ok).toBe(false);
-  });
-
-  it('refuses a PR already in the merge queue', () => {
-    const gate = evaluateMobileMerge(eligiblePr({ state: 'queued' }), 'squash');
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/queue/i);
-  });
-
-  it('refuses when review is not approved (never trusts a stale/lying client)', () => {
-    for (const decision of ['changes_requested', 'review_required', null] as const) {
-      const gate = evaluateMobileMerge(eligiblePr({ reviewDecision: decision }), 'squash');
-      expect(gate.ok).toBe(false);
-      if (!gate.ok) expect(gate.reason).toMatch(/approv/i);
+  it('refuses a blocked PR with the desktop reason', () => {
+    const cases = [
+      [{ isDraft: true }, 'Mark this pull request ready before merging'],
+      [{ state: 'merged' }, 'This pull request is already merged'],
+      [{ state: 'closed' }, 'Reopen this pull request before merging'],
+      [{ state: 'queued' }, 'GitHub is already set to merge this pull request'],
+      [{ mergeable: false }, 'Resolve the conflicts with main first'],
+    ] as const satisfies ReadonlyArray<readonly [Partial<PullRequestState>, string]>;
+    for (const [over, reason] of cases) {
+      expect(evaluateMobileMerge({ pr: eligiblePr(over), method: 'squash' })).toEqual({
+        ok: false,
+        reason,
+      });
     }
   });
 
-  it('refuses when CI checks are not green', () => {
-    const failing = evaluateMobileMerge(eligiblePr({ checks: 'failure' }), 'squash');
-    expect(failing.ok).toBe(false);
-    if (!failing.ok) expect(failing.reason).toMatch(/fail/i);
-
-    const pending = evaluateMobileMerge(eligiblePr({ checks: 'pending' }), 'squash');
-    expect(pending.ok).toBe(false);
-
-    const missing = evaluateMobileMerge(eligiblePr({ checks: null }), 'squash');
-    expect(missing.ok).toBe(false);
+  it('refuses while GitHub has not finished checking mergeability', () => {
+    expect(evaluateMobileMerge({ pr: eligiblePr({ mergeable: null }), method: 'squash' })).toEqual({
+      ok: false,
+      reason: 'GitHub has not finished checking whether this branch merges',
+    });
   });
 
-  it('refuses a known-unmergeable PR (conflicts) even when approved + green', () => {
-    const gate = evaluateMobileMerge(eligiblePr({ mergeable: false }), 'squash');
-    expect(gate.ok).toBe(false);
-    if (!gate.ok) expect(gate.reason).toMatch(/conflict/i);
+  it('refuses on every desktop caveat, naming each one', () => {
+    expect(
+      evaluateMobileMerge({
+        pr: eligiblePr({ reviewDecision: 'review_required' }),
+        method: 'squash',
+      }),
+    ).toEqual({ ok: false, reason: 'A review is still requested' });
+    expect(
+      evaluateMobileMerge({
+        pr: eligiblePr({ reviewDecision: 'changes_requested', checks: 'failure' }),
+        method: 'squash',
+      }),
+    ).toEqual({ ok: false, reason: 'A reviewer asked for changes; Checks are failing' });
+    expect(
+      evaluateMobileMerge({ pr: eligiblePr({ checks: 'pending' }), method: 'squash' }),
+    ).toEqual({ ok: false, reason: 'Checks are still running' });
   });
 });
 

@@ -44,6 +44,14 @@ it checks scope and runs the same store actions the desktop UI uses. There is
 no raw or exec action. Merge policy lives in the frontend executor, not in the
 bridge.
 
+A phone merge follows the desktop merge readiness rule and is stricter about
+it: what blocks the desktop blocks the phone, and so do the desktop's warnings
+(changes requested, a review still requested, failing or running checks) and a
+mergeability GitHub has not finished computing. The phone shows a fraction of
+the context and a merge cannot be undone, so the phone refuses with the same
+reason the desktop would show. A repository with no required review or no CI
+merges from the phone like it does on the desktop.
+
 ## Listener lifetime
 
 - Nothing listens at boot. The listener starts when the pairing studio opens

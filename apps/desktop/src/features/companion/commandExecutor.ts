@@ -27,7 +27,6 @@ import {
   evaluateMobileCreateSession,
   evaluateMobileMerge,
   evaluateMobileSpawnWorkflow,
-  isMergeMethod,
   markSessionMobileShared,
 } from './mobileConfinement';
 import type { AgentKind } from '../session/agent-kind';
@@ -678,15 +677,12 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       const sessionId = requireSession(data);
       const method = asString(data.method) ?? 'squash';
       const pr = store.sessionGithub[sessionId]?.pr ?? null;
-      const gate = evaluateMobileMerge(pr, method);
+      const gate = evaluateMobileMerge({ pr, method });
       if (!gate.ok) {
         throw new BridgeSafeError(`merge refused: ${gate.reason}`);
       }
-      if (!isMergeMethod(method)) {
-        throw new BridgeSafeError(`unsupported merge method: ${method}`);
-      }
       markSessionMobileShared(sessionId);
-      await store.mergePr(sessionId, pr?.number, method);
+      await store.mergePr(sessionId, gate.pr.number, gate.method);
       return undefined;
     }
 
