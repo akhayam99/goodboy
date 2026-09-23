@@ -35,7 +35,7 @@ type Params = {
   readonly availability?: WorkflowRoutingAvailabilitySnapshot;
 };
 
-export type BlockedWorkflowStep = Readonly<{
+type BlockedWorkflowStep = Readonly<{
   stepId: StepId;
   stepName: string;
   reason: string;

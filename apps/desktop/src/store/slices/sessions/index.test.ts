@@ -19,7 +19,6 @@ import type {
   PlanWithCount,
   Project,
   ProjectId,
-  ProviderRunId,
   Session,
   SessionExternalTask,
   SessionId,
@@ -106,7 +105,6 @@ const SESSION_ID = 'session-1' as SessionId;
 const SESSION_ID_2 = 'session-2' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
 const AGENT_ID_2 = 'agent-2' as AgentId;
-const RUN_ID = 'run-1' as ProviderRunId;
 const PLAN_ID = 'plan-1' as PlanId;
 const NOW = '2026-05-28T00:00:00.000Z' as IsoDateTime;
 
@@ -221,41 +219,6 @@ describe('store contract', () => {
   });
 
   describe('sessions', () => {
-    it('refreshSessions overwrites sessions from DB', async () => {
-      const store = useAppStore;
-      const { listSessionsForWorkspace } = await import('@goodboy/db');
-      (listSessionsForWorkspace as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
-        buildSession({ id: SESSION_ID }),
-        buildSession({ id: SESSION_ID_2, goal: 'two' }),
-      ]);
-      await store.getState().refreshSessions(WS_ID);
-      const ss = store.getState().sessions;
-      expect(ss).toHaveLength(2);
-      expect(ss[0]?.id).toBe(SESSION_ID);
-      expect(ss[1]?.goal).toBe('two');
-    });
-
-    it('refreshSessions reconciles a database-running session before storing it', async () => {
-      const store = useAppStore;
-      const { listSessionsForWorkspace } = await import('@goodboy/db');
-      (listSessionsForWorkspace as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
-        buildSession({ state: { kind: 'running', runId: RUN_ID, startedAt: NOW } }),
-      ]);
-      storySpies.listLiveRunIds.mockResolvedValueOnce(new Set());
-
-      await store.getState().refreshSessions(WS_ID);
-
-      expect(
-        store.getState().sessions.filter((session) => session.state.kind === 'running'),
-      ).toHaveLength(0);
-      expect(storySpies.updateSessionState).toHaveBeenCalledWith(
-        expect.anything(),
-        SESSION_ID,
-        expect.objectContaining({ kind: 'idle' }),
-        expect.any(String),
-      );
-    });
-
     it('loads durable resolve rows when agents are already cached', async () => {
       const store = useAppStore;
       const original = store.getState().loadResolveSession;

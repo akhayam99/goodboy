@@ -14,7 +14,7 @@ import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutin
 import { resolveWorkflowChildRouting } from '../workflowRouting/resolveWorkflowChildRouting';
 import type { AppStore } from '../../store';
 
-export type ChildRoutingRequest = Readonly<{
+type ChildRoutingRequest = Readonly<{
   proposal: WorkflowRoutingProposal | null;
   promptText: string;
   childLock: WorkflowRoutingLock | null;
@@ -33,7 +33,7 @@ export type ChildRoutingBatch =
   | Readonly<{ kind: 'ready'; entries: ReadonlyArray<ChildRoutingFields> }>
   | Readonly<{ kind: 'blocked'; reason: string }>;
 
-export const LEGACY_CHILD_ROUTING: ChildRoutingFields = {
+const LEGACY_CHILD_ROUTING: ChildRoutingFields = {
   routingLock: null,
   routingDecision: null,
   taskProfile: null,
@@ -51,7 +51,7 @@ type ResolveOneParams = {
   readonly isChildSelectionEnabled: boolean;
 };
 
-export type ChildRoutingOutcome =
+type ChildRoutingOutcome =
   | Readonly<{ kind: 'routed'; fields: ChildRoutingFields }>
   | Readonly<{ kind: 'legacy' }>
   | Readonly<{ kind: 'blocked'; reason: string }>;

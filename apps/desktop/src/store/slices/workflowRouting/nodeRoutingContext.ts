@@ -52,7 +52,7 @@ const configuredRolePick = ({
   return { provider: routing.provider, model: routing.model, effort: routing.effort };
 };
 
-export type WorkflowNodeRoutingContext = Readonly<{
+type WorkflowNodeRoutingContext = Readonly<{
   agent: Agent | null;
   step: Step | null;
   role: AgentRole | null;

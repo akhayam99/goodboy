@@ -62,7 +62,7 @@ const childProposalOutcome = ({
   return hintedRoutingOutcome({ outcome: { kind: 'valid', proposal }, promptText });
 };
 
-export type WorkflowChildRouting = Readonly<{
+type WorkflowChildRouting = Readonly<{
   resolution: WorkflowRoutingResolution;
   taskProfile: WorkflowTaskProfile | null;
 }>;

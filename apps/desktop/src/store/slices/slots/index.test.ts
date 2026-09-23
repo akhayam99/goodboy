@@ -338,16 +338,5 @@ describe('store contract', () => {
       await store.getState().loadSessionTelemetry(SESSION_ID);
       expect(store.getState().sessionTelemetry[SESSION_ID]).toEqual([rec]);
     });
-
-    it('refreshSessionSummary stores the summary', async () => {
-      const store = useAppStore;
-      const sum = { estimatedCostUsd: 1.23 } as never;
-      const db = await import('@goodboy/db');
-      (db.summarizeSessionTelemetry as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-        sum,
-      );
-      await store.getState().refreshSessionSummary(SESSION_ID);
-      expect(store.getState().sessionSummary).toBe(sum);
-    });
   });
 });

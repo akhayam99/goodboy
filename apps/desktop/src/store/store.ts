@@ -348,9 +348,7 @@ type AppActions = {
   setWindowPresence(label: string, workspaceId: WorkspaceId | null): void;
   removeWindowPresence(label: string): void;
   setCurrentSession(id: SessionId | null): Promise<void>;
-  refreshSessions(workspaceId: WorkspaceId): Promise<void>;
   loadArchivedSessions(workspaceId: WorkspaceId): Promise<void>;
-  refreshSessionSummary(sessionId: SessionId): Promise<void>;
   loadSetting(key: string): Promise<string | null>;
   saveSetting(key: string, value: string): Promise<void>;
   refreshProviderStatus(status: ProviderStatus): void;
@@ -635,7 +633,6 @@ type AppActions = {
   }): Promise<SendTurnResult>;
   cancelCurrentTurn(sessionId: SessionId, agentId?: AgentId): Promise<void>;
   retrySummarizer(sessionId: SessionId, taskModelOverride?: TaskModelPreference): void;
-  refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;
   loadSessionTelemetry(sessionId: SessionId): Promise<void>;
   loadSessionSlots(sessionId: SessionId): Promise<void>;
   ensureSessionSlots(sessionId: SessionId): Promise<ReadonlyArray<ContextSlot>>;

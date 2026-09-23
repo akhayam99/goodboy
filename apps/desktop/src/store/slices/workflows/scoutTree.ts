@@ -310,14 +310,14 @@ const canFanOutByRole = async ({
   return false;
 };
 
-export type FanOutChildSpec = Readonly<{
+type FanOutChildSpec = Readonly<{
   name: string;
   promptText: string;
   kickoff: string;
   routingProposal: WorkflowRoutingProposal | null;
 }>;
 
-export type FanOutStartResult =
+type FanOutStartResult =
   | Readonly<{ kind: 'started'; childIds: ReadonlyArray<AgentId> }>
   | Readonly<{ kind: 'blocked'; reason: string }>
   | Readonly<{ kind: 'skipped' }>;

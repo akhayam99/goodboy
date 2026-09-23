@@ -157,6 +157,3 @@ export const composeDelegateKickoff = ({ questionText, hints }: KickoffParams): 
 
 export const DELEGATE_NUDGE =
   'That reply carried no answer. Emit exactly one `<<oq-answer>>` block with the answer, or one `<<ctx-question>>` block if only the user can decide. Nothing else.';
-
-export const delegateAnswerNote = ({ agentName }: { readonly agentName: string }): string =>
-  `answered by ${agentName} on your behalf`;

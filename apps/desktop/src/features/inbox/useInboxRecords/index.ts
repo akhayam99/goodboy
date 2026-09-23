@@ -26,7 +26,6 @@ type Result = {
   readonly isLoading: boolean;
   readonly errors: Errors;
   readonly refetch: () => void;
-  readonly connectedCount: number;
 };
 
 export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
@@ -95,7 +94,6 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
     records,
     errors,
     refetch,
-    connectedCount: integrations.length + 1,
     isLoading:
       github.loading ||
       gitlabIssues.loading ||
