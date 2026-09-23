@@ -5,12 +5,18 @@ import {
   SETTING_EDITOR_BINARY,
 } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
-import { useThemeStore } from '../../../../shared/lib/theme';
+import { useThemeStore, type ThemePreference } from '../../../../shared/lib/theme';
 import { UpdatesSection } from './UpdatesSection';
 
+const THEME_OPTIONS = [
+  { value: 'dark', label: 'Dark' },
+  { value: 'light', label: 'Light' },
+  { value: 'system', label: 'Match system' },
+] as const satisfies ReadonlyArray<{ readonly value: ThemePreference; readonly label: string }>;
+
 export const AppGeneralSection = () => {
-  const theme = useThemeStore((s) => s.theme);
-  const setTheme = useThemeStore((s) => s.setTheme);
+  const preference = useThemeStore((s) => s.preference);
+  const setPreference = useThemeStore((s) => s.setPreference);
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
@@ -55,12 +61,21 @@ export const AppGeneralSection = () => {
           <FieldRow label="Theme" help="Applies to every window.">
             <Select
               size="sm"
-              value={theme}
-              onChange={(e) => setTheme(e.target.value === 'light' ? 'light' : 'dark')}
+              value={preference}
+              onChange={(e) => {
+                const next = THEME_OPTIONS.find((option) => option.value === e.target.value);
+                if (next === undefined) {
+                  return;
+                }
+                setPreference(next.value);
+              }}
               aria-label="Theme"
             >
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
+              {THEME_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </Select>
           </FieldRow>
         </div>
