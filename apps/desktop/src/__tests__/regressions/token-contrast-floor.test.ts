@@ -93,13 +93,56 @@ const composite = ({
   foreground[2] * alpha + background[2] * (1 - alpha),
 ];
 
-const readThemes = (): Readonly<Record<'dark' | 'light', Palette>> => {
+type Lab = readonly [number, number, number];
+
+const readLabs = (block: string): Readonly<Record<string, Lab>> => {
+  const labs: Record<string, Lab> = {};
+  const pattern = /--color-([a-z0-9-]+):\s*oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)\s*;/g;
+  for (const match of block.matchAll(pattern)) {
+    const chroma = Number(match[3]);
+    const radians = (Number(match[4]) * Math.PI) / 180;
+    labs[String(match[1])] = [
+      Number(match[2]),
+      chroma * Math.cos(radians),
+      chroma * Math.sin(radians),
+    ];
+  }
+  return labs;
+};
+
+const themeBlocks = (): Readonly<{ dark: string; light: string }> => {
   const css = readFileSync(STYLES, 'utf8');
   const themeStart = css.indexOf('@theme {');
   const lightStart = css.indexOf("html[data-theme='light'] {");
-  const dark = readPalette(css.slice(themeStart, lightStart));
-  const light = { ...dark, ...readPalette(css.slice(lightStart, css.indexOf('\n}', lightStart))) };
-  return { dark, light };
+  return {
+    dark: css.slice(themeStart, lightStart),
+    light: css.slice(lightStart, css.indexOf('\n}', lightStart)),
+  };
+};
+
+const readLabThemes = (): Readonly<Record<'dark' | 'light', Readonly<Record<string, Lab>>>> => {
+  const blocks = themeBlocks();
+  const dark = readLabs(blocks.dark);
+  return { dark, light: { ...dark, ...readLabs(blocks.light) } };
+};
+
+const deltaE = ({ first, second }: { first: Lab; second: Lab }): number =>
+  100 * Math.hypot(first[0] - second[0], first[1] - second[1], first[2] - second[2]);
+
+const lab = ({ labs, token }: { labs: Readonly<Record<string, Lab>>; token: string }): Lab => {
+  const value = labs[token];
+  if (value === undefined) {
+    throw new Error(`styles.css has no oklch --color-${token}`);
+  }
+  return value;
+};
+
+const TONE_SEPARATION = 6;
+
+const readThemes = (): Readonly<Record<'dark' | 'light', Palette>> => {
+  const blocks = themeBlocks();
+  const dark = readPalette(blocks.dark);
+  return { dark, light: { ...dark, ...readPalette(blocks.light) } };
 };
 
 describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
@@ -199,5 +242,20 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
       expect(Number(hue)).toBeGreaterThanOrEqual(200);
       expect(Number(hue)).toBeLessThanOrEqual(275);
     }
+  });
+});
+
+describe.each(Object.entries(readLabThemes()))('%s tone separation', (_theme, labs) => {
+  it('keeps every tone pair apart in oklab', () => {
+    const failures = TONES.flatMap((first, index) =>
+      TONES.slice(index + 1).map((second) => ({
+        pair: `${first}-${second}`,
+        distance: deltaE({
+          first: lab({ labs, token: first }),
+          second: lab({ labs, token: second }),
+        }),
+      })),
+    ).filter(({ distance }) => distance < TONE_SEPARATION);
+    expect(failures).toEqual([]);
   });
 });
