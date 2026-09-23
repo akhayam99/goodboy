@@ -55,6 +55,7 @@ export const ActivityRunScene = () => {
   return (
     <ShellFrame
       session={SESSION}
+      sidebar="expanded"
       main={<SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />}
     />
   );

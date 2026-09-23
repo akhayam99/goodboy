@@ -13,6 +13,7 @@ import { AppFooter } from '../../AppFooter';
 import { AppTopBar } from '../../AppTopBar';
 import { ToastProvider } from '../../Toast';
 import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
+import { CollapsedRail } from '../../../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SessionCrumbBar } from '../../../../features/session/components/SessionCrumbBar';
 import { useAppStore, type LensKind } from '../../../../store';
 import type { ProviderInfo } from '../../../../features/providers/providers';
@@ -94,13 +95,14 @@ export const seedShellChrome = ({
 type ShellFrameProps = {
   readonly session: Session;
   readonly main: ReactNode;
+  readonly sidebar?: 'collapsed' | 'expanded';
 };
 
-export const ShellFrame = ({ session, main }: ShellFrameProps) => {
+export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameProps) => {
   const arrangement = shellArrangement({
     hasWorkspace: true,
     hasActiveSession: true,
-    isSidebarCollapsed: false,
+    isSidebarCollapsed: sidebar === 'collapsed',
   });
 
   return (
@@ -112,7 +114,9 @@ export const ShellFrame = ({ session, main }: ShellFrameProps) => {
         leftSidebar={
           arrangement.leftSlot === 'sessions' ? (
             <SessionNavSidebar session={session} onCollapse={noop} />
-          ) : undefined
+          ) : (
+            <CollapsedRail onExpand={noop} />
+          )
         }
         footer={
           arrangement.hasFooter ? (

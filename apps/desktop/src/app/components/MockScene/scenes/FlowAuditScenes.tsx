@@ -1439,6 +1439,50 @@ export const WorkflowRunScene = () => {
   );
 };
 
+const answeredAt = (minute: number): IsoDateTime =>
+  `2026-09-16T09:${String(minute).padStart(2, '0')}:00.000Z` as IsoDateTime;
+
+const ANSWERED_QUESTIONS: ReadonlyArray<OpenQuestion> = [
+  {
+    ...OPEN_QUESTIONS[0]!,
+    userAnswer:
+      'The relay clock. It owns the retry schedule, and the payments host only sets the deadline.',
+    answerSource: 'agent',
+    answeredByAgentId: CHAT_AGENT_RESOLVER_ID,
+    status: 'answered',
+    answeredAt: '2026-09-16T10:18:00.000Z' as IsoDateTime,
+  },
+  ...OPEN_QUESTIONS.filter((question) => question.status === 'answered'),
+  {
+    id: 'mock-flow-question-jitter' as OpenQuestionId,
+    sessionId: CHAT_SESSION_ID,
+    createdByAgentId: CHAT_AGENT_BACKOFF_ID,
+    text: 'How much jitter should the retry timer add?',
+    suggestedAnswers: ['None', 'Up to 10 percent', 'Full jitter'],
+    recommendedAnswer: 'Full jitter',
+    selectMode: 'one',
+    isBlocking: false,
+    userAnswer: 'Full jitter',
+    status: 'answered',
+    createdAt: answeredAt(40),
+    answeredAt: answeredAt(44),
+  },
+  {
+    id: 'mock-flow-question-cap' as OpenQuestionId,
+    sessionId: CHAT_SESSION_ID,
+    createdByAgentId: CHAT_AGENT_TRIAGE_ID,
+    text: 'After how many attempts should a notice stop retrying?',
+    suggestedAnswers: ['5 attempts', '8 attempts', 'Until the deadline'],
+    recommendedAnswer: '8 attempts',
+    selectMode: 'one',
+    isBlocking: false,
+    userAnswer: '8 attempts, then the dead letter queue',
+    status: 'answered',
+    createdAt: answeredAt(20),
+    answeredAt: answeredAt(26),
+  },
+];
+
 export const OpenQuestionsScene = () => {
   const [isReady, setIsReady] = useState(false);
 
@@ -1453,11 +1497,9 @@ export const OpenQuestionsScene = () => {
     });
     useAppStore.setState({
       sessionOpenQuestions: {
-        [CHAT_SESSION_ID]: OPEN_QUESTIONS.filter((question) => question.status === 'open'),
+        [CHAT_SESSION_ID]: OPEN_QUESTIONS.filter((question) => question.id === QUESTION_SIGNALS_ID),
       },
-      sessionAnsweredQuestions: {
-        [CHAT_SESSION_ID]: OPEN_QUESTIONS.filter((question) => question.status === 'answered'),
-      },
+      sessionAnsweredQuestions: { [CHAT_SESSION_ID]: ANSWERED_QUESTIONS },
       sessionDismissedQuestions: { [CHAT_SESSION_ID]: [] },
       selectedAgentId: {},
       loadSessionOpenQuestions: async () => undefined,

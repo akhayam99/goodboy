@@ -27,7 +27,6 @@ import { useAppStore } from '../../../../store';
 import type { DiscoveredScriptScan } from '../../../../store/slices/scripts/state';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 import {
-  REPORT_ARTIFACT_ID,
   SESSION as ARTIFACT_SESSION,
   SESSION_ID as ARTIFACT_SESSION_ID,
   seedArtifactScene,
@@ -840,7 +839,7 @@ export const ArtifactsLensShellScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedArtifactScene({ focusedArtifactId: REPORT_ARTIFACT_ID });
+    seedArtifactScene({ focusedArtifactId: null });
     seedShellChrome({
       session: ARTIFACT_SESSION,
       siblings: ARTIFACT_SIBLINGS,
@@ -853,6 +852,7 @@ export const ArtifactsLensShellScene = () => {
       telemetryAt: '2026-09-14T16:40:00.000Z' as IsoDateTime,
       lens: 'plans',
     });
+    useAppStore.setState({ artifactFilter: { [ARTIFACT_SESSION_ID]: 'plan' } });
     setIsReady(true);
   }, []);
 
