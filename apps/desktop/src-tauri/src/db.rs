@@ -174,6 +174,7 @@ impl SqlParam {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ExecResult {
     pub rows_affected: i64,
 }
@@ -259,5 +260,16 @@ pub fn value_to_json(value: ValueRef<'_>) -> serde_json::Value {
                 .unwrap_or_default(),
         ),
         ValueRef::Blob(bytes) => serde_json::Value::String(format!("blob:{}", bytes.len())),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn exec_result_serializes_rows_affected_in_camel_case() {
+        let value = serde_json::to_value(ExecResult { rows_affected: 3 }).unwrap();
+        assert_eq!(value, serde_json::json!({ "rowsAffected": 3 }));
     }
 }

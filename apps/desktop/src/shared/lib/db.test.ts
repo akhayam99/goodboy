@@ -52,4 +52,15 @@ describe('tauriDatabase', () => {
       { version: 1 },
     ]);
   });
+
+  it('hands back the affected row count under the key the backend serializes', async () => {
+    invokeMock.mockResolvedValue({ rowsAffected: 2 });
+
+    const result = await tauriDatabase.execute('UPDATE sessions SET title = ?', ['x']);
+    expect(result.rowsAffected).toBe(2);
+    expect(invokeMock).toHaveBeenCalledWith('db_execute', {
+      sql: 'UPDATE sessions SET title = ?',
+      params: ['x'],
+    });
+  });
 });
