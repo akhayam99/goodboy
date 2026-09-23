@@ -152,7 +152,7 @@ export const mapNotificationAction = (
   if (action.kind === 'open-lens') {
     const { sessionId, lens } = action;
     return {
-      label: 'Open scripts',
+      label: 'Show output',
       onClick: () => {
         void store.setCurrentSession(sessionId).then(() => {
           store.setActiveLens(sessionId, lens);

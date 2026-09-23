@@ -285,6 +285,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
                   title: failureTitle,
                   error: `Exited with code ${result.exitCode}.`,
                   sessionId,
+                  action: { kind: 'open-lens', sessionId, lens: 'scripts' },
                 });
                 return;
               }

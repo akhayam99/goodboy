@@ -960,7 +960,7 @@ describe('ScriptsPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
     expect(screen.getByText('Last run')).toBeDefined();
-    expect(screen.getByText('cancelled')).toBeDefined();
+    expect(screen.getByText('Stopped')).toBeDefined();
     expect(screen.queryByText('Running')).toBeNull();
   });
 
