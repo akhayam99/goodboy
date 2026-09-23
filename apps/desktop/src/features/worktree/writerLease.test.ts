@@ -6,6 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeSpy }));
 
 import {
   acquireWriterLease,
+  acquireWriterLeaseWaiting,
   listUnknownWriterLeases,
   releaseWriterLease,
   repositoryWriterResource,
@@ -70,6 +71,30 @@ describe('writer lease bridge', () => {
       blockedBy: 'run-9',
       blockedState: 'unknown',
       blockedResource: 'repo:/repo/api',
+    });
+  });
+
+  it('waits through contention on the backend queue instead of failing on the first denial', async () => {
+    invokeSpy.mockResolvedValue({
+      id: 'lease-3',
+      holder: 'mount:four',
+      token: 'token-3',
+      isGranted: true,
+      blockedBy: null,
+      blockedState: null,
+      blockedResource: null,
+    });
+
+    const outcome = await acquireWriterLeaseWaiting({
+      holder: 'mount:four',
+      resources: ['repo:/repo/api'],
+    });
+
+    expect(outcome).toEqual({ outcome: 'granted', token: 'token-3' });
+    expect(invokeSpy).toHaveBeenCalledWith('writer_lease_acquire_waiting', {
+      holder: 'mount:four',
+      resources: ['repo:/repo/api'],
+      runId: null,
     });
   });
 

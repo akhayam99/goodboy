@@ -478,7 +478,7 @@ fn spawn_one(
 
     let event_app = app.clone();
     let event_binding = args.writer_lease.cloned();
-    let (mut child, lease_guard) = spawn_leased_child(
+    let (child, lease_guard) = spawn_leased_child(
         &mut command,
         leases,
         args.writer_lease,
@@ -496,25 +496,24 @@ fn spawn_one(
             }
         },
     )?;
-    invocation_permit.bind_process(child.id())?;
+    let process_id = child.id();
+    let mut armed = crate::aux_spawn::KillOnDrop::new(child);
+    invocation_permit.bind_process(process_id)?;
     if let Some(lease) = durable_lease.as_ref() {
-        lease.bind_process(child.id());
+        lease.bind_process(process_id);
     }
 
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| TurnError::Io(std::io::Error::other("no stdout")))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| TurnError::Io(std::io::Error::other("no stderr")))?;
+    let (stdout, stderr) = armed
+        .child()
+        .map(|child| (child.stdout.take(), child.stderr.take()))
+        .unwrap_or((None, None));
+    let stdout = stdout.ok_or_else(|| TurnError::Io(std::io::Error::other("no stdout")))?;
+    let stderr = stderr.ok_or_else(|| TurnError::Io(std::io::Error::other("no stderr")))?;
 
-    let slot = Arc::new(Mutex::new(Some(child)));
-    registry
-        .lock()
-        .map_err(|_| TurnError::Poisoned)?
-        .insert(args.run_id.to_string(), Arc::clone(&slot));
+    let mut live = registry.lock().map_err(|_| TurnError::Poisoned)?;
+    let slot = Arc::new(Mutex::new(armed.disarm()));
+    live.insert(args.run_id.to_string(), Arc::clone(&slot));
+    drop(live);
 
     let app_clone = app.clone();
     let registry_clone = Arc::clone(registry);
@@ -639,10 +638,17 @@ pub async fn turn_spawn(
         }
     };
 
-    let invocation_permit = admission.admit(
-        database.inner().clone(),
-        invocation.request(&args.provider_id),
-    )?;
+    let invocation_permit = {
+        let admission = admission.inner().clone();
+        let database = database.inner().clone();
+        let request = invocation.request(&args.provider_id);
+        let cancel_key = args.run_id.clone();
+        tauri::async_runtime::spawn_blocking(move || {
+            admission.admit(database, request, &cancel_key)
+        })
+        .await
+        .map_err(|error| TurnError::Io(std::io::Error::other(error.to_string())))??
+    };
 
     spawn_one(
         &app,
@@ -690,9 +696,10 @@ pub async fn turn_list_live(state: State<'_, TurnRegistry>) -> Result<Vec<String
 pub async fn turn_cancel(
     state: State<'_, TurnRegistry>,
     queue: State<'_, crate::writer_lease::WriterLeaseQueue>,
+    admission: State<'_, crate::invocation_admission::InvocationAdmission>,
     run_id: String,
 ) -> Result<(), TurnError> {
-    let was_waiting = queue.cancel(&run_id);
+    let was_waiting = queue.cancel(&run_id) || admission.cancel(&run_id);
     let map = state.0.lock().map_err(|_| TurnError::Poisoned)?;
     let slot = map.get(&run_id).cloned();
     drop(map);
@@ -1058,9 +1065,7 @@ mod tests {
     #[test]
     fn only_claude_and_codex_can_prove_a_read_only_invocation() {
         assert!(crate::writer_lease::launcher_proves_read_only("claude"));
-        assert!(crate::writer_lease::launcher_proves_read_only(
-            "/opt/homebrew/bin/codex"
-        ));
+        assert!(crate::writer_lease::launcher_proves_read_only("codex"));
         for binary in ["cursor-agent", "opencode", "openrouter", "moonshot", "agy"] {
             assert!(
                 !crate::writer_lease::launcher_proves_read_only(binary),

@@ -289,6 +289,7 @@ pub fn run() {
             worktree_writer::worktree_writer_abandon,
             worktree_writer::worktree_writer_status,
             writer_lease::writer_lease_acquire,
+            writer_lease::writer_lease_acquire_waiting,
             writer_lease::writer_lease_release,
             writer_lease::writer_lease_unknown,
             query_bridge::query_bridge_serving,
