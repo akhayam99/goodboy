@@ -6,7 +6,7 @@ export const SITE = {
   linux: 'https://github.com/akhayam99/goodboy/releases',
   issues: 'https://github.com/akhayam99/goodboy/issues',
   concepts: 'https://github.com/akhayam99/goodboy/blob/main/docs/concepts.md',
-  privacy: 'https://github.com/akhayam99/goodboy#zero-data-ownership',
+  privacy: 'https://github.com/akhayam99/goodboy#where-your-work-lives',
   providersDoc: 'https://github.com/akhayam99/goodboy/blob/main/docs/providers.md',
   brew: 'brew install --cask akhayam99/tap/goodboy',
 } as const;

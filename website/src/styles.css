@@ -430,12 +430,8 @@ h2 {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    -100deg,
-    rgba(255, 255, 255, 0) 4%,
-    rgba(255, 255, 255, 0.45) 46%,
-    #fff 100%
-  );
+  pointer-events: none;
+  background: linear-gradient(90deg, #fff 0, rgba(255, 255, 255, 0) 48px);
 }
 
 @media (max-width: 960px) {
@@ -607,29 +603,45 @@ h2 {
 }
 
 .belt {
+  width: min(1072px, calc(100% - 48px));
+  margin: 0 auto;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 64px,
+    #000 calc(100% - 64px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 64px,
+    #000 calc(100% - 64px),
+    transparent 100%
+  );
 }
 
 .beltTrack {
   display: flex;
   width: max-content;
   padding: 2px 0;
-  animation: beltScroll 30s linear infinite;
-}
-
-.belt:hover .beltTrack {
-  animation-play-state: paused;
+  animation: beltScroll 37s linear infinite;
 }
 
 .beltTrackReverse {
+  animation-duration: 35s;
   animation-direction: reverse;
+}
+
+.beltCopy {
+  display: flex;
+  flex-shrink: 0;
 }
 
 @keyframes beltScroll {
   to {
-    transform: translateX(-25%);
+    transform: translateX(-50%);
   }
 }
 
@@ -637,13 +649,13 @@ h2 {
   display: flex;
   align-items: center;
   gap: 12px;
-  height: 58px;
-  min-width: 210px;
+  height: 52px;
+  min-width: 180px;
   background: #fff;
   border: 1px solid var(--gray3);
   border-radius: 999px;
-  padding: 0 22px;
-  margin-right: 14px;
+  padding: 0 20px;
+  margin-right: 12px;
   flex-shrink: 0;
 }
 
@@ -672,13 +684,26 @@ h2 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .belt {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
   .beltTrack {
     width: 100%;
-    flex-wrap: wrap;
-    justify-content: center;
-    row-gap: 14px;
     animation: none;
     transform: none;
+  }
+  .beltClone {
+    display: none;
+  }
+  .beltCopy {
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  .bchip {
+    margin-right: 0;
   }
 }
 
