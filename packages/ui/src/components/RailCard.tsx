@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '../cn';
 import { TERMINAL_DIM } from '../terminalDim';
+import { FOCUS_RING } from '../focusRing';
+import { SELECTED_ROW_CLASSES } from '../selectedRow';
 
 type Props = {
   readonly title: ReactNode;
@@ -9,6 +11,7 @@ type Props = {
   readonly meta?: ReactNode;
   readonly trailing?: ReactNode;
   readonly muted?: boolean;
+  readonly isSelected?: boolean;
   readonly ariaLabel?: string;
   readonly className?: string;
   readonly onSelect: () => void;
@@ -20,6 +23,7 @@ export const RailCard = ({
   meta,
   trailing,
   muted = false,
+  isSelected = false,
   ariaLabel,
   className,
   onSelect,
@@ -27,9 +31,13 @@ export const RailCard = ({
   <button
     type="button"
     aria-label={ariaLabel}
+    aria-current={isSelected ? 'true' : undefined}
+    data-selected={isSelected}
     onClick={onSelect}
     className={cn(
-      'flex w-full items-center gap-3 rounded-lg border border-border-soft bg-elevated px-3 py-2.5 text-left transition-colors hover:border-border hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+      'flex w-full items-center gap-3 rounded-lg border border-border-soft bg-elevated px-3 py-2.5 text-left motion-safe:transition-colors hover:border-border hover:bg-hover',
+      FOCUS_RING,
+      SELECTED_ROW_CLASSES,
       muted && ['border-border-soft bg-transparent', TERMINAL_DIM],
       className,
     )}

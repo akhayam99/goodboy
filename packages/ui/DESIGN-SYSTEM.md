@@ -27,6 +27,12 @@ interaction overlays painted as a background-image layer, so they stack on
 whatever fill the element rests on instead of replacing it, and `cn` keeps them
 beside a surface class. `scrim` is reserved for modal backdrops.
 
+A selected row has one treatment everywhere: `bg-selected`, foreground text and
+medium weight, driven by `data-selected` (`selectedRow.ts`, used by
+`SelectableRow` and `RailCard isSelected`). No ring and no primary tint mark a
+selection; the focus ring stays the only ring, so focus and selection read
+apart, as in VS Code and Linear lists.
+
 ## Type scale
 
 `text-3xs` 10px/14px, `2xs` 11px/16px, `xs` 12px, `sm` 14px/20px, `base` 15px,

@@ -1,10 +1,9 @@
 import { RotateCcw, Square } from 'lucide-react';
-import { Chip, GhostActionButton, MetaRow, RailCard, cn } from '@goodboy/ui';
+import { Chip, GhostActionButton, MetaRow, RailCard } from '@goodboy/ui';
 import {
   ARTIFACT_GENERATION_PRESENTATION,
   type ArtifactGeneration,
 } from '../../artifactCollection';
-import { SELECTED_ROW_CLASS } from './selectedRow';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PROVIDER_LABEL, modelLabel } from '../../../chat/utils/chat-constants';
@@ -59,7 +58,8 @@ export const ArtifactGenerationRow = ({
         <RailCard
           title={generation.title}
           muted={generation.state === 'unproduced'}
-          className={cn('pr-24', isSelected && SELECTED_ROW_CLASS)}
+          isSelected={isSelected}
+          className="pr-24"
           status={
             <Chip
               tone={presentation.tone}

@@ -1,5 +1,6 @@
 import type { AriaAttributes, ReactNode } from 'react';
 import { cn } from '../cn';
+import { SELECTED_ROW_CLASSES } from '../selectedRow';
 
 export type SelectableRowProps = {
   readonly selected: boolean;
@@ -14,8 +15,10 @@ export type SelectableRowProps = {
   readonly className?: string;
 };
 
-const ROW_CLASSES =
-  'flex w-full rounded-md text-left text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground data-[selected=true]:bg-muted data-[selected=true]:font-medium data-[selected=true]:text-foreground data-[selected=true]:ring-1 data-[selected=true]:ring-border';
+const ROW_CLASSES = cn(
+  'flex w-full rounded-md text-left text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
+  SELECTED_ROW_CLASSES,
+);
 
 export const SelectableRow = ({
   selected,
