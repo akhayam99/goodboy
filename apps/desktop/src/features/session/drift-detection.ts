@@ -1,4 +1,4 @@
-import type { AgentKind } from './agent-kind';
+import { kindWritesFiles, type AgentKind } from './agent-kind';
 
 type DriftSignal =
   | 'plan-marker-from-non-planner'
@@ -24,19 +24,7 @@ const IMPL_DIFF_RE =
 
 const PLAN_MARKER_EXEMPT: ReadonlySet<AgentKind> = new Set(['planner', 'generic']);
 
-const FILE_EDIT_EXEMPT: ReadonlySet<AgentKind> = new Set([
-  'implementer',
-  'debugger',
-  'tester',
-  'generic',
-]);
-
-const IMPL_OUTPUT_EXEMPT: ReadonlySet<AgentKind> = new Set([
-  'implementer',
-  'debugger',
-  'tester',
-  'generic',
-]);
+const isWriteExempt = (kind: AgentKind): boolean => kind !== 'docs' && kindWritesFiles(kind);
 
 const DOC_EXTENSIONS = /\.(?:md|mdx|txt|rst)$/;
 
@@ -52,7 +40,7 @@ export const detectDrift = (input: DriftDetectionInput): ReadonlyArray<DriftViol
     });
   }
 
-  if (filesEdited.length > 0 && !FILE_EDIT_EXEMPT.has(agentKind)) {
+  if (filesEdited.length > 0 && !isWriteExempt(agentKind)) {
     const isDocsAgent = agentKind === 'docs';
     const nonDocFiles = isDocsAgent
       ? filesEdited.filter((f) => !DOC_EXTENSIONS.test(f))
@@ -67,7 +55,7 @@ export const detectDrift = (input: DriftDetectionInput): ReadonlyArray<DriftViol
     }
   }
 
-  if (!IMPL_OUTPUT_EXEMPT.has(agentKind) && IMPL_DIFF_RE.test(assistantText)) {
+  if (!isWriteExempt(agentKind) && IMPL_DIFF_RE.test(assistantText)) {
     violations.push({
       kind: agentKind,
       signal: 'impl-output-from-readonly-kind',
