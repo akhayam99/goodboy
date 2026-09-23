@@ -3,7 +3,6 @@ import { FlaskConical, RefreshCw, Smartphone, Unplug } from 'lucide-react';
 import { Button, cn, Divider, formatError, ScrollFade, Skeleton } from '@goodboy/ui';
 import { StudioShell } from '../../shared/components/StudioShell';
 import { bridgeRevoke, bridgeStart, bridgeStatus, type BridgeStatus, type QrInfo } from './bridge';
-import { clearMobileSharedSessions } from './mobileConfinement';
 import { ICON_SIZE } from '../../shared/components/conceptIcons';
 
 type Props = {
@@ -56,7 +55,6 @@ export const CompanionStudio = ({ onClose }: Props) => {
     setError(null);
     try {
       await bridgeRevoke();
-      clearMobileSharedSessions();
       await mint();
     } catch (e) {
       setError(formatError(e));

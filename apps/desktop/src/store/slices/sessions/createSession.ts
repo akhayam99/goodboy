@@ -29,7 +29,6 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 import { kindRouting, AGENT_KIND_META, type AgentKind } from '../../../features/session/agent-kind';
 import { SETTING_LAST_SESSION_ID } from '../../../features/settings/settings';
-import { markSessionMobileShared } from '../../../features/companion/mobileConfinement';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { clampTitle } from './titleLimit';
 import { preSpawnWorkflowAgents } from '../workflows/preSpawnWorkflowAgents';
@@ -66,7 +65,6 @@ type Input = {
   kickoffPrompt?: string;
   externalTasks?: ReadonlyArray<ExternalTaskInput>;
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
-  mobileShared?: boolean;
   omitGoalSlot?: boolean;
 };
 
@@ -88,7 +86,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
     kickoffPrompt,
     externalTasks,
     attachmentInputs,
-    mobileShared = false,
     omitGoalSlot = false,
   }: Input): Promise<{ session: Session }> => {
     const workspace = await getWorkspaceById({ db: tauriDatabase, id: workspaceId });
@@ -104,9 +101,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const trimmedFallbackRef = fallbackRef?.trim();
     const trimmedFolderName = folderName?.trim();
     const sessionId = crypto.randomUUID() as SessionId;
-    if (mobileShared) {
-      markSessionMobileShared(sessionId);
-    }
     const existingSeparator = trimmedExisting?.lastIndexOf('/') ?? -1;
     const existingPrefix =
       existingSeparator > 0 ? trimmedExisting?.slice(0, existingSeparator) : undefined;

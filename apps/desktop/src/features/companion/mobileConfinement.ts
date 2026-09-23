@@ -13,19 +13,6 @@ import type {
 } from '@goodboy/types';
 import { evaluatePrMergeReadiness } from '../review/prMergeReadiness';
 
-const mobileSharedSessions = new Set<SessionId>();
-
-export const markSessionMobileShared = (sessionId: SessionId): void => {
-  mobileSharedSessions.add(sessionId);
-};
-
-export const isSessionMobileShared = (sessionId: SessionId): boolean =>
-  mobileSharedSessions.has(sessionId);
-
-export const clearMobileSharedSessions = (): void => {
-  mobileSharedSessions.clear();
-};
-
 const MERGE_METHODS: ReadonlySet<string> = new Set<PrMergeMethod>(['squash', 'merge', 'rebase']);
 
 export const isMergeMethod = (v: unknown): v is PrMergeMethod =>

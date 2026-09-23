@@ -8,13 +8,10 @@ import type {
 } from '@goodboy/types';
 import {
   clearMobileCreateRateState,
-  clearMobileSharedSessions,
   evaluateMobileCreateSession,
   evaluateMobileMerge,
   evaluateMobileSpawnWorkflow,
   isMergeMethod,
-  isSessionMobileShared,
-  markSessionMobileShared,
 } from './mobileConfinement';
 
 const sid = (s: string): SessionId => s as SessionId;
@@ -35,30 +32,6 @@ const eligiblePr = (over: Partial<PullRequestState> = {}): PullRequestState => (
   body: '',
   updatedAt: '2026-06-22T00:00:00Z',
   ...over,
-});
-
-afterEach(() => clearMobileSharedSessions());
-
-describe('mobile shared-session registry', () => {
-  it('starts empty and marks a session shared', () => {
-    expect(isSessionMobileShared(sid('s1'))).toBe(false);
-    markSessionMobileShared(sid('s1'));
-    expect(isSessionMobileShared(sid('s1'))).toBe(true);
-  });
-
-  it('is sticky and idempotent until explicitly cleared (desktop revoke)', () => {
-    markSessionMobileShared(sid('s1'));
-    markSessionMobileShared(sid('s1'));
-    expect(isSessionMobileShared(sid('s1'))).toBe(true);
-    clearMobileSharedSessions();
-    expect(isSessionMobileShared(sid('s1'))).toBe(false);
-  });
-
-  it('confines each session independently', () => {
-    markSessionMobileShared(sid('s1'));
-    expect(isSessionMobileShared(sid('s1'))).toBe(true);
-    expect(isSessionMobileShared(sid('s2'))).toBe(false);
-  });
 });
 
 describe('isMergeMethod', () => {

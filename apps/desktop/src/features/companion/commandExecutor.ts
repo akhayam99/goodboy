@@ -27,7 +27,6 @@ import {
   evaluateMobileCreateSession,
   evaluateMobileMerge,
   evaluateMobileSpawnWorkflow,
-  markSessionMobileShared,
 } from './mobileConfinement';
 import type { AgentKind } from '../session/agent-kind';
 import type {
@@ -562,14 +561,12 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
           projectId: gate.projectId,
           goal: resolved.goal,
           externalTasks: [resolved.externalTask],
-          mobileShared: true,
         }));
       } catch (e) {
         gate.reservation.release();
         throw e;
       }
       gate.reservation.commit();
-      markSessionMobileShared(session.id);
       if (setupWorkflow) {
         try {
           if (typeof window !== 'undefined') {
@@ -586,7 +583,6 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
 
     case 'advanceStep': {
       const sessionId = requireSession(data);
-      markSessionMobileShared(sessionId);
       await advanceNextWorkflowStep(sessionId);
       return undefined;
     }
@@ -598,7 +594,6 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       if (content.trim().length === 0 && attachments.length === 0) {
         throw new BridgeSafeError('send requires content or attachments');
       }
-      markSessionMobileShared(sessionId);
       const agentId = asString(data.agentId) as AgentId | undefined;
       const override = coerceOverride(data);
       void store
@@ -616,7 +611,6 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
 
     case 'spawnAgent': {
       const sessionId = requireSession(data);
-      markSessionMobileShared(sessionId);
       const name = asString(data.name);
       const prompt = asString(data.prompt);
       const rawKind = asString(data.kind);
@@ -643,7 +637,6 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       if (value === undefined) {
         throw new BridgeSafeError('setContextSlot requires a string value');
       }
-      markSessionMobileShared(sessionId);
       await store.upsertSessionSlot(sessionId, rawKey, value);
       return undefined;
     }
@@ -654,7 +647,6 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       if (!prompt) {
         throw new BridgeSafeError('resolveComment requires a prompt describing the comment');
       }
-      markSessionMobileShared(sessionId);
       const sourceCommentUrl = asString(data.commentUrl);
       const sourceThreadId = asString(data.threadId);
       const sourceKind: AgentSourceKind | null = sourceThreadId
@@ -681,7 +673,6 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       if (!gate.ok) {
         throw new BridgeSafeError(`merge refused: ${gate.reason}`);
       }
-      markSessionMobileShared(sessionId);
       await store.mergePr(sessionId, gate.pr.number, gate.method);
       return undefined;
     }
@@ -698,7 +689,6 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       if (!gate.ok) {
         throw new BridgeSafeError(`spawn workflow refused: ${gate.reason}`);
       }
-      markSessionMobileShared(gate.sessionId);
       await store.attachWorkflowToSession(gate.sessionId, gate.workflowId, {
         autoRun: false,
         triggerMode: 'manual',

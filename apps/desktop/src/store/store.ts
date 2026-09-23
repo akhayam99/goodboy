@@ -458,7 +458,6 @@ type AppActions = {
       url: string;
       title: string;
     }>;
-    mobileShared?: boolean;
     omitGoalSlot?: boolean;
   }): Promise<{ session: Session }>;
   createUntitledSession(input: { workspaceId: WorkspaceId }): Promise<{ session: Session }>;

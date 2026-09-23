@@ -188,12 +188,7 @@ import {
   executeBridgeCommand,
 } from './commandExecutor';
 import { invoke } from '@tauri-apps/api/core';
-import {
-  clearMobileCreateRateState,
-  clearMobileSharedSessions,
-  isSessionMobileShared,
-} from './mobileConfinement';
-import type { SessionId } from '@goodboy/types';
+import { clearMobileCreateRateState } from './mobileConfinement';
 import { WorkflowGateError } from '../../store/slices/workflows/workflowActivationGate';
 
 const invokeMock = vi.mocked(invoke);
@@ -268,7 +263,6 @@ const lastCall = (spy: ReturnType<typeof vi.fn>) => spy.mock.calls[spy.mock.call
 
 beforeEach(() => {
   vi.clearAllMocks();
-  clearMobileSharedSessions();
   clearMobileCreateRateState();
   // clearAllMocks resets call data but NOT implementations; restore the default
   // resolving createSession so a sibling test's custom impl doesn't leak.
@@ -319,21 +313,15 @@ describe('queryProviders (read-only menu RPC)', () => {
     expect(codex.connection).toBe('missing'); // not in store → falls back
     expect(anthropic.models.length).toBeGreaterThan(0);
   });
-
-  it('does not mark any session shared (read-only)', async () => {
-    await executeBridgeCommand(cmd('queryProviders', {}));
-    expect(isSessionMobileShared('s1' as SessionId)).toBe(false);
-  });
 });
 
 describe('setContextSlot editable allow-list', () => {
-  it('writes an editable slot and confines the session', async () => {
+  it('writes an editable slot', async () => {
     const res = await executeBridgeCommand(
       cmd('setContextSlot', { sessionId: 's1', key: 'goal', value: 'ship the bridge' }),
     );
     expect(res.ok).toBe(true);
     expect(h.upsertSessionSlot).toHaveBeenCalledWith('s1', 'goal', 'ship the bridge');
-    expect(isSessionMobileShared('s1' as SessionId)).toBe(true);
   });
 
   it.each(['goal', 'decisions', 'open_questions', 'last_output_summary'])(
@@ -484,7 +472,6 @@ describe('spawnAgent option mapping', () => {
       model: 'gpt-5-codex',
       focus: 'agent',
     });
-    expect(isSessionMobileShared('s1' as SessionId)).toBe(true);
   });
 
   it('spawns with no options (plan-approval affordance: desktop auto-selects)', async () => {
@@ -536,7 +523,6 @@ describe('advanceStep workflow advancement', () => {
       agentId: 'ag2',
       focus: 'none',
     });
-    expect(isSessionMobileShared('s1' as SessionId)).toBe(true);
   });
 
   it('activates the first step when nothing has run yet (no predecessors)', async () => {
@@ -632,7 +618,6 @@ describe('mergePr (write path, security-gated)', () => {
     expect(res.ok).toBe(true);
     // The server PR number (7) is used, not anything the phone supplied.
     expect(h.mergePr).toHaveBeenCalledWith('s1', 7, 'squash');
-    expect(isSessionMobileShared('s1' as SessionId)).toBe(true);
   });
 
   it('passes the merge|rebase method through to the store', async () => {
@@ -945,7 +930,7 @@ describe('queryFileDiff (read-only single-file diff RPC)', () => {
 });
 
 describe('createSessionFromIssue (security-gated write)', () => {
-  it('resolves the issue server-side, creates the session, and confines it', async () => {
+  it('resolves the issue server-side, and creates the session', async () => {
     const res = await executeBridgeCommand(
       cmd('createSessionFromIssue', {
         workspaceId: 'w1',
@@ -970,14 +955,10 @@ describe('createSessionFromIssue (security-gated write)', () => {
           title: 'Fix the thing',
         },
       ],
-      // Origin marker: confines the new session before any kickoff turn.
-      mobileShared: true,
     });
-    // The new session is mobile-shared so its turns clamp at sendTurn.
-    expect(isSessionMobileShared('new-session-1' as SessionId)).toBe(true);
   });
 
-  it('resolves a jira issue server-side, creates the session, and confines it', async () => {
+  it('resolves a jira issue server-side, and creates the session', async () => {
     h.state.value = makeStore({
       workspaceIntegrations: {
         w1: [
@@ -1015,7 +996,6 @@ describe('createSessionFromIssue (security-gated write)', () => {
           title: 'Fix the thing',
         },
       ],
-      mobileShared: true,
     });
     expect(integ.jiraGetFetch).toHaveBeenCalledWith({
       workspaceId: 'w1',
@@ -1023,7 +1003,6 @@ describe('createSessionFromIssue (security-gated write)', () => {
       email: 'pm@example.com',
       issueKey: 'PROJ-1',
     });
-    expect(isSessionMobileShared('new-session-1' as SessionId)).toBe(true);
   });
 
   it('masks a raw jira client error when resolving the issue (no body leaks to phone)', async () => {
@@ -1059,21 +1038,6 @@ describe('createSessionFromIssue (security-gated write)', () => {
     expect(errSpy).toHaveBeenCalled();
     expect(h.createSession).not.toHaveBeenCalled();
     errSpy.mockRestore();
-  });
-
-  // FINDING 2 (ordering): the executor MUST pass mobileShared so createSession
-  // registers the confinement synchronously before its own kickoff turn can
-  // dispatch. (The mark-before-kickoff ordering itself is proven against the real
-  // createSession slice in store.workflow-stepper.test.ts.)
-  it('passes mobileShared:true so createSession confines before any kickoff turn', async () => {
-    await executeBridgeCommand(
-      cmd('createSessionFromIssue', {
-        workspaceId: 'w1',
-        provider: 'linear',
-        issueIdentifier: 'ENG-1',
-      }),
-    );
-    expect(h.createSession).toHaveBeenCalledWith(expect.objectContaining({ mobileShared: true }));
   });
 
   // FINDING 1 (info disclosure): a raw provider/client failure while resolving
