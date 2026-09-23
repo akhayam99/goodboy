@@ -4088,6 +4088,7 @@ mod tests {
                     routing_lock: None,
                     routing_decision: None,
                     task_profile: None,
+                    generation_reservation_id: None,
                 }],
             ),
         );
@@ -4144,10 +4145,10 @@ mod tests {
             .unwrap();
         let mut repeat = execution_graph_input("[{\"id\":\"discovery\"}]");
         repeat.nodes.push(ClusterExecutionNodeRow {
-            node_id: "extra".to_string(),
             agent_id: Some("agent-2".to_string()),
             ordinal: 1,
             role: "tester".to_string(),
+            ..execution_node("extra", "active", "pending")
         });
         let second = record_cluster_execution_graph(&conn, repeat).unwrap();
 
@@ -4165,10 +4166,10 @@ mod tests {
         .unwrap();
         let mut failing = execution_graph_input("[{\"id\":\"discovery\"}]");
         failing.nodes.push(ClusterExecutionNodeRow {
-            node_id: "extra".to_string(),
             agent_id: None,
             ordinal: 1,
             role: "tester".to_string(),
+            ..execution_node("extra", "active", "pending")
         });
 
         assert!(record_cluster_execution_graph(&conn, failing).is_err());
