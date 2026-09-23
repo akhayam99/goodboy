@@ -415,6 +415,10 @@ Each workspace has its own list of skills. There is no global list. Call one
 from the chat with `/skill-name`. A skill runs on any connected provider, not
 only the one whose folder it came from.
 
+Scripts that come with a skill run only from `<project-root>/.kay/skills`.
+Skills found under `.claude/skills` are prompts only, so a cloned repository
+cannot make its scripts run when you use a skill.
+
 ## Editor
 
 When you want to type code yourself, Goodboy opens your editor on the right

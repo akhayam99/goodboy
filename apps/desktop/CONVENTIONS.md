@@ -29,8 +29,8 @@ This app is the **only** layer that calls Tauri commands (`invoke`) and imports 
   - `scripts.rs`: `bash -c` on a workspace script the user wrote.
   - `terminal.rs`: the user's login shell.
   - `provider_lifecycle.rs`: install and login.
-  - `skills.rs`: a skill script file, with its path guarded under `<workspace>/.kay/skills`.
-- **Every process Goodboy starts replays the login environment.** [docs/architecture.md](../../docs/architecture.md) → Subprocess environment owns how it works and why (a Dock-launched app needs it). This is on purpose and it is broad. The resolved env is the user's own shell, not a sandbox.
+  - `skills.rs`: a skill script file, with its path guarded under `<project-root>/.kay/skills`.
+- **Which processes replay the login environment** is owned by [docs/architecture.md](../../docs/architecture.md) → Subprocess environment. A script body the user wrote gets it. Everything else gets only PATH. Where it is replayed it is broad: the resolved env is the user's own shell, not a sandbox.
 - Every provider process start removes the env vars of a nested session (`CLAUDECODE`, `CLAUDE_CODE_ENTRYPOINT`, `CLAUDE_AGENT_SDK_VERSION`), through `aux_spawn::scrub_nested_session_env`. If they stay, the CLI refuses to run or falls back to broken auth.
 
 ## State (Zustand)

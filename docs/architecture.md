@@ -37,7 +37,8 @@ Which helper to use depends on what the process runs.
 - Everything else gets only `PATH`. Use `command`.
 
 `run_git_push` gets the full environment. A repo's `pre-push` hook can read
-variables set in `~/.zshrc`, like registry tokens or tool settings. `PATH`
+variables set in `~/.zshrc`, like registry tokens or tool settings. `skill_run_script`
+gets it too, because a skill script is the user's own bash. `PATH`
 and `TERM` are set after the login environment is copied, so they win over
 anything your profile sets.
 
