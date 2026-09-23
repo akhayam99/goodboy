@@ -7,7 +7,7 @@
 [![stars](https://img.shields.io/github/stars/akhayam99/goodboy?style=flat-square&label=stars&labelColor=15181b&color=3d444d)](https://github.com/akhayam99/goodboy/stargazers)
 [![license](https://img.shields.io/badge/license-FSL--1.1--MIT-3d444d?style=flat-square&labelColor=15181b)](./LICENSE.md)
 
-[Install](#install) &nbsp;·&nbsp; [Providers](#providers-and-integrations) &nbsp;·&nbsp; [Concepts](./docs/concepts.md) &nbsp;·&nbsp; [Documentation](./docs/README.md) &nbsp;·&nbsp; [goodboy-ai.dev](https://goodboy-ai.dev)
+[Install](#install) &nbsp;·&nbsp; [Providers](#your-providers-one-pool) &nbsp;·&nbsp; [Concepts](./docs/concepts.md) &nbsp;·&nbsp; [Documentation](./docs/README.md) &nbsp;·&nbsp; [goodboy-ai.dev](https://goodboy-ai.dev)
 
 <sub>Tauri 2 &nbsp;·&nbsp; React 19 &nbsp;·&nbsp; TypeScript &nbsp;·&nbsp; SQLite</sub>
 
@@ -26,37 +26,12 @@ needs briefing again, and it all runs on the plan you already pay for.
 
 <br>
 
-## Providers and integrations
-
-<div align="center">
-  <img src=".github/providers.png" alt="Claude, Codex, Cursor, Gemini, OpenCode, OpenRouter and Moonshot" width="860">
-</div>
-
-Claude, Cursor and Codex sign in with the CLI you already use, and the rest
-take a key. Connect a second one and it inherits the session it joins.
-[The provider guide](./docs/providers.md) covers installation and what each
-provider does differently.
-
-<div align="center">
-  <img src=".github/integrations.png" alt="GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack" width="860">
-</div>
-
-Connect the tools you already work in and agents read from them through the
-[query bridge](./docs/query-bridge.md).
-
-<br>
-
-## Not only a chat window
+## Every task on one board
 
 Four terminals open and no idea which one is waiting on you.
 
-The chat is still there, inside a session: one task with its plan, its
-questions and its diff. The plan lands as a page of its own, and a question
-you would rather not answer goes to another agent.
-
-![A session chat: the agent's plan as its own artifact, three files edited, a question answered by another agent and a second one an agent is answering right now, with the other sessions in the sidebar](./docs/images/chat-shell.png)
-
-Every session sits on one board, with the issues it came from on the card.
+Goodboy's home is a board of sessions. A session is one task, with its plan,
+its questions and its diff, and the issues it came from sit on the card.
 Nobody has to ask you where things stand.
 
 ![The Goodboy board for a workspace: cards under building, running, needs you and in review, some linked to a Linear, Sentry, Jira or GitHub issue, with the done and archived columns folded at the end](./docs/images/board-shell.png)
@@ -89,30 +64,6 @@ describe the goal and let the orchestrator build one for you.
 
 <br>
 
-## Run out of quota and the task keeps going
-
-Burning the big model on a one-liner is easy when nothing is watching.
-
-Goodboy meters every turn and holds a monthly cap per provider. When one is
-spent, limited or unreachable, the next turn runs on another provider from
-your pool, and the chat tells you which one and why.
-
-![The provider settings: seven providers with their connection state, the default provider, the routing pool Goodboy can pick from, and a model chosen per task](./docs/images/providers.png)
-
-<br>
-
-## See what the work cost
-
-Agents spend money while you are looking somewhere else.
-
-Impact keeps the running total, split by provider, by model and by session,
-next to the cap and the threshold that moves the next turn elsewhere. You can
-tell which model earned its price.
-
-![The Impact studio: spend per provider and per session in the rail, one provider against its monthly cap and alert threshold, and its cost broken down by model](./docs/images/impact.png)
-
-<br>
-
 ## Nobody edits your checkout
 
 Two agents in the same working copy is a merge conflict waiting for you.
@@ -122,18 +73,6 @@ several sessions run at once without stepping on each other. One session can
 hold more than one repository, each with its own branch and pull request.
 
 ![The Projects section of a session: two repositories mounted, one with three branches of a pull request series and a merged one shown, each with its worktree, and the terminal, scripts and editor actions of a row](./docs/images/mounts.png)
-
-<br>
-
-## A review comment comes back as a commit
-
-A pull request with nine comments is an afternoon of context switching.
-
-Review shows the pull request, its checks and every thread. Hand a comment to
-an agent and it returns a local commit and a drafted reply. Nothing reaches
-the pull request until you say so.
-
-![The Resolve queue for a pull request: comment threads with their state, two replies ready to post, one question for you, one settled but not published](./docs/images/resolve.png)
 
 <br>
 
@@ -162,13 +101,84 @@ as yours.
 
 <br>
 
+## A review comment comes back as a commit
+
+A pull request with nine comments is an afternoon of context switching.
+
+Review shows the pull request, its checks and every thread. Hand a comment to
+an agent and it returns a local commit and a drafted reply. Nothing reaches
+the pull request until you say so.
+
+![The Resolve queue for a pull request: comment threads with their state, two replies ready to post, one question for you, one settled but not published](./docs/images/resolve.png)
+
+<br>
+
+## Your providers, one pool
+
+<div align="center">
+  <img src=".github/providers.png" alt="Claude, Codex, Cursor, Gemini, OpenCode, OpenRouter and Moonshot" width="860">
+</div>
+
+Burning the big model on a one-liner is easy when nothing is watching.
+
+Claude, Cursor and Codex sign in with the CLI you already use, and the rest
+take a key. Pick a default, the pool Goodboy may route to and a model per
+task. Each provider gets a monthly cap: when one is spent, limited or
+unreachable, the next turn runs on another provider from your pool, and the
+chat tells you which one and why. [The provider guide](./docs/providers.md)
+covers installation and what each provider does differently.
+
+![The provider settings: seven providers with their connection state, the default provider, the routing pool Goodboy can pick from, and a model chosen per task](./docs/images/providers.png)
+
+<br>
+
+## See what the work cost
+
+Agents spend money while you are looking somewhere else.
+
+Impact keeps the running total, split by provider, by model and by session,
+next to the cap and the threshold that moves the next turn elsewhere. You can
+tell which model earned its price.
+
+![The Impact studio: spend per provider and per session in the rail, one provider against its monthly cap and alert threshold, and its cost broken down by model](./docs/images/impact.png)
+
+<br>
+
+## Your tools, one Inbox
+
+<div align="center">
+  <img src=".github/integrations.png" alt="GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack" width="860">
+</div>
+
+An issue in Linear, an error in Sentry, a thread in Slack, and a tab open for
+each before the work even starts.
+
+The Inbox collects the issues, pull requests, threads and errors from the
+tools you connect. Open one and launch a session from it with the goal
+already written. Agents read from the same tools through the
+[query bridge](./docs/query-bridge.md).
+
+![The Inbox: issues, errors and threads from GitHub, Linear, Jira, Sentry and Slack in one list, a Linear issue open with its fields and description, and a launch box that starts a session from it](./docs/images/inbox.png)
+
+<br>
+
+## And a chat, when you want one
+
+Sometimes you just want to tell the agent what to do.
+
+The chat is still there, inside the session. The plan it writes opens as its
+own page, and a question you would rather not answer goes to another agent.
+
+![A session chat: the agent's plan as its own artifact, three files edited, a question answered by another agent and a second one an agent is answering right now, with the other sessions in the sidebar](./docs/images/chat-shell.png)
+
+<br>
+
 ## Also in the box
 
 - Terminal, Explore and Diff lenses on every session, one shortcut each
 - A command palette for sessions, lenses and studios
 - Open the worktree in VS Code or Cursor when you want to type yourself
 - Pair a phone to follow a session away from the desk
-- One Inbox for what your trackers and review tools send you
 
 <br>
 
