@@ -196,6 +196,8 @@ export const NON_SESSION_STATE_KEYS = [
   'changelogError',
   'changelogFetchedAt',
   'changelogSeenVersion',
+  'changelogSeenHydrated',
+  'changelogFocusVersion',
   'bugReportDraft',
   'slackChannels',
   'slackUsers',

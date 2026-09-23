@@ -20,7 +20,7 @@ import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekO
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
 import { isMainWindow } from './features/workspace/window';
 import { primaryProjectRoot } from './features/workspace/primaryProjectRoot';
-import { ReleaseToast } from './features/changelog/components/ReleaseToast';
+import { ReleaseNoticeBridge } from './features/changelog/components/ReleaseNoticeBridge';
 import { OnboardingCard } from './features/onboarding/OnboardingCard';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
@@ -312,7 +312,7 @@ export const App = () => {
       <WorkflowFollowToastBridge />
       <NewSessionBridge />
       <SessionArchiveBridge />
-      <ReleaseToast onOpenChangelog={openChangelog} />
+      <ReleaseNoticeBridge onOpenChangelog={openChangelog} />
       <AppShell
         topBar={<AppTopBar onOpenSpend={openSpend} />}
         footer={

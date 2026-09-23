@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
   type RefObject,
@@ -20,8 +21,19 @@ export type ShowToastOptions = {
   readonly action?: ToastAction;
 };
 
+export type PreviewNotificationParams = {
+  readonly severity: ToastKind;
+  readonly title: string;
+  readonly message: string;
+  readonly context?: string;
+  readonly action?: ToastAction;
+  readonly persist: boolean;
+  readonly onDismiss?: () => void;
+};
+
 type ToastContextValue = {
   showToast: (kind: ToastKind, message: string, opts?: ShowToastOptions) => void;
+  previewNotification: (params: PreviewNotificationParams) => void;
 };
 
 type ToastLiftValue = {
@@ -44,17 +56,11 @@ const isSameToast = ({ a, b }: { a: ToastItem; b: Omit<ToastItem, 'id' | 'count'
 
 export const ToastProvider = ({ children }: ToastProviderProps) => {
   const [toasts, setToasts] = useState<ReadonlyArray<ToastItem>>([]);
+  const toastsRef = useRef(toasts);
+  toastsRef.current = toasts;
   const [lifts, setLifts] = useState<Readonly<Record<string, number>>>({});
 
-  const showToast = useCallback((kind: ToastKind, message: string, opts?: ShowToastOptions) => {
-    const next = {
-      kind,
-      message: message.length > 0 ? message.charAt(0).toUpperCase() + message.slice(1) : message,
-      title: opts?.title,
-      context: opts?.context,
-      persist: opts?.persist === true,
-      action: opts?.action,
-    };
+  const pushToast = useCallback((next: Omit<ToastItem, 'id' | 'count' | 'revision'>) => {
     setToasts((prev) => {
       const match = prev.find((toast) => isSameToast({ a: toast, b: next }));
       if (match !== undefined) {
@@ -68,17 +74,51 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
     });
   }, []);
 
-  const dismiss = useCallback(({ id }: { id: string }) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  const showToast = useCallback(
+    (kind: ToastKind, message: string, opts?: ShowToastOptions) => {
+      pushToast({
+        kind,
+        message: message.length > 0 ? message.charAt(0).toUpperCase() + message.slice(1) : message,
+        title: opts?.title,
+        context: opts?.context,
+        persist: opts?.persist === true,
+        action: opts?.action,
+      });
+    },
+    [pushToast],
+  );
+
+  const previewNotification = useCallback(
+    ({
+      severity,
+      title,
+      message,
+      context,
+      action,
+      persist,
+      onDismiss,
+    }: PreviewNotificationParams) => {
+      pushToast({ kind: severity, title, message, context, action, persist, onDismiss });
+    },
+    [pushToast],
+  );
+
+  const removeToasts = useCallback(({ ids }: { ids: ReadonlySet<string> }) => {
+    toastsRef.current.filter((toast) => ids.has(toast.id)).forEach((toast) => toast.onDismiss?.());
+    setToasts((prev) => prev.filter((toast) => !ids.has(toast.id)));
   }, []);
+
+  const dismiss = useCallback(
+    ({ id }: { id: string }) => removeToasts({ ids: new Set([id]) }),
+    [removeToasts],
+  );
 
   const openOverflow = useCallback(
     ({ suppressedIds }: { suppressedIds: ReadonlyArray<string> }) => {
-      const hidden = new Set(suppressedIds);
-      setToasts((prev) => prev.filter((toast) => !hidden.has(toast.id)));
+      removeToasts({ ids: new Set(suppressedIds) });
       window.dispatchEvent(new CustomEvent(OPEN_NOTIFICATIONS_EVENT));
     },
-    [],
+    [removeToasts],
   );
 
   const setLift = useCallback(({ id, bottom }: { id: string; bottom: number | null }) => {
@@ -94,7 +134,10 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
     });
   }, []);
 
-  const value = useMemo(() => ({ showToast }), [showToast]);
+  const value = useMemo(
+    () => ({ showToast, previewNotification }),
+    [showToast, previewNotification],
+  );
   const liftValue = useMemo(() => ({ setLift }), [setLift]);
   const liftValues = Object.values(lifts);
   const bottom = liftValues.length > 0 ? Math.max(...liftValues) : null;

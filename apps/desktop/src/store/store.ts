@@ -261,6 +261,7 @@ import { initialUpdaterState } from './slices/updater/state';
 import { createChangelogSlice } from './slices/changelog';
 import { initialChangelogState } from './slices/changelog/state';
 import type { Params as MarkChangelogSeenParams } from './slices/changelog/markChangelogSeen';
+import type { FocusChangelogReleaseParams } from './slices/changelog/focusChangelogRelease';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
 import { initialBugReportDraftState } from './slices/bugReportDraft/state';
 import type { Params as SetBugReportDraftParams } from './slices/bugReportDraft/setBugReportDraft';
@@ -322,6 +323,7 @@ type AppActions = {
   reloadChangelog(): Promise<void>;
   hydrateChangelogSeen(): Promise<void>;
   markChangelogSeen(params: MarkChangelogSeenParams): Promise<void>;
+  focusChangelogRelease(params: FocusChangelogReleaseParams): void;
   setBugReportDraft(params: SetBugReportDraftParams): void;
   addBugReportImages(params: AddBugReportImagesParams): void;
   removeBugReportImage(params: RemoveBugReportImageParams): void;

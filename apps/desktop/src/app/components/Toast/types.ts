@@ -13,6 +13,7 @@ export type ToastItem = {
   readonly context?: string;
   readonly persist: boolean;
   readonly action?: ToastAction;
+  readonly onDismiss?: () => void;
   readonly count: number;
   readonly revision: number;
 };

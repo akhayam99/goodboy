@@ -147,7 +147,7 @@ export const NotificationToastBridge = () => {
   const notifications = useAppStore((s) => s.notifications);
   const sessions = useAppStore((s) => s.sessions);
   const workspaces = useAppStore((s) => s.workspaces);
-  const { showToast } = useToast();
+  const { previewNotification } = useToast();
 
   const seen = useRef<Set<string>>(new Set());
   const mountedAt = useRef<number>(Date.now());
@@ -156,14 +156,16 @@ export const NotificationToastBridge = () => {
     for (const n of pickFreshFailures(notifications, seen.current, mountedAt.current)) {
       const store = useAppStore.getState();
       const toastAction = n.action != null ? mapNotificationAction(n.action, store) : undefined;
-      showToast(n.severity === 'error' ? 'error' : 'warning', n.body ?? '', {
+      previewNotification({
+        severity: n.severity === 'error' ? 'error' : 'warning',
         title: n.title,
+        message: n.body ?? '',
         context: notificationContext(n, sessions, workspaces),
         persist: n.severity === 'error',
         action: toastAction,
       });
     }
-  }, [notifications, sessions, workspaces, showToast]);
+  }, [notifications, sessions, workspaces, previewNotification]);
 
   return null;
 };

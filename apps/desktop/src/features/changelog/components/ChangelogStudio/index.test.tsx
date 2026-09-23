@@ -44,6 +44,8 @@ beforeEach(() => {
     changelogError: null,
     changelogFetchedAt: null,
     changelogSeenVersion: null,
+    changelogSeenHydrated: true,
+    changelogFocusVersion: null,
   };
   mocks.installedVersion = null;
 });
@@ -64,6 +66,8 @@ describe('ChangelogStudio', () => {
       changelogError: null,
       changelogFetchedAt: '2026-07-11T10:00:00Z',
       changelogSeenVersion: null,
+      changelogSeenHydrated: true,
+      changelogFocusVersion: null,
     };
     mocks.installedVersion = '0.1.55';
 
@@ -84,6 +88,8 @@ describe('ChangelogStudio', () => {
       changelogError: null,
       changelogFetchedAt: '2026-07-11T10:00:00Z',
       changelogSeenVersion: null,
+      changelogSeenHydrated: true,
+      changelogFocusVersion: null,
     };
 
     renderStudio();
@@ -99,6 +105,8 @@ describe('ChangelogStudio', () => {
       changelogError: 'network down',
       changelogFetchedAt: null,
       changelogSeenVersion: null,
+      changelogSeenHydrated: true,
+      changelogFocusVersion: null,
     };
 
     renderStudio();
@@ -117,6 +125,8 @@ describe('ChangelogStudio', () => {
       changelogError: 'network down',
       changelogFetchedAt: new Date(Date.now() - 2 * 3_600_000).toISOString(),
       changelogSeenVersion: null,
+      changelogSeenHydrated: true,
+      changelogFocusVersion: null,
     };
 
     renderStudio();
@@ -133,6 +143,8 @@ describe('ChangelogStudio', () => {
       changelogError: null,
       changelogFetchedAt: '2026-07-11T10:00:00Z',
       changelogSeenVersion: null,
+      changelogSeenHydrated: true,
+      changelogFocusVersion: null,
     };
     mocks.installedVersion = '0.1.55';
 
@@ -156,6 +168,8 @@ describe('ChangelogStudio', () => {
       changelogError: 'network down',
       changelogFetchedAt: null,
       changelogSeenVersion: null,
+      changelogSeenHydrated: true,
+      changelogFocusVersion: null,
     };
     mocks.installedVersion = '0.1.55';
 
@@ -171,6 +185,8 @@ describe('ChangelogStudio', () => {
       changelogError: null,
       changelogFetchedAt: null,
       changelogSeenVersion: null,
+      changelogSeenHydrated: true,
+      changelogFocusVersion: null,
     };
     mocks.installedVersion = '0.1.55';
 
@@ -186,6 +202,8 @@ describe('ChangelogStudio', () => {
       changelogError: null,
       changelogFetchedAt: '2026-07-11T10:00:00Z',
       changelogSeenVersion: null,
+      changelogSeenHydrated: true,
+      changelogFocusVersion: null,
     };
     mocks.installedVersion = '0.1.55';
 
@@ -201,6 +219,8 @@ describe('ChangelogStudio', () => {
       changelogError: null,
       changelogFetchedAt: '2026-07-11T10:00:00Z',
       changelogSeenVersion: null,
+      changelogSeenHydrated: true,
+      changelogFocusVersion: null,
     };
 
     renderStudio();
