@@ -5,7 +5,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import type { Database } from '../client';
+import type { Database, PlainStatement } from '../client';
 import { UniqueViolationError } from '../shared/errors';
 
 type Row = {
@@ -34,11 +34,6 @@ type TransferMountPathParams = {
   readonly expectedRevision: number;
 };
 
-type MountRow = {
-  readonly worktree_path: string | null;
-  readonly revision: number;
-};
-
 const toDomain = (row: Row): RetainedWorktreePath => ({
   ...row,
   lastCheckedAt:
@@ -62,85 +57,85 @@ export const listRetainedWorktreePaths = async ({
   return rows.map(toDomain);
 };
 
+type RetainedPathInsertParams = {
+  readonly retained: RetainedWorktreePath;
+};
+
+export const retainedPathInsertStatement = ({
+  retained,
+}: RetainedPathInsertParams): PlainStatement => ({
+  sql: `INSERT INTO retained_worktree_paths
+    (id, workspace_id, project_id, source_session_id, source_mount_id, repo_root,
+     worktree_path, branch, reason, last_checked_at, created_at, updated_at)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  params: [
+    retained.id,
+    retained.workspaceId,
+    retained.projectId,
+    retained.sourceSessionId,
+    retained.sourceMountId,
+    retained.repoRoot,
+    retained.worktreePath,
+    retained.branch,
+    retained.reason,
+    retained.lastCheckedAt === null ? null : Date.parse(retained.lastCheckedAt),
+    Date.parse(retained.createdAt),
+    Date.parse(retained.updatedAt),
+  ],
+});
+
+const STALE_MOUNT = 'STALE_MOUNT';
+const PATH_OWNED = 'PATH_OWNED';
+
 export const transferMountPathToRetained = async ({
   db,
   retained,
   expectedRevision,
 }: TransferMountPathParams): Promise<boolean> => {
-  await db.exec('BEGIN IMMEDIATE');
-  try {
-    const mountRows = await db.select<MountRow>(
-      `SELECT worktree_path, revision FROM session_worktrees
-       WHERE session_id = ? AND id = ? LIMIT 1`,
-      [retained.sourceSessionId, retained.sourceMountId],
-    );
-    const mount = mountRows[0];
-    if (
-      mount === undefined ||
-      mount.revision !== expectedRevision ||
-      mount.worktree_path !== retained.worktreePath
-    ) {
-      await db.exec('ROLLBACK');
-      return false;
-    }
-    const owners = await db.select<{ readonly id: string }>(
-      `SELECT id FROM session_worktrees WHERE worktree_path = ? AND id != ?
-       UNION ALL
-       SELECT id FROM retained_worktree_paths WHERE worktree_path = ?
-       LIMIT 1`,
-      [retained.worktreePath, retained.sourceMountId, retained.worktreePath],
-    );
-    if (owners.length > 0) {
-      throw new UniqueViolationError('retained worktree path', 'worktreePath');
-    }
-    await db.execute(
-      `INSERT INTO retained_worktree_paths
-        (id, workspace_id, project_id, source_session_id, source_mount_id, repo_root,
-         worktree_path, branch, reason, last_checked_at, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        retained.id,
-        retained.workspaceId,
-        retained.projectId,
-        retained.sourceSessionId,
-        retained.sourceMountId,
-        retained.repoRoot,
-        retained.worktreePath,
-        retained.branch,
-        retained.reason,
-        retained.lastCheckedAt === null ? null : Date.parse(retained.lastCheckedAt),
-        Date.parse(retained.createdAt),
-        Date.parse(retained.updatedAt),
-      ],
-    );
-    const update = await db.execute(
-      `UPDATE session_worktrees
-       SET worktree_path = NULL, last_worktree_path = ?, is_attached = 0,
-           disk_state = 'removed', revision = revision + 1, updated_at = ?
-       WHERE session_id = ? AND id = ? AND revision = ? AND worktree_path = ?`,
-      [
-        retained.worktreePath,
-        Date.parse(retained.updatedAt),
-        retained.sourceSessionId,
-        retained.sourceMountId,
-        expectedRevision,
-        retained.worktreePath,
-      ],
-    );
-    if (update.rowsAffected === 0) {
-      await db.exec('ROLLBACK');
-      return false;
-    }
-    await db.execute(
-      'UPDATE sessions SET active_mount_id = NULL WHERE id = ? AND active_mount_id = ?',
-      [retained.sourceSessionId, retained.sourceMountId],
-    );
-    await db.exec('COMMIT');
-    return true;
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
+  const mountKey = [
+    retained.sourceSessionId,
+    retained.sourceMountId,
+    expectedRevision,
+    retained.worktreePath,
+  ];
+  const outcome = await db.transaction({
+    statements: [
+      {
+        sql: `SELECT id FROM session_worktrees
+         WHERE session_id = ? AND id = ? AND revision = ? AND worktree_path = ? LIMIT 1`,
+        params: mountKey,
+        abortWhen: 'noRows',
+        abortCode: STALE_MOUNT,
+      },
+      {
+        sql: `SELECT id FROM session_worktrees WHERE worktree_path = ? AND id != ?
+         UNION ALL
+         SELECT id FROM retained_worktree_paths WHERE worktree_path = ?
+         LIMIT 1`,
+        params: [retained.worktreePath, retained.sourceMountId, retained.worktreePath],
+        abortWhen: 'rows',
+        abortCode: PATH_OWNED,
+      },
+      retainedPathInsertStatement({ retained }),
+      {
+        sql: `UPDATE session_worktrees
+         SET worktree_path = NULL, last_worktree_path = ?, is_attached = 0,
+             disk_state = 'removed', revision = revision + 1, updated_at = ?
+         WHERE session_id = ? AND id = ? AND revision = ? AND worktree_path = ?`,
+        params: [retained.worktreePath, Date.parse(retained.updatedAt), ...mountKey],
+        abortWhen: 'noChanges',
+        abortCode: STALE_MOUNT,
+      },
+      {
+        sql: 'UPDATE sessions SET active_mount_id = NULL WHERE id = ? AND active_mount_id = ?',
+        params: [retained.sourceSessionId, retained.sourceMountId],
+      },
+    ],
+  });
+  if (outcome.status === 'aborted' && outcome.abortCode === PATH_OWNED) {
+    throw new UniqueViolationError('retained worktree path', 'worktreePath');
   }
+  return outcome.status === 'committed';
 };
 
 type RetainedKeyParams = {

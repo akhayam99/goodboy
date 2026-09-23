@@ -12,8 +12,10 @@ import {
   listSessionMounts,
   listWorktreesForSession,
   updateSessionMountBranch,
+  updateSessionMountLifecycle,
   updateSessionWorktreeRepoSlug,
 } from './session-worktree';
+import { UniqueViolationError } from '../shared/errors';
 
 const workspaceId = 'w1' as WorkspaceId;
 const sessionId = 's1' as SessionId;
@@ -454,5 +456,80 @@ describe('deleteSession', () => {
 
     expect(await db.select('SELECT id FROM sessions WHERE id = ?', [sessionId])).toEqual([]);
     expect(await listSessionMounts({ db, sessionId })).toEqual([]);
+  });
+});
+
+type InsertMountParams = {
+  readonly db: Database;
+  readonly id: string;
+  readonly worktreePath: string;
+};
+
+describe('mount path guards', () => {
+  const insertMount = async ({ db, id, worktreePath }: InsertMountParams): Promise<void> =>
+    insertSessionWorktree(db, {
+      id,
+      sessionId,
+      worktreePath,
+      branch: `branch-${id}`,
+      parallelIndex: 0,
+      createdAt: Date.now(),
+    });
+
+  it('refuses a second mount on an owned path and writes nothing', async () => {
+    const db = await seed();
+    await insertMount({ db, id: 'first', worktreePath: '/tmp/wt/shared' });
+
+    await expect(
+      insertMount({ db, id: 'second', worktreePath: '/tmp/wt/shared' }),
+    ).rejects.toBeInstanceOf(UniqueViolationError);
+    expect((await listSessionMounts({ db, sessionId })).map((mount) => mount.id)).toEqual([
+      'first',
+    ]);
+  });
+
+  it('returns false on a stale revision and leaves the mount as it was', async () => {
+    const db = await seed();
+    await insertMount({ db, id: 'first', worktreePath: '/tmp/wt/first' });
+
+    const updated = await updateSessionMountLifecycle({
+      db,
+      sessionId,
+      mountId: 'first' as MountId,
+      worktreePath: null,
+      isAttached: false,
+      diskState: 'removed',
+      expectedRevision: 5,
+      updatedAt: new Date().toISOString() as IsoDateTime,
+    });
+
+    expect(updated).toBe(false);
+    expect((await listSessionMounts({ db, sessionId }))[0]).toMatchObject({
+      worktreePath: '/tmp/wt/first',
+      revision: 0,
+    });
+  });
+
+  it('refuses to move a mount onto a path another mount owns', async () => {
+    const db = await seed();
+    await insertMount({ db, id: 'first', worktreePath: '/tmp/wt/first' });
+    await insertMount({ db, id: 'second', worktreePath: '/tmp/wt/second' });
+
+    await expect(
+      updateSessionMountLifecycle({
+        db,
+        sessionId,
+        mountId: 'second' as MountId,
+        worktreePath: '/tmp/wt/first',
+        isAttached: true,
+        diskState: 'present',
+        expectedRevision: 0,
+        updatedAt: new Date().toISOString() as IsoDateTime,
+      }),
+    ).rejects.toBeInstanceOf(UniqueViolationError);
+    const second = (await listSessionMounts({ db, sessionId })).find(
+      (mount) => mount.id === 'second',
+    );
+    expect(second).toMatchObject({ worktreePath: '/tmp/wt/second', revision: 0 });
   });
 });

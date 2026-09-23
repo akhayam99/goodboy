@@ -170,6 +170,7 @@ const h = vi.hoisted(() => {
     execute: vi.fn(),
     select: vi.fn(),
     exec: vi.fn(),
+    transaction: vi.fn(),
     listLiveRunIds: vi.fn(async () => new Set<string>()),
     agentList: vi.fn(async () => [] as ReadonlyArray<Agent>),
     slots,
@@ -429,6 +430,7 @@ beforeEach(async () => {
   h.exec.mockReset().mockImplementation(db.exec);
   h.execute.mockReset().mockImplementation(db.execute);
   h.select.mockReset().mockImplementation(db.select);
+  h.transaction.mockReset().mockImplementation(db.transaction);
   await migrate(db);
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Workspace', 'workspace', 1, 1)",

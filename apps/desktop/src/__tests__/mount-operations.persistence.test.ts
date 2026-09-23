@@ -1,13 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Database } from '@goodboy/db';
+import type { Database, TransactionParams } from '@goodboy/db';
 import type { MountId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
-  db: null as unknown as {
-    exec: (sql: string) => Promise<void>;
-    execute: (sql: string, params?: ReadonlyArray<unknown>) => Promise<{ rowsAffected: number }>;
-    select: <T>(sql: string, params?: ReadonlyArray<unknown>) => Promise<ReadonlyArray<T>>;
-  },
+  db: null as unknown as Database,
   branchNames: ['ak/base'] as Array<string>,
   createWorktree: vi.fn(),
   inspectWorktree: vi.fn(async () => ({ kind: 'registered' }) as { kind: string }),
@@ -22,6 +18,7 @@ vi.mock('../shared/lib/db', () => ({
     exec: (sql: string) => h.db.exec(sql),
     execute: (sql: string, params?: ReadonlyArray<unknown>) => h.db.execute(sql, params),
     select: <T>(sql: string, params?: ReadonlyArray<unknown>) => h.db.select<T>(sql, params),
+    transaction: (params: TransactionParams) => h.db.transaction(params),
   },
 }));
 
