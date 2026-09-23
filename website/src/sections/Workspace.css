@@ -225,6 +225,44 @@
   flex-shrink: 0;
 }
 
+@media (min-width: 960px) and (max-width: 1079px) {
+  #workspace .split {
+    display: block;
+  }
+
+  #workspace .split > .blockHead h2 {
+    font-size: clamp(30px, 3.8vw, 54px);
+  }
+
+  #workspace .split > .blockHead .sub {
+    font-size: clamp(17px, 1.6vw, 20px);
+  }
+
+  #workspace .split > .splitBody > .ws-frame {
+    margin-top: 48px;
+  }
+}
+
+@media (min-width: 1080px) {
+  #workspace .ws-goal {
+    max-width: none;
+  }
+
+  #workspace .ws-grid {
+    flex-wrap: nowrap;
+  }
+
+  #workspace .ws-touched-group {
+    flex: 1 1 0;
+    width: auto;
+  }
+
+  #workspace .ws-rest-group {
+    flex: 0 0 40%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 760px) {
   .ws-touched-group {
     width: 100%;
