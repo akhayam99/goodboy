@@ -43,7 +43,9 @@ A few rules are always true:
 - A single repository is a workspace with one project
 - A session belongs to the workspace, never to a project
 - Every session starts with one agent, and always has at least one
-- Goodboy never runs git init, never commits and never adds a remote for you
+- Git state is created or rewritten only when you ask: initializing a repo,
+  amend, squash, a resolve attempt. Never by a mount or a turn, and nothing is
+  pushed without a publish
 
 The app follows the life of a task. First the task itself. Then the tools it
 comes from and goes back to. Then the code it produces. The chat comes last.

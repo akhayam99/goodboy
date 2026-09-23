@@ -7,7 +7,7 @@ Component placement and folder layout: [file-system.md](../file-system.md) → C
 
 ## `export const`, never `export function`
 
-React class components (error boundaries that require `class`) are the only exception. Named exports only. One export per file ([AGENTS.md](../../AGENTS.md) → Exports).
+React class components (error boundaries that require `class`) are the only exception. Named exports only. One export per file ([AGENTS.md](../../AGENTS.md) → Components and exports).
 
 ## React component patterns
 

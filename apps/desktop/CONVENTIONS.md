@@ -44,7 +44,7 @@ This app is the **only** layer that calls Tauri commands (`invoke`) and imports 
 
 ## React patterns
 
-[docs/typescript/components.md](../../docs/typescript/components.md) owns them. Two additions for desktop: `useTransition` for updates that are not urgent and for async UX. `use()` to unwrap promises, only at suspense boundaries you own.
+[docs/typescript/components.md](../../docs/typescript/components.md) owns them. One addition for desktop: `use()` to unwrap promises, only at suspense boundaries you own.
 
 ## Styling
 

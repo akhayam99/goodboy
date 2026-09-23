@@ -18,14 +18,18 @@ Every object shape is a `type`. `interface` is forbidden, no exceptions, because
 A `switch` over a union should end with a `default` case that assigns the switched value to `never`. That way, adding a new variant flags every switch that doesn't handle it yet.
 
 ```ts
-const label = (s: SessionStage): string => {
-  switch (s) {
+type Params = {
+  readonly stage: SessionStage;
+};
+
+const stageLabel = ({ stage }: Params): string => {
+  switch (stage) {
     case 'running':
       return 'Running';
     case 'done':
       return 'Done';
     default: {
-      const _exhaustive: never = s;
+      const _exhaustive: never = stage;
       return _exhaustive;
     }
   }

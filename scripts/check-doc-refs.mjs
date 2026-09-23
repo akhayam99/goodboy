@@ -25,7 +25,6 @@ const ALLOWLIST_REASON_BY_REF = new Map([
     'dangerousDisableAssetCspModification',
     { kind: 'vocabulary', reason: 'tauri config key named as forbidden' },
   ],
-  ['useTransition', { kind: 'stale', reason: 'cluster 14 drops the rule nothing follows' }],
   ['docs/worktree-bridge.md', { kind: 'stale', reason: 'cluster 08 rewrites docs/event-bus.md' }],
   ['UniqueViolation', { kind: 'stale', reason: 'cluster 02 renames the db error kinds' }],
   ['ForeignKeyViolation', { kind: 'stale', reason: 'cluster 02 renames the db error kinds' }],
