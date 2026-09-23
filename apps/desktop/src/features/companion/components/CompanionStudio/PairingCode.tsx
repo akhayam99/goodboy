@@ -82,8 +82,7 @@ export const PairingCode = ({ info, loading, error, remaining, total, onMint }: 
           <RefreshCw size={ICON_SIZE.row} aria-hidden /> New code
         </Button>
         <p className="max-w-[18rem] text-center text-2xs text-muted-foreground">
-          A new code is minted automatically when this one expires. Only one device can be linked at
-          a time.
+          A new code is minted automatically when this one expires.
         </p>
       </div>
     </>

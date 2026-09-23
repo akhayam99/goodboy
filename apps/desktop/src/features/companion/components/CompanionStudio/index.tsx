@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlaskConical, Smartphone } from 'lucide-react';
-import { formatError, ScrollFade } from '@goodboy/ui';
+import { Divider, formatError, ScrollFade } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import {
@@ -23,6 +23,7 @@ export const CompanionStudio = ({ onClose }: Props) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [revoking, setRevoking] = useState(false);
+  const [isPairingAnother, setIsPairingAnother] = useState(false);
   const [remaining, setRemaining] = useState(0);
   const totalRef = useRef(0);
 
@@ -56,6 +57,7 @@ export const CompanionStudio = ({ onClose }: Props) => {
     setError(null);
     try {
       await bridgeRevoke();
+      setIsPairingAnother(false);
       await mint();
     } catch (e) {
       setError(formatError(e));
@@ -63,6 +65,17 @@ export const CompanionStudio = ({ onClose }: Props) => {
       setRevoking(false);
     }
   }, [mint]);
+
+  const pairAnother = useCallback(() => {
+    setIsPairingAnother(true);
+    void mint();
+  }, [mint]);
+
+  const enrolled = status?.enrolledCount ?? 0;
+  const isPaired = enrolled > 0;
+  const isLoadingStatus = loading && status === null;
+  const showsCode = !isPaired || isPairingAnother || error !== null;
+  const total = totalRef.current > 0 ? totalRef.current : 1;
 
   useEffect(() => {
     void mint();
@@ -77,14 +90,10 @@ export const CompanionStudio = ({ onClose }: Props) => {
   }, [info]);
 
   useEffect(() => {
-    if (info !== null && remaining === 0 && !loading) {
+    if (showsCode && info !== null && remaining === 0 && !loading) {
       void mint();
     }
-  }, [remaining, info, loading, mint]);
-
-  const enrolled = status?.enrolledCount ?? 0;
-  const total = totalRef.current > 0 ? totalRef.current : 1;
-  const showsPairedDevices = error === null && info !== null && enrolled > 0;
+  }, [showsCode, remaining, info, loading, mint]);
 
   return (
     <StudioShell
@@ -100,12 +109,18 @@ export const CompanionStudio = ({ onClose }: Props) => {
           viewportClassName="flex items-center justify-center"
         >
           <div className="mx-auto flex w-full max-w-md flex-col items-center gap-7 px-8 py-10">
-            <div className="flex flex-col items-center gap-1.5 text-center">
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">Scan to pair</h2>
-              <p className="max-w-[18rem] text-2xs text-muted-foreground">
-                Open Goodboy on your iPhone and point the camera at this code.
-              </p>
-            </div>
+            {!isLoadingStatus && (
+              <div className="flex flex-col items-center gap-1.5 text-center">
+                <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                  {showsCode ? 'Scan to pair' : 'Paired devices'}
+                </h2>
+                {showsCode && (
+                  <p className="max-w-[18rem] text-2xs text-muted-foreground">
+                    Open Goodboy on your iPhone and point the camera at this code.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="flex max-w-[20rem] items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-left">
               <FlaskConical
@@ -114,27 +129,32 @@ export const CompanionStudio = ({ onClose }: Props) => {
                 className="mt-0.5 shrink-0 text-warning"
               />
               <p className="text-2xs leading-relaxed text-warning">
-                This feature is currently in testing. Contact the developer to get access before
-                trying it out.
+                Goodboy for iPhone is in private testing and cannot be downloaded yet. Pairing works
+                with a build you already have.
               </p>
             </div>
 
-            <PairingCode
-              info={info}
-              loading={loading}
-              error={error}
-              remaining={remaining}
-              total={total}
-              onMint={() => void mint()}
-            />
+            {showsCode && (
+              <PairingCode
+                info={info}
+                loading={loading}
+                error={error}
+                remaining={remaining}
+                total={total}
+                onMint={() => void mint()}
+              />
+            )}
 
-            {showsPairedDevices ? (
+            {isPaired && showsCode && <Divider />}
+
+            {isPaired && (
               <PairedDevices
                 enrolled={enrolled}
                 revoking={revoking}
-                onRevoke={() => void revoke()}
+                onRevoke={revoke}
+                {...(!showsCode && { onPairAnother: pairAnother })}
               />
-            ) : null}
+            )}
           </div>
         </ScrollFade>
       )}
