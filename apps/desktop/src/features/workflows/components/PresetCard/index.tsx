@@ -1,6 +1,6 @@
 import { ClampedProse, SelectableRow } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
-import { inferAgentKindFromName, ROLE_TO_KIND } from '../../../session/agent-kind';
+import { classifyStep } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { WorkflowOriginTag } from '../WorkflowOriginTag';
 
@@ -33,7 +33,7 @@ export const PresetCard = ({ template, active, onSelect }: Props) => {
         {steps.length > 0 ? (
           <span className="flex flex-wrap items-center gap-2 pr-8">
             {steps.map((step) => {
-              const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
+              const kind = classifyStep({ step });
               return <AgentAvatar key={step.id} kind={kind} size="xs" title={step.name} />;
             })}
           </span>

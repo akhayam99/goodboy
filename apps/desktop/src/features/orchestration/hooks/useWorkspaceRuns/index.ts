@@ -13,7 +13,7 @@ import type {
 import { EMPTY_ARRAY, useAppStore, agentHasUnread } from '../../../../store';
 import { deriveSessionStage, isPrReviewSession } from '../../../../store/slices/session-view';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
-import { inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
+import { classifyStep, inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
 import { agentThreadIds } from '../../../session/agentThreadIds';
 import {
   statusToNodeStatus,
@@ -71,7 +71,7 @@ const kindOf = (agent: Agent): AgentKind =>
 
 const stepKind = (workflow: Workflow, stepId: string): AgentKind => {
   const step = workflow.steps.find((s) => s.id === stepId);
-  return step ? inferAgentKindFromName(step.name) : 'generic';
+  return step != null ? classifyStep({ step }) : 'generic';
 };
 
 const buildCostByAgentId = (

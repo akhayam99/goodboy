@@ -11,7 +11,7 @@ import type {
   Workflow,
 } from '@goodboy/types';
 import type { VerbosityLevel } from '../../../../features/settings/verbosity';
-import { inferAgentKindFromName } from '../../../../features/session/agent-kind';
+import { classifyStep } from '../../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../resolveStepRouting';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import type { WorkflowBlockReason } from '../../advanceGate';
@@ -66,7 +66,7 @@ export const WorkflowNextStepCta = ({
   const [isRecovering, setIsRecovering] = useState(false);
   const chain = useMemo(() => classifyWorkflowChain(workflow, runs), [workflow, runs]);
   const next = chain.kind === 'step' ? chain.step : null;
-  const kind = useMemo(() => (next ? inferAgentKindFromName(next.name) : 'generic'), [next]);
+  const kind = useMemo(() => (next != null ? classifyStep({ step: next }) : 'generic'), [next]);
   const routing = resolveStepRouting({
     step: next,
     kind,

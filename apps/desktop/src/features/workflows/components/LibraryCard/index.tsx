@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ClampedProse, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import { Check, GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { StepDef } from '@goodboy/types';
-import { agentKindPalette, ROLE_LABEL, ROLE_TO_KIND } from '../../../session/agent-kind';
+import { agentKindPalette, kindForRole, ROLE_LABEL } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -17,7 +17,7 @@ type Props = {
 
 export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onDelete }: Props) => {
   const [confirming, setConfirming] = useState(false);
-  const kind = ROLE_TO_KIND[def.role] ?? 'generic';
+  const kind = kindForRole({ role: def.role });
   const isGlobal = def.workspaceId === null;
   return (
     <li

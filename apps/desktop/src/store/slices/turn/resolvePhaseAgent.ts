@@ -7,7 +7,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { invokeAgentInsert, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
-import { inferAgentKindFromName } from '../../../features/session/agent-kind';
+import { classifyStep } from '../../../features/session/agent-kind';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -43,6 +43,6 @@ export const resolvePhaseAgent = async ({
     status: 'running',
     providerRunId,
     startedAt: now(),
-    kind: inferAgentKindFromName(definition.name),
+    kind: classifyStep({ step: definition }),
   });
 };

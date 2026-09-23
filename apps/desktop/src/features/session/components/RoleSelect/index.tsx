@@ -2,7 +2,7 @@ import { AnchoredPopover, cn, useDropdown, tintClasses } from '@goodboy/ui';
 import type { AgentRole } from '@goodboy/types';
 import { Check, ChevronDown } from 'lucide-react';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
-import { ROLE_LABEL, ROLE_TO_KIND, visibleAgentRoles } from '../../agent-kind';
+import { kindForRole, ROLE_LABEL, visibleAgentRoles } from '../../agent-kind';
 
 type Props = {
   value: AgentRole;
@@ -34,7 +34,7 @@ export const RoleSelect = ({ value, onChange, disabled }: Props) => {
             disabled && 'cursor-not-allowed opacity-50',
           )}
         >
-          <AgentAvatar kind={ROLE_TO_KIND[value]} size="xs" />
+          <AgentAvatar kind={kindForRole({ role: value })} size="xs" />
           <span className="flex-1 truncate font-medium text-foreground">{ROLE_LABEL[value]}</span>
           <ChevronDown
             size={11}
@@ -64,7 +64,7 @@ export const RoleSelect = ({ value, onChange, disabled }: Props) => {
                 : 'text-muted-foreground hover:bg-hover hover:text-foreground',
             )}
           >
-            <AgentAvatar kind={ROLE_TO_KIND[role]} size="xs" />
+            <AgentAvatar kind={kindForRole({ role })} size="xs" />
             <span className="flex-1 truncate">{ROLE_LABEL[role]}</span>
             {active ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
           </button>

@@ -13,7 +13,7 @@ import type {
   ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
-import { ROLE_TO_KIND, kindRouting } from '../features/session/agent-kind';
+import { kindForRole, kindRouting } from '../features/session/agent-kind';
 
 const runTurnSpy = vi.fn();
 
@@ -699,13 +699,13 @@ describe('createSession, step.role drives agent kind over name inference (#793)'
     });
 
     const insertArgs = phaseRunInsertSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(insertArgs['kind']).toBe(ROLE_TO_KIND['implementer']);
+    expect(insertArgs['kind']).toBe(kindForRole({ role: 'implementer' }));
 
     const state = useAppStore.getState();
     const agentId = state.selectedAgentId[session.id];
     expect(agentId).toBeDefined();
     expect(state.agentModelOverride[agentId!]).toBe(
-      kindRouting({ kind: ROLE_TO_KIND['implementer'] }).model,
+      kindRouting({ kind: kindForRole({ role: 'implementer' }) }).model,
     );
   });
 

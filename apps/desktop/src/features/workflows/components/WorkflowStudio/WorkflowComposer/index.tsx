@@ -6,7 +6,7 @@ import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types
 import type { StepDefUpsertArgs } from '../../../workflows';
 import type { StepDraft, WorkflowDraft } from '../../../engine';
 import { stepDraftWithModel } from '../../../engine';
-import { ROLE_TO_KIND } from '../../../../session/agent-kind';
+import { kindForRole } from '../../../../session/agent-kind';
 import { WorkflowStepCard } from '../../../../session/components/WorkflowStepCard';
 import { StepFlowConnector } from '../StepFlowConnector';
 import { StepLibraryPalette } from '../StepLibraryPalette';
@@ -208,7 +208,7 @@ export const WorkflowComposer = ({
                   />
                   <WorkflowStepCard
                     ordinal={idx}
-                    kind={ROLE_TO_KIND[def.role] ?? 'generic'}
+                    kind={kindForRole({ role: def.role })}
                     role={def.role}
                     provider={resolvedProvider(def)}
                     providerValue={def.provider}

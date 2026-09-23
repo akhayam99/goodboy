@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PROVIDER_CAPABILITIES, ROLE_REGISTRY } from '@goodboy/core';
-import type { Agent, AgentId, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
+import type { Agent, AgentId, AgentRole, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
 import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
 import {
   AGENT_KIND_DEFAULTS,
@@ -10,9 +10,11 @@ import {
   agentHomeLens,
   agentKindPalette,
   classifyAgent,
+  classifyStep,
   inferAgentKindFromName,
   isStandaloneAgent,
   kindConsumesPlan,
+  kindForRole,
   kindRouting,
   resolveAgentKind,
   resolveRootAgent,
@@ -581,6 +583,42 @@ describe('inferAgentKindFromName', () => {
     ['agent 1', 'generic'],
   ] as [string, AgentKind][])('name %s → %s', (name, expected) => {
     expect(inferAgentKindFromName(name)).toBe(expected);
+  });
+});
+
+describe('kindForRole', () => {
+  const LEGACY_ROLE_TO_KIND = {
+    scout: 'scout',
+    planner: 'planner',
+    implementer: 'implementer',
+    reviewer: 'reviewer',
+    tester: 'tester',
+    investigator: 'debugger',
+    docs: 'docs',
+    report: 'report',
+    wireframe: 'wireframe',
+    resolver: 'resolver',
+    custom: 'generic',
+  } satisfies Record<AgentRole, AgentKind>;
+
+  it.each(Object.keys(ROLE_REGISTRY) as AgentRole[])('%s matches the legacy role map', (role) => {
+    expect(kindForRole({ role })).toBe(LEGACY_ROLE_TO_KIND[role]);
+  });
+});
+
+describe('classifyStep', () => {
+  it('reads the step role before the name', () => {
+    expect(classifyStep({ step: { name: 'Plan the approach', role: 'tester' } })).toBe('tester');
+    expect(classifyStep({ step: { name: 'Look around', role: 'investigator' } })).toBe('debugger');
+  });
+
+  it('maps the custom role to the generalist', () => {
+    expect(classifyStep({ step: { name: 'Implement feature', role: 'custom' } })).toBe('generic');
+  });
+
+  it('falls back to the name when the step has no role', () => {
+    expect(classifyStep({ step: { name: 'Implement feature' } })).toBe('implementer');
+    expect(classifyStep({ step: { name: 'agent 1', role: null } })).toBe('generic');
   });
 });
 

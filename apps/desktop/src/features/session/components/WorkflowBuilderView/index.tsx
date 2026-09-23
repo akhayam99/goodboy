@@ -78,7 +78,7 @@ import {
   upsertArgsFromDraft,
 } from '../../../workflows/engine';
 import { useWorkflowDraft } from '../../../workflows/engine/useWorkflowDraft';
-import { ROLE_LABEL, ROLE_TO_KIND, inferAgentKindFromName, type AgentKind } from '../../agent-kind';
+import { ROLE_LABEL, classifyStep, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { WorkflowStepCard } from '../WorkflowStepCard';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
@@ -114,9 +114,11 @@ type Props = {
 
 type ProviderEntry = { readonly id: ProviderId; readonly connection: string };
 
-const editableKind = (step: StepDraft): AgentKind =>
-  (step.role !== 'custom' ? ROLE_TO_KIND[step.role] : undefined) ??
-  inferAgentKindFromName(step.name);
+type EditableKindParams = {
+  readonly step: StepDraft;
+};
+
+const editableKind = ({ step }: EditableKindParams): AgentKind => classifyStep({ step });
 
 const sortedSteps = (template: Workflow): Workflow['steps'] =>
   [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
@@ -1116,9 +1118,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       <div className="flex flex-col gap-1.5" role="radiogroup" aria-label="Presets">
                         {presets.map((t) => {
                           const tSteps = sortedSteps(t);
-                          const kinds = tSteps.map((s) =>
-                            s.role ? ROLE_TO_KIND[s.role] : inferAgentKindFromName(s.name),
-                          );
+                          const kinds = tSteps.map((s) => classifyStep({ step: s }));
                           const shown = kinds.slice(0, 5);
                           const selected = t.id === selectedPresetId;
                           const desc = t.description || t.goal;
@@ -1401,7 +1401,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                               />
                               <WorkflowStepCard
                                 ordinal={i}
-                                kind={editableKind(st)}
+                                kind={editableKind({ step: st })}
                                 role={st.role}
                                 provider={resolvedProvider(st)}
                                 providerValue={st.provider}

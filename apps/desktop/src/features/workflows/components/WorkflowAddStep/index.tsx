@@ -5,7 +5,7 @@ import { recommendedModelForRole, resolveRoleRouting } from '@goodboy/core';
 import type { ProviderId, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { WorkflowStepCard } from '../../../session/components/WorkflowStepCard';
-import { ROLE_TO_KIND } from '../../../session/agent-kind';
+import { kindForRole } from '../../../session/agent-kind';
 import { mergeRoleModels } from '../../mergeRoleModels';
 import { addStep, stepDraftWithModel, type StepDraft } from '../../engine';
 
@@ -113,7 +113,7 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
       <ul className="flex list-none flex-col p-0">
         <WorkflowStepCard
           ordinal={stepCount}
-          kind={ROLE_TO_KIND[draft.role] ?? 'generic'}
+          kind={kindForRole({ role: draft.role })}
           role={draft.role}
           provider={resolvedProvider}
           providerValue={draft.provider}

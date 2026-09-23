@@ -316,18 +316,25 @@ const AGENT_ROLES: ReadonlyArray<AgentRole> = SELECTABLE_AGENT_ROLES.filter(
 
 export const visibleAgentRoles = (): ReadonlyArray<AgentRole> => AGENT_ROLES;
 
-export const ROLE_TO_KIND: Record<AgentRole, AgentKind> = {
-  scout: 'scout',
-  planner: 'planner',
-  implementer: 'implementer',
-  reviewer: 'reviewer',
-  tester: 'tester',
-  investigator: 'debugger',
-  docs: 'docs',
-  report: 'report',
-  wireframe: 'wireframe',
-  resolver: 'resolver',
-  custom: 'generic',
+type KindForRoleParams = {
+  readonly role: AgentRole;
+};
+
+export const kindForRole = ({ role }: KindForRoleParams): AgentKind =>
+  presentationKeyForRole({ role });
+
+type ClassifyStepParams = {
+  readonly step: {
+    readonly name: string;
+    readonly role?: AgentRole | null;
+  };
+};
+
+export const classifyStep = ({ step }: ClassifyStepParams): AgentKind => {
+  if (step.role != null) {
+    return kindForRole({ role: step.role });
+  }
+  return inferAgentKindFromName(step.name);
 };
 
 export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {

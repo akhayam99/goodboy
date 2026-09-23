@@ -16,7 +16,7 @@ import {
   resolveRoleRouting,
   type WorkflowRoutingAvailabilitySnapshot,
 } from '@goodboy/core';
-import { ROLE_TO_KIND, inferAgentKindFromName } from '../../../features/session/agent-kind';
+import { classifyStep } from '../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../../features/workflows/resolveStepRouting';
 import { revalidateStepRouting } from '../../../features/workflows/revalidateStepRouting';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
@@ -91,7 +91,7 @@ export const preSpawnWorkflowAgents = async ({
   const sortedSteps = [...steps].sort((left, right) => left.ordinal - right.ordinal);
 
   for (const step of sortedSteps) {
-    const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
+    const kind = classifyStep({ step });
     const revalidated =
       availability === undefined
         ? ({ kind: 'keep' } as const)
