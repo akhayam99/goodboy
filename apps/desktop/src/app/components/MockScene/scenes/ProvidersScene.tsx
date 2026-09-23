@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { IsoDateTime, OverrideSettings, WorkspaceId } from '@goodboy/types';
-import { ToastProvider } from '../../Toast';
-import { ProviderSettingsScope } from '../../../../features/providers/components/ProviderStudio';
+import { SettingsStudio } from '../../../../features/settings/components/SettingsStudio';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
+import { StudioFrame, mockWorkspace, seedStudioChrome } from './shellChrome';
 
 const WORKSPACE_ID = 'mock-providers-workspace-cascadia' as WorkspaceId;
 
@@ -112,8 +112,14 @@ const WORKSPACE_OVERRIDES: OverrideSettings = {
   attributionFooter: null,
 };
 
+const WORKSPACE = mockWorkspace({ id: WORKSPACE_ID, name: 'Cascadia' });
+
 const seedProvidersScene = (): void => {
+  seedStudioChrome();
   useAppStore.setState({
+    workspaces: [WORKSPACE],
+    currentWorkspaceId: WORKSPACE_ID,
+    sessions: [],
     providers: PROVIDERS,
     workspaceOverrides: { [WORKSPACE_ID]: WORKSPACE_OVERRIDES },
     refreshProviders: async () => undefined,
@@ -133,10 +139,15 @@ export const ProvidersScene = () => {
   }
 
   return (
-    <ToastProvider>
-      <main className="h-screen overflow-hidden bg-background text-foreground">
-        <ProviderSettingsScope workspaceId={WORKSPACE_ID} />
-      </main>
-    </ToastProvider>
+    <StudioFrame
+      activeStudio={null}
+      main={
+        <SettingsStudio
+          currentWorkspace={WORKSPACE}
+          initialFocus={{ scope: 'providers' }}
+          onClose={() => undefined}
+        />
+      }
+    />
   );
 };

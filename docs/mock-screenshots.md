@@ -161,6 +161,14 @@ the map before building anything: the surface you need is often already
 there, and the keys are the `?scene=` values. They cost nothing at runtime
 when `VITE_GOODBOY_MOCK` is unset.
 
+README images always show the app around the feature. `scenes/shellChrome.tsx`
+holds the two frames: `ShellFrame` (top bar, sessions sidebar, crumb bar,
+footer) for anything inside a session, seeded with `seedShellChrome`, and
+`StudioFrame` (top bar and footer) for studios such as Settings, Impact and the
+Inbox, seeded with `seedStudioChrome`. `scenes/sceneReveal.ts` opens the
+completed mounts and holds a mount row in its hover state, so the row actions
+show up in a still image.
+
 The README's feature guide is captured from these scenes, and the images live
 in `docs/images/`, named after the scene that produced them, so a re-capture
 is one command with no lookup. A shorter `--window-size` height than 900 is

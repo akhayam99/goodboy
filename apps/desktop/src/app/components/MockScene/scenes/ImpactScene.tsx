@@ -12,8 +12,8 @@ import type {
   TelemetryRecordId,
   WorkspaceId,
 } from '@goodboy/types';
-import { ToastProvider } from '../../Toast';
 import { ImpactStudio } from '../../../../features/impact/components/ImpactStudio';
+import { StudioFrame, mockWorkspace, seedStudioChrome } from './shellChrome';
 import { useAppStore, type ProviderSpendEntry } from '../../../../store';
 
 const WORKSPACE_ID = 'mock-impact-workspace-northwind' as WorkspaceId;
@@ -304,7 +304,9 @@ const BUDGET_ALERTS: ReadonlyArray<BudgetAlert> = [
 const noop = async (): Promise<void> => undefined;
 
 const seedImpactScene = (): void => {
+  seedStudioChrome();
   useAppStore.setState({
+    workspaces: [mockWorkspace({ id: WORKSPACE_ID, name: WORKSPACE_NAME })],
     sessions: SESSIONS,
     currentSessionId: PAYMENTS_ID,
     currentWorkspaceId: WORKSPACE_ID,
@@ -339,15 +341,16 @@ export const ImpactScene = () => {
   }
 
   return (
-    <ToastProvider>
-      <main className="h-screen overflow-hidden bg-background text-foreground">
+    <StudioFrame
+      activeStudio="impact"
+      main={
         <ImpactStudio
           workspaceId={WORKSPACE_ID}
           workspaceName={WORKSPACE_NAME}
           initialScope={{ kind: 'provider', provider: 'anthropic' }}
           onClose={() => undefined}
         />
-      </main>
-    </ToastProvider>
+      }
+    />
   );
 };

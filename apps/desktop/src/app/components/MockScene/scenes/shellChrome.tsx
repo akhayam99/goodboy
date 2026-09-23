@@ -6,6 +6,8 @@ import type {
   Session,
   SessionId,
   TelemetryRecordId,
+  Workspace,
+  WorkspaceId,
 } from '@goodboy/types';
 import { AppFooter } from '../../AppFooter';
 import { AppTopBar } from '../../AppTopBar';
@@ -40,7 +42,7 @@ type ChromeParams = Readonly<{
   siblings: ReadonlyArray<Session>;
   branches: Readonly<Record<string, string>>;
   telemetryAt: IsoDateTime;
-  lens: LensKind;
+  lens: LensKind | null;
 }>;
 
 export const seedShellChrome = ({
@@ -61,7 +63,7 @@ export const seedShellChrome = ({
     sessionViewPrefs: { [workspaceId]: { sort: 'updatedAt', group: 'stage' } },
     sessionTelemetry: {
       ...state.sessionTelemetry,
-      [session.id]: [
+      [session.id]: state.sessionTelemetry[session.id] ?? [
         {
           id: 'mock-surface-telemetry-turn' as TelemetryRecordId,
           runId: 'mock-surface-run-turn' as ProviderRunId,
@@ -76,7 +78,7 @@ export const seedShellChrome = ({
         },
       ],
     },
-    providers: [CLAUDE_PROVIDER],
+    providers: state.providers.length > 0 ? state.providers : [CLAUDE_PROVIDER],
     notifications: [],
     notificationsLoading: false,
     notificationCounts: { total: 0, unread: 0 },
@@ -118,11 +120,11 @@ export const ShellFrame = ({ session, main }: ShellFrameProps) => {
               activeStudio={null}
               githubEnabled
               linearEnabled
-              jiraEnabled={false}
-              sentryEnabled={false}
+              jiraEnabled
+              sentryEnabled
               gitlabEnabled={false}
               bitbucketEnabled={false}
-              slackEnabled={false}
+              slackEnabled
               onOpenWorkflows={noop}
               onOpenProviders={noop}
               onOpenSettings={noop}
@@ -152,3 +154,93 @@ export const ShellFrame = ({ session, main }: ShellFrameProps) => {
     </ToastProvider>
   );
 };
+
+export const seedStudioChrome = (): void => {
+  useAppStore.setState({
+    notifications: [],
+    notificationsLoading: false,
+    notificationCounts: { total: 0, unread: 0 },
+    loadNotifications: async () => undefined,
+    markNotificationsRead: async () => undefined,
+    clearNotifications: async () => undefined,
+    setCurrentSession: async () => undefined,
+  });
+};
+
+type StudioFrameProps = {
+  readonly activeStudio: string | null;
+  readonly main: ReactNode;
+};
+
+export const StudioFrame = ({ activeStudio, main }: StudioFrameProps) => {
+  const arrangement = shellArrangement({
+    hasWorkspace: true,
+    hasActiveSession: false,
+    isSidebarCollapsed: false,
+  });
+
+  return (
+    <ToastProvider>
+      <AppShell
+        topBar={<AppTopBar onOpenSpend={noop} />}
+        leftHidden={arrangement.leftHidden}
+        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
+        leftSidebar={undefined}
+        footer={
+          <AppFooter
+            activeStudio={activeStudio}
+            githubEnabled
+            linearEnabled
+            jiraEnabled
+            sentryEnabled
+            gitlabEnabled={false}
+            bitbucketEnabled={false}
+            slackEnabled
+            onOpenWorkflows={noop}
+            onOpenProviders={noop}
+            onOpenSettings={noop}
+            onOpenImpact={noop}
+            onOpenChangelog={noop}
+            onOpenGithub={noop}
+            onOpenLinear={noop}
+            onOpenJira={noop}
+            onOpenSentry={noop}
+            onOpenGitlab={noop}
+            onOpenBitbucket={noop}
+            onOpenInbox={noop}
+            onOpenSlack={noop}
+          />
+        }
+        main={main}
+        rightSidebar={null}
+      />
+    </ToastProvider>
+  );
+};
+
+type MockWorkspaceParams = Readonly<{
+  id: WorkspaceId;
+  name: string;
+}>;
+
+export const mockWorkspace = ({ id, name }: MockWorkspaceParams): Workspace => ({
+  id,
+  name,
+  slug: name.toLowerCase(),
+  sessionsRoot: `/mock/${name.toLowerCase()}/sessions`,
+  overrides: {
+    defaultProviderId: null,
+    defaultWorkflowId: null,
+    defaultBranchPrefix: null,
+    parallelEnabled: null,
+    defaultVerbosity: null,
+    providerBindings: null,
+    taskModels: null,
+    roleModels: null,
+    parallelAgents: null,
+    providerPool: null,
+    attributionFooter: null,
+  },
+  createdAt: '2026-08-01T09:00:00.000Z' as IsoDateTime,
+  updatedAt: '2026-09-20T09:00:00.000Z' as IsoDateTime,
+});
