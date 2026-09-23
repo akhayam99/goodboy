@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { Session, SessionProjectMount } from '@goodboy/types';
+import type { Session, SessionProjectMount, TelemetryRecord } from '@goodboy/types';
 
 vi.mock('../../store/store', async () => {
   const zustand = await import('zustand');
@@ -13,15 +13,27 @@ vi.mock('../../store/store', async () => {
       selectedProjectIds: {},
       getSelectedProjectIds: () => undefined,
       sessionProjectMounts: {},
+      sessionTelemetry: {},
+      scriptRuns: {},
+      sessions: [],
+      archivedSessions: {},
+      projectScripts: {},
     })),
   };
 });
 
 import { useAppStore } from '../../store/store';
-import { useProjectFilteredSessions } from '../../store/selectors';
+import { useProjectFilteredSessions, useTelemetryForSessions } from '../../store/selectors';
+import { useRunningScripts } from '../../features/scripts/components/RunningScriptsIndicator/useRunningScripts';
 
 const viewSession = { id: 'session-in-view' } as Session;
 const mount = { projectId: 'project-ledger' } as SessionProjectMount;
+const scriptSession = {
+  id: 'session-in-view',
+  goal: 'Ship ledger-core',
+  workspaceId: 'workspace-acme',
+} as Session;
+const record = { kind: 'turn', estimatedCostUsd: 0.4 } as TelemetryRecord;
 
 type CountedParams<T> = {
   readonly hook: () => T;
@@ -153,5 +165,54 @@ describe('whole-map store keys stay out of consumers that render a few sessions'
       })),
     );
     expect(counter.renders).toBeGreaterThan(before);
+  });
+
+  it('writing telemetry of a session out of view does not re-render spend or the rollup', () => {
+    useAppStore.setState({ sessionTelemetry: { [viewSession.id]: [record] } });
+    const sessions = [viewSession];
+    const { counter, result } = renderCounted({
+      hook: () => useTelemetryForSessions({ sessions }),
+    });
+    const first = result.current;
+    const before = counter.renders;
+
+    act(() =>
+      useAppStore.setState((state) => ({
+        sessionTelemetry: { ...state.sessionTelemetry, 'session-elsewhere': [record] },
+      })),
+    );
+    expect(counter.renders).toBe(before);
+    expect(result.current).toBe(first);
+  });
+
+  it('streaming script output does not re-render the top bar running scripts', () => {
+    const pending = { status: 'pending', result: null, runId: 'run-1', startedAt: 10 } as const;
+    useAppStore.setState({
+      sessions: [scriptSession],
+      scriptRuns: { [viewSession.id]: { 'script-test': pending } },
+    });
+    const { counter, result } = renderCounted({ hook: () => useRunningScripts() });
+    const first = result.current;
+    const before = counter.renders;
+    expect(first).toEqual([expect.objectContaining({ scriptId: 'script-test', startedAt: 10 })]);
+
+    act(() =>
+      useAppStore.setState({
+        scriptRuns: { [viewSession.id]: { 'script-test': { ...pending, output: 'line 1' } } },
+      }),
+    );
+    expect(counter.renders).toBe(before);
+    expect(result.current).toBe(first);
+
+    act(() =>
+      useAppStore.setState({
+        scriptRuns: {
+          [viewSession.id]: {
+            'script-test': { status: 'ok', result: null, runId: 'run-1', startedAt: 10 },
+          },
+        },
+      }),
+    );
+    expect(result.current).toEqual([]);
   });
 });

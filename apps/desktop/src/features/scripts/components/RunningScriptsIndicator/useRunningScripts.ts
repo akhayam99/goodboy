@@ -1,6 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import type { ScriptRunRecord } from '../../scripts';
 
 export type RunningScript = {
   readonly sessionId: SessionId;
@@ -10,14 +12,67 @@ export type RunningScript = {
   readonly startedAt: number;
 };
 
+type PendingScriptRun = {
+  readonly sessionId: SessionId;
+  readonly scriptId: string;
+  readonly runId: string;
+  readonly name: string | null;
+  readonly startedAt: number;
+};
+
+const NO_RUNNING_SCRIPTS: ReadonlyArray<RunningScript> = [];
+
+type CollectParams = {
+  readonly scriptRuns: Readonly<Record<string, Readonly<Record<string, ScriptRunRecord>>>>;
+  readonly previous: ReadonlyMap<string, PendingScriptRun>;
+};
+
+const collectPendingRuns = ({
+  scriptRuns,
+  previous,
+}: CollectParams): ReadonlyMap<string, PendingScriptRun> => {
+  const next = new Map<string, PendingScriptRun>();
+  for (const [sessionId, runs] of Object.entries(scriptRuns)) {
+    for (const [scriptId, record] of Object.entries(runs)) {
+      if (record.status !== 'pending') {
+        continue;
+      }
+      const kept = previous.get(record.runId) ?? null;
+      next.set(
+        record.runId,
+        kept ?? {
+          sessionId: sessionId as SessionId,
+          scriptId,
+          runId: record.runId,
+          name: record.name ?? null,
+          startedAt: record.startedAt,
+        },
+      );
+    }
+  }
+  return next;
+};
+
 export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
-  const scriptRuns = useAppStore((state) => state.scriptRuns);
+  const pendingCache = useRef<ReadonlyMap<string, PendingScriptRun>>(new Map());
+  const pendingRuns = useAppStore(
+    useShallow((state) => {
+      const next = collectPendingRuns({
+        scriptRuns: state.scriptRuns,
+        previous: pendingCache.current,
+      });
+      pendingCache.current = next;
+      return [...next.values()];
+    }),
+  );
   const sessions = useAppStore((state) => state.sessions);
   const archivedSessions = useAppStore((state) => state.archivedSessions);
   const projectScripts = useAppStore((state) => state.projectScripts);
 
   return useMemo(() => {
-    const running: RunningScript[] = [];
+    if (pendingRuns.length === 0) {
+      return NO_RUNNING_SCRIPTS;
+    }
     const sessionById = new Map(
       Object.values(archivedSessions ?? {})
         .flat()
@@ -26,30 +81,25 @@ export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
     for (const session of sessions) {
       sessionById.set(session.id, session);
     }
-    for (const session of sessionById.values()) {
-      const sessionId = session.id as SessionId;
-      const runs = scriptRuns[sessionId];
-      if (runs === undefined) {
+    const running: RunningScript[] = [];
+    for (const run of pendingRuns) {
+      const session = sessionById.get(run.sessionId) ?? null;
+      if (session === null) {
         continue;
       }
-      const names = new Map<string, string>(
-        (projectScripts[session.workspaceId] ?? []).map(
-          (script) => [script.id, script.name] as const,
-        ),
-      );
-      for (const [scriptId, record] of Object.entries(runs)) {
-        if (record.status !== 'pending') {
-          continue;
-        }
-        running.push({
-          sessionId,
-          sessionGoal: session.goal,
-          scriptId,
-          scriptName: record.name ?? names.get(scriptId) ?? 'script',
-          startedAt: record.startedAt,
-        });
-      }
+      const scriptName =
+        run.name ??
+        (projectScripts[session.workspaceId] ?? []).find((script) => script.id === run.scriptId)
+          ?.name ??
+        'script';
+      running.push({
+        sessionId: run.sessionId,
+        sessionGoal: session.goal,
+        scriptId: run.scriptId,
+        scriptName,
+        startedAt: run.startedAt,
+      });
     }
     return running.sort((a, b) => a.startedAt - b.startedAt);
-  }, [archivedSessions, scriptRuns, projectScripts, sessions]);
+  }, [archivedSessions, pendingRuns, projectScripts, sessions]);
 };

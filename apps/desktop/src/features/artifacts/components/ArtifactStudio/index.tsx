@@ -49,21 +49,23 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
   const setArtifactDraft = useAppStore((s) => s.setArtifactDraft);
   const stopArtifactGeneration = useAppStore((s) => s.stopArtifactGeneration);
   const verifications = useAppStore((s) => s.wireframeScoutVerification);
-  const activeAgentIds = useAppStore(
-    useShallow((s) =>
-      agents
-        .filter((agent) => {
-          const turn = s.agentTurnState?.[agent.id];
-          return turn?.kind === 'running' || turn?.kind === 'starting';
-        })
-        .map((agent) => agent.id),
-    ),
+  const turnKinds = useAppStore(
+    useShallow((s) => agents.map((agent) => s.agentTurnState[agent.id]?.kind ?? null)),
   );
-  const runningAgentIds = useAppStore(
-    useShallow((s) =>
-      agents.filter((agent) => s.agentTurnState?.[agent.id]?.kind === 'running').map((a) => a.id),
-    ),
-  );
+  const { activeAgentIds, runningAgentIds } = useMemo(() => {
+    const active = new Set<AgentId>();
+    const running = new Set<AgentId>();
+    agents.forEach((agent, index) => {
+      const kind = turnKinds[index] ?? null;
+      if (kind === 'running') {
+        running.add(agent.id);
+      }
+      if (kind === 'running' || kind === 'starting') {
+        active.add(agent.id);
+      }
+    });
+    return { activeAgentIds: active, runningAgentIds: running };
+  }, [agents, turnKinds]);
   const [awaitedAgentId, setAwaitedAgentId] = useState<AgentId | null>(null);
   const [focusedRunAgentId, setFocusedRunAgentId] = useState<AgentId | null>(null);
 
@@ -111,8 +113,8 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
       resolveArtifactGenerations({
         agents,
         artifacts,
-        activeAgentIds: new Set<AgentId>(activeAgentIds),
-        runningAgentIds: new Set<AgentId>(runningAgentIds),
+        activeAgentIds,
+        runningAgentIds,
         openQuestions,
         verifications,
       }),

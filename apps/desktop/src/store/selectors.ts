@@ -168,6 +168,23 @@ export const useProjectMountsForSessions = ({
     }),
   );
 
+export const useTelemetryForSessions = ({
+  sessions,
+}: SessionsParams): AppState['sessionTelemetry'] =>
+  useAppStore(
+    useShallow((state) => {
+      const picked: Record<string, ReadonlyArray<TelemetryRecord>> = {};
+      for (const session of sessions) {
+        const records = state.sessionTelemetry[session.id];
+        if (records === undefined) {
+          continue;
+        }
+        picked[session.id] = records;
+      }
+      return picked;
+    }),
+  );
+
 export const useProjectFilteredSessions = ({
   workspaceId,
   sessions,
@@ -537,7 +554,7 @@ export const useWorkspaceRollup = (
   sessions: ReadonlyArray<Session>,
 ): WorkspaceRollup => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
-  const sessionTelemetry = useAppStore((s) => s.sessionTelemetry);
+  const sessionTelemetry = useTelemetryForSessions({ sessions });
   return useMemo(() => {
     const countOf = (key: string) => groups.find((g) => g.key === key)?.sessions.length ?? 0;
     const startOfDay = new Date();
@@ -545,8 +562,8 @@ export const useWorkspaceRollup = (
     const cutoff = startOfDay.toISOString();
     let todaySpend = 0;
     for (const session of sessions) {
-      const recs = sessionTelemetry[session.id as SessionId];
-      if (!recs) {
+      const recs = sessionTelemetry[session.id];
+      if (recs === undefined) {
         continue;
       }
       for (const rec of recs) {

@@ -47,6 +47,7 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useSessions: () => state.sessions,
+  useTelemetryForSessions: () => state.sessionTelemetry,
 }));
 
 import { ImpactStudio } from './index';
