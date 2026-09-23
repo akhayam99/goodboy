@@ -147,8 +147,10 @@ type KeyInit = {
 };
 
 const press = (init: KeyInit): void => {
+  const event = new KeyboardEvent('keydown', { bubbles: true, ...init });
+  Object.defineProperty(event, 'getModifierState', { value: () => false });
   act(() => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, ...init }));
+    window.dispatchEvent(event);
   });
 };
 

@@ -42,7 +42,24 @@ type Registration = {
 const registrations = new Map<ShortcutId, Registration>();
 let listening = false;
 
+const isEditableTarget = (target: EventTarget | null): boolean =>
+  target instanceof HTMLElement &&
+  (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
+
+const typingWins = (event: KeyboardEvent): boolean => {
+  if (currentPlatform() === 'darwin') {
+    return false;
+  }
+  if (event.getModifierState('AltGraph')) {
+    return true;
+  }
+  return event.altKey && isEditableTarget(event.target);
+};
+
 const onKeyDown = (event: KeyboardEvent): void => {
+  if (typingWins(event)) {
+    return;
+  }
   for (const registration of registrations.values()) {
     if (!eventMatches(event, SHORTCUTS[registration.id].combo)) {
       continue;

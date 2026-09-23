@@ -230,7 +230,9 @@ outside the registry. So no two surfaces can claim the same chord, and no
 shortcut can exist without being documented. **A shortcut is taught where it
 is used.** A control that has one shows it: as a pill on hover in dense rows,
 and as a glyph in parentheses in tooltips. Where the row is too tight, the
-tooltip is the only place it shows.
+tooltip is the only place it shows. Off macOS, typing wins over the lens
+plane. An AltGr character, or a Ctrl+Alt combo typed into a field or the
+terminal, never fires a shortcut.
 
 ## Studios
 
