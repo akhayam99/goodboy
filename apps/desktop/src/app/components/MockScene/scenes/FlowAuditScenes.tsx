@@ -46,6 +46,8 @@ import { ChatImageLoaderProvider } from '../../../../features/chat/components/Ch
 import { TranscriptRows } from '../../../../features/chat/components/ChatView/TranscriptRows';
 import type { TranscriptRow } from '../../../../features/chat/utils/cluster-operations';
 import { CommandPalette } from '../../../../features/session/components/CommandPalette';
+import { QuestionsPane } from '../../../../features/session/components/SessionWorkspace/parts/QuestionsPane';
+import { ShellFrame, seedShellChrome } from './shellChrome';
 
 const noop = () => undefined;
 
@@ -1409,6 +1411,13 @@ export const WorkflowRunScene = () => {
 
   useEffect(() => {
     seedWorkflowRun();
+    seedShellChrome({
+      session: FLOW_SESSION,
+      siblings: SESSIONS.filter((session) => session.id !== FLOW_SESSION_ID),
+      branches: {},
+      telemetryAt: NOW,
+      lens: 'workflows',
+    });
     setIsReady(true);
   }, []);
 
@@ -1419,9 +1428,14 @@ export const WorkflowRunScene = () => {
   }
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
-      <WorkflowRunDetail session={FLOW_SESSION} workflowRunId={DYNAMIC_RUN_ID} />
-    </main>
+    <ShellFrame
+      session={FLOW_SESSION}
+      main={
+        <div className="flex h-full min-h-0 flex-col">
+          <WorkflowRunDetail session={FLOW_SESSION} workflowRunId={DYNAMIC_RUN_ID} />
+        </div>
+      }
+    />
   );
 };
 
@@ -1430,6 +1444,26 @@ export const OpenQuestionsScene = () => {
 
   useEffect(() => {
     seedChatSurfaces();
+    seedShellChrome({
+      session: CHAT_SESSION,
+      siblings: SESSIONS.filter((session) => session.id !== CHAT_SESSION_ID),
+      branches: {},
+      telemetryAt: NOW,
+      lens: 'questions',
+    });
+    useAppStore.setState({
+      sessionOpenQuestions: {
+        [CHAT_SESSION_ID]: OPEN_QUESTIONS.filter((question) => question.status === 'open'),
+      },
+      sessionAnsweredQuestions: {
+        [CHAT_SESSION_ID]: OPEN_QUESTIONS.filter((question) => question.status === 'answered'),
+      },
+      sessionDismissedQuestions: { [CHAT_SESSION_ID]: [] },
+      selectedAgentId: {},
+      loadSessionOpenQuestions: async () => undefined,
+      loadSessionAnsweredQuestions: async () => undefined,
+      loadSessionDismissedQuestions: async () => undefined,
+    });
     setIsReady(true);
   }, []);
 
@@ -1437,17 +1471,7 @@ export const OpenQuestionsScene = () => {
     return null;
   }
 
-  return (
-    <main className="h-screen overflow-auto bg-background text-foreground">
-      <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.chat, PANE_RHYTHM.body)}>
-        <OpenQuestionCluster
-          questions={OPEN_QUESTIONS}
-          sessionId={CHAT_SESSION_ID}
-          viewerAgentId={null}
-        />
-      </div>
-    </main>
-  );
+  return <ShellFrame session={CHAT_SESSION} main={<QuestionsPane session={CHAT_SESSION} />} />;
 };
 
 const TranscriptFeed = () => (

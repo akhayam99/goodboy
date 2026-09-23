@@ -1,18 +1,14 @@
 import { useEffect, useState } from 'react';
-import { AppShell, IconButton, StudioRailLayout } from '@goodboy/ui';
+import { IconButton, StudioRailLayout } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
-import { AppFooter } from '../../AppFooter';
-import { AppTopBar } from '../../AppTopBar';
-import { ToastProvider } from '../../Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { InboxDetail } from '../../../../features/inbox/components/InboxStudio/InboxDetail';
 import { InboxRail } from '../../../../features/inbox/components/InboxStudio/InboxRail';
 import type { InboxKind, InboxProvider, InboxRecord } from '../../../../features/inbox/types';
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
-import { useAppStore } from '../../../../store';
-import { shellArrangement } from '../../../shellArrangement';
 import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
+import { StudioFrame, seedStudioChrome } from './shellChrome';
 
 const noop = () => undefined;
 const MINUTE = 60_000;
@@ -242,15 +238,7 @@ export const InboxScene = () => {
 
   useEffect(() => {
     seedBoardScene();
-    useAppStore.setState({
-      notifications: [],
-      notificationsLoading: false,
-      notificationCounts: { total: 0, unread: 0 },
-      loadNotifications: async () => undefined,
-      markNotificationsRead: async () => undefined,
-      clearNotifications: async () => undefined,
-      setCurrentSession: async () => undefined,
-    });
+    seedStudioChrome();
     setIsReady(true);
   }, []);
 
@@ -258,47 +246,5 @@ export const InboxScene = () => {
     return null;
   }
 
-  const arrangement = shellArrangement({
-    hasWorkspace: true,
-    hasActiveSession: false,
-    isSidebarCollapsed: false,
-  });
-
-  return (
-    <ToastProvider>
-      <AppShell
-        topBar={<AppTopBar onOpenSpend={noop} />}
-        leftHidden={arrangement.leftHidden}
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={undefined}
-        footer={
-          <AppFooter
-            activeStudio="inbox"
-            githubEnabled
-            linearEnabled
-            jiraEnabled
-            sentryEnabled
-            gitlabEnabled={false}
-            bitbucketEnabled={false}
-            slackEnabled
-            onOpenWorkflows={noop}
-            onOpenProviders={noop}
-            onOpenSettings={noop}
-            onOpenImpact={noop}
-            onOpenChangelog={noop}
-            onOpenGithub={noop}
-            onOpenLinear={noop}
-            onOpenJira={noop}
-            onOpenSentry={noop}
-            onOpenGitlab={noop}
-            onOpenBitbucket={noop}
-            onOpenInbox={noop}
-            onOpenSlack={noop}
-          />
-        }
-        main={<InboxPane />}
-        rightSidebar={null}
-      />
-    </ToastProvider>
-  );
+  return <StudioFrame activeStudio="inbox" main={<InboxPane />} />;
 };

@@ -21,6 +21,7 @@ import type {
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';
 import { useHoveredMountRow, useShowCompletedMounts } from './sceneReveal';
+import { ShellFrame, seedShellChrome } from './shellChrome';
 
 const WORKSPACE_ID = 'mock-workspace-harborline' as WorkspaceId;
 const SESSION_ID = 'mock-session-mount-rows' as SessionId;
@@ -198,6 +199,18 @@ const SESSION: Session = {
   createdAt: NOW,
   updatedAt: NOW,
 };
+
+const sibling = (id: string, goal: string): Session => ({
+  ...SESSION,
+  id: id as SessionId,
+  goal,
+});
+
+const SIBLINGS: ReadonlyArray<Session> = [
+  sibling('mock-mounts-sibling-statements', 'Stop corrected statements from posting twice'),
+  sibling('mock-mounts-sibling-dunning', 'Retry failed card payments on a dunning schedule'),
+  sibling('mock-mounts-sibling-audit', 'Add an audit trail to manual ledger adjustments'),
+];
 
 type PrParams = {
   readonly number: number;
@@ -526,6 +539,13 @@ export const MountsScene = () => {
       loadPrSeries: async () => [SERIES],
       loadMountCleanupProposals: async () => [],
     });
+    seedShellChrome({
+      session: SESSION,
+      siblings: SIBLINGS,
+      branches: { [SESSION_ID]: POSTINGS_BRANCH },
+      telemetryAt: NOW,
+      lens: null,
+    });
     setIsReady(true);
   }, []);
 
@@ -537,8 +557,9 @@ export const MountsScene = () => {
   }
 
   return (
-    <main className="h-screen overflow-hidden bg-background text-foreground">
-      <SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />
-    </main>
+    <ShellFrame
+      session={SESSION}
+      main={<SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />}
+    />
   );
 };

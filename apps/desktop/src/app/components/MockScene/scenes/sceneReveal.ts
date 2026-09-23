@@ -4,7 +4,7 @@ const POLL_MS = 150;
 const HOVER_ATTRIBUTE = 'data-scene-hover';
 const HOVER_STYLE_ID = 'scene-hover-style';
 const HOVER_STYLE = [
-  `[${HOVER_ATTRIBUTE}] .group-hover\\/mount-row\\:opacity-100 { opacity: 1; }`,
+  `[${HOVER_ATTRIBUTE}] .group-hover\\/mount-row\\:opacity-100 { opacity: 1; transition: none; }`,
   `[${HOVER_ATTRIBUTE}] > div:first-child { background-color: color-mix(in oklch, var(--color-muted) 40%, transparent); }`,
 ].join('\n');
 
@@ -55,15 +55,17 @@ export const useHoveredMountRow = ({ isReady, rowLabel }: HoverParams) => {
       style.textContent = HOVER_STYLE;
       document.head.appendChild(style);
     }
-    return pollUntil(() => {
+    const markRow = () => {
       const row = [
         ...document.querySelectorAll<HTMLElement>('[data-testid="project-mount-row"]'),
       ].find((element) => element.textContent?.includes(rowLabel));
-      if (row === undefined) {
-        return false;
+      if (row !== undefined && !row.hasAttribute(HOVER_ATTRIBUTE)) {
+        row.setAttribute(HOVER_ATTRIBUTE, '');
       }
-      row.setAttribute(HOVER_ATTRIBUTE, '');
-      return true;
-    });
+    };
+    markRow();
+    const observer = new MutationObserver(markRow);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, [isReady, rowLabel]);
 };
