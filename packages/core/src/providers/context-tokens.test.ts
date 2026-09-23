@@ -39,21 +39,21 @@ describe('contextTokensForUsage', () => {
   });
 
   it.each(INCLUSIVE_INPUT_PROVIDERS)(
-    'falls back without double-counting cache tokens for legacy %s usage',
+    'never passes turn totals off as the context for %s usage',
     (provider) => {
       expect(
         contextTokensForUsage({
           provider,
-          inputTokens: 100,
+          inputTokens: 2_750_000,
           cachedInputTokens: 20,
           cacheCreationInputTokens: 30,
-          outputTokens: 10,
+          outputTokens: 42_700,
         }),
-      ).toBe(110);
+      ).toBeNull();
     },
   );
 
-  it('falls back for non-finite context tokens', () => {
+  it('reads non-finite context tokens as unknown', () => {
     expect(
       contextTokensForUsage({
         provider: 'codex',
@@ -61,7 +61,7 @@ describe('contextTokensForUsage', () => {
         outputTokens: 10,
         contextTokens: Number.NaN,
       }),
-    ).toBe(110);
+    ).toBeNull();
   });
 });
 

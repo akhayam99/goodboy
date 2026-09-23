@@ -34,9 +34,5 @@ export const contextTokensForUsage = ({
   if (contextTokens != null && Number.isFinite(contextTokens)) {
     return contextTokens;
   }
-  if (provider === 'codex' || provider === 'gemini') {
-    return inputTokens + outputTokens;
-  }
-
   return null;
 };

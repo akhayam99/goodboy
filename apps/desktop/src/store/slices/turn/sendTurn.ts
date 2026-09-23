@@ -151,6 +151,7 @@ import { classifyToolCallFailure, toolCallFailureMessage } from './classifyToolC
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
+import { codexMeasuredUsage } from './codexMeasuredUsage';
 import { turnNodeRouting } from './turnNodeRouting';
 import type { GetFn, SendTurnResult, SetFn } from './types';
 
@@ -917,6 +918,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         : undefined;
     lease.attemptId = resolveAttemptId;
     let assistantText = '';
+    let providerThreadId: string | null = activeAgent?.providerSessionId ?? null;
     const resolveCandidateWriter = createResolveCandidateWriter({
       persist: async () => {
         if (resolveAttemptId === undefined || agentRowEarly === null) {
@@ -1092,6 +1094,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             ? { ...resolvedEvent, provider }
             : resolvedEvent;
         get().appendTurnEvent(activeAgentId, sessionId, event);
+        if (event.kind === 'provider_session_init') {
+          providerThreadId = event.providerSessionId;
+        }
         if (event.kind === 'error') {
           receivedProviderError = true;
         }
@@ -1129,7 +1134,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
         if (event.kind === 'usage') {
           await recordUsageTelemetry(set, get, {
-            event,
+            event: await codexMeasuredUsage({ event, provider, threadId: providerThreadId }),
             provider,
             model,
             runId,

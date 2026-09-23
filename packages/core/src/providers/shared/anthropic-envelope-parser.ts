@@ -50,6 +50,7 @@ type UsagePayload = {
   readonly outputTokens?: number;
   readonly cacheReadTokens?: number;
   readonly cacheCreationInputTokens?: number;
+  readonly cacheWriteTokens?: number;
 };
 
 type ContextTokenParams = {
@@ -63,7 +64,8 @@ const contextTokensFromUsage = ({ usage }: ContextTokenParams): number | null =>
   const input = usage.input_tokens ?? usage.inputTokens;
   const output = usage.output_tokens ?? usage.outputTokens;
   const cached = usage.cache_read_input_tokens ?? usage.cacheReadTokens;
-  const cacheCreation = usage.cache_creation_input_tokens ?? usage.cacheCreationInputTokens;
+  const cacheCreation =
+    usage.cache_creation_input_tokens ?? usage.cacheCreationInputTokens ?? usage.cacheWriteTokens;
   if (
     typeof input !== 'number' &&
     typeof output !== 'number' &&
@@ -192,7 +194,10 @@ export const parseAnthropicEnvelopeLine = (
       const input = usage.input_tokens ?? usage.inputTokens;
       const output = usage.output_tokens ?? usage.outputTokens;
       const cached = usage.cache_read_input_tokens ?? usage.cacheReadTokens;
-      const cacheCreation = usage.cache_creation_input_tokens ?? usage.cacheCreationInputTokens;
+      const cacheCreation =
+        usage.cache_creation_input_tokens ??
+        usage.cacheCreationInputTokens ??
+        usage.cacheWriteTokens;
       const contextTokens = ctx.lastAssistantContextTokens;
       delete ctx.lastAssistantContextTokens;
       const events: TurnEvent[] = [];

@@ -87,7 +87,7 @@ describe('AgentMetrics', () => {
     expect(screen.getByText('ctx 100%').className).toContain('text-danger');
   });
 
-  it('does not double-count cached tokens for inclusive codex input', () => {
+  it('shows the codex context measured on its last request', () => {
     render(
       <AgentMetrics
         telemetry={telemetry({ provider: 'codex', model: 'gpt-5.5' })}
@@ -96,10 +96,11 @@ describe('AgentMetrics', () => {
           {
             provider: 'codex',
             model: 'gpt-5.5',
-            inputTokens: 100_000,
-            outputTokens: 20_000,
-            cachedInputTokens: 50_000,
-            cacheCreationInputTokens: 10_000,
+            inputTokens: 2_750_000,
+            outputTokens: 42_700,
+            cachedInputTokens: 2_600_000,
+            cacheCreationInputTokens: 0,
+            contextTokens: 120_000,
           },
         ]}
         turns={1}
@@ -109,6 +110,30 @@ describe('AgentMetrics', () => {
       />,
     );
     expect(screen.getByText('ctx 30%')).toBeTruthy();
+  });
+
+  it('shows no codex context when only the turn totals are known', () => {
+    render(
+      <AgentMetrics
+        telemetry={telemetry({ provider: 'codex', model: 'gpt-5.5' })}
+        aggregate={null}
+        contextUsage={[
+          {
+            provider: 'codex',
+            model: 'gpt-5.5',
+            inputTokens: 2_750_000,
+            outputTokens: 42_700,
+            cachedInputTokens: 2_600_000,
+            cacheCreationInputTokens: 0,
+          },
+        ]}
+        turns={1}
+        turnsLoading={false}
+        run={run}
+        density="compact"
+      />,
+    );
+    expect(screen.queryByText(/^ctx /)).toBeNull();
   });
 
   it('stays readable for an agent that never ran', () => {
