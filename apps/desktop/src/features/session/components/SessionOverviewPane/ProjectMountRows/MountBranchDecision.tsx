@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { GitBranch } from 'lucide-react';
-import { InlineConfirm, formatError } from '@goodboy/ui';
+import { InlineConfirm } from '@goodboy/ui';
 import type {
   MountBranchObservation,
   MountBranchResolution,
   MountId,
   SessionId,
 } from '@goodboy/types';
-import { useToast } from '../../../../../app/components/Toast';
 import { worktreeBranchHolder } from '../../../../worktree/worktree';
 import { useAppStore } from '../../../../../store';
 import type { MountBranchHolder } from '../../../../../store/slices/project-mounts/mountRowModel';
@@ -38,7 +37,7 @@ export const MountBranchDecision = ({
   holder,
 }: Props) => {
   const resolveMountBranchMismatch = useAppStore((state) => state.resolveMountBranchMismatch);
-  const { showToast } = useToast();
+  const reportError = useAppStore((state) => state.reportError);
   const [isDismissed, setIsDismissed] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [resolvedHolder, setResolvedHolder] = useState<MountBranchHolder | 'checking' | null>(
@@ -93,7 +92,7 @@ export const MountBranchDecision = ({
       await resolveMountBranchMismatch({ sessionId, mountId, resolution });
       setIsDismissed(true);
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({ title: "Couldn't settle the branch mismatch", error, sessionId });
     } finally {
       setIsBusy(false);
     }

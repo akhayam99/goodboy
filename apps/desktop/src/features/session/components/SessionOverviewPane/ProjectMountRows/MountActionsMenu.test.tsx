@@ -15,7 +15,7 @@ const { state, showToast, worktreeDetachAssessment } = vi.hoisted(() => ({
     detachProject: vi.fn(async () => [{ worktreePath: '/worktrees/api', kind: 'removed' }]),
     unmountMount: vi.fn(async () => ({ kept: false })),
     forgetMount: vi.fn(async () => ({ keptPath: null as string | null })),
-    emitNotification: vi.fn(),
+    reportError: vi.fn(async () => undefined),
     projects: [{ id: 'project-1', kind: 'repo', baseBranch: 'develop' as string | null }],
     sessions: [{ id: 'session-1', state: { kind: 'idle' } }],
     terminalTabs: {},
@@ -571,9 +571,11 @@ describe('MountActionsMenu', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Detach and remove' }));
 
     await waitFor(() =>
-      expect(showToast).toHaveBeenCalledWith(
-        'error',
-        'Could not remove /worktrees/api. Its mount stays; check again before retrying.',
+      expect(state.reportError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Couldn't detach api",
+          error: 'Could not remove /worktrees/api. Its mount stays; check again before retrying.',
+        }),
       ),
     );
     expect(screen.getByText('Detach api?')).toBeDefined();

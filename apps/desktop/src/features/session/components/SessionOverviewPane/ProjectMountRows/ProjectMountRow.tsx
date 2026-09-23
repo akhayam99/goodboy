@@ -5,7 +5,6 @@ import {
   Skeleton,
   Tooltip,
   cn,
-  formatError,
   tintClasses,
   type OverflowMenuItem,
 } from '@goodboy/ui';
@@ -15,7 +14,6 @@ import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 import { selectActiveMountId } from '../../../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { useToast } from '../../../../../app/components/Toast';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
 import { useEditorMenuItems } from '../useEditorMenuItems';
 import { MountBranchDecision } from './MountBranchDecision';
@@ -77,7 +75,7 @@ export const ProjectMountRow = ({
   const openMountTerminal = useAppStore((state) => state.openMountTerminal);
   const attachMount = useAppStore((state) => state.attachMount);
   const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
-  const { showToast } = useToast();
+  const reportError = useAppStore((state) => state.reportError);
   const [isAttaching, setIsAttaching] = useState(false);
   const isRepo = row.projectKind === 'repo';
   const worktreePath = row.worktreePath;
@@ -117,7 +115,7 @@ export const ProjectMountRow = ({
     try {
       await attachMount({ sessionId, mountId: row.mountId });
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({ title: `Couldn't mount ${label}`, error, sessionId });
     } finally {
       setIsAttaching(false);
     }
@@ -127,7 +125,7 @@ export const ProjectMountRow = ({
     try {
       await setSessionActiveMount({ sessionId, mountId: row.mountId });
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({ title: `Couldn't send next turns to ${label}`, error, sessionId });
     }
   };
 

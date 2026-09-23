@@ -1,12 +1,5 @@
 import { useState } from 'react';
-import {
-  AnchoredPopover,
-  InlineConfirm,
-  cn,
-  formatError,
-  useDropdown,
-  type ConfirmRole,
-} from '@goodboy/ui';
+import { AnchoredPopover, InlineConfirm, cn, useDropdown, type ConfirmRole } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
@@ -62,6 +55,7 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
     (state) =>
       state.projects.find((candidate) => candidate.id === row.projectId)?.baseBranch ?? null,
   );
+  const reportError = useAppStore((state) => state.reportError);
   const { showToast } = useToast();
   const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 170 });
   const [isChecking, setIsChecking] = useState(false);
@@ -102,13 +96,17 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
           break;
         case 'kept':
         case 'failed':
-          showToast('error', result.reason ?? `Could not remove the worktree for ${label}.`);
+          void reportError({
+            title: `Couldn't remove the worktree for ${label}`,
+            error: result.reason ?? '',
+            sessionId,
+          });
           break;
       }
       setConfirm(null);
       dropdown.close();
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({ title: `Couldn't remove the worktree for ${label}`, error, sessionId });
     } finally {
       setIsBusy(false);
     }
@@ -191,7 +189,7 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
       });
       reveal();
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({ title: `Couldn't check the worktree for ${label}`, error, sessionId });
     } finally {
       setIsChecking(false);
     }

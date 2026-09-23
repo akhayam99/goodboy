@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link2 } from 'lucide-react';
-import { cn, formatError, Skeleton, Eyebrow } from '@goodboy/ui';
+import { cn, Skeleton, Eyebrow } from '@goodboy/ui';
 import type { IsoDateTime, Session } from '@goodboy/types';
 import { useAppStore, useSessionSlots } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -27,6 +27,7 @@ type PickIssueParams = {
 export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdoption }: Props) => {
   const issues = useKickoffIssues({ workspaceId: session.workspaceId });
   const linkSessionExternalTask = useAppStore((state) => state.linkSessionExternalTask);
+  const reportError = useAppStore((state) => state.reportError);
   const slots = useSessionSlots(session.id);
   const { showToast } = useToast();
   const [linkingKey, setLinkingKey] = useState<string | null>(null);
@@ -51,9 +52,13 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdopti
       if (onProposeAdoption != null && !hasNothingToAdopt({ adoption: proposed })) {
         onProposeAdoption(proposed);
       }
-      showToast('success', `${candidate.identifier} linked to this session`);
+      showToast('success', `Linked ${candidate.identifier} to this session.`);
     } catch (cause) {
-      showToast('error', formatError(cause));
+      void reportError({
+        title: `Couldn't link ${candidate.identifier}`,
+        error: cause,
+        sessionId: session.id,
+      });
     } finally {
       setLinkingKey(null);
     }

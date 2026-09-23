@@ -1,12 +1,5 @@
 import { useState } from 'react';
-import {
-  AnchoredPopover,
-  Button,
-  Chip,
-  SelectableRow,
-  formatError,
-  useDropdown,
-} from '@goodboy/ui';
+import { AnchoredPopover, Button, Chip, SelectableRow, useDropdown } from '@goodboy/ui';
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import {
@@ -16,7 +9,6 @@ import {
   type WriteDestinationCandidate,
 } from '../../../../store/slices/project-mounts/writeDestination';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { useToast } from '../../../../app/components/Toast';
 import { useWriteDestination } from './useWriteDestination';
 
 type Props = {
@@ -37,7 +29,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
     fallback,
   });
   const setSessionActiveMount = useAppStore((state) => state.setSessionActiveMount);
-  const { showToast } = useToast();
+  const reportError = useAppStore((state) => state.reportError);
   const dropdown = useDropdown({ width: 'w-96', expectedHeight: 320 });
   const [pendingMountId, setPendingMountId] = useState<MountId | null>(null);
   const [isApplying, setIsApplying] = useState(false);
@@ -85,7 +77,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
       await setSessionActiveMount({ sessionId, mountId: pendingMountId });
       dropdown.close();
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({ title: "Couldn't change where the next turns write", error, sessionId });
     } finally {
       setIsApplying(false);
     }

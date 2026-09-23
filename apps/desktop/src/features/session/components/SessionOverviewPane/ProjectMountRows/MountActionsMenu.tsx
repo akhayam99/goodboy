@@ -5,7 +5,6 @@ import {
   IconButton,
   InlineConfirm,
   cn,
-  formatError,
   useDropdown,
   tintClasses,
   type OverflowMenuItem,
@@ -109,7 +108,7 @@ export const MountActionsMenu = ({
   });
   const detachProject = useAppStore((state) => state.detachProject);
   const unmountMount = useAppStore((state) => state.unmountMount);
-  const emitNotification = useAppStore((state) => state.emitNotification);
+  const reportError = useAppStore((state) => state.reportError);
   const isRepoProject = useAppStore(
     (state) => state.projects.find((candidate) => candidate.id === projectId)?.kind === 'repo',
   );
@@ -182,15 +181,13 @@ export const MountActionsMenu = ({
     worktreeStatus != null && isWorkingTreeClean({ workingTree: worktreeStatus.workingTree });
   const label = menuLabel ?? `${projectName} actions`;
 
-  const fail = (title: string, error: unknown) => {
-    showToast('error', `${title}: ${formatError(error)}`);
-    void emitNotification({
-      kind: 'error',
-      severity: 'warning',
+  const fail = ({ title, error }: { title: string; error: unknown }) => {
+    void reportError({
       title,
-      body: formatError(error),
+      error,
+      severity: 'warning',
       sessionId,
-      workspaceId,
+      ...(workspaceId !== undefined && { workspaceId }),
     });
   };
 
@@ -261,7 +258,10 @@ export const MountActionsMenu = ({
       const summary = summarizeDetachOutcomes({ outcomes });
       const summarized = outcomes.find((outcome) => outcome.kind === summary);
       if (summary === 'failed') {
-        showToast('error', detachFailureMessage({ outcomes }));
+        fail({
+          title: `Couldn't detach ${projectName}`,
+          error: detachFailureMessage({ outcomes }),
+        });
         assess();
         return;
       }
@@ -276,7 +276,7 @@ export const MountActionsMenu = ({
       dropdown.close();
       setConfirming(null);
     } catch (error) {
-      fail("Couldn't detach the project", error);
+      fail({ title: "Couldn't detach the project", error });
     } finally {
       setIsBusy(false);
       setStage(null);
@@ -299,7 +299,7 @@ export const MountActionsMenu = ({
           : `Removed ${branch === '' ? 'the mount' : branch} from this session. Files remain at ${result.keptPath}.`,
       );
     } catch (error) {
-      fail("Couldn't remove the mount", error);
+      fail({ title: "Couldn't remove the mount", error });
     } finally {
       setIsBusy(false);
     }
@@ -318,7 +318,7 @@ export const MountActionsMenu = ({
         showToast('info', `Worktree kept at ${worktreePath}`);
       }
     } catch (error) {
-      fail("Couldn't unmount the branch", error);
+      fail({ title: "Couldn't unmount the branch", error });
     } finally {
       setIsBusy(false);
     }

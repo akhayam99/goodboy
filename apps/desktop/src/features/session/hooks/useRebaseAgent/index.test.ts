@@ -42,6 +42,7 @@ const { showToast, state } = vi.hoisted(() => ({
     spawnAgent: vi.fn(async () => 'agent-1'),
     selectAgent: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
+    reportError: vi.fn(async () => undefined),
     beginSessionCreation: vi.fn(() => 'creation-1'),
     endSessionCreation: vi.fn(),
     recordSessionEvent: vi.fn(async () => undefined),
@@ -92,6 +93,7 @@ beforeEach(() => {
   state.selectAgent.mockReset();
   state.selectAgent.mockResolvedValue(undefined);
   state.setActiveLens.mockReset();
+  state.reportError.mockClear();
   state.beginSessionCreation.mockReset();
   state.beginSessionCreation.mockReturnValue('creation-1');
   state.endSessionCreation.mockReset();
@@ -199,7 +201,7 @@ describe('useRebaseAgent', () => {
 
     await act(() => result.current.run({ mountId }));
     state.sessionPhaseRuns = {
-      [sessionId]: [{ id: 'agent-1', name: 'Rebase on main', status: 'failed' }],
+      [sessionId]: [{ id: 'agent-1', name: 'Rebase on main', status: 'completed' }],
     };
     rerender();
 
@@ -213,6 +215,26 @@ describe('useRebaseAgent', () => {
 
     expect(state.selectAgent).toHaveBeenCalledWith(sessionId, 'agent-1');
     expect(state.setActiveLens).toHaveBeenCalledWith(sessionId, 'agents');
+  });
+
+  it('reports a stopped rebase agent to the log with a way to open it', async () => {
+    const { result, rerender } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
+
+    await act(() => result.current.run({ mountId }));
+    state.sessionPhaseRuns = {
+      [sessionId]: [{ id: 'agent-1', name: 'Rebase on main', status: 'failed' }],
+    };
+    rerender();
+
+    await waitFor(() =>
+      expect(state.reportError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Couldn't rebase the branch",
+          action: { kind: 'open-agent', sessionId, agentId: 'agent-1' },
+        }),
+      ),
+    );
+    expect(showToast).toHaveBeenCalledTimes(1);
   });
 
   it('records the request for the mount it was handed so the suggestion is consumed', async () => {

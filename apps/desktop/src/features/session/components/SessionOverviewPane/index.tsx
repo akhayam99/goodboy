@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { formatError } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   useAppStore,
@@ -12,7 +11,6 @@ import {
 import type { LensKind } from '../../../../store';
 import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { PaneShell } from '../../../../shared/components/PaneShell';
-import { useToast } from '../../../../app/components/Toast';
 import { HeaderBand } from './HeaderBand';
 import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
 import { SessionKickoff } from '../SessionKickoff';
@@ -39,7 +37,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
   const renameTask = useAppStore((s) => s.renameTask);
-  const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
   const [isGoalHistoryOpen, setIsGoalHistoryOpen] = useState(false);
   const [adoption, setAdoption] = useState<IssueAdoption | null>(null);
   const goalSlot = slots.find((slot) => slot.key === 'goal');
@@ -52,9 +50,9 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     }
     const title = adoption.title;
     setAdoption({ ...adoption, title: null });
-    renameTask(sessionId, title).catch((cause: unknown) => {
-      showToast('error', formatError(cause));
-    });
+    renameTask(sessionId, title).catch((error: unknown) =>
+      reportError({ title: "Couldn't rename the session", error, sessionId }),
+    );
   };
 
   const applyAdoptedGoal = () => {

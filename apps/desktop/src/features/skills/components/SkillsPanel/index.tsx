@@ -17,7 +17,6 @@ import { CardAction } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -89,7 +88,7 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
   const saveSkill = useAppStore((s) => s.saveSkill);
   const deleteSkill = useAppStore((s) => s.deleteSkill);
   const rescanSkills = useAppStore((s) => s.rescanSkills);
-  const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
 
   const [editingSkill, setEditingSkill] = useState<Skill | null | 'new'>(null);
   const [form, setForm] = useState<EditorForm>(emptyForm());
@@ -164,7 +163,7 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
     try {
       await deleteSkill(skill.id, workspaceId);
     } catch (err) {
-      showToast('error', formatError(err), { title: 'delete failed' });
+      void reportError({ title: `Couldn't delete ${skill.name}`, error: err, workspaceId });
     }
   };
 

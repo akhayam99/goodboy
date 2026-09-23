@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FolderX, Trash2 } from 'lucide-react';
-import { Button, Divider, formatError, InlineConfirm, SectionHeader } from '@goodboy/ui';
+import { Button, Divider, InlineConfirm, SectionHeader } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -16,6 +16,7 @@ type Props = {
 export const OrphanWorktreesSection = ({ workspaceId }: Props) => {
   const orphans = useAppStore((s) => s.orphanWorktrees[workspaceId] ?? EMPTY);
   const removeOrphanWorktrees = useAppStore((s) => s.removeOrphanWorktrees);
+  const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
   const [isArmed, setIsArmed] = useState(false);
 
@@ -29,9 +30,9 @@ export const OrphanWorktreesSection = ({ workspaceId }: Props) => {
   const onConfirm = async () => {
     try {
       await removeOrphanWorktrees({ workspaceId, paths: orphans.map((o) => o.path) });
-      showToast('success', `removed ${folderLabel}`);
+      showToast('success', `Removed ${folderLabel}.`);
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({ title: `Couldn't remove ${folderLabel}`, error, workspaceId });
     } finally {
       setIsArmed(false);
     }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { formatError, useCopyLink, type OverflowMenuItem } from '@goodboy/ui';
+import { useCopyLink, type OverflowMenuItem } from '@goodboy/ui';
 import { Copy } from 'lucide-react';
 import { useAppStore } from '../../../../../store';
 import { openInEditor } from '../../../../../shared/lib/editor';
@@ -19,6 +19,7 @@ type LaunchEditorParams = {
 export const useEditorMenuItems = ({ worktreePath }: Params): ReadonlyArray<OverflowMenuItem> => {
   const detectedEditors = useAppStore((state) => state.detectedEditors);
   const loadDetectedEditors = useAppStore((state) => state.loadDetectedEditors);
+  const reportError = useAppStore((state) => state.reportError);
   const { showToast } = useToast();
   const { failedKey, copy } = useCopyLink();
 
@@ -33,7 +34,7 @@ export const useEditorMenuItems = ({ worktreePath }: Params): ReadonlyArray<Over
     if (failedKey === null) {
       return;
     }
-    showToast('error', "couldn't copy the path");
+    showToast('warning', "Couldn't copy the path.");
   }, [failedKey, showToast]);
 
   return useMemo<ReadonlyArray<OverflowMenuItem>>(() => {
@@ -44,7 +45,7 @@ export const useEditorMenuItems = ({ worktreePath }: Params): ReadonlyArray<Over
       try {
         await openInEditor(worktreePath, binary);
       } catch (error) {
-        showToast('error', `couldn't open editor: ${formatError(error)}`);
+        void reportError({ title: "Couldn't open the editor", error });
       }
     };
     const referenceEditors = detectedEditors.filter((editor) =>
@@ -89,5 +90,5 @@ export const useEditorMenuItems = ({ worktreePath }: Params): ReadonlyArray<Over
         disabled: worktreePath === null,
       },
     ];
-  }, [copy, detectedEditors, showToast, worktreePath]);
+  }, [copy, detectedEditors, reportError, worktreePath]);
 };

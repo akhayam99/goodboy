@@ -148,6 +148,7 @@ export const CommandPalette = ({
       : isBranchlessSession({ branch: s.sessionBranches[s.currentSessionId] }),
   );
   const runScript = useAppStore((s) => s.runScript);
+  const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
@@ -217,15 +218,24 @@ export const CommandPalette = ({
         group: 'script',
         onSelect: () => {
           if (currentSession == null) {
-            showToast('warning', `${sc.name}, open a session to run scripts`);
+            showToast('warning', `Open a session to run ${sc.name}.`);
             return;
           }
-          void runScript({ sessionId: currentSession.id, scriptId: sc.id }).then((result) => {
-            showToast(
-              result.exitCode === 0 ? 'success' : 'error',
-              result.exitCode === 0 ? `${sc.name}, done` : `${sc.name}, exited ${result.exitCode}`,
-            );
-          });
+          const sessionId = currentSession.id;
+          const failureTitle = `Couldn't run ${sc.name}`;
+          void runScript({ sessionId, scriptId: sc.id })
+            .then((result) => {
+              if (result.exitCode !== 0) {
+                void reportError({
+                  title: failureTitle,
+                  error: `Exited with code ${result.exitCode}.`,
+                  sessionId,
+                });
+                return;
+              }
+              showToast('success', `${sc.name} finished.`);
+            })
+            .catch((error: unknown) => reportError({ title: failureTitle, error, sessionId }));
         },
       });
     }
@@ -301,6 +311,7 @@ export const CommandPalette = ({
     scripts,
     currentSession,
     runScript,
+    reportError,
     showToast,
     agentKindOverride,
     isBranchless,

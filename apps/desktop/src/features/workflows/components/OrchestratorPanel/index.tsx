@@ -68,6 +68,7 @@ export const OrchestratorPanel = ({
   const retryWorkflowOrchestration = useAppStore((state) => state.retryWorkflowOrchestration);
   const continueWorkflowRun = useAppStore((state) => state.continueWorkflowRun);
   const addWorkflowOrchestratorHint = useAppStore((state) => state.addWorkflowOrchestratorHint);
+  const reportError = useAppStore((state) => state.reportError);
   const removeWorkflowOrchestratorHint = useAppStore(
     (state) => state.removeWorkflowOrchestratorHint,
   );
@@ -330,12 +331,25 @@ export const OrchestratorPanel = ({
             isDeciding={isOrchestrating}
             isStepRunning={agents.some((agent) => agent.status === 'running')}
             disabled={busy || isOrchestrating}
-            onSubmit={(draft) => addWorkflowOrchestratorHint(sessionId, run.id, draft)}
+            onSubmit={async (draft) => {
+              try {
+                await addWorkflowOrchestratorHint(sessionId, run.id, draft);
+                return true;
+              } catch (error) {
+                void reportError({ title: "Couldn't save the hint", error, sessionId });
+                return false;
+              }
+            }}
           />
           <OrchestratorHintLog
             hints={hints}
             disabled={busy}
-            onRemove={(hintId) => void removeWorkflowOrchestratorHint(sessionId, run.id, hintId)}
+            onRemove={(hintId) =>
+              void removeWorkflowOrchestratorHint(sessionId, run.id, hintId).catch(
+                (error: unknown) =>
+                  reportError({ title: "Couldn't remove the hint", error, sessionId }),
+              )
+            }
           />
         </OrchestratorDrawer>
       ) : null}

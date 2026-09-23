@@ -30,7 +30,7 @@ export type AttachmentDropNotices = Readonly<{
 }>;
 
 type Params = {
-  readonly showToast: (kind: ToastKind, message: string) => void;
+  readonly showToast: (kind: Exclude<ToastKind, 'error'>, message: string) => void;
   readonly enabled?: boolean;
   readonly notices?: AttachmentDropNotices;
   readonly persistToDisk?: (att: PersistArgs) => Promise<string | null>;
@@ -76,7 +76,7 @@ export const usePendingAttachments = ({
       if (skipped > 0) {
         showToast(
           'warning',
-          `${skipped} file${skipped === 1 ? '' : 's'} skipped, unsupported type`,
+          `Skipped ${skipped} file${skipped === 1 ? '' : 's'} of an unsupported type.`,
         );
       }
       if (allowed.length === 0) {
@@ -85,7 +85,7 @@ export const usePendingAttachments = ({
       const accepted: PendingAttachment[] = [];
       for (const file of allowed) {
         if (file.size > MAX_ATTACHMENT_BYTES) {
-          showToast('error', `${file.name || 'file'} is over 15MB`);
+          showToast('warning', `${file.name || 'This file'} is over 15MB.`);
           continue;
         }
         try {
@@ -96,7 +96,7 @@ export const usePendingAttachments = ({
           const relPath = await persist({ id, fileName, dataUrl });
           accepted.push({ id, fileName, mimeType, dataUrl, relPath });
         } catch {
-          showToast('error', `could not read ${file.name || 'file'}`);
+          showToast('warning', `Couldn't read ${file.name || 'the file'}.`);
         }
       }
       if (accepted.length === 0) {
@@ -105,11 +105,11 @@ export const usePendingAttachments = ({
       setAttachments((prev) => {
         const room = ATTACHMENT_LIMIT - prev.length;
         if (room <= 0) {
-          showToast('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
+          showToast('warning', `The limit is ${ATTACHMENT_LIMIT} attachments.`);
           return prev;
         }
         if (accepted.length > room) {
-          showToast('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
+          showToast('warning', `The limit is ${ATTACHMENT_LIMIT} attachments.`);
         }
         return [...prev, ...accepted.slice(0, room)];
       });
@@ -148,7 +148,7 @@ export const usePendingAttachments = ({
     if (unsupported > 0) {
       showToast(
         'warning',
-        `${unsupported} file${unsupported === 1 ? '' : 's'} skipped, unsupported type`,
+        `Skipped ${unsupported} file${unsupported === 1 ? '' : 's'} of an unsupported type.`,
       );
     }
     const dropped: PendingAttachment[] = [];
@@ -178,9 +178,9 @@ export const usePendingAttachments = ({
     if (rejected.length > 0) {
       const label =
         rejected.length === 1
-          ? `could not attach ${rejected[0]}, it may be over 15MB`
-          : `${rejected.length} files could not be read`;
-      showToast('error', label);
+          ? `Couldn't attach ${rejected[0]}. It may be over 15MB.`
+          : `Couldn't read ${rejected.length} files.`;
+      showToast('warning', label);
     }
     if (dropped.length === 0) {
       return;
@@ -188,11 +188,11 @@ export const usePendingAttachments = ({
     setAttachments((previous) => {
       const room = ATTACHMENT_LIMIT - previous.length;
       if (room <= 0) {
-        showToast('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
+        showToast('warning', `The limit is ${ATTACHMENT_LIMIT} attachments.`);
         return previous;
       }
       if (dropped.length > room) {
-        showToast('warning', `attachment limit is ${ATTACHMENT_LIMIT}`);
+        showToast('warning', `The limit is ${ATTACHMENT_LIMIT} attachments.`);
       }
       return [...previous, ...dropped.slice(0, room)];
     });

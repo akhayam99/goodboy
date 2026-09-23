@@ -115,6 +115,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
   const beginSessionCreation = useAppStore((state) => state.beginSessionCreation);
   const endSessionCreation = useAppStore((state) => state.endSessionCreation);
   const recordSessionEvent = useAppStore((state) => state.recordSessionEvent);
+  const reportError = useAppStore((state) => state.reportError);
   const { showToast } = useToast();
   const config = useMemo(
     () =>
@@ -168,27 +169,31 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
     const isFailed = agent.status === 'failed';
     endSessionCreation(sessionId, pending.creationId);
     setPending(null);
-    showToast(
-      isFailed ? 'error' : 'success',
-      isFailed
-        ? 'The rebase agent stopped before finishing.'
-        : `This branch is rebased on ${baseBranch}.`,
-      {
-        title: isFailed ? 'Rebase failed' : 'Rebase done',
-        action: {
-          label: 'Open the rebase agent',
-          onClick: () => {
-            setActiveLens(sessionId, 'agents');
-            void selectAgent(sessionId, agentId);
-          },
+    if (isFailed) {
+      void reportError({
+        title: "Couldn't rebase the branch",
+        error: 'The rebase agent stopped before finishing.',
+        sessionId,
+        action: { kind: 'open-agent', sessionId, agentId },
+      });
+      return;
+    }
+    showToast('success', `This branch is rebased on ${baseBranch}.`, {
+      title: 'Rebase done',
+      action: {
+        label: 'Open the rebase agent',
+        onClick: () => {
+          setActiveLens(sessionId, 'agents');
+          void selectAgent(sessionId, agentId);
         },
       },
-    );
+    });
   }, [
     baseBranch,
     endSessionCreation,
     pending,
     phaseRuns,
+    reportError,
     selectAgent,
     sessionId,
     setActiveLens,

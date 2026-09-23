@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { MountCleanupProposal, SessionId } from '@goodboy/types';
-import { Button, formatError, cn, tintClasses } from '@goodboy/ui';
+import { Button, cn, tintClasses } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 
 type Props = {
@@ -24,7 +23,7 @@ export const MountCleanupProposals = ({ sessionId }: Props) => {
   );
   const loadMountCleanupProposals = useAppStore((state) => state.loadMountCleanupProposals);
   const resolveMountCleanup = useAppStore((state) => state.resolveMountCleanup);
-  const { showToast } = useToast();
+  const reportError = useAppStore((state) => state.reportError);
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,7 +39,7 @@ export const MountCleanupProposals = ({ sessionId }: Props) => {
     try {
       await resolveMountCleanup({ sessionId, requestId: proposal.requestId, decision });
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({ title: "Couldn't settle the worktree cleanup", error, sessionId });
     } finally {
       setBusy(null);
     }

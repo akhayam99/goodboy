@@ -269,7 +269,7 @@ describe('SessionKickoff', () => {
       title: '[ENG-1] Fix the login redirect',
       goal: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
     });
-    expect(spies.showToast).toHaveBeenCalledWith('success', 'ENG-1 linked to this session');
+    expect(spies.showToast).toHaveBeenCalledWith('success', 'Linked ENG-1 to this session.');
   });
 
   it('leaves a goal the session already has out of the proposal', async () => {

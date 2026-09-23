@@ -34,7 +34,7 @@ type NotifyParams = {
 
 export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Props) => {
   const dropdown = useDropdown({ width: 'w-64', expectedHeight: 160 });
-  const emitNotification = useAppStore((state) => state.emitNotification);
+  const reportError = useAppStore((state) => state.reportError);
   const configuredBaseBranch = useAppStore(
     (state) => state.projects.find((project) => project.id === projectId)?.baseBranch ?? null,
   );
@@ -45,7 +45,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
   const [baseError, setBaseError] = useState<string | null>(null);
   const baseBranch = configuredBaseBranch ?? 'main';
   const notify = ({ title, message }: NotifyParams) => {
-    void emitNotification({ kind: 'error', severity: 'error', title, body: message, sessionId });
+    void reportError({ title, error: message, sessionId });
   };
   const rebase = useRebaseAgent({
     sessionId,

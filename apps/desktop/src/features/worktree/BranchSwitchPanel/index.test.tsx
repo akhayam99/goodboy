@@ -238,7 +238,7 @@ describe('BranchSwitchPanel', () => {
         createNew: false,
       }),
     );
-    expect(showToast).toHaveBeenCalledWith('success', 'branch switched to feat/next');
+    expect(showToast).toHaveBeenCalledWith('success', 'Switched to feat/next.');
     expect(onDone).toHaveBeenCalledOnce();
   });
 

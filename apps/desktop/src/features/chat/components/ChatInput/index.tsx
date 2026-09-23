@@ -46,6 +46,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const dismissSessionNudge = useAppStore((s) => s.dismissSessionNudge);
   const acceptSessionNudgeHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const reportError = useAppStore((s) => s.reportError);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
   const agentKindOverride = useAppStore((s) =>
     selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
@@ -312,8 +313,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         title: 'Agent started',
         message: 'The agent is picking this up. You can keep working.',
       });
-    } catch {
-      return;
+    } catch (error) {
+      void reportError({ title: "Couldn't start the agent", error, sessionId: session.id });
     }
   };
 

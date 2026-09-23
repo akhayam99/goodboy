@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { GitFork } from 'lucide-react';
-import { AnchoredPopover, Button, Input, Tooltip, cn, formatError, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, Input, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import type { ProjectId, SessionId } from '@goodboy/types';
-import { useToast } from '../../../../../app/components/Toast';
 import { useAppStore } from '../../../../../store';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
@@ -23,7 +22,7 @@ export const NewBranchMountAction = ({
 }: Props) => {
   const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 190 });
   const forkMount = useAppStore((state) => state.forkMount);
-  const { showToast } = useToast();
+  const reportError = useAppStore((state) => state.reportError);
   const [branch, setBranch] = useState('');
   const [isBusy, setIsBusy] = useState(false);
 
@@ -35,7 +34,11 @@ export const NewBranchMountAction = ({
       setBranch('');
       dropdown.close();
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({
+        title: `Couldn't mount a new branch of ${projectName}`,
+        error,
+        sessionId,
+      });
     } finally {
       setIsBusy(false);
     }

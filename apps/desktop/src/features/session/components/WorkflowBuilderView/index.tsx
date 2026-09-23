@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import {
   AlertTriangle,
@@ -611,7 +611,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         return;
       }
       if (!polished) {
-        showToast('error', 'could not polish the step, kept your wording');
+        showToast('warning', 'Kept your wording. The step could not be polished.');
         return;
       }
     } catch (err) {
@@ -664,7 +664,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       if (polished && polished !== goalText) {
         replaceGoal(polished);
       } else if (!polished) {
-        showToast('error', 'could not polish the goal, kept your wording');
+        showToast('warning', 'Kept your wording. The goal could not be polished.');
       }
     } catch (err) {
       setError(formatError(err));
@@ -690,7 +690,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         setSteps([]);
         setExpandedKey(null);
       }
-      showToast('success', `preset deleted: ${t.name}`);
+      showToast('success', `Deleted the ${t.name} preset.`);
     } catch (err) {
       setError(formatError(err));
     }
@@ -801,7 +801,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     try {
       if (usePresetAsIs) {
         await attachWorkflowToSession(session.id, selectedPreset!.id, attachOptions());
-        showToast('success', `workflow started: ${selectedPreset!.name}`);
+        showToast('success', `Started ${selectedPreset!.name}.`);
         handleClose();
         return;
       }
@@ -862,7 +862,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         );
       }
       await attachWorkflowToSession(session.id, workflowId, attachOptions());
-      showToast('success', `workflow started: ${saved?.name ?? name}`);
+      showToast('success', `Started ${saved?.name ?? name}.`);
       handleClose();
     } catch (err) {
       setError(formatError(err));
