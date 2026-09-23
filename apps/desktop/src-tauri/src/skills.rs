@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
 
 use crate::db::{Db, DbError};
 
@@ -218,10 +218,13 @@ pub async fn skill_get(
 }
 
 #[tauri::command]
-pub async fn skill_upsert(
-    state: State<'_, Db>,
-    input: SkillUpsertInput,
-) -> Result<SkillRow, SkillError> {
+pub async fn skill_upsert(app: AppHandle, input: SkillUpsertInput) -> Result<SkillRow, SkillError> {
+    tauri::async_runtime::spawn_blocking(move || skill_upsert_blocking(&app.state::<Db>(), input))
+        .await
+        .map_err(|e| SkillError::Io(e.to_string()))?
+}
+
+fn skill_upsert_blocking(state: &Db, input: SkillUpsertInput) -> Result<SkillRow, SkillError> {
     let roots = {
         let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
         workspace_roots(&conn, &input.workspace_id)?
@@ -317,7 +320,15 @@ pub async fn skill_upsert(
 }
 
 #[tauri::command]
-pub async fn skill_delete(state: State<'_, Db>, skill_id: String) -> Result<(), SkillError> {
+pub async fn skill_delete(app: AppHandle, skill_id: String) -> Result<(), SkillError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        skill_delete_blocking(&app.state::<Db>(), skill_id)
+    })
+    .await
+    .map_err(|e| SkillError::Io(e.to_string()))?
+}
+
+fn skill_delete_blocking(state: &Db, skill_id: String) -> Result<(), SkillError> {
     let (file_path, roots) = {
         let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
         let row: Option<(String, String)> = {
@@ -379,9 +390,17 @@ pub async fn skill_delete(state: State<'_, Db>, skill_id: String) -> Result<(), 
 
 #[tauri::command]
 pub async fn skill_rescan(
-    state: State<'_, Db>,
+    app: AppHandle,
     workspace_id: String,
 ) -> Result<Vec<SkillRow>, SkillError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        skill_rescan_blocking(&app.state::<Db>(), workspace_id)
+    })
+    .await
+    .map_err(|e| SkillError::Io(e.to_string()))?
+}
+
+fn skill_rescan_blocking(state: &Db, workspace_id: String) -> Result<Vec<SkillRow>, SkillError> {
     let roots = {
         let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
         workspace_roots(&conn, &workspace_id)?
