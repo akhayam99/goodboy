@@ -100,8 +100,8 @@ and update `APPLE_CERTIFICATE_PASSWORD`.
 
 On launch, packaged builds check
 `releases/latest/download/latest.json` through `tauri-plugin-updater`. If a
-newer version exists, a "Restart to update" control shows up in the status bar
-and next to the sidebar logo. This is macOS only. The Linux job writes no
+newer version exists, an "Update and restart" control shows up in `AppFooter`
+and in `WorkspaceLauncher`. This is macOS only. The Linux job writes no
 `latest.json` and no `.sig`, so nothing tells a Linux build that a newer
 version exists. Adding it would mean signing the AppImage with the updater
 keypair and pointing the plugin at a Linux target.

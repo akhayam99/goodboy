@@ -38,25 +38,21 @@ file holds those explanations. Everything below has been "fixed" at least once a
 - `RoutingPicker.onModel(model)` carries only the model string, not the
   provider picked in the picker. A consumer that rebuilds a provider-model
   pair from values captured by an earlier render can save the old provider
-  with the new model. There are 11 production mounts across 10 files:
-  `ChatInput`, `NotificationCenter`, `DiffViewerContent`, `RoleModelRow`
-  (twice), `TaskModelRow`, `AgentSpawnConfig`, `WorkflowBuilderView`,
-  `WorkflowStepCard`, `LibraryStepForm`, and `OrchestratorRoutingRow`. Keep the
-  provider in current state or a ref when you handle `onModel`. Nobody has ever
-  widened the contract to close this. The same stale-pairing bug was fixed at
-  the call site instead, separately, at least twice
+  with the new model. Every `onModel` consumer keeps the provider in current
+  state or a ref. Nobody has ever widened the contract to close this. The same
+  stale-pairing bug was fixed at the call site instead, separately, at least
+  twice
   (`RoleModelRow`/`TaskModelRow`, then `LibraryStepForm`/
   `OrchestratorRoutingRow` in #1307). Each time the fix tracked the provider in
   a ref instead of adding a provider parameter to `onModel`. This matters for
   more than passing UI state. `LibraryStepForm` saves through
   `step_def_upsert`, whose Tauri command inserts or updates the SQLite
   `step_library` table.
-- `LinkedPrChip` and `NewSessionView` read `[data-studio-overlay]` from the
-  DOM to tell whether a fullscreen studio is open. In the first, that decides
-  navigation inside the session. In the second, it decides how Escape works.
-  They check the DOM because that state is split in two: the `sessionStudio`
-  union in the store, and the shell that renders every studio. Do not tidy it
-  up without first moving fullscreen-studio state into one place.
+- `LinkedPrChip` reads `[data-studio-overlay]` from the DOM to tell whether a
+  fullscreen studio is open. That decides navigation inside the session. It
+  checks the DOM because that state is split in two: the `sessionStudio` union
+  in the store, and the shell that renders every studio. Do not tidy it up
+  without first moving fullscreen-studio state into one place.
 
 ## Hand-maintained lists the compiler does not check
 
@@ -81,10 +77,6 @@ fails silently at runtime.
   replaced by the default, and overwritten.
 - `SIMPLE_LENSES` marks the lenses that still work without a branch. A lens
   left out of it is hidden or cleared for sessions with no branch.
-- `GITHUB_ONLY_KINDS` removes GitHub-only resolver actions on other hosts. A
-  new GitHub-only action kind left out of it is offered where it cannot work.
-- `MARKDOWN_SLOTS` decides which context slots render as markdown. A new
-  prose slot left out renders through the plain (non-markdown) path.
 
 ## Traps in the toolchain
 

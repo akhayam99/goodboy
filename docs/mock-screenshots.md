@@ -54,10 +54,10 @@ real app as soon as either one changes, and it shows.
 
 There are two cases, and each needs a different approach:
 
-**The component is pure props.** `WorkflowStepGraph`, `ResolveBoard` and
-`RoleModelRow` work this way. Read the component's prop type and build fake
-data that matches it. Use real branded id casts (e.g. `'x' as Agent['id']`)
-and real enum values. Pass it straight in. No store involved.
+**The component is pure props.** `WorkflowStepGraph` and `RoleModelRow` work
+this way. Read the component's prop type and build fake data that matches it.
+Use real branded id casts (e.g. `'x' as Agent['id']`) and real enum values.
+Pass it straight in. No store involved.
 
 **The component reads the zustand store.** `SessionOverviewPane`,
 `DefaultsPanel`, `SessionNavSidebar` and `AppFooter`'s enabling flags work
@@ -86,7 +86,7 @@ the component instead of a gap in the mock.
 
 - **The same "role" badge is computed two different ways depending on
   which component you're in.** `useWorkspaceRuns`'s `kindOf` reads
-  `agent.kind` directly. `WorkflowStepGraphBranch`'s badge reads the
+  `agent.kind` directly. `WorkflowStepGraphRow`'s badge reads the
   `agentKindOverride` **prop** instead (keyed by agent id). If that is empty
   it falls back to `inferAgentKindFromName(agent.name)`, and it ignores
   `agent.kind` entirely. Setting `kind: 'implementer'` on the agent object did
@@ -109,11 +109,10 @@ the component instead of a gap in the mock.
   `childrenByParentId: ReadonlyMap<string, ReadonlyArray<Agent>>` prop, keyed
   by the parent agent's id. The node shows a `doneChildCount/childCount`
   badge on its own. You don't compute or render that yourself.
-- **Mounting `SessionNavSidebar` (or anything under it, like
-  `SessionNavFooter`) on its own throws `useToast must be used inside
-ToastProvider`.** In the real app tree, `ToastProvider` wraps everything, but
-  with the current `MOCK_ENABLED` gate `MockScene` mounts before that wrapper.
-  So `MockScene`'s own root has to wrap itself in `ToastProvider` too.
+- **Mounting anything that calls `useToast` on its own throws `useToast must
+be used inside ToastProvider`.** `App` returns `MockScene` under the
+  `MOCK_ENABLED` gate before it mounts `ToastProvider`. So a scene that renders
+  such a component wraps itself in `ToastProvider`.
 - **`AppShell` already has `leftSidebar` and `footer` slots.** You need no
   layout code to add the real session sidebar or the real app footer to a
   scene. Pass the components into those two props.
