@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, Chip, cn, StatusDot, type Tone, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Chip, cn, StatusDot, type Tone, useDropdown, Eyebrow } from '@goodboy/ui';
 import type { ClaudePermissionMode, ProviderId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { withShortcutHint } from '../../../../shared/keyboard/registry';
@@ -112,9 +112,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
       }
     >
       <div className="flex items-center px-2.5 pb-0.5 pt-1">
-        <span className="text-2xs uppercase tracking-wide text-faint-foreground">
-          Permission mode
-        </span>
+        <Eyebrow label="Permission mode" muted />
       </div>
       {PERMISSION_MODES.map((m) => {
         const active = session.permissionMode === m.value;

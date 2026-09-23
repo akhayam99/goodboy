@@ -58,7 +58,9 @@ export const ToolCallCard = ({ item }: Props) => {
             <span className="flex min-w-0 items-center gap-1.5">
               <span className="truncate font-mono text-muted-foreground">{item.toolName}</span>
               {!running && item.isError && (
-                <span className={cn('shrink-0 text-2xs uppercase tracking-wide', dangerTint.text)}>
+                <span
+                  className={cn('shrink-0 text-2xs uppercase tracking-eyebrow', dangerTint.text)}
+                >
                   error
                 </span>
               )}

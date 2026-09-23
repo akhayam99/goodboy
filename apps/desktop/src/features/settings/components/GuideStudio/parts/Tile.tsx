@@ -18,7 +18,9 @@ export const Tile = ({ tone, label, mono, children }: Props) => (
       tintClasses(tone).borderSoft,
     )}
   >
-    <span className={cn('text-xs font-semibold uppercase tracking-wide', tintClasses(tone).text)}>
+    <span
+      className={cn('text-xs font-semibold uppercase tracking-eyebrow', tintClasses(tone).text)}
+    >
       {label}
     </span>
     <span className={cn('text-xs leading-relaxed text-muted-foreground', mono && 'font-mono')}>

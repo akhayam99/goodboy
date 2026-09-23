@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link2 } from 'lucide-react';
-import { cn, formatError, Skeleton } from '@goodboy/ui';
+import { cn, formatError, Skeleton, Eyebrow } from '@goodboy/ui';
 import type { IsoDateTime, Session } from '@goodboy/types';
 import { useAppStore, useSessionSlots } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -79,9 +79,7 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdopti
         onOpenWorkflowBuilder={onOpenWorkflowBuilder}
       />
       <div className="flex flex-col gap-1">
-        <p className="px-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
-          Or pick up an issue
-        </p>
+        <Eyebrow label="Or pick up an issue" className="px-0.5" />
         {issues.hasSources && issues.isLoaded && issues.rows.length > 0
           ? issues.rows.map((row) => {
               const key = `${row.provider}:${row.externalId}`;

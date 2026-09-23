@@ -1,5 +1,5 @@
 import { Bot } from 'lucide-react';
-import { Textarea, cn, tintClasses } from '@goodboy/ui';
+import { Textarea, cn, tintClasses, Eyebrow } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { getDefaultTurnModel } from '@goodboy/core';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -81,9 +81,7 @@ export const DelegateAnswerPanel = ({
         <p className="text-2xs text-muted-foreground">{QUESTION_DELEGATE_COPY.panelHint}</p>
         <div className="flex flex-col gap-1">
           <span className="flex items-baseline gap-1.5">
-            <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {QUESTION_DELEGATE_COPY.hintsLabel}
-            </span>
+            <Eyebrow label={QUESTION_DELEGATE_COPY.hintsLabel} />
             <span className="text-2xs lowercase tracking-normal text-faint-foreground">
               optional
             </span>

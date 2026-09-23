@@ -1,4 +1,4 @@
-import { ClampedProse, ConfirmPopover, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { ClampedProse, ConfirmPopover, Tooltip, cn, tintClasses, Eyebrow } from '@goodboy/ui';
 import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { StepDef } from '@goodboy/types';
 import { agentKindPalette, kindForRole, ROLE_LABEL } from '../../../session/agent-kind';
@@ -54,9 +54,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
 
       <div className="absolute right-1.5 top-1.5 flex items-center gap-1">
         {isGlobal ? (
-          <span className="px-1 text-2xs uppercase tracking-eyebrow text-muted-foreground group-focus-within:hidden group-hover:hidden">
-            global
-          </span>
+          <Eyebrow label="global" className="px-1 group-focus-within:hidden group-hover:hidden" />
         ) : null}
         <Tooltip content="add to workflow">
           <button

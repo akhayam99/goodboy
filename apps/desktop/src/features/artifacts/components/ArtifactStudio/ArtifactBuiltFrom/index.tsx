@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Collapsible, SectionSurface } from '@goodboy/ui';
+import { Collapsible, SectionSurface, Eyebrow } from '@goodboy/ui';
 import type { ArtifactKind, ArtifactProvenance, SessionArtifact } from '@goodboy/types';
 import { loadArtifactProvenance } from '../../../artifactProvenance';
 import { BuiltFromRow } from './BuiltFromRow';
@@ -92,9 +92,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
             : `workflow run ${provenance.executingWorkflowRunId}`}
         </BuiltFromRow>
         <div className="flex min-w-0 flex-col gap-1">
-          <span className="text-2xs uppercase tracking-wide text-muted-foreground">
-            evidence sent
-          </span>
+          <Eyebrow label="evidence sent" />
           {provenance.evidence.length === 0 ? (
             <span className="text-xs text-muted-foreground">
               no session source was named in the pack
@@ -107,9 +105,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
                   data-testid="built-from-evidence"
                   className="flex min-w-0 items-baseline gap-2 text-xs"
                 >
-                  <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground">
-                    {entry.kind}
-                  </span>
+                  <Eyebrow label={entry.kind} className="shrink-0" />
                   <span className="min-w-0 truncate text-foreground">{entry.label}</span>
                 </li>
               ))}

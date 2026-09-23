@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { WireframeAction, WireframeAdjustment, WireframeDocument } from '@goodboy/core';
-import { Divider, StudioDetailTabs, cn } from '@goodboy/ui';
+import { Divider, StudioDetailTabs, cn, Eyebrow } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import type { WireframeFidelity } from '../../wireframeFidelity';
 import {
@@ -211,7 +211,9 @@ export const WireframeStudioBody = ({ artifact, fidelity, document, adjustments 
       <WireframeAdjustments adjustments={adjustments} />
       <Divider />
       <div className={cn('flex min-w-0 flex-col gap-2')}>
-        <h3 className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">Flow</h3>
+        <h3>
+          <Eyebrow label="Flow" />
+        </h3>
         <WireframeFlowOverview
           document={document}
           index={index}

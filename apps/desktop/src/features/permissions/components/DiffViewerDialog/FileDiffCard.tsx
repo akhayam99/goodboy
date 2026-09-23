@@ -8,6 +8,7 @@ import {
   EmptyState,
   Tooltip,
   tintClasses,
+  Eyebrow,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { CopyButton } from '@goodboy/ui';
@@ -414,9 +415,7 @@ export const FileDiffCard = ({
           ) : null}
           {fileLevelComments.length > 0 || fileLevelComposerOpen ? (
             <div className="mb-3 flex flex-col gap-1.5">
-              <span className="text-3xs font-semibold uppercase tracking-wide text-muted-foreground">
-                file notes
-              </span>
+              <Eyebrow label="file notes" />
               {fileLevelComments.map((c) => (
                 <CommentItem
                   key={c.id}

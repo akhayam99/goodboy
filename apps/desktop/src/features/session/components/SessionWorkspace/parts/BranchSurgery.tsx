@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, GitCommit, GitMerge, Pencil, X } from 'lucide-react';
-import { InlineConfirm, Input, cn } from '@goodboy/ui';
+import { InlineConfirm, Input, cn, Eyebrow } from '@goodboy/ui';
 import type { BranchCommit } from '@goodboy/types';
 import { GhostActionButton } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -52,9 +52,7 @@ export const BranchSurgery = ({ commits, headSha, onAmend, onSquash }: Props) =>
 
   return (
     <div className="flex flex-col gap-1.5 px-2.5 py-1.5">
-      <span className="text-2xs font-semibold uppercase tracking-wide text-faint-foreground">
-        Rewrite the branch
-      </span>
+      <Eyebrow label="Rewrite the branch" muted />
       <ul className="flex flex-col gap-1.5">
         {commits.map((commit, index) => (
           <li key={commit.sha} className="flex min-w-0 flex-col gap-1">

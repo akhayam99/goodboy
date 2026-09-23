@@ -1,3 +1,4 @@
+import { Eyebrow } from '@goodboy/ui';
 import { useEffect, useRef } from 'react';
 import type {
   Agent,
@@ -76,9 +77,7 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
         >
           {agent.name}
         </button>
-        <span className="shrink-0 text-3xs font-medium uppercase tracking-wide text-faint-foreground">
-          {view.sourceLabel}
-        </span>
+        <Eyebrow label={view.sourceLabel} muted className="shrink-0" />
       </div>
       {view.isMutable ? (
         <RoutingPicker

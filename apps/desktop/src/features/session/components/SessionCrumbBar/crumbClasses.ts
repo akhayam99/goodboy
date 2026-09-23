@@ -6,4 +6,4 @@ export const CRUMB_LINK_CLASS = 'text-faint-foreground hover:bg-hover hover:text
 export const CRUMB_LAST_CLASS = 'font-medium text-foreground';
 
 export const SIBLING_GROUP_LABEL_CLASS =
-  'px-2 pb-1 pt-2 text-3xs font-medium uppercase tracking-[0.12em] text-faint-foreground first:pt-1';
+  'px-2 pb-1 pt-2 text-3xs font-medium uppercase tracking-eyebrow text-faint-foreground first:pt-1';

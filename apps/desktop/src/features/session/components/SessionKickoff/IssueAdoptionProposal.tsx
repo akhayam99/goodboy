@@ -1,4 +1,4 @@
-import { Button } from '@goodboy/ui';
+import { Button, Eyebrow } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { IssueAdoption } from './issueAdoption';
 
@@ -18,9 +18,7 @@ type RowProps = {
 
 const AdoptionRow = ({ label, value, action, onUse }: RowProps) => (
   <div className="flex items-center gap-2">
-    <span className="w-10 shrink-0 text-2xs uppercase tracking-wide text-muted-foreground">
-      {label}
-    </span>
+    <Eyebrow label={label} className="w-10 shrink-0" />
     <span className="min-w-0 flex-1 truncate text-xs text-foreground">{value}</span>
     <Button variant="secondary" size="sm" onClick={onUse}>
       {action}

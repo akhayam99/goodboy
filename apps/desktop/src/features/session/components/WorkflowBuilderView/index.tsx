@@ -192,7 +192,7 @@ export const uniqueWorkflowName = (
 };
 
 const SECTION_LABEL_CLS =
-  'inline-flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-faint-foreground';
+  'inline-flex items-center gap-1.5 text-2xs font-medium uppercase tracking-eyebrow text-faint-foreground';
 
 export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);

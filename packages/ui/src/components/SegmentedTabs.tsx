@@ -161,7 +161,7 @@ export const SegmentedTabs = <T extends string>({
             )}
             {option.badge != null ? (
               typeof option.badge === 'string' ? (
-                <span className="rounded-md bg-muted px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wide text-muted-foreground">
+                <span className="rounded-md bg-muted px-1.5 py-0.5 text-2xs font-bold uppercase tracking-eyebrow text-muted-foreground">
                   {option.badge}
                 </span>
               ) : (

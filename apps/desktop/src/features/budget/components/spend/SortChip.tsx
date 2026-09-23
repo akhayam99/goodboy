@@ -15,6 +15,6 @@ export const SortChip = ({ active, label, onClick }: Props) => (
     emphasis={active ? 'strong' : 'soft'}
     label={label}
     onClick={onClick}
-    className="uppercase tracking-[0.08em]"
+    className="uppercase tracking-eyebrow"
   />
 );

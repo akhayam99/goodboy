@@ -15,7 +15,7 @@ export const EditorMenuContent = ({ items, onClose }: Props) => (
         return (
           <div
             key={item.key}
-            className="px-2.5 pb-0.5 pt-1.5 text-2xs font-semibold uppercase tracking-wide text-faint-foreground"
+            className="px-2.5 pb-0.5 pt-1.5 text-2xs font-semibold uppercase tracking-eyebrow text-faint-foreground"
           >
             {item.label}
           </div>

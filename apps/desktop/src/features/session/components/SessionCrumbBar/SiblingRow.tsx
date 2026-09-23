@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { cn, Eyebrow } from '@goodboy/ui';
 import type { AgentId } from '@goodboy/types';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import type { SwitcherEntry } from './switcherEntry';
@@ -24,8 +24,6 @@ export const SiblingRow = ({ entry, selectedAgentId, onSelect }: SiblingRowProps
   >
     <AgentAvatar kind={entry.kind} size="sm" />
     <span className="min-w-0 flex-1 truncate">{entry.agent.name}</span>
-    <span className="shrink-0 text-2xs uppercase tracking-wide text-faint-foreground">
-      {entry.agent.status}
-    </span>
+    <Eyebrow label={entry.agent.status} muted className="shrink-0" />
   </button>
 );

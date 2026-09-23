@@ -1,5 +1,5 @@
 import { ArrowRight, Network } from 'lucide-react';
-import { SectionHeader } from '@goodboy/ui';
+import { SectionHeader, Eyebrow } from '@goodboy/ui';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { Block } from './Block';
@@ -44,9 +44,7 @@ export const AgentsSection = ({}: Props) => (
 
     <Block title="Reading the agent row">
       <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle p-4 text-xs">
-        <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Second line of each agent
-        </span>
+        <Eyebrow label="Second line of each agent" />
         <div className="flex flex-wrap items-center gap-2 font-mono text-foreground">
           <Chip tone="primary">model</Chip>
           <span className="text-faint-foreground">·</span>

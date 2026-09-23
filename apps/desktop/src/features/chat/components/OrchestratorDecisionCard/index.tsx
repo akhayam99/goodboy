@@ -10,7 +10,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const infoTint = tintClasses('info');
 
-const LABEL_CLASS = 'text-2xs font-medium uppercase tracking-wide text-muted-foreground';
+const LABEL_CLASS = 'text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'orchestrator_decision' }>;

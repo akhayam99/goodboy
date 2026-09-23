@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { PrDetail, ProjectId } from '@goodboy/types';
 import { CircleDashed } from 'lucide-react';
-import { EmptyState } from '@goodboy/ui';
+import { EmptyState, Eyebrow } from '@goodboy/ui';
 import { RailBlock } from '@goodboy/ui';
 import { latestTerminalReviewsByAuthor } from '../../utils/latest-terminal-reviews-by-author';
 import { Avatar } from '@goodboy/ui';
@@ -64,9 +64,7 @@ export const PrReviewers = ({ detail, projectRoot, projectId, onAddReviewers }: 
               <CircleDashed size={ICON_SIZE.row} aria-hidden className="shrink-0 text-info" />
               <Avatar url={request.avatarUrl} alt={request.login} size="xs" />
               <span className="min-w-0 flex-1 truncate">{request.login}</span>
-              <span className="shrink-0 text-3xs uppercase tracking-wide text-faint-foreground">
-                awaiting
-              </span>
+              <Eyebrow label="awaiting" muted className="shrink-0" />
             </li>
           ))}
         </ul>

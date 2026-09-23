@@ -2,7 +2,7 @@ import { X } from 'lucide-react';
 import { collapse, ONBOARDING_STEPS, type OnboardingGroup } from '../onboarding-store';
 import type { OnboardingProgress } from '../hooks/useOnboardingProgress';
 import { StepRow } from './StepRow';
-import { Tooltip } from '@goodboy/ui';
+import { Tooltip, Eyebrow } from '@goodboy/ui';
 
 const GROUP_LABEL: Record<OnboardingGroup, string> = {
   setup: 'Setup',
@@ -39,9 +39,7 @@ export const ChecklistBody = ({ progress }: Props) => {
           }
           return (
             <div key={group} className="flex flex-col gap-1">
-              <span className="px-1.5 text-3xs font-medium uppercase tracking-[0.08em] text-faint-foreground">
-                {GROUP_LABEL[group]}
-              </span>
+              <Eyebrow label={GROUP_LABEL[group]} muted className="px-1.5" />
               <ul className="flex flex-col gap-1">
                 {steps.map((step) => (
                   <StepRow

@@ -176,7 +176,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
         )}
       </div>
       <div className="flex flex-col gap-1.5">
-        <Eyebrow label={copy.eyebrow} className="tracking-[0.12em] text-faint-foreground" />
+        <Eyebrow label={copy.eyebrow} muted />
         <h2 className="text-base font-semibold text-foreground">{copy.title}</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">{copy.body}</p>
       </div>

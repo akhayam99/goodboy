@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { KbdPill, SectionHeader } from '@goodboy/ui';
+import { KbdPill, SectionHeader, Eyebrow } from '@goodboy/ui';
 import { SHORTCUTS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { ShortcutId, ShortcutPlane } from '../../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -59,9 +59,7 @@ export const ShortcutsSection = ({ initiallyExpanded }: Props) => {
         <div id="keyboard-shortcuts-list" className="flex flex-col gap-5">
           {PLANE_ORDER.map((plane) => (
             <div key={plane} className="flex flex-col gap-2">
-              <span className="text-3xs font-medium uppercase tracking-[0.12em] text-faint-foreground">
-                {PLANE_LABELS[plane]}
-              </span>
+              <Eyebrow label={PLANE_LABELS[plane]} muted />
               <ul className="grid grid-cols-2 gap-x-10 gap-y-3">
                 {idsInPlane(plane).map((id) => (
                   <li key={id} className="flex items-center justify-between gap-4 text-xs">

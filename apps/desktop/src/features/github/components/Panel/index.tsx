@@ -92,7 +92,7 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
         {!hideSectionHeader && (
           <>
             <GithubIcon size={ICON_SIZE.control} aria-hidden className="text-muted-foreground" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
+            <h2 className="text-sm font-semibold uppercase tracking-eyebrow text-foreground">
               GitHub
             </h2>
           </>

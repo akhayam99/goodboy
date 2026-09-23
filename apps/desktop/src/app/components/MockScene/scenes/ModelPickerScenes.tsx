@@ -1,3 +1,4 @@
+import { Eyebrow } from '@goodboy/ui';
 import { useEffect, type ReactNode } from 'react';
 import type { ProviderId } from '@goodboy/types';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
@@ -57,7 +58,7 @@ type TriggerProps = {
 
 const Trigger = ({ caption, provider, model, effort }: TriggerProps) => (
   <div className="flex flex-col gap-1">
-    <span className="text-3xs uppercase tracking-wide text-faint-foreground">{caption}</span>
+    <Eyebrow label={caption} muted />
     <RoutingPicker
       connectedProviders={CONNECTED}
       provider={provider}

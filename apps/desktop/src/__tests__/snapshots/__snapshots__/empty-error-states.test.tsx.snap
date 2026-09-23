@@ -17,7 +17,7 @@ exports[`snapshot, empty states > ChatEmptyState: fresh session, set-up-a-workfl
     class="flex flex-col gap-1.5"
   >
     <span
-      class="text-2xs font-semibold uppercase tracking-eyebrow tracking-[0.12em] text-faint-foreground"
+      class="text-2xs font-semibold uppercase tracking-eyebrow text-faint-foreground"
     >
       fresh session
     </span>

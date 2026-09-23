@@ -26,7 +26,7 @@ export const PermissionDecisionCard = ({ item, sessionId, agentId }: Props) => {
   return (
     <TranscriptShell tone="neutral" variant="boxed" className="flex flex-col gap-1.5 text-xs">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-md bg-elevated px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="rounded-md bg-elevated px-1.5 py-0.5 text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground">
           perm decision
         </span>
         <code className="font-mono text-foreground">{item.toolName}</code>

@@ -1,6 +1,14 @@
 import { useMemo } from 'react';
 import { Activity, Square } from 'lucide-react';
-import { CardAction, CardActionSlot, MetaRow, SectionHeader, cn, formatUsd } from '@goodboy/ui';
+import {
+  CardAction,
+  CardActionSlot,
+  MetaRow,
+  SectionHeader,
+  cn,
+  formatUsd,
+  Eyebrow,
+} from '@goodboy/ui';
 import { stripControlMarkers } from '@goodboy/core';
 import type { Agent, ResolveAttempt, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -98,9 +106,7 @@ export const ResolveAgentActivity = ({
       </p>
       {preview !== '' && (
         <div className="flex min-w-0 flex-col gap-1">
-          <p className="text-3xs uppercase tracking-wide text-muted-foreground">
-            {RESOLVE_ITEM_LABEL.latest}
-          </p>
+          <Eyebrow label={RESOLVE_ITEM_LABEL.latest} />
           <p className="min-w-0 max-w-[65ch] whitespace-pre-line break-words text-xs leading-4 text-muted-foreground">
             {preview}
           </p>

@@ -46,7 +46,7 @@ export const WorkflowRunStatus = ({
   const isQueuedAfter = !isDiscarded && run.triggerMode === 'after_run' && !hasStarted;
 
   const baseClass =
-    'inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide';
+    'inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium uppercase tracking-eyebrow';
 
   if (isDiscarded) {
     return (

@@ -1,6 +1,7 @@
 import { Fragment, memo, useMemo, type ReactNode } from 'react';
 import { Square, SquareCheck, SquareMinus, type LucideIcon } from 'lucide-react';
 import { cn } from '../../cn';
+import { Eyebrow } from '../Eyebrow';
 import { RemoteImage } from '../RemoteImage';
 import { LocalImage } from '../LocalImage';
 import { ctxStyleForTag, ctxTagLabel } from './ctxTagStyle';
@@ -23,7 +24,7 @@ type MarkdownProps = {
 };
 
 const CHIP_CLASS =
-  'mx-0.5 inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide';
+  'mx-0.5 inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-eyebrow';
 
 const INLINE_CODE_CLASS: Record<MarkdownVariant, string> = {
   document: 'rounded-md bg-muted px-1 py-0 font-mono text-[0.875em] text-foreground wrap-anywhere',
@@ -471,8 +472,8 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
         >
           {block.entries.map((entry, ei) => (
             <Fragment key={`${key}-f${ei}`}>
-              <dt className="pt-px text-2xs font-semibold uppercase leading-5 tracking-eyebrow text-muted-foreground">
-                {renderInline(entry.label, `${key}-f${ei}-l`, variant)}
+              <dt className="pt-px leading-5">
+                <Eyebrow label={renderInline(entry.label, `${key}-f${ei}-l`, variant)} />
               </dt>
               <dd className="min-w-0 leading-relaxed text-foreground wrap-anywhere">
                 {renderInline(entry.value, `${key}-f${ei}-v`, variant)}
@@ -504,9 +505,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
               data-block="metric"
               className="flex min-w-0 flex-col gap-0.5 rounded-md border border-border-soft px-3 py-2.5"
             >
-              <span className="text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground">
-                {renderInline(entry.label, `${key}-m${ei}-l`, variant)}
-              </span>
+              <Eyebrow label={renderInline(entry.label, `${key}-m${ei}-l`, variant)} />
               <span
                 data-block="metric-value"
                 className="text-xl font-semibold leading-tight tracking-tight text-foreground tabular-nums wrap-anywhere"

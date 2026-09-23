@@ -11,7 +11,7 @@ const UsageStat = ({ value, label }: UsageStatProps) => {
   return (
     <span className="inline-flex items-baseline gap-1">
       <span className="tabular-nums text-muted-foreground">{value}</span>
-      <span className="uppercase tracking-wide text-faint-foreground">{label}</span>
+      <span className="uppercase tracking-eyebrow text-faint-foreground">{label}</span>
     </span>
   );
 };

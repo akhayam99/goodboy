@@ -64,7 +64,7 @@ export const ScoutSubtree = ({
         aria-expanded={expanded}
         aria-label={`${expanded ? 'collapse' : 'expand'} ${groupLabel}`}
         className={cn(
-          'flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide',
+          'flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-eyebrow',
           tintClasses('info').text,
           'transition-colors hover:text-info',
         )}

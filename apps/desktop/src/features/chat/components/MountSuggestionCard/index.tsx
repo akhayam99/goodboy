@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Button, cn, IconButton, tintClasses } from '@goodboy/ui';
+import { Button, cn, IconButton, tintClasses, Eyebrow } from '@goodboy/ui';
 import type { MaterializationDeferralCause } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -109,7 +109,7 @@ export const MountSuggestionCard = ({
       </div>
       {isOpen ? (
         <div className="flex min-w-0 flex-col gap-1.5 pl-6">
-          <span className="text-2xs uppercase tracking-wide text-muted-foreground">Reason</span>
+          <Eyebrow label="Reason" />
           <span className="min-w-0 text-xs text-foreground">{reason}</span>
           <span className="text-2xs text-muted-foreground">
             Requested by {agentName} for {projectName}.

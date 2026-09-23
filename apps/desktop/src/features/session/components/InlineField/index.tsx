@@ -1,5 +1,5 @@
 import { Pencil } from 'lucide-react';
-import { cn, Tooltip } from '@goodboy/ui';
+import { cn, Tooltip, Eyebrow } from '@goodboy/ui';
 
 type Props = {
   label: string;
@@ -12,9 +12,7 @@ export const InlineField = ({ label, children, onEdit, editLabel }: Props) => {
   return (
     <div className="group/inline flex flex-col gap-1">
       <div className="flex items-center gap-1.5">
-        <span className="text-2xs font-semibold uppercase tracking-wide text-faint-foreground">
-          {label}
-        </span>
+        <Eyebrow label={label} muted />
         {onEdit ? (
           <Tooltip content={editLabel ?? `Edit ${label}`}>
             <button

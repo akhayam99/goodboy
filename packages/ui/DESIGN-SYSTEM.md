@@ -325,7 +325,7 @@ space alone. It sits one step above the canvas, so the cards inside it reach
 the top of the ramp and nothing stacks a fourth level. A metadata line is not a
 section and does not get a surface.
 
-`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between regions, never decoration after every heading or field.
+`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It is also the only uppercase label. A standalone label with `uppercase` renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Uppercase text inside a chip or badge keeps its own class but uses `tracking-eyebrow`. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between regions, never decoration after every heading or field.
 
 ## Prose disclosure
 
