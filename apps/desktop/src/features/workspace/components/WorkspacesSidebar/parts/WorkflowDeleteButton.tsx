@@ -1,25 +1,28 @@
-import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { InlineConfirm, cn, tintClasses } from '@goodboy/ui';
+import { ConfirmPopover, cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly onConfirm: () => void;
 };
 
-export const WorkflowDeleteButton = ({ onConfirm }: Props) => {
-  const [isArmed, setIsArmed] = useState(false);
-
-  return (
-    <div className="relative flex shrink-0 items-center">
+export const WorkflowDeleteButton = ({ onConfirm }: Props) => (
+  <ConfirmPopover
+    role="danger"
+    icon={<Trash2 size={ICON_SIZE.control} aria-hidden />}
+    title="Delete workflow run?"
+    description="Permanently removes this workflow run from the session."
+    confirmLabel="Delete"
+    onConfirm={onConfirm}
+    trigger={({ isArmed, arm }) => (
       <button
         type="button"
-        onClick={() => setIsArmed(true)}
+        onClick={arm}
         aria-expanded={isArmed}
         className={cn(
           'inline-flex min-h-7 shrink-0 items-center gap-1 rounded-md px-2 text-2xs font-semibold',
           tintClasses('danger').text,
-          'transition-colors',
+          'motion-safe:transition-colors',
           tintClasses('danger').hoverBg,
           'hover:text-danger',
         )}
@@ -27,22 +30,6 @@ export const WorkflowDeleteButton = ({ onConfirm }: Props) => {
         <Trash2 size={ICON_SIZE.control} aria-hidden />
         Delete
       </button>
-      {isArmed ? (
-        <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
-          <InlineConfirm
-            role="danger"
-            icon={<Trash2 size={ICON_SIZE.control} aria-hidden />}
-            title="Delete workflow run?"
-            description="Permanently removes this workflow run from the session."
-            confirmLabel="Delete"
-            onConfirm={() => {
-              setIsArmed(false);
-              onConfirm();
-            }}
-            onCancel={() => setIsArmed(false)}
-          />
-        </div>
-      ) : null}
-    </div>
-  );
-};
+    )}
+  />
+);

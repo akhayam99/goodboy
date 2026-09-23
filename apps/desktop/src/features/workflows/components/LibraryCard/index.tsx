@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { ClampedProse, Tooltip, cn, tintClasses } from '@goodboy/ui';
-import { Check, GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { ClampedProse, ConfirmPopover, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { StepDef } from '@goodboy/types';
 import { agentKindPalette, kindForRole, ROLE_LABEL } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
@@ -16,7 +15,6 @@ type Props = {
 };
 
 export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onDelete }: Props) => {
-  const [confirming, setConfirming] = useState(false);
   const kind = kindForRole({ role: def.role });
   const isGlobal = def.workspaceId === null;
   return (
@@ -71,71 +69,52 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
             <Plus size={ICON_SIZE.row} aria-hidden />
           </button>
         </Tooltip>
-        {confirming ? (
-          <div
-            className="flex items-center gap-0.5 rounded-md border border-border bg-background px-1 py-0.5 shadow-sm"
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <span className="px-1 text-2xs text-muted-foreground">Delete?</span>
-            <Tooltip content="confirm delete">
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirming(false);
-                  onDelete();
-                }}
-                aria-label={`Confirm delete ${def.name}`}
+        <div onPointerDown={(e) => e.stopPropagation()}>
+          <ConfirmPopover
+            role="danger"
+            icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+            title={`Delete ${def.name}?`}
+            description="Removes this step from the library."
+            confirmLabel="Delete step"
+            onConfirm={onDelete}
+            trigger={({ isArmed, arm }) => (
+              <div
                 className={cn(
-                  'rounded-md p-0.5 text-danger motion-safe:transition-colors',
-                  tintClasses('danger').hoverBg,
+                  'items-center gap-0.5 group-focus-within:flex group-hover:flex',
+                  isArmed ? 'flex' : 'hidden',
                 )}
               >
-                <Check size={ICON_SIZE.row} aria-hidden />
-              </button>
-            </Tooltip>
-            <Tooltip content="cancel">
-              <button
-                type="button"
-                onClick={() => setConfirming(false)}
-                aria-label="Cancel delete"
-                className="rounded-md p-0.5 text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
-              >
-                <X size={ICON_SIZE.row} aria-hidden />
-              </button>
-            </Tooltip>
-          </div>
-        ) : (
-          <div className="hidden items-center gap-0.5 group-focus-within:flex group-hover:flex">
-            <Tooltip content={isGlobal ? 'edit (creates a workspace copy)' : 'edit step'}>
-              <button
-                type="button"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={onEdit}
-                aria-label={`Edit ${def.name}`}
-                className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:bg-hover hover:text-foreground"
-              >
-                <Pencil size={ICON_SIZE.row} aria-hidden />
-              </button>
-            </Tooltip>
-            {!isGlobal && (
-              <Tooltip content="delete step">
-                <button
-                  type="button"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => setConfirming(true)}
-                  aria-label={`Delete ${def.name}`}
-                  className={cn(
-                    'rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors',
-                    tintClasses('danger').hoverBg,
-                    'hover:text-danger',
-                  )}
-                >
-                  <Trash2 size={ICON_SIZE.row} aria-hidden />
-                </button>
-              </Tooltip>
+                <Tooltip content={isGlobal ? 'edit (creates a workspace copy)' : 'edit step'}>
+                  <button
+                    type="button"
+                    onClick={onEdit}
+                    aria-label={`Edit ${def.name}`}
+                    className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:bg-hover hover:text-foreground"
+                  >
+                    <Pencil size={ICON_SIZE.row} aria-hidden />
+                  </button>
+                </Tooltip>
+                {!isGlobal && (
+                  <Tooltip content="delete step">
+                    <button
+                      type="button"
+                      onClick={arm}
+                      aria-label={`Delete ${def.name}`}
+                      aria-expanded={isArmed}
+                      className={cn(
+                        'rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors',
+                        tintClasses('danger').hoverBg,
+                        'hover:text-danger',
+                      )}
+                    >
+                      <Trash2 size={ICON_SIZE.row} aria-hidden />
+                    </button>
+                  </Tooltip>
+                )}
+              </div>
             )}
-          </div>
-        )}
+          />
+        </div>
       </div>
     </li>
   );

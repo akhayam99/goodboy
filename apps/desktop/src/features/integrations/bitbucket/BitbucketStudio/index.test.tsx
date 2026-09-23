@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import type { ReactNode } from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { ToastProvider } from '../../../../app/components/Toast';
@@ -157,7 +157,11 @@ describe('BitbucketStudio', () => {
     renderStudio();
 
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect Bitbucket' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect Bitbucket' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Disconnect Bitbucket?' })).getByRole('button', {
+        name: 'Disconnect',
+      }),
+    );
 
     await vi.waitFor(() =>
       expect(h.disconnectIntegration).toHaveBeenCalledWith({

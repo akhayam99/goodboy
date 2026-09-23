@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { formatError, IconButton, InlineConfirm } from '@goodboy/ui';
+import { ConfirmPopover, formatError, IconButton } from '@goodboy/ui';
 import { Unplug } from 'lucide-react';
 import { useToast } from '../../../../app/components/Toast';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -24,24 +24,23 @@ export const IntegrationDisconnect = ({ label, description, onDisconnect }: Prop
   };
 
   return (
-    <div className="relative flex shrink-0 items-center">
-      {isArmed ? null : (
-        <IconButton icon={Unplug} label={`Disconnect ${label}`} onClick={() => setIsArmed(true)} />
+    <ConfirmPopover
+      role="danger"
+      icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
+      title={`Disconnect ${label}?`}
+      description={description}
+      confirmLabel="Disconnect"
+      isOpen={isArmed}
+      onConfirm={confirm}
+      onCancel={() => setIsArmed(false)}
+      trigger={() => (
+        <IconButton
+          icon={Unplug}
+          label={`Disconnect ${label}`}
+          aria-expanded={isArmed}
+          onClick={() => setIsArmed(true)}
+        />
       )}
-      {isArmed ? (
-        <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
-          <InlineConfirm
-            role="danger"
-            icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
-            title={`Disconnect ${label}?`}
-            description={description}
-            confirmLabel={`Disconnect ${label}`}
-            autoDisarmMs={4000}
-            onConfirm={confirm}
-            onCancel={() => setIsArmed(false)}
-          />
-        </div>
-      ) : null}
-    </div>
+    />
   );
 };

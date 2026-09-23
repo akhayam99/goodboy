@@ -11,13 +11,7 @@ const SKIP_SEGMENTS = new Set(['__tests__', 'node_modules', 'dist']);
 const CONFIRM_POPOVER = ['packages', 'ui', 'src', 'components', 'ConfirmPopover.tsx'].join(sep);
 
 const PENDING: ReadonlyArray<string> = [
-  'apps/desktop/src/features/integrations/components/IntegrationDisconnect/index.tsx',
   'apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/RemoveWorktreeAction.tsx',
-  'apps/desktop/src/features/workflows/components/OrchestratorPanel/index.tsx',
-  'apps/desktop/src/features/workflows/components/WorkflowNextStepCta/index.tsx',
-  'apps/desktop/src/features/workspace/components/WorkspacesSidebar/parts/WorkflowDeleteButton.tsx',
-  'apps/desktop/src/features/workspace/components/WorkspacesSidebar/parts/WorkflowKillButton.tsx',
-  'apps/desktop/src/features/workspace/components/WorkspacesSidebar/parts/WorkflowRunStartButton.tsx',
 ];
 
 const CONFIRM_TAG = /<InlineConfirm\b(?:[^\n]*\/>|[\s\S]*?\n\s*\/?>)/g;

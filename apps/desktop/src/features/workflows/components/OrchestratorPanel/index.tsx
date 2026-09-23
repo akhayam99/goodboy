@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   CircleHelp,
   CircleStop,
@@ -8,7 +8,7 @@ import {
   SkipForward,
   Wallet,
 } from 'lucide-react';
-import { Eyebrow, InlineConfirm, Markdown, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { ConfirmPopover, Eyebrow, Markdown, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type {
   Agent,
@@ -76,7 +76,6 @@ export const OrchestratorPanel = ({
   );
   const [isHintsOpen, setIsHintsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [isStopArmed, setIsStopArmed] = useState(false);
   const hints = run.orchestratorHints ?? EMPTY_HINTS;
   const queuedHintCount = hints.filter((hint) => hint.consumedAt == null).length;
   const overriddenRoleCount = Object.keys(run.roleModelOverrides ?? {}).length;
@@ -100,11 +99,6 @@ export const OrchestratorPanel = ({
   const isRunOver = state.phase === 'done';
   const isStepInFlight = isOrchestrating || agents.some((agent) => agent.status === 'running');
   const showStopNow = isStepInFlight && run.orchestrationStop?.kind !== 'operator';
-  useEffect(() => {
-    if (!showStopNow) {
-      setIsStopArmed(false);
-    }
-  }, [showStopNow]);
 
   const guard = async (action: () => Promise<void>) => {
     if (busy) {
@@ -259,35 +253,27 @@ export const OrchestratorPanel = ({
             />
           )}
           {showStopNow ? (
-            <div className="relative flex">
-              <button
-                type="button"
-                aria-expanded={isStopArmed}
-                onClick={() => setIsStopArmed(true)}
-                className={cn(
-                  'rounded-md px-1.5 py-0.5 text-2xs font-medium text-danger',
-                  tintClasses('danger').hoverBg,
-                )}
-              >
-                Stop now
-              </button>
-              {isStopArmed ? (
-                <div className="absolute right-0 top-full z-popover w-72 rounded-lg bg-background shadow-lg">
-                  <InlineConfirm
-                    role="alert"
-                    icon={<CircleStop size={ICON_SIZE.row} aria-hidden />}
-                    title="Stop now?"
-                    description="The step in flight is cancelled and marked skipped. Everything it already wrote is kept."
-                    confirmLabel="Stop now"
-                    onConfirm={() => {
-                      setIsStopArmed(false);
-                      void stopWorkflowRunNow(sessionId, run.id);
-                    }}
-                    onCancel={() => setIsStopArmed(false)}
-                  />
-                </div>
-              ) : null}
-            </div>
+            <ConfirmPopover
+              role="alert"
+              icon={<CircleStop size={ICON_SIZE.row} aria-hidden />}
+              title="Stop now?"
+              description="The step in flight is cancelled and marked skipped. Everything it already wrote is kept."
+              confirmLabel="Stop now"
+              onConfirm={() => void stopWorkflowRunNow(sessionId, run.id)}
+              trigger={({ isArmed, arm }) => (
+                <button
+                  type="button"
+                  aria-expanded={isArmed}
+                  onClick={arm}
+                  className={cn(
+                    'rounded-md px-1.5 py-0.5 text-2xs font-medium text-danger',
+                    tintClasses('danger').hoverBg,
+                  )}
+                >
+                  Stop now
+                </button>
+              )}
+            />
           ) : null}
         </div>
       </div>

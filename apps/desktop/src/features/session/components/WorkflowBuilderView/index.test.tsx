@@ -987,8 +987,25 @@ describe('WorkflowBuilderView (preset mode)', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: /delete preset/i }));
     expect(mockDeleteWorkflow).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: /confirm delete ship it/i }));
+    const confirm = await screen.findByRole('dialog', { name: 'Delete Ship It?' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete preset' }));
     await waitFor(() => expect(mockDeleteWorkflow).toHaveBeenCalledWith('wf-preset-1', 'ws-1'));
+  });
+
+  it('keeps the preset when its delete confirm is cancelled', async () => {
+    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('button', { name: /preset actions: ship it/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /delete preset/i }));
+    const confirm = await screen.findByRole('dialog', { name: 'Delete Ship It?' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Delete Ship It?' })).toBeNull(),
+    );
+    expect(mockDeleteWorkflow).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /preset actions: ship it/i })).toBeDefined();
   });
 
   it('discarding the draft never deletes the selected preset', () => {

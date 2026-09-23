@@ -1,14 +1,6 @@
 import type { ReactNode } from 'react';
-import {
-  Divider,
-  EmptyState,
-  ScrollFade,
-  SectionHeader,
-  Tooltip,
-  cn,
-  tintClasses,
-} from '@goodboy/ui';
-import { Check, Plus, RotateCcw, X } from 'lucide-react';
+import { Divider, EmptyState, InlineConfirm, ScrollFade, SectionHeader, cn } from '@goodboy/ui';
+import { Plus, RotateCcw } from 'lucide-react';
 import type { Workflow, WorkflowId } from '@goodboy/types';
 import {
   CONCEPT_ICONS,
@@ -88,44 +80,16 @@ export const WorkflowsRail = ({
 
       <div className="shrink-0 px-3 pb-3 pt-1">
         {confirmReset ? (
-          <div
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg',
-              tintClasses('warning').bgSoft,
-              'px-2.5 py-2',
-            )}
-          >
-            <span className="flex-1 text-2xs leading-tight text-muted-foreground">
-              Restore the built-in presets? Your edits to them are overwritten. Custom presets you
-              made are kept.
-            </span>
-            <Tooltip content="confirm restore">
-              <button
-                type="button"
-                onClick={onReset}
-                disabled={resetting}
-                aria-label="Confirm restore defaults"
-                className={cn(
-                  'rounded-md p-0.5 text-warning transition-colors',
-                  tintClasses('warning').hoverBg,
-                  'disabled:opacity-50',
-                )}
-              >
-                <Check size={ICON_SIZE.row} aria-hidden />
-              </button>
-            </Tooltip>
-            <Tooltip content="cancel">
-              <button
-                type="button"
-                onClick={() => setConfirmReset(false)}
-                disabled={resetting}
-                aria-label="Cancel restore defaults"
-                className="rounded-md p-0.5 text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:opacity-50"
-              >
-                <X size={ICON_SIZE.row} aria-hidden />
-              </button>
-            </Tooltip>
-          </div>
+          <InlineConfirm
+            role="alert"
+            icon={<RotateCcw size={ICON_SIZE.row} aria-hidden />}
+            title="Restore the built-in presets?"
+            description="Your edits to them are overwritten. Custom presets you made are kept."
+            confirmLabel="Restore"
+            isBusy={resetting}
+            onConfirm={onReset}
+            onCancel={() => setConfirmReset(false)}
+          />
         ) : (
           <button
             type="button"

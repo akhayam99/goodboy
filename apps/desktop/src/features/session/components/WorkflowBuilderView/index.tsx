@@ -16,10 +16,10 @@ import {
   Target,
   Trash2,
   Undo2,
-  X,
 } from 'lucide-react';
 import {
   Button,
+  ConfirmPopover,
   cn,
   Divider,
   EmptyState,
@@ -31,7 +31,6 @@ import {
   SegmentedTabs,
   Skeleton,
   Textarea,
-  Tooltip,
   type SegmentedTabOption,
   tintClasses,
 } from '@goodboy/ui';
@@ -1176,51 +1175,32 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                   />
                                 ) : null}
                               </button>
-                              {confirmDeleteId === t.id ? (
-                                <span className="flex shrink-0 items-center gap-0.5">
-                                  <span className="px-1 text-2xs text-muted-foreground">
-                                    Delete?
-                                  </span>
-                                  <Tooltip content={`Confirm delete ${t.name}`}>
-                                    <button
-                                      type="button"
-                                      onClick={() => void onDeletePreset(t)}
-                                      aria-label={`Confirm delete ${t.name}`}
-                                      className={cn(
-                                        'rounded-md p-1 text-danger transition-colors',
-                                        tintClasses('danger').hoverBg,
-                                      )}
-                                    >
-                                      <Check size={ICON_SIZE.row} aria-hidden />
-                                    </button>
-                                  </Tooltip>
-                                  <Tooltip content="Cancel delete">
-                                    <button
-                                      type="button"
-                                      onClick={() => setConfirmDeleteId(null)}
-                                      aria-label="Cancel delete"
-                                      className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
-                                    >
-                                      <X size={ICON_SIZE.row} aria-hidden />
-                                    </button>
-                                  </Tooltip>
-                                </span>
-                              ) : (
-                                <OverflowMenu
-                                  label={`Preset actions: ${t.name}`}
-                                  disabled={busy}
-                                  items={[
-                                    {
-                                      kind: 'item',
-                                      key: 'delete',
-                                      label: 'Delete preset',
-                                      icon: Trash2,
-                                      destructive: true,
-                                      onClick: () => setConfirmDeleteId(t.id),
-                                    },
-                                  ]}
-                                />
-                              )}
+                              <ConfirmPopover
+                                role="danger"
+                                icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+                                title={`Delete ${t.name}?`}
+                                description="Removes this preset from the workspace."
+                                confirmLabel="Delete preset"
+                                isOpen={confirmDeleteId === t.id}
+                                onConfirm={() => onDeletePreset(t)}
+                                onCancel={() => setConfirmDeleteId(null)}
+                                trigger={() => (
+                                  <OverflowMenu
+                                    label={`Preset actions: ${t.name}`}
+                                    disabled={busy}
+                                    items={[
+                                      {
+                                        kind: 'item',
+                                        key: 'delete',
+                                        label: 'Delete preset',
+                                        icon: Trash2,
+                                        destructive: true,
+                                        onClick: () => setConfirmDeleteId(t.id),
+                                      },
+                                    ]}
+                                  />
+                                )}
+                              />
                             </div>
                           );
                         })}

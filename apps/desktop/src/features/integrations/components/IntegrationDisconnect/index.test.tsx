@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../app/components/Toast';
 import { IntegrationDisconnect } from '.';
 
@@ -25,11 +25,11 @@ describe('IntegrationDisconnect', () => {
     expect(screen.getByText('Disconnect Linear?')).toBeDefined();
     expect(onDisconnect).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect Linear' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Disconnect' }));
     await waitFor(() => expect(onDisconnect).toHaveBeenCalledOnce());
   });
 
-  it('cancels back to the icon without disconnecting', () => {
+  it('cancels back to the trigger without disconnecting', () => {
     const onDisconnect = vi.fn(async () => undefined);
     renderWithToast(
       <IntegrationDisconnect
@@ -59,7 +59,7 @@ describe('IntegrationDisconnect', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitHub' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitHub' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Disconnect' }));
 
     expect(await screen.findByText('Keychain is locked')).toBeDefined();
     expect(screen.getByText('Disconnect GitHub?')).toBeDefined();

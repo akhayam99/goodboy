@@ -1,9 +1,7 @@
 import { AlertTriangle, Play } from 'lucide-react';
-import { InlineConfirm } from '@goodboy/ui';
+import { CardAction, ConfirmPopover, GhostActionButton } from '@goodboy/ui';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { useStartAnywayConfirm } from '../../../../workflows/useStartAnywayConfirm';
-import { CardAction } from '@goodboy/ui';
-import { GhostActionButton } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -21,40 +19,37 @@ export const WorkflowRunStartButton = ({ variant, blockReason, onStart }: Props)
   const isBlocked = blockReason != null;
 
   return (
-    <div className="relative flex shrink-0 items-center">
-      {variant === 'detail' ? (
-        <GhostActionButton
-          icon={isBlocked ? AlertTriangle : Play}
-          label="Start"
-          tone={isBlocked ? 'warning' : 'success'}
-          title={isBlocked ? start.description : undefined}
-          isBusy={start.isBusy}
-          onClick={start.onTrigger}
-        />
-      ) : (
-        <CardAction
-          icon={isBlocked ? AlertTriangle : Play}
-          label="Start workflow now"
-          tone={isBlocked ? 'warning' : 'success'}
-          disabled={start.isBusy}
-          onClick={start.onTrigger}
-        />
-      )}
-      {start.isConfirming ? (
-        <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
-          <InlineConfirm
-            role="alert"
-            icon={<AlertTriangle size={ICON_SIZE.row} />}
-            title={start.title}
-            description={start.description}
-            confirmLabel={start.confirmLabel}
-            cancelLabel={start.cancelLabel}
+    <ConfirmPopover
+      role="alert"
+      icon={<AlertTriangle size={ICON_SIZE.row} />}
+      title={start.title}
+      description={start.description}
+      confirmLabel={start.confirmLabel}
+      cancelLabel={start.cancelLabel}
+      isBusy={start.isBusy}
+      isOpen={start.isConfirming}
+      onConfirm={start.onConfirm}
+      onCancel={start.onCancel}
+      trigger={() =>
+        variant === 'detail' ? (
+          <GhostActionButton
+            icon={isBlocked ? AlertTriangle : Play}
+            label="Start"
+            tone={isBlocked ? 'warning' : 'success'}
+            title={isBlocked ? start.description : undefined}
             isBusy={start.isBusy}
-            onConfirm={start.onConfirm}
-            onCancel={start.onCancel}
+            onClick={start.onTrigger}
           />
-        </div>
-      ) : null}
-    </div>
+        ) : (
+          <CardAction
+            icon={isBlocked ? AlertTriangle : Play}
+            label="Start workflow now"
+            tone={isBlocked ? 'warning' : 'success'}
+            disabled={start.isBusy}
+            onClick={start.onTrigger}
+          />
+        )
+      }
+    />
   );
 };
