@@ -154,7 +154,7 @@ describe('StageBoardCard layout', () => {
     expect(title.className).toContain('line-clamp-2');
     expect(title.className).toContain('min-h-10');
     expect(title.className).toContain('leading-5');
-    expect(metaRow?.className).toContain('col-span-2');
+    expect(metaRow?.className).not.toContain('col-span-2');
     expect(metaRow?.className).toContain('col-start-1');
     expect(metaRow?.className).toContain('row-start-2');
     expect(metaRow?.className).toContain('h-5');
@@ -331,7 +331,7 @@ describe('StageBoardCard actions visibility', () => {
     expect(nav.selectCard).toHaveBeenCalledTimes(2);
   });
 
-  it('shows attention action tint at rest and keeps non-attention neutral', () => {
+  it('shows the attention tint on the visible action at rest', () => {
     useDynamicActionsMock.mockReturnValue([
       {
         key: 'questions',
@@ -350,14 +350,10 @@ describe('StageBoardCard actions visibility', () => {
     ]);
     render(<StageBoardCard session={session} nav={nav} />);
     const attention = screen.getByLabelText('1 open question');
-    const nonAttention = screen.getByLabelText('run next step');
     expect(attention.className.includes(' bg-warning/5')).toBe(true);
     expect(attention.className).toContain('text-warning');
     expect(attention.className).not.toContain('opacity-0');
-    expect(nonAttention.className).not.toContain('bg-warning/5');
-    expect(nonAttention.className.includes(' bg-primary/5')).toBe(false);
-    expect(nonAttention.className).toContain('opacity-0');
-    expect(nonAttention.className).toContain('group-hover/session-card:opacity-100');
+    expect(screen.queryByLabelText('run next step')).toBeNull();
   });
 
   it('highlights a danger action', () => {
@@ -376,18 +372,15 @@ describe('StageBoardCard actions visibility', () => {
     expect(action.className).toContain('text-danger');
   });
 
-  it('reveals editor and terminal on hover instead of showing them at rest', () => {
+  it('keeps nothing hover-only on the card', () => {
     render(<StageBoardCard session={session} nav={nav} />);
-    for (const label of ['Open in editor', 'Open terminal']) {
-      const control = screen.getByLabelText(label);
-      expect(control.className).toContain('opacity-0');
-      expect(control.className).toContain('group-hover/session-card:opacity-100');
-      expect(control.className).toContain('group-focus-within/session-card:opacity-100');
-      expect(control.className).not.toContain('agent-card');
-    }
+    const card = screen.getAllByRole('button')[0] as HTMLElement;
+    expect(card.querySelector('.opacity-0')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Session actions' })).toBeDefined();
   });
 
-  it('renders the revealed extras before the visible action', () => {
+  it('lists editor, terminal and the extra actions, then archive and delete, in the overflow', () => {
+    const run = vi.fn();
     useDynamicActionsMock.mockReturnValue([
       {
         key: 'questions',
@@ -401,28 +394,31 @@ describe('StageBoardCard actions visibility', () => {
         icon: Play,
         tone: 'primary',
         label: 'run next step',
-        onClick: vi.fn(),
+        onClick: run,
       },
     ]);
     render(<StageBoardCard session={session} nav={nav} />);
-    const group = screen.getByRole('group', { name: 'Session quick actions' });
-    expect(Array.from(group.children)).toEqual([
-      screen.getByLabelText('run next step').parentElement,
-      screen.getByLabelText('Open in editor').parentElement,
-      screen.getByLabelText('Open terminal').parentElement,
-      screen.getByLabelText('1 open question').parentElement,
+    fireEvent.click(screen.getByRole('button', { name: 'Session actions' }));
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Open in editor',
+      'Open terminal',
+      'run next step',
+      'Archive',
+      'Delete',
     ]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'run next step' }));
+    expect(run).toHaveBeenCalledOnce();
+    expect(nav.selectCard).not.toHaveBeenCalled();
   });
 
-  it('reveals archive and delete with no divider', () => {
-    render(<StageBoardCard session={session} nav={nav} />);
-    const group = screen.getByRole('group', { name: 'Session lifecycle actions' });
-    const archive = screen.getByLabelText('Archive');
-    const del = screen.getByLabelText('Delete');
-    expect(group.querySelector('[role="separator"]')).toBeNull();
-    expect(Array.from(group.children)).toEqual([archive.parentElement, del.parentElement]);
-    expect(archive.className).toContain('opacity-0');
-    expect(del.className).toContain('opacity-0');
+  it('deletes through the card delete path', () => {
+    const onDelete = vi.fn();
+    render(<StageBoardCard session={session} nav={nav} onDelete={onDelete} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Session actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
+
+    expect(onDelete).toHaveBeenCalledWith(session);
   });
 
   it('shows restore as the one visible action on an archived card', () => {
@@ -431,9 +427,8 @@ describe('StageBoardCard actions visibility', () => {
     expect(restore.className).not.toContain('opacity-0');
     const group = screen.getByRole('group', { name: 'Session quick actions' });
     expect(group.contains(restore)).toBe(true);
-    expect(screen.queryByLabelText('Archive')).toBeNull();
-    expect(screen.queryByLabelText('Open in editor')).toBeNull();
-    expect(screen.getByLabelText('Delete').className).toContain('opacity-0');
+    fireEvent.click(screen.getByRole('button', { name: 'Session actions' }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Delete']);
   });
 });
 
@@ -513,8 +508,7 @@ describe('StageBoardCard footer', () => {
     ]);
     expect(right?.firstElementChild).toBe(cost);
     expect(right?.children.length).toBe(1);
-    expect(right?.className).toContain('group-hover/session-card:opacity-0');
-    expect(right?.className).toContain('group-focus-within/session-card:opacity-0');
+    expect(right?.className).not.toContain('opacity-0');
     expect(metaRow?.querySelector('.lucide-chevron-right')).toBeNull();
   });
 
