@@ -2,6 +2,7 @@ export {
   DEFAULT_GH_TIMEOUT_MS,
   GhCliError,
   GhJsonParseError,
+  GhJsonShapeError,
   runJson,
   type GhResult,
   type GhRunOptions,

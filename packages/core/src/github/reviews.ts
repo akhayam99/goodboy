@@ -27,11 +27,12 @@ export const fetchPrNodeId = async (
   prNumber: number,
   opts: GhRunOptions = {},
 ): Promise<string> => {
-  const raw = await runJson<RawPrIdResponse>(
+  const raw = await runJson<RawPrIdResponse>({
     runner,
-    ['pr', 'view', String(prNumber), '--repo', repo, '--json', 'id'],
+    args: ['pr', 'view', String(prNumber), '--repo', repo, '--json', 'id'],
     opts,
-  );
+    shape: 'object',
+  });
   const id = raw.id ?? '';
   if (id.length === 0) {
     throw new GhCliError(`pr ${repo}#${prNumber} returned no node id`, JSON.stringify(raw), 1);
@@ -72,9 +73,9 @@ export const addPullRequestReview = async (
     pullRequestReview{ id url }
   }
 }`;
-  const raw = await runJson<RawAddReviewResponse>(
+  const raw = await runJson<RawAddReviewResponse>({
     runner,
-    [
+    args: [
       'api',
       'graphql',
       '-f',
@@ -85,7 +86,8 @@ export const addPullRequestReview = async (
       `body=${input.body}`,
     ],
     opts,
-  );
+    shape: 'object',
+  });
   if (raw.errors && raw.errors.length > 0) {
     const first = raw.errors[0]?.message ?? 'unknown graphql error';
     throw new GhCliError(`addPullRequestReview failed: ${first}`, first, 1);

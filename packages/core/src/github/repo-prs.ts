@@ -35,7 +35,7 @@ export const listOpenPrsForRepo = async (
   ];
   let raw: ReadonlyArray<RawRepoPullRequest>;
   try {
-    raw = await runJson<ReadonlyArray<RawRepoPullRequest>>(runner, args, opts);
+    raw = await runJson<ReadonlyArray<RawRepoPullRequest>>({ runner, args, opts, shape: 'array' });
   } catch (err) {
     if (err instanceof GhCliError) {
       return [];

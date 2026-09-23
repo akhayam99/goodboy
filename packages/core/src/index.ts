@@ -385,6 +385,7 @@ export {
   DEFAULT_PR_CACHE_TTL_MS,
   GhCliError,
   GhJsonParseError,
+  GhJsonShapeError,
   createGithubRepo,
   createIssueComment,
   detectRepoSlug,
