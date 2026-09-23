@@ -74,6 +74,8 @@ vi.mock('../../../onboarding/onboarding-store', () => ({
 }));
 
 import { SettingsStudio } from './index';
+import { APP_SECTIONS } from './appSections';
+import type { SettingsScopeChange } from './types';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../../reportIssueStudioEvent';
 import { SHORTCUTS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
@@ -127,24 +129,45 @@ describe('SettingsStudio', () => {
     expect(screen.getByRole('button', { name: 'Tools' }).getAttribute('aria-current')).toBe('true');
   });
 
-  it('renders all settings scopes in a navigation rail', () => {
+  const renderApp = ({
+    section,
+    onScopeChange = vi.fn(),
+  }: {
+    readonly section?: string;
+    readonly onScopeChange?: (params: SettingsScopeChange) => void;
+  } = {}) =>
     render(
       <SettingsStudio
         currentWorkspace={null}
-        onScopeChange={vi.fn()}
-        focus={{ scope: 'app' }}
+        onScopeChange={onScopeChange}
+        focus={section === undefined ? { scope: 'app' } : { scope: 'app', section }}
         onClose={vi.fn()}
       />,
     );
 
+  it('nests the app items under App in the one navigation rail', () => {
+    renderApp();
+
+    expect(screen.getAllByRole('navigation')).toHaveLength(1);
+    const items = screen.getByRole('list', { name: 'App settings' });
     expect(
-      ['Editor', 'Shortcuts', 'Config backup', 'Help', 'Danger zone'].map(
-        (label) => screen.getByText(label).textContent,
-      ),
-    ).toEqual(['Editor', 'Shortcuts', 'Config backup', 'Help', 'Danger zone']);
-    expect(screen.getByRole('navigation', { name: /settings scopes/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'App' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Providers & models' })).toBeDefined();
+      within(items)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(APP_SECTIONS.map((section) => section.label));
+    expect(APP_SECTIONS.map((section) => section.id)).toEqual([
+      'general',
+      'shortcuts',
+      'backup',
+      'storage',
+      'help',
+      'danger',
+    ]);
+    expect(
+      within(items).getByRole('button', { name: 'General' }).getAttribute('aria-current'),
+    ).toBe('true');
+    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    expect(screen.getByText('Default editor')).toBeDefined();
   });
 
   it('lists only App and Providers without a workspace, and lands providers on an account', () => {
@@ -158,12 +181,11 @@ describe('SettingsStudio', () => {
     );
 
     const rail = screen.getByRole('navigation', { name: /settings scopes/i });
-    expect(
-      within(rail)
-        .getAllByRole('button')
-        .map((button) => button.textContent),
-    ).toEqual(['App', 'Providers & models']);
-    expect(screen.getByRole('button', { name: 'App' }).getAttribute('aria-current')).toBe('true');
+    expect(within(rail).queryByRole('button', { name: /^Workspace/ })).toBeNull();
+    expect(within(rail).queryByRole('button', { name: 'Tools' })).toBeNull();
+    expect(within(rail).getByRole('button', { name: 'App' })).toBeDefined();
+    expect(within(rail).getByRole('button', { name: 'Providers & models' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
 
     rerender(
       <SettingsStudio
@@ -174,86 +196,46 @@ describe('SettingsStudio', () => {
       />,
     );
     expect(screen.getByText('Provider settings content')).toBeDefined();
+    expect(screen.queryByRole('list', { name: 'App settings' })).toBeNull();
   });
 
-  it('reports a rail click as a scope change instead of switching on its own', () => {
+  it('reports rail clicks as focus changes instead of switching on its own', () => {
     const onScopeChange = vi.fn();
-    render(
-      <SettingsStudio
-        currentWorkspace={null}
-        onScopeChange={onScopeChange}
-        focus={{ scope: 'app' }}
-        onClose={vi.fn()}
-      />,
-    );
+    renderApp({ onScopeChange });
 
     fireEvent.click(screen.getByRole('button', { name: 'Providers & models' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Storage' }));
 
-    expect(onScopeChange).toHaveBeenCalledWith({ scope: 'providers' });
-    expect(screen.getByRole('button', { name: 'App' }).getAttribute('aria-current')).toBe('true');
+    expect(onScopeChange).toHaveBeenNthCalledWith(1, { scope: 'providers' });
+    expect(onScopeChange).toHaveBeenNthCalledWith(2, { scope: 'app', section: 'storage' });
+    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
   });
 
-  it('collapses shortcuts by default', () => {
-    render(
-      <SettingsStudio
-        currentWorkspace={null}
-        onScopeChange={vi.fn()}
-        focus={{ scope: 'app' }}
-        onClose={vi.fn()}
-      />,
-    );
+  it('opens the shortcuts item with the whole list visible', () => {
+    renderApp({ section: 'shortcuts' });
 
-    const toggle = screen.getByRole('button', { name: /expand keyboard shortcuts/i });
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByRole('heading', { name: 'Shortcuts' })).toBeDefined();
     expect(screen.getByText(`${Object.keys(SHORTCUTS).length} shortcuts`)).toBeDefined();
-    expect(screen.queryByText('Command palette')).toBeNull();
-    fireEvent.click(toggle);
     expect(screen.getByText('Command palette')).toBeDefined();
     expect(screen.getByText(shortcutGlyphs('lens.agents'))).toBeDefined();
+    expect(screen.queryByRole('button', { name: /keyboard shortcuts/i })).toBeNull();
   });
 
-  it('expands and scrolls to shortcuts when focused', () => {
-    render(
-      <SettingsStudio
-        currentWorkspace={null}
-        onScopeChange={vi.fn()}
-        focus={{ scope: 'app', section: 'shortcuts' }}
-        onClose={vi.fn()}
-      />,
-    );
+  it('falls back to General for an unknown section', () => {
+    renderApp({ section: 'integrations' });
 
-    expect(
-      screen
-        .getByRole('button', { name: /collapse keyboard shortcuts/i })
-        .getAttribute('aria-expanded'),
-    ).toBe('true');
-    expect(screen.getByText('Command palette')).toBeDefined();
-    expect(scrollIntoViewMock.mock.contexts.at(-1)).toBe(document.getElementById('shortcuts'));
+    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
   });
 
   it('leaves GitHub to Tools settings', () => {
-    render(
-      <SettingsStudio
-        currentWorkspace={null}
-        onScopeChange={vi.fn()}
-        focus={{ scope: 'app' }}
-        onClose={vi.fn()}
-      />,
-    );
+    renderApp();
 
     expect(screen.queryByText('GitHub')).toBeNull();
     expect(screen.queryByText('Global fallback token used by every workspace.')).toBeNull();
   });
 
   it('wipes only after the row confirm and offers a restart', async () => {
-    render(
-      <SettingsStudio
-        currentWorkspace={null}
-        onScopeChange={vi.fn()}
-        focus={{ scope: 'app' }}
-        onClose={vi.fn()}
-      />,
-    );
+    renderApp({ section: 'danger' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
     expect(state.wipeLocalDatabase).not.toHaveBeenCalled();
@@ -268,14 +250,7 @@ describe('SettingsStudio', () => {
   });
 
   it('cancels the wipe back to its trigger', () => {
-    render(
-      <SettingsStudio
-        currentWorkspace={null}
-        onScopeChange={vi.fn()}
-        focus={{ scope: 'app' }}
-        onClose={vi.fn()}
-      />,
-    );
+    renderApp({ section: 'danger' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -287,14 +262,7 @@ describe('SettingsStudio', () => {
   it('opens the report issue studio through the shared studio event', () => {
     const listener = vi.fn();
     window.addEventListener(REPORT_ISSUE_STUDIO_EVENT, listener);
-    render(
-      <SettingsStudio
-        currentWorkspace={null}
-        onScopeChange={vi.fn()}
-        focus={{ scope: 'app' }}
-        onClose={vi.fn()}
-      />,
-    );
+    renderApp({ section: 'help' });
 
     fireEvent.click(screen.getByRole('button', { name: /report an issue/i }));
 
@@ -302,16 +270,11 @@ describe('SettingsStudio', () => {
     window.removeEventListener(REPORT_ISSUE_STUDIO_EVENT, listener);
   });
 
-  it.each(['editor', 'advanced', 'initialization'])('resolves the %s deep link', (section) => {
-    render(
-      <SettingsStudio
-        currentWorkspace={null}
-        onScopeChange={vi.fn()}
-        focus={{ scope: 'app', section }}
-        onClose={vi.fn()}
-      />,
-    );
+  it('offers export and import under Backup', () => {
+    renderApp({ section: 'backup' });
 
-    expect(scrollIntoViewMock.mock.contexts.at(-1)).toBe(document.getElementById(section));
+    expect(screen.getByRole('heading', { name: 'Backup' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Export' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Import' })).toBeDefined();
   });
 });

@@ -5,7 +5,6 @@ import {
   FieldRow,
   InlineConfirm,
   ScrollFade,
-  SectionHeader,
   Skeleton,
   cn,
   tintClasses,
@@ -95,10 +94,6 @@ export const StorageSection = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <SectionHeader
-        label="Storage"
-        hint="What the local database and archived sessions hold on this computer."
-      />
       <div className="flex flex-col">
         <FieldRow label="Database" help="Every workspace, session, message, and streamed event.">
           {showSkeleton ? (

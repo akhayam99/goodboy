@@ -267,8 +267,13 @@ one is open at a time.
   popover (its header's Open all) and from the palette's Go to group, never
   from the footer, since the bell already shows the unread count. The popover
   never deletes history. That lives in the studio, behind its confirm. Report
-  an issue opens from the top bar, the App scope panel in Settings and the
-  palette. It sits next to settings, not beside the named launchers.
+  an issue opens from the top bar, **Settings > App > Help** and the palette.
+  It sits next to settings, not beside the named launchers.
+- **Settings nests items in its rail.** While App is active, its items
+  (General, Shortcuts, Backup, Storage, Help, Danger zone) sit under the App
+  row as indented rows, and the panel shows one item at a time. So App adds no
+  second rail column. Precedent: the VS Code settings table of contents and
+  Linear's settings sidebar.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
   beside a detail panel is fine. "no left panel and right panel at once" is
   about two sidebars on either side of the content, which the app does not do.

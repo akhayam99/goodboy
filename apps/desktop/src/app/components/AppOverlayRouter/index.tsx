@@ -3,7 +3,7 @@ import type { Session, Workspace } from '@goodboy/types';
 import { DeleteSessionConfirm } from '../../../features/session/components/DeleteSessionConfirm';
 import { ConvertWorkspaceDialog } from '../../../features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
-import type { SettingsStudioScope } from '../../../features/settings/components/SettingsStudio/types';
+import type { SettingsScopeChange } from '../../../features/settings/components/SettingsStudio/types';
 import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard';
 import type { CommitDiffTarget } from '../../../shared/hooks/useCommitLinkInterceptor';
 import { isAppScopeOverlay, type Overlay } from '../../hooks/useAppOverlays/overlayState';
@@ -68,7 +68,7 @@ const CompanionStudio = lazy(() =>
 type Props = {
   readonly overlay: Overlay | null;
   readonly close: () => void;
-  readonly onSettingsScopeChange: (params: { readonly scope: SettingsStudioScope }) => void;
+  readonly onSettingsScopeChange: (params: SettingsScopeChange) => void;
   readonly currentWorkspace: Workspace | null;
   readonly isWorkspaceLauncherBranch: boolean;
   readonly deleteOpen: boolean;
@@ -88,7 +88,7 @@ type Props = {
 type StudioParams = {
   readonly overlay: Overlay;
   readonly close: () => void;
-  readonly onSettingsScopeChange: (params: { readonly scope: SettingsStudioScope }) => void;
+  readonly onSettingsScopeChange: (params: SettingsScopeChange) => void;
   readonly currentWorkspace: Workspace | null;
   readonly workspaceProjectRoot: string | null;
   readonly offerWorkspaceRepo: () => void;

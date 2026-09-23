@@ -247,7 +247,9 @@ describe('a11y smoke, QuickActionsPopover', () => {
 
 describe('a11y smoke, SettingsStudio app scope', () => {
   it('panel open', async () => {
-    const { container } = renderInToasts(<AppScopePanel requestClose={vi.fn()} />);
+    const { container } = renderInToasts(
+      <AppScopePanel section="general" requestClose={vi.fn()} />,
+    );
     await expectBaseline({ name: 'AppScopePanel open', container });
   });
 });

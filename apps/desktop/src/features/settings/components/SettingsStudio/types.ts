@@ -11,3 +11,8 @@ export type SettingsFocus = {
   readonly provider?: ProviderId;
   readonly action?: ProviderLifecycleAction;
 };
+
+export type SettingsScopeChange = {
+  readonly scope: SettingsStudioScope;
+  readonly section?: string;
+};

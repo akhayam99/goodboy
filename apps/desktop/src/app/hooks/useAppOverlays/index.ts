@@ -1,7 +1,7 @@
 import { createElement, useCallback, useEffect, useState, type ReactNode } from 'react';
 import type { Session, SessionId, Workspace } from '@goodboy/types';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
-import type { SettingsStudioScope } from '../../../features/settings/components/SettingsStudio/types';
+import type { SettingsScopeChange } from '../../../features/settings/components/SettingsStudio/types';
 import { markStepComplete } from '../../../features/onboarding/onboarding-store';
 import { useSessionById } from '../../../store';
 import { AppOverlayRouter, AppStudio } from '../../components/AppOverlayRouter';
@@ -28,10 +28,6 @@ type OpenParams = {
 
 type OpenIntegrationParams = {
   readonly provider: IntegrationGlyphProvider;
-};
-
-type ScopeChangeParams = {
-  readonly scope: SettingsStudioScope;
 };
 
 export const useAppOverlays = ({
@@ -132,7 +128,13 @@ export const useAppOverlays = ({
   );
 
   const changeSettingsScope = useCallback(
-    ({ scope }: ScopeChangeParams) => open({ overlay: { kind: 'settings', focus: { scope } } }),
+    ({ scope, section }: SettingsScopeChange) =>
+      open({
+        overlay: {
+          kind: 'settings',
+          focus: section === undefined ? { scope } : { scope, section },
+        },
+      }),
     [open],
   );
 

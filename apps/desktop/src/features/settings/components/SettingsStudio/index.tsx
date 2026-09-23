@@ -6,13 +6,14 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { AppScopePanel } from './AppScopePanel';
 import { SettingsRail, settingsScopeAvailable } from './SettingsRail';
-import type { SettingsFocus, SettingsStudioScope } from './types';
+import { appSectionOf } from './appSections';
+import type { SettingsFocus, SettingsScopeChange } from './types';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
 
 type Props = {
   readonly currentWorkspace: Workspace | null;
   readonly focus: SettingsFocus;
-  readonly onScopeChange: (params: { readonly scope: SettingsStudioScope }) => void;
+  readonly onScopeChange: (params: SettingsScopeChange) => void;
   readonly onClose: () => void;
 };
 
@@ -39,6 +40,7 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
             <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
               <SettingsRail
                 scope={availableScope}
+                appSection={appSectionOf({ section: focus.section })}
                 workspaceName={currentWorkspace?.name ?? null}
                 hasWorkspace={hasWorkspace}
                 onSelect={onScopeChange}
@@ -47,7 +49,10 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
           }
           detail={
             availableScope === 'app' ? (
-              <AppScopePanel initialSection={focus.section} requestClose={requestClose} />
+              <AppScopePanel
+                section={appSectionOf({ section: focus.section })}
+                requestClose={requestClose}
+              />
             ) : availableScope === 'workspace' && currentWorkspace !== null ? (
               <WorkspaceScopePanel
                 workspaceId={currentWorkspace.id}
