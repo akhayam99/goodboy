@@ -587,6 +587,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 align="end"
                 ariaLabel="Model routing"
                 openEvent="goodboy:open-model-picker"
+                shortcut="session.model"
                 provider={routing.effectiveProvider}
                 model={routing.effectiveModelId}
                 effort={{

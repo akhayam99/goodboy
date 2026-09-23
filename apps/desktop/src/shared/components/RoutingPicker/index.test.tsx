@@ -13,6 +13,7 @@ import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
 import { cursorMaxModeAdvisory } from '../../lib/cursorMaxModeAdvisory';
 import { RoutingPicker } from './index';
+import { withShortcutHint } from '../../keyboard/registry';
 
 const baseProps = {
   connectedProviders: [
@@ -65,6 +66,20 @@ describe('RoutingPicker', () => {
     const trigger = screen.getByRole('button', { name: /routing/i });
     expect(trigger.getAttribute('aria-label')).toBe('routing: Claude · Opus · 5 · High · Brief');
     expect(tooltipTextOf({ element: trigger })).toContain('Claude · Opus · 5 · High · Brief');
+  });
+
+  it('teaches the shortcut that opens it in the trigger tooltip', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        verbosity="brief"
+        onVerbosity={vi.fn()}
+        shortcut="session.model"
+      />,
+    );
+    expect(tooltipTextOf({ element: screen.getByRole('button', { name: /routing/i }) })).toBe(
+      withShortcutHint({ label: 'Claude · Opus · 5 · High · Brief', shortcut: 'session.model' }),
+    );
   });
 
   it('still explains a disabled trigger when the caller gives no reason', () => {

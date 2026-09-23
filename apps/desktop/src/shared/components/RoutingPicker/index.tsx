@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { withShortcutHint, type ShortcutId } from '../../keyboard/registry';
 import { ChevronDown, RotateCcw } from 'lucide-react';
 import {
   MODEL_CATALOGS,
@@ -83,6 +84,7 @@ export type Props = {
   readonly disabledTitle?: string;
   readonly ariaLabel?: string;
   readonly openEvent?: string;
+  readonly shortcut?: ShortcutId;
   readonly availability?: 'run' | 'setup';
 };
 
@@ -106,6 +108,7 @@ export const RoutingPicker = ({
   disabledTitle,
   ariaLabel,
   openEvent,
+  shortcut,
   availability = 'run',
 }: Props) => {
   const [isProviderConnectionInFlight, setIsProviderConnectionInFlight] = useState(false);
@@ -294,7 +297,13 @@ export const RoutingPicker = ({
             </Tooltip>
           )}
           <Tooltip
-            content={disabled ? (disabledTitle ?? summary) : `${summary}. Click to change.`}
+            content={
+              disabled
+                ? (disabledTitle ?? summary)
+                : shortcut !== undefined
+                  ? withShortcutHint({ label: summary, shortcut })
+                  : `${summary}. Click to change.`
+            }
             anchorClassName={variant === 'field' ? 'w-full' : undefined}
           >
             <button
