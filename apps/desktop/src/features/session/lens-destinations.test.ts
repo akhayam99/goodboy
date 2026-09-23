@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NO_CONNECTED_TOOLS, lensDestinations, type ConnectedLensTools } from './lens-destinations';
+import { lensDestinations, type ConnectedLensTools } from './lens-destinations';
 import { SHORTCUTS, type ShortcutId } from '../../shared/keyboard/registry';
 
 const LENS_SHORTCUT_IDS = (Object.keys(SHORTCUTS) as ReadonlyArray<ShortcutId>).filter((id) =>
@@ -13,6 +13,13 @@ const REGION_ONLY_SHORTCUTS = new Set<ShortcutId>([
   'lens.decisions',
   'lens.summary',
 ]);
+
+const NO_CONNECTED_TOOLS: ConnectedLensTools = {
+  linear: false,
+  gitlab: false,
+  jira: false,
+  slack: false,
+};
 
 const ALL_TOOLS: ConnectedLensTools = { linear: true, gitlab: true, jira: true, slack: true };
 

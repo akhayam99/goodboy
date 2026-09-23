@@ -37,13 +37,6 @@ const TOOL_OF_LENS: Partial<Record<LensKind, LensTool>> = {
   slack_threads: 'slack',
 };
 
-export const NO_CONNECTED_TOOLS: ConnectedLensTools = {
-  linear: false,
-  gitlab: false,
-  jira: false,
-  slack: false,
-};
-
 type Params = {
   readonly isBranchless: boolean;
   readonly isGithubCodeHost: boolean;
