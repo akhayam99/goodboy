@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Divider, EmptyState, ScrollFade, inlineMarkdownText } from '@goodboy/ui';
 import type { Agent, AgentId, SessionId, ProjectScript } from '@goodboy/types';
 import {
@@ -118,7 +118,8 @@ const openSettings = (detail: SettingsFocus) =>
 
 export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
   const [query, setQuery] = useState(initialQuery);
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const listboxId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -318,57 +319,97 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
     toggleTheme,
   ]);
 
-  const filtered = useMemo(() => {
+  const ordered = useMemo(() => {
     const { prefix, query: q } = parsed;
     const scope = prefix ? items.filter((it) => it.group === prefix.group) : items;
-    if (q.length === 0) {
-      return prefix ? scope.slice(0, 50) : withGroupQuota(scope);
-    }
-    return scope
-      .map((item) => ({
-        item,
-        score: Math.max(
-          fuzzyScore(q, item.label),
-          item.sublabel ? fuzzyScore(q, item.sublabel) : 0,
-        ),
-      }))
-      .filter(({ score }) => score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map(({ item }) => item)
-      .slice(0, 30);
+    const matched =
+      q.length === 0
+        ? prefix
+          ? scope.slice(0, 50)
+          : withGroupQuota(scope)
+        : scope
+            .map((item) => ({
+              item,
+              score: Math.max(
+                fuzzyScore(q, item.label),
+                item.sublabel ? fuzzyScore(q, item.sublabel) : 0,
+              ),
+            }))
+            .filter(({ score }) => score > 0)
+            .sort((a, b) => b.score - a.score)
+            .map(({ item }) => item)
+            .slice(0, 30);
+    return [...matched].sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group));
   }, [items, parsed]);
 
+  const selectedIndex = Math.max(
+    0,
+    ordered.findIndex((item) => item.id === selectedId),
+  );
+  const selected = ordered[selectedIndex] ?? null;
+  const optionId = (id: string) => `${listboxId}-${id}`;
+
   useEffect(() => {
-    setSelectedIndex(0);
-  }, [filtered.length, query]);
+    setSelectedId(null);
+  }, [query]);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
   useEffect(() => {
-    const el = listRef.current?.children[selectedIndex] as HTMLElement | undefined;
-    el?.scrollIntoView({ block: 'nearest' });
-  }, [selectedIndex]);
+    if (selected === null) {
+      return;
+    }
+    listRef.current
+      ?.querySelector(`[data-id="${CSS.escape(selected.id)}"]`)
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [selected]);
+
+  const moveSelection = (delta: number) => {
+    const next = ordered[Math.min(Math.max(selectedIndex + delta, 0), ordered.length - 1)];
+    if (next === undefined) {
+      return;
+    }
+    setSelectedId(next.id);
+  };
+
+  const run = (item: PaletteItem) => {
+    item.onSelect();
+    onClose();
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex((i) => Math.min(i + 1, filtered.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      filtered[selectedIndex]?.onSelect();
-      onClose();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      onClose();
-    } else if (e.key === 'Tab' && query.length === 0) {
-      e.preventDefault();
-      const first = PALETTE_PREFIXES[0]!;
-      setQuery(first.symbol);
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        moveSelection(1);
+        return;
+      case 'ArrowUp':
+        e.preventDefault();
+        moveSelection(-1);
+        return;
+      case 'Enter':
+        e.preventDefault();
+        if (selected === null) {
+          onClose();
+          return;
+        }
+        run(selected);
+        return;
+      case 'Escape':
+        e.preventDefault();
+        onClose();
+        return;
+      case 'Tab':
+        if (query.length > 0) {
+          return;
+        }
+        e.preventDefault();
+        setQuery(PALETTE_PREFIXES[0]?.symbol ?? '');
+        return;
+      default:
+        return;
     }
   };
 
@@ -391,6 +432,11 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
+          role="combobox"
+          aria-expanded
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-activedescendant={selected === null ? undefined : optionId(selected.id)}
           aria-label="Command palette search"
           className="w-full bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         />
@@ -422,9 +468,9 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
         )}
 
         <ScrollFade className="max-h-80">
-          <ul ref={listRef}>
-            {filtered.length === 0 ? (
-              <li>
+          <ul ref={listRef} id={listboxId} role="listbox" aria-label="Commands">
+            {ordered.length === 0 ? (
+              <li role="presentation">
                 <EmptyState
                   icon={CONCEPT_ICONS.search}
                   tone={CONCEPT_TONE.search}
@@ -434,50 +480,52 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
                 />
               </li>
             ) : (
-              GROUP_ORDER.flatMap((group) => {
-                const itemsInGroup = filtered.filter((it) => it.group === group);
-                if (itemsInGroup.length === 0) {
-                  return [];
+              ordered.flatMap((item, index) => {
+                const isSelected = index === selectedIndex;
+                const row = (
+                  <li
+                    key={item.id}
+                    id={optionId(item.id)}
+                    data-id={item.id}
+                    role="option"
+                    aria-selected={isSelected}
+                    className={`flex cursor-pointer items-center gap-2 px-4 py-2 text-sm ${
+                      isSelected ? 'bg-muted' : 'hover:bg-hover'
+                    }`}
+                    onMouseEnter={() => setSelectedId(item.id)}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      run(item);
+                    }}
+                  >
+                    {item.accent ? (
+                      <span
+                        aria-hidden
+                        className={`size-1.5 shrink-0 rounded-full ${item.accent}`}
+                      />
+                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <span className="block truncate">{item.label}</span>
+                      {item.sublabel ? (
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {item.sublabel}
+                        </span>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+                if (ordered[index - 1]?.group === item.group) {
+                  return [row];
                 }
                 return [
                   <li
-                    key={`group:${group}`}
+                    key={`group:${item.group}`}
+                    role="presentation"
                     className="bg-subtle px-4 py-1 text-2xs font-medium tracking-wide text-muted-foreground"
                   >
-                    {GROUP_LABELS[group]}
+                    {GROUP_LABELS[item.group]}
                   </li>,
-                  ...itemsInGroup.map((item) => {
-                    const idx = filtered.indexOf(item);
-                    return (
-                      <li
-                        key={item.id}
-                        className={`flex cursor-pointer items-center gap-2 px-4 py-2 text-sm ${
-                          idx === selectedIndex ? 'bg-muted' : 'hover:bg-hover'
-                        }`}
-                        onMouseEnter={() => setSelectedIndex(idx)}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          item.onSelect();
-                          onClose();
-                        }}
-                      >
-                        {item.accent ? (
-                          <span
-                            aria-hidden
-                            className={`size-1.5 shrink-0 rounded-full ${item.accent}`}
-                          />
-                        ) : null}
-                        <div className="min-w-0 flex-1">
-                          <span className="block truncate">{item.label}</span>
-                          {item.sublabel ? (
-                            <span className="block truncate text-xs text-muted-foreground">
-                              {item.sublabel}
-                            </span>
-                          ) : null}
-                        </div>
-                      </li>
-                    );
-                  }),
+                  row,
                 ];
               })
             )}

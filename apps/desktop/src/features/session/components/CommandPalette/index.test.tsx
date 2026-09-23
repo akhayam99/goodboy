@@ -59,6 +59,8 @@ beforeEach(() => {
   hooks.workspaces = [];
   hooks.currentWorkspace = null;
   toastMock.mockReset();
+  state.openWorkspace.mockClear();
+  state.setCurrentSession.mockClear();
 });
 afterEach(cleanup);
 
@@ -161,6 +163,58 @@ describe('CommandPalette', () => {
     expect(screen.getByText('Open Terminal')).toBeDefined();
     expect(screen.getByText('Open settings')).toBeDefined();
     expect(screen.getByText('Report an issue')).toBeDefined();
+  });
+
+  it('selects the first rendered row on open, whatever group it belongs to', () => {
+    hooks.workspaces = [{ id: 'workspace-1', name: 'Harborline' }];
+    hooks.sessions = [{ id: 'session-9', goal: 'settle the ledger' }];
+    render(<CommandPalette onClose={vi.fn()} />);
+
+    const options = screen.getAllByRole('option');
+    expect(options[0]?.textContent).toContain('settle the ledger');
+    expect(options[0]?.getAttribute('aria-selected')).toBe('true');
+    expect(
+      options.filter((option) => option.getAttribute('aria-selected') === 'true'),
+    ).toHaveLength(1);
+  });
+
+  it('moves the highlight across a group boundary and keeps the active descendant on it', () => {
+    hooks.workspaces = [{ id: 'workspace-1', name: 'Harborline' }];
+    hooks.sessions = [{ id: 'session-9', goal: 'settle the ledger' }];
+    render(<CommandPalette onClose={vi.fn()} />);
+    const input = screen.getByRole('combobox');
+
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+
+    const options = screen.getAllByRole('option');
+    expect(options[1]?.textContent).toContain('Harborline');
+    expect(options[1]?.getAttribute('aria-selected')).toBe('true');
+    expect(input.getAttribute('aria-activedescendant')).toBe(options[1]?.id);
+  });
+
+  it('runs the highlighted row on enter', () => {
+    hooks.workspaces = [{ id: 'workspace-1', name: 'Harborline' }];
+    hooks.sessions = [{ id: 'session-9', goal: 'settle the ledger' }];
+    const onClose = vi.fn();
+    render(<CommandPalette onClose={onClose} />);
+    const input = screen.getByRole('combobox');
+
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(state.openWorkspace).toHaveBeenCalledWith('workspace-1', 'Harborline');
+    expect(state.setCurrentSession).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('names the list as a listbox and its group headers as presentation', () => {
+    hooks.sessions = [{ id: 'session-9', goal: 'settle the ledger' }];
+    render(<CommandPalette onClose={vi.fn()} />);
+
+    const input = screen.getByRole('combobox');
+    const listbox = screen.getByRole('listbox');
+    expect(input.getAttribute('aria-controls')).toBe(listbox.id);
+    expect(screen.getByText('Sessions').getAttribute('role')).toBe('presentation');
   });
 
   it('teaches each navigation destination with the chord that reaches it', () => {
