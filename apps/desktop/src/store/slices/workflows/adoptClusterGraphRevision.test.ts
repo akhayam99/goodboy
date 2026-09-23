@@ -14,7 +14,6 @@ const h = vi.hoisted(() => ({
   refuseRevision: vi.fn(),
   agentList: vi.fn(),
   reserve: vi.fn(),
-  bind: vi.fn(),
   routing: vi.fn(),
 }));
 
@@ -25,7 +24,6 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 vi.mock('../agents/reserveGeneration', () => ({
   reserveGeneration: h.reserve,
-  bindGeneration: h.bind,
 }));
 vi.mock('./childRoutingBatch', () => ({ childRoutingBatch: h.routing }));
 
@@ -170,7 +168,6 @@ describe('adoptClusterGraphRevision', () => {
         reservationId: `reservation-${index}`,
       })),
     }));
-    h.bind.mockImplementation(async () => undefined);
     h.routing.mockImplementation(({ requests }: { readonly requests: ReadonlyArray<unknown> }) => ({
       kind: 'ready' as const,
       entries: requests.map(() => ({
@@ -226,6 +223,7 @@ describe('adoptClusterGraphRevision', () => {
     expect(call.toRevision).toBe(2);
     expect(call.agents).toHaveLength(1);
     expect(call.agents[0]?.name).toBe('Rewrite in two passes');
+    expect(call.agents[0]?.generationReservationId).toBe('reservation-0');
     const retired = call.nodes.find((node) => node.nodeId === 'impl');
     expect(retired).toMatchObject({ state: 'superseded', supersededBy: 'impl-split' });
     expect(retired?.agentId).toBe('a-impl');
@@ -422,7 +420,7 @@ describe('adoptClusterGraphRevision', () => {
     });
 
     expect(outcome.kind).toBe('refused');
-    expect(h.bind).not.toHaveBeenCalled();
+    expect(h.agentList).not.toHaveBeenCalled();
   });
 
   it('reports an execution that consumed no graph instead of inventing one', async () => {

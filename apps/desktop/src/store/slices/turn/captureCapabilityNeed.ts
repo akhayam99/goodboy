@@ -54,6 +54,7 @@ export const captureCapabilityNeed = async ({
     requesterAgentId: agentId,
     requesterRole,
     inventoryRevision: inventory.revision,
+    inventorySourceIds: new Set(inventory.entries.map((entry) => entry.sourceId)),
   });
   if (validation.kind === 'none') {
     return { kind: 'none' };

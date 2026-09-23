@@ -297,4 +297,70 @@ describe('agent generation ledger', () => {
     );
     expect(rows[0]?.total).toBe(7);
   });
+
+  it('gives a retried creation its own reservation and never rebinds a spent one', async () => {
+    const db = await seed();
+    const first = await generate({ db, parentAgentId: 'root' as AgentId, childId: 'child' });
+    const retry = await reserveUnder({
+      db,
+      parentAgentId: 'root' as AgentId,
+      reservationId: 'reservation:child',
+    });
+
+    const firstId = first.kind === 'granted' ? first.reservations[0]!.reservationId : '';
+    const retryId = retry.kind === 'granted' ? retry.reservations[0]!.reservationId : '';
+    expect(retryId).not.toBe('');
+    expect(retryId).not.toBe(firstId);
+    await expect(
+      bindAgentGeneration({
+        db,
+        bindings: [{ reservationId: firstId, agentId: 'replacement' as AgentId }],
+      }),
+    ).rejects.toThrow('already bound');
+    const rows = await db.select<{ readonly total: number }>(
+      "SELECT COUNT(*) AS total FROM agent_generation_ledger WHERE causal_root_agent_id = 'root' AND depth > 0",
+    );
+    expect(rows[0]?.total).toBe(2);
+  });
+
+  it('counts depth from the lineage when the parent predates the ledger', async () => {
+    const db = await seed();
+    await insertAgent({ db, id: 'legacy-1', parentAgentId: 'root' });
+    await insertAgent({ db, id: 'legacy-2', parentAgentId: 'legacy-1' });
+    await insertAgent({ db, id: 'legacy-3', parentAgentId: 'legacy-2' });
+
+    const deep = await reserveUnder({
+      db,
+      parentAgentId: 'legacy-3' as AgentId,
+      reservationId: 'reservation:deep',
+    });
+
+    expect(deep.kind === 'refused' ? deep.limit : null).toBe('depth');
+  });
+
+  it('notifies a rootless refusal once per session instead of once globally', async () => {
+    const db = await seed();
+    const rootless = (session: SessionId) =>
+      reserveAgentGeneration({
+        db,
+        reservationId: 'reservation:rootless',
+        sessionId: session,
+        workflowRunId: null,
+        parentAgentId: null,
+        creationPath: 'workflow-step',
+        count: 1,
+        obligationId: 'obligation-rootless',
+      });
+    for (let index = 0; index < 2; index++) {
+      expect((await rootless(sessionId)).kind).toBe('granted');
+    }
+
+    const first = await rootless(sessionId);
+    const again = await rootless(sessionId);
+    const other = await rootless(otherSessionId);
+
+    expect(first.kind === 'refused' ? first.isFirstRefusal : null).toBe(true);
+    expect(again.kind === 'refused' ? again.isFirstRefusal : null).toBe(false);
+    expect(other.kind === 'refused' ? other.isFirstRefusal : null).toBe(true);
+  });
 });

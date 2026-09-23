@@ -102,6 +102,7 @@ import type {
 import type { ResolveQuestionDelegateParams } from './slices/open-questions/resolveQuestionDelegate';
 import type { NeedDispositionOutcome } from './slices/workflows/applyNeedDisposition';
 import type { TakeQuestionBackParams } from './slices/open-questions/takeQuestionBack';
+import type { RecordPlannerUsageParams } from './slices/workflows/recordPlannerUsage';
 import { createBudgetSlice } from './slices/budget';
 import { createSkillsSlice } from './slices/skills';
 import { createStorageSlice } from './slices/storage';
@@ -590,6 +591,7 @@ type AppActions = {
     readonly sessionId: SessionId;
     readonly workflowRunId: WorkflowRunId;
   }): Promise<void>;
+  recordPlannerUsage(params: RecordPlannerUsageParams): Promise<void>;
   maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;
   orchestrateNextStep(
     sessionId: SessionId,

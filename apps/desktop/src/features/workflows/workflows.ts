@@ -981,17 +981,6 @@ export const invokeAgentGenerationReserve = async ({
   };
 };
 
-export const invokeAgentGenerationBind = async ({
-  bindings,
-}: {
-  readonly bindings: ReadonlyArray<Readonly<{ reservationId: string; agentId: AgentId }>>;
-}): Promise<void> => {
-  if (bindings.length === 0) {
-    return;
-  }
-  await invoke('agent_generation_bind', { bindings });
-};
-
 type RawClusterExecutionNodeRow = {
   readonly nodeId: string;
   readonly agentId: AgentId | null;
@@ -1184,6 +1173,7 @@ export type AgentInsertArgs = {
   readonly routingLock?: WorkflowRoutingLock | null;
   readonly routingDecision?: WorkflowRoutingDecision | null;
   readonly taskProfile?: WorkflowTaskProfile | null;
+  readonly generationReservationId?: string;
 };
 
 const toAgentInsertPayload = ({ run }: { readonly run: AgentInsertArgs }) => ({
@@ -1225,6 +1215,7 @@ const toAgentInsertPayload = ({ run }: { readonly run: AgentInsertArgs }) => ({
     isValid: isWorkflowTaskProfile,
     field: 'task profile',
   }),
+  generationReservationId: run.generationReservationId ?? null,
 });
 
 export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> => {

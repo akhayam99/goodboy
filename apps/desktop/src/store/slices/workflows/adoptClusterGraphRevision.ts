@@ -18,7 +18,7 @@ import {
   invokeClusterGraphRevisionRefuse,
   type AgentInsertArgs,
 } from '../../../features/workflows/workflows';
-import { bindGeneration, reserveGeneration } from '../agents/reserveGeneration';
+import { reserveGeneration } from '../agents/reserveGeneration';
 import { childRoutingBatch } from './childRoutingBatch';
 import { releasedSourceIds } from './releasedClusterSources';
 import type { GetFn, SetFn } from './types';
@@ -256,6 +256,7 @@ export const adoptClusterGraphRevision = async ({
       ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
       ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
       ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
+      generationReservationId: reservation.reservations[index]!.reservationId,
     };
   });
   const nodes: ReadonlyArray<ClusterExecutionNode> = outcome.nodes.map((node) => ({
@@ -286,7 +287,6 @@ export const adoptClusterGraphRevision = async ({
       reason: `the proposal was formed against revision ${graph.revision} and the execution is at revision ${adopted.graph.revision}`,
     });
   }
-  await bindGeneration({ reservations: reservation.reservations, agentIds: materializedIds });
   const refreshed = await invokeAgentList(sessionId);
   rememberGraph({ set, sessionId, graph: adopted.graph });
   set((state) => ({

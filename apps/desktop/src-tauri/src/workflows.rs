@@ -265,6 +265,8 @@ pub struct PhaseRunInsertInput {
     pub routing_decision: Option<String>,
     #[serde(rename = "taskProfile")]
     pub task_profile: Option<String>,
+    #[serde(rename = "generationReservationId", default)]
+    pub generation_reservation_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -633,14 +635,6 @@ pub struct GenerationReservationOutcome {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct GenerationBindingInput {
-    #[serde(rename = "reservationId")]
-    pub reservation_id: String,
-    #[serde(rename = "agentId")]
-    pub agent_id: String,
-}
-
-#[derive(Debug, Deserialize)]
 pub struct ClusterCompletionHoldResolutionInput {
     pub id: String,
     #[serde(rename = "resolutionEvidence")]
@@ -823,6 +817,8 @@ pub enum PhaseError {
     NodeNotMutable(String),
     #[error("cluster completion hold resolution requires evidence")]
     InvalidHoldResolution,
+    #[error("generation reservation cannot be bound: {0}")]
+    ReservationNotBindable(String),
 }
 
 crate::util::impl_error_serialize!(PhaseError);
@@ -837,6 +833,7 @@ impl PhaseError {
             PhaseError::InvalidRouting => "invalid_routing",
             PhaseError::NodeNotMutable(_) => "node_not_mutable",
             PhaseError::InvalidHoldResolution => "invalid_hold_resolution",
+            PhaseError::ReservationNotBindable(_) => "reservation_not_bindable",
         }
     }
 }
@@ -2380,6 +2377,7 @@ fn resolve_lineage(
     let mut seen: Vec<String> = Vec::new();
     let mut cursor = parent.to_string();
     let mut root = parent.to_string();
+    let mut structural_depth: i64 = 0;
     for step in 0..ANCESTRY_WALK_CAP {
         if seen.iter().any(|entry| entry == &cursor) {
             return Ok(LineageResolution::Invalid(
@@ -2420,6 +2418,7 @@ fn resolve_lineage(
                     ));
                 }
                 cursor = next;
+                structural_depth += 1;
             }
         }
     }
@@ -2430,7 +2429,8 @@ fn resolve_lineage(
             |row| row.get::<_, i64>(0),
         )
         .optional()?
-        .unwrap_or(0);
+        .unwrap_or(0)
+        .max(structural_depth);
     Ok(LineageResolution::Resolved {
         causal_root_agent_id: Some(root),
         parent_depth,
@@ -2446,6 +2446,14 @@ fn count_of(
         .map_err(PhaseError::Db)
 }
 
+fn generation_refusal_scope(input: &GenerationReservationInput) -> String {
+    match (input.parent_agent_id.as_deref(), input.workflow_run_id.as_deref()) {
+        (Some(parent), _) => format!("agent:{parent}"),
+        (None, Some(run)) => format!("run:{run}"),
+        (None, None) => "session".to_string(),
+    }
+}
+
 fn record_generation_refusal(
     conn: &rusqlite::Connection,
     input: &GenerationReservationInput,
@@ -2455,14 +2463,15 @@ fn record_generation_refusal(
 ) -> Result<bool, PhaseError> {
     let changed = conn.execute(
         "INSERT OR IGNORE INTO generation_refusals
-           (id, session_id, workflow_run_id, parent_agent_id, causal_root_agent_id, obligation_id,
-            limit_name, reason, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+           (id, session_id, workflow_run_id, parent_agent_id, scope_key, causal_root_agent_id,
+            obligation_id, limit_name, reason, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
         rusqlite::params![
-            format!("generation-refusal:{}:{}", input.reservation_id, limit),
+            format!("generation-refusal:{}", crate::util::uuid_v4()),
             input.session_id,
             input.workflow_run_id,
-            input.parent_agent_id.clone().unwrap_or_else(|| "none".to_string()),
+            input.parent_agent_id,
+            generation_refusal_scope(input),
             causal_root_agent_id,
             input.obligation_id,
             limit,
@@ -2597,11 +2606,12 @@ fn reserve_agent_generation(
         }
     }
     let now = crate::util::now_ms();
+    let attempt = format!("{}:{}", input.reservation_id, crate::util::uuid_v4());
     let mut reservations: Vec<GenerationReservationRow> = Vec::new();
     for index in 0..input.count {
-        let id = format!("{}:{index}", input.reservation_id);
+        let id = format!("{attempt}:{index}");
         tx.execute(
-            "INSERT OR IGNORE INTO agent_generation_ledger
+            "INSERT INTO agent_generation_ledger
                (id, session_id, workflow_run_id, parent_agent_id, causal_root_agent_id, agent_id,
                 depth, creation_path, obligation_id, purpose, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, NULL, ?6, ?7, ?8, ?9, ?10)",
@@ -2643,29 +2653,24 @@ pub async fn agent_generation_reserve(
     reserve_agent_generation(&mut conn, input)
 }
 
-fn bind_agent_generation(
+fn bind_generation_reservation(
     conn: &rusqlite::Connection,
-    bindings: Vec<GenerationBindingInput>,
+    reservation_id: &str,
+    agent_id: &str,
 ) -> Result<(), PhaseError> {
-    for binding in bindings.iter() {
-        conn.execute(
-            "UPDATE agent_generation_ledger
-                SET agent_id = ?1,
-                    causal_root_agent_id = CASE WHEN parent_agent_id IS NULL THEN ?1 ELSE causal_root_agent_id END
-              WHERE id = ?2",
-            rusqlite::params![binding.agent_id, binding.reservation_id],
-        )?;
+    let changed = conn.execute(
+        "UPDATE agent_generation_ledger
+            SET agent_id = ?1,
+                causal_root_agent_id = CASE WHEN parent_agent_id IS NULL THEN ?1 ELSE causal_root_agent_id END
+          WHERE id = ?2 AND agent_id IS NULL",
+        rusqlite::params![agent_id, reservation_id],
+    )?;
+    if changed == 0 {
+        return Err(PhaseError::ReservationNotBindable(format!(
+            "reservation {reservation_id} is missing or already bound to an agent"
+        )));
     }
     Ok(())
-}
-
-#[tauri::command]
-pub async fn agent_generation_bind(
-    state: State<'_, Db>,
-    bindings: Vec<GenerationBindingInput>,
-) -> Result<(), PhaseError> {
-    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
-    bind_agent_generation(&conn, bindings)
 }
 
 fn capability_purpose_for_finding_target(target: &str) -> Option<&'static str> {
@@ -2826,7 +2831,8 @@ fn record_cluster_execution_graph(
     input: ClusterExecutionGraphInput,
 ) -> Result<ClusterExecutionGraphRow, PhaseError> {
     let now = crate::util::now_ms();
-    conn.execute(
+    let transaction = conn.unchecked_transaction()?;
+    let created = transaction.execute(
         "INSERT OR IGNORE INTO cluster_execution_graphs
            (container_agent_id, session_id, workflow_run_id, plan_id, goal_title,
             execution_version, graph_json, created_at)
@@ -2842,8 +2848,13 @@ fn record_cluster_execution_graph(
             now,
         ],
     )?;
-    for node in input.nodes.iter() {
-        conn.execute(
+    let nodes_to_record = if created == 1 {
+        input.nodes.as_slice()
+    } else {
+        &[]
+    };
+    for node in nodes_to_record {
+        transaction.execute(
             "INSERT OR IGNORE INTO cluster_execution_nodes
                (container_agent_id, node_id, agent_id, ordinal, role, state, superseded_by,
                 revision, result_state)
@@ -2857,6 +2868,7 @@ fn record_cluster_execution_graph(
             ],
         )?;
     }
+    transaction.commit()?;
     let sql = format!(
         "SELECT {CLUSTER_EXECUTION_GRAPH_COLUMNS} FROM cluster_execution_graphs WHERE container_agent_id = ?1"
     );
@@ -3098,6 +3110,9 @@ fn insert_agent_row(
             input.execution_purpose,
         ],
     )?;
+    if let Some(reservation_id) = input.generation_reservation_id.as_deref() {
+        bind_generation_reservation(conn, reservation_id, &id)?;
+    }
 
     Ok(SessionRow {
         id,
@@ -3139,13 +3154,23 @@ pub async fn agent_insert(
     state: State<'_, Db>,
     input: PhaseRunInsertInput,
 ) -> Result<SessionRow, PhaseError> {
-    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    let mut conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    insert_agent(&mut conn, input)
+}
+
+fn insert_agent(
+    conn: &mut rusqlite::Connection,
+    input: PhaseRunInsertInput,
+) -> Result<SessionRow, PhaseError> {
     validate_routing_values(
         input.routing_lock.as_ref(),
         input.routing_decision.as_ref(),
         input.task_profile.as_ref(),
     )?;
-    insert_agent_row(&conn, input)
+    let transaction = conn.transaction()?;
+    let row = insert_agent_row(&transaction, input)?;
+    transaction.commit()?;
+    Ok(row)
 }
 
 fn children_of_parent(
@@ -4113,6 +4138,46 @@ mod tests {
     }
 
     #[test]
+    fn cluster_execution_graph_rerecord_adds_no_node_binding() {
+        let conn = execution_graphs_conn();
+        record_cluster_execution_graph(&conn, execution_graph_input("[{\"id\":\"discovery\"}]"))
+            .unwrap();
+        let mut repeat = execution_graph_input("[{\"id\":\"discovery\"}]");
+        repeat.nodes.push(ClusterExecutionNodeRow {
+            node_id: "extra".to_string(),
+            agent_id: Some("agent-2".to_string()),
+            ordinal: 1,
+            role: "tester".to_string(),
+        });
+        let second = record_cluster_execution_graph(&conn, repeat).unwrap();
+
+        assert_eq!(second.nodes.len(), 1);
+        assert_eq!(second.nodes[0].node_id, "discovery");
+    }
+
+    #[test]
+    fn cluster_execution_graph_record_rolls_back_on_a_failed_node() {
+        let conn = execution_graphs_conn();
+        conn.execute_batch(
+            "CREATE TRIGGER reject_extra BEFORE INSERT ON cluster_execution_nodes
+             WHEN NEW.node_id = 'extra' BEGIN SELECT RAISE(ABORT, 'rejected'); END;",
+        )
+        .unwrap();
+        let mut failing = execution_graph_input("[{\"id\":\"discovery\"}]");
+        failing.nodes.push(ClusterExecutionNodeRow {
+            node_id: "extra".to_string(),
+            agent_id: None,
+            ordinal: 1,
+            role: "tester".to_string(),
+        });
+
+        assert!(record_cluster_execution_graph(&conn, failing).is_err());
+        assert!(list_cluster_execution_graphs(&conn, "session")
+            .unwrap()
+            .is_empty());
+    }
+
+    #[test]
     fn cluster_completion_hold_resolution_records_evidence() {
         let conn = completion_holds_conn();
         record_cluster_completion_hold(&conn, completion_hold_input("hold-1")).unwrap();
@@ -4360,6 +4425,7 @@ mod tests {
                 r#"{"taskType":"implementation","difficulty":"heavy","basis":"agent"}"#.to_string(),
             ),
             execution_purpose: Some("cluster".to_string()),
+            generation_reservation_id: None,
         }
     }
 
@@ -4546,13 +4612,14 @@ mod tests {
                 id TEXT PRIMARY KEY,
                 session_id TEXT NOT NULL,
                 workflow_run_id TEXT,
-                parent_agent_id TEXT NOT NULL,
+                parent_agent_id TEXT,
+                scope_key TEXT NOT NULL,
                 causal_root_agent_id TEXT,
                 obligation_id TEXT,
                 limit_name TEXT NOT NULL,
                 reason TEXT NOT NULL,
                 created_at INTEGER NOT NULL,
-                UNIQUE (parent_agent_id, limit_name)
+                UNIQUE (session_id, scope_key, limit_name)
             );
             CREATE TABLE evidence_inventories (
                 id TEXT PRIMARY KEY,
@@ -4610,17 +4677,30 @@ mod tests {
             reserve_agent_generation(conn, reservation_input(&format!("reservation:{child}"), Some(parent)))
                 .unwrap();
         if outcome.kind == "granted" {
-            seed_agent(conn, child, Some(parent), "session");
-            bind_agent_generation(
-                conn,
-                vec![GenerationBindingInput {
-                    reservation_id: outcome.reservations[0].reservation_id.clone(),
-                    agent_id: child.to_string(),
-                }],
-            )
-            .unwrap();
+            insert_bound_agent(conn, child, Some(parent), &outcome.reservations[0].reservation_id)
+                .unwrap();
         }
         outcome
+    }
+
+    fn insert_bound_agent(
+        conn: &mut rusqlite::Connection,
+        id: &str,
+        parent: Option<&str>,
+        reservation_id: &str,
+    ) -> Result<SessionRow, PhaseError> {
+        insert_agent(
+            conn,
+            PhaseRunInsertInput {
+                session_id: "session".to_string(),
+                parent_agent_id: parent.map(|value| value.to_string()),
+                workflow_run_id: None,
+                routing_decision: None,
+                task_profile: None,
+                generation_reservation_id: Some(reservation_id.to_string()),
+                ..child_input(id, 0)
+            },
+        )
     }
 
     #[test]
@@ -4697,6 +4777,130 @@ mod tests {
         assert_eq!(cycle.limit.as_deref(), Some("lineage"));
         assert!(missing.reason.unwrap().contains("not on record"));
         assert!(foreign.reason.unwrap().contains("another session"));
+    }
+
+    #[test]
+    fn generation_gives_every_attempt_its_own_reservation() {
+        let mut conn = generation_conn();
+        seed_agent(&conn, "root", None, "session");
+
+        let first =
+            reserve_agent_generation(&mut conn, reservation_input("reservation:same", Some("root")))
+                .unwrap();
+        let retry =
+            reserve_agent_generation(&mut conn, reservation_input("reservation:same", Some("root")))
+                .unwrap();
+
+        assert_eq!(first.kind, "granted");
+        assert_eq!(retry.kind, "granted");
+        assert_ne!(
+            first.reservations[0].reservation_id,
+            retry.reservations[0].reservation_id
+        );
+        let rows: i64 = conn
+            .query_row("SELECT COUNT(*) FROM agent_generation_ledger", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(rows, 2);
+    }
+
+    #[test]
+    fn generation_refunds_nothing_when_a_deleted_child_is_retried() {
+        let mut conn = generation_conn();
+        seed_agent(&conn, "root", None, "session");
+        for index in 0..GENERATION_ROOT_DESCENDANT_CAP {
+            assert_eq!(generate(&mut conn, "root", &format!("child-{index}")).kind, "granted");
+        }
+        conn.execute("DELETE FROM agents WHERE id = 'child-0'", []).unwrap();
+
+        let retry = generate(&mut conn, "root", "child-0");
+
+        assert_eq!(retry.kind, "refused");
+        assert_eq!(retry.limit.as_deref(), Some("root-descendants"));
+    }
+
+    #[test]
+    fn agent_insert_binds_a_reservation_once_and_rolls_back_otherwise() {
+        let mut conn = generation_conn();
+        seed_agent(&conn, "root", None, "session");
+        let granted =
+            reserve_agent_generation(&mut conn, reservation_input("reservation:once", Some("root")))
+                .unwrap();
+        let reservation_id = granted.reservations[0].reservation_id.clone();
+
+        assert!(insert_bound_agent(&mut conn, "first", Some("root"), &reservation_id).is_ok());
+        assert!(insert_bound_agent(&mut conn, "second", Some("root"), &reservation_id).is_err());
+        assert!(insert_bound_agent(&mut conn, "third", Some("root"), "reservation:ghost:0").is_err());
+
+        let bound: String = conn
+            .query_row(
+                "SELECT agent_id FROM agent_generation_ledger WHERE id = ?1",
+                rusqlite::params![reservation_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(bound, "first");
+        let orphans: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM agents WHERE id IN ('second', 'third')",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(orphans, 0);
+    }
+
+    #[test]
+    fn generation_counts_depth_from_lineage_when_the_parent_has_no_ledger_row() {
+        let mut conn = generation_conn();
+        seed_agent(&conn, "root", None, "session");
+        seed_agent(&conn, "legacy-1", Some("root"), "session");
+        seed_agent(&conn, "legacy-2", Some("legacy-1"), "session");
+        seed_agent(&conn, "legacy-3", Some("legacy-2"), "session");
+
+        let deep =
+            reserve_agent_generation(&mut conn, reservation_input("reservation:deep", Some("legacy-3")))
+                .unwrap();
+
+        assert_eq!(deep.kind, "refused");
+        assert_eq!(deep.limit.as_deref(), Some("depth"));
+    }
+
+    #[test]
+    fn generation_notifies_a_root_refusal_once_per_session_and_run() {
+        let mut conn = generation_conn();
+        for (session, run) in [("session-a", "run-a"), ("session-b", "run-b")] {
+            for index in 0..GENERATION_RUN_CAP {
+                conn.execute(
+                    "INSERT INTO agent_generation_ledger
+                       (id, session_id, workflow_run_id, parent_agent_id, causal_root_agent_id,
+                        agent_id, depth, creation_path, created_at)
+                     VALUES (?1, ?2, ?3, NULL, ?1, NULL, 0, 'workflow-step', 0)",
+                    rusqlite::params![format!("{run}:{index}"), session, run],
+                )
+                .unwrap();
+            }
+        }
+        let root_input = |reservation: &str, session: &str, run: &str| GenerationReservationInput {
+            session_id: session.to_string(),
+            workflow_run_id: Some(run.to_string()),
+            creation_path: "workflow-step".to_string(),
+            ..reservation_input(reservation, None)
+        };
+
+        let first_a =
+            reserve_agent_generation(&mut conn, root_input("reservation:a1", "session-a", "run-a"))
+                .unwrap();
+        let again_a =
+            reserve_agent_generation(&mut conn, root_input("reservation:a2", "session-a", "run-a"))
+                .unwrap();
+        let first_b =
+            reserve_agent_generation(&mut conn, root_input("reservation:b1", "session-b", "run-b"))
+                .unwrap();
+
+        assert_eq!(first_a.limit.as_deref(), Some("run-descendants"));
+        assert!(first_a.is_first_refusal);
+        assert!(!again_a.is_first_refusal);
+        assert!(first_b.is_first_refusal);
     }
 
     #[test]

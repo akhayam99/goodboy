@@ -24,6 +24,7 @@ const repairNeed = {
 };
 
 const CURRENT_REVISION = 'rabc123';
+const CURRENT_SOURCES: ReadonlySet<string> = new Set(['review:finding-1']);
 
 describe('capability need validation', () => {
   it('accepts a reviewer asking an implementer for a repair', () => {
@@ -33,6 +34,7 @@ describe('capability need validation', () => {
       requesterAgentId: 'agent-1',
       requesterRole: 'reviewer',
       inventoryRevision: CURRENT_REVISION,
+      inventorySourceIds: CURRENT_SOURCES,
     });
 
     expect(outcome.kind).toBe('valid');
@@ -47,6 +49,7 @@ describe('capability need validation', () => {
       requesterAgentId: 'agent-1',
       requesterRole: 'reviewer',
       inventoryRevision: CURRENT_REVISION,
+      inventorySourceIds: CURRENT_SOURCES,
     });
 
     expect(outcome).toEqual({
@@ -63,6 +66,7 @@ describe('capability need validation', () => {
       requesterAgentId: 'agent-1',
       requesterRole: 'planner',
       inventoryRevision: CURRENT_REVISION,
+      inventorySourceIds: CURRENT_SOURCES,
     });
 
     expect(outcome.kind).toBe('rejected');
@@ -79,6 +83,7 @@ describe('capability need validation', () => {
       requesterAgentId: 'agent-1',
       requesterRole: 'reviewer',
       inventoryRevision: CURRENT_REVISION,
+      inventorySourceIds: CURRENT_SOURCES,
     });
 
     expect(outcome.kind).toBe('rejected');
@@ -92,6 +97,7 @@ describe('capability need validation', () => {
       requesterAgentId: 'agent-1',
       requesterRole: 'reviewer',
       inventoryRevision: CURRENT_REVISION,
+      inventorySourceIds: CURRENT_SOURCES,
     });
 
     expect(outcome.kind).toBe('rejected');
@@ -105,6 +111,7 @@ describe('capability need validation', () => {
       requesterAgentId: 'agent-1',
       requesterRole: 'reviewer',
       inventoryRevision: CURRENT_REVISION,
+      inventorySourceIds: CURRENT_SOURCES,
     });
 
     expect(outcome.kind).toBe('rejected');
@@ -119,6 +126,7 @@ describe('capability need validation', () => {
         requesterAgentId: 'agent-1',
         requesterRole: 'reviewer',
         inventoryRevision: CURRENT_REVISION,
+        inventorySourceIds: CURRENT_SOURCES,
       }),
     ).toEqual({ kind: 'none' });
   });
@@ -135,6 +143,7 @@ describe('capability need validation', () => {
       requesterAgentId: 'agent-1',
       requesterRole: 'reviewer',
       inventoryRevision: CURRENT_REVISION,
+      inventorySourceIds: CURRENT_SOURCES,
     });
 
     expect(outcome.kind === 'valid' ? outcome.need.targetRole : null).toBe('investigator');
@@ -166,10 +175,53 @@ describe('capability need validation', () => {
       requesterAgentId: 'agent-1',
       requesterRole: 'reviewer',
       inventoryRevision: CURRENT_REVISION,
+      inventorySourceIds: CURRENT_SOURCES,
     });
 
     expect(outcome.kind).toBe('rejected');
     expect(outcome.kind === 'rejected' ? outcome.rejection : null).toBe('stale-inventory');
+  });
+
+  it('rejects a need citing evidence the inventory does not list', () => {
+    const outcome = validateCapabilityNeed({
+      assistantText: needBody({ ...repairNeed, evidence: ['review:finding-1', 'review:ghost'] }),
+      emittingProvider: null,
+      requesterAgentId: 'agent-1',
+      requesterRole: 'reviewer',
+      inventoryRevision: CURRENT_REVISION,
+      inventorySourceIds: CURRENT_SOURCES,
+    });
+
+    expect(outcome).toEqual({
+      kind: 'rejected',
+      rejection: 'unknown-evidence',
+      reason: 'the need cites evidence the inventory does not list: review:ghost',
+    });
+  });
+
+  it('rejects a need body that leaves out a contract field', () => {
+    const { gap: _gap, ...withoutGap } = repairNeed;
+    expect(
+      extractCapabilityNeed({ assistantText: needBody(withoutGap), emittingProvider: null }),
+    ).toEqual({ kind: 'malformed', reason: 'the need body carries no gap' });
+    expect(
+      extractCapabilityNeed({
+        assistantText: needBody({ ...repairNeed, scope: 'sendTurn.ts' }),
+        emittingProvider: null,
+      }),
+    ).toEqual({ kind: 'malformed', reason: 'the need body carries no scope list' });
+    expect(
+      extractCapabilityNeed({
+        assistantText: needBody({ ...repairNeed, evidence: [1] }),
+        emittingProvider: null,
+      }),
+    ).toEqual({ kind: 'malformed', reason: 'the need body carries no evidence list' });
+    expect(
+      extractCapabilityNeed({
+        assistantText: needBody({ ...repairNeed, expectedOutput: null }),
+        emittingProvider: null,
+      }),
+    ).toEqual({ kind: 'malformed', reason: 'the need body carries no expected output' });
   });
 
   it('maps completion finding targets onto obligation purposes', () => {
