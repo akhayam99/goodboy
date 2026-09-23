@@ -258,7 +258,7 @@ describe('OnboardingWizard', () => {
       fireEvent.click(screen.getByRole('button', { name: /get started/i }));
       expect(
         screen.getByText(
-          'Connect one provider to continue. Connect installs the CLI when it is missing.',
+          'Connect one provider to continue. Install sets up a missing CLI, then signs you in.',
         ),
       ).toBeDefined();
     });

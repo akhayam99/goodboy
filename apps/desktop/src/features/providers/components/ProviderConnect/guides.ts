@@ -35,7 +35,7 @@ const INSTALL_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
       },
       {
         title: 'After install',
-        body: 'Goodboy automatically moves to the sign-in step. You stay in the same modal, no re-clicking.',
+        body: 'Goodboy moves to the sign-in step on its own, in the same place.',
       },
     ],
     docsUrl: ANTHROPIC_DOCS,

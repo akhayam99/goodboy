@@ -1,33 +1,13 @@
-import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider } from '@goodboy/core';
 import { useState } from 'react';
-import { Check } from 'lucide-react';
-import { Button } from '@goodboy/ui';
 import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { PROVIDER_LABEL_LOWER, type ProviderDisplayInfo } from '../../../providers/providers';
-import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
-import { StatusPill } from '../../../providers/components/ProviderLifecycleTile/StatusPill';
-import { ProviderConnectModal } from '../../../providers/components/ProviderConnectModal';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-
-export const PROVIDER_ORDER = [
-  'anthropic',
-  'codex',
-  'cursor',
-  'gemini',
-  'opencode',
-  'openrouter',
-  'moonshot',
-] satisfies ReadonlyArray<ProviderId>;
-
-type Expect<T extends true> = T;
-type ProviderOrderIsTotal =
-  Exclude<ProviderId, (typeof PROVIDER_ORDER)[number]> extends never ? true : false;
-type _ProviderOrderTotalCheck = Expect<ProviderOrderIsTotal>;
+import { type ProviderDisplayInfo } from '../../../providers/providers';
+import { PROVIDER_ORDER } from '../../../providers/components/ProviderStudio/providerOrder';
+import { ProviderRow } from './ProviderRow';
 
 export const ProvidersStep = () => {
   const providers = useAppStore((s) => s.providers);
-  const [connectTarget, setConnectTarget] = useState<ProviderId | null>(null);
+  const [expandedId, setExpandedId] = useState<ProviderId | null>(null);
   const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
     (p): p is ProviderDisplayInfo => p !== undefined,
   );
@@ -39,62 +19,20 @@ export const ProvidersStep = () => {
           Connect a provider
         </h2>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          Every agent runs through a provider CLI, so connect at least one.
+          Every agent runs through a provider, so connect at least one.
         </p>
       </div>
 
       <ul className="flex flex-col gap-2">
         {ordered.map((info) => (
-          <ProviderRow key={info.id} info={info} onConnect={setConnectTarget} />
+          <ProviderRow
+            key={info.id}
+            info={info}
+            isExpanded={expandedId === info.id}
+            onExpandedChange={({ providerId }) => setExpandedId(providerId)}
+          />
         ))}
       </ul>
-
-      <ProviderConnectModal providerId={connectTarget} onClose={() => setConnectTarget(null)} />
     </div>
   );
 };
-
-function ProviderRow({
-  info,
-  onConnect,
-}: {
-  info: ProviderDisplayInfo;
-  onConnect: (providerId: ProviderId) => void;
-}) {
-  const Icon = PROVIDER_BRAND[info.id].icon;
-  const connected = info.connection === 'connected';
-  const isApi = isApiProvider({ id: info.id });
-  const isManual = PROVIDER_CONNECT_CAPABILITIES[info.id].tier === 'manual';
-
-  return (
-    <li className="flex items-center gap-3 rounded-lg border border-border-soft bg-subtle px-3.5 py-2.5">
-      <span
-        className="flex size-8 shrink-0 items-center justify-center rounded-md bg-subtle"
-        style={{ color: brandColor(info.id) }}
-      >
-        <Icon size={ICON_SIZE.hero} aria-hidden />
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-sm font-medium capitalize text-foreground">
-          {PROVIDER_LABEL_LOWER[info.id]}
-        </span>
-        <StatusPill connection={info.connection} />
-      </div>
-      {connected ? (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
-          <Check size={ICON_SIZE.control} aria-hidden /> Connected
-        </span>
-      ) : isApi ? (
-        <span className="text-xs text-muted-foreground">Set up later</span>
-      ) : isManual ? (
-        <Button size="sm" variant="ghost" onClick={() => onConnect(info.id)}>
-          Set up manually
-        </Button>
-      ) : (
-        <Button size="sm" variant="secondary" onClick={() => onConnect(info.id)}>
-          Connect
-        </Button>
-      )}
-    </li>
-  );
-}

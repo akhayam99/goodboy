@@ -46,7 +46,7 @@ const setConnect = (patch: Partial<ProviderConnectState>) => {
   state.providerConnect = { anthropic: { ...IDLE, ...patch }, gemini: { ...IDLE } };
 };
 
-const renderConnect = (chrome: 'studio' | 'modal' | 'inline' = 'modal', id = 'anthropic') =>
+const renderConnect = (chrome: 'studio' | 'inline' = 'inline', id = 'anthropic') =>
   render(<ProviderConnect providerId={id as ProviderId} chrome={chrome} onDone={vi.fn()} />);
 
 beforeEach(() => {
@@ -100,7 +100,7 @@ describe('ProviderConnect', () => {
 
     setConnect({ phase: 'fallback-offered', step: 'login', command: 'claude auth login' });
     view.rerender(
-      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="modal" onDone={vi.fn()} />,
+      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="inline" onDone={vi.fn()} />,
     );
 
     expect(screen.getByText(/If this keeps failing/)).toBeDefined();
@@ -115,7 +115,7 @@ describe('ProviderConnect', () => {
 
     setConnect({ phase: 'stall', step: 'login', runId: 'run-1' });
     view.rerender(
-      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="modal" onDone={vi.fn()} />,
+      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="inline" onDone={vi.fn()} />,
     );
 
     expect(screen.getByText('This sign-in needs a choice from you.')).toBeDefined();
@@ -130,7 +130,7 @@ describe('ProviderConnect', () => {
 
     setConnect({ phase: 'working', step: 'login', runId: 'run-1' });
     view.rerender(
-      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="modal" onDone={vi.fn()} />,
+      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="inline" onDone={vi.fn()} />,
     );
 
     expect(screen.getByText('live terminal')).toBeDefined();
@@ -145,7 +145,7 @@ describe('ProviderConnect', () => {
 
     setConnect({ phase: 'failed', step: 'login', runId: 'run-1', command: 'claude auth login' });
     view.rerender(
-      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="modal" onDone={vi.fn()} />,
+      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="inline" onDone={vi.fn()} />,
     );
 
     expect(screen.getByText('live terminal')).toBeDefined();
@@ -159,7 +159,7 @@ describe('ProviderConnect', () => {
 
     setConnect({ phase: 'success', identity: 'ada@example.com', runId: 'run-1' });
     view.rerender(
-      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="modal" onDone={vi.fn()} />,
+      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="inline" onDone={vi.fn()} />,
     );
 
     expect(screen.getByText('live terminal')).toBeDefined();
@@ -184,7 +184,7 @@ describe('ProviderConnect', () => {
 
     setConnect({ phase: 'handoff', step: 'login', runId: 'run-1', authUrl: 'https://x.test' });
     view.rerender(
-      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="modal" onDone={vi.fn()} />,
+      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="inline" onDone={vi.fn()} />,
     );
 
     expect(screen.getByText('live terminal')).toBeDefined();
@@ -242,7 +242,7 @@ describe('ProviderConnect', () => {
 
     setConnect({ phase: 'finished-unverified' });
     view.rerender(
-      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="modal" onDone={vi.fn()} />,
+      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="inline" onDone={vi.fn()} />,
     );
 
     expect(
@@ -260,7 +260,7 @@ describe('ProviderConnect', () => {
   });
 
   it('never offers connect for a provider Goodboy cannot drive', () => {
-    renderConnect('modal', 'gemini');
+    renderConnect('inline', 'gemini');
 
     expect(screen.queryByRole('button', { name: 'Connect' })).toBeNull();
     expect(screen.getByText(/no auth subcommand/i)).toBeDefined();

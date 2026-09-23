@@ -12,9 +12,15 @@ type Props = {
   readonly providerId: ProviderId;
   readonly onDone: () => void;
   readonly onInFlightChange?: (isInFlight: boolean) => void;
+  readonly autoStart?: boolean;
 };
 
-export const ProviderInlineConnect = ({ providerId, onDone, onInFlightChange }: Props) => {
+export const ProviderInlineConnect = ({
+  providerId,
+  onDone,
+  onInFlightChange,
+  autoStart = false,
+}: Props) => {
   const phase = useAppStore((state) => state.providerConnect[providerId].phase);
   const running = isConnectRunning({ phase });
 
@@ -44,7 +50,12 @@ export const ProviderInlineConnect = ({ providerId, onDone, onInFlightChange }: 
   return (
     <ScrollFade className="min-h-0 max-h-96" fadeFrom="subtle">
       <div className="p-3">
-        <ProviderConnect providerId={providerId} chrome="inline" onDone={onDone} />
+        <ProviderConnect
+          providerId={providerId}
+          chrome="inline"
+          autoStart={autoStart}
+          onDone={onDone}
+        />
       </div>
     </ScrollFade>
   );

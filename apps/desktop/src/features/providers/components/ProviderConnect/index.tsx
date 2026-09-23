@@ -7,7 +7,7 @@ import { useAppStore } from '../../../../store';
 import { openUrl } from '../../../../shared/lib/editor';
 import { PROVIDER_LABEL_LOWER } from '../../providers';
 import { PROVIDER_BRAND } from '../provider-brand';
-import { guideFor } from '../ProviderConnectModal/guides';
+import { guideFor } from './guides';
 import { ConnectDetails } from './ConnectDetails';
 import { ManualNote } from './ManualNote';
 import { TrustNote } from './TrustNote';

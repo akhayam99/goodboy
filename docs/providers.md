@@ -433,13 +433,14 @@ When a provider ships or retires a model, update three files under
 
 ### Source map
 
-- `packages/types/src/provider-connect.ts`: connect tiers and `loginEnv`
-- `packages/types/src/provider-commands.ts`: install, login and logout commands
-- `packages/types/src/provider-catalog.ts`: `PROVIDER_KIND`, `OPENCODE_ROUTING`
-- `packages/types/src/provider-registry.ts`: provider ids, `PROVIDER_API_KEY_ENV`
+- `packages/core/src/providers/provider-connect.ts`: connect tiers and `loginEnv`
+- `packages/core/src/providers/provider-commands.ts`: install, login and logout commands
+- `packages/core/src/providers/provider-catalog.ts`: `PROVIDER_KIND`, `OPENCODE_ROUTING`
+- `packages/types/src/provider-registry.ts`: provider ids
+- `packages/core/src/providers/provider-api-key-env.ts`: `PROVIDER_API_KEY_ENV`
 - `apps/desktop/src/store/slices/providers/connectProvider.ts`: the steps and timers behind **Connect**
 - `apps/desktop/src/features/providers/components/ProviderStudio/`: the provider cards and **Defaults**
-- `apps/desktop/src/features/providers/components/ProviderConnectModal/guides.ts`: the guide text shown in the app
+- `apps/desktop/src/features/providers/components/ProviderConnect/guides.ts`: the guide text shown in the app
 - `apps/desktop/src-tauri/src/providers.rs`: finding CLIs and checking sign-in
 - `apps/desktop/src-tauri/src/provider_credentials.rs`: API key checks
 - `apps/desktop/src-tauri/src/turn.rs`: the args and env for starting a turn

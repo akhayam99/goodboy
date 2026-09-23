@@ -29,7 +29,7 @@ type Cta = {
 };
 
 const PROVIDER_GATE_HINT =
-  'Connect one provider to continue. Connect installs the CLI when it is missing.';
+  'Connect one provider to continue. Install sets up a missing CLI, then signs you in.';
 
 export const OnboardingWizard = () => {
   const { open, mode, providersConnected, hasWorkspace, workspace, projectCount } =
