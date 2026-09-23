@@ -254,6 +254,47 @@ describe('store contract', () => {
       );
     });
 
+    it('emitNotification keeps the row in memory when the insert fails', async () => {
+      const store = useAppStore;
+      storySpies.insertNotification.mockRejectedValueOnce(new Error('database is locked'));
+      await expect(
+        store.getState().emitNotification({ kind: 'error', severity: 'error', title: 'Kept' }),
+      ).resolves.toBeUndefined();
+      expect(store.getState().notifications[0]?.title).toBe('Kept');
+      expect(store.getState().notificationCounts.unread).toBe(1);
+    });
+
+    it('reportError persists an error row with the formatted failure as body', async () => {
+      const store = useAppStore;
+      await store.getState().reportError({
+        title: "Couldn't prune transcripts",
+        error: new Error('disk full'),
+        sessionId: SESSION_ID,
+      });
+      const row = store.getState().notifications[0];
+      expect(row).toMatchObject({
+        kind: 'error',
+        severity: 'error',
+        title: "Couldn't prune transcripts",
+        sessionId: SESSION_ID,
+      });
+      expect(row?.body).toContain('disk full');
+      expect(storySpies.insertNotification).toHaveBeenCalledTimes(1);
+    });
+
+    it('reportError truncates a long failure and honours a warning severity', async () => {
+      const store = useAppStore;
+      await store.getState().reportError({
+        title: "Couldn't read the log",
+        error: 'x'.repeat(2000),
+        severity: 'warning',
+      });
+      const row = store.getState().notifications[0];
+      expect(row?.severity).toBe('warning');
+      expect(row?.body).toHaveLength(600);
+      expect(row?.body?.endsWith('…')).toBe(true);
+    });
+
     it('markNotificationsRead flips read=true on all entries', async () => {
       const store = useAppStore;
       store.setState({

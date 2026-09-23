@@ -83,6 +83,7 @@ import { type AgentKind } from '../features/session/agent-kind';
 import type { TerminalTabId, TerminalTabStatus } from '../shared/types/terminal';
 import { createNotificationsSlice } from './slices/notifications';
 import type { EmitNotificationParams } from './slices/notifications/emitNotification';
+import type { ReportErrorParams } from './slices/notifications/reportError';
 import { createNudgesSlice } from './slices/nudges';
 import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts';
 import { createPlansSlice } from './slices/plans';
@@ -870,6 +871,7 @@ type AppActions = {
   removeGoalAttachment(owner: GoalAttachmentOwner, id: string): Promise<void>;
   loadNotifications(): Promise<void>;
   emitNotification(params: EmitNotificationParams): Promise<void>;
+  reportError(params: ReportErrorParams): Promise<void>;
   retryStepSummary(params: {
     sessionId: SessionId;
     agentId: AgentId;

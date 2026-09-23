@@ -46,7 +46,6 @@ export const emitNotification = (set: SetFn) => {
       coalesceKey:
         coalesceKey ?? `${kind}:${sessionId ?? workspaceId ?? 'global'}:${severity}:${title}`,
     };
-    await insertNotification(tauriDatabase, n);
     set((state) => ({
       notifications: [n, ...state.notifications].slice(0, NOTIFICATION_LIST_LIMIT),
       notificationCounts: {
@@ -54,5 +53,6 @@ export const emitNotification = (set: SetFn) => {
         unread: state.notificationCounts.unread + 1,
       },
     }));
+    await insertNotification(tauriDatabase, n).catch(() => undefined);
   };
 };
