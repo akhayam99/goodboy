@@ -7,6 +7,18 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.4.0
+
+Goodboy is now source-available under the Functional Source License: still free, still yours to read and change, and every version turns MIT two years after it ships.
+
+### [#1858] A new license, FSL-1.1-MIT
+
+From this version on, Goodboy ships under FSL-1.1-MIT instead of MIT. You can use it for anything, at work included, read the code, change it and share your changes. The one thing it rules out is selling Goodboy, or something built from it, as a product that competes with Goodboy.
+
+Each version becomes MIT two years after it is published, so v0.4.0 turns MIT in September 2028. Every release up to v0.3.15 keeps the MIT license it shipped with.
+
+Nothing changes in how the app works: every feature is still included, with no account and no new bill.
+
 ## Goodboy v0.3.15
 
 The orchestrator starts on every provider, reads your hints when you say so, and the context bar shows what the model is really holding.
