@@ -4,6 +4,7 @@ import { WorkspaceScene } from './scenes/WorkspaceScene';
 import { WorkflowScene } from './scenes/WorkflowScene';
 import { ShellScene } from './scenes/ShellScene';
 import { ChatShellScene } from './scenes/ChatShellScene';
+import { InboxScene } from './scenes/InboxScene';
 import { MountsScene } from './scenes/MountsScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
@@ -53,6 +54,7 @@ const SCENES = {
   workflow: WorkflowScene,
   shell: ShellScene,
   'chat-shell': ChatShellScene,
+  inbox: InboxScene,
   mounts: MountsScene,
   'mount-mismatch': MountMismatchScene,
   resolve: ResolveScene,
