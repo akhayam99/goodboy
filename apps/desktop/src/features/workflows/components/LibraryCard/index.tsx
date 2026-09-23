@@ -1,7 +1,8 @@
 import { ClampedProse, ConfirmPopover, Tooltip, cn, tintClasses, Eyebrow } from '@goodboy/ui';
 import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { StepDef } from '@goodboy/types';
-import { agentKindPalette, kindForRole, ROLE_LABEL } from '../../../session/agent-kind';
+import { kindForRole, ROLE_LABEL } from '../../../session/agent-kind';
+import { AgentKindChip } from '../../../session/components/AgentKindChip';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -37,11 +38,9 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
       />
       <AgentAvatar kind={kind} size="sm" />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-20">
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-center gap-2">
           <span className="truncate text-xs font-medium text-foreground">{def.name}</span>
-          <span className={cn('shrink-0 text-2xs font-medium', agentKindPalette({ kind }).fg)}>
-            {ROLE_LABEL[def.role]}
-          </span>
+          <AgentKindChip kind={kind} label={ROLE_LABEL[def.role]} />
         </div>
         {def.promptPrefix ? (
           <ClampedProse

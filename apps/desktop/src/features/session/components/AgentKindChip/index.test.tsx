@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { AgentKindChip } from '.';
 import { AGENT_KIND_ORDER, type AgentKind } from '../../agent-kind';
 
@@ -72,5 +73,23 @@ describe('AgentKindChip', () => {
     const { container } = render(<AgentKindChip kind="tester" />);
     expect(container.querySelector('[aria-hidden]')).toBeNull();
     expect(screen.getByText('Test')).toBeDefined();
+  });
+
+  it('renders the label density by default with the kind label, or the label it is given', () => {
+    render(<AgentKindChip kind="debugger" label="Debugger" />);
+    expect(screen.getByText('Debugger').className).toContain('w-24');
+  });
+
+  it('renders the glyph density as the kind avatar named by its tooltip', () => {
+    render(<AgentKindChip kind="planner" density="glyph" />);
+
+    const glyph = screen.getByRole('img', { name: 'Plan' });
+    expect(screen.queryByText('Plan')).toBeNull();
+    expect(tooltipTextOf({ element: glyph })).toBe('Plan');
+  });
+
+  it('lets a glyph name the step it stands for', () => {
+    render(<AgentKindChip kind="tester" density="glyph" title="Cover the retry path" />);
+    expect(screen.getByRole('img', { name: 'Cover the retry path' })).toBeDefined();
   });
 });

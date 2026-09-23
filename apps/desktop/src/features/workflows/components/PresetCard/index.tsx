@@ -1,7 +1,7 @@
 import { ClampedProse, SelectableRow } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import { classifyStep } from '../../../session/agent-kind';
-import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
+import { AgentKindChip } from '../../../session/components/AgentKindChip';
 import { WorkflowOriginTag } from '../WorkflowOriginTag';
 
 type Props = {
@@ -34,7 +34,7 @@ export const PresetCard = ({ template, active, onSelect }: Props) => {
           <span className="flex flex-wrap items-center gap-2 pr-8">
             {steps.map((step) => {
               const kind = classifyStep({ step });
-              return <AgentAvatar key={step.id} kind={kind} size="xs" title={step.name} />;
+              return <AgentKindChip key={step.id} kind={kind} density="glyph" title={step.name} />;
             })}
           </span>
         ) : null}

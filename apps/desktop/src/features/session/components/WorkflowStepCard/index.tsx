@@ -4,6 +4,7 @@ import { ClampedProse, cn, Input, Textarea, Tooltip, tintClasses, Eyebrow } from
 import type { AgentRole, EffortLevel, ProviderId, VerbosityLevel } from '@goodboy/types';
 import { agentKindPalette, ROLE_LABEL, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
+import { AgentKindChip } from '../AgentKindChip';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { WORKFLOW_ROUTING_COPY } from '../../../workflows/workflowRoutingCopy';
@@ -151,11 +152,7 @@ export const WorkflowStepCard = ({
       <AgentAvatar kind={kind} size="sm" />
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span className="min-w-0 truncate text-xs font-medium text-foreground">{displayName}</span>
-        {onRole == null ? (
-          <span className={cn('shrink-0 text-3xs font-medium uppercase tracking-eyebrow', pal.fg)}>
-            {ROLE_LABEL[role]}
-          </span>
-        ) : null}
+        {onRole == null ? <AgentKindChip kind={kind} label={ROLE_LABEL[role]} /> : null}
       </span>
       {trailing}
     </span>

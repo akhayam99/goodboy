@@ -89,11 +89,21 @@ section of the guide uses it.
 ## Agent kinds
 
 Agent kinds do **not** get a lucide glyph. They are shown by the mascot plus
-a color per kind in `shared/components/AgentAvatar`, which comes from
-`AGENT_KIND_PALETTE` in `features/session/agent-kind.ts`. A second glyph system
-for the same ten kinds (`generic`, `scout`, `planner`, `implementer`,
-`debugger`, `tester`, `reviewer`, `pr-reviewer`, `docs`, `resolver`) would
-compete with it. Use `AgentAvatar`.
+a color per kind in `shared/components/AgentAvatar`, read through
+`agentKindPalette({ kind })` in `features/session/agent-kind.ts`. The list of
+kinds is `AGENT_KIND_META` in the same file. A second glyph system for the same
+kinds would compete with it. Use `AgentAvatar`.
+
+A kind shown as a label always renders through `AgentKindChip`, one tinted
+recipe at two densities:
+
+- `label` (default): the fixed-width tinted chip, so a column of chips stays
+  lined up (tree rows, the timeline, step and library cards). `label` can
+  change the text where a surface names the role instead of the kind.
+- `glyph`: the kind avatar at `xs` with the label in a tooltip, for dense
+  strips such as preset cards.
+
+Never build a colored role word or an outlined kind chip by hand.
 
 ## Run states
 
