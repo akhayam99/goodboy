@@ -210,6 +210,40 @@ describe('cluster graph revisions', () => {
     expect(journal[0]?.state).toBe('adopted');
   });
 
+  it('keeps the graph at its revision when a node write fails during adoption', async () => {
+    const db = await seed();
+    await recordClusterExecutionGraph({ db, snapshot });
+    await expect(
+      adoptClusterGraphRevision({
+        db,
+        revision: {
+          id: 'rev-1',
+          containerAgentId,
+          obligationId: null,
+          fromRevision: 1,
+          toRevision: 2,
+          reason: 'broken',
+          graph,
+          nodes: [
+            {
+              nodeId: 'impl-2',
+              agentId: null,
+              ordinal: 0,
+              role: 'not-a-role' as 'implementer',
+              state: 'active',
+              supersededBy: null,
+              revision: 2,
+              resultState: 'pending',
+            },
+          ],
+        },
+      }),
+    ).rejects.toThrow();
+    const stored = await getClusterExecutionGraph({ db, containerAgentId });
+    expect(stored?.revision).toBe(1);
+    expect(await listClusterGraphRevisions({ db, containerAgentId })).toHaveLength(0);
+  });
+
   it('refuses a revision formed against an older graph and leaves the graph alone', async () => {
     const db = await seed();
     await recordClusterExecutionGraph({ db, snapshot });
