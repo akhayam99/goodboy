@@ -4,8 +4,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { TranscriptItem } from '../../utils/transcript-items';
 
+const cardRenders = vi.hoisted(() => ({ count: 0 }));
+
 vi.mock('../TranscriptCards', () => ({
-  TranscriptCard: ({ item }: { item: TranscriptItem }) => <div data-testid="card">{item.key}</div>,
+  TranscriptCard: ({ item }: { item: TranscriptItem }) => {
+    cardRenders.count += 1;
+    return <div data-testid="card">{item.key}</div>;
+  },
 }));
 
 import { OperationsCluster } from './index';
@@ -164,5 +169,18 @@ describe('OperationsCluster', () => {
     expect(screen.getAllByTestId('card')).toHaveLength(1);
     fireEvent.click(screen.getByRole('button'));
     expect(screen.queryByTestId('card')).toBeNull();
+  });
+
+  it('skips re-rendering when the parent rebuilds the same items', () => {
+    const { rerender } = render(<OperationsCluster items={[tool('a'), tool('b', false)]} />);
+    fireEvent.click(screen.getByRole('button'));
+    const before = cardRenders.count;
+
+    rerender(<OperationsCluster items={[tool('a'), tool('b', false)]} />);
+    expect(cardRenders.count).toBe(before);
+
+    rerender(<OperationsCluster items={[tool('a'), tool('b')]} />);
+    expect(cardRenders.count).toBeGreaterThan(before);
+    expect(screen.queryByText('grep')).toBeNull();
   });
 });

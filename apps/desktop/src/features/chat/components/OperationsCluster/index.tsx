@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Layers } from 'lucide-react';
 import { cn, MetaRow, tintClasses } from '@goodboy/ui';
 import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
+import { transcriptItemsEqual } from '../../utils/transcriptItemEqual';
 import { formatDuration } from '../../utils/format-duration';
 import { useElapsedMs } from '../../hooks/useElapsedMs';
 import { TranscriptCard } from '../TranscriptCards';
@@ -38,7 +39,7 @@ const dangerTint = tintClasses('danger');
 const successTint = tintClasses('success');
 const runningTint = tintClasses('info');
 
-export const OperationsCluster = ({
+const OperationsClusterView = ({
   items,
   sessionId = null,
   agentId = null,
@@ -49,10 +50,15 @@ export const OperationsCluster = ({
   retryingErrorRunId = null,
 }: Props) => {
   const [open, setOpen] = useState(false);
-  const running = runningTool(items);
+  const { running, errorCount, successCount } = useMemo(() => {
+    const failed = items.reduce((n, i) => (i.kind === 'tool_call' && i.isError ? n + 1 : n), 0);
+    return {
+      running: runningTool(items),
+      errorCount: failed,
+      successCount: items.length - failed,
+    };
+  }, [items]);
   const elapsedMs = useElapsedMs({ running: running != null });
-  const errorCount = items.reduce((n, i) => (i.kind === 'tool_call' && i.isError ? n + 1 : n), 0);
-  const successCount = items.length - errorCount;
   const showError = running == null && errorCount > 0;
   const stateIcon =
     running != null
@@ -158,3 +164,15 @@ export const OperationsCluster = ({
     </TranscriptDisclosure>
   );
 };
+
+const propsEqual = (previous: Props, next: Props): boolean =>
+  transcriptItemsEqual({ previous: previous.items, next: next.items }) &&
+  previous.sessionId === next.sessionId &&
+  previous.agentId === next.agentId &&
+  previous.workingDir === next.workingDir &&
+  previous.onRefreshAuth === next.onRefreshAuth &&
+  previous.onOpenDiff === next.onOpenDiff &&
+  previous.onRetryError === next.onRetryError &&
+  previous.retryingErrorRunId === next.retryingErrorRunId;
+
+export const OperationsCluster = memo(OperationsClusterView, propsEqual);

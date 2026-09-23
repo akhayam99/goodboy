@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
+import { transcriptItemEqual } from '../../utils/transcriptItemEqual';
 import { ArtifactBlockCard } from '../ArtifactBlockCard';
 import { ArtifactCaptureNoticeCard } from '../ArtifactCaptureNoticeCard';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
@@ -114,29 +115,10 @@ function TranscriptCardImpl({
   }
 }
 
-function itemEqual(a: TranscriptItem, b: TranscriptItem): boolean {
-  if (a === b) {
-    return true;
-  }
-  if (a.kind !== b.kind || a.key !== b.key) {
-    return false;
-  }
-  if (a.kind === 'tool_call' && b.kind === 'tool_call') {
-    return a.ended === b.ended && a.isError === b.isError && a.output === b.output;
-  }
-  if (a.kind === 'assistant_text' && b.kind === 'assistant_text') {
-    return a.text === b.text;
-  }
-  if (a.kind === 'artifact_block' && b.kind === 'artifact_block') {
-    return a.complete === b.complete && a.artifactKind === b.artifactKind && a.title === b.title;
-  }
-  return true;
-}
-
 export const TranscriptCard = memo(
   TranscriptCardImpl,
   (prev, next) =>
-    itemEqual(prev.item, next.item) &&
+    transcriptItemEqual({ previous: prev.item, next: next.item }) &&
     prev.sessionId === next.sessionId &&
     prev.agentId === next.agentId &&
     prev.workingDir === next.workingDir &&
