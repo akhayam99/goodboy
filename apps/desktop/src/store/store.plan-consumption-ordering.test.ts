@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetWorkflowTurnBreaker } from './slices/turn/workflowTurnBreaker';
+import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from './storyHarness';
 import type {
   ProjectId,
   Agent,
@@ -392,6 +393,12 @@ function streamText(text: string) {
   };
 }
 
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
 describe('autorun plan consumption ordering', () => {
   let idleSpy: typeof globalThis.requestIdleCallback | undefined;
 
@@ -424,7 +431,6 @@ describe('autorun plan consumption ordering', () => {
   });
 
   it('persists the plan before the implementer reads it, recording a consumption (plan flips to consumed)', async () => {
-    const { useAppStore } = await import('./store');
     seedStore(useAppStore);
     runTurnSpy
       .mockImplementationOnce(streamText(PLAN_MARKER))
@@ -453,7 +459,6 @@ describe('autorun plan consumption ordering', () => {
   });
 
   it('does not auto-advance on empty planner output: retries then fails the step', async () => {
-    const { useAppStore } = await import('./store');
     seedStore(useAppStore);
     runTurnSpy.mockImplementation(() => emptyStream());
 
@@ -475,7 +480,6 @@ describe('autorun plan consumption ordering', () => {
   });
 
   it('fans out when the persisted plan carries 2+ clusters, after recording the consumption', async () => {
-    const { useAppStore } = await import('./store');
     seedStore(useAppStore);
     runTurnSpy.mockImplementationOnce(streamText(PLAN_MARKER_WITH_CLUSTERS));
 
@@ -495,7 +499,6 @@ describe('autorun plan consumption ordering', () => {
   });
 
   it('persists the plan strictly before recording its consumption (race-fix invariant)', async () => {
-    const { useAppStore } = await import('./store');
     seedStore(useAppStore);
     runTurnSpy
       .mockImplementationOnce(streamText(PLAN_MARKER))
@@ -515,7 +518,6 @@ describe('autorun plan consumption ordering', () => {
   });
 
   it('does not auto-advance or capture a plan when the planner turn errors', async () => {
-    const { useAppStore } = await import('./store');
     seedStore(useAppStore);
     runTurnSpy.mockImplementationOnce(() => {
       throw new Error('provider boom');
@@ -536,7 +538,6 @@ describe('autorun plan consumption ordering', () => {
   });
 
   it('still auto-advances when plan capture fails, recording no consumption', async () => {
-    const { useAppStore } = await import('./store');
     seedStore(useAppStore);
     upsertPlanSpy.mockRejectedValueOnce(new Error('db unavailable'));
     runTurnSpy
@@ -557,7 +558,6 @@ describe('autorun plan consumption ordering', () => {
   });
 
   it('captures the plan but records no consumption outside a workflow', async () => {
-    const { useAppStore } = await import('./store');
     seedStore(useAppStore);
     useAppStore.setState({ sessions: [{ ...makeSession(), workflowRuns: [] }] });
     runTurnSpy.mockImplementationOnce(streamText(PLAN_MARKER));

@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from './storyHarness';
 import type {
   Agent,
   AgentId,
@@ -204,6 +205,12 @@ function makeRetryEntry(overrides: { id?: string; payloadJson?: string; attempts
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {}
 
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
 describe('audit retry queue, sendTurn enqueue on failure', () => {
   beforeEach(() => {
     runTurnSpy.mockReset();
@@ -223,11 +230,6 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
-
-  async function importStore() {
-    const mod = await import('./store');
-    return mod.useAppStore;
-  }
 
   function setupSession(useAppStore: Awaited<ReturnType<typeof importStore>>) {
     const defaultAgent: Agent = {
@@ -314,8 +316,6 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
       } as TurnEvent;
     }
     runTurnSpy.mockImplementation(() => toolStream());
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
     useAppStore.setState({ volatilePermissionAllows: new Set(['tu-1']) });
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
@@ -342,8 +342,6 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
       } as TurnEvent;
     }
     runTurnSpy.mockImplementation(() => toolStream());
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
 
@@ -394,9 +392,7 @@ describe('audit retry queue, drain worker (happy path)', () => {
       state: 'connected',
       identity: 'test',
     });
-
-    const mod = await import('./store');
-    await mod.useAppStore.getState().hydrate();
+    await useAppStore.getState().hydrate();
     await Promise.resolve();
   }
 
@@ -439,12 +435,10 @@ describe('audit retry queue, drain worker (happy path)', () => {
     const entry = { ...makeRetryEntry({ id: 'retry-exhausted', attempts: 4 }), updatedAt: 0 };
     auditRetryDrainSpy.mockResolvedValue([entry]);
     permissionAuditInsertSpy.mockRejectedValue(new Error('permanent failure'));
-
-    const mod = await import('./store');
     await runHydrate();
 
     await vi.waitFor(() => {
-      expect(mod.useAppStore.getState().notifications).toEqual([
+      expect(useAppStore.getState().notifications).toEqual([
         expect.objectContaining({
           kind: 'error',
           severity: 'error',
@@ -501,12 +495,10 @@ describe('audit retry queue, drain worker (happy path)', () => {
       updatedAt: 0,
     };
     auditRetryDrainSpy.mockResolvedValue([entry]);
-
-    const mod = await import('./store');
     await runHydrate();
 
     await vi.waitFor(() => {
-      expect(mod.useAppStore.getState().notifications).toEqual([
+      expect(useAppStore.getState().notifications).toEqual([
         expect.objectContaining({
           kind: 'error',
           severity: 'warning',

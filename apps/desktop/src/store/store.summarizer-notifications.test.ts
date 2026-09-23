@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from './storyHarness';
 import type { IsoDateTime, ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import { overridesWithAttribution } from '../__tests__/helpers/attributionOverrides';
 
@@ -207,6 +208,12 @@ const SESSION_ID = 'session-notif-test' as SessionId;
 const WORKSPACE_ID = 'ws-notif-test' as WorkspaceId;
 const NOW = '2026-07-23T00:00:00.000Z' as IsoDateTime;
 
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
 describe('summarizer notifications', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -223,8 +230,6 @@ describe('summarizer notifications', () => {
       usage: { inputTokens: 10, outputTokens: 5, cachedInputTokens: 0, estimatedCostUsd: 0 },
       model: 'claude-haiku-4-5',
     });
-
-    const { useAppStore } = await import('./store');
     const { enqueueSummarizer, summarizerQueues } = await import('./turn-helpers');
 
     summarizerQueues.delete(SESSION_ID);
@@ -291,8 +296,6 @@ describe('summarizer notifications', () => {
 
   it('failure notification body includes provider and error, carries retry action', async () => {
     summarizeSpy.mockRejectedValue(new Error('model overloaded'));
-
-    const { useAppStore } = await import('./store');
     const { enqueueSummarizer, summarizerQueues } = await import('./turn-helpers');
 
     summarizerQueues.delete(SESSION_ID);
@@ -364,8 +367,6 @@ describe('summarizer notifications', () => {
   it('retries a parse failure exactly once before surfacing it', async () => {
     const { SummarizerParseError } = await import('@goodboy/core');
     summarizeSpy.mockRejectedValue(new SummarizerParseError('not valid JSON', 'Sistema bloccato'));
-
-    const { useAppStore } = await import('./store');
     const { enqueueSummarizer, summarizerQueues } = await import('./turn-helpers');
 
     summarizerQueues.delete(SESSION_ID);
@@ -435,7 +436,6 @@ type SeedParams = {
 };
 
 const seedSummarizerState = async ({ connected, cooldowns }: SeedParams) => {
-  const { useAppStore } = await import('./store');
   const { PROVIDER_CAPABILITIES } = await import('@goodboy/core');
   useAppStore.setState({
     sessions: [
@@ -484,7 +484,6 @@ const seedSummarizerState = async ({ connected, cooldowns }: SeedParams) => {
 };
 
 const enqueue = async () => {
-  const { useAppStore } = await import('./store');
   const { enqueueSummarizer, summarizerQueues } = await import('./turn-helpers');
   summarizerQueues.delete(SESSION_ID);
   enqueueSummarizer({

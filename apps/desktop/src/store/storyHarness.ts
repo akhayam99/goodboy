@@ -34,7 +34,11 @@ export const STORY_NOW = '2026-08-22T00:00:00.000Z' as IsoDateTime;
 
 export const STORE_IMPORT_TIMEOUT_MS = 60_000;
 
-export const importStore = async () => (await import('./store')).useAppStore;
+export const importStoreModule = () => import('./store');
+
+export type StoryStoreModule = Awaited<ReturnType<typeof importStoreModule>>;
+
+export const importStore = async () => (await importStoreModule()).useAppStore;
 
 export type StoryStore = Awaited<ReturnType<typeof importStore>>;
 
@@ -326,7 +330,7 @@ export const resetStorySpies = () => {
 };
 
 export const resetStoryStore = async () => {
-  const { initialState, useAppStore } = await import('./store');
+  const { initialState, useAppStore } = await importStoreModule();
   resetStorySpies();
   useAppStore.setState(initialState);
   if (typeof globalThis.localStorage !== 'undefined') {

@@ -1,4 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../store/storyHarness';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
 
 vi.mock('../../turn', () => ({
@@ -118,11 +124,14 @@ const RUN_ID = 'run-1' as ProviderRunId;
 const AT: IsoDateTime = '2026-05-07T00:00:00.000Z' as IsoDateTime;
 
 describe('store unknownPayloadCounts', () => {
-  let useAppStore: (typeof import('../../store/store'))['useAppStore'];
+  let useAppStore: StoryStore;
+
+  beforeAll(async () => {
+    useAppStore = await importStore();
+  }, STORE_IMPORT_TIMEOUT_MS);
 
   beforeEach(async () => {
-    vi.resetModules();
-    ({ useAppStore } = await import('../../store/store'));
+    await resetStoryStore();
   });
 
   afterEach(() => {

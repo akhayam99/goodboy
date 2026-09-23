@@ -1,4 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../store/storyHarness';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
 
 vi.mock('../../turn', () => ({
@@ -141,10 +147,14 @@ function buildSession() {
 }
 
 describe('resolvePermissionRequest', () => {
-  let useAppStore: (typeof import('../../store/store'))['useAppStore'];
+  let useAppStore: StoryStore;
+
+  beforeAll(async () => {
+    useAppStore = await importStore();
+  }, STORE_IMPORT_TIMEOUT_MS);
 
   beforeEach(async () => {
-    vi.resetModules();
+    await resetStoryStore();
     permissionRuleUpsertSpy.mockReset();
     permissionRuleUpsertSpy.mockResolvedValue({
       id: 'rule-new',
@@ -155,7 +165,6 @@ describe('resolvePermissionRequest', () => {
       createdAt: AT,
       updatedAt: AT,
     });
-    ({ useAppStore } = await import('../../store/store'));
     useAppStore.setState({ sessions: [buildSession()] });
   });
 
@@ -237,7 +246,7 @@ describe('resolvePermissionRequest', () => {
 
   it('each scope appends a permission_decision TurnEvent', async () => {
     for (const scope of ['global', 'workspace', 'session', 'once', 'deny'] as const) {
-      vi.resetModules();
+      await resetStoryStore();
       permissionRuleUpsertSpy.mockReset();
       permissionRuleUpsertSpy.mockResolvedValue({
         id: 'rule-new',
@@ -248,7 +257,6 @@ describe('resolvePermissionRequest', () => {
         createdAt: AT,
         updatedAt: AT,
       });
-      ({ useAppStore } = await import('../../store/store'));
       useAppStore.setState({ sessions: [buildSession()] });
 
       await call(useAppStore.getState(), scope);
