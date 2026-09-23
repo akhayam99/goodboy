@@ -157,6 +157,10 @@ h2 {
   transform: translateX(3px);
 }
 
+.nobr {
+  white-space: nowrap;
+}
+
 .vh {
   position: absolute;
   width: 1px;
@@ -424,14 +428,6 @@ h2 {
   to {
     transform: translateY(-50%);
   }
-}
-
-.wall:after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(90deg, #fff 0, rgba(255, 255, 255, 0) 48px);
 }
 
 @media (max-width: 960px) {
@@ -704,7 +700,12 @@ h2 {
 }
 
 section.block {
-  padding: clamp(64px, 9vw, 104px) 0;
+  padding: clamp(56px, 7vw, 88px) 0;
+}
+
+section.block:not(.alt) + section.block:not(.alt),
+section.block.alt + section.block.alt {
+  padding-top: clamp(24px, 2.5vw, 32px);
 }
 
 section.block.alt {
@@ -729,6 +730,14 @@ section.block.alt {
     align-self: start;
   }
 
+  .split > .blockHead h2 {
+    font-size: clamp(30px, 3vw, 44px);
+  }
+
+  .split > .blockHead .sub {
+    font-size: 18px;
+  }
+
   .split > .more {
     grid-column: 1;
     grid-row: 2;
@@ -750,6 +759,10 @@ section.block.alt {
   .split.splitSticky > .blockHead {
     position: sticky;
     top: 96px;
+  }
+
+  .split.splitCenter > .splitBody {
+    align-self: center;
   }
 }
 
@@ -1245,4 +1258,11 @@ footer .right {
   margin-left: auto;
   display: flex;
   gap: 20px;
+}
+
+@media (max-width: 480px) {
+  footer .right {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
 }

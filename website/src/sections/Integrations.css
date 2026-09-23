@@ -361,11 +361,9 @@
 .ig-note {
   grid-column: 1 / -1;
   margin-top: 2px;
-  padding-top: 14px;
-  border-top: 1px solid var(--gray1);
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--gray7);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--gray6);
   opacity: 0;
   transition: opacity 0.58s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
@@ -376,7 +374,7 @@
 
 .ig-note b {
   font-weight: 600;
-  color: var(--ink);
+  color: var(--gray7);
 }
 
 @media (max-width: 900px) {
