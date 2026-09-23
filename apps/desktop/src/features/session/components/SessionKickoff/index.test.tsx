@@ -15,6 +15,10 @@ const { store, hooks, spies } = vi.hoisted(() => ({
       ReadonlyArray<{ provider: string; externalId: string }>
     >,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<{ status: string }>>,
+    sessionProjectMounts: { 'sess-kickoff': [{ projectId: 'project-1' }] } as Record<
+      string,
+      ReadonlyArray<{ projectId: string }>
+    >,
     openArtifactCreation: vi.fn(),
     linkSessionExternalTask: vi.fn(async () => undefined),
     upsertSessionSlot: vi.fn(async () => undefined),
@@ -59,6 +63,10 @@ vi.mock('../../../integrations/components/IntegrationGlyph', () => ({
   IntegrationGlyph: ({ provider }: { provider: string }) => (
     <span data-testid={`glyph-${provider}`} />
   ),
+}));
+
+vi.mock('../SessionOverviewPane/ProjectMountRows/MountProjectAction', () => ({
+  MountProjectAction: () => <button type="button">Mount project</button>,
 }));
 
 vi.mock('../CreateAgentPopover', () => ({
@@ -115,7 +123,7 @@ describe('SessionKickoff', () => {
     expect(screen.getByText('How do you want to start?')).toBeDefined();
     expect(screen.getByTestId('create-agent-tile')).toBeDefined();
     expect(screen.getByRole('button', { name: /Add workflow/ })).toBeDefined();
-    expect(screen.getByTestId('create-report-cta')).toBeDefined();
+    expect(screen.queryByTestId('create-report-cta')).toBeNull();
     expect(screen.getByTestId('create-wireframe-cta')).toBeDefined();
     expect(screen.getByText('Or pick up an issue')).toBeDefined();
     expect(screen.getByText('No tracker connected yet')).toBeDefined();
@@ -178,13 +186,21 @@ describe('SessionKickoff', () => {
     expect(onOpenWorkflowBuilder).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the report reachable as an explanation and the wireframe as an act', () => {
+  it('leads with mounting a project when the session has none', () => {
+    store.sessionProjectMounts = {};
     render(<SessionKickoff session={session} onOpenWorkflowBuilder={vi.fn()} />);
 
-    expect(screen.getByTestId('create-report-cta').hasAttribute('disabled')).toBe(true);
-    expect(
-      screen.getByText('nothing has run yet, so there is nothing to work from.'),
-    ).toBeDefined();
+    const mount = screen.getByRole('button', { name: 'Mount project' });
+    const workflow = screen.getByRole('button', { name: /Add workflow/ });
+    expect(mount.compareDocumentPosition(workflow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    store.sessionProjectMounts = { 'sess-kickoff': [{ projectId: 'project-1' }] };
+  });
+
+  it('holds the report back until there is something to report, and offers the wireframe', () => {
+    render(<SessionKickoff session={session} onOpenWorkflowBuilder={vi.fn()} />);
+
+    expect(screen.queryByTestId('create-report-cta')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Mount project' })).toBeNull();
 
     fireEvent.click(screen.getByTestId('create-wireframe-cta'));
     expect(store.openArtifactCreation).toHaveBeenCalledWith({

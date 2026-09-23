@@ -34,6 +34,7 @@ import { QueuedMessages } from './parts/QueuedMessages';
 import { SuggestionStack } from './parts/SuggestionStack';
 import { TurnErrorCallout } from '../TurnErrorCallout';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ARCHIVED_SESSION_REASON } from '../../../session/archivedSession';
 
 type Props = {
   readonly session: Session;
@@ -265,7 +266,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const submitDraft = async ({ force }: { readonly force: boolean }) => {
     const content = value.trim();
     const atts = attachments;
-    if ((!content && atts.length === 0) || providerDisconnected) return;
+    if ((!content && atts.length === 0) || providerDisconnected || session.archivedAt != null)
+      return;
     dispatch.setError(null);
     dispatch.setLastFailedTurn(null);
 
@@ -408,8 +410,14 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     }
   };
 
-  const canSend = !providerDisconnected && (value.trim().length > 0 || attachments.length > 0);
-  const sendDisabledTitle = providerDisconnected ? 'Sign in first' : undefined;
+  const isArchived = session.archivedAt != null;
+  const isBlocked = providerDisconnected || isArchived;
+  const canSend = !isBlocked && (value.trim().length > 0 || attachments.length > 0);
+  const sendDisabledTitle = isArchived
+    ? ARCHIVED_SESSION_REASON
+    : providerDisconnected
+      ? 'Sign in first'
+      : undefined;
   const overrideDisabledTitle = !routing.allowOverride
     ? 'this session was created without per-turn routing overrides'
     : undefined;
@@ -487,15 +495,17 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               onKeyDown={onKeyDown}
               onPaste={onPaste}
               placeholder={
-                providerDisconnected
-                  ? 'Sign in to send a message'
-                  : isRunning
-                    ? queue.length > 0
-                      ? 'Type to queue another message'
-                      : 'Turn running, type to queue the next message'
-                    : CHAT_PLACEHOLDER
+                isArchived
+                  ? ARCHIVED_SESSION_REASON
+                  : providerDisconnected
+                    ? 'Sign in to send a message'
+                    : isRunning
+                      ? queue.length > 0
+                        ? 'Type to queue another message'
+                        : 'Turn running, type to queue the next message'
+                      : CHAT_PLACEHOLDER
               }
-              disabled={providerDisconnected}
+              disabled={isBlocked}
               autoGrow
               rows={1}
               maxRows={12}
@@ -544,7 +554,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={providerDisconnected}
+                  disabled={isBlocked}
                   aria-label="Attach files"
                   className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                 >
@@ -565,7 +575,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   onValueChange('$');
                   wrapperRef.current?.querySelector('textarea')?.focus();
                 }}
-                disabled={providerDisconnected}
+                disabled={isBlocked}
                 title="Run a project script"
                 aria-label="Run a project script"
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md font-mono text-sm text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"

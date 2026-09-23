@@ -216,6 +216,11 @@ function sessionHasRunningAgentIn(state: StageInfoState, sessionId: SessionId): 
   return runs ? runs.some((r) => r.status === 'running') : false;
 }
 
+function sessionHasRunIn(state: StageInfoState, sessionId: SessionId): boolean {
+  const runs = state.sessionPhaseRuns[sessionId];
+  return runs === undefined || runs.length > 0;
+}
+
 function sessionIsDecidingIn(state: StageInfoState, session: Session): boolean {
   return session.workflowRuns.some(
     (run) => state.orchestratingWorkflowRuns?.[run.id] === true && run.discardedAt == null,
@@ -250,6 +255,7 @@ function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo 
     isDecidingWorkflow: sessionIsDecidingIn(state, session),
     isPrReview: isPrReviewSession({ agents: state.sessionPhaseRuns[sessionId] ?? [] }),
     isBranchless,
+    hasRun: sessionHasRunIn(state, sessionId),
   });
 }
 

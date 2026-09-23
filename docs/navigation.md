@@ -19,6 +19,10 @@
   is its one button (up to three lines, with the full goal in the tooltip). Its
   quick and lifecycle actions sit next to it, never nested inside it. Restoring
   an archived card uses the `restore` glyph.
+- **An archived session is read-only until Restore.** Its overview shows an
+  Archived chip with an inline Restore. The composer, new agents, workflows and
+  project mounts stay disabled with "Restore this session to continue". Nothing
+  restores on its own, so a shelved session never spends by itself.
 - **Four surfaces, four jobs, no competition.** The top bar is chrome ("where am I
   and what is it costing"). The footer is access ("where do I go"). The sidebar is
   presence ("what else is going on"). The ⌘K palette is transit ("where do I

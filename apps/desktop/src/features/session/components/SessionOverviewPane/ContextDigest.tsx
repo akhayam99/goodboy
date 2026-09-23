@@ -66,6 +66,10 @@ export const ContextDigest = ({ sessionId, onSelectLens }: Props) => {
     [slots],
   );
 
+  if (digest.decisions.count === 0 && digest.summary.count === 0) {
+    return null;
+  }
+
   return (
     <section aria-label="Context digest" className="flex min-w-0 flex-col">
       <DigestRow

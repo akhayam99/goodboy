@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { ReactElement, ReactNode } from 'react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
@@ -33,6 +33,8 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
 });
 
 import { GoalOverviewRegion } from './GoalOverviewRegion';
+import { GoalDetailAction } from './GoalDetailAction';
+import { goalPresence } from './goalPresence';
 
 const SESSION_ID = 'sess-1' as SessionId;
 
@@ -44,24 +46,36 @@ type RenderParams = {
   readonly onOpenHistory?: () => void;
 };
 
-const renderRegion = ({
+const Harness = ({
   value = 'Ship the parser rewrite',
   sessionTitle = 'Rewrite the parser',
   historyCount = 2,
   isLoading = false,
   onOpenHistory = vi.fn(),
-}: RenderParams = {}) =>
-  render(
-    <GoalOverviewRegion
-      sessionId={SESSION_ID}
-      sessionTitle={sessionTitle}
-      value={value}
-      historyCount={historyCount}
-      isLoading={isLoading}
-      isSummarizing={false}
-      onOpenHistory={onOpenHistory}
-    />,
+}: RenderParams) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const presence = goalPresence({ value, sessionTitle });
+  return (
+    <>
+      {presence === 'own' || isEditing || isLoading ? null : (
+        <GoalDetailAction presence={presence} disabled={false} onClick={() => setIsEditing(true)} />
+      )}
+      <GoalOverviewRegion
+        sessionId={SESSION_ID}
+        sessionTitle={sessionTitle}
+        value={value}
+        historyCount={historyCount}
+        isLoading={isLoading}
+        isSummarizing={false}
+        isEditing={isEditing}
+        onEditingChange={setIsEditing}
+        onOpenHistory={onOpenHistory}
+      />
+    </>
   );
+};
+
+const renderRegion = (params: RenderParams = {}) => render(<Harness {...params} />);
 
 beforeEach(() => {
   store.upsertSessionSlot.mockClear();
@@ -171,8 +185,7 @@ describe('GoalOverviewRegion', () => {
 
     expect(screen.queryByText('Ship the parser rewrite')).toBeNull();
     expect(screen.queryByText('Goal')).toBeNull();
-    const action = screen.getByRole('button', { name: 'Detail the goal' });
-    expect(action.textContent).toBe('Detail the goal');
+    expect(screen.getByRole('button', { name: 'Detail the goal' })).toBeDefined();
   });
 
   it('opens the editor on the current value from the quiet action', () => {
@@ -191,7 +204,7 @@ describe('GoalOverviewRegion', () => {
     renderRegion({ value: '', historyCount: 0 });
 
     expect(screen.queryByText('Goal')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Add a goal' }).textContent).toBe('Add a goal');
+    expect(screen.getByRole('button', { name: 'Add a goal' })).toBeDefined();
   });
 
   it('keeps previous versions reachable from the quiet row', () => {

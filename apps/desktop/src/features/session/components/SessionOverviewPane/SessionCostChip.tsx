@@ -64,10 +64,14 @@ export const SessionCostChip = ({ sessionId }: Props) => {
   const spent = formatUsd(sessionCost);
   const label = sessionBudget != null ? `${spent} / ${formatUsd(sessionBudget)}` : spent;
   const capNote = CAP_NOTE[capState];
+  const summariesSpend = (telemetry ?? EMPTY_ARRAY)
+    .filter((record) => record.kind === 'summarizer')
+    .reduce((sum, record) => sum + record.estimatedCostUsd, 0);
+  const summariesLine = summariesSpend > 0 ? `\nSummaries ${formatUsdPrecise(summariesSpend)}` : '';
   const title =
     sessionBudget != null
-      ? `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} of a ${formatUsdPrecise(sessionBudget)} cap${capNote} (excluding summarizer), click for budget details`
-      : `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} (excluding summarizer), click for budget details`;
+      ? `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} of a ${formatUsdPrecise(sessionBudget)} cap${capNote} (excluding summaries)${summariesLine}\nClick for budget details`
+      : `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} (excluding summaries)${summariesLine}\nClick for budget details`;
   const sessionLabel = sessionTitle({ session });
   const turns = useMemo<ReadonlyArray<WorkspaceTurn>>(
     () =>

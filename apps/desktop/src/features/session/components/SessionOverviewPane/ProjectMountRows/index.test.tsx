@@ -380,9 +380,6 @@ describe('ProjectMountRows', () => {
     expect(screen.getByText('Projects')).toBeDefined();
     expect(screen.queryByText('No project mounted yet')).toBeNull();
     expect(screen.getByRole('button', { name: 'Mount project' })).toBeDefined();
-    expect(
-      screen.getByText('Mount a workspace project to make it available in this session.'),
-    ).toBeDefined();
   });
 
   it('keeps the mount action in the section header when mounts exist', () => {

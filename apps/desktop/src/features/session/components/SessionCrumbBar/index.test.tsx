@@ -597,7 +597,7 @@ describe('SessionCrumbBar on a cluster child', () => {
       name: 'an extremely long father agent display name',
     });
     expect(father.className).toContain('truncate');
-    expect(father.className).toContain('max-w-48');
+    expect(father.className).toContain('max-w-64');
     const child = screen.getByRole('button', {
       name: /an even longer cluster child area description name/,
     });

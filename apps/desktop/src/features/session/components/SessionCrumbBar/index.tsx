@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { StatusDot, Tooltip } from '@goodboy/ui';
+import { StatusDot, Tooltip, cn } from '@goodboy/ui';
 import type { Agent, AgentId, ResolveAttempt, Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -156,7 +156,10 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
         const visibleCrumb = accessory === crumb.accessory ? crumb : { ...crumb, accessory };
 
         return (
-          <span key={crumb.id} className="flex min-w-0 items-center gap-2">
+          <span
+            key={crumb.id}
+            className={cn('flex min-w-0 items-center gap-2', isLast ? 'flex-1' : 'shrink')}
+          >
             {index > 0 ? (
               <ChevronRight
                 size={ICON_SIZE.row}

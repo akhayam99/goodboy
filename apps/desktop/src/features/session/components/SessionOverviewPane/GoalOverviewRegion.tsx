@@ -1,18 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
-import { History, Plus } from 'lucide-react';
-import {
-  Button,
-  Chip,
-  ClampedProse,
-  SectionHeader,
-  Skeleton,
-  Textarea,
-  Tooltip,
-  cn,
-} from '@goodboy/ui';
+import { History } from 'lucide-react';
+import { Button, ClampedProse, SectionHeader, Skeleton, Textarea, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { goalPresence } from './goalPresence';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -23,6 +15,8 @@ type Props = {
   readonly historyCount: number;
   readonly isLoading: boolean;
   readonly isSummarizing: boolean;
+  readonly isEditing: boolean;
+  readonly onEditingChange: (isEditing: boolean) => void;
   readonly onOpenHistory: () => void;
 };
 
@@ -45,10 +39,11 @@ export const GoalOverviewRegion = ({
   historyCount,
   isLoading,
   isSummarizing,
+  isEditing,
+  onEditingChange,
   onOpenHistory,
 }: Props) => {
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
-  const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value);
 
   useEffect(() => {
@@ -59,7 +54,7 @@ export const GoalOverviewRegion = ({
   }, [isEditing, value]);
 
   const commit = () => {
-    setIsEditing(false);
+    onEditingChange(false);
     if (draft === value) {
       return;
     }
@@ -70,7 +65,7 @@ export const GoalOverviewRegion = ({
     if (isSummarizing) {
       return;
     }
-    setIsEditing(true);
+    onEditingChange(true);
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
@@ -84,10 +79,7 @@ export const GoalOverviewRegion = ({
     startEditing();
   };
 
-  const hasValue = value !== '';
-  const isSameAsTitle = hasValue && value.trim() === sessionTitle.trim();
-  const hasOwnText = hasValue && !isSameAsTitle;
-  const isQuiet = !isLoading && !isEditing && !hasOwnText;
+  const isQuiet = !isLoading && !isEditing && goalPresence({ value, sessionTitle }) !== 'own';
   const historyAction =
     historyCount === 0 ? null : (
       <Tooltip content={`${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'}`}>
@@ -105,24 +97,10 @@ export const GoalOverviewRegion = ({
 
   if (isQuiet) {
     return (
-      <section aria-label="Goal" className="flex min-w-0 flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Tooltip content={isSameAsTitle ? 'The title is the whole goal so far' : 'No goal yet'}>
-            <Chip
-              as="button"
-              tone="neutral"
-              shape="badge"
-              size="control"
-              bordered={false}
-              disabled={isSummarizing}
-              onClick={startEditing}
-              icon={<Plus size={11} aria-hidden />}
-              label={isSameAsTitle ? 'Detail the goal' : 'Add a goal'}
-              className="border border-dashed border-border bg-transparent"
-            />
-          </Tooltip>
-          {historyAction}
-        </div>
+      <section aria-label="Goal" className="flex min-w-0 flex-col gap-2 empty:hidden">
+        {historyAction === null ? null : (
+          <div className="flex flex-wrap items-center gap-2">{historyAction}</div>
+        )}
         <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />
       </section>
     );
@@ -145,7 +123,7 @@ export const GoalOverviewRegion = ({
             if (event.key === 'Escape') {
               event.preventDefault();
               setDraft(value);
-              setIsEditing(false);
+              onEditingChange(false);
               return;
             }
             if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
