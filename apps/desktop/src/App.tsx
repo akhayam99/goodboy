@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { AppFooter } from './app/components/AppFooter';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import { BootSplash } from './app/components/BootSplash';
 import { KeepAliveWorkSurface } from './app/components/KeepAliveWorkSurface';
 import { AppTopBar } from './app/components/AppTopBar';
@@ -39,7 +39,8 @@ import {
 } from './store';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
-import { useGithubConnection } from './features/integrations/github/useGithubConnection';
+import { useConnectedIntegrations } from './features/integrations/hooks/useConnectedIntegrations';
+import { useAsyncSubscription } from './app/hooks/useAsyncSubscription';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
 import { MOCK_ENABLED } from './store/mock-data';
 import { MockScene } from './app/components/MockScene';
@@ -73,48 +74,9 @@ export const App = () => {
   const currentWorkspaceSessions = useSessions();
   const hasActiveSession = currentSession != null;
   const sessionSidebar = useSessionSidebarVisibility({ hasActiveSession });
-  const githubConnection = useGithubConnection({ workspaceId: currentWorkspace?.id ?? null });
-  const hasLinear = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'linear',
-    ),
-  );
-  const hasSentry = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'sentry',
-    ),
-  );
-  const hasJira = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'jira',
-    ),
-  );
-  const hasGitlab = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'gitlab',
-    ),
-  );
-  const hasBitbucket = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'bitbucket',
-    ),
-  );
-  const hasSlack = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'slack',
-    ),
-  );
+  const connected = useConnectedIntegrations({ workspaceId: currentWorkspaceId });
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
   const isWorkspaceLauncherBranch = hasWorkspaces && currentWorkspace === null && isMainWindow();
-  const connected = {
-    github: githubConnection.isAuthenticated,
-    linear: hasLinear,
-    sentry: hasSentry,
-    jira: hasJira,
-    gitlab: hasGitlab,
-    bitbucket: hasBitbucket,
-    slack: hasSlack,
-  };
   const {
     footer,
     armDeleteConfirm,
@@ -153,86 +115,11 @@ export const App = () => {
   useWindowPresence();
   useZoomShortcuts();
   useUnhandledRejectionNotice();
-
-  useEffect(() => {
-    let off: (() => void) | undefined;
-    let cancelled = false;
-    void listenBridgeCommands().then((fn) => {
-      if (cancelled) {
-        fn();
-        return;
-      }
-      off = fn;
-    });
-    return () => {
-      cancelled = true;
-      off?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    let off: (() => void) | undefined;
-    let cancelled = false;
-    void listenProjectMaterializeRequests().then((fn) => {
-      if (cancelled) {
-        fn();
-        return;
-      }
-      off = fn;
-    });
-    return () => {
-      cancelled = true;
-      off?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    let off: (() => void) | undefined;
-    let cancelled = false;
-    void listenMountCommands().then((fn) => {
-      if (cancelled) {
-        fn();
-        return;
-      }
-      off = fn;
-    });
-    return () => {
-      cancelled = true;
-      off?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    let off: (() => void) | undefined;
-    let cancelled = false;
-    void startWorktreeWriterBridge().then((fn) => {
-      if (cancelled) {
-        fn();
-        return;
-      }
-      off = fn;
-    });
-    return () => {
-      cancelled = true;
-      off?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    let off: (() => void) | undefined;
-    let cancelled = false;
-    void startPrWriteBridge().then((fn) => {
-      if (cancelled) {
-        fn();
-        return;
-      }
-      off = fn;
-    });
-    return () => {
-      cancelled = true;
-      off?.();
-    };
-  }, []);
+  useAsyncSubscription({ start: listenBridgeCommands });
+  useAsyncSubscription({ start: listenProjectMaterializeRequests });
+  useAsyncSubscription({ start: listenMountCommands });
+  useAsyncSubscription({ start: startWorktreeWriterBridge });
+  useAsyncSubscription({ start: startPrWriteBridge });
 
   useEffect(() => {
     setKeepAliveIds([]);
