@@ -44,7 +44,7 @@ Everything the app writes for itself lives under `~/.goodboy`:
 - `sessions/<workspace-slug>/<session-slug>-<id>/` is a session's container directory, for workspaces that did not configure their own sessions root. Repository project mounts use dedicated git worktrees under the repository's `.goodboy/worktrees/` directory. Several mounts of one project may belong to the same session.
 - `workspaces/<slug>/PROFILE.md` is the one-way projection of a workspace's profile; the database row is the source of truth and the file is never read back.
 - `file-versions/` holds the captured file version blobs.
-- `query-<pid>.sock` is the query bridge socket of a running instance ([query-bridge.md](query-bridge.md)).
+- `sockets/query-<pid>.sock` is the query bridge socket of a running instance ([query-bridge.md](query-bridge.md)). `sockets/` holds nothing but bridge sockets, because it is the only part of `~/.goodboy` a bridge-enabled agent is granted; the database, its sidecars and its snapshots stay outside that grant.
 - `boot-breadcrumbs.log` records boot phase timings.
 
 Two things live with the user's code instead: a folder project's session directories under `<project-root>/sessions/`, and skills under `<project-root>/.kay/skills/` or `<project-root>/.claude/skills/`.

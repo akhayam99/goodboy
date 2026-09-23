@@ -125,7 +125,7 @@ socket and is not served.
 ## One socket per running instance
 
 The socket file is named after the process that binds it, `query-<pid>.sock` in
-the state directory. A fixed name can only ever belong to the newest process
+`~/.goodboy/sockets/`. A fixed name can only ever belong to the newest process
 that started, and the loss is silent: an installed build and a development
 build both bind it, the second one wins, and the agents of the first keep
 talking to a bridge that answers from another database with another set of
@@ -138,6 +138,30 @@ is what a crash leaves behind, and never touches one whose owner is still
 alive, including another live instance. The fixed-name socket earlier versions
 bound is removed only when no listener answers on it, so upgrading does not
 disturb an older build that is still running.
+
+## A directory that holds only sockets
+
+A writer turn has to reach the socket from inside its sandbox, so the socket's
+directory is added to the turn's writable roots: `--add-dir` for Claude, and
+`--add-dir` under `workspace-write` for Codex. That grant is the reason the
+socket does not sit in `~/.goodboy` itself. Granting the state directory would
+hand every sandboxed writer the SQLite database, its WAL and SHM sidecars and
+its snapshots, including the lease and admission ledger meant to constrain that
+writer. The bridge therefore binds in `~/.goodboy/sockets/`, a directory it
+creates with mode `0700`, refuses to use when it is a symbolic link or belongs
+to another user, and grants alone. Nothing else is ever written there.
+
+The sweep can only remove Unix socket files whose names follow the bridge's own
+patterns. A regular file or a symbolic link is left alone whatever its name, so
+no sweep can delete the database, a sidecar or a snapshot, even one planted
+under a socket's name.
+
+Builds before this layout bound `query-<pid>.sock` directly in `~/.goodboy`. A
+starting instance also sweeps that previous location under the same rules: a
+socket whose owner has exited is removed, and a socket of an older build that
+is still running is left in place, together with the grant its own agents
+already hold, until that build exits. The previous location is never bound,
+advertised or granted again.
 
 The CLI is not a second program. It is the same executable the user launched,
 entered through the `query` first argument, which is answered and exited before
@@ -383,5 +407,6 @@ The current transport uses Unix domain sockets and therefore runs only on macOS
 and Linux. Windows does not advertise or serve the bridge. The socket exists
 only while its owning Goodboy process is running, belongs to the current OS
 user, is local to one machine, and cannot continue an operation while the app
-is stopped. Very long state-directory paths can also hit the platform's Unix
-socket path-length limit before a listener can bind.
+is stopped. A socket path longer than 103 bytes cannot be addressed on macOS,
+so a home directory deep enough to exceed it leaves the bridge unserved and
+unadvertised rather than failing at bind time.
