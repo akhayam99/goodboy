@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { VerbosityLevel, WorkspaceId } from '@goodboy/types';
+import type { WorkspaceId } from '@goodboy/types';
 import {
   Button,
   cn,
@@ -22,6 +22,8 @@ import { VerbositySelect } from '../../../../features/session/components/Verbosi
 import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';
+import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
+import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { primaryProjectRoot } from '../../../../features/workspace/primaryProjectRoot';
 import { useSectionAnchors } from '../../hooks/useSectionAnchors';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -51,7 +53,16 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
   const projectRoot = useAppStore((s) => primaryProjectRoot({ projects: s.projects, workspaceId }));
   const renameWorkspace = useAppStore((s) => s.renameWorkspace);
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
-  const storeSetWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
+  const patchWorkspaceOverrides = useAppStore((s) => s.patchWorkspaceOverrides);
+  const verbosity = useAppStore(
+    (s) => selectWorkspaceResolvedSettings({ state: s, workspaceId }).defaultVerbosity,
+  );
+  const parallelAgents = useAppStore(
+    (s) => selectWorkspaceResolvedSettings({ state: s, workspaceId }).parallelAgents,
+  );
+  const resolvedBranchPrefix = useAppStore(
+    (s) => selectWorkspaceResolvedSettings({ state: s, workspaceId }).defaultBranchPrefix,
+  );
   const runningCount = useAppStore((s) =>
     s.currentWorkspaceId === workspaceId
       ? s.sessions.filter((session) => session.state.kind === 'running').length
@@ -69,48 +80,27 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
   const { anchor } = useSectionAnchors({ section: initialSection });
 
-  const verbosity = wsOverrides?.defaultVerbosity ?? 'normal';
-  const parallelAgents = wsOverrides?.parallelAgents ?? false;
   const attributionFooter = isAttributionEnabled({ overrides: wsOverrides });
 
   useEffect(() => {
-    const value = wsOverrides?.defaultBranchPrefix ?? DEFAULT_BRANCH_PREFIX;
-    setBranchPrefix(value);
-    setSavedBranchPrefix(value);
-  }, [workspaceId, wsOverrides?.defaultBranchPrefix]);
+    setBranchPrefix(resolvedBranchPrefix);
+    setSavedBranchPrefix(resolvedBranchPrefix);
+  }, [workspaceId, resolvedBranchPrefix]);
 
   useEffect(() => {
     setDisplayName(workspace?.name ?? '');
   }, [workspace?.name]);
 
   const persistOverrides = async ({
-    partial,
+    patch,
     failureTitle,
   }: {
-    partial: Partial<{
-      defaultVerbosity: VerbosityLevel;
-      parallelAgents: boolean;
-      attributionFooter: boolean;
-      defaultBranchPrefix: string;
-    }>;
-    failureTitle: string;
+    readonly patch: WorkspaceOverridesPatch;
+    readonly failureTitle: string;
   }) => {
     setBusy(true);
     try {
-      await storeSetWorkspaceOverrides(workspaceId, {
-        defaultProviderId: wsOverrides?.defaultProviderId ?? null,
-        defaultWorkflowId: wsOverrides?.defaultWorkflowId ?? null,
-        defaultBranchPrefix: wsOverrides?.defaultBranchPrefix ?? null,
-        parallelEnabled: wsOverrides?.parallelEnabled ?? null,
-        defaultVerbosity: verbosity,
-        providerBindings: wsOverrides?.providerBindings ?? null,
-        taskModels: wsOverrides?.taskModels ?? null,
-        roleModels: wsOverrides?.roleModels ?? null,
-        parallelAgents,
-        providerPool: wsOverrides?.providerPool ?? null,
-        attributionFooter: wsOverrides?.attributionFooter ?? null,
-        ...partial,
-      });
+      await patchWorkspaceOverrides({ workspaceId, patch });
     } catch (err) {
       void reportError({ title: failureTitle, error: err, workspaceId });
     } finally {
@@ -143,19 +133,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
     }
     setBusy(true);
     try {
-      await storeSetWorkspaceOverrides(workspaceId, {
-        defaultProviderId: wsOverrides?.defaultProviderId ?? null,
-        defaultWorkflowId: wsOverrides?.defaultWorkflowId ?? null,
-        defaultBranchPrefix: next,
-        parallelEnabled: wsOverrides?.parallelEnabled ?? null,
-        defaultVerbosity: verbosity,
-        providerBindings: wsOverrides?.providerBindings ?? null,
-        taskModels: wsOverrides?.taskModels ?? null,
-        roleModels: wsOverrides?.roleModels ?? null,
-        parallelAgents,
-        providerPool: wsOverrides?.providerPool ?? null,
-        attributionFooter: wsOverrides?.attributionFooter ?? null,
-      });
+      await patchWorkspaceOverrides({ workspaceId, patch: { defaultBranchPrefix: next } });
       setBranchPrefix(next);
       setSavedBranchPrefix(next);
     } catch (err) {
@@ -279,7 +257,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                     value={verbosity}
                     onChange={(v) =>
                       void persistOverrides({
-                        partial: { defaultVerbosity: v },
+                        patch: { defaultVerbosity: v },
                         failureTitle: "Couldn't save the output verbosity",
                       })
                     }
@@ -298,7 +276,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   disabled={busy}
                   onChange={(next) =>
                     void persistOverrides({
-                      partial: { parallelAgents: next },
+                      patch: { parallelAgents: next },
                       failureTitle: "Couldn't save the parallel agents setting",
                     })
                   }
@@ -315,7 +293,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   disabled={busy}
                   onChange={(next) =>
                     void persistOverrides({
-                      partial: { attributionFooter: next },
+                      patch: { attributionFooter: next },
                       failureTitle: "Couldn't save the attribution line setting",
                     })
                   }

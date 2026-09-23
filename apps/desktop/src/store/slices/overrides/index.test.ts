@@ -209,5 +209,84 @@ describe('store contract', () => {
       expect(payload.overrides).toHaveProperty('providerPool', ['anthropic', 'codex']);
       expect(payload.overrides).not.toHaveProperty('enabledProviders');
     });
+
+    it('patchWorkspaceOverrides merges one key into the current row and keeps the others', async () => {
+      const store = useAppStore;
+      const base = buildWorkspace().overrides;
+      store.setState({
+        workspaceOverrides: {
+          [WS_ID]: { ...base, defaultBranchPrefix: 'hb', providerPool: ['anthropic'] },
+        },
+      });
+
+      await store
+        .getState()
+        .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { parallelAgents: true } });
+
+      expect(store.getState().workspaceOverrides[WS_ID]).toEqual({
+        ...base,
+        defaultBranchPrefix: 'hb',
+        providerPool: ['anthropic'],
+        parallelAgents: true,
+      });
+    });
+
+    it('patchWorkspaceOverrides leaves untouched keys null instead of pinning resolved defaults', async () => {
+      const store = useAppStore;
+
+      await store
+        .getState()
+        .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { defaultBranchPrefix: 'nw' } });
+
+      expect(store.getState().workspaceOverrides[WS_ID]).toEqual({
+        ...buildWorkspace().overrides,
+        defaultBranchPrefix: 'nw',
+      });
+    });
+
+    it('patchWorkspaceOverrides reads the row at call time, so two quick edits both land', async () => {
+      const store = useAppStore;
+
+      await Promise.all([
+        store
+          .getState()
+          .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { parallelAgents: true } }),
+        store
+          .getState()
+          .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { attributionFooter: false } }),
+      ]);
+
+      expect(store.getState().workspaceOverrides[WS_ID]?.parallelAgents).toBe(true);
+      expect(store.getState().workspaceOverrides[WS_ID]?.attributionFooter).toBe(false);
+    });
+
+    it('patchWorkspaceOverrides maps an undefined patch value to null', async () => {
+      const store = useAppStore;
+      store.setState({
+        workspaceOverrides: { [WS_ID]: { ...buildWorkspace().overrides, providerPool: ['codex'] } },
+      });
+
+      await store
+        .getState()
+        .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { providerPool: undefined } });
+
+      expect(store.getState().workspaceOverrides[WS_ID]?.providerPool).toBeNull();
+    });
+
+    it('patchWorkspaceOverrides rolls back when the write fails', async () => {
+      const store = useAppStore;
+      const previous = { ...buildWorkspace().overrides, defaultBranchPrefix: 'hb' };
+      store.setState({ workspaceOverrides: { [WS_ID]: previous } });
+      const { invoke } = await import('@tauri-apps/api/core');
+      vi.mocked(invoke).mockRejectedValueOnce(new Error('disk full'));
+
+      await expect(
+        store
+          .getState()
+          .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { defaultBranchPrefix: 'nw' } }),
+      ).rejects.toThrow('disk full');
+
+      expect(store.getState().workspaceOverrides[WS_ID]).toEqual(previous);
+    });
   });
 });

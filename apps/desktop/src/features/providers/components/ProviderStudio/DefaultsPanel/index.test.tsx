@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { OverrideSettings, TaskModelPreference } from '@goodboy/types';
+import {
+  mergeWorkspaceOverrides,
+  type WorkspaceOverridesPatch,
+} from '../../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { DefaultsPanel } from './index';
 
 type SetWorkspaceOverrides = (workspaceId: string, overrides: OverrideSettings) => Promise<void>;
@@ -13,11 +17,17 @@ const { state } = vi.hoisted(() => ({
       { id: 'cursor', connection: 'connected' },
     ],
     setWorkspaceOverrides: vi.fn<SetWorkspaceOverrides>(async () => undefined),
+    patchWorkspaceOverrides: async (_params: {
+      workspaceId: string;
+      patch: WorkspaceOverridesPatch;
+    }): Promise<void> => undefined,
   },
 }));
 
 vi.mock('../../../../../store', () => ({
-  useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
+  useAppStore: Object.assign(<T,>(selector: (store: typeof state) => T) => selector(state), {
+    getState: () => state,
+  }),
 }));
 
 vi.mock('../../ProviderChip', () => ({
@@ -131,6 +141,14 @@ const EMPTY_OVERRIDES: OverrideSettings = {
 };
 
 beforeEach(() => {
+  state.patchWorkspaceOverrides = ({ workspaceId, patch }) =>
+    state.setWorkspaceOverrides(
+      workspaceId,
+      mergeWorkspaceOverrides({
+        base: state.workspaceOverrides[workspaceId] ?? EMPTY_OVERRIDES,
+        patch,
+      }),
+    );
   state.workspaceOverrides = { 'ws-1': EMPTY_OVERRIDES };
   state.setWorkspaceOverrides.mockReset();
   state.setWorkspaceOverrides.mockImplementation(async (workspaceId, overrides) => {
@@ -292,6 +310,16 @@ describe('DefaultsPanel', () => {
         },
       }),
     );
+  });
+
+  it('keeps both task pins when two rows change before a re-render', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing cheap model' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Plan drafting routing cheap model' }));
+
+    const taskModels = state.workspaceOverrides['ws-1']?.taskModels ?? {};
+    expect(Object.keys(taskModels).sort()).toEqual(['plan_generation', 'summarizer']);
   });
 
   it('renders a row per agent role', () => {

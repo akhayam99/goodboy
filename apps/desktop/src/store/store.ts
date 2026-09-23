@@ -188,6 +188,7 @@ import type {
 } from './slices/workflowRouting/types';
 import { createSlotsSlice } from './slices/slots';
 import { createOverridesSlice } from './slices/overrides';
+import type { WorkspaceOverridesPatch } from './slices/overrides/patchWorkspaceOverrides';
 import { createCredentialsSlice } from './slices/credentials';
 import { createWorkflowsSlice } from './slices/workflows';
 import type { CopyWorkflowFromWorkspaceParams } from './slices/workflows/copyWorkflowFromWorkspace';
@@ -713,6 +714,10 @@ type AppActions = {
   wipeLocalDatabase(): Promise<void>;
   loadWorkspaceOverrides(workspaceId: WorkspaceId): Promise<void>;
   setWorkspaceOverrides(workspaceId: WorkspaceId, overrides: OverrideSettings): Promise<void>;
+  patchWorkspaceOverrides(params: {
+    readonly workspaceId: WorkspaceId;
+    readonly patch: WorkspaceOverridesPatch;
+  }): Promise<void>;
   setWorkspaceProviderBinding(
     workspaceId: WorkspaceId,
     providerId: ProviderId,

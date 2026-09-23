@@ -1,4 +1,4 @@
-import { resolveSettings } from '@goodboy/core';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE, resolveSettings } from '@goodboy/core';
 import type {
   ProjectId,
   ProviderId,
@@ -93,3 +93,20 @@ export const selectResolvedSettings = ({ state, sessionId }: Params): SessionSet
   }
   return resolveSessionSettings({ state, session });
 };
+
+type WorkspaceParams = {
+  readonly state: AppStore;
+  readonly workspaceId: WorkspaceId;
+};
+
+export const selectWorkspaceResolvedSettings = ({
+  state,
+  workspaceId,
+}: WorkspaceParams): SessionSettings =>
+  resolveScopedSettings({
+    state,
+    workspaceId,
+    projectId: null,
+    sessionId: null,
+    defaultProviderId: DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
+  });

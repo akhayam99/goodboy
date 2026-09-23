@@ -62,10 +62,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
   providerPoolIds.add(defaultProviderId);
 
   const { busy, error, persistOverrides, persistTaskModel, persistRoleModel } =
-    useDefaultsPersistence({
-      workspaceId,
-      overrides,
-    });
+    useDefaultsPersistence({ workspaceId });
 
   const [group, setGroup] = useState<DefaultsGroup>('task');
   const taskOverrideCount = TASKS.filter((task) => overrides.taskModels?.[task.id] != null).length;
@@ -78,9 +75,9 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
   const onDefaultProvider = ({ providerId }: ProviderParams) => {
     const providerPool =
       overrides.providerPool == null
-        ? undefined
+        ? null
         : Array.from(new Set([...overrides.providerPool, providerId]));
-    void persistOverrides({ partial: { defaultProviderId: providerId, providerPool } });
+    void persistOverrides({ patch: { defaultProviderId: providerId, providerPool } });
   };
 
   const onToggleRoutingProvider = ({ providerId }: ProviderParams) => {
@@ -88,18 +85,18 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
       return;
     }
     const nextProviderIds = new Set(providerPoolIds);
-    if (nextProviderIds.has(providerId)) {
+    const isInPool = nextProviderIds.has(providerId);
+    if (isInPool) {
       nextProviderIds.delete(providerId);
-    } else {
+    }
+    if (!isInPool) {
       nextProviderIds.add(providerId);
     }
     nextProviderIds.add(defaultProviderId);
     const selectedProviderIds = connectedProviderIds.filter((id) => nextProviderIds.has(id));
     const isEveryProviderEnabled = selectedProviderIds.length === connectedProviderIds.length;
     void persistOverrides({
-      partial: {
-        providerPool: isEveryProviderEnabled ? undefined : selectedProviderIds,
-      },
+      patch: { providerPool: isEveryProviderEnabled ? null : selectedProviderIds },
     });
   };
 

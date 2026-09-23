@@ -2,6 +2,11 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import type { OverrideSettings } from '@goodboy/types';
+import {
+  mergeWorkspaceOverrides,
+  type WorkspaceOverridesPatch,
+} from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 
 const { state, toastMock } = vi.hoisted(() => ({
   state: {
@@ -10,8 +15,12 @@ const { state, toastMock } = vi.hoisted(() => ({
     deleteWorkspace: vi.fn(async () => undefined),
     workspaces: [] as ReadonlyArray<{ id: string; name: string; rootPath: string }>,
     renameWorkspace: vi.fn(async () => undefined),
-    workspaceOverrides: {} as Record<string, unknown>,
-    setWorkspaceOverrides: vi.fn(async () => undefined),
+    workspaceOverrides: {} as Record<string, OverrideSettings>,
+    setWorkspaceOverrides: vi.fn(async (_workspaceId: string, _overrides: unknown) => undefined),
+    patchWorkspaceOverrides: async (_params: {
+      workspaceId: string;
+      patch: WorkspaceOverridesPatch;
+    }): Promise<void> => undefined,
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     providers: [] as ReadonlyArray<{ id: string; connection: string }>,
     orphanWorktrees: {} as Record<
@@ -55,6 +64,20 @@ vi.mock('../../../../features/providers/components/provider-brand', () => ({
   brandColor: () => '#000000',
 }));
 
+const EMPTY: OverrideSettings = {
+  defaultProviderId: null,
+  defaultWorkflowId: null,
+  defaultBranchPrefix: null,
+  parallelEnabled: null,
+  defaultVerbosity: null,
+  providerBindings: null,
+  taskModels: null,
+  roleModels: null,
+  parallelAgents: null,
+  providerPool: null,
+  attributionFooter: null,
+};
+
 beforeEach(() => {
   state.loadSetting = vi.fn(async () => null);
   state.saveSetting = vi.fn(async () => undefined);
@@ -62,7 +85,17 @@ beforeEach(() => {
   state.workspaces = [{ id: 'ws-1', name: 'billing', rootPath: '/repos/billing-api' }];
   state.renameWorkspace = vi.fn(async () => undefined);
   state.workspaceOverrides = {};
-  state.setWorkspaceOverrides = vi.fn(async () => undefined);
+  state.setWorkspaceOverrides = vi.fn(
+    async (_workspaceId: string, _overrides: unknown) => undefined,
+  );
+  state.patchWorkspaceOverrides = ({ workspaceId, patch }) =>
+    state.setWorkspaceOverrides(
+      workspaceId,
+      mergeWorkspaceOverrides({
+        base: state.workspaceOverrides[workspaceId] ?? EMPTY,
+        patch,
+      }),
+    );
   state.workspaceIntegrations = {};
   state.providers = [];
   state.orphanWorktrees = {};
@@ -156,6 +189,21 @@ describe('WorkspaceScopePanel', () => {
       'ws-1',
       expect.objectContaining({ attributionFooter: null }),
     );
+  });
+
+  it('writes only the parallel agents key, never a resolved verbosity', () => {
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
+    const row = screen.getByText('Parallel agents').parentElement?.parentElement;
+    if (row == null) {
+      throw new Error('parallel agents row not rendered');
+    }
+
+    fireEvent.click(within(row).getByRole('switch'));
+
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith('ws-1', {
+      ...EMPTY,
+      parallelAgents: true,
+    });
   });
 
   it('renames the workspace on blur while keeping the folder name as the hint', () => {
