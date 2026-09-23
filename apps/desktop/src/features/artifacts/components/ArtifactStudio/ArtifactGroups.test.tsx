@@ -14,11 +14,7 @@ const counts = {
   wireframe: 0,
 } satisfies Record<ArtifactFilter, number>;
 
-type RenderParams = {
-  readonly isCompact: boolean;
-};
-
-const renderGroups = ({ isCompact }: RenderParams) =>
+const renderGroups = () =>
   render(
     <ArtifactGroups
       plans={[]}
@@ -26,9 +22,6 @@ const renderGroups = ({ isCompact }: RenderParams) =>
       counts={counts}
       filter="all"
       openQuestionCount={0}
-      selectedArtifactId={null}
-      selectedGenerationAgentId={null}
-      isCompact={isCompact}
       empty={<p>nothing of this kind in this session yet</p>}
       onFilterChange={() => {}}
       onSelectPlan={() => {}}
@@ -40,22 +33,10 @@ const renderGroups = ({ isCompact }: RenderParams) =>
   );
 
 describe('ArtifactGroups', () => {
-  it('hands the compact rail a one-line strip with no horizontal scroller around it', () => {
-    renderGroups({ isCompact: true });
-    const tablist = screen.getByRole('tablist', { name: 'Artifact kind' });
+  it('shows the kind tabs and the empty state when nothing matches the filter', () => {
+    renderGroups();
 
-    expect(tablist.closest('.overflow-x-auto')).toBeNull();
-    expect(tablist.className).not.toContain('flex-wrap');
-  });
-
-  it('keeps the wide pane strip inside the horizontal scroller', () => {
-    renderGroups({ isCompact: false });
-    const tablist = screen.getByRole('tablist', { name: 'Artifact kind' });
-    const viewport = tablist.closest('.overflow-x-auto');
-
-    expect(viewport).not.toBeNull();
-    expect(tablist.className).toContain('w-max');
-    expect(viewport?.parentElement?.className).not.toContain('min-w-0');
-    expect(viewport?.parentElement?.className).toContain('shrink-0');
+    expect(screen.getByRole('tablist', { name: 'Artifact kind' })).toBeDefined();
+    expect(screen.getByText('nothing of this kind in this session yet')).toBeDefined();
   });
 });

@@ -5,15 +5,13 @@ import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDat
 
 type Props = {
   readonly artifact: SessionArtifact;
-  readonly isSelected: boolean;
   readonly onSelect: () => void;
 };
 
-export const ArtifactRow = ({ artifact, isSelected, onSelect }: Props) => (
+export const ArtifactRow = ({ artifact, onSelect }: Props) => (
   <RailCard
     title={artifact.title}
     muted={artifact.status === 'discarded'}
-    isSelected={isSelected}
     status={<ArtifactStatusChip kind={artifact.kind} status={artifact.status} />}
     meta={
       <MetaRow

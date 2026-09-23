@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ScrollFade } from '@goodboy/ui';
-import type { AgentId, ArtifactId, PlanId, PlanWithCount } from '@goodboy/types';
+import type { ArtifactId, PlanId, PlanWithCount } from '@goodboy/types';
 import {
   ARTIFACT_FILTER_LABEL,
   type ArtifactFilter,
@@ -18,9 +18,6 @@ type Props = {
   readonly counts: Readonly<Record<ArtifactFilter, number>>;
   readonly filter: ArtifactFilter;
   readonly openQuestionCount: number;
-  readonly selectedArtifactId: ArtifactId | null;
-  readonly selectedGenerationAgentId: AgentId | null;
-  readonly isCompact: boolean;
   readonly empty: ReactNode;
   readonly onFilterChange: (filter: ArtifactFilter) => void;
   readonly onSelectPlan: (planId: PlanId) => void;
@@ -36,9 +33,6 @@ export const ArtifactGroups = ({
   counts,
   filter,
   openQuestionCount,
-  selectedArtifactId,
-  selectedGenerationAgentId,
-  isCompact,
   empty,
   onFilterChange,
   onSelectPlan,
@@ -48,27 +42,13 @@ export const ArtifactGroups = ({
   onRetryGeneration,
 }: Props) => (
   <>
-    {isCompact ? (
-      <ArtifactFilterTabs value={filter} counts={counts} isCompact onChange={onFilterChange} />
-    ) : (
-      <ScrollFade orientation="horizontal" fadeSize={16} className="shrink-0">
-        <ArtifactFilterTabs
-          value={filter}
-          counts={counts}
-          isCompact={false}
-          onChange={onFilterChange}
-        />
-      </ScrollFade>
-    )}
+    <ScrollFade orientation="horizontal" fadeSize={16} className="shrink-0">
+      <ArtifactFilterTabs value={filter} counts={counts} onChange={onFilterChange} />
+    </ScrollFade>
     {counts[filter] === 0 ? empty : null}
     {isArtifactSectionShown({ filter, kind: 'plan', counts }) ? (
       <ArtifactSection heading={ARTIFACT_FILTER_LABEL.plan}>
-        <PlanList
-          plans={plans}
-          openQuestionCount={openQuestionCount}
-          {...(isCompact && { visibleFinishedCount: 0 })}
-          onSelect={onSelectPlan}
-        />
+        <PlanList plans={plans} openQuestionCount={openQuestionCount} onSelect={onSelectPlan} />
       </ArtifactSection>
     ) : null}
     {groups.map((group) =>
@@ -77,9 +57,6 @@ export const ArtifactGroups = ({
           <ArtifactKindRows
             artifacts={group.artifacts}
             generations={group.generations}
-            selectedArtifactId={selectedArtifactId}
-            selectedGenerationAgentId={selectedGenerationAgentId}
-            isCompact={isCompact}
             onSelectArtifact={onSelectArtifact}
             onSelectGeneration={onSelectGeneration}
             onStopGeneration={onStopGeneration}

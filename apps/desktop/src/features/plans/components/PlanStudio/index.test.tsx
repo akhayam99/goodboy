@@ -177,9 +177,9 @@ describe('PlanStudio', () => {
     expect(screen.getByText('Nothing active')).toBeDefined();
     const emptyCard = screen.getByText('Nothing active').closest('.border-dashed');
     expect(emptyCard).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show finished (1)' }));
     expect(screen.getByText('Implement auth module')).toBeDefined();
     expect(screen.getByText('consumed')).toBeDefined();
-    expect(screen.getByRole('region', { name: 'Finished history' })).toBeDefined();
   });
 
   it('shows consumed plans alongside active plans too', () => {
@@ -208,6 +208,7 @@ describe('PlanStudio', () => {
     render(<PlanStudio sessionId={'sess-1' as never} />);
 
     expect(screen.queryByText('Nothing active')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Show finished/ }));
     expect(screen.getByText('Old plan')).toBeDefined();
   });
 
@@ -371,6 +372,7 @@ describe('PlanStudio consumer provenance', () => {
       },
     ];
     render(<PlanStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByRole('button', { name: /Show finished/ }));
 
     expect(screen.getByText('Run by implementer +1 more')).toBeDefined();
   });

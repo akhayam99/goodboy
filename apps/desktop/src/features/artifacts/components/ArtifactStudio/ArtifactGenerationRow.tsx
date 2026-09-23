@@ -12,8 +12,6 @@ import { wireframeScoutLine } from '../../../wireframes/wireframeScoutProgress';
 
 type Props = {
   readonly generation: ArtifactGeneration;
-  readonly isSelected: boolean;
-  readonly hasScoutLines: boolean;
   readonly onSelect: () => void;
   readonly onStop: () => void;
   readonly onRetry: () => void;
@@ -31,14 +29,7 @@ const routingLabel = ({
   return generation.model === null ? provider : `${provider} · ${modelLabel(generation.model)}`;
 };
 
-export const ArtifactGenerationRow = ({
-  generation,
-  isSelected,
-  hasScoutLines,
-  onSelect,
-  onStop,
-  onRetry,
-}: Props) => {
+export const ArtifactGenerationRow = ({ generation, onSelect, onStop, onRetry }: Props) => {
   const presentation = ARTIFACT_GENERATION_PRESENTATION[generation.kind][generation.state];
   const Icon = presentation.icon;
   const routing = routingLabel({ generation });
@@ -54,12 +45,11 @@ export const ArtifactGenerationRow = ({
 
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <div className="group relative flex min-w-0">
+      <div className="group flex min-w-0 items-center gap-1.5">
         <RailCard
           title={generation.title}
           muted={generation.state === 'unproduced'}
-          isSelected={isSelected}
-          className="pr-24"
+          className="min-w-0 flex-1"
           status={
             <Chip
               tone={presentation.tone}
@@ -75,17 +65,17 @@ export const ArtifactGenerationRow = ({
           onSelect={onSelect}
         />
         {generation.state === 'generating' && generation.canStop ? (
-          <span className="pointer-events-none absolute right-8 top-2.5 opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+          <span className="shrink-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
             <GhostActionButton icon={Square} label="Stop" onClick={onStop} />
           </span>
         ) : null}
         {generation.state === 'unproduced' ? (
-          <span className="pointer-events-none absolute right-8 top-2.5 opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+          <span className="shrink-0">
             <GhostActionButton icon={RotateCcw} label="Try again" onClick={onRetry} />
           </span>
         ) : null}
       </div>
-      {!hasScoutLines || generation.scouts.length === 0 ? null : (
+      {generation.scouts.length === 0 ? null : (
         <ul data-testid="artifact-generation-scouts" className="flex min-w-0 flex-col gap-0.5 pl-3">
           {generation.scouts.map((scout) => (
             <li key={scout.agentId} className="truncate text-2xs text-muted-foreground">

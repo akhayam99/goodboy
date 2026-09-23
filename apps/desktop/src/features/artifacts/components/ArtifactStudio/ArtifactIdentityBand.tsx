@@ -42,18 +42,18 @@ export const ArtifactIdentityBand = ({
         variant="ghost"
         size="sm"
         onClick={onBack}
-        className="shrink-0 @min-[1025px]:hidden"
+        className="shrink-0"
         data-testid="artifact-back"
       >
         <ArrowLeft size={ICON_SIZE.row} aria-hidden />
         All artifacts
       </Button>
-      <h2
+      <h1
         data-testid="artifact-title"
         className="min-w-0 shrink truncate text-sm font-semibold leading-snug text-foreground"
       >
         {artifact.title}
-      </h2>
+      </h1>
       <ArtifactStatusChip kind={artifact.kind} status={artifact.status} />
       {stateChip}
       <IconButton

@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { StudioRailLayout } from '@goodboy/ui';
 import type { Agent, AgentId, ArtifactId, IsoDateTime, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -11,7 +10,6 @@ import {
 import { PlanStudio } from '../../../plans/components/PlanStudio';
 import { ArtifactCollection } from './ArtifactCollection';
 import { ArtifactDetail } from './ArtifactDetail';
-import { ArtifactRail } from './ArtifactRail';
 import { ArtifactRunDetail } from './ArtifactRunDetail';
 import { ArtifactCreationPane } from '../ArtifactCreationPane';
 import { loadArtifactProvenance } from '../../artifactProvenance';
@@ -19,6 +17,7 @@ import { ARTIFACT_RETRY_MISSING_BRIEF, artifactRetryDraft } from '../../artifact
 import { resolveArtifactGenerations, type ArtifactGeneration } from '../../artifactCollection';
 import { standaloneArtifacts } from '../../standaloneArtifacts';
 import { artifactCounts, artifactGroups } from '../../artifactGroups';
+import { useEscapeToList } from '../../hooks/useEscapeToList';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -190,6 +189,17 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
     void stopArtifactGeneration({ sessionId, agentId: generation.agentId });
   };
 
+  const backToList = useCallback(() => {
+    setFocusedRunAgentId(null);
+    setFocusedArtifactId(sessionId, null);
+  }, [sessionId, setFocusedArtifactId]);
+
+  useEscapeToList({
+    isActive:
+      creation === null && focusedPlanId === null && (selected !== null || focusedRun !== null),
+    onEscape: backToList,
+  });
+
   const changeFilter = (next: typeof filter) => setArtifactFilter({ sessionId, filter: next });
 
   if (creation !== null && session !== null) {
@@ -213,6 +223,7 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
   if (selected === null && focusedRun === null) {
     return (
       <ArtifactCollection
+        sessionId={sessionId}
         plans={plans}
         groups={groups}
         counts={counts}
@@ -229,8 +240,8 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
     );
   }
 
-  const detail =
-    selected !== null ? (
+  if (selected !== null) {
+    return (
       <ArtifactDetail
         sessionId={sessionId}
         artifact={selected}
@@ -239,39 +250,16 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
         onBack={() => setFocusedArtifactId(sessionId, null)}
         onSelectArtifact={selectArtifact}
       />
-    ) : focusedRun === null ? null : (
-      <ArtifactRunDetail
-        sessionId={sessionId}
-        generation={focusedRun}
-        onBack={() => setFocusedRunAgentId(null)}
-        onStop={() => stopGeneration(focusedRun)}
-        onOpenAgent={() => void selectAgent(sessionId, focusedRun.agentId)}
-      />
     );
+  }
 
-  return (
-    <StudioRailLayout
-      railLabel="Artifacts"
-      railWidth="narrow"
-      railVisibility="wideContainer"
-      rail={
-        <ArtifactRail
-          plans={plans}
-          groups={groups}
-          counts={counts}
-          openQuestionCount={openQuestionCount}
-          filter={filter}
-          selectedArtifactId={selected?.id ?? null}
-          selectedGenerationAgentId={focusedRun?.agentId ?? null}
-          onFilterChange={changeFilter}
-          onSelectPlan={(planId) => setFocusedPlanId(sessionId, planId)}
-          onSelectArtifact={selectArtifact}
-          onSelectGeneration={selectGeneration}
-          onStopGeneration={stopGeneration}
-          onRetryGeneration={retryGeneration}
-        />
-      }
-      detail={detail}
+  return focusedRun === null ? null : (
+    <ArtifactRunDetail
+      sessionId={sessionId}
+      generation={focusedRun}
+      onBack={() => setFocusedRunAgentId(null)}
+      onStop={() => stopGeneration(focusedRun)}
+      onOpenAgent={() => void selectAgent(sessionId, focusedRun.agentId)}
     />
   );
 };

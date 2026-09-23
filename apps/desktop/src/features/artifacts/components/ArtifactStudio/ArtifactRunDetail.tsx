@@ -49,15 +49,15 @@ export const ArtifactRunDetail = ({
           variant="ghost"
           size="sm"
           onClick={onBack}
-          className="shrink-0 @min-[1025px]:hidden"
+          className="shrink-0"
           data-testid="artifact-run-back"
         >
           <ArrowLeft size={ICON_SIZE.row} aria-hidden />
           All artifacts
         </Button>
-        <h2 className="min-w-0 shrink truncate text-sm font-semibold leading-snug text-foreground">
+        <h1 className="min-w-0 shrink truncate text-sm font-semibold leading-snug text-foreground">
           {generation.title}
-        </h2>
+        </h1>
         <Chip
           tone={presentation.tone}
           size="xs"
