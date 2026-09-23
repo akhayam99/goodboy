@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import {
   AnchoredPopover,
-  Button,
   IconButton,
+  InlineConfirm,
   cn,
   formatError,
   useDropdown,
@@ -55,6 +55,8 @@ type Props = {
 
 type Confirming = 'detach' | 'forget' | 'unmount' | null;
 
+const WorktreeIcon = CONCEPT_ICONS.worktree;
+
 type DetachTarget = {
   readonly mountId: MountId;
   readonly path: string;
@@ -97,7 +99,12 @@ export const ProjectDetachMenu = ({
   canDetachProject = true,
   isMountAttached,
 }: Props) => {
-  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 190 });
+  const dropdown = useDropdown({
+    align: 'end',
+    width: 'w-96',
+    expectedWidth: 384,
+    expectedHeight: 190,
+  });
   const detachProject = useAppStore((state) => state.detachProject);
   const unmountMount = useAppStore((state) => state.unmountMount);
   const emitNotification = useAppStore((state) => state.emitNotification);
@@ -357,32 +364,34 @@ export const ProjectDetachMenu = ({
       }
     >
       {confirming === 'unmount' ? (
-        <div className="flex flex-col gap-2 p-3">
-          <span className="text-xs font-medium">
-            {branch === '' ? 'Unmount this branch?' : `Unmount ${branch}?`}
-          </span>
-          {isClean ? (
-            <span className="text-2xs text-muted-foreground">
-              Its worktree is removed. The branch and any pull request stay.
-            </span>
-          ) : (
-            keptNote
-          )}
-          <div className="flex items-center gap-1">
-            <Button size="sm" variant="ghost" disabled={isBusy} onClick={() => void unmount()}>
-              {isClean ? 'Unmount' : 'Unmount, keep changes'}
-            </Button>
-            <Button size="sm" variant="ghost" disabled={isBusy} onClick={() => setConfirming(null)}>
-              Cancel
-            </Button>
-          </div>
-        </div>
+        <InlineConfirm
+          role="alert"
+          icon={<WorktreeIcon size={ICON_SIZE.row} />}
+          title={branch === '' ? 'Unmount this branch?' : `Unmount ${branch}?`}
+          {...(isClean
+            ? { description: 'Its worktree is removed. The branch and any pull request stay.' }
+            : {})}
+          confirmLabel={isClean ? 'Unmount' : 'Unmount, keep changes'}
+          surface="plain"
+          isBusy={isBusy}
+          onConfirm={() => void unmount()}
+          onCancel={() => setConfirming(null)}
+        >
+          {isClean ? null : keptNote}
+        </InlineConfirm>
       ) : null}
       {confirming === 'forget' ? (
-        <div className="flex flex-col gap-2 p-3">
-          <span className="text-xs font-medium">
-            {branch === '' ? 'Remove this mount?' : `Remove ${branch}?`}
-          </span>
+        <InlineConfirm
+          role="alert"
+          icon={<WorktreeIcon size={ICON_SIZE.row} />}
+          title={branch === '' ? 'Remove this mount?' : `Remove ${branch}?`}
+          confirmLabel="Remove"
+          surface="plain"
+          isBusy={isBusy}
+          isConfirmDisabled={forgetBlockers.length > 0}
+          onConfirm={() => void forget()}
+          onCancel={() => setConfirming(null)}
+        >
           {forgetBlockers.length > 0 ? (
             <div className="flex min-w-0 flex-col gap-1 text-2xs text-muted-foreground">
               {forgetBlockers.map((blocker) => (
@@ -394,17 +403,7 @@ export const ProjectDetachMenu = ({
           ) : (
             forgetNote
           )}
-          <div className="flex items-center gap-1">
-            {forgetBlockers.length === 0 && (
-              <Button size="sm" variant="ghost" disabled={isBusy} onClick={() => void forget()}>
-                Remove
-              </Button>
-            )}
-            <Button size="sm" variant="ghost" disabled={isBusy} onClick={() => setConfirming(null)}>
-              Cancel
-            </Button>
-          </div>
-        </div>
+        </InlineConfirm>
       ) : null}
       {confirming === 'detach' ? (
         <DetachConfirm

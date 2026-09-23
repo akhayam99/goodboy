@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { AnchoredPopover, InlineConfirm, cn, formatError, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  InlineConfirm,
+  cn,
+  formatError,
+  useDropdown,
+  type ConfirmRole,
+} from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
@@ -40,9 +47,10 @@ const AlertIcon = CONCEPT_ICONS.errors;
 const WorktreeIcon = CONCEPT_ICONS.worktree;
 const CONFIRM_ROLE = {
   blocked: 'alert',
+  unread: 'alert',
   unmerged: 'primary',
   risky: 'danger',
-} satisfies Record<'blocked' | 'unmerged' | 'risky', 'alert' | 'primary' | 'danger'>;
+} satisfies Record<Confirm['kind'], ConfirmRole>;
 const BLOCKER_CODES = [
   'agent-running',
   'terminal-open',
@@ -217,63 +225,43 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
         </button>
       }
     >
-      {confirm === null ? null : confirm.kind === 'unread' ? (
-        <div className="flex flex-col gap-2 p-3">
-          <span className="text-xs font-medium">Remove worktree?</span>
-          <div className="flex min-w-0 flex-col gap-1 text-2xs text-muted-foreground">
+      {confirm === null ? null : (
+        <InlineConfirm
+          role={CONFIRM_ROLE[confirm.kind]}
+          icon={
+            confirm.kind === 'unmerged' ? (
+              <WorktreeIcon size={ICON_SIZE.row} />
+            ) : (
+              <AlertIcon size={ICON_SIZE.row} />
+            )
+          }
+          title="Remove worktree?"
+          confirmLabel="Remove worktree"
+          surface="plain"
+          isBusy={isBusy}
+          isConfirmDisabled={confirm.kind === 'blocked' || confirm.kind === 'unread'}
+          onConfirm={() =>
+            void remove({ mode: confirm.kind === 'unmerged' ? 'safe' : 'confirmed' })
+          }
+          onCancel={() => cancel()}
+          {...(confirm.kind === 'unread'
+            ? {
+                altAction: {
+                  label: 'Check again',
+                  onClick: () => void check(),
+                  disabled: isChecking,
+                },
+              }
+            : {})}
+        >
+          <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
             {confirm.lines.map((line) => (
               <p key={line} className="break-words">
                 {line}
               </p>
             ))}
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={isChecking}
-              onClick={() => void check()}
-              className="rounded-md px-2 py-0.5 text-2xs font-semibold hover:bg-hover"
-            >
-              Check again
-            </button>
-            <button
-              type="button"
-              onClick={() => cancel()}
-              className="rounded-md px-2 py-0.5 text-2xs font-semibold hover:bg-hover"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col p-2">
-          <InlineConfirm
-            role={CONFIRM_ROLE[confirm.kind]}
-            icon={
-              confirm.kind === 'unmerged' ? (
-                <WorktreeIcon size={ICON_SIZE.row} />
-              ) : (
-                <AlertIcon size={ICON_SIZE.row} />
-              )
-            }
-            title="Remove worktree?"
-            confirmLabel="Remove worktree"
-            isBusy={isBusy}
-            isConfirmDisabled={confirm.kind === 'blocked'}
-            onConfirm={() =>
-              void remove({ mode: confirm.kind === 'unmerged' ? 'safe' : 'confirmed' })
-            }
-            onCancel={() => cancel()}
-          >
-            <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
-              {confirm.lines.map((line) => (
-                <p key={line} className="break-words">
-                  {line}
-                </p>
-              ))}
-            </div>
-          </InlineConfirm>
-        </div>
+        </InlineConfirm>
       )}
     </AnchoredPopover>
   );

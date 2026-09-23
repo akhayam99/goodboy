@@ -668,7 +668,7 @@ describe('ProjectDetachMenu', () => {
     expect(
       screen.getByText('A terminal is open in api; close it before removing this worktree.'),
     ).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Remove' })).toHaveProperty('disabled', true);
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
   });
 
@@ -696,7 +696,7 @@ describe('ProjectDetachMenu', () => {
     expect(
       screen.getByText('Work is still running in api; stop it before removing this worktree.'),
     ).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Remove' })).toHaveProperty('disabled', true);
     expect(state.forgetMount).not.toHaveBeenCalled();
   });
 

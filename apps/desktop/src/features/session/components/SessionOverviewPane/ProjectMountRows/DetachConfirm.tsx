@@ -1,4 +1,4 @@
-import { Button, InlineConfirm, Skeleton } from '@goodboy/ui';
+import { InlineConfirm, Skeleton } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { DetachDetails } from './DetachDetails';
 import { CHECKING_STATUS, detachActionFor, type DetachPlan } from './detachPlan';
@@ -30,41 +30,46 @@ export const DetachConfirm = ({
 
   if (plan.kind === 'checking') {
     return (
-      <div className="flex flex-col gap-2 p-3">
-        <span className="text-xs font-medium">{title}</span>
+      <InlineConfirm
+        role="primary"
+        icon={<WorktreeIcon size={ICON_SIZE.row} />}
+        title={title}
+        confirmLabel="Detach"
+        surface="plain"
+        isConfirmDisabled
+        onConfirm={() => undefined}
+        onCancel={onCancel}
+      >
         <div role="status" aria-live="polite" className="flex flex-col gap-1.5">
           <span className="text-2xs text-muted-foreground">{CHECKING_STATUS}</span>
           <Skeleton className="h-3 w-full" />
           <Skeleton className="h-3 w-4/5" />
-          <Skeleton className="h-6 w-28" />
         </div>
-        <div className="flex justify-end">
-          <Button size="sm" variant="ghost" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
-      </div>
+      </InlineConfirm>
     );
   }
 
   const action = detachActionFor({ plan });
   if (action === null) {
     return (
-      <div className="flex flex-col gap-2 p-3">
-        <span className="text-xs font-medium">{title}</span>
-        <div className="flex min-w-0 flex-col gap-1 text-2xs text-muted-foreground">
+      <InlineConfirm
+        role="alert"
+        icon={<AlertIcon size={ICON_SIZE.row} />}
+        title={title}
+        confirmLabel="Detach"
+        surface="plain"
+        isConfirmDisabled
+        onConfirm={() => undefined}
+        onCancel={onCancel}
+      >
+        <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
           {plan.lines.map((line) => (
             <p key={line} className="break-words">
               {line}
             </p>
           ))}
         </div>
-        <div className="flex items-center gap-1">
-          <Button size="sm" variant="ghost" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
-      </div>
+      </InlineConfirm>
     );
   }
   const isRisky = plan.kind === 'risky';
@@ -77,40 +82,39 @@ export const DetachConfirm = ({
     plan.kind === 'keep' && (plan.reason === 'unavailable' || plan.reason === 'unverified');
 
   return (
-    <div className="flex flex-col p-2">
-      <InlineConfirm
-        role={action.role === 'danger' ? 'danger' : 'primary'}
-        icon={isRisky ? <AlertIcon size={ICON_SIZE.row} /> : <WorktreeIcon size={ICON_SIZE.row} />}
-        title={title}
-        confirmLabel={action.label}
-        isBusy={isBusy}
-        onConfirm={() => onConfirm({ disposition: action.disposition })}
-        onCancel={onCancel}
-        {...(isUnread
-          ? { altAction: { label: 'Check again', onClick: onRecheck, disabled: isBusy } }
-          : {})}
-      >
-        <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
-          {plan.lines.map((line) => (
-            <p key={line} className="break-words">
-              {line}
-            </p>
-          ))}
-        </div>
-        {!hasDetails ? null : (
-          <DetachDetails
-            projectName={projectName}
-            details={details}
-            isBusy={isBusy}
-            {...(isRisky ? { onKeepFiles: () => onConfirm({ disposition: 'keep-files' }) } : {})}
-          />
-        )}
-        {stage === null ? null : (
-          <p role="status" aria-live="polite" className="text-2xs text-muted-foreground">
-            {stage}
+    <InlineConfirm
+      role={action.role === 'danger' ? 'danger' : 'primary'}
+      surface="plain"
+      icon={isRisky ? <AlertIcon size={ICON_SIZE.row} /> : <WorktreeIcon size={ICON_SIZE.row} />}
+      title={title}
+      confirmLabel={action.label}
+      isBusy={isBusy}
+      onConfirm={() => onConfirm({ disposition: action.disposition })}
+      onCancel={onCancel}
+      {...(isUnread
+        ? { altAction: { label: 'Check again', onClick: onRecheck, disabled: isBusy } }
+        : {})}
+    >
+      <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
+        {plan.lines.map((line) => (
+          <p key={line} className="break-words">
+            {line}
           </p>
-        )}
-      </InlineConfirm>
-    </div>
+        ))}
+      </div>
+      {!hasDetails ? null : (
+        <DetachDetails
+          projectName={projectName}
+          details={details}
+          isBusy={isBusy}
+          {...(isRisky ? { onKeepFiles: () => onConfirm({ disposition: 'keep-files' }) } : {})}
+        />
+      )}
+      {stage === null ? null : (
+        <p role="status" aria-live="polite" className="text-2xs text-muted-foreground">
+          {stage}
+        </p>
+      )}
+    </InlineConfirm>
   );
 };

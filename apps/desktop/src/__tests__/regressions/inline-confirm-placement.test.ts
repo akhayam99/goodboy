@@ -10,10 +10,6 @@ const SOURCE_ROOTS = [
 const SKIP_SEGMENTS = new Set(['__tests__', 'node_modules', 'dist']);
 const CONFIRM_POPOVER = ['packages', 'ui', 'src', 'components', 'ConfirmPopover.tsx'].join(sep);
 
-const PENDING: ReadonlyArray<string> = [
-  'apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/RemoveWorktreeAction.tsx',
-];
-
 const CONFIRM_TAG = /<InlineConfirm\b(?:[^\n]*\/>|[\s\S]*?\n\s*\/?>)/g;
 
 const listSourceFiles = (dir: string, acc: string[] = []): string[] => {
@@ -54,7 +50,6 @@ const placementProblem = (source: string): string | null => {
 describe('inline confirm placement', () => {
   it('renders only as a row swap, a ConfirmPopover or a plain menu swap', () => {
     const offenders: string[] = [];
-    const seen = new Set<string>();
     for (const root of SOURCE_ROOTS) {
       for (const file of listSourceFiles(root)) {
         if (file.endsWith(CONFIRM_POPOVER)) {
@@ -65,17 +60,9 @@ describe('inline confirm placement', () => {
         if (problem === null) {
           continue;
         }
-        seen.add(path);
-        if (PENDING.includes(path)) {
-          continue;
-        }
         offenders.push(`${path}: ${problem}`);
       }
     }
     expect(offenders, offenders.join('\n')).toEqual([]);
-    expect(
-      PENDING.filter((path) => !seen.has(path)),
-      'remove migrated files from PENDING',
-    ).toEqual([]);
   });
 });
