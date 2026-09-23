@@ -173,8 +173,22 @@ const handleChildStartFailure = async ({
 
   const delayMs = START_BACKOFF_MS[failures - 1] ?? START_BACKOFF_MS[START_BACKOFF_MS.length - 1]!;
   setTimeout(() => {
-    const child = (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === childId);
-    if (child != null && (child.status === 'completed' || child.status === 'skipped')) {
+    const phaseRuns = get().sessionPhaseRuns[sessionId] ?? [];
+    const child = phaseRuns.find((r) => r.id === childId);
+    if (child === undefined) {
+      return;
+    }
+    if (child.status === 'completed' || child.status === 'skipped') {
+      return;
+    }
+    const session = get().sessions.find((s) => s.id === sessionId);
+    if (session === undefined) {
+      return;
+    }
+    const workflowRunId =
+      child.workflowRunId ?? phaseRuns.find((r) => r.id === containerId)?.workflowRunId;
+    const run = session.workflowRuns.find((r) => r.id === workflowRunId);
+    if (run?.discardedAt != null) {
       return;
     }
     const turn = get().agentTurnState[childId];

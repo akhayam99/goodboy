@@ -7,6 +7,7 @@ import {
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { cancelledRunIds, deriveSessionState } from '../../session-mutators';
+import { cancelTurnStartWindow } from '../turn/turnStartWindow';
 import type { GetFn, SetFn } from './types';
 
 export const discardWorkflow = (set: SetFn, get: GetFn) => {
@@ -33,6 +34,11 @@ export const discardWorkflow = (set: SetFn, get: GetFn) => {
     const frozen: Record<AgentId, TurnState> = {};
     for (const r of ownRuns) {
       const turn = state.agentTurnState[r.id];
+      if (turn?.kind === 'starting') {
+        cancelTurnStartWindow({ agentId: r.id });
+        frozen[r.id] = { kind: 'idle', lastActivityAt: now };
+        continue;
+      }
       if (turn?.kind !== 'running') {
         continue;
       }

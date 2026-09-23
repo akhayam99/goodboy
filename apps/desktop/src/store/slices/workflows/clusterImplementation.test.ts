@@ -1752,6 +1752,7 @@ describe('cluster child start retry', () => {
             ...args,
           } as unknown as Agent;
         });
+        hoisted.invokeAgentList.mockResolvedValue(agents);
         return { inserted: true, agents };
       },
     );
@@ -1795,6 +1796,34 @@ describe('cluster child start retry', () => {
       expect.any(String),
       { sessionId: SID },
     );
+  });
+
+  it('stops retrying a child once its workflow run is discarded', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
+    vi.useFakeTimers();
+    withUniqueChildIds('retry-discard');
+    const c = container({
+      id: 'container-discard' as AgentId,
+      workflowRunId: 'wf-1' as WorkflowRunId,
+    });
+    const { get, set, sendTurn, state } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      clusterStartAttempts: {},
+    });
+    sendTurn.mockRejectedValue(new Error('spawn ETIMEDOUT'));
+
+    await fanOutClusters(set, get, SID, c, clusters, 'goal');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+
+    state.sessions = [
+      {
+        ...sessionRow(true),
+        workflowRuns: [{ id: 'wf-1', workflowId: 'flow-1', discardedAt: '2026-01-01T00:00:00Z' }],
+      },
+    ];
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(sendTurn).toHaveBeenCalledTimes(1);
   });
 
   it('does not retry a deterministic start failure', async () => {
