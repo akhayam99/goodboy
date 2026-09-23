@@ -44,6 +44,7 @@ export const TASKS: ReadonlyArray<{
   {
     id: 'rebase',
     label: 'Rebase',
-    description: 'Preselected model for the agent that rebases the session branch onto main',
+    description:
+      'Preselected model for the agent that rebases the session branch onto its base branch',
   },
 ];
