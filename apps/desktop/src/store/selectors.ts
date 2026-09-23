@@ -84,6 +84,7 @@ export const useRunSpendUsd = (sessionId: SessionId, workflowRunId: WorkflowRunI
   );
 
 const EMPTY_RUN_IDS: ReadonlyArray<ProviderRunId> = [];
+const EMPTY_RUN_ROUTING: Readonly<Record<ProviderRunId, ExecutedAgentRouting>> = {};
 
 type ExecutedRoutingParams = {
   readonly agent: Pick<Agent, 'id' | 'sessionId' | 'runId'>;
@@ -96,10 +97,11 @@ export const useExecutedAgentRouting = ({
     (state) => state.sessionTelemetry[agent.sessionId] ?? EMPTY_TELEMETRY,
   );
   const runHistory = useAppStore((state) => state.agentRunHistory[agent.id] ?? EMPTY_RUN_IDS);
+  const liveRouting = useAppStore((state) => state.runRouting[agent.id] ?? EMPTY_RUN_ROUTING);
   const agentRunId = agent.runId ?? null;
   return useMemo(
-    () => executedAgentRouting({ agentRunId, runHistory, records }),
-    [agentRunId, runHistory, records],
+    () => executedAgentRouting({ agentRunId, runHistory, records, liveRouting }),
+    [agentRunId, runHistory, records, liveRouting],
   );
 };
 

@@ -1115,6 +1115,7 @@ export const initialState: AppState = {
   announcedRunBudget: {},
   selectedAgentId: {},
   agentRunHistory: {},
+  runRouting: {},
   agentTurnState: {},
   clusterStartAttempts: {},
   unknownPayloadCounts: {},

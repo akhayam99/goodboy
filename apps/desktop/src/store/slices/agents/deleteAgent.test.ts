@@ -133,6 +133,7 @@ const makeStore = ({ isMounted = true }: { readonly isMounted?: boolean } = {}) 
     agentDraft: {},
     agentQueue: {},
     agentRunHistory: {},
+    runRouting: { [DOOMED]: { [RUN]: { provider: 'codex', model: 'gpt-5.6-sol' } } },
     agentModelOverride: {},
     agentProviderOverride: {},
     agentEffortOverride: {},
@@ -209,6 +210,16 @@ describe('deleteAgent', () => {
     await deleteAgent(set, get)(SID, DOOMED);
 
     expect(state.agentTurnDestination).toEqual({});
+  });
+
+  it('drops the spawn routing the deleted agent ran on', async () => {
+    const { get, set, state } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([]);
+
+    await deleteAgent(set, get)(SID, DOOMED);
+
+    expect(state.runRouting).toEqual({});
   });
 
   it('keeps the lease the attempt saved when the session was never loaded', async () => {
