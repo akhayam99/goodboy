@@ -18,7 +18,14 @@ vi.mock('@goodboy/db', () => ({
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
+const { cancelRunningStepsSpy } = vi.hoisted(() => ({
+  cancelRunningStepsSpy: vi.fn(async () => true),
+}));
+
+vi.mock('./cancelRunningSteps', () => ({ cancelRunningSteps: cancelRunningStepsSpy }));
+
 import { addWorkflowOrchestratorHint } from './addWorkflowOrchestratorHint';
+import { decisionRestartMark } from './decisionRestart';
 import { removeWorkflowOrchestratorHint } from './removeWorkflowOrchestratorHint';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -36,9 +43,14 @@ const QUEUED: OrchestratorHint = {
 type StateParams = {
   readonly hints?: ReadonlyArray<OrchestratorHint>;
   readonly isDeciding?: boolean;
+  readonly isStepRunning?: boolean;
 };
 
-const baseState = ({ hints = [], isDeciding = false }: StateParams): State => ({
+const baseState = ({
+  hints = [],
+  isDeciding = false,
+  isStepRunning = false,
+}: StateParams): State => ({
   sessions: [
     {
       id: SESSION_ID,
@@ -57,7 +69,13 @@ const baseState = ({ hints = [], isDeciding = false }: StateParams): State => ({
     } as unknown as Session,
   ],
   orchestratingWorkflowRuns: { [RUN_ID]: isDeciding },
+  sessionPhaseRuns: {
+    [SESSION_ID]: isStepRunning
+      ? [{ id: 'agent-1', workflowRunId: RUN_ID, status: 'running', ordinal: 0 }]
+      : [],
+  },
   orchestrateNextStep: vi.fn(async () => undefined),
+  continueWorkflowRun: vi.fn(async () => undefined),
 });
 
 const harness = (state: State) => {
@@ -85,6 +103,7 @@ describe('orchestrator hint actions', () => {
 
     await addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
       text: '  no PR, commit locally  ',
+      delivery: 'queue',
     });
 
     const hints = hintsOf(state);
@@ -96,26 +115,61 @@ describe('orchestrator hint actions', () => {
     expect(updateHintsSpy).toHaveBeenCalledWith({}, RUN_ID, hints);
   });
 
-  it('asks for a new decision when the hint lands while one is in flight', async () => {
+  it('restarts the decision in flight when the hint is read now', async () => {
     const state = baseState({ isDeciding: true });
     const { set, get } = harness(state);
+    const before = decisionRestartMark({ workflowRunId: RUN_ID });
 
     await addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
       text: 'no PR, commit locally',
+      delivery: 'now',
     });
 
+    expect(decisionRestartMark({ workflowRunId: RUN_ID })).toBe(before + 1);
     expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(cancelRunningStepsSpy).not.toHaveBeenCalled();
   });
 
-  it('leaves the next decision to the run when nothing is deciding', async () => {
+  it('stops the step in flight and decides again when the hint is read now', async () => {
+    const state = baseState({ isStepRunning: true });
+    const { set, get } = harness(state);
+
+    await addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
+      text: 'look at the payout domain first',
+      delivery: 'now',
+    });
+
+    expect(cancelRunningStepsSpy).toHaveBeenCalledTimes(1);
+    expect(state['continueWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+
+  it('decides right away on an idle run when the hint is read now', async () => {
     const state = baseState({});
     const { set, get } = harness(state);
 
     await addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
-      text: 'no PR, commit locally',
+      text: 'look at the payout domain first',
+      delivery: 'now',
     });
 
+    expect(cancelRunningStepsSpy).not.toHaveBeenCalled();
+    expect(state['continueWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+
+  it('interrupts nothing when the hint is queued', async () => {
+    const state = baseState({ isDeciding: true, isStepRunning: true });
+    const { set, get } = harness(state);
+    const before = decisionRestartMark({ workflowRunId: RUN_ID });
+
+    await addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
+      text: 'no PR, commit locally',
+      delivery: 'queue',
+    });
+
+    expect(decisionRestartMark({ workflowRunId: RUN_ID })).toBe(before);
     expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
+    expect(state['continueWorkflowRun']).not.toHaveBeenCalled();
+    expect(cancelRunningStepsSpy).not.toHaveBeenCalled();
     expect(hintsOf(state)[0]?.consumedAt).toBeUndefined();
   });
 
@@ -125,6 +179,7 @@ describe('orchestrator hint actions', () => {
 
     await addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
       text: '   ',
+      delivery: 'queue',
     });
 
     expect(updateHintsSpy).not.toHaveBeenCalled();

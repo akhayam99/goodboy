@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { ArrowUp } from 'lucide-react';
-import { IconButton, Input } from '@goodboy/ui';
-import type { OrchestratorHintDraft } from '../../../../store/slices/workflows/addWorkflowOrchestratorHint';
+import { Button, Input } from '@goodboy/ui';
+import type {
+  OrchestratorHintDelivery,
+  OrchestratorHintDraft,
+} from '../../../../store/slices/workflows/addWorkflowOrchestratorHint';
 
 type Props = {
   readonly isDeciding: boolean;
@@ -10,19 +12,23 @@ type Props = {
   readonly onSubmit: (draft: OrchestratorHintDraft) => Promise<void>;
 };
 
-type TimingParams = {
+type SendParams = {
+  readonly delivery: OrchestratorHintDelivery;
+};
+
+type ReadNowParams = {
   readonly isDeciding: boolean;
   readonly isStepRunning: boolean;
 };
 
-const timingCopy = ({ isDeciding, isStepRunning }: TimingParams): string | null => {
+const readNowCopy = ({ isDeciding, isStepRunning }: ReadNowParams): string => {
   if (isDeciding) {
-    return 'Sending restarts the decision in flight with your hint';
+    return 'Read now restarts the decision in flight with your hint.';
   }
   if (isStepRunning) {
-    return 'The orchestrator reads it when the step in flight finishes';
+    return 'Read now stops the step in flight, keeps what it wrote, and decides again.';
   }
-  return null;
+  return 'Read now asks for a decision right away.';
 };
 
 export const OrchestratorHintComposer = ({
@@ -33,49 +39,59 @@ export const OrchestratorHintComposer = ({
 }: Props) => {
   const [text, setText] = useState('');
   const canSend = disabled === false && text.trim() !== '';
-  const timing = timingCopy({ isDeciding, isStepRunning });
 
-  const send = async () => {
+  const send = async ({ delivery }: SendParams) => {
     if (canSend === false) {
       return;
     }
-    await onSubmit({ text });
+    await onSubmit({ text, delivery });
     setText('');
   };
 
   return (
     <form
       aria-label="Tell the orchestrator"
-      className="flex flex-col gap-1"
+      className="flex flex-col gap-1.5"
       onSubmit={(event) => {
         event.preventDefault();
-        void send();
+        void send({ delivery: 'queue' });
       }}
     >
-      <div className="flex items-center gap-1.5">
-        <Input
-          id="orchestrator-hint-field"
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          placeholder="Tell the orchestrator something"
-          aria-label="Hint for the orchestrator"
-          data-testid="orchestrator-hint-input"
-          disabled={disabled}
-          className="h-7 text-2xs"
-        />
-        <IconButton
-          icon={ArrowUp}
-          label="Send hint"
-          type="submit"
-          disabled={canSend === false}
-          data-testid="orchestrator-hint-send"
-        />
-      </div>
-      {timing == null ? null : (
+      <Input
+        id="orchestrator-hint-field"
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        placeholder="Tell the orchestrator something"
+        aria-label="Hint for the orchestrator"
+        data-testid="orchestrator-hint-input"
+        disabled={disabled}
+        className="h-7 text-2xs"
+      />
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span data-testid="orchestrator-hint-timing" className="text-2xs text-muted-foreground">
-          {timing}
+          Queue waits for the next decision. {readNowCopy({ isDeciding, isStepRunning })}
         </span>
-      )}
+        <span className="flex shrink-0 items-center gap-1.5">
+          <Button
+            type="submit"
+            size="sm"
+            variant="ghost"
+            disabled={canSend === false}
+            data-testid="orchestrator-hint-queue"
+          >
+            Queue
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            disabled={canSend === false}
+            data-testid="orchestrator-hint-now"
+            onClick={() => void send({ delivery: 'now' })}
+          >
+            Read now
+          </Button>
+        </span>
+      </div>
     </form>
   );
 };

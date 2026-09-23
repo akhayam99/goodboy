@@ -4,10 +4,6 @@ type HintsParams = {
   readonly hints: ReadonlyArray<OrchestratorHint>;
 };
 
-type ArrivedParams = HintsParams & {
-  readonly seenIds: ReadonlySet<string>;
-};
-
 type ConsumeParams = HintsParams & {
   readonly readIds: ReadonlySet<string>;
   readonly consumedAt: IsoDateTime;
@@ -28,9 +24,6 @@ export const formatOrchestratorHints = ({ hints }: HintsParams): string => {
   );
   return [HINTS_HEADER, ...lines].join('\n');
 };
-
-export const hasHintArrivedSince = ({ hints, seenIds }: ArrivedParams): boolean =>
-  hints.some((hint) => seenIds.has(hint.id) === false);
 
 export const consumeOrchestratorHints = ({
   hints,

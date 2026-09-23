@@ -215,7 +215,7 @@ describe('OrchestratorPanel state ladder', () => {
     expect(sentence()).toContain('Choosing the next step');
     expect(screen.getByTestId('orchestrator-panel').className).toContain('spin-border');
     expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
-    expect(screen.getByTestId('orchestrator-hint-input')).toBeDefined();
+    expect(screen.getByRole('button', { name: /hints/i })).toBeDefined();
   });
 
   it('names the step it waits on and how long it has been running', () => {
@@ -470,14 +470,14 @@ describe('OrchestratorPanel state ladder', () => {
 
   it('opens one drawer at a time, so two fields never stack', () => {
     renderPanel({
-      runOverride: run({ orchestrationOutcome: 'done', orchestratorHints: [hint({})] }),
+      runOverride: run({ orchestrationOutcome: 'done' }),
       agents: [agent(0, 'completed')],
     });
 
     fireEvent.click(screen.getByTestId('orchestrator-continue-toggle'));
     openHints();
 
-    expect(screen.getByTestId('orchestrator-hint-log')).toBeDefined();
+    expect(screen.getByTestId('orchestrator-hint-input')).toBeDefined();
     expect(screen.queryByTestId('orchestrator-continue-note')).toBeNull();
   });
 });
@@ -490,31 +490,53 @@ describe('OrchestratorPanel strip', () => {
     expect(screen.queryByTestId('step-routing')).toBeNull();
   });
 
-  it('sends a hint from the card', () => {
+  it('queues a hint from the disclosure', () => {
     renderPanel();
 
+    openHints();
     fireEvent.change(screen.getByTestId('orchestrator-hint-input'), {
       target: { value: 'ignore the website' },
     });
-    fireEvent.click(screen.getByTestId('orchestrator-hint-send'));
+    fireEvent.click(screen.getByTestId('orchestrator-hint-queue'));
 
     expect(storeState['addWorkflowOrchestratorHint']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
       text: 'ignore the website',
+      delivery: 'queue',
     });
   });
 
-  it('says when the orchestrator will read a hint, and nothing while the run idles', () => {
+  it('sends a hint to be read now', () => {
     renderPanel();
-    expect(screen.queryByTestId('orchestrator-hint-timing')).toBeNull();
+
+    openHints();
+    fireEvent.change(screen.getByTestId('orchestrator-hint-input'), {
+      target: { value: 'look at the payout domain first' },
+    });
+    fireEvent.click(screen.getByTestId('orchestrator-hint-now'));
+
+    expect(storeState['addWorkflowOrchestratorHint']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
+      text: 'look at the payout domain first',
+      delivery: 'now',
+    });
+  });
+
+  it('says what read now does in the state the run is in', () => {
+    renderPanel();
+    openHints();
+    expect(screen.getByTestId('orchestrator-hint-timing').textContent).toContain(
+      'asks for a decision right away',
+    );
 
     cleanup();
     renderPanel({ agents: [agent(0, 'running')] });
+    openHints();
     expect(screen.getByTestId('orchestrator-hint-timing').textContent).toContain(
-      'when the step in flight finishes',
+      'stops the step in flight',
     );
 
     cleanup();
     renderPanel({ isOrchestrating: true });
+    openHints();
     expect(screen.getByTestId('orchestrator-hint-timing').textContent).toContain(
       'restarts the decision in flight',
     );
@@ -554,26 +576,6 @@ describe('OrchestratorPanel strip', () => {
     expect(storeState['setWorkflowRunAutoRun']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
   });
 
-  it('shows the hints toggle only once there is a hint to show, with its count', () => {
-    renderPanel();
-    expect(screen.queryByTestId('orchestrator-hints-toggle')).toBeNull();
-
-    cleanup();
-    renderPanel({
-      runOverride: run({ orchestratorHints: [hint({ id: 'a' }), hint({ id: 'b' })] }),
-    });
-    expect(screen.getByTestId('orchestrator-hints-toggle').textContent).toContain('Hints (2)');
-  });
-
-  it('puts stop now next to autorun, on the right of the card', () => {
-    renderPanel({ agents: [agent(0, 'running')], runOverride: run({ autoRun: true }) });
-
-    const controls = screen.getByTestId('orchestrator-controls');
-    expect(controls.contains(screen.getByRole('button', { name: 'Stop now' }))).toBe(true);
-    expect(controls.contains(screen.getByTestId('workflow-autorun-toggle'))).toBe(true);
-    expect(screen.getByTestId('orchestrator-state').contains(controls)).toBe(false);
-  });
-
   it('drops the autorun switch once the run is over', () => {
     renderPanel({
       runOverride: run({ orchestrationOutcome: 'done' }),
@@ -604,7 +606,7 @@ describe('OrchestratorPanel strip', () => {
     expect(screen.queryByRole('button', { name: /orchestrator options/i })).toBeNull();
     expect(screen.queryByRole('menuitem')).toBeNull();
     expect(screen.getByRole('button', { name: /decide next step/i })).toBeDefined();
-    expect(screen.getByTestId('orchestrator-hint-input')).toBeDefined();
+    expect(screen.getByRole('button', { name: /^hints$/i })).toBeDefined();
     expect(screen.getByTestId('workflow-autorun-toggle')).toBeDefined();
   });
 
@@ -727,13 +729,13 @@ describe('OrchestratorPanel strip', () => {
   });
 
   it('opens role models instead of hints, never both', () => {
-    renderPanel({ runOverride: run({ orchestratorHints: [hint({})] }) });
+    renderPanel();
 
     openHints();
     fireEvent.click(screen.getByTestId('orchestrator-role-models-toggle'));
 
     expect(screen.getByTestId('orchestrator-role-models')).toBeDefined();
-    expect(screen.queryByTestId('orchestrator-hint-log')).toBeNull();
+    expect(screen.queryByTestId('orchestrator-hints-input')).toBeNull();
   });
 
   it('folds the decisions into the strip behind a count', () => {
