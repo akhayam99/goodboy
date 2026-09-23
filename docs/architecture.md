@@ -103,15 +103,15 @@ Installing an older version of the app on top does not work.
 Everything the app saves for itself lives in `~/.goodboy`.
 
 - `data.db`: the SQLite database. Its copies from before each migration (`data.db.pre-m*.bak`) sit next to it.
-- `sessions/<workspace-slug>/<session-slug>-<id>/`: a session's own folder, for workspaces that did not set their own place for sessions.
+- `scratch/<session-id>/`: where a session's turns write before any project is mounted.
 - `workspaces/<slug>/PROFILE.md`: a copy of a workspace's profile, written out for reading. The database row is the real one, and the app never reads this file back.
 - `file-versions/`: saved versions of files.
 - `query-<pid>.sock`: the socket a running app uses for the query bridge (see [query-bridge.md](query-bridge.md)).
 - `boot-breadcrumbs.log`: how long each startup step took.
 
 When a session works on a repository, it gets its own git worktree in the
-repository's `.goodboy/worktrees/` folder. A session can have several
-worktrees of the same project.
+repository's `.goodboy/worktrees/` folder ([mounts.md](mounts.md)). A session
+can have several worktrees of the same project.
 
 Two things live next to your code instead of in `~/.goodboy`. A folder
 project keeps its session folders in `<project-root>/sessions/`. Skills live
@@ -119,33 +119,5 @@ in `<project-root>/.kay/skills/` or `<project-root>/.claude/skills/`.
 
 ### How mounts are saved and recovered
 
-A mount is one copy of a repository that a session works in. The
-`session_worktrees` table holds one row per mount, and the row id is the
-mount's identity. The project id points at the repository the mount belongs
-to, not at one checkout of it. Each mount stores its current branch, its
-current path (which can be empty), its last path, whether it is attached,
-what the app last saw on disk, and a revision number. The session stores
-which mount is active.
-
-`mount_pr_links` records which pull requests belong to a mount. It is kept
-apart from the provider caches, which are keyed by branch. So switching
-branches can clear what the provider shows without losing pull request
-history. `pr_series` and `pr_series_members` store how pull requests are
-grouped and in what order. They are set on purpose and never guessed from
-commits.
-
-Every change to files or to a provider goes through `mount_operations`, with a
-request id chosen by the caller. The app saves the operation before it acts.
-If the app stops halfway, the next start can finish the database side,
-whether the worktree already exists or is already gone. Before a provider
-retries creating something, the app refreshes the remote first. These checks
-make it safe to run the same request again after a stop at any point the app
-can see.
-
-When the app loads a session or brings one back from the archive, it checks
-every saved worktree before letting agents write to it. If a path is missing,
-the app detaches it, keeps it as the last path and marks it missing. When
-cleanup finds a path with uncommitted changes or anything else unsafe, and
-the work still needs to go on, it moves the path to `retained_worktree_paths`.
-Every cleanup goes through the same checked removal code in Rust, and local
-branches are always kept.
+The mount table, the operation log, recovery and cleanup are described in
+[mounts.md](mounts.md).

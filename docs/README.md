@@ -118,6 +118,8 @@ only when your task reaches the case it covers.
   ask a connected tool, or how it asks.
 - [companion.md](companion.md): when you change how a phone pairs, what a
   paired phone may ask for, or when the pairing listener runs.
+- [mounts.md](mounts.md): when you change where a session writes on disk,
+  the mount lifecycle, the mount operation log, or recovery.
 - [workflows.md](workflows.md): when you touch the workflow tables, the
   logic that moves a run to its next step, or the summary written after
   each step.

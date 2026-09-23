@@ -76,7 +76,7 @@ in it.
 
 ## Sessions
 
-A **session** holds one goal. It has its own folder, its own budget and notes
+A **session** holds one goal. It has its own budget and notes
 that every agent in it can read. "Refactor authentication domain" is a session.
 
 You never set a session's stage by hand. Goodboy works it out from what is in
@@ -90,17 +90,18 @@ the session. The stages are the columns of the board:
 
 ## Lazy sessions
 
-A new session starts with only its own folder, called the **container**. It
-has no worktree and no branch yet. By default the container lives at
-`~/.goodboy/sessions/<workspace-slug>/<session-slug>-<id>`. A workspace can
-pick a different sessions folder.
+A new session starts with no folder, no worktree and no branch. A turn that
+runs before anything is mounted writes to a scratch folder,
+`~/.goodboy/scratch/<session-id>`.
 
 A project joins the session when Goodboy **materializes** it. That means it
 gets its own working copy inside the session, called a **mount**:
 
-- A repo project gets a git worktree inside the container, named after the
-  project
+- A repo project gets a git worktree under the repository's own
+  `.goodboy/worktrees/`
 - A folder project gets a plain folder under `<project-root>/sessions/`
+
+[mounts.md](mounts.md) owns the layout and the mount lifecycle.
 
 This only happens when the work needs it. There are four ways:
 
@@ -120,7 +121,7 @@ project the session touches. The repository name on each mount tells them
 apart.
 
 Before a project is materialized, agents can read its root folder. Every write
-has to go into the container or into a mounted project.
+has to go into the scratch folder or into a mounted project.
 
 ### Mounts
 
