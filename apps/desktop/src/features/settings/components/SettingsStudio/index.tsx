@@ -7,7 +7,7 @@ import { StudioShell } from '../../../../shared/components/StudioShell';
 import { AppScopePanel } from './AppScopePanel';
 import { SettingsRail, settingsScopeAvailable } from './SettingsRail';
 import { appSectionOf } from './appSections';
-import type { SettingsFocus, SettingsScopeChange } from './types';
+import type { ScopeFrameParts, SettingsFocus, SettingsScopeChange } from './types';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
 
 type Props = {
@@ -23,6 +23,26 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
     ? focus.scope
     : 'app';
 
+  const frame = ({ nested, detail }: ScopeFrameParts) => (
+    <StudioRailLayout
+      railLabel="Settings scopes"
+      railWidth="narrow"
+      rail={
+        <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
+          <SettingsRail
+            scope={availableScope}
+            appSection={appSectionOf({ section: focus.section })}
+            workspaceName={currentWorkspace?.name ?? null}
+            hasWorkspace={hasWorkspace}
+            nested={nested}
+            onSelect={onScopeChange}
+          />
+        </ScrollFade>
+      }
+      detail={detail}
+    />
+  );
+
   return (
     <StudioShell
       icon={CONCEPT_ICONS.settings}
@@ -32,49 +52,44 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
       closeLabel="close settings"
       onClose={onClose}
     >
-      {(requestClose) => (
-        <StudioRailLayout
-          railLabel="Settings scopes"
-          railWidth="narrow"
-          rail={
-            <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
-              <SettingsRail
-                scope={availableScope}
-                appSection={appSectionOf({ section: focus.section })}
-                workspaceName={currentWorkspace?.name ?? null}
-                hasWorkspace={hasWorkspace}
-                onSelect={onScopeChange}
-              />
-            </ScrollFade>
-          }
-          detail={
-            availableScope === 'app' ? (
+      {(requestClose) =>
+        availableScope === 'app' ? (
+          frame({
+            nested: null,
+            detail: (
               <AppScopePanel
                 section={appSectionOf({ section: focus.section })}
                 requestClose={requestClose}
               />
-            ) : availableScope === 'workspace' && currentWorkspace !== null ? (
+            ),
+          })
+        ) : availableScope === 'workspace' && currentWorkspace !== null ? (
+          frame({
+            nested: null,
+            detail: (
               <WorkspaceScopePanel
                 workspaceId={currentWorkspace.id}
                 initialSection={focus.section}
                 requestClose={requestClose}
               />
-            ) : availableScope === 'providers' ? (
-              <ProviderSettingsScope
-                workspaceId={currentWorkspace?.id ?? null}
-                initialFocus={focus.provider}
-                initialAction={focus.action}
-              />
-            ) : availableScope === 'tools' && currentWorkspace !== null ? (
-              <ToolSettingsScope
-                key={currentWorkspace.id}
-                workspaceId={currentWorkspace.id}
-                initialFocus={focus.tool}
-              />
-            ) : null
-          }
-        />
-      )}
+            ),
+          })
+        ) : availableScope === 'providers' ? (
+          <ProviderSettingsScope
+            workspaceId={currentWorkspace?.id ?? null}
+            initialFocus={focus.provider}
+            initialAction={focus.action}
+            frame={frame}
+          />
+        ) : availableScope === 'tools' && currentWorkspace !== null ? (
+          <ToolSettingsScope
+            key={currentWorkspace.id}
+            workspaceId={currentWorkspace.id}
+            initialFocus={focus.tool}
+            frame={frame}
+          />
+        ) : null
+      }
     </StudioShell>
   );
 };

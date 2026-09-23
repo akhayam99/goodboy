@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import type { ReactNode } from 'react';
 import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -54,7 +55,15 @@ vi.mock('../../../../store', () => ({
 }));
 
 vi.mock('../../../providers/components/ProviderStudio', () => ({
-  ProviderSettingsScope: () => <div>Provider settings content</div>,
+  ProviderSettingsScope: ({
+    frame,
+  }: {
+    readonly frame: (parts: { nested: ReactNode; detail: ReactNode }) => ReactNode;
+  }) =>
+    frame({
+      nested: <ul aria-label="Providers & models settings" />,
+      detail: <div>Provider settings content</div>,
+    }),
 }));
 
 vi.mock('./WorkspaceScopePanel', () => ({
@@ -126,7 +135,16 @@ describe('SettingsStudio', () => {
       />,
     );
     expect((await screen.findByLabelText('Personal API key')).id).toBe('linear-pat');
-    expect(screen.getByRole('button', { name: 'Tools' }).getAttribute('aria-current')).toBe('true');
+    expect(screen.getAllByRole('navigation')).toHaveLength(1);
+    const tools = screen.getByRole('list', { name: 'Tools settings' });
+    expect(
+      within(tools)
+        .getByRole('button', { name: /^Linear/ })
+        .getAttribute('aria-current'),
+    ).toBe('true');
+    expect(screen.getByRole('button', { name: 'Tools' }).getAttribute('aria-current')).toBe(
+      'false',
+    );
   });
 
   const renderApp = ({
@@ -197,6 +215,12 @@ describe('SettingsStudio', () => {
     );
     expect(screen.getByText('Provider settings content')).toBeDefined();
     expect(screen.queryByRole('list', { name: 'App settings' })).toBeNull();
+    expect(
+      within(screen.getByRole('navigation', { name: /settings scopes/i })).getByRole('list', {
+        name: 'Providers & models settings',
+      }),
+    ).toBeDefined();
+    expect(screen.getAllByRole('navigation')).toHaveLength(1);
   });
 
   it('reports rail clicks as focus changes instead of switching on its own', () => {

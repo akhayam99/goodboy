@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ScrollFade } from '@goodboy/ui';
 import type { ProviderId, ProviderLifecycleAction, WorkspaceId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
-import { StudioRailLayout } from '@goodboy/ui';
+import type { ScopeFrame } from '../../../settings/components/SettingsStudio/types';
 import { isConnectRunning } from '../ProviderConnect/isConnectRunning';
 import { ProvidersRail } from './ProvidersRail';
 import { ProviderDetailPanel } from './ProviderDetailPanel';
@@ -14,9 +13,15 @@ type Props = {
   readonly workspaceId: WorkspaceId | null;
   readonly initialFocus?: ProviderId | null;
   readonly initialAction?: ProviderLifecycleAction | null;
+  readonly frame: ScopeFrame;
 };
 
-export const ProviderSettingsScope = ({ workspaceId, initialFocus, initialAction }: Props) => {
+export const ProviderSettingsScope = ({
+  workspaceId,
+  initialFocus,
+  initialAction,
+  frame,
+}: Props) => {
   const providers = useAppStore((s) => s.providers);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
   const landing: ProviderId | 'defaults' =
@@ -51,37 +56,30 @@ export const ProviderSettingsScope = ({ workspaceId, initialFocus, initialAction
     setFocused(id);
   };
 
-  return (
-    <StudioRailLayout
-      railLabel="Providers"
-      railWidth="standard"
-      rail={
-        <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
-          <ProvidersRail
-            providers={ordered}
-            focusedId={focused}
-            onSelect={onSelect}
-            onSelectDefaults={
-              workspaceId === null
-                ? undefined
-                : () => {
-                    setAutoConnect(false);
-                    setFocused('defaults');
-                  }
-            }
-          />
-        </ScrollFade>
-      }
-      detail={
-        focused === 'defaults' && workspaceId !== null ? (
-          <DefaultsPanel workspaceId={workspaceId} />
-        ) : (
-          <ProviderDetailPanel
-            info={selected}
-            autoConnect={autoConnect && selected?.id === initialFocus}
-          />
-        )
-      }
-    />
-  );
+  return frame({
+    nested: (
+      <ProvidersRail
+        providers={ordered}
+        focusedId={focused}
+        onSelect={onSelect}
+        onSelectDefaults={
+          workspaceId === null
+            ? undefined
+            : () => {
+                setAutoConnect(false);
+                setFocused('defaults');
+              }
+        }
+      />
+    ),
+    detail:
+      focused === 'defaults' && workspaceId !== null ? (
+        <DefaultsPanel workspaceId={workspaceId} />
+      ) : (
+        <ProviderDetailPanel
+          info={selected}
+          autoConnect={autoConnect && selected?.id === initialFocus}
+        />
+      ),
+  });
 };

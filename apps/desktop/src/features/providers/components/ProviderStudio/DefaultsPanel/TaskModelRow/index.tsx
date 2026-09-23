@@ -62,8 +62,13 @@ export const TaskModelRow = ({
   }, [effortModel]);
 
   return (
-    <FieldRow label={label} help={help}>
-      <div className="flex items-center gap-2">
+    <FieldRow
+      label={label}
+      help={help}
+      layout="stacked"
+      className="@min-[36rem]:flex-row @min-[36rem]:items-center @min-[36rem]:justify-between @min-[36rem]:gap-6"
+    >
+      <div className="flex min-w-0 items-center gap-2">
         <RoutingStatusControl
           label={label}
           isCustom={preference != null}
@@ -72,7 +77,7 @@ export const TaskModelRow = ({
           idleLabel="auto"
           resetLabel="Back to auto"
         />
-        <div className="w-80">
+        <div className="w-80 min-w-0 max-w-full">
           <RoutingPicker
             ariaLabel={`${label} routing`}
             connectedProviders={availableProviderIds}

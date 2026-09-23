@@ -1,4 +1,4 @@
-import { Eyebrow, StatusRailItem } from '@goodboy/ui';
+import { StatusRailItem } from '@goodboy/ui';
 import type { IntegrationBinding } from '@goodboy/types';
 import { FOOTER_INTEGRATIONS } from '../../../../app/components/AppFooter/categories';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -24,32 +24,27 @@ export const ToolsRail = ({
   connected,
   githubIdentity,
 }: Props) => (
-  <div className="flex flex-col gap-4 p-2">
-    <section className="flex flex-col gap-1">
-      <Eyebrow label="Tools" className="px-2.5" />
-      <div className="flex flex-col gap-0.5">
-        {FOOTER_INTEGRATIONS.map(({ provider }) => {
-          const isActive = provider === focusedId;
-          const subtitle = !connected[provider]
-            ? 'not connected'
-            : provider === 'github'
-              ? (githubIdentity ?? 'connected')
-              : toolIdentity({
-                  binding: integrations.find((binding) => binding.provider === provider),
-                });
-          return (
-            <StatusRailItem
-              key={provider}
-              icon={<IntegrationGlyph provider={provider} size={ICON_SIZE.control} useBrandColor />}
-              label={integrationLabel({ provider })}
-              subtitle={subtitle}
-              tone={connected[provider] ? 'success' : 'neutral'}
-              selected={isActive}
-              onClick={() => onSelect(provider)}
-            />
-          );
-        })}
-      </div>
-    </section>
-  </div>
+  <ul aria-label="Tools settings" className="flex flex-col gap-0.5 pl-6">
+    {FOOTER_INTEGRATIONS.map(({ provider }) => {
+      const subtitle = !connected[provider]
+        ? 'not connected'
+        : provider === 'github'
+          ? (githubIdentity ?? 'connected')
+          : toolIdentity({
+              binding: integrations.find((binding) => binding.provider === provider),
+            });
+      return (
+        <li key={provider}>
+          <StatusRailItem
+            icon={<IntegrationGlyph provider={provider} size={ICON_SIZE.control} useBrandColor />}
+            label={integrationLabel({ provider })}
+            subtitle={subtitle}
+            tone={connected[provider] ? 'success' : 'neutral'}
+            selected={provider === focusedId}
+            onClick={() => onSelect(provider)}
+          />
+        </li>
+      );
+    })}
+  </ul>
 );

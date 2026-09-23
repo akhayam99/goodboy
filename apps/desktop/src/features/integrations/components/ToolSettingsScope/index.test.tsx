@@ -11,6 +11,14 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { ToolSettingsScope } from '.';
+import type { ScopeFrameParts } from '../../../settings/components/SettingsStudio/types';
+
+const plainFrame = ({ nested, detail }: ScopeFrameParts) => (
+  <>
+    {nested}
+    {detail}
+  </>
+);
 import { TrackerStudioLinks } from '../TrackerStudioLinks';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -142,9 +150,9 @@ afterEach(() => {
 describe('ToolSettingsScope', () => {
   it('renders every tool in footer order', async () => {
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} />);
+      render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />);
     });
-    const rail = screen.getByRole('complementary', { name: 'Tools' });
+    const rail = screen.getByRole('list', { name: 'Tools settings' });
     expect(
       within(rail)
         .getAllByRole('button')
@@ -169,7 +177,7 @@ describe('ToolSettingsScope', () => {
     { tool: 'slack', label: 'Slack', field: 'User token', id: 'slack-token' },
   ])('focuses the $tool form from the rail', async ({ label, field, id }) => {
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} />);
+      render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />);
     });
     fireEvent.click(screen.getByRole('button', { name: `${label} not connected` }));
     expect(screen.getByLabelText(field).id).toBe(id);
@@ -179,7 +187,9 @@ describe('ToolSettingsScope', () => {
 
   it('lands initialFocus on the requested tool', async () => {
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="slack" />);
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="slack" />,
+      );
     });
     expect(screen.getByLabelText('User token')).toBeDefined();
     expect(
@@ -190,7 +200,9 @@ describe('ToolSettingsScope', () => {
   it('shows the connected identity and confirms disconnect', async () => {
     store.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [LINEAR] } });
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="linear" />);
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="linear" />,
+      );
     });
     expect(screen.getByText('Connected as Ada')).toBeDefined();
     expect(screen.getByText('linear.app/acme')).toBeDefined();
@@ -209,7 +221,9 @@ describe('ToolSettingsScope', () => {
       store.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [LINEAR] } });
     });
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="linear" />);
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="linear" />,
+      );
     });
     fireEvent.change(screen.getByLabelText('Personal API key'), { target: { value: 'test-key' } });
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Connect' })));
@@ -222,7 +236,9 @@ describe('ToolSettingsScope', () => {
     store.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [LINEAR] } });
     const dispatch = vi.spyOn(window, 'dispatchEvent');
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="linear" />);
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="linear" />,
+      );
     });
     fireEvent.click(screen.getByRole('button', { name: 'Open in inbox' }));
     expect(dispatch).toHaveBeenCalledWith(
@@ -266,7 +282,13 @@ describe('ToolSettingsScope', () => {
     async ({ provider, identity, secondary, label }) => {
       store.setState({ workspaceIntegrations: { [WORKSPACE_ID]: BINDINGS } });
       await act(async () => {
-        render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus={provider} />);
+        render(
+          <ToolSettingsScope
+            frame={plainFrame}
+            workspaceId={WORKSPACE_ID}
+            initialFocus={provider}
+          />,
+        );
       });
       expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([label]);
       expect(screen.getByText(identity)).toBeDefined();
@@ -286,7 +308,7 @@ describe('ToolSettingsScope', () => {
     github.mode = 'gh-cli';
     github.user = 'Ada';
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} />);
+      render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />);
     });
     await waitFor(() => expect(screen.getByLabelText('Personal API key').id).toBe('gitlab-pat'));
     expect(
@@ -304,11 +326,17 @@ describe('ToolSettingsScope', () => {
             resolveStatus = resolve;
           }),
       );
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus={initialFocus} />);
+      render(
+        <ToolSettingsScope
+          frame={plainFrame}
+          workspaceId={WORKSPACE_ID}
+          initialFocus={initialFocus}
+        />,
+      );
       expect(screen.queryByRole('heading')).toBeNull();
       expect(screen.queryByLabelText('Personal API key')).toBeNull();
       expect(
-        within(screen.getByRole('complementary', { name: 'Tools' }))
+        within(screen.getByRole('list', { name: 'Tools settings' }))
           .getAllByRole('button')
           .every((button) => button.getAttribute('aria-current') !== 'true'),
       ).toBe(true);
@@ -322,7 +350,9 @@ describe('ToolSettingsScope', () => {
 
   it('keeps one title and switches its subtitle when the connection changes', async () => {
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="linear" />);
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="linear" />,
+      );
     });
     const title = screen.getByRole('heading', { name: 'Linear' });
     const header = title.parentElement?.parentElement ?? null;
@@ -335,7 +365,9 @@ describe('ToolSettingsScope', () => {
 
   it('connects GitHub with a workspace key without requiring the CLI', async () => {
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="github" />);
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="github" />,
+      );
     });
     fireEvent.click(await screen.findByRole('button', { name: 'Use a different key' }));
     const field = document.getElementById('github-workspace-pat');
@@ -367,7 +399,9 @@ describe('ToolSettingsScope', () => {
     github.mode = 'pat';
     github.user = 'Ada';
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="github" />);
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="github" />,
+      );
     });
     expect(await screen.findByText('Connected as Ada with a personal API key')).toBeDefined();
     expect(screen.getByText('Uses the all-workspaces connection')).toBeDefined();
@@ -384,7 +418,7 @@ describe('ToolSettingsScope', () => {
     github.user = 'Ada';
     store.setState({ workspaceIntegrations: { [WORKSPACE_ID]: BINDINGS } });
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} />);
+      render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />);
     });
     expect(await screen.findByText('Connected as Ada through the gh CLI')).toBeDefined();
     expect(screen.getByText('Run gh auth logout to sign out')).toBeDefined();
@@ -397,7 +431,9 @@ describe('ToolSettingsScope', () => {
 
   it('offers CLI instructions and refreshes the GitHub connection', async () => {
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="github" />);
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="github" />,
+      );
     });
     expect(await screen.findByText('gh auth login')).toBeDefined();
     expect(screen.getByLabelText('Personal API key').id).toBe('github-pat');
@@ -410,7 +446,9 @@ describe('ToolSettingsScope', () => {
   it('says so in one line when the gh CLI is missing', async () => {
     store.setState({ githubStatus: { mode: 'absent', available: false, scopes: [] } });
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="github" />);
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="github" />,
+      );
     });
     expect(await screen.findByText('The GitHub CLI is not installed.')).toBeDefined();
     expect(screen.queryByLabelText('Personal API key')).toBeNull();
@@ -421,7 +459,9 @@ describe('ToolSettingsScope', () => {
     github.scoped = true;
     github.user = 'Ada';
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="github" />);
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="github" />,
+      );
     });
     expect(await screen.findByText('Connected as Ada')).toBeDefined();
     expect(screen.getByText('workspace key')).toBeDefined();
@@ -435,7 +475,9 @@ describe('ToolSettingsScope', () => {
 
   it('reads the global and the workspace status once each', async () => {
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="github" />);
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="github" />,
+      );
     });
     expect(screen.getByLabelText('Personal API key')).toBeDefined();
     expect(invoke).toHaveBeenCalledTimes(2);
@@ -446,7 +488,9 @@ describe('ToolSettingsScope', () => {
   it('reaches a connection form using the keyboard', async () => {
     const user = userEvent.setup();
     await act(async () => {
-      render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="github" />);
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="github" />,
+      );
     });
     await screen.findByRole('button', { name: 'Use a different key' });
     screen.getByRole('button', { name: 'GitHub not connected' }).focus();

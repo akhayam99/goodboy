@@ -143,6 +143,10 @@ shell against the same localhost URL:
 gives the mock scene's `useEffect` time to fill the store, and React time to
 render, before the snapshot is taken.
 
+A layout change is also captured at `--window-size=1100,800`, close to the
+window's minimum width, where a second rail or a fixed-width control is the
+first thing to clip. Capture both themes at both widths.
+
 ## Data hygiene
 
 Fake workspace names, session goals and usernames must be generic but

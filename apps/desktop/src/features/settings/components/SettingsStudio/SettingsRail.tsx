@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { PANE_RHYTHM, SelectableRow, cn } from '@goodboy/ui';
 import { Boxes, Settings, Wrench } from 'lucide-react';
 import type { SettingsScopeChange, SettingsStudioScope } from './types';
@@ -9,6 +10,7 @@ type Props = {
   readonly appSection: AppSection;
   readonly workspaceName: string | null;
   readonly hasWorkspace: boolean;
+  readonly nested: ReactNode;
   readonly onSelect: (params: SettingsScopeChange) => void;
 };
 
@@ -37,6 +39,7 @@ export const SettingsRail = ({
   appSection,
   workspaceName,
   hasWorkspace,
+  nested,
   onSelect,
 }: Props) => (
   <nav aria-label="Settings scopes" className={`flex flex-col gap-1 ${PANE_RHYTHM.navRail.body}`}>
@@ -44,7 +47,7 @@ export const SettingsRail = ({
       const Icon = item.icon;
       const subtitle = item.scope === 'workspace' ? workspaceName : null;
       const isActive = scope === item.scope;
-      const hasItems = item.scope === 'app';
+      const hasItems = item.scope === 'app' || (isActive && nested !== null);
       return (
         <div key={item.scope} className="flex flex-col gap-0.5">
           <SelectableRow
@@ -64,7 +67,8 @@ export const SettingsRail = ({
               )}
             </span>
           </SelectableRow>
-          {isActive && hasItems && (
+          {isActive && item.scope !== 'app' && nested}
+          {isActive && item.scope === 'app' && (
             <ul aria-label={`${item.label} settings`} className="flex flex-col gap-0.5">
               {APP_SECTIONS.map((section) => (
                 <li key={section.id}>

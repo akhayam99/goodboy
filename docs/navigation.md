@@ -271,9 +271,11 @@ one is open at a time.
   It sits next to settings, not beside the named launchers.
 - **Settings nests items in its rail.** While App is active, its items
   (General, Shortcuts, Backup, Storage, Help, Danger zone) sit under the App
-  row as indented rows, and the panel shows one item at a time. So App adds no
-  second rail column. Precedent: the VS Code settings table of contents and
-  Linear's settings sidebar.
+  row as indented rows, and the panel shows one item at a time. Providers &
+  models nests Defaults and one row per provider the same way, and Tools nests
+  one row per tool. So no scope adds a second rail column. Every scope panel
+  keeps the reading width. Precedent: the VS Code settings table of contents
+  and Linear's settings sidebar.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
   beside a detail panel is fine. "no left panel and right panel at once" is
   about two sidebars on either side of the content, which the app does not do.

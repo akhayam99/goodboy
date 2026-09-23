@@ -169,7 +169,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
         {group === 'task' ? (
           <div className="flex flex-col">
             {TASKS.map((task, index) => (
-              <div key={task.id} className="flex flex-col">
+              <div key={task.id} className="@container flex flex-col">
                 {index > 0 ? <Divider /> : null}
                 <TaskModelRow
                   task={task.id}
