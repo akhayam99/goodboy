@@ -83,7 +83,6 @@ const BoardShellSceneContent = () => {
         ) : undefined
       }
       main={<StageBoard workspaceId={WORKSPACE_ID} sessions={sessions} />}
-      rightSidebar={null}
     />
   );
 };

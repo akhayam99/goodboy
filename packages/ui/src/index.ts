@@ -15,7 +15,6 @@ export {
   LEFT_SIDEBAR_MAX,
   LEFT_SIDEBAR_MIN,
   LEFT_SIDEBAR_STORAGE_KEY,
-  RIGHT_SIDEBAR_STORAGE_KEY,
 } from './components/AppShell';
 export type { AppShellProps } from './components/AppShell';
 export { Button } from './components/Button';

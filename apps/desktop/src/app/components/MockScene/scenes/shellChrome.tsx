@@ -149,7 +149,6 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
             <div className="min-h-0 flex-1">{main}</div>
           </div>
         }
-        rightSidebar={null}
       />
     </ToastProvider>
   );

@@ -9,11 +9,7 @@ afterEach(cleanup);
 describe('AppShell', () => {
   it('takes the hidden left sidebar out of the tab order', () => {
     const { rerender } = render(
-      <AppShell
-        leftSidebar={<button type="button">sessions</button>}
-        main={<div>main</div>}
-        rightSidebar={null}
-      />,
+      <AppShell leftSidebar={<button type="button">sessions</button>} main={<div>main</div>} />,
     );
     const aside = screen.getByRole('button', { name: 'sessions' }).closest('aside');
 
@@ -24,7 +20,6 @@ describe('AppShell', () => {
         leftSidebar={<button type="button">sessions</button>}
         leftHidden
         main={<div>main</div>}
-        rightSidebar={null}
       />,
     );
 
@@ -38,7 +33,6 @@ describe('AppShell', () => {
         leftHidden
         leftOverlay={<div>peek</div>}
         main={<div>main</div>}
-        rightSidebar={null}
       />,
     );
     const slot = screen.getByText('peek').parentElement;
@@ -49,16 +43,14 @@ describe('AppShell', () => {
   });
 
   it('lets the footer size its own track, so a divider never pushes it past the row', () => {
-    render(<AppShell footer={<div>status</div>} main={<div>main</div>} rightSidebar={null} />);
+    render(<AppShell footer={<div>status</div>} main={<div>main</div>} />);
     const grid = screen.getByText('status').closest('[style*="grid-template-rows"]');
 
     expect(grid?.getAttribute('style')).toContain('grid-template-rows: minmax(0,1fr) auto');
   });
 
   it('omits the overlay slot when nothing is peeking', () => {
-    render(
-      <AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} rightSidebar={null} />,
-    );
+    render(<AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} />);
 
     expect(screen.queryByText('peek')).toBeNull();
   });

@@ -3,17 +3,15 @@ import { cn } from '../cn';
 import { ResizeHandle } from './ResizeHandle';
 
 export type AppShellProps = {
-  topBar?: ReactNode;
-  footer?: ReactNode;
-  leftSidebar?: ReactNode;
-  leftHidden?: boolean;
-  leftSidebarCollapsed?: boolean;
-  leftOverlay?: ReactNode;
-  main: ReactNode;
-  rightSidebar: ReactNode;
-  rightSidebarCollapsed?: boolean;
-  overlay?: ReactNode;
-  className?: string;
+  readonly topBar?: ReactNode;
+  readonly footer?: ReactNode;
+  readonly leftSidebar?: ReactNode;
+  readonly leftHidden?: boolean;
+  readonly leftSidebarCollapsed?: boolean;
+  readonly leftOverlay?: ReactNode;
+  readonly main: ReactNode;
+  readonly overlay?: ReactNode;
+  readonly className?: string;
 };
 
 export const LEFT_SIDEBAR_MIN = 260;
@@ -21,95 +19,60 @@ export const LEFT_SIDEBAR_MAX = 640;
 export const LEFT_SIDEBAR_DEFAULT = 340;
 export const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v2';
 
-const RIGHT_SIDEBAR_MIN = 260;
-const RIGHT_SIDEBAR_MAX = 560;
-const RIGHT_SIDEBAR_DEFAULT = 340;
-export const RIGHT_SIDEBAR_STORAGE_KEY = 'goodboy:right-sidebar-width';
-const RIGHT_RAIL_WIDTH = 44;
 const LEFT_RAIL_WIDTH = 44;
 
-function readPersistedWidth(key: string, def: number, min: number, max: number): number {
+const readPersistedLeftWidth = (): number => {
   if (typeof localStorage === 'undefined') {
-    return def;
+    return LEFT_SIDEBAR_DEFAULT;
   }
-  const raw = localStorage.getItem(key);
-  if (!raw) {
-    return def;
+  const raw = localStorage.getItem(LEFT_SIDEBAR_STORAGE_KEY);
+  if (raw === null || raw === '') {
+    return LEFT_SIDEBAR_DEFAULT;
   }
   const parsed = parseInt(raw, 10);
   if (Number.isNaN(parsed)) {
-    return def;
+    return LEFT_SIDEBAR_DEFAULT;
   }
-  return Math.max(min, Math.min(max, parsed));
-}
+  return Math.max(LEFT_SIDEBAR_MIN, Math.min(LEFT_SIDEBAR_MAX, parsed));
+};
 
-function buildLayout(opts: {
-  collapsed: boolean;
-  leftCollapsed: boolean;
-  leftHidden: boolean;
-  hasLeftSidebar: boolean;
-  hasRightSidebar: boolean;
-  hasFooter: boolean;
-  leftWidthPx: number;
-  rightWidthPx: number;
-}): {
-  templateAreas: string;
-  templateColumns: string;
-  templateRows: string;
-} {
-  const {
-    collapsed,
-    leftCollapsed,
-    leftHidden,
-    hasLeftSidebar,
-    hasRightSidebar,
-    hasFooter,
-    leftWidthPx,
-    rightWidthPx,
-  } = opts;
+type LayoutParams = {
+  readonly leftCollapsed: boolean;
+  readonly leftHidden: boolean;
+  readonly hasLeftSidebar: boolean;
+  readonly hasFooter: boolean;
+  readonly leftWidthPx: number;
+};
 
+type Layout = {
+  readonly templateAreas: string;
+  readonly templateColumns: string;
+  readonly templateRows: string;
+};
+
+const buildLayout = ({
+  leftCollapsed,
+  leftHidden,
+  hasLeftSidebar,
+  hasFooter,
+  leftWidthPx,
+}: LayoutParams): Layout => {
   const rows = hasFooter ? 'minmax(0,1fr) auto' : 'minmax(0,1fr)';
-
   if (!hasLeftSidebar) {
-    if (!hasRightSidebar) {
-      return {
-        templateAreas: hasFooter ? '"main" "footer"' : '"main"',
-        templateColumns: 'minmax(0,1fr)',
-        templateRows: rows,
-      };
-    }
     return {
-      templateAreas: hasFooter
-        ? '"main rhandle right" "footer footer footer"'
-        : '"main rhandle right"',
-      templateColumns: `minmax(0,1fr) ${collapsed ? '0px' : '6px'} ${
-        collapsed ? RIGHT_RAIL_WIDTH : rightWidthPx
-      }px`,
+      templateAreas: hasFooter ? '"main" "footer"' : '"main"',
+      templateColumns: 'minmax(0,1fr)',
       templateRows: rows,
     };
   }
-
   const leftCol = leftHidden ? '0px' : leftCollapsed ? `${LEFT_RAIL_WIDTH}px` : `${leftWidthPx}px`;
   const handleCol = leftHidden || leftCollapsed ? '0px' : '6px';
-  if (!hasRightSidebar) {
-    return {
-      templateAreas: hasFooter
-        ? '"left lhandle main" "footer footer footer"'
-        : '"left lhandle main"',
-      templateColumns: `${leftCol} ${handleCol} minmax(0,1fr)`,
-      templateRows: rows,
-    };
-  }
   return {
-    templateAreas: hasFooter
-      ? '"left lhandle main rhandle right" "footer footer footer footer footer"'
-      : '"left lhandle main rhandle right"',
-    templateColumns: `${leftCol} ${handleCol} minmax(0,1fr) ${collapsed ? '0px' : '6px'} ${
-      collapsed ? RIGHT_RAIL_WIDTH : rightWidthPx
-    }px`,
+    templateAreas: hasFooter ? '"left lhandle main" "footer footer footer"' : '"left lhandle main"',
+    templateColumns: `${leftCol} ${handleCol} minmax(0,1fr)`,
     templateRows: rows,
   };
-}
+};
 
 export const AppShell = ({
   topBar,
@@ -119,31 +82,13 @@ export const AppShell = ({
   leftSidebarCollapsed = false,
   leftOverlay,
   main,
-  rightSidebar,
-  rightSidebarCollapsed = false,
   overlay,
   className,
 }: AppShellProps) => {
   const hasFooter = footer != null;
   const hasLeftSidebar = leftSidebar != null;
-  const hasRightSidebar = rightSidebar !== null && rightSidebar !== undefined;
   const isLeftResizeDisabled = leftHidden || leftSidebarCollapsed;
-  const [leftWidth, setLeftWidth] = useState<number>(() =>
-    readPersistedWidth(
-      LEFT_SIDEBAR_STORAGE_KEY,
-      LEFT_SIDEBAR_DEFAULT,
-      LEFT_SIDEBAR_MIN,
-      LEFT_SIDEBAR_MAX,
-    ),
-  );
-  const [rightWidth, setRightWidth] = useState<number>(() =>
-    readPersistedWidth(
-      RIGHT_SIDEBAR_STORAGE_KEY,
-      RIGHT_SIDEBAR_DEFAULT,
-      RIGHT_SIDEBAR_MIN,
-      RIGHT_SIDEBAR_MAX,
-    ),
-  );
+  const [leftWidth, setLeftWidth] = useState<number>(readPersistedLeftWidth);
   useEffect(() => {
     if (typeof localStorage === 'undefined') {
       return;
@@ -151,22 +96,12 @@ export const AppShell = ({
     localStorage.setItem(LEFT_SIDEBAR_STORAGE_KEY, String(leftWidth));
   }, [leftWidth]);
 
-  useEffect(() => {
-    if (typeof localStorage === 'undefined') {
-      return;
-    }
-    localStorage.setItem(RIGHT_SIDEBAR_STORAGE_KEY, String(rightWidth));
-  }, [rightWidth]);
-
   const layout = buildLayout({
-    collapsed: rightSidebarCollapsed,
     leftCollapsed: leftSidebarCollapsed,
     leftHidden,
     hasLeftSidebar,
-    hasRightSidebar,
     hasFooter,
     leftWidthPx: leftWidth,
-    rightWidthPx: rightWidth,
   });
   const gridStyle: CSSProperties = {
     gridTemplateAreas: layout.templateAreas,
@@ -218,29 +153,6 @@ export const AppShell = ({
         >
           {main}
         </main>
-        {hasRightSidebar ? (
-          <div className="min-h-0" style={{ gridArea: 'rhandle' }}>
-            {rightSidebarCollapsed ? null : (
-              <ResizeHandle
-                value={rightWidth}
-                min={RIGHT_SIDEBAR_MIN}
-                max={RIGHT_SIDEBAR_MAX}
-                onChange={setRightWidth}
-                onReset={() => setRightWidth(RIGHT_SIDEBAR_DEFAULT)}
-                side="right"
-                ariaLabel="Resize right sidebar"
-              />
-            )}
-          </div>
-        ) : null}
-        {hasRightSidebar ? (
-          <aside
-            className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
-            style={{ gridArea: 'right' }}
-          >
-            {rightSidebar}
-          </aside>
-        ) : null}
         {leftOverlay != null ? (
           <div
             className="pointer-events-none relative z-20 flex min-h-0 min-w-0"
@@ -252,10 +164,7 @@ export const AppShell = ({
         {overlay != null ? (
           <div
             className="relative z-30 flex min-h-0 min-w-0 flex-col overflow-hidden"
-            style={{
-              gridColumn: hasRightSidebar ? 'main-start / right-end' : 'main',
-              gridRow: '1 / 2',
-            }}
+            style={{ gridColumn: 'main', gridRow: '1 / 2' }}
           >
             {overlay}
           </div>

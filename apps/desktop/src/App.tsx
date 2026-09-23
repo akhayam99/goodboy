@@ -263,7 +263,6 @@ export const App = () => {
             <OnboardingCard />
           </div>
         }
-        rightSidebar={null}
         overlay={null}
       />
       {overlays}

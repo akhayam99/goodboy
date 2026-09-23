@@ -277,7 +277,6 @@ export const ShellScene = () => {
           ) : undefined
         }
         main={<SessionOverviewPane session={SESSION} onSelectLens={noop} />}
-        rightSidebar={null}
       />
     </ToastProvider>
   );
