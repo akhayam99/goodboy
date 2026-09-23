@@ -1,7 +1,6 @@
 import { useEffect, useRef, type RefObject } from 'react';
-import type { AgentId, ProviderId, Session, EffortLevel } from '@goodboy/types';
+import type { AgentId, EffortLevel, ProviderId, Session, VerbosityLevel } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
 import { asEffortLevel, asProvider } from '../lib';
 import { resolveSessionSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 

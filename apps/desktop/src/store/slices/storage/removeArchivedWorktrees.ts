@@ -3,10 +3,10 @@ import type { IsoDateTime } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { runMountRemoval } from '../project-mounts/runMountRemoval';
 import { collectArchivedWorktrees } from './collectArchivedWorktrees';
-import type { GetFn, SetFn, WorktreeRemovalResult } from './types';
+import type { GetFn, SetFn, WorktreeCleanupTally } from './types';
 
 export const removeArchivedWorktrees = (_set: SetFn, get: GetFn) => {
-  return async (): Promise<WorktreeRemovalResult> => {
+  return async (): Promise<WorktreeCleanupTally> => {
     const targets = await collectArchivedWorktrees({ projects: get().projects });
     let removed = 0;
     let failed = 0;

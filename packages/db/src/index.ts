@@ -148,7 +148,6 @@ export {
   summarizeSessionTelemetry,
   summarizeWorkspaceTelemetry,
   summarizeWorkspaceProviderTelemetry,
-  type TelemetrySummary,
   type ProviderTelemetrySummary,
 } from './queries/telemetry';
 export { getSetting, setSetting } from './queries/settings';

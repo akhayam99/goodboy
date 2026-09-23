@@ -6,6 +6,7 @@ import type {
   TelemetryKind,
   TelemetryRecord,
   TelemetryRecordId,
+  TelemetrySummary,
   WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
@@ -76,13 +77,6 @@ export const listTelemetryForSession = async (
     [sessionId],
   );
   return rows.map(toDomain);
-};
-
-export type TelemetrySummary = {
-  readonly inputTokens: number;
-  readonly outputTokens: number;
-  readonly estimatedCostUsd: number;
-  readonly recordCount: number;
 };
 
 type SummaryRow = {

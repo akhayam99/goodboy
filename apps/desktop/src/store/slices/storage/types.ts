@@ -30,7 +30,7 @@ export type StorageStats = {
   readonly retainedWorktrees: ReadonlyArray<RetainedWorktreeTarget>;
 };
 
-export type WorktreeRemovalResult = {
+export type WorktreeCleanupTally = {
   readonly removed: number;
   readonly failed: number;
 };

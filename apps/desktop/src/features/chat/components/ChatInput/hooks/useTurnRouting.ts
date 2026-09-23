@@ -1,6 +1,12 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { ProviderId, Session, TurnProviderOverride, EffortLevel } from '@goodboy/types';
+import type {
+  EffortLevel,
+  ProviderId,
+  Session,
+  TurnProviderOverride,
+  VerbosityLevel,
+} from '@goodboy/types';
 import {
   PROVIDER_CAPABILITIES,
   canonicalModelId,
@@ -14,7 +20,6 @@ import { useAppStore } from '../../../../../store';
 import { agentPinApplies } from '../../../../../store/slices/turn/agentPinApplies';
 import { agentReferenceRouting } from '../../../../../store/slices/turn/agentReferenceRouting';
 import { stepConfigForAgent } from '../../../../../store/slices/turn/stepConfigForAgent';
-import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
 import { asEffortLevel, asProvider } from '../lib';
 import { resolveSessionSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 

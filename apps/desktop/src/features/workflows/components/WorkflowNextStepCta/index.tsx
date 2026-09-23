@@ -8,9 +8,9 @@ import type {
   ProviderId,
   RoleModelPreferences,
   Step,
+  VerbosityLevel,
   Workflow,
 } from '@goodboy/types';
-import type { VerbosityLevel } from '../../../../features/settings/verbosity';
 import { classifyStep } from '../../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../resolveStepRouting';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';

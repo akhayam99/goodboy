@@ -7,7 +7,7 @@ import type { StorageStats } from './slices/storage';
 import type { MountCleanupState } from './slices/mount-cleanup/state';
 import type { PrSeriesState } from './slices/pr-series/state';
 import type { PrWritesState } from './slices/pr-writes/state';
-import type { Notification, NotificationCounts, TelemetrySummary } from '@goodboy/db';
+import type { Notification, NotificationCounts } from '@goodboy/db';
 import type {
   Agent,
   AgentId,
@@ -20,11 +20,16 @@ import type {
   FileVersion,
   GhTokenStatus,
   GoalAttachment,
+  IntegrationBinding,
   IntegrationCredential,
   IntegrationCredentialUsage,
   IsoDateTime,
   LinkedIssue,
   Message,
+  MountBranchObservation,
+  MountId,
+  MountPullRequestIdentity,
+  MountPullRequestLink,
   OpenQuestion,
   OpenQuestionId,
   OrchestratorRouting,
@@ -33,28 +38,26 @@ import type {
   PlanId,
   PlanWithCount,
   PrDetail,
-  PrReviewDraft,
   Project,
   ProjectId,
+  ProjectScript,
   ProviderCredential,
   ProviderId,
   ProviderRunId,
+  PrReviewDraft,
   PullRequestState,
   Session,
   SessionBudget,
   SessionEvent,
   SessionExternalTask,
   SessionId,
-  MountBranchObservation,
-  MountId,
-  MountPullRequestIdentity,
-  MountPullRequestLink,
   SessionMountView,
   SessionProjectMount,
   SessionViewPrefs,
   Skill,
   StepDef,
   TelemetryRecord,
+  TelemetrySummary,
   TurnEvent,
   TurnState,
   Workflow,
@@ -62,8 +65,6 @@ import type {
   Workspace,
   WorkspaceGitStatus,
   WorkspaceId,
-  IntegrationBinding,
-  ProjectScript,
 } from '@goodboy/types';
 import type { SessionWorktree } from '@goodboy/db';
 import type { AgentKind } from '../features/session/agent-kind';

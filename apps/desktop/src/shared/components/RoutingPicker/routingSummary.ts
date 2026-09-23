@@ -1,10 +1,16 @@
-import type { CatalogModel, ModelSelection, ProviderId, EffortLevel } from '@goodboy/types';
+import type {
+  CatalogModel,
+  EffortLevel,
+  ModelSelection,
+  ProviderId,
+  VerbosityLevel,
+} from '@goodboy/types';
 import {
   EFFORT_LABEL,
   PROVIDER_LABEL,
   modelLabel,
 } from '../../../features/chat/utils/chat-constants';
-import { VERBOSITY_LABEL, type VerbosityLevel } from '../../../features/settings/verbosity';
+import { VERBOSITY_LABEL } from '../../../features/settings/verbosity';
 
 export type RoutingTriggerLabel = {
   readonly name: ReadonlyArray<string>;

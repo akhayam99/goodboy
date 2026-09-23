@@ -17,13 +17,15 @@ import {
   useDropdown,
   tintClasses,
 } from '@goodboy/ui';
-import type { CatalogModel, ModelSelection, ProviderId, EffortLevel } from '@goodboy/types';
+import type {
+  CatalogModel,
+  EffortLevel,
+  ModelSelection,
+  ProviderId,
+  VerbosityLevel,
+} from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
-import {
-  VERBOSITY_LABEL,
-  VERBOSITY_LEVELS,
-  type VerbosityLevel,
-} from '../../../features/settings/verbosity';
+import { VERBOSITY_LABEL, VERBOSITY_LEVELS } from '../../../features/settings/verbosity';
 import { AxesSection } from './AxesSection';
 import { verbosityTone } from './chipTone';
 import { PickerChip } from './PickerChip';

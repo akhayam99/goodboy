@@ -1,11 +1,7 @@
+import type { VerbosityLevel } from '@goodboy/types';
 import { AnchoredPopover, cn, useDropdown, tintClasses } from '@goodboy/ui';
 import { Check, ChevronDown } from 'lucide-react';
-import {
-  VERBOSITY_LABEL,
-  VERBOSITY_LEVELS,
-  VERBOSITY_DOT,
-  type VerbosityLevel,
-} from '../../../settings/verbosity';
+import { VERBOSITY_LABEL, VERBOSITY_LEVELS, VERBOSITY_DOT } from '../../../settings/verbosity';
 
 type Props = {
   value: VerbosityLevel;
