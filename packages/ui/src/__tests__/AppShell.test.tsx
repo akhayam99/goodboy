@@ -54,4 +54,24 @@ describe('AppShell', () => {
 
     expect(screen.queryByText('peek')).toBeNull();
   });
+
+  it('spans the studio across every column of the work row, above the peek', () => {
+    render(
+      <AppShell
+        leftSidebar={<div>sessions</div>}
+        leftOverlay={<div>peek</div>}
+        footer={<div>status</div>}
+        main={<div>main</div>}
+        studio={<div>settings studio</div>}
+      />,
+    );
+    const slot = screen.getByText('settings studio').parentElement;
+    const peek = screen.getByText('peek').parentElement;
+
+    expect(slot?.style.gridColumn).toBe('1 / -1');
+    expect(slot?.style.gridRow).toBe('1 / 2');
+    expect(slot?.className).toContain('z-studio');
+    expect(peek?.className).toContain('z-20');
+    expect(screen.getByText('status').parentElement?.style.gridArea).toBe('footer');
+  });
 });

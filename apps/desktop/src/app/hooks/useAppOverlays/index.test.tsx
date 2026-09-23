@@ -139,7 +139,12 @@ const Harness = ({ connectedGithub }: { readonly connectedGithub: boolean }) => 
   useEffect(() => {
     handle.current = overlays;
   });
-  return <>{overlays.overlays}</>;
+  return (
+    <>
+      {overlays.studio}
+      {overlays.layers}
+    </>
+  );
 };
 
 const overlays = (): Overlays => {

@@ -4,7 +4,7 @@ import type { IntegrationGlyphProvider } from '../../../features/integrations/co
 import type { SettingsStudioScope } from '../../../features/settings/components/SettingsStudio/types';
 import { markStepComplete } from '../../../features/onboarding/onboarding-store';
 import { useSessionById } from '../../../store';
-import { AppOverlayRouter } from '../../components/AppOverlayRouter';
+import { AppOverlayRouter, AppStudio } from '../../components/AppOverlayRouter';
 import { clearCurrentSessionStudio } from './clearCurrentSessionStudio';
 import { footerTarget, type ConnectedIntegrations, type Overlay } from './overlayState';
 import { useCloseOverlayOnNavigation } from './useCloseOverlayOnNavigation';
@@ -152,12 +152,21 @@ export const useAppOverlays = ({
     setDeleteSessionId(null);
   }, []);
 
-  const overlays: ReactNode = createElement(AppOverlayRouter, {
+  const studio: ReactNode = isWorkspaceLauncherBranch
+    ? null
+    : createElement(AppStudio, {
+        overlay,
+        close,
+        onSettingsScopeChange: changeSettingsScope,
+        currentWorkspace,
+        workspaceProjectRoot,
+        offerWorkspaceRepo,
+      });
+
+  const layers: ReactNode = createElement(AppOverlayRouter, {
     overlay,
     close,
-    onSettingsScopeChange: changeSettingsScope,
     currentWorkspace,
-    workspaceProjectRoot,
     isWorkspaceLauncherBranch,
     deleteOpen,
     deleteTargetSession,
@@ -187,6 +196,7 @@ export const useAppOverlays = ({
     openShortcutHelp,
     openSpend,
     openWorkflows,
-    overlays,
+    studio,
+    layers,
   };
 };

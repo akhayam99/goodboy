@@ -85,7 +85,8 @@ export const App = () => {
     openShortcutHelp,
     openSpend,
     openWorkflows,
-    overlays,
+    studio,
+    layers,
   } = useAppOverlays({
     connected,
     currentSession,
@@ -179,7 +180,7 @@ export const App = () => {
     return (
       <ToastProvider>
         <NotificationToastBridge />
-        {overlays}
+        {layers}
       </ToastProvider>
     );
   }
@@ -263,9 +264,9 @@ export const App = () => {
             <OnboardingCard />
           </div>
         }
-        overlay={null}
+        studio={studio}
       />
-      {overlays}
+      {layers}
     </ToastProvider>
   );
 };

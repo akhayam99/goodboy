@@ -68,9 +68,7 @@ const CompanionStudio = lazy(() =>
 type Props = {
   readonly overlay: Overlay | null;
   readonly close: () => void;
-  readonly onSettingsScopeChange: (params: { readonly scope: SettingsStudioScope }) => void;
   readonly currentWorkspace: Workspace | null;
-  readonly workspaceProjectRoot: string | null;
   readonly isWorkspaceLauncherBranch: boolean;
   readonly deleteOpen: boolean;
   readonly deleteTargetSession: Session | null;
@@ -172,12 +170,35 @@ const renderStudio = ({
   }
 };
 
-export const AppOverlayRouter = ({
+export const AppStudio = ({
   overlay,
   close,
   onSettingsScopeChange,
   currentWorkspace,
   workspaceProjectRoot,
+  offerWorkspaceRepo,
+}: Omit<StudioParams, 'overlay'> & { readonly overlay: Overlay | null }) => {
+  if (overlay === null) {
+    return null;
+  }
+  return (
+    <Suspense fallback={null}>
+      {renderStudio({
+        overlay,
+        close,
+        onSettingsScopeChange,
+        currentWorkspace,
+        workspaceProjectRoot,
+        offerWorkspaceRepo,
+      })}
+    </Suspense>
+  );
+};
+
+export const AppOverlayRouter = ({
+  overlay,
+  close,
+  currentWorkspace,
   isWorkspaceLauncherBranch,
   deleteOpen,
   deleteTargetSession,
@@ -210,16 +231,6 @@ export const AppOverlayRouter = ({
 
   return (
     <Suspense fallback={null}>
-      {overlay === null
-        ? null
-        : renderStudio({
-            overlay,
-            close,
-            onSettingsScopeChange,
-            currentWorkspace,
-            workspaceProjectRoot,
-            offerWorkspaceRepo,
-          })}
       {paletteOpen ? <CommandPalette initialQuery={palettePrefix} onClose={closePalette} /> : null}
       {currentWorkspace !== null ? (
         <ConvertWorkspaceDialog

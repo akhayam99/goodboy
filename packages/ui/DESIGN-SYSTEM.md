@@ -256,18 +256,18 @@ Named tokens in `apps/desktop/src/styles.css` under `@theme`, with keys
 is a precedence chain (each layer must sit above the one below).
 `docs/styling.md` owns the reasoning. This table is only the registry.
 
-| token                        | value | who                                                    |
-| ---------------------------- | ----- | ------------------------------------------------------ |
-| `--z-index-studio`           | 50    | `StudioShell`, the floor: never lowered                |
-| `--z-index-popover-backdrop` | 55    | click-catcher behind the app-global popovers           |
-| `--z-index-onboarding`       | 60    | the onboarding wizard over a studio                    |
-| `--z-index-drag`             | 62    | the workflow studio drag ghost                         |
-| `--z-index-popover`          | 65    | the app-global popovers                                |
-| `--z-index-command-palette`  | 70    | ⌘K, which fires whatever else is open                  |
-| `--z-index-tooltip`          | 75    | triggerable from inside a popover or the palette       |
-| `--z-index-toast`            | 85    | the toast stack                                        |
-| `--z-index-lightbox`         | 90    | the image lightbox, above everything z-indexed         |
-| (native `<dialog>`)          | n/a   | the browser's top layer, above every z-indexed element |
+| token                        | value | who                                                                                            |
+| ---------------------------- | ----- | ---------------------------------------------------------------------------------------------- |
+| `--z-index-studio`           | 50    | the `AppShell` studio slot and the launcher's viewport `StudioShell`, the floor: never lowered |
+| `--z-index-popover-backdrop` | 55    | click-catcher behind the app-global popovers                                                   |
+| `--z-index-onboarding`       | 60    | the onboarding wizard over a studio                                                            |
+| `--z-index-drag`             | 62    | the workflow studio drag ghost                                                                 |
+| `--z-index-popover`          | 65    | the app-global popovers                                                                        |
+| `--z-index-command-palette`  | 70    | ⌘K, which fires whatever else is open                                                          |
+| `--z-index-tooltip`          | 75    | triggerable from inside a popover or the palette                                               |
+| `--z-index-toast`            | 85    | the toast stack                                                                                |
+| `--z-index-lightbox`         | 90    | the image lightbox, above everything z-indexed                                                 |
+| (native `<dialog>`)          | n/a   | the browser's top layer, above every z-indexed element                                         |
 
 ## Primitives
 

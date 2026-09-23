@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Notification } from '@goodboy/db';
+import { AppShell } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 
 const { state } = vi.hoisted(() => ({
@@ -38,7 +39,10 @@ vi.mock('../../../../store', () => {
 import { NotificationCenter } from './index';
 
 const stylesCssPath = resolve(__dirname, '../../../../styles.css');
-const studioShellPath = resolve(__dirname, '../../../../shared/components/StudioShell/index.tsx');
+const appShellPath = resolve(
+  __dirname,
+  '../../../../../../../packages/ui/src/components/AppShell.tsx',
+);
 
 const readZIndexToken = (name: string): number => {
   const css = readFileSync(stylesCssPath, 'utf8');
@@ -80,11 +84,9 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('transient popover stacking above a full-page studio', () => {
-  it('keeps StudioShell fullscreen pinned on the studio layer', () => {
-    const source = readFileSync(studioShellPath, 'utf8');
-    expect(source).toContain(
-      "'fixed inset-x-0 bottom-9 top-9 z-studio flex flex-col bg-background'",
-    );
+  it('keeps the app shell studio slot pinned on the studio layer', () => {
+    const source = readFileSync(appShellPath, 'utf8');
+    expect(source).toContain('relative z-studio flex min-h-0 min-w-0 flex-col overflow-hidden');
   });
 
   it('orders the named z-scale above the studio floor', () => {
@@ -120,21 +122,25 @@ describe('transient popover stacking above a full-page studio', () => {
 
   it('renders the notifications popover above an open full-page studio, mid animation', async () => {
     const { container } = render(
-      <>
-        <StudioShell
-          title="GitHub"
-          workspaceName="acme"
-          closeLabel="close github studio"
-          onClose={() => {}}
-        >
-          {() => <p>studio body</p>}
-        </StudioShell>
-        <NotificationCenter />
-      </>,
+      <AppShell
+        topBar={<NotificationCenter />}
+        main={<p>board</p>}
+        studio={
+          <StudioShell
+            title="GitHub"
+            workspaceName="acme"
+            closeLabel="close github studio"
+            onClose={() => {}}
+          >
+            {() => <p>studio body</p>}
+          </StudioShell>
+        }
+      />,
     );
 
     const shell = container.querySelector('[data-studio-overlay]') as HTMLElement;
-    expect(shell.className).toContain('z-studio');
+    const slot = shell.parentElement as HTMLElement;
+    expect(slot.className).toContain('z-studio');
     expect(shell.className).toContain('animate-studio-in');
 
     await act(async () => {
@@ -148,7 +154,7 @@ describe('transient popover stacking above a full-page studio', () => {
     expect(backdrop).not.toBeNull();
     expect(popoverPanel).not.toBeNull();
 
-    expect(shell.className).toContain('z-studio');
+    expect(slot.className).toContain('z-studio');
     expect(shell.className).toContain('animate-studio-in');
   });
 });

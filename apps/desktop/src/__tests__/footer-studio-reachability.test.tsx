@@ -48,15 +48,17 @@ const { state, workspace } = vi.hoisted(() => {
 type ShellProps = {
   readonly topBar?: ReactNode;
   readonly footer?: ReactNode;
+  readonly studio?: ReactNode;
 };
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/ui')>();
   return {
     ...actual,
-    AppShell: ({ topBar, footer }: ShellProps) => (
+    AppShell: ({ topBar, footer, studio }: ShellProps) => (
       <div>
         {topBar}
+        {studio}
         {footer}
       </div>
     ),

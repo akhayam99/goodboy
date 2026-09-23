@@ -10,7 +10,7 @@ export type AppShellProps = {
   readonly leftSidebarCollapsed?: boolean;
   readonly leftOverlay?: ReactNode;
   readonly main: ReactNode;
-  readonly overlay?: ReactNode;
+  readonly studio?: ReactNode;
   readonly className?: string;
 };
 
@@ -82,7 +82,7 @@ export const AppShell = ({
   leftSidebarCollapsed = false,
   leftOverlay,
   main,
-  overlay,
+  studio,
   className,
 }: AppShellProps) => {
   const hasFooter = footer != null;
@@ -161,12 +161,12 @@ export const AppShell = ({
             {leftOverlay}
           </div>
         ) : null}
-        {overlay != null ? (
+        {studio != null ? (
           <div
-            className="relative z-30 flex min-h-0 min-w-0 flex-col overflow-hidden"
-            style={{ gridColumn: 'main', gridRow: '1 / 2' }}
+            className="relative z-studio flex min-h-0 min-w-0 flex-col overflow-hidden"
+            style={{ gridColumn: '1 / -1', gridRow: '1 / 2' }}
           >
-            {overlay}
+            {studio}
           </div>
         ) : null}
         {hasFooter ? (

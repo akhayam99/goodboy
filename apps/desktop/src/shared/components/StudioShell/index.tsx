@@ -39,7 +39,7 @@ export const StudioShell = ({
           ? 'relative h-full w-full flex flex-col bg-background'
           : variant === 'viewport'
             ? 'fixed inset-0 z-studio flex flex-col bg-background'
-            : 'fixed inset-x-0 bottom-9 top-9 z-studio flex flex-col bg-background',
+            : 'relative flex h-full w-full min-h-0 flex-col bg-background',
         closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
       )}
     >

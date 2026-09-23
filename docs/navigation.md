@@ -40,11 +40,10 @@
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
   Save/Cancel footer, and no settings surface stacked on another.
-- **One overlay slot.** Workspace-scoped editors share a single overlay over
-  main, so the sessions column stays visible. Only one is open at a time,
-  picked by strict precedence, never stacked. Scope decides the pattern.
-  Session-scoped editors layer over the session pane. App-level studios are
-  full-page. Anything that became a lens stays a lens.
+- **One studio slot.** Workspace and app studios share the shell's single
+  studio slot, one at a time. Opening one replaces the other, never stacks.
+  Scope decides the pattern. Session-scoped editors layer over the session
+  pane. Studios take the slot. Anything that became a lens stays a lens.
 
 A second entry point reuses the existing mount and never builds a parallel one.
 The palette dispatches an event that the owning component listens for. The
@@ -87,10 +86,11 @@ grid, so no column resize, hide animation or overlay can move it.
   a second copy of the same list, so it is not added. The shell primitive can
   lay out more reduced states than the product uses. Which one a column gets is
   decided here, not by what the primitive offers.
-- **The overlay slots sit inside the grid, not above it.** A floating overlay
-  spans the full row, so a peek can hover over main without taking layout
-  space. A full-surface overlay spans the work area and stops before the
-  sessions column, so an editor never hides where the user is.
+- **The overlay slots sit inside the grid, not above it.** The peek spans the
+  work row, so it can hover over main without taking layout space. The studio
+  slot spans the same row, sidebar included, and sits above the peek. A studio
+  covers the columns between the bars, never the bars, and reaches the bottom
+  edge when the footer is hidden.
 
 **The pane** is the work. It is the only surface that scrolls its own body,
 mounts editors and takes a title.
@@ -239,9 +239,11 @@ terminal, never fires a shortcut.
 
 ## Studios
 
-Utility studios are fullscreen overlays drawn between the top bar and the
-footer, so both bars stay visible and usable. They are not part of the
-breadcrumb IA. They exit on close or Esc, and only one is open at a time.
+Utility studios render in the shell's studio slot, between the top bar and the
+footer, so both bars stay visible and usable. The one exception is the
+workspace launcher, which has no shell. There, Add workspace takes the whole
+window. Studios are not part of the breadcrumb IA. They exit on close or Esc,
+and only one is open at a time.
 
 - **Navigating closes the studio.** Moving to another workspace, session, or
   lens of the current session closes whatever studio is open, whether the move

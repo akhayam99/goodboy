@@ -16,24 +16,24 @@ const defaults = {
 };
 
 describe('StudioShell variant rendering', () => {
-  it('defaults to fullscreen variant (fixed top-9 inset-x-0 z-studio)', () => {
+  it('defaults to fullscreen, which fills the app shell studio slot', () => {
     const { container } = render(<StudioShell {...defaults}>{() => <p>body</p>}</StudioShell>);
     const shell = container.firstElementChild as HTMLElement;
-    expect(shell.className).toContain('fixed');
-    expect(shell.className).toContain('top-9');
-    expect(shell.className).toContain('inset-x-0');
-    expect(shell.className).toContain('bottom-9');
-    expect(shell.className).toContain('z-studio');
+    expect(shell.className).toContain('h-full');
+    expect(shell.className).not.toContain('fixed');
+    expect(shell.className).not.toContain('top-9');
+    expect(shell.hasAttribute('data-studio-overlay')).toBe(true);
   });
 
-  it('variant="fullscreen" applies fixed positioning', () => {
+  it('variant="viewport" covers the window, for the launcher where no shell exists', () => {
     const { container } = render(
-      <StudioShell {...defaults} variant="fullscreen">
+      <StudioShell {...defaults} variant="viewport">
         {() => <p>body</p>}
       </StudioShell>,
     );
     const shell = container.firstElementChild as HTMLElement;
     expect(shell.className).toContain('fixed');
+    expect(shell.className).toContain('inset-0');
     expect(shell.className).toContain('z-studio');
   });
 
