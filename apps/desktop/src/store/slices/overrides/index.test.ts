@@ -209,11 +209,5 @@ describe('store contract', () => {
       expect(payload.overrides).toHaveProperty('providerPool', ['anthropic', 'codex']);
       expect(payload.overrides).not.toHaveProperty('enabledProviders');
     });
-
-    it('setTaskOverrides caches the override map keyed by session', async () => {
-      const store = useAppStore;
-      await store.getState().setTaskOverrides(SESSION_ID, { defaultVerbosity: 'normal' } as never);
-      expect(store.getState().sessionOverrides[SESSION_ID]?.defaultVerbosity).toBe('normal');
-    });
   });
 });

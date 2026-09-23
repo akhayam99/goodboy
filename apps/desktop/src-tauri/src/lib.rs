@@ -369,7 +369,6 @@ pub fn run() {
             settings_overrides::get_workspace_overrides,
             settings_overrides::set_workspace_overrides,
             settings_overrides::get_session_overrides,
-            settings_overrides::set_session_overrides,
             config_export::export_config_to_file,
             config_export::import_config_from_file,
             github::gh_status,

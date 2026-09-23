@@ -730,7 +730,6 @@ type AppActions = {
     credentialId: string | null,
   ): Promise<void>;
   loadSessionOverrides(sessionId: SessionId): Promise<void>;
-  setTaskOverrides(sessionId: SessionId, overrides: OverrideSettings): Promise<void>;
   loadCredentials(): Promise<void>;
   createCredential(
     providerId: ProviderId,
