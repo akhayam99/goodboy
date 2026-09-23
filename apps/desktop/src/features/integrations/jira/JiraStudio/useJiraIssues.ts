@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { Session, SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
+import type { Session, SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { useAppStore, useSessions } from '../../../../store';
 import { jiraListIssues, type JiraIssue, type JiraStatusCategoryKey } from '../client';
 import { useJiraConfig } from '../useJiraConfig';
+import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
 
 const SLUG_MAX_LEN = 48;
+const JIRA_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['jira'];
 
 type BranchSlugParams = {
   readonly issue: JiraIssue;
@@ -71,7 +73,7 @@ type SessionMatchParams = {
   readonly issues: ReadonlyArray<JiraIssue>;
   readonly sessions: ReadonlyArray<Session>;
   readonly sessionBranches: Readonly<Record<string, string>>;
-  readonly sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>;
+  readonly linkedSessions: ReadonlyMap<string, SessionId>;
 };
 
 const branchTail = (branch: string): string => {
@@ -84,19 +86,13 @@ export const resolveIssueSessions = ({
   issues,
   sessions,
   sessionBranches,
-  sessionExternalTasks,
+  linkedSessions,
 }: SessionMatchParams): Map<string, SessionId> => {
   const byIssue = new Map<string, SessionId>();
-  for (const session of sessions) {
-    const tasks = sessionExternalTasks[session.id] ?? [];
-    for (const task of tasks) {
-      if (task.provider === 'jira' && !byIssue.has(task.externalId)) {
-        byIssue.set(task.externalId, session.id);
-      }
-    }
-  }
   for (const issue of issues) {
-    if (byIssue.has(issue.id)) {
+    const linked = linkedSessions.get(linkedTaskKey({ provider: 'jira', externalId: issue.id }));
+    if (linked !== undefined) {
+      byIssue.set(issue.id, linked);
       continue;
     }
     const slug = jiraBranchSlug({ issue });
@@ -133,7 +129,7 @@ export const useJiraIssues = ({
   assignedOnly,
 }: HookParams): UseJiraIssues => {
   const sessions = useSessions();
-  const sessionExternalTasks = useAppStore((state) => state.sessionExternalTasks);
+  const linkedSessions = useLinkedExternalIds({ providers: JIRA_PROVIDERS, sessions });
   const sessionBranches = useAppStore((state) => state.sessionBranches);
   const config = useJiraConfig({ workspaceId });
   const siteUrl = config?.siteUrl ?? null;
@@ -173,8 +169,8 @@ export const useJiraIssues = ({
   }, [fetchIssues]);
 
   const sessionIdByIssueId = useMemo(
-    () => resolveIssueSessions({ issues, sessions, sessionBranches, sessionExternalTasks }),
-    [issues, sessions, sessionBranches, sessionExternalTasks],
+    () => resolveIssueSessions({ issues, sessions, sessionBranches, linkedSessions }),
+    [issues, sessions, sessionBranches, linkedSessions],
   );
 
   const groups = useMemo(

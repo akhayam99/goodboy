@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GithubIssue, IsoDateTime, SessionExternalTask, SessionId } from '@goodboy/types';
 import { buildGithubIssueGroups } from './useGithubIssues';
+import { collectLinkedExternalIds } from '../../../integrations/hooks/useLinkedExternalIds';
 
 type IssueParams = {
   readonly number: number;
@@ -46,12 +47,15 @@ describe('buildGithubIssueGroups', () => {
         makeIssue({ number: 42, updatedAt: '2026-07-22T10:00:00Z' }),
         makeIssue({ number: 43, updatedAt: '2026-07-21T10:00:00Z' }),
       ],
-      externalTasks: {
-        [sessionId]: [
-          makeTask({ sessionId, externalId: '42' }),
-          makeTask({ sessionId, externalId: '43', provider: 'gitlab' }),
-        ],
-      },
+      linkedSessions: collectLinkedExternalIds({
+        sessionExternalTasks: {
+          [sessionId]: [
+            makeTask({ sessionId, externalId: '42' }),
+            makeTask({ sessionId, externalId: '43', provider: 'gitlab' }),
+          ],
+        },
+        providers: ['github'],
+      }),
     });
 
     expect(groups[0]?.rows.map((row) => row.issue.number)).toEqual([42, 43, 41]);

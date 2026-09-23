@@ -2,15 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   GitlabIntegrationBinding,
   Session,
-  SessionExternalTask,
+  SessionExternalTaskProvider,
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { useAppStore, useSessions } from '../../../../store';
 import { gitlabFetchAssignedIssues, type GitlabIssue } from '../client';
+import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
 
 const SLUG_MAX_LEN = 48;
+const GITLAB_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['gitlab'];
 
 const slugify = (input: string): string => {
   return slugifyBranch({ input, maxLength: SLUG_MAX_LEN });
@@ -85,20 +87,14 @@ export const resolveIssueSessions = (
   issues: ReadonlyArray<GitlabIssue>,
   sessions: ReadonlyArray<Session>,
   sessionBranches: Readonly<Record<string, string>>,
-  sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>,
+  linkedSessions: ReadonlyMap<string, SessionId>,
 ): Map<string, SessionId> => {
   const byIssue = new Map<string, SessionId>();
-  for (const session of sessions) {
-    const tasks = sessionExternalTasks[session.id] ?? [];
-    for (const task of tasks) {
-      if (task.provider === 'gitlab' && !byIssue.has(task.externalId)) {
-        byIssue.set(task.externalId, session.id);
-      }
-    }
-  }
   for (const issue of issues) {
     const key = String(issue.id);
-    if (byIssue.has(key)) {
+    const linked = linkedSessions.get(linkedTaskKey({ provider: 'gitlab', externalId: key }));
+    if (linked !== undefined) {
+      byIssue.set(key, linked);
       continue;
     }
     const match = sessions.find((s) => sessionMatchesIssue(s, issue, sessionBranches));
@@ -123,7 +119,7 @@ type HookParams = {
 
 export const useGitlabIssues = ({ workspaceId, isEnabled = true }: HookParams): UseGitlabIssues => {
   const sessions = useSessions();
-  const sessionExternalTasks = useAppStore((s) => s.sessionExternalTasks);
+  const linkedSessions = useLinkedExternalIds({ providers: GITLAB_PROVIDERS, sessions });
   const sessionBranches = useAppStore((s) => s.sessionBranches);
   const host = useAppStore((s) => {
     const integration = s.workspaceIntegrations[workspaceId]?.find(
@@ -163,8 +159,8 @@ export const useGitlabIssues = ({ workspaceId, isEnabled = true }: HookParams): 
   }, [fetchIssues]);
 
   const sessionIdByIssueId = useMemo(
-    () => resolveIssueSessions(issues, sessions, sessionBranches, sessionExternalTasks),
-    [issues, sessions, sessionBranches, sessionExternalTasks],
+    () => resolveIssueSessions(issues, sessions, sessionBranches, linkedSessions),
+    [issues, sessions, sessionBranches, linkedSessions],
   );
 
   const groups = useMemo(

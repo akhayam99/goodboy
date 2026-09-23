@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { sentryFetchIssues, type SentryIssue } from '../client';
+import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
+
+const SENTRY_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['sentry'];
 
 export type SentryIssueRow = {
   readonly issue: SentryIssue;
@@ -21,27 +23,14 @@ export const dedupById = (issues: ReadonlyArray<SentryIssue>): SentryIssue[] => 
   return out;
 };
 
-export const resolveSentrySessions = (
-  sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>,
-): Map<string, SessionId> => {
-  const byIssue = new Map<string, SessionId>();
-  for (const [sessionId, tasks] of Object.entries(sessionExternalTasks)) {
-    for (const task of tasks) {
-      if (task.provider === 'sentry' && !byIssue.has(task.externalId)) {
-        byIssue.set(task.externalId, sessionId as SessionId);
-      }
-    }
-  }
-  return byIssue;
-};
-
 export const buildIssueRows = (
   issues: ReadonlyArray<SentryIssue>,
-  sessionIdByExternalId: ReadonlyMap<string, SessionId>,
+  linkedSessions: ReadonlyMap<string, SessionId>,
 ): SentryIssueRow[] =>
   issues.map((issue) => ({
     issue,
-    sessionId: sessionIdByExternalId.get(issue.id) ?? null,
+    sessionId:
+      linkedSessions.get(linkedTaskKey({ provider: 'sentry', externalId: issue.id })) ?? null,
   }));
 
 export type UseSentryIssues = {
@@ -54,7 +43,7 @@ export type UseSentryIssues = {
 };
 
 export const useSentryIssues = (workspaceId: WorkspaceId, isEnabled = true): UseSentryIssues => {
-  const sessionExternalTasks = useAppStore((s) => s.sessionExternalTasks);
+  const linkedSessions = useLinkedExternalIds({ providers: SENTRY_PROVIDERS });
   const [issues, setIssues] = useState<ReadonlyArray<SentryIssue>>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -94,15 +83,7 @@ export const useSentryIssues = (workspaceId: WorkspaceId, isEnabled = true): Use
     void load(null, true);
   }, [load]);
 
-  const sessionIdByIssueId = useMemo(
-    () => resolveSentrySessions(sessionExternalTasks),
-    [sessionExternalTasks],
-  );
-
-  const rows = useMemo(
-    () => buildIssueRows(issues, sessionIdByIssueId),
-    [issues, sessionIdByIssueId],
-  );
+  const rows = useMemo(() => buildIssueRows(issues, linkedSessions), [issues, linkedSessions]);
 
   const reload = useCallback(() => {
     setIssues([]);

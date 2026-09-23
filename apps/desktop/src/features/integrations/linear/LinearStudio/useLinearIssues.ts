@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Session, SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
+import type { Session, SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useSessions } from '../../../../store';
 import {
   issuePullRequests,
@@ -7,6 +7,9 @@ import {
   prRepoFromUrl,
   type LinearIssue,
 } from '../client';
+import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
+
+const LINEAR_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['linear'];
 
 type LinearGroupKey = 'started' | 'unstarted' | 'backlog' | 'triage' | 'other';
 
@@ -115,20 +118,14 @@ export const resolveIssueSessions = (
   issues: ReadonlyArray<LinearIssue>,
   sessions: ReadonlyArray<Session>,
   sessionBranches: Readonly<Record<string, string>>,
-  sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>,
+  linkedSessions: ReadonlyMap<string, SessionId>,
   sessionPr: ReadonlyMap<string, SessionPrRef>,
 ): Map<string, SessionId> => {
   const byIssue = new Map<string, SessionId>();
-  for (const session of sessions) {
-    const tasks = sessionExternalTasks[session.id] ?? [];
-    for (const task of tasks) {
-      if (task.provider === 'linear' && !byIssue.has(task.externalId)) {
-        byIssue.set(task.externalId, session.id);
-      }
-    }
-  }
   for (const issue of issues) {
-    if (byIssue.has(issue.id)) {
+    const linked = linkedSessions.get(linkedTaskKey({ provider: 'linear', externalId: issue.id }));
+    if (linked !== undefined) {
+      byIssue.set(issue.id, linked);
       continue;
     }
     const match = sessions.find((s) => sessionMatchesIssue(s, issue, sessionBranches, sessionPr));
@@ -148,7 +145,7 @@ export type UseLinearIssues = {
 
 export const useLinearIssues = (workspaceId: WorkspaceId, isEnabled = true): UseLinearIssues => {
   const sessions = useSessions();
-  const sessionExternalTasks = useAppStore((s) => s.sessionExternalTasks);
+  const linkedSessions = useLinkedExternalIds({ providers: LINEAR_PROVIDERS, sessions });
   const sessionBranches = useAppStore((s) => s.sessionBranches);
   const sessionGithub = useAppStore((s) => s.sessionGithub);
   const [issues, setIssues] = useState<ReadonlyArray<LinearIssue>>([]);
@@ -190,8 +187,8 @@ export const useLinearIssues = (workspaceId: WorkspaceId, isEnabled = true): Use
   }, [sessionGithub]);
 
   const sessionIdByIssueId = useMemo(
-    () => resolveIssueSessions(issues, sessions, sessionBranches, sessionExternalTasks, sessionPr),
-    [issues, sessions, sessionBranches, sessionExternalTasks, sessionPr],
+    () => resolveIssueSessions(issues, sessions, sessionBranches, linkedSessions, sessionPr),
+    [issues, sessions, sessionBranches, linkedSessions, sessionPr],
   );
 
   const groups = useMemo(

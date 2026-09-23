@@ -9,6 +9,7 @@ import {
   useGitlabIssues,
 } from './useGitlabIssues';
 import { gitlabFetchAssignedIssues, type GitlabIssue } from '../client';
+import { collectLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
 
 const h = vi.hoisted(() => ({
   sessionExternalTasks: {},
@@ -112,6 +113,10 @@ describe('buildIssueGroups', () => {
 });
 
 describe('resolveIssueSessions', () => {
+  const linkedFor = (
+    sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>,
+    sessions: ReadonlyArray<Session>,
+  ) => collectLinkedExternalIds({ sessionExternalTasks, providers: ['gitlab'], sessions });
   const NO_BRANCHES: Record<string, string> = {};
   const NO_TASKS: Record<string, ReadonlyArray<SessionExternalTask>> = {};
 
@@ -120,7 +125,12 @@ describe('resolveIssueSessions', () => {
     const tasks: Record<string, ReadonlyArray<SessionExternalTask>> = {
       s1: [{ externalId: '101', provider: 'gitlab' } as SessionExternalTask],
     };
-    const map = resolveIssueSessions([issue], [session('s1')], NO_BRANCHES, tasks);
+    const map = resolveIssueSessions(
+      [issue],
+      [session('s1')],
+      NO_BRANCHES,
+      linkedFor(tasks, [session('s1')]),
+    );
     expect(map.get('101')).toBe('s1');
   });
 
@@ -129,21 +139,36 @@ describe('resolveIssueSessions', () => {
     const tasks: Record<string, ReadonlyArray<SessionExternalTask>> = {
       s1: [{ externalId: '101', provider: 'linear' } as SessionExternalTask],
     };
-    const map = resolveIssueSessions([issue], [session('s1')], NO_BRANCHES, tasks);
+    const map = resolveIssueSessions(
+      [issue],
+      [session('s1')],
+      NO_BRANCHES,
+      linkedFor(tasks, [session('s1')]),
+    );
     expect(map.get('101')).toBeUndefined();
   });
 
   it('links by branch slug when no external task exists', () => {
     const issue = makeIssue({ id: 101, iid: 42, title: 'Fix login' });
     const branches = { s1: 'kay/42-fix-login' };
-    const map = resolveIssueSessions([issue], [session('s1')], branches, NO_TASKS);
+    const map = resolveIssueSessions(
+      [issue],
+      [session('s1')],
+      branches,
+      linkedFor(NO_TASKS, [session('s1')]),
+    );
     expect(map.get('101')).toBe('s1');
   });
 
   it('does not link a branch whose tail differs from the slug', () => {
     const issue = makeIssue({ id: 101, iid: 42, title: 'Fix login' });
     const branches = { s1: 'kay/99-other' };
-    const map = resolveIssueSessions([issue], [session('s1')], branches, NO_TASKS);
+    const map = resolveIssueSessions(
+      [issue],
+      [session('s1')],
+      branches,
+      linkedFor(NO_TASKS, [session('s1')]),
+    );
     expect(map.get('101')).toBeUndefined();
   });
 
@@ -153,7 +178,12 @@ describe('resolveIssueSessions', () => {
       s2: [{ externalId: '101', provider: 'gitlab' } as SessionExternalTask],
     };
     const branches = { s1: 'kay/42-fix-login' };
-    const map = resolveIssueSessions([issue], [session('s1'), session('s2')], branches, tasks);
+    const map = resolveIssueSessions(
+      [issue],
+      [session('s1'), session('s2')],
+      branches,
+      linkedFor(tasks, [session('s1'), session('s2')]),
+    );
     expect(map.get('101')).toBe('s2');
   });
 });

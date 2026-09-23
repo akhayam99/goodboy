@@ -1,9 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { detectRepoSlug } from '@goodboy/core';
-import type { GithubIssue, SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  GithubIssue,
+  SessionExternalTaskProvider,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
-import { useAppStore } from '../../../../store';
 import { ghAssignedIssues, tauriGhRunner } from '../../github';
+import {
+  linkedTaskKey,
+  useLinkedExternalIds,
+} from '../../../integrations/hooks/useLinkedExternalIds';
+
+const GITHUB_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['github'];
 
 type GithubIssueRow = Readonly<{
   issue: GithubIssue;
@@ -18,7 +28,7 @@ export type GithubIssueGroup = Readonly<{
 
 type GroupsParams = {
   readonly issues: ReadonlyArray<GithubIssue>;
-  readonly externalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>;
+  readonly linkedSessions: ReadonlyMap<string, SessionId>;
 };
 
 type BranchParams = {
@@ -44,21 +54,16 @@ export const githubBranchSlug = ({ issue }: BranchParams): string =>
 
 export const buildGithubIssueGroups = ({
   issues,
-  externalTasks,
+  linkedSessions,
 }: GroupsParams): ReadonlyArray<GithubIssueGroup> => {
-  const sessionIdByExternalId = new Map<string, SessionId>();
-  for (const [sessionId, tasks] of Object.entries(externalTasks)) {
-    for (const task of tasks) {
-      if (task.provider === 'github' && !sessionIdByExternalId.has(task.externalId)) {
-        sessionIdByExternalId.set(task.externalId, sessionId as SessionId);
-      }
-    }
-  }
   const rows = [...issues]
     .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
     .map((issue) => ({
       issue,
-      sessionId: sessionIdByExternalId.get(String(issue.number)) ?? null,
+      sessionId:
+        linkedSessions.get(
+          linkedTaskKey({ provider: 'github', externalId: String(issue.number) }),
+        ) ?? null,
     }));
   return rows.length === 0 ? [] : [{ key: 'open', label: 'Open', rows }];
 };
@@ -68,7 +73,7 @@ export const useGithubIssues = ({
   rootPath,
   isEnabled = true,
 }: HookParams): Result => {
-  const externalTasks = useAppStore((state) => state.sessionExternalTasks);
+  const linkedSessions = useLinkedExternalIds({ providers: GITHUB_PROVIDERS });
   const [issues, setIssues] = useState<ReadonlyArray<GithubIssue>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,8 +108,8 @@ export const useGithubIssues = ({
   }, [fetchIssues]);
 
   const groups = useMemo(
-    () => buildGithubIssueGroups({ issues, externalTasks }),
-    [externalTasks, issues],
+    () => buildGithubIssueGroups({ issues, linkedSessions }),
+    [issues, linkedSessions],
   );
 
   return { groups, loading, error, hasRemote, refetch: () => void fetchIssues() };

@@ -64,6 +64,7 @@ const HOT_SLICE_KEYS: ReadonlySet<string> = new Set([
   'sessionProjectMounts',
   'sessionTelemetry',
   'scriptRuns',
+  'sessionExternalTasks',
 ]);
 
 const WHOLE_SLICE_TAIL = /^(?:state|s|store)\.([A-Za-z_$][\w$]*)$/;
