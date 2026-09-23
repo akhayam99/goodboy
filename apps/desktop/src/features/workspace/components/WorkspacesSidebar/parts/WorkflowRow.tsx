@@ -220,8 +220,8 @@ export const WorkflowRow = ({
       <div className="col-span-2 row-start-1 grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] items-start gap-2">
         {isDetail ? (
           <div className="col-start-1 row-start-1 flex min-w-0 items-start gap-3">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent/10">
-              <CONCEPT_ICONS.workflows size={ICON_SIZE.hero} aria-hidden className="text-accent" />
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <CONCEPT_ICONS.workflows size={ICON_SIZE.hero} aria-hidden className="text-primary" />
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -302,7 +302,7 @@ export const WorkflowRow = ({
               <CONCEPT_ICONS.workflows
                 size={ICON_SIZE.row}
                 aria-hidden
-                className="shrink-0 text-accent"
+                className="shrink-0 text-primary"
               />
             ) : null}
             <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">

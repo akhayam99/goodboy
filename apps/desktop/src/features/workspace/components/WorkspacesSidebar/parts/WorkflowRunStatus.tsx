@@ -120,7 +120,7 @@ export const WorkflowRunStatus = ({
   }
   if (isDeciding && !hasOrchestratorStrip) {
     return (
-      <span className={cn(baseClass, 'bg-accent/10 text-accent')}>
+      <span className={cn(baseClass, 'bg-primary/10 text-primary')}>
         <CONCEPT_ICONS.orchestrator size={10} aria-hidden />
         Next step due
       </span>
@@ -148,5 +148,5 @@ export const WorkflowRunStatus = ({
   if (hasOrchestratorStrip) {
     return null;
   }
-  return <span className={cn(baseClass, 'bg-accent/10 text-accent')}>Ready</span>;
+  return <span className={cn(baseClass, 'bg-primary/10 text-primary')}>Ready</span>;
 };

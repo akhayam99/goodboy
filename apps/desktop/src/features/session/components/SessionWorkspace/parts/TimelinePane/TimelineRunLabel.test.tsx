@@ -68,7 +68,7 @@ describe('TimelineRunLabel', () => {
     const { className } = chipOf();
 
     expect(className).toContain(runIdentity({ laneIndex: 0, seed: 0 }).chip);
-    for (const tone of ['primary', 'accent', 'success', 'danger', 'warning', 'info']) {
+    for (const tone of ['primary', 'success', 'danger', 'warning', 'info']) {
       expect(className).not.toContain(`bg-${tone}`);
       expect(className).not.toContain(`text-${tone}`);
     }

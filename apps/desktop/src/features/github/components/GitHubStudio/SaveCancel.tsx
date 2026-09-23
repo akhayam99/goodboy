@@ -17,7 +17,7 @@ export const SaveCancel = ({ isBusy, onSave, onCancel }: Props) => {
         onClick={onSave}
         disabled={isBusy}
         busy={isBusy}
-        className="border-primary bg-primary text-primary-foreground hover:border-primary hover:bg-primary/90 hover:text-primary-foreground"
+        className="border-primary bg-primary text-on-tone hover:border-primary hover:bg-primary/90 hover:text-on-tone"
       />
       <IconButton icon={X} iconSize={14} label="Cancel" onClick={onCancel} disabled={isBusy} />
     </div>

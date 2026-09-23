@@ -33,7 +33,7 @@ export const UpdateIndicator = ({ variant }: Props) => {
   const trigger = (
     <Chip
       as="button"
-      tone="accent"
+      tone="primary"
       emphasis="strong"
       shape={variant === 'pip' ? 'pill' : 'badge'}
       icon={<ArrowUpCircle size={11} aria-hidden />}

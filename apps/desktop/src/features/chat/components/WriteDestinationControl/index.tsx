@@ -169,7 +169,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
       </AnchoredPopover>
       {running !== null && diverges ? (
         <Chip
-          tone="accent"
+          tone="primary"
           size="3xs"
           bordered={false}
           label={<span className="max-w-[10rem] truncate">{`Next: ${shorten(nextLabel)}`}</span>}

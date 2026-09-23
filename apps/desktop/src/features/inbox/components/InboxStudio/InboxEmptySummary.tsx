@@ -87,7 +87,7 @@ export const InboxEmptySummary = ({
               label="Threads"
               value={String(counts.thread)}
               icon={<MessagesSquare size={ICON_SIZE.hero} aria-hidden />}
-              tone="accent"
+              tone="primary"
               valueSize="lg"
             />
             <StatCard

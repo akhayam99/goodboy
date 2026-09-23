@@ -17,7 +17,7 @@ const TITLE: Record<WorkflowOrigin, string> = {
 const TONE: Record<WorkflowOrigin, Tone> = {
   library: 'neutral',
   custom: 'neutral',
-  orchestrated: 'accent',
+  orchestrated: 'primary',
 };
 
 type Props = {

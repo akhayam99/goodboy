@@ -30,9 +30,7 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
         className={cn(
           'inline-flex h-6 shrink-0 items-center gap-1 rounded-md bg-danger/10 px-2 text-2xs text-danger motion-safe:transition-colors',
           retrying && 'animate-border-pulse',
-          canRetry
-            ? 'hover:bg-danger/15 hover:text-danger-foreground/90'
-            : 'cursor-not-allowed opacity-70',
+          canRetry ? 'hover:bg-danger/15 hover:text-on-tone' : 'cursor-not-allowed opacity-70',
         )}
       >
         <AlertTriangle size={10} aria-hidden />

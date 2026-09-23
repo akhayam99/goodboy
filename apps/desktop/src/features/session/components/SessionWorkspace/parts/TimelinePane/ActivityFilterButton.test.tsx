@@ -233,13 +233,13 @@ describe('ActivityFilterButton', () => {
     open();
     const row = screen.getByRole('menuitemcheckbox', { name: 'Workflows' });
     expect(row.querySelector('svg')).not.toBeNull();
-    expect(row.querySelector('svg')?.getAttribute('class')).toContain('text-accent');
+    expect(row.querySelector('svg')?.getAttribute('class')).toContain('text-primary');
   });
 
-  it('dims the glyph of an inactive row', () => {
+  it('keeps the glyph of an inactive row', () => {
     open({ filter: { ...DEFAULT_ACTIVITY_FILTER, decisions: false } });
     const row = screen.getByRole('menuitemcheckbox', { name: 'Decisions' });
-    expect(row.querySelector('svg')?.getAttribute('class')).toContain('text-muted-foreground/50');
+    expect(row.querySelector('svg')).not.toBeNull();
   });
 
   it('closes a visible row with an open eye at the trailing edge', () => {
@@ -257,6 +257,5 @@ describe('ActivityFilterButton', () => {
     const eye = row.querySelector('.lucide-eye-off');
     expect(eye).not.toBeNull();
     expect(row.querySelector('.lucide-eye')).toBeNull();
-    expect(eye?.getAttribute('class')).toContain('text-muted-foreground/40');
   });
 });

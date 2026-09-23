@@ -54,12 +54,10 @@ describe('Button', () => {
   it('renders the supported semantic actions as buttons', () => {
     render(
       <>
-        <Button variant="accent">Accent</Button>
         <Button variant="info">Info</Button>
       </>,
     );
 
-    expect(screen.getByRole('button', { name: 'Accent' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Info' })).toBeDefined();
   });
 });

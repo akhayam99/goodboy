@@ -39,9 +39,9 @@ const SECONDARY_BUTTON =
   'inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60';
 
 const ROLE_CONFIRM: Record<ConfirmRole, string> = {
-  primary: 'bg-primary text-primary-foreground',
-  alert: 'bg-warning text-warning-foreground',
-  danger: 'bg-danger text-danger-foreground',
+  primary: 'bg-primary text-on-tone',
+  alert: 'bg-warning text-on-tone',
+  danger: 'bg-danger text-on-tone',
 };
 
 export const InlineConfirm = ({

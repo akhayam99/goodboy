@@ -5,7 +5,7 @@ import { tintClasses, type Tone } from '../tint';
 import { StatusDot } from './StatusDot';
 
 export type ButtonVariant =
-  'primary' | 'secondary' | 'ghost' | 'danger' | 'warning' | 'accent' | 'info' | 'success';
+  'primary' | 'secondary' | 'ghost' | 'danger' | 'warning' | 'info' | 'success';
 export type ButtonSize = 'sm' | 'md';
 export type ButtonEmphasis = 'solid' | 'outline';
 
@@ -19,14 +19,13 @@ export type ButtonProps = Omit<ComponentProps<'button'>, 'type'> & {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
+  primary: 'bg-primary text-on-tone hover:bg-primary/90',
   secondary: 'bg-muted text-foreground hover:bg-muted/70 border-border',
   ghost: 'border-0 text-foreground hover:bg-muted',
-  danger: 'bg-danger text-danger-foreground hover:bg-danger/90',
-  warning: 'bg-warning text-warning-foreground hover:bg-warning/90',
-  accent: 'bg-accent text-accent-foreground hover:bg-accent/90',
-  info: 'bg-info text-info-foreground hover:bg-info/90',
-  success: 'bg-success text-success-foreground hover:bg-success/90',
+  danger: 'bg-danger text-on-tone hover:bg-danger/90',
+  warning: 'bg-warning text-on-tone hover:bg-warning/90',
+  info: 'bg-info text-on-tone hover:bg-info/90',
+  success: 'bg-success text-on-tone hover:bg-success/90',
 };
 
 const variantTone: Record<ButtonVariant, Tone> = {
@@ -35,7 +34,6 @@ const variantTone: Record<ButtonVariant, Tone> = {
   ghost: 'neutral',
   danger: 'danger',
   warning: 'warning',
-  accent: 'accent',
   info: 'info',
   success: 'success',
 };

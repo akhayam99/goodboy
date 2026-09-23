@@ -72,7 +72,7 @@ export const PermissionScopePicker = ({
 
   const scopeTone = (scope: PermissionScope): string => {
     if (scope === 'session') {
-      return 'border-transparent bg-primary text-primary-foreground hover:bg-primary/90';
+      return 'border-transparent bg-primary text-on-tone hover:bg-primary/90';
     }
     if (scope === 'deny') {
       return 'border-danger/40 text-danger hover:bg-danger/10';

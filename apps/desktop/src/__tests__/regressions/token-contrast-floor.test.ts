@@ -8,16 +8,7 @@ const BODY_FLOOR = 4.5;
 const LARGE_FLOOR = 3;
 
 const SURFACES = ['background', 'subtle', 'muted', 'elevated'] as const;
-const TONES = [
-  'primary',
-  'accent',
-  'info',
-  'success',
-  'warning',
-  'danger',
-  'merged',
-  'draft',
-] as const;
+const TONES = ['primary', 'info', 'success', 'warning', 'danger', 'merged', 'draft'] as const;
 // The diff viewer paints code on the canvas and on hunk rows, never on a card.
 const CODE_SURFACES = ['background', 'subtle', 'muted'] as const;
 
@@ -195,21 +186,18 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
   });
 
   it.each(TONES)('keeps %s solid fills readable', (tone) => {
-    expect(
-      contrast(swatch(palette, `${tone}-foreground`), swatch(palette, tone)),
-    ).toBeGreaterThanOrEqual(BODY_FLOOR);
+    expect(contrast(swatch(palette, 'on-tone'), swatch(palette, tone))).toBeGreaterThanOrEqual(
+      BODY_FLOOR,
+    );
   });
 
-  it('keeps primary inside the 200-275 hue band and accent off its clone', () => {
+  it('keeps primary inside the 200-275 hue band', () => {
     const css = readFileSync(STYLES, 'utf8');
-    const hues = [
-      ...css.matchAll(/--color-(primary|accent):\s*oklch\([\d.]+\s+[\d.]+\s+([\d.]+)/g),
-    ];
-    expect(hues).toHaveLength(4);
-    for (const [, , hue] of hues) {
+    const hues = [...css.matchAll(/--color-primary:\s*oklch\([\d.]+\s+[\d.]+\s+([\d.]+)/g)];
+    expect(hues).toHaveLength(2);
+    for (const [, hue] of hues) {
       expect(Number(hue)).toBeGreaterThanOrEqual(200);
       expect(Number(hue)).toBeLessThanOrEqual(275);
     }
-    expect(swatch(palette, 'primary')).not.toEqual(swatch(palette, 'accent'));
   });
 });

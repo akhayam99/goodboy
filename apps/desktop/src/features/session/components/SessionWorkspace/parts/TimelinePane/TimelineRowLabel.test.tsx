@@ -32,7 +32,7 @@ const agentEntry = ({ agentKind, name, isChained = false }: AgentParams): Timeli
     children: [],
     answers: [],
     hasDuration: true,
-    chain: isChained ? { identity: { index: 0, chip: 'text-accent' } } : null,
+    chain: isChained ? { identity: { index: 0, chip: 'text-primary' } } : null,
   }) as unknown as TimelineStreamEntry;
 
 type ItemParams = {

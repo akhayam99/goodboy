@@ -70,13 +70,11 @@ anything here.
 
 ## Colour
 
-The identity colour is the **accent teal**. The exact value changes by surface,
-and the tokens own it, not this file: `--accent` in `website/src/styles.css`,
-and the accent ramp in `apps/desktop/src/styles.css`. Read them, do not retype
-them.
+The identity colour of the product is `--color-primary`. The website keeps its
+own `--accent` token for the same role. Read the tokens, do not retype them.
 
-The tile behind the mark is **black, never the accent**. It is the same value
-in the app, on the site, in the favicon and in the app icon: `--brand-tile` in
+The tile behind the mark is **black, never the primary colour**. It is the same
+value in the app, on the site, in the favicon and in the app icon: `--brand-tile` in
 `website/src/styles.css` and `--color-brand` in `apps/desktop/src/styles.css`.
 The generator refuses to run when those two disagree.
 

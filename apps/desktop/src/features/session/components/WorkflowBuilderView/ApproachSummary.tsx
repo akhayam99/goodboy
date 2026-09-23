@@ -38,7 +38,7 @@ export const ApproachSummary = ({ mode }: Props) => {
     <div className="flex items-start gap-2 rounded-lg border border-border-soft bg-subtle/40 p-3">
       <CONCEPT_ICONS.orchestrator
         size={ICON_SIZE.row}
-        className="shrink-0 text-accent"
+        className="shrink-0 text-primary"
         aria-hidden
       />
       <div className="flex flex-col gap-1">

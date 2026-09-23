@@ -131,10 +131,11 @@ concept cannot get an icon without a tone, or a tone without an icon.
   because they are plumbing. Giving a concept a new color changes what it
   claims.
 
-Ten tones (`success`, `info`, `warning`, `danger`, `primary`, `accent`,
-`merged`, `draft`, `operations`, `neutral`). Each one resolves through the
-single accessor `tintClasses(tone)`. Components take a `Tone` and call it. They
-never hand-write `bg-warning/10`.
+Eight tones (`success`, `info`, `warning`, `danger`, `primary`, `merged`,
+`draft`, `neutral`). Each one resolves through the single accessor
+`tintClasses(tone)`. Components take a `Tone` and call it. They never
+hand-write `bg-warning/10`. Every solid semantic fill uses the shared `on-tone`
+text colour.
 
 ### The one identity exception
 

@@ -97,7 +97,7 @@ export const AnswerSubmitButton = ({
             disabled={disabled}
             className={cn(
               'group inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-2xs font-semibold',
-              'bg-primary text-primary-foreground shadow-inset-primary',
+              'bg-primary text-on-tone shadow-inset-primary',
               'transition-[filter,transform,box-shadow] duration-150 motion-safe:will-change-transform',
               'hover:brightness-105 active:scale-[0.98]',
               'disabled:pointer-events-none disabled:opacity-40',

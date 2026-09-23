@@ -81,9 +81,9 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   pr_approved: { ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_approved], label: 'Pull request' },
   pr_merged: { ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_merged], label: 'Pull request' },
   pr_closed: { ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_closed], label: 'Pull request' },
-  workflow_started: { icon: CONCEPT_ICONS.workflows, tone: 'accent', label: 'Workflow' },
+  workflow_started: { icon: CONCEPT_ICONS.workflows, tone: 'primary', label: 'Workflow' },
   workflow_discarded: { icon: CONCEPT_ICONS.workflows, tone: 'neutral', label: 'Workflow' },
-  workflow_restored: { icon: CONCEPT_ICONS.workflows, tone: 'accent', label: 'Workflow' },
+  workflow_restored: { icon: CONCEPT_ICONS.workflows, tone: 'primary', label: 'Workflow' },
   workflow_deleted: { icon: CONCEPT_ICONS.delete, tone: 'neutral', label: 'Workflow' },
   decisions_changed: {
     icon: CONCEPT_ICONS.decisions,
@@ -102,7 +102,7 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   external_task_created: { icon: Link2, tone: 'neutral', label: 'Issue' },
   rebase_requested: { icon: GitBranch, tone: 'info', label: 'Branch' },
   session_archived: { icon: CONCEPT_ICONS.archive, tone: 'neutral', label: 'Session' },
-  session_restored: { icon: CONCEPT_ICONS.restore, tone: 'accent', label: 'Session' },
+  session_restored: { icon: CONCEPT_ICONS.restore, tone: 'primary', label: 'Session' },
   write_destination_changed: {
     icon: CONCEPT_ICONS.worktree,
     tone: CONCEPT_TONE.worktree,

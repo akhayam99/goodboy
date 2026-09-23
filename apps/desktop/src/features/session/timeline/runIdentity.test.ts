@@ -20,7 +20,7 @@ describe('runIdentity', () => {
   });
 
   it('never borrows a semantic tone', () => {
-    const tones = ['success', 'danger', 'warning', 'info', 'accent', 'plan', 'neutral'];
+    const tones = ['success', 'danger', 'warning', 'info', 'primary', 'plan', 'neutral'];
     for (let index = 0; index < 40; index += 1) {
       const identity = runIdentity({ laneIndex: index, seed: 0 });
       expect(tones.some((tone) => identity.stroke.includes(tone))).toBe(false);

@@ -18,7 +18,7 @@ describe('Chip', () => {
     render(
       <>
         <Chip tone="neutral" label="PRESET" width="lg" />
-        <Chip tone="accent" label="ORCHESTRATED" width="lg" />
+        <Chip tone="primary" label="ORCHESTRATED" width="lg" />
       </>,
     );
 

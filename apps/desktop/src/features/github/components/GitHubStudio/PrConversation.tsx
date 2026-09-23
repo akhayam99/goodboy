@@ -86,7 +86,7 @@ export const PrConversation = ({
               }}
               className={cn(
                 'rounded-lg transition-shadow',
-                tid && tid === flashThreadId ? 'ring-2 ring-accent/60' : '',
+                tid && tid === flashThreadId ? 'ring-2 ring-primary/60' : '',
               )}
             >
               <ConversationThread

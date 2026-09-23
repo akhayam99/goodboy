@@ -24,7 +24,7 @@ export const StepFlowConnector = ({ index, interior, dragging, active }: Props) 
         active ? (
           <div className="flex items-center gap-2">
             <span className="h-1 w-12 rounded-full bg-primary" aria-hidden />
-            <span className="rounded-full bg-primary px-2 py-0.5 text-2xs font-medium leading-none text-primary-foreground shadow-sm">
+            <span className="rounded-full bg-primary px-2 py-0.5 text-2xs font-medium leading-none text-on-tone shadow-sm">
               drop here
             </span>
             <span className="h-1 w-12 rounded-full bg-primary" aria-hidden />

@@ -100,7 +100,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <button
               type="button"
               onClick={this.reset}
-              className="rounded bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+              className="rounded bg-primary px-3 py-1.5 text-xs font-semibold text-on-tone hover:opacity-90"
             >
               Try again
             </button>

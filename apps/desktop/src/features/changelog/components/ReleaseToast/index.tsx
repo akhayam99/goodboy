@@ -24,12 +24,12 @@ export const ReleaseToast = ({ onOpenChangelog }: Props) => {
     <div
       role="status"
       data-testid="release-toast"
-      className="fixed bottom-12 right-3 z-toast flex max-w-96 items-start gap-3 rounded-lg border border-accent/25 bg-elevated px-3 py-3 shadow-lg"
+      className="fixed bottom-12 right-3 z-toast flex max-w-96 items-start gap-3 rounded-lg border border-primary/25 bg-elevated px-3 py-3 shadow-lg"
     >
       <CONCEPT_ICONS.changelog
         size={ICON_SIZE.control}
         aria-hidden
-        className="mt-px shrink-0 text-accent"
+        className="mt-px shrink-0 text-primary"
       />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold leading-snug text-foreground">
