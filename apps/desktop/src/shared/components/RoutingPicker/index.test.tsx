@@ -2,7 +2,12 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { MODEL_CATALOGS, PROVIDER_CAPABILITIES } from '@goodboy/core';
+import {
+  MODEL_CATALOGS,
+  PROVIDER_CAPABILITIES,
+  resolveModelArgs,
+  resolveStoredModelSelection,
+} from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
@@ -408,7 +413,13 @@ describe('RoutingPicker', () => {
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     fireEvent.click(screen.getByRole('button', { name: '6' }));
     expect(onModel).toHaveBeenCalledWith('gpt-6-astra');
-    expect(screen.getByRole('contentinfo').textContent).toBe(
+    const selectedModelId = onModel.mock.calls.at(-1)?.[0] as string;
+    const selection = resolveStoredModelSelection({
+      provider: 'codex',
+      id: selectedModelId,
+      effort: 'low',
+    }).selection;
+    expect(resolveModelArgs({ provider: 'codex', selection }).args.join(' ')).toBe(
       '-m gpt-6-astra -c model_reasoning_effort="low"',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Max' }));
@@ -713,10 +724,21 @@ describe('RoutingPicker', () => {
     expect(pickerDialog.closest('[data-dropdown-portal]')?.parentElement).toBe(hostDialog);
   });
 
-  it('shows the exact resolved model arguments in the footer', () => {
-    render(<RoutingPicker {...baseProps} />);
+  it('resolves the exact model arguments for the selection it emits', () => {
+    const onModel = vi.fn();
+    render(<RoutingPicker {...baseProps} onModel={onModel} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('contentinfo').textContent).toBe('--model claude-opus-5 --effort high');
+    fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
+    fireEvent.click(screen.getByRole('button', { name: '5' }));
+    expect(onModel).toHaveBeenCalledWith('claude-opus-5');
+    const selection = resolveStoredModelSelection({
+      provider: 'anthropic',
+      id: 'claude-opus-5',
+      effort: 'high',
+    }).selection;
+    expect(resolveModelArgs({ provider: 'anthropic', selection }).args.join(' ')).toBe(
+      '--model claude-opus-5 --effort high',
+    );
   });
 
   it('distributes provider tabs evenly across the row', () => {

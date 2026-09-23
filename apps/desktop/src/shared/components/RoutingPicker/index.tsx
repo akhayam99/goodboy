@@ -5,7 +5,6 @@ import {
   modelAxes,
   modelIdForSelection,
   remapModelSelection,
-  resolveModelArgs,
   resolveStoredModelSelection,
 } from '@goodboy/core';
 import {
@@ -178,10 +177,6 @@ export const RoutingPicker = ({
   if (viewedModel == null) {
     throw new Error(`provider catalog is empty: ${viewProvider}`);
   }
-  const viewedResolved = resolveModelArgs({
-    provider: viewProvider,
-    selection: viewedRouting.selection,
-  });
   const axes = modelAxes({ model: viewedModel, selection: viewedRouting.selection });
   const cursorModels = MODEL_CATALOGS.cursor.map((entry) => entry.key);
   const maxModeModels = useCursorMaxModeModels({ models: cursorModels });
@@ -491,10 +486,6 @@ export const RoutingPicker = ({
             </PickerSection>
           </>
         )}
-      <Divider />
-      <footer className="px-3 py-2 font-mono text-2xs text-muted-foreground">
-        {viewedResolved.args.join(' ')}
-      </footer>
     </AnchoredPopover>
   );
 };
