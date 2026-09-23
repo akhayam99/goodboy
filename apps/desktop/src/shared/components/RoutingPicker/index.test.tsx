@@ -2,7 +2,12 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { MODEL_CATALOGS, PROVIDER_CAPABILITIES } from '@goodboy/core';
+import {
+  MODEL_CATALOGS,
+  PROVIDER_CAPABILITIES,
+  resolveModelArgs,
+  resolveStoredModelSelection,
+} from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
@@ -26,6 +31,16 @@ const baseProps = {
   onProvider: vi.fn(),
   onModel: vi.fn(),
 };
+type SegmentParams = {
+  readonly element: HTMLElement;
+};
+
+const triggerSegments = ({ element }: SegmentParams): ReadonlyArray<string> =>
+  (element.textContent ?? '')
+    .split('·')
+    .map((segment) => segment.trim())
+    .filter((segment) => segment !== '');
+
 const providers = Object.keys(PROVIDER_CAPABILITIES).filter(
   (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
 );
@@ -40,7 +55,7 @@ describe('RoutingPicker', () => {
   it('reads model and effort in the closed trigger, never the provider name', () => {
     render(<RoutingPicker {...baseProps} />);
     const trigger = screen.getByRole('button', { name: /routing/i });
-    expect(trigger.textContent).toContain('Opus 5');
+    expect(trigger.textContent).toContain('Opus · 5');
     expect(trigger.textContent).toContain('High');
     expect(trigger.textContent).not.toContain('Claude');
   });
@@ -48,8 +63,8 @@ describe('RoutingPicker', () => {
   it('keeps the full routing in the accessible name and the tooltip', () => {
     render(<RoutingPicker {...baseProps} verbosity="brief" onVerbosity={vi.fn()} />);
     const trigger = screen.getByRole('button', { name: /routing/i });
-    expect(trigger.getAttribute('aria-label')).toBe('routing: Claude · Opus 5 · High · Brief');
-    expect(tooltipTextOf({ element: trigger })).toContain('Claude · Opus 5 · High · Brief');
+    expect(trigger.getAttribute('aria-label')).toBe('routing: Claude · Opus · 5 · High · Brief');
+    expect(tooltipTextOf({ element: trigger })).toContain('Claude · Opus · 5 · High · Brief');
   });
 
   it('still explains a disabled trigger when the caller gives no reason', () => {
@@ -57,7 +72,72 @@ describe('RoutingPicker', () => {
       <RoutingPicker {...baseProps} disabled={true} verbosity="brief" onVerbosity={vi.fn()} />,
     );
     expect(tooltipTextOf({ element: screen.getByRole('button', { name: /routing/i }) })).toBe(
-      'Claude · Opus 5 · High · Brief',
+      'Claude · Opus · 5 · High · Brief',
+    );
+  });
+
+  it('says the Cursor mode in the trigger and carries no effort the model refuses', () => {
+    const view = render(
+      <RoutingPicker
+        {...baseProps}
+        provider="cursor"
+        model="claude-opus-5-5-high"
+        effort={{ editable: true, value: 'high', onChange: vi.fn() }}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /^routing:/ }).getAttribute('aria-label')).toBe(
+      'routing: Cursor · Opus · 5.5 · High',
+    );
+
+    view.rerender(
+      <RoutingPicker
+        {...baseProps}
+        provider="cursor"
+        model="composer-2.5-fast"
+        effort={{ editable: true, value: 'high', onChange: vi.fn() }}
+      />,
+    );
+    const trigger = screen.getByRole('button', { name: /^routing:/ });
+    expect(triggerSegments({ element: trigger })).toEqual(['Composer', '2.5', 'Fast']);
+    expect(trigger.getAttribute('aria-label')).toBe('routing: Cursor · Composer · 2.5 · Fast');
+  });
+
+  it.each([
+    {
+      provider: 'codex' as ProviderId,
+      model: 'gpt-5.6-sol',
+      summary: 'Codex · GPT · 5.6 · Sol · High',
+    },
+    {
+      provider: 'codex' as ProviderId,
+      model: 'gpt-6-astra',
+      summary: 'Codex · GPT · 6 · Astra · High',
+    },
+    {
+      provider: 'cursor' as ProviderId,
+      model: 'kimi-k3-high',
+      summary: 'Cursor · Kimi · K3 · High',
+    },
+    {
+      provider: 'cursor' as ProviderId,
+      model: 'gpt-5.3-codex',
+      summary: 'Cursor · GPT · 5.3 · Codex',
+    },
+    {
+      provider: 'cursor' as ProviderId,
+      model: 'gemini-3.8-flash-high',
+      summary: 'Cursor · Gemini · 3.8 · Flash · High',
+    },
+    {
+      provider: 'gemini' as ProviderId,
+      model: 'gemini-3.1-pro',
+      summary: 'Gemini · 3.1 · Pro · High',
+    },
+    { provider: 'cursor' as ProviderId, model: 'auto', summary: 'Cursor · Auto' },
+  ])('spells $summary in the closed trigger', ({ provider, model, summary }) => {
+    render(<RoutingPicker {...baseProps} provider={provider} model={model} />);
+    expect(screen.getByRole('button', { name: /^routing:/ }).getAttribute('aria-label')).toBe(
+      `routing: ${summary}`,
     );
   });
 
@@ -78,7 +158,8 @@ describe('RoutingPicker', () => {
       />,
     );
     const trigger = screen.getByRole('button', { name: /^routing:/ });
-    expect(trigger.textContent).toContain('3.8 Flash');
+    expect(triggerSegments({ element: trigger })).toEqual(['3.8', 'Flash', 'High']);
+    expect(trigger.getAttribute('aria-label')).toBe('routing: Gemini · 3.8 · Flash · High');
     fireEvent.click(trigger);
     const effort = within(screen.getByRole('group', { name: 'Effort' }));
     expect(effort.getAllByRole('button').map((button) => button.textContent)).toEqual([
@@ -104,7 +185,7 @@ describe('RoutingPicker', () => {
       <RoutingPicker {...baseProps} model="" recommendation={{ model: 'claude-sonnet-4-6' }} />,
     );
     const trigger = screen.getByRole('button', { name: /routing/i });
-    expect(trigger.textContent).toContain('Sonnet 4.6');
+    expect(triggerSegments({ element: trigger })).toEqual(['Sonnet', '4.6', 'High']);
     fireEvent.click(trigger);
     expect(screen.getByRole('button', { name: 'Sonnet' }).getAttribute('aria-pressed')).toBe(
       'true',
@@ -306,16 +387,29 @@ describe('RoutingPicker', () => {
     expect(screen.getByRole('dialog')).toBeDefined();
   });
 
-  it('shows Codex checkpoints as version chips, one per billable model', () => {
+  it('splits Codex checkpoints into a version and a variant row', () => {
     const onModel = vi.fn();
     render(
       <RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-terra" onModel={onModel} />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('button', { name: '5.6 Terra' }).getAttribute('aria-pressed')).toBe(
+    const versions = within(screen.getByRole('group', { name: 'Version' }));
+    expect(versions.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      '5.5',
+      '5.6',
+      '6',
+    ]);
+    expect(versions.getByRole('button', { name: '5.6' }).getAttribute('aria-pressed')).toBe('true');
+    const variants = within(screen.getByRole('group', { name: 'Variant' }));
+    expect(variants.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Luna',
+      'Terra',
+      'Sol',
+    ]);
+    expect(variants.getByRole('button', { name: 'Terra' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
-    fireEvent.click(screen.getByRole('button', { name: '5.6 Luna' }));
+    fireEvent.click(variants.getByRole('button', { name: 'Luna' }));
     expect(onModel).toHaveBeenCalledWith('gpt-5.6-luna');
   });
 
@@ -334,26 +428,41 @@ describe('RoutingPicker', () => {
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     fireEvent.click(screen.getByRole('button', { name: '6' }));
     expect(onModel).toHaveBeenCalledWith('gpt-6-astra');
-    expect(screen.getByRole('contentinfo').textContent).toBe(
+    const selectedModelId = onModel.mock.calls.at(-1)?.[0] as string;
+    const selection = resolveStoredModelSelection({
+      provider: 'codex',
+      id: selectedModelId,
+      effort: 'low',
+    }).selection;
+    expect(resolveModelArgs({ provider: 'codex', selection }).args.join(' ')).toBe(
       '-m gpt-6-astra -c model_reasoning_effort="low"',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Max' }));
     expect(onChange).toHaveBeenCalledWith('max');
   });
 
-  it('leaves Codex no variant row, because one key is now one spawnable model', () => {
+  it('offers a variant row for every version that ships a variant, even a lone one', () => {
     const view = render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-sol" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.queryByRole('group', { name: 'Variant' })).toBeNull();
-    for (const label of ['5.6 Sol', '5.6 Terra', '5.6 Luna']) {
-      expect(screen.getByRole('button', { name: label })).toBeDefined();
-    }
+    expect(
+      within(screen.getByRole('group', { name: 'Variant' }))
+        .getByRole('button', { name: 'Sol' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
 
     view.unmount();
-    render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.5" />);
+    const bareView = render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.5" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     expect(screen.queryByRole('group', { name: 'Variant' })).toBeNull();
     expect(screen.getByRole('button', { name: '5.5' }).getAttribute('aria-pressed')).toBe('true');
+
+    bareView.unmount();
+    render(<RoutingPicker {...baseProps} provider="codex" model="gpt-6-astra" />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const astra = within(screen.getByRole('group', { name: 'Variant' })).getAllByRole('button');
+    expect(astra.map((button) => button.textContent)).toEqual(['Astra']);
+    expect(astra[0]?.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: '6' }).getAttribute('aria-pressed')).toBe('true');
   });
 
   it('clamps Cursor effort after a toggle invalidates it and announces the adjustment', () => {
@@ -433,11 +542,14 @@ describe('RoutingPicker', () => {
     expect(within(modelOptions).getByRole('group', { name: 'Effort' })).toBeDefined();
   });
 
-  it('omits the version row for a model without a version axis', () => {
+  it('omits the version row for a family that ships a single model', () => {
     render(<RoutingPicker {...baseProps} provider="cursor" model="auto" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const modelOptions = screen.getByRole('region', { name: 'Model options' });
-    expect(within(modelOptions).queryByRole('group', { name: 'Model Version' })).toBeNull();
+    expect(
+      within(modelOptions).getByRole('button', { name: 'Auto' }).getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(within(modelOptions).queryByRole('group', { name: 'Version' })).toBeNull();
   });
 
   it('shows a Max Mode advisory after failure and clears it after success', () => {
@@ -491,7 +603,7 @@ describe('RoutingPicker', () => {
     ).toEqual(['Haiku', 'Sonnet', 'Opus', 'Fable']);
     fireEvent.click(within(models).getByRole('button', { name: 'Opus' }));
     expect(
-      within(screen.getByRole('group', { name: 'Model Version' }))
+      within(screen.getByRole('group', { name: 'Version' }))
         .getAllByRole('button')
         .map((button) => button.textContent),
     ).toEqual(['4.6', '4.7', '4.8', '5', '5.5']);
@@ -525,7 +637,7 @@ describe('RoutingPicker', () => {
     render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-terra" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const model = screen.getByRole('group', { name: 'Model' });
-    const version = screen.getByRole('group', { name: 'Model Version' });
+    const version = screen.getByRole('group', { name: 'Version' });
     const effort = screen.getByRole('group', { name: 'Effort' });
     expect(
       [model, version, effort].every((group) => group?.className.includes('justify-end')),
@@ -629,10 +741,21 @@ describe('RoutingPicker', () => {
     expect(pickerDialog.closest('[data-dropdown-portal]')?.parentElement).toBe(hostDialog);
   });
 
-  it('shows the exact resolved model arguments in the footer', () => {
-    render(<RoutingPicker {...baseProps} />);
+  it('resolves the exact model arguments for the selection it emits', () => {
+    const onModel = vi.fn();
+    render(<RoutingPicker {...baseProps} onModel={onModel} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('contentinfo').textContent).toBe('--model claude-opus-5 --effort high');
+    fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
+    fireEvent.click(screen.getByRole('button', { name: '5' }));
+    expect(onModel).toHaveBeenCalledWith('claude-opus-5');
+    const selection = resolveStoredModelSelection({
+      provider: 'anthropic',
+      id: 'claude-opus-5',
+      effort: 'high',
+    }).selection;
+    expect(resolveModelArgs({ provider: 'anthropic', selection }).args.join(' ')).toBe(
+      '--model claude-opus-5 --effort high',
+    );
   });
 
   it('distributes provider tabs evenly across the row', () => {

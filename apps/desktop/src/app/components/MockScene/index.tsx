@@ -40,6 +40,12 @@ import { LensSwitcherClosedScene, LensSwitcherScene } from './scenes/LensSwitche
 import { CardRailsScene } from './scenes/CardRailsScene';
 import { ProvidersScene } from './scenes/ProvidersScene';
 import { ImpactScene } from './scenes/ImpactScene';
+import {
+  ModelPickerCodexScene,
+  ModelPickerCursorScene,
+  ModelPickerScene,
+  ModelPickerTriggersScene,
+} from './scenes/ModelPickerScenes';
 
 const SCENES = {
   workspace: WorkspaceScene,
@@ -76,6 +82,10 @@ const SCENES = {
   'lens-switcher-closed': LensSwitcherClosedScene,
   providers: ProvidersScene,
   impact: ImpactScene,
+  'model-picker': ModelPickerScene,
+  'model-picker-cursor': ModelPickerCursorScene,
+  'model-picker-codex': ModelPickerCodexScene,
+  'model-picker-triggers': ModelPickerTriggersScene,
 };
 
 export const MockScene = () => {

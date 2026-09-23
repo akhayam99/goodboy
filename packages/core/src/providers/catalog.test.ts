@@ -45,6 +45,16 @@ const emittedModel = ({ provider, selection }: AssertParams): string => {
   return id;
 };
 
+type TokensParams = {
+  readonly text: string;
+};
+
+const tokensOf = ({ text }: TokensParams): ReadonlyArray<string> =>
+  text
+    .toLowerCase()
+    .split(/[-/\s]+/)
+    .filter((token) => token !== '');
+
 type CrossParams = {
   readonly provider: ProviderId;
   readonly model: CatalogModel;
@@ -120,15 +130,54 @@ describe('model catalogs', () => {
       const familyByGroup = new Map<string, ModelFamily>();
       for (const model of catalog) {
         const group = model.presentation.group;
-        if (group == null) {
-          continue;
-        }
         const family = familyByGroup.get(group);
         if (family != null) {
           expect(model.presentation.family).toBe(family);
           continue;
         }
         familyByGroup.set(group, model.presentation.family);
+      }
+    }
+  });
+
+  it('names every catalog entry by the chips the picker shows for it', () => {
+    for (const provider of PROVIDER_IDS) {
+      const catalog: ReadonlyArray<CatalogModel> = MODEL_CATALOGS[provider];
+      for (const model of catalog) {
+        const { group, version, checkpoint, family } = model.presentation;
+        expect(group, `${provider}/${model.key} declares no group`).not.toBe('');
+        expect(version, `${provider}/${model.key} declares no version`).not.toBe('');
+        const chips = `${group} ${version} ${checkpoint ?? ''}`;
+        const identity = [...tokensOf({ text: chips }), ...tokensOf({ text: family })];
+        for (const token of tokensOf({ text: model.label })) {
+          expect(
+            identity,
+            `${provider}/${model.key}: "${model.label}" says more than "${chips.trim()}"`,
+          ).toContain(token);
+        }
+        const spoken = [...tokensOf({ text: model.label }), ...tokensOf({ text: family })];
+        for (const token of tokensOf({ text: group })) {
+          expect(
+            spoken,
+            `${provider}/${model.key}: group "${group}" is absent from "${model.label}"`,
+          ).toContain(token);
+        }
+      }
+    }
+  });
+
+  it('keeps every group member reachable by a distinct chip path', () => {
+    for (const provider of PROVIDER_IDS) {
+      const claimed = new Map<string, string>();
+      const catalog: ReadonlyArray<CatalogModel> = MODEL_CATALOGS[provider];
+      for (const model of catalog) {
+        const { group, version, checkpoint } = model.presentation;
+        const chip = `${group} · ${version}${checkpoint == null ? '' : ` · ${checkpoint}`}`;
+        expect(
+          claimed.get(chip),
+          `${provider}: "${chip}" is claimed by both ${claimed.get(chip)} and ${model.key}`,
+        ).toBeUndefined();
+        claimed.set(chip, model.key);
       }
     }
   });

@@ -638,10 +638,8 @@ describe('OrchestratorPanel strip', () => {
     fireEvent.click(screen.getByTestId('orchestrator-role-models-toggle'));
 
     const implementer = screen.getByRole('group', { name: /implementer model/i });
-    expect(implementer.textContent).toContain('GPT-5.6');
-    expect(screen.getByRole('group', { name: /scout model/i }).textContent).not.toContain(
-      'GPT-5.6',
-    );
+    expect(implementer.textContent).toContain('GPT · 5.6 · Sol');
+    expect(screen.getByRole('group', { name: /scout model/i }).textContent).not.toContain('5.6');
   });
 
   it('drops a role back to the workspace default from the drawer', () => {

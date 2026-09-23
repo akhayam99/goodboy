@@ -9,6 +9,7 @@ import {
   MODEL_CATALOGS,
   getDefaultTurnModel,
   getModelProvider,
+  modelHasEffortAxis,
   resolveModelArgs,
   resolveStoredModelSelection,
 } from '@goodboy/core';
@@ -107,7 +108,9 @@ export const resolveRouting = ({
     selection: stored.selection,
   });
   const appliedEffort = resolved.clamped?.applied ?? stored.selection.effort ?? effort;
-  const selection = { ...stored.selection, effort: appliedEffort };
+  const selection = modelHasEffortAxis({ model: selectedModel })
+    ? { ...stored.selection, effort: appliedEffort }
+    : stored.selection;
   const effortLevels = effortsFor({
     model: selectedModel,
     selection,

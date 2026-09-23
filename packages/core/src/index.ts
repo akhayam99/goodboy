@@ -224,6 +224,7 @@ export { parseLegacyId } from './providers/parseLegacyId';
 export { remapModelSelection } from './providers/remapModelSelection';
 export { resolveCursorCombo } from './providers/cursorCombo';
 export { modelAxes } from './providers/modelAxes';
+export { modelHasEffortAxis } from './providers/modelHasEffortAxis';
 export { resolveModelArgs } from './providers/resolveModelArgs';
 export {
   PROVIDER_ARG_FLAGS,
