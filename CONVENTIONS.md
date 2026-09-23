@@ -43,7 +43,7 @@ Format: `type(scope): subject`
 - Body: optional, explains WHY. Wrap at 80 chars max.
 - Footer: reference issues, `Closes #12`, `Refs #34`.
 
-Example: `feat(core): add anthropic provider adapter`
+Example: `feat(core): add the moonshot model catalog`
 
 ### PR rules
 

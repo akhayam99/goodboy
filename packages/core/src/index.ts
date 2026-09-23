@@ -260,7 +260,6 @@ export { fallbackWantsThinker } from './providers/fallbackWantsThinker';
 export { strongestModelForTier } from './providers/strongestModelForTier';
 export { planTaskModelFallback } from './providers/task-model-fallback';
 export { cliModelId } from './providers/cliModelId';
-export { cliExitEvents } from './providers/shared/cli-exit-events';
 export {
   createJsonLineAssembler,
   type JsonLineAssembler,
