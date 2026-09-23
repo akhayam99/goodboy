@@ -36,7 +36,10 @@ import {
 } from '../workflows/clusterImplementation';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import type { SpawnFocus } from '../session-view/spawnFocus';
+import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type { GetFn, SetFn } from './types';
+
+const spawnQueue = createKeyedQueue();
 
 type SpawnArgs = {
   stepId?: StepId;
@@ -98,84 +101,96 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       stepPromptPrefix = step.promptPrefix;
     }
   }
-  const currentRuns = state.sessionPhaseRuns[sessionId] ?? [];
-  const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
-  if (!resolvedName) {
-    resolvedName = `agent ${nextOrdinal + 1}`;
-  }
-  const workspaceVerbositySeed =
-    state.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? undefined;
-  const resolvedKind = args.kindOverride ?? inferAgentKindFromName(resolvedName);
-  const roleModels = state.workspaceOverrides[session.workspaceId]?.roleModels;
-  const routing = kindRouting({ kind: resolvedKind, roleModels });
-  const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
-  const inserted = await invokeAgentInsert({
-    sessionId,
-    ...(args.stepId !== undefined && { stepId: args.stepId }),
-    ...(args.workflowRunId !== undefined && { workflowRunId: args.workflowRunId }),
-    ordinal: nextOrdinal,
-    name: resolvedName,
-    status: 'pending',
-    kind: resolvedKind,
-    ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
-    ...(sourceThreadId !== undefined && { sourceThreadId }),
-    ...(args.sourceThreadIds !== undefined && { sourceThreadIds: args.sourceThreadIds }),
-    ...(args.sourceCommentUrl !== undefined && { sourceCommentUrl: args.sourceCommentUrl }),
-    ...(args.sourceKind !== undefined && { sourceKind: args.sourceKind }),
-    ...(args.parentAgentId !== undefined && { parentAgentId: args.parentAgentId }),
-  });
-  const resolvedProvider = args.provider ?? routing.provider;
-  const resolvedModel = args.model ?? routing.model;
-  const resolvedEffort = EFFORT_LEVELS.find((level) => level === args.effort) ?? routing.effort;
-  await updateAgentConfig(tauriDatabase, inserted.id, {
-    providerOverride: resolvedProvider,
-    modelOverride: resolvedModel,
-    effort: resolvedEffort,
-  });
-  const listed = await invokeAgentList(sessionId);
-  const refreshed = listed.map((agent) =>
-    agent.id === inserted.id
-      ? {
-          ...agent,
+  const { inserted, resolvedKind, resolvedProvider, resolvedModel, resolvedEffort } =
+    await spawnQueue.run({
+      key: sessionId,
+      task: async () => {
+        const currentRuns = get().sessionPhaseRuns[sessionId] ?? [];
+        const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
+        const agentName =
+          resolvedName !== undefined && resolvedName !== ''
+            ? resolvedName
+            : `agent ${nextOrdinal + 1}`;
+        const workspaceVerbositySeed =
+          state.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? undefined;
+        const resolvedKind = args.kindOverride ?? inferAgentKindFromName(agentName);
+        const roleModels = state.workspaceOverrides[session.workspaceId]?.roleModels;
+        const routing = kindRouting({ kind: resolvedKind, roleModels });
+        const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
+        const inserted = await invokeAgentInsert({
+          sessionId,
+          ...(args.stepId !== undefined && { stepId: args.stepId }),
+          ...(args.workflowRunId !== undefined && { workflowRunId: args.workflowRunId }),
+          ordinal: nextOrdinal,
+          name: agentName,
+          status: 'pending',
+          kind: resolvedKind,
+          ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
+          ...(sourceThreadId !== undefined && { sourceThreadId }),
+          ...(args.sourceThreadIds !== undefined && { sourceThreadIds: args.sourceThreadIds }),
+          ...(args.sourceCommentUrl !== undefined && { sourceCommentUrl: args.sourceCommentUrl }),
+          ...(args.sourceKind !== undefined && { sourceKind: args.sourceKind }),
+          ...(args.parentAgentId !== undefined && { parentAgentId: args.parentAgentId }),
+        });
+        const resolvedProvider = args.provider ?? routing.provider;
+        const resolvedModel = args.model ?? routing.model;
+        const resolvedEffort =
+          EFFORT_LEVELS.find((level) => level === args.effort) ?? routing.effort;
+        await updateAgentConfig(tauriDatabase, inserted.id, {
           providerOverride: resolvedProvider,
           modelOverride: resolvedModel,
           effort: resolvedEffort,
-        }
-      : agent,
-  );
-  const takesFocus = args.focus === 'agent';
-  set((s) => ({
-    sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
-    ...(takesFocus &&
-      workSurfaceFocus({
-        sessionId,
-        focus: { kind: 'agent', agentId: inserted.id },
-        activeLens: s.activeLens,
-        sessionStudio: s.sessionStudio,
-        selectedAgentId: s.selectedAgentId,
-      })),
-    transcripts: { ...s.transcripts, [inserted.id]: [] },
-    messages: { ...s.messages, [sessionId]: [] },
-    agentTurnState: {
-      ...s.agentTurnState,
-      [inserted.id]: { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime },
-    },
-    agentModelOverride: {
-      ...s.agentModelOverride,
-      [inserted.id]: resolvedModel,
-    },
-    agentProviderOverride: {
-      ...s.agentProviderOverride,
-      [inserted.id]: resolvedProvider,
-    },
-    agentEffortOverride: {
-      ...s.agentEffortOverride,
-      [inserted.id]: resolvedEffort,
-    },
-    ...(args.kindOverride !== undefined && {
-      agentKindOverride: { ...s.agentKindOverride, [inserted.id]: args.kindOverride },
-    }),
-  }));
+        });
+        const listed = await invokeAgentList(sessionId);
+        const refreshed = listed.map((agent) =>
+          agent.id === inserted.id
+            ? {
+                ...agent,
+                providerOverride: resolvedProvider,
+                modelOverride: resolvedModel,
+                effort: resolvedEffort,
+              }
+            : agent,
+        );
+        const takesFocus = args.focus === 'agent';
+        set((s) => ({
+          sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
+          ...(takesFocus &&
+            workSurfaceFocus({
+              sessionId,
+              focus: { kind: 'agent', agentId: inserted.id },
+              activeLens: s.activeLens,
+              sessionStudio: s.sessionStudio,
+              selectedAgentId: s.selectedAgentId,
+            })),
+          transcripts: { ...s.transcripts, [inserted.id]: [] },
+          messages: { ...s.messages, [sessionId]: [] },
+          agentTurnState: {
+            ...s.agentTurnState,
+            [inserted.id]: {
+              kind: 'idle',
+              lastActivityAt: new Date().toISOString() as IsoDateTime,
+            },
+          },
+          agentModelOverride: {
+            ...s.agentModelOverride,
+            [inserted.id]: resolvedModel,
+          },
+          agentProviderOverride: {
+            ...s.agentProviderOverride,
+            [inserted.id]: resolvedProvider,
+          },
+          agentEffortOverride: {
+            ...s.agentEffortOverride,
+            [inserted.id]: resolvedEffort,
+          },
+          ...(args.kindOverride !== undefined && {
+            agentKindOverride: { ...s.agentKindOverride, [inserted.id]: args.kindOverride },
+          }),
+        }));
+        return { inserted, resolvedKind, resolvedProvider, resolvedModel, resolvedEffort };
+      },
+    });
   const baseKickoff = stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
   const effectiveKind: AgentKind =
     args.kindOverride ?? (inserted.kind as AgentKind | undefined) ?? resolvedKind;

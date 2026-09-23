@@ -256,6 +256,38 @@ describe('spawnAgent focus', () => {
   });
 });
 
+describe('spawnAgent ordinals', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    listConsumptionsForPlanSpy.mockResolvedValue([]);
+  });
+
+  it('gives two concurrent spawns in one session distinct ordinals', async () => {
+    const { spawn } = buildHarness([]);
+    const rows: Agent[] = [];
+    invokeAgentInsertSpy.mockImplementation(
+      async (args: { readonly ordinal: number; readonly name: string }) => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const row = {
+          id: `agent-${rows.length}` as AgentId,
+          sessionId: SESSION_ID,
+          ordinal: args.ordinal,
+          name: args.name,
+          status: 'pending',
+        } satisfies Agent;
+        rows.push(row);
+        return row;
+      },
+    );
+    invokeAgentListSpy.mockImplementation(async () => [...rows]);
+
+    await Promise.all([spawn(SESSION_ID, {}), spawn(SESSION_ID, {})]);
+
+    expect(rows.map((row) => row.ordinal)).toEqual([0, 1]);
+    expect(rows.map((row) => row.name)).toEqual(['agent 1', 'agent 2']);
+  });
+});
+
 describe('spawnAgent ad-hoc cluster fan-out', () => {
   beforeEach(() => {
     vi.clearAllMocks();
