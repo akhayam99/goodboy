@@ -828,7 +828,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                 />
               ) : null}
               {selectedUserScripts.length === 0 && newDraft === null ? (
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-muted/20 px-2.5 py-2">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-subtle px-2.5 py-2">
                   <p className="text-xs text-muted-foreground">
                     {normalizedQuery === ''
                       ? `No scripts saved for ${selectedProject.name} yet. Save the command you keep retyping.`
@@ -923,7 +923,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                   <p className="text-xs text-muted-foreground">No manifest scripts found.</p>
                 ) : null}
                 {normalizedQuery !== '' && !hasSearchResults ? (
-                  <div className="flex items-center gap-2 rounded-md bg-muted/30 px-2.5 py-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 rounded-md bg-subtle px-2.5 py-2 text-xs text-muted-foreground">
                     <span>No scripts match</span>
                     <button
                       type="button"

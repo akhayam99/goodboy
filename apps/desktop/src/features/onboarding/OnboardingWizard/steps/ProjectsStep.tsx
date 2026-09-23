@@ -132,7 +132,7 @@ export const ProjectsStep = ({ workspace, initialConflicts }: Props) => {
 
   return (
     <div className="flex flex-col items-center gap-6 text-center">
-      <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 text-primary">
+      <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft bg-subtle text-primary">
         <FolderGit2 size={26} aria-hidden />
       </span>
 
@@ -151,7 +151,7 @@ export const ProjectsStep = ({ workspace, initialConflicts }: Props) => {
             {linked.map((project) => (
               <li
                 key={project.id}
-                className="flex items-center gap-3 rounded-lg border border-border-soft/60 bg-subtle/20 px-3 py-2"
+                className="flex items-center gap-3 rounded-lg border border-border-soft bg-subtle px-3 py-2"
               >
                 <span className="shrink-0 text-muted-foreground">
                   {project.kind === 'repo' ? (

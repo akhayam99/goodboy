@@ -6,7 +6,7 @@ type Props = {
   readonly className?: string;
 };
 
-const CODE_CLASS = 'rounded-md bg-muted/50 px-1 py-0 font-mono text-foreground';
+const CODE_CLASS = 'rounded-md bg-muted px-1 py-0 font-mono text-foreground';
 
 type RenderParams = {
   readonly tokens: ReadonlyArray<InlineToken>;

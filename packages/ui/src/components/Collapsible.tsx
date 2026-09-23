@@ -18,7 +18,7 @@ export const Collapsible = ({
 }: CollapsibleProps) => {
   const panelId = useId();
   return (
-    <div className={cn('flex flex-col rounded-md', open && 'bg-muted/30', className)}>
+    <div className={cn('flex flex-col rounded-md', open && 'bg-subtle', className)}>
       <button
         type="button"
         aria-expanded={open}

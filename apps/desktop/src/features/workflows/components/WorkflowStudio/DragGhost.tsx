@@ -14,7 +14,7 @@ export const DragGhost = ({ ghost }: Props) => {
       className={tokenCn(
         'pointer-events-none fixed z-[60] flex items-center gap-1.5 rounded-md border',
         tokenTintClasses('primary').border,
-        'bg-background/95 px-2 py-1 text-2xs font-medium text-foreground shadow-lg',
+        'bg-background px-2 py-1 text-2xs font-medium text-foreground shadow-lg',
       )}
       style={{ left: ghost.x + 12, top: ghost.y + 12 }}
     >

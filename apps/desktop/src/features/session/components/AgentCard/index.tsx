@@ -97,7 +97,7 @@ export const AgentCard = ({
         DENSITY_PADDING[density],
         isInert ? '' : 'cursor-pointer',
         isMuted && 'opacity-60',
-        isSelected ? 'bg-elevated' : 'bg-muted/40 hover:bg-hover',
+        isSelected ? 'bg-elevated' : 'bg-subtle hover:bg-hover',
         tone === 'default' && (isSelected ? 'border-border' : 'border-transparent'),
         agentCardBorderClass(tone),
         isInspected && 'ring-1 ring-inset ring-border',

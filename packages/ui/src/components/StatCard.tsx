@@ -68,7 +68,7 @@ export const StatCard = ({
 
   const shell = cn(
     icon && tint ? 'flex items-start gap-3' : 'flex flex-col gap-1',
-    'rounded-lg border bg-muted/20 px-4 py-3',
+    'rounded-lg border bg-subtle px-4 py-3',
     alert ? warningTint.border : 'border-border-soft',
     className,
   );

@@ -1000,7 +1000,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                   minRows={2}
                   maxRows={4}
                   disabled={busy || polishing}
-                  className="resize-none rounded-lg bg-subtle/80 px-4 py-3 text-sm ring-1 ring-border-soft focus-visible:ring-foreground/15"
+                  className="resize-none rounded-lg bg-subtle px-4 py-3 text-sm ring-1 ring-border-soft focus-visible:ring-foreground/15"
                 />
                 <div
                   ref={composerRef}
@@ -1254,7 +1254,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                   />
                 ) : (
                   <div className="flex flex-col gap-2">
-                    <div className="rounded-lg bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
+                    <div className="rounded-lg bg-subtle ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
                       <div className="relative">
                         <Textarea
                           value={processText}
@@ -1324,7 +1324,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                               setCustomNameEdited(true);
                             }}
                             disabled={blocked}
-                            className="h-8 bg-background/70 text-sm font-medium"
+                            className="h-8 bg-background text-sm font-medium"
                           />
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
@@ -1484,7 +1484,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         className="flex flex-col gap-1.5"
                       >
                         <Skeleton className="h-3 w-28 rounded" />
-                        <ol className="flex flex-col divide-y divide-border-soft/50">
+                        <ol className="flex flex-col divide-y divide-border-soft">
                           {Array.from({ length: 3 }).map((_, i) => (
                             <li key={i} className="flex flex-col gap-1.5 px-1 py-3 first:pt-1">
                               <div className="flex items-center gap-2">
@@ -1512,7 +1512,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                   <Divider />
                   <section className="flex flex-col gap-3">
                     <SectionHeader icon={<Rocket size={11} aria-hidden />} label="Launch options" />
-                    <div className="flex flex-col divide-y divide-border-soft/70 overflow-hidden rounded-lg border border-border-soft bg-subtle/40">
+                    <div className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-lg border border-border-soft bg-subtle">
                       <div className="flex flex-col gap-2 px-3 py-2.5">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-2xs font-medium text-foreground">

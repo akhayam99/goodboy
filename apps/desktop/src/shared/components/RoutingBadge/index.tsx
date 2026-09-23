@@ -76,7 +76,7 @@ const divergenceCopy = ({
 };
 
 const CHIP_CLASS =
-  'inline-flex items-center gap-1 rounded-md bg-muted/50 px-1.5 py-0.5 text-2xs text-muted-foreground';
+  'inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground';
 
 export const RoutingBadge = ({
   provider = null,

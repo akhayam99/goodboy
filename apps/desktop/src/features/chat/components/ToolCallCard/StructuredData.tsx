@@ -50,7 +50,7 @@ export const StructuredData = ({ data, depth = 0, label, hasImages = false }: Pr
           {data.map((v, i) => (
             <span
               key={i}
-              className="inline-block rounded-md bg-muted/50 px-1.5 py-0.5 text-foreground"
+              className="inline-block rounded-md bg-muted px-1.5 py-0.5 text-foreground"
             >
               <StructuredData data={v} depth={depth + 1} hasImages={hasImages} />
             </span>

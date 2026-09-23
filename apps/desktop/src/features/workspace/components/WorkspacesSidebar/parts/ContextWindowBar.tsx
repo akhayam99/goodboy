@@ -53,7 +53,7 @@ const ProviderBar = ({ usage, showProvider }: ProviderBarProps) => {
           {formatTokens(used)} / {windowLabel} · {Math.round(pct * 100)}%
         </span>
       </div>
-      <div className="h-0.5 w-full overflow-hidden rounded-full bg-muted/60">
+      <div className="h-0.5 w-full overflow-hidden rounded-full bg-muted">
         <div
           className={cn(
             'h-full rounded-full transition-all',

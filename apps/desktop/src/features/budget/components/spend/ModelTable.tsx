@@ -23,7 +23,7 @@ export const ModelTable = ({
         tone={CONCEPT_TONE.budget}
         title="No model usage recorded yet"
         size="inline"
-        className="justify-center bg-muted/10 px-3 py-4"
+        className="justify-center bg-subtle px-3 py-4"
       />
     );
   }

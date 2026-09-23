@@ -103,7 +103,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
           tone={CONCEPT_TONE.providers}
           title="No API keys yet"
           size="inline"
-          className="bg-muted/10 py-8"
+          className="bg-subtle py-8"
         />
       ) : null}
 
@@ -126,7 +126,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
             ) : (
               <li
                 key={c.id}
-                className="group flex items-center gap-3 rounded-lg border border-border-soft bg-muted/20 p-3 transition-colors hover:bg-hover"
+                className="group flex items-center gap-3 rounded-lg border border-border-soft bg-subtle p-3 transition-colors hover:bg-hover"
               >
                 <span
                   className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"

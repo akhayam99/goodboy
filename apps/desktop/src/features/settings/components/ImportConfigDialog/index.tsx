@@ -56,7 +56,7 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
           <p className="text-xs text-danger">{error}</p>
         </div>
       ) : result?.ok ? (
-        <dl className="divide-y divide-border-soft/50 overflow-hidden rounded-md border border-border-soft">
+        <dl className="divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft">
           {statRows.map((row) => (
             <div key={row.label} className="flex items-center justify-between px-3 py-2 text-xs">
               <dt className="flex items-center gap-2 text-muted-foreground">
@@ -70,7 +70,7 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
       ) : result ? (
         <ul
           className={tokenCn(
-            'divide-y divide-border-soft/50 overflow-hidden rounded-md border',
+            'divide-y divide-border-soft overflow-hidden rounded-md border',
             tokenTintClasses('danger').borderSoft,
           )}
         >

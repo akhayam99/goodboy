@@ -41,6 +41,12 @@ const RULES = [
     allow: NO_ALLOW,
     why: 'interactive hover surfaces use the shared hover overlay',
   },
+  {
+    pattern:
+      /(?:bg-(?:muted|subtle|background|elevated|foreground)|border-soft|divide-border-soft)\/(?:\d+|\[[^\]]+\])|bg-(?:black|white)\/|shadow-2xl|rgba\(/,
+    allow: NO_ALLOW,
+    why: 'neutral surfaces use the opaque ramp or named overlays and shadows',
+  },
 ] satisfies ReadonlyArray<Rule>;
 
 const listSourceFiles = ({ dir, files = [] }: { dir: string; files?: string[] }): string[] => {

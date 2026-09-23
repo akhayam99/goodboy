@@ -433,7 +433,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
             'relative flex flex-col rounded-md ring-1 transition-all focus-within:ring-2 focus-within:ring-focus-ring',
             isDragging
               ? tokenCn(tokenTintClasses('primary').bgSoft, 'ring-2 ring-primary')
-              : 'bg-subtle/80 ring-border-soft',
+              : 'bg-subtle ring-border-soft',
           )}
         >
           <div

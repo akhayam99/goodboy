@@ -192,7 +192,7 @@ export const WorkflowStepCard = ({
               tokenTintClasses('primary').bgSoft,
               'shadow-sm',
             )
-          : 'border-border-soft bg-subtle/40 hover:border-border hover:bg-hover',
+          : 'border-border-soft bg-subtle hover:border-border hover:bg-hover',
         dragging && 'opacity-40',
       )}
     >

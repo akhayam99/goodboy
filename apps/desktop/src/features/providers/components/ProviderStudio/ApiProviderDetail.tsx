@@ -58,7 +58,7 @@ export const ApiProviderDetail = ({ info }: Props) => {
           label="Runtime"
           hint={`Sessions for ${info.label} execute through this locally installed runtime.`}
         />
-        <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/20 p-4">
+        <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-subtle p-4">
           <span
             className={
               isRuntimeReady

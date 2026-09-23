@@ -31,7 +31,7 @@ const AdoptionRow = ({ label, value, action, onUse }: RowProps) => (
 export const IssueAdoptionProposal = ({ adoption, onUseTitle, onUseGoal, onDismiss }: Props) => (
   <section
     aria-label="Issue suggestions"
-    className="flex flex-col gap-2 rounded-md border border-border-soft bg-muted/30 p-2.5"
+    className="flex flex-col gap-2 rounded-md border border-border-soft bg-subtle p-2.5"
   >
     <header className="flex items-center gap-2">
       <CONCEPT_ICONS.issues

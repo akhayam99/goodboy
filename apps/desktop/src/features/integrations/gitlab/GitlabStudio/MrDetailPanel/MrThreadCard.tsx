@@ -30,7 +30,7 @@ export const MrThreadCard = ({ thread, onReply, onResolve, resolveError }: Props
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
+    <div className="flex flex-col gap-2 rounded-lg bg-subtle p-3">
       <div className="flex flex-wrap items-center gap-2">
         <MrNoteHeader note={thread.head} />
         {anchor != null && (

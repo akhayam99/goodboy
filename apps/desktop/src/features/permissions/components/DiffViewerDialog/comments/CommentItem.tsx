@@ -45,7 +45,7 @@ export const CommentItem = ({
       <div className="flex items-center gap-2">
         <span
           aria-hidden
-          className="flex size-5 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-3xs font-semibold uppercase text-muted-foreground"
+          className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-3xs font-semibold uppercase text-muted-foreground"
         >
           ME
         </span>

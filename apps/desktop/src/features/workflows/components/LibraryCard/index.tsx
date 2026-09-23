@@ -74,7 +74,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
         </Tooltip>
         {confirming ? (
           <div
-            className="flex items-center gap-0.5 rounded-md border border-border bg-background/95 px-1 py-0.5 shadow-sm"
+            className="flex items-center gap-0.5 rounded-md border border-border bg-background px-1 py-0.5 shadow-sm"
             onPointerDown={(e) => e.stopPropagation()}
           >
             <span className="px-1 text-2xs text-muted-foreground">Delete?</span>

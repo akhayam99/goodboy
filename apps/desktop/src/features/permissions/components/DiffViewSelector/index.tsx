@@ -379,8 +379,8 @@ export const DiffViewSelector = ({
                         'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors',
                         isActive
                           ? 'bg-background text-foreground shadow-sm ring-1 ring-inset ring-border-soft'
-                          : 'text-foreground hover:bg-background/60',
-                        isFocused && !isActive && 'bg-background/60 text-foreground',
+                          : 'text-foreground hover:bg-background',
+                        isFocused && !isActive && 'bg-background text-foreground',
                       )}
                     >
                       <span

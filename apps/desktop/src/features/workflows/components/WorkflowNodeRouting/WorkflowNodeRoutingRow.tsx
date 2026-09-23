@@ -67,7 +67,7 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
   };
 
   return (
-    <li className="flex min-w-0 flex-col gap-1.5 rounded-md border border-border-soft bg-background/40 px-2 py-1.5">
+    <li className="flex min-w-0 flex-col gap-1.5 rounded-md border border-border-soft bg-background px-2 py-1.5">
       <div className="flex min-w-0 items-center gap-2">
         <button
           type="button"

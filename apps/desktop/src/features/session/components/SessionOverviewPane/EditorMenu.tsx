@@ -150,7 +150,7 @@ export const EditorMenu = ({
             aria-haspopup="menu"
             aria-expanded={dropdown.open}
             onClick={dropdown.toggle}
-            className={cn('size-7', triggerClassName, dropdown.open && 'opacity-100 bg-muted/60')}
+            className={cn('size-7', triggerClassName, dropdown.open && 'opacity-100 bg-muted')}
           />
         ) : (
           <Tooltip content={tooltip}>

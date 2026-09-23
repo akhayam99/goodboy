@@ -461,7 +461,7 @@ export const FileDiffCard = ({
                         <tr key={`hunk-${row.hunkIndex}`}>
                           <td
                             colSpan={columnCount}
-                            className="border-y border-border-soft/40 bg-muted/30"
+                            className="border-y border-border-soft bg-subtle"
                           >
                             <div
                               className={cn(
@@ -614,7 +614,7 @@ export const FileDiffCard = ({
                                 : undefined
                             }
                             className={cn(
-                              'w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-3xs tabular-nums text-faint-foreground',
+                              'w-9 select-none border-r border-border-soft px-1.5 text-right text-3xs tabular-nums text-faint-foreground',
                               canComment &&
                                 newAnchor !== null &&
                                 'cursor-pointer transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',

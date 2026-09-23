@@ -14,7 +14,7 @@ export const ShowMoreBar = ({ step, rendered, total, onShowMore }: Props) => {
   return (
     <>
       <Divider />
-      <div className="flex flex-col items-center gap-1 bg-muted/20 py-3">
+      <div className="flex flex-col items-center gap-1 bg-subtle py-3">
         <button
           type="button"
           onClick={onShowMore}

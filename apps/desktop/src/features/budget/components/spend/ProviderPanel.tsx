@@ -72,7 +72,7 @@ export const ProviderPanel = ({
       />
       {isLoading && <PanelLoading label="Loading budget data" />}
       {capUsd !== null ? (
-        <section className="flex items-center gap-6 rounded-lg border border-border-soft bg-muted/20 p-5">
+        <section className="flex items-center gap-6 rounded-lg border border-border-soft bg-subtle p-5">
           <CostRing pct={pct} centerLabel={`${Math.round(pct * 100)}%`} subLabel="of cap" />
           <div className="grid flex-1 grid-cols-3 gap-3">
             <div title={formatUsdPrecise(spent)}>

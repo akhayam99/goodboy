@@ -89,7 +89,7 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
     <section aria-label={`Connect ${label}`} className="flex flex-col gap-4">
       <div
         className={cn(
-          'flex items-start gap-3 rounded-lg border border-border-soft bg-subtle/30 p-4',
+          'flex items-start gap-3 rounded-lg border border-border-soft bg-subtle p-4',
           view.isRunning && 'spin-border spin-border-info',
         )}
       >

@@ -30,7 +30,7 @@ export const CredentialRow = ({
   onForget,
 }: Props) => {
   return (
-    <div className="flex items-center gap-2 rounded-md border border-border-soft bg-subtle/40 px-3 py-2">
+    <div className="flex items-center gap-2 rounded-md border border-border-soft bg-subtle px-3 py-2">
       <button
         type="button"
         onClick={onSelect}

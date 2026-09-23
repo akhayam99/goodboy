@@ -30,7 +30,7 @@ type ToneParams = {
 
 const sideTone = ({ line }: ToneParams): string => {
   if (line === null) {
-    return 'bg-muted/20 text-transparent';
+    return 'bg-subtle text-transparent';
   }
   if (line.kind === 'add') {
     return tokenCn(tokenTintClasses('success').bgSoft);
@@ -138,7 +138,7 @@ export const DiffPairCells = ({
             ? tokenCn(tokenTintClasses('warning').border)
             : pair.new?.kind === 'add'
               ? tokenCn(tokenTintClasses('success').border)
-              : 'border-border-soft/40',
+              : 'border-border-soft',
           newCommentable && COMMENTABLE_CLASS,
           selectingNew && tokenCn(tokenTintClasses('primary').bg),
         )}

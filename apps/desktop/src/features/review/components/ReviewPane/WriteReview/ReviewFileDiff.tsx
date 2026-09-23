@@ -203,7 +203,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                           <tr key={`hunk-${row.hunkIndex}`}>
                             <td
                               colSpan={columnCount}
-                              className="border-y border-border-soft/40 bg-muted/30 px-2.5 py-1 text-3xs font-medium tabular-nums text-faint-foreground"
+                              className="border-y border-border-soft bg-subtle px-2.5 py-1 text-3xs font-medium tabular-nums text-faint-foreground"
                             >
                               {row.header}
                             </td>
@@ -334,7 +334,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                             <td className="w-9 select-none px-1.5 text-right text-3xs tabular-nums text-faint-foreground">
                               {line.oldLine ?? ''}
                             </td>
-                            <td className="w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-3xs tabular-nums text-faint-foreground">
+                            <td className="w-9 select-none border-r border-border-soft px-1.5 text-right text-3xs tabular-nums text-faint-foreground">
                               {line.newLine ?? ''}
                             </td>
                             <td className="whitespace-pre px-2.5 text-foreground">

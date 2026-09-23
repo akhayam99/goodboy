@@ -32,7 +32,7 @@ export const SpendLimitDisclosure = ({
     <div
       className={cn(
         'overflow-hidden rounded-lg border border-border-soft',
-        enabled ? 'bg-subtle/60' : 'bg-subtle/40',
+        enabled ? 'bg-subtle' : 'bg-subtle',
       )}
     >
       <div className="flex items-center justify-between gap-4 p-3">

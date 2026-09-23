@@ -114,7 +114,7 @@ export const MountPreflightCard = ({
           </p>
           <details className="text-2xs text-muted-foreground">
             <summary className="cursor-pointer select-none">Technical detail</summary>
-            <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted/40 p-1.5 font-mono text-2xs">
+            <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded-md bg-subtle p-1.5 font-mono text-2xs">
               {failure.detail}
             </pre>
           </details>

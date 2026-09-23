@@ -113,15 +113,12 @@ export const WorkflowStepRow = ({
         : isActionable && isBlocked
           ? tokenCn(tokenTintClasses('warning').border, tokenTintClasses('warning').bgSoft)
           : isRunning
-            ? cn(
-                tokenCn(tokenTintClasses('info').border),
-                isSelected ? 'bg-elevated' : 'bg-muted/40',
-              )
+            ? cn(tokenCn(tokenTintClasses('info').border), isSelected ? 'bg-elevated' : 'bg-subtle')
             : hasUnread
-              ? tokenCn(tokenTintClasses('warning').border, 'bg-muted/40')
+              ? tokenCn(tokenTintClasses('warning').border, 'bg-subtle')
               : isSelected
                 ? 'border-border bg-elevated'
-                : 'border-transparent bg-muted/40',
+                : 'border-transparent bg-subtle',
   );
 
   const renderStatusIcon = () => {

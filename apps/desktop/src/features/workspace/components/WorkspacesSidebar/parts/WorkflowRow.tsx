@@ -559,7 +559,7 @@ export const WorkflowRow = ({
                             onSelect={onPickAgent}
                           />
                         ) : (
-                          <div className="ml-3 border-l border-border-soft/60 pl-2">
+                          <div className="ml-3 border-l border-border-soft pl-2">
                             <Collapsible
                               open={clustersExpanded || clusterChildren.some(isRunning)}
                               onOpenChange={() => toggleClusterExpand(run.id)}

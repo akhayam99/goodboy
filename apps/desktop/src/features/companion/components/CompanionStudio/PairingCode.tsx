@@ -57,7 +57,7 @@ export const PairingCode = ({ info, loading, error, remaining, total, onMint }: 
         />
         <div className="flex w-[244px] flex-col items-center gap-1.5">
           <div
-            className="h-1.5 w-full overflow-hidden rounded-full bg-border-soft/60"
+            className="h-1.5 w-full overflow-hidden rounded-full bg-border-soft"
             role="progressbar"
             aria-valuenow={remaining}
             aria-valuemin={0}

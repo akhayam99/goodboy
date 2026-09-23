@@ -175,7 +175,7 @@ function ConnectedAccount({
   readonly onConfirmDisconnect: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/20 p-4">
+    <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-subtle p-4">
       <StatusDot tone="success" size="md" />
       <div className="flex min-w-0 flex-col">
         <span className="truncate text-sm font-medium text-foreground">

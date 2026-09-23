@@ -32,7 +32,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
   return (
     <div
       className={cn(
-        'flex flex-col gap-1.5 rounded-md border-l-2 bg-muted/20 px-3 py-2',
+        'flex flex-col gap-1.5 rounded-md border-l-2 bg-subtle px-3 py-2',
         draft.stale
           ? tokenCn(tokenTintClasses('warning').border, 'opacity-70')
           : tokenCn(tokenTintClasses('draft').border),

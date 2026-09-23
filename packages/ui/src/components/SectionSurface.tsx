@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '../cn';
 import { SectionHeader } from './SectionHeader';
 
-const SECTION_SURFACE_CLASS = 'flex flex-col gap-2 rounded-md bg-muted/30 p-3';
+const SECTION_SURFACE_CLASS = 'flex flex-col gap-2 rounded-md bg-subtle p-3';
 
 export type SectionSurfaceProps = {
   readonly label: string;

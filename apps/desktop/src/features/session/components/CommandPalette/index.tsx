@@ -377,14 +377,14 @@ export const CommandPalette = ({
 
   return (
     <div
-      className="fixed inset-0 z-command-palette flex items-start justify-center bg-black/20 pt-[20vh]"
+      className="fixed inset-0 z-command-palette flex items-start justify-center pt-[20vh]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
         }
       }}
     >
-      <div className="w-full max-w-md overflow-hidden rounded-lg border border-border bg-background shadow-2xl motion-safe:animate-studio-in">
+      <div className="w-full max-w-md overflow-hidden rounded-lg border border-border bg-background shadow-lg motion-safe:animate-studio-in">
         <input
           ref={inputRef}
           type="text"

@@ -75,7 +75,7 @@ export const OverflowMenu = ({
               disabled
                 ? 'cursor-not-allowed text-faint-foreground'
                 : 'text-faint-foreground hover:bg-hover hover:text-foreground',
-              dropdown.open && 'bg-foreground/10 text-foreground',
+              dropdown.open && 'bg-selected text-foreground',
               triggerClassName,
             )}
           >

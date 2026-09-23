@@ -21,7 +21,7 @@ export const QueuedMessages = ({
     return null;
   }
   return (
-    <div className="flex flex-col gap-1 rounded-md bg-subtle/80 p-1 ring-1 ring-border-soft">
+    <div className="flex flex-col gap-1 rounded-md bg-subtle p-1 ring-1 ring-border-soft">
       <div className="flex items-center gap-1.5 px-1.5 pt-0.5 text-2xs text-muted-foreground">
         <Clock size={11} aria-hidden />
         <span>
@@ -40,7 +40,7 @@ export const QueuedMessages = ({
         return (
           <div
             key={item.id}
-            className="group flex items-center gap-2 rounded-md bg-background/60 px-1.5 py-1"
+            className="group flex items-center gap-2 rounded-md bg-background px-1.5 py-1"
           >
             <span
               className={tokenCn(

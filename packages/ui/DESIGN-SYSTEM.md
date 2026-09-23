@@ -18,6 +18,13 @@ Text uses four opaque semantic steps. `foreground` is primary content,
 placeholders and trailing hints. `disabled-foreground` is reserved for disabled
 controls. Opacity modifiers do not create additional text steps.
 
+## Elevation ramp
+
+`background`, `subtle`, `muted` and `elevated` express distance from the canvas
+in both themes. Components step between those opaque surfaces instead of
+mixing one surface through opacity. `hover` and `selected` are interaction
+overlays; `scrim` is reserved for modal backdrops.
+
 ## Type scale
 
 `text-3xs` 10px/14px, `2xs` 11px/16px, `xs` 12px, `sm` 14px/20px, `base` 15px,

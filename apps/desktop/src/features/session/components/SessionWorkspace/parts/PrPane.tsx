@@ -61,7 +61,7 @@ const hostTitle = ({ remoteKind, providerCount, activeProvider }: HostTitleParam
 
 const SessionBranchTag = ({ branch }: { readonly branch: string | null }) =>
   branch == null ? null : (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/[0.04] px-2.5 py-1 font-mono text-2xs text-muted-foreground ring-1 ring-border-soft/60">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-subtle px-2.5 py-1 font-mono text-2xs text-muted-foreground ring-1 ring-border-soft">
       <GitBranch size={11} aria-hidden className="shrink-0" />
       <span className="truncate text-foreground">{branch}</span>
     </span>

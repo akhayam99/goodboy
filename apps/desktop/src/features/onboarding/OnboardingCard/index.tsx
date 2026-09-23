@@ -20,7 +20,7 @@ export const OnboardingCard = () => {
 
   return (
     <div className="pointer-events-none absolute bottom-4 right-4 z-20">
-      <div className="pointer-events-auto flex w-full max-w-xs flex-col gap-2 rounded-[6px] border border-border-soft bg-elevated/80 p-3 shadow-md backdrop-blur-sm">
+      <div className="pointer-events-auto flex w-full max-w-xs flex-col gap-2 rounded-[6px] border border-border-soft bg-elevated p-3 shadow-md backdrop-blur-sm">
         {progress.isDone ? <CompletedBody /> : <ChecklistBody progress={progress} />}
       </div>
     </div>
@@ -34,7 +34,7 @@ export const OnboardingChip = () => {
   }
 
   return (
-    <div className="group inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle/60 px-1.5 py-1 motion-safe:transition-colors hover:border-border">
+    <div className="group inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle px-1.5 py-1 motion-safe:transition-colors hover:border-border">
       <button
         type="button"
         onClick={() => reopen()}

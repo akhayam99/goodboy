@@ -24,7 +24,7 @@ export const RecommendationRow = ({
         'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-xs transition-colors',
         active
           ? 'bg-background font-medium text-foreground'
-          : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
+          : 'text-muted-foreground hover:bg-background hover:text-foreground',
       )}
     >
       <span>{label}</span>

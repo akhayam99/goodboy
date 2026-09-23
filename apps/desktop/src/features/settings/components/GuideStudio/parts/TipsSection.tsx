@@ -44,7 +44,7 @@ export const TipsSection = ({}: Props) => {
         {tips.map((t, i) => (
           <div
             key={t.title}
-            className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-subtle/40 p-4 motion-safe:transition-colors hover:border-border hover:bg-subtle/60"
+            className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-subtle p-4 motion-safe:transition-colors hover:border-border hover:bg-subtle"
           >
             <div className="flex items-center gap-2">
               <span

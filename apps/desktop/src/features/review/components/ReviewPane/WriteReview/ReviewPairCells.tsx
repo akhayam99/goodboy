@@ -27,7 +27,7 @@ type SideStateParams = {
 
 const sideTone = ({ line, hasDraft }: SideStateParams): string => {
   if (line === null) {
-    return 'bg-muted/20';
+    return 'bg-subtle';
   }
   if (hasDraft) {
     return tokenCn(tokenTintClasses('draft').bgSoft);
@@ -98,7 +98,7 @@ export const ReviewPairCells = ({
       <td
         className={cn(
           ACTIONS_CLASS,
-          newAccent === 'border-transparent' ? 'border-border-soft/40' : newAccent,
+          newAccent === 'border-transparent' ? 'border-border-soft' : newAccent,
           newTone,
         )}
       >

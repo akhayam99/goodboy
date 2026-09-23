@@ -9,7 +9,7 @@ type Props = {
 };
 
 export const OpenThread = ({ thread, onOpenUrl, onFix }: Props) => (
-  <div className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-muted/10 p-3">
+  <div className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-subtle p-3">
     <ReviewThreadContent thread={thread} onOpenUrl={onOpenUrl} />
     {onFix !== undefined && (
       <span className="flex justify-end">

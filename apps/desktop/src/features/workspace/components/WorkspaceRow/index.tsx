@@ -29,7 +29,7 @@ export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props)
         'group flex w-full items-center gap-3 rounded-md border px-3 text-left transition-colors',
         density === 'card' ? 'py-2.5' : 'py-2',
         highlighted
-          ? 'border-border bg-muted/60'
+          ? 'border-border bg-muted'
           : 'border-transparent hover:border-border-soft hover:bg-hover',
       )}
     >

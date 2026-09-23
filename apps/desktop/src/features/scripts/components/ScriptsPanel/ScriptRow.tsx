@@ -136,7 +136,7 @@ export const ScriptRow = ({
           expanded ? 'grid-rows-[auto_auto] gap-y-2' : 'grid-rows-[auto]',
           presentation.borderClass,
           presentation.pulseClass,
-          expanded ? 'bg-muted/20' : 'bg-card/40',
+          expanded ? 'bg-subtle' : 'bg-card/40',
         )}
       >
         <div className="col-start-1 row-start-1 flex min-w-0 flex-col gap-0.5">
@@ -313,7 +313,7 @@ export const ScriptRow = ({
               <button
                 type="button"
                 onClick={() => startEditing({ field: 'body' })}
-                className="cursor-text rounded-lg bg-subtle/40 p-3 text-left transition-colors hover:bg-subtle/70"
+                className="cursor-text rounded-lg bg-subtle p-3 text-left transition-colors hover:bg-subtle"
               >
                 <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground">
                   {bodyDraft}

@@ -13,7 +13,7 @@ export const NotesFooter = ({ openCount, spawning, routing, onPropose }: Props) 
   return (
     <>
       <Divider className="shrink-0" />
-      <div className="flex shrink-0 items-center justify-between gap-3 bg-muted/20 px-4 py-2.5">
+      <div className="flex shrink-0 items-center justify-between gap-3 bg-subtle px-4 py-2.5">
         <span className="text-xs text-muted-foreground">
           {openCount} open {openCount === 1 ? 'note' : 'notes'} · spawn a reviewer to propose fixes
         </span>

@@ -41,7 +41,7 @@ export const AxesSection = ({
           <div
             role="group"
             aria-label={axis.label}
-            className="flex flex-wrap justify-end gap-1 rounded-lg bg-background/40 p-1"
+            className="flex flex-wrap justify-end gap-1 rounded-lg bg-background p-1"
           >
             {axis.options.map((option) => (
               <PickerChip
@@ -59,7 +59,7 @@ export const AxesSection = ({
           <div
             role="group"
             aria-label={variantAxis.label}
-            className="flex flex-wrap justify-end gap-1 rounded-lg bg-background/40 p-1"
+            className="flex flex-wrap justify-end gap-1 rounded-lg bg-background p-1"
           >
             {variantAxis.options.map((option) => (
               <PickerChip
@@ -87,7 +87,7 @@ export const AxesSection = ({
           <div
             role="group"
             aria-label={toggleRowLabel}
-            className="flex flex-wrap justify-end gap-1 rounded-lg bg-background/40 p-1"
+            className="flex flex-wrap justify-end gap-1 rounded-lg bg-background p-1"
           >
             {axes.toggles.map((toggle) => (
               <PickerChip

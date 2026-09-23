@@ -38,7 +38,7 @@ export const TreeNodeView = ({
         className={cn(
           'group relative flex w-full items-center gap-2 py-1 pr-1 font-mono text-xs transition-colors',
           isSelected
-            ? 'border-l-2 border-primary bg-muted/60 text-foreground'
+            ? 'border-l-2 border-primary bg-muted text-foreground'
             : 'border-l-2 border-transparent text-muted-foreground hover:bg-hover hover:text-foreground',
           reviewState === 'reviewed' && !isSelected && 'opacity-50',
         )}

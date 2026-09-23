@@ -50,7 +50,7 @@ export const ProviderGrid = ({
               disabled={isDisabled}
               onClick={() => onSelect(id)}
               className={cn(
-                'relative inline-flex size-full min-w-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground',
+                'relative inline-flex size-full min-w-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-foreground',
                 isActive && 'bg-background text-foreground shadow-sm',
                 isSecondary && 'text-foreground ring-1 ring-inset ring-border-soft',
                 isDisabled && 'cursor-not-allowed',
@@ -80,7 +80,7 @@ export const ProviderGrid = ({
             new CustomEvent('goodboy:open-settings', { detail: { scope: 'providers' } }),
           );
         }}
-        className="inline-flex min-w-0 items-center justify-center gap-1 rounded-md text-3xs font-medium text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground"
+        className="inline-flex min-w-0 items-center justify-center gap-1 rounded-md text-3xs font-medium text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
       >
         <Plus size={13} aria-hidden className="shrink-0" />
         <span className="truncate">Add</span>

@@ -93,7 +93,7 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
             className={cn(
               'inline-flex shrink-0 items-center justify-center rounded p-1 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               open
-                ? 'bg-foreground/10 text-foreground'
+                ? 'bg-selected text-foreground'
                 : 'text-faint-foreground hover:bg-hover hover:text-foreground',
             )}
           >

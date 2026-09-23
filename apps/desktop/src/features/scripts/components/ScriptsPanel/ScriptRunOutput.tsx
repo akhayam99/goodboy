@@ -51,7 +51,7 @@ export const ScriptRunOutput = ({ run, completedAt }: Props) => {
       {open && result !== null ? (
         <ScrollFade
           className="max-h-56"
-          viewportClassName="whitespace-pre-wrap break-all bg-subtle/40 px-3 py-2 font-mono text-2xs leading-relaxed text-foreground"
+          viewportClassName="whitespace-pre-wrap break-all bg-subtle px-3 py-2 font-mono text-2xs leading-relaxed text-foreground"
         >
           {result.stdout}
           {result.stderr !== '' ? (

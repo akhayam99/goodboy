@@ -21,6 +21,7 @@
   --color-border-soft: oklch(0.36 0.012 255);
   --color-hover: oklch(1 0 0 / 0.05);
   --color-selected: oklch(1 0 0 / 0.09);
+  --color-scrim: oklch(0 0 0 / 0.6);
 
   --color-primary: oklch(0.74 0.13 210);
   --color-on-tone: oklch(0.16 0 0);
@@ -110,6 +111,8 @@
   --text-base: 15px;
   --text-lg: 17px;
   --text-xl: 20px;
+
+  --shadow-xl: 0 16px 36px -8px oklch(0 0 0 / 0.22), 0 6px 12px -4px oklch(0 0 0 / 0.16);
 
   --chat-header-h: 2rem;
 
@@ -294,6 +297,7 @@ html[data-theme='light'] {
   --color-border-soft: oklch(0.9 0.005 250);
   --color-hover: oklch(0 0 0 / 0.04);
   --color-selected: oklch(0 0 0 / 0.07);
+  --color-scrim: oklch(0 0 0 / 0.35);
   --color-primary: oklch(0.455 0.14 210);
   --color-on-tone: oklch(0.99 0 0);
   /* Semantic, tuned for AA on light bg (text use) and white-fg readability (bg use).
@@ -461,7 +465,7 @@ dialog::backdrop {
 }
 
 dialog[open]::backdrop {
-  background-color: oklch(0 0 0 / 0.6);
+  background-color: var(--color-scrim);
   backdrop-filter: blur(2px);
 }
 

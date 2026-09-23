@@ -26,8 +26,7 @@ const CHIP_CLASS =
   'mx-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide';
 
 const INLINE_CODE_CLASS: Record<MarkdownVariant, string> = {
-  document:
-    'rounded-md bg-muted/50 px-1 py-0 font-mono text-[0.875em] text-foreground wrap-anywhere',
+  document: 'rounded-md bg-muted px-1 py-0 font-mono text-[0.875em] text-foreground wrap-anywhere',
   preview: 'font-mono text-[0.875em] text-foreground wrap-anywhere',
 };
 
@@ -374,7 +373,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
         <div key={key} className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b border-border-soft/60">
+              <tr className="border-b border-border-soft">
                 {block.headers.map((h, j) => (
                   <th
                     key={`${key}-h-${j}`}
@@ -390,10 +389,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
             </thead>
             <tbody>
               {block.rows.map((row, ri) => (
-                <tr
-                  key={`${key}-r-${ri}`}
-                  className="border-b border-border-soft/50 last:border-b-0"
-                >
+                <tr key={`${key}-r-${ri}`} className="border-b border-border-soft last:border-b-0">
                   {row.map((cell, ci) => (
                     <td
                       key={`${key}-r-${ri}-c-${ci}`}

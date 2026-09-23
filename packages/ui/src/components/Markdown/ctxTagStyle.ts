@@ -52,7 +52,7 @@ const TONE_CLASSES: Record<CtxTone, ToneClasses> = {
   muted: {
     iconClass: 'text-muted-foreground',
     chipClass: 'bg-muted text-muted-foreground',
-    calloutClass: 'border-border-soft bg-muted/40',
+    calloutClass: 'border-border-soft bg-subtle',
     calloutLabelClass: 'text-muted-foreground',
   },
 };

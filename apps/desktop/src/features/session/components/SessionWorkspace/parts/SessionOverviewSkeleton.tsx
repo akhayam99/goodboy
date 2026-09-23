@@ -34,7 +34,7 @@ export const SessionOverviewSkeleton = ({ isFreshLayout }: Props) => {
         {isFreshLayout ? (
           <div className="flex flex-col gap-2">
             <Skeleton className="h-3 w-12 rounded-full" />
-            <div className="flex flex-col gap-3 rounded-lg bg-muted/20 p-4">
+            <div className="flex flex-col gap-3 rounded-lg bg-subtle p-4">
               <div className="flex flex-col gap-2">
                 <Skeleton className="h-3 w-20 rounded-full" />
                 <Skeleton className="h-5 w-36" />

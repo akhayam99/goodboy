@@ -66,9 +66,9 @@ function ProviderRow({
   const isManual = PROVIDER_CONNECT_CAPABILITIES[info.id].tier === 'manual';
 
   return (
-    <li className="flex items-center gap-3 rounded-lg border border-border-soft/50 bg-subtle/20 px-3.5 py-2.5">
+    <li className="flex items-center gap-3 rounded-lg border border-border-soft bg-subtle px-3.5 py-2.5">
       <span
-        className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/30"
+        className="flex size-8 shrink-0 items-center justify-center rounded-md bg-subtle"
         style={{ color: brandColor(info.id) }}
       >
         <Icon size={ICON_SIZE.hero} aria-hidden />

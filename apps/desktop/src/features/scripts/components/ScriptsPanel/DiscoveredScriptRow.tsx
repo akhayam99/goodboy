@@ -40,7 +40,7 @@ export const DiscoveredScriptRow = ({
           isExpanded ? 'grid-rows-[auto_auto] gap-y-2' : 'grid-rows-[auto]',
           presentation.borderClass,
           presentation.pulseClass,
-          isExpanded ? 'bg-muted/20' : 'bg-card/40',
+          isExpanded ? 'bg-subtle' : 'bg-card/40',
         )}
       >
         <button
@@ -79,7 +79,7 @@ export const DiscoveredScriptRow = ({
             <p className="truncate font-mono text-2xs text-muted-foreground" title={cwd}>
               {cwd}
             </p>
-            <div className="rounded-lg bg-subtle/40 p-3">
+            <div className="rounded-lg bg-subtle p-3">
               <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground">
                 {command}
               </pre>

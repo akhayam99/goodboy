@@ -88,7 +88,7 @@ const CategoryRow = ({ category, isActive, onToggle }: CategoryRowProps) => {
       onClick={() => onToggle({ toggle: category, enabled: !isActive })}
       className={cn(
         'group flex w-full items-center gap-2 px-3 py-2 text-left motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
-        isActive ? 'bg-muted/60 hover:bg-hover' : 'hover:bg-hover',
+        isActive ? 'bg-muted hover:bg-hover' : 'hover:bg-hover',
       )}
     >
       <Icon
@@ -133,7 +133,7 @@ const ChildChip = ({ toggle, isActive, isParentActive, onToggle }: ChildChipProp
         'inline-flex items-center gap-1 whitespace-nowrap rounded-md border px-2 py-0.5 text-2xs motion-safe:transition-colors disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
         isOn
           ? 'border-border bg-muted text-foreground'
-          : 'border-border-soft bg-elevated/30 text-muted-foreground',
+          : 'border-border-soft bg-elevated text-muted-foreground',
         isParentActive && !isOn ? 'hover:border-border hover:bg-hover hover:text-foreground' : '',
         isParentActive && isOn ? 'hover:bg-hover' : '',
       )}

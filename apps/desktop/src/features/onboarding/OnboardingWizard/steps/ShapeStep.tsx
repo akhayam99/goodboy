@@ -74,7 +74,7 @@ export const ShapeStep = ({
   if (workspace !== null) {
     return (
       <div className="flex flex-col items-center gap-6 text-center">
-        <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 text-primary">
+        <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft bg-subtle text-primary">
           <FolderGit2 size={26} aria-hidden />
         </span>
 
@@ -106,7 +106,7 @@ export const ShapeStep = ({
 
   return (
     <div className="flex flex-col items-center gap-6 text-center">
-      <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 text-primary">
+      <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft bg-subtle text-primary">
         <FolderGit2 size={26} aria-hidden />
       </span>
 

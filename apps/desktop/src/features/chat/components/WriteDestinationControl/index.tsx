@@ -129,7 +129,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
           </div>
 
           {running !== null && diverges ? (
-            <div className="flex flex-col gap-0.5 rounded-md bg-muted/40 px-2 py-1.5 text-2xs">
+            <div className="flex flex-col gap-0.5 rounded-md bg-subtle px-2 py-1.5 text-2xs">
               <span className="text-muted-foreground">In progress: {runningLabel}</span>
               <span className="text-muted-foreground">Next turns: {nextLabel}</span>
             </div>

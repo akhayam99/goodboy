@@ -19,7 +19,7 @@ export const SiblingRow = ({ entry, selectedAgentId, onSelect }: SiblingRowProps
       'flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors',
       entry.agent.id === selectedAgentId
         ? 'bg-background text-foreground'
-        : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
+        : 'text-muted-foreground hover:bg-background hover:text-foreground',
     )}
   >
     <AgentAvatar kind={entry.kind} size="sm" />

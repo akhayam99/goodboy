@@ -8,7 +8,7 @@ type Props = {
 };
 
 export const ManifestSearchInput = ({ value, onChange }: Props) => (
-  <div className="flex items-center gap-2 rounded-md border border-border-soft bg-muted/30 px-2.5 py-1.5 focus-within:ring-2 focus-within:ring-[var(--color-focus-ring)]">
+  <div className="flex items-center gap-2 rounded-md border border-border-soft bg-subtle px-2.5 py-1.5 focus-within:ring-2 focus-within:ring-[var(--color-focus-ring)]">
     <Search size={ICON_SIZE.control} className="shrink-0 text-muted-foreground" aria-hidden />
     <input
       type="search"

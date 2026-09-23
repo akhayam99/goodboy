@@ -161,7 +161,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
             {linked.map((project) => (
               <li
                 key={project.id}
-                className="flex items-center gap-3 rounded-lg border border-border-soft/60 bg-subtle/20 px-3 py-2"
+                className="flex items-center gap-3 rounded-lg border border-border-soft bg-subtle px-3 py-2"
               >
                 <span className="shrink-0 text-muted-foreground">
                   {project.kind === 'repo' ? (

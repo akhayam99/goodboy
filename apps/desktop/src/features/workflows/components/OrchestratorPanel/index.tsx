@@ -222,7 +222,7 @@ export const OrchestratorPanel = ({
       className={cn(
         'flex flex-col gap-2 rounded-lg border px-3 py-2.5',
         state.tone === 'neutral'
-          ? 'border-border-soft bg-muted/20'
+          ? 'border-border-soft bg-subtle'
           : cn(tint.borderSoft, tint.bgSoft),
         isDeciding && 'spin-border spin-border-info',
       )}

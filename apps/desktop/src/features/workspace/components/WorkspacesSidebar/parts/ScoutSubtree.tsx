@@ -55,7 +55,7 @@ export const ScoutSubtree = ({
     return n;
   })();
   return (
-    <div className="ml-3 flex flex-col gap-0.5 border-l border-border-soft/60 pl-2">
+    <div className="ml-3 flex flex-col gap-0.5 border-l border-border-soft pl-2">
       <button
         type="button"
         onClick={() => onToggle(containerId)}
