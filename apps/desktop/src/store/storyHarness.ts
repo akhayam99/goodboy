@@ -189,18 +189,8 @@ export const storySpies = {
   tauriInvoke: vi.fn(async (_cmd?: unknown, _args?: unknown): Promise<unknown> => null),
   invokeAgentList: vi.fn(async (_sessionId?: unknown) => [] as ReadonlyArray<Agent>),
   invokeBudgetAlertsList: vi.fn(async () => [] as ReadonlyArray<BudgetAlert>),
-  createWorktree: vi.fn(async (_args: unknown) => ({
-    worktreePath: '/tmp/app/.goodboy/worktrees/goal-12345678',
-    branchName: 'goodboy/goal-12345678',
-    slug: 'goal-12345678',
-    reused: false,
-  })),
-  createSessionDir: vi.fn(async (_args: unknown) => ({
-    worktreePath: '/tmp/app/sessions/goal-12345678',
-    branchName: '',
-    slug: 'goal-12345678',
-    reused: false,
-  })),
+  createWorktree: vi.fn(),
+  createSessionDir: vi.fn(),
   sessionDirExists: vi.fn(async (_args: unknown) => true),
   scratchDirPrepare: vi.fn(async (_args: unknown) => '/tmp/goodboy-root/scratch/session-story'),
   scratchDirRemove: vi.fn(async (_args: unknown) => undefined),
@@ -242,7 +232,7 @@ export const storySpies = {
   updateSessionActiveProject: vi.fn(async () => undefined),
   updateSessionWriteDestination: vi.fn(async () => true),
   listWorktreesForSession: vi.fn(async () => [] as ReadonlyArray<never>),
-  getWorkspaceById: vi.fn(async () => null),
+  getWorkspaceById: vi.fn(async (): Promise<Workspace | null> => null),
   listProjectsForWorkspace: vi.fn(async () => [] as ReadonlyArray<Project>),
   upsertSessionExternalTask: vi.fn(async () => undefined),
   upsertContextSlot: vi.fn(async () => undefined),
@@ -298,6 +288,18 @@ export const resetStorySpies = () => {
     );
   }
   storySpies.listActiveResolveAttempts.mockImplementation(async () => []);
+  storySpies.createWorktree.mockImplementation(async () => ({
+    worktreePath: '/tmp/app/.goodboy/worktrees/goal-12345678',
+    branchName: 'goodboy/goal-12345678',
+    slug: 'goal-12345678',
+    reused: false,
+  }));
+  storySpies.createSessionDir.mockImplementation(async () => ({
+    worktreePath: '/tmp/app/sessions/goal-12345678',
+    branchName: '',
+    slug: 'goal-12345678',
+    reused: false,
+  }));
   storySpies.removeWorktreeChecked.mockImplementation(
     async ({ worktreePath }: { worktreePath: string }) => ({
       kind: 'removed',
