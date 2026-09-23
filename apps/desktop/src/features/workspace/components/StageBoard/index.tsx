@@ -249,7 +249,9 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                 size="md"
                 variant="secondary"
                 onClick={() =>
-                  window.dispatchEvent(new CustomEvent('goodboy:open-workspace-settings'))
+                  window.dispatchEvent(
+                    new CustomEvent('goodboy:open-settings', { detail: { scope: 'workspace' } }),
+                  )
                 }
               >
                 Open workspace settings

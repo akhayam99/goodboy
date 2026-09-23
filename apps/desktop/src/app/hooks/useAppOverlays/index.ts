@@ -33,7 +33,6 @@ import { OPEN_COMMAND_PALETTE_EVENT } from '../../../features/onboarding/openCom
 import { useCommitLinkInterceptor } from '../../../shared/hooks/useCommitLinkInterceptor';
 import { useAppStore, useSessionById } from '../../../store';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
-import { resolveOpenDiffViewerEvent } from '../../../store/slices/session-view/openDiffViewerEvent';
 
 type Params = {
   readonly connected: Readonly<Record<IntegrationGlyphProvider, boolean>>;
@@ -345,31 +344,11 @@ export const useAppOverlays = ({
       state.setFocusedPlanId(sessionId, isPlanId(planId) ? planId : null);
       state.setActiveLens(sessionId, 'plans');
     };
-    const onOpenDiffViewer = (event: Event) => {
-      const sessionId = eventValue({ event, key: 'sessionId' });
-      const workingDir = eventValue({ event, key: 'workingDir' });
-      const detail = {
-        sessionId: isSessionId(sessionId) ? sessionId : undefined,
-        workingDir: typeof workingDir === 'string' ? workingDir : undefined,
-      };
-      const resolved = resolveOpenDiffViewerEvent({ detail });
-      if (resolved === null) {
-        return;
-      }
-      setSettingsOpen(false);
-      useAppStore.getState().openDiffLens(resolved.sessionId, resolved.focus);
-    };
-    const onOpenProviderStudio = (event: Event) => {
-      openSettingsEvent({ event, fallbackScope: 'providers' });
-    };
     const onOpenImpactStudio = (event: Event) => {
       const scope = eventValue({ event, key: 'scope' });
       closeAllStudios();
       setImpactStudioFocus(isImpactScope(scope) ? scope : null);
       setImpactStudioOpen(true);
-    };
-    const onOpenWorkspaceSettings = (event: Event) => {
-      openSettingsEvent({ event, fallbackScope: 'workspace' });
     };
     const onRevealChat = () => {
       setSettingsOpen(false);
@@ -410,10 +389,7 @@ export const useAppOverlays = ({
     window.addEventListener('goodboy:open-guide', onOpenGuide);
     window.addEventListener(REPORT_ISSUE_STUDIO_EVENT, onOpenReportIssue);
     window.addEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
-    window.addEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
-    window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
     window.addEventListener(IMPACT_STUDIO_EVENT, onOpenImpactStudio);
-    window.addEventListener('goodboy:open-workspace-settings', onOpenWorkspaceSettings);
     window.addEventListener('goodboy:open-inbox', onOpenInboxStudio);
     window.addEventListener('goodboy:reveal-chat', onRevealChat);
     window.addEventListener('goodboy:add-workspace', onAddWorkspace);
@@ -424,10 +400,7 @@ export const useAppOverlays = ({
       window.removeEventListener('goodboy:open-guide', onOpenGuide);
       window.removeEventListener(REPORT_ISSUE_STUDIO_EVENT, onOpenReportIssue);
       window.removeEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
-      window.removeEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
-      window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
       window.removeEventListener(IMPACT_STUDIO_EVENT, onOpenImpactStudio);
-      window.removeEventListener('goodboy:open-workspace-settings', onOpenWorkspaceSettings);
       window.removeEventListener('goodboy:open-inbox', onOpenInboxStudio);
       window.removeEventListener('goodboy:reveal-chat', onRevealChat);
       window.removeEventListener('goodboy:add-workspace', onAddWorkspace);

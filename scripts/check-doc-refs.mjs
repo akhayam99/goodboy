@@ -25,7 +25,6 @@ const ALLOWLIST_REASON_BY_REF = new Map([
     'dangerousDisableAssetCspModification',
     { kind: 'vocabulary', reason: 'tauri config key named as forbidden' },
   ],
-  ['docs/worktree-bridge.md', { kind: 'stale', reason: 'cluster 08 rewrites docs/event-bus.md' }],
 ]);
 
 for (const [ref, entry] of ALLOWLIST_REASON_BY_REF) {

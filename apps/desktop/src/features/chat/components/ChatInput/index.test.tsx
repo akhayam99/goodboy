@@ -263,13 +263,6 @@ describe('ChatInput, input wiring', () => {
     expect((textarea as HTMLTextAreaElement).disabled).toBe(false);
   });
 
-  it('focuses the textarea when requested by a transcript CTA', () => {
-    render(<ChatInput session={makeSession()} />);
-    const textarea = screen.getByRole('textbox');
-    window.dispatchEvent(new CustomEvent('goodboy:focus-composer'));
-    expect(document.activeElement).toBe(textarea);
-  });
-
   it('shows the session cost badge in the footer once spend accrues', () => {
     mockStore.setState({
       sessionTelemetry: {

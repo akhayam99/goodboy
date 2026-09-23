@@ -192,12 +192,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     void loadPhaseRunsForSession(session.id);
   }, [session.id, loadPhaseRunsForSession]);
 
-  useEffect(() => {
-    const focusComposer = () => wrapperRef.current?.querySelector('textarea')?.focus();
-    window.addEventListener('goodboy:focus-composer', focusComposer);
-    return () => window.removeEventListener('goodboy:focus-composer', focusComposer);
-  }, []);
-
   const sendWith = useCallback(
     async ({
       content,

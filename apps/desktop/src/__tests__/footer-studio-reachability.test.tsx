@@ -454,19 +454,6 @@ describe('Footer to settings and more-popover reachability', () => {
   });
 });
 
-describe('Legacy settings event forwarding', () => {
-  it.each([
-    ['goodboy:open-workspace-settings', 'workspace'],
-    ['goodboy:open-provider-studio', 'providers'],
-  ])('forwards %s to the %s settings scope', (eventName, scope) => {
-    render(<App />);
-
-    act(() => window.dispatchEvent(new CustomEvent(eventName)));
-
-    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe(scope);
-  });
-});
-
 describe('Spend reachability through the impact studio', () => {
   it('opens the impact studio at a session scope from the impact studio event', () => {
     render(<App />);

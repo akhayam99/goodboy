@@ -26,7 +26,6 @@ import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
 import { readPersistedLens } from './workSurfaceStorage';
 import { LENS_KINDS } from './types';
 import { LENS_LABEL } from '../../../features/session/lens-labels';
-import { resolveOpenDiffViewerEvent } from './openDiffViewerEvent';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../storyHarness')).tauriCoreModuleMock(),
@@ -604,50 +603,6 @@ describe('store contract', () => {
       expect(store.getState().activeLens[SESSION_ID]).toBe('github_issue');
       expect(store.getState().focusedGithubIssueNumber[SESSION_ID]).toBe(9);
       expect(store.getState().focusedExternalTask[SESSION_ID]).toBeNull();
-    });
-
-    it('the open-diff-viewer event resolution cannot land on a stale commit after going back', async () => {
-      const store = useAppStore;
-      store.getState().setActiveLens(SESSION_ID, 'review');
-      store.getState().openDiffLens(SESSION_ID, { kind: 'commit', sha: 'abc1234', path: null });
-      store.getState().lensGo(SESSION_ID, -1);
-      expect(store.getState().diffFocus[SESSION_ID]).toEqual({
-        kind: 'commit',
-        sha: 'abc1234',
-        path: null,
-      });
-
-      const resolved = resolveOpenDiffViewerEvent({ detail: { sessionId: SESSION_ID } });
-      if (resolved === null) {
-        throw new Error('expected a resolution');
-      }
-      store.getState().openDiffLens(resolved.sessionId, resolved.focus);
-
-      expect(store.getState().activeLens[SESSION_ID]).toBe('files');
-      expect(store.getState().diffFocus[SESSION_ID]).toBeNull();
-    });
-
-    it('the event path and a direct openDiffLens call land in identical state', async () => {
-      const store = useAppStore;
-      store.getState().openDiffLens(SESSION_ID, { kind: 'commit', sha: 'abc1234', path: null });
-      const resolved = resolveOpenDiffViewerEvent({ detail: { sessionId: SESSION_ID } });
-      if (resolved === null) {
-        throw new Error('expected a resolution');
-      }
-      store.getState().openDiffLens(resolved.sessionId, resolved.focus);
-      const eventPathState = {
-        activeLens: store.getState().activeLens[SESSION_ID],
-        diffFocus: store.getState().diffFocus[SESSION_ID],
-      };
-
-      store.getState().openDiffLens(SESSION_ID_2, { kind: 'commit', sha: 'abc1234', path: null });
-      store.getState().openDiffLens(SESSION_ID_2, null);
-      const directCallState = {
-        activeLens: store.getState().activeLens[SESSION_ID_2],
-        diffFocus: store.getState().diffFocus[SESSION_ID_2],
-      };
-
-      expect(eventPathState).toEqual(directCallState);
     });
 
     it('openMountDiff selects the mount and leaves the focus null so the lens lands on the branch default', async () => {

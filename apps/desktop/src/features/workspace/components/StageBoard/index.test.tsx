@@ -331,7 +331,7 @@ describe('StageBoard git gate', () => {
 
   it('explains an empty board whose only project is not usable yet', () => {
     const listener = vi.fn();
-    window.addEventListener('goodboy:open-workspace-settings', listener);
+    window.addEventListener('goodboy:open-settings', listener);
     gitStatuses.current = { 'proj-1': statusOf('absent') };
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
 
@@ -344,7 +344,9 @@ describe('StageBoard git gate', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open workspace settings' }));
 
     expect(listener).toHaveBeenCalledOnce();
-    window.removeEventListener('goodboy:open-workspace-settings', listener);
+    const [event] = listener.mock.calls[0] ?? [];
+    expect(event instanceof CustomEvent ? event.detail : null).toEqual({ scope: 'workspace' });
+    window.removeEventListener('goodboy:open-settings', listener);
   });
 
   it('names the unreachable folder on an empty board', () => {

@@ -51,12 +51,8 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
 
   useEffect(() => {
     const revealTranscript = () => setTab('transcript');
-    window.addEventListener('goodboy:focus-composer', revealTranscript);
     window.addEventListener('goodboy:reveal-chat', revealTranscript);
-    return () => {
-      window.removeEventListener('goodboy:focus-composer', revealTranscript);
-      window.removeEventListener('goodboy:reveal-chat', revealTranscript);
-    };
+    return () => window.removeEventListener('goodboy:reveal-chat', revealTranscript);
   }, []);
 
   const status = turnState?.kind === 'running' ? 'running' : agent.status;

@@ -114,6 +114,8 @@ only when your task reaches the case it covers.
   picked, or DB migrations.
 - [model-picker.md](model-picker.md): when you change how a user picks a
   model or effort.
+- [event-bus.md](event-bus.md): when you send or listen for a `goodboy:`
+  window event, or open a studio from another feature.
 - [query-bridge.md](query-bridge.md): when you change what an agent can
   ask a connected tool, or how it asks.
 - [companion.md](companion.md): when you change how a phone pairs, what a
