@@ -1,9 +1,10 @@
-import { cn, tintClasses } from '@goodboy/ui';
+import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { Agent, ProviderId, ProviderName } from '@goodboy/types';
 import type { AgentKind } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../session/components/AgentKindChip';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { WorkflowStepStatus } from '../WorkflowStepStatus';
+import { PROVIDER_LABEL, modelLabel } from '../../../chat/utils/chat-constants';
 
 type Props = {
   readonly run: Agent;
@@ -59,13 +60,26 @@ export const WorkflowStepGraphNode = ({
           answering for {answersForStepName}
         </span>
       ) : null}
-      <RoutingBadge
-        provider={provider}
-        model={model}
-        planned={{ provider: plannedProvider, model: plannedModel }}
-        glyphPlacement="trailing"
-        className="max-w-40 shrink-0"
-      />
+      {modelLabel(plannedModel) === modelLabel(model) && plannedProvider === provider ? (
+        <RoutingBadge
+          provider={provider}
+          model={model}
+          glyphPlacement="trailing"
+          className="max-w-40 shrink-0"
+        />
+      ) : (
+        <Tooltip
+          content={`Planned ${modelLabel(plannedModel)} on ${PROVIDER_LABEL[plannedProvider]}`}
+          anchorClassName="max-w-40 shrink-0"
+        >
+          <span
+            aria-label={`planned model ${modelLabel(plannedModel)}`}
+            className="inline-flex min-w-0"
+          >
+            <RoutingBadge provider={provider} model={model} glyphPlacement="trailing" />
+          </span>
+        </Tooltip>
+      )}
       <WorkflowStepStatus status={run.status} label={run.name} />
     </button>
     {childCount > 0 ? (

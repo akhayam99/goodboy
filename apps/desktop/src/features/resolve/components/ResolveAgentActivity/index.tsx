@@ -10,11 +10,21 @@ import {
   Eyebrow,
 } from '@goodboy/ui';
 import { stripControlMarkers } from '@goodboy/core';
-import type { Agent, ResolveAttempt, SessionId } from '@goodboy/types';
+import { PROVIDER_IDS, type Agent, type ResolveAttempt, type SessionId } from '@goodboy/types';
+import { PROVIDER_LABEL, modelLabel } from '../../../chat/utils/chat-constants';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useTranscript } from '../../../../store/transcript';
 import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { RESOLVE_ITEM_LABEL, attemptPhaseLabel, sharedRunCostLabel } from '../../resolveItemCopy';
+
+type ProviderLabelParams = {
+  readonly provider: string;
+};
+
+const attemptProviderLabel = ({ provider }: ProviderLabelParams): string => {
+  const known = PROVIDER_IDS.find((id) => id === provider);
+  return known === undefined ? provider : PROVIDER_LABEL[known];
+};
 
 type Props = {
   readonly sessionId: SessionId;
@@ -115,10 +125,10 @@ export const ResolveAgentActivity = ({
       <MetaRow
         className="text-3xs"
         items={[
-          <span key="model" className="font-mono">
-            {attempt.model}
+          <span key="model" className="font-mono" title={attempt.model}>
+            {modelLabel(attempt.model)}
           </span>,
-          attempt.provider,
+          attemptProviderLabel({ provider: attempt.provider }),
           attempt.effort === null ? null : `effort ${attempt.effort}`,
           costUsd === null ? (
             <span key="cost">{RESOLVE_ITEM_LABEL.costUnavailable}</span>
