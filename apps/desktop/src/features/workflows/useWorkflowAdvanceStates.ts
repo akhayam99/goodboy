@@ -5,6 +5,8 @@ import { workflowRunHasOpenQuestions } from '../context/openQuestionsGate';
 import type { AttachedRun } from './activeWorkflowRuns';
 import { resolveWorkflowAdvance, type WorkflowAdvanceState } from './advanceGate';
 
+const RUN_ID_SEPARATOR = '\n';
+
 type Params = {
   readonly sessionId: SessionId;
   readonly workflows: ReadonlyArray<AttachedRun>;
@@ -20,14 +22,22 @@ export const useWorkflowAdvanceStates = ({
   const isSummarizerRunning = useAppStore(
     (state) => state.summarizerStatus?.[sessionId]?.status === 'running',
   );
-  const hasRunningTurn = useAppStore((state) =>
-    agents.some((agent) => {
+  const turningRunIds = useAppStore((state) => {
+    const runIds = new Set<string>();
+    for (const agent of agents) {
+      if (agent.workflowRunId == null) {
+        continue;
+      }
       const turn = state.agentTurnState?.[agent.id];
-      return turn?.kind === 'running' || turn?.kind === 'starting';
-    }),
-  );
+      if (turn?.kind === 'running' || turn?.kind === 'starting') {
+        runIds.add(agent.workflowRunId);
+      }
+    }
+    return [...runIds].sort().join(RUN_ID_SEPARATOR);
+  });
 
   return useMemo(() => {
+    const turning = new Set(turningRunIds.split(RUN_ID_SEPARATOR));
     const states = new Map<string, WorkflowAdvanceState>();
     for (const attached of workflows) {
       const runAgents = agents.filter(
@@ -43,11 +53,11 @@ export const useWorkflowAdvanceStates = ({
           agents: runAgents,
           hasOpenQuestions: workflowRunHasOpenQuestions(questions, attached.run.id),
           isSummarizerRunning,
-          isTurnRunning: hasRunningTurn,
+          isTurnRunning: turning.has(attached.run.id),
           isAutoRun: attached.run.autoRun === true,
         }),
       );
     }
     return states;
-  }, [agents, hasRunningTurn, isSummarizerRunning, questions, workflows]);
+  }, [agents, isSummarizerRunning, questions, turningRunIds, workflows]);
 };
