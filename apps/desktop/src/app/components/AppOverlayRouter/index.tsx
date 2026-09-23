@@ -61,7 +61,7 @@ const DiffViewerDialog = lazy(() =>
   })),
 );
 const CompanionStudio = lazy(() =>
-  import('../../../features/companion/CompanionStudio').then((module) => ({
+  import('../../../features/companion/components/CompanionStudio').then((module) => ({
     default: module.CompanionStudio,
   })),
 );
