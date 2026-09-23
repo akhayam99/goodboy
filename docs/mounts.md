@@ -140,3 +140,8 @@ path, then unmount or remove. The terminal and scripts icons on the row are
 hover accelerators, shown at rest only while something runs there; a hover
 icon is never the only way to an action. The project menu holds Detach
 project and renders nothing when the project has no mount to detach.
+
+The branch chip is the branch control: on a mounted repo row the whole chip
+opens the branch switcher, whose header copies the branch name. Where the
+branch cannot switch (unmounted rows, folder projects) the chip copies the
+name. Copy feedback is the check icon, never a toast.

@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
-import { Button, formatError, Input, SegmentedTabs, cn, tintClasses } from '@goodboy/ui';
+import { AlertTriangle, Check, Copy, GitBranch } from 'lucide-react';
+import {
+  Button,
+  IconButton,
+  formatError,
+  Input,
+  SegmentedTabs,
+  cn,
+  tintClasses,
+  useCopyLink,
+} from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useToast } from '../../../app/components/Toast';
 import { useAppStore, useSessionById } from '../../../store';
@@ -33,6 +42,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
     (state) => resolveSessionRepo({ state, sessionId, mountId })?.repoRoot ?? null,
   );
   const { showToast } = useToast();
+  const { copiedKey, failedKey, copy } = useCopyLink();
   const [branchMode, setBranchMode] = useState<'existing' | 'new'>('new');
   const [branchTarget, setBranchTarget] = useState('');
   const [branches, setBranches] = useState<ReadonlyArray<LocalBranchInfo>>(() =>
@@ -125,6 +135,31 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
           Move this branch mount to another branch
         </span>
       </div>
+
+      {branch === null ? null : (
+        <div className="flex min-w-0 items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+          <GitBranch size={11} aria-hidden className="shrink-0" />
+          <span title={branch} className="min-w-0 flex-1 truncate font-mono text-foreground">
+            {branch}
+          </span>
+          <IconButton
+            variant="ghost"
+            icon={copiedKey === null ? Copy : Check}
+            iconSize={11}
+            label="Copy branch name"
+            tooltip={
+              copiedKey !== null
+                ? 'Copied'
+                : failedKey !== null
+                  ? 'Copy failed'
+                  : 'Copy branch name'
+            }
+            tone={copiedKey !== null ? 'success' : failedKey !== null ? 'danger' : 'neutral'}
+            onClick={() => void copy({ text: branch })}
+            className="size-6 shrink-0"
+          />
+        </div>
+      )}
 
       <SegmentedTabs
         ariaLabel="Branch source"
