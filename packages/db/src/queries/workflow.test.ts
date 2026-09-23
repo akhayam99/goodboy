@@ -149,4 +149,55 @@ describe('workflow queries', () => {
       upsertWorkflow(db, { ...buildWorkflow(), id: 'wf-2' as WorkflowId, steps: [] }),
     ).rejects.toThrow();
   });
+
+  it('writes neither the workflow nor any step when a later step has invalid routing', async () => {
+    const workflow = buildWorkflow();
+    const broken: Workflow = {
+      ...workflow,
+      steps: [
+        ...workflow.steps,
+        {
+          id: 'step-3' as StepId,
+          workflowId,
+          ordinal: 2,
+          name: 'Implement',
+          promptPrefix: 'write the change',
+          routingLock: {
+            version: 1,
+            pick: { provider: 'nowhere', model: 'gpt-5.6', effort: 'high' },
+            origin: 'user',
+          } as unknown as NonNullable<Workflow['steps'][number]['routingLock']>,
+        },
+      ],
+    };
+
+    await expect(upsertWorkflow(db, broken)).rejects.toThrow('Invalid routing lock');
+    expect(await db.select('SELECT id FROM workflows')).toEqual([]);
+    expect(await db.select('SELECT id FROM steps')).toEqual([]);
+  });
+
+  it('leaves the previous steps in place when a re-save fails validation', async () => {
+    await upsertWorkflow(db, buildWorkflow());
+    const renamed: Workflow = {
+      ...buildWorkflow(),
+      name: 'Renamed',
+      steps: [
+        {
+          id: 'step-1' as StepId,
+          workflowId,
+          ordinal: 0,
+          name: 'Scout again',
+          promptPrefix: 'map the area',
+          taskProfile: { taskType: 'nope' } as unknown as NonNullable<
+            Workflow['steps'][number]['taskProfile']
+          >,
+        },
+      ],
+    };
+
+    await expect(upsertWorkflow(db, renamed)).rejects.toThrow('Invalid task profile');
+    const stored = await getWorkflow(db, workflowId);
+    expect(stored?.name).toBe('Refactor');
+    expect(stored?.steps[0]?.name).toBe('Scout');
+  });
 });
