@@ -258,19 +258,21 @@ describe('AppFooter', () => {
     expect(center?.contains(screen.getByTestId('update-indicator'))).toBe(true);
   });
 
-  it('pulses the providers launcher until a provider connects, and never while its studio is open', () => {
+  it('pulses the providers launcher icon until a provider connects, and never while its studio is open', () => {
     const { rerender } = render(<AppFooter {...footerProps()} />);
     const providers = () =>
       screen.getByRole('button', { name: 'Connect and manage your provider accounts' });
+    const pulsing = () => providers().querySelector('.motion-safe\\:animate-soft-pulse');
 
-    expect(providers().className).toContain('motion-safe:animate-soft-pulse');
+    expect(pulsing()).not.toBeNull();
+    expect(providers().className).not.toContain('animate-soft-pulse');
 
     rerender(<AppFooter {...footerProps({ overrides: { activeStudio: 'provider' } })} />);
-    expect(providers().className).not.toContain('animate-soft-pulse');
+    expect(pulsing()).toBeNull();
 
     storeState.providers = [{ connection: 'connected' }];
     rerender(<AppFooter {...footerProps()} />);
-    expect(providers().className).not.toContain('animate-soft-pulse');
+    expect(pulsing()).toBeNull();
   });
 
   it('lays the row out as three grid regions so the beta badge cannot overlap a cluster', () => {

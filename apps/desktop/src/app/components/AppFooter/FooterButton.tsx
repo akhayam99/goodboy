@@ -33,11 +33,19 @@ export const FooterButton = ({
         active
           ? 'bg-muted text-foreground'
           : pulse
-            ? cn('text-info motion-safe:animate-soft-pulse', tintClasses('info').hoverBg)
+            ? cn('text-info', tintClasses('info').hoverBg)
             : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >
-      <span className={cn('flex items-center', active && tintClasses(tone).icon)}>{icon}</span>
+      <span
+        className={cn(
+          'flex items-center',
+          active && tintClasses(tone).icon,
+          pulse && !active && 'motion-safe:animate-soft-pulse',
+        )}
+      >
+        {icon}
+      </span>
       {showLabel ? <span>{label}</span> : null}
     </button>
   </Tooltip>

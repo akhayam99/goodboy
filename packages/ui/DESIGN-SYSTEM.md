@@ -395,11 +395,12 @@ states and sit outside the registry.
   cycles, then rest) on an element that now needs the user, never one that
   is working.
 - `soft-pulse`: the only animation in the app for a lasting state. It breathes
-  a state that holds and is alive: the Providers launcher while no provider is
-  connected, the centre dot of the running marker on the activity rail, a
-  running tool or script icon, and the boot splash status. On the rail it sits
-  inside the `spin-border` ring, so the pair reads as one running state, not
-  two claims. The bar for another lasting-state animation is high.
+  a state that holds and is alive: the Providers launcher icon (never its
+  label) while no provider is connected, the centre dot of the running marker
+  on the activity rail, a running tool icon or scout dot, and the boot splash
+  status. On the rail it sits inside the `spin-border` ring, so the pair reads
+  as one running state, not two claims. The bar for another lasting-state
+  animation is high.
 - `cost-chip-pulse`: the spend meter just ticked. One 1100ms halo, paired with
   the digit roll.
 - `text-shimmer`: a label whose action is in flight, such as a handoff while

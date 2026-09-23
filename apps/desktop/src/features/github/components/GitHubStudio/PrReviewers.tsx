@@ -64,7 +64,9 @@ export const PrReviewers = ({ detail, projectRoot, projectId, onAddReviewers }: 
               <CircleDashed size={ICON_SIZE.row} aria-hidden className="shrink-0 text-info" />
               <Avatar url={request.avatarUrl} alt={request.login} size="xs" />
               <span className="min-w-0 flex-1 truncate">{request.login}</span>
-              <span className="shrink-0 text-3xs uppercase tracking-wide opacity-60">awaiting</span>
+              <span className="shrink-0 text-3xs uppercase tracking-wide text-faint-foreground">
+                awaiting
+              </span>
             </li>
           ))}
         </ul>

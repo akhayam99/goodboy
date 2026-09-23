@@ -38,12 +38,7 @@ export const TranscriptRowHeader = ({
     <>
       {onToggle ? <TranscriptChevron open={open} /> : <span aria-hidden className="w-3 shrink-0" />}
       {icon != null && <span className={cn('flex shrink-0 items-center', tint.icon)}>{icon}</span>}
-      <span
-        className={cn(
-          'shrink-0 text-2xs font-medium uppercase tracking-wide opacity-80',
-          tint.text,
-        )}
-      >
+      <span className={cn('shrink-0 text-2xs font-medium uppercase tracking-wide', tint.text)}>
         {eyebrow}
       </span>
       {badge}

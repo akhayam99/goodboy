@@ -123,10 +123,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
             key={m.value}
             type="button"
             onClick={() => onPick(m.value)}
-            className={cn(
-              'flex w-full items-start gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-hover',
-              active ? '' : 'opacity-80',
-            )}
+            className="flex w-full items-start gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-hover"
           >
             <StatusDot tone={m.tone} size="sm" className="mt-1" />
             <span className="min-w-0 flex-1">

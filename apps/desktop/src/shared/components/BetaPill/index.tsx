@@ -38,7 +38,7 @@ export const BetaPill = ({ className }: Props) => {
             <span className="flex items-center gap-1.5">
               <span className="font-semibold">Beta</span>
               <span aria-hidden className={cn('h-2.5 w-px', tintClasses('primary').bg)} />
-              <span className="font-medium opacity-80">Sponsor</span>
+              <span className="font-medium">Sponsor</span>
             </span>
           }
           onClick={toggle}
