@@ -2,12 +2,10 @@ import { useEffect, useState } from 'react';
 import {
   CircleHelp,
   CircleStop,
-  Eraser,
   PenLine,
   Play,
   RotateCcw,
   SkipForward,
-  Users,
   Wallet,
 } from 'lucide-react';
 import { Eyebrow, InlineConfirm, Markdown, StatusDot, cn, tintClasses } from '@goodboy/ui';
@@ -34,7 +32,6 @@ import { OrchestratorDrawer } from './OrchestratorDrawer';
 import { OrchestratorHintComposer } from './OrchestratorHintComposer';
 import { OrchestratorHintLog } from './OrchestratorHintLog';
 import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
-import { RunRoleModels } from './RunRoleModels';
 import { resolveOrchestratorState } from './orchestratorState';
 import { useElapsedLabel } from './useElapsedLabel';
 
@@ -66,6 +63,7 @@ export const OrchestratorPanel = ({
   const removeWorkflowOrchestratorHint = useAppStore(
     (state) => state.removeWorkflowOrchestratorHint,
   );
+  const setWorkflowRoleModelOverrides = useAppStore((state) => state.setWorkflowRoleModelOverrides);
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
   const setWorkflowRunAutoRun = useAppStore((state) => state.setWorkflowRunAutoRun);
   const stopWorkflowRunNow = useAppStore((state) => state.stopWorkflowRunNow);
@@ -76,20 +74,12 @@ export const OrchestratorPanel = ({
   const sessionBudgetBlocked = useAppStore((state) =>
     isBudgetBlocked({ alerts: state.budgetAlerts ?? EMPTY_ALERTS, sessionId }),
   );
-  const [openDrawer, setOpenDrawer] = useState<'none' | 'continue' | 'hints' | 'roles'>('none');
-  const [continueNote, setContinueNote] = useState('');
+  const [isHintsOpen, setIsHintsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [isStopArmed, setIsStopArmed] = useState(false);
   const hints = run.orchestratorHints ?? EMPTY_HINTS;
   const queuedHintCount = hints.filter((hint) => hint.consumedAt == null).length;
-  const continueOpen = openDrawer === 'continue';
-  const hintsOpen = openDrawer === 'hints';
-  const rolesOpen = openDrawer === 'roles';
-  const hasNote = continueNote.trim() !== '';
   const overriddenRoleCount = Object.keys(run.roleModelOverrides ?? {}).length;
-
-  const toggleDrawer = (drawer: 'continue' | 'hints' | 'roles') =>
-    setOpenDrawer((current) => (current === drawer ? 'none' : drawer));
 
   const state = resolveOrchestratorState({
     run,
@@ -212,11 +202,10 @@ export const OrchestratorPanel = ({
             icon={Play}
             label="Continue the run"
             variant="primary"
-            testId="orchestrator-continue-toggle"
-            title="Continue this run, with or without a note about what is missing"
-            expanded={continueOpen}
+            testId="orchestrator-continue"
+            title="Ask the orchestrator for more. To say what is missing, send it a hint to read now."
             disabled={busy}
-            onClick={() => toggleDrawer('continue')}
+            onClick={() => void guard(() => continueWorkflowRun(sessionId, run.id))}
           />
         );
       default:
@@ -230,80 +219,57 @@ export const OrchestratorPanel = ({
       data-phase={state.phase}
       aria-label="Orchestrator"
       className={cn(
-        'flex flex-col gap-1.5 rounded-lg border px-3 py-2',
+        'flex flex-col gap-2 rounded-lg border px-3 py-2.5',
         state.tone === 'neutral'
           ? 'border-border-soft bg-muted/20'
           : cn(tint.borderSoft, tint.bgSoft),
         isDeciding && 'spin-border spin-border-info',
       )}
     >
-      <div className="flex min-w-0 items-start gap-2.5">
+      <div data-testid="orchestrator-header" className="flex min-w-0 flex-wrap items-center gap-2">
         <span
           className={cn(
-            'flex size-8 shrink-0 items-center justify-center rounded-lg',
+            'flex size-6 shrink-0 items-center justify-center rounded-md',
             state.tone === 'neutral' ? 'bg-muted' : tint.bg,
           )}
         >
           <CONCEPT_ICONS.orchestrator
-            size={ICON_SIZE.control}
+            size={ICON_SIZE.row}
             aria-hidden
             className={state.tone === 'neutral' ? 'text-muted-foreground' : tint.icon}
           />
         </span>
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="min-w-0 flex-1">
           <Eyebrow label="Orchestrator" muted />
-          <p
-            data-testid="orchestrator-state"
-            className={cn(
-              'flex min-w-0 flex-wrap items-center gap-1.5 text-xs font-medium',
-              state.tone === 'neutral' ? 'text-foreground' : tint.text,
-            )}
-          >
-            {isPulsing ? (
-              <StatusDot tone={pulseTone} size="sm" pulsing ariaLabel={state.sentence} />
-            ) : null}
-            <span className="min-w-0">{state.sentence}</span>
-            {elapsed == null ? null : (
-              <span
-                data-testid="orchestrator-elapsed"
-                className="tabular-nums font-normal text-muted-foreground"
-              >
-                · {elapsed}
-              </span>
-            )}
-            {queuedHintCount === 0 ? null : (
-              <span data-testid="orchestrator-queued-hints" className="font-normal text-warning">
-                · {queuedHintCount} {queuedHintCount === 1 ? 'hint' : 'hints'} queued
-              </span>
-            )}
-            {overriddenRoleCount === 0 ? null : (
-              <span
-                data-testid="orchestrator-role-models-count"
-                className="font-normal text-muted-foreground"
-              >
-                · {overriddenRoleCount} {overriddenRoleCount === 1 ? 'role' : 'roles'} on a chosen
-                model
-              </span>
-            )}
-          </p>
-
-          {state.detail != null && state.detail !== '' ? (
-            <div data-testid="orchestrator-detail" className="min-w-0">
-              <Markdown text={state.detail} className="text-2xs leading-relaxed" />
-            </div>
-          ) : null}
+        </span>
+        <div
+          data-testid="orchestrator-controls"
+          className="flex shrink-0 flex-wrap items-center justify-end gap-1.5"
+        >
+          <OrchestratorRoutingRow
+            sessionId={sessionId}
+            run={run}
+            disabled={busy || isOrchestrating}
+          />
+          {isRunOver ? null : (
+            <WorkflowAutorunToggle
+              variant="detail"
+              isOn={run.autoRun === true}
+              onToggle={() => void setWorkflowRunAutoRun(sessionId, run.id, run.autoRun !== true)}
+            />
+          )}
           {showStopNow ? (
             <div className="relative flex">
               <button
                 type="button"
                 aria-expanded={isStopArmed}
                 onClick={() => setIsStopArmed(true)}
-                className="rounded px-1.5 text-2xs text-danger hover:bg-danger/10"
+                className="rounded-md px-1.5 py-0.5 text-2xs font-medium text-danger hover:bg-danger/10"
               >
                 Stop now
               </button>
               {isStopArmed ? (
-                <div className="absolute left-0 top-full z-popover w-72 rounded-lg bg-background shadow-lg">
+                <div className="absolute right-0 top-full z-popover w-72 rounded-lg bg-background shadow-lg">
                   <InlineConfirm
                     role="alert"
                     icon={<CircleStop size={ICON_SIZE.row} aria-hidden />}
@@ -321,100 +287,91 @@ export const OrchestratorPanel = ({
             </div>
           ) : null}
         </div>
-
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-          {isRunOver ? null : (
-            <WorkflowAutorunToggle
-              variant="detail"
-              isOn={run.autoRun === true}
-              onToggle={() => void setWorkflowRunAutoRun(sessionId, run.id, run.autoRun !== true)}
-            />
-          )}
-          {primaryAction}
-          <OrchestratorAction
-            icon={PenLine}
-            label="Hints"
-            variant="ghost"
-            testId="orchestrator-hints-toggle"
-            title="Tell the orchestrator something for the rest of the run"
-            expanded={hintsOpen}
-            onClick={() => toggleDrawer('hints')}
-          />
-          <OrchestratorAction
-            icon={Users}
-            label="Role models"
-            variant="ghost"
-            testId="orchestrator-role-models-toggle"
-            title="Pick the model each role uses for the rest of this run"
-            expanded={rolesOpen}
-            onClick={() => toggleDrawer('roles')}
-          />
-        </div>
       </div>
 
-      <div className="flex justify-end">
-        <OrchestratorRoutingRow
-          sessionId={sessionId}
-          run={run}
-          disabled={busy || isOrchestrating}
+      <div className="flex min-w-0 flex-col gap-1">
+        <p
+          data-testid="orchestrator-state"
+          className={cn(
+            'flex min-w-0 flex-wrap items-center gap-1.5 text-xs font-medium',
+            state.tone === 'neutral' ? 'text-foreground' : tint.text,
+          )}
+        >
+          {isPulsing ? (
+            <StatusDot tone={pulseTone} size="sm" pulsing ariaLabel={state.sentence} />
+          ) : null}
+          <span className="min-w-0">{state.sentence}</span>
+          {elapsed == null ? null : (
+            <span
+              data-testid="orchestrator-elapsed"
+              className="tabular-nums font-normal text-muted-foreground"
+            >
+              · {elapsed}
+            </span>
+          )}
+          {queuedHintCount === 0 ? null : (
+            <span data-testid="orchestrator-queued-hints" className="font-normal text-warning">
+              · {queuedHintCount} {queuedHintCount === 1 ? 'hint' : 'hints'} queued
+            </span>
+          )}
+        </p>
+        {state.detail != null && state.detail !== '' ? (
+          <div data-testid="orchestrator-detail" className="min-w-0">
+            <Markdown text={state.detail} className="text-2xs leading-relaxed" />
+          </div>
+        ) : null}
+        {overriddenRoleCount === 0 ? null : (
+          <p
+            data-testid="orchestrator-role-models-count"
+            className="flex flex-wrap items-center gap-1 text-2xs text-muted-foreground"
+          >
+            {overriddenRoleCount} {overriddenRoleCount === 1 ? 'role runs' : 'roles run'} on a model
+            chosen for this run.
+            <button
+              type="button"
+              data-testid="orchestrator-role-models-clear"
+              disabled={busy}
+              onClick={() => void guard(() => setWorkflowRoleModelOverrides(sessionId, run.id, {}))}
+              className="rounded font-medium text-foreground underline-offset-2 hover:underline"
+            >
+              Let the orchestrator pick
+            </button>
+          </p>
+        )}
+      </div>
+
+      <div data-testid="orchestrator-actions" className="flex flex-wrap items-center gap-1.5">
+        {primaryAction}
+        <OrchestratorAction
+          icon={PenLine}
+          label={hints.length === 0 ? 'Hints' : `Hints (${hints.length})`}
+          variant="ghost"
+          testId="orchestrator-hints-toggle"
+          title="Tell the orchestrator something, and see what you already told it"
+          expanded={isHintsOpen}
+          onClick={() => setIsHintsOpen((open) => !open)}
         />
       </div>
 
-      <div className="flex min-w-0 flex-col gap-1.5">
-        {rolesOpen ? <RunRoleModels sessionId={sessionId} run={run} disabled={busy} /> : null}
-
-        {continueOpen ? (
-          <OrchestratorDrawer
-            inputId="orchestrator-continue-note-field"
-            title="Not done? Say what is missing"
-            help="Optional. Leave it empty and the orchestrator decides what comes next. What you write stays on the decision it triggers."
-          >
-            <textarea
-              id="orchestrator-continue-note-field"
-              value={continueNote}
-              onChange={(event) => setContinueNote(event.target.value)}
-              rows={2}
-              placeholder="e.g. the gate is in place but its tests are missing"
-              data-testid="orchestrator-continue-note"
-              className="w-full rounded-md border border-border-soft bg-background px-2 py-1 text-2xs text-foreground focus:outline-none focus:ring-1 focus:ring-[var(--color-focus-ring)]"
-            />
-            <OrchestratorAction
-              icon={Play}
-              label={hasNote ? 'Continue with this note' : 'Continue, you decide'}
-              variant="primary"
-              testId="orchestrator-continue-confirm"
-              disabled={busy}
-              onClick={() =>
-                void guard(async () => {
-                  await continueWorkflowRun(sessionId, run.id, continueNote);
-                  setContinueNote('');
-                  setOpenDrawer('none');
-                })
-              }
-            />
-          </OrchestratorDrawer>
-        ) : null}
-
-        {hintsOpen ? (
-          <OrchestratorDrawer
-            inputId="orchestrator-hint-field"
-            title="Hints"
-            help="The orchestrator rereads every hint at each decision and judges which still apply. Remove one to take it back."
-          >
-            <OrchestratorHintComposer
-              isDeciding={isOrchestrating}
-              isStepRunning={agents.some((agent) => agent.status === 'running')}
-              disabled={busy}
-              onSubmit={(draft) => addWorkflowOrchestratorHint(sessionId, run.id, draft)}
-            />
-            <OrchestratorHintLog
-              hints={hints}
-              disabled={busy}
-              onRemove={(hintId) => void removeWorkflowOrchestratorHint(sessionId, run.id, hintId)}
-            />
-          </OrchestratorDrawer>
-        ) : null}
-      </div>
+      {isHintsOpen ? (
+        <OrchestratorDrawer
+          inputId="orchestrator-hint-field"
+          title="Hints"
+          help="The orchestrator rereads every hint at each decision and judges which still apply. Ask it for a provider or a model here too. Remove a hint to take it back."
+        >
+          <OrchestratorHintComposer
+            isDeciding={isOrchestrating}
+            isStepRunning={agents.some((agent) => agent.status === 'running')}
+            disabled={busy}
+            onSubmit={(draft) => addWorkflowOrchestratorHint(sessionId, run.id, draft)}
+          />
+          <OrchestratorHintLog
+            hints={hints}
+            disabled={busy}
+            onRemove={(hintId) => void removeWorkflowOrchestratorHint(sessionId, run.id, hintId)}
+          />
+        </OrchestratorDrawer>
+      ) : null}
 
       <WorkflowNodeRouting sessionId={sessionId} workflowRunId={run.id} steps={steps} />
 
