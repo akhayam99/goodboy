@@ -356,6 +356,7 @@ pub fn run() {
             workflows::capability_grant_claim,
             workflows::capability_grant_update,
             workflows::capability_obligation_decide,
+            workflows::capability_obligation_reopen,
             workflows::capability_obligation_settle,
             workflows::evidence_inventory_record,
             workflows::evidence_delivery_record,

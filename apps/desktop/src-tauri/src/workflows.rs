@@ -368,6 +368,8 @@ pub struct CapabilityObligationRow {
     pub identity: String,
     #[serde(rename = "requesterAgentId")]
     pub requester_agent_id: String,
+    #[serde(rename = "requesterParentAgentId", default)]
+    pub requester_parent_agent_id: Option<String>,
     #[serde(rename = "targetRole")]
     pub target_role: String,
     pub purpose: String,
@@ -512,6 +514,15 @@ pub struct CapabilityNeedInput {
     pub routing_proposal: Option<String>,
     #[serde(rename = "inventoryRevision")]
     pub inventory_revision: String,
+    #[serde(rename = "holdContainerAgentId", default)]
+    pub hold_container_agent_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CapabilityReopenInput {
+    #[serde(rename = "obligationId")]
+    pub obligation_id: String,
+    pub reason: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -1832,6 +1843,7 @@ fn capability_obligation_from_row(
         workflow_run_id: row.get(2)?,
         identity: row.get(3)?,
         requester_agent_id: row.get(4)?,
+        requester_parent_agent_id: None,
         target_role: row.get(5)?,
         purpose: row.get(6)?,
         state: row.get(7)?,
@@ -1872,12 +1884,28 @@ fn capability_hold_ids_for_obligation(
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
 }
 
+fn capability_requester_parent(
+    conn: &rusqlite::Connection,
+    requester_agent_id: &str,
+) -> Result<Option<String>, PhaseError> {
+    let found = conn
+        .query_row(
+            "SELECT id, session_id, parent_agent_id FROM agents WHERE id = ?1",
+            rusqlite::params![requester_agent_id],
+            |row| row.get::<_, Option<String>>(2),
+        )
+        .optional()?;
+    Ok(found.flatten())
+}
+
 fn hydrate_capability_obligation(
     conn: &rusqlite::Connection,
     obligation: &mut CapabilityObligationRow,
 ) -> Result<(), PhaseError> {
     obligation.requests = capability_requests_for_obligation(conn, &obligation.id)?;
     obligation.hold_ids = capability_hold_ids_for_obligation(conn, &obligation.id)?;
+    obligation.requester_parent_agent_id =
+        capability_requester_parent(conn, &obligation.requester_agent_id)?;
     Ok(())
 }
 
@@ -1993,8 +2021,65 @@ fn record_capability_need(
             now,
         ],
     )?;
+    if let Some(container) = input.hold_container_agent_id.as_deref() {
+        link_need_to_completion_hold(conn, &input, container, &obligation.id)?;
+    }
     hydrate_capability_obligation(conn, &mut obligation)?;
     Ok(obligation)
+}
+
+fn link_need_to_completion_hold(
+    conn: &rusqlite::Connection,
+    input: &CapabilityNeedInput,
+    container: &str,
+    obligation_id: &str,
+) -> Result<(), PhaseError> {
+    let now = crate::util::now_ms();
+    let existing = conn
+        .query_row(
+            "SELECT id FROM cluster_completion_holds
+              WHERE source_agent_id = ?1 AND container_agent_id = ?2 AND state = 'open'
+              ORDER BY created_at DESC LIMIT 1",
+            rusqlite::params![input.requester_agent_id, container],
+            |row| row.get::<_, String>(0),
+        )
+        .optional()?;
+    let hold_id = match existing {
+        Some(id) => id,
+        None => {
+            let findings = match capability_purpose_for_finding_target(&input.target_role) {
+                Some(_) => serde_json::json!([{ "reason": input.gap, "target": input.target_role }]),
+                None => serde_json::json!([]),
+            };
+            conn.execute(
+                "INSERT OR IGNORE INTO cluster_completion_holds
+                   (id, session_id, workflow_run_id, container_agent_id, source_agent_id, source_turn_id,
+                    reason, findings_json, state, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'unresolved-outcome', ?7, 'open', ?8, ?8)",
+                rusqlite::params![
+                    format!("cluster-completion-hold:need:{}", input.request_id),
+                    input.session_id,
+                    input.workflow_run_id,
+                    container,
+                    input.requester_agent_id,
+                    input.source_turn_id,
+                    findings.to_string(),
+                    now,
+                ],
+            )?;
+            conn.query_row(
+                "SELECT id FROM cluster_completion_holds WHERE source_agent_id = ?1 AND source_turn_id = ?2",
+                rusqlite::params![input.requester_agent_id, input.source_turn_id],
+                |row| row.get::<_, String>(0),
+            )?
+        }
+    };
+    conn.execute(
+        "INSERT OR IGNORE INTO capability_obligation_holds (obligation_id, hold_id, created_at)
+         VALUES (?1, ?2, ?3)",
+        rusqlite::params![obligation_id, hold_id, now],
+    )?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -2067,10 +2152,22 @@ fn claim_capability_grant(
 ) -> Result<CapabilityGrantClaim, PhaseError> {
     let now = crate::util::now_ms();
     let inserted = conn.execute(
-        "INSERT OR IGNORE INTO capability_grants
+        "INSERT INTO capability_grants
            (id, obligation_id, session_id, workflow_run_id, granted_role, purpose, continuation,
             parent_outcome, transferred_work, state, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10, ?10)",
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10, ?10)
+         ON CONFLICT(obligation_id) DO UPDATE SET
+            granted_role = excluded.granted_role,
+            purpose = excluded.purpose,
+            continuation = excluded.continuation,
+            parent_outcome = excluded.parent_outcome,
+            transferred_work = excluded.transferred_work,
+            child_agent_id = NULL,
+            replacement_agent_id = NULL,
+            verification_agent_id = NULL,
+            state = 'pending',
+            updated_at = excluded.updated_at
+          WHERE capability_grants.state = 'failed'",
         rusqlite::params![
             input.id,
             input.obligation_id,
@@ -2176,6 +2273,29 @@ fn decide_capability_obligation(
         ],
     )?;
     obligation_by_id(conn, &input.obligation_id)
+}
+
+fn reopen_capability_obligation(
+    conn: &rusqlite::Connection,
+    input: CapabilityReopenInput,
+) -> Result<CapabilityObligationRow, PhaseError> {
+    conn.execute(
+        "UPDATE capability_obligations
+            SET state = 'open', decision = NULL, decision_reason = ?1, owner_agent_id = NULL,
+                child_agent_id = NULL, updated_at = ?2
+          WHERE id = ?3 AND state <> 'satisfied'",
+        rusqlite::params![input.reason, crate::util::now_ms(), input.obligation_id],
+    )?;
+    obligation_by_id(conn, &input.obligation_id)
+}
+
+#[tauri::command]
+pub async fn capability_obligation_reopen(
+    state: State<'_, Db>,
+    input: CapabilityReopenInput,
+) -> Result<CapabilityObligationRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    reopen_capability_obligation(&conn, input)
 }
 
 #[tauri::command]
@@ -3571,6 +3691,12 @@ mod tests {
                 hold_id TEXT NOT NULL,
                 created_at INTEGER NOT NULL,
                 PRIMARY KEY (obligation_id, hold_id)
+            );
+            CREATE TABLE agents (
+                id TEXT PRIMARY KEY,
+                session_id TEXT,
+                parent_agent_id TEXT,
+                deleted_at INTEGER
             );",
         )
         .unwrap();
@@ -3596,7 +3722,105 @@ mod tests {
             continuation: "handoff".to_string(),
             routing_proposal: None,
             inventory_revision: "rabc123".to_string(),
+            hold_container_agent_id: None,
         }
+    }
+
+    #[test]
+    fn a_cluster_child_need_is_held_on_its_container() {
+        let conn = completion_holds_conn();
+        let mut input = capability_need_input("request-1");
+        input.hold_container_agent_id = Some("container".to_string());
+
+        let obligation = record_capability_need(&conn, input).unwrap();
+        let holds = list_cluster_completion_holds(&conn, "session").unwrap();
+
+        assert_eq!(holds.len(), 1);
+        assert_eq!(holds[0].container_agent_id, "container");
+        assert_eq!(holds[0].source_agent_id, "source");
+        assert_eq!(holds[0].state, "open");
+        assert_eq!(obligation.hold_ids, vec![holds[0].id.clone()]);
+    }
+
+    #[test]
+    fn a_cluster_child_need_joins_the_open_hold_it_already_has() {
+        let conn = completion_holds_conn();
+        record_cluster_completion_hold(&conn, completion_hold_input("hold-1")).unwrap();
+        let mut input = capability_need_input("request-1");
+        input.source_turn_id = "turn-2".to_string();
+        input.hold_container_agent_id = Some("container".to_string());
+
+        let obligation = record_capability_need(&conn, input).unwrap();
+        let holds = list_cluster_completion_holds(&conn, "session").unwrap();
+
+        assert_eq!(holds.len(), 1);
+        assert_eq!(obligation.hold_ids, vec!["hold-1".to_string()]);
+    }
+
+    #[test]
+    fn a_need_outside_a_cluster_creates_no_hold() {
+        let conn = completion_holds_conn();
+
+        let obligation = record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+        let holds = list_cluster_completion_holds(&conn, "session").unwrap();
+
+        assert!(holds.is_empty());
+        assert!(obligation.hold_ids.is_empty());
+    }
+
+    #[test]
+    fn a_failed_grant_can_be_claimed_again_but_a_live_one_cannot() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+        claim_capability_grant(&conn, capability_grant_input()).unwrap();
+
+        let live = claim_capability_grant(&conn, capability_grant_input()).unwrap();
+        update_capability_grant(
+            &conn,
+            CapabilityGrantUpdateInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                state: "failed".to_string(),
+                child_agent_id: Some("child-1".to_string()),
+                replacement_agent_id: None,
+                verification_agent_id: Some("verifier-1".to_string()),
+            },
+        )
+        .unwrap();
+        let again = claim_capability_grant(&conn, capability_grant_input()).unwrap();
+
+        assert!(!live.is_first_delivery);
+        assert!(again.is_first_delivery);
+        assert_eq!(again.grant.state, "pending");
+        assert_eq!(again.grant.child_agent_id, None);
+        assert_eq!(again.grant.verification_agent_id, None);
+    }
+
+    #[test]
+    fn reopening_an_obligation_returns_it_open_and_unowned() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+        conn.execute(
+            "UPDATE capability_obligations SET state = 'granted', decision = 'granted', owner_agent_id = 'child-1', child_agent_id = 'child-1'",
+            [],
+        )
+        .unwrap();
+
+        let reopened = reopen_capability_obligation(
+            &conn,
+            CapabilityReopenInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                reason: "the focused review found the guard still missing".to_string(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(reopened.state, "open");
+        assert_eq!(reopened.decision, None);
+        assert_eq!(reopened.owner_agent_id, None);
+        assert_eq!(
+            reopened.decision_reason,
+            Some("the focused review found the guard still missing".to_string())
+        );
     }
 
     fn capability_grant_input() -> CapabilityGrantInput {
@@ -3799,6 +4023,40 @@ mod tests {
         assert_eq!(duplicate.requests.len(), 1);
         assert_eq!(obligations[0].requests[0].id, "request-1");
         assert_eq!(obligations[0].state, "open");
+    }
+
+    #[test]
+    fn obligation_carries_the_container_of_a_tombstoned_requester() {
+        let conn = completion_holds_conn();
+        conn.execute(
+            "INSERT INTO agents (id, session_id, parent_agent_id, deleted_at) VALUES ('source', 'session', 'container', 1)",
+            [],
+        )
+        .unwrap();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+
+        let obligations = list_capability_obligations(&conn, "session").unwrap();
+
+        assert_eq!(obligations.len(), 1);
+        assert_eq!(
+            obligations[0].requester_parent_agent_id,
+            Some("container".to_string())
+        );
+    }
+
+    #[test]
+    fn obligation_of_a_standalone_requester_has_no_container() {
+        let conn = completion_holds_conn();
+        conn.execute(
+            "INSERT INTO agents (id, session_id, parent_agent_id, deleted_at) VALUES ('source', 'session', NULL, NULL)",
+            [],
+        )
+        .unwrap();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+
+        let obligations = list_capability_obligations(&conn, "session").unwrap();
+
+        assert_eq!(obligations[0].requester_parent_agent_id, None);
     }
 
     #[test]
@@ -4662,6 +4920,27 @@ mod tests {
             .query_row("SELECT COUNT(*) FROM generation_refusals", [], |row| row.get(0))
             .unwrap();
         assert_eq!(refusals, 1);
+    }
+
+    #[test]
+    fn generation_refuses_the_third_attempt_on_one_obligation() {
+        let mut conn = generation_conn();
+        seed_agent(&conn, "requester", None, "session");
+        let attempt = |conn: &mut rusqlite::Connection, key: &str| {
+            let mut input = reservation_input(key, Some("requester"));
+            input.obligation_id = Some("capability-obligation:requester:implementer:repair".to_string());
+            reserve_agent_generation(conn, input).unwrap()
+        };
+
+        let first = attempt(&mut conn, "reservation:attempt-1");
+        let second = attempt(&mut conn, "reservation:attempt-2");
+        let third = attempt(&mut conn, "reservation:attempt-3");
+
+        assert_eq!(first.kind, "granted");
+        assert_eq!(second.kind, "granted");
+        assert_eq!(third.kind, "refused");
+        assert_eq!(third.limit.as_deref(), Some("repair-attempts"));
+        assert!(third.is_first_refusal);
     }
 
     #[test]

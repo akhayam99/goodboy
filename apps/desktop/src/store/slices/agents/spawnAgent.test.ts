@@ -28,7 +28,16 @@ const {
   listPlansForSessionSpy,
   fanOutClustersSpy,
   updateAgentConfigSpy,
+  generationReserveSpy,
 } = vi.hoisted(() => ({
+  generationReserveSpy: vi.fn(async ({ count }: { readonly count: number }) => ({
+    kind: 'granted' as const,
+    reservations: Array.from({ length: count }, (_, index) => ({
+      reservationId: `reservation:${index}`,
+      depth: 1,
+      causalRootAgentId: null,
+    })),
+  })),
   invokeAgentInsertSpy: vi.fn(),
   invokeAgentListSpy: vi.fn(async () => [] as ReadonlyArray<Agent>),
   addPlanConsumptionSpy: vi.fn(async () => undefined),
@@ -39,14 +48,7 @@ const {
 }));
 
 vi.mock('../../../features/workflows/workflows', () => ({
-  invokeAgentGenerationReserve: async ({ count }: { readonly count: number }) => ({
-    kind: 'granted' as const,
-    reservations: Array.from({ length: count }, (_, index) => ({
-      reservationId: `reservation:${index}`,
-      depth: 1,
-      causalRootAgentId: null,
-    })),
-  }),
+  invokeAgentGenerationReserve: generationReserveSpy,
   invokeAgentGenerationBind: async () => undefined,
   invokeEvidenceInventoryRecord: async () => undefined,
   invokeEvidenceDeliveryRecord: async () => undefined,
@@ -379,6 +381,24 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     });
 
     expect(fanOutClustersSpy).not.toHaveBeenCalled();
+  });
+
+  it('counts a capability attempt against its obligation in the generation ledger', async () => {
+    const { spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, {
+      kindOverride: 'implementer',
+      parentAgentId: 'requester-1' as AgentId,
+      executionPurpose: 'capability',
+      obligationId: 'capability-obligation:requester-1:implementer:repair',
+    });
+
+    expect(generationReserveSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        creationPath: 'capability',
+        obligationId: 'capability-obligation:requester-1:implementer:repair',
+      }),
+    );
   });
 
   it('both container entry paths use the same routing decision contract', async () => {

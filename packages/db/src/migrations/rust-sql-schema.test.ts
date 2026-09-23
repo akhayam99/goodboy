@@ -101,6 +101,12 @@ const TOMBSTONE_READ_ALLOWLIST: ReadonlyArray<TombstoneAllowance> = [
       'ancestry walk by id: deleting an agent never refunds generation allowance, so the lineage has to resolve through a tombstone',
   },
   {
+    file: 'capability-obligation.ts',
+    contains: ['SELECT id, session_id, parent_agent_id FROM agents WHERE id'],
+    reason:
+      'requester lineage by id: an obligation outlives its tombstoned requester, so the container it surfaces on has to resolve through the tombstone',
+  },
+  {
     file: 'snapshot.rs',
     contains: ['FROM agents WHERE deleted_at IS NULL'],
     reason: 'carries its own tombstone filter and projects deleted_at into the snapshot',

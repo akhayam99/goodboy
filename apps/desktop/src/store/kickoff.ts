@@ -43,6 +43,9 @@ export const composeUnitBoundary = ({ unit, marker }: BoundaryParams): string =>
 export const composeClusterOutcomeBoundary = ({ agentId }: { readonly agentId: AgentId }): string =>
   `**Outcome** emit one line \`<<cluster-outcome>>{"v":1,"id":"${agentId}","status":"clear"}<</cluster-outcome>>\` when no work remains for another agent. If you found work that still needs an owner, emit one line \`<<cluster-outcome>>{"v":1,"id":"${agentId}","status":"unresolved","findings":[{"reason":"short reason","target":"implementer"}]}<</cluster-outcome>>\` instead. Each target is implementer, planner, investigator, or tester. Emit the outcome beside the cluster boundary even when this cluster is review work.`;
 
+export const composeVerificationVerdict = ({ agentId }: { readonly agentId: AgentId }): string =>
+  `**Verdict** emit one line \`<<cluster-outcome>>{"v":1,"id":"${agentId}","status":"clear"}<</cluster-outcome>>\` only when the change holds. If it does not, emit one line \`<<cluster-outcome>>{"v":1,"id":"${agentId}","status":"unresolved","findings":[{"reason":"short reason","target":"implementer"}]}<</cluster-outcome>>\` instead. Each target is implementer, planner, investigator, or tester. Without this verdict the change counts as not verified and nothing is released.`;
+
 const stepBoundaryMarker = (agentId: AgentId): string => `<<step-done id="${agentId}">>`;
 
 export const composeStepBoundary = (agentId: AgentId): string =>

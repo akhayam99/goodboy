@@ -33,6 +33,7 @@ const obligation: CapabilityObligation = {
   workflowRunId: RUN_ID,
   identity: 'agent-1:implementer:repair',
   requesterAgentId: REQUESTER_ID,
+  requesterParentAgentId: null,
   targetRole: 'implementer',
   purpose: 'repair',
   state: 'open',

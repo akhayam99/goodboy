@@ -8,6 +8,8 @@ import { useAppStore } from '../../../../store';
 import { CapabilityObligationAction } from '../../../../shared/components/CapabilityObligationAction';
 import { ClusterCompletionHoldAction } from '../../../../shared/components/ClusterCompletionHoldAction';
 import { useClusterNode } from '../../useClusterNode';
+import { isOrphanedOnContainer } from './isOrphanedOnContainer';
+import { openObligationForNode } from './openObligationForNode';
 
 type Props = {
   readonly run: Agent;
@@ -50,16 +52,18 @@ export const WorkflowStepGraphNode = ({
       return sourceHold;
     }
     return (
-      openHolds.find(
-        (hold) => hold.containerAgentId === run.id && !visibleAgentIds.has(hold.sourceAgentId),
+      openHolds.find((hold) =>
+        isOrphanedOnContainer({ hold, containerAgentId: run.id, visibleAgentIds }),
       ) ?? null
     );
   });
-  const obligation = useAppStore(
-    (state) =>
-      state.capabilityObligations?.[run.sessionId]?.find(
-        (candidate) => candidate.requesterAgentId === run.id && candidate.state === 'open',
-      ) ?? null,
+  const obligation = useAppStore((state) =>
+    openObligationForNode({
+      agentId: run.id,
+      visibleAgentIds,
+      holds: state.clusterCompletionHolds?.[run.sessionId] ?? [],
+      obligations: state.capabilityObligations?.[run.sessionId] ?? [],
+    }),
   );
   return (
     <div className="flex min-w-0 flex-1 items-center gap-1.5">

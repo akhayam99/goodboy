@@ -324,6 +324,69 @@ describe('adoptClusterGraphRevision', () => {
     expect(h.adopt).not.toHaveBeenCalled();
   });
 
+  it('treats a repaired node as completed while its attempt stays transferred', async () => {
+    const repairedHold: ClusterCompletionHold = {
+      id: 'hold-impl',
+      sessionId: SESSION_ID,
+      workflowRunId: null,
+      containerAgentId: CONTAINER_ID,
+      sourceAgentId: 'a-impl' as AgentId,
+      sourceTurnId: 'turn-impl',
+      reason: 'unresolved-outcome',
+      findings: [],
+      state: 'resolved',
+      resolutionEvidence: 'repair verified',
+      resolvedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+    };
+    const { set, get } = makeStore({
+      graph: graphOf(),
+      agents: [
+        agentOf({ id: 'a-discovery', status: 'completed' }),
+        agentOf({ id: 'a-impl', status: 'transferred' }),
+      ],
+      holds: [repairedHold],
+    });
+
+    const outcome = await adoptClusterGraphRevision({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      containerAgentId: CONTAINER_ID,
+      obligationId: 'obligation-1',
+      proposalText: proposal({ baseRevision: 1 }),
+      reason: 'the planner split the rewrite',
+    });
+
+    expect(outcome.kind).toBe('refused');
+    expect(outcome.kind === 'refused' ? outcome.reason : '').toContain('"impl" already completed');
+    expect(h.adopt).not.toHaveBeenCalled();
+  });
+
+  it('lets a revision replace a transferred attempt whose node never completed', async () => {
+    const { set, get } = makeStore({
+      graph: graphOf(),
+      agents: [
+        agentOf({ id: 'a-discovery', status: 'completed' }),
+        agentOf({ id: 'a-impl', status: 'transferred' }),
+      ],
+    });
+
+    const outcome = await adoptClusterGraphRevision({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      containerAgentId: CONTAINER_ID,
+      obligationId: 'obligation-1',
+      proposalText: proposal({ baseRevision: 1 }),
+      reason: 'the planner split the rewrite',
+    });
+
+    expect(outcome.kind).toBe('adopted');
+    expect(h.adopt).toHaveBeenCalledTimes(1);
+  });
+
   it('refuses a planner turn that carries no revision', async () => {
     const { set, get } = makeStore({
       graph: graphOf(),

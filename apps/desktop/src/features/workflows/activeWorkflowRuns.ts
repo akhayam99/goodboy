@@ -1,4 +1,4 @@
-import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
+import type { Agent, ClusterCompletionHold, Workflow, WorkflowRun } from '@goodboy/types';
 import { isWorkflowRunComplete } from './isWorkflowRunComplete';
 
 export type AttachedRun = {
@@ -9,9 +9,10 @@ export type AttachedRun = {
 type Params = {
   readonly attachedRuns: ReadonlyArray<AttachedRun>;
   readonly agents: ReadonlyArray<Agent>;
+  readonly holds: ReadonlyArray<ClusterCompletionHold>;
 };
 
-export const splitWorkflowRuns = ({ attachedRuns, agents }: Params) => {
+export const splitWorkflowRuns = ({ attachedRuns, agents, holds }: Params) => {
   const agentsByRunId = new Map<string, Agent[]>();
   const everyAgentByRunId = new Map<string, Agent[]>();
   for (const agent of agents) {
@@ -32,7 +33,12 @@ export const splitWorkflowRuns = ({ attachedRuns, agents }: Params) => {
   const discarded = attachedRuns.filter(({ run }) => run.discardedAt != null);
   const live = attachedRuns.filter(({ run }) => run.discardedAt == null);
   const completed = live.filter(({ run, workflow }) =>
-    isWorkflowRunComplete({ run, workflow, agents: everyAgentByRunId.get(run.id) ?? [] }),
+    isWorkflowRunComplete({
+      run,
+      workflow,
+      agents: everyAgentByRunId.get(run.id) ?? [],
+      holds,
+    }),
   );
   const active = live.filter((entry) => !completed.includes(entry));
 

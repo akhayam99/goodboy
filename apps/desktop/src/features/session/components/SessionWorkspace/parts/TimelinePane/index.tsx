@@ -57,6 +57,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   const externalTasks = useAppStore((s) => s.sessionExternalTasks?.[sessionId] ?? EMPTY_ARRAY);
   const worktrees = useAppStore((s) => s.sessionWorktreeRecords?.[sessionId] ?? EMPTY_ARRAY);
   const events = useAppStore((s) => s.sessionEvents?.[sessionId] ?? EMPTY_ARRAY);
+  const holds = useAppStore((s) => s.clusterCompletionHolds?.[sessionId] ?? EMPTY_ARRAY);
   const areEventsLoaded = useAppStore((s) => s.sessionEvents?.[sessionId] !== undefined);
   const areAgentsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
   const loadSessionEvents = useAppStore((s) => s.loadSessionEvents);
@@ -206,6 +207,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         unreadAgentIds,
         blockedRunIds,
         decidingRunIds,
+        holds,
         dayLabelFor: dayLabel,
         showWorkflowSubagents: activity.filter.workflowSubagents,
         showAgentSubagents: activity.filter.agentSubagents,
@@ -214,7 +216,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         showWireframes: isActivityChildShown({ filter: activity.filter, toggle: 'wireframes' }),
         showQuestions: activity.filter.questions,
       }),
-    [activity.filter, blockedRunIds, decidingRunIds, unreadAgentIds, visibleEntries],
+    [activity.filter, blockedRunIds, decidingRunIds, holds, unreadAgentIds, visibleEntries],
   );
 
   const rail = useMemo(
