@@ -10,8 +10,8 @@
     "url": "https://github.com/akhayam99/goodboy.git"
   },
   "engines": {
-    "node": ">=20",
-    "pnpm": ">=9"
+    "node": ">=22",
+    "pnpm": ">=10"
   },
   "packageManager": "pnpm@10.33.4",
   "scripts": {
