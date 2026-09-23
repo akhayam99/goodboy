@@ -4,13 +4,37 @@ const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwi
 
 vi.mock('../platform', () => ({ currentPlatform: () => platform.current }));
 
-import {
-  RESERVED_COMBOS,
-  SHORTCUTS,
-  formatCombo,
-  shortcutGlyphs,
-  withShortcutHint,
-} from './registry';
+import { SHORTCUTS, formatCombo, shortcutGlyphs, withShortcutHint } from './registry';
+
+const RESERVED_COMBOS: ReadonlyArray<string> = [
+  'cmd+KeyQ',
+  'cmd+KeyW',
+  'cmd+KeyM',
+  'cmd+KeyH',
+  'cmd+alt+KeyH',
+  'cmd+alt+KeyD',
+  'cmd+shift+KeyQ',
+  'cmd+alt+shift+KeyQ',
+  'cmd+shift+Slash',
+  'cmd+shift+Digit3',
+  'cmd+shift+Digit4',
+  'cmd+shift+Digit5',
+  'cmd+Space',
+  'cmd+Tab',
+  'cmd+shift+Tab',
+  'cmd+Backquote',
+  'cmd+KeyA',
+  'cmd+KeyC',
+  'cmd+KeyV',
+  'cmd+KeyX',
+  'cmd+KeyZ',
+  'cmd+shift+KeyZ',
+  'cmd+Backspace',
+  'cmd+ArrowLeft',
+  'cmd+ArrowRight',
+  'cmd+ArrowUp',
+  'cmd+ArrowDown',
+];
 
 const entries = Object.entries(SHORTCUTS);
 

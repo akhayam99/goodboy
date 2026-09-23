@@ -378,7 +378,6 @@ pub async fn sentry_fetch_issues(
     })
 }
 
-#[tauri::command]
 pub async fn sentry_fetch_issue(
     workspace_id: String,
     project_id: Option<String>,

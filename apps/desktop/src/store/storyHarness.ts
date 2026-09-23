@@ -14,7 +14,6 @@ import type {
   IsoDateTime,
   OverrideSettings,
   PlanConsumption,
-  PlanId,
   PlanWithCount,
   Project,
   ProjectId,
@@ -514,8 +513,6 @@ export const permissionsModuleMock = () => ({
 export const providersModuleMock = () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(async () => ({ state: 'connected', identity: 'test' })),
-  getCursorStatus: vi.fn(async () => null),
-  getCodexStatus: vi.fn(async () => null),
   getGeminiStatus: vi.fn(async () => null),
   getOpenCodeStatus: vi.fn(async () => null),
   getOpenRouterStatus: vi.fn(async () => null),

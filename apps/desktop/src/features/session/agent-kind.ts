@@ -1,7 +1,6 @@
 import {
   classifyFirstTurn,
   getCheapModel,
-  normalizeAgentRole,
   presentationKeyForRole,
   REPORT_KIT_GUIDE,
   ROLE_REGISTRY,
@@ -9,7 +8,6 @@ import {
   resolveRoleRouting,
   WIREFRAME_SCHEMA_BRIEF,
   type AgentKindLabel,
-  type WorkflowLibraryStep,
 } from '@goodboy/core';
 import type {
   Agent,
@@ -449,10 +447,6 @@ export const visibleAgentKinds = (): ReadonlyArray<AgentKind> =>
       ROLE_REGISTRY[KIND_TO_ROLE[kind]].pickerEligible,
   ).sort((left, right) => AGENT_KIND_META[left].label.localeCompare(AGENT_KIND_META[right].label));
 
-export const inferAgentKindFromStep = (step: WorkflowLibraryStep): AgentKind => {
-  return presentationKeyForRole({ role: step.role });
-};
-
 export const inferAgentKindFromName = (name: string): AgentKind => {
   const lower = name.toLowerCase();
   if (/^resolve\b|: resolve|resolve(?:r|s|d)?\b/.test(lower)) {
@@ -503,9 +497,6 @@ export const classifyAgent = (agent: Agent, override: AgentKind | null): AgentKi
 
 export const isStandaloneAgent = (agent: Agent): boolean =>
   agent.parentAgentId == null && !(agent.workflowRunId != null && agent.stepId != null);
-
-export const selectStandaloneAgents = (agents: ReadonlyArray<Agent>): ReadonlyArray<Agent> =>
-  agents.filter(isStandaloneAgent);
 
 export const selectNonResolverStandaloneAgents = (
   agents: ReadonlyArray<Agent>,

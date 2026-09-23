@@ -21,9 +21,6 @@ class DatabaseUnavailableError extends Error {
   }
 }
 
-export const isDatabaseUnavailable = (error: unknown): boolean =>
-  error instanceof DatabaseUnavailableError;
-
 const describeRejection = (rejection: unknown): string => {
   if (typeof rejection === 'string') {
     return rejection;

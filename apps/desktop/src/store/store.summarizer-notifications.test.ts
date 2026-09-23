@@ -33,8 +33,6 @@ vi.mock('../shared/lib/db', () => ({
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(async () => ({ state: 'connected', identity: 'test' })),
-  getCursorStatus: vi.fn(async () => null),
-  getCodexStatus: vi.fn(async () => null),
   getProviderStatus: vi.fn(async () => null),
 }));
 

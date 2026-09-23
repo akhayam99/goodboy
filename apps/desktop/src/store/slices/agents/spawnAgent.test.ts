@@ -13,8 +13,8 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import {
-  buildCombinedCommentAgentArgs,
   buildCommentAgentArgs,
+  buildResolverAgentArgs,
 } from '../../../features/chat/spawn-from-comment';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -451,8 +451,8 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
   it('persists every combined source thread and the first compatibility thread', async () => {
     const { spawn } = buildHarness([]);
-    const args = buildCombinedCommentAgentArgs(
-      [
+    const args = buildResolverAgentArgs({
+      threads: [
         { head: COMMENT, replies: [] },
         {
           head: {
@@ -464,8 +464,8 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
           replies: [],
         },
       ],
-      PR,
-    );
+      pr: PR,
+    });
 
     await spawn(SESSION_ID, {
       kindOverride: 'resolver',

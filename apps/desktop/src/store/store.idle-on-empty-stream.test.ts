@@ -100,8 +100,6 @@ vi.mock('@goodboy/db', () => ({
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
-  getCursorStatus: vi.fn(),
-  getCodexStatus: vi.fn(),
   getProviderStatus: vi.fn(),
 }));
 

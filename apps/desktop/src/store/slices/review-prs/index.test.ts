@@ -12,8 +12,8 @@ import type {
 } from '@goodboy/types';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
 import type { AppStore } from '../../store';
-import type { SetFn } from './types';
-import { createReviewPrsSlice, selectReviewPrs } from './index';
+import type { ReviewPrsState, SetFn } from './types';
+import { createReviewPrsSlice } from './index';
 
 const { detectRepoSlugSpy, listOpenPrsForRepoSpy, gitlabFetchProjectMrsSpy, worktreeRemoteUrlSpy } =
   vi.hoisted(() => ({
@@ -41,6 +41,14 @@ vi.mock('../../../features/worktree/worktree', () => ({
 }));
 
 const WS_ID = 'workspace-1' as WorkspaceId;
+
+const prsOf = (state: AppStore): ReviewPrsState => {
+  const entry = state.reviewPrs[WS_ID];
+  if (entry === undefined) {
+    throw new Error('the workspace has no review pull requests yet');
+  }
+  return entry;
+};
 const PROJECT_ID = 'project-1' as ProjectId;
 const NOW = '2026-07-23T00:00:00.000Z' as IsoDateTime;
 
@@ -177,7 +185,7 @@ describe('review-prs slice', () => {
       githubStatus: { available: true, mode: 'gh-cli', user: 'Me' },
     });
     await slice.refreshReviewPrs(WS_ID);
-    const result = selectReviewPrs(WS_ID)(getState());
+    const result = prsOf(getState());
     const mine = result.items.find((p) => p.number === 1);
     const other = result.items.find((p) => p.number === 2);
     expect(mine?.mine).toBe(true);
@@ -206,7 +214,7 @@ describe('review-prs slice', () => {
       workspaceIntegrations: { [WS_ID]: [buildGitlabIntegration()] },
     });
     await slice.refreshReviewPrs(WS_ID);
-    const result = selectReviewPrs(WS_ID)(getState());
+    const result = prsOf(getState());
     const byIid = new Map(result.items.map((p) => [p.number, p]));
     expect(result.items.map((p) => p.state).sort()).toEqual(
       ['closed', 'draft', 'merged', 'open'].sort(),
@@ -228,7 +236,7 @@ describe('review-prs slice', () => {
       workspaceIntegrations: { [WS_ID]: [buildGitlabIntegration()] },
     });
     await slice.refreshReviewPrs(WS_ID);
-    const result = selectReviewPrs(WS_ID)(getState());
+    const result = prsOf(getState());
     expect(gitlabFetchProjectMrsSpy).not.toHaveBeenCalled();
     expect(result.items.map((p) => p.id)).toEqual(['github:7:project-1']);
     expect(result.error).toBeNull();
@@ -253,9 +261,7 @@ describe('review-prs slice', () => {
       'https://code.acme.dev',
       'acme/web',
     );
-    expect(selectReviewPrs(WS_ID)(getState()).items.map((p) => p.id)).toEqual([
-      'gitlab:11:project-1',
-    ]);
+    expect(prsOf(getState()).items.map((p) => p.id)).toEqual(['gitlab:11:project-1']);
   });
 
   it('keeps github results when the gitlab provider fails', async () => {
@@ -267,7 +273,7 @@ describe('review-prs slice', () => {
       workspaceIntegrations: { [WS_ID]: [buildGitlabIntegration()] },
     });
     await slice.refreshReviewPrs(WS_ID);
-    const result = selectReviewPrs(WS_ID)(getState());
+    const result = prsOf(getState());
     expect(result.items.map((p) => p.id)).toEqual(['github:7:project-1']);
     expect(result.error).toContain('gitlab down');
     expect(result.loading).toBe(false);
@@ -301,7 +307,7 @@ describe('review-prs slice', () => {
       ['/tmp/broken', WS_ID, brokenId],
       ['/tmp/api', WS_ID, apiId],
     ]);
-    expect(selectReviewPrs(WS_ID)(getState()).items).toEqual([
+    expect(prsOf(getState()).items).toEqual([
       expect.objectContaining({ repo: 'acme/web', projectId: webId }),
       expect.objectContaining({ repo: 'acme/api', projectId: apiId }),
     ]);
@@ -319,7 +325,7 @@ describe('review-prs slice', () => {
       workspaceIntegrations: { [WS_ID]: [buildGitlabIntegration()] },
     });
     await slice.refreshReviewPrs(WS_ID);
-    const result = selectReviewPrs(WS_ID)(getState());
+    const result = prsOf(getState());
     expect(result.items.map((p) => p.id)).toEqual(['gitlab:2:project-1', 'github:1:project-1']);
     expect(result.fetchedAt).not.toBeNull();
   });
@@ -333,17 +339,11 @@ describe('review-prs slice', () => {
     await slice.refreshReviewPrs(WS_ID);
     expect(detectRepoSlugSpy).not.toHaveBeenCalled();
     expect(gitlabFetchProjectMrsSpy).not.toHaveBeenCalled();
-    expect(selectReviewPrs(WS_ID)(getState())).toEqual({
+    expect(prsOf(getState())).toEqual({
       items: [],
       loading: false,
       error: null,
       fetchedAt: expect.any(String),
     });
-  });
-
-  it('selectReviewPrs falls back to an empty idle state', () => {
-    const { getState } = buildHarness({});
-    const result = selectReviewPrs('missing-ws' as WorkspaceId)(getState());
-    expect(result).toEqual({ items: [], loading: false, error: null, fetchedAt: null });
   });
 });

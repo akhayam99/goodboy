@@ -278,15 +278,6 @@ export const buildResolverAgentArgs = ({
   };
 };
 
-export const buildCombinedCommentAgentArgs = (
-  threads: ReadonlyArray<CommentThread>,
-  pr: PullRequestState,
-  choice: ResolveModelChoice = {},
-): CommentAgentArgs => {
-  const args = buildResolverAgentArgs({ threads, pr, hint: choice.hint ?? '' });
-  return { ...args, name: `resolve: ${threads.length} review threads` };
-};
-
 export type ResolveModelChoice = {
   readonly provider?: ProviderId;
   readonly model?: string;

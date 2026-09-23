@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ProviderId } from '@goodboy/types';
-import type { ProviderConnectState } from '../../../../store/slices/providers';
+import type { ProviderConnectState } from '../../../../store/slices/providers/types';
 
 const { state, openUrl } = vi.hoisted(() => ({
   state: {

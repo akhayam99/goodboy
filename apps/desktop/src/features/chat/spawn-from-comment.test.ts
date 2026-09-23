@@ -7,9 +7,9 @@ import {
 } from '@goodboy/core';
 import type { PrComment, PullRequestState } from '@goodboy/types';
 import {
-  buildCombinedCommentAgentArgs,
   buildCommentAgentArgs,
   buildCommentAgentTitle,
+  buildResolverAgentArgs,
 } from './spawn-from-comment';
 
 const PR: PullRequestState = {
@@ -121,7 +121,7 @@ describe('spawn-from-comment', () => {
   });
 
   it('carries author, location, link and thread id of every thread it hands over', () => {
-    const prompt = buildCombinedCommentAgentArgs(threadsOf(2), PR).initialPrompt;
+    const prompt = buildResolverAgentArgs({ threads: threadsOf(2), pr: PR }).initialPrompt;
     expect(prompt).toContain('Thread 1 of 2');
     expect(prompt).toContain('Thread 2 of 2');
     expect(prompt).toContain('- author: alice');
@@ -146,7 +146,7 @@ describe('spawn-from-comment', () => {
   });
 
   it('asks for exactly one outcome marker per thread and never reuses a reply', () => {
-    const prompt = buildCombinedCommentAgentArgs(threadsOf(3), PR).initialPrompt;
+    const prompt = buildResolverAgentArgs({ threads: threadsOf(3), pr: PR }).initialPrompt;
     const replies = realIds(extractAllCommentReplies(prompt));
 
     expect(outcomeIds(prompt)).toEqual(['PRRT_1', 'PRRT_3', 'PRRT_2']);
@@ -155,8 +155,8 @@ describe('spawn-from-comment', () => {
   });
 
   it('states the reply contract once, however many threads it hands over', () => {
-    const one = buildCombinedCommentAgentArgs(threadsOf(1), PR).initialPrompt;
-    const four = buildCombinedCommentAgentArgs(threadsOf(4), PR).initialPrompt;
+    const one = buildResolverAgentArgs({ threads: threadsOf(1), pr: PR }).initialPrompt;
+    const four = buildResolverAgentArgs({ threads: threadsOf(4), pr: PR }).initialPrompt;
     const needle = 'Every <<comment-reply>> block follows this contract.';
 
     expect(occurrences({ text: one, needle })).toBe(1);
@@ -166,7 +166,7 @@ describe('spawn-from-comment', () => {
   });
 
   it('names every thread id it owns in the worked example', () => {
-    const prompt = buildCombinedCommentAgentArgs(threadsOf(2), PR).initialPrompt;
+    const prompt = buildResolverAgentArgs({ threads: threadsOf(2), pr: PR }).initialPrompt;
     const example = prompt.slice(prompt.indexOf('reads exactly like this:'));
 
     expect(example).toContain('threadId="PRRT_1"');
@@ -231,14 +231,13 @@ describe('spawn-from-comment', () => {
       body: 'handle the second issue',
       url: 'https://github.com/o/r/pull/9108#discussion_r2',
     });
-    const args = buildCombinedCommentAgentArgs(
-      [
+    const args = buildResolverAgentArgs({
+      threads: [
         { head: first, replies: [makeComment({ id: 'reply-1', body: 'first reply' })] },
         { head: second, replies: [] },
       ],
-      PR,
-      { provider: 'codex', model: 'gpt-5-codex', effort: 'high' },
-    );
+      pr: PR,
+    });
     expect(args.sourceThreadIds).toEqual(['PRRT_1', 'PRRT_2']);
     expect(args.sourceCommentUrl).toBe(first.url);
     expect(args.sourceKind).toBe('review_comment');
@@ -248,7 +247,7 @@ describe('spawn-from-comment', () => {
 
   it('uses the neutral resolver instruction for a combined kickoff', () => {
     const threads = threadsOf(2);
-    const prompt = buildCombinedCommentAgentArgs(threads, PR, { hint: '  ' }).initialPrompt;
+    const prompt = buildResolverAgentArgs({ threads: threads, pr: PR, hint: '  ' }).initialPrompt;
     expect(prompt).toContain(
       'Judge all 2 threads above on the merits in one pass. When a thread asks for the right change, implement it and commit locally as you go. When the change it asks for is wrong or not worth making, leave the code unchanged and give the reason in its outcome marker. Never default to either outcome: read the code first, then decide per thread.',
     );

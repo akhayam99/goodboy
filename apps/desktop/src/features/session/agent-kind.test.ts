@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PROVIDER_CAPABILITIES, ROLE_REGISTRY, type WorkflowLibraryStep } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, ROLE_REGISTRY } from '@goodboy/core';
 import type { Agent, AgentId, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
 import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
 import {
@@ -11,14 +11,12 @@ import {
   agentKindPalette,
   classifyAgent,
   inferAgentKindFromName,
-  inferAgentKindFromStep,
   isStandaloneAgent,
   kindConsumesPlan,
   kindRouting,
   resolveAgentKind,
   resolveRootAgent,
   selectNonResolverStandaloneAgents,
-  selectStandaloneAgents,
   visibleAgentKinds,
   visibleAgentRoles,
 } from './agent-kind';
@@ -49,10 +47,6 @@ const ALL_KINDS: ReadonlyArray<AgentKind> = [
   'resolver',
   'generic',
 ];
-
-function makeStep(role: string, name = role): WorkflowLibraryStep {
-  return { name, role, promptPrefix: '', expectedOutput: '' };
-}
 
 describe('resolveRootAgent', () => {
   it('routes a cluster child through its topmost workflow-step ancestor', () => {
@@ -167,22 +161,6 @@ describe('isStandaloneAgent', () => {
 
   it('keeps an agent that has a workflowRunId but no stepId', () => {
     expect(isStandaloneAgent(agentOf({ workflowRunId: WF }))).toBe(true);
-  });
-});
-
-describe('selectStandaloneAgents', () => {
-  it('filters out child and workflow-bound agents', () => {
-    const agents = [
-      agentOf({ id: 'standalone' as AgentId }),
-      agentOf({ id: 'child' as AgentId, parentAgentId: 'parent' as AgentId }),
-      agentOf({ id: 'workflow' as AgentId, workflowRunId: WF, stepId: STEP }),
-    ];
-
-    expect(selectStandaloneAgents(agents)).toHaveLength(1);
-  });
-
-  it('returns an empty array when given none', () => {
-    expect(selectStandaloneAgents([])).toEqual([]);
   });
 });
 
@@ -465,29 +443,6 @@ describe('kindRouting role overrides', () => {
 
     expect(routing.model).toBe(ROLE_REGISTRY.reviewer.model);
     expect(routing.effort).toBe(ROLE_REGISTRY.reviewer.effort);
-  });
-});
-
-describe('inferAgentKindFromStep', () => {
-  it.each([
-    ['scout', 'scout'],
-    ['investigator', 'debugger'],
-    ['planner', 'planner'],
-    ['implementer', 'implementer'],
-    ['tester', 'tester'],
-    ['reviewer', 'reviewer'],
-    ['docs', 'docs'],
-    ['writer', 'docs'],
-    ['debugger', 'debugger'],
-    ['generic', 'generic'],
-    ['report', 'report'],
-    ['wireframe', 'wireframe'],
-  ] as [string, AgentKind][])('role %s → %s', (role, expected) => {
-    expect(inferAgentKindFromStep(makeStep(role))).toBe(expected);
-  });
-
-  it('unknown role falls back to generic', () => {
-    expect(inferAgentKindFromStep(makeStep('oracle'))).toBe('generic');
   });
 });
 

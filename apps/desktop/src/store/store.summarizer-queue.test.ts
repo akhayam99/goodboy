@@ -46,8 +46,6 @@ vi.mock('../shared/lib/db', () => ({
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
-  getCursorStatus: vi.fn(),
-  getCodexStatus: vi.fn(),
   getProviderStatus: vi.fn(),
 }));
 
@@ -263,7 +261,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       )
       .mockResolvedValue(undefined);
 
-    const { summarizerQueues } = storeModule;
+    const { summarizerQueues } = await import('./turn-helpers');
     summarizerQueues.clear();
 
     useAppStore.setState({
@@ -512,7 +510,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       resolved = true;
     });
 
-    const { summarizerQueues: sq } = storeModule;
+    const { summarizerQueues: sq } = await import('./turn-helpers');
     sq.clear();
 
     const queue = {
@@ -616,7 +614,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('in-flight + multiple queued coalesces to one pending entry', async () => {
-    const { summarizerQueues: sq } = storeModule;
+    const { summarizerQueues: sq } = await import('./turn-helpers');
     sq.clear();
 
     const queue = {
@@ -656,7 +654,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('queue inFlight=true while summarizer runs does not prevent subsequent queue entries', async () => {
-    const { summarizerQueues: sq } = storeModule;
+    const { summarizerQueues: sq } = await import('./turn-helpers');
     sq.clear();
 
     const queue = {

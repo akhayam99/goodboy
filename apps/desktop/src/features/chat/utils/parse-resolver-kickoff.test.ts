@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrComment, PullRequestState } from '@goodboy/types';
-import { buildCombinedCommentAgentArgs, buildCommentAgentArgs } from '../spawn-from-comment';
+import { buildCommentAgentArgs, buildResolverAgentArgs } from '../spawn-from-comment';
 import { parseResolverKickoff } from './parse-resolver-kickoff';
 
 const PR: PullRequestState = {
@@ -35,8 +35,8 @@ const comment = (over: Partial<PrComment> = {}): PrComment => ({
 
 describe('parseResolverKickoff', () => {
   it('reads back every thread the kickoff hands over', () => {
-    const text = buildCombinedCommentAgentArgs(
-      [
+    const text = buildResolverAgentArgs({
+      threads: [
         { head: comment(), replies: [comment({ id: 'r2', author: 'bob', body: 'rename it too' })] },
         {
           head: comment({
@@ -51,8 +51,8 @@ describe('parseResolverKickoff', () => {
           replies: [],
         },
       ],
-      PR,
-    ).initialPrompt;
+      pr: PR,
+    }).initialPrompt;
 
     const parsed = parseResolverKickoff({ text });
 

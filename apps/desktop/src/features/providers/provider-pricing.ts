@@ -25,10 +25,6 @@ type PriceParams = {
 
 const activeTable: PricingTable = shippedPricing;
 
-export const getActivePricingTable = (): PricingTable => {
-  return activeTable;
-};
-
 const IS_DEV = import.meta.env.DEV === true;
 
 const priceForModel = ({ provider, model }: PriceParams): ModelPrice | null => {

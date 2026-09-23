@@ -390,7 +390,6 @@ pub fn run() {
             sentry::sentry_validate_connection,
             sentry::sentry_connect,
             sentry::sentry_fetch_issues,
-            sentry::sentry_fetch_issue,
             sentry::sentry_fetch_issue_detail,
             gitlab::gitlab_validate_connection,
             gitlab::gitlab_connect,

@@ -4,12 +4,7 @@ const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
 
-import {
-  DATABASE_FILE_HINT,
-  DATABASE_UNAVAILABLE_MESSAGE,
-  isDatabaseUnavailable,
-  tauriDatabase,
-} from './db';
+import { DATABASE_FILE_HINT, DATABASE_UNAVAILABLE_MESSAGE, tauriDatabase } from './db';
 
 beforeEach(() => {
   invokeMock.mockReset();
@@ -34,14 +29,17 @@ describe('tauriDatabase', () => {
     invokeMock.mockRejectedValue(UNMANAGED_REJECTION);
 
     const failure = await tauriDatabase.exec('PRAGMA user_version').catch((err: unknown) => err);
-    expect(isDatabaseUnavailable(failure)).toBe(true);
+    expect(failure).toMatchObject({
+      name: 'DatabaseUnavailableError',
+      message: DATABASE_UNAVAILABLE_MESSAGE,
+    });
   });
 
   it('lets an ordinary sql failure through untouched', async () => {
     invokeMock.mockRejectedValue(new Error('no such table: sessions'));
 
     const failure = await tauriDatabase.select('SELECT 1').catch((err: unknown) => err);
-    expect(isDatabaseUnavailable(failure)).toBe(false);
+    expect(failure).not.toMatchObject({ name: 'DatabaseUnavailableError' });
     expect(failure).toBeInstanceOf(Error);
   });
 

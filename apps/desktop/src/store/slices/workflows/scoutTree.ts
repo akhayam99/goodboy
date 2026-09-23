@@ -439,7 +439,7 @@ export const startFanOutChildren = async ({
   return { kind: 'started', childIds };
 };
 
-const fanOutAgents = async ({
+export const fanOutAgents = async ({
   set,
   get,
   sessionId,
@@ -493,16 +493,6 @@ const fanOutAgents = async ({
       { sessionId },
     );
   }
-};
-
-export const fanOutScouts = async (
-  set: SetFn,
-  get: GetFn,
-  sessionId: SessionId,
-  container: Agent,
-  areas: ReadonlyArray<ExtractedFanOutArea>,
-): Promise<void> => {
-  await fanOutAgents({ set, get, sessionId, container, areas, role: 'scout' });
 };
 
 const maybeSynthesizeParent = async ({

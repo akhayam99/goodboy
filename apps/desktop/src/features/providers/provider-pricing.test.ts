@@ -1,12 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import shippedPricing from './pricing.json';
 import {
   getCodexPriceOverride,
   getGeminiPriceOverride,
-  getActivePricingTable,
+  type PricingTable,
 } from './provider-pricing';
 
 type PricingWindow = Window & {
-  __DEV_PRICING_OVERRIDE__?: Partial<ReturnType<typeof getActivePricingTable>>;
+  __DEV_PRICING_OVERRIDE__?: Partial<PricingTable>;
 };
 
 const pricingWindow = window as PricingWindow;
@@ -15,9 +16,9 @@ afterEach(() => {
   delete pricingWindow.__DEV_PRICING_OVERRIDE__;
 });
 
-describe('getActivePricingTable', () => {
+describe('shipped pricing', () => {
   it('returns shipped pricing by default', () => {
-    const table = getActivePricingTable();
+    const table: PricingTable = shippedPricing;
     expect(table.anthropic).toBeDefined();
     expect(table.codex).toBeDefined();
     expect(table.gemini).toBeDefined();
@@ -25,7 +26,7 @@ describe('getActivePricingTable', () => {
   });
 
   it('pins the reconciled opus price', () => {
-    expect(getActivePricingTable().anthropic['claude-opus-4-7']).toEqual({
+    expect(shippedPricing.anthropic['claude-opus-4-7']).toEqual({
       inputPerMtok: 5,
       outputPerMtok: 25,
       cachedInputPerMtok: 0.5,

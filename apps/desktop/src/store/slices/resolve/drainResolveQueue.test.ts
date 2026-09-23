@@ -7,7 +7,7 @@ import type { GetFn, SetFn } from './types';
 import type { SendTurnResult } from '../turn/types';
 import { createResolveSlice } from './index';
 import { createResolveThread } from './createResolveThread';
-import { selectDirtyTreeThreads, withDirtyTreeReason } from './selectDirtyTreeThreads';
+import { isDirtyTreeRow, withDirtyTreeReason } from './selectDirtyTreeThreads';
 import { resolveInitialState } from './state';
 
 type Lease = {
@@ -898,10 +898,9 @@ describe('resolve queue scheduler', () => {
 
     expect(harness.sendTurn).toHaveBeenCalledTimes(1);
     expect(
-      selectDirtyTreeThreads({
-        sessionResolveThreads: harness.get().sessionResolveThreads,
-        sessionId: SESSION_A,
-      }),
+      (harness.get().sessionResolveThreads[SESSION_A] ?? [])
+        .filter((row) => isDirtyTreeRow({ row }))
+        .map((row) => row.threadId),
     ).toEqual(['PRRT_1']);
 
     setTree({ unstaged: 0 });
@@ -942,10 +941,9 @@ describe('resolve queue scheduler', () => {
     await harness.actions.drainResolveQueue({ sessionId: SESSION_A, endedAttemptId });
 
     expect(
-      selectDirtyTreeThreads({
-        sessionResolveThreads: harness.get().sessionResolveThreads,
-        sessionId: SESSION_A,
-      }),
+      (harness.get().sessionResolveThreads[SESSION_A] ?? [])
+        .filter((row) => isDirtyTreeRow({ row }))
+        .map((row) => row.threadId),
     ).toEqual([]);
     expect(harness.sendTurn).toHaveBeenCalledTimes(2);
     expect(harness.sendTurn.mock.calls[1]?.[0]?.content).toBe('fix two');
@@ -975,10 +973,9 @@ describe('resolve queue scheduler', () => {
     await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
 
     expect(
-      selectDirtyTreeThreads({
-        sessionResolveThreads: harness.get().sessionResolveThreads,
-        sessionId: SESSION_A,
-      }),
+      (harness.get().sessionResolveThreads[SESSION_A] ?? [])
+        .filter((row) => isDirtyTreeRow({ row }))
+        .map((row) => row.threadId),
     ).toEqual(['PRRT_1']);
     expect(harness.sendTurn).not.toHaveBeenCalled();
   });

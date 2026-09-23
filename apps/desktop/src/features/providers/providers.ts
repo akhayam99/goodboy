@@ -90,9 +90,6 @@ export const getProviderStatus = async (id: ProviderId): Promise<ProviderStatus>
   return invoke<ProviderStatus>(TAURI_GET_CMD[id]);
 };
 
-export const getCursorStatus = (): Promise<ProviderStatus> => getProviderStatus('cursor');
-export const getCodexStatus = (): Promise<ProviderStatus> => getProviderStatus('codex');
-
 type RefreshParams = {
   readonly id: ProviderId;
 };

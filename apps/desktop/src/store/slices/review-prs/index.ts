@@ -8,5 +8,3 @@ export const createReviewPrsSlice = (set: SetFn, get: GetFn) => {
     startPrReviewSession: startPrReviewSession(get),
   };
 };
-
-export { selectReviewPrs } from './selectReviewPrs';

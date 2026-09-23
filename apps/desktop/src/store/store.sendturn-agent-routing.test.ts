@@ -17,7 +17,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES, resolveStoredModelSelection } from '@goodboy/core';
+import { resolveStoredModelSelection } from '@goodboy/core';
 
 const resolveModelArgsSpy = vi.hoisted(() => vi.fn());
 
@@ -203,8 +203,6 @@ vi.mock('../features/file-versions/fileVersions', () => ({
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
-  getCursorStatus: vi.fn(),
-  getCodexStatus: vi.fn(),
   getProviderStatus: vi.fn(),
 }));
 

@@ -62,7 +62,7 @@ vi.mock('./summarizeWorkflowAgentOutput', () => ({
   summarizeWorkflowAgentOutput: hoisted.summarizeWorkflowAgentOutput,
 }));
 
-import { FAN_OUT_MAX_CHILDREN, advanceScoutTree, fanOutScouts } from './scoutTree';
+import { FAN_OUT_MAX_CHILDREN, advanceScoutTree, fanOutAgents } from './scoutTree';
 
 const SID = 'sess-1' as SessionId;
 
@@ -117,13 +117,20 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe('fanOutScouts workflowRunId propagation', () => {
+describe('scout fan-out workflowRunId propagation', () => {
   it('propagates the container workflowRunId to every spawned sub-scout', async () => {
     vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
     const { get, set } = makeStore(c);
 
-    await fanOutScouts(set, get, SID, c, areas(3));
+    await fanOutAgents({
+      set: set,
+      get: get,
+      sessionId: SID,
+      container: c,
+      areas: areas(3),
+      role: 'scout',
+    });
 
     expect(hoisted.insertArgs).toHaveLength(3);
     for (const args of hoisted.insertArgs) {
@@ -136,7 +143,14 @@ describe('fanOutScouts workflowRunId propagation', () => {
     const c = container();
     const { get, set } = makeStore(c);
 
-    await fanOutScouts(set, get, SID, c, areas(2));
+    await fanOutAgents({
+      set: set,
+      get: get,
+      sessionId: SID,
+      container: c,
+      areas: areas(2),
+      role: 'scout',
+    });
 
     expect(hoisted.insertArgs).toHaveLength(2);
     for (const args of hoisted.insertArgs) {
@@ -149,7 +163,14 @@ describe('fanOutScouts workflowRunId propagation', () => {
     const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
     const { get, set } = makeStore(c);
 
-    await fanOutScouts(set, get, SID, c, areas(3));
+    await fanOutAgents({
+      set: set,
+      get: get,
+      sessionId: SID,
+      container: c,
+      areas: areas(3),
+      role: 'scout',
+    });
 
     expect(hoisted.invokeAgentInsertBatch).toHaveBeenCalledTimes(1);
     const call = hoisted.invokeAgentInsertBatch.mock.calls[0]![0];
@@ -163,7 +184,16 @@ describe('fanOutScouts workflowRunId propagation', () => {
     const { get, set, sendTurn, state } = makeStore(c);
     hoisted.invokeAgentInsertBatch.mockRejectedValueOnce(new Error('database is locked'));
 
-    await expect(fanOutScouts(set, get, SID, c, areas(3))).rejects.toThrow('database is locked');
+    await expect(
+      fanOutAgents({
+        set: set,
+        get: get,
+        sessionId: SID,
+        container: c,
+        areas: areas(3),
+        role: 'scout',
+      }),
+    ).rejects.toThrow('database is locked');
 
     expect(hoisted.insertArgs).toHaveLength(0);
     expect(hoisted.invokeAgentList).not.toHaveBeenCalled();
@@ -178,7 +208,14 @@ describe('fanOutScouts workflowRunId propagation', () => {
     const { get, set, sendTurn } = makeStore(c);
     hoisted.invokeAgentInsertBatch.mockResolvedValueOnce({ inserted: false, agents: [] });
 
-    await fanOutScouts(set, get, SID, c, areas(3));
+    await fanOutAgents({
+      set: set,
+      get: get,
+      sessionId: SID,
+      container: c,
+      areas: areas(3),
+      role: 'scout',
+    });
 
     expect(sendTurn).not.toHaveBeenCalled();
     expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
@@ -190,7 +227,14 @@ describe('fanOutScouts workflowRunId propagation', () => {
     const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
     const { get, set } = makeStore(c);
 
-    await fanOutScouts(set, get, SID, c, areas(2));
+    await fanOutAgents({
+      set: set,
+      get: get,
+      sessionId: SID,
+      container: c,
+      areas: areas(2),
+      role: 'scout',
+    });
 
     for (const args of hoisted.insertArgs) {
       expect(args.kind).toBe('scout');
@@ -204,7 +248,14 @@ describe('fanOutScouts workflowRunId propagation', () => {
     const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
     const { get, set, sendTurn } = makeStore(c);
 
-    await fanOutScouts(set, get, SID, c, areas(3));
+    await fanOutAgents({
+      set: set,
+      get: get,
+      sessionId: SID,
+      container: c,
+      areas: areas(3),
+      role: 'scout',
+    });
 
     expect(sendTurn).toHaveBeenCalledTimes(3);
     for (const [args] of sendTurn.mock.calls) {
@@ -217,7 +268,14 @@ describe('fanOutScouts workflowRunId propagation', () => {
     const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
     const { get, set } = makeStore(c);
 
-    await fanOutScouts(set, get, SID, c, areas(1));
+    await fanOutAgents({
+      set: set,
+      get: get,
+      sessionId: SID,
+      container: c,
+      areas: areas(1),
+      role: 'scout',
+    });
 
     expect(hoisted.insertArgs).toHaveLength(0);
     expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
@@ -228,7 +286,14 @@ describe('fanOutScouts workflowRunId propagation', () => {
     const c = container({ workflowRunId: 'wf-9' as WorkflowRunId });
     const { get, set, emitNotification } = makeStore(c);
 
-    await fanOutScouts(set, get, SID, c, areas(FAN_OUT_MAX_CHILDREN + 2));
+    await fanOutAgents({
+      set: set,
+      get: get,
+      sessionId: SID,
+      container: c,
+      areas: areas(FAN_OUT_MAX_CHILDREN + 2),
+      role: 'scout',
+    });
 
     expect(hoisted.insertArgs).toHaveLength(FAN_OUT_MAX_CHILDREN);
     for (const args of hoisted.insertArgs) {
