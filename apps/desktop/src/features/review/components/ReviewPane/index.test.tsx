@@ -78,7 +78,7 @@ vi.mock('../../../../store', () => ({
 vi.mock('../../../../store/slices/github/activeProjectPrs', () => ({
   selectActiveProjectPrs: () => h.state.branchPrs,
 }));
-vi.mock('../../../github/components/GitHubStudio/CreatePrPanel', () => ({
+vi.mock('../../../github/components/PullRequest/CreatePrPanel', () => ({
   CreatePrPanel: ({ onCancel }: { readonly onCancel?: () => void }) => (
     <div data-testid="create-pr">
       <button type="button" onClick={onCancel}>

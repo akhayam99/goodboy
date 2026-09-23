@@ -1,7 +1,7 @@
 import { MetaRow, Skeleton, cn, formatUsdPrecise } from '@goodboy/ui';
 import type { Agent, ProviderId, TelemetryRecord } from '@goodboy/types';
 import { getModelProvider } from '@goodboy/core';
-import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
+import type { ProviderContextUsage } from '../AgentTree/ContextWindowBar';
 import { CostBadge } from '../../../providers/components/CostBadge';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { AgentLastUpdate } from '../../../../shared/components/AgentLastUpdate';

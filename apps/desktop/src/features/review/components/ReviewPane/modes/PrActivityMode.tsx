@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Button } from '@goodboy/ui';
 import type { DiffComment, PrComment, PullRequestState } from '@goodboy/types';
-import { PrConversation } from '../../../../github/components/GitHubStudio/PrConversation';
+import { PrConversation } from '../../../../github/components/PullRequest/PrConversation';
 import type { CommentThread } from '../../../../github/comment-threads';
 import { LocalNotesSection } from '../LocalNotesSection';
 import { ModeShell } from './ModeShell';

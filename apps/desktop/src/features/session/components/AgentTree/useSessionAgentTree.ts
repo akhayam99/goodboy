@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Agent, AgentId } from '@goodboy/types';
-import { EMPTY_ARRAY, agentHasUnread } from '../../../../../store';
+import { EMPTY_ARRAY, agentHasUnread } from '../../../../store';
 
 type Params = {
   readonly phaseRuns: ReadonlyArray<Agent>;

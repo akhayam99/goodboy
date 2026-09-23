@@ -8,7 +8,7 @@ import { useAppStore, useExecutedAgentRouting } from '../../../../store';
 import { effectiveAgentStatus } from './agentNowState';
 import { classifyAgent } from '../../agent-kind';
 import { AgentKindChip } from '../AgentKindChip';
-import { AgentStatusBadge } from '../../../workspace/components/WorkspacesSidebar/parts/AgentStatusBadge';
+import { AgentStatusBadge } from '../AgentTree/AgentStatusBadge';
 import { AgentHeaderActions } from '../AgentHeaderActions';
 import { AgentBrief } from './AgentBrief';
 import { AgentTitle } from './AgentTitle';

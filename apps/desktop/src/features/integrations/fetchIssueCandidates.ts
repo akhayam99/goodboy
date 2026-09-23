@@ -7,12 +7,12 @@ import type {
 import { slugifyBranch } from '../../shared/utils/slugifyBranch';
 import { ghAssignedIssues, tauriGhRunner } from '../github/github';
 import { goalFromIssue as goalFromGithubIssue } from '../github/goal-from-issue';
-import { githubBranchSlug } from '../github/components/GitHubStudio/useGithubIssues';
+import { githubBranchSlug } from '../github/components/PullRequest/useGithubIssues';
 import { linearFetchAssignedIssues } from './linear/client';
 import { goalFromIssue as goalFromLinearIssue } from './linear/goal-from-issue';
 import { gitlabFetchAssignedIssues, issueIdentifier } from './gitlab/client';
 import { goalFromIssue as goalFromGitlabIssue } from './gitlab/goal-from-issue';
-import { gitlabBranchSlug } from './gitlab/GitlabStudio/useGitlabIssues';
+import { gitlabBranchSlug } from './gitlab/MergeRequest/useGitlabIssues';
 import { jiraListIssues } from './jira/client';
 import { goalFromIssue as goalFromJiraIssue } from './jira/goal-from-issue';
 import { jiraBranchSlug } from './jira/JiraStudio/useJiraIssues';

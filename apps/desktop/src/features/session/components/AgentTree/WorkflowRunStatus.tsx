@@ -1,8 +1,8 @@
 import { AlertTriangle, CircleStop, Link2, Pause } from 'lucide-react';
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
 import { StatusDot, cn, tintClasses } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
-import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
 
 type Props = {
   readonly run: WorkflowRun;

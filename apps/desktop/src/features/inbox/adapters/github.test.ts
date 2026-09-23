@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GithubIssue, SessionId } from '@goodboy/types';
-import type { GithubIssueGroup } from '../../github/components/GitHubStudio/useGithubIssues';
+import type { GithubIssueGroup } from '../../github/components/PullRequest/useGithubIssues';
 import { adaptGithubIssues } from './github';
 
 const issue = (overrides: Partial<GithubIssue> = {}): GithubIssue => ({

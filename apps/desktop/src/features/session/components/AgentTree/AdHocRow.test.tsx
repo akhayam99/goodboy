@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 
-vi.mock('../../../../../store', () => {
+vi.mock('../../../../store', () => {
   const useAppStore = Object.assign(() => undefined, {
     getState: () => ({ markAgentSeen: vi.fn(async () => undefined) }),
   });

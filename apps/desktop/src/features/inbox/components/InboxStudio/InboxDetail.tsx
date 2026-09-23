@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { GithubIssueDetail } from '../../../github/GithubIssueDetail';
 import { GitlabIssueDetail } from '../../../integrations/gitlab/GitlabIssueDetail';
-import { MrDetailPanel } from '../../../integrations/gitlab/GitlabStudio/MrDetailPanel';
+import { MrDetailPanel } from '../../../integrations/gitlab/MergeRequest/MrDetailPanel';
 import { LinearIssueDetail } from '../../../integrations/linear/LinearIssueDetail';
 import { JiraIssueDetail } from '../../../integrations/jira/JiraIssueDetail';
 import { SentryIssueDetail } from '../../../integrations/sentry/SentryIssueDetail';

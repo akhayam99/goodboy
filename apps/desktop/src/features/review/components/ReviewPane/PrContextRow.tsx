@@ -10,8 +10,8 @@ import {
 } from '@goodboy/ui';
 import type { PrCheckRun, PullRequestState } from '@goodboy/types';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
-import { PrSwitcher } from '../../../github/components/GitHubStudio/PrSwitcher';
-import { checksRollup } from '../../../github/components/GitHubStudio/checksRollup';
+import { PrSwitcher } from '../../../github/components/PullRequest/PrSwitcher';
+import { checksRollup } from '../../../github/components/PullRequest/checksRollup';
 
 type Props = {
   readonly pr: PullRequestState;

@@ -12,7 +12,7 @@ const { state } = vi.hoisted(() => ({
     shown: new Set<WorkspaceId>(),
     openWorkspace: vi.fn(async () => undefined),
     saveSetting: vi.fn(async () => undefined),
-    deleteWorkspace: vi.fn(async () => undefined),
+    disconnectWorkspace: vi.fn(async () => undefined),
     installUpdate: vi.fn(async () => undefined),
     settings: {} as Record<string, string>,
     updaterStatus: 'idle' as string,
@@ -27,7 +27,7 @@ vi.mock('../../../../store', () => ({
     selector: (s: {
       openWorkspace: typeof state.openWorkspace;
       saveSetting: typeof state.saveSetting;
-      deleteWorkspace: typeof state.deleteWorkspace;
+      disconnectWorkspace: typeof state.disconnectWorkspace;
       installUpdate: typeof state.installUpdate;
       settings: Record<string, string>;
       updaterStatus: string;
@@ -41,7 +41,7 @@ vi.mock('../../../../store', () => ({
     selector({
       openWorkspace: state.openWorkspace,
       saveSetting: state.saveSetting,
-      deleteWorkspace: state.deleteWorkspace,
+      disconnectWorkspace: state.disconnectWorkspace,
       installUpdate: state.installUpdate,
       settings: state.settings,
       updaterStatus: state.updaterStatus,
@@ -64,7 +64,7 @@ beforeEach(() => {
   state.shown = new Set();
   state.openWorkspace = vi.fn(async () => undefined);
   state.saveSetting = vi.fn(async () => undefined);
-  state.deleteWorkspace = vi.fn(async () => undefined);
+  state.disconnectWorkspace = vi.fn(async () => undefined);
   state.installUpdate = vi.fn(async () => undefined);
   state.settings = {};
   state.updaterStatus = 'idle';
@@ -88,9 +88,9 @@ describe('WorkspaceLauncher', () => {
   it('disconnects a workspace after an explicit confirmation', async () => {
     render(<WorkspaceLauncher />);
     fireEvent.click(screen.getByLabelText('Disconnect alpha'));
-    expect(state.deleteWorkspace).not.toHaveBeenCalled();
+    expect(state.disconnectWorkspace).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
-    expect(state.deleteWorkspace).toHaveBeenCalledWith('ws-a');
+    expect(state.disconnectWorkspace).toHaveBeenCalledWith('ws-a');
     expect(state.openWorkspace).not.toHaveBeenCalled();
   });
 
@@ -98,7 +98,7 @@ describe('WorkspaceLauncher', () => {
     render(<WorkspaceLauncher />);
     fireEvent.click(screen.getByLabelText('Disconnect bravo'));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(state.deleteWorkspace).not.toHaveBeenCalled();
+    expect(state.disconnectWorkspace).not.toHaveBeenCalled();
   });
 
   it('shows the update action when an update is available', () => {

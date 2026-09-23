@@ -9,7 +9,7 @@ const { hoverState, markAgentSeen } = vi.hoisted(() => ({
   markAgentSeen: vi.fn(async () => undefined),
 }));
 
-vi.mock('../../../../../store', () => {
+vi.mock('../../../../store', () => {
   const useAppStore = Object.assign(() => undefined, {
     getState: () => ({ markAgentSeen }),
   });
@@ -20,8 +20,8 @@ vi.mock('../../../../../store', () => {
 });
 
 import { AgentRow } from './AgentRow';
-import { describeAgentStatus } from '../../../../session/agent-status';
-import { stateDescription } from '../../../../../shared/utils/statePresentation';
+import { describeAgentStatus } from '../../agent-status';
+import { stateDescription } from '../../../../shared/utils/statePresentation';
 
 const SID = 'sess-1' as SessionId;
 

@@ -4,7 +4,7 @@ import type { ProviderId } from '@goodboy/types';
 import { type ProviderDisplayInfo } from '../../../providers/providers';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
-import { StatusPill } from '../../../providers/components/ProviderLifecycleTile/StatusPill';
+import { StatusPill } from '../../../providers/components/ProviderConnect/StatusPill';
 import { ProviderInlineConnect } from '../../../providers/components/ProviderInlineConnect';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 

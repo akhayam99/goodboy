@@ -1,5 +1,5 @@
-import type { GitlabIssueGroup } from '../../integrations/gitlab/GitlabStudio/useGitlabIssues';
-import type { GitlabMrGroup } from '../../integrations/gitlab/GitlabStudio/useGitlabMrs';
+import type { GitlabIssueGroup } from '../../integrations/gitlab/MergeRequest/useGitlabIssues';
+import type { GitlabMrGroup } from '../../integrations/gitlab/MergeRequest/useGitlabMrs';
 import type { InboxRecord, InboxState } from '../types';
 
 type Params = {

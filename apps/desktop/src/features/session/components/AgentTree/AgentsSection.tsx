@@ -1,17 +1,17 @@
 import { SectionHeader, cn } from '@goodboy/ui';
 import type { Session, WorkflowRunId } from '@goodboy/types';
-import { ScriptsSection } from '../../../../scripts/components/ScriptsSection';
-import { DogMascot } from '../../../../../shared/components/DogMascot';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { StandaloneAgentsLane } from '../../../../../features/session/components/StandaloneAgentsLane';
-import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
+import { ScriptsSection } from '../../../scripts/components/ScriptsSection';
+import { DogMascot } from '../../../../shared/components/DogMascot';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { StandaloneAgentsLane } from '../StandaloneAgentsLane';
+import { WorkflowAttachButton } from '../../../workflows/components/WorkflowAttachButton';
 import { SectionToggle } from './SectionToggle';
 import { PlanReadySuggestion } from './PlanReadySuggestion';
 import { WorkflowStartButton } from './WorkflowStartButton';
 import { CollapsedSummary } from './CollapsedSummary';
 import { WorkflowRow } from './WorkflowRow';
 import { useAgentsSection } from './useAgentsSection';
-import { pluralize } from '../../../../../shared/utils/pluralize';
+import { pluralize } from '../../../../shared/utils/pluralize';
 
 const FIRST_HEADER_CLASS = 'pb-1.5';
 const SUBSEQUENT_HEADER_CLASS = 'mt-6 pb-1.5';

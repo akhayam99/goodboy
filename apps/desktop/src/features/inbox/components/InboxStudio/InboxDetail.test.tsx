@@ -31,7 +31,7 @@ vi.mock('../../../integrations/gitlab/GitlabIssueDetail', () => ({
   ),
 }));
 
-vi.mock('../../../integrations/gitlab/GitlabStudio/MrDetailPanel', () => ({
+vi.mock('../../../integrations/gitlab/MergeRequest/MrDetailPanel', () => ({
   MrDetailPanel: ({ mr, dock }: { mr: { title: string } | null; dock: ReactNode }) => (
     <div data-testid="panel">
       gitlab-mr:{mr?.title}

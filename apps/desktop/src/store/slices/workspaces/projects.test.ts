@@ -51,7 +51,7 @@ vi.mock('../../../features/terminal/terminal', () => ({
 }));
 
 import { addWorkspace } from './addWorkspace';
-import { deleteWorkspace } from './deleteWorkspace';
+import { disconnectWorkspace } from './disconnectWorkspace';
 import { updateWorkspaceProfile } from './updateWorkspaceProfile';
 import { addProject } from '../projects/addProject';
 import { addProjects } from '../projects/addProjects';
@@ -362,7 +362,7 @@ describe('workspace and project slices', () => {
       workspaceOverrides: { [WORKSPACE_ID]: overrides },
     });
 
-    await deleteWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await disconnectWorkspace(store.set, store.get)(WORKSPACE_ID);
 
     expect(h.disconnectWorkspace).toHaveBeenCalledOnce();
     expect(store.state.workspaces).toEqual([]);

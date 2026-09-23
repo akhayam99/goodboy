@@ -3,24 +3,21 @@ import { CircleCheck, PanelRight, RotateCcw, Trash2 } from 'lucide-react';
 import { Chip, InlineConfirm } from '@goodboy/ui';
 import { contextTokensForUsage } from '@goodboy/core';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
-import { modelLabel } from '../../../../../features/chat/utils/chat-constants';
-import { agentHasUnread } from '../../../../../store';
-import { formatCost } from '../../../../../features/session/agent-row-format';
-import { agentKindPalette, type AgentKind } from '../../../../../features/session/agent-kind';
-import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip';
-import { AgentCard } from '../../../../../features/session/components/AgentCard';
-import { AgentCardAction } from '../../../../../features/session/components/AgentCard/AgentCardAction';
-import { AgentStatusIcon } from '../../../../../features/session/components/AgentCard/AgentStatusIcon';
-import { AgentCardTitle } from '../../../../../features/session/components/AgentCard/AgentCardTitle';
-import { agentCardTone } from '../../../../../features/session/components/AgentCard/agentCardTone';
-import type { AgentCardDensity } from '../../../../../features/session/components/AgentCard/agentCardDensity';
-import {
-  AgentMetrics,
-  type AgentAggregate,
-} from '../../../../../features/session/components/AgentMetrics';
-import { useHoverMarkViewed } from '../../../../../features/session/hooks/useHoverMarkViewed';
+import { modelLabel } from '../../../chat/utils/chat-constants';
+import { agentHasUnread } from '../../../../store';
+import { formatCost } from '../../agent-row-format';
+import { agentKindPalette, type AgentKind } from '../../agent-kind';
+import { AgentKindChip } from '../AgentKindChip';
+import { AgentCard } from '../AgentCard';
+import { AgentCardAction } from '../AgentCard/AgentCardAction';
+import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';
+import { AgentCardTitle } from '../AgentCard/AgentCardTitle';
+import { agentCardTone } from '../AgentCard/agentCardTone';
+import type { AgentCardDensity } from '../AgentCard/agentCardDensity';
+import { AgentMetrics, type AgentAggregate } from '../AgentMetrics';
+import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
 import type { ProviderContextUsage } from './ContextWindowBar';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly run: Agent;

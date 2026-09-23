@@ -2,7 +2,7 @@ import type { Agent, Workflow, WorkflowOrigin, WorkflowRun } from '@goodboy/type
 import { ClampedProse, MetaRow, formatUsdPrecise } from '@goodboy/ui';
 import { classifyWorkflowChain } from '@goodboy/core';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
-import { WorkflowRunStatus } from '../../../../workspace/components/WorkspacesSidebar/parts/WorkflowRunStatus';
+import { WorkflowRunStatus } from '../../AgentTree/WorkflowRunStatus';
 import {
   formatAdaptiveAge,
   formatRelativeDuration,

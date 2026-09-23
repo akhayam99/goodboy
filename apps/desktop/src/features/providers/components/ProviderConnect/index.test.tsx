@@ -25,7 +25,7 @@ vi.mock('../../../../store', () => {
 
 vi.mock('../../../../shared/lib/editor', () => ({ openUrl }));
 
-vi.mock('../ProviderLifecycleTile/InlineTerminal', () => ({
+vi.mock('./InlineTerminal', () => ({
   InlineTerminal: () => <div>live terminal</div>,
 }));
 

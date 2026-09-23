@@ -2,9 +2,9 @@ import { cn, tintClasses } from '@goodboy/ui';
 import { Fragment, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { Agent, AgentId } from '@goodboy/types';
-import { EMPTY_ARRAY, agentHasUnread } from '../../../../../store';
-import { AGENT_KIND_META, classifyAgent } from '../../../../../features/session/agent-kind';
-import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
+import { EMPTY_ARRAY, agentHasUnread } from '../../../../store';
+import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
+import type { AgentAggregate } from '../AgentMetrics';
 import { ClusterChildRow } from './ClusterChildRow';
 
 type Props = {

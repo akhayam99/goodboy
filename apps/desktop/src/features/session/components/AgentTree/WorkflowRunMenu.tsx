@@ -8,7 +8,7 @@ import {
   tintClasses,
   useDropdown,
 } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workflowName: string;

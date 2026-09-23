@@ -4,7 +4,7 @@ import { Markdown, MetaRow } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { ResolverKickoffThread } from '../../utils/parse-resolver-kickoff';
 import { openUrl } from '../../../../shared/lib/editor';
-import { ConversationThread } from '../../../github/components/GitHubStudio/ConversationThread';
+import { ConversationThread } from '../../../github/components/PullRequest/ConversationThread';
 import { openReviewThread } from '../../../review/openReviewThread';
 import { TranscriptChevron } from '../TranscriptChevron';
 import { useKickoffDockedThread } from './useKickoffDockedThread';

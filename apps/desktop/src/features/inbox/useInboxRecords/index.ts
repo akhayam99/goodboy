@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
-import { useGithubIssues } from '../../github/components/GitHubStudio/useGithubIssues';
+import { useGithubIssues } from '../../github/components/PullRequest/useGithubIssues';
 import { useBitbucketPrs } from '../../integrations/bitbucket/BitbucketStudio/useBitbucketPrs';
 import { useWorkspaceBitbucketRepo } from '../../integrations/bitbucket/useWorkspaceBitbucketRepo';
-import { useGitlabIssues } from '../../integrations/gitlab/GitlabStudio/useGitlabIssues';
-import { useGitlabMrs } from '../../integrations/gitlab/GitlabStudio/useGitlabMrs';
+import { useGitlabIssues } from '../../integrations/gitlab/MergeRequest/useGitlabIssues';
+import { useGitlabMrs } from '../../integrations/gitlab/MergeRequest/useGitlabMrs';
 import { useJiraIssues } from '../../integrations/jira/JiraStudio/useJiraIssues';
 import { useLinearIssues } from '../../integrations/linear/LinearStudio/useLinearIssues';
 import { useSentryIssues } from '../../integrations/sentry/SentryStudio/useSentryIssues';

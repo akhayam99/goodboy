@@ -1,8 +1,8 @@
 import { StatusDot, cn, formatUsd, formatUsdPrecise, tintClasses } from '@goodboy/ui';
 import { Check, Clock } from 'lucide-react';
 import type { Agent } from '@goodboy/types';
-import { agentHasUnread, useAppStore } from '../../../../../store';
-import { useHoverMarkViewed } from '../../../../../features/session/hooks/useHoverMarkViewed';
+import { agentHasUnread, useAppStore } from '../../../../store';
+import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
 
 type Props = {
   readonly child: Agent;

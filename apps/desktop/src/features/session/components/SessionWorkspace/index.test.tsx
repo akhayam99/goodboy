@@ -159,7 +159,7 @@ vi.mock('../../../worktree/worktree', () => ({ worktreeStatus: vi.fn() }));
 vi.mock('../../../worktree/useRemoteHostKind', () => ({
   useRemoteHostKind: () => hooks.remoteKind,
 }));
-vi.mock('../../../workspace/components/WorkspacesSidebar/parts/AgentsSection', () => ({
+vi.mock('../AgentTree/AgentsSection', () => ({
   AgentsSection: ({ only }: { only?: string }) => (
     <div data-testid="agents-section" data-home={only} />
   ),

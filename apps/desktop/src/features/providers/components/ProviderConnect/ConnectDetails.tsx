@@ -3,7 +3,7 @@ import type { ProviderId } from '@goodboy/types';
 import { EscapeHatch } from './EscapeHatch';
 import { GuidePanel } from './GuidePanel';
 import type { ProviderGuide } from './guides';
-import { InlineTerminal } from '../ProviderLifecycleTile/InlineTerminal';
+import { InlineTerminal } from './InlineTerminal';
 import { CommandPreview } from '@goodboy/ui';
 
 type Props = {

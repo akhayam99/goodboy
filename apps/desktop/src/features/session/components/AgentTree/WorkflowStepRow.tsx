@@ -2,21 +2,18 @@ import { useEffect, useState } from 'react';
 import { StatusDot, cn, tintClasses } from '@goodboy/ui';
 import { AlertTriangle, Check, Clock, CircleHelp, Play } from 'lucide-react';
 import type { Agent, ProviderId, TelemetryRecord } from '@goodboy/types';
-import { agentHasUnread } from '../../../../../store';
-import type { AgentKind } from '../../../../../features/session/agent-kind';
-import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip';
-import {
-  AgentMetrics,
-  type AgentAggregate,
-} from '../../../../../features/session/components/AgentMetrics';
+import { agentHasUnread } from '../../../../store';
+import type { AgentKind } from '../../agent-kind';
+import { AgentKindChip } from '../AgentKindChip';
+import { AgentMetrics, type AgentAggregate } from '../AgentMetrics';
 import { GhostActionButton } from '@goodboy/ui';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import { WorkflowStepPlanBadge } from './WorkflowStepPlanBadge';
-import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
-import { WORKFLOW_BLOCK_COPY } from '../../../../workflows/blockCopy';
-import { useHoverMarkViewed } from '../../../../../features/session/hooks/useHoverMarkViewed';
-import { useInlineRename } from '../../../../../shared/hooks/useInlineRename';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
+import { WORKFLOW_BLOCK_COPY } from '../../../workflows/blockCopy';
+import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
+import { useInlineRename } from '../../../../shared/hooks/useInlineRename';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly run: Agent;

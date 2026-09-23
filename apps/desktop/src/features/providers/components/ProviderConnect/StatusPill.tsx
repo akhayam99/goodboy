@@ -1,5 +1,5 @@
 import { StatusDot, type Tone } from '@goodboy/ui';
-import type { ProviderConnectionState } from '../../../../features/providers/providers';
+import type { ProviderConnectionState } from '../../providers';
 
 type Props = {
   readonly connection: ProviderConnectionState;

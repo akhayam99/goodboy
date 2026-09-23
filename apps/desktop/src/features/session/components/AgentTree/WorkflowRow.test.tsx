@@ -16,7 +16,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { TERMINAL_DIM } from '@goodboy/ui';
-import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
+import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
 
 type WriteDestinationProps = {
   readonly fallback?: 'automatic';
@@ -30,7 +30,7 @@ const storeMocks = vi.hoisted(() => ({
   sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
 }));
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useRunSpendUsd: () => storeMocks.runSpendUsd,
   useExecutedAgentRouting: () => null,
@@ -45,18 +45,15 @@ vi.mock('../../../../../store', () => ({
     }),
 }));
 
-vi.mock('../../../../chat/components/WriteDestinationControl', () => ({
+vi.mock('../../../chat/components/WriteDestinationControl', () => ({
   WriteDestinationControl: ({ fallback }: WriteDestinationProps) => (
     <div data-testid="write-destination-control">{fallback}</div>
   ),
 }));
 
-vi.mock(
-  '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip',
-  () => ({
-    GoalAttachmentsStrip: () => <div data-testid="goal-attachments" />,
-  }),
-);
+vi.mock('../../../context/components/ContextPanel/strips/GoalAttachmentsStrip', () => ({
+  GoalAttachmentsStrip: () => <div data-testid="goal-attachments" />,
+}));
 
 vi.mock('./WorkflowStepRow', () => ({
   WorkflowStepRow: ({ run }: { readonly run: Agent }) => (

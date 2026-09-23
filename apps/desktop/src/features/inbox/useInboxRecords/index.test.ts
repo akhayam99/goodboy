@@ -1,9 +1,9 @@
 import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
-import type { GithubIssueGroup } from '../../github/components/GitHubStudio/useGithubIssues';
-import type { GitlabIssueGroup } from '../../integrations/gitlab/GitlabStudio/useGitlabIssues';
-import type { GitlabMrGroup } from '../../integrations/gitlab/GitlabStudio/useGitlabMrs';
+import type { GithubIssueGroup } from '../../github/components/PullRequest/useGithubIssues';
+import type { GitlabIssueGroup } from '../../integrations/gitlab/MergeRequest/useGitlabIssues';
+import type { GitlabMrGroup } from '../../integrations/gitlab/MergeRequest/useGitlabMrs';
 import type { JiraIssueGroup } from '../../integrations/jira/JiraStudio/useJiraIssues';
 import type { LinearIssueGroup } from '../../integrations/linear/LinearStudio/useLinearIssues';
 import type { SentryIssueRow } from '../../integrations/sentry/SentryStudio/useSentryIssues';
@@ -51,21 +51,21 @@ vi.mock('../../../store', () => ({
     selector({ workspaceIntegrations: h.integrations }),
 }));
 
-vi.mock('../../github/components/GitHubStudio/useGithubIssues', () => ({
+vi.mock('../../github/components/PullRequest/useGithubIssues', () => ({
   useGithubIssues: (params: { isEnabled: boolean }) => {
     h.enabled.github = params.isEnabled;
     return { ...h.github, refetch: h.refetch.github };
   },
 }));
 
-vi.mock('../../integrations/gitlab/GitlabStudio/useGitlabIssues', () => ({
+vi.mock('../../integrations/gitlab/MergeRequest/useGitlabIssues', () => ({
   useGitlabIssues: (params: { isEnabled: boolean }) => {
     h.enabled.gitlab = params.isEnabled;
     return { ...h.gitlabIssues, refetch: h.refetch.gitlabIssues };
   },
 }));
 
-vi.mock('../../integrations/gitlab/GitlabStudio/useGitlabMrs', () => ({
+vi.mock('../../integrations/gitlab/MergeRequest/useGitlabMrs', () => ({
   useGitlabMrs: (params: { isEnabled: boolean }) => {
     h.enabled.gitlabMrs = params.isEnabled;
     return { ...h.gitlabMrs, refetch: h.refetch.gitlabMrs };

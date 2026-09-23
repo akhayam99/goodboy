@@ -376,7 +376,7 @@ type AppActions = {
     workspaceId: WorkspaceId;
     profile: WorkspaceProfile;
   }): Promise<Workspace>;
-  deleteWorkspace(id: WorkspaceId): Promise<void>;
+  disconnectWorkspace(id: WorkspaceId): Promise<void>;
   mergeWorkspaces(input: {
     sourceWorkspaceIds: ReadonlyArray<WorkspaceId>;
     targetWorkspaceId: WorkspaceId;

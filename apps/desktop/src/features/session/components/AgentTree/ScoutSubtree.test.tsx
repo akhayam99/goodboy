@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as never[],
   agentHasUnread: (agent: Agent, isCurrentlyViewed: boolean): boolean => {
     if (isCurrentlyViewed || agent.status === 'skipped' || !agent.lastFinishedAt) {

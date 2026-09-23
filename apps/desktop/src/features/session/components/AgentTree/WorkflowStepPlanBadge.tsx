@@ -1,12 +1,8 @@
 import type { Agent } from '@goodboy/types';
 import { cn, tintClasses } from '@goodboy/ui';
-import { useAppStore, useSessionPlans } from '../../../../../store';
-import { kindConsumesPlan, type AgentKind } from '../../../../session/agent-kind';
-import {
-  CONCEPT_ICONS,
-  CONCEPT_TONE,
-  ICON_SIZE,
-} from '../../../../../shared/components/conceptIcons';
+import { useAppStore, useSessionPlans } from '../../../../store';
+import { kindConsumesPlan, type AgentKind } from '../../agent-kind';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const planTint = tintClasses(CONCEPT_TONE.plans);
 

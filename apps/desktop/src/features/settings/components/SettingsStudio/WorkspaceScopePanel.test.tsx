@@ -12,7 +12,7 @@ const { state, toastMock } = vi.hoisted(() => ({
   state: {
     loadSetting: vi.fn(async () => null),
     saveSetting: vi.fn(async () => undefined),
-    deleteWorkspace: vi.fn(async () => undefined),
+    disconnectWorkspace: vi.fn(async () => undefined),
     workspaces: [] as ReadonlyArray<{ id: string; name: string; rootPath: string }>,
     renameWorkspace: vi.fn(async () => undefined),
     workspaceOverrides: {} as Record<string, OverrideSettings>,
@@ -81,7 +81,7 @@ const EMPTY: OverrideSettings = {
 beforeEach(() => {
   state.loadSetting = vi.fn(async () => null);
   state.saveSetting = vi.fn(async () => undefined);
-  state.deleteWorkspace = vi.fn(async () => undefined);
+  state.disconnectWorkspace = vi.fn(async () => undefined);
   state.workspaces = [{ id: 'ws-1', name: 'billing', rootPath: '/repos/billing-api' }];
   state.renameWorkspace = vi.fn(async () => undefined);
   state.workspaceOverrides = {};
@@ -239,13 +239,13 @@ describe('WorkspaceScopePanel', () => {
     const requestClose = vi.fn();
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={requestClose} />);
     fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
-    expect(state.deleteWorkspace).not.toHaveBeenCalled();
+    expect(state.disconnectWorkspace).not.toHaveBeenCalled();
 
     const confirm = screen.getByRole('group', { name: 'Disconnect billing?' });
     expect(within(confirm).getByText(/Choose Add workspace with the same folder/)).toBeDefined();
     fireEvent.click(within(confirm).getByRole('button', { name: 'Disconnect' }));
 
-    await waitFor(() => expect(state.deleteWorkspace).toHaveBeenCalledWith('ws-1'));
+    await waitFor(() => expect(state.disconnectWorkspace).toHaveBeenCalledWith('ws-1'));
     await waitFor(() => expect(requestClose).toHaveBeenCalledOnce());
   });
 
@@ -254,7 +254,7 @@ describe('WorkspaceScopePanel', () => {
     fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(state.deleteWorkspace).not.toHaveBeenCalled();
+    expect(state.disconnectWorkspace).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: /disconnect/i })).toBeDefined();
   });
 

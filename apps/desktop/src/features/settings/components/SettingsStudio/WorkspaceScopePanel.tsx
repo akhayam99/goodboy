@@ -47,7 +47,7 @@ type Props = {
 };
 
 export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose }: Props) => {
-  const disconnect = useAppStore((s) => s.deleteWorkspace);
+  const disconnect = useAppStore((s) => s.disconnectWorkspace);
   const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId) ?? null);
   const renameWorkspace = useAppStore((s) => s.renameWorkspace);
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);

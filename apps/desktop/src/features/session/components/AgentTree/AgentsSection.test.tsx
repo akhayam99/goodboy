@@ -28,7 +28,7 @@ const h = vi.hoisted(() => {
   return { state, gate, detachWorkflowFromSession, setPanelSectionExpanded };
 });
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof h.state) => T) => selector(h.state),
   useSessionLoading: () => ({ agents: false, transcript: false }),
   useSessionOpenQuestions: () => [],
@@ -155,7 +155,7 @@ vi.mock('./SectionToggle', () => ({
 vi.mock('./PlanReadySuggestion', () => ({
   PlanReadySuggestion: () => <div data-testid="plan-ready" />,
 }));
-vi.mock('../../../../../features/session/components/CreateAgentPopover', () => ({
+vi.mock('../CreateAgentPopover', () => ({
   CreateAgentPopover: () => <div data-testid="spawn" />,
 }));
 vi.mock('./CollapsedSummary', () => ({
@@ -205,26 +205,25 @@ vi.mock('./ClusterChildRow', () => ({
   ),
 }));
 vi.mock('./WorkflowKillButton', () => ({ WorkflowKillButton: () => null }));
-vi.mock('../../../../scripts/components/ScriptsSection', () => ({
+vi.mock('../../../scripts/components/ScriptsSection', () => ({
   ScriptsSection: () => <div data-testid="scripts" />,
 }));
-vi.mock(
-  '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip',
-  () => ({ GoalAttachmentsStrip: () => null }),
-);
-vi.mock('../../../../../shared/components/DogMascot', () => ({ DogMascot: () => null }));
-vi.mock('../../../../providers/components/CostBadge', () => ({ CostBadge: () => null }));
+vi.mock('../../../context/components/ContextPanel/strips/GoalAttachmentsStrip', () => ({
+  GoalAttachmentsStrip: () => null,
+}));
+vi.mock('../../../../shared/components/DogMascot', () => ({ DogMascot: () => null }));
+vi.mock('../../../providers/components/CostBadge', () => ({ CostBadge: () => null }));
 
-vi.mock('../../../../../features/workflows/components/WorkflowNextStepCta', () => ({
+vi.mock('../../../workflows/components/WorkflowNextStepCta', () => ({
   WorkflowNextStepCta: () => null,
 }));
-vi.mock('../../../../../features/context/openQuestionsGate', () => ({
+vi.mock('../../../context/openQuestionsGate', () => ({
   workflowRunHasOpenQuestions: () => h.gate.hasOpenQuestions,
 }));
-vi.mock('../../../../../features/session/agent-row-format', () => ({
+vi.mock('../../agent-row-format', () => ({
   computeLatestTelemetryByAgentId: () => new Map(),
 }));
-vi.mock('../../../../../features/session/agent-kind', () => ({
+vi.mock('../../agent-kind', () => ({
   kindRouting: () => ({ provider: 'anthropic', model: 'm', effort: 'medium' }),
   classifyAgent: () => 'implementer',
   resolveAgentKind: () => 'implementer',

@@ -15,15 +15,15 @@ import type {
   TelemetryRecord,
   WorkflowRunId,
 } from '@goodboy/types';
-import type { AgentKind } from '../../../../../features/session/agent-kind';
-import { CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import type { AgentKind } from '../../agent-kind';
+import { CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 const storeState = vi.hoisted(() => ({
   plans: [] as ReadonlyArray<PlanWithCount>,
   planConsumptions: {} as Record<PlanId, ReadonlyArray<PlanConsumption>>,
 }));
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../store', () => ({
   agentHasUnread: () => false,
   useAppStore: <T,>(
     selector: (state: { planConsumptions: Record<PlanId, ReadonlyArray<PlanConsumption>> }) => T,

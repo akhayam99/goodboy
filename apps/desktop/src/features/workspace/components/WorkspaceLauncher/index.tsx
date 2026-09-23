@@ -25,7 +25,7 @@ export const WorkspaceLauncher = () => {
   const projects = useAppStore((s) => s.projects);
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const saveSetting = useAppStore((s) => s.saveSetting);
-  const deleteWorkspace = useAppStore((s) => s.deleteWorkspace);
+  const disconnectWorkspace = useAppStore((s) => s.disconnectWorkspace);
   const reopenLast = useAppStore((s) => s.settings[SETTING_REOPEN_LAST] === '1');
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
@@ -55,7 +55,7 @@ export const WorkspaceLauncher = () => {
     if (!disconnectTarget) {
       return;
     }
-    await deleteWorkspace(disconnectTarget.id);
+    await disconnectWorkspace(disconnectTarget.id);
     setDisconnectTarget(null);
   };
 

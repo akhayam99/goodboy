@@ -1,4 +1,4 @@
-import type { GithubIssueGroup } from '../../github/components/GitHubStudio/useGithubIssues';
+import type { GithubIssueGroup } from '../../github/components/PullRequest/useGithubIssues';
 import type { InboxRecord } from '../types';
 
 type Params = { readonly groups: ReadonlyArray<GithubIssueGroup> };

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { Session } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
-import { useAgentStartedToast } from '../../../../../shared/hooks/useAgentStartedToast';
-import { useSessionSuggestions } from '../../../../suggestions';
-import { SuggestionRow } from '../../../../suggestions/components/SuggestionRow';
+import { useAppStore } from '../../../../store';
+import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
+import { useSessionSuggestions } from '../../../suggestions';
+import { SuggestionRow } from '../../../suggestions/components/SuggestionRow';
 
 type Props = {
   task: Session;

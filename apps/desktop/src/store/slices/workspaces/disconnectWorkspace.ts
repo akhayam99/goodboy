@@ -6,7 +6,7 @@ import { invokeTerminalClose } from '../../../features/terminal/terminal';
 import { clearPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 
-export const deleteWorkspace = (set: SetFn, get: GetFn) => {
+export const disconnectWorkspace = (set: SetFn, get: GetFn) => {
   return async (id: WorkspaceId) => {
     const state = get();
     const workspace = state.workspaces.find((w) => w.id === id);

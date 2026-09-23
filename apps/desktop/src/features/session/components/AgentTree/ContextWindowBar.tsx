@@ -2,12 +2,12 @@ import { cn } from '@goodboy/ui';
 import { contextTokensForUsage } from '@goodboy/core';
 import { Gauge } from 'lucide-react';
 import type { ProviderName } from '@goodboy/types';
-import { modelLabel } from '../../../../../features/chat/utils/chat-constants';
-import { formatTokens } from '../../../../../features/session/agent-row-format';
-import { contextUsageTone } from '../../../../../features/session/contextUsageTone';
-import { contextWindowFor } from '../../../../../features/session/contextWindowFor';
-import { ProviderIcon } from '../../../../../features/providers/components/ProviderIcon';
-import { formatInteger } from '../../../../../shared/utils/formatInteger';
+import { modelLabel } from '../../../chat/utils/chat-constants';
+import { formatTokens } from '../../agent-row-format';
+import { contextUsageTone } from '../../contextUsageTone';
+import { contextWindowFor } from '../../contextWindowFor';
+import { ProviderIcon } from '../../../providers/components/ProviderIcon';
+import { formatInteger } from '../../../../shared/utils/formatInteger';
 
 export type ProviderContextUsage = {
   readonly provider: ProviderName;

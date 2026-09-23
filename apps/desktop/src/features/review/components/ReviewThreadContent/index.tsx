@@ -2,9 +2,9 @@ import { ExternalLink } from 'lucide-react';
 import { Avatar, Chip, Tooltip } from '@goodboy/ui';
 import type { CommentThread } from '../../../github/comment-threads';
 import { isBot } from '../../../github/comment-threads';
-import { ThreadBody } from '../../../github/components/GitHubStudio/ThreadBody';
-import { ThreadPathChip } from '../../../github/components/GitHubStudio/ThreadPathChip';
-import { ThreadReplies } from '../../../github/components/GitHubStudio/ThreadReplies';
+import { ThreadBody } from '../../../github/components/PullRequest/ThreadBody';
+import { ThreadPathChip } from '../../../github/components/PullRequest/ThreadPathChip';
+import { ThreadReplies } from '../../../github/components/PullRequest/ThreadReplies';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 

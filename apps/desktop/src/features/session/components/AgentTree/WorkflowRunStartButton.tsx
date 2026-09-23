@@ -1,8 +1,8 @@
 import { AlertTriangle, Play } from 'lucide-react';
 import { CardAction, ConfirmPopover, GhostActionButton } from '@goodboy/ui';
-import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
-import { useStartAnywayConfirm } from '../../../../workflows/useStartAnywayConfirm';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
+import { useStartAnywayConfirm } from '../../../workflows/useStartAnywayConfirm';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly variant: 'sidebar' | 'detail';

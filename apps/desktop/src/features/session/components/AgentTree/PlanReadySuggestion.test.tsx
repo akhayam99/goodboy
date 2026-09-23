@@ -25,18 +25,18 @@ const { state } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
   useSessionOpenQuestions: () => [],
   useSessionPlans: () => state.plans,
 }));
 
-vi.mock('../../../../../shared/hooks/useAgentStartedToast', () => ({
+vi.mock('../../../../shared/hooks/useAgentStartedToast', () => ({
   useAgentStartedToast: () => vi.fn(),
 }));
 
-vi.mock('../../../../suggestions', () => ({
+vi.mock('../../../suggestions', () => ({
   useSessionSuggestions: () => [
     {
       id: 'plan-ready:plan-1',

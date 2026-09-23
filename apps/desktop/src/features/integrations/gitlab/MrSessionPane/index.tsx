@@ -1,6 +1,6 @@
 import { GitMerge } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
-import { MrDetailPanel } from '../GitlabStudio/MrDetailPanel';
+import { MrDetailPanel } from '../MergeRequest/MrDetailPanel';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 
 type Props = {

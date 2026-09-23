@@ -13,7 +13,7 @@ vi.mock('@goodboy/ui', () => ({
   StatusDot: () => null,
 }));
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../store', () => ({
   useAppStore: (selector: (state: Record<string, unknown>) => unknown) =>
     selector({ clusterStartAttempts: {} }),
   agentHasUnread: (agent: Agent, isCurrentlyViewed: boolean): boolean => {

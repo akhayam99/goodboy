@@ -16,19 +16,16 @@ import {
   useAppStore,
   useSessionLoading,
   useSessionOpenQuestions,
-} from '../../../../../store';
-import {
-  resolveWorkflowAdvance,
-  type WorkflowBlockReason,
-} from '../../../../../features/workflows/advanceGate';
-import { viewWorkflowAdvance } from '../../../../../features/workflows/workflowAdvanceView';
-import { WORKFLOW_BLOCK_COPY } from '../../../../../features/workflows/blockCopy';
-import { workflowRunHasOpenQuestions } from '../../../../../features/context/openQuestionsGate';
-import { classifyAgent, type AgentKind } from '../../../../../features/session/agent-kind';
-import { useAgentMetrics } from '../../../../../features/session/hooks/useAgentMetrics';
-import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
+} from '../../../../store';
+import { resolveWorkflowAdvance, type WorkflowBlockReason } from '../../../workflows/advanceGate';
+import { viewWorkflowAdvance } from '../../../workflows/workflowAdvanceView';
+import { WORKFLOW_BLOCK_COPY } from '../../../workflows/blockCopy';
+import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
+import { classifyAgent, type AgentKind } from '../../agent-kind';
+import { useAgentMetrics } from '../../hooks/useAgentMetrics';
+import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { useSessionAgentTree } from './useSessionAgentTree';
-import { workflowKindName } from '../lib';
+import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 
 type Params = {
   readonly task: Session;
