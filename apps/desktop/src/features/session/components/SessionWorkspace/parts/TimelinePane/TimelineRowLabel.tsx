@@ -155,19 +155,11 @@ export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
         className={cn(
           'flex min-w-0 items-center overflow-hidden',
           isStep ? 'text-xs leading-4' : 'text-sm leading-5',
-          emphasis === 'success'
-            ? 'text-success'
-            : emphasis === 'merged'
-              ? 'text-merged'
-              : emphasis === 'danger'
-                ? 'text-danger'
-                : emphasis === 'muted'
-                  ? 'text-muted-foreground'
-                  : item.markerState === 'running' || item.hasUnread
-                    ? 'font-medium text-foreground'
-                    : isStep
-                      ? 'text-foreground'
-                      : 'text-foreground',
+          emphasis === 'muted'
+            ? 'text-muted-foreground'
+            : item.markerState === 'running' || item.hasUnread
+              ? 'font-medium text-foreground'
+              : 'text-foreground',
         )}
       >
         {segments.map((segment, index) =>
