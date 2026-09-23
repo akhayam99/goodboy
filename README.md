@@ -157,7 +157,7 @@ brew install --cask akhayam99/tap/goodboy
 Or take the `.dmg` from the
 [latest release](https://github.com/akhayam99/goodboy/releases/latest) and drop
 Goodboy in Applications. Linux releases ship as AppImage, `.deb` and `.rpm` on
-the same page. Windows needs a source build for now.
+the same page.
 
 <br>
 
@@ -177,8 +177,7 @@ provider does differently.
 </div>
 
 Connect the tools you already work in and agents read from them through the
-[query bridge](./docs/query-bridge.md). Each integration covers the part of its
-service the work needs, not the whole API.
+[query bridge](./docs/query-bridge.md).
 
 <br>
 
@@ -209,17 +208,12 @@ local loop.
 
 <br>
 
-## Documentation and contributing
+## Documentation
 
 Start at the [documentation index](./docs/README.md), which leads to
 [concepts](./docs/concepts.md), [workflows](./docs/workflows.md),
 [providers](./docs/providers.md), the [query bridge](./docs/query-bridge.md)
 and [architecture](./docs/architecture.md).
-
-If something breaks, feels off or is missing,
-[open an issue](https://github.com/akhayam99/goodboy/issues/new). "This feels
-off" is a valid bug report. Before changing code, read
-[AGENTS.md](./AGENTS.md) and [CONVENTIONS.md](./CONVENTIONS.md).
 
 <br>
 
@@ -231,19 +225,22 @@ off" is a valid bug report. Before changing code, read
 
 [Amin Khayam](https://github.com/akhayam99) &nbsp;·&nbsp; [Luca Laudiero](https://github.com/teckperry)
 
+Your face fits here too. Pick an
+[issue](https://github.com/akhayam99/goodboy/issues), open a pull request, and
+read [AGENTS.md](./AGENTS.md) and [CONVENTIONS.md](./CONVENTIONS.md) before you
+start.
+
+<br>
+
+## Support Goodboy
+
+The best support is using it. Run it on real work,
+[open an issue](https://github.com/akhayam99/goodboy/issues/new) when something
+feels off, send a pull request, and leave a star if it earns one.
+
+<br>
+
 ## License
 
-[FSL-1.1-MIT](./LICENSE.md) © Amin Khayam
-
-Goodboy is source-available under the Functional Source License. You can use
-it for anything, at work included, read it, change it and share your changes.
-The one thing it rules out is shipping it, or something built from it, as a
-commercial product that competes with Goodboy. Two years after each version
-is published, that version becomes MIT.
-
-Releases up to v0.3.15 stay under the MIT license they shipped with.
-
-## Trademark
-
-The Goodboy name and logo are not covered by the license. A fork is welcome,
-under its own name and its own logo.
+Source-available under [FSL-1.1-MIT](./LICENSE.md) © Amin Khayam. Free to use,
+at work too, not to be sold as a competing product.

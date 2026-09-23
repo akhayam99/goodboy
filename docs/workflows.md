@@ -89,22 +89,10 @@ truncation with no model involved. The step still completes, the result is
 flagged `degraded`, and a notification offers the retry. Either way the summary
 becomes the next step's carry-forward context.
 
-## Parallel step execution does not exist
+## Steps run in sequence
 
-There is no parallel step execution. The 0.1.x plumbing that hinted at one
-(the `parallel_groups` table and its runtime) was unreachable from any
-authoring surface and was dropped in migration m122. The `parallel_agents`
-override that survives is a different feature: it gates scout fan-out, not
-step parallelism. Do not design against the dropped shape; a future parallel
-feature starts from a decision, not from that residue.
+Steps run one after another. Parallelism lives inside a step: the
+`parallel_agents` override gates scout fan-out.
 
-## Known limits
-
-- **Expected output is null on most existing data.** The backfill migration
-  covered only the seeded example steps.
-- **The step library has no expected output.** The field exists on a
-  workflow's own steps, not on library entries.
-- **One automatic continue, then failure.** A hands-free step that stops
-  without a `step-done` marker gets exactly one nudge, then fails. It is
-  deliberately not a retry loop: a step that cannot end itself twice is a
-  prompt problem, and looping on it spends tokens without converging.
+A hands-free step that stops without a `step-done` marker gets one nudge. If
+it stops again, the step fails and waits for you.

@@ -11,8 +11,8 @@ const FAQS: readonly FaqItem[] = [
     a: 'Goodboy is at its best on a code project, where you get a branch, a diff and a pull request out of every task. Point it at a plain folder and agents still work on it.',
   },
   {
-    q: 'Is it really free, and what is the catch?',
-    a: 'Free and source-available, every feature included from the first launch. No account, no paid tier waiting for you further down.',
+    q: 'Is it really free?',
+    a: 'Yes. Free and source-available, every feature included from the first launch, and no account to create.',
   },
   {
     q: 'Will it cost me anything on top of what I already pay?',
