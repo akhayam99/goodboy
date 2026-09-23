@@ -218,6 +218,8 @@ export const updateAgentStatus = async (
   await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values);
 };
 
+const OPEN_QUESTION_TEXTS_INDEX = 2;
+
 export const purgeAgentForDelete = async ({
   db,
   id,
@@ -225,28 +227,29 @@ export const purgeAgentForDelete = async ({
   readonly db: Database;
   readonly id: AgentId;
 }): Promise<ReadonlyArray<string>> => {
-  await db.exec('BEGIN');
-  try {
-    await db.execute('DELETE FROM messages WHERE agent_id = ?', [id]);
-    await db.execute('DELETE FROM turn_events WHERE agent_id = ?', [id]);
-    const openQuestions = await db.select<{ text: string }>(
-      "SELECT text FROM open_questions WHERE created_by_agent_id = ? AND status = 'open'",
-      [id],
-    );
-    await db.execute(
-      "DELETE FROM open_questions WHERE created_by_agent_id = ? AND status = 'open'",
-      [id],
-    );
-    await db.execute('UPDATE agents SET deleted_at = ?, output_summary = NULL WHERE id = ?', [
-      Date.now(),
-      id,
-    ]);
-    await db.exec('COMMIT');
-    return openQuestions.map((row) => row.text);
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
+  const outcome = await db.transaction({
+    statements: [
+      { sql: 'DELETE FROM messages WHERE agent_id = ?', params: [id] },
+      { sql: 'DELETE FROM turn_events WHERE agent_id = ?', params: [id] },
+      {
+        sql: "SELECT text FROM open_questions WHERE created_by_agent_id = ? AND status = 'open'",
+        params: [id],
+      },
+      {
+        sql: "DELETE FROM open_questions WHERE created_by_agent_id = ? AND status = 'open'",
+        params: [id],
+      },
+      {
+        sql: 'UPDATE agents SET deleted_at = ?, output_summary = NULL WHERE id = ?',
+        params: [Date.now(), id],
+      },
+    ],
+  });
+  if (outcome.status === 'aborted') {
+    return [];
   }
+  const rows = outcome.results[OPEN_QUESTION_TEXTS_INDEX]?.rows ?? [];
+  return rows.flatMap((row) => (typeof row.text === 'string' ? [row.text] : []));
 };
 
 export type AgentConfigUpdate = {

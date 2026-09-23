@@ -21,7 +21,7 @@ import type {
   WorkflowTriggerMode,
 } from '@goodboy/types';
 import { PROVIDER_IDS } from '@goodboy/types';
-import type { Database } from '../client';
+import type { Database, PlainStatement } from '../client';
 import { serializeOrchestratorHintLog, toOrchestratorHintLog } from './orchestrator-hint-log';
 
 export type SessionWorkflowRow = {
@@ -250,6 +250,16 @@ export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
   };
 };
 
+type SessionTouchParams = {
+  readonly sessionId: SessionId;
+  readonly updatedAt: IsoDateTime;
+};
+
+const sessionTouchStatement = ({ sessionId, updatedAt }: SessionTouchParams): PlainStatement => ({
+  sql: 'UPDATE sessions SET updated_at = ? WHERE id = ?',
+  params: [Date.parse(updatedAt), sessionId],
+});
+
 async function bumpSessionUpdatedAt(
   db: Database,
   sessionId: SessionId,
@@ -338,43 +348,25 @@ export const updateWorkflowOrder = async (
   workflowRunIds: ReadonlyArray<WorkflowRunId>,
   updatedAt: IsoDateTime,
 ): Promise<void> => {
-  const existing = await db.select<SessionWorkflowRow>(
-    `SELECT ${SESSION_WORKFLOW_COLS} FROM session_workflows WHERE session_id = ?`,
-    [sessionId],
-  );
-  const existingRunIds = new Set(existing.map((run) => run.workflow_run_id));
-
-  await db.exec('BEGIN');
-  try {
-    if (workflowRunIds.length === 0) {
-      await db.execute('DELETE FROM session_workflows WHERE session_id = ?', [sessionId]);
-    }
-    if (workflowRunIds.length > 0) {
-      const placeholders = workflowRunIds.map(() => '?').join(', ');
-      await db.execute(
-        `DELETE FROM session_workflows
-         WHERE session_id = ? AND workflow_run_id NOT IN (${placeholders})`,
-        [sessionId, ...workflowRunIds],
-      );
-    }
-    for (const [ordinal, runId] of workflowRunIds.entries()) {
-      if (existingRunIds.has(runId) === false) {
-        continue;
-      }
-      await db.execute(
-        'UPDATE session_workflows SET ordinal = ? WHERE workflow_run_id = ? AND session_id = ?',
-        [ordinal, runId, sessionId],
-      );
-    }
-    await db.execute('UPDATE sessions SET updated_at = ? WHERE id = ?', [
-      Date.parse(updatedAt),
-      sessionId,
-    ]);
-    await db.exec('COMMIT');
-  } catch (err) {
-    await db.exec('ROLLBACK');
-    throw err;
-  }
+  const placeholders = workflowRunIds.map(() => '?').join(', ');
+  const prune: PlainStatement =
+    workflowRunIds.length === 0
+      ? { sql: 'DELETE FROM session_workflows WHERE session_id = ?', params: [sessionId] }
+      : {
+          sql: `DELETE FROM session_workflows
+           WHERE session_id = ? AND workflow_run_id NOT IN (${placeholders})`,
+          params: [sessionId, ...workflowRunIds],
+        };
+  await db.transaction({
+    statements: [
+      prune,
+      ...workflowRunIds.map((runId, ordinal) => ({
+        sql: 'UPDATE session_workflows SET ordinal = ? WHERE workflow_run_id = ? AND session_id = ?',
+        params: [ordinal, runId, sessionId],
+      })),
+      sessionTouchStatement({ sessionId, updatedAt }),
+    ],
+  });
 };
 
 export const discardWorkflowInSession = async (
@@ -384,24 +376,21 @@ export const discardWorkflowInSession = async (
   discardedAt: IsoDateTime,
 ): Promise<void> => {
   const updatedAt = Date.parse(discardedAt);
-  await db.exec('BEGIN');
-  try {
-    await db.execute('UPDATE session_workflows SET discarded_at = ? WHERE workflow_run_id = ?', [
-      updatedAt,
-      workflowRunId,
-    ]);
-    await db.execute(
-      `UPDATE session_artifacts
-       SET status = 'superseded', updated_at = ?
-       WHERE kind = 'plan' AND workflow_run_id = ? AND status = 'active'`,
-      [updatedAt, workflowRunId],
-    );
-    await bumpSessionUpdatedAt(db, sessionId, discardedAt);
-    await db.exec('COMMIT');
-  } catch (err) {
-    await db.exec('ROLLBACK');
-    throw err;
-  }
+  await db.transaction({
+    statements: [
+      {
+        sql: 'UPDATE session_workflows SET discarded_at = ? WHERE workflow_run_id = ?',
+        params: [updatedAt, workflowRunId],
+      },
+      {
+        sql: `UPDATE session_artifacts
+         SET status = 'superseded', updated_at = ?
+         WHERE kind = 'plan' AND workflow_run_id = ? AND status = 'active'`,
+        params: [updatedAt, workflowRunId],
+      },
+      sessionTouchStatement({ sessionId, updatedAt: discardedAt }),
+    ],
+  });
 };
 
 export const restoreWorkflowInSession = async (
@@ -410,23 +399,21 @@ export const restoreWorkflowInSession = async (
   workflowRunId: WorkflowRunId,
   restoredAt: IsoDateTime,
 ): Promise<void> => {
-  await db.exec('BEGIN');
-  try {
-    await db.execute('UPDATE session_workflows SET discarded_at = NULL WHERE workflow_run_id = ?', [
-      workflowRunId,
-    ]);
-    await db.execute(
-      `UPDATE session_artifacts
-       SET status = 'active', updated_at = ?
-       WHERE kind = 'plan' AND workflow_run_id = ? AND status = 'superseded'`,
-      [Date.parse(restoredAt), workflowRunId],
-    );
-    await bumpSessionUpdatedAt(db, sessionId, restoredAt);
-    await db.exec('COMMIT');
-  } catch (err) {
-    await db.exec('ROLLBACK');
-    throw err;
-  }
+  await db.transaction({
+    statements: [
+      {
+        sql: 'UPDATE session_workflows SET discarded_at = NULL WHERE workflow_run_id = ?',
+        params: [workflowRunId],
+      },
+      {
+        sql: `UPDATE session_artifacts
+         SET status = 'active', updated_at = ?
+         WHERE kind = 'plan' AND workflow_run_id = ? AND status = 'superseded'`,
+        params: [Date.parse(restoredAt), workflowRunId],
+      },
+      sessionTouchStatement({ sessionId, updatedAt: restoredAt }),
+    ],
+  });
 };
 
 export const updateSessionWorkflowStep = async (
@@ -556,24 +543,18 @@ export const repointWorkflowRunTemplate = async ({
   workflowId,
   stepRepoints,
 }: RepointWorkflowRunParams): Promise<void> => {
-  await db.exec('BEGIN');
-  try {
-    await db.execute('UPDATE session_workflows SET workflow_id = ? WHERE workflow_run_id = ?', [
-      workflowId,
-      workflowRunId,
-    ]);
-    for (const repoint of stepRepoints) {
-      await db.execute('UPDATE agents SET step_id = ? WHERE workflow_run_id = ? AND step_id = ?', [
-        repoint.toStepId,
-        workflowRunId,
-        repoint.fromStepId,
-      ]);
-    }
-    await db.exec('COMMIT');
-  } catch (err) {
-    await db.exec('ROLLBACK');
-    throw err;
-  }
+  await db.transaction({
+    statements: [
+      {
+        sql: 'UPDATE session_workflows SET workflow_id = ? WHERE workflow_run_id = ?',
+        params: [workflowId, workflowRunId],
+      },
+      ...stepRepoints.map((repoint) => ({
+        sql: 'UPDATE agents SET step_id = ? WHERE workflow_run_id = ? AND step_id = ?',
+        params: [repoint.toStepId, workflowRunId, repoint.fromStepId],
+      })),
+    ],
+  });
 };
 
 export const updateSessionWorkflowTriggerMode = async (

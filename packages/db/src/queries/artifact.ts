@@ -338,6 +338,8 @@ export const listArtifactsForSession = async ({
   return rows.map(toDomain);
 };
 
+const ARTIFACT_GONE = 'ARTIFACT_GONE';
+
 export const updateArtifactSource = async ({
   db,
   input,
@@ -348,20 +350,29 @@ export const updateArtifactSource = async ({
   }
   const metadata = metadataForWrite({ kind: existing.kind, value: input.metadata });
   const now = Date.now();
-  await db.exec('BEGIN');
-  try {
-    await db.execute(
-      `UPDATE session_artifacts
-       SET title = ?, source_format = ?, source_text = ?, metadata_json = ?,
-           revision = revision + 1, updated_at = ?
-       WHERE id = ?`,
-      [input.title, input.sourceFormat, input.sourceText, JSON.stringify(metadata), now, input.id],
-    );
-    await db.execute('DELETE FROM artifact_renditions WHERE artifact_id = ?', [input.id]);
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
+  const outcome = await db.transaction({
+    statements: [
+      {
+        sql: `UPDATE session_artifacts
+         SET title = ?, source_format = ?, source_text = ?, metadata_json = ?,
+             revision = revision + 1, updated_at = ?
+         WHERE id = ?`,
+        params: [
+          input.title,
+          input.sourceFormat,
+          input.sourceText,
+          JSON.stringify(metadata),
+          now,
+          input.id,
+        ],
+        abortWhen: 'noChanges',
+        abortCode: ARTIFACT_GONE,
+      },
+      { sql: 'DELETE FROM artifact_renditions WHERE artifact_id = ?', params: [input.id] },
+    ],
+  });
+  if (outcome.status === 'aborted') {
+    throw new Error(`Artifact update failed: ${input.id}`);
   }
   const artifact = await selectArtifact({ db, artifactId: input.id });
   if (artifact === null) {

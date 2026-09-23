@@ -4,6 +4,11 @@ import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import type { Database } from '../client';
 import { upsertResolveThread } from './resolve-thread';
 import {
+  finalizeResolveCandidateIntegration,
+  getResolveCandidate,
+  insertResolveCandidate,
+} from './resolve-candidate';
+import {
   deferResolveQueueItem,
   insertResolveQueueItem,
   listResolveQueueItems,
@@ -164,5 +169,74 @@ describe('resolve queue item queries', () => {
     const [row] = await listResolveQueueItems({ db, sessionId });
     expect(row?.item.id).toBe(item.id);
     expect(row?.item.supersededAt).toBeNull();
+  });
+});
+
+describe('resolve candidate integration', () => {
+  const insertCandidate = async (): Promise<void> =>
+    insertResolveCandidate({
+      db,
+      candidate: {
+        id: 'candidate',
+        sessionId,
+        revision: 1,
+        baseSha: 'base',
+        candidateSha: 'head',
+        worktreePath: '/tmp/candidate',
+        mountTarget: null,
+        state: 'ready',
+        integratedSha: null,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    });
+
+  it('accepts every covered item and marks the candidate integrated together', async () => {
+    await insertCandidate();
+
+    await finalizeResolveCandidateIntegration({
+      db,
+      candidateId: 'candidate',
+      integratedSha: 'merged',
+      approvals: [{ queueItemId: 'item', revision: 2, replyHash: 'hash' }],
+    });
+
+    expect((await getResolveCandidate({ db, candidateId: 'candidate' }))?.state).toBe('integrated');
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item).toMatchObject({
+      approvalState: 'accepted',
+      integratedSha: 'merged',
+    });
+  });
+
+  it('refuses a stale item revision and writes nothing', async () => {
+    await insertCandidate();
+
+    await expect(
+      finalizeResolveCandidateIntegration({
+        db,
+        candidateId: 'candidate',
+        integratedSha: 'merged',
+        approvals: [{ queueItemId: 'item', revision: 1, replyHash: 'hash' }],
+      }),
+    ).rejects.toThrow('Candidate covers an item whose revision is stale');
+    expect((await getResolveCandidate({ db, candidateId: 'candidate' }))?.state).toBe('ready');
+  });
+
+  it('refuses a candidate that is no longer ready and rolls back the approvals', async () => {
+    await insertCandidate();
+    await db.execute("UPDATE resolve_candidates SET state = 'stale' WHERE id = 'candidate'");
+
+    await expect(
+      finalizeResolveCandidateIntegration({
+        db,
+        candidateId: 'candidate',
+        integratedSha: 'merged',
+        approvals: [{ queueItemId: 'item', revision: 2, replyHash: 'hash' }],
+      }),
+    ).rejects.toThrow('Candidate is no longer ready');
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item).toMatchObject({
+      approvalState: 'none',
+      integratedSha: null,
+    });
   });
 });

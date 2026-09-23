@@ -437,15 +437,12 @@ export const renameSession = async (
 };
 
 export const deleteSession = async (db: Database, id: SessionId): Promise<void> => {
-  await db.exec('BEGIN IMMEDIATE');
-  try {
-    await db.execute('UPDATE sessions SET active_mount_id = NULL WHERE id = ?', [id]);
-    await db.execute('DELETE FROM sessions WHERE id = ?', [id]);
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
-  }
+  await db.transaction({
+    statements: [
+      { sql: 'UPDATE sessions SET active_mount_id = NULL WHERE id = ?', params: [id] },
+      { sql: 'DELETE FROM sessions WHERE id = ?', params: [id] },
+    ],
+  });
 };
 
 export const purgeSessionForDelete = async ({
@@ -455,32 +452,28 @@ export const purgeSessionForDelete = async ({
   readonly db: Database;
   readonly id: SessionId;
 }): Promise<void> => {
-  await db.exec('BEGIN');
-  try {
-    await db.execute('DELETE FROM messages WHERE session_id = ?', [id]);
-    await db.execute('DELETE FROM turn_events WHERE session_id = ?', [id]);
-    await db.execute('DELETE FROM file_versions WHERE session_id = ?', [id]);
-    await db.execute('DELETE FROM context_slots WHERE session_id = ?', [id]);
-    await db.execute('DELETE FROM context_slot_history WHERE session_id = ?', [id]);
-    await db.execute(
-      `DELETE FROM goal_attachments
-       WHERE session_id = ?
-          OR workflow_run_id IN (
-            SELECT workflow_run_id FROM session_workflows WHERE session_id = ?
-          )`,
-      [id, id],
-    );
-    const now = Date.now();
-    await db.execute('UPDATE sessions SET deleted_at = ?, updated_at = ? WHERE id = ?', [
-      now,
-      now,
-      id,
-    ]);
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
-  }
+  const now = Date.now();
+  await db.transaction({
+    statements: [
+      { sql: 'DELETE FROM messages WHERE session_id = ?', params: [id] },
+      { sql: 'DELETE FROM turn_events WHERE session_id = ?', params: [id] },
+      { sql: 'DELETE FROM file_versions WHERE session_id = ?', params: [id] },
+      { sql: 'DELETE FROM context_slots WHERE session_id = ?', params: [id] },
+      { sql: 'DELETE FROM context_slot_history WHERE session_id = ?', params: [id] },
+      {
+        sql: `DELETE FROM goal_attachments
+         WHERE session_id = ?
+            OR workflow_run_id IN (
+              SELECT workflow_run_id FROM session_workflows WHERE session_id = ?
+            )`,
+        params: [id, id],
+      },
+      {
+        sql: 'UPDATE sessions SET deleted_at = ?, updated_at = ? WHERE id = ?',
+        params: [now, now, id],
+      },
+    ],
+  });
 };
 
 export const archiveSession = async (db: Database, id: SessionId): Promise<void> => {
