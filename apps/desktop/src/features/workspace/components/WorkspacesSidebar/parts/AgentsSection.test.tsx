@@ -227,7 +227,6 @@ vi.mock('../../../../../features/session/agent-row-format', () => ({
 vi.mock('../../../../../features/session/agent-kind', () => ({
   kindRouting: () => ({ provider: 'anthropic', model: 'm', effort: 'medium' }),
   classifyAgent: () => 'implementer',
-  inferAgentKindFromName: () => 'implementer',
   resolveAgentKind: () => 'implementer',
   KIND_TO_ROLE: { implementer: 'implementer' },
   isRightSizedKind: () => false,

@@ -188,6 +188,19 @@ pick it when you start the agent.
 - **PR reviewer** opens a session that reviews someone else's pull request
 - **Resolve** starts from the **Review** lens and fixes review comments
 
+A kind is worked out in the same order on every screen:
+
+- A started agent (`classifyAgent`): the kind override, then the saved kind
+  (old role names such as `investigator` map to their kind), then the agent
+  name
+- A workflow step (`classifyStep`): the step role, then the step name
+- An agent not saved yet (`resolveAgentKind`): the override, then the name,
+  then the first user message
+
+Only those three functions guess from a name, so no screen can pick a kind its
+own way. `AGENT_KIND_META` in `apps/desktop/src/features/session/agent-kind.ts`
+lists every kind, and `visibleAgentKinds` decides which ones the menu offers.
+
 The code name behind each label is in [Under the hood](#under-the-hood).
 
 ## Workflows

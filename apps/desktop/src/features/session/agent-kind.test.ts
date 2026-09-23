@@ -11,7 +11,6 @@ import {
   agentKindPalette,
   classifyAgent,
   classifyStep,
-  inferAgentKindFromName,
   isStandaloneAgent,
   kindConsumesPlan,
   kindForRole,
@@ -559,7 +558,7 @@ describe('classifyAgent', () => {
   });
 });
 
-describe('inferAgentKindFromName', () => {
+describe('name inference through classifyAgent', () => {
   it.each([
     ['Scout', 'scout'],
     ['Explore', 'scout'],
@@ -582,7 +581,8 @@ describe('inferAgentKindFromName', () => {
     ['Resolver', 'resolver'],
     ['agent 1', 'generic'],
   ] as [string, AgentKind][])('name %s → %s', (name, expected) => {
-    expect(inferAgentKindFromName(name)).toBe(expected);
+    expect(classifyAgent({ agent: { name }, override: null })).toBe(expected);
+    expect(classifyStep({ step: { name } })).toBe(expected);
   });
 });
 

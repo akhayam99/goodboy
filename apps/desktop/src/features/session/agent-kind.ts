@@ -334,7 +334,7 @@ export const classifyStep = ({ step }: ClassifyStepParams): AgentKind => {
   if (step.role != null) {
     return kindForRole({ role: step.role });
   }
-  return inferAgentKindFromName(step.name);
+  return inferAgentKindFromName({ name: step.name });
 };
 
 export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {
@@ -463,7 +463,11 @@ export const visibleAgentKinds = (): ReadonlyArray<AgentKind> =>
       ROLE_REGISTRY[KIND_TO_ROLE[kind]].pickerEligible,
   ).sort((left, right) => AGENT_KIND_META[left].label.localeCompare(AGENT_KIND_META[right].label));
 
-export const inferAgentKindFromName = (name: string): AgentKind => {
+type InferAgentKindFromNameParams = {
+  readonly name: string;
+};
+
+const inferAgentKindFromName = ({ name }: InferAgentKindFromNameParams): AgentKind => {
   const lower = name.toLowerCase();
   if (/^resolve\b|: resolve|resolve(?:r|s|d)?\b/.test(lower)) {
     return 'resolver';
@@ -513,7 +517,7 @@ export const classifyAgent = ({ agent, override }: ClassifyAgentParams): AgentKi
     }
     return presentationKeyForRole({ role: agent.kind });
   }
-  return inferAgentKindFromName(agent.name);
+  return inferAgentKindFromName({ name: agent.name });
 };
 
 type AgentParams = {
@@ -555,7 +559,7 @@ export const resolveAgentKind = ({
     }
     return presentationKeyForRole({ role: override });
   }
-  const fromName = inferAgentKindFromName(name);
+  const fromName = inferAgentKindFromName({ name });
   if (fromName !== 'generic') {
     return fromName;
   }
