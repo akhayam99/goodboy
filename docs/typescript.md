@@ -1,11 +1,10 @@
 # TypeScript conventions
 
-> **Read this when** writing TypeScript and you need the index into the
-> cluster-specific rule for what you're touching. **Not for** file placement
-> (see `docs/file-system.md`).
+> **Read this when** you write TypeScript and need the right rule for what
+> you're touching. **Not for** file placement (see `docs/file-system.md`).
 
-How we write TypeScript across the monorepo. These are rules, not suggestions.
-Each cluster is its own file under `typescript/`.
+This is how we write TypeScript across the monorepo. These are rules, not
+suggestions. Each topic below has its own file under `typescript/`.
 
 - [Data & types](typescript/data.md): `type` never `interface`, intersection over `extends`, `satisfies` over `as`, exhaustiveness with `never`, discriminated unions, branded IDs.
 - [Components & exports](typescript/components.md): `export const`, one export per file, React component patterns (`ref` as prop, no `forwardRef`, no `React.FC`), `Props`/`Params` object parameters, no untyped prop spreading.
