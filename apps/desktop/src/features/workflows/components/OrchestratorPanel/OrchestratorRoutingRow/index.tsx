@@ -4,9 +4,9 @@ import {
   modelIdForSelection,
   resolveStoredModelSelection,
   resolveTaskModel,
+  clampEffortForModel,
 } from '@goodboy/core';
 import type { EffortLevel, ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
-import { clampEffort, modelEffortLevels } from '../../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { useAppStore } from '../../../../../store/store';
 import { selectResolvedSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
@@ -40,9 +40,6 @@ const providerModelId = ({ provider, model }: ProviderModelParams): string => {
     ? model
     : modelIdForSelection({ provider, selection: stored.selection });
 };
-
-const effortForModel = (model: string, requested: EffortLevel): EffortLevel | null =>
-  modelEffortLevels(model) == null ? null : clampEffort(model, requested);
 
 export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
   const session = useAppStore((state) =>
@@ -126,10 +123,10 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
         model={model}
         effort={{
           editable: true,
-          value: effortForModel(effortModel, effortValue) ?? effortValue,
+          value: clampEffortForModel({ model: effortModel, effort: effortValue }) ?? effortValue,
           onChange: (effort) => {
             const nextModel = pendingModel.current;
-            const applied = effortForModel(nextModel, effort);
+            const applied = clampEffortForModel({ model: nextModel, effort });
             apply({
               providerId: pendingProvider.current,
               model: nextModel,
@@ -158,7 +155,10 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
             void setWorkflowOrchestratorRouting(sessionId, run.id, null);
             return;
           }
-          const carried = pinned?.effort == null ? null : effortForModel(nextModel, pinned.effort);
+          const carried =
+            pinned?.effort == null
+              ? null
+              : clampEffortForModel({ model: nextModel, effort: pinned.effort });
           apply({
             providerId: pendingProvider.current,
             model: nextModel,

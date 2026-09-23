@@ -1,9 +1,8 @@
 import { Bot } from 'lucide-react';
 import { Textarea, cn, tintClasses, Eyebrow } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
-import { getDefaultTurnModel } from '@goodboy/core';
+import { getDefaultTurnModel, clampEffortForModel } from '@goodboy/core';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { clampEffort } from '../../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { QUESTION_DELEGATE_COPY } from '../../../questionDelegate';
 import type { DelegateRouting } from '../useOpenQuestions';
@@ -40,7 +39,11 @@ export const DelegateAnswerPanel = ({
       return;
     }
     const model = getDefaultTurnModel({ id: provider });
-    onRouting({ provider, model, effort: clampEffort(model, routing.effort) });
+    onRouting({
+      provider,
+      model,
+      effort: clampEffortForModel({ model, effort: routing.effort }) ?? routing.effort,
+    });
   };
 
   return (
@@ -111,7 +114,11 @@ export const DelegateAnswerPanel = ({
           disabled={false}
           onProvider={onProvider}
           onModel={(model) =>
-            onRouting({ ...routing, model, effort: clampEffort(model, routing.effort) })
+            onRouting({
+              ...routing,
+              model,
+              effort: clampEffortForModel({ model, effort: routing.effort }) ?? routing.effort,
+            })
           }
         />
       </div>

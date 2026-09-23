@@ -7,9 +7,8 @@ import type {
 } from '@goodboy/types';
 import { devWarn } from '../dev-log';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
-import { clampEffort } from './clampEffort';
+import { clampEffortForModel } from './clampEffortForModel';
 import { getCheapModel, getMidModel } from './cli-defaults';
-import { getModelDescriptor } from './model-display';
 import { resolvedStoredModelId } from './resolvedStoredModelId';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
 
@@ -26,11 +25,7 @@ const automaticEffort = ({ task, model }: EffortParams): EffortLevel | null => {
   if (AGENT_PRESELECT_TASKS.has(task)) {
     return null;
   }
-  const levels = getModelDescriptor(model)?.effort ?? [];
-  if (levels.length === 0) {
-    return null;
-  }
-  return clampEffort({ requested: AUTOMATIC_EFFORT, available: levels });
+  return clampEffortForModel({ model, effort: AUTOMATIC_EFFORT });
 };
 
 type AutomaticParams = {

@@ -221,6 +221,7 @@ export { remapModelSelection } from './providers/remapModelSelection';
 export { resolveCursorCombo } from './providers/cursorCombo';
 export { modelAxes } from './providers/modelAxes';
 export { modelHasEffortAxis } from './providers/modelHasEffortAxis';
+export { clampEffortForModel, modelEffortLevels } from './providers/clampEffortForModel';
 export { resolveModelArgs } from './providers/resolveModelArgs';
 export {
   PROVIDER_ARG_FLAGS,

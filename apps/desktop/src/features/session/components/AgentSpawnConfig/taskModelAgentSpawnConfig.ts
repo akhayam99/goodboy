@@ -1,6 +1,5 @@
-import { resolveTaskModel } from '@goodboy/core';
+import { resolveTaskModel, clampEffortForModel } from '@goodboy/core';
 import type { AuxTaskId, ProviderId, TaskModelPreferences } from '@goodboy/types';
-import { clampEffort } from '../../../chat/utils/chat-constants';
 import type { AgentSpawnConfigValue } from './AgentSpawnConfigValue';
 import { DEFAULT_AGENT_SPAWN_CONFIG } from './defaultAgentSpawnConfig';
 
@@ -23,10 +22,12 @@ export const taskModelAgentSpawnConfig = ({
     workspaceDefaultProviderId,
     sessionDefaultProviderId,
   });
+  const requestedEffort = taskModel.effort ?? DEFAULT_AGENT_SPAWN_CONFIG.effort;
   return {
     ...DEFAULT_AGENT_SPAWN_CONFIG,
     provider: taskModel.providerId,
     model: taskModel.model,
-    effort: clampEffort(taskModel.model, taskModel.effort ?? DEFAULT_AGENT_SPAWN_CONFIG.effort),
+    effort:
+      clampEffortForModel({ model: taskModel.model, effort: requestedEffort }) ?? requestedEffort,
   };
 };

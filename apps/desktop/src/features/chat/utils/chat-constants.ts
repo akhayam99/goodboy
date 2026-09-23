@@ -1,5 +1,10 @@
 import type { EffortLevel, ModelCostTier, ModelFamily, ProviderId } from '@goodboy/types';
-import { getModelDescriptor, getProviderModelPrice } from '@goodboy/core';
+import {
+  clampEffortForModel,
+  getModelDescriptor,
+  getProviderModelPrice,
+  modelEffortLevels as coreModelEffortLevels,
+} from '@goodboy/core';
 
 export const PROVIDER_LABEL: Record<ProviderId, string> = {
   anthropic: 'Claude',
@@ -14,47 +19,11 @@ export const PROVIDER_LABEL: Record<ProviderId, string> = {
 export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 export type { EffortLevel } from '@goodboy/types';
 
-const SONNET_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high'];
-const OPUS_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high', 'xhigh', 'max'];
-const CODEX_EFFORT: ReadonlyArray<EffortLevel> = ['minimal', 'low', 'medium', 'high'];
+export const modelEffortLevels = (model: string): ReadonlyArray<EffortLevel> | null =>
+  coreModelEffortLevels({ model });
 
-export const modelEffortLevels = (model: string): ReadonlyArray<EffortLevel> | null => {
-  const descriptor = getModelDescriptor(model);
-  if (descriptor != null) {
-    return descriptor.effort != null && descriptor.effort.length > 0 ? descriptor.effort : null;
-  }
-  if (/claude-opus/i.test(model)) {
-    return OPUS_EFFORT;
-  }
-  if (/claude-sonnet/i.test(model)) {
-    return SONNET_EFFORT;
-  }
-  if (/gpt|codex/i.test(model)) {
-    return CODEX_EFFORT;
-  }
-  return null;
-};
-
-export const clampEffort = (model: string, effort: EffortLevel): EffortLevel => {
-  const levels = modelEffortLevels(model);
-  if (levels == null || levels.includes(effort)) {
-    return effort;
-  }
-  const requestedIndex = EFFORT_LEVELS.indexOf(effort);
-  for (let index = requestedIndex - 1; index >= 0; index -= 1) {
-    const candidate = EFFORT_LEVELS[index];
-    if (candidate != null && levels.includes(candidate)) {
-      return candidate;
-    }
-  }
-  for (let index = requestedIndex + 1; index < EFFORT_LEVELS.length; index += 1) {
-    const candidate = EFFORT_LEVELS[index];
-    if (candidate != null && levels.includes(candidate)) {
-      return candidate;
-    }
-  }
-  return effort;
-};
+export const clampEffort = (model: string, effort: EffortLevel): EffortLevel =>
+  clampEffortForModel({ model, effort }) ?? effort;
 
 export const EFFORT_LABEL: Record<EffortLevel, string> = {
   minimal: 'Minimal',

@@ -1,9 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { resolveTaskModel } from '@goodboy/core';
+import { resolveTaskModel, clampEffortForModel } from '@goodboy/core';
 import type { Agent, OpenQuestion, ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { clampEffort } from '../../../chat/utils/chat-constants';
 import {
   delegateRowState,
   latestQuestionDelegate,
@@ -72,10 +71,12 @@ export const useQuestionDelegateControls = ({
       workspaceDefaultProviderId: null,
       sessionDefaultProviderId: sessionProvider,
     });
+    const requestedEffort = resolved.effort ?? 'medium';
     return {
       provider: resolved.providerId,
       model: resolved.model,
-      effort: clampEffort(resolved.model, resolved.effort ?? 'medium'),
+      effort:
+        clampEffortForModel({ model: resolved.model, effort: requestedEffort }) ?? requestedEffort,
     };
   }, [sessionProvider, taskModels]);
 

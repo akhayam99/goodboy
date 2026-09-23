@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { getDefaultTurnModel } from '@goodboy/core';
+import { getDefaultTurnModel, clampEffortForModel } from '@goodboy/core';
 import {
   AnchoredPopover,
   Button,
@@ -14,12 +14,7 @@ import {
 } from '@goodboy/ui';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import {
-  EFFORT_LABEL,
-  PROVIDER_LABEL,
-  clampEffort,
-  modelLabel,
-} from '../../../chat/utils/chat-constants';
+import { EFFORT_LABEL, PROVIDER_LABEL, modelLabel } from '../../../chat/utils/chat-constants';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import {
@@ -199,7 +194,8 @@ export const CreateAgentPopover = ({
                 setRouting({
                   provider,
                   model,
-                  effort: clampEffort(model, effective.effort),
+                  effort:
+                    clampEffortForModel({ model, effort: effective.effort }) ?? effective.effort,
                 });
               }}
               onPickModel={(model, effort) => {

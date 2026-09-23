@@ -1,11 +1,10 @@
 import { Tooltip, cn } from '@goodboy/ui';
 import type { ProviderId, EffortLevel } from '@goodboy/types';
-import { getModelProvider, modelCatalogKey } from '@goodboy/core';
+import { getModelProvider, modelCatalogKey, clampEffortForModel } from '@goodboy/core';
 import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
 import {
   EFFORT_LABEL,
   PROVIDER_LABEL,
-  clampEffort,
   modelLabel,
 } from '../../../features/chat/utils/chat-constants';
 
@@ -93,7 +92,10 @@ export const RoutingBadge = ({
   const providerLabel = resolvedProvider != null ? PROVIDER_LABEL[resolvedProvider] : named;
   const Glyph = resolvedProvider != null ? PROVIDER_BRAND[resolvedProvider].icon : null;
   const level = effort != null && effort in EFFORT_LABEL ? (effort as EffortLevel) : null;
-  const resolvedEffort = model != null && level != null ? clampEffort(model, level) : level;
+  const resolvedEffort =
+    model != null && level != null
+      ? (clampEffortForModel({ model, effort: level }) ?? level)
+      : level;
   const glyphSize = variant === 'full' ? 12 : 11;
   const plannedModel = planned?.model ?? null;
   const plannedProvider = planned?.provider ?? null;

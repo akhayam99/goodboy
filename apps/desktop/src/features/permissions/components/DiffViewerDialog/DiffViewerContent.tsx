@@ -11,7 +11,7 @@ import {
   Skeleton,
   Tooltip,
 } from '@goodboy/ui';
-import { getDefaultTurnModel, parseUnifiedDiff } from '@goodboy/core';
+import { getDefaultTurnModel, parseUnifiedDiff, clampEffortForModel } from '@goodboy/core';
 import type {
   BranchCommit,
   DiffComment,
@@ -41,7 +41,6 @@ import { kindRouting, type AgentKindRouting } from '../../../../features/session
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { useRebaseAgent } from '../../../../features/session/hooks/useRebaseAgent';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
-import { clampEffort } from '../../../../features/chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { STORAGE_KEYS, STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -1087,14 +1086,18 @@ export const DiffViewerContent = ({
                 setResolverRouting({
                   provider: next,
                   model,
-                  effort: clampEffort(model, resolverRouting.effort),
+                  effort:
+                    clampEffortForModel({ model, effort: resolverRouting.effort }) ??
+                    resolverRouting.effort,
                 });
               }}
               onModel={(model) =>
                 setResolverRouting({
                   ...resolverRouting,
                   model,
-                  effort: clampEffort(model, resolverRouting.effort),
+                  effort:
+                    clampEffortForModel({ model, effort: resolverRouting.effort }) ??
+                    resolverRouting.effort,
                 })
               }
             />

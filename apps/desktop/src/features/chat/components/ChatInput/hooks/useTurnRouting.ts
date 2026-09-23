@@ -8,13 +8,13 @@ import {
   resolveModelForProvider,
   resolveStoredModelSelection,
   resolvedStoredModelId,
+  clampEffortForModel,
 } from '@goodboy/core';
 import { useAppStore } from '../../../../../store';
 import { agentPinApplies } from '../../../../../store/slices/turn/agentPinApplies';
 import { agentReferenceRouting } from '../../../../../store/slices/turn/agentReferenceRouting';
 import { stepConfigForAgent } from '../../../../../store/slices/turn/stepConfigForAgent';
 import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
-import { clampEffort } from '../../../utils/chat-constants';
 import { asEffortLevel, asProvider } from '../lib';
 import { resolveSessionSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 
@@ -148,7 +148,7 @@ export const useTurnRouting = ({ session }: Params) => {
     provider: effectiveProvider,
     modelId: effectiveStoredId,
   });
-  const effectiveEffort = clampEffort(effectiveModel, effort);
+  const effectiveEffort = clampEffortForModel({ model: effectiveModel, effort }) ?? effort;
   const effectiveSelection = useMemo(() => {
     const stored = resolveStoredModelSelection({
       provider: effectiveProvider,
@@ -262,7 +262,7 @@ export const useTurnRouting = ({ session }: Params) => {
 
   const realignEffort = useCallback(
     (model: string) => {
-      const clamped = clampEffort(model, effort);
+      const clamped = clampEffortForModel({ model, effort }) ?? effort;
       if (clamped === effort) {
         return;
       }
@@ -324,7 +324,8 @@ export const useTurnRouting = ({ session }: Params) => {
     setIsPicked(false);
     setSelectedProviderState(referenceProvider);
     setSelectedModelState(referenceModel);
-    const alignedEffort = clampEffort(referenceModel, referenceEffort);
+    const alignedEffort =
+      clampEffortForModel({ model: referenceModel, effort: referenceEffort }) ?? referenceEffort;
     setEffortState(alignedEffort);
     void storeSetAgentConfig(session.id, selectedAgentId, {
       providerOverride: referenceProvider,
