@@ -164,6 +164,19 @@ describe('loadSessionMounts', () => {
     expect(h.listMountOperations).toHaveBeenCalledTimes(2);
   });
 
+  it('renders a worktree git reported missing as missing when the row write loses', async () => {
+    const state = makeState();
+    h.mounts.set('mount-lost', mountFixture({ id: 'mount-lost', worktreePath: GONE_PATH }));
+    h.updateSessionMountLifecycle.mockImplementation(async () => false);
+
+    const views = await load(state);
+
+    expect(views.find((view) => view.id === 'mount-lost')).toMatchObject({
+      isAttached: false,
+      diskState: 'missing',
+    });
+  });
+
   it('never republishes a mount that hydration could not find on disk', async () => {
     const state = makeState();
     h.mounts.set(

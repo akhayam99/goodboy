@@ -136,7 +136,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       const invalidActiveMountSessionIds = new Set<string>();
       const repairedWriteDestinations = new Map<string, RepairedDestination>();
       for (const s of sessions) {
-        const rows = await verifyAvailableWorktrees({
+        const { available: rows } = await verifyAvailableWorktrees({
           sessionId: s.id,
           candidates: worktreesBySession.get(s.id) ?? [],
           projects,

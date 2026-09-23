@@ -40,11 +40,13 @@ before projecting it as writable. Disk states:
 
 - `present`: the worktree was seen registered.
 - `missing`: git reported the path gone. The row detaches and keeps the last
-  path.
+  path; when that write loses a revision race, the rendered view still says
+  `missing`, because git's answer does not depend on the row.
 - `removed`: a Goodboy action removed the directory.
 - `unchecked`: the repository could not be read (unplugged volume, git
-  error). The mount renders unavailable but is never treated as gone, so
-  cleanup cannot mistake an unmounted drive for a deleted worktree.
+  error), and only then. The mount renders unavailable but is never treated
+  as gone, so cleanup cannot mistake an unmounted drive for a deleted
+  worktree.
 
 ## Lifecycle
 

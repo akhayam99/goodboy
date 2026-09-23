@@ -64,7 +64,7 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
         invokeWorkflowsForSession(sessionId).catch(() => []),
       ]);
       const projects = get().projects.filter((project) => project.workspaceId === workspaceId);
-      const worktreeRows = await verifyAvailableWorktrees({
+      const { available: worktreeRows } = await verifyAvailableWorktrees({
         sessionId,
         candidates: storedRows,
         projects,

@@ -64,7 +64,10 @@ vi.mock('../sessions/reconcileSessionRuns', () => ({
   reconcileLoadedSessions: vi.fn(async ({ sessions }: ReconcileParams) => sessions),
 }));
 vi.mock('../project-mounts/verifyAvailableWorktrees', () => ({
-  verifyAvailableWorktrees: vi.fn(async ({ candidates }: VerifyParams) => candidates),
+  verifyAvailableWorktrees: vi.fn(async ({ candidates }: VerifyParams) => ({
+    available: candidates,
+    missing: [],
+  })),
 }));
 vi.mock('../transcripts/buffer', () => ({ clearPendingTurnEvents: vi.fn() }));
 

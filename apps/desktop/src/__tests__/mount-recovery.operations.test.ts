@@ -443,7 +443,7 @@ describe('interrupted mount recovery', () => {
     h.mounts.set('mount-one', mount);
     h.inspection = { kind: 'missing', path: mount.worktreePath };
 
-    const available = await verifyAvailableWorktrees({
+    const { available, missing } = await verifyAvailableWorktrees({
       sessionId: SESSION_ID,
       candidates: [
         {
@@ -457,6 +457,7 @@ describe('interrupted mount recovery', () => {
     });
 
     expect(available).toEqual([]);
+    expect(missing).toEqual(['mount-one']);
     expect(h.mounts.get('mount-one')).toMatchObject({
       worktreePath: null,
       isAttached: false,
