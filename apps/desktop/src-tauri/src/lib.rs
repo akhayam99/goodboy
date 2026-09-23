@@ -3,6 +3,7 @@ mod attachment;
 mod aux_spawn;
 mod bitbucket;
 mod boot_breadcrumb;
+mod codex_rollout;
 mod bridge;
 mod budget;
 mod config_export;
@@ -302,6 +303,7 @@ pub fn run() {
             summarize::summarize_session,
             summarize::summarize_cancel,
             planner::planner_run,
+            codex_rollout::codex_rollout_context,
             repo::validate_git_repo,
             repo::project_git_status,
             repo::repo_init_with_remote,

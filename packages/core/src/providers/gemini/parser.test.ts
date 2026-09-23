@@ -157,6 +157,40 @@ describe('parseJsonLine (gemini stream-json)', () => {
     ]);
   });
 
+  it('measures the context from the last request when the turn made several', () => {
+    const step = (inputTokens: number) =>
+      JSON.stringify({
+        event: 'step_update',
+        step_update: {
+          conversation_id: 'fe3759b4',
+          state: 'DONE',
+          step_type: 'agent_response',
+          text_delta: '.',
+          usage: {
+            input_tokens: inputTokens,
+            output_tokens: 10,
+            total_tokens: inputTokens + 10,
+          },
+        },
+      });
+    parse({ line: step(12000) });
+    parse({ line: step(18000) });
+    const events = parse({
+      line: JSON.stringify({
+        event: 'result',
+        result: {
+          conversation_id: 'fe3759b4',
+          status: 'SUCCESS',
+          num_turns: 2,
+          usage: { input_tokens: 30000, output_tokens: 20, total_tokens: 30020 },
+        },
+      }),
+    });
+    const usage = events.find((event) => event.kind === 'usage');
+    expect(usage?.kind === 'usage' && usage.usage.contextTokens).toBe(18010);
+    expect(usage?.kind === 'usage' && usage.usage.inputTokens).toBe(30000);
+  });
+
   it('emits usage and an error when the final result failed', () => {
     const events = parse({
       line: JSON.stringify({
@@ -182,7 +216,6 @@ describe('parseJsonLine (gemini stream-json)', () => {
           outputTokens: 2,
           cachedInputTokens: 1,
           cacheCreationInputTokens: 0,
-          contextTokens: 5,
           estimatedCostUsd: 0,
         },
         at,
