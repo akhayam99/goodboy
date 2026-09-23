@@ -17,7 +17,8 @@
   want to be").
 - **The top bar carries state and identity, never destinations.** It never
   edits a record in place. Anything that opens a destination belongs in the
-  footer.
+  footer. The spend chip is the one exception: it is state that opens the
+  studio that owns that number, the impact overview.
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
   is always pinned at the left of the top bar. The sidebar shows no workspace
@@ -30,9 +31,9 @@
   their exact position. The update control comes and goes with a pending update,
   because an update is an event, not a count.
 - **Hidden is not gone.** Anything the user can put away must come back without
-  a hunt. A hidden sessions column peeks back from a deliberate anchor, or when
-  the pointer rests at the window edge. Peek floats the one sidebar over the
-  page instead of laying it out.
+  a hunt. A hidden sessions column peeks back when the pointer rests at the
+  window edge. Peek floats the one sidebar over the page instead of laying it
+  out.
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
   never an inversion. The app has no inverted navigation control. New session
   is the only emphasised sidebar control. Navigation rows, Board included, are
@@ -114,8 +115,8 @@ sidebar. Board → session is the full depth of navigation.
 **Peek is a way of showing the sidebar, not a second sidebar.** The overlay
 renders the same sidebar component, and the codebase has one sessions list.
 Peek is wider than the pinned column. The extra width applies at read time, so
-widening the peek never moves the column. Peek opens faster from the strip
-toggle than from the screen edge, because a deliberate anchor is not a graze.
+widening the peek never moves the column. It opens after a short rest at the
+screen edge, so a graze does not open it.
 
 **The session overview is the reference page.** It shows the whole surface
 grammar on one screen, so read it before designing a new surface. Here is its
@@ -166,9 +167,10 @@ surface itself shows urgency, never a badge parked beside it.
   Deeper crumbs never carry the switcher. No second persistent strip, tab bar
   or rail carries it either.
 - **The workflow case extends the same control**:
-  `Overview > {WorkflowKind} > {Step}`. Implementer clusters add a fourth crumb
-  (the child's name, or `{done}/{total} clusters` when the root is selected).
-  There is no separate step strip and no "Part of {Workflow}" line.
+  `Overview > Workflows > {Run} > {Step}`. A delegated child names its root and
+  parent agents between the run and itself, and an open question it answers
+  adds one last crumb. There is no separate step strip and no "Part of
+  {Workflow}" line.
 
 ## Top bar
 
@@ -216,10 +218,10 @@ Centre: the beta pill and, while an update is pending, the update pip.
 
 Right: the launchers reached by name and a `More` popover for the rest.
 
-- **The release dot answers "have you read the notes for what you're
-  running"**, not "has a new release been published". It works offline. It
-  never lights up for a version the user cannot install. A fresh install shows
-  one dot, not one per release.
+- **The release notice answers "have you read the notes for what you're
+  running"**, not "has a new release been published". After an update, one
+  notice names the installed version and opens its notes. It works offline. A
+  fresh install shows none, and dismissing it marks that version as read.
 - Exactly one integration control has the active fill. It sits on the open
   glyph, or on the link action when that integration is disconnected. Opening
   any studio closes the others.
