@@ -40,6 +40,18 @@ for (const [ref, entry] of ALLOWLIST_REASON_BY_REF) {
 const git = ({ args }) =>
   execFileSync('git', args, { cwd: ROOT_DIRECTORY, maxBuffer: 1 << 28 }).toString();
 
+const isGitIgnoredPath = ({ path }) => {
+  try {
+    execFileSync('git', ['check-ignore', '-q', '--no-index', path], { cwd: ROOT_DIRECTORY });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const isKnownPath = ({ path }) =>
+  existsSync(resolve(ROOT_DIRECTORY, path)) || isGitIgnoredPath({ path });
+
 const listDocs = () =>
   git({ args: ['ls-files', '*.md'] })
     .split('\n')
@@ -67,7 +79,7 @@ const collectLineMisses = ({ doc, line, lineNumber, knownIdentifiers }) => {
     const token = raw.replace(/\(\)$/, '');
     const path = token.replace(LINE_SUFFIX, '');
     const isPath = PATH_ANCHOR.test(path) && !PATH_PLACEHOLDER.test(path);
-    if (isPath && !existsSync(resolve(ROOT_DIRECTORY, path))) {
+    if (isPath && !isKnownPath({ path })) {
       misses.push({ location, kind: 'path', ref: path });
     }
     if (IDENTIFIER.test(token) && !knownIdentifiers.has(token)) {
