@@ -66,6 +66,9 @@ import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { buildProfileGuard } from '../../profileGuard';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
+import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';
+import { decisionRestartMark } from './decisionRestart';
+import { updateOrchestratorHints } from './updateOrchestratorHints';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import { recordOrchestratorUsage } from './recordOrchestratorUsage';
 import { findWorkflowActivationBlock } from './workflowActivationGate';
@@ -641,7 +644,13 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)
           ?.profile,
       });
-      const hints = [profileBlock, run.orchestratorHints, operatorNote]
+      const readHints = run.orchestratorHints ?? [];
+      const readHintIds = new Set(readHints.map((hint) => hint.id));
+      const restartMark = decisionRestartMark({ workflowRunId });
+      const isDecisionDiscarded = (): boolean =>
+        hasOperatorStop({ get, sessionId, workflowRunId }) ||
+        decisionRestartMark({ workflowRunId }) !== restartMark;
+      const hints = [profileBlock, formatOrchestratorHints({ hints: readHints }), operatorNote]
         .map((entry) => entry?.trim() ?? '')
         .filter((entry) => entry !== '')
         .join('\n');
@@ -684,7 +693,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           }),
         });
       } catch (error) {
-        if (hasOperatorStop({ get, sessionId, workflowRunId })) {
+        if (isDecisionDiscarded()) {
           return;
         }
         const message = `${failureLabel(error)} (${routing.providerId}/${routing.model})`;
@@ -704,7 +713,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       }
       const decision = result.decision;
       if (decision == null) {
-        if (hasOperatorStop({ get, sessionId, workflowRunId })) {
+        if (isDecisionDiscarded()) {
           await recordOrchestratorUsage({
             set,
             get,
@@ -750,7 +759,8 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         );
         return;
       }
-      if (hasOperatorStop({ get, sessionId, workflowRunId })) {
+      const decisionUsage = result;
+      const discardWithUsage = async (): Promise<void> => {
         await recordOrchestratorUsage({
           set,
           get,
@@ -758,12 +768,30 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           agentId: null,
           workflowRunId,
           provider: routing.providerId,
-          model: result.model,
-          usage: result.usage,
+          model: decisionUsage.model,
+          usage: decisionUsage.usage,
         });
+      };
+      if (isDecisionDiscarded()) {
+        await discardWithUsage();
         return;
       }
       await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
+      if (readHintIds.size > 0) {
+        await updateOrchestratorHints({
+          set,
+          get,
+          sessionId,
+          workflowRunId,
+          update: (hints) =>
+            consumeOrchestratorHints({
+              hints,
+              readIds: readHintIds,
+              consumedAt: new Date().toISOString() as IsoDateTime,
+              step: workflow.steps.length + 1,
+            }),
+        });
+      }
       try {
         await persistRunSummary({ set, sessionId, workflowRunId, summary: decision.runSummary });
       } catch {}
@@ -839,6 +867,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         const routingDecision = resolution.decision;
         const selected = routingDecision.selected;
         const reason = decision.reason.trim();
+        if (isDecisionDiscarded()) {
+          await discardWithUsage();
+          return;
+        }
         const agent = await appendStep({
           set,
           get,
@@ -892,6 +924,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           focus: 'announce',
           bypassGate: true,
         });
+        return;
+      }
+      if (isDecisionDiscarded()) {
+        await discardWithUsage();
         return;
       }
       await persistOrchestrationOutcome({

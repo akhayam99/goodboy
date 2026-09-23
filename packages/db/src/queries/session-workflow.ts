@@ -2,6 +2,7 @@ import type {
   AgentRole,
   IsoDateTime,
   ModelEffort,
+  OrchestratorHint,
   OrchestratorRouting,
   ProviderId,
   RoleModelFallback,
@@ -21,6 +22,7 @@ import type {
 } from '@goodboy/types';
 import { PROVIDER_IDS } from '@goodboy/types';
 import type { Database } from '../client';
+import { serializeOrchestratorHintLog, toOrchestratorHintLog } from './orchestrator-hint-log';
 
 export type SessionWorkflowRow = {
   workflow_run_id: string;
@@ -34,7 +36,7 @@ export type SessionWorkflowRow = {
   orchestration_reason: string | null;
   orchestration_error: string | null;
   orchestration_stop_kind: string;
-  orchestrator_hints: string | null;
+  orchestrator_hint_log: string | null;
   orchestrator_summary: string | null;
   orchestrator_provider: string | null;
   orchestrator_model: string | null;
@@ -49,7 +51,7 @@ export type SessionWorkflowRow = {
 };
 
 export const SESSION_WORKFLOW_COLS =
-  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hints, orchestrator_summary, orchestrator_provider, orchestrator_model, orchestrator_effort, role_model_overrides, spend_limit_usd, spend_limit_mode, chain_after_run_id, goal, discarded_at, created_at';
+  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hint_log, orchestrator_summary, orchestrator_provider, orchestrator_model, orchestrator_effort, role_model_overrides, spend_limit_usd, spend_limit_mode, chain_after_run_id, goal, discarded_at, created_at';
 
 type RoutingColumns = {
   readonly provider: string | null;
@@ -215,6 +217,7 @@ export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
     return Number.isNaN(timestamp) ? undefined : (new Date(timestamp).toISOString() as IsoDateTime);
   })();
   const roleModelOverrides = toRoleModelOverrides({ value: row.role_model_overrides });
+  const orchestratorHints = toOrchestratorHintLog({ value: row.orchestrator_hint_log });
   return {
     id: row.workflow_run_id as WorkflowRunId,
     workflowId: row.workflow_id as WorkflowId,
@@ -229,8 +232,7 @@ export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
     ...(row.orchestration_reason != null &&
       row.orchestration_reason !== '' && { orchestrationReason: row.orchestration_reason }),
     ...(orchestrationStop != null && { orchestrationStop }),
-    ...(row.orchestrator_hints != null &&
-      row.orchestrator_hints !== '' && { orchestratorHints: row.orchestrator_hints }),
+    ...(orchestratorHints.length > 0 && { orchestratorHints }),
     ...(row.orchestrator_summary != null &&
       row.orchestrator_summary !== '' && { orchestratorSummary: row.orchestrator_summary }),
     ...(orchestratorRouting != null && { orchestratorRouting }),
@@ -516,11 +518,11 @@ export const updateWorkflowRunOrchestrationStop = async (
 export const updateWorkflowRunOrchestratorHints = async (
   db: Database,
   workflowRunId: WorkflowRunId,
-  hints: string | null,
+  hints: ReadonlyArray<OrchestratorHint>,
 ): Promise<void> => {
   await db.execute(
-    'UPDATE session_workflows SET orchestrator_hints = ? WHERE workflow_run_id = ?',
-    [hints, workflowRunId],
+    'UPDATE session_workflows SET orchestrator_hint_log = ? WHERE workflow_run_id = ?',
+    [serializeOrchestratorHintLog({ hints }), workflowRunId],
   );
 };
 
