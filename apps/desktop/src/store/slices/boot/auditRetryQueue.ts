@@ -38,13 +38,13 @@ export const drainAuditRetryQueue = async (get: GetFn): Promise<void> => {
     } catch {
       await invokeAuditRetryDelete(entry.id).catch(() => undefined);
       await get()
-        .emitNotification(
-          'error',
-          'warning',
-          'Audit entry dropped',
-          `A queued permission audit record was corrupt and was removed. Entry ${entry.id}.`,
-          { coalesceKey: 'audit-retry:corrupt' },
-        )
+        .emitNotification({
+          kind: 'error',
+          severity: 'warning',
+          title: 'Audit entry dropped',
+          body: `A queued permission audit record was corrupt and was removed. Entry ${entry.id}.`,
+          coalesceKey: 'audit-retry:corrupt',
+        })
         .catch(() => undefined);
       continue;
     }
@@ -64,13 +64,13 @@ export const drainAuditRetryQueue = async (get: GetFn): Promise<void> => {
       if (nextAttempts >= AUDIT_RETRY_MAX_ATTEMPTS) {
         await invokeAuditRetryDelete(entry.id).catch(() => undefined);
         await get()
-          .emitNotification(
-            'error',
-            'error',
-            'Audit write failed',
-            `A permission audit record could not be saved after ${AUDIT_RETRY_MAX_ATTEMPTS} attempts. Entry ${entry.id}: ${errMsg}`,
-            { coalesceKey: 'audit-retry:exhausted' },
-          )
+          .emitNotification({
+            kind: 'error',
+            severity: 'error',
+            title: 'Audit write failed',
+            body: `A permission audit record could not be saved after ${AUDIT_RETRY_MAX_ATTEMPTS} attempts. Entry ${entry.id}: ${errMsg}`,
+            coalesceKey: 'audit-retry:exhausted',
+          })
           .catch(() => undefined);
       } else {
         await invokeAuditRetryUpdate(entry.id, nextAttempts, errMsg).catch(() => undefined);

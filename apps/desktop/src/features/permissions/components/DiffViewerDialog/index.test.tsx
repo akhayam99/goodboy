@@ -1013,11 +1013,13 @@ describe('open in editor', () => {
 
     await waitFor(() => {
       expect(state.emitNotification).toHaveBeenCalledWith(
-        'error',
-        'error',
-        'Could not open file in editor',
-        'editor not found',
-        { sessionId: SID },
+        expect.objectContaining({
+          kind: 'error',
+          severity: 'error',
+          title: 'Could not open file in editor',
+          body: 'editor not found',
+          sessionId: SID,
+        }),
       );
     });
   });

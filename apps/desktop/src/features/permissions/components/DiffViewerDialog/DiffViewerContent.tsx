@@ -699,7 +699,11 @@ export const DiffViewerContent = ({
       try {
         await openFileInWorkspace(root, `${root}/${filePath}`, editorBinary);
       } catch (err) {
-        void emitNotification('error', 'error', 'Could not open file in editor', formatError(err), {
+        void emitNotification({
+          kind: 'error',
+          severity: 'error',
+          title: 'Could not open file in editor',
+          body: formatError(err),
           sessionId,
         });
       }

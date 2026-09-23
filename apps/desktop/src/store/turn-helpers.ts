@@ -309,17 +309,15 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
         },
       };
     });
-    void get().emitNotification(
-      'error',
-      'error',
-      'summarizer paused',
-      'every summarizer provider is cooling down',
-      {
-        sessionId,
-        action: { kind: 'retry-summarizer', sessionId },
-        coalesceKey: `summarizer-cooling:${sessionId}:${windowEnd ?? 'unknown'}`,
-      },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'error',
+      title: 'summarizer paused',
+      body: 'every summarizer provider is cooling down',
+      sessionId,
+      action: { kind: 'retry-summarizer', sessionId },
+      coalesceKey: `summarizer-cooling:${sessionId}:${windowEnd ?? 'unknown'}`,
+    });
     return;
   }
 
@@ -597,17 +595,15 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       });
       return;
     }
-    void get().emitNotification(
-      'error',
-      'error',
-      'summarizer failed',
-      `${taskModel.providerId}: ${message}`,
-      {
-        sessionId,
-        action: { kind: 'retry-summarizer', sessionId },
-        coalesceKey: `summarizer-failed:${sessionId}`,
-      },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'error',
+      title: 'summarizer failed',
+      body: `${taskModel.providerId}: ${message}`,
+      sessionId,
+      action: { kind: 'retry-summarizer', sessionId },
+      coalesceKey: `summarizer-failed:${sessionId}`,
+    });
   }
 };
 

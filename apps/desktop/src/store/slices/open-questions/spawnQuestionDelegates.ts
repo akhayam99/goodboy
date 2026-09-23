@@ -96,13 +96,14 @@ export const spawnQuestionDelegates = (get: GetFn) => {
 
       if (!canDelegateQuestion({ asker })) {
         outcomes.push({ questionId: question.id, agentId: null, kind: 'refused' });
-        void get().emitNotification(
-          'agent-auto-spawn',
-          'warning',
-          'This question cannot be delegated',
-          "A delegated agent can't delegate again. This one is yours to answer.",
-          { sessionId, coalesceKey: `question-delegate:${question.id}` },
-        );
+        void get().emitNotification({
+          kind: 'agent-auto-spawn',
+          severity: 'warning',
+          title: 'This question cannot be delegated',
+          body: "A delegated agent can't delegate again. This one is yours to answer.",
+          sessionId,
+          coalesceKey: `question-delegate:${question.id}`,
+        });
         continue;
       }
 
@@ -139,13 +140,14 @@ export const spawnQuestionDelegates = (get: GetFn) => {
       } catch (error) {
         await settleStrandedDelegates({ sessionId, questionId: question.id });
         outcomes.push({ questionId: question.id, agentId: null, kind: 'failed' });
-        void get().emitNotification(
-          'agent-auto-spawn',
-          'warning',
-          'The delegated agent did not start',
-          `${question.text} stays open. Answer it yourself or hand it over again. ${String(error)}`,
-          { sessionId, coalesceKey: `question-delegate:${question.id}` },
-        );
+        void get().emitNotification({
+          kind: 'agent-auto-spawn',
+          severity: 'warning',
+          title: 'The delegated agent did not start',
+          body: `${question.text} stays open. Answer it yourself or hand it over again. ${String(error)}`,
+          sessionId,
+          coalesceKey: `question-delegate:${question.id}`,
+        });
       } finally {
         inFlight.delete(question.id);
       }

@@ -951,11 +951,13 @@ describe('cluster child routing lifecycle', () => {
     expect(executions).toHaveLength(0);
     expect(routingUpdates()).toHaveLength(0);
     expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'cluster blocked: heavy rewrite',
-      expect.stringContaining('codex/gpt-5.6-sol'),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'cluster blocked: heavy rewrite',
+        body: expect.stringContaining('codex/gpt-5.6-sol'),
+        sessionId: SID,
+      }),
     );
   });
 
@@ -985,11 +987,13 @@ describe('cluster child routing lifecycle', () => {
     expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
     expect(executions).toHaveLength(0);
     expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'cluster blocked: container',
-      expect.any(String),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'cluster blocked: container',
+        body: expect.any(String),
+        sessionId: SID,
+      }),
     );
   });
 });
@@ -1071,11 +1075,13 @@ describe('advanceClusterImplementation', () => {
       completedAt: expect.any(String),
     });
     expect(store.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      expect.stringContaining('cluster paused'),
-      expect.stringContaining('autorun is off'),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: expect.stringContaining('cluster paused'),
+        body: expect.stringContaining('autorun is off'),
+        sessionId: SID,
+      }),
     );
   });
 
@@ -1255,11 +1261,12 @@ describe('advanceClusterImplementation', () => {
       expect.objectContaining({ agentId: child.id, output: assistantText }),
     );
     expect(emitNotification).not.toHaveBeenCalledWith(
-      'summarizer-degraded',
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
+      expect.objectContaining({
+        kind: 'summarizer-degraded',
+        severity: expect.anything(),
+        title: expect.anything(),
+        body: expect.anything(),
+      }),
     );
   });
 
@@ -1288,15 +1295,15 @@ describe('advanceClusterImplementation', () => {
 
     expect(emitNotification).toHaveBeenCalledTimes(1);
     expect(emitNotification).toHaveBeenCalledWith(
-      'summarizer-degraded',
-      'warning',
-      expect.stringContaining('child-0'),
-      expect.stringContaining('provider failed'),
-      {
+      expect.objectContaining({
+        kind: 'summarizer-degraded',
+        severity: 'warning',
+        title: expect.stringContaining('child-0'),
+        body: expect.stringContaining('provider failed'),
         sessionId: SID,
         action: { kind: 'retry-step-summary', sessionId: SID, agentId: child.id },
         coalesceKey: 'step-summary-degraded:wf-1:step-1',
-      },
+      }),
     );
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
       child.id,
@@ -1322,11 +1329,12 @@ describe('advanceClusterImplementation', () => {
       expect.objectContaining({ outputSummary: 'advanced to next cluster manually' }),
     );
     expect(emitNotification).not.toHaveBeenCalledWith(
-      'summarizer-degraded',
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
+      expect.objectContaining({
+        kind: 'summarizer-degraded',
+        severity: expect.anything(),
+        title: expect.anything(),
+        body: expect.anything(),
+      }),
     );
   });
 
@@ -1444,11 +1452,13 @@ describe('advanceClusterImplementation', () => {
       completedAt: expect.any(String),
     });
     expect(store.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      expect.stringContaining('cluster blocked'),
-      expect.stringContaining('no instructions'),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: expect.stringContaining('cluster blocked'),
+        body: expect.stringContaining('no instructions'),
+        sessionId: SID,
+      }),
     );
   });
 
@@ -1483,11 +1493,13 @@ describe('advanceClusterImplementation', () => {
       completedAt: expect.any(String),
     });
     expect(store.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'cluster blocked: missing implementer',
-      expect.stringContaining('more clusters'),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'cluster blocked: missing implementer',
+        body: expect.stringContaining('more clusters'),
+        sessionId: SID,
+      }),
     );
     expect(store.maybeAutoAdvanceWorkflow).not.toHaveBeenCalled();
   });
@@ -1735,11 +1747,13 @@ describe('resumeClusterChildren', () => {
       expect.objectContaining({ status: 'failed' }),
     );
     expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'cluster blocked: child-1',
-      expect.any(String),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'cluster blocked: child-1',
+        body: expect.any(String),
+        sessionId: SID,
+      }),
     );
   });
 });
@@ -1793,11 +1807,13 @@ describe('cluster child start retry', () => {
       expect.objectContaining({ status: 'failed' }),
     );
     expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      expect.stringContaining('cluster could not start'),
-      expect.any(String),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: expect.stringContaining('cluster could not start'),
+        body: expect.any(String),
+        sessionId: SID,
+      }),
     );
     expect(state.clusterStepStartAttempts).toEqual({ 'container-a': 3 });
     expect(state.clusterStartAttempts).toEqual({ 'retry-a-1': 3 });

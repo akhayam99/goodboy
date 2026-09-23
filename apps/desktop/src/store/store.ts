@@ -4,13 +4,7 @@ import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
 import { type SlotKey } from '@goodboy/core';
-import {
-  type SessionConfigUpdate,
-  type AgentConfigUpdate,
-  type NotificationAction,
-  type NotificationKind,
-  type NotificationSeverity,
-} from '@goodboy/db';
+import { type SessionConfigUpdate, type AgentConfigUpdate } from '@goodboy/db';
 import type {
   AgentId,
   AgentSourceKind,
@@ -88,6 +82,7 @@ import { type WorkflowUpsertArgs, type StepDefUpsertArgs } from '../features/wor
 import { type AgentKind } from '../features/session/agent-kind';
 import type { TerminalTabId, TerminalTabStatus } from '../shared/types/terminal';
 import { createNotificationsSlice } from './slices/notifications';
+import type { EmitNotificationParams } from './slices/notifications/emitNotification';
 import { createNudgesSlice } from './slices/nudges';
 import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts';
 import { createPlansSlice } from './slices/plans';
@@ -874,18 +869,7 @@ type AppActions = {
   ): Promise<void>;
   removeGoalAttachment(owner: GoalAttachmentOwner, id: string): Promise<void>;
   loadNotifications(): Promise<void>;
-  emitNotification(
-    kind: NotificationKind,
-    severity: NotificationSeverity,
-    title: string,
-    body?: string,
-    opts?: {
-      sessionId?: SessionId;
-      workspaceId?: WorkspaceId;
-      action?: NotificationAction;
-      coalesceKey?: string;
-    },
-  ): Promise<void>;
+  emitNotification(params: EmitNotificationParams): Promise<void>;
   retryStepSummary(params: {
     sessionId: SessionId;
     agentId: AgentId;

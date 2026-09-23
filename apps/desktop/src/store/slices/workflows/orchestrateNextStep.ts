@@ -219,16 +219,14 @@ const announceRunBudget = ({
   set((state) => ({
     announcedRunBudget: { ...state.announcedRunBudget, [workflowRunId]: stop.limitUsd },
   }));
-  void get().emitNotification(
-    'budget-cap',
-    'warning',
-    'workflow run over its spend limit',
-    stop.message,
-    {
-      sessionId,
-      action: { kind: 'open-budget', sessionId },
-    },
-  );
+  void get().emitNotification({
+    kind: 'budget-cap',
+    severity: 'warning',
+    title: 'workflow run over its spend limit',
+    body: stop.message,
+    sessionId,
+    action: { kind: 'open-budget', sessionId },
+  });
 };
 
 type PersistOutcomeParams = {
@@ -693,7 +691,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           action: 'blocked',
           reason: `orchestrator failed: ${message}`,
         });
-        void get().emitNotification('error', 'warning', 'orchestrator failed', message, {
+        void get().emitNotification({
+          kind: 'error',
+          severity: 'warning',
+          title: 'orchestrator failed',
+          body: message,
           sessionId,
         });
         return;
@@ -736,13 +738,13 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           model: result.model,
           usage: result.usage,
         });
-        void get().emitNotification(
-          'error',
-          'warning',
-          'orchestrator reply unparseable',
-          'the decision could not be parsed, use next step to retry',
-          { sessionId },
-        );
+        void get().emitNotification({
+          kind: 'error',
+          severity: 'warning',
+          title: 'orchestrator reply unparseable',
+          body: 'the decision could not be parsed, use next step to retry',
+          sessionId,
+        });
         return;
       }
       const decisionUsage = result;
@@ -938,7 +940,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       if (decision.action === 'done') {
         return;
       }
-      void get().emitNotification('error', 'warning', 'dynamic workflow blocked', decision.reason, {
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'dynamic workflow blocked',
+        body: decision.reason,
         sessionId,
       });
     } finally {

@@ -84,7 +84,13 @@ export const useSuggestionActions = ({
   const proposalActions = useMountProposalActions({ sessionId });
 
   const reportError = (title: string) => (message: string) => {
-    void emitNotification('error', 'error', title, formatError(message), { sessionId });
+    void emitNotification({
+      kind: 'error',
+      severity: 'error',
+      title,
+      body: formatError(message),
+      sessionId,
+    });
   };
 
   const rebaseMounts = useMemo(

@@ -61,11 +61,13 @@ describe('continueOrPause', () => {
       expect.objectContaining({ status: 'failed' }),
     );
     expect(state.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'cluster paused: cluster 1',
-      'the implementer stopped before completing this cluster. open the agent and continue manually.',
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'cluster paused: cluster 1',
+        body: 'the implementer stopped before completing this cluster. open the agent and continue manually.',
+        sessionId: SESSION_ID,
+      }),
     );
     expect(state.workflowContinueAttempts).toEqual({});
   });
@@ -87,11 +89,13 @@ describe('continueOrPause', () => {
     expect(outcome).toBe('paused');
     expect(restart).not.toHaveBeenCalled();
     expect(state.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'step paused: cluster 1',
-      expect.stringContaining('autorun is off'),
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'step paused: cluster 1',
+        body: expect.stringContaining('autorun is off'),
+        sessionId: SESSION_ID,
+      }),
     );
   });
 

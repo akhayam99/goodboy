@@ -33,7 +33,11 @@ export const markPrReady = (_set: SetFn, get: GetFn) => {
         });
         if (res.exitCode !== 0) {
           const errMsg = res.stderr.trim() || `gh pr ready exited with ${res.exitCode}`;
-          void get().emitNotification('error', 'error', 'Mark ready failed', errMsg, {
+          void get().emitNotification({
+            kind: 'error',
+            severity: 'error',
+            title: 'Mark ready failed',
+            body: errMsg,
             sessionId,
             workspaceId: workspace.id,
           });

@@ -193,13 +193,13 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
         continue;
       }
       fresh[run.id] = marker;
-      void get().emitNotification(
-        'error',
-        'warning',
-        'workflow blocked',
-        `Autorun stopped at ${chain.failedStep.name} because the step failed.`,
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'workflow blocked',
+        body: `Autorun stopped at ${chain.failedStep.name} because the step failed.`,
+        sessionId,
+      });
     }
     if (Object.keys(fresh).length > 0) {
       set((current) => ({

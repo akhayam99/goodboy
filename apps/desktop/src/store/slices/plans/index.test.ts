@@ -272,7 +272,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
         focus: 'none',
       });
       expect(state.emitNotification).toHaveBeenCalledTimes(1);
-      expect(state.emitNotification.mock.calls[0]![2]).toBe('workflow step held back');
+      expect(state.emitNotification.mock.calls[0]![0].title).toBe('workflow step held back');
       expect(state.spawnAgent).not.toHaveBeenCalled();
     });
   });

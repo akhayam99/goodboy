@@ -12,12 +12,12 @@ export const useUnhandledRejectionNotice = () => {
       isNotifying = true;
       void useAppStore
         .getState()
-        .emitNotification(
-          'error',
-          'warning',
-          'an action failed in the background',
-          formatError(event.reason),
-        )
+        .emitNotification({
+          kind: 'error',
+          severity: 'warning',
+          title: 'an action failed in the background',
+          body: formatError(event.reason),
+        })
         .catch(() => undefined)
         .finally(() => {
           isNotifying = false;

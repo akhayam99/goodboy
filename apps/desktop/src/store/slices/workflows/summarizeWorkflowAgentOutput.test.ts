@@ -228,7 +228,9 @@ describe('summarizeWorkflowAgentOutput', () => {
     expect(summarizeStepOutputSpy).not.toHaveBeenCalled();
     expect(summary).toContain('the step wrote three files');
     expect(emitNotification).toHaveBeenCalledTimes(1);
-    expect(emitNotification.mock.calls[0]?.[3]).toContain('cooling down');
+    expect((emitNotification.mock.calls[0]?.[0] as { body?: string } | undefined)?.body).toContain(
+      'cooling down',
+    );
   });
 
   it('starts on a provider that is not cooling down', async () => {
@@ -282,11 +284,12 @@ describe('summarizeWorkflowAgentOutput', () => {
     await call();
 
     expect(emitNotification).toHaveBeenCalledTimes(1);
-    const [, , title, body, opts] = emitNotification.mock.calls[0] ?? [];
-    expect(String(title)).toContain('codex/');
-    expect(String(body)).toContain('anthropic/');
-    expect(String(body)).toContain('Providers then Defaults');
-    expect(opts).toMatchObject({
+    const params = emitNotification.mock.calls[0]?.[0] as
+      { title: string; body?: string; coalesceKey?: string } | undefined;
+    expect(String(params?.title)).toContain('codex/');
+    expect(String(params?.body)).toContain('anthropic/');
+    expect(String(params?.body)).toContain('Providers then Defaults');
+    expect(params).toMatchObject({
       coalesceKey: 'summarizer-model-unavailable:codex:gpt-5.6-luna',
     });
   });
@@ -307,7 +310,9 @@ describe('summarizeWorkflowAgentOutput', () => {
     expect(summarizeStepOutputSpy).toHaveBeenCalledTimes(1);
     expect(summary).toContain('the step wrote three files');
     expect(emitNotification).toHaveBeenCalledTimes(1);
-    expect(String(emitNotification.mock.calls[0]?.[3])).toContain('carried unsummarized');
+    expect(
+      String((emitNotification.mock.calls[0]?.[0] as { body?: string } | undefined)?.body),
+    ).toContain('carried unsummarized');
   });
 
   it('truncates and notifies once when no other provider can take over', async () => {

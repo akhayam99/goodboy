@@ -28,13 +28,13 @@ export const useMountProposalActions = ({ sessionId }: Params): MountProposalAct
       try {
         await ensureProjectMounted({ sessionId, projectId, reason });
       } catch (error) {
-        await emitNotification(
-          'error',
-          'error',
-          'Mount failed',
-          `Could not mount ${projectName}. Try again. ${formatError(error)}`,
-          { sessionId },
-        );
+        await emitNotification({
+          kind: 'error',
+          severity: 'error',
+          title: 'Mount failed',
+          body: `Could not mount ${projectName}. Try again. ${formatError(error)}`,
+          sessionId,
+        });
         throw error;
       }
     },

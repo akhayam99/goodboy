@@ -32,7 +32,11 @@ export const reopenPr = (_set: SetFn, get: GetFn) => {
         });
         if (res.exitCode !== 0) {
           const errMsg = res.stderr.trim() || `gh pr reopen exited with ${res.exitCode}`;
-          void get().emitNotification('error', 'error', `Reopen of #${num} failed`, errMsg, {
+          void get().emitNotification({
+            kind: 'error',
+            severity: 'error',
+            title: `Reopen of #${num} failed`,
+            body: errMsg,
             sessionId,
             workspaceId: workspace.id,
           });

@@ -128,11 +128,13 @@ describe('recoverStuckStep', () => {
     await run({ sessionId: SESSION_ID, workflowRunId: RUN_ID });
 
     expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'the blocked step could not be checked',
-      'provider unavailable. You can still skip this step.',
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'the blocked step could not be checked',
+        body: 'provider unavailable. You can still skip this step.',
+        sessionId: SESSION_ID,
+      }),
     );
   });
 });

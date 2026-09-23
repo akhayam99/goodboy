@@ -1280,11 +1280,13 @@ describe('orchestrateNextStep', () => {
 
     expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
     expect(state['emitNotification']).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'dynamic workflow blocked',
-      'A product choice is required.',
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'dynamic workflow blocked',
+        body: 'A product choice is required.',
+        sessionId: SESSION_ID,
+      }),
     );
     expect(updateOutcomeSpy).toHaveBeenCalledWith(
       {},
@@ -1305,11 +1307,13 @@ describe('orchestrateNextStep', () => {
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
 
     expect(state['emitNotification']).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'orchestrator failed',
-      expect.stringContaining('the orchestrator timed out after 120s'),
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'orchestrator failed',
+        body: expect.stringContaining('the orchestrator timed out after 120s'),
+        sessionId: SESSION_ID,
+      }),
     );
     expect(state['appendTurnEvent']).toHaveBeenCalledWith(
       AGENT_ID,
@@ -1409,11 +1413,13 @@ describe('orchestrateNextStep', () => {
       expect.objectContaining({ action: 'blocked' }),
     );
     expect(state['emitNotification']).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'orchestrator reply unparseable',
-      'the decision could not be parsed, use next step to retry',
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'orchestrator reply unparseable',
+        body: 'the decision could not be parsed, use next step to retry',
+        sessionId: SESSION_ID,
+      }),
     );
     expect(insertTelemetrySpy).toHaveBeenCalledTimes(1);
   });
@@ -1859,11 +1865,13 @@ describe('orchestrateNextStep', () => {
 
     expect(decideSpy).toHaveBeenCalledTimes(1);
     expect(state['emitNotification']).toHaveBeenCalledWith(
-      'budget-cap',
-      'warning',
-      expect.stringContaining('spend limit'),
-      expect.stringContaining('spend limit'),
-      expect.objectContaining({ sessionId: SESSION_ID }),
+      expect.objectContaining({
+        kind: 'budget-cap',
+        severity: 'warning',
+        title: expect.stringContaining('spend limit'),
+        body: expect.stringContaining('spend limit'),
+        sessionId: SESSION_ID,
+      }),
     );
   });
 
@@ -1886,7 +1894,7 @@ describe('orchestrateNextStep', () => {
     const { set, get } = harness(state);
     const budgetCalls = () =>
       (state['emitNotification'] as ReturnType<typeof vi.fn>).mock.calls.filter(
-        (call) => call[0] === 'budget-cap',
+        (call) => (call[0] as { kind: string }).kind === 'budget-cap',
       ).length;
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);

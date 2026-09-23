@@ -185,13 +185,14 @@ export const publishConversations = async ({
               });
             }
             await loadPublicationsInto({ set, sessionId });
-            void get().emitNotification(
-              'error',
-              'error',
-              'nothing was pushed',
-              `${error}. The conversations stayed as they were.`,
-              { sessionId, action: { kind: 'retry-publication', sessionId } },
-            );
+            void get().emitNotification({
+              kind: 'error',
+              severity: 'error',
+              title: 'nothing was pushed',
+              body: `${error}. The conversations stayed as they were.`,
+              sessionId,
+              action: { kind: 'retry-publication', sessionId },
+            });
             return { kind: 'push_failed', error };
           }
           pushed = true;

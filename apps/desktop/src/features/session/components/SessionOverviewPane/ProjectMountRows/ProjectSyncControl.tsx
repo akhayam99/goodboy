@@ -45,7 +45,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
   const [baseError, setBaseError] = useState<string | null>(null);
   const baseBranch = configuredBaseBranch ?? 'main';
   const notify = ({ title, message }: NotifyParams) => {
-    void emitNotification('error', 'error', title, message, { sessionId });
+    void emitNotification({ kind: 'error', severity: 'error', title, body: message, sessionId });
   };
   const rebase = useRebaseAgent({
     sessionId,

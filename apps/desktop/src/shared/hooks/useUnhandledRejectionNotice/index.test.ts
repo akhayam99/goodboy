@@ -30,10 +30,12 @@ describe('useUnhandledRejectionNotice', () => {
 
     await waitFor(() => expect(emitNotification).toHaveBeenCalledTimes(1));
     expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'an action failed in the background',
-      'agent list refused',
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'an action failed in the background',
+        body: 'agent list refused',
+      }),
     );
   });
 

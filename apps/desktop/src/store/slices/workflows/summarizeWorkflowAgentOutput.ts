@@ -52,17 +52,15 @@ const notifyModelUnavailable = ({
     replacement === null
       ? 'no other provider could take over, so the step output was carried unsummarized'
       : `${modelLabelFor(replacement)} summarized this step instead`;
-  void get().emitNotification(
-    'summarizer-degraded',
-    'warning',
-    `summarizer model unavailable: ${label}`,
-    `${label} is not available to this account and ${outcome}. change the summarizer model in Providers then Defaults.`,
-    {
-      sessionId,
-      action: { kind: 'retry-step-summary', sessionId, agentId: agent.id as AgentId },
-      coalesceKey: `summarizer-model-unavailable:${unavailable.providerId}:${unavailable.model}`,
-    },
-  );
+  void get().emitNotification({
+    kind: 'summarizer-degraded',
+    severity: 'warning',
+    title: `summarizer model unavailable: ${label}`,
+    body: `${label} is not available to this account and ${outcome}. change the summarizer model in Providers then Defaults.`,
+    sessionId,
+    action: { kind: 'retry-step-summary', sessionId, agentId: agent.id as AgentId },
+    coalesceKey: `summarizer-model-unavailable:${unavailable.providerId}:${unavailable.model}`,
+  });
 };
 
 const notifyDegraded = ({ get, sessionId, agent, modelLabel, reason }: NotifyParams): void => {
@@ -72,17 +70,15 @@ const notifyDegraded = ({ get, sessionId, agent, modelLabel, reason }: NotifyPar
     workflowRunId != null && stepId != null
       ? `step-summary-degraded:${workflowRunId}:${stepId}`
       : `step-summary-degraded:${agent.id}`;
-  void get().emitNotification(
-    'summarizer-degraded',
-    'warning',
-    `step summary degraded: ${agent.name}`,
-    `${modelLabel}: ${reason}`,
-    {
-      sessionId,
-      action: { kind: 'retry-step-summary', sessionId, agentId: agent.id as AgentId },
-      coalesceKey,
-    },
-  );
+  void get().emitNotification({
+    kind: 'summarizer-degraded',
+    severity: 'warning',
+    title: `step summary degraded: ${agent.name}`,
+    body: `${modelLabel}: ${reason}`,
+    sessionId,
+    action: { kind: 'retry-step-summary', sessionId, agentId: agent.id as AgentId },
+    coalesceKey,
+  });
 };
 
 export const summarizeWorkflowAgentOutput = async ({

@@ -24,11 +24,11 @@ export const bulkUnarchiveTask = (set: SetFn, get: GetFn) => {
       }
     }
     if (failed.length > 0) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        failureMessage({ failed: failed.length, total: ids.length }),
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: failureMessage({ failed: failed.length, total: ids.length }),
+      });
     }
     return { succeeded, failed };
   };

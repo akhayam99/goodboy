@@ -141,13 +141,13 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
         };
       });
     } catch (error) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        'session restored, but some data failed to load',
-        formatError(error),
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'session restored, but some data failed to load',
+        body: formatError(error),
+        sessionId,
+      });
     }
     void get()
       .reconcileOrphanWorktrees()

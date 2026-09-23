@@ -115,22 +115,22 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         try {
           await recoverStagedFileVersions({
             onFailure: async ({ sessionId, runId, message }) => {
-              await get().emitNotification(
-                'error',
-                'warning',
-                'Some staged file versions could not be recovered',
-                `session: ${sessionId}. run: ${runId}. details: ${message}`,
-                { sessionId },
-              );
+              await get().emitNotification({
+                kind: 'error',
+                severity: 'warning',
+                title: 'Some staged file versions could not be recovered',
+                body: `session: ${sessionId}. run: ${runId}. details: ${message}`,
+                sessionId,
+              });
             },
           });
         } catch (error) {
-          await get().emitNotification(
-            'error',
-            'warning',
-            'File version recovery could not run at startup',
-            formatError(error),
-          );
+          await get().emitNotification({
+            kind: 'error',
+            severity: 'warning',
+            title: 'File version recovery could not run at startup',
+            body: formatError(error),
+          });
         }
 
         await applyQaDecidingPreview({ set }).catch(() => {});

@@ -95,13 +95,13 @@ export const skipStuckStepAndAdvance = (set: SetFn, get: GetFn) => {
         onlyWhenBlocked: options?.onlyWhenBlocked === true,
       });
     } catch (error) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        'the blocked step was not skipped',
-        formatError(error),
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'the blocked step was not skipped',
+        body: formatError(error),
+        sessionId,
+      });
     }
   };
 };

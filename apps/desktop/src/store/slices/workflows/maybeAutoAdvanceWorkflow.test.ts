@@ -255,11 +255,13 @@ describe('maybeAutoAdvanceWorkflow', () => {
     await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
     expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
     expect(state['emitNotification']).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'workflow blocked',
-      'Autorun stopped at s0 because the step failed.',
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'workflow blocked',
+        body: 'Autorun stopped at s0 because the step failed.',
+        sessionId: SESSION_ID,
+      }),
     );
   });
 

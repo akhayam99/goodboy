@@ -35,13 +35,13 @@ export const stopWorkflowRunNow = (set: SetFn, get: GetFn) => {
     try {
       await runStop({ set, get, sessionId, workflowRunId });
     } catch (error) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        'the run was not fully stopped',
-        formatError(error),
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'the run was not fully stopped',
+        body: formatError(error),
+        sessionId,
+      });
     }
   };
 };

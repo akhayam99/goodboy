@@ -565,13 +565,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       pickedOverride != null &&
       (provider !== pickedOverride.providerId || picked.kind === 'unresolved' || !ranAsPicked)
     ) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        'the turn did not run on the model you picked',
-        `you picked ${pickedOverride.providerId}/${picked.kind === 'unspecified' ? spawnModel : picked.id}, the turn ran on ${provider}/${spawnModel}`,
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'the turn did not run on the model you picked',
+        body: `you picked ${pickedOverride.providerId}/${picked.kind === 'unspecified' ? spawnModel : picked.id}, the turn ran on ${provider}/${spawnModel}`,
+        sessionId,
+      });
     }
     const explicitEffortFlag = PROVIDER_ARG_FLAGS[provider].effortFlag;
     const effortFlagIndex =
@@ -893,17 +893,15 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       if (ratio >= 0.85) {
         const pct = Math.round(ratio * 100);
         void get()
-          .emitNotification(
-            'error',
-            'warning',
-            'Context near the limit',
-            `This turn is estimated at ${estimated.toLocaleString()} of ${ctxWindow.toLocaleString()} tokens (${pct}%). Consider /compact.`,
-            {
-              sessionId,
-              workspaceId: session.workspaceId,
-              coalesceKey: `context-soft-cap:${sessionId}`,
-            },
-          )
+          .emitNotification({
+            kind: 'error',
+            severity: 'warning',
+            title: 'Context near the limit',
+            body: `This turn is estimated at ${estimated.toLocaleString()} of ${ctxWindow.toLocaleString()} tokens (${pct}%). Consider /compact.`,
+            sessionId,
+            workspaceId: session.workspaceId,
+            coalesceKey: `context-soft-cap:${sessionId}`,
+          })
           .catch(() => undefined);
       }
     }
@@ -968,13 +966,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       stage: 'begin' | 'finalize' | 'persist';
       message: string;
     }) => {
-      await get().emitNotification(
-        'error',
-        'warning',
-        'Could not capture a recoverable file version for this turn',
-        `stage: ${stage}. details: ${message}`,
-        { sessionId, workspaceId: session.workspaceId },
-      );
+      await get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Could not capture a recoverable file version for this turn',
+        body: `stage: ${stage}. details: ${message}`,
+        sessionId,
+        workspaceId: session.workspaceId,
+      });
     };
     const turnFileVersionCapture = isSessionDirScope
       ? await beginTurnFileVersionCapture({
@@ -1452,19 +1451,18 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         const resetLabel =
           usageLimitResetAtMs != null ? formatResetTime({ resetAtMs: usageLimitResetAtMs }) : null;
         void get()
-          .emitNotification(
-            'error',
-            'warning',
-            'Provider at its usage limit',
-            resetLabel != null
-              ? `${PROVIDER_LABEL[provider]} is at its usage limit. Retrying at ${resetLabel}.`
-              : `${PROVIDER_LABEL[provider]} is at its usage limit. Retry it when the limit resets.`,
-            {
-              sessionId,
-              workspaceId: session.workspaceId,
-              coalesceKey: `provider-usage-limit:${provider}`,
-            },
-          )
+          .emitNotification({
+            kind: 'error',
+            severity: 'warning',
+            title: 'Provider at its usage limit',
+            body:
+              resetLabel != null
+                ? `${PROVIDER_LABEL[provider]} is at its usage limit. Retrying at ${resetLabel}.`
+                : `${PROVIDER_LABEL[provider]} is at its usage limit. Retry it when the limit resets.`,
+            sessionId,
+            workspaceId: session.workspaceId,
+            coalesceKey: `provider-usage-limit:${provider}`,
+          })
           .catch(() => undefined);
         if (usageLimitResetAtMs != null) {
           const delayMs = Math.min(
@@ -1613,18 +1611,16 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         filesEdited: Array.from(filesTouchedThisTurn),
       });
       if (driftViolations.length > 0) {
-        void get().emitNotification(
-          'boundary-drift',
-          'warning',
-          `${agentRowEarly?.name ?? 'agent'} drifted from ${earlyAgentKind} role`,
-          driftViolations[0]!.detail,
-          {
-            sessionId,
-            ...(activeAgentId != null && {
-              action: { kind: 'open-agent' as const, sessionId, agentId: activeAgentId },
-            }),
-          },
-        );
+        void get().emitNotification({
+          kind: 'boundary-drift',
+          severity: 'warning',
+          title: `${agentRowEarly?.name ?? 'agent'} drifted from ${earlyAgentKind} role`,
+          body: driftViolations[0]!.detail,
+          sessionId,
+          ...(activeAgentId != null && {
+            action: { kind: 'open-agent' as const, sessionId, agentId: activeAgentId },
+          }),
+        });
       }
       if (
         sessionAwaitsPullRequest({ state: get(), sessionId }) &&

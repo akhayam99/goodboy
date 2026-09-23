@@ -54,13 +54,14 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
       });
 
     if (taskModel == null) {
-      void get().emitNotification(
-        'summarizer-degraded',
-        'warning',
-        'step summary retry unavailable',
-        'every summarizer provider is cooling down',
-        { sessionId, action: { kind: 'retry-step-summary', sessionId, agentId } },
-      );
+      void get().emitNotification({
+        kind: 'summarizer-degraded',
+        severity: 'warning',
+        title: 'step summary retry unavailable',
+        body: 'every summarizer provider is cooling down',
+        sessionId,
+        action: { kind: 'retry-step-summary', sessionId, agentId },
+      });
       return;
     }
 
@@ -83,13 +84,14 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
       ...(expectedOutput !== '' && { expectedOutput }),
     });
     if (result.degraded) {
-      void get().emitNotification(
-        'summarizer-degraded',
-        'warning',
-        'step summary retry failed',
-        result.error ?? 'summarization failed',
-        { sessionId, action: { kind: 'retry-step-summary', sessionId, agentId } },
-      );
+      void get().emitNotification({
+        kind: 'summarizer-degraded',
+        severity: 'warning',
+        title: 'step summary retry failed',
+        body: result.error ?? 'summarization failed',
+        sessionId,
+        action: { kind: 'retry-step-summary', sessionId, agentId },
+      });
       return;
     }
     await invokeAgentUpdateStatus(agentId, { status: 'completed', outputSummary: result.summary });

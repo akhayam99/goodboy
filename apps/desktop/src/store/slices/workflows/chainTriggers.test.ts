@@ -360,11 +360,13 @@ describe('startWorkflowRun', () => {
 
     expect(state['emitNotification']).toHaveBeenCalledTimes(1);
     expect(state['emitNotification']).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'workflow step held back',
-      expect.stringContaining('Open questions'),
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'workflow step held back',
+        body: expect.stringContaining('Open questions'),
+        sessionId: SESSION_ID,
+      }),
     );
   });
 

@@ -125,13 +125,13 @@ const failChildStart = async ({
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
   }
   void get().refreshUnreadWorkspaces();
-  void get().emitNotification(
-    'error',
-    'warning',
-    `cluster could not start: ${name}`,
-    `${reason} open the agent and continue it manually. the step stays open until this cluster finishes.`,
-    { sessionId },
-  );
+  void get().emitNotification({
+    kind: 'error',
+    severity: 'warning',
+    title: `cluster could not start: ${name}`,
+    body: `${reason} open the agent and continue it manually. the step stays open until this cluster finishes.`,
+    sessionId,
+  });
 };
 
 const handleChildStartFailure = async ({
@@ -258,13 +258,13 @@ export const fanOutClusters = async (
     })),
   });
   if (batch.kind === 'blocked') {
-    void get().emitNotification(
-      'error',
-      'warning',
-      `cluster blocked: ${container.name}`,
-      batch.reason,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `cluster blocked: ${container.name}`,
+      body: batch.reason,
+      sessionId,
+    });
     return;
   }
 
@@ -518,13 +518,13 @@ export const resumeClusterChildren = async ({
     const blocked = await invokeAgentList(sessionId);
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
     void get().refreshUnreadWorkspaces();
-    void get().emitNotification(
-      'error',
-      'warning',
-      `cluster blocked: ${next.name}`,
-      'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `cluster blocked: ${next.name}`,
+      body: 'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
+      sessionId,
+    });
     return false;
   }
   const revalidated = await revalidateChildRouting({
@@ -536,13 +536,13 @@ export const resumeClusterChildren = async ({
     promptText: `${next.name}\n${clusters[index]?.instructions ?? ''}`,
   });
   if (revalidated.kind === 'blocked') {
-    void get().emitNotification(
-      'error',
-      'warning',
-      `cluster blocked: ${next.name}`,
-      revalidated.reason,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `cluster blocked: ${next.name}`,
+      body: revalidated.reason,
+      sessionId,
+    });
     return false;
   }
   await invokeAgentUpdateStatus(container.id, { status: 'running' });
@@ -668,13 +668,13 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
       void get().refreshUnreadWorkspaces();
-      void get().emitNotification(
-        'error',
-        'warning',
-        'cluster blocked: missing implementer',
-        'the resolved plan has more clusters than this implementation contains, so the next cluster cannot start. open the plan and re-run the implementer.',
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'cluster blocked: missing implementer',
+        body: 'the resolved plan has more clusters than this implementation contains, so the next cluster cannot start. open the plan and re-run the implementer.',
+        sessionId,
+      });
       return;
     }
     if (!hasInstructions(clusters[nextIndex])) {
@@ -682,13 +682,13 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
       void get().refreshUnreadWorkspaces();
-      void get().emitNotification(
-        'error',
-        'warning',
-        `cluster blocked: ${next.name}`,
-        'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `cluster blocked: ${next.name}`,
+        body: 'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
+        sessionId,
+      });
       return;
     }
     const revalidated = await revalidateChildRouting({
@@ -702,13 +702,13 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     if (revalidated.kind === 'blocked') {
       const held = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: held } }));
-      void get().emitNotification(
-        'error',
-        'warning',
-        `cluster blocked: ${next.name}`,
-        revalidated.reason,
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `cluster blocked: ${next.name}`,
+        body: revalidated.reason,
+        sessionId,
+      });
       return;
     }
     void get().refreshUnreadWorkspaces();

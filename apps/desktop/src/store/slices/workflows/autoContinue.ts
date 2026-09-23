@@ -84,12 +84,12 @@ export const continueOrPause = async ({
   set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: stalled } }));
   void get().refreshUnreadWorkspaces();
   const copy = PAUSE_COPY[unit];
-  void get().emitNotification(
-    'error',
-    'warning',
-    `${copy.title}: ${agent.name}`,
-    handsFree ? copy.handsFree : copy.manual,
-    { sessionId },
-  );
+  void get().emitNotification({
+    kind: 'error',
+    severity: 'warning',
+    title: `${copy.title}: ${agent.name}`,
+    body: handsFree ? copy.handsFree : copy.manual,
+    sessionId,
+  });
   return 'paused';
 };

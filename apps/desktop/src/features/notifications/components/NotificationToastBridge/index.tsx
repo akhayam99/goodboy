@@ -113,13 +113,13 @@ export const mapNotificationAction = (
             publicationId: preview.publicationId,
           });
         })().catch((err: unknown) => {
-          void store.emitNotification(
-            'error',
-            'error',
-            'retry failed, conversations left open',
-            formatError(err),
-            { sessionId },
-          );
+          void store.emitNotification({
+            kind: 'error',
+            severity: 'error',
+            title: 'retry failed, conversations left open',
+            body: formatError(err),
+            sessionId,
+          });
         });
       },
     };

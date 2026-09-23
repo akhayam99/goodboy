@@ -32,7 +32,11 @@ export const convertPrToDraft = (_set: SetFn, get: GetFn) => {
         });
         if (res.exitCode !== 0) {
           const errMsg = res.stderr.trim() || `gh pr ready --undo exited with ${res.exitCode}`;
-          void get().emitNotification('error', 'error', 'Convert to draft failed', errMsg, {
+          void get().emitNotification({
+            kind: 'error',
+            severity: 'error',
+            title: 'Convert to draft failed',
+            body: errMsg,
             sessionId,
             workspaceId: workspace.id,
           });

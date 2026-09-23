@@ -12,11 +12,11 @@ export const bulkDeleteTask = (set: SetFn, get: GetFn) => {
       }
     }
     if (failures.length > 0) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        `failed to delete ${failures.length} of ${ids.length} sessions`,
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `failed to delete ${failures.length} of ${ids.length} sessions`,
+      });
     }
   };
 };

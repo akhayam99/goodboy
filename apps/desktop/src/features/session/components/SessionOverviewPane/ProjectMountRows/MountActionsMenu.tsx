@@ -184,7 +184,11 @@ export const MountActionsMenu = ({
 
   const fail = (title: string, error: unknown) => {
     showToast('error', `${title}: ${formatError(error)}`);
-    void emitNotification('error', 'warning', title, formatError(error), {
+    void emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title,
+      body: formatError(error),
       sessionId,
       workspaceId,
     });

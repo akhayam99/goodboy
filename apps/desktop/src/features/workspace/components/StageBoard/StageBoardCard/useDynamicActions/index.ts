@@ -164,7 +164,11 @@ export const useDynamicActions = (
             projectId: proposal.projectId,
             reason: proposal.reason,
           }).catch((error: unknown) => {
-            void emitNotification('error', 'error', 'Mount failed', formatError(error), {
+            void emitNotification({
+              kind: 'error',
+              severity: 'error',
+              title: 'Mount failed',
+              body: formatError(error),
               sessionId: id,
             });
           });

@@ -782,11 +782,13 @@ describe('scout child routing lifecycle', () => {
     expect(hoisted.invokeAgentInsertBatch).not.toHaveBeenCalled();
     expect(executions).toHaveLength(0);
     expect(emitNotification).toHaveBeenCalledWith(
-      'agent-auto-spawn',
-      'warning',
-      `agent fan-out held: ${root.name}`,
-      expect.any(String),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'agent-auto-spawn',
+        severity: 'warning',
+        title: `agent fan-out held: ${root.name}`,
+        body: expect.any(String),
+        sessionId: SID,
+      }),
     );
   });
 });

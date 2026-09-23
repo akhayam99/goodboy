@@ -56,13 +56,13 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
     if (unsettledChildren.length > 0) {
       const resumed = await resumeClusterChildren({ set, get, sessionId, container: agent });
       if (!resumed) {
-        void get().emitNotification(
-          'error',
-          'warning',
-          `step waiting on clusters: ${agent.name}`,
-          `${unsettledChildren.length} cluster ${unsettledChildren.length === 1 ? 'agent has' : 'agents have'} not finished, so this step stays open. open the cluster agents and continue them.`,
-          { sessionId },
-        );
+        void get().emitNotification({
+          kind: 'error',
+          severity: 'warning',
+          title: `step waiting on clusters: ${agent.name}`,
+          body: `${unsettledChildren.length} cluster ${unsettledChildren.length === 1 ? 'agent has' : 'agents have'} not finished, so this step stays open. open the cluster agents and continue them.`,
+          sessionId,
+        });
       }
       return { shouldAutoAdvance: false };
     }

@@ -190,7 +190,7 @@ describe('store contract', () => {
   describe('notifications', () => {
     it('emitNotification prepends a new notification', async () => {
       const store = useAppStore;
-      await store.getState().emitNotification('error', 'error', 'oops');
+      await store.getState().emitNotification({ kind: 'error', severity: 'error', title: 'oops' });
       const ns = store.getState().notifications;
       expect(ns).toHaveLength(1);
       expect(ns[0]?.title).toBe('oops');
@@ -201,10 +201,16 @@ describe('store contract', () => {
 
     it('emitNotification keys two unrelated failures in one session apart', async () => {
       const store = useAppStore;
-      await store.getState().emitNotification('error', 'error', 'summarizer failed', undefined, {
+      await store.getState().emitNotification({
+        kind: 'error',
+        severity: 'error',
+        title: 'summarizer failed',
         sessionId: SESSION_ID,
       });
-      await store.getState().emitNotification('error', 'error', 'orchestrator failed', undefined, {
+      await store.getState().emitNotification({
+        kind: 'error',
+        severity: 'error',
+        title: 'orchestrator failed',
         sessionId: SESSION_ID,
       });
       const keys = store.getState().notifications.map((n) => n.coalesceKey);
@@ -216,23 +222,27 @@ describe('store contract', () => {
 
     it('emitNotification leaves an explicit coalesceKey untouched', async () => {
       const store = useAppStore;
-      await store
-        .getState()
-        .emitNotification('error', 'warning', 'Context near the limit', 'body', {
-          sessionId: SESSION_ID,
-          coalesceKey: `context-soft-cap:${SESSION_ID}`,
-        });
+      await store.getState().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Context near the limit',
+        body: 'body',
+        sessionId: SESSION_ID,
+        coalesceKey: `context-soft-cap:${SESSION_ID}`,
+      });
       expect(store.getState().notifications[0]?.coalesceKey).toBe(`context-soft-cap:${SESSION_ID}`);
     });
 
     it('emitNotification persists action payload to DB', async () => {
       const store = useAppStore;
-      await store
-        .getState()
-        .emitNotification('error', 'error', 'summarizer failed', 'anthropic: timeout', {
-          sessionId: SESSION_ID,
-          action: { kind: 'retry-summarizer', sessionId: SESSION_ID },
-        });
+      await store.getState().emitNotification({
+        kind: 'error',
+        severity: 'error',
+        title: 'summarizer failed',
+        body: 'anthropic: timeout',
+        sessionId: SESSION_ID,
+        action: { kind: 'retry-summarizer', sessionId: SESSION_ID },
+      });
       const ns = store.getState().notifications;
       expect(ns[0]?.action).toEqual({ kind: 'retry-summarizer', sessionId: SESSION_ID });
       expect(storySpies.insertNotification).toHaveBeenCalledWith(

@@ -192,13 +192,14 @@ const publishGitlab = async ({
         `${NOTE_PREFIX[verdict]}${trimmedBody}`,
       );
     } catch (err) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        'review summary note failed to post',
-        formatError(err),
-        { sessionId, workspaceId: workspace.id },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'review summary note failed to post',
+        body: formatError(err),
+        sessionId,
+        workspaceId: workspace.id,
+      });
     }
   }
   return { publishedIds, failed };

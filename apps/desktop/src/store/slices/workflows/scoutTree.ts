@@ -453,13 +453,13 @@ export const fanOutAgents = async ({
   const clamped = areas.slice(0, FAN_OUT_MAX_CHILDREN);
   const dropped = areas.length - clamped.length;
   if (dropped > 0) {
-    void get().emitNotification(
-      'agent-auto-spawn',
-      'info',
-      `agent fan-out capped: ${container.name}`,
-      `dropped ${dropped} area(s) over the ${FAN_OUT_MAX_CHILDREN}-child limit`,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'agent-auto-spawn',
+      severity: 'info',
+      title: `agent fan-out capped: ${container.name}`,
+      body: `dropped ${dropped} area(s) over the ${FAN_OUT_MAX_CHILDREN}-child limit`,
+      sessionId,
+    });
   }
   if (clamped.length < 2) {
     return;
@@ -481,13 +481,13 @@ export const fanOutAgents = async ({
     })),
   });
   if (started.kind === 'blocked') {
-    void get().emitNotification(
-      'agent-auto-spawn',
-      'warning',
-      `agent fan-out held: ${container.name}`,
-      started.reason,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'agent-auto-spawn',
+      severity: 'warning',
+      title: `agent fan-out held: ${container.name}`,
+      body: started.reason,
+      sessionId,
+    });
   }
 };
 

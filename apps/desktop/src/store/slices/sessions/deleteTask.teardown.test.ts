@@ -143,11 +143,12 @@ describe('deleting a session', () => {
       }),
     ]);
     expect(store.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'failed to remove 1 session paths',
-      expect.stringContaining('untracked-files'),
-      expect.anything(),
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'failed to remove 1 session paths',
+        body: expect.stringContaining('untracked-files'),
+      }),
     );
   });
 

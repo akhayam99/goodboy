@@ -47,7 +47,11 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
       onDone();
     } catch (error) {
       setFailure(mountFailure({ error, project, preflight }));
-      void emitNotification('error', 'warning', 'could not add the project', formatError(error), {
+      void emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'could not add the project',
+        body: formatError(error),
         sessionId,
         workspaceId: project.workspaceId,
       });

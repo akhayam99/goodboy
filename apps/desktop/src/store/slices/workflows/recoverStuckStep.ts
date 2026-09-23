@@ -59,13 +59,13 @@ export const recoverStuckStep = (get: GetFn) => {
         origin: 'workflow',
       });
     } catch (error) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        'the blocked step could not be checked',
-        `${formatError(error)}. You can still skip this step.`,
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'the blocked step could not be checked',
+        body: `${formatError(error)}. You can still skip this step.`,
+        sessionId,
+      });
     }
   };
 };

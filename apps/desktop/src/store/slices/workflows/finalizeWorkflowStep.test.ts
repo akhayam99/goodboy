@@ -257,11 +257,13 @@ describe('finalizeWorkflowStep output summary', () => {
       '[step-output] summarization failed, using deterministic fallback: provider unavailable',
     );
     expect(state.emitNotification).toHaveBeenCalledWith(
-      'summarizer-degraded',
-      'warning',
-      expect.stringContaining('Implement'),
-      expect.stringContaining('provider unavailable'),
-      expect.objectContaining({ sessionId: SESSION_ID }),
+      expect.objectContaining({
+        kind: 'summarizer-degraded',
+        severity: 'warning',
+        title: expect.stringContaining('Implement'),
+        body: expect.stringContaining('provider unavailable'),
+        sessionId: SESSION_ID,
+      }),
     );
   });
 
@@ -298,11 +300,11 @@ describe('finalizeWorkflowStep output summary', () => {
 
     expect(state.emitNotification).toHaveBeenCalledTimes(2);
     expect(state.emitNotification).toHaveBeenLastCalledWith(
-      'summarizer-degraded',
-      'warning',
-      expect.any(String),
-      expect.any(String),
       expect.objectContaining({
+        kind: 'summarizer-degraded',
+        severity: 'warning',
+        title: expect.any(String),
+        body: expect.any(String),
         coalesceKey: `step-summary-degraded:${agent.workflowRunId}:${agent.stepId}`,
       }),
     );
@@ -388,11 +390,13 @@ describe('finalizeWorkflowStep output summary', () => {
       expect.objectContaining({ status: 'failed' }),
     );
     expect(finalize.state.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'step paused: Implement',
-      expect.stringContaining('step-done marker'),
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'step paused: Implement',
+        body: expect.stringContaining('step-done marker'),
+        sessionId: SESSION_ID,
+      }),
     );
     expect(finalize.state.workflowContinueAttempts).toEqual({});
   });
@@ -572,11 +576,13 @@ describe('finalizeWorkflowStep output summary', () => {
     expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
     expect(state.sendTurn).not.toHaveBeenCalled();
     expect(state.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      `step waiting on clusters: ${agent.name}`,
-      expect.stringContaining('1 cluster agent has not finished'),
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: `step waiting on clusters: ${agent.name}`,
+        body: expect.stringContaining('1 cluster agent has not finished'),
+        sessionId: SESSION_ID,
+      }),
     );
     expect(result).toEqual({ shouldAutoAdvance: false });
   });
