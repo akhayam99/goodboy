@@ -6,7 +6,6 @@ UPDATE session_workflows
          json_object(
            'id', lower(hex(randomblob(16))),
            'text', trim(orchestrator_hints),
-           'isPinned', json('true'),
            'createdAt', strftime('%Y-%m-%dT%H:%M:%fZ', created_at / 1000.0, 'unixepoch')
          )
        )

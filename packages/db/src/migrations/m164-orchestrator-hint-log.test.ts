@@ -49,7 +49,7 @@ describe('m164 orchestrator hint log', () => {
     await expect(hintLogs(db)).rejects.toThrow();
   });
 
-  it('carries a standing hint over as one pinned entry', async () => {
+  it('carries a standing hint over as one entry', async () => {
     const db = await seed();
     await migrate(db, migrations);
     const row = (await hintLogs(db)).find((entry) => entry.workflow_run_id === 'run-hinted');
@@ -57,7 +57,6 @@ describe('m164 orchestrator hint log', () => {
     expect(log).toHaveLength(1);
     expect(log[0]).toMatchObject({
       text: 'keep it to one PR',
-      isPinned: true,
       createdAt: '2026-01-01T00:00:00.000Z',
     });
     expect(log[0]?.consumedAt).toBeUndefined();

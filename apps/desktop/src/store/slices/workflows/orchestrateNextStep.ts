@@ -66,8 +66,8 @@ import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { findWorkflowRun } from './findWorkflowRun';
 import {
-  activeOrchestratorHints,
   consumeOrchestratorHints,
+  formatOrchestratorHints,
   hasHintArrivedSince,
 } from './orchestratorHintQueue';
 import { writeOrchestratorHints } from './writeOrchestratorHints';
@@ -623,7 +623,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)
           ?.profile,
       });
-      const readHints = activeOrchestratorHints({ hints: run.orchestratorHints ?? [] });
+      const readHints = run.orchestratorHints ?? [];
       const readHintIds = new Set(readHints.map((hint) => hint.id));
       const isDecisionDiscarded = (): boolean =>
         hasOperatorStop({ get, sessionId, workflowRunId }) ||
@@ -631,7 +631,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           hints: findWorkflowRun({ get, sessionId, workflowRunId })?.orchestratorHints ?? [],
           seenIds: readHintIds,
         });
-      const hints = [profileBlock, ...readHints.map((hint) => hint.text), operatorNote]
+      const hints = [profileBlock, formatOrchestratorHints({ hints: readHints }), operatorNote]
         .map((entry) => entry?.trim() ?? '')
         .filter((entry) => entry !== '')
         .join('\n');

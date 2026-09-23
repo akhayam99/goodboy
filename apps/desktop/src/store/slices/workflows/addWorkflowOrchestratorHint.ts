@@ -5,7 +5,6 @@ import { writeOrchestratorHints } from './writeOrchestratorHints';
 
 export type OrchestratorHintDraft = {
   readonly text: string;
-  readonly isPinned: boolean;
 };
 
 export const addWorkflowOrchestratorHint = (set: SetFn, get: GetFn) => {
@@ -22,7 +21,6 @@ export const addWorkflowOrchestratorHint = (set: SetFn, get: GetFn) => {
     const hint: OrchestratorHint = {
       id: crypto.randomUUID(),
       text,
-      isPinned: draft.isPinned,
       createdAt: new Date().toISOString() as IsoDateTime,
     };
     await writeOrchestratorHints({

@@ -24,7 +24,7 @@ const toHint = ({ entry }: HintEntryParams): OrchestratorHint | null => {
   if (isUnknownRecord(entry) === false) {
     return null;
   }
-  const { id, text, isPinned, createdAt, consumedAt, consumedAtStep } = entry;
+  const { id, text, createdAt, consumedAt, consumedAtStep } = entry;
   if (
     typeof id !== 'string' ||
     id === '' ||
@@ -37,7 +37,6 @@ const toHint = ({ entry }: HintEntryParams): OrchestratorHint | null => {
   return {
     id,
     text,
-    isPinned: isPinned === true,
     createdAt,
     ...(isIsoTimestamp(consumedAt) && { consumedAt }),
     ...(typeof consumedAtStep === 'number' &&

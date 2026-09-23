@@ -114,7 +114,6 @@ const HINT_AT = '2026-09-23T10:00:00.000Z' as IsoDateTime;
 const hint = (over: Partial<OrchestratorHint>): OrchestratorHint => ({
   id: 'hint',
   text: 'keep it to one PR',
-  isPinned: false,
   createdAt: HINT_AT,
   ...over,
 });
@@ -132,7 +131,6 @@ beforeEach(() => {
     continueWorkflowRun: vi.fn(async () => undefined),
     addWorkflowOrchestratorHint: vi.fn(async () => undefined),
     removeWorkflowOrchestratorHint: vi.fn(async () => undefined),
-    pinWorkflowOrchestratorHint: vi.fn(async () => undefined),
     setWorkflowOrchestratorRouting: vi.fn(async () => undefined),
     setWorkflowRoleModelOverrides: vi.fn(async () => undefined),
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
@@ -492,7 +490,7 @@ describe('OrchestratorPanel strip', () => {
     expect(screen.queryByTestId('step-routing')).toBeNull();
   });
 
-  it('sends a hint from the disclosure, read once by default', () => {
+  it('sends a hint from the disclosure', () => {
     renderPanel();
 
     openHints();
@@ -503,27 +501,15 @@ describe('OrchestratorPanel strip', () => {
 
     expect(storeState['addWorkflowOrchestratorHint']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
       text: 'ignore the website',
-      isPinned: false,
     });
   });
 
-  it('keeps a hint for every step when asked', () => {
+  it('says a hint restarts the decision in flight, and nothing otherwise', () => {
     renderPanel();
-
     openHints();
-    fireEvent.change(screen.getByTestId('orchestrator-hint-input'), {
-      target: { value: 'never use fable for builders' },
-    });
-    fireEvent.click(screen.getByLabelText('Keep for every step'));
-    fireEvent.click(screen.getByTestId('orchestrator-hint-send'));
+    expect(screen.queryByTestId('orchestrator-hint-timing')).toBeNull();
 
-    expect(storeState['addWorkflowOrchestratorHint']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
-      text: 'never use fable for builders',
-      isPinned: true,
-    });
-  });
-
-  it('says a hint restarts the decision in flight', () => {
+    cleanup();
     renderPanel({ isOrchestrating: true });
 
     openHints();
@@ -533,12 +519,11 @@ describe('OrchestratorPanel strip', () => {
     );
   });
 
-  it('lists every hint with its state and acts only on the live ones', () => {
+  it('lists every hint newest first with the step that first read it', () => {
     renderPanel({
       runOverride: run({
         orchestratorHints: [
           hint({ id: 'read', text: 'keep it to one PR', consumedAt: HINT_AT, consumedAtStep: 2 }),
-          hint({ id: 'pinned', text: 'never use fable', isPinned: true }),
           hint({ id: 'queued', text: 'run a reviewer first' }),
         ],
       }),
@@ -547,22 +532,10 @@ describe('OrchestratorPanel strip', () => {
     openHints();
 
     const rows = screen.getAllByTestId('orchestrator-hint-row');
-    expect(rows.map((row) => row.getAttribute('data-status'))).toEqual([
-      'pinned',
-      'queued',
-      'read',
-    ]);
-    expect(rows[2]?.textContent).toContain('read at step 2');
-    expect(rows[2]?.querySelectorAll('button')).toHaveLength(0);
+    expect(rows.map((row) => row.getAttribute('data-status'))).toEqual(['queued', 'read']);
+    expect(rows[1]?.textContent).toContain('read at step 2');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Read it only once' }));
-    expect(storeState['pinWorkflowOrchestratorHint']).toHaveBeenCalledWith(
-      SESSION_ID,
-      RUN_ID,
-      'pinned',
-      false,
-    );
-    fireEvent.click(screen.getAllByRole('button', { name: 'Remove hint' })[1]!);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Remove hint' })[0]!);
     expect(storeState['removeWorkflowOrchestratorHint']).toHaveBeenCalledWith(
       SESSION_ID,
       RUN_ID,
@@ -589,11 +562,11 @@ describe('OrchestratorPanel strip', () => {
     expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
   });
 
-  it('counts pinned and queued hints without spending a button on them', () => {
+  it('counts queued hints without spending a button on them', () => {
     renderPanel({
       runOverride: run({
         orchestratorHints: [
-          hint({ id: 'pinned', isPinned: true }),
+          hint({ id: 'read', consumedAt: HINT_AT, consumedAtStep: 1 }),
           hint({ id: 'queued-1' }),
           hint({ id: 'queued-2' }),
         ],
@@ -601,7 +574,6 @@ describe('OrchestratorPanel strip', () => {
     });
 
     const text = screen.getByTestId('orchestrator-panel').textContent ?? '';
-    expect(text).toContain('1 hint on every step');
     expect(text).toContain('2 hints queued');
   });
 

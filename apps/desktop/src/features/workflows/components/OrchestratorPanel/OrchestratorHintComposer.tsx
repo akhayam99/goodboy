@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowUp } from 'lucide-react';
-import { Checkbox, IconButton, Input } from '@goodboy/ui';
+import { IconButton, Input } from '@goodboy/ui';
 import type { OrchestratorHintDraft } from '../../../../store/slices/workflows/addWorkflowOrchestratorHint';
 
 type Props = {
@@ -11,22 +11,20 @@ type Props = {
 
 export const OrchestratorHintComposer = ({ isDeciding, disabled, onSubmit }: Props) => {
   const [text, setText] = useState('');
-  const [isPinned, setIsPinned] = useState(false);
   const canSend = disabled === false && text.trim() !== '';
 
   const send = async () => {
     if (canSend === false) {
       return;
     }
-    await onSubmit({ text, isPinned });
+    await onSubmit({ text });
     setText('');
-    setIsPinned(false);
   };
 
   return (
     <form
       aria-label="Tell the orchestrator"
-      className="flex flex-col gap-1.5"
+      className="flex flex-col gap-1"
       onSubmit={(event) => {
         event.preventDefault();
         void send();
@@ -51,20 +49,11 @@ export const OrchestratorHintComposer = ({ isDeciding, disabled, onSubmit }: Pro
           data-testid="orchestrator-hint-send"
         />
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Checkbox
-          id="orchestrator-hint-pinned"
-          checked={isPinned}
-          disabled={disabled}
-          onChange={setIsPinned}
-          label={<span className="text-2xs text-muted-foreground">Keep for every step</span>}
-        />
+      {isDeciding ? (
         <span data-testid="orchestrator-hint-timing" className="text-2xs text-muted-foreground">
-          {isDeciding
-            ? 'Sending restarts the decision in flight with your hint'
-            : 'Read at the next decision'}
+          Sending restarts the decision in flight with your hint
         </span>
-      </div>
+      ) : null}
     </form>
   );
 };

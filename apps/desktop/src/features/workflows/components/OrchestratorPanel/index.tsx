@@ -66,7 +66,6 @@ export const OrchestratorPanel = ({
   const removeWorkflowOrchestratorHint = useAppStore(
     (state) => state.removeWorkflowOrchestratorHint,
   );
-  const pinWorkflowOrchestratorHint = useAppStore((state) => state.pinWorkflowOrchestratorHint);
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
   const setWorkflowRunAutoRun = useAppStore((state) => state.setWorkflowRunAutoRun);
   const stopWorkflowRunNow = useAppStore((state) => state.stopWorkflowRunNow);
@@ -82,10 +81,7 @@ export const OrchestratorPanel = ({
   const [busy, setBusy] = useState(false);
   const [isStopArmed, setIsStopArmed] = useState(false);
   const hints = run.orchestratorHints ?? EMPTY_HINTS;
-  const pinnedHintCount = hints.filter((hint) => hint.isPinned).length;
-  const queuedHintCount = hints.filter(
-    (hint) => hint.isPinned === false && hint.consumedAt == null,
-  ).length;
+  const queuedHintCount = hints.filter((hint) => hint.consumedAt == null).length;
   const continueOpen = openDrawer === 'continue';
   const hintsOpen = openDrawer === 'hints';
   const rolesOpen = openDrawer === 'roles';
@@ -275,11 +271,6 @@ export const OrchestratorPanel = ({
                 · {elapsed}
               </span>
             )}
-            {pinnedHintCount === 0 ? null : (
-              <span className="font-normal text-muted-foreground">
-                · {pinnedHintCount} {pinnedHintCount === 1 ? 'hint' : 'hints'} on every step
-              </span>
-            )}
             {queuedHintCount === 0 ? null : (
               <span data-testid="orchestrator-queued-hints" className="font-normal text-warning">
                 · {queuedHintCount} {queuedHintCount === 1 ? 'hint' : 'hints'} queued
@@ -345,7 +336,7 @@ export const OrchestratorPanel = ({
             label="Hints"
             variant="ghost"
             testId="orchestrator-hints-toggle"
-            title="Tell the orchestrator something, once or for every step"
+            title="Tell the orchestrator something for the rest of the run"
             expanded={hintsOpen}
             onClick={() => toggleDrawer('hints')}
           />
@@ -408,7 +399,7 @@ export const OrchestratorPanel = ({
           <OrchestratorDrawer
             inputId="orchestrator-hint-field"
             title="Hints"
-            help="A hint is read once by the next decision, or by every decision when you keep it for every step."
+            help="The orchestrator rereads every hint at each decision and judges which still apply. Remove one to take it back."
           >
             <OrchestratorHintComposer
               isDeciding={isOrchestrating}
@@ -419,9 +410,6 @@ export const OrchestratorPanel = ({
               hints={hints}
               disabled={busy}
               onRemove={(hintId) => void removeWorkflowOrchestratorHint(sessionId, run.id, hintId)}
-              onPin={(hintId, isPinned) =>
-                void pinWorkflowOrchestratorHint(sessionId, run.id, hintId, isPinned)
-              }
             />
           </OrchestratorDrawer>
         ) : null}
