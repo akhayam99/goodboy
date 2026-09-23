@@ -107,6 +107,51 @@ describe('artifactDrafts slice', () => {
     expect(store.getState().artifactDrafts[SESSION_ID]).toEqual({});
   });
 
+  it('keeps attachment refs across a restart', () => {
+    const attachment = {
+      id: 'attachment-1',
+      fileName: 'ledger-flow.png',
+      mimeType: 'image/png',
+      relPath: '.goodboy/attachments/ledger-flow.png',
+    };
+    makeStore()
+      .getState()
+      .setArtifactDraft({
+        sessionId: SESSION_ID,
+        draft: reportDraft({ brief: 'with a sketch', attachments: [attachment] }),
+      });
+
+    const restarted = makeStore();
+    restarted.getState().hydrateArtifactDrafts({ sessionId: SESSION_ID });
+
+    expect(restarted.getState().artifactDrafts[SESSION_ID]?.report?.attachments).toEqual([
+      attachment,
+    ]);
+  });
+
+  it('drops a malformed attachment ref and keeps the valid ones', () => {
+    const valid = {
+      id: 'attachment-1',
+      fileName: 'notes.md',
+      mimeType: 'text/markdown',
+      relPath: '.goodboy/attachments/notes.md',
+    };
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        v: 1,
+        report: {
+          ...reportDraft(),
+          attachments: [valid, { id: 'attachment-2', fileName: 'broken.png' }, 'not-a-ref'],
+        },
+      }),
+    );
+    const store = makeStore();
+    store.getState().hydrateArtifactDrafts({ sessionId: SESSION_ID });
+
+    expect(store.getState().artifactDrafts[SESSION_ID]?.report?.attachments).toEqual([valid]);
+  });
+
   it('removes the storage row when the last draft is cleared', () => {
     const store = makeStore();
     store.getState().setArtifactDraft({

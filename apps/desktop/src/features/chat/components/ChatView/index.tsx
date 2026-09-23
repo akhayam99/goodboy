@@ -11,7 +11,6 @@ import type { ReactNode } from 'react';
 import { ArrowDown } from 'lucide-react';
 import type {
   AgentId,
-  AttachmentInput,
   MessageAttachment,
   OpenQuestion,
   ProviderId,
@@ -51,8 +50,8 @@ import { useScrollPin } from './useScrollPin';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 import { WorkflowAdvanceRow } from './parts/WorkflowAdvanceRow';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
-import { readAttachment } from '../../turn';
-import { dataUrlToBase64 } from '../ChatInput/lib';
+import { missingAttachmentsMessage, readRetryAttachments } from './readRetryAttachments';
+import { useToast } from '../../../../app/components/Toast';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -71,11 +70,6 @@ type RetrySource = {
 type RetrySourceParams = {
   readonly events: ReadonlyArray<TurnEvent>;
   readonly runId: ProviderRunId;
-};
-
-type RetryAttachmentsParams = {
-  readonly worktreePath: string | null;
-  readonly attachments: ReadonlyArray<MessageAttachment>;
 };
 
 type RetryOverrideParams = {
@@ -102,28 +96,6 @@ const findRetrySource = ({ events, runId }: RetrySourceParams): RetrySource | nu
   return null;
 };
 
-const readRetryAttachments = async ({
-  worktreePath,
-  attachments,
-}: RetryAttachmentsParams): Promise<ReadonlyArray<AttachmentInput>> => {
-  if (worktreePath == null || attachments.length === 0) {
-    return [];
-  }
-  const out: AttachmentInput[] = [];
-  for (const attachment of attachments) {
-    try {
-      const dataUrl = await readAttachment(worktreePath, attachment.relPath);
-      out.push({
-        id: attachment.id,
-        fileName: attachment.fileName,
-        mimeType: attachment.mimeType,
-        dataBase64: dataUrlToBase64(dataUrl),
-      });
-    } catch {}
-  }
-  return out;
-};
-
 const buildRetryOverride = ({
   provider,
   model,
@@ -142,6 +114,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
     (s) => s.selectedAgentId[session.id] ?? null,
   ) as AgentId | null;
   const sendTurn = useAppStore((s) => s.sendTurn);
+  const { showToast } = useToast();
   const events = useTranscript(selectedAgentId);
   const items = useMemo(() => reduceTranscript(events), [events]);
   const [retryingErrorRunId, setRetryingErrorRunId] = useState<ProviderRunId | null>(null);
@@ -288,10 +261,13 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
       }
       setRetryingErrorRunId(item.runId);
       try {
-        const attachments = await readRetryAttachments({
+        const { inputs: attachments, missing } = await readRetryAttachments({
           worktreePath,
           attachments: source.attachments,
         });
+        if (missing.length > 0) {
+          showToast('warning', missingAttachmentsMessage({ missing }));
+        }
         const override = buildRetryOverride({ provider: source.provider, model: source.model });
         await sendTurn({
           sessionId: session.id,
@@ -304,7 +280,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
         setRetryingErrorRunId(null);
       }
     },
-    [events, selectedAgentId, sendTurn, session.id, worktreePath],
+    [events, selectedAgentId, sendTurn, session.id, showToast, worktreePath],
   );
 
   const mountProposals = useTranscriptMountProposals({ session });

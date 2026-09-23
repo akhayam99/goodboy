@@ -57,6 +57,10 @@ vi.mock('../../../../store', () => ({
   useTranscript: () => [],
 }));
 
+vi.mock('../../../../app/components/Toast', () => ({
+  useToast: () => ({ showToast: vi.fn() }),
+}));
+
 vi.mock('./OpenQuestionInlineCard', () => ({
   OpenQuestionInlineCard: () => null,
 }));
