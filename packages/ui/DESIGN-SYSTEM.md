@@ -33,6 +33,12 @@ medium weight, driven by `data-selected` (`selectedRow.ts`, used by
 selection; the focus ring stays the only ring, so focus and selection read
 apart, as in VS Code and Linear lists.
 
+A row that holds its own links or buttons is `InteractiveRow`: one overlay
+button stretched over the row opens it, and the inner controls sit above it.
+A `role="button"` div with its own key handler and propagation stopping is not
+another pattern. A settings-style rail entry with an icon, a subtitle and a
+status dot is `StatusRailItem`.
+
 ## Type scale
 
 `text-3xs` 10px/14px, `2xs` 11px/16px, `xs` 12px, `sm` 14px/20px, `base` 15px,

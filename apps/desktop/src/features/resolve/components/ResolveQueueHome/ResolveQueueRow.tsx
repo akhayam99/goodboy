@@ -1,6 +1,13 @@
-import type { KeyboardEvent, SyntheticEvent } from 'react';
 import { ChevronRight, RotateCcw } from 'lucide-react';
-import { CardAction, CardActionSlot, Chip, ClampedProse, Tooltip, cn } from '@goodboy/ui';
+import {
+  CardAction,
+  CardActionSlot,
+  Chip,
+  ClampedProse,
+  InteractiveRow,
+  Tooltip,
+  cn,
+} from '@goodboy/ui';
 import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { RESOLVE_COMMENT_UNAVAILABLE, RESOLVE_QUEUE_ACTION_LABEL } from '../../resolveQueueCopy';
@@ -23,20 +30,6 @@ type Props = {
 const deliveryTimeMs = ({ row }: { readonly row: QueueRow }): number | null =>
   row.delivery === null ? null : (row.delivery.replyPostedAt ?? row.delivery.resolvedAt);
 
-const INNER_CONTROL_SELECTOR = 'a, button';
-
-const stopOnInnerControl = (event: SyntheticEvent<HTMLElement>): void => {
-  const target = event.target;
-  if (!(target instanceof Element)) {
-    return;
-  }
-  const control = target.closest(INNER_CONTROL_SELECTOR);
-  if (control === null || !event.currentTarget.contains(control)) {
-    return;
-  }
-  event.stopPropagation();
-};
-
 export const ResolveQueueRow = ({
   row,
   isSelected,
@@ -53,32 +46,18 @@ export const ResolveQueueRow = ({
   const integratedSha = item.integratedSha;
   const postedAtMs = deliveryTimeMs({ row });
 
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
-    if (event.target !== event.currentTarget) {
-      return;
-    }
-    if (event.key !== 'Enter' && event.key !== ' ') {
-      return;
-    }
-    event.preventDefault();
-    onOpen();
-  };
-
   return (
     <li className="list-none">
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label={accessibleName}
-        aria-current={isSelected ? 'true' : undefined}
-        data-selected={isSelected}
-        data-thread-id={row.thread.threadId}
-        onClick={onOpen}
-        onKeyDown={onKeyDown}
-        className={cn(
-          'group/resolve-row grid cursor-pointer grid-cols-[minmax(0,1fr)_auto_auto] grid-rows-[auto_auto] gap-x-4 gap-y-2 rounded-md px-3 py-2 text-left text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring data-[selected=true]:bg-muted data-[selected=true]:font-medium data-[selected=true]:text-foreground',
+      <InteractiveRow
+        label={accessibleName}
+        isSelected={isSelected}
+        onOpen={onOpen}
+        dataAttributes={{ 'data-thread-id': row.thread.threadId }}
+        frameClassName={cn(
+          'group/resolve-row',
           status === 'working' && 'spin-border spin-border-info',
         )}
+        className="grid grid-cols-[minmax(0,1fr)_auto_auto] grid-rows-[auto_auto] gap-x-4 gap-y-2 px-3 py-2 text-left"
       >
         <div className="col-start-1 row-start-1 min-w-0">
           {body === null ? (
@@ -86,11 +65,7 @@ export const ResolveQueueRow = ({
               {RESOLVE_COMMENT_UNAVAILABLE}
             </p>
           ) : (
-            <div
-              onClick={stopOnInnerControl}
-              onKeyDown={stopOnInnerControl}
-              className="min-w-0 text-sm font-medium leading-5 text-foreground"
-            >
+            <div className="min-w-0 text-sm font-medium leading-5 text-foreground">
               <ClampedProse text={body} lines={2} className="text-foreground" />
             </div>
           )}
@@ -122,10 +97,7 @@ export const ResolveQueueRow = ({
               <Tooltip content={integratedSha} side="top">
                 <button
                   type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onOpenCommit({ sha: integratedSha });
-                  }}
+                  onClick={() => onOpenCommit({ sha: integratedSha })}
                   className="rounded-sm font-mono tabular-nums underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                 >
                   {shortSha({ sha: integratedSha })}
@@ -167,7 +139,7 @@ export const ResolveQueueRow = ({
             />
           </CardActionSlot>
         )}
-      </div>
+      </InteractiveRow>
     </li>
   );
 };

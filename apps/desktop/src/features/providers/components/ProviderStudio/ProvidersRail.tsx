@@ -1,4 +1,4 @@
-import { Eyebrow, SelectableRow, StatusDot, type Tone } from '@goodboy/ui';
+import { Eyebrow, SelectableRow, StatusRailItem, type Tone } from '@goodboy/ui';
 import { type ProviderConnectionState, type ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
@@ -59,25 +59,15 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
                 ? (p.identity ?? STATUS_LABEL.connected)
                 : STATUS_LABEL[p.connection];
             return (
-              <SelectableRow
+              <StatusRailItem
                 key={id}
+                icon={<Icon size={ICON_SIZE.control} style={{ color: brandColor(id) }} />}
+                label={p.label}
+                subtitle={subtitle}
+                tone={STATUS_TONE[p.connection]}
                 selected={active}
                 onClick={() => onSelect(id)}
-                ariaCurrent={active}
-                className="items-center gap-2.5 px-2.5 py-2"
-              >
-                <Icon
-                  size={ICON_SIZE.control}
-                  aria-hidden
-                  className="shrink-0"
-                  style={{ color: brandColor(id) }}
-                />
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-sm font-medium text-foreground">{p.label}</span>
-                  <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
-                </span>
-                <StatusDot tone={STATUS_TONE[p.connection]} size="md" />
-              </SelectableRow>
+              />
             );
           })}
         </div>

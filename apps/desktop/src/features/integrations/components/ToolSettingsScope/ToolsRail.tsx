@@ -1,4 +1,4 @@
-import { Eyebrow, SelectableRow, StatusDot } from '@goodboy/ui';
+import { Eyebrow, StatusRailItem } from '@goodboy/ui';
 import type { IntegrationBinding } from '@goodboy/types';
 import { FOOTER_INTEGRATIONS } from '../../../../app/components/AppFooter/categories';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -38,24 +38,15 @@ export const ToolsRail = ({
                   binding: integrations.find((binding) => binding.provider === provider),
                 });
           return (
-            <SelectableRow
+            <StatusRailItem
               key={provider}
+              icon={<IntegrationGlyph provider={provider} size={ICON_SIZE.control} useBrandColor />}
+              label={integrationLabel({ provider })}
+              subtitle={subtitle}
+              tone={connected[provider] ? 'success' : 'neutral'}
               selected={isActive}
-              ariaCurrent={isActive}
               onClick={() => onSelect(provider)}
-              className="items-center gap-2.5 px-2.5 py-2"
-            >
-              <span aria-hidden className="shrink-0">
-                <IntegrationGlyph provider={provider} size={ICON_SIZE.control} useBrandColor />
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm font-medium text-foreground">
-                  {integrationLabel({ provider })}
-                </span>
-                <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
-              </span>
-              <StatusDot tone={connected[provider] ? 'success' : 'neutral'} size="md" />
-            </SelectableRow>
+            />
           );
         })}
       </div>

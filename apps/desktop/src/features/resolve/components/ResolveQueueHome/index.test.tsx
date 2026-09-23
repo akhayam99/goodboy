@@ -402,7 +402,10 @@ describe('walking the queue from the keyboard', () => {
     };
     render(<ResolveQueueHome session={SESSION} />);
 
-    const inner = within(rowFor('PRRT_2')).getAllByRole('button', { hidden: true })[0];
+    const overlay = rowFor('PRRT_2');
+    const inner = within(overlay.parentElement ?? overlay)
+      .getAllByRole('button', { hidden: true })
+      .find((button) => button !== overlay);
     const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
     inner?.dispatchEvent(event);
 
