@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { formatError } from '@goodboy/ui';
+import { TASKS } from '@goodboy/types';
 import type {
   AgentRole,
   AuxTaskId,
   OverrideSettings,
   RoleModelPreference,
   TaskModelPreference,
+  TaskModelPreferences,
   WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
@@ -29,6 +31,20 @@ type PersistRoleModelParams = {
   readonly preference: RoleModelPreference | null;
 };
 
+type KnownTaskModelsParams = {
+  readonly taskModels: TaskModelPreferences | null;
+};
+
+const knownTaskModels = ({
+  taskModels,
+}: KnownTaskModelsParams): Partial<Record<AuxTaskId, TaskModelPreference>> =>
+  Object.fromEntries(
+    TASKS.flatMap(({ id }) => {
+      const preference = taskModels?.[id];
+      return preference == null ? [] : [[id, preference]];
+    }),
+  );
+
 export const useDefaultsPersistence = ({ workspaceId, overrides }: Params) => {
   const setWorkspaceOverrides = useAppStore((state) => state.setWorkspaceOverrides);
   const [busy, setBusy] = useState(false);
@@ -47,7 +63,7 @@ export const useDefaultsPersistence = ({ workspaceId, overrides }: Params) => {
   };
 
   const persistTaskModel = ({ task, preference }: PersistTaskModelParams) => {
-    const taskModels = { ...(overrides.taskModels ?? {}) };
+    const taskModels = knownTaskModels({ taskModels: overrides.taskModels });
     if (preference == null) {
       delete taskModels[task];
     }

@@ -8,7 +8,6 @@ export type ProviderBindings = Partial<Record<ProviderId, string>>;
 
 export type AuxTaskId =
   | 'summarizer'
-  | 'branch_naming'
   | 'plan_generation'
   | 'prose_polish'
   | 'agent_naming'

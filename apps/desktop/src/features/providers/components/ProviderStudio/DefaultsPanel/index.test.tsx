@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { OverrideSettings } from '@goodboy/types';
+import type { OverrideSettings, TaskModelPreference } from '@goodboy/types';
 import { DefaultsPanel } from './index';
 
 type SetWorkspaceOverrides = (workspaceId: string, overrides: OverrideSettings) => Promise<void>;
@@ -656,20 +656,25 @@ describe('DefaultsPanel', () => {
     );
   });
 
-  it('counts only the task overrides the panel can show', () => {
+  it('counts only the task overrides the panel can show, and drops the rest on write', () => {
+    const storedTaskModels: Readonly<Record<string, TaskModelPreference>> = {
+      branch_naming: { providerId: 'anthropic', model: 'claude-sonnet-5' },
+      summarizer: { providerId: 'anthropic', model: 'claude-sonnet-4-6' },
+    };
     state.workspaceOverrides = {
-      'ws-1': {
-        ...EMPTY_OVERRIDES,
-        taskModels: {
-          branch_naming: { providerId: 'anthropic', model: 'claude-sonnet-5' },
-          summarizer: { providerId: 'anthropic', model: 'claude-sonnet-4-6' },
-        },
-      },
+      'ws-1': { ...EMPTY_OVERRIDES, taskModels: storedTaskModels },
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     expect(screen.getByRole('tab', { name: 'Task models (1)' })).toBeDefined();
     expect(screen.queryByText('Branch naming')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing auto' }));
+
+    expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
+      'ws-1',
+      expect.objectContaining({ taskModels: null }),
+    );
   });
 
   it('shows the override count for each group in its tab label', () => {

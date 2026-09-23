@@ -102,7 +102,7 @@ const WORKSPACE_OVERRIDES: OverrideSettings = {
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: {
-    branch_naming: { providerId: 'codex', model: 'gpt-6-astra' },
+    agent_naming: { providerId: 'codex', model: 'gpt-6-astra' },
     plan_generation: { providerId: 'cursor', model: 'composer-2.5-fast' },
     pr_draft: { providerId: 'anthropic', model: 'claude-sonnet-5' },
   },
