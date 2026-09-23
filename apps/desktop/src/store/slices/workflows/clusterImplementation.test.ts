@@ -1513,6 +1513,99 @@ describe('advanceClusterImplementation', () => {
     expect(refreshUnreadWorkspaces).toHaveBeenCalledTimes(1);
     expect(maybeAutoAdvanceWorkflow).toHaveBeenCalledWith(SID);
   });
+
+  const threeClusters = (): PlanWithCount =>
+    plan({
+      clusters: [
+        { title: 'c0', instructions: 'do 0' },
+        { title: 'c1', instructions: 'do 1' },
+        { title: 'c2', instructions: 'do 2' },
+      ],
+    });
+
+  it('never re-kicks the last child when a skipped sibling sits before it', async () => {
+    const c0 = childAgent({ id: 'sk0', ordinal: 0, status: 'completed' });
+    const c1 = childAgent({ id: 'sk1', ordinal: 1, status: 'skipped' });
+    const c2 = childAgent({ id: 'sk2', ordinal: 2, status: 'running' });
+    const { get, set, sendTurn, maybeAutoAdvanceWorkflow } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1, c2] },
+      sessionPlans: { [SID]: [threeClusters()] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      c0,
+      c1,
+      childAgent({ id: 'sk2', ordinal: 2, status: 'completed' }),
+    ]);
+
+    await advanceClusterImplementation(set, get)(SID, 'sk2' as AgentId, done('sk2'));
+
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      PARENT,
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(maybeAutoAdvanceWorkflow).toHaveBeenCalledWith(SID);
+  });
+
+  it('keeps a skipped container skipped when its last cluster finishes', async () => {
+    const c0 = childAgent({ id: 'ks0', ordinal: 0, status: 'completed' });
+    const c1 = childAgent({ id: 'ks1', ordinal: 1 });
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'skipped' }), c0, c1] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'skipped' }),
+      c0,
+      childAgent({ id: 'ks1', ordinal: 1, status: 'completed' }),
+    ]);
+
+    await advanceClusterImplementation(set, get)(SID, 'ks1' as AgentId, done('ks1'));
+
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(PARENT, expect.anything());
+  });
+
+  it('starts the next unsettled cluster past a skipped sibling', async () => {
+    const c0 = childAgent({ id: 'nx0', ordinal: 0, status: 'running' });
+    const c1 = childAgent({ id: 'nx1', ordinal: 1, status: 'skipped' });
+    const c2 = childAgent({ id: 'nx2', ordinal: 2 });
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1, c2] },
+      sessionPlans: { [SID]: [threeClusters()] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'nx0', ordinal: 0, status: 'completed' }),
+      c1,
+      c2,
+    ]);
+
+    await advanceClusterImplementation(set, get)(SID, 'nx0' as AgentId, done('nx0'));
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    const call = (sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId; content: string };
+    expect(call.agentId).toBe('nx2');
+    expect(call.content).toContain('3/3');
+    expect(call.content).toContain('do 2');
+  });
+
+  it('never re-kicks the child it just completed even when the list is stale', async () => {
+    const c0 = childAgent({ id: 'st0', ordinal: 0, status: 'running' });
+    const c1 = childAgent({ id: 'st1', ordinal: 1 });
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([container({ status: 'running' }), c0, c1]);
+
+    await advanceClusterImplementation(set, get)(SID, 'st0' as AgentId, done('st0'));
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    const call = (sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId };
+    expect(call.agentId).toBe('st1');
+  });
 });
 
 describe('unsettledClusterChildren', () => {
