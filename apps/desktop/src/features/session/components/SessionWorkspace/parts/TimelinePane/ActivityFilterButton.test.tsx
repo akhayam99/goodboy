@@ -115,7 +115,7 @@ describe('ActivityFilterButton', () => {
 
     expect(reportsChip.getAttribute('aria-checked')).toBe('false');
     expect(reportsChip.className).toContain('border-border-soft');
-    expect(reportsChip.className).toContain('bg-elevated/30');
+    expect(reportsChip.className).toContain('bg-elevated');
   });
 
   it('offers a suggestions row and counts it on the badge once hidden', () => {

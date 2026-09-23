@@ -58,7 +58,7 @@ exports[`snapshot, empty states > ChatEmptyState: fresh session, set-up-a-workfl
     </li>
   </ul>
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-muted text-foreground hover:bg-muted/70 border-border h-7 px-2.5 text-xs"
+    class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-muted text-foreground hover:bg-hover border-border h-7 px-2.5 text-xs"
     type="button"
   >
     <svg
@@ -165,7 +165,7 @@ exports[`snapshot, empty states > NotificationCenter: no notifications 1`] = `
   >
     <button
       aria-label="Notifications"
-      class="relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/50"
+      class="relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors text-muted-foreground hover:text-foreground hover:bg-hover"
       type="button"
     >
       <svg
@@ -277,7 +277,7 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
         class="flex items-center gap-2"
       >
         <button
-          class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+          class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-xs"
           type="button"
         >
           Rescan
@@ -536,7 +536,7 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
     class="flex items-center justify-end gap-2"
   >
     <button
-      class="mr-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+      class="mr-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
       type="button"
     >
       <svg
@@ -569,7 +569,7 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
       Archive instead
     </button>
     <button
-      class="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+      class="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
       type="button"
     >
       Cancel

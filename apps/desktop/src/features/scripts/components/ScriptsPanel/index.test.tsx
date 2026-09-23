@@ -839,7 +839,7 @@ describe('ScriptsPanel', () => {
     expect(screen.getByText('+1 line')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
 
-    expect(screen.getByTestId('script-card-s1').className).toContain('bg-muted/20');
+    expect(screen.getByTestId('script-card-s1').className).toContain('bg-subtle');
     expect(
       screen.getByText(
         (_, element) =>

@@ -146,7 +146,7 @@ describe('Markdown document rhythm', () => {
   it('keeps inline code quiet and free of vertical padding', () => {
     const { container } = render(<Markdown text="run `packages/core/src/index.ts` now" />);
     const code = container.querySelector('code');
-    expect(code?.className).toContain('bg-muted/50');
+    expect(code?.className).toContain('bg-muted');
     expect(code?.className).toContain('py-0');
     expect(code?.className).not.toContain('break-all');
     expect(code?.className).toContain('wrap-anywhere');
