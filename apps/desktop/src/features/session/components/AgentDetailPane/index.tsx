@@ -5,8 +5,8 @@ import { ChatView } from '../../../chat/components/ChatView';
 import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { useAppStore, useExecutedAgentRouting } from '../../../../store';
+import { effectiveAgentStatus } from './agentNowState';
 import { classifyAgent } from '../../agent-kind';
-import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { AgentKindChip } from '../AgentKindChip';
 import { AgentStatusBadge } from '../../../workspace/components/WorkspacesSidebar/parts/AgentStatusBadge';
 import { AgentHeaderActions } from '../AgentHeaderActions';
@@ -29,7 +29,15 @@ const TABS = [
 ] satisfies ReadonlyArray<{ readonly value: Tab; readonly label: string }>;
 
 export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow }: Props) => {
-  const [tab, setTab] = useState<Tab>('brief');
+  const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
+  const hasOpenQuestions = useAppStore((state) =>
+    (state.sessionOpenQuestions[session.id] ?? []).some(
+      (question) => question.createdByAgentId === agent.id,
+    ),
+  );
+  const status = effectiveAgentStatus({ agent, turnState });
+  const liveTab: Tab = status === 'running' || hasOpenQuestions ? 'transcript' : 'brief';
+  const [tab, setTab] = useState<Tab>(liveTab);
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const providerOverride = useAppStore(
     (state) => state.agentProviderOverride[agent.id] ?? agent.providerOverride ?? null,
@@ -40,13 +48,11 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
   const effortOverride = useAppStore(
     (state) => state.agentEffortOverride[agent.id] ?? agent.effort ?? null,
   );
-  const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
-  const metrics = useAgentMetrics({ sessionId: session.id });
   const executed = useExecutedAgentRouting({ agent });
   const kind = classifyAgent({ agent, override: kindOverride });
 
   useEffect(() => {
-    setTab('brief');
+    setTab(liveTab);
   }, [agent.id]);
 
   useEffect(() => {
@@ -55,7 +61,6 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
     return () => window.removeEventListener('goodboy:reveal-chat', revealTranscript);
   }, []);
 
-  const status = turnState?.kind === 'running' ? 'running' : agent.status;
   const planned =
     modelOverride != null || providerOverride != null
       ? { provider: providerOverride, model: modelOverride }
@@ -78,9 +83,6 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
                 effort={effortOverride}
                 planned={planned}
               />
-              <span className="text-2xs tabular-nums text-muted-foreground">
-                {metrics.turnsByAgentId.get(agent.id) ?? 0} turns
-              </span>
             </>
           }
           actions={

@@ -82,7 +82,6 @@ export const AgentMetrics = ({
                 model={model ?? null}
                 planned={planned}
                 muted={muted}
-                missingLabel="no model yet"
               />
             ) : null,
             <CostBadge

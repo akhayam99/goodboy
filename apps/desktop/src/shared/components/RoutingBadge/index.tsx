@@ -20,7 +20,6 @@ type Props = {
   readonly planned?: PlannedRouting | null;
   readonly variant?: 'compact' | 'full';
   readonly glyphPlacement?: 'leading' | 'trailing';
-  readonly missingLabel?: string;
   readonly muted?: boolean;
   readonly className?: string;
 };
@@ -73,6 +72,8 @@ const divergenceCopy = ({
   return null;
 };
 
+const MISSING_LABEL = 'Model not chosen yet';
+
 const CHIP_CLASS =
   'inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground';
 
@@ -83,7 +84,6 @@ export const RoutingBadge = ({
   planned = null,
   variant = 'compact',
   glyphPlacement = 'leading',
-  missingLabel = 'not resolved',
   muted = false,
   className,
 }: Props) => {
@@ -143,7 +143,7 @@ export const RoutingBadge = ({
               aria-hidden
             />
           )}
-          {providerLabel ?? missingLabel}
+          {providerLabel ?? MISSING_LABEL}
         </span>
         {model != null && (
           <span className={cn(CHIP_CLASS, 'min-w-0 font-mono')} title={model}>
@@ -185,7 +185,7 @@ export const RoutingBadge = ({
           {modelLabel(model)}
         </span>
       ) : (
-        <span className="text-faint-foreground">{missingLabel}</span>
+        <span className="text-faint-foreground">{MISSING_LABEL}</span>
       )}
       {model != null && resolvedEffort != null && (
         <span className="shrink-0 text-muted-foreground" title="Effort">

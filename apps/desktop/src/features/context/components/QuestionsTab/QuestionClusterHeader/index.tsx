@@ -41,12 +41,11 @@ export const QuestionClusterHeader = ({
     <>
       <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
       <span className="truncate text-foreground">{label}</span>
-      {ownerAgent != null && (
+      {ownerAgent != null && ownerAgent.modelOverride != null && (
         <RoutingBadge
           provider={ownerAgent.providerOverride ?? null}
-          model={ownerAgent.modelOverride ?? null}
+          model={ownerAgent.modelOverride}
           effort={ownerAgent.effort ?? null}
-          missingLabel=""
         />
       )}
       {creatorAgentName !== null && (

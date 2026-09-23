@@ -131,7 +131,6 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
             provider={shown?.provider ?? null}
             model={shown?.model ?? null}
             effort={shown?.effort ?? null}
-            missingLabel={WORKFLOW_ROUTING_COPY.noSelection}
           />
           <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground">
             {WORKFLOW_ROUTING_COPY.immutableNote}

@@ -9,7 +9,8 @@ const state = vi.hoisted(() => ({
   agentProviderOverride: {},
   agentModelOverride: {},
   agentEffortOverride: {},
-  agentTurnState: {},
+  agentTurnState: {} as Record<string, { kind: string }>,
+  sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ createdByAgentId?: string }>>,
 }));
 
 const executedRouting = vi.hoisted(() => ({
@@ -19,15 +20,6 @@ const executedRouting = vi.hoisted(() => ({
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
   useExecutedAgentRouting: () => executedRouting.value,
-}));
-
-vi.mock('../../hooks/useAgentMetrics', () => ({
-  useAgentMetrics: () => ({
-    latestTelemetryByAgentId: new Map(),
-    aggregatesByAgentId: new Map(),
-    providerUsageByAgentId: new Map(),
-    turnsByAgentId: new Map(),
-  }),
 }));
 
 vi.mock('../../../chat/components/ChatView', () => ({
@@ -46,7 +38,7 @@ const agent = {
   sessionId,
   ordinal: 0,
   name: 'Implement chat',
-  status: 'running',
+  status: 'completed',
   kind: 'implementer',
 } satisfies Agent;
 
@@ -59,6 +51,7 @@ beforeEach(() => {
     agentModelOverride: {},
     agentEffortOverride: {},
     agentTurnState: {},
+    sessionOpenQuestions: {},
   });
   executedRouting.value = null;
 });
@@ -66,7 +59,12 @@ beforeEach(() => {
 describe('AgentDetailPane', () => {
   it('places the title at the shared detail inset above agent metadata', () => {
     render(
-      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
+      <AgentDetailPane
+        session={session}
+        agent={{ ...agent, status: 'running' }}
+        isChatActive
+        onBack={() => undefined}
+      />,
     );
 
     const title = screen.getByRole('heading', { level: 1, name: 'Implement chat' });
@@ -75,6 +73,32 @@ describe('AgentDetailPane', () => {
     expect(title.className).toContain('text-xl');
     expect(title.closest('.px-6')?.className).toContain('py-5');
     expect(title.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('opens on the transcript while the agent is running', () => {
+    render(
+      <AgentDetailPane
+        session={session}
+        agent={{ ...agent, status: 'running' }}
+        isChatActive
+        onBack={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Transcript' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+  });
+
+  it('opens on the transcript while the agent waits on an answer', () => {
+    state.sessionOpenQuestions = { [session.id]: [{ createdByAgentId: agent.id }] };
+    render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
+    );
+
+    expect(screen.getByRole('tab', { name: 'Transcript' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
   });
 
   it('opens on the brief and keeps transcript one tab away', () => {
