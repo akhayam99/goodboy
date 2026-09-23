@@ -22,6 +22,8 @@ import {
   stringifyRoutingJson,
 } from '@goodboy/db';
 import type { GetFn, SetFn } from './types';
+import { releaseCapabilityHolds } from './releaseCapabilityHolds';
+import { resolveClusterCompletionHold } from './resolveClusterCompletionHold';
 
 const hoisted = vi.hoisted(() => {
   const insertArgs: Array<Record<string, unknown>> = [];
@@ -91,6 +93,8 @@ const hoisted = vi.hoisted(() => {
     invokeWorkflowNodeRoutingUpdate: vi.fn(async () => undefined),
     invokeListConsumptionsForPlan: vi.fn(async () => [] as ReadonlyArray<PlanConsumption>),
     summarizeAgentOutput: vi.fn(async () => ({ summary: 'model summary', degraded: false })),
+    invokeClusterCompletionHoldResolve: vi.fn(async () => undefined),
+    invokeClusterCompletionHolds: vi.fn(async () => [] as ReadonlyArray<unknown>),
   };
 });
 
@@ -113,6 +117,8 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeClusterExecutionGraphRecord: hoisted.invokeClusterExecutionGraphRecord,
   invokeClusterGraphFreeze: hoisted.invokeClusterGraphFreeze,
   invokeWorkflowNodeRoutingUpdate: hoisted.invokeWorkflowNodeRoutingUpdate,
+  invokeClusterCompletionHoldResolve: hoisted.invokeClusterCompletionHoldResolve,
+  invokeClusterCompletionHolds: hoisted.invokeClusterCompletionHolds,
 }));
 
 vi.mock('../../../features/plans/plans', () => ({
@@ -2736,6 +2742,204 @@ describe('a frozen cluster execution', () => {
       expect.objectContaining({ status: 'completed' }),
     );
     expect(store.sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('completes a repaired node without rewriting its transferred attempt', async () => {
+    const transferred = childAgent({ id: 'child-1', ordinal: 0, status: 'transferred' });
+    const successor = childAgent({ id: 'child-2', ordinal: 1, status: 'pending' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), transferred, successor] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: {
+        [SID]: [revisedGraph({ frozenReason: null, supersededAgentId: null })],
+      },
+      clusterCompletionHolds: {
+        [SID]: [
+          resolvedHoldOn({ id: 'hold-repaired', sourceAgentId: transferred.id, state: 'open' }),
+        ],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      transferred,
+      successor,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, transferred.id, '', {
+      force: true,
+      resolvedHoldId: 'hold-repaired',
+    });
+
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      transferred.id,
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(
+      store.get().sessionPhaseRuns[SID]?.find((agent) => agent.id === transferred.id)?.status,
+    ).toBe('transferred');
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
+    expect(store.sendTurn).toHaveBeenCalledWith(expect.objectContaining({ agentId: successor.id }));
+  });
+
+  it('completes the container through a repaired node whose attempt stays transferred', async () => {
+    const transferred = childAgent({ id: 'child-1', ordinal: 0, status: 'transferred' });
+    const finished = childAgent({ id: 'child-2', ordinal: 1, status: 'completed' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), transferred, finished] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: {
+        [SID]: [revisedGraph({ frozenReason: null, supersededAgentId: null })],
+      },
+      clusterCompletionHolds: {
+        [SID]: [
+          resolvedHoldOn({ id: 'hold-repaired', sourceAgentId: transferred.id, state: 'open' }),
+        ],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      transferred,
+      finished,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, transferred.id, '', {
+      force: true,
+      resolvedHoldId: 'hold-repaired',
+    });
+
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      transferred.id,
+      expect.anything(),
+    );
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      PARENT,
+      expect.objectContaining({ status: 'completed' }),
+    );
+  });
+
+  it('resumes past a transferred node whose repair was already verified', async () => {
+    const c = container({ status: 'running' });
+    const transferred = childAgent({ id: 'child-1', ordinal: 0, status: 'transferred' });
+    const successor = childAgent({ id: 'child-2', ordinal: 1, status: 'pending' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [c, transferred, successor] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: {
+        [SID]: [revisedGraph({ frozenReason: null, supersededAgentId: null })],
+      },
+      clusterCompletionHolds: {
+        [SID]: [
+          resolvedHoldOn({ id: 'hold-repaired', sourceAgentId: transferred.id, state: 'resolved' }),
+        ],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([c, transferred, successor]);
+
+    const resumed = await resumeClusterChildren({
+      set: store.set,
+      get: store.get,
+      sessionId: SID,
+      container: c,
+    });
+
+    expect(resumed).toBe(true);
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
+    expect(store.sendTurn).toHaveBeenCalledWith(expect.objectContaining({ agentId: successor.id }));
+  });
+
+  it('never releases a successor through a transferred attempt on its own', async () => {
+    const c = container({ status: 'running' });
+    const transferred = childAgent({ id: 'child-1', ordinal: 0, status: 'transferred' });
+    const successor = childAgent({ id: 'child-2', ordinal: 1, status: 'pending' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [c, transferred, successor] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: {
+        [SID]: [revisedGraph({ frozenReason: null, supersededAgentId: null })],
+      },
+      clusterCompletionHolds: { [SID]: [] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([c, transferred, successor]);
+
+    const resumed = await resumeClusterChildren({
+      set: store.set,
+      get: store.get,
+      sessionId: SID,
+      container: c,
+    });
+
+    expect(resumed).toBe(false);
+    expect(store.sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('releases the successor of a transferred cluster child once its need is repaired and verified', async () => {
+    const transferred = childAgent({ id: 'child-1', ordinal: 0, status: 'transferred' });
+    const successor = childAgent({ id: 'child-2', ordinal: 1, status: 'pending' });
+    const needHold = {
+      ...resolvedHoldOn({ id: 'hold-need', sourceAgentId: transferred.id, state: 'open' }),
+      reason: 'unresolved-outcome' as const,
+      findings: [{ reason: 'the guard is gone', target: 'implementer' as const }],
+    };
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), transferred, successor] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: {
+        [SID]: [revisedGraph({ frozenReason: null, supersededAgentId: null })],
+      },
+      clusterCompletionHolds: { [SID]: [needHold] },
+    });
+    Object.assign(store.state, {
+      advanceClusterImplementation: advanceClusterImplementation(store.set, store.get),
+      resolveClusterCompletionHold: resolveClusterCompletionHold({
+        set: store.set,
+        get: store.get,
+      }),
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      transferred,
+      successor,
+    ]);
+    hoisted.invokeClusterCompletionHolds.mockResolvedValue([{ ...needHold, state: 'resolved' }]);
+
+    const released = await releaseCapabilityHolds({
+      set: store.set,
+      get: store.get,
+      sessionId: SID,
+      obligation: {
+        id: 'capability-obligation:child-1:implementer:repair',
+        sessionId: SID,
+        workflowRunId: null,
+        identity: 'child-1:implementer:repair',
+        requesterAgentId: transferred.id,
+        requesterParentAgentId: PARENT,
+        targetRole: 'implementer',
+        purpose: 'repair',
+        state: 'satisfied',
+        ownerAgentId: null,
+        decision: 'granted',
+        decisionReason: null,
+        satisfiedRevision: 'sha-verified',
+        childAgentId: null,
+        deliveredAt: null,
+        deliveryReceipt: 'repair verified by a focused review',
+        requests: [],
+        holdIds: ['hold-need'],
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+      isRequesterContinuing: false,
+    });
+
+    expect(released).toEqual(['hold-need']);
+    expect(hoisted.invokeClusterCompletionHoldResolve).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'hold-need' }),
+    );
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      transferred.id,
+      expect.anything(),
+    );
+    expect(store.sendTurn).toHaveBeenCalledWith(expect.objectContaining({ agentId: successor.id }));
   });
 
   it('keeps an explicitly resolved tombstoned child out of a frozen plan', async () => {

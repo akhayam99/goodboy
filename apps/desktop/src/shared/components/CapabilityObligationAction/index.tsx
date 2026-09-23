@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { HandHelping } from 'lucide-react';
+import { Button } from '@goodboy/ui';
 import type { CapabilityObligation } from '@goodboy/types';
 import { ICON_SIZE } from '../conceptIcons';
+import { useAppStore } from '../../../store';
 
 type Props = {
   readonly obligation: CapabilityObligation;
@@ -35,6 +38,9 @@ const stateLabel = ({ obligation }: Props): string => {
 };
 
 export const CapabilityObligationAction = ({ obligation }: Props) => {
+  const [isDeciding, setIsDeciding] = useState(false);
+  const decideNeed = useAppStore((state) => state.decideCapabilityNeed);
+  const isUndecided = obligation.state === 'open' && obligation.decision === null;
   const label = obligationLabel({ obligation });
   const request = obligation.requests[obligation.requests.length - 1];
   const detail =
@@ -53,6 +59,25 @@ export const CapabilityObligationAction = ({ obligation }: Props) => {
       >
         {stateLabel({ obligation })}
       </span>
+      {isUndecided ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-auto shrink-0 px-2 py-0.5 text-2xs"
+          data-testid={`decide-capability-need-${obligation.id}`}
+          disabled={isDeciding}
+          onClick={(event) => {
+            event.stopPropagation();
+            setIsDeciding(true);
+            void decideNeed({
+              sessionId: obligation.sessionId,
+              obligationId: obligation.id,
+            }).finally(() => setIsDeciding(false));
+          }}
+        >
+          {isDeciding ? 'Deciding' : 'Decide again'}
+        </Button>
+      ) : null}
     </div>
   );
 };

@@ -3,6 +3,7 @@ import type {
   Agent,
   AgentId,
   AgentStatus,
+  ClusterCompletionHold,
   IsoDateTime,
   SessionId,
   StepId,
@@ -72,6 +73,22 @@ const clusterChild = (ordinal: number, status: AgentStatus): Agent => ({
   status,
 });
 
+const holdOn = (state: ClusterCompletionHold['state']): ClusterCompletionHold => ({
+  id: 'hold-1',
+  sessionId: SESSION_ID,
+  workflowRunId: RUN_ID,
+  containerAgentId: CONTAINER_ID,
+  sourceAgentId: 'child-1' as AgentId,
+  sourceTurnId: 'turn-1',
+  reason: 'unresolved-outcome',
+  findings: [],
+  state,
+  resolutionEvidence: state === 'resolved' ? 'repair verified' : null,
+  resolvedAt: state === 'resolved' ? NOW : null,
+  createdAt: NOW,
+  updatedAt: NOW,
+});
+
 describe('isWorkflowRunComplete', () => {
   it('reads a static run as complete when every step agent settled and no descendant is left', () => {
     expect(
@@ -79,6 +96,7 @@ describe('isWorkflowRunComplete', () => {
         run: run(),
         workflow,
         agents: [stepAgent('completed'), clusterChild(1, 'completed')],
+        holds: [],
       }),
     ).toBe(true);
   });
@@ -89,6 +107,7 @@ describe('isWorkflowRunComplete', () => {
         run: run(),
         workflow,
         agents: [stepAgent('completed'), clusterChild(1, 'pending')],
+        holds: [],
       }),
     ).toBe(false);
   });
@@ -99,6 +118,7 @@ describe('isWorkflowRunComplete', () => {
         run: run({ executionMode: 'dynamic', orchestrationOutcome: 'done' }),
         workflow,
         agents: [stepAgent('completed'), clusterChild(1, 'pending')],
+        holds: [],
       }),
     ).toBe(false);
   });
@@ -109,6 +129,7 @@ describe('isWorkflowRunComplete', () => {
         run: run(),
         workflow,
         agents: [stepAgent('completed'), clusterChild(1, 'skipped')],
+        holds: [],
       }),
     ).toBe(true);
   });
@@ -119,6 +140,40 @@ describe('isWorkflowRunComplete', () => {
         run: run(),
         workflow,
         agents: [stepAgent('completed'), clusterChild(1, 'transferred')],
+        holds: [],
+      }),
+    ).toBe(false);
+  });
+
+  it('does not let a transferred cluster child complete its container while its hold is open', () => {
+    expect(
+      isWorkflowRunComplete({
+        run: run(),
+        workflow,
+        agents: [stepAgent('completed'), clusterChild(1, 'transferred')],
+        holds: [holdOn('open')],
+      }),
+    ).toBe(false);
+  });
+
+  it('completes a run whose transferred cluster child finished its node through a resolved hold', () => {
+    expect(
+      isWorkflowRunComplete({
+        run: run(),
+        workflow,
+        agents: [stepAgent('completed'), clusterChild(1, 'transferred')],
+        holds: [holdOn('resolved')],
+      }),
+    ).toBe(true);
+  });
+
+  it('never counts a resolved hold under another container for a transferred child', () => {
+    expect(
+      isWorkflowRunComplete({
+        run: run(),
+        workflow,
+        agents: [stepAgent('completed'), clusterChild(1, 'transferred')],
+        holds: [{ ...holdOn('resolved'), containerAgentId: 'other-container' as AgentId }],
       }),
     ).toBe(false);
   });
@@ -129,6 +184,7 @@ describe('isWorkflowRunComplete', () => {
         run: run(),
         workflow,
         agents: [stepAgent('transferred')],
+        holds: [],
       }),
     ).toBe(false);
   });
@@ -141,16 +197,29 @@ describe('splitWorkflowRuns', () => {
     const result = splitWorkflowRuns({
       attachedRuns,
       agents: [stepAgent('completed'), clusterChild(1, 'pending'), clusterChild(2, 'pending')],
+      holds: [],
     });
 
     expect(result.completed).toHaveLength(0);
     expect(result.active).toHaveLength(1);
   });
 
+  it('moves a run to completed once its transferred child finished its node through a hold', () => {
+    const result = splitWorkflowRuns({
+      attachedRuns,
+      agents: [stepAgent('completed'), clusterChild(1, 'transferred')],
+      holds: [holdOn('resolved')],
+    });
+
+    expect(result.completed).toHaveLength(1);
+    expect(result.active).toHaveLength(0);
+  });
+
   it('still exposes only step agents in agentsByRunId', () => {
     const result = splitWorkflowRuns({
       attachedRuns,
       agents: [stepAgent('completed'), clusterChild(1, 'completed')],
+      holds: [],
     });
 
     expect(result.agentsByRunId.get(RUN_ID)?.map((agent) => agent.id)).toEqual([CONTAINER_ID]);

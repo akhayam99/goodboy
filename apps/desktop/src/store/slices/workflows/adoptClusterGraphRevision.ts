@@ -20,7 +20,11 @@ import {
 } from '../../../features/workflows/workflows';
 import { bindGeneration, reserveGeneration } from '../agents/reserveGeneration';
 import { childRoutingBatch } from './childRoutingBatch';
-import { releasedSourceIds } from './releasedClusterSources';
+import {
+  clusterSourceProgress,
+  isCompletedAmong,
+  type ClusterSourceProgress,
+} from './clusterSourceProgress';
 import type { GetFn, SetFn } from './types';
 
 export type GraphRevisionOutcome =
@@ -60,18 +64,21 @@ const childrenOf = ({
 const progressFor = ({
   graph,
   children,
-  released,
+  sourceProgress,
 }: {
   readonly graph: ClusterExecutionGraph;
   readonly children: ReadonlyArray<Agent>;
-  readonly released: ReadonlySet<AgentId>;
+  readonly sourceProgress: ClusterSourceProgress;
 }): ReadonlyArray<ClusterAdoptionProgress> =>
   graph.nodes.map((binding) => {
     const agent = children.find((child) => child.id === binding.agentId) ?? null;
-    const isReleased = agent === null && binding.agentId !== null && released.has(binding.agentId);
+    const isReleased =
+      agent === null && binding.agentId !== null && sourceProgress.released.has(binding.agentId);
     return {
       nodeId: binding.nodeId,
-      isCompleted: isReleased || agent?.status === 'completed',
+      isCompleted:
+        isReleased ||
+        (agent !== null && isCompletedAmong({ agent, completed: sourceProgress.completed })),
       isRunning: agent !== null && agent.status === 'running',
     };
   });
@@ -181,7 +188,7 @@ export const adoptClusterGraphRevision = async ({
     progress: progressFor({
       graph,
       children,
-      released: releasedSourceIds({
+      sourceProgress: clusterSourceProgress({
         get,
         sessionId,
         containerId: containerAgentId,

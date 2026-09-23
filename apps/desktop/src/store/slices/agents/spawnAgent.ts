@@ -59,6 +59,7 @@ type SpawnArgs = {
   focus?: SpawnFocus;
   parentAgentId?: AgentId;
   executionPurpose?: AgentExecutionPurpose;
+  obligationId?: string;
 };
 
 type Params = {
@@ -132,6 +133,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
           creationPath: generationPath,
           reservationKey: `${args.parentAgentId ?? 'root'}:${nextOrdinal}:${resolvedName}`,
           count: 1,
+          obligationId: args.obligationId ?? null,
           label: resolvedName,
         });
   if (reservation !== null && reservation.kind === 'refused') {

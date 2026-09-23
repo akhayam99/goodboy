@@ -1,4 +1,4 @@
-import type { Agent, OpenQuestion, SessionEventKind } from '@goodboy/types';
+import type { Agent, ClusterCompletionHold, OpenQuestion, SessionEventKind } from '@goodboy/types';
 import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
 import type {
   TimelineAgentEntry,
@@ -85,6 +85,7 @@ type Params = {
   readonly unreadAgentIds: ReadonlySet<string>;
   readonly blockedRunIds: ReadonlySet<string>;
   readonly decidingRunIds: ReadonlySet<string>;
+  readonly holds: ReadonlyArray<ClusterCompletionHold>;
   readonly dayLabelFor: (params: { readonly at: string }) => string | null;
   readonly showWorkflowSubagents?: boolean;
   readonly showAgentSubagents?: boolean;
@@ -410,17 +411,38 @@ const isArtifactShown = ({
 const stepAgentsOf = ({ entry }: { readonly entry: TimelineRunEntry }): ReadonlyArray<Agent> =>
   entry.children.flatMap((child) => (child.kind === 'agent' ? [child.agent] : []));
 
+const agentWithDescendants = ({
+  entry,
+}: {
+  readonly entry: TimelineAgentEntry;
+}): ReadonlyArray<Agent> => [
+  entry.agent,
+  ...entry.children.flatMap((child) => agentWithDescendants({ entry: child })),
+];
+
+const runAgentsOf = ({ entry }: { readonly entry: TimelineRunEntry }): ReadonlyArray<Agent> =>
+  entry.children.flatMap((child) =>
+    child.kind === 'agent' ? agentWithDescendants({ entry: child }) : [],
+  );
+
 const isSettled = ({ agent }: { readonly agent: Agent }): boolean =>
   agent.status === 'completed' || agent.status === 'skipped';
 
-const isRunFinished = ({ entry }: { readonly entry: TimelineRunEntry }): boolean => {
+const isRunFinished = ({
+  entry,
+  holds,
+}: {
+  readonly entry: TimelineRunEntry;
+  readonly holds: ReadonlyArray<ClusterCompletionHold>;
+}): boolean => {
   if (entry.run.discardedAt != null) {
     return true;
   }
   return isWorkflowRunComplete({
     run: entry.run,
     workflow: entry.workflow,
-    agents: stepAgentsOf({ entry }),
+    agents: runAgentsOf({ entry }),
+    holds,
   });
 };
 
@@ -428,6 +450,7 @@ type EmitContext = {
   readonly unreadAgentIds: ReadonlySet<string>;
   readonly blockedRunIds: ReadonlySet<string>;
   readonly decidingRunIds: ReadonlySet<string>;
+  readonly holds: ReadonlyArray<ClusterCompletionHold>;
   readonly groups: RailGroupInput[];
   readonly showWorkflowSubagents: boolean;
   readonly showAgentSubagents: boolean;
@@ -531,7 +554,7 @@ type EmitRunParams = {
 
 const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => {
   const laneId = laneIdOf({ entryId: entry.id });
-  const isFinished = isRunFinished({ entry });
+  const isFinished = isRunFinished({ entry, holds: context.holds });
   const needsUser = context.blockedRunIds.has(entry.run.id);
   const isMuted = entry.run.discardedAt != null;
   const shape: RailGroupShape = isFinished ? 'merged' : 'open';
@@ -735,6 +758,7 @@ export const buildTimelineStream = ({
   unreadAgentIds,
   blockedRunIds,
   decidingRunIds,
+  holds,
   dayLabelFor,
   showWorkflowSubagents = true,
   showAgentSubagents = true,
@@ -747,6 +771,7 @@ export const buildTimelineStream = ({
     unreadAgentIds,
     blockedRunIds,
     decidingRunIds,
+    holds,
     groups: [],
     showWorkflowSubagents,
     showAgentSubagents,

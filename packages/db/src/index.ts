@@ -16,6 +16,7 @@ export {
 } from './queries/capability-obligation';
 export {
   bindAgentGeneration,
+  countObligationAttempts,
   listGenerationRefusals,
   reserveAgentGeneration,
   type GenerationRefusal,

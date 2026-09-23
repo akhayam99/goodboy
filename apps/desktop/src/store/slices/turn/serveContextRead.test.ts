@@ -43,6 +43,7 @@ const obligation = {
   workflowRunId: 'workflow-run-1' as WorkflowRunId,
   identity: 'agent-1:implementer:repair',
   requesterAgentId: AGENT_ID,
+  requesterParentAgentId: null,
   targetRole: 'implementer',
   purpose: 'repair',
   state: 'granted',

@@ -123,6 +123,7 @@ export type CapabilityObligation = Readonly<{
   workflowRunId: WorkflowRunId | null;
   identity: string;
   requesterAgentId: AgentId;
+  requesterParentAgentId: AgentId | null;
   targetRole: AgentRole;
   purpose: CapabilityPurpose;
   state: CapabilityObligationState;

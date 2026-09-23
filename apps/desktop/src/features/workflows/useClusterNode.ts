@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type {
   AgentId,
+  ClusterCompletionHold,
   ClusterGraphNode,
   ClusterNodeResultState,
   ClusterNodeState,
@@ -9,6 +10,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { useAppStore } from '../../store';
+import { completedSourceIds } from '../../store/slices/workflows/clusterSourceProgress';
 
 export type ClusterNodeView = Readonly<{
   role: PlanClusterRole;
@@ -20,6 +22,8 @@ export type ClusterNodeView = Readonly<{
   supersededBy: string | null;
   isFrozen: boolean;
 }>;
+
+const NO_HOLDS: ReadonlyArray<ClusterCompletionHold> = [];
 
 type Params = {
   readonly sessionId: SessionId;
@@ -49,6 +53,7 @@ export const useClusterNode = ({ sessionId, agentId }: Params): ClusterNodeView 
         .map((agent) => agent.id),
     ),
   );
+  const holds = useAppStore((state) => state.clusterCompletionHolds?.[sessionId] ?? NO_HOLDS);
   return useMemo(() => {
     for (const graph of graphs) {
       const binding = graph.nodes.find((node) => node.agentId === agentId);
@@ -69,9 +74,18 @@ export const useClusterNode = ({ sessionId, agentId }: Params): ClusterNodeView 
           isFrozen,
         };
       }
+      const completedThroughHold = completedSourceIds({
+        holds,
+        containerId: graph.containerAgentId,
+        resolvingHoldId: null,
+      });
       const pending = node.dependsOn.filter((dependency) => {
         const dependencyAgentId = graph.nodes.find((entry) => entry.nodeId === dependency)?.agentId;
-        return dependencyAgentId == null || completedAgentIds.includes(dependencyAgentId) === false;
+        return (
+          dependencyAgentId == null ||
+          (completedAgentIds.includes(dependencyAgentId) === false &&
+            completedThroughHold.has(dependencyAgentId) === false)
+        );
       });
       return {
         role: node.role,
@@ -85,5 +99,5 @@ export const useClusterNode = ({ sessionId, agentId }: Params): ClusterNodeView 
       };
     }
     return null;
-  }, [graphs, completedAgentIds, agentId]);
+  }, [graphs, completedAgentIds, holds, agentId]);
 };

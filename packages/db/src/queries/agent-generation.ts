@@ -408,6 +408,20 @@ export const bindAgentGeneration = async ({
   }
 };
 
+export const countObligationAttempts = async ({
+  db,
+  obligationId,
+}: {
+  readonly db: Database;
+  readonly obligationId: string;
+}): Promise<number> => {
+  const rows = await db.select<CountRow>(
+    'SELECT COUNT(*) AS total FROM agent_generation_ledger WHERE obligation_id = ?',
+    [obligationId],
+  );
+  return rows[0]?.total ?? 0;
+};
+
 export type GenerationRefusal = Readonly<{
   id: string;
   sessionId: SessionId;

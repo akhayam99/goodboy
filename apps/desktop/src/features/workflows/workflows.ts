@@ -610,6 +610,7 @@ type RawCapabilityObligationRow = {
   readonly targetRole: string;
   readonly purpose: CapabilityPurpose;
   readonly state: CapabilityObligationState;
+  readonly requesterParentAgentId?: AgentId | null;
   readonly ownerAgentId: AgentId | null;
   readonly decision: CapabilityObligationDecision | null;
   readonly decisionReason: string | null;
@@ -661,6 +662,7 @@ const capabilityObligationFromRow = ({
   workflowRunId: row.workflowRunId,
   identity: row.identity,
   requesterAgentId: row.requesterAgentId,
+  requesterParentAgentId: row.requesterParentAgentId ?? null,
   targetRole: normalizeAgentRole({ role: row.targetRole }),
   purpose: row.purpose,
   state: row.state,
@@ -706,6 +708,7 @@ export type RecordCapabilityNeedParams = {
   readonly continuation: CapabilityContinuation;
   readonly routingProposal: WorkflowRoutingProposal | null;
   readonly inventoryRevision: string;
+  readonly holdContainerAgentId: AgentId | null;
 };
 
 export const invokeCapabilityNeedRecord = async (
@@ -734,6 +737,7 @@ export const invokeCapabilityNeedRecord = async (
         field: 'routing proposal',
       }),
       inventoryRevision: need.inventoryRevision,
+      holdContainerAgentId: need.holdContainerAgentId,
     },
   });
   return capabilityObligationFromRow({ row });
@@ -845,6 +849,18 @@ export const invokeCapabilityObligationDecide = async (
   input: DecideCapabilityObligationParams,
 ): Promise<CapabilityObligation> => {
   const row = await invoke<RawCapabilityObligationRow>('capability_obligation_decide', { input });
+  return capabilityObligationFromRow({ row });
+};
+
+export type ReopenCapabilityObligationParams = {
+  readonly obligationId: string;
+  readonly reason: string;
+};
+
+export const invokeCapabilityObligationReopen = async (
+  input: ReopenCapabilityObligationParams,
+): Promise<CapabilityObligation> => {
+  const row = await invoke<RawCapabilityObligationRow>('capability_obligation_reopen', { input });
   return capabilityObligationFromRow({ row });
 };
 

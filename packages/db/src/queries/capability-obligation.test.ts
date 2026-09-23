@@ -76,6 +76,17 @@ describe('capability obligation queries', () => {
     expect(obligations[0]?.state).toBe('open');
   });
 
+  it('keeps the container of a requester that was tombstoned after it raised a need', async () => {
+    const db = await seed();
+
+    const recorded = await recordCapabilityNeed({ db, need });
+    await db.execute("UPDATE agents SET deleted_at = 1 WHERE id = 'source'");
+
+    const obligations = await listCapabilityObligations({ db, sessionId });
+    expect(recorded.requesterParentAgentId).toBe(containerAgentId);
+    expect(obligations[0]?.requesterParentAgentId).toBe(containerAgentId);
+  });
+
   it('converges an unresolved completion hold and a matching need on one obligation', async () => {
     const db = await seed();
     await recordClusterCompletionHold({

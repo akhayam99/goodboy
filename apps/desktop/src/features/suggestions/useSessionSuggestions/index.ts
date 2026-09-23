@@ -1,6 +1,13 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, PlanId, Session, SessionEvent, SessionProjectMount } from '@goodboy/types';
+import type {
+  Agent,
+  ClusterCompletionHold,
+  PlanId,
+  Session,
+  SessionEvent,
+  SessionProjectMount,
+} from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions, useSessionPlans } from '../../../store';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
@@ -75,9 +82,14 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
   const plans = useSessionPlans(sessionId);
   const openQuestions = useSessionOpenQuestions(sessionId);
   const attachedRuns = useAttachedWorkflowRuns({ session });
+  const holds = useAppStore(
+    (state) =>
+      state.clusterCompletionHolds?.[sessionId] ??
+      (EMPTY_ARRAY as ReadonlyArray<ClusterCompletionHold>),
+  );
   const { active, agentsByRunId } = useMemo(
-    () => splitWorkflowRuns({ attachedRuns, agents: effectiveAgents }),
-    [attachedRuns, effectiveAgents],
+    () => splitWorkflowRuns({ attachedRuns, agents: effectiveAgents, holds }),
+    [attachedRuns, effectiveAgents, holds],
   );
   const advanceByRunId = useWorkflowAdvanceStates({
     sessionId,
