@@ -1,7 +1,7 @@
 import type { ResolveQueueStatus } from '../../store/slices/resolve/deriveResolveQueueStatus';
 import type { ResolveQueueFilter } from '../../store/slices/session-view';
 
-export const RESOLVE_QUEUE_TITLE = 'Resolve';
+export const RESOLVE_QUEUE_TITLE = 'Conversations';
 
 export const RESOLVE_QUEUE_STATUS_LABEL: Record<ResolveQueueStatus, string> = {
   fix_ready: 'Fix ready, on your machine',

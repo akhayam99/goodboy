@@ -315,7 +315,9 @@ one is open at a time.
   by the pane it opens in, so it closes with that pane. There is one
   implementation of that split. Reuse it instead of growing a rail.
 - **Review is the pull request destination for GitHub, and it has no second
-  copy.** One lens holds the review conversations, the PR details, the PR
+  copy.** The lens is Review, its list of review threads is Conversations
+  (heading, back links and the overview action say so), and Resolve stays a
+  verb on the actions that settle a thread. One lens holds the review conversations, the PR details, the PR
   activity, the checks, the create-a-PR form and the reviewer's own draft
   review. They are detail modes of that one surface, switched from its dock,
   and each mode swaps in for the conversation list like any other detail. There

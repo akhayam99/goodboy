@@ -277,7 +277,7 @@ describe('ReviewPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'PR details' }));
     expect(screen.queryByTestId('resolve-queue')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Resolve' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to conversations' }));
     expect(screen.getByTestId('resolve-queue')).toBeDefined();
   });
 
@@ -580,7 +580,7 @@ describe('ReviewPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Submit review (1)' }));
     await waitFor(() => expect(h.state.publishPrReview).toHaveBeenCalledTimes(1));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Resolve' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to conversations' }));
     expect(screen.getByTestId('resolve-queue')).toBeDefined();
   });
 

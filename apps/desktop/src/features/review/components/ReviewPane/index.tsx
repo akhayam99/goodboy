@@ -299,7 +299,6 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
       onSelectPr={(prNumber) => void selectSessionPr(sessionId, prNumber)}
       onRefresh={() => void refreshSessionPrDetail(sessionId, { force: true })}
       onOpenChecks={() => setMode('checks')}
-      onOpenQueue={() => setMode('queue')}
       onOpenOnGithub={() => void openUrl(pr.url)}
     />
   );
@@ -323,6 +322,7 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
         localNotes={localNotes}
         onBack={backToQueue}
         onOpenUrl={(url) => void openUrl(url)}
+        onOpenConversations={() => setMode('queue')}
         onOpenLocalNotes={() => openDiffLens(sessionId, { kind: 'working', path: null })}
         onFix={startGeneralFix}
       />

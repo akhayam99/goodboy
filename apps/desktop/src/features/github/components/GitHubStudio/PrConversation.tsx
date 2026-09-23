@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { PrComment, PullRequestState } from '@goodboy/types';
 import { Button, EmptyState, cn, tintClasses } from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
@@ -12,6 +12,11 @@ type Props = {
   readonly scrollToThreadId?: string | null;
   readonly onOpenUrl: (url: string) => void;
   readonly onFix?: (thread: CommentThread) => void;
+  readonly empty?: {
+    readonly title: string;
+    readonly description: string;
+    readonly action: ReactNode;
+  };
 };
 
 export const PrConversation = ({
@@ -20,6 +25,7 @@ export const PrConversation = ({
   scrollToThreadId = null,
   onOpenUrl,
   onFix,
+  empty,
 }: Props) => {
   const threads = useMemo(() => {
     const all = groupThreads(comments);
@@ -54,13 +60,18 @@ export const PrConversation = ({
         bordered
         icon={CONCEPT_ICONS.comments}
         tone={CONCEPT_TONE.comments}
-        title="No comments yet"
-        description="Review comments and replies on this pull request will show up here."
+        title={empty?.title ?? 'No comments yet'}
+        description={
+          empty?.description ??
+          'Review comments and replies on this pull request will show up here.'
+        }
         action={
-          <Button variant="ghost" size="sm" onClick={() => onOpenUrl(pr.url)}>
-            View conversation on GitHub
-            <ExternalLink size={ICON_SIZE.row} aria-hidden />
-          </Button>
+          empty?.action ?? (
+            <Button variant="ghost" size="sm" onClick={() => onOpenUrl(pr.url)}>
+              View conversation on GitHub
+              <ExternalLink size={ICON_SIZE.row} aria-hidden />
+            </Button>
+          )
         }
       />
     );

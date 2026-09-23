@@ -588,7 +588,7 @@ describe('the shape of the queue surface', () => {
 
     expect(region.className).toContain('min-h-0');
     expect(region.className).toContain('flex-1');
-    expect(region.contains(screen.getByRole('heading', { name: 'Resolve' }))).toBe(false);
+    expect(region.contains(screen.getByRole('heading', { name: 'Conversations' }))).toBe(false);
     expect(
       screen.getByRole('button', { name: 'Start resolve run' }).closest('.overflow-y-auto'),
     ).toBeNull();
