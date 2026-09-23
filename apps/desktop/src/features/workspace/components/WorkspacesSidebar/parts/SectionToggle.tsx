@@ -16,7 +16,7 @@ export const SectionToggle = ({ expanded, label, onToggle }: Props) => {
         onClick={onToggle}
         aria-expanded={expanded}
         aria-label={`${expanded ? 'collapse' : 'expand'} ${label}`}
-        className="flex size-5 shrink-0 items-center justify-center rounded text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
+        className="flex size-5 shrink-0 items-center justify-center rounded-sm text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
       >
         {expanded ? (
           <ChevronDown size={ICON_SIZE.row} aria-hidden />

@@ -165,7 +165,7 @@ exports[`snapshot, empty states > NotificationCenter: no notifications 1`] = `
   >
     <button
       aria-label="Notifications"
-      class="relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors text-muted-foreground hover:text-foreground hover:bg-hover"
+      class="relative flex items-center justify-center rounded-sm p-1.5 motion-safe:transition-colors text-muted-foreground hover:text-foreground hover:bg-hover"
       type="button"
     >
       <svg
@@ -695,11 +695,11 @@ exports[`snapshot, error states > SessionOverviewLoading: silent skeleton before
         </div>
         <div
           aria-hidden="true"
-          class="motion-safe:animate-pulse rounded bg-muted h-7 w-3/5"
+          class="motion-safe:animate-pulse rounded-sm bg-muted h-7 w-3/5"
         />
         <div
           aria-hidden="true"
-          class="motion-safe:animate-pulse rounded bg-muted h-5 w-2/3"
+          class="motion-safe:animate-pulse rounded-sm bg-muted h-5 w-2/3"
         />
         <div
           class="flex flex-wrap items-center gap-2"

@@ -133,7 +133,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
             disabled={isPending}
             onClick={onSpawn}
             className={cn(
-              'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
+              'inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
               'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               'disabled:cursor-not-allowed disabled:opacity-60',
             )}
@@ -151,7 +151,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
               type="button"
               onClick={onOpen}
               className={cn(
-                'rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
+                'rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
                 'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               )}
             >

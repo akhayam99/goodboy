@@ -144,8 +144,8 @@ export const SentryIssueDetail = ({
           aria-label="Loading Sentry issue details"
           className="flex flex-col gap-2"
         >
-          <Skeleton className="h-3 w-1/2 rounded" />
-          <Skeleton className="h-3 w-1/3 rounded" />
+          <Skeleton className="h-3 w-1/2 rounded-sm" />
+          <Skeleton className="h-3 w-1/3 rounded-sm" />
         </div>
       ) : null}
       {summaryError != null ? (

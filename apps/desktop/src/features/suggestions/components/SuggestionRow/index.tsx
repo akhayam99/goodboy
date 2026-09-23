@@ -27,7 +27,7 @@ export const SuggestionRow = ({
       data-testid={`suggestion-${suggestion.id}`}
       className={cn(
         'flex w-full items-center gap-3 border border-border-soft bg-surface-raised',
-        size === 'card' && 'rounded-xl px-4 py-3',
+        size === 'card' && 'rounded-lg px-4 py-3',
         size === 'compact' && cn('rounded-md', PANE_RHYTHM.navRail.row),
       )}
     >

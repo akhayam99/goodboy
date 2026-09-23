@@ -58,7 +58,7 @@ const HistoryEntry = ({
         aria-label={expanded ? 'Collapse entry' : 'Expand entry'}
       >
         {expanded ? (
-          <div className="rounded text-xs leading-relaxed text-foreground">
+          <div className="rounded-sm text-xs leading-relaxed text-foreground">
             {renderAsMarkdown ? (
               <Markdown text={entry.value} className="text-xs" />
             ) : (

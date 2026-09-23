@@ -63,6 +63,22 @@ const RULES = [
     allow: ['packages/ui/src/components/Skeleton.tsx'],
     why: 'standing motion is the registered soft pulse; only the skeleton pulses to load',
   },
+  {
+    pattern: /\bz-\[/,
+    allow: NO_ALLOW,
+    why: 'global layers use the named z-index tokens',
+  },
+  {
+    pattern: /\bduration-\[/,
+    allow: NO_ALLOW,
+    why: 'durations use the numeric scale, never an arbitrary value',
+  },
+  {
+    pattern:
+      /(?<![\w:$.{-])rounded(?=['"`]|\s+(?:[\w:[\]/.-]*-[\w\]/.-]|border\b|flex\b|block\b|grid\b|truncate\b|inline\b|hidden\b|shadow\b|relative\b|absolute\b|transition\b))|\brounded-\[/,
+    allow: NO_ALLOW,
+    why: 'radius comes from the sm, md, lg and full steps',
+  },
 ] satisfies ReadonlyArray<Rule>;
 
 const listSourceFiles = ({ dir, files = [] }: { dir: string; files?: string[] }): string[] => {

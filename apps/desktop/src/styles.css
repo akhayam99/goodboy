@@ -101,6 +101,8 @@
   --text-base: 15px;
   --text-lg: 17px;
   --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
 
   --shadow-xl: 0 16px 36px -8px oklch(0 0 0 / 0.22), 0 6px 12px -4px oklch(0 0 0 / 0.16);
 
@@ -131,7 +133,6 @@
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
-  --radius-xl: 16px;
 
   --tracking-eyebrow: 0.08em;
 
@@ -225,11 +226,15 @@
      and drops below 3:1 on the brighter elevations. */
   --color-focus-ring: var(--color-primary);
 
+  --z-index-studio: 50;
   --z-index-popover-backdrop: 55;
+  --z-index-onboarding: 60;
+  --z-index-drag: 62;
   --z-index-popover: 65;
   --z-index-command-palette: 70;
   --z-index-tooltip: 75;
   --z-index-toast: 85;
+  --z-index-lightbox: 90;
 }
 
 /* fade-in keyframes defined only when the user hasn't asked to reduce motion,

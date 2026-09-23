@@ -39,7 +39,7 @@ export const SharedCandidateNote = ({ members, onSelectMember }: Props) => {
             <button
               type="button"
               onClick={() => onSelectMember(member.threadId)}
-              className="min-w-0 flex-1 truncate rounded text-left text-2xs text-muted-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className="min-w-0 flex-1 truncate rounded-sm text-left text-2xs text-muted-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               {member.title === null
                 ? member.threadId

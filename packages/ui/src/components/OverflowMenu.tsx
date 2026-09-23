@@ -71,7 +71,7 @@ export const OverflowMenu = ({
             aria-haspopup="menu"
             aria-expanded={dropdown.open}
             className={cn(
-              'shrink-0 rounded p-1 motion-safe:transition-colors',
+              'shrink-0 rounded-sm p-1 motion-safe:transition-colors',
               disabled
                 ? 'cursor-not-allowed text-faint-foreground'
                 : 'text-faint-foreground hover:bg-hover hover:text-foreground',

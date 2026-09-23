@@ -40,7 +40,7 @@ describe('AnswerOptionRow', () => {
 
     render(<AnswerOptionRow label="yes" selected={false} mode="many" onToggle={() => undefined} />);
     const square = screen.getByRole('checkbox', { name: 'yes' }).querySelector('span[aria-hidden]');
-    expect(square?.className).toContain('rounded-[4px]');
+    expect(square?.className).toContain('rounded-sm');
     expect(square?.className).not.toContain('rounded-full');
   });
 

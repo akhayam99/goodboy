@@ -22,7 +22,7 @@ export const InlineField = ({ label, children, onEdit, editLabel }: Props) => {
               onClick={onEdit}
               aria-label={editLabel ?? `edit ${label}`}
               className={cn(
-                'inline-flex size-4 items-center justify-center rounded text-faint-foreground',
+                'inline-flex size-4 items-center justify-center rounded-sm text-faint-foreground',
                 'opacity-0 transition-[opacity,color,background-color] hover:bg-hover hover:text-foreground',
                 'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                 'group-hover/inline:opacity-100 motion-reduce:opacity-60',

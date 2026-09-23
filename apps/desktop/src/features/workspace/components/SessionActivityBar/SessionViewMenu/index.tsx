@@ -91,7 +91,7 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
             aria-expanded={open}
             aria-label="Display options"
             className={cn(
-              'inline-flex shrink-0 items-center justify-center rounded p-1 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+              'inline-flex shrink-0 items-center justify-center rounded-sm p-1 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               open
                 ? 'bg-selected text-foreground'
                 : 'text-faint-foreground hover:bg-hover hover:text-foreground',
@@ -162,7 +162,7 @@ function MenuItem({ label, hint, selected, onClick }: MenuItemProps) {
       aria-checked={selected}
       onClick={onClick}
       className={cn(
-        'flex items-center gap-2 rounded px-2 py-1.5 text-left text-xs motion-safe:transition-colors',
+        'flex items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs motion-safe:transition-colors',
         selected ? 'text-foreground' : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >

@@ -30,7 +30,7 @@ export const PairingCode = ({ info, loading, error, remaining, total, onMint }: 
         <Skeleton className="size-[244px] rounded-lg" />
         <div className="flex w-[244px] flex-col items-center gap-1.5">
           <Skeleton className="h-1.5 w-full rounded-full" />
-          <Skeleton className="h-3 w-24 rounded" />
+          <Skeleton className="h-3 w-24 rounded-sm" />
         </div>
       </div>
     );

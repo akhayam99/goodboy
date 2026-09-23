@@ -112,9 +112,9 @@ export const WriteReview = ({ session, listWidth }: Props) => {
                 key={cardIndex}
                 className="flex flex-col gap-1.5 rounded-md border border-border-soft p-3"
               >
-                <Skeleton className="h-3 w-40 rounded" />
-                <Skeleton className="h-3 w-3/4 rounded" />
-                <Skeleton className="h-3 w-1/2 rounded" />
+                <Skeleton className="h-3 w-40 rounded-sm" />
+                <Skeleton className="h-3 w-3/4 rounded-sm" />
+                <Skeleton className="h-3 w-1/2 rounded-sm" />
               </div>
             ))}
           </div>

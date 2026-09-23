@@ -93,7 +93,7 @@ export const NotificationCenter = () => {
               type="button"
               onClick={handleOpen}
               className={cn(
-                'relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors',
+                'relative flex items-center justify-center rounded-sm p-1.5 motion-safe:transition-colors',
                 open
                   ? 'bg-muted text-foreground'
                   : 'text-muted-foreground hover:text-foreground hover:bg-hover',
@@ -126,7 +126,7 @@ export const NotificationCenter = () => {
               type="button"
               onClick={() => void clearNotifications()}
               className={cn(
-                'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors',
+                'inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors',
                 tintClasses('danger').hoverBg,
                 'hover:text-danger',
               )}
@@ -149,8 +149,8 @@ export const NotificationCenter = () => {
               <div key={index} className="flex items-start gap-2">
                 <Skeleton className="mt-0.5 size-3.5 shrink-0 rounded-full" />
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                  <Skeleton className="h-3 w-2/3 rounded" />
-                  <Skeleton className="h-2.5 w-1/3 rounded" />
+                  <Skeleton className="h-3 w-2/3 rounded-sm" />
+                  <Skeleton className="h-2.5 w-1/3 rounded-sm" />
                 </div>
               </div>
             ))}
@@ -311,7 +311,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
             <Tooltip content="Retry">
               <button
                 type="button"
-                className="rounded p-1 hover:bg-hover"
+                className="rounded-sm p-1 hover:bg-hover"
                 onClick={action.onClick}
                 aria-label="Retry"
               >
@@ -322,7 +322,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
           <Tooltip content="Dismiss the group">
             <button
               type="button"
-              className="rounded p-1 hover:bg-hover"
+              className="rounded-sm p-1 hover:bg-hover"
               onClick={onDismiss}
               aria-label="Dismiss group"
             >
@@ -345,7 +345,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
                 mapNotificationAction(entry.action, useAppStore.getState()) != null ? (
                   <button
                     type="button"
-                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-hover"
+                    className="rounded-sm px-1.5 py-0.5 text-2xs hover:bg-hover"
                     onClick={mapNotificationAction(entry.action, useAppStore.getState())?.onClick}
                   >
                     Retry
@@ -355,7 +355,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
                 entry.action?.kind === 'retry-step-summary' ? (
                   <button
                     type="button"
-                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-hover"
+                    className="rounded-sm px-1.5 py-0.5 text-2xs hover:bg-hover"
                     onClick={() => setPickerOpen((value) => !value)}
                   >
                     Retry with…
@@ -364,7 +364,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
                 {canSendToDevelopers ? (
                   <button
                     type="button"
-                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-hover"
+                    className="rounded-sm px-1.5 py-0.5 text-2xs hover:bg-hover"
                     onClick={() => sendNotificationToDevelopers({ notification: entry })}
                   >
                     Send to developers
@@ -481,7 +481,7 @@ const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
       </div>
       <button
         type="button"
-        className="rounded px-1.5 py-0.5 text-2xs font-medium text-foreground ring-1 ring-inset ring-foreground/20 hover:bg-hover hover:text-foreground"
+        className="rounded-sm px-1.5 py-0.5 text-2xs font-medium text-foreground ring-1 ring-inset ring-foreground/20 hover:bg-hover hover:text-foreground"
         onClick={dispatch}
         aria-label="Confirm retry with selected model"
       >

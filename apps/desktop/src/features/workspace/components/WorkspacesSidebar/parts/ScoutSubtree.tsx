@@ -76,7 +76,7 @@ export const ScoutSubtree = ({
         {!expanded && unreadCount > 0 ? (
           <span
             className={cn(
-              'inline-flex shrink-0 items-center gap-1 rounded',
+              'inline-flex shrink-0 items-center gap-1 rounded-sm',
               tintClasses('warning').bg,
               'px-1 py-0.5 text-3xs font-medium text-warning',
             )}

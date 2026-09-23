@@ -173,9 +173,11 @@ full-page surface, because their trigger stays visible and clickable no matter
 what is open under it. These use named tokens from the `@theme` block in
 `styles.css`, under `--z-index-*`. Tailwind v4 turns each key into a
 `z-<name>` utility. The values are in
-[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md). The order is `StudioShell`
-fullscreen, then `popover-backdrop`, `popover`, `command-palette`, `tooltip`,
-`toast`, with a native `<dialog>` above all of them in the browser's top layer.
+[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md). The order is `studio`,
+then `popover-backdrop`, `onboarding`, `drag`, `popover`, `command-palette`,
+`tooltip`, `toast`, `lightbox`, with a native `<dialog>` above all of them in
+the browser's top layer. `no-token-bypass.test.ts` rejects `z-[N]`. A new
+global layer gets a named token and a row in the table.
 
 That order is a precedence chain, not taste. Each step must sit above the one
 under it, because it can be opened while that one is still open. **A control

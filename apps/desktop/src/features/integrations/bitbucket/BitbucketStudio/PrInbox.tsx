@@ -69,10 +69,10 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
           {Array.from({ length: 7 }).map((_, index) => (
             <div key={index} className="flex flex-col gap-1.5 px-2.5 py-2">
               <div className="flex items-center gap-2">
-                <Skeleton className="h-3 w-3 shrink-0 rounded" />
-                <Skeleton className="h-3 flex-1 rounded" />
+                <Skeleton className="h-3 w-3 shrink-0 rounded-sm" />
+                <Skeleton className="h-3 flex-1 rounded-sm" />
               </div>
-              <Skeleton className="h-2.5 w-16 rounded" />
+              <Skeleton className="h-2.5 w-16 rounded-sm" />
             </div>
           ))}
         </div>

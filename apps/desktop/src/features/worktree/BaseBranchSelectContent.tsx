@@ -117,7 +117,7 @@ export const BaseBranchSelectContent = ({ repoPath, value, onCommit, onClose }: 
                   onMouseEnter={() => setHighlightIndex(index)}
                   onClick={() => commit({ candidate: branch })}
                   className={cn(
-                    'flex w-full rounded px-2 py-1.5 text-left font-mono text-xs',
+                    'flex w-full rounded-sm px-2 py-1.5 text-left font-mono text-xs',
                     index === highlightIndex
                       ? cn(tintClasses('primary').bg, 'text-foreground')
                       : 'text-muted-foreground hover:bg-hover hover:text-foreground',
@@ -134,7 +134,7 @@ export const BaseBranchSelectContent = ({ repoPath, value, onCommit, onClose }: 
         <button
           type="button"
           onClick={() => commit({ candidate: '' })}
-          className="rounded px-2 py-1.5 text-left text-2xs text-muted-foreground hover:bg-hover hover:text-foreground"
+          className="rounded-sm px-2 py-1.5 text-left text-2xs text-muted-foreground hover:bg-hover hover:text-foreground"
         >
           Use default
         </button>

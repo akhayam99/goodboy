@@ -17,7 +17,7 @@ export const SentryStackTrace = ({ frames, isLoading, error }: Props) => {
         className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle p-3"
       >
         {['w-3/4', 'w-1/2', 'w-2/3', 'w-5/6', 'w-2/5', 'w-3/5'].map((width) => (
-          <Skeleton key={width} className={cn('h-2.5 rounded', width)} />
+          <Skeleton key={width} className={cn('h-2.5 rounded-sm', width)} />
         ))}
       </div>
     );

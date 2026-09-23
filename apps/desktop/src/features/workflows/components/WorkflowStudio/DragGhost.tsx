@@ -12,7 +12,7 @@ export const DragGhost = ({ ghost }: Props) => {
   return (
     <div
       className={cn(
-        'pointer-events-none fixed z-[60] flex items-center gap-1.5 rounded-md border',
+        'pointer-events-none fixed z-drag flex items-center gap-1.5 rounded-md border',
         tintClasses('primary').border,
         'bg-background px-2 py-1 text-2xs font-medium text-foreground shadow-lg',
       )}

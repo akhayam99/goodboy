@@ -30,16 +30,18 @@ beside a surface class. `scrim` is reserved for modal backdrops.
 ## Type scale
 
 `text-3xs` 10px/14px, `2xs` 11px/16px, `xs` 12px, `sm` 14px/20px, `base` 15px,
-`lg` 17px, `xl` 20px. Any `text-[Npx]` is rejected. The standing exceptions
-live in `docs/styling.md`, which owns the authoring rule.
+`lg` 17px, `xl` 20px, and one display grade, `2xl` 24px/32px, kept for the
+onboarding titles, the `EmptyState` hero and the Impact headline. Any
+`text-[Npx]` is rejected. The standing exceptions live in `docs/styling.md`,
+which owns the authoring rule.
 
 **Every size a repeated row uses declares its own line-height.** Without that
 pair, the box height follows whatever `line-height` the size inherits. For
 example, `3xs` and `2xs` inherited the body's 1.55 and came out at 15.5px and
 17.05px. That put the lens rail's group labels and count chips on a fractional
 pixel, and a row with a count ended up taller than a row without one. `3xs`,
-`2xs` and `sm` have a fixed line height in the tokens. `xs` does not, so a
-repeated row that uses it writes `leading-4` where it is used.
+`2xs`, `sm` and `2xl` have a fixed line height in the tokens. `xs` does not, so
+a repeated row that uses it writes `leading-4` where it is used.
 
 ### One grade per role
 
@@ -71,14 +73,17 @@ artifact.
 
 ## Radius scale
 
-One radius family, one step away from square. `rounded-xl` and larger look
-bubbly at this scale.
+One radius family, one step away from square. There is no `rounded-xl` token:
+larger radii look bubbly at this scale. `no-token-bypass.test.ts` rejects bare
+`rounded` and arbitrary `rounded-[Npx]`. Bare `rounded` comes out at 3.75px on
+the 15px root, so it is always written `rounded-sm`.
 
-| token          | value | used for                                           |
-| -------------- | ----- | -------------------------------------------------- |
-| `rounded-lg`   | 8px   | framed surfaces: cards, banners, inputs, buttons   |
-| `rounded-md`   | 6px   | small inset controls: icon buttons, segmented tabs |
-| `rounded-full` | n/a   | pills, avatars, circular icon buttons              |
+| token          | value | used for                                                      |
+| -------------- | ----- | ------------------------------------------------------------- |
+| `rounded-lg`   | 8px   | framed surfaces: cards, banners, panels                       |
+| `rounded-md`   | 6px   | controls and popovers: buttons, inputs, selects, icon buttons |
+| `rounded-sm`   | 4px   | inline tokens: kbd, code, small badges, checkboxes            |
+| `rounded-full` | n/a   | pills, avatars, circular icon buttons                         |
 
 ## Spacing scale
 
@@ -241,12 +246,15 @@ is a precedence chain (each layer must sit above the one below).
 
 | token                        | value | who                                                    |
 | ---------------------------- | ----- | ------------------------------------------------------ |
-| (StudioShell fullscreen)     | 50    | the floor: never lowered                               |
+| `--z-index-studio`           | 50    | `StudioShell`, the floor: never lowered                |
 | `--z-index-popover-backdrop` | 55    | click-catcher behind the app-global popovers           |
+| `--z-index-onboarding`       | 60    | the onboarding wizard over a studio                    |
+| `--z-index-drag`             | 62    | the workflow studio drag ghost                         |
 | `--z-index-popover`          | 65    | the app-global popovers                                |
 | `--z-index-command-palette`  | 70    | ⌘K, which fires whatever else is open                  |
 | `--z-index-tooltip`          | 75    | triggerable from inside a popover or the palette       |
 | `--z-index-toast`            | 85    | the toast stack                                        |
+| `--z-index-lightbox`         | 90    | the image lightbox, above everything z-indexed         |
 | (native `<dialog>`)          | n/a   | the browser's top layer, above every z-indexed element |
 
 ## Primitives

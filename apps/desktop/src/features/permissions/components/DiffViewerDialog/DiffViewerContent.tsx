@@ -973,16 +973,16 @@ export const DiffViewerContent = ({
                 className="flex flex-col overflow-hidden rounded-md border border-border-soft"
               >
                 <div className="flex items-center gap-2 px-3 py-1.5">
-                  <Skeleton className="h-3 w-40 rounded" />
+                  <Skeleton className="h-3 w-40 rounded-sm" />
                   <div className="flex-1" />
-                  <Skeleton className="h-3 w-10 rounded" />
+                  <Skeleton className="h-3 w-10 rounded-sm" />
                 </div>
                 <Divider />
                 <div className="flex flex-col gap-1.5 p-3">
                   {lines.map((w, li) => (
                     <div key={li} className="flex items-center gap-3">
-                      <Skeleton className="h-3 w-8 shrink-0 rounded" />
-                      <Skeleton className="h-3 rounded" style={{ width: w }} />
+                      <Skeleton className="h-3 w-8 shrink-0 rounded-sm" />
+                      <Skeleton className="h-3 rounded-sm" style={{ width: w }} />
                     </div>
                   ))}
                 </div>
@@ -1047,9 +1047,9 @@ export const DiffViewerContent = ({
                 {mountedCount < files.length && (
                   <div className="flex flex-col gap-2 py-3">
                     <div className="flex items-center gap-2 rounded-lg border border-border-soft px-3 py-2.5">
-                      <Skeleton className="h-4 w-4 shrink-0 rounded" />
-                      <Skeleton className="h-3 w-1/3 rounded" />
-                      <Skeleton className="ml-auto h-3 w-10 rounded" />
+                      <Skeleton className="h-4 w-4 shrink-0 rounded-sm" />
+                      <Skeleton className="h-3 w-1/3 rounded-sm" />
+                      <Skeleton className="ml-auto h-3 w-10 rounded-sm" />
                     </div>
                     <span className="text-center text-xs text-muted-foreground">
                       {mountedCount} / {files.length} files

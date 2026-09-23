@@ -42,7 +42,7 @@ export const RunningScriptRow = ({ run, now, onOpen, onStop }: Props) => (
         onClick={() => onStop(run)}
         aria-label={`Stop ${run.scriptName}`}
         className={cn(
-          'shrink-0 rounded p-1 text-muted-foreground transition-colors',
+          'shrink-0 rounded-sm p-1 text-muted-foreground transition-colors',
           tintClasses('danger').hoverBg,
           'hover:text-danger',
         )}

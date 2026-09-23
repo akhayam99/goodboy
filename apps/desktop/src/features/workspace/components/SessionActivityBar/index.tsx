@@ -196,7 +196,7 @@ export const SessionActivityBar = ({
                         ? undefined
                         : stateDescription({ presentation: groupPresentation })
                     }
-                    className="group flex w-full items-center gap-2 rounded px-0.5 text-left"
+                    className="group flex w-full items-center gap-2 rounded-sm px-0.5 text-left"
                   >
                     <ChevronRight
                       size={ICON_SIZE.row}

@@ -23,7 +23,7 @@ type MarkdownProps = {
 };
 
 const CHIP_CLASS =
-  'mx-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide';
+  'mx-0.5 inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide';
 
 const INLINE_CODE_CLASS: Record<MarkdownVariant, string> = {
   document: 'rounded-md bg-muted px-1 py-0 font-mono text-[0.875em] text-foreground wrap-anywhere',

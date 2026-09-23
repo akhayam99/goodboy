@@ -117,9 +117,9 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdopti
           <div role="status" aria-label="Loading issues" className="flex flex-col gap-1 py-0.5">
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="flex items-center gap-2 px-2 py-1.5">
-                <Skeleton className="size-4 shrink-0 rounded" />
-                <Skeleton className="h-3 w-14 shrink-0 rounded" />
-                <Skeleton className="h-3 min-w-0 flex-1 rounded" />
+                <Skeleton className="size-4 shrink-0 rounded-sm" />
+                <Skeleton className="h-3 w-14 shrink-0 rounded-sm" />
+                <Skeleton className="h-3 min-w-0 flex-1 rounded-sm" />
               </div>
             ))}
           </div>

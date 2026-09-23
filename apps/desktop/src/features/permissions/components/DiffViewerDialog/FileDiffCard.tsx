@@ -376,7 +376,7 @@ export const FileDiffCard = ({
             >
               <span
                 className={cn(
-                  'flex size-3 items-center justify-center rounded-[3px] border',
+                  'flex size-3 items-center justify-center rounded-sm border',
                   isReviewed
                     ? 'border-success bg-success text-background'
                     : 'border-muted-foreground/50',

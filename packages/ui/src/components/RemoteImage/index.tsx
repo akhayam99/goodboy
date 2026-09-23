@@ -25,7 +25,7 @@ const IMAGE_CLASS =
 const BLOCK_CLASS =
   'my-1.5 flex items-start gap-2.5 rounded-lg border border-dashed border-border-soft bg-elevated px-3 py-2.5 text-left';
 
-const HOST_CLASS = 'rounded bg-muted px-1 font-mono text-[0.9em] text-foreground';
+const HOST_CLASS = 'rounded-sm bg-muted px-1 font-mono text-[0.9em] text-foreground';
 
 const hostOf = (url: string): string => {
   try {

@@ -90,7 +90,7 @@ export const PermissionScopePicker = ({
           onClick={() => void handle(scope)}
           title={SCOPE_TITLES[scope]}
           className={cn(
-            'rounded border px-2 py-0.5 text-2xs font-medium transition-colors',
+            'rounded-sm border px-2 py-0.5 text-2xs font-medium transition-colors',
             scopeTone(scope),
             busy && 'cursor-not-allowed opacity-50',
           )}

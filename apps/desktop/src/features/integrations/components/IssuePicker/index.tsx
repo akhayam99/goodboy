@@ -206,7 +206,7 @@ export const IssuePicker = ({
                   void openUrl(value.url);
                 }}
                 aria-label="Open issue in browser"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <ExternalLink size={ICON_SIZE.row} aria-hidden />
               </button>
@@ -218,7 +218,7 @@ export const IssuePicker = ({
               tabIndex={-1}
               onClick={togglePanel}
               aria-label={isOpen ? 'Close issue list' : 'Open issue list'}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
             >
               <ChevronDown
                 size={ICON_SIZE.row}
@@ -236,8 +236,8 @@ export const IssuePicker = ({
             <div role="status" aria-label="Loading issues" className="py-0.5">
               {Array.from({ length: 5 }).map((_, index) => (
                 <div key={index} className="flex items-center gap-2 px-2.5 py-1.5">
-                  <Skeleton className="h-3 w-12 shrink-0 rounded" />
-                  <Skeleton className="h-3 min-w-0 flex-1 rounded" />
+                  <Skeleton className="h-3 w-12 shrink-0 rounded-sm" />
+                  <Skeleton className="h-3 min-w-0 flex-1 rounded-sm" />
                 </div>
               ))}
             </div>

@@ -32,7 +32,7 @@ export const ThreadReplies = ({ replies }: Props) => {
             type="button"
             aria-expanded={expanded}
             onClick={() => setExpanded((v) => !v)}
-            className="inline-flex w-fit items-center gap-1 rounded text-2xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex w-fit items-center gap-1 rounded-sm text-2xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ChevronRight
               size={11}

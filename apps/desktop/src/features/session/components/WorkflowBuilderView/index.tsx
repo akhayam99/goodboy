@@ -1483,7 +1483,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         aria-label="Drafting plan"
                         className="flex flex-col gap-1.5"
                       >
-                        <Skeleton className="h-3 w-28 rounded" />
+                        <Skeleton className="h-3 w-28 rounded-sm" />
                         <ol className="flex flex-col divide-y divide-border-soft">
                           {Array.from({ length: 3 }).map((_, i) => (
                             <li key={i} className="flex flex-col gap-1.5 px-1 py-3 first:pt-1">
@@ -1492,11 +1492,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                   {i + 1}
                                 </span>
                                 <Skeleton className="size-4 shrink-0 rounded-full" />
-                                <Skeleton className="h-3 flex-1 rounded" />
+                                <Skeleton className="h-3 flex-1 rounded-sm" />
                               </div>
                               <div className="flex flex-col gap-1 pl-5">
-                                <Skeleton className="h-2 w-full rounded" />
-                                <Skeleton className="h-2 w-4/5 rounded" />
+                                <Skeleton className="h-2 w-full rounded-sm" />
+                                <Skeleton className="h-2 w-4/5 rounded-sm" />
                               </div>
                             </li>
                           ))}

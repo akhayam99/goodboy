@@ -410,7 +410,7 @@ export const CommandPalette = ({
                     inputRef.current?.focus();
                   }}
                   aria-label={`Filter by ${p.hint}`}
-                  className="inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-hover hover:text-foreground"
+                  className="inline-flex items-center gap-1 rounded-sm px-1 py-0.5 transition-colors hover:bg-hover hover:text-foreground"
                   title={p.hint}
                 >
                   <kbd className="font-mono text-foreground">{p.symbol}</kbd>

@@ -100,7 +100,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             and providers are all persisted to disk. Try again first, and reload only if the screen
             comes back broken.
           </p>
-          <ScrollFade className="max-h-40" viewportClassName="rounded bg-muted px-3 py-2">
+          <ScrollFade className="max-h-40" viewportClassName="rounded-sm bg-muted px-3 py-2">
             <pre className="whitespace-pre-wrap break-words text-xs text-danger">
               {error.message}
             </pre>
@@ -109,14 +109,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <button
               type="button"
               onClick={this.reset}
-              className="rounded bg-primary px-3 py-1.5 text-xs font-semibold text-on-tone hover:opacity-90"
+              className="rounded-sm bg-primary px-3 py-1.5 text-xs font-semibold text-on-tone hover:opacity-90"
             >
               Try again
             </button>
             <button
               type="button"
               onClick={this.reload}
-              className="rounded border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-hover"
+              className="rounded-sm border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-hover"
             >
               Reload
             </button>
@@ -125,7 +125,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 type="button"
                 onClick={this.report}
                 aria-label="Report this on GitHub"
-                className="inline-flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-hover"
+                className="inline-flex items-center gap-1.5 rounded-sm border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-hover"
               >
                 Report this
                 <ExternalLink size={11} aria-hidden />

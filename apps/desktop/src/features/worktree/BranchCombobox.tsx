@@ -177,7 +177,7 @@ export const BranchCombobox = ({
                 }
               }}
               aria-label={open ? 'Close branch list' : 'Open branch list'}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
             >
               <ChevronDown
                 size={ICON_SIZE.row}

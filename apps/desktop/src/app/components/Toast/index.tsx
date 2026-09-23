@@ -228,7 +228,7 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
           {toast.action != null ? (
             <button
               type="button"
-              className="mt-1.5 rounded px-1.5 py-0.5 text-2xs font-medium text-foreground ring-1 ring-inset ring-foreground/20 hover:bg-hover hover:text-foreground"
+              className="mt-1.5 rounded-sm px-1.5 py-0.5 text-2xs font-medium text-foreground ring-1 ring-inset ring-foreground/20 hover:bg-hover hover:text-foreground"
               onClick={() => {
                 toast.action!.onClick();
                 onDismiss(toast.id);

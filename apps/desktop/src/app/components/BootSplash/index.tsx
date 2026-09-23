@@ -154,7 +154,7 @@ function BootErrorRecovery({
             type="button"
             onClick={onRetry}
             className={cn(
-              'rounded border',
+              'rounded-sm border',
               tintClasses('danger').borderSoft,
               'bg-background px-3 py-1.5 text-danger motion-safe:transition-colors',
               tintClasses('danger').hoverBg,

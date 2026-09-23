@@ -345,7 +345,7 @@ export const OnboardingWizard = () => {
         dismiss();
       }}
       className={cn(
-        'fixed inset-0 z-50 flex flex-col overflow-hidden bg-background outline-none',
+        'fixed inset-0 z-onboarding flex flex-col overflow-hidden bg-background outline-none',
         closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
       )}
     >

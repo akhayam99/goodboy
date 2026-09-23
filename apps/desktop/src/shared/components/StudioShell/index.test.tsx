@@ -16,14 +16,14 @@ const defaults = {
 };
 
 describe('StudioShell variant rendering', () => {
-  it('defaults to fullscreen variant (fixed top-9 inset-x-0 z-50)', () => {
+  it('defaults to fullscreen variant (fixed top-9 inset-x-0 z-studio)', () => {
     const { container } = render(<StudioShell {...defaults}>{() => <p>body</p>}</StudioShell>);
     const shell = container.firstElementChild as HTMLElement;
     expect(shell.className).toContain('fixed');
     expect(shell.className).toContain('top-9');
     expect(shell.className).toContain('inset-x-0');
     expect(shell.className).toContain('bottom-9');
-    expect(shell.className).toContain('z-50');
+    expect(shell.className).toContain('z-studio');
   });
 
   it('variant="fullscreen" applies fixed positioning', () => {
@@ -34,10 +34,10 @@ describe('StudioShell variant rendering', () => {
     );
     const shell = container.firstElementChild as HTMLElement;
     expect(shell.className).toContain('fixed');
-    expect(shell.className).toContain('z-50');
+    expect(shell.className).toContain('z-studio');
   });
 
-  it('variant="slot" applies relative positioning, no fixed/z-50', () => {
+  it('variant="slot" applies relative positioning, no fixed/z-studio', () => {
     const { container } = render(
       <StudioShell {...defaults} variant="slot">
         {() => <p>body</p>}
@@ -46,7 +46,7 @@ describe('StudioShell variant rendering', () => {
     const shell = container.firstElementChild as HTMLElement;
     expect(shell.className).toContain('relative');
     expect(shell.className).not.toContain('fixed');
-    expect(shell.className).not.toContain('z-50');
+    expect(shell.className).not.toContain('z-studio');
   });
 });
 

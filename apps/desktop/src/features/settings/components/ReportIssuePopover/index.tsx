@@ -58,7 +58,7 @@ export const ReportIssuePopover = () => {
             onClick={toggle}
             aria-label={triggerLabel}
             className={cn(
-              'relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors',
+              'relative flex items-center justify-center rounded-sm p-1.5 motion-safe:transition-colors',
               open
                 ? 'bg-muted text-foreground'
                 : 'text-muted-foreground hover:bg-hover hover:text-foreground',

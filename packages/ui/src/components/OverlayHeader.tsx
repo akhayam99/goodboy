@@ -84,7 +84,7 @@ export const OverlayHeader = ({
           disabled={closeDisabled}
           aria-label={closeLabel}
           className={cn(
-            'flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors',
+            'flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors',
             'hover:bg-hover hover:text-foreground',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             closeDisabled && 'cursor-not-allowed opacity-50',

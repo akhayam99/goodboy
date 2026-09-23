@@ -69,7 +69,7 @@ export const RunningScriptsIndicator = () => {
             aria-label={label}
             aria-expanded={isOpen}
             className={cn(
-              'relative flex items-center gap-1 rounded p-1.5 motion-safe:transition-colors',
+              'relative flex items-center gap-1 rounded-sm p-1.5 motion-safe:transition-colors',
               isOpen ? 'bg-muted text-info' : 'text-info hover:bg-hover',
             )}
           >

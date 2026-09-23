@@ -277,11 +277,11 @@ export const InboxRail = ({
             <div key={index} className="flex flex-col gap-1 px-3 py-2">
               <div className="flex items-center gap-2">
                 <Skeleton className="size-3.5 shrink-0 rounded-full" />
-                <Skeleton className="h-3 flex-1 rounded" />
+                <Skeleton className="h-3 flex-1 rounded-sm" />
               </div>
               <div className="flex items-center gap-2">
                 <span aria-hidden className="size-3.5 shrink-0" />
-                <Skeleton className="h-2.5 w-1/3 rounded" />
+                <Skeleton className="h-2.5 w-1/3 rounded-sm" />
               </div>
             </div>
           ))}

@@ -80,24 +80,32 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('transient popover stacking above a full-page studio', () => {
-  it('keeps StudioShell fullscreen pinned at z-50', () => {
+  it('keeps StudioShell fullscreen pinned on the studio layer', () => {
     const source = readFileSync(studioShellPath, 'utf8');
-    expect(source).toContain("'fixed inset-x-0 bottom-9 top-9 z-50 flex flex-col bg-background'");
+    expect(source).toContain(
+      "'fixed inset-x-0 bottom-9 top-9 z-studio flex flex-col bg-background'",
+    );
   });
 
-  it('orders the named z-scale above the z-50 studio floor', () => {
-    const studio = 50;
+  it('orders the named z-scale above the studio floor', () => {
+    const studio = readZIndexToken('studio');
     const popoverBackdrop = readZIndexToken('popover-backdrop');
+    const onboarding = readZIndexToken('onboarding');
+    const drag = readZIndexToken('drag');
     const popover = readZIndexToken('popover');
     const commandPalette = readZIndexToken('command-palette');
     const tooltip = readZIndexToken('tooltip');
     const toast = readZIndexToken('toast');
+    const lightbox = readZIndexToken('lightbox');
 
     expect(popoverBackdrop).toBeGreaterThan(studio);
-    expect(popover).toBeGreaterThan(popoverBackdrop);
+    expect(onboarding).toBeGreaterThan(popoverBackdrop);
+    expect(drag).toBeGreaterThan(onboarding);
+    expect(popover).toBeGreaterThan(drag);
     expect(commandPalette).toBeGreaterThan(popover);
     expect(tooltip).toBeGreaterThan(commandPalette);
     expect(toast).toBeGreaterThan(tooltip);
+    expect(lightbox).toBeGreaterThan(toast);
   });
 
   it('keeps the z-index tokens inside the @theme block so tailwind actually generates their utilities', () => {
@@ -126,7 +134,7 @@ describe('transient popover stacking above a full-page studio', () => {
     );
 
     const shell = container.querySelector('[data-studio-overlay]') as HTMLElement;
-    expect(shell.className).toContain('z-50');
+    expect(shell.className).toContain('z-studio');
     expect(shell.className).toContain('animate-studio-in');
 
     await act(async () => {
@@ -140,7 +148,7 @@ describe('transient popover stacking above a full-page studio', () => {
     expect(backdrop).not.toBeNull();
     expect(popoverPanel).not.toBeNull();
 
-    expect(shell.className).toContain('z-50');
+    expect(shell.className).toContain('z-studio');
     expect(shell.className).toContain('animate-studio-in');
   });
 });

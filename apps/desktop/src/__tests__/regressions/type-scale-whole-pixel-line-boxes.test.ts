@@ -31,7 +31,7 @@ const isWhole = (value: number): boolean => Number.isInteger(value);
 
 const leadingPx = ({ step }: { step: number }): number => step * SPACING_PX;
 
-const PINNED_GRADES = ['3xs', '2xs', 'sm'] as const;
+const PINNED_GRADES = ['3xs', '2xs', 'sm', '2xl'] as const;
 
 const UNPINNED_GRADES = ['xs', 'base', 'lg', 'xl'] as const;
 

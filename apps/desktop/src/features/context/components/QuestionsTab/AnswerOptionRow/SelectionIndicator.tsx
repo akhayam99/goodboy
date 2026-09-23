@@ -12,7 +12,7 @@ export const SelectionIndicator = ({ mode, selected }: Props) => (
     aria-hidden
     className={cn(
       'grid size-4 shrink-0 translate-y-0.5 place-items-center border',
-      mode === 'many' ? 'rounded-[4px]' : 'rounded-full',
+      mode === 'many' ? 'rounded-sm' : 'rounded-full',
       selected ? 'border-primary bg-primary text-on-tone' : 'border-border bg-transparent',
     )}
   >

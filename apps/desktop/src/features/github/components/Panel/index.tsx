@@ -19,7 +19,7 @@ const CreateTokenLink = () => (
     >
       Create a personal access token on GitHub
     </a>{' '}
-    (scope <code className="rounded bg-muted px-1 py-0.5 font-mono">repo</code>), then{' '}
+    (scope <code className="rounded-sm bg-muted px-1 py-0.5 font-mono">repo</code>), then{' '}
     <a
       href={TOKEN_LIST_URL}
       target="_blank"
@@ -187,9 +187,9 @@ function Absent({
     <div className="flex flex-col gap-3">
       <p className="text-xs leading-relaxed text-muted-foreground">
         connect with a personal API key (classic or fine-grained personal access token, scope:{' '}
-        <code className="rounded bg-muted px-1 py-0.5 font-mono text-3xs">repo</code>), or run{' '}
-        <code className="rounded bg-muted px-1 py-0.5 font-mono text-3xs">gh auth login</code> in a
-        terminal and reload Goodboy.
+        <code className="rounded-sm bg-muted px-1 py-0.5 font-mono text-3xs">repo</code>), or run{' '}
+        <code className="rounded-sm bg-muted px-1 py-0.5 font-mono text-3xs">gh auth login</code> in
+        a terminal and reload Goodboy.
       </p>
       <div className="flex items-center gap-2">
         <Input
@@ -290,7 +290,7 @@ function Connected({
         <div className="flex flex-col gap-2">
           <p className="text-3xs leading-relaxed text-muted-foreground">
             Using your system gh login, Goodboy is not storing a key. To disconnect, run{' '}
-            <code className="rounded bg-muted px-1 py-0.5 font-mono">gh auth logout</code> in a
+            <code className="rounded-sm bg-muted px-1 py-0.5 font-mono">gh auth logout</code> in a
             terminal. To use a different personal API key here (e.g. one authorized for your org via
             SSO), connect one below.
           </p>

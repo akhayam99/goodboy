@@ -144,7 +144,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
               <button
                 type="button"
                 onClick={() => setEditing('body')}
-                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-3xs font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-3xs font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <Pencil size={11} aria-hidden />
                 Edit

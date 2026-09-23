@@ -46,7 +46,7 @@ export const NeedsYouPopover = ({ sessions, count }: Props) => {
           onClick={dropdown.toggle}
           aria-label={`${count} ${count === 1 ? 'session needs' : 'sessions need'} you`}
           aria-expanded={dropdown.open}
-          className="flex items-center gap-1 rounded px-1.5 py-1 transition-colors hover:bg-hover"
+          className="flex items-center gap-1 rounded-sm px-1.5 py-1 transition-colors hover:bg-hover"
         >
           <StatusDot tone="warning" size="sm" pulsing />
           <span className="font-medium tabular-nums text-foreground">{count}</span>

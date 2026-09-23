@@ -61,7 +61,7 @@ export const AgentFollowUpChild = ({ entry, sessionId }: Props) => {
         type="button"
         onClick={onOpen}
         className={cn(
-          'shrink-0 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
+          'shrink-0 rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
           'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         )}
       >

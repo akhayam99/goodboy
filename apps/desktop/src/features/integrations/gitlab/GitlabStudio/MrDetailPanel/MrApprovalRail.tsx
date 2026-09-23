@@ -24,7 +24,7 @@ export const MrApprovalRail = ({ approval, isLoading, error }: Props) => {
   if (isLoading) {
     return (
       <RailBlock label="Approvals">
-        <Skeleton className="h-3 w-24 rounded" />
+        <Skeleton className="h-3 w-24 rounded-sm" />
       </RailBlock>
     );
   }

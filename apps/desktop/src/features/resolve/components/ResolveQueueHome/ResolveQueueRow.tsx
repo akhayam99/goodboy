@@ -126,7 +126,7 @@ export const ResolveQueueRow = ({
                     event.stopPropagation();
                     onOpenCommit({ sha: integratedSha });
                   }}
-                  className="rounded font-mono tabular-nums underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                  className="rounded-sm font-mono tabular-nums underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                 >
                   {shortSha({ sha: integratedSha })}
                 </button>
