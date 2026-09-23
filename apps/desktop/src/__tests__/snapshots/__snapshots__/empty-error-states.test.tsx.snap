@@ -626,12 +626,12 @@ exports[`snapshot, error states > SessionOverviewLoading: retryable failure afte
       <span
         class="text-sm font-medium text-foreground"
       >
-        This session did not finish loading
+        This session did not load
       </span>
       <span
         class="max-w-xs text-xs leading-relaxed text-muted-foreground"
       >
-        Its agents and plans have not arrived. Nothing here is missing on purpose.
+        Retry, or reopen it from the board.
       </span>
     </div>
     <div
@@ -681,119 +681,153 @@ exports[`snapshot, error states > SessionOverviewLoading: silent skeleton before
       role="status"
     >
       <div
-        class="flex flex-col gap-3"
+        class="flex flex-col gap-4"
       >
         <div
-          class="flex items-center gap-2"
+          class="flex flex-col gap-2"
+        >
+          <div
+            class="flex items-center justify-between gap-2"
+          >
+            <div
+              aria-hidden="true"
+              class="motion-safe:animate-pulse rounded-sm bg-muted h-7 w-3/5"
+            />
+            <div
+              aria-hidden="true"
+              class="motion-safe:animate-pulse bg-muted h-6 w-16 rounded-md"
+            />
+          </div>
+          <div
+            class="flex flex-wrap items-center justify-between gap-2"
+          >
+            <div
+              class="flex items-center gap-2"
+            >
+              <div
+                aria-hidden="true"
+                class="motion-safe:animate-pulse bg-muted h-6 w-24 rounded-md"
+              />
+              <div
+                aria-hidden="true"
+                class="motion-safe:animate-pulse bg-muted h-6 w-20 rounded-md"
+              />
+            </div>
+            <div
+              class="flex items-center gap-2"
+            >
+              <div
+                aria-hidden="true"
+                class="motion-safe:animate-pulse bg-muted h-6 w-28 rounded-md"
+              />
+              <div
+                aria-hidden="true"
+                class="motion-safe:animate-pulse bg-muted h-6 w-14 rounded-md"
+              />
+            </div>
+          </div>
+        </div>
+        <div
+          aria-label="Loading"
+          class="flex flex-col gap-2"
+          role="status"
         >
           <div
             aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted size-2.5 rounded-full"
+            class="motion-safe:animate-pulse bg-muted h-3 rounded-sm w-full"
           />
           <div
             aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-3 w-24 rounded-full"
+            class="motion-safe:animate-pulse bg-muted h-3 rounded-sm w-2/3"
           />
         </div>
         <div
-          aria-hidden="true"
-          class="motion-safe:animate-pulse rounded-sm bg-muted h-7 w-3/5"
-        />
-        <div
-          aria-hidden="true"
-          class="motion-safe:animate-pulse rounded-sm bg-muted h-5 w-2/3"
-        />
-        <div
-          class="flex flex-wrap items-center gap-2"
+          class="flex flex-col gap-1.5"
         >
           <div
             aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-6 w-24 rounded-md"
+            class="motion-safe:animate-pulse bg-muted h-9 w-full rounded-md"
           />
           <div
             aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-6 w-32 rounded-md"
-          />
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-6 w-16 rounded-md"
-          />
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-3 w-20 rounded-full"
+            class="motion-safe:animate-pulse bg-muted h-9 w-full rounded-md"
           />
         </div>
       </div>
       <div
-        class="flex flex-col gap-6"
+        class="flex flex-col gap-3"
       >
         <div
-          class="flex flex-col gap-2"
-        >
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-3 w-12 rounded-full"
-          />
-          <div
-            class="grid grid-cols-2 gap-2"
-          >
-            <div
-              aria-hidden="true"
-              class="motion-safe:animate-pulse bg-muted h-11 w-full rounded-lg"
-            />
-            <div
-              aria-hidden="true"
-              class="motion-safe:animate-pulse bg-muted h-11 w-full rounded-lg"
-            />
-          </div>
-        </div>
-        <div
-          class="flex flex-col gap-2"
+          class="flex items-center justify-between gap-2"
         >
           <div
             aria-hidden="true"
             class="motion-safe:animate-pulse bg-muted h-3 w-16 rounded-full"
           />
           <div
-            class="flex flex-col gap-2"
+            aria-hidden="true"
+            class="motion-safe:animate-pulse bg-muted h-6 w-24 rounded-md"
+          />
+        </div>
+        <div
+          class="flex items-start gap-3"
+        >
+          <div
+            aria-hidden="true"
+            class="motion-safe:animate-pulse bg-muted mt-1 size-2.5 shrink-0 rounded-full"
+          />
+          <div
+            class="flex min-w-0 flex-1 flex-col gap-1.5"
           >
             <div
               aria-hidden="true"
-              class="motion-safe:animate-pulse bg-muted h-16 w-full rounded-lg"
+              class="motion-safe:animate-pulse rounded-sm bg-muted h-4 w-2/5"
             />
             <div
               aria-hidden="true"
-              class="motion-safe:animate-pulse bg-muted h-16 w-full rounded-lg"
+              class="motion-safe:animate-pulse bg-muted h-3 w-3/4 rounded-sm"
             />
           </div>
         </div>
-      </div>
-      <div
-        class="flex flex-col gap-2"
-      >
         <div
-          class="flex items-center justify-between gap-2 px-0.5"
+          class="flex items-start gap-3"
         >
           <div
             aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-3 w-24 rounded-full"
+            class="motion-safe:animate-pulse bg-muted mt-1 size-2.5 shrink-0 rounded-full"
           />
           <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-6 w-14 rounded-md"
-          />
+            class="flex min-w-0 flex-1 flex-col gap-1.5"
+          >
+            <div
+              aria-hidden="true"
+              class="motion-safe:animate-pulse rounded-sm bg-muted h-4 w-2/5"
+            />
+            <div
+              aria-hidden="true"
+              class="motion-safe:animate-pulse bg-muted h-3 w-3/4 rounded-sm"
+            />
+          </div>
         </div>
         <div
-          class="flex flex-col gap-2"
+          class="flex items-start gap-3"
         >
           <div
             aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-12 w-full rounded-lg"
+            class="motion-safe:animate-pulse bg-muted mt-1 size-2.5 shrink-0 rounded-full"
           />
           <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-12 w-full rounded-lg"
-          />
+            class="flex min-w-0 flex-1 flex-col gap-1.5"
+          >
+            <div
+              aria-hidden="true"
+              class="motion-safe:animate-pulse rounded-sm bg-muted h-4 w-2/5"
+            />
+            <div
+              aria-hidden="true"
+              class="motion-safe:animate-pulse bg-muted h-3 w-3/4 rounded-sm"
+            />
+          </div>
         </div>
       </div>
     </div>

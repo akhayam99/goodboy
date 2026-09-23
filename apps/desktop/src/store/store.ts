@@ -1145,6 +1145,7 @@ export const initialState: AppState = {
   sessionOpenQuestions: {},
   sessionAnsweredQuestions: {},
   sessionDismissedQuestions: {},
+  sessionQuestionsLoadError: {},
   openQuestionScrollTarget: null,
   sessionLoading: {},
   boardReady: true,

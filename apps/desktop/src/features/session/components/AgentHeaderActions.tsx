@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import { CircleCheck, CircleDot, OctagonX, Trash2 } from 'lucide-react';
 import { InlineConfirm } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
@@ -29,9 +30,20 @@ export const AgentHeaderActions = ({
   const deleteAgent = useAppStore((state) => state.deleteAgent);
   const isTurnRunning = useAppStore((state) => state.agentTurnState[agent.id]?.kind === 'running');
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const armDelete = () => {
+    setDeleteError(null);
+    setIsConfirmingDelete(true);
+  };
 
   const remove = async () => {
-    await deleteAgent(sessionId, agent.id);
+    try {
+      await deleteAgent(sessionId, agent.id);
+    } catch (error) {
+      setDeleteError(`Couldn't delete this agent. ${formatError(error)}`);
+      return;
+    }
     setIsConfirmingDelete(false);
     onDeleted?.();
   };
@@ -59,12 +71,7 @@ export const AgentHeaderActions = ({
             onClick={() => void cancelCurrentTurn(sessionId, agent.id)}
           />
         ) : null}
-        <GhostActionButton
-          icon={Trash2}
-          label="Delete"
-          tone="danger"
-          onClick={() => setIsConfirmingDelete(true)}
-        />
+        <GhostActionButton icon={Trash2} label="Delete" tone="danger" onClick={armDelete} />
       </div>
       {isConfirmingDelete && (
         <InlineConfirm
@@ -73,6 +80,13 @@ export const AgentHeaderActions = ({
           title={deleteTitle}
           description={deleteDescription}
           confirmLabel="Delete"
+          note={
+            deleteError !== null ? (
+              <p role="alert" className="text-2xs text-danger">
+                {deleteError}
+              </p>
+            ) : null
+          }
           onConfirm={remove}
           onCancel={() => setIsConfirmingDelete(false)}
         />

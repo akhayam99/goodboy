@@ -170,6 +170,7 @@ afterEach(() => {
 });
 
 import { DiffViewerDialog, DiffViewerPane } from './index';
+import { listBranchCommits } from '../../../../features/worktree/worktree';
 import { DIFF_CAPPED_COLUMN_CLASS } from './lib';
 
 const SID = 's1' as SessionId;
@@ -289,6 +290,13 @@ describe('DiffViewerPane', () => {
     expect(refresh.parentElement?.className).toContain('pt-0.5');
     expect(container.querySelector('[class*="max-w-2xl"]')).toBeNull();
     expect(container.querySelector('[class*="max-w-5xl"]')).not.toBeNull();
+  });
+
+  it('says the branch commits did not load instead of drawing none', async () => {
+    vi.mocked(listBranchCommits).mockRejectedValueOnce(new Error('git log failed'));
+    render(<DiffViewerPane worktreePath="/tmp/worktree" onClose={vi.fn()} />);
+
+    expect(await screen.findByText("Couldn't read this branch's commits.")).toBeDefined();
   });
 
   it('caps the pane header to the empty-state column when there is nothing to diff', async () => {

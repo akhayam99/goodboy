@@ -23,6 +23,7 @@ import { AnswerSubmitButton } from '../../../../context/components/QuestionsTab/
 import { DismissedQuestionUndo } from '../../../../context/components/QuestionsTab/DismissedQuestionUndo';
 import { QuestionClusterHeader } from '../../../../context/components/QuestionsTab/QuestionClusterHeader';
 import { QuestionsPaneCard } from './QuestionsPaneCard';
+import { ContextLoadFailure } from './ContextPane/ContextLoadFailure';
 import {
   buildQuestionClusters,
   type QuestionCluster,
@@ -329,6 +330,7 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
   const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions);
   const openLoaded = useAppStore((s) => s.sessionOpenQuestions[sessionId] !== undefined);
   const answeredLoaded = useAppStore((s) => s.sessionAnsweredQuestions[sessionId] !== undefined);
+  const loadError = useAppStore((s) => s.sessionQuestionsLoadError[sessionId]);
   const drafts = useOpenQuestions((s) => s.drafts);
   const justAnswered = useOpenQuestions((s) => s.justAnswered);
   const toggleSuggestion = useOpenQuestions((s) => s.toggleSuggestion);
@@ -345,10 +347,14 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
   const restoreDismissedOpenQuestion = useAppStore((s) => s.restoreDismissedOpenQuestion);
 
-  useEffect(() => {
+  const loadQuestions = useCallback(() => {
     void loadSessionOpenQuestions(sessionId);
     void loadSessionAnsweredQuestions(sessionId);
   }, [sessionId, loadSessionOpenQuestions, loadSessionAnsweredQuestions]);
+
+  useEffect(() => {
+    loadQuestions();
+  }, [loadQuestions]);
 
   const pendingUndoQuestion =
     pendingUndo?.question.sessionId === sessionId ? pendingUndo.question : null;
@@ -422,6 +428,18 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
     },
     [clearUndo, restoreDismissedOpenQuestion, sessionId],
   );
+
+  if ((!openLoaded || !answeredLoaded) && loadError !== undefined) {
+    return (
+      <PaneShell
+        title="Questions"
+        description="Decisions agents need from you to keep going."
+        eyebrow={eyebrow}
+      >
+        <ContextLoadFailure title="Questions" onRetry={loadQuestions} />
+      </PaneShell>
+    );
+  }
 
   if (!openLoaded || !answeredLoaded) {
     return (

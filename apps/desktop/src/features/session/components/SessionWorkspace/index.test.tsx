@@ -594,12 +594,23 @@ describe('SessionWorkspace breadcrumb visibility', () => {
   it('keeps the overlay ladder up while the selected agent has not loaded yet', () => {
     store.activeLens = { [SESSION_ID]: 'agents' };
     store.selectedAgentId = { [SESSION_ID]: 'agent-not-loaded' };
-    store.sessionPhaseRuns = { [SESSION_ID]: [] };
+    store.sessionPhaseRuns = {};
 
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
     expect(screen.getByRole('status', { name: 'Loading' })).toBeDefined();
+    expect(screen.queryByTestId('agent-detail-pane')).toBeNull();
+  });
+
+  it('names a selected agent the loaded session no longer has', () => {
+    store.activeLens = { [SESSION_ID]: 'agents' };
+    store.selectedAgentId = { [SESSION_ID]: 'agent-gone' };
+    store.sessionPhaseRuns = { [SESSION_ID]: [] };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByText('This agent is no longer in this session')).toBeDefined();
     expect(screen.queryByTestId('agent-detail-pane')).toBeNull();
   });
 
@@ -818,7 +829,7 @@ describe('SessionWorkspace overview', () => {
     });
 
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
-    expect(screen.getByText('This session did not finish loading')).toBeDefined();
+    expect(screen.getByText('This session did not load')).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: /retry/i }));
     expect(store.loadPhaseRunsForSession).toHaveBeenCalledWith(SESSION_ID);

@@ -279,6 +279,7 @@ export const DiffViewerContent = ({
   const [view, setView] = useState<DiffView>(DEFAULT_VIEW);
   const [commits, setCommits] = useState<ReadonlyArray<BranchCommit>>([]);
   const [status, setStatus] = useState<WorktreeStatus | null>(null);
+  const [metaError, setMetaError] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
   const isGitAware = Boolean(worktreePath);
@@ -431,8 +432,14 @@ export const DiffViewerContent = ({
         }
         setCommits(c);
         setStatus(s);
+        setMetaError(null);
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (cancelled) {
+          return;
+        }
+        setMetaError(formatError(err));
+      });
     return () => {
       cancelled = true;
     };
@@ -766,6 +773,12 @@ export const DiffViewerContent = ({
     commitsAheadOfMain != null
       ? `${commitsAheadOfMain} ${commitsAheadOfMain === 1 ? 'commit' : 'commits'}`
       : 'commit count unknown';
+  const metaErrorLine =
+    metaError !== null ? (
+      <p role="status" className="text-2xs text-muted-foreground" title={metaError}>
+        Couldn't read this branch's commits.
+      </p>
+    ) : null;
 
   return (
     <div
@@ -828,6 +841,7 @@ export const DiffViewerContent = ({
               ) : null}
             </div>
             <p className="text-sm text-muted-foreground">{DIFF_VIEWER_PANE_COPY.description}</p>
+            {metaErrorLine}
           </div>
           {!isEmpty ? (
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
@@ -964,6 +978,9 @@ export const DiffViewerContent = ({
               }
             />
           )}
+          {metaErrorLine !== null ? (
+            <div className="shrink-0 px-2.5 py-1">{metaErrorLine}</div>
+          ) : null}
         </>
       )}
 
