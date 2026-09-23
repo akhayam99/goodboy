@@ -206,4 +206,53 @@ describe('runDatabaseHygiene', () => {
     expect(auditCount[0]?.count).toBe(5000);
     expect(eventCount[0]?.count).toBe(200_000);
   });
+
+  it('prunes only old terminal provider runs that no spend, agent or file version points at', async () => {
+    const db = await makeMigratedTestDatabase();
+    await seedSession({ db });
+    const old = NOW - 91 * DAY_MS;
+    await db.execute(
+      `INSERT INTO provider_runs
+         (id, session_id, provider, model, status_kind, status_payload, created_at)
+       VALUES
+         ('orphan-old', 'session-1', 'anthropic', 'model', 'succeeded', '{}', ?),
+         ('orphan-failed', 'session-1', 'anthropic', 'model', 'failed', '{}', ?),
+         ('orphan-recent', 'session-1', 'anthropic', 'model', 'succeeded', '{}', ?),
+         ('with-spend', 'session-1', 'anthropic', 'model', 'succeeded', '{}', ?),
+         ('with-agent', 'session-1', 'anthropic', 'model', 'cancelled', '{}', ?),
+         ('with-file', 'session-1', 'anthropic', 'model', 'succeeded', '{}', ?),
+         ('in-flight', 'session-1', 'anthropic', 'model', 'pending', '{}', ?)`,
+      [old, old, NOW - 10 * DAY_MS, old, old, old, old],
+    );
+    await db.execute(
+      `INSERT INTO telemetry_records
+         (id, run_id, session_id, kind, provider, model, input_tokens, output_tokens, estimated_cost_usd, recorded_at)
+       VALUES ('spend-1', 'with-spend', 'session-1', 'turn', 'anthropic', 'model', 1, 1, 1, ?)`,
+      [old],
+    );
+    await db.execute("UPDATE agents SET provider_run_id = 'with-agent' WHERE id = 'agent-1'");
+    await db.execute(
+      `INSERT INTO file_versions
+         (id, session_id, relative_path, stored_name, size_bytes, content_hash, change_kind, snapshot_source, provider_run_id, captured_at)
+       VALUES ('fv-1', 'session-1', 'a.md', 'fv-1.bin', 1, 'hash', 'modified', 'agent_turn', 'with-file', ?)`,
+      [old],
+    );
+
+    const result = await runDatabaseHygiene({ db, now: NOW });
+    const rows = await db.select<{ id: string; status_kind: string }>(
+      'SELECT id, status_kind FROM provider_runs ORDER BY id',
+    );
+    const spend = await db.select<{ id: string }>('SELECT id FROM telemetry_records');
+
+    expect(result.providerRunsDeleted).toBe(2);
+    expect(rows.map((row) => row.id)).toEqual([
+      'in-flight',
+      'orphan-recent',
+      'with-agent',
+      'with-file',
+      'with-spend',
+    ]);
+    expect(rows.find((row) => row.id === 'in-flight')?.status_kind).toBe('cancelled');
+    expect(spend).toEqual([{ id: 'spend-1' }]);
+  });
 });
