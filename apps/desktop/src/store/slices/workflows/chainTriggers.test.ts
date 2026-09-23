@@ -447,6 +447,7 @@ describe('discardWorkflow chain flip', () => {
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
       workflowContinueAttempts: {},
+      decisionRestartMarks: {},
       clusterStepStartAttempts: {},
       recordSessionEvent: vi.fn(async () => undefined),
     };
@@ -474,6 +475,7 @@ describe('discardWorkflow chain flip', () => {
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
       workflowContinueAttempts: {},
+      decisionRestartMarks: {},
       clusterStepStartAttempts: {},
       recordSessionEvent: vi.fn(async () => undefined),
     };
@@ -503,6 +505,7 @@ describe('discardWorkflow chain flip', () => {
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
       workflowContinueAttempts: {},
+      decisionRestartMarks: {},
       clusterStepStartAttempts: {},
       recordSessionEvent: vi.fn(async () => undefined),
     };
@@ -522,6 +525,7 @@ describe('discardWorkflow chain flip', () => {
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
       workflowContinueAttempts: {},
+      decisionRestartMarks: {},
       clusterStepStartAttempts: {},
       recordSessionEvent: vi.fn(async () => undefined),
     };
@@ -540,6 +544,7 @@ describe('discardWorkflow chain flip', () => {
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
       workflowContinueAttempts: {},
+      decisionRestartMarks: {},
       clusterStepStartAttempts: {},
       recordSessionEvent: vi.fn(async () => undefined),
     };
@@ -560,6 +565,7 @@ describe('attachWorkflowToSession trigger modes', () => {
       transcripts: {},
       agentTurnState: {},
       workflowContinueAttempts: {},
+      decisionRestartMarks: {},
       clusterStepStartAttempts: {},
       recordSessionEvent: vi.fn(async () => undefined),
       agentModelOverride: {} as Record<string, string>,
