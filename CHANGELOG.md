@@ -7,6 +7,35 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.14
+
+The model picker groups by family and splits every model into a version and a variant, and the closed picker says the whole selection.
+
+### [#1846] One family, one chip
+
+Gemini, Kimi, Grok, GLM, DeepSeek and Nemotron used to sit as flat rows next to families that already collapsed into a ladder. They are grouped now, under every provider, so Cursor goes from nineteen chips to eleven.
+
+### [#1846] Version is the number, variant is the size
+
+Gemini 3.8 Flash, GPT 5.6 Sol, Kimi K2.7 Code and DeepSeek V4 Pro used to fill the version row with one chip per size, and the number itself was never something you could pick. The version row lists the numbers and a Variant row lists the sizes. The Variant row shows whenever the chosen version has one, even with a single member, so GPT 6 still says Astra.
+
+### [#1846] The closed picker says the whole selection
+
+The trigger reads `Composer · 2.5 · Fast` or `GPT · 5.6 · Sol · High`, and the tooltip says the same thing with the provider in front. Composer Fast and plain Composer used to read identically.
+
+No saved selection changes meaning: the model keys are the same, only what the picker shows moved.
+
+### [#1845] Reports read as documents, and their PDF holds up
+
+Report agents get a layout kit: a summary lead, metrics tiles, fact rows, a timeline, callouts and inline status pills, all drawn the same in the app and in the PDF. What you ask for still wins over the default shape. The PDF, printed by WebKit, no longer clips list numbers, strands a section rule at the bottom of a page or prints the logo as a black square.
+
+### Fixes
+
+- Picking a model without an effort setting, like Composer, after one that had it no longer leaves `high` saved in the selection [#1846]
+- The line of CLI arguments at the bottom of the picker is gone [#1846]
+- An unclosed callout in a report ends at the first blank line instead of swallowing the rest of the document [#1845]
+- Task boxes `[ ]`, `[x]` and `[~]` render as boxes in reports [#1845]
+
 ## Goodboy v0.3.13
 
 The model catalogs caught up with what the CLIs actually serve: Claude Opus 5.5, eleven more Cursor families, three more Kimi models, and an OpenRouter list that no longer offers models nobody can run.
