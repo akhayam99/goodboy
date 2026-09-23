@@ -21,7 +21,7 @@ import {
   invokeWorkflowUpsert,
   type WorkflowStepUpsertArgs,
 } from '../../../features/workflows/workflows';
-import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { clearOrchestrationOutcome } from './clearOrchestrationOutcome';
 import { patchWorkflowRun } from './patchWorkflowRun';
@@ -248,7 +248,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
       defaultProvider: (session.providerOverride ??
         session.providerPreference.defaultProvider) as ProviderId,
       roleModels: mergeRoleModels({
-        workspace: roleModelsForSession({ state: get(), sessionId }),
+        workspace: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
         run: run.roleModelOverrides,
       }),
       runRoleModels: run.roleModelOverrides ?? null,

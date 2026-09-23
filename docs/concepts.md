@@ -286,10 +286,16 @@ Settings can be set at four levels. The level closest to the work wins:
 
 - **Permission rules** can be set at all four levels. When more than one
   matches a tool call, the most specific one decides.
-- **Settings overrides** (default provider, branch prefix, verbosity, pinned
-  models, provider pool) can be set on a workspace or a session, on top of the
-  global defaults. Anything you leave empty comes from the level above. A
-  project override sets the branch prefix for that project's mounts.
+- **Settings overrides** (default provider, branch prefix, verbosity, role
+  and task models, provider pool, parallel agents, provider bindings) can be
+  set on a workspace, a project or a session, on top of the global defaults.
+  Anything you leave empty comes from the level above. The session engine
+  reads them only through `selectResolvedSettings`: session, then the
+  session's active project, then workspace, then global (`resolveSettings` in
+  core). Provider bindings merge per provider instead, and the closest level
+  wins. A project override sets the branch prefix for that project's mounts.
+  The settings screens edit the workspace row and read that row back, since
+  it is what they change.
 - **Workflows, the step library and skills** belong to the workspace. A step
   library entry with no workspace is a built-in starter step for everyone.
 - **Project scripts** belong to the project, because only the project knows

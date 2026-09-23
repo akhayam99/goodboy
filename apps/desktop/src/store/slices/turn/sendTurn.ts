@@ -157,6 +157,7 @@ import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
 import { codexMeasuredUsage } from './codexMeasuredUsage';
 import { turnNodeRouting } from './turnNodeRouting';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { GetFn, SendTurnResult, SetFn } from './types';
 
 type Input = {
@@ -531,13 +532,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ? autoModelForRole({
             role: phaseDefinition.role ?? 'custom',
             providers: [provider],
-            prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
+            prefs: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
           })
         : phaseDefinition == null && routingDecision.fallbackUsed
           ? autoModelForRole({
               role: KIND_TO_ROLE[turnAgentKind],
               providers: [provider],
-              prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
+              prefs: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
             })
           : null;
     const rawEffort = nodeEffort ?? get().agentEffortOverride[activeAgentId] ?? null;
@@ -579,9 +580,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       ?.split('"')[1];
     const effortFlag = effortFlagIndex >= 0 ? resolvedModel.args[effortFlagIndex + 1] : codexEffort;
 
-    const wsBindings = get().workspaceOverrides[session.workspaceId]?.providerBindings ?? {};
-    const sessBindings = get().sessionOverrides[sessionId]?.providerBindings ?? {};
-    const boundCredentialId = { ...wsBindings, ...sessBindings }[provider];
+    const boundCredentialId = selectResolvedSettings({ state: get(), sessionId })?.providerBindings[
+      provider
+    ];
     const effectiveCredentialId =
       isApiProvider({ id: provider }) &&
       (boundCredentialId === undefined || boundCredentialId === CLI_CREDENTIAL)
@@ -879,7 +880,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const effectiveVerbosity =
       phaseDefinition?.verbosity ??
       agentRowForVerbosity?.verbosity ??
-      get().workspaceOverrides[session.workspaceId]?.defaultVerbosity ??
+      selectResolvedSettings({ state: get(), sessionId })?.defaultVerbosity ??
       'normal';
     const verbosityHint = verbosityDirective(effectiveVerbosity);
     resolvedPrompt = `${verbosityHint}\n\n${resolvedPrompt}`;
@@ -1377,7 +1378,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       const fallbackRole = phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind];
       const preferredFallback = resolveRoleRouting({
         role: fallbackRole,
-        prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
+        prefs: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
       }).fallback;
       const fallbackPlan = cancelledBeforeFailure
         ? null

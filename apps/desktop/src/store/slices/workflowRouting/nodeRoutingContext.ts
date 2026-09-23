@@ -22,7 +22,7 @@ import {
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
-import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { AppStore } from '../../store';
 import type { WorkflowRoutingNodeRef } from './types';
 import { isWorkflowNodeRoutingMutable } from './workflowNodeRoutingMutability';
@@ -138,7 +138,7 @@ export const workflowNodeRoutingContext = ({
     agent?.workflowRunId == null
       ? null
       : (session.workflowRuns.find((candidate) => candidate.id === agent.workflowRunId) ?? null);
-  const workspaceRoleModels = roleModelsForSession({ state, sessionId });
+  const workspaceRoleModels = selectResolvedSettings({ state, sessionId })?.roleModels ?? null;
   const compiled = role === null ? null : defaultsForRole(role);
   const defaultProvider = (session.providerOverride ??
     session.providerPreference.defaultProvider) as ProviderId;

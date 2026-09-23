@@ -28,6 +28,7 @@ import { openTurnStartWindow } from '../turn/turnStartWindow';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 import type { GetFn, SetFn } from './types';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 
 export const SCOUT_DEPTH_CAP = 2;
 const FAN_OUT_DEPTH_CAP = 1;
@@ -75,11 +76,7 @@ const depthCapForRole = (role: AgentRole): number => {
 };
 
 const fanOutEnabled = (get: GetFn, sessionId: SessionId): boolean => {
-  const session = get().sessions.find((s) => s.id === sessionId);
-  if (!session) {
-    return false;
-  }
-  return get().workspaceOverrides[session.workspaceId]?.parallelAgents === true;
+  return selectResolvedSettings({ state: get(), sessionId })?.parallelAgents === true;
 };
 
 const composeChildKickoff = ({

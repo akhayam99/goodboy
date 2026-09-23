@@ -9,6 +9,7 @@ import type { ModelEffort, ProviderId, SessionId, WorkflowRun } from '@goodboy/t
 import { clampEffort, modelEffortLevels } from '../../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { useAppStore } from '../../../../../store/store';
+import { selectResolvedSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -48,13 +49,11 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
     state.sessions.find((current) => current.id === sessionId),
   );
   const providers = useAppStore((state) => state.providers);
-  const taskModels = useAppStore((state) =>
-    session == null ? undefined : state.workspaceOverrides?.[session.workspaceId]?.taskModels,
+  const taskModels = useAppStore(
+    (state) => selectResolvedSettings({ state, sessionId })?.taskModels ?? undefined,
   );
-  const workspaceDefaultProviderId = useAppStore((state) =>
-    session == null
-      ? undefined
-      : state.workspaceOverrides?.[session.workspaceId]?.defaultProviderId,
+  const workspaceDefaultProviderId = useAppStore(
+    (state) => selectResolvedSettings({ state, sessionId })?.defaultProviderOverride ?? undefined,
   );
   const setWorkflowOrchestratorRouting = useAppStore(
     (state) => state.setWorkflowOrchestratorRouting,

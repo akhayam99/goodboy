@@ -4,6 +4,7 @@ import { useAppStore } from '../../../../../store';
 import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
 import type { EffortLevel } from '../../../utils/chat-constants';
 import { asEffortLevel, asProvider } from '../lib';
+import { resolveSessionSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 
 type UseAgentSwitchSyncArgs = {
   readonly session: Session;
@@ -40,7 +41,7 @@ export const useAgentSwitchSync = ({
 }: UseAgentSwitchSyncArgs) => {
   const storeSetAgentConfig = useAppStore((s) => s.setAgentConfig);
   const workspaceDefaultVerbosity = useAppStore(
-    (s) => s.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? null,
+    (s) => resolveSessionSettings({ state: s, session }).defaultVerbosityOverride ?? null,
   );
   const lastAgentIdRef = useRef(selectedAgentId);
 

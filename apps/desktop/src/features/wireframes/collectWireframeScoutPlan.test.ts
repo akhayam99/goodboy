@@ -63,7 +63,13 @@ const mount = {
 
 const stateWith = (overrides: Record<string, unknown> = {}): AppStore =>
   ({
-    sessions: [{ id: SESSION_ID, workspaceId: WORKSPACE_ID }],
+    sessions: [
+      {
+        id: SESSION_ID,
+        workspaceId: WORKSPACE_ID,
+        providerPreference: { defaultProvider: 'anthropic' },
+      },
+    ],
     workspaceOverrides: {},
     providers: [{ id: 'anthropic', connection: 'connected' }],
     providerCooldowns: {},

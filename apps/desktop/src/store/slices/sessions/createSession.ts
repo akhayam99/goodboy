@@ -38,6 +38,7 @@ import { discardUncreatedSession } from './discardUncreatedSession';
 import { rememberMaterializationSeed } from './materializationSeeds';
 import { resolveSessionProject } from './resolveSessionProject';
 import type { GetFn, SetFn } from './types';
+import { resolveScopedSettings } from '../overrides/selectResolvedSettings';
 
 type ExternalTaskInput = {
   provider: SessionExternalTaskProvider;
@@ -261,9 +262,15 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const agentProviderOverrides: Record<string, ProviderId> = {};
     const agentEffortOverrides: Record<string, ModelEffort> = {};
 
-    const workspaceVerbositySeed =
-      get().workspaceOverrides[workspaceId]?.defaultVerbosity ?? undefined;
-    const roleModels = get().workspaceOverrides[workspaceId]?.roleModels ?? null;
+    const creationSettings = resolveScopedSettings({
+      state: get(),
+      workspaceId,
+      projectId: project?.id ?? null,
+      sessionId: null,
+      defaultProviderId: session.providerPreference.defaultProvider,
+    });
+    const workspaceVerbositySeed = creationSettings.defaultVerbosityOverride ?? undefined;
+    const roleModels = creationSettings.roleModels;
 
     if (workflowId) {
       const templates = get().phaseTemplates[workspaceId] ?? [];

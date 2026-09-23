@@ -62,7 +62,7 @@ import {
   spentUsdForRun,
   type SpendLimitStop,
 } from './budgetBlock';
-import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { buildProfileGuard } from '../../profileGuard';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
@@ -623,16 +623,17 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const openQuestions = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
       const defaultProvider = (session.providerOverride ??
         session.providerPreference.defaultProvider) as ProviderId;
-      const workspaceRoleModels = roleModelsForSession({ state: get(), sessionId });
+      const workspaceRoleModels =
+        selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null;
       const roleModels = mergeRoleModels({
         workspace: workspaceRoleModels,
         run: run.roleModelOverrides,
       });
       const taskModel = resolveTaskModel({
         task: 'workflow_orchestrator',
-        preferences: get().workspaceOverrides?.[session.workspaceId]?.taskModels,
-        workspaceDefaultProviderId:
-          get().workspaceOverrides?.[session.workspaceId]?.defaultProviderId,
+        preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
+        workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
+          ?.defaultProviderOverride,
         sessionDefaultProviderId: defaultProvider,
       });
       const pinnedRouting =

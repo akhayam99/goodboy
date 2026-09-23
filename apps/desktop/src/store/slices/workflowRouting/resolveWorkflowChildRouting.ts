@@ -19,7 +19,7 @@ import {
   type WorkflowRoutingResolution,
 } from '@goodboy/core';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
-import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { AppStore } from '../../store';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {
@@ -109,7 +109,7 @@ export const resolveWorkflowChildRouting = ({
     proposal: outcome,
     roleDefault: configuredRolePick({
       role,
-      roleModels: roleModelsForSession({ state, sessionId }),
+      roleModels: selectResolvedSettings({ state, sessionId })?.roleModels ?? null,
     }),
     sessionDefault:
       session === undefined || session.modelOverride == null || defaultProvider === null

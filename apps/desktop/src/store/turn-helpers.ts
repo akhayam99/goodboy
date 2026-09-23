@@ -94,6 +94,7 @@ import {
 import { sessionAwaitsPullRequest } from './slices/github/sessionAwaitsPullRequest';
 import { selectMountById } from './slices/project-mounts/selectors';
 import { mountContinuationRefusal, queueMountContinuation } from './slices/turn/mountContinuations';
+import { selectResolvedSettings } from './slices/overrides/selectResolvedSettings';
 
 type AttachmentsBlockParams = {
   readonly scope: string;
@@ -280,9 +281,9 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
     routeTaskModel({
       taskModel: resolveTaskModel({
         task: 'summarizer',
-        preferences: get().workspaceOverrides?.[session.workspaceId]?.taskModels,
-        workspaceDefaultProviderId:
-          get().workspaceOverrides?.[session.workspaceId]?.defaultProviderId,
+        preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
+        workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
+          ?.defaultProviderOverride,
         sessionDefaultProviderId: session.providerPreference.defaultProvider,
       }),
       connectedProviders,

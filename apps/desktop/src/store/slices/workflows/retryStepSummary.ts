@@ -7,6 +7,7 @@ import { stepForAgent } from '../../../features/workflows/stepForAgent';
 import { summarizeAgentOutput } from '../../summarizeAgentOutput';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -39,9 +40,9 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
       routeTaskModel({
         taskModel: resolveTaskModel({
           task: 'summarizer',
-          preferences: get().workspaceOverrides?.[session.workspaceId]?.taskModels,
-          workspaceDefaultProviderId:
-            get().workspaceOverrides?.[session.workspaceId]?.defaultProviderId,
+          preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
+          workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
+            ?.defaultProviderOverride,
           sessionDefaultProviderId: session.providerPreference.defaultProvider,
         }),
         connectedProviders: get()

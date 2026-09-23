@@ -6,6 +6,7 @@ import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { clampWorkflowTitle } from './titleLimit';
 import { isWorkflowTitleUserEdited } from './workflowTitleUserEdited';
 import type { GetFn, SetFn } from './types';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 
 const TITLE_TIMEOUT_MS = 15_000;
 
@@ -81,8 +82,9 @@ export const generateWorkflowTitle = (set: SetFn, get: GetFn) => {
       }
       const taskModel = resolveTaskModel({
         task: 'agent_naming',
-        preferences: get().workspaceOverrides?.[workspaceId]?.taskModels,
-        workspaceDefaultProviderId: get().workspaceOverrides?.[workspaceId]?.defaultProviderId,
+        preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
+        workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
+          ?.defaultProviderOverride,
         sessionDefaultProviderId: session.providerPreference.defaultProvider,
       });
       const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;

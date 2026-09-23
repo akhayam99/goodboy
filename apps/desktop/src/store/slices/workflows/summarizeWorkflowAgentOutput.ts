@@ -11,6 +11,7 @@ import { stepForAgent } from '../../../features/workflows/stepForAgent';
 import { summarizeAgentOutput, type SummarizeAgentOutputResult } from '../../summarizeAgentOutput';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 
 type Params = {
   readonly set: SetFn;
@@ -101,8 +102,9 @@ export const summarizeWorkflowAgentOutput = async ({
   const enabledProviders = session.providerPreference.enabledProviders ?? null;
   const resolved = resolveTaskModel({
     task: 'summarizer',
-    preferences: get().workspaceOverrides?.[session.workspaceId]?.taskModels,
-    workspaceDefaultProviderId: get().workspaceOverrides?.[session.workspaceId]?.defaultProviderId,
+    preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
+    workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
+      ?.defaultProviderOverride,
     sessionDefaultProviderId: session.providerPreference.defaultProvider,
   });
   const taskModel = routeTaskModel({

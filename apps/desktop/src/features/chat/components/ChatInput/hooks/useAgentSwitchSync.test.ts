@@ -6,7 +6,11 @@ import type { EffortLevel } from '../../../utils/chat-constants';
 import { useAgentSwitchSync } from './useAgentSwitchSync';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
-const SESSION = { id: 'session-1', workspaceId: WORKSPACE_ID } as unknown as Session;
+const SESSION = {
+  id: 'session-1',
+  workspaceId: WORKSPACE_ID,
+  providerPreference: { defaultProvider: 'anthropic' },
+} as unknown as Session;
 const AGENT_A = 'agent-a' as AgentId;
 const AGENT_B = 'agent-b' as AgentId;
 

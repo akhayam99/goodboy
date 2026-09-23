@@ -323,7 +323,7 @@ function makeAdvanceStore(runs: ReadonlyArray<Agent>, fanout: boolean) {
     agentTurnState: {},
     sessionNudges: {},
     workspaceOverrides: { [WS]: { parallelAgents: fanout } },
-    sessions: [{ id: SID, workspaceId: WS }],
+    sessions: [{ id: SID, workspaceId: WS, providerPreference: { defaultProvider: 'anthropic' } }],
     sendTurn,
     emitNotification,
     refreshUnreadWorkspaces,

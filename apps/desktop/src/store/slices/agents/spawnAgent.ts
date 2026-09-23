@@ -38,6 +38,7 @@ import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type { GetFn, SetFn } from './types';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 
 const spawnQueue = createKeyedQueue();
 
@@ -111,10 +112,10 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
           resolvedName !== undefined && resolvedName !== ''
             ? resolvedName
             : `agent ${nextOrdinal + 1}`;
-        const workspaceVerbositySeed =
-          state.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? undefined;
+        const settings = selectResolvedSettings({ state, sessionId });
+        const workspaceVerbositySeed = settings?.defaultVerbosityOverride ?? undefined;
         const resolvedKind = args.kindOverride ?? inferAgentKindFromName(agentName);
-        const roleModels = state.workspaceOverrides[session.workspaceId]?.roleModels;
+        const roleModels = settings?.roleModels ?? null;
         const routing = kindRouting({ kind: resolvedKind, roleModels });
         const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
         const inserted = await invokeAgentInsert({

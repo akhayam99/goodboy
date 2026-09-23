@@ -16,6 +16,7 @@ import { stepConfigForAgent } from '../../../../../store/slices/turn/stepConfigF
 import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
 import { type EffortLevel, clampEffort } from '../../../utils/chat-constants';
 import { asEffortLevel, asProvider } from '../lib';
+import { resolveSessionSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 
 type Params = {
   readonly session: Session;
@@ -27,7 +28,7 @@ export const useTurnRouting = ({ session }: Params) => {
   const storeSetAgentEffortOverride = useAppStore((s) => s.setAgentEffortOverride);
   const storeSetAgentVerbosity = useAppStore((s) => s.setAgentVerbosity);
   const workspaceDefaultVerbosity = useAppStore(
-    (s) => s.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? null,
+    (s) => resolveSessionSettings({ state: s, session }).defaultVerbosityOverride ?? null,
   );
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
   const agentModelOverride = useAppStore((s) =>
@@ -45,7 +46,7 @@ export const useTurnRouting = ({ session }: Params) => {
     selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
   );
   const roleModels = useAppStore(
-    (s) => s.workspaceOverrides[session.workspaceId]?.roleModels ?? null,
+    (s) => resolveSessionSettings({ state: s, session }).roleModels ?? null,
   );
   const workspaceWorkflows = useAppStore((s) => s.phaseTemplates[session.workspaceId] ?? null);
   const connectedProviders = useAppStore(

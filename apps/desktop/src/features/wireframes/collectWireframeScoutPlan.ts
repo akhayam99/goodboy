@@ -21,6 +21,7 @@ import {
   type WireframeScoutRoot,
 } from './wireframeScoutPlan';
 import { WIREFRAME_SCOUTS } from './wireframeScoutRoles';
+import { selectResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
 
 export type WireframeScoutGate =
   | Readonly<{ kind: 'skipped'; reason: string }>
@@ -81,9 +82,7 @@ export const wireframeScoutGate = ({
   if (routing.kind === 'blocked') {
     return { kind: 'skipped', reason: wireframeScoutSkipRouting({ reason: routing.reason }) };
   }
-  const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
-  const roleModels =
-    session === null ? undefined : state.workspaceOverrides?.[session.workspaceId]?.roleModels;
+  const roleModels = selectResolvedSettings({ state, sessionId })?.roleModels ?? null;
   const fallback = kindRouting({ kind: 'scout', roleModels });
   const first = routing.entries[0];
   const provider = first?.providerOverride ?? fallback.provider;
