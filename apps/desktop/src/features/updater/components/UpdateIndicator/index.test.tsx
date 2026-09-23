@@ -74,12 +74,23 @@ describe('UpdateIndicator', () => {
     expect(screen.getByTestId('update-indicator').textContent).toContain('Update to 0.1.58');
   });
 
-  it('installs only after the confirmation is accepted', async () => {
+  it('installs only after the inline confirmation is accepted', async () => {
     setStatus('available');
     render(<UpdateIndicator variant="pip" />);
     await userEvent.click(screen.getByTestId('update-indicator'));
     expect(installUpdate).not.toHaveBeenCalled();
-    await userEvent.click(screen.getByRole('button', { name: 'Update and restart' }));
+    expect(screen.getByRole('dialog', { name: 'Goodboy 0.1.58 is available' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Download and restart' }));
+    expect(installUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers a retry in the same popover after an install failure', async () => {
+    seed({ status: 'available', failure: { phase: 'install', message: 'connection reset' } });
+    render(<UpdateIndicator variant="pip" />);
+    await userEvent.click(screen.getByTestId('update-indicator'));
+    expect(screen.getByText("Couldn't install 0.1.58")).toBeTruthy();
+    expect(screen.getByText('connection reset')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(installUpdate).toHaveBeenCalledTimes(1);
   });
 });

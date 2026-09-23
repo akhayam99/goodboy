@@ -14,6 +14,10 @@ const { flags, storeState } = vi.hoisted(() => ({
     updaterStatus: 'idle' as 'idle' | 'available' | 'downloading',
     updateVersion: '0.2.0' as string | null,
     installUpdate: vi.fn(async () => undefined),
+    updateFailure: null,
+    updateProgress: null,
+    agentTurnState: {},
+    focusChangelogRelease: vi.fn(),
   },
 }));
 

@@ -128,7 +128,7 @@ export const AppFooter = ({
 
         <div className="flex items-center gap-2">
           <BetaPill />
-          <UpdateIndicator variant="pip" />
+          <UpdateIndicator variant="pip" onOpenChangelog={onOpenChangelog} />
         </div>
 
         <div className="flex items-center gap-0.5">

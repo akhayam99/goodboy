@@ -100,6 +100,7 @@ export type { IconButtonProps } from './components/IconButton';
 export { InlineConfirm } from './components/InlineConfirm';
 export type { ConfirmAltAction, ConfirmRole } from './components/InlineConfirm';
 export { ConfirmPopover } from './components/ConfirmPopover';
+export type { ConfirmPopoverTriggerParams } from './components/ConfirmPopover';
 export { InteractiveRow } from './components/InteractiveRow';
 export type { InteractiveRowProps } from './components/InteractiveRow';
 export { Input } from './components/Input';

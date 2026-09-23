@@ -32,6 +32,10 @@ vi.mock('../../../../store', () => ({
       settings: Record<string, string>;
       updaterStatus: string;
       updateVersion: string | null;
+      updateFailure: null;
+      updateProgress: null;
+      agentTurnState: Record<string, never>;
+      focusChangelogRelease: () => void;
     }) => unknown,
   ) =>
     selector({
@@ -42,6 +46,10 @@ vi.mock('../../../../store', () => ({
       settings: state.settings,
       updaterStatus: state.updaterStatus,
       updateVersion: state.updateVersion,
+      updateFailure: null,
+      updateProgress: null,
+      agentTurnState: {},
+      focusChangelogRelease: () => undefined,
     }),
 }));
 
@@ -98,7 +106,7 @@ describe('WorkspaceLauncher', () => {
     state.updateVersion = '0.1.99';
     render(<WorkspaceLauncher />);
     fireEvent.click(screen.getByRole('button', { name: 'Update to 0.1.99' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Update and restart' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Download and restart' }));
     expect(state.installUpdate).toHaveBeenCalled();
   });
 
