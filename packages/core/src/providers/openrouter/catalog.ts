@@ -69,7 +69,8 @@ export const OPENROUTER_CATALOG = [
     presentation: {
       family: 'gemini',
       group: 'Gemini',
-      version: '3.1 Pro',
+      version: '3.1',
+      checkpoint: 'Pro',
       order: 54,
       costTier: 'mid',
     },
@@ -86,7 +87,8 @@ export const OPENROUTER_CATALOG = [
     presentation: {
       family: 'other',
       group: 'DeepSeek',
-      version: 'V4 Pro',
+      version: 'V4',
+      checkpoint: 'Pro',
       order: 12,
       costTier: 'cheap',
     },
@@ -361,8 +363,9 @@ export const OPENROUTER_CATALOG = [
     contextWindow: 400_000,
     presentation: {
       family: 'gpt',
-      group: 'Codex',
+      group: 'GPT',
       version: '5.3',
+      checkpoint: 'Codex',
       order: 55,
       costTier: 'mid',
     },
@@ -379,7 +382,8 @@ export const OPENROUTER_CATALOG = [
     presentation: {
       family: 'gemini',
       group: 'Gemini',
-      version: '3.8 Flash',
+      version: '3.8',
+      checkpoint: 'Flash',
       order: 53,
       costTier: 'cheap',
     },
@@ -396,7 +400,8 @@ export const OPENROUTER_CATALOG = [
     presentation: {
       family: 'gemini',
       group: 'Gemini',
-      version: '3.7 Flash',
+      version: '3.7',
+      checkpoint: 'Flash',
       order: 52,
       costTier: 'cheap',
     },
@@ -413,7 +418,8 @@ export const OPENROUTER_CATALOG = [
     presentation: {
       family: 'gemini',
       group: 'Gemini',
-      version: '3.6 Flash',
+      version: '3.6',
+      checkpoint: 'Flash',
       order: 51,
       costTier: 'cheap',
     },
@@ -430,7 +436,8 @@ export const OPENROUTER_CATALOG = [
     presentation: {
       family: 'gemini',
       group: 'Gemini',
-      version: '3.5 Flash',
+      version: '3.5',
+      checkpoint: 'Flash',
       order: 50,
       costTier: 'cheap',
     },
@@ -447,7 +454,8 @@ export const OPENROUTER_CATALOG = [
     presentation: {
       family: 'other',
       group: 'DeepSeek',
-      version: 'V4.1 Flash',
+      version: 'V4.1',
+      checkpoint: 'Flash',
       order: 11,
       costTier: 'cheap',
     },
@@ -464,7 +472,8 @@ export const OPENROUTER_CATALOG = [
     presentation: {
       family: 'other',
       group: 'DeepSeek',
-      version: 'V4 Flash',
+      version: 'V4',
+      checkpoint: 'Flash',
       order: 10,
       costTier: 'cheap',
     },
@@ -498,7 +507,8 @@ export const OPENROUTER_CATALOG = [
     presentation: {
       family: 'other',
       group: 'Kimi',
-      version: 'K2.7 Code',
+      version: 'K2.7',
+      checkpoint: 'Code',
       order: 33,
       costTier: 'cheap',
     },

@@ -225,11 +225,11 @@ describe('parseModelId', () => {
     });
   });
 
-  it('codex coding models group under the codex subfamily', () => {
+  it('codex coding models group under the gpt subfamily with codex as their variant', () => {
     expect(parseModelId('gpt-5.3-codex')).toEqual({
       family: 'gpt',
-      subfamily: 'Codex',
-      variantLabel: '5.3',
+      subfamily: 'GPT',
+      variantLabel: '5.3 Codex',
     });
   });
 

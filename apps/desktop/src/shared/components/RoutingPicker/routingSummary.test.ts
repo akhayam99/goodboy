@@ -41,6 +41,18 @@ describe('routingSummary', () => {
     expect(label.name).toEqual(['Auto']);
   });
 
+  it('drops the family segment when it repeats the provider name', () => {
+    const label = routingTriggerLabel({
+      model: catalogModel({ provider: 'gemini', key: 'gemini-3.8-flash' }),
+      modelId: 'gemini-3.8-flash',
+      selection: { key: 'gemini-3.8-flash' },
+      effort: 'medium',
+      showEffort: true,
+    });
+    expect(label.name).toEqual(['3.8', 'Flash']);
+    expect(routingSummary({ provider: 'gemini', label })).toBe('Gemini · 3.8 · Flash · Medium');
+  });
+
   it('says the mode the model offers and skips the toggle it cannot honor', () => {
     const label = routingTriggerLabel({
       model: catalogModel({ provider: 'cursor', key: 'sonnet-4.6' }),

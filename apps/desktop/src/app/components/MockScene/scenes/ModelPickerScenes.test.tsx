@@ -17,7 +17,7 @@ const openPickers = () => {
 };
 
 describe('ModelPickerScene', () => {
-  it('opens the Cursor popover on a family chip and its version row', () => {
+  it('opens the Cursor popover on a family chip, its version row and its variant row', () => {
     vi.useFakeTimers();
     render(<ModelPickerScene />);
     openPickers();
@@ -32,7 +32,15 @@ describe('ModelPickerScene', () => {
       within(cursor.getByRole('group', { name: 'Version' }))
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['3 Flash', '3.5 Flash', '3.6 Flash', '3.7 Flash', '3.8 Flash', '3.1 Pro']);
+    ).toEqual(['3', '3.1', '3.5', '3.6', '3.7', '3.8']);
+    expect(
+      within(cursor.getByRole('group', { name: 'Version' }))
+        .getByRole('button', { name: '3.8' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+    const variants = within(cursor.getByRole('group', { name: 'Variant' })).getAllByRole('button');
+    expect(variants.map((button) => button.textContent)).toEqual(['Flash']);
+    expect(variants[0]?.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('opens the Codex popover on its version and variant rows', () => {
@@ -65,7 +73,7 @@ describe('ModelPickerScene', () => {
       'codex astra routing: Codex · GPT · 6 · Astra · High',
       'cursor kimi routing: Cursor · Kimi · K3 · High',
       'claude opus routing: Claude · Opus · 5.5 · High',
-      'cursor codex routing: Cursor · Codex · 5.3',
+      'cursor codex routing: Cursor · GPT · 5.3 · Codex',
       'cursor auto routing: Cursor · Auto',
     ]);
   });

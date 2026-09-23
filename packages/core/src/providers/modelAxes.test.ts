@@ -19,7 +19,11 @@ describe('modelAxes', () => {
     const axes = modelAxes({ model, selection: { key: model.key, variant: 'astra' } });
     expect(axes.model.options).toContainEqual({ id: 'GPT', label: 'GPT', modelKey: 'gpt-6' });
     expect(axes.version?.options).toContainEqual({ id: '6', label: '6', modelKey: 'gpt-6' });
-    expect(axes.checkpoint).toBeNull();
+    expect(axes.checkpoint).toEqual({
+      label: 'Variant',
+      options: [{ id: 'Astra', label: 'Astra', modelKey: 'gpt-6' }],
+      activeId: 'Astra',
+    });
     expect(axes.effort?.levels).toEqual([
       { level: 'low', available: true },
       { level: 'medium', available: true },
@@ -206,7 +210,6 @@ describe('modelAxes', () => {
       { id: 'Sonnet', label: 'Sonnet', modelKey: 'sonnet-5' },
       { id: 'Opus', label: 'Opus', modelKey: 'opus-5.5' },
       { id: 'Fable', label: 'Fable', modelKey: 'fable-5.1' },
-      { id: 'Codex', label: 'Codex', modelKey: 'gpt-5.3-codex' },
       { id: 'GPT', label: 'GPT', modelKey: 'gpt-5.6' },
       { id: 'Grok', label: 'Grok', modelKey: 'grok-4.7' },
       { id: 'Gemini', label: 'Gemini', modelKey: 'gemini-3.1-pro' },
@@ -216,7 +219,7 @@ describe('modelAxes', () => {
     ]);
   });
 
-  it('splits a cursor family into its version chips, newest last', () => {
+  it('splits a cursor family into numeric version chips and a variant row', () => {
     const model = CURSOR_CATALOG.find((candidate) => candidate.key === 'gemini-3.6-flash');
     if (model == null) {
       throw new Error('missing cursor gemini-3.6-flash');
@@ -225,14 +228,19 @@ describe('modelAxes', () => {
     expect(axes.model.activeId).toBe('Gemini');
     expect(axes.version?.label).toBe('Version');
     expect(axes.version?.options).toEqual([
-      { id: '3 Flash', label: '3 Flash', modelKey: 'gemini-3-flash' },
-      { id: '3.5 Flash', label: '3.5 Flash', modelKey: 'gemini-3.5-flash' },
-      { id: '3.6 Flash', label: '3.6 Flash', modelKey: 'gemini-3.6-flash' },
-      { id: '3.7 Flash', label: '3.7 Flash', modelKey: 'gemini-3.7-flash' },
-      { id: '3.8 Flash', label: '3.8 Flash', modelKey: 'gemini-3.8-flash' },
-      { id: '3.1 Pro', label: '3.1 Pro', modelKey: 'gemini-3.1-pro' },
+      { id: '3', label: '3', modelKey: 'gemini-3-flash' },
+      { id: '3.1', label: '3.1', modelKey: 'gemini-3.1-pro' },
+      { id: '3.5', label: '3.5', modelKey: 'gemini-3.5-flash' },
+      { id: '3.6', label: '3.6', modelKey: 'gemini-3.6-flash' },
+      { id: '3.7', label: '3.7', modelKey: 'gemini-3.7-flash' },
+      { id: '3.8', label: '3.8', modelKey: 'gemini-3.8-flash' },
     ]);
-    expect(axes.version?.activeId).toBe('3.6 Flash');
+    expect(axes.version?.activeId).toBe('3.6');
+    expect(axes.checkpoint).toEqual({
+      label: 'Variant',
+      options: [{ id: 'Flash', label: 'Flash', modelKey: 'gemini-3.6-flash' }],
+      activeId: 'Flash',
+    });
   });
 
   it('reaches every catalog model by walking its own chips', () => {

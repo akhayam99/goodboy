@@ -52,7 +52,8 @@ export const OPENCODE_CATALOG = [
     presentation: {
       family: 'other',
       group: 'Nemotron',
-      version: '3 Ultra',
+      version: '3',
+      checkpoint: 'Ultra',
       order: 15,
       costTier: 'cheap',
     },
@@ -86,7 +87,8 @@ export const OPENCODE_CATALOG = [
     presentation: {
       family: 'other',
       group: 'Nemotron',
-      version: '3.5 Lightning',
+      version: '3.5',
+      checkpoint: 'Lightning',
       order: 25,
       costTier: 'cheap',
     },
@@ -103,7 +105,8 @@ export const OPENCODE_CATALOG = [
     presentation: {
       family: 'other',
       group: 'Ling',
-      version: '3.0 Flash Fin',
+      version: '3.0',
+      checkpoint: 'Flash Fin',
       order: 30,
       costTier: 'cheap',
     },

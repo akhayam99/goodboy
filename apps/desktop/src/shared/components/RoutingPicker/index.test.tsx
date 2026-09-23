@@ -118,7 +118,21 @@ describe('RoutingPicker', () => {
       model: 'kimi-k3-high',
       summary: 'Cursor · Kimi · K3 · High',
     },
-    { provider: 'cursor' as ProviderId, model: 'gpt-5.3-codex', summary: 'Cursor · Codex · 5.3' },
+    {
+      provider: 'cursor' as ProviderId,
+      model: 'gpt-5.3-codex',
+      summary: 'Cursor · GPT · 5.3 · Codex',
+    },
+    {
+      provider: 'cursor' as ProviderId,
+      model: 'gemini-3.8-flash-high',
+      summary: 'Cursor · Gemini · 3.8 · Flash · High',
+    },
+    {
+      provider: 'gemini' as ProviderId,
+      model: 'gemini-3.1-pro',
+      summary: 'Gemini · 3.1 · Pro · High',
+    },
     { provider: 'cursor' as ProviderId, model: 'auto', summary: 'Cursor · Auto' },
   ])('spells $summary in the closed trigger', ({ provider, model, summary }) => {
     render(<RoutingPicker {...baseProps} provider={provider} model={model} />);
@@ -144,7 +158,8 @@ describe('RoutingPicker', () => {
       />,
     );
     const trigger = screen.getByRole('button', { name: /^routing:/ });
-    expect(triggerSegments({ element: trigger })).toEqual(['Flash', '3.8', 'High']);
+    expect(triggerSegments({ element: trigger })).toEqual(['3.8', 'Flash', 'High']);
+    expect(trigger.getAttribute('aria-label')).toBe('routing: Gemini · 3.8 · Flash · High');
     fireEvent.click(trigger);
     const effort = within(screen.getByRole('group', { name: 'Effort' }));
     expect(effort.getAllByRole('button').map((button) => button.textContent)).toEqual([
@@ -426,7 +441,7 @@ describe('RoutingPicker', () => {
     expect(onChange).toHaveBeenCalledWith('max');
   });
 
-  it('offers a variant row only for a version that ships more than one checkpoint', () => {
+  it('offers a variant row for every version that ships a variant, even a lone one', () => {
     const view = render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-sol" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     expect(
@@ -444,7 +459,9 @@ describe('RoutingPicker', () => {
     bareView.unmount();
     render(<RoutingPicker {...baseProps} provider="codex" model="gpt-6-astra" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.queryByRole('group', { name: 'Variant' })).toBeNull();
+    const astra = within(screen.getByRole('group', { name: 'Variant' })).getAllByRole('button');
+    expect(astra.map((button) => button.textContent)).toEqual(['Astra']);
+    expect(astra[0]?.getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('button', { name: '6' }).getAttribute('aria-pressed')).toBe('true');
   });
 

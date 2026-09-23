@@ -107,15 +107,17 @@ const selectionAxes = ({ model }: SelectionAxesParams) => {
         ? null
         : {
             label: 'Version',
-            options: [...versionModels.entries()].map(([label, candidate]) => ({
-              id: label,
-              label,
-              modelKey: candidate.key,
-            })),
+            options: [...versionModels.entries()]
+              .sort(([left], [right]) => left.localeCompare(right, 'en', { numeric: true }))
+              .map(([label, candidate]) => ({
+                id: label,
+                label,
+                modelKey: candidate.key,
+              })),
             activeId: model.presentation.version,
           },
     checkpoint:
-      checkpointOptions.length <= 1
+      checkpointOptions.length === 0
         ? null
         : {
             label: 'Variant',

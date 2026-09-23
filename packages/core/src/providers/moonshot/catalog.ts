@@ -35,7 +35,8 @@ export const MOONSHOT_CATALOG = [
     presentation: {
       family: 'other',
       group: 'Kimi',
-      version: 'K2.7 Code HighSpeed',
+      version: 'K2.7',
+      checkpoint: 'Code HighSpeed',
       order: 9,
       costTier: 'mid',
     },
@@ -52,7 +53,8 @@ export const MOONSHOT_CATALOG = [
     presentation: {
       family: 'other',
       group: 'Kimi',
-      version: 'K2.7 Code',
+      version: 'K2.7',
+      checkpoint: 'Code',
       order: 8,
       costTier: 'cheap',
     },

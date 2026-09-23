@@ -178,8 +178,9 @@ export const CURSOR_CATALOG = [
     contextWindow: 400_000,
     presentation: {
       family: 'gpt',
-      group: 'Codex',
+      group: 'GPT',
       version: '5.3',
+      checkpoint: 'Codex',
       order: 50,
       costTier: 'mid',
     },
@@ -338,7 +339,8 @@ export const CURSOR_CATALOG = [
     presentation: {
       family: 'gemini',
       group: 'Gemini',
-      version: '3.8 Flash',
+      version: '3.8',
+      checkpoint: 'Flash',
       order: 78,
       costTier: 'mid',
     },
@@ -699,7 +701,8 @@ export const CURSOR_CATALOG = [
     presentation: {
       family: 'gemini',
       group: 'Gemini',
-      version: '3.1 Pro',
+      version: '3.1',
+      checkpoint: 'Pro',
       order: 79,
       costTier: 'mid',
     },
@@ -722,7 +725,8 @@ export const CURSOR_CATALOG = [
     presentation: {
       family: 'gemini',
       group: 'Gemini',
-      version: '3.7 Flash',
+      version: '3.7',
+      checkpoint: 'Flash',
       order: 77,
       costTier: 'mid',
     },
@@ -759,7 +763,8 @@ export const CURSOR_CATALOG = [
     presentation: {
       family: 'gemini',
       group: 'Gemini',
-      version: '3.6 Flash',
+      version: '3.6',
+      checkpoint: 'Flash',
       order: 76,
       costTier: 'mid',
     },
@@ -796,7 +801,8 @@ export const CURSOR_CATALOG = [
     presentation: {
       family: 'gemini',
       group: 'Gemini',
-      version: '3.5 Flash',
+      version: '3.5',
+      checkpoint: 'Flash',
       order: 75,
       costTier: 'mid',
     },
@@ -819,7 +825,8 @@ export const CURSOR_CATALOG = [
     presentation: {
       family: 'gemini',
       group: 'Gemini',
-      version: '3 Flash',
+      version: '3',
+      checkpoint: 'Flash',
       order: 74,
       costTier: 'mid',
     },
@@ -842,7 +849,8 @@ export const CURSOR_CATALOG = [
     presentation: {
       family: 'other',
       group: 'Kimi',
-      version: 'K2.7 Code',
+      version: 'K2.7',
+      checkpoint: 'Code',
       order: 85,
       costTier: 'mid',
     },

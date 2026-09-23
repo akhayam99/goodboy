@@ -78,7 +78,7 @@ const BOTH_EVENTS = [CURSOR_OPEN_EVENT, CODEX_OPEN_EVENT];
 const CursorColumn = () => (
   <Column
     title="Cursor, one chip per family"
-    hint="Gemini is a single chip and the Flash ladder lives on the Version row"
+    hint="Gemini is a single chip, the Version row holds the numbers and Variant says Flash"
   >
     <RoutingPicker
       connectedProviders={CONNECTED}

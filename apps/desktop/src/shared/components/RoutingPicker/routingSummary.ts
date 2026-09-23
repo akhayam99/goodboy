@@ -53,7 +53,7 @@ const modelNames = ({ model, modelId }: NameParams): ReadonlyArray<string> => {
   }
   const { group, version, checkpoint } = model.presentation;
   return [
-    group,
+    ...(group === PROVIDER_LABEL[model.provider] ? [] : [group]),
     ...(version === group ? [] : [version]),
     ...(checkpoint == null ? [] : [checkpoint]),
   ];
