@@ -25,7 +25,11 @@ type Cta = {
   readonly onClick: () => void;
   readonly variant: ButtonVariant;
   readonly disabled?: boolean;
+  readonly hint?: string;
 };
+
+const PROVIDER_GATE_HINT =
+  'Connect one provider to continue. Connect installs the CLI when it is missing.';
 
 export const OnboardingWizard = () => {
   const { open, mode, providersConnected, hasWorkspace, workspace, projectCount } =
@@ -262,6 +266,7 @@ export const OnboardingWizard = () => {
       onClick: goNext,
       variant: 'primary',
       disabled: providersConnected === 0,
+      ...(providersConnected === 0 ? { hint: PROVIDER_GATE_HINT } : {}),
     };
   } else if (step === 2) {
     body = (
@@ -382,20 +387,32 @@ export const OnboardingWizard = () => {
                 {stepError}
               </p>
             ) : null}
-            <div
-              className={cn(
-                'flex items-center pt-2',
-                step > minStep ? 'justify-between' : 'justify-center',
-              )}
-            >
-              {step > minStep && (
-                <Button variant="ghost" size="sm" onClick={goBack} disabled={busy}>
-                  Back
+            <div className="flex flex-col gap-2 pt-2">
+              <div
+                className={cn(
+                  'flex items-center',
+                  step > minStep ? 'justify-between' : 'justify-center',
+                )}
+              >
+                {step > minStep && (
+                  <Button variant="ghost" size="sm" onClick={goBack} disabled={busy}>
+                    Back
+                  </Button>
+                )}
+                <Button variant={cta.variant} onClick={cta.onClick} disabled={cta.disabled}>
+                  {cta.label}
                 </Button>
+              </div>
+              {cta.hint !== undefined && (
+                <p
+                  className={cn(
+                    'text-xs text-muted-foreground',
+                    step > minStep ? 'text-right' : 'text-center',
+                  )}
+                >
+                  {cta.hint}
+                </p>
               )}
-              <Button variant={cta.variant} onClick={cta.onClick} disabled={cta.disabled}>
-                {cta.label}
-              </Button>
             </div>
           </div>
         </div>

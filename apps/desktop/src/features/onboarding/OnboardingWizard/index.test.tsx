@@ -252,6 +252,24 @@ describe('OnboardingWizard', () => {
       ).toBe(true);
     });
 
+    it('explains the provider gate under the disabled Continue', () => {
+      setHook({ providersConnected: 0, hasWorkspace: true });
+      render(<OnboardingWizard />);
+      fireEvent.click(screen.getByRole('button', { name: /get started/i }));
+      expect(
+        screen.getByText(
+          'Connect one provider to continue. Connect installs the CLI when it is missing.',
+        ),
+      ).toBeDefined();
+    });
+
+    it('drops the provider gate hint once a provider is connected', () => {
+      setHook({ providersConnected: 1, hasWorkspace: true });
+      render(<OnboardingWizard />);
+      fireEvent.click(screen.getByRole('button', { name: /get started/i }));
+      expect(screen.queryByText(/Connect one provider to continue/)).toBeNull();
+    });
+
     it('keeps Create workspace disabled until a shape is chosen and a name is typed', () => {
       setHook({ providersConnected: 1, hasWorkspace: false });
       render(<OnboardingWizard />);
