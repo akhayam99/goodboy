@@ -370,33 +370,31 @@ exports[`snapshot, error states > App init error, BootSplash with error message 
     </div>
   </div>
   <div
-    class="flex w-64 flex-col gap-3 rounded-r-md border-l-2 border-danger/40 p-4 font-mono text-2xs"
+    class="flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-xs border-danger/40"
     role="alert"
   >
     <div
       class="flex flex-col gap-1"
     >
       <span
-        class="text-danger"
+        class="font-medium text-danger"
       >
-        ✗ 
-        init
-         failed
+        Init failed
       </span>
       <p
-        class="leading-relaxed text-danger"
+        class="leading-relaxed text-muted-foreground"
       >
         database migration failed
       </p>
     </div>
     <div
-      class="flex flex-col gap-1.5"
+      class="flex items-center gap-2"
     >
       <button
-        class="text-left text-faint-foreground underline-offset-2 hover:underline"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-xs"
         type="button"
       >
-        report on github ↗
+        Report on GitHub
       </button>
     </div>
   </div>
@@ -431,33 +429,31 @@ exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
     </div>
   </div>
   <div
-    class="flex w-64 flex-col gap-3 rounded-r-md border-l-2 border-danger/40 p-4 font-mono text-2xs"
+    class="flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-xs border-danger/40"
     role="alert"
   >
     <div
       class="flex flex-col gap-1"
     >
       <span
-        class="text-danger"
+        class="font-medium text-danger"
       >
-        ✗ 
-        init
-         failed
+        Init failed
       </span>
       <p
-        class="leading-relaxed text-danger"
+        class="leading-relaxed text-muted-foreground"
       >
         detecting-cli failed
       </p>
     </div>
     <div
-      class="flex flex-col gap-1.5"
+      class="flex items-center gap-2"
     >
       <button
-        class="text-left text-faint-foreground underline-offset-2 hover:underline"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-xs"
         type="button"
       >
-        report on github ↗
+        Report on GitHub
       </button>
     </div>
   </div>
