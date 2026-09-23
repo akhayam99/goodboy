@@ -355,7 +355,6 @@ pub fn run() {
             workflows::evidence_inventory_record,
             workflows::evidence_delivery_record,
             workflows::agent_generation_reserve,
-            workflows::agent_generation_bind,
             workflows::cluster_completion_holds_for_session,
             workflows::cluster_completion_hold_record,
             workflows::cluster_completion_hold_resolve,

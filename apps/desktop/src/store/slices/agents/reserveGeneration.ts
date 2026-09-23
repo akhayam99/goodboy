@@ -1,6 +1,5 @@
 import type { AgentId, GenerationCreationPath, SessionId, WorkflowRunId } from '@goodboy/types';
 import {
-  invokeAgentGenerationBind,
   invokeAgentGenerationReserve,
   type GenerationReservationOutcome,
 } from '../../../features/workflows/workflows';
@@ -54,20 +53,4 @@ export const reserveGeneration = async ({
     );
   }
   return outcome;
-};
-
-export const bindGeneration = async ({
-  reservations,
-  agentIds,
-}: {
-  readonly reservations: ReadonlyArray<Readonly<{ reservationId: string }>>;
-  readonly agentIds: ReadonlyArray<AgentId>;
-}): Promise<void> => {
-  const bindings = agentIds.map((agentId, index) => ({
-    reservationId: reservations[index]?.reservationId ?? '',
-    agentId,
-  }));
-  await invokeAgentGenerationBind({
-    bindings: bindings.filter((binding) => binding.reservationId.length > 0),
-  }).catch(() => undefined);
 };

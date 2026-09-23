@@ -890,6 +890,9 @@ const stringList = ({ value }: { readonly value: unknown }): ReadonlyArray<strin
 const trimmedString = ({ value }: { readonly value: unknown }): string =>
   typeof value === 'string' ? value.trim() : '';
 
+const isStringArray = ({ value }: { readonly value: unknown }): boolean =>
+  Array.isArray(value) && value.every((entry) => typeof entry === 'string');
+
 type ExtractCapabilityNeedParams = {
   readonly assistantText: string;
   readonly emittingProvider: ProviderId | null;
@@ -940,6 +943,18 @@ export const extractCapabilityNeed = ({
   if (continuation === undefined) {
     return { kind: 'malformed', reason: 'the need body names no known continuation' };
   }
+  if (!isStringArray({ value: value.scope })) {
+    return { kind: 'malformed', reason: 'the need body carries no scope list' };
+  }
+  if (!isStringArray({ value: value.evidence })) {
+    return { kind: 'malformed', reason: 'the need body carries no evidence list' };
+  }
+  if (typeof value.gap !== 'string') {
+    return { kind: 'malformed', reason: 'the need body carries no gap' };
+  }
+  if (typeof value.expectedOutput !== 'string') {
+    return { kind: 'malformed', reason: 'the need body carries no expected output' };
+  }
   const routingProposal = isUnknownRecord(value.routing)
     ? childRoutingProposal({ entry: value.routing, emittingProvider })
     : null;
@@ -953,8 +968,8 @@ export const extractCapabilityNeed = ({
       question: value.question.trim(),
       scope: stringList({ value: value.scope }),
       evidenceRefs: stringList({ value: value.evidence }),
-      gap: trimmedString({ value: value.gap }),
-      expectedOutput: trimmedString({ value: value.expectedOutput }),
+      gap: value.gap.trim(),
+      expectedOutput: value.expectedOutput.trim(),
       continuation,
       routingProposal,
       inventoryRevision: trimmedString({ value: value.inventoryRevision }),
@@ -1025,6 +1040,10 @@ export const extractContextRead = ({
     }
     const range = trimmedString({ value: source.range });
     sources.push({ id, range: range.length === 0 ? null : range });
+  }
+  const ids = new Set(sources.map((source) => source.id));
+  if (ids.size !== sources.length) {
+    return { kind: 'malformed', reason: 'a context-read source is listed more than once' };
   }
   return { kind: 'valid', request: { version: 1, inventoryRevision, sources } };
 };

@@ -36,7 +36,7 @@ import {
   fanOutClusters,
   selectFanOutPlan,
 } from '../workflows/clusterImplementation';
-import { bindGeneration, reserveGeneration } from './reserveGeneration';
+import { reserveGeneration } from './reserveGeneration';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { GetFn, SetFn } from './types';
@@ -147,7 +147,8 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     executionPurpose:
       args.sourceKind === 'open_question'
         ? 'question-delegate'
-        : (args.executionPurpose ?? 'standalone'),
+        : (args.executionPurpose ??
+          (args.parentAgentId !== undefined ? 'capability' : 'standalone')),
     kind: resolvedKind,
     ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
     ...(sourceThreadId !== undefined && { sourceThreadId }),
@@ -155,10 +156,10 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     ...(args.sourceCommentUrl !== undefined && { sourceCommentUrl: args.sourceCommentUrl }),
     ...(args.sourceKind !== undefined && { sourceKind: args.sourceKind }),
     ...(args.parentAgentId !== undefined && { parentAgentId: args.parentAgentId }),
+    ...(reservation !== null && {
+      generationReservationId: reservation.reservations[0]!.reservationId,
+    }),
   });
-  if (reservation !== null && reservation.kind === 'granted') {
-    await bindGeneration({ reservations: reservation.reservations, agentIds: [inserted.id] });
-  }
   const resolvedProvider = args.provider ?? routing.provider;
   const resolvedModel = args.model ?? routing.model;
   const resolvedEffort = EFFORT_LEVELS.find((level) => level === args.effort) ?? routing.effort;

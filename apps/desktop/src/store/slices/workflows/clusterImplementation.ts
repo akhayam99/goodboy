@@ -30,7 +30,7 @@ import {
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
 import { composeClusterOutcomeBoundary, composeKickoff, composeUnitBoundary } from '../../kickoff';
-import { bindGeneration, reserveGeneration } from '../agents/reserveGeneration';
+import { reserveGeneration } from '../agents/reserveGeneration';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { revalidateChildRouting } from './revalidateChildRouting';
 import { isHandsFree } from './handsFree';
@@ -191,6 +191,9 @@ const pairClusterNodes = ({
   });
 };
 
+const isCompletedPair = ({ pair }: { readonly pair: ClusterNodePair }): boolean =>
+  pair.isReleased || pair.agent?.status === 'completed';
+
 const clusterProgress = ({
   pairs,
 }: {
@@ -199,7 +202,7 @@ const clusterProgress = ({
   pairs.map((pair) => ({
     nodeId: pair.node.id,
     isSettled: pair.isReleased || (pair.agent !== null && isSettledChild(pair.agent)),
-    isCompleted: pair.isReleased || pair.agent?.status === 'completed',
+    isCompleted: isCompletedPair({ pair }),
     isStartable:
       pair.isReleased === false && (pair.agent === null || pair.agent.status === 'pending'),
   }));
@@ -271,7 +274,7 @@ function composeClusterKickoff({
 }): string {
   const total = pairs.length > 0 ? pairs.length : 1;
   const priorTitles = pairs
-    .filter((pair) => pair.node.ordinal < target.ordinal)
+    .filter((pair) => pair.node.ordinal < target.ordinal && isCompletedPair({ pair }))
     .map((pair) => `${pair.node.ordinal + 1}. ${pair.node.title}`);
   const priorBlock =
     priorTitles.length > 0
@@ -523,6 +526,7 @@ export const fanOutClusters = async (
         ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
         ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
         ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
+        generationReservationId: reservation.reservations[index]!.reservationId,
       };
     }),
   });
@@ -530,7 +534,6 @@ export const fanOutClusters = async (
     return;
   }
   const childIds: AgentId[] = materialized.agents.map((agent) => agent.id);
-  await bindGeneration({ reservations: reservation.reservations, agentIds: childIds });
 
   const bindings: ReadonlyArray<ClusterExecutionNode> = nodes.map((node, index) => ({
     nodeId: node.id,

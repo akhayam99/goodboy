@@ -13,7 +13,8 @@ export type CapabilityNeedRejection =
   | 'empty-question'
   | 'capability-denied'
   | 'unsupported-continuation'
-  | 'stale-inventory';
+  | 'stale-inventory'
+  | 'unknown-evidence';
 
 export type CapabilityNeedValidation =
   | Readonly<{ kind: 'none' }>
@@ -26,6 +27,7 @@ type ValidateCapabilityNeedParams = {
   readonly requesterAgentId: string;
   readonly requesterRole: string;
   readonly inventoryRevision: string;
+  readonly inventorySourceIds: ReadonlySet<string>;
 };
 
 export const validateCapabilityNeed = ({
@@ -34,6 +36,7 @@ export const validateCapabilityNeed = ({
   requesterAgentId,
   requesterRole,
   inventoryRevision,
+  inventorySourceIds,
 }: ValidateCapabilityNeedParams): CapabilityNeedValidation => {
   const extraction = extractCapabilityNeed({ assistantText, emittingProvider });
   if (extraction.kind === 'none') {
@@ -55,6 +58,14 @@ export const validateCapabilityNeed = ({
       kind: 'rejected',
       rejection: 'stale-inventory',
       reason: `the need was formed against inventory revision ${need.inventoryRevision.length === 0 ? '(none)' : need.inventoryRevision}, the current one is ${inventoryRevision}`,
+    };
+  }
+  const unknownRefs = need.evidenceRefs.filter((ref) => !inventorySourceIds.has(ref));
+  if (unknownRefs.length > 0) {
+    return {
+      kind: 'rejected',
+      rejection: 'unknown-evidence',
+      reason: `the need cites evidence the inventory does not list: ${unknownRefs.join(', ')}`,
     };
   }
   if (need.question.length === 0) {

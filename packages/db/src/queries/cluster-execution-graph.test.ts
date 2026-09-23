@@ -108,4 +108,23 @@ describe('cluster execution graph queries', () => {
     expect(second.graph).toEqual(graph);
     expect(await getClusterExecutionGraph({ db, containerAgentId })).toEqual(second);
   });
+
+  it('adds no node binding when the same container is recorded again with a new node', async () => {
+    const db = await seed();
+    await recordClusterExecutionGraph({ db, snapshot });
+
+    const second = await recordClusterExecutionGraph({
+      db,
+      snapshot: {
+        ...snapshot,
+        nodes: [
+          ...snapshot.nodes,
+          { nodeId: 'extra', agentId: 'review' as AgentId, ordinal: 2, role: 'tester' as const },
+        ],
+      },
+    });
+
+    expect(second.graph).toEqual(graph);
+    expect(second.nodes.map((node) => node.nodeId)).toEqual(['impl', 'review']);
+  });
 });

@@ -101,7 +101,6 @@ vi.mock('../../../features/workflows/workflows', () => ({
       causalRootAgentId: null,
     })),
   }),
-  invokeAgentGenerationBind: async () => undefined,
   invokeEvidenceInventoryRecord: async () => undefined,
   invokeEvidenceDeliveryRecord: async () => undefined,
   invokeWorkflowUpsert: invokeWorkflowUpsertSpy,

@@ -92,12 +92,6 @@ UPDATE agents
  WHERE execution_purpose IS NULL
    AND id IN (SELECT agent_id FROM cluster_execution_nodes WHERE agent_id IS NOT NULL);
 
-UPDATE agents
-   SET execution_purpose = 'cluster'
- WHERE execution_purpose IS NULL
-   AND parent_agent_id IS NOT NULL
-   AND kind IN ('planner', 'implementer', 'docs', 'report', 'wireframe', 'resolver', 'generic');
-
 DROP VIEW IF EXISTS live_agents;
 CREATE VIEW live_agents AS SELECT * FROM agents WHERE deleted_at IS NULL;
 `;

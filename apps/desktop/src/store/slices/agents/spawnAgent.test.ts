@@ -47,7 +47,6 @@ vi.mock('../../../features/workflows/workflows', () => ({
       causalRootAgentId: null,
     })),
   }),
-  invokeAgentGenerationBind: async () => undefined,
   invokeEvidenceInventoryRecord: async () => undefined,
   invokeEvidenceDeliveryRecord: async () => undefined,
   invokeAgentInsert: invokeAgentInsertSpy,
@@ -280,6 +279,34 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'debugger', name: 'debug startup crash' }),
+    );
+  });
+
+  it('records a parented spawn as a capability child bound to its reservation', async () => {
+    const { spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, { name: 'handoff', parentAgentId: 'agent-parent' as AgentId });
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        executionPurpose: 'capability',
+        parentAgentId: 'agent-parent',
+        generationReservationId: 'reservation:0',
+      }),
+    );
+  });
+
+  it('keeps an explicit purpose on a parented spawn', async () => {
+    const { spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, {
+      name: 'handoff',
+      parentAgentId: 'agent-parent' as AgentId,
+      executionPurpose: 'standalone',
+    });
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ executionPurpose: 'standalone' }),
     );
   });
 

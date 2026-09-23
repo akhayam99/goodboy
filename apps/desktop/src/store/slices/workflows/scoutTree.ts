@@ -25,7 +25,7 @@ import { clampWireframeScoutReport } from '../../../features/wireframes/wirefram
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
 import { openTurnStartWindow } from '../turn/turnStartWindow';
-import { bindGeneration, reserveGeneration } from '../agents/reserveGeneration';
+import { reserveGeneration } from '../agents/reserveGeneration';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 import type { GetFn, SetFn } from './types';
@@ -396,6 +396,7 @@ export const startFanOutChildren = async ({
         ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
         ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
         ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
+        generationReservationId: reservation.reservations[index]!.reservationId,
       };
     }),
   });
@@ -403,7 +404,6 @@ export const startFanOutChildren = async ({
     return { kind: 'skipped' };
   }
   const childIds: AgentId[] = materialized.agents.map((agent) => agent.id);
-  await bindGeneration({ reservations: reservation.reservations, agentIds: childIds });
 
   synthesisStarted.delete(container.id);
   await invokeAgentUpdateStatus(container.id, { status: 'running' });
