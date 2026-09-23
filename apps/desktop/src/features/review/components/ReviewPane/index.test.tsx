@@ -61,6 +61,7 @@ const h = vi.hoisted(() => {
     loadReviewDrafts: vi.fn(async () => undefined),
     openDiffLens: vi.fn(),
     selectAgent: vi.fn(async () => undefined),
+    reportError: vi.fn(async () => undefined),
   };
   const useAppStore = Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
     getState: () => state,
@@ -365,8 +366,11 @@ describe('ReviewPane', () => {
     );
 
     await waitFor(() =>
-      expect(h.showToast).toHaveBeenCalledWith('error', 'Mark ready failed: branch is protected'),
+      expect(h.state.reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't mark #248 ready", sessionId: SESSION.id }),
+      ),
     );
+    expect(h.showToast).not.toHaveBeenCalled();
   });
 
   it('says what marking a draft ready sends before it sends it', () => {

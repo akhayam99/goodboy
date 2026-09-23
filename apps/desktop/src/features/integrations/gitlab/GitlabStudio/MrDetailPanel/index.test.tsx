@@ -24,6 +24,8 @@ type Store = {
   readonly spawnAgent: ReturnType<typeof vi.fn<SpawnAgent>>;
   readonly selectAgent: ReturnType<typeof vi.fn>;
   readonly setCurrentSession: ReturnType<typeof vi.fn>;
+  readonly setActiveLens: ReturnType<typeof vi.fn>;
+  readonly reportError: ReturnType<typeof vi.fn>;
   workspaceOverrides: Record<string, { readonly taskModels: TaskModelPreferences | null }>;
 };
 
@@ -72,6 +74,8 @@ const h = vi.hoisted(() => ({
     spawnAgent: vi.fn<SpawnAgent>(async () => 'agent-3'),
     selectAgent: vi.fn(async () => undefined),
     setCurrentSession: vi.fn(async () => undefined),
+    setActiveLens: vi.fn(),
+    reportError: vi.fn(async () => undefined),
     workspaceOverrides: {},
   } satisfies Store,
 }));

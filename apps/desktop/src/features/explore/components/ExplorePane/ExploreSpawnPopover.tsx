@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnchoredPopover, Button, Divider, Textarea, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import { AGENT_KIND_META } from '../../../session/agent-kind';
 import { resolveSpawnRouting } from '../../../session/spawn-routing';
@@ -36,8 +36,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
   });
   const { open, close, toggle } = dropdown;
   const spawnAgent = useAppStore((state) => state.spawnAgent);
-  const selectAgent = useAppStore((state) => state.selectAgent);
-  const { showToast } = useToast();
+  const announceAgentStarted = useAgentStartedToast();
   const session = useAppStore(
     (state) => state.sessions.find((candidate) => candidate.id === sessionId) ?? null,
   );
@@ -87,15 +86,12 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
         focus: 'none',
       });
       close();
-      showToast('success', `An agent is working on ${entry.name}. You can keep working.`, {
+      announceAgentStarted({
+        sessionId,
+        agentId,
         title: 'Agent started',
-        action: {
-          label: 'Open the agent',
-          onClick: () => {
-            void selectAgent(sessionId, agentId);
-            window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-          },
-        },
+        message: `An agent is working on ${entry.name}. You can keep working.`,
+        onOpen: () => window.dispatchEvent(new CustomEvent('goodboy:reveal-chat')),
       });
     } catch (error) {
       setSpawnError(toErrorMessage({ error }));

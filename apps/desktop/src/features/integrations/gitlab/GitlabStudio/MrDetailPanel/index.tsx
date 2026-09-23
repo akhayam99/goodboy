@@ -4,7 +4,7 @@ import {
   StudioDetailLayout,
 } from '../../../../../shared/components/StudioDetail';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Button, formatError, Markdown, cn, tintClasses } from '@goodboy/ui';
+import { Button, Markdown, cn, tintClasses } from '@goodboy/ui';
 import { AlertTriangle, FileText, GitBranch, GitMerge, MessageSquare } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
@@ -90,6 +90,7 @@ export const MrDetailPanel = ({
     return integration?.config.host ?? null;
   });
   const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
 
   const [localMr, setLocalMr] = useState<GitlabMergeRequest | null>(null);
   const [section, setSection] = useState<MrSection>('overview');
@@ -164,7 +165,11 @@ export const MrDetailPanel = ({
       showToast('success', 'Merge request merged');
       onClose();
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({
+        title: mr == null ? "Couldn't merge the merge request" : `Couldn't merge !${mr.iid}`,
+        error: err,
+        ...(sessionId != null && { sessionId }),
+      });
     } finally {
       setBusy(null);
     }
@@ -194,7 +199,11 @@ export const MrDetailPanel = ({
       onRefresh?.();
       showToast('success', toast);
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({
+        title: `Couldn't update !${mr.iid}`,
+        error: err,
+        ...(sessionId != null && { sessionId }),
+      });
     } finally {
       setBusy(null);
     }

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useToast } from '../../../../../app/components/Toast';
 import { useAppStore } from '../../../../../store';
@@ -48,6 +47,7 @@ export const usePrActions = ({ sessionId, repo, pullRequestId, onWritten }: Para
   const commentOnBitbucketPr = useAppStore((state) => state.commentOnBitbucketPr);
   const replyToBitbucketPrComment = useAppStore((state) => state.replyToBitbucketPrComment);
   const { showToast } = useToast();
+  const reportError = useAppStore((state) => state.reportError);
   const [busy, setBusy] = useState<BitbucketPrActionBusy>(null);
 
   const target =
@@ -65,7 +65,11 @@ export const usePrActions = ({ sessionId, repo, pullRequestId, onWritten }: Para
       onWritten();
       showToast('success', toast);
     } catch (error: unknown) {
-      showToast('error', formatError(error));
+      void reportError({
+        title: `Couldn't update pull request #${target.pullRequestId}`,
+        error,
+        sessionId: target.sessionId,
+      });
     } finally {
       setBusy(null);
     }

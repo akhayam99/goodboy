@@ -19,6 +19,7 @@ import type { AgentSpawnConfigValue } from '../../../../session/components/Agent
 import { taskModelAgentSpawnConfig } from '../../../../session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../app/components/Toast';
+import { useAgentStartedToast } from '../../../../../shared/hooks/useAgentStartedToast';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
@@ -38,9 +39,8 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
   );
   const createMrForSession = useAppStore((s) => s.createMrForSession);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const { showToast } = useToast();
+  const announceAgentStarted = useAgentStartedToast();
 
   const resolvedAgentConfig = useMemo(
     () =>
@@ -59,6 +59,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
   const [targetBranch, setTargetBranch] = useState('main');
   const [draft, setDraft] = useState(true);
   const [busy, setBusy] = useState<'create' | 'agent' | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
   const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(resolvedAgentConfig);
   const [agentConfigUserTouched, setAgentConfigUserTouched] = useState(false);
 
@@ -77,6 +78,8 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
     return null;
   }
 
+  const shownError = failure ?? error;
+
   const onCreate = async () => {
     if (busy !== null || title.trim().length === 0) {
       return;
@@ -90,9 +93,10 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
         targetBranch: targetBranch.trim() || 'main',
         draft,
       });
+      setFailure(null);
       showToast('success', 'Merge request created');
     } catch (err) {
-      showToast('error', formatError(err));
+      setFailure(formatError(err));
     } finally {
       setBusy(null);
     }
@@ -121,21 +125,16 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
         effort: agentConfig.effort,
         focus: 'none',
       });
-      showToast('success', 'An agent is drafting the merge request. You can keep working.', {
+      setFailure(null);
+      announceAgentStarted({
+        sessionId,
+        agentId,
         title: 'Agent started',
-        action: {
-          label: 'Open the agent',
-          onClick: () => {
-            void (async () => {
-              await setCurrentSession(sessionId);
-              await selectAgent(sessionId, agentId);
-              onClose();
-            })();
-          },
-        },
+        message: 'An agent is drafting the merge request. You can keep working.',
+        onOpen: onClose,
       });
     } catch (err) {
-      showToast('error', formatError(err));
+      setFailure(formatError(err));
     } finally {
       setBusy(null);
     }
@@ -234,16 +233,16 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
       <footer className="shrink-0 px-6 py-3">
         <div className="mx-auto flex w-full max-w-2xl items-center gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            {error != null ? (
+            {shownError != null && (
               <span
                 role="alert"
                 className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
-                title={error}
+                title={shownError}
               >
                 <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-                {error}
+                {shownError}
               </span>
-            ) : null}
+            )}
           </div>
           {mode === 'manual' ? (
             <Button

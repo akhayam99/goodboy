@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, GhostActionButton, InlineConfirm, formatError } from '@goodboy/ui';
+import { Button, GhostActionButton, InlineConfirm } from '@goodboy/ui';
 import { Activity, AlertTriangle, GitCommit, RefreshCw, RotateCw } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type {
@@ -52,6 +52,7 @@ const BLOCKER_ACTION_ICON: Record<BlockerAction, LucideIcon> = {
 
 export const ResolvePublishStrip = ({ sessionId }: Props) => {
   const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
   const preview = useAppStore((s) => s.activePublicationPreview[sessionId] ?? null);
   const queueItems = useAppStore((s) => s.sessionResolveQueueItems[sessionId] ?? EMPTY_QUEUE_ITEMS);
   const publications = useAppStore(
@@ -103,32 +104,46 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
     entryRef.current?.focus();
     if (publicationReturn.reconcile) {
       void retryPublication({ sessionId }).catch((error: unknown) =>
-        showToast('error', formatError(error)),
+        reportError({ title: "Couldn't check the publication", error, sessionId }),
       );
     }
-  }, [publicationReturn, retryPublication, sessionId, showToast]);
+  }, [publicationReturn, reportError, retryPublication, sessionId]);
 
   const run = useCallback(
-    async (work: () => Promise<void>): Promise<void> => {
+    async ({
+      work,
+      failureTitle,
+    }: {
+      work: () => Promise<void>;
+      failureTitle: string;
+    }): Promise<void> => {
       setIsBusy(true);
       try {
         await work();
       } catch (error) {
-        showToast('error', formatError(error));
+        void reportError({ title: failureTitle, error, sessionId });
       } finally {
         setIsBusy(false);
       }
     },
-    [showToast],
+    [reportError, sessionId],
   );
 
   const onPrepare = useCallback(
-    () => void run(async () => void (await preparePublication({ sessionId }))),
+    () =>
+      void run({
+        work: async () => void (await preparePublication({ sessionId })),
+        failureTitle: "Couldn't prepare the publication",
+      }),
     [preparePublication, run, sessionId],
   );
 
   const onCheckAndRetry = useCallback(
-    () => void run(async () => void (await retryPublication({ sessionId }))),
+    () =>
+      void run({
+        work: async () => void (await retryPublication({ sessionId })),
+        failureTitle: "Couldn't check the publication",
+      }),
     [retryPublication, run, sessionId],
   );
 
@@ -138,31 +153,40 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
       return;
     }
     setIsArmed(false);
-    void run(async () => {
-      const result = await publishConversations({ sessionId, publicationId });
-      if (result.kind === 'push_failed') {
-        showToast('error', result.error);
-        return;
-      }
-      if (result.kind === 'busy') {
-        showToast('error', 'Another push is already running for this pull request');
-        return;
-      }
-      if (result.kind === 'done') {
-        showToast(
-          result.failed > 0 ? 'error' : 'success',
-          result.failed > 0
-            ? `${result.closed} done, ${result.failed} left open`
-            : PUBLICATION_COMPLETE,
-        );
-      }
+    void run({
+      failureTitle: "Couldn't publish the conversations",
+      work: async () => {
+        const result = await publishConversations({ sessionId, publicationId });
+        if (result.kind === 'push_failed') {
+          return;
+        }
+        if (result.kind === 'busy') {
+          showToast('warning', 'Another push is already running for this pull request');
+          return;
+        }
+        if (result.kind !== 'done') {
+          return;
+        }
+        if (result.failed > 0) {
+          void reportError({
+            title: `Couldn't close ${result.failed} conversations`,
+            error: `${result.closed} done, ${result.failed} left open.`,
+            sessionId,
+          });
+          return;
+        }
+        showToast('success', PUBLICATION_COMPLETE);
+      },
     });
-  }, [preview, publishConversations, run, sessionId, showToast]);
+  }, [preview, publishConversations, reportError, run, sessionId, showToast]);
 
   const onCancel = useCallback(() => {
     setIsArmed(false);
-    void run(async () => {
-      await cancelPublication({ sessionId, publicationId: preview?.publicationId ?? '' });
+    void run({
+      failureTitle: "Couldn't cancel the publication",
+      work: async () => {
+        await cancelPublication({ sessionId, publicationId: preview?.publicationId ?? '' });
+      },
     });
   }, [cancelPublication, preview, run, sessionId]);
 

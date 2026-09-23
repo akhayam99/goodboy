@@ -35,7 +35,7 @@ export const convertPrToDraft = (_set: SetFn, get: GetFn) => {
           void get().emitNotification({
             kind: 'error',
             severity: 'error',
-            title: "Couldn't convert the pull request to a draft",
+            title: `Couldn't convert #${num} to a draft`,
             body: errMsg,
             sessionId,
             workspaceId: workspace.id,
