@@ -1,26 +1,27 @@
 import type { ProviderUsage, TurnEvent } from '@goodboy/types';
-import { parseAnthropicEnvelopeLine, type ParseContext } from '../shared/anthropic-envelope-parser';
+import { devWarn } from '../../dev-log';
+import {
+  parseAnthropicEnvelopeValue,
+  type ParseContext,
+} from '../shared/anthropic-envelope-parser';
+import { parseJsonAllowingControlChars } from '../shared/parseJsonAllowingControlChars';
 
 export type { ParseContext };
 
 const MULTI_REQUEST_TURNS = new WeakSet<ParseContext>();
 
-type LineTypeParams = {
-  readonly line: string;
+type PayloadTypeParams = {
+  readonly value: unknown;
 };
 
-const lineType = ({ line }: LineTypeParams): string | undefined => {
-  try {
-    const parsed: unknown = JSON.parse(line);
-    if (typeof parsed !== 'object' || parsed === null) {
-      return undefined;
-    }
-    const type = (parsed as { type?: unknown }).type;
-    return typeof type === 'string' ? type : undefined;
-  } catch {
+const payloadType = ({ value }: PayloadTypeParams): string | undefined => {
+  if (typeof value !== 'object' || value === null || !('type' in value)) {
     return undefined;
   }
+  return typeof value.type === 'string' ? value.type : undefined;
 };
+
+const CURSOR_ENVELOPE = { adapter: 'cursor', logTag: 'cursor-adapter' } as const;
 
 type SingleRequestParams = {
   readonly usage: ProviderUsage;
@@ -44,15 +45,20 @@ export const parseCursorStreamLine = (
   line: string,
   ctx: ParseContext,
 ): ReadonlyArray<TurnEvent> => {
-  const type =
-    line.includes('"tool_call"') || line.includes('"result"') ? lineType({ line }) : undefined;
+  const trimmed = line.trim();
+  if (trimmed.length === 0) {
+    return [];
+  }
+  const parsed = parseJsonAllowingControlChars({ text: trimmed });
+  if (!parsed.ok) {
+    devWarn(`[${CURSOR_ENVELOPE.logTag}] dropped a stream-json line that is not json`);
+    return [];
+  }
+  const type = payloadType({ value: parsed.value });
   if (type === 'tool_call') {
     MULTI_REQUEST_TURNS.add(ctx);
   }
-  const events = parseAnthropicEnvelopeLine(line, ctx, {
-    adapter: 'cursor',
-    logTag: 'cursor-adapter',
-  });
+  const events = parseAnthropicEnvelopeValue({ value: parsed.value, ctx, opts: CURSOR_ENVELOPE });
   if (type !== 'result') {
     return events;
   }
