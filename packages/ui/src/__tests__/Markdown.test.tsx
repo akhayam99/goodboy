@@ -418,6 +418,25 @@ describe('Markdown report kit', () => {
     expect(entries[0]?.textContent).toContain('deploy starts');
   });
 
+  it('reads a capitalised timeline tag as a timeline, time first', () => {
+    const { container } = render(
+      <Markdown text={['<<Timeline>>', '2026-09-01 | deploy', '<</Timeline>>'].join('\n')} />,
+    );
+    const entry = container.querySelector('[data-block="timeline-entry"]');
+    const [time, event] = [...(entry?.querySelectorAll(':scope > span:not([aria-hidden])') ?? [])];
+    expect(time?.textContent).toBe('2026-09-01');
+    expect(event?.textContent).toBe('deploy');
+  });
+
+  it('reads an uppercase facts tag as facts', () => {
+    const { container } = render(
+      <Markdown text={['<<FACTS>>', 'Ticket: ACME-412', '<</FACTS>>'].join('\n')} />,
+    );
+    const facts = container.querySelector('[data-block="facts"]');
+    expect(facts?.querySelector('dt')?.textContent).toBe('Ticket');
+    expect(facts?.querySelector('dd')?.textContent).toBe('ACME-412');
+  });
+
   it('renders a page break as its own marker', () => {
     const { container } = render(
       <Markdown text={['one', '', '<<pagebreak>>', '', 'two'].join('\n')} />,
