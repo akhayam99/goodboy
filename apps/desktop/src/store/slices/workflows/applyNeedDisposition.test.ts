@@ -26,6 +26,8 @@ const h = vi.hoisted(() => ({
   freeze: vi.fn(),
   deliveryRecord: vi.fn(),
   agentById: vi.fn(),
+  holdResolve: vi.fn(),
+  holds: vi.fn(),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -44,6 +46,8 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowUpsert: h.workflowUpsert,
   invokeEvidenceInventoryRecord: async () => undefined,
   invokeEvidenceDeliveryRecord: h.deliveryRecord,
+  invokeClusterCompletionHoldResolve: h.holdResolve,
+  invokeClusterCompletionHolds: h.holds,
 }));
 vi.mock('./clusterImplementation', () => ({ freezeClusterExecution: h.freeze }));
 
@@ -672,6 +676,62 @@ describe('applyNeedDisposition', () => {
         content: expect.stringContaining('Narrow the request'),
       }),
     );
+  });
+
+  it('releases the hold on a refused requester so its own completion can advance', async () => {
+    const requester = agentOf({ parentAgentId: 'container-1' as AgentId });
+    const { set, get, state } = createHarness({ requester });
+    const hold = {
+      id: 'hold-1',
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      containerAgentId: 'container-1' as AgentId,
+      sourceAgentId: REQUESTER_ID,
+      sourceTurnId: 'run-1',
+      reason: 'unresolved-outcome',
+      findings: [],
+      state: 'open',
+      resolutionEvidence: null,
+      resolvedAt: null,
+      createdAt: '2026-07-30T00:00:00.000Z',
+      updatedAt: '2026-07-30T00:00:00.000Z',
+    };
+    Object.assign(state, { clusterCompletionHolds: { [SESSION_ID]: [hold] } });
+    h.holdResolve.mockImplementation(async () => undefined);
+    h.holds.mockImplementation(async () => [{ ...hold, state: 'resolved' }]);
+    h.decide.mockImplementation(async () =>
+      obligationOf({
+        state: 'refused',
+        decision: 'refused',
+        decisionReason: 'no allowance is left in this run',
+        holdIds: ['hold-1'],
+      }),
+    );
+
+    await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation: obligationOf({ holdIds: ['hold-1'] }),
+      decision: {
+        action: 'need',
+        reason: 'no allowance is left in this run',
+        obligationId: obligationOf().id,
+        disposition: { kind: 'refuse' },
+      },
+    });
+
+    expect(h.holdResolve).toHaveBeenCalledWith({
+      id: 'hold-1',
+      resolutionEvidence: expect.stringContaining('no allowance is left in this run'),
+    });
+    expect(
+      (
+        state as unknown as {
+          clusterCompletionHolds: Record<string, ReadonlyArray<{ state: string }>>;
+        }
+      ).clusterCompletionHolds[SESSION_ID]?.[0]?.state,
+    ).toBe('resolved');
   });
 
   it('refuses the third repair attempt on one obligation at the ledger cap and leaves it open', async () => {

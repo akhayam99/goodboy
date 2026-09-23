@@ -26,7 +26,10 @@ import {
 } from '../../../features/workflows/workflows';
 import { claimCapabilityObligationOwner } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { releaseCapabilityHolds } from './releaseCapabilityHolds';
+import {
+  releaseCapabilityHolds,
+  releaseHoldsForContinuingRequester,
+} from './releaseCapabilityHolds';
 import { resolveObligationRequester } from './resolveObligationRequester';
 import {
   inferAgentKindFromName,
@@ -229,6 +232,13 @@ export const applyNeedDisposition = async ({
       reason,
     });
     refreshObligation({ set, sessionId, obligation: recorded });
+    await releaseHoldsForContinuingRequester({
+      set,
+      get,
+      sessionId,
+      holdIds: recorded.holdIds,
+      resolutionEvidence: `${disposition.kind === 'refuse' ? 'need refused' : 'need sent back for narrowing'}, so the requester continues without it: ${reason}`,
+    });
     void get().emitNotification(
       'error',
       'warning',
