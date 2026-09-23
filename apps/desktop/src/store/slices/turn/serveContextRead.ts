@@ -21,13 +21,14 @@ type Params = {
 export type ContextReadService =
   | Readonly<{ kind: 'none' }>
   | Readonly<{ kind: 'refused'; reason: string }>
+  | Readonly<{ kind: 'held'; reason: string }>
   | Readonly<{ kind: 'served'; delivered: number; refused: number }>;
 
 export const contextReadBlocksCompletion = ({
   service,
 }: {
   readonly service: ContextReadService;
-}): boolean => service.kind === 'served';
+}): boolean => service.kind === 'served' || service.kind === 'held';
 
 const sliceByRange = ({
   content,
@@ -132,7 +133,12 @@ export const serveContextRead = async ({
       receipts,
     });
   } catch {
-    return { kind: 'refused', reason: 'the delivery receipt could not be recorded' };
+    const reason =
+      'the delivery receipt could not be recorded, so nothing was handed over and the agent is held until it asks again';
+    void get().emitNotification('error', 'warning', `context read held: ${agent.name}`, reason, {
+      sessionId,
+    });
+    return { kind: 'held', reason };
   }
 
   const delivered = receipts.filter((receipt) => receipt.outcome === 'delivered').length;
