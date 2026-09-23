@@ -10,6 +10,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BootSplash, bootErrorCategory } from './index';
 import { DATABASE_UNAVAILABLE_MESSAGE } from '../../../shared/lib/db';
+import { openUrl } from '../../../shared/lib/editor';
 
 describe('BootSplash slow boot recovery', () => {
   beforeEach(() => {
@@ -104,7 +105,7 @@ describe('BootSplash boot handoff', () => {
     render(<BootSplash phase="error" error={DATABASE_UNAVAILABLE_MESSAGE} onRetry={vi.fn()} />);
 
     expect(screen.getByRole('alert')).toBeDefined();
-    expect(screen.getByText('✗ database failed')).toBeDefined();
+    expect(screen.getByText('Database failed')).toBeDefined();
     expect(screen.getByText(/~\/\.goodboy\/data\.db is moved aside/)).toBeDefined();
   });
 
@@ -113,6 +114,25 @@ describe('BootSplash boot handoff', () => {
 
     expect(screen.queryByRole('button', { name: /retry/i })).toBeNull();
     expect(screen.getByRole('button', { name: /report on github/i })).toBeDefined();
+  });
+});
+
+describe('BootSplash issue report', () => {
+  afterEach(cleanup);
+
+  it('keeps the home path out of the issue link', () => {
+    render(
+      <BootSplash
+        phase="migrating"
+        error="cannot open /Users/dev/.goodboy/data.db"
+        onRetry={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /report on github/i }));
+
+    const url = String(vi.mocked(openUrl).mock.calls.at(-1)?.[0]);
+    expect(decodeURIComponent(url)).toContain('cannot open ~/.goodboy/data.db');
+    expect(decodeURIComponent(url)).not.toContain('/Users/dev');
   });
 });
 
