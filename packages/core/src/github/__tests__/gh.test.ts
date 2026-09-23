@@ -1,39 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { GhCliError, GhJsonParseError, type GhRunner, detect, runJson } from '../gh';
+import { GhCliError, GhJsonParseError, type GhRunner, runJson } from '../gh';
 
 function makeRunner(result: { stdout: string; stderr: string; exitCode: number }): GhRunner {
   return { run: vi.fn().mockResolvedValue(result) };
 }
-
-describe('detect', () => {
-  it('returns available:false when runner throws', async () => {
-    const runner: GhRunner = { run: vi.fn().mockRejectedValue(new Error('spawn failed')) };
-    const result = await detect(runner);
-    expect(result).toEqual({ available: false });
-  });
-
-  it('returns available:false when exitCode is non-zero', async () => {
-    const runner = makeRunner({ stdout: '', stderr: 'not found', exitCode: 127 });
-    const result = await detect(runner);
-    expect(result).toEqual({ available: false });
-  });
-
-  it('parses version from gh version output', async () => {
-    const runner = makeRunner({
-      stdout: 'gh version 2.40.1 (2024-01-01)\nhttps://github.com/cli/cli/releases/tag/v2.40.1\n',
-      stderr: '',
-      exitCode: 0,
-    });
-    const result = await detect(runner);
-    expect(result).toEqual({ available: true, version: '2.40.1' });
-  });
-
-  it('returns available:true with no version when output is unexpected', async () => {
-    const runner = makeRunner({ stdout: 'something unexpected', stderr: '', exitCode: 0 });
-    const result = await detect(runner);
-    expect(result).toEqual({ available: true, version: undefined });
-  });
-});
 
 describe('runJson', () => {
   it('throws GhCliError with preserved stderr and exitCode on non-zero exit', async () => {

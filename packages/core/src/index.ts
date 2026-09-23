@@ -281,10 +281,7 @@ export { costCoverage, type CostCoverage } from './providers/cost-coverage';
 
 export { computeCursorCostUsd } from './providers/cursor/cost';
 export { CURSOR_AUTO_MODEL, CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './providers/cursor/models';
-export {
-  parseCursorStreamLine,
-  type ParseContext as CursorParseContext,
-} from './providers/cursor/parser';
+export { parseCursorStreamLine } from './providers/cursor/parser';
 
 export {
   SkillParseError,
@@ -302,29 +299,16 @@ export {
 
 export { CODEX_DEFAULT_MODEL, CODEX_MODELS } from './providers/codex/constants';
 export { computeCodexCostUsd, type CodexModelPriceOverride } from './providers/codex/cost';
-export {
-  parseJsonLine as parseCodexJsonLine,
-  type ParseContext as CodexParseContext,
-} from './providers/codex/parser';
+export { parseJsonLine as parseCodexJsonLine } from './providers/codex/parser';
 
 export { OPENCODE_MODELS } from './providers/opencode/constants';
 export { OPENROUTER_MODELS } from './providers/openrouter/constants';
 export { computeOpenCodeCostUsd } from './providers/opencode/cost';
-export {
-  parseJsonLine as parseOpenCodeJsonLine,
-  type ParseContext as OpenCodeParseContext,
-} from './providers/opencode/parser';
+export { parseJsonLine as parseOpenCodeJsonLine } from './providers/opencode/parser';
 
-export {
-  GEMINI_CHEAP_MODEL,
-  GEMINI_DEFAULT_MODEL,
-  GEMINI_MODELS,
-} from './providers/gemini/constants';
+export { GEMINI_DEFAULT_MODEL, GEMINI_MODELS } from './providers/gemini/constants';
 export { computeGeminiCostUsd, type GeminiModelPriceOverride } from './providers/gemini/cost';
-export {
-  parseJsonLine as parseGeminiJsonLine,
-  type ParseContext as GeminiParseContext,
-} from './providers/gemini/parser';
+export { parseJsonLine as parseGeminiJsonLine } from './providers/gemini/parser';
 
 export {
   Summarizer,
@@ -408,7 +392,6 @@ export {
   GhJsonParseError,
   createGithubRepo,
   createIssueComment,
-  detect as detectGh,
   detectRepoSlug,
   fetchLinkedIssues,
   fetchPrDetail,
@@ -433,7 +416,6 @@ export {
   validateGithubRepoName,
   type CreateRepoResult,
   type GetPrInput,
-  type GhDetectResult,
   type GhResult,
   type GhRunOptions,
   type GhRunner,
