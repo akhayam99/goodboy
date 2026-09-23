@@ -1,13 +1,3 @@
-//! Companion bridge: the desktop-side responder for Goodboy Mobile.
-//!
-//! Implements the FROZEN wire/crypto contract in `goodboy-mobile/PROTOCOL.md`
-//! (Noise_XK_25519_ChaChaPoly_SHA256 + length-prefixed app frames). Read-only by
-//! construction: there is no client opcode that mutates the desktop. The phone
-//! observes; the desktop stays the sole writer of `~/.goodboy/data.db`.
-//!
-//! There is intentionally NO visible "connect your phone" surface. The bridge is
-//! reached only via a hidden frontend shortcut that calls `bridge_start`.
-
 mod commands;
 mod frame;
 mod identity;
