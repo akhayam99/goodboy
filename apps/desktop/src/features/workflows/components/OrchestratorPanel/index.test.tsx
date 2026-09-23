@@ -433,52 +433,55 @@ describe('OrchestratorPanel state ladder', () => {
     expect(sentence()).toContain('Run complete · 3 steps · $1.28');
     expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
 
-    fireEvent.click(screen.getByTestId('orchestrator-continue-toggle'));
-    fireEvent.change(screen.getByTestId('orchestrator-continue-note'), {
-      target: { value: 'tests are missing' },
-    });
-    fireEvent.click(screen.getByTestId('orchestrator-continue-confirm'));
+    fireEvent.click(screen.getByTestId('orchestrator-continue'));
 
-    expect(storeState['continueWorkflowRun']).toHaveBeenCalledWith(
+    expect(storeState['continueWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+});
+
+describe('OrchestratorPanel card', () => {
+  it('offers no role model editor, and lets a run that carries one go back to the orchestrator', () => {
+    renderPanel({
+      runOverride: run({
+        roleModelOverrides: {
+          implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+        },
+      }),
+    });
+
+    expect(screen.queryByTestId('orchestrator-role-models-toggle')).toBeNull();
+    expect(screen.getByTestId('orchestrator-role-models-count').textContent).toContain(
+      '1 role runs on a model chosen for this run',
+    );
+    fireEvent.click(screen.getByTestId('orchestrator-role-models-clear'));
+
+    expect(storeState['setWorkflowRoleModelOverrides']).toHaveBeenCalledWith(
       SESSION_ID,
       RUN_ID,
-      'tests are missing',
+      {},
     );
   });
 
-  it('says who decides, so an empty note is never a dead end', () => {
-    renderPanel({
-      runOverride: run({ orchestrationOutcome: 'done' }),
-      agents: [agent(0, 'completed')],
-    });
+  it('keeps the model, autorun and stop in the header, and the call to action below', () => {
+    renderPanel({ agents: [agent(0, 'running')], runOverride: run({ autoRun: true }) });
 
-    fireEvent.click(screen.getByTestId('orchestrator-continue-toggle'));
-    const drawer = screen.getByTestId('orchestrator-continue-note').parentElement;
-    expect(drawer?.textContent).toContain('Not done? Say what is missing');
-    expect(drawer?.textContent).toContain('Leave it empty and the orchestrator decides');
-    expect(screen.getByTestId('orchestrator-continue-confirm').textContent).toContain(
-      'Continue, you decide',
-    );
-
-    fireEvent.change(screen.getByTestId('orchestrator-continue-note'), {
-      target: { value: 'the tests are missing' },
-    });
-    expect(screen.getByTestId('orchestrator-continue-confirm').textContent).toContain(
-      'Continue with this note',
-    );
+    const header = screen.getByTestId('orchestrator-header');
+    expect(header.contains(screen.getByTestId('orchestrator-routing'))).toBe(true);
+    expect(header.contains(screen.getByTestId('workflow-autorun-toggle'))).toBe(true);
+    expect(header.contains(screen.getByRole('button', { name: 'Stop now' }))).toBe(true);
+    expect(
+      screen
+        .getByTestId('orchestrator-actions')
+        .contains(screen.getByTestId('orchestrator-hints-toggle')),
+    ).toBe(true);
   });
 
-  it('opens one drawer at a time, so two fields never stack', () => {
+  it('counts the hints on their toggle', () => {
     renderPanel({
-      runOverride: run({ orchestrationOutcome: 'done' }),
-      agents: [agent(0, 'completed')],
+      runOverride: run({ orchestratorHints: [hint({ id: 'a' }), hint({ id: 'b' })] }),
     });
 
-    fireEvent.click(screen.getByTestId('orchestrator-continue-toggle'));
-    openHints();
-
-    expect(screen.getByTestId('orchestrator-hint-input')).toBeDefined();
-    expect(screen.queryByTestId('orchestrator-continue-note')).toBeNull();
+    expect(screen.getByTestId('orchestrator-hints-toggle').textContent).toContain('Hints (2)');
   });
 });
 
@@ -674,68 +677,6 @@ describe('OrchestratorPanel strip', () => {
       8,
       'notify',
     );
-  });
-
-  it('keeps role models behind a drawer, one row per role the orchestrator can pick', () => {
-    renderPanel();
-    expect(screen.queryByTestId('orchestrator-role-models')).toBeNull();
-
-    fireEvent.click(screen.getByTestId('orchestrator-role-models-toggle'));
-
-    const drawer = screen.getByTestId('orchestrator-role-models');
-    expect(drawer.textContent).toContain('for the rest of this run');
-    expect(screen.getAllByRole('group', { name: /model$/i })).toHaveLength(11);
-    expect(screen.queryByRole('group', { name: /report model/i })).not.toBeNull();
-    expect(screen.queryByRole('group', { name: /wireframe model/i })).not.toBeNull();
-  });
-
-  it('reads the role models a run already carries', () => {
-    renderPanel({
-      runOverride: run({
-        roleModelOverrides: {
-          implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
-        },
-      }),
-    });
-
-    expect(screen.getByTestId('orchestrator-role-models-count').textContent).toContain(
-      '1 role on a chosen model',
-    );
-
-    fireEvent.click(screen.getByTestId('orchestrator-role-models-toggle'));
-
-    const implementer = screen.getByRole('group', { name: /implementer model/i });
-    expect(implementer.textContent).toContain('GPT · 5.6 · Sol');
-    expect(screen.getByRole('group', { name: /scout model/i }).textContent).not.toContain('5.6');
-  });
-
-  it('drops a role back to the workspace default from the drawer', () => {
-    renderPanel({
-      runOverride: run({
-        roleModelOverrides: {
-          implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
-          scout: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'low' },
-        },
-      }),
-    });
-
-    fireEvent.click(screen.getByTestId('orchestrator-role-models-toggle'));
-    const implementer = screen.getByRole('group', { name: /implementer model/i });
-    fireEvent.click(within(implementer).getByRole('button', { name: /reset routing override/i }));
-
-    expect(storeState['setWorkflowRoleModelOverrides']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
-      scout: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'low' },
-    });
-  });
-
-  it('opens role models instead of hints, never both', () => {
-    renderPanel();
-
-    openHints();
-    fireEvent.click(screen.getByTestId('orchestrator-role-models-toggle'));
-
-    expect(screen.getByTestId('orchestrator-role-models')).toBeDefined();
-    expect(screen.queryByTestId('orchestrator-hints-input')).toBeNull();
   });
 
   it('folds the decisions into the strip behind a count', () => {
