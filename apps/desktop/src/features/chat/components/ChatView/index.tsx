@@ -188,7 +188,10 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   );
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
-  const { scrollerRef, pinned, onScroll } = useScrollPin([deferredItems], selectedAgentId);
+  const { scrollerRef, pinned, onScroll } = useScrollPin({
+    deps: [deferredItems],
+    resetKey: selectedAgentId,
+  });
   const fadeHostRef = useRef<HTMLDivElement>(null);
 
   const provider = session.providerPreference.defaultProvider;

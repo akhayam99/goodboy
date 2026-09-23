@@ -69,7 +69,9 @@ describe('resolveRootAgent', () => {
     if (resolved == null) {
       throw new Error('Expected a root agent');
     }
-    expect(agentHomeLens(resolved, classifyAgent(resolved, null))).toBe('workflows');
+    expect(
+      agentHomeLens({ agent: resolved, kind: classifyAgent({ agent: resolved, override: null }) }),
+    ).toBe('workflows');
   });
 
   it('routes a parallel branch with only a step binding to its orchestrator home', () => {
@@ -92,7 +94,9 @@ describe('resolveRootAgent', () => {
     if (resolved == null) {
       throw new Error('Expected an orchestrating agent');
     }
-    expect(agentHomeLens(resolved, classifyAgent(resolved, null))).toBe('workflows');
+    expect(
+      agentHomeLens({ agent: resolved, kind: classifyAgent({ agent: resolved, override: null }) }),
+    ).toBe('workflows');
   });
 
   it('stops at the highest available agent when a parent is missing', () => {
@@ -112,81 +116,90 @@ describe('resolveRootAgent', () => {
 
 describe('agentHomeLens', () => {
   it('routes a full workflow step agent (workflowRunId + stepId) to workflows', () => {
-    expect(agentHomeLens(agentOf({ workflowRunId: WF, stepId: STEP }), 'implementer')).toBe(
-      'workflows',
-    );
+    expect(
+      agentHomeLens({ agent: agentOf({ workflowRunId: WF, stepId: STEP }), kind: 'implementer' }),
+    ).toBe('workflows');
   });
 
   it('routes a cluster child without a step binding to agents', () => {
-    expect(agentHomeLens(agentOf({ workflowRunId: WF }), 'implementer')).toBe('agents');
+    expect(agentHomeLens({ agent: agentOf({ workflowRunId: WF }), kind: 'implementer' })).toBe(
+      'agents',
+    );
   });
 
   it('routes a scout sub-agent without a step binding to agents', () => {
     expect(
-      agentHomeLens(agentOf({ workflowRunId: WF, parentAgentId: 'p1' as AgentId }), 'scout'),
+      agentHomeLens({
+        agent: agentOf({ workflowRunId: WF, parentAgentId: 'p1' as AgentId }),
+        kind: 'scout',
+      }),
     ).toBe('agents');
   });
 
   it('routes a resolver without a step binding to resolve', () => {
-    expect(agentHomeLens(agentOf({ workflowRunId: WF }), 'resolver')).toBe('review');
+    expect(agentHomeLens({ agent: agentOf({ workflowRunId: WF }), kind: 'resolver' })).toBe(
+      'review',
+    );
   });
 
   it('routes a resolver with no workflowRunId to resolve', () => {
-    expect(agentHomeLens(agentOf({}), 'resolver')).toBe('review');
+    expect(agentHomeLens({ agent: agentOf({}), kind: 'resolver' })).toBe('review');
   });
 
   it('routes a hand-spawned agent (no workflowRunId, non-resolver) to agents', () => {
-    expect(agentHomeLens(agentOf({}), 'generic')).toBe('agents');
-    expect(agentHomeLens(agentOf({}), 'scout')).toBe('agents');
+    expect(agentHomeLens({ agent: agentOf({}), kind: 'generic' })).toBe('agents');
+    expect(agentHomeLens({ agent: agentOf({}), kind: 'scout' })).toBe('agents');
   });
 
   it('does not route to workflows on stepId alone when workflowRunId is absent', () => {
-    expect(agentHomeLens(agentOf({ stepId: STEP }), 'generic')).toBe('agents');
-    expect(agentHomeLens(agentOf({ stepId: STEP }), 'resolver')).toBe('review');
+    expect(agentHomeLens({ agent: agentOf({ stepId: STEP }), kind: 'generic' })).toBe('agents');
+    expect(agentHomeLens({ agent: agentOf({ stepId: STEP }), kind: 'resolver' })).toBe('review');
   });
 });
 
 describe('isStandaloneAgent', () => {
   it('treats a top-level agent with no workflow binding as standalone', () => {
-    expect(isStandaloneAgent(agentOf())).toBe(true);
+    expect(isStandaloneAgent({ agent: agentOf() })).toBe(true);
   });
 
   it('rejects a child agent', () => {
-    expect(isStandaloneAgent(agentOf({ parentAgentId: 'parent' as AgentId }))).toBe(false);
+    expect(isStandaloneAgent({ agent: agentOf({ parentAgentId: 'parent' as AgentId }) })).toBe(
+      false,
+    );
   });
 
   it('rejects an agent bound to a workflow step', () => {
-    expect(isStandaloneAgent(agentOf({ workflowRunId: WF, stepId: STEP }))).toBe(false);
+    expect(isStandaloneAgent({ agent: agentOf({ workflowRunId: WF, stepId: STEP }) })).toBe(false);
   });
 
   it('keeps an agent that has a workflowRunId but no stepId', () => {
-    expect(isStandaloneAgent(agentOf({ workflowRunId: WF }))).toBe(true);
+    expect(isStandaloneAgent({ agent: agentOf({ workflowRunId: WF }) })).toBe(true);
   });
 });
 
 describe('selectNonResolverStandaloneAgents', () => {
   it('keeps a generic standalone agent', () => {
     const agents = [agentOf({ id: 'generic' as AgentId, name: 'explore the repo' })];
-    expect(selectNonResolverStandaloneAgents(agents, {})).toHaveLength(1);
+    expect(selectNonResolverStandaloneAgents({ agents, agentKindOverride: {} })).toHaveLength(1);
   });
 
   it('excludes a name-classified resolver', () => {
     const agents = [agentOf({ id: 'resolver' as AgentId, name: 'resolve foo' })];
-    expect(selectNonResolverStandaloneAgents(agents, {})).toHaveLength(0);
+    expect(selectNonResolverStandaloneAgents({ agents, agentKindOverride: {} })).toHaveLength(0);
   });
 
   it('prefers a persisted kind over name inference', () => {
     const agents = [
       agentOf({ id: 'persisted' as AgentId, name: 'resolve foo', kind: 'implementer' }),
     ];
-    expect(selectNonResolverStandaloneAgents(agents, {})).toHaveLength(1);
+    expect(selectNonResolverStandaloneAgents({ agents, agentKindOverride: {} })).toHaveLength(1);
   });
 
   it('excludes an agent with a persisted resolver kind', () => {
     const agents = [
       agentOf({ id: 'persisted' as AgentId, name: 'explore the repo', kind: 'resolver' }),
     ];
-    expect(selectNonResolverStandaloneAgents(agents, {})).toHaveLength(0);
+    expect(selectNonResolverStandaloneAgents({ agents, agentKindOverride: {} })).toHaveLength(0);
   });
 
   it('excludes an agent overridden to resolver', () => {
@@ -195,14 +208,18 @@ describe('selectNonResolverStandaloneAgents', () => {
     ];
     const overrides: Record<string, AgentKind> = { override: 'resolver' };
 
-    expect(selectNonResolverStandaloneAgents(agents, overrides)).toHaveLength(0);
+    expect(
+      selectNonResolverStandaloneAgents({ agents, agentKindOverride: overrides }),
+    ).toHaveLength(0);
   });
 
   it('prefers a non-resolver override over persisted kind and name inference', () => {
     const agents = [agentOf({ id: 'override' as AgentId, name: 'resolve foo', kind: 'resolver' })];
     const overrides: Record<string, AgentKind> = { override: 'scout' };
 
-    expect(selectNonResolverStandaloneAgents(agents, overrides)).toHaveLength(1);
+    expect(
+      selectNonResolverStandaloneAgents({ agents, agentKindOverride: overrides }),
+    ).toHaveLength(1);
   });
 
   it('excludes a workflow-step agent that is not standalone', () => {
@@ -215,7 +232,7 @@ describe('selectNonResolverStandaloneAgents', () => {
       }),
     ];
 
-    expect(selectNonResolverStandaloneAgents(agents, {})).toHaveLength(0);
+    expect(selectNonResolverStandaloneAgents({ agents, agentKindOverride: {} })).toHaveLength(0);
   });
 });
 
@@ -448,61 +465,95 @@ describe('kindRouting role overrides', () => {
 
 describe('resolveAgentKind', () => {
   it('override wins over everything', () => {
-    expect(resolveAgentKind('Plan the migration', 'find the bug', 'docs')).toBe('docs');
+    expect(
+      resolveAgentKind({
+        name: 'Plan the migration',
+        firstUserText: 'find the bug',
+        override: 'docs',
+      }),
+    ).toBe('docs');
   });
 
   it('override wins even when name contains role-triggering keywords', () => {
-    expect(resolveAgentKind('fix login bug', null, 'generic')).toBe('generic');
-    expect(resolveAgentKind('refactor auth module', null, 'scout')).toBe('scout');
+    expect(
+      resolveAgentKind({ name: 'fix login bug', firstUserText: null, override: 'generic' }),
+    ).toBe('generic');
+    expect(
+      resolveAgentKind({ name: 'refactor auth module', firstUserText: null, override: 'scout' }),
+    ).toBe('scout');
   });
 
   it('prefers name-based inference when the name is meaningful', () => {
-    expect(resolveAgentKind('Plan the migration', 'find the bug')).toBe('planner');
-    expect(resolveAgentKind('Review diff', 'implement the feature')).toBe('reviewer');
+    expect(resolveAgentKind({ name: 'Plan the migration', firstUserText: 'find the bug' })).toBe(
+      'planner',
+    );
+    expect(resolveAgentKind({ name: 'Review diff', firstUserText: 'implement the feature' })).toBe(
+      'reviewer',
+    );
   });
 
   it('falls back to first-turn classification when the name is generic', () => {
-    expect(resolveAgentKind('agent 1', 'find where AgentKind is defined')).toBe('scout');
-    expect(resolveAgentKind('agent 2', 'plan the migration')).toBe('planner');
-    expect(resolveAgentKind('agent 3', 'implement the chip auto-label')).toBe('implementer');
-    expect(resolveAgentKind('agent 4', 'audit the diff')).toBe('reviewer');
-    expect(resolveAgentKind('agent 5', 'write a test for the parser')).toBe('tester');
-    expect(resolveAgentKind('agent 6', 'update the readme')).toBe('docs');
-    expect(resolveAgentKind('agent 7', 'debug the startup crash')).toBe('debugger');
+    expect(
+      resolveAgentKind({ name: 'agent 1', firstUserText: 'find where AgentKind is defined' }),
+    ).toBe('scout');
+    expect(resolveAgentKind({ name: 'agent 2', firstUserText: 'plan the migration' })).toBe(
+      'planner',
+    );
+    expect(
+      resolveAgentKind({ name: 'agent 3', firstUserText: 'implement the chip auto-label' }),
+    ).toBe('implementer');
+    expect(resolveAgentKind({ name: 'agent 4', firstUserText: 'audit the diff' })).toBe('reviewer');
+    expect(
+      resolveAgentKind({ name: 'agent 5', firstUserText: 'write a test for the parser' }),
+    ).toBe('tester');
+    expect(resolveAgentKind({ name: 'agent 6', firstUserText: 'update the readme' })).toBe('docs');
+    expect(resolveAgentKind({ name: 'agent 7', firstUserText: 'debug the startup crash' })).toBe(
+      'debugger',
+    );
   });
 
   it('stays generic when first turn is missing or unclassifiable', () => {
-    expect(resolveAgentKind('agent 1', null)).toBe('generic');
-    expect(resolveAgentKind('agent 1', '')).toBe('generic');
-    expect(resolveAgentKind('agent 1', 'hello')).toBe('generic');
+    expect(resolveAgentKind({ name: 'agent 1', firstUserText: null })).toBe('generic');
+    expect(resolveAgentKind({ name: 'agent 1', firstUserText: '' })).toBe('generic');
+    expect(resolveAgentKind({ name: 'agent 1', firstUserText: 'hello' })).toBe('generic');
   });
 });
 
 describe('classifyAgent', () => {
   it('prefers an override over persisted kind and name inference', () => {
-    expect(classifyAgent(agentOf({ name: 'plan migration', kind: 'scout' }), 'docs')).toBe('docs');
+    expect(
+      classifyAgent({
+        agent: agentOf({ name: 'plan migration', kind: 'scout' }),
+        override: 'docs',
+      }),
+    ).toBe('docs');
   });
 
   it('prefers a valid persisted kind over name inference', () => {
-    expect(classifyAgent(agentOf({ name: 'plan migration', kind: 'reviewer' }), null)).toBe(
-      'reviewer',
-    );
+    expect(
+      classifyAgent({
+        agent: agentOf({ name: 'plan migration', kind: 'reviewer' }),
+        override: null,
+      }),
+    ).toBe('reviewer');
   });
 
   it('falls back to generic for an invalid persisted kind', () => {
-    expect(classifyAgent(agentOf({ name: 'debug startup', kind: 'unknown' }), null)).toBe(
-      'generic',
-    );
+    expect(
+      classifyAgent({ agent: agentOf({ name: 'debug startup', kind: 'unknown' }), override: null }),
+    ).toBe('generic');
   });
 
   it('normalizes persisted role aliases before presentation', () => {
-    expect(classifyAgent(agentOf({ kind: 'writer' }), null)).toBe('docs');
-    expect(classifyAgent(agentOf({ kind: 'investigator' }), null)).toBe('debugger');
-    expect(classifyAgent(agentOf({ kind: 'custom' }), null)).toBe('generic');
+    expect(classifyAgent({ agent: agentOf({ kind: 'writer' }), override: null })).toBe('docs');
+    expect(classifyAgent({ agent: agentOf({ kind: 'investigator' }), override: null })).toBe(
+      'debugger',
+    );
+    expect(classifyAgent({ agent: agentOf({ kind: 'custom' }), override: null })).toBe('generic');
   });
 
   it('returns generic without a persisted kind or meaningful name', () => {
-    expect(classifyAgent(agentOf({ name: 'agent 1' }), null)).toBe('generic');
+    expect(classifyAgent({ agent: agentOf({ name: 'agent 1' }), override: null })).toBe('generic');
   });
 });
 
@@ -537,7 +588,7 @@ describe('kindConsumesPlan', () => {
   const CONSUMING: ReadonlyArray<AgentKind> = ['implementer', 'debugger', 'generic'];
 
   it.each(ALL_KINDS)('%s partitions into consumer vs passthrough', (kind) => {
-    expect(kindConsumesPlan(kind)).toBe(CONSUMING.includes(kind));
+    expect(kindConsumesPlan({ kind })).toBe(CONSUMING.includes(kind));
   });
 
   it('keeps read/test/doc roles as passthrough', () => {
@@ -550,7 +601,7 @@ describe('kindConsumesPlan', () => {
       'planner',
       'resolver',
     ] as const) {
-      expect(kindConsumesPlan(kind)).toBe(false);
+      expect(kindConsumesPlan({ kind })).toBe(false);
     }
   });
 });
@@ -568,7 +619,7 @@ describe('AGENT_KIND_META', () => {
 
   it('labels the do-everything role Generalist, resolved from its unchanged id', () => {
     expect(AGENT_KIND_META.generic.label).toBe('Generalist');
-    expect(classifyAgent(agentOf({ kind: 'generic' }), null)).toBe('generic');
+    expect(classifyAgent({ agent: agentOf({ kind: 'generic' }), override: null })).toBe('generic');
   });
 });
 

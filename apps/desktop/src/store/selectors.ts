@@ -866,7 +866,7 @@ export const useNonResolverStandaloneAgents = (sessionId: SessionId): ReadonlyAr
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS);
   const agentKindOverride = useSessionAgentKindOverrides(sessionId);
   return useMemo(
-    () => selectNonResolverStandaloneAgents(phaseRuns, agentKindOverride),
+    () => selectNonResolverStandaloneAgents({ agents: phaseRuns, agentKindOverride }),
     [phaseRuns, agentKindOverride],
   );
 };

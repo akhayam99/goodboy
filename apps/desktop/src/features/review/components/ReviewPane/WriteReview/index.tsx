@@ -75,7 +75,8 @@ export const WriteReview = ({ session, listWidth }: Props) => {
 
   const askAgent = (lineTarget: ReviewLineTarget) => {
     const reviewer =
-      phaseRuns.find((agent) => classifyAgent(agent, null) === 'pr-reviewer') ?? phaseRuns[0];
+      phaseRuns.find((agent) => classifyAgent({ agent, override: null }) === 'pr-reviewer') ??
+      phaseRuns[0];
     if (reviewer == null) {
       showToast('error', 'No agent in this session to ask.');
       return;

@@ -20,7 +20,7 @@ export const WorkflowStepPlanBadge = ({ run, kind }: Props) => {
   const planConsumptions = useAppStore((state) => state.planConsumptions);
   const plannerPlan =
     kind === 'planner' ? [...plans].reverse().find((plan) => plan.agentId === run.id) : undefined;
-  const consumedPlan = kindConsumesPlan(kind)
+  const consumedPlan = kindConsumesPlan({ kind })
     ? [...plans]
         .reverse()
         .find((plan) =>
@@ -33,7 +33,7 @@ export const WorkflowStepPlanBadge = ({ run, kind }: Props) => {
       : [];
   const hasRunConsumptions = runPlans.some((plan) => (planConsumptions[plan.id]?.length ?? 0) > 0);
   const fallbackPlan =
-    kindConsumesPlan(kind) &&
+    kindConsumesPlan({ kind }) &&
     consumedPlan == null &&
     !hasRunConsumptions &&
     (run.status === 'running' || run.status === 'completed') &&

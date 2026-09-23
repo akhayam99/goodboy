@@ -38,7 +38,9 @@ export const ScoutSubtree = ({
   const doneCount = children.filter(
     (c) => c.status === 'completed' || c.status === 'skipped',
   ).length;
-  const childKinds = new Set(children.map((child) => classifyAgent(child, null)));
+  const childKinds = new Set(
+    children.map((child) => classifyAgent({ agent: child, override: null })),
+  );
   const childKind = childKinds.size === 1 ? childKinds.values().next().value : undefined;
   const groupLabel = childKind === undefined ? 'agents' : AGENT_KIND_META[childKind].pluralLabel;
   const unreadCount = (() => {

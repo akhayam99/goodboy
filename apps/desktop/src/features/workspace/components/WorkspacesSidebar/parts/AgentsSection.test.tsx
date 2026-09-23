@@ -231,7 +231,7 @@ vi.mock('../../../../../features/session/agent-kind', () => ({
   resolveAgentKind: () => 'implementer',
   KIND_TO_ROLE: { implementer: 'implementer' },
   isRightSizedKind: () => false,
-  isStandaloneAgent: (agent: Agent) =>
+  isStandaloneAgent: ({ agent }: { agent: Agent }) =>
     agent.parentAgentId == null && !(agent.workflowRunId != null && agent.stepId != null),
 }));
 

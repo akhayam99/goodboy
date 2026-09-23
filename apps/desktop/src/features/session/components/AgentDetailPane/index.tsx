@@ -43,7 +43,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
   const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const metrics = useAgentMetrics({ sessionId: session.id });
   const executed = useExecutedAgentRouting({ agent });
-  const kind = classifyAgent(agent, kindOverride);
+  const kind = classifyAgent({ agent, override: kindOverride });
 
   useEffect(() => {
     setTab('brief');

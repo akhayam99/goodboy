@@ -24,7 +24,7 @@ const IMPL_DIFF_RE =
 
 const PLAN_MARKER_EXEMPT: ReadonlySet<AgentKind> = new Set(['planner', 'generic']);
 
-const isWriteExempt = (kind: AgentKind): boolean => kind !== 'docs' && kindWritesFiles(kind);
+const isWriteExempt = (kind: AgentKind): boolean => kind !== 'docs' && kindWritesFiles({ kind });
 
 const DOC_EXTENSIONS = /\.(?:md|mdx|txt|rst)$/;
 

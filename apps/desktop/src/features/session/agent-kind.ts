@@ -47,7 +47,12 @@ export const resolveRootAgent = ({ agents, agentId }: Params): Agent | null => {
   return null;
 };
 
-export const agentHomeLens = (agent: Agent, kind: AgentKind): AgentHomeLens => {
+type AgentHomeLensParams = {
+  readonly agent: Agent;
+  readonly kind: AgentKind;
+};
+
+export const agentHomeLens = ({ agent, kind }: AgentHomeLensParams): AgentHomeLens => {
   if (agent.workflowRunId != null && agent.stepId != null) {
     return 'workflows';
   }
@@ -78,7 +83,11 @@ const PLAN_CONSUMING_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>([
   'generic',
 ]);
 
-export const kindConsumesPlan = (kind: AgentKind): boolean => {
+type KindParams = {
+  readonly kind: AgentKind;
+};
+
+export const kindConsumesPlan = ({ kind }: KindParams): boolean => {
   return PLAN_CONSUMING_KINDS.has(kind);
 };
 
@@ -91,7 +100,7 @@ const WRITE_CAPABLE_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>([
   'generic',
 ]);
 
-export const kindWritesFiles = (kind: AgentKind): boolean => {
+export const kindWritesFiles = ({ kind }: KindParams): boolean => {
   return WRITE_CAPABLE_KINDS.has(kind);
 };
 
@@ -479,7 +488,12 @@ export const inferAgentKindFromName = (name: string): AgentKind => {
   return 'generic';
 };
 
-export const classifyAgent = (agent: Agent, override: AgentKind | null): AgentKind => {
+type ClassifyAgentParams = {
+  readonly agent: Agent;
+  readonly override: AgentKind | null;
+};
+
+export const classifyAgent = ({ agent, override }: ClassifyAgentParams): AgentKind => {
   if (override != null) {
     if (override === 'pr-reviewer') {
       return override;
@@ -495,25 +509,40 @@ export const classifyAgent = (agent: Agent, override: AgentKind | null): AgentKi
   return inferAgentKindFromName(agent.name);
 };
 
-export const isStandaloneAgent = (agent: Agent): boolean =>
+type AgentParams = {
+  readonly agent: Agent;
+};
+
+export const isStandaloneAgent = ({ agent }: AgentParams): boolean =>
   agent.parentAgentId == null && !(agent.workflowRunId != null && agent.stepId != null);
 
-export const selectNonResolverStandaloneAgents = (
-  agents: ReadonlyArray<Agent>,
-  agentKindOverride: Readonly<Record<string, AgentKind>>,
-): ReadonlyArray<Agent> =>
+type SelectNonResolverStandaloneAgentsParams = {
+  readonly agents: ReadonlyArray<Agent>;
+  readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
+};
+
+export const selectNonResolverStandaloneAgents = ({
+  agents,
+  agentKindOverride,
+}: SelectNonResolverStandaloneAgentsParams): ReadonlyArray<Agent> =>
   agents.filter(
     (agent) =>
-      isStandaloneAgent(agent) &&
-      classifyAgent(agent, agentKindOverride[agent.id] ?? null) !== 'resolver',
+      isStandaloneAgent({ agent }) &&
+      classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null }) !== 'resolver',
   );
 
-export const resolveAgentKind = (
-  name: string,
-  firstUserText: string | null,
-  override: AgentKind | null = null,
-): AgentKind => {
-  if (override !== null) {
+type ResolveAgentKindParams = {
+  readonly name: string;
+  readonly firstUserText: string | null;
+  readonly override?: AgentKind | null;
+};
+
+export const resolveAgentKind = ({
+  name,
+  firstUserText,
+  override,
+}: ResolveAgentKindParams): AgentKind => {
+  if (override != null) {
     if (override === 'pr-reviewer') {
       return override;
     }

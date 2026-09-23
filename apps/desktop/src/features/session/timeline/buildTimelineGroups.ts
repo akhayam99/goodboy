@@ -315,7 +315,7 @@ export const buildTimelineGroups = ({
       at: creation.at,
       ordinal: agent.ordinal,
       agent,
-      agentKind: classifyAgent(agent, agentKindOverride[agent.id] ?? null),
+      agentKind: classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null }),
       stepLabel,
       openQuestions: attachedQuestions.filter((question) => question.status === 'open'),
       terminalQuestions: attachedQuestions.filter((question) => question.status !== 'open'),

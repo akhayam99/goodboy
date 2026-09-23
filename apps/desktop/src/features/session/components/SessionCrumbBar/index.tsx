@@ -79,7 +79,8 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   }, [phaseRuns, selectedAgent]);
 
   const toEntries = useMemo(() => {
-    const kindOf = (agent: Agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null);
+    const kindOf = (agent: Agent) =>
+      classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null });
     return (peers: ReadonlyArray<Agent>): ReadonlyArray<SwitcherEntry> =>
       peers.map((agent) => ({
         agent,
@@ -95,13 +96,14 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
     if (selectedAgent == null || rootAgent == null) {
       return EMPTY_ARRAY as ReadonlyArray<SwitcherEntry>;
     }
-    const kindOf = (agent: Agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null);
+    const kindOf = (agent: Agent) =>
+      classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null });
     return toEntries(
       switcherPeers({
         agents: phaseRuns,
         selectedAgent,
         rootAgent,
-        home: agentHomeLens(rootAgent, kindOf(rootAgent)),
+        home: agentHomeLens({ agent: rootAgent, kind: kindOf(rootAgent) }),
         kindOf,
       }),
     );
@@ -111,13 +113,14 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
     if (parentAgent == null || rootAgent == null) {
       return EMPTY_ARRAY as ReadonlyArray<SwitcherEntry>;
     }
-    const kindOf = (agent: Agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null);
+    const kindOf = (agent: Agent) =>
+      classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null });
     return toEntries(
       switcherPeers({
         agents: phaseRuns,
         selectedAgent: parentAgent,
         rootAgent,
-        home: agentHomeLens(rootAgent, kindOf(rootAgent)),
+        home: agentHomeLens({ agent: rootAgent, kind: kindOf(rootAgent) }),
         kindOf,
       }),
     );

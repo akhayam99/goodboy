@@ -67,7 +67,7 @@ export const runPlan = (get: GetFn) => {
     }
 
     const nextKind = inferAgentKindFromName(nextStep.name);
-    if (!kindConsumesPlan(nextKind)) {
+    if (!kindConsumesPlan({ kind: nextKind })) {
       return await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',

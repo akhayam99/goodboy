@@ -525,7 +525,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const agentKindOverrideForTurn = get().agentKindOverride[activeAgentId] ?? null;
     const turnAgentKind =
       activeAgent != null
-        ? classifyAgent(activeAgent, agentKindOverrideForTurn)
+        ? classifyAgent({ agent: activeAgent, override: agentKindOverrideForTurn })
         : (agentKindOverrideForTurn ?? inferAgentKindFromName(''));
     const autoStepModel =
       phaseDefinition != null && nodeModel === null
@@ -991,7 +991,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       activeMountId: turnMountId,
       isBridgeServing,
       isSessionDirScope,
-      canWrite: kindWritesFiles(earlyAgentKind),
+      canWrite: kindWritesFiles({ kind: earlyAgentKind }),
     });
     const anchorText = get().sessionLanguageAnchor[sessionId] ?? '';
     const languageGuard = buildSessionLanguageGuard({

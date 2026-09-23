@@ -53,7 +53,7 @@ export const agentReferenceRouting = ({
       effort: session.effort ?? 'medium',
     };
   }
-  const kind = classifyAgent(agent, kindOverride);
+  const kind = classifyAgent({ agent, override: kindOverride });
   const routing = resolveStepRouting({
     step: stepConfig,
     kind,

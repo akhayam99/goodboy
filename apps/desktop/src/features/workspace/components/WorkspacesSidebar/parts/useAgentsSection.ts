@@ -211,7 +211,8 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
   const standaloneAgentCount = useMemo(
     () =>
       tree.adHocAgents.filter(
-        (agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null) !== 'resolver',
+        (agent) =>
+          classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null }) !== 'resolver',
       ).length,
     [tree.adHocAgents, agentKindOverride],
   );

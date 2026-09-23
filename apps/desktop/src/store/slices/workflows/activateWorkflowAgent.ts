@@ -107,7 +107,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
 
     const effectiveKind: AgentKind =
       (agent.kind as AgentKind | undefined) ?? inferAgentKindFromName(agent.name);
-    const consumesPlan = kindConsumesPlan(effectiveKind);
+    const consumesPlan = kindConsumesPlan({ kind: effectiveKind });
     const explicitPlan =
       explicitPlanId !== undefined
         ? (get().sessionPlans[sessionId]?.find((p) => p.id === explicitPlanId) ?? null)

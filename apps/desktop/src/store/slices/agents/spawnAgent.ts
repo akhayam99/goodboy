@@ -197,7 +197,8 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     args.kindOverride ?? (inserted.kind as AgentKind | undefined) ?? resolvedKind;
   const isImplementer = effectiveKind === 'implementer';
   const hasExplicitPlanContext = args.triggeredPlanId !== undefined || args.stepId !== undefined;
-  const engagePlan = isImplementer || (kindConsumesPlan(effectiveKind) && hasExplicitPlanContext);
+  const engagePlan =
+    isImplementer || (kindConsumesPlan({ kind: effectiveKind }) && hasExplicitPlanContext);
   let planSection = '';
   let planToConsume: PlanWithCount | null = null;
   let planForKickoff: PlanWithCount | null = null;

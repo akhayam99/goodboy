@@ -61,11 +61,11 @@ export const AdHocRow = ({
   isMuted = false,
   density = 'sidebar',
 }: Props) => {
-  const kind = resolveAgentKind(
-    run.name,
-    firstUserTextByAgentId.get(run.id) ?? null,
-    agentKindOverride[run.id] ?? null,
-  );
+  const kind = resolveAgentKind({
+    name: run.name,
+    firstUserText: firstUserTextByAgentId.get(run.id) ?? null,
+    override: agentKindOverride[run.id] ?? null,
+  });
   const scoutChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
   const activeDelegatedChildCount = scoutChildren.filter(
     (child) => child.status === 'pending' || child.status === 'running',
