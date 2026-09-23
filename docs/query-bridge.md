@@ -210,7 +210,7 @@ Both return the updated `mounts` array. Finish any merge, rebase or cherry-pick 
 
 ### Pull requests and series
 
-Opening a pull request or merge request always happens on one mount. `github pr-create` and `gitlab mr-create` need an explicit `--mount`. They open a draft unless you pass `--ready`, and they refresh from the provider first. Sometimes the remote accepts the request but the answer never comes back. A retry then finds the existing request and attaches it, instead of opening a duplicate.
+Opening a pull request or merge request always happens on one mount. `github pr-create` and `gitlab mr-create` need an explicit `--mount`. They open a draft unless you pass `--ready`, and they refresh from the provider first. Sometimes the remote accepts the request but the answer never comes back. A retry then finds the existing request and attaches it, instead of opening a duplicate. These two are the only verbs that create a request. Bitbucket reads know about mounts, but Bitbucket has no `pr-create`.
 
 ```
 "$GOODBOY_BIN" query github pr-create \
