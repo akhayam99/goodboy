@@ -9,6 +9,7 @@ import type {
 } from '@goodboy/types';
 import { MATERIALIZATION_DEFERRAL_CAUSES } from '@goodboy/types';
 import type { Database } from '../client';
+import { isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type SessionEventRow = {
   readonly id: string;
@@ -43,18 +44,6 @@ const deferralCauseAt = ({ source, key }: FieldParams): MaterializationDeferralC
   return MATERIALIZATION_DEFERRAL_CAUSES.find((candidate) => candidate === value) ?? null;
 };
 
-type DecodePayloadParams = {
-  readonly raw: string;
-};
-
-const decodePayload = ({ raw }: DecodePayloadParams): unknown => {
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-};
-
 type ParsePayloadParams = {
   readonly raw: string | null;
 };
@@ -63,11 +52,14 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
   if (raw == null || raw.length === 0) {
     return null;
   }
-  const decoded = decodePayload({ raw });
-  if (typeof decoded !== 'object' || decoded === null || Array.isArray(decoded)) {
+  const source = parseJsonColumn<Readonly<Record<string, unknown>> | null>({
+    value: raw,
+    isValid: isJsonRecord,
+    fallback: null,
+  });
+  if (source === null) {
     return null;
   }
-  const source = decoded as Readonly<Record<string, unknown>>;
   const worktreePath = stringAt({ source, key: 'worktreePath' });
   const branch = stringAt({ source, key: 'branch' });
   const from = stringAt({ source, key: 'from' });

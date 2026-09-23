@@ -6,6 +6,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import { isJsonValue, parseJsonColumn } from '../shared/parseJsonColumn';
 
 export type MountPullRequestLinkRow = {
   readonly id: string;
@@ -36,14 +37,6 @@ type UpsertMountPullRequestLinkParams = {
   readonly link: MountPullRequestLink;
 };
 
-const parseSnapshot = ({ value }: { readonly value: string }): unknown => {
-  try {
-    return JSON.parse(value) as unknown;
-  } catch {
-    return null;
-  }
-};
-
 export const MOUNT_PR_LINK_COLUMNS = `link.id, link.mount_id AS mountId, link.provider, link.host,
   link.repo_slug AS repoSlug, link.pr_number AS prNumber,
   link.head_branch AS headBranch, link.base_branch AS baseBranch,
@@ -53,7 +46,7 @@ export const MOUNT_PR_LINK_COLUMNS = `link.id, link.mount_id AS mountId, link.pr
 
 export const toMountPullRequestLink = (row: MountPullRequestLinkRow): MountPullRequestLink => ({
   ...row,
-  snapshot: parseSnapshot({ value: row.snapshot }),
+  snapshot: parseJsonColumn({ value: row.snapshot, isValid: isJsonValue, fallback: null }),
   lastObservedAt: new Date(row.lastObservedAt).toISOString() as IsoDateTime,
   createdAt: new Date(row.createdAt).toISOString() as IsoDateTime,
   updatedAt: new Date(row.updatedAt).toISOString() as IsoDateTime,

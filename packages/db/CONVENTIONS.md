@@ -37,6 +37,7 @@ Data is stored **only locally**. No data leaves the user's machine.
 - Parameterized queries only. Never string concatenation.
 - Return domain types from `@goodboy/types`, not raw rows. The mapping happens here.
 - No N+1 queries. Use joins or batched fetches.
+- A stored JSON column is read through `parseJsonColumn` in `src/shared/parseJsonColumn.ts`, with a type guard and a fallback. One malformed row then falls back or is skipped, instead of failing the whole list.
 - A write with more than one statement goes through `db.transaction` with guards. Never `exec('BEGIN')`. When a write depends on a read: read, plan, then write. `transactions.test.ts` fails on a hand-written `BEGIN`, `COMMIT` or `ROLLBACK` outside the migration runner.
 
 ## Error handling

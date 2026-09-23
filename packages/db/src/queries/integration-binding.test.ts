@@ -187,4 +187,17 @@ describe('integration bindings', () => {
     });
     expect(stored?.provider).toBe('github');
   });
+
+  it('skips a binding whose stored config is malformed instead of failing the list', async () => {
+    const db = await seed();
+    await upsertIntegrationBinding({ db, binding: makeBinding() });
+    await upsertIntegrationBinding({ db, binding: makeBinding({ id: 'binding-2', projectId }) });
+    await db.execute("UPDATE integration_bindings SET config = '{broken' WHERE id = 'binding-2'");
+
+    const listed = await listIntegrationBindingsForWorkspace({ db, workspaceId });
+    const broken = await getIntegrationBinding({ db, workspaceId, provider: 'linear', projectId });
+
+    expect(listed.map((binding) => binding.id)).toEqual(['binding-1']);
+    expect(broken).toBeNull();
+  });
 });

@@ -16,6 +16,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { legacyAgentRoutingDecision, parseWorkflowRouting } from './workflowRoutingCodec';
+import { isJsonArray, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type AgentRow = {
   id: string;
@@ -61,18 +62,8 @@ type UpdateAgentDomainsParams = {
 };
 
 const parseDomains = ({ value }: ParseDomainsParams): ReadonlyArray<string> => {
-  if (value === null) {
-    return [];
-  }
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed.filter((domain): domain is string => typeof domain === 'string');
-  } catch {
-    return [];
-  }
+  const parsed = parseJsonColumn({ value, isValid: isJsonArray, fallback: [] });
+  return parsed.filter((domain): domain is string => typeof domain === 'string');
 };
 
 const toAgent = ({ row }: ToAgentParams): Agent => {

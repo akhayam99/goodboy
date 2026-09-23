@@ -21,6 +21,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { SESSION_WORKFLOW_COLS, toWorkflowRun, type SessionWorkflowRow } from './session-workflow';
+import { isJsonArray, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type SessionRow = {
   id: string;
@@ -67,21 +68,11 @@ function serializeEnabledProviders(
 }
 
 function parseEnabledProviders(raw: string | null): ReadonlyArray<ProviderId> | undefined {
-  if (raw === null) {
-    return undefined;
-  }
-  try {
-    const values: unknown = JSON.parse(raw);
-    if (!Array.isArray(values)) {
-      return undefined;
-    }
-    const providers = values.filter(
-      (value): value is ProviderId => typeof value === 'string' && VALID_PROVIDER_IDS.has(value),
-    );
-    return providers.length > 0 ? providers : undefined;
-  } catch {
-    return undefined;
-  }
+  const values = parseJsonColumn({ value: raw, isValid: isJsonArray, fallback: [] });
+  const providers = values.filter(
+    (value): value is ProviderId => typeof value === 'string' && VALID_PROVIDER_IDS.has(value),
+  );
+  return providers.length > 0 ? providers : undefined;
 }
 
 const VALID_PERMISSION_MODES: ReadonlySet<string> = new Set(CLAUDE_PERMISSION_MODES);

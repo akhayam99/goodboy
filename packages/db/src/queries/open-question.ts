@@ -10,6 +10,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import { isStringArray, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type OpenQuestionRow = {
   id: string;
@@ -52,7 +53,11 @@ const toDomain = (row: OpenQuestionRow): OpenQuestion => {
     ownedByStepOrdinal: row.owned_by_step_ordinal ?? undefined,
     createdByAgentId: row.created_by_agent_id ? (row.created_by_agent_id as AgentId) : undefined,
     text: row.text,
-    suggestedAnswers: JSON.parse(row.suggested_answers) as ReadonlyArray<string>,
+    suggestedAnswers: parseJsonColumn({
+      value: row.suggested_answers,
+      isValid: isStringArray,
+      fallback: [],
+    }),
     recommendedAnswer: row.recommended_answer ?? undefined,
     selectMode: toSelectMode(row.select_mode),
     isBlocking: row.is_blocking === 1,

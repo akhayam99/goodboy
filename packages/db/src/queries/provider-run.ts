@@ -5,6 +5,7 @@ import type {
   RoutingDecision,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import { isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type ProviderRunRow = {
   id: string;
@@ -16,14 +17,11 @@ type ProviderRunRow = {
   created_at: number;
 };
 
-type ParsedPayload = {
-  routingDecision?: RoutingDecision;
-  [key: string]: unknown;
-};
+const isStoredRoutingDecision = (value: unknown): value is RoutingDecision => isJsonRecord(value);
 
 function extractRoutingDecision(payload: string): RoutingDecision | undefined {
-  const data = JSON.parse(payload) as ParsedPayload;
-  return data.routingDecision;
+  const data = parseJsonColumn({ value: payload, isValid: isJsonRecord, fallback: {} });
+  return isStoredRoutingDecision(data.routingDecision) ? data.routingDecision : undefined;
 }
 
 function splitStatus(

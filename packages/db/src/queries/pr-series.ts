@@ -20,6 +20,7 @@ import {
   toMountPullRequestLink,
   type MountPullRequestLinkRow,
 } from './mount-pr-link';
+import { isJsonValue, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type SeriesRow = {
   readonly id: PrSeriesId;
@@ -96,16 +97,7 @@ const parseIdentity = ({
 }: {
   readonly value: string | null;
 }): MountPullRequestIdentity | null => {
-  if (value === null) {
-    return null;
-  }
-  const parsed: unknown = ((): unknown => {
-    try {
-      return JSON.parse(value) as unknown;
-    } catch {
-      return null;
-    }
-  })();
+  const parsed = parseJsonColumn({ value, isValid: isJsonValue, fallback: null });
   if (!isRecord(parsed)) {
     return null;
   }

@@ -210,4 +210,21 @@ describe('open_questions queries', () => {
       'oq-c',
     ]);
   });
+
+  it('reads malformed suggested answers as none instead of failing the list', async () => {
+    const db = await seed();
+    await insertOpenQuestion(db, {
+      id: 'oq-broken' as OpenQuestionId,
+      sessionId,
+      text: 'which queue?',
+      suggestedAnswers: ['sqs'],
+    });
+    await db.execute("UPDATE open_questions SET suggested_answers = '[1' WHERE id = 'oq-broken'");
+
+    const open = await listOpenQuestionsForSession(db, sessionId, 'open');
+
+    expect(open.map((question) => [question.id, question.suggestedAnswers])).toEqual([
+      ['oq-broken', []],
+    ]);
+  });
 });

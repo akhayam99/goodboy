@@ -55,4 +55,22 @@ describe('GitHub PR cache', () => {
       branch: 'ak/fresh',
     });
   });
+
+  it('reads a malformed cached pull request as a miss on the pull request', async () => {
+    const db = await seed();
+    await upsertGithubPrCache(db, {
+      branch: 'ak/broken',
+      repoSlug: 'acme/repo',
+      pr: null,
+      fetchedAt: new Date().toISOString(),
+    });
+    await db.execute(
+      `UPDATE github_pr_cache SET pr_json = '{"number":"seven"}' WHERE branch = 'ak/broken'`,
+    );
+
+    await expect(getGithubPrCache(db, 'acme/repo', 'ak/broken')).resolves.toMatchObject({
+      branch: 'ak/broken',
+      pr: null,
+    });
+  });
 });

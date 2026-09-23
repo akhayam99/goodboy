@@ -1,5 +1,6 @@
 import type { AgentId, IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
+import { isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
 
 export type NotificationSeverity = 'success' | 'info' | 'warning' | 'error';
 export type NotificationKind =
@@ -64,15 +65,26 @@ type NotificationRow = {
   coalesce_key: string | null;
 };
 
+const NOTIFICATION_ACTION_KINDS = {
+  'retry-summarizer': true,
+  'retry-step-summary': true,
+  'open-agent': true,
+  'open-budget': true,
+  'open-orphan-worktrees': true,
+  'retry-publication': true,
+} satisfies Record<NotificationAction['kind'], true>;
+
+const isNotificationAction = (value: unknown): value is NotificationAction =>
+  isJsonRecord(value) &&
+  typeof value.kind === 'string' &&
+  Object.hasOwn(NOTIFICATION_ACTION_KINDS, value.kind);
+
 function parseAction(raw: string | null): NotificationAction | null {
-  if (raw == null) {
-    return null;
-  }
-  try {
-    return JSON.parse(raw) as NotificationAction;
-  } catch {
-    return null;
-  }
+  return parseJsonColumn<NotificationAction | null>({
+    value: raw,
+    isValid: isNotificationAction,
+    fallback: null,
+  });
 }
 
 function serializeAction(action: NotificationAction | null): string | null {
