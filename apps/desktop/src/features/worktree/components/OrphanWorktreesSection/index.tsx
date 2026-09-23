@@ -4,7 +4,7 @@ import { Button, Divider, formatError, InlineConfirm, SectionHeader } from '@goo
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { formatDiskSize } from '../../utils/formatDiskSize';
+import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const EMPTY: ReadonlyArray<never> = [];
@@ -58,7 +58,7 @@ export const OrphanWorktreesSection = ({ workspaceId }: Props) => {
                 </span>
               </div>
               <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
-                {formatDiskSize({ bytes: orphan.sizeBytes })}
+                {formatBytes({ bytes: orphan.sizeBytes })}
               </span>
             </div>
           ))}
@@ -68,7 +68,7 @@ export const OrphanWorktreesSection = ({ workspaceId }: Props) => {
             role="danger"
             icon={<FolderX size={ICON_SIZE.row} aria-hidden />}
             title={`Delete ${folderLabel}?`}
-            description={`${formatDiskSize({ bytes: totalBytes })} will be removed from disk. This cannot be undone.`}
+            description={`${formatBytes({ bytes: totalBytes })} will be removed from disk. This cannot be undone.`}
             confirmLabel="Delete"
             onConfirm={onConfirm}
             onCancel={() => setIsArmed(false)}
@@ -82,7 +82,7 @@ export const OrphanWorktreesSection = ({ workspaceId }: Props) => {
               className="text-danger hover:text-danger"
             >
               <Trash2 size={ICON_SIZE.row} aria-hidden />
-              Delete {folderLabel} ({formatDiskSize({ bytes: totalBytes })})
+              Delete {folderLabel} ({formatBytes({ bytes: totalBytes })})
             </Button>
           </div>
         )}

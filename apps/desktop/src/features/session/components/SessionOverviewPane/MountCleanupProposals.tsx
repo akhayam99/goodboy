@@ -3,7 +3,7 @@ import type { MountCleanupProposal, SessionId } from '@goodboy/types';
 import { Button, formatError, cn, tintClasses } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { formatDiskSize } from '../../../worktree/utils/formatDiskSize';
+import { formatBytes } from '../../../../shared/utils/formatBytes';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -58,7 +58,7 @@ export const MountCleanupProposals = ({ sessionId }: Props) => {
               {proposal.worktreePath}
               {proposal.sizeBytes === null
                 ? ''
-                : ` (${formatDiskSize({ bytes: proposal.sizeBytes })})`}
+                : ` (${formatBytes({ bytes: proposal.sizeBytes })})`}
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-1">

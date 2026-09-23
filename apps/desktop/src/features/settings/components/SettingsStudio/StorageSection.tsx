@@ -14,7 +14,7 @@ import {
 import { useToast } from '../../../../app/components/Toast';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 import { useAppStore } from '../../../../store';
-import { formatBytes } from './formatBytes';
+import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type ConfirmTarget = 'transcripts' | 'worktrees';

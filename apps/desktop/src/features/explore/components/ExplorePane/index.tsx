@@ -16,6 +16,7 @@ import { PaneShell } from '../../../../shared/components/PaneShell';
 import { InspectorSplit } from '../../../session/components/SessionWorkspace/parts/InspectorSplit';
 import { ExplorePreviewPanel } from './ExplorePreviewPanel';
 import { ExploreSpawnPopover } from './ExploreSpawnPopover';
+import { formatBytes } from '../../../../shared/utils/formatBytes';
 
 const ROOT_PATH = '';
 const EMPTY_ENTRIES: ReadonlyArray<ExploreEntry> = Object.freeze([]);
@@ -58,21 +59,6 @@ type PreviewState =
       readonly status: 'ready';
       readonly content: ExploreContent;
     };
-
-const formatByteSize = ({ bytes }: { readonly bytes: number }): string => {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  const units = ['KB', 'MB', 'GB', 'TB'];
-  let size = bytes / 1024;
-  let index = 0;
-  while (size >= 1024 && index < units.length - 1) {
-    size /= 1024;
-    index += 1;
-  }
-  const precision = size >= 10 ? 0 : 1;
-  return `${size.toFixed(precision)} ${units[index]}`;
-};
 
 const resolveAbsolutePath = ({
   sessionDir,
@@ -261,7 +247,7 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
         const age =
           entry.modifiedAt == null ? '' : formatRelativeAge({ fromIso: entry.modifiedAt });
         const ageLabel = age === '' ? 'unknown age' : age;
-        const sizeLabel = formatByteSize({ bytes: entry.sizeBytes });
+        const sizeLabel = formatBytes({ bytes: entry.sizeBytes });
 
         return (
           <div key={entry.relPath} className="flex flex-col gap-0.5">

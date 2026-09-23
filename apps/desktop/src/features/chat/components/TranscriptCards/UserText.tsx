@@ -7,16 +7,7 @@ import { AttachmentChip } from '../../../attachments/components/AttachmentChip';
 import { useAttachmentThumbnail } from '../../../attachments/hooks/useAttachmentThumbnail';
 import { TranscriptShell } from '../TranscriptShell';
 import { CopyButton } from '@goodboy/ui';
-
-const formatHHMM = (iso: string): string => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) {
-    return '';
-  }
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  return `${hh}:${mm}`;
-};
+import { formatClockTime } from '../../../../shared/utils/formatClockTime';
 
 type MessageAttachmentChipProps = {
   readonly attachment: MessageAttachment;
@@ -82,7 +73,7 @@ export const UserText = ({ text, at, attachments, provider, model, workingDir = 
             provider ? <ProviderFootnote key="provider" provider={provider} model={model} /> : null,
             provider && model ? <span key="model">{modelLabel(model)}</span> : null,
             <span key="time" className="font-mono">
-              {formatHHMM(at)}
+              {formatClockTime({ iso: at })}
             </span>,
           ]}
         />
