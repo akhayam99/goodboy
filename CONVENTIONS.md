@@ -49,7 +49,7 @@ Example: `feat(core): add anthropic provider adapter`
 
 - The title follows the conventional commits format.
 - Description: what + why + test plan. Link the issue: `Closes #N`.
-- Typecheck, test, and build must all be green. Lint is wired but does nothing yet (see [CI pipeline](#ci-pipeline)).
+- Every blocking step in the [CI pipeline](#ci-pipeline) must be green.
 - No squash-merge for PRs with several commits, unless every commit is chore-level. Prefer rebase or merge.
 - Review your own PR before you ask for a review.
 
@@ -73,10 +73,18 @@ Code rules and the forbidden-patterns checklist live in [AGENTS.md](./AGENTS.md)
 
 ## CI pipeline
 
-The steps are in `.github/workflows/ci.yml`. All must pass. A warning never counts as green. Two oddities you cannot tell from the config:
+The steps are in `.github/workflows/ci.yml`, in this order. All of them block. A warning never counts as green.
 
-- `turbo.json` declares a `lint` task, but no package has a `lint` script and the repo has no eslint config. So that step passes today without checking anything.
-- `rust.yml`: `cargo fmt --check` and `clippy` are advisory (`continue-on-error`). Only `cargo test --locked` blocks. `main` is not clean under fmt or clippy.
+- `lint`: `turbo run lint --affected`. No package has a `lint` script and the repo has no eslint config, so this step checks nothing today. Root `pnpm lint` also runs `check:tauri-commands`.
+- `typecheck`: `turbo run typecheck --affected`, `tsc --noEmit` in each package.
+- `tauri commands`: `check:tauri-commands`. Every frontend `invoke` name is registered in `generate_handler!`, and every registered command is invoked somewhere.
+- `knip`: unused files, duplicate exports and unlisted dependencies across the repo.
+- `knip production`: unused files, exports and types in `apps/desktop` production code.
+- `test`: `turbo run test --affected`, vitest in every package.
+- `build`: `turbo run build --affected`.
+- `pnpm audit --prod` (its own job): known vulnerabilities in production dependencies.
+
+Outside `ci.yml`, `rust.yml` runs `cargo fmt --check` and `clippy` as advisory (`continue-on-error`). Only `cargo test --locked` blocks. `main` is not clean under fmt or clippy.
 
 ## Naming conventions
 
@@ -90,4 +98,4 @@ Each workspace MUST have:
 - `tsconfig.json` extending the root `tsconfig.base.json`.
 - `CONVENTIONS.md` with the rules for its stack.
 - `README.md` with its purpose and its public API.
-- `src/index.ts` as the only public entry point (re-exports only).
+- `src/index.ts` as the only public entry point (re-exports only), for `packages/*`. Two subpaths are allowed: `@goodboy/core/node` (Node-only helpers) and `@goodboy/db/test-helpers` (test databases). `apps/desktop` is an app, not a library, and has no `src/index.ts`.
