@@ -15,7 +15,7 @@ import type {
 import { attachWorkflowToSession as attachWorkflowToSessionInDb } from '@goodboy/db';
 import { runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { isRunSettled } from '../../../features/workflows/isRunSettled';
+import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
@@ -71,7 +71,9 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
           get().sessionPhaseRuns[sessionId] ?? [],
           chainAfterId,
         );
-        if (isRunSettled({ run: predecessor, workflow: predTemplate, agents: predAgents })) {
+        if (
+          isWorkflowRunComplete({ run: predecessor, workflow: predTemplate, agents: predAgents })
+        ) {
           triggerMode = 'immediate';
         }
       }

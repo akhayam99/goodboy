@@ -2,7 +2,7 @@ import type { Agent, SessionId, WorkflowRunId } from '@goodboy/types';
 import { listOpenQuestionsForSession } from '@goodboy/db';
 import { classifyWorkflowChain, findReusableAgent, runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { isRunSettled } from '../../../features/workflows/isRunSettled';
+import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import {
   BUDGET_BLOCK_MESSAGE,
@@ -52,7 +52,7 @@ const startChainedRuns = async ({ get, sessionId }: Params): Promise<void> => {
       continue;
     }
     if (
-      isRunSettled({
+      isWorkflowRunComplete({
         run: predecessor,
         workflow: predTemplate,
         agents: runsForWorkflowRun(runs, predecessor.id),

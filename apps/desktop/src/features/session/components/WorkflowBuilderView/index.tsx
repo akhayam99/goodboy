@@ -82,7 +82,7 @@ import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { WorkflowStepCard } from '../WorkflowStepCard';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { type EffortLevel, clampEffort } from '../../../chat/utils/chat-constants';
-import { isRunSettled } from '../../../workflows/isRunSettled';
+import { isWorkflowRunComplete } from '../../../workflows/isWorkflowRunComplete';
 import { useWorkflowDrag } from '../../../workflows/hooks/useWorkflowDrag';
 import { StepFlowConnector } from '../../../workflows/components/WorkflowStudio/StepFlowConnector';
 import { parseSpendLimit } from '../../../workflows/components/RunSpendLimitPopover/SpendLimitFields';
@@ -412,7 +412,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       .map((r) => {
         const template = phaseTemplates.find((t) => t.id === r.workflowId) ?? null;
         const agents = runsForWorkflowRun(sessionPhaseRuns, r.id);
-        const complete = isRunSettled({ run: r, workflow: template, agents });
+        const complete = isWorkflowRunComplete({ run: r, workflow: template, agents });
         const failed = agents.some((a) => a.status === 'failed');
         return { run: r, template, complete, failed };
       })

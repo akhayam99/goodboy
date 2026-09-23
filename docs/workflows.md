@@ -227,6 +227,13 @@ autorun stops on both. `maybeAutoAdvanceWorkflow` skips a run with open
 questions. It only starts the next agent when every agent is `completed` or
 `skipped`, and a `failed` agent is never either.
 
+One check decides when a run is finished: `isWorkflowRunComplete`. The chain
+trigger, attach and the builder all use it. A run is not finished while any
+agent with a parent is still neither `completed` nor `skipped`. This is checked
+first, so a dynamic run marked `done` still waits for a running child. After
+that, a dynamic run finishes on its `done` outcome. A static run needs its
+template, at least one step, and every step agent settled.
+
 A hands-free run (`auto_run`, set on the run or taken from the session) waits
 for a busy summarizer. It checks every 100ms for up to 60 seconds, then moves
 on whether the summarizer finished or not. It still stops on any budget alert
