@@ -573,11 +573,7 @@ type AppActions = {
     options?: OrchestrateOptions,
   ): Promise<void>;
   retryWorkflowOrchestration(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
-  continueWorkflowRun(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    note?: string,
-  ): Promise<void>;
+  continueWorkflowRun(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   addWorkflowOrchestratorHint(
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,

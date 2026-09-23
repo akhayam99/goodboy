@@ -1,15 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, Session, SessionId, WorkflowId, WorkflowRunId } from '@goodboy/types';
 
-const { updateOutcomeSpy, updateHintsSpy } = vi.hoisted(() => ({
+const { updateOutcomeSpy } = vi.hoisted(() => ({
   updateOutcomeSpy: vi.fn(async () => undefined),
-  updateHintsSpy: vi.fn(async () => undefined),
 }));
 
 vi.mock('@goodboy/db', () => ({
   updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
   updateWorkflowRunOrchestrationStop: vi.fn(async () => undefined),
-  updateWorkflowRunOrchestratorHints: updateHintsSpy,
 }));
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -85,22 +83,7 @@ describe('continueWorkflowRun', () => {
     const run = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(run.orchestrationOutcome).toBeUndefined();
     expect(run.orchestrationStop).toBeUndefined();
-    expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {});
-  });
-
-  it('hands the note to the orchestrator once without pinning it to the hints', async () => {
-    const standing = { id: 'hint-1', text: 'skip the docs', createdAt: NOW };
-    const state = baseState({ orchestratorHints: [standing] });
-    const { set, get } = harness(state);
-
-    await continueWorkflowRun(set, get)(SESSION_ID, RUN_ID, '  also check the migrations  ');
-
-    expect(updateHintsSpy).not.toHaveBeenCalled();
-    expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
-      extraHints: 'also check the migrations',
-    });
-    const run = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
-    expect(run.orchestratorHints).toEqual([standing]);
+    expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
 
   it('leaves a static run alone', async () => {

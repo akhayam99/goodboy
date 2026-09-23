@@ -80,7 +80,6 @@ import type { GetFn, SetFn } from './types';
 
 export type OrchestrateOptions = {
   readonly routing?: OrchestratorRouting;
-  readonly extraHints?: string;
   readonly bypassGate?: boolean;
 };
 
@@ -170,7 +169,6 @@ type EmitParams = {
   readonly action: 'next' | 'done' | 'blocked';
   readonly reason: string;
   readonly stepName?: string;
-  readonly operatorNote?: string;
   readonly preferredAgentId?: AgentId;
 };
 
@@ -181,7 +179,6 @@ const emitDecision = ({
   action,
   reason,
   stepName,
-  operatorNote,
   preferredAgentId,
 }: EmitParams): AgentId | null => {
   const runAgents = runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId);
@@ -196,7 +193,6 @@ const emitDecision = ({
     action,
     reason,
     ...(stepName != null && { stepName }),
-    ...(operatorNote != null && operatorNote !== '' && { operatorNote }),
     at: new Date().toISOString() as IsoDateTime,
   };
   get().appendTurnEvent(agentId, sessionId, event);
@@ -523,11 +519,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
     if (orchestrationInFlight.has(workflowRunId)) {
       set((state) => {
         const previous = state.pendingOrchestrations?.[workflowRunId];
-        const extraHint = options?.extraHints?.trim() ?? '';
-        const extraHints = [...(previous?.extraHints ?? [])];
-        if (extraHint !== '' && !extraHints.includes(extraHint)) {
-          extraHints.push(extraHint);
-        }
         const routing = options?.routing ?? previous?.routing;
         return {
           pendingOrchestrations: {
@@ -535,7 +526,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
             [workflowRunId]: {
               sessionId,
               bypassGate: (previous?.bypassGate ?? false) || (options?.bypassGate ?? false),
-              extraHints,
               ...(routing != null && { routing }),
             },
           },
@@ -544,7 +534,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       return;
     }
     orchestrationInFlight.add(workflowRunId);
-    const operatorNote = options?.extraHints?.trim() ?? '';
     try {
       setDeciding({ set, workflowRunId, isDeciding: true });
       const session = get().sessions.find((candidate) => candidate.id === sessionId);
@@ -657,7 +646,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const isDecisionDiscarded = (): boolean =>
         hasOperatorStop({ get, sessionId, workflowRunId }) ||
         decisionRestartMark({ get, workflowRunId }) !== restartMark;
-      const hints = [profileBlock, formatOrchestratorHints({ hints: readHints }), operatorNote]
+      const hints = [profileBlock, formatOrchestratorHints({ hints: readHints })]
         .map((entry) => entry?.trim() ?? '')
         .filter((entry) => entry !== '')
         .join('\n');
@@ -711,7 +700,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           workflowRunId,
           action: 'blocked',
           reason: `orchestrator failed: ${message}`,
-          operatorNote,
         });
         void get().emitNotification('error', 'warning', 'orchestrator failed', message, {
           sessionId,
@@ -745,7 +733,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           workflowRunId,
           action: 'blocked',
           reason: 'the orchestrator reply could not be parsed, retry to continue',
-          operatorNote,
         });
         await recordOrchestratorUsage({
           set,
@@ -859,7 +846,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
             workflowRunId,
             action: 'blocked',
             reason: resolution.reason,
-            operatorNote,
           });
           await recordOrchestratorUsage({
             set,
@@ -914,7 +900,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           action: decision.action,
           reason,
           stepName: agent.name,
-          operatorNote,
           preferredAgentId: agent.id,
         });
         await recordOrchestratorUsage({
@@ -952,7 +937,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         workflowRunId,
         action: decision.action,
         reason: decision.reason,
-        operatorNote,
       });
       await recordOrchestratorUsage({
         set,
@@ -985,7 +969,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         queueMicrotask(() => {
           void get().orchestrateNextStep(pending.sessionId, workflowRunId, {
             ...(pending.bypassGate && { bypassGate: true }),
-            ...(pending.extraHints.length > 0 && { extraHints: pending.extraHints.join('\n\n') }),
             ...(pending.routing != null && { routing: pending.routing }),
           });
         });

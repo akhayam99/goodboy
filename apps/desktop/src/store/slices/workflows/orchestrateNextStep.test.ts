@@ -404,7 +404,6 @@ describe('orchestrateNextStep', () => {
     await vi.waitFor(() => expect(listOpenQuestionsSpy).toHaveBeenCalledTimes(1));
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID, {
       bypassGate: true,
-      extraHints: ' first pending hint ',
       routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
     });
 
@@ -413,7 +412,6 @@ describe('orchestrateNextStep', () => {
       [WORKFLOW_RUN_ID]: {
         sessionId: SESSION_ID,
         bypassGate: true,
-        extraHints: ['first pending hint'],
         routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
       },
     });
@@ -427,13 +425,12 @@ describe('orchestrateNextStep', () => {
 
     expect(orchestrate).toHaveBeenLastCalledWith(SESSION_ID, WORKFLOW_RUN_ID, {
       bypassGate: true,
-      extraHints: 'first pending hint',
       routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
     });
     expect(state['pendingOrchestrations']).toEqual({});
   });
 
-  it('coalesces three concurrent calls into one rerun with deduped hints and last routing', async () => {
+  it('coalesces three concurrent calls into one rerun with the last routing', async () => {
     const openQuestionsGate: { release: (() => void) | null } = { release: null };
     listOpenQuestionsSpy.mockImplementationOnce(
       () =>
@@ -455,15 +452,13 @@ describe('orchestrateNextStep', () => {
     const first = orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
     await vi.waitFor(() => expect(listOpenQuestionsSpy).toHaveBeenCalledTimes(1));
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID, {
-      extraHints: 'first hint',
       routing: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
     });
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID, {
       bypassGate: true,
-      extraHints: 'second hint',
       routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
     });
-    await orchestrate(SESSION_ID, WORKFLOW_RUN_ID, { extraHints: 'first hint' });
+    await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
 
     if (openQuestionsGate.release == null) {
       throw new Error('open questions gate was not reached');
@@ -474,7 +469,6 @@ describe('orchestrateNextStep', () => {
 
     expect(orchestrate).toHaveBeenLastCalledWith(SESSION_ID, WORKFLOW_RUN_ID, {
       bypassGate: true,
-      extraHints: 'first hint\n\nsecond hint',
       routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
     });
     expect(state['pendingOrchestrations']).toEqual({});
@@ -1889,61 +1883,6 @@ describe('orchestrateNextStep', () => {
     expect(state['emitNotification']).not.toHaveBeenCalled();
   });
 
-  it('records the note on the decision it triggered, not only in the prompt', async () => {
-    decideSpy.mockResolvedValueOnce({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'The tests come next.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Write the missing tests.',
-        },
-      },
-      model: 'claude-haiku-4-5',
-    });
-    const state = baseState();
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
-      extraHints: '  the gate is in place but its tests are missing  ',
-    });
-
-    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
-      'agent-2',
-      SESSION_ID,
-      expect.objectContaining({
-        kind: 'orchestrator_decision',
-        operatorNote: 'the gate is in place but its tests are missing',
-      }),
-    );
-  });
-
-  it('records the note on a terminal decision too', async () => {
-    decideSpy.mockResolvedValueOnce({
-      decision: { action: 'done', reason: 'all set' },
-      usage: NO_USAGE,
-      model: 'claude-haiku-4-5',
-    });
-    const state = baseState();
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
-      extraHints: 'ship the changelog as well',
-    });
-
-    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
-      AGENT_ID,
-      SESSION_ID,
-      expect.objectContaining({
-        kind: 'orchestrator_decision',
-        action: 'done',
-        operatorNote: 'ship the changelog as well',
-      }),
-    );
-  });
-
   it('leaves the note off a decision the operator did not write one for', async () => {
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
@@ -1957,72 +1896,6 @@ describe('orchestrateNextStep', () => {
 
     const appended = state['appendTurnEvent'] as ReturnType<typeof vi.fn>;
     expect(appended.mock.calls[0]![2]).not.toHaveProperty('operatorNote');
-  });
-
-  it('carries the note from the continue drawer all the way onto the decision', async () => {
-    decideSpy.mockResolvedValueOnce({
-      decision: { action: 'done', reason: 'all set' },
-      usage: NO_USAGE,
-      model: 'claude-haiku-4-5',
-    });
-    const state = baseState();
-    const { set, get } = harness(state);
-    state['orchestrateNextStep'] = orchestrateNextStep(set, get);
-
-    await continueWorkflowRun(set, get)(SESSION_ID, WORKFLOW_RUN_ID, '  say what is missing  ');
-
-    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
-      AGENT_ID,
-      SESSION_ID,
-      expect.objectContaining({
-        kind: 'orchestrator_decision',
-        operatorNote: 'say what is missing',
-      }),
-    );
-  });
-
-  it('records the note on a provider failure block, not only in the prompt', async () => {
-    decideSpy.mockRejectedValueOnce(new Error('orchestrator decision timed out'));
-    const state = baseState();
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
-      extraHints: 'this was already flaky yesterday',
-    });
-
-    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
-      AGENT_ID,
-      SESSION_ID,
-      expect.objectContaining({
-        kind: 'orchestrator_decision',
-        action: 'blocked',
-        operatorNote: 'this was already flaky yesterday',
-      }),
-    );
-  });
-
-  it('records the note on an unparseable-reply block, not only in the prompt', async () => {
-    decideSpy.mockResolvedValueOnce({
-      decision: null,
-      usage: BILLED_USAGE,
-      model: 'claude-haiku-4-5',
-    });
-    const state = baseState();
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
-      extraHints: 'retry with more context',
-    });
-
-    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
-      AGENT_ID,
-      SESSION_ID,
-      expect.objectContaining({
-        kind: 'orchestrator_decision',
-        action: 'blocked',
-        operatorNote: 'retry with more context',
-      }),
-    );
   });
 
   it('routes the decision through the provider handed by the caller', async () => {
@@ -2417,7 +2290,7 @@ describe('orchestrateNextStep and the session context summarizer', () => {
     const { set, get } = harness(state);
     state['orchestrateNextStep'] = orchestrateNextStep(set, get);
 
-    const pending = continueWorkflowRun(set, get)(SESSION_ID, WORKFLOW_RUN_ID, 'keep going');
+    const pending = continueWorkflowRun(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
     await vi.advanceTimersByTimeAsync(2_000);
 
     expect(decideSpy).not.toHaveBeenCalled();
