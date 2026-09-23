@@ -1,13 +1,13 @@
 import type {
   ModelCostTier,
   ModelEffort,
+  ModelPrice,
   ModelRoutingProfile,
   ProviderId,
   WorkflowModelPick,
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import { MODEL_COST_RANK } from '../providers/modelCostRank';
-import type { ModelPriceSummary } from '../providers/model-price';
 
 export type WorkflowModelCandidate = Readonly<{
   provider: ProviderId;
@@ -16,7 +16,7 @@ export type WorkflowModelCandidate = Readonly<{
   contextWindow: number;
   costTier: ModelCostTier;
   profile: ModelRoutingProfile | null;
-  price: ModelPriceSummary | null;
+  price: ModelPrice | null;
 }>;
 
 export type WorkflowModelRecommendation = Readonly<{

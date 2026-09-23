@@ -1,4 +1,4 @@
-import type { ModelKey, ProviderId } from '@goodboy/types';
+import type { ModelKey, ModelPrice, ProviderId } from '@goodboy/types';
 import { ANTHROPIC_CATALOG } from './claude/catalog';
 import { CLAUDE_PRICES } from './claude/cost';
 import { CODEX_CATALOG } from './codex/catalog';
@@ -8,12 +8,7 @@ import { CURSOR_PRICES } from './cursor/cost';
 import { GEMINI_CATALOG } from './gemini/catalog';
 import { GEMINI_PRICES } from './gemini/cost';
 
-export type ModelPriceSummary = {
-  readonly inputPerMtok: number;
-  readonly outputPerMtok: number;
-};
-
-const MERGED_PRICES: Record<string, { inputPerMtok: number; outputPerMtok: number }> = {
+const MERGED_PRICES: Record<string, ModelPrice> = {
   ...CURSOR_PRICES,
   ...CLAUDE_PRICES,
   ...CODEX_PRICES,
@@ -48,7 +43,7 @@ for (const model of GEMINI_CATALOG) {
   }
 }
 
-export const getModelPrice = (model: string): ModelPriceSummary | null => {
+export const getModelPrice = (model: string): ModelPrice | null => {
   const price = MERGED_PRICES[model];
   if (price == null) {
     return null;
@@ -61,17 +56,12 @@ type ProviderPriceParams = {
   readonly model: ModelKey;
 };
 
-type RawPrice = {
-  readonly inputPerMtok: number;
-  readonly outputPerMtok: number;
-};
-
 type TableLookupParams = {
-  readonly table: Readonly<Record<string, RawPrice>>;
+  readonly table: Readonly<Record<string, ModelPrice>>;
   readonly ids: ReadonlyArray<string>;
 };
 
-const firstPriceIn = ({ table, ids }: TableLookupParams): ModelPriceSummary | null => {
+const firstPriceIn = ({ table, ids }: TableLookupParams): ModelPrice | null => {
   for (const id of ids) {
     const price = table[id];
     if (price != null) {
@@ -113,7 +103,7 @@ const candidateIds = ({ map, model }: CandidateIdsParams): ReadonlyArray<string>
 export const getProviderModelPrice = ({
   provider,
   model,
-}: ProviderPriceParams): ModelPriceSummary | null => {
+}: ProviderPriceParams): ModelPrice | null => {
   switch (provider) {
     case 'anthropic':
       return firstPriceIn({

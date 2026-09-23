@@ -140,6 +140,7 @@ export type {
   ModelDescriptor,
   ModelEffort,
   ModelFamily,
+  ModelPrice,
   ModelTier,
   ProviderConnectionState,
   ProviderInfo,

@@ -1,11 +1,11 @@
 import type {
   AgentRole,
   ModelEffort,
+  ModelPrice,
   ProviderId,
   WorkflowTaskDifficulty,
   WorkflowTaskType,
 } from '@goodboy/types';
-import type { ModelPriceSummary } from '../providers/model-price';
 
 export type OrchestratorStep = {
   readonly name: string;
@@ -62,7 +62,7 @@ export type OrchestratorModelOption = {
   readonly taskTypes: ReadonlyArray<WorkflowTaskType>;
   readonly preferredDifficulty: ReadonlyArray<WorkflowTaskDifficulty>;
   readonly contextWindow: number;
-  readonly price: ModelPriceSummary | null;
+  readonly price: ModelPrice | null;
 };
 
 export type OrchestratorRoleDefault = {

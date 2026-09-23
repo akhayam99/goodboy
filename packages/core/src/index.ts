@@ -188,11 +188,7 @@ export {
 export { PROVIDER_ID_TO_NAME, resolveProvider, type ResolveProviderInput } from './budget/router';
 
 export { computeCostUsd, priceFor } from './providers/claude/cost';
-export {
-  getModelPrice,
-  getProviderModelPrice,
-  type ModelPriceSummary,
-} from './providers/model-price';
+export { getModelPrice, getProviderModelPrice } from './providers/model-price';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
 export {
@@ -298,7 +294,7 @@ export {
 } from './skills';
 
 export { CODEX_DEFAULT_MODEL, CODEX_MODELS } from './providers/codex/constants';
-export { computeCodexCostUsd, type CodexModelPriceOverride } from './providers/codex/cost';
+export { computeCodexCostUsd } from './providers/codex/cost';
 export { parseJsonLine as parseCodexJsonLine } from './providers/codex/parser';
 
 export { OPENCODE_MODELS } from './providers/opencode/constants';
@@ -307,7 +303,7 @@ export { computeOpenCodeCostUsd } from './providers/opencode/cost';
 export { parseJsonLine as parseOpenCodeJsonLine } from './providers/opencode/parser';
 
 export { GEMINI_DEFAULT_MODEL, GEMINI_MODELS } from './providers/gemini/constants';
-export { computeGeminiCostUsd, type GeminiModelPriceOverride } from './providers/gemini/cost';
+export { computeGeminiCostUsd } from './providers/gemini/cost';
 export { parseJsonLine as parseGeminiJsonLine } from './providers/gemini/parser';
 
 export {

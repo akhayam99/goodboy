@@ -1,11 +1,4 @@
-import type { ProviderUsage } from '@goodboy/types';
-
-type ModelPrice = {
-  readonly inputPerMtok: number;
-  readonly outputPerMtok: number;
-  readonly cachedInputPerMtok: number;
-  readonly assumed?: true;
-};
+import type { ModelPrice, ProviderUsage } from '@goodboy/types';
 
 const FABLE_PRICE: ModelPrice = {
   inputPerMtok: 10,
@@ -70,7 +63,7 @@ export const computeCostUsd = ({ usage, model }: Params): number => {
   const price = priceFor(model);
   return (
     (usage.inputTokens * price.inputPerMtok) / 1_000_000 +
-    (usage.cachedInputTokens * price.cachedInputPerMtok) / 1_000_000 +
+    (usage.cachedInputTokens * (price.cachedInputPerMtok ?? price.inputPerMtok)) / 1_000_000 +
     ((usage.cacheCreationInputTokens ?? 0) * price.inputPerMtok * 1.25) / 1_000_000 +
     (usage.outputTokens * price.outputPerMtok) / 1_000_000
   );

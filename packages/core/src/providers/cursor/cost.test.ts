@@ -103,6 +103,8 @@ describe('computeCursorCostUsd', () => {
     const known = Object.values(CURSOR_PRICES);
     expect(fallback.inputPerMtok).toBe(Math.max(...known.map((p) => p.inputPerMtok)));
     expect(fallback.outputPerMtok).toBe(Math.max(...known.map((p) => p.outputPerMtok)));
-    expect(fallback.cachedInputPerMtok).toBe(Math.max(...known.map((p) => p.cachedInputPerMtok)));
+    expect(fallback.cachedInputPerMtok).toBe(
+      Math.max(...known.map((p) => p.cachedInputPerMtok ?? p.inputPerMtok)),
+    );
   });
 });

@@ -26,6 +26,13 @@ export type ModelFamily =
 
 export type ModelCostTier = 'cheap' | 'mid' | 'expensive';
 
+export type ModelPrice = {
+  readonly inputPerMtok: number;
+  readonly outputPerMtok: number;
+  readonly cachedInputPerMtok?: number;
+  readonly assumed?: true;
+};
+
 export type ModelEffort = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
 export type ModelTier = 'turn' | 'cheap';
