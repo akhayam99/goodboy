@@ -335,7 +335,7 @@ export const OrchestratorPanel = ({
               data-testid="orchestrator-role-models-clear"
               disabled={busy}
               onClick={() => void guard(() => setWorkflowRoleModelOverrides(sessionId, run.id, {}))}
-              className="rounded font-medium text-foreground underline-offset-2 hover:underline"
+              className="rounded-sm font-medium text-foreground underline-offset-2 hover:underline"
             >
               Let the orchestrator pick
             </button>

@@ -57,7 +57,7 @@ type TriggerProps = {
 
 const Trigger = ({ caption, provider, model, effort }: TriggerProps) => (
   <div className="flex flex-col gap-1">
-    <span className="text-3xs uppercase tracking-wide text-muted-foreground/70">{caption}</span>
+    <span className="text-3xs uppercase tracking-wide text-faint-foreground">{caption}</span>
     <RoutingPicker
       connectedProviders={CONNECTED}
       provider={provider}
