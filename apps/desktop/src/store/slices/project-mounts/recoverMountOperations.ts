@@ -1,4 +1,9 @@
-import { insertSessionMount, listMountOperations, updateSessionMountLifecycle } from '@goodboy/db';
+import {
+  deleteSessionMount,
+  insertSessionMount,
+  listMountOperations,
+  updateSessionMountLifecycle,
+} from '@goodboy/db';
 import type { IsoDateTime, MountId, MountOperation, ProjectId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { inspectWorktree } from '../../../features/worktree/worktree';
@@ -10,6 +15,7 @@ import {
 } from './mountOperations';
 import { applyMountViews, loadMountViews } from './mountViews';
 import { MOUNT_REMOVAL_FINISHES } from './runMountRemoval';
+import { settleMountCleanupProposals } from './settleMountProposals';
 import { verifyMountViews } from './verifyMountViews';
 import type { GetFn, SessionKeyInput, SetFn } from './types';
 
@@ -151,9 +157,41 @@ const recoverUnmount = async ({
 
 type RemovalOutcome = 'succeeded' | 'failed' | 'uncertain';
 
+const readFlag = ({ source, key }: { readonly source: unknown; readonly key: string }) => {
+  if (source === null || typeof source !== 'object') {
+    return false;
+  }
+  return (source as Readonly<Record<string, unknown>>)[key] === true;
+};
+
 type RecoverRemovalParams = {
+  readonly set: SetFn;
   readonly operation: MountOperation;
   readonly views: Awaited<ReturnType<typeof loadMountViews>>;
+};
+
+type DropRowParams = {
+  readonly set: SetFn;
+  readonly operation: MountOperation;
+  readonly mountId: MountId;
+  readonly kept: boolean;
+};
+
+const finishDropRow = async ({
+  set,
+  operation,
+  mountId,
+  kept,
+}: DropRowParams): Promise<RemovalOutcome> => {
+  await settleMountCleanupProposals({
+    set,
+    sessionId: operation.sessionId,
+    mountId,
+    outcome: kept ? 'kept' : 'removed',
+  });
+  await deleteSessionMount({ db: tauriDatabase, sessionId: operation.sessionId, mountId });
+  await succeedMountOperation({ operation: { ...operation, mountId: null } });
+  return 'succeeded';
 };
 
 const readFinish = ({ operation }: { readonly operation: MountOperation }) => {
@@ -162,6 +200,7 @@ const readFinish = ({ operation }: { readonly operation: MountOperation }) => {
 };
 
 const recoverRemoval = async ({
+  set,
   operation,
   views,
 }: RecoverRemovalParams): Promise<RemovalOutcome> => {
@@ -184,7 +223,12 @@ const recoverRemoval = async ({
     await markMountOperationUncertain({ operation: settled, errorCode: 'repository-unavailable' });
     return 'uncertain';
   }
-  if (inspection.kind !== 'missing') {
+  const isGone = inspection.kind === 'missing';
+  const keepDirectory = readFlag({ source: operation.input, key: 'keepDirectory' });
+  if (finish === 'drop-row' && (isGone || keepDirectory)) {
+    return finishDropRow({ set, operation, mountId: row.id, kept: !isGone });
+  }
+  if (!isGone) {
     await failMountOperation({ operation: settled, errorCode: 'cleanup-failed' });
     return 'failed';
   }
@@ -229,7 +273,7 @@ export const recoverMountOperations = (set: SetFn, get: GetFn) => {
         continue;
       }
       if (operation.kind === 'remove') {
-        const outcome = await recoverRemoval({ operation, views });
+        const outcome = await recoverRemoval({ set, operation, views });
         if (outcome !== 'uncertain') {
           views = await loadMountViews({ get, sessionId });
           settled += 1;

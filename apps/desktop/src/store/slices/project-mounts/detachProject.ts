@@ -7,13 +7,14 @@ import type {
   SessionMountView,
 } from '@goodboy/types';
 import { deleteSessionMount } from '@goodboy/db';
+import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { cleanupMountDirectory } from '../mount-cleanup';
 import { MOUNT_CLEANUP_BLOCKER_REASON, mountCleanupBlockers } from '../mount-cleanup/cleanupPolicy';
 import { clearMountBranchObservation } from './mountBranchObservations';
 import { withRepositoryAndMountLock } from './mountLocks';
 import { loadMountViews } from './mountViews';
 import { releaseMountSelection } from './releaseMountSelection';
+import { runMountRemoval } from './runMountRemoval';
 import { settleMountCleanupProposals } from './settleMountProposals';
 import type { GetFn, SetFn } from './types';
 
@@ -61,6 +62,7 @@ type DetachTarget = {
   readonly directory: string | null;
   readonly worktreePath: string | null;
   readonly path: string;
+  readonly revision: number;
 };
 
 const isGone = ({ diskState }: { readonly diskState: MountDiskState }): boolean =>
@@ -90,6 +92,7 @@ const detachTargets = ({ views, projectId }: TargetParams): ReadonlyArray<Detach
       directory: directoryOf({ view }),
       worktreePath: view.worktreePath,
       path: view.worktreePath ?? view.lastWorktreePath ?? '',
+      revision: view.revision,
     }));
 
 type DropParams = {
@@ -126,6 +129,70 @@ const dropMountFromSession = ({ set, sessionId, target }: DropParams): void => {
   });
 };
 
+type RemoveTargetParams = {
+  readonly get: GetFn;
+  readonly set: SetFn;
+  readonly sessionId: SessionId;
+  readonly projectId: ProjectId;
+  readonly target: DetachTarget;
+  readonly selection: CleanupSelection;
+  readonly isRepoProject: boolean;
+};
+
+const removeTarget = async ({
+  get,
+  set,
+  sessionId,
+  projectId,
+  target,
+  selection,
+  isRepoProject,
+}: RemoveTargetParams): Promise<DetachProjectOutcome> => {
+  const dropRow = async ({ kept }: { readonly kept: boolean }): Promise<boolean> => {
+    await settleMountCleanupProposals({
+      set,
+      sessionId,
+      mountId: target.mountId,
+      outcome: kept ? 'kept' : 'removed',
+    });
+    await deleteSessionMount({ db: tauriDatabase, sessionId, mountId: target.mountId });
+    return true;
+  };
+  const directory = target.directory;
+  if (directory === null) {
+    await withRepositoryAndMountLock({
+      repoRoot: target.repoRoot,
+      mountKey: `${sessionId}:${target.mountId}`,
+      run: () => dropRow({ kept: false }),
+    });
+    return { mountId: target.mountId, worktreePath: target.path, kind: 'missing', reason: null };
+  }
+  const { decision } = await runMountRemoval({
+    get,
+    mode: selection.mode,
+    keepDirectory: selection.keepDirectory,
+    finish: 'drop-row',
+    expectedRevision: target.revision,
+    target: {
+      sessionId,
+      mountId: target.mountId,
+      projectId,
+      repoRoot: target.repoRoot,
+      worktreePath: directory,
+      branch: target.branch,
+      diskState: target.diskState,
+      isRepoProject,
+    },
+    finishRow: ({ decision: removal }) => dropRow({ kept: removal.kind === 'kept' }),
+  });
+  return {
+    mountId: target.mountId,
+    worktreePath: target.path,
+    kind: decision.kind,
+    reason: decision.kind === 'kept' || decision.kind === 'failed' ? decision.reason : null,
+  };
+};
+
 export const detachProject = (set: SetFn, get: GetFn) => {
   return async ({
     sessionId,
@@ -159,75 +226,42 @@ export const detachProject = (set: SetFn, get: GetFn) => {
         });
         continue;
       }
-      const outcome = await withRepositoryAndMountLock({
-        repoRoot: target.repoRoot,
-        mountKey: `${sessionId}:${target.mountId}`,
-        run: async (): Promise<DetachProjectOutcome> => {
-          const directory = target.directory;
-          const result =
-            directory === null
-              ? null
-              : await cleanupMountDirectory({
-                  get,
-                  keepDirectory: selection.keepDirectory,
-                  mode: selection.mode,
-                  target: {
-                    sessionId,
-                    mountId: target.mountId,
-                    projectId,
-                    repoRoot: target.repoRoot,
-                    worktreePath: directory,
-                    branch: target.branch,
-                    diskState: target.diskState,
-                    isRepoProject: project?.kind === 'repo',
-                  },
-                });
-          const decision: MountCleanupDecision = result?.decision ?? {
-            kind: 'missing',
-            path: target.path,
-          };
-          if (decision.kind === 'failed') {
-            return {
-              mountId: target.mountId,
-              worktreePath: target.path,
-              kind: decision.kind,
-              reason: decision.reason,
-            };
-          }
-          const kept = decision.kind === 'kept';
-          const reason = decision.kind === 'kept' ? decision.reason : null;
-          await settleMountCleanupProposals({
-            set,
-            sessionId,
-            mountId: target.mountId,
-            outcome: kept ? 'kept' : 'removed',
-          });
-          await deleteSessionMount({ db: tauriDatabase, sessionId, mountId: target.mountId });
-          released.push(target.mountId);
-          dropMountFromSession({ set, sessionId, target });
-          clearMountBranchObservation({ set, sessionId, mountId: target.mountId });
-          await get().recordSessionEvent({
-            sessionId,
-            kind: 'project_detached',
-            payload: {
-              mountId: target.mountId,
-              projectId,
-              projectName,
-              branch: target.branch,
-              worktreePath: target.path,
-              kept,
-              ...(reason != null ? { reason } : {}),
-            },
-          });
-          return {
-            mountId: target.mountId,
-            worktreePath: target.path,
-            kind: decision.kind,
-            reason,
-          };
-        },
-      });
+      const outcome = await removeTarget({
+        get,
+        set,
+        sessionId,
+        projectId,
+        target,
+        selection,
+        isRepoProject: project?.kind === 'repo',
+      }).catch((error: unknown): DetachProjectOutcome => ({
+        mountId: target.mountId,
+        worktreePath: target.path,
+        kind: 'failed',
+        reason: formatError(error),
+      }));
       outcomes.push(outcome);
+      if (outcome.kind === 'failed') {
+        continue;
+      }
+      released.push(target.mountId);
+      dropMountFromSession({ set, sessionId, target });
+      clearMountBranchObservation({ set, sessionId, mountId: target.mountId });
+      await get()
+        .recordSessionEvent({
+          sessionId,
+          kind: 'project_detached',
+          payload: {
+            mountId: target.mountId,
+            projectId,
+            projectName,
+            branch: target.branch,
+            worktreePath: target.path,
+            kept: outcome.kind === 'kept',
+            ...(outcome.reason !== null ? { reason: outcome.reason } : {}),
+          },
+        })
+        .catch(() => undefined);
     }
     const remaining = get().sessionProjectMounts[sessionId] ?? [];
     const hasFailure = outcomes.some((outcome) => outcome.kind === 'failed');

@@ -48,6 +48,9 @@ vi.mock('../features/worktree/worktree', () => ({
 }));
 vi.mock('@goodboy/db', () => ({
   listSessionMounts: vi.fn(async () => [...h.mounts.values()]),
+  deleteSessionMount: vi.fn(async ({ mountId }: { readonly mountId: MountId }) =>
+    h.mounts.delete(mountId),
+  ),
   listMountOperations: vi.fn(async () => [...h.operations.values()]),
   getMountOperation: vi.fn(
     async ({ requestId }: { readonly requestId: string }) => h.operations.get(requestId) ?? null,
@@ -220,6 +223,7 @@ const makeState = (): State => ({
   sessionBranches: {},
   sessionWorktrees: {},
   mountBranchObservations: {},
+  mountCleanupProposals: {},
   mountGithub: {},
   mountSelectedPr: {},
   mountGitlabMr: {},
@@ -332,6 +336,56 @@ describe('interrupted mount recovery', () => {
       status: 'failed',
       errorCode: 'cleanup-failed',
     });
+  });
+
+  it('finishes a detach that crashed between the disk and the row delete', async () => {
+    h.mounts.set('mount-one', mountFixture());
+    h.operations.set('request-remove', removalFixture({ finish: 'drop-row' }));
+    h.operations.set('cleanup:merge_cleanup:mount-one:feature/one', {
+      ...operationFixture({ kind: 'remove', status: 'pending', result: null }),
+      id: 'operation-proposal',
+      requestId: 'cleanup:merge_cleanup:mount-one:feature/one',
+      input: {
+        worktreePath: '/repo/.goodboy/worktrees/mount-one',
+        repoRoot: '/repo',
+        branch: 'feature/one',
+      },
+    });
+    h.inspection = { kind: 'missing', path: '/repo/.goodboy/worktrees/mount-one' };
+
+    const settled = await recovery()({ sessionId: SESSION_ID });
+
+    expect(settled).toBe(1);
+    expect(h.mounts.has('mount-one')).toBe(false);
+    expect(h.operations.get('request-remove')).toMatchObject({
+      status: 'succeeded',
+      mountId: null,
+    });
+    expect(h.operations.get('cleanup:merge_cleanup:mount-one:feature/one')).toMatchObject({
+      status: 'succeeded',
+      result: expect.objectContaining({ outcome: 'removed' }),
+    });
+  });
+
+  it('drops the row of a detach that meant to keep its registered directory', async () => {
+    h.mounts.set('mount-one', mountFixture());
+    h.operations.set('request-remove', removalFixture({ finish: 'drop-row', keepDirectory: true }));
+
+    const settled = await recovery()({ sessionId: SESSION_ID });
+
+    expect(settled).toBe(1);
+    expect(h.mounts.has('mount-one')).toBe(false);
+    expect(h.operations.get('request-remove')?.status).toBe('succeeded');
+  });
+
+  it('never removes a registered directory a detach was asked to delete', async () => {
+    h.mounts.set('mount-one', mountFixture());
+    h.operations.set('request-remove', removalFixture({ finish: 'drop-row' }));
+
+    await recovery()({ sessionId: SESSION_ID });
+
+    expect(h.mounts.get('mount-one')).toMatchObject({ isAttached: true, revision: 0 });
+    expect(h.operations.get('request-remove')?.status).toBe('failed');
   });
 
   it('keeps a removal uncertain while its repository cannot be read', async () => {

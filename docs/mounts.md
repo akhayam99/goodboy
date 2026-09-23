@@ -56,7 +56,9 @@ before projecting it as writable. Disk states:
 - **Remove** removes the worktree of a mount whose work is complete, from its
   row or, for archived sessions, from storage settings, and keeps the row.
 - **Detach** takes a project out of the session: every mount of that project
-  is cleaned up per the chosen disposition and its row deleted.
+  is cleaned up per the chosen disposition and its row deleted. Each mount is
+  its own removal; one that fails is reported with its reason, the rest still
+  detach, and the write destination is always handed over afterwards.
 - **Forget** deletes the row of a mount that is already off disk or kept on
   purpose; it never touches the directory.
 
@@ -94,9 +96,11 @@ repository cannot be read stays `uncertain`.
 
 A `remove` operation is finished from its recorded input, never from a live
 closure: a row that is already gone closes it; a path git reports missing gets
-the recorded finish applied; a directory that is still there closes it
-`failed` and stays on disk for the user to retry. Recovery never deletes a
-directory.
+the recorded finish applied (a `drop-row` settles the mount's cleanup
+proposals before deleting the row, since the proposal's mount link is cleared
+on delete); a directory that was meant to stay lets a `drop-row` delete the
+row; any other directory still there closes the operation `failed` and stays
+on disk for the user to retry. Recovery never deletes a directory.
 
 ## Cleanup proposals
 
