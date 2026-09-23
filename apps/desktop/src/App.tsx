@@ -42,17 +42,11 @@ import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
 import { useConnectedIntegrations } from './features/integrations/hooks/useConnectedIntegrations';
 import { useAsyncSubscription } from './app/hooks/useAsyncSubscription';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
-import { MOCK_ENABLED } from './store/mock-data';
-import { MockScene } from './app/components/MockScene';
 import { shellArrangement } from './app/shellArrangement';
 
 const KEEP_ALIVE_CAP = 5;
 
 export const App = () => {
-  if (MOCK_ENABLED) {
-    return <MockScene />;
-  }
-
   const hydrate = useAppStore((s) => s.hydrate);
   const retryHydrate = useAppStore((s) => s.retryHydrate);
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
