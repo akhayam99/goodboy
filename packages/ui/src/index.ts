@@ -99,6 +99,7 @@ export { IconButton } from './components/IconButton';
 export type { IconButtonProps } from './components/IconButton';
 export { InlineConfirm } from './components/InlineConfirm';
 export type { ConfirmAltAction, ConfirmRole } from './components/InlineConfirm';
+export { ConfirmPopover } from './components/ConfirmPopover';
 export { Input } from './components/Input';
 export type { InputProps } from './components/Input';
 export { KbdPill } from './components/KbdPill';

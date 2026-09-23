@@ -463,7 +463,8 @@ exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
 exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
 <div
   aria-label="Delete session?"
-  class="flex min-w-0 flex-col gap-2 rounded-lg border p-2.5 text-2xs border-danger/40 bg-danger/10"
+  class="flex min-w-0 flex-col gap-2 text-2xs rounded-lg border p-2.5 border-danger/40 bg-danger/10"
+  data-surface="card"
   role="group"
 >
   <div
@@ -471,7 +472,7 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
   >
     <span
       aria-hidden="true"
-      class="mt-px flex shrink-0 items-center text-danger"
+      class="flex h-4 shrink-0 items-center text-danger"
     >
       <svg
         aria-hidden="true"
@@ -529,10 +530,10 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
     This cannot be undone. To keep the history, archive instead.
   </p>
   <div
-    class="flex items-center justify-end gap-2"
+    class="flex min-w-0 flex-wrap items-center gap-2 justify-between"
   >
     <button
-      class="mr-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
+      class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-xs"
       type="button"
     >
       <svg
@@ -564,18 +565,23 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
       </svg>
       Archive instead
     </button>
-    <button
-      class="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
-      type="button"
+    <div
+      class="flex items-center gap-2"
     >
-      Cancel
-    </button>
-    <button
-      class="rounded-md px-2 py-0.5 font-semibold motion-safe:transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 bg-danger text-on-tone"
-      type="button"
-    >
-      Delete
-    </button>
+      <button
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-muted text-foreground hover:bg-hover border-border h-7 px-2.5 text-xs"
+        data-confirm-cancel="true"
+        type="button"
+      >
+        Cancel
+      </button>
+      <button
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-danger text-on-tone hover:bg-danger/90 h-7 px-2.5 text-xs"
+        type="button"
+      >
+        Delete
+      </button>
+    </div>
   </div>
 </div>
 `;

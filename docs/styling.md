@@ -158,9 +158,13 @@ any error. First, paint nothing until the first measurement, or the panel
 flashes at `0,0`. Second, recompute on `scroll` with capture `true`, because a
 scroll in any ancestor moves the trigger.
 
-**Confirmations never open a dialog.** A destructive action swaps its own row
-or button for `InlineConfirm`. That way the thing being destroyed stays visible
-while the user decides.
+**Confirmations never open a dialog.** A destructive action confirms through
+`InlineConfirm`. That way the thing being destroyed stays visible while the
+user decides. There are three placements: a row swap in place of a trigger
+that has width, `ConfirmPopover` anchored to a small trigger, and a menu swap
+that replaces an open menu's body with the `plain` surface. The solid danger
+fill is only on the confirm button, never on the trigger.
+[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md) owns the placement rules.
 
 **`Dialog` survives for the three cases an anchor cannot serve**: a full-screen
 viewer, a multi-step flow that owns the whole screen, and a blocking system

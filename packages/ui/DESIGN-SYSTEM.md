@@ -293,7 +293,13 @@ The focused object's primary action uses the same fixed header action region. A 
 
 That row also uses the same width as the content it commits. It is never stretched across a shell or container that also holds unrelated content.
 
-`InlineConfirm` stays attached to a destructive trigger in its action region. A confirmation detached in the body, or a destructive footer dock, is not another zone.
+`InlineConfirm` stays attached to a destructive trigger in its action region. A confirmation detached in the body, or a destructive footer dock, is not another zone. It is the only confirmation body, and it shows in exactly one of three placements, picked by how much room the trigger has:
+
+- **Row swap**: a trigger inside a row with width (a `FieldRow`, a section footer) is replaced in the same slot by the `card` surface.
+- **Anchored**: a small trigger (icon button, sidebar row action, header action, rail row) opens `ConfirmPopover`, which shows the `plain` surface in an `AnchoredPopover`. Escape and a click outside cancel. The popover stays open and busy while the confirm runs.
+- **Menu swap**: a destructive item in an open menu or popover replaces the menu body with `InlineConfirm surface="plain"` in the same popover.
+
+A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`, is a bug (`inline-confirm-placement.test.ts`). The trigger is ghost or secondary with danger text. The solid danger fill shows only on the confirm button. The title says what will happen. The description says what survives and how to undo it. Reversible actions use `role="alert"`, irreversible ones `role="danger"`.
 
 ## Section rhythm
 

@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '../cn';
 import { tintClasses, type Tone } from '../tint';
+import { Button, type ButtonVariant } from './Button';
 
 export type ConfirmRole = 'primary' | 'alert' | 'danger';
+
+export type ConfirmSurface = 'card' | 'plain';
 
 export type ConfirmAltAction = {
   readonly label: string;
@@ -26,6 +29,7 @@ type Props = {
   readonly isBusy?: boolean;
   readonly isConfirmDisabled?: boolean;
   readonly autoDisarmMs?: number;
+  readonly surface?: ConfirmSurface;
   readonly className?: string;
 };
 
@@ -35,13 +39,10 @@ const ROLE_TONE: Record<ConfirmRole, Tone> = {
   danger: 'danger',
 };
 
-const SECONDARY_BUTTON =
-  'inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
-
-const ROLE_CONFIRM: Record<ConfirmRole, string> = {
-  primary: 'bg-primary text-on-tone',
-  alert: 'bg-warning text-on-tone',
-  danger: 'bg-danger text-on-tone',
+const ROLE_VARIANT: Record<ConfirmRole, ButtonVariant> = {
+  primary: 'primary',
+  alert: 'warning',
+  danger: 'danger',
 };
 
 export const InlineConfirm = ({
@@ -59,6 +60,7 @@ export const InlineConfirm = ({
   isBusy = false,
   isConfirmDisabled = false,
   autoDisarmMs,
+  surface = 'card',
   className,
 }: Props) => {
   const [isRunning, setIsRunning] = useState(false);
@@ -88,15 +90,15 @@ export const InlineConfirm = ({
     <div
       role="group"
       aria-label={title}
+      data-surface={surface}
       className={cn(
-        'flex min-w-0 flex-col gap-2 rounded-lg border p-2.5 text-2xs',
-        tint.border,
-        tint.bg,
+        'flex min-w-0 flex-col gap-2 text-2xs',
+        surface === 'card' ? cn('rounded-lg border p-2.5', tint.border, tint.bg) : 'p-3',
         className,
       )}
     >
       <div className="flex min-w-0 items-start gap-1.5">
-        <span className={cn('mt-px flex shrink-0 items-center', tint.icon)} aria-hidden>
+        <span className={cn('flex h-4 shrink-0 items-center', tint.icon)} aria-hidden>
           {icon}
         </span>
         <div className="flex min-w-0 flex-col gap-0.5">
@@ -110,32 +112,42 @@ export const InlineConfirm = ({
       {children}
       {note}
 
-      <div className="flex items-center justify-end gap-2">
+      <div
+        className={cn(
+          'flex min-w-0 flex-wrap items-center gap-2',
+          altAction != null ? 'justify-between' : 'justify-end',
+        )}
+      >
         {altAction != null && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={altAction.onClick}
             disabled={busy || altAction.disabled === true}
-            className={cn('mr-auto', SECONDARY_BUTTON)}
           >
             {altAction.icon}
             {altAction.label}
-          </button>
+          </Button>
         )}
-        <button type="button" onClick={onCancel} disabled={busy} className={SECONDARY_BUTTON}>
-          {cancelLabel}
-        </button>
-        <button
-          type="button"
-          onClick={() => void confirm()}
-          disabled={busy || isConfirmDisabled}
-          className={cn(
-            'rounded-md px-2 py-0.5 font-semibold motion-safe:transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60',
-            ROLE_CONFIRM[role],
-          )}
-        >
-          {confirmLabel}
-        </button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            data-confirm-cancel
+            onClick={onCancel}
+            disabled={busy}
+          >
+            {cancelLabel}
+          </Button>
+          <Button
+            variant={ROLE_VARIANT[role]}
+            size="sm"
+            onClick={() => void confirm()}
+            disabled={busy || isConfirmDisabled}
+          >
+            {confirmLabel}
+          </Button>
+        </div>
       </div>
     </div>
   );
