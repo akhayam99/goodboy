@@ -328,6 +328,34 @@ describe('StageBoard git gate', () => {
         ?.getAttribute('data-tooltip'),
     ).toBe('The project folder is unreachable');
   });
+
+  it('explains an empty board whose only project is not usable yet', () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-workspace-settings', listener);
+    gitStatuses.current = { 'proj-1': statusOf('absent') };
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'This project needs a git repository with one commit first',
+      }),
+    ).toBeDefined();
+    expect(screen.queryByText('Start your first session')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open workspace settings' }));
+
+    expect(listener).toHaveBeenCalledOnce();
+    window.removeEventListener('goodboy:open-workspace-settings', listener);
+  });
+
+  it('names the unreachable folder on an empty board', () => {
+    gitStatuses.current = { 'proj-1': statusOf('missing') };
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+
+    expect(
+      screen.getByRole('heading', { name: 'The project folder is unreachable' }),
+    ).toBeDefined();
+    expect(screen.getByText(/Relink it in workspace settings/)).toBeDefined();
+  });
 });
 
 describe('StageBoard instant create', () => {

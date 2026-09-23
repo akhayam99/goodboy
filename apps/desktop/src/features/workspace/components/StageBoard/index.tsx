@@ -32,7 +32,7 @@ import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
 import { ProjectFilter } from '../ProjectFilter';
 import { ProjectGitPills } from '../ProjectGitPill';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Confirm = { readonly kind: 'delete'; readonly session: Session };
 
@@ -157,6 +157,13 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
       : areAllRepoProjectsMissing
         ? 'The project folder is unreachable'
         : 'This project needs a git repository with one commit first';
+  const unreachableDescription =
+    projectGitStatuses.length === 1
+      ? 'Goodboy cannot reach the folder this project points to. Relink it in workspace settings.'
+      : 'Goodboy cannot reach the folders these projects point to. Relink them in workspace settings.';
+  const blockedDescription = areAllRepoProjectsMissing
+    ? unreachableDescription
+    : 'Sessions branch from the latest commit. Make the first commit, or link another project in workspace settings.';
 
   const newSessionButton = (
     <Button
@@ -221,6 +228,30 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
               >
                 <Plus size={ICON_SIZE.control} aria-hidden />
                 New session
+              </Button>
+            }
+            size="lg"
+            headingLevel={2}
+            className="max-w-md"
+          />
+        </div>
+      )}
+
+      {!pending && hasProjects && empty && !hasUsableProject && !statusesPending && (
+        <div className="flex flex-1 items-center justify-center">
+          <EmptyState
+            icon={CONCEPT_ICONS.projectRepo}
+            title={blockedReason}
+            description={blockedDescription}
+            action={
+              <Button
+                size="md"
+                variant="secondary"
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent('goodboy:open-workspace-settings'))
+                }
+              >
+                Open workspace settings
               </Button>
             }
             size="lg"
