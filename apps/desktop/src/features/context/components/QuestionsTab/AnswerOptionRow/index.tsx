@@ -14,7 +14,7 @@ type Props = {
   readonly onToggle: () => void;
 };
 
-export const SuggestionRow = ({
+export const AnswerOptionRow = ({
   label,
   selected,
   recommended = false,

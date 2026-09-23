@@ -10,7 +10,7 @@ import type {
 import { CONCEPT_TONE, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { TranscriptShell } from '../../../../chat/components/TranscriptShell';
 import type { DelegateRowState } from '../../../questionDelegate';
-import { SuggestionRow } from '../SuggestionRow';
+import { AnswerOptionRow } from '../AnswerOptionRow';
 import { CustomAnswerField } from '../CustomAnswerField';
 import { DelegateAnswerRow } from '../DelegateAnswerRow';
 import { DelegateAnswerPanel } from '../DelegateAnswerPanel';
@@ -203,7 +203,7 @@ export const QuestionCard = ({
                 className="flex flex-col gap-2"
               >
                 {suggestions.map((suggestion) => (
-                  <SuggestionRow
+                  <AnswerOptionRow
                     key={suggestion}
                     label={suggestion}
                     mode={mode}
