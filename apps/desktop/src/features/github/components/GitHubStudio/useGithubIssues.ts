@@ -35,6 +35,7 @@ type Result = Readonly<{
   groups: ReadonlyArray<GithubIssueGroup>;
   loading: boolean;
   error: string | null;
+  hasRemote: boolean | null;
   refetch: () => void;
 }>;
 
@@ -71,6 +72,7 @@ export const useGithubIssues = ({
   const [issues, setIssues] = useState<ReadonlyArray<GithubIssue>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasRemote, setHasRemote] = useState<boolean | null>(null);
 
   const fetchIssues = useCallback(async () => {
     if (!isEnabled) {
@@ -83,6 +85,7 @@ export const useGithubIssues = ({
     setError(null);
     try {
       const slug = await detectRepoSlug(tauriGhRunner, rootPath, workspaceId);
+      setHasRemote(slug != null);
       if (slug == null) {
         setIssues([]);
         return;
@@ -104,5 +107,5 @@ export const useGithubIssues = ({
     [externalTasks, issues],
   );
 
-  return { groups, loading, error, refetch: () => void fetchIssues() };
+  return { groups, loading, error, hasRemote, refetch: () => void fetchIssues() };
 };

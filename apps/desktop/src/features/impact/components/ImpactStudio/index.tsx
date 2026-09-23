@@ -71,6 +71,7 @@ export const ImpactStudio = ({ workspaceId, workspaceName, initialScope, onClose
             onRetryOverview={() => metrics.retry('overview')}
             onRetryShipped={() => metrics.retry('shipped')}
             onOpenSession={openSession}
+            hasSpend={spend.providers.length > 0}
             spendSection={
               <SpendSection
                 providers={spend.providers}

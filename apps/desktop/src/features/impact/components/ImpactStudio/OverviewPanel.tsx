@@ -18,6 +18,7 @@ type Props = {
   readonly reviews: QueryResult<ReviewOutcomes>;
   readonly isLoading: boolean;
   readonly spendSection: ReactNode;
+  readonly hasSpend: boolean;
   readonly onRetryOverview: () => void;
   readonly onRetryShipped: () => void;
   readonly onOpenSession: (sessionId: SessionId) => void;
@@ -29,6 +30,7 @@ export const OverviewPanel = ({
   reviews,
   isLoading,
   spendSection,
+  hasSpend,
   onRetryOverview,
   onRetryShipped,
   onOpenSession,
@@ -59,7 +61,7 @@ export const OverviewPanel = ({
       />
       <ErrorStrip label="review outcomes" error={reviews.error} onRetry={onRetryShipped} />
       {isLoading && data === null ? <PanelLoading label="Loading impact metrics" /> : null}
-      {data !== null && data.sessionCount === 0 ? (
+      {data !== null && data.sessionCount === 0 && data.spendUsd === null && !hasSpend ? (
         <EmptyState
           icon={CONCEPT_ICONS.impact}
           tone={CONCEPT_TONE.impact}

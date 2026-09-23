@@ -9,6 +9,14 @@ import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { SessionRows } from './SessionRows';
 import { StudioWidget } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { NOT_LOADED_HINT, UNKNOWN_VALUE } from '../../../../shared/utils/unknownValue';
+
+const FLOW_TILE_LABELS = [
+  'median wall-clock',
+  'wait on human',
+  'question blocked',
+  'failed steps',
+] as const;
 
 type Props = {
   readonly agentDurations: QueryResult<AgentDurations>;
@@ -27,6 +35,8 @@ export const FlowPanel = ({
 }: Props) => {
   const agents = agentDurations.data;
   const health = flowHealth.data;
+  const countOrUnknown = (value: number | undefined): string =>
+    value === undefined ? UNKNOWN_VALUE : String(value);
   return (
     <StudioPanel title="Flow" subtitle="How quickly work moves and where it waits">
       <ErrorStrip label="agent duration" error={agentDurations.error} onRetry={onRetry} />
@@ -35,31 +45,39 @@ export const FlowPanel = ({
         <PanelLoading label="Loading impact metrics" />
       ) : null}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          label="median wall-clock"
-          value={formatHours({ hours: health?.medianSessionHours ?? null })}
-          hint={`p90 ${formatHours({ hours: health?.p90SessionHours ?? null })}`}
-        />
-        <StatCard
-          label="wait on human"
-          value={formatHours({ hours: health?.medianQuestionHours ?? null })}
-          hint={`${health?.answeredQuestions ?? 0} answered`}
-        />
-        <StatCard
-          label="question blocked"
-          value={String(health?.questionBlockedSessions ?? 0)}
-          hint={`${health?.staleQuestions ?? 0} over 24h`}
-        />
-        <StatCard
-          label="failed steps"
-          value={String(health?.failedAgents ?? 0)}
-          hint={`${health?.budgetAlerts ?? 0} budget alerts`}
-        />
+        {health === null ? (
+          FLOW_TILE_LABELS.map((label) => (
+            <StatCard key={label} label={label} value={UNKNOWN_VALUE} hint={NOT_LOADED_HINT} />
+          ))
+        ) : (
+          <>
+            <StatCard
+              label="median wall-clock"
+              value={formatHours({ hours: health.medianSessionHours })}
+              hint={`p90 ${formatHours({ hours: health.p90SessionHours })}`}
+            />
+            <StatCard
+              label="wait on human"
+              value={formatHours({ hours: health.medianQuestionHours })}
+              hint={`${health.answeredQuestions} answered`}
+            />
+            <StatCard
+              label="question blocked"
+              value={String(health.questionBlockedSessions)}
+              hint={`${health.staleQuestions} over 24h`}
+            />
+            <StatCard
+              label="failed steps"
+              value={String(health.failedAgents)}
+              hint={`${health.budgetAlerts} budget alerts`}
+            />
+          </>
+        )}
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <StudioWidget
           label="agent duration by kind"
-          hint={`${agents?.totalAgents ?? 0} completed agents`}
+          hint={agents === null ? NOT_LOADED_HINT : `${agents.totalAgents} completed agents`}
         >
           <div className="flex flex-col gap-1">
             {agents?.byKind.map((entry) => (
@@ -91,16 +109,20 @@ export const FlowPanel = ({
             <div className="flex items-center gap-3">
               <span className="min-w-0 flex-1 text-xs">Waiting on open questions</span>
               <span className="font-mono text-sm tabular-nums">
-                {health?.questionBlockedSessions ?? 0}
+                {countOrUnknown(health?.questionBlockedSessions)}
               </span>
             </div>
             <div className="flex items-center gap-3">
               <span className="min-w-0 flex-1 text-xs">Failed workflow agents</span>
-              <span className="font-mono text-sm tabular-nums">{health?.failedAgents ?? 0}</span>
+              <span className="font-mono text-sm tabular-nums">
+                {countOrUnknown(health?.failedAgents)}
+              </span>
             </div>
             <div className="flex items-center gap-3">
               <span className="min-w-0 flex-1 text-xs">Undismissed budget alerts</span>
-              <span className="font-mono text-sm tabular-nums">{health?.budgetAlerts ?? 0}</span>
+              <span className="font-mono text-sm tabular-nums">
+                {countOrUnknown(health?.budgetAlerts)}
+              </span>
             </div>
           </div>
         </StudioWidget>

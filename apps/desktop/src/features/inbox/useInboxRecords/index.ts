@@ -17,7 +17,7 @@ import { adaptJiraIssues } from '../adapters/jira';
 import { adaptLinearIssues } from '../adapters/linear';
 import { adaptSentryIssues } from '../adapters/sentry';
 import { adaptSlackThreads } from '../adapters/slack';
-import type { InboxProvider, InboxRecord } from '../types';
+import { INBOX_PROVIDERS, type InboxProvider, type InboxRecord } from '../types';
 
 type Params = { readonly workspaceId: WorkspaceId; readonly rootPath: string };
 type Errors = Readonly<Record<InboxProvider, string | null>>;
@@ -25,6 +25,7 @@ type Result = {
   readonly records: ReadonlyArray<InboxRecord>;
   readonly isLoading: boolean;
   readonly errors: Errors;
+  readonly connected: ReadonlyArray<InboxProvider>;
   readonly refetch: () => void;
 };
 
@@ -80,6 +81,9 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
     slack: slack.error,
     bitbucket: bitbucket.error,
   } satisfies Errors;
+  const connected = INBOX_PROVIDERS.filter((provider) =>
+    provider === 'github' ? github.hasRemote === true : has(provider),
+  );
   const refetch = (): void => {
     github.refetch();
     gitlabIssues.refetch();
@@ -93,6 +97,7 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
   return {
     records,
     errors,
+    connected,
     refetch,
     isLoading:
       github.loading ||

@@ -62,7 +62,10 @@ export const InboxStudio = ({
   initialSessionId = null,
   onClose,
 }: Props) => {
-  const { records, isLoading, errors, refetch } = useInboxRecords({ workspaceId, rootPath });
+  const { records, isLoading, errors, connected, refetch } = useInboxRecords({
+    workspaceId,
+    rootPath,
+  });
   const [query, setQuery] = useState('');
   const [kindFilter, setKindFilter] = useState<InboxKindFilter>(() => {
     if (initialKind != null) {
@@ -223,6 +226,7 @@ export const InboxStudio = ({
               rootPath={rootPath}
               isLoading={isLoading}
               errors={errors}
+              connected={connected}
               onRefresh={refetch}
               onClose={requestClose}
               onDeselect={onDeselect}

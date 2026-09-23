@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
   AgentId,
   ArtifactId,
@@ -74,7 +74,9 @@ const provenance: ArtifactProvenance = {
 const renderWith = async (value: ArtifactProvenance | null, artifact: SessionArtifact = report) => {
   loadArtifactProvenance.mockResolvedValueOnce(value);
   render(<ArtifactBuiltFrom artifact={artifact} />);
-  await screen.findByLabelText('built from');
+  await waitFor(() =>
+    expect(screen.queryByRole('status', { name: 'Loading built from' })).toBeNull(),
+  );
 };
 
 describe('ArtifactBuiltFrom', () => {
@@ -84,6 +86,26 @@ describe('ArtifactBuiltFrom', () => {
 
   afterEach(() => {
     cleanup();
+  });
+
+  it('holds the section with a skeleton while provenance loads', () => {
+    loadArtifactProvenance.mockReturnValueOnce(new Promise(() => undefined));
+    render(<ArtifactBuiltFrom artifact={report} />);
+
+    expect(screen.getByLabelText('built from')).toBeDefined();
+    expect(screen.getByRole('status', { name: 'Loading built from' })).toBeDefined();
+  });
+
+  it('tells a failed load apart from a missing record and retries it', async () => {
+    loadArtifactProvenance.mockRejectedValueOnce(new Error('database is locked'));
+    render(<ArtifactBuiltFrom artifact={report} />);
+
+    expect(await screen.findByTestId('built-from-failed')).toBeDefined();
+    expect(screen.queryByTestId('built-from-missing')).toBeNull();
+
+    loadArtifactProvenance.mockResolvedValueOnce(provenance);
+    fireEvent.click(screen.getByRole('button', { name: /retry/i }));
+    expect(await screen.findByTestId('built-from')).toBeDefined();
   });
 
   it('says plainly that an older artifact recorded nothing', async () => {

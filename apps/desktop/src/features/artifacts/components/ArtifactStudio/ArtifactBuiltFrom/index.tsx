@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Collapsible, SectionSurface, Eyebrow } from '@goodboy/ui';
+import { RotateCcw } from 'lucide-react';
+import { Button, Collapsible, SectionSurface, Eyebrow, Skeleton } from '@goodboy/ui';
 import type { ArtifactKind, ArtifactProvenance, SessionArtifact } from '@goodboy/types';
 import { loadArtifactProvenance } from '../../../artifactProvenance';
 import { BuiltFromRow } from './BuiltFromRow';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly artifact: SessionArtifact;
@@ -11,6 +13,7 @@ type Props = {
 type LoadState =
   | Readonly<{ kind: 'loading' }>
   | Readonly<{ kind: 'missing' }>
+  | Readonly<{ kind: 'failed' }>
   | Readonly<{ kind: 'ready'; provenance: ArtifactProvenance }>;
 
 const EVIDENCE_PREVIEW = 5;
@@ -34,6 +37,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
   const [isEvidenceOpen, setIsEvidenceOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     let isCurrent = true;
@@ -47,16 +51,39 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
       })
       .catch(() => {
         if (isCurrent) {
-          setState({ kind: 'missing' });
+          setState({ kind: 'failed' });
         }
       });
     return () => {
       isCurrent = false;
     };
-  }, [artifact.agentId]);
+  }, [artifact.agentId, loadAttempt]);
 
   if (state.kind === 'loading') {
-    return null;
+    return (
+      <SectionSurface label="built from" ariaLabel="built from">
+        <div role="status" aria-label="Loading built from" className="flex flex-col gap-2">
+          <Skeleton className="h-3 w-2/3 rounded-sm" />
+          <Skeleton className="h-3 w-1/2 rounded-sm" />
+        </div>
+      </SectionSurface>
+    );
+  }
+
+  if (state.kind === 'failed') {
+    return (
+      <SectionSurface label="built from" ariaLabel="built from">
+        <div data-testid="built-from-failed" className="flex items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            The record of this generation did not load.
+          </p>
+          <Button size="sm" variant="ghost" onClick={() => setLoadAttempt((n) => n + 1)}>
+            <RotateCcw size={ICON_SIZE.row} aria-hidden />
+            Retry
+          </Button>
+        </div>
+      </SectionSurface>
+    );
   }
 
   if (state.kind === 'missing') {

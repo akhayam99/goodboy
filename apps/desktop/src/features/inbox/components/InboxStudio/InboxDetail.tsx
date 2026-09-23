@@ -23,6 +23,7 @@ type Props = {
   readonly rootPath: string;
   readonly isLoading: boolean;
   readonly errors: Readonly<Record<InboxProvider, string | null>>;
+  readonly connected: ReadonlyArray<InboxProvider>;
   readonly onRefresh: () => void;
   readonly onClose: () => void;
   readonly onDeselect: () => void;
@@ -40,6 +41,7 @@ export const InboxDetail = ({
   rootPath,
   isLoading,
   errors,
+  connected,
   onRefresh,
   onClose,
   onDeselect,
@@ -56,6 +58,9 @@ export const InboxDetail = ({
         records={records}
         hasVisibleRecords={hasVisibleRecords}
         hasFiltersActive={hasFiltersActive}
+        errors={errors}
+        connected={connected}
+        onRetry={onRefresh}
         onClearFilters={onClearFilters}
         onOpenIntegrations={onOpenIntegrations}
       />

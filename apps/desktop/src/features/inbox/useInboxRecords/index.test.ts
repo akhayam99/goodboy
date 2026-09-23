@@ -13,7 +13,12 @@ import type { BitbucketRepo } from '../../integrations/bitbucket/client';
 
 const h = vi.hoisted(() => ({
   integrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
-  github: { groups: [] as GithubIssueGroup[], loading: false, error: null as string | null },
+  github: {
+    groups: [] as GithubIssueGroup[],
+    loading: false,
+    error: null as string | null,
+    hasRemote: null as boolean | null,
+  },
   gitlabIssues: { groups: [] as GitlabIssueGroup[], loading: false, error: null as string | null },
   gitlabMrs: {
     groups: [] as GitlabMrGroup[],
@@ -161,7 +166,7 @@ const jiraGroups = (updatedAt: string): JiraIssueGroup[] => [
 
 beforeEach(() => {
   h.integrations = {};
-  h.github = { groups: [], loading: false, error: null };
+  h.github = { groups: [], loading: false, error: null, hasRemote: null };
   h.gitlabIssues = { groups: [], loading: false, error: null };
   h.gitlabMrs = { groups: [], host: null, loading: false, error: null };
   h.linear = { groups: [], loading: false, error: null };
@@ -182,7 +187,12 @@ afterEach(() => {
 
 describe('useInboxRecords', () => {
   it('aggregates and sorts records newest first across providers', () => {
-    h.github = { groups: githubGroups('2026-08-01T10:00:00Z'), loading: false, error: null };
+    h.github = {
+      groups: githubGroups('2026-08-01T10:00:00Z'),
+      loading: false,
+      error: null,
+      hasRemote: true,
+    };
     h.jira = { groups: jiraGroups('2026-08-03T10:00:00Z'), isLoading: false, error: null };
 
     const { result } = renderHook(() => useInboxRecords({ workspaceId, rootPath: '/repo' }));
@@ -205,8 +215,27 @@ describe('useInboxRecords', () => {
     expect(h.enabled.bitbucket).toBe(false);
   });
 
+  it('counts github as connected only once a remote is found', () => {
+    h.integrations = { 'workspace-1': [{ provider: 'linear' }] };
+    h.github = { groups: [], loading: false, error: null, hasRemote: false };
+
+    const { result, rerender } = renderHook(() =>
+      useInboxRecords({ workspaceId, rootPath: '/repo' }),
+    );
+    expect(result.current.connected).toEqual(['linear']);
+
+    h.github = { groups: [], loading: false, error: null, hasRemote: true };
+    rerender();
+    expect(result.current.connected).toEqual(['github', 'linear']);
+  });
+
   it('isolates a failing provider so the rest of the inbox still renders', () => {
-    h.github = { groups: githubGroups('2026-08-01T10:00:00Z'), loading: false, error: null };
+    h.github = {
+      groups: githubGroups('2026-08-01T10:00:00Z'),
+      loading: false,
+      error: null,
+      hasRemote: true,
+    };
     h.jira = { groups: [], isLoading: false, error: 'Jira request failed' };
 
     const { result } = renderHook(() => useInboxRecords({ workspaceId, rootPath: '/repo' }));

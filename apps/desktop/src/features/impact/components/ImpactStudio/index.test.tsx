@@ -239,6 +239,25 @@ describe('ImpactStudio', () => {
     expect(screen.getByText('p90 4.0h')).toBeDefined();
   });
 
+  it('draws failed flow metrics as not loaded instead of zero', () => {
+    mocks.metrics = {
+      ...buildMetrics(),
+      flowHealth: { data: null, error: new Error('database is locked') },
+    };
+    render(
+      <ImpactStudio
+        workspaceId={'workspace-1' as never}
+        workspaceName="Goodboy"
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Flow' }));
+    expect(screen.getAllByText('not loaded')).toHaveLength(4);
+    expect(screen.queryByText('0 answered')).toBeNull();
+    expect(screen.getAllByText('\u2013').length).toBeGreaterThanOrEqual(4);
+  });
+
   it('switches to Efficiency and stops pointing at a separate budget studio', () => {
     render(
       <ImpactStudio
