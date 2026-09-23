@@ -1,10 +1,5 @@
 import type { EffortLevel, ModelCostTier, ModelFamily, ProviderId } from '@goodboy/types';
-import {
-  clampEffortForModel,
-  getModelDescriptor,
-  getProviderModelPrice,
-  modelEffortLevels as coreModelEffortLevels,
-} from '@goodboy/core';
+import { getModelDescriptor, getProviderModelPrice } from '@goodboy/core';
 
 export const PROVIDER_LABEL: Record<ProviderId, string> = {
   anthropic: 'Claude',
@@ -17,13 +12,6 @@ export const PROVIDER_LABEL: Record<ProviderId, string> = {
 };
 
 export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
-export type { EffortLevel } from '@goodboy/types';
-
-export const modelEffortLevels = (model: string): ReadonlyArray<EffortLevel> | null =>
-  coreModelEffortLevels({ model });
-
-export const clampEffort = (model: string, effort: EffortLevel): EffortLevel =>
-  clampEffortForModel({ model, effort }) ?? effort;
 
 export const EFFORT_LABEL: Record<EffortLevel, string> = {
   minimal: 'Minimal',

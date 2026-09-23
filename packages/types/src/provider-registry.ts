@@ -35,8 +35,6 @@ export type ModelPrice = {
 
 export type EffortLevel = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
-export type ModelEffort = EffortLevel;
-
 export type ModelTier = 'turn' | 'cheap';
 
 export type ModelDescriptor = {

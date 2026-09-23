@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   PROVIDER_CAPABILITIES,
+  clampEffortForModel,
   defaultsForRole,
   getModelProvider,
+  modelEffortLevels,
   recommendedModelForRole,
   resolveRoleRouting,
   type ResolvedRoleFallback,
@@ -16,13 +18,7 @@ import type {
   RoleModelPreferences,
 } from '@goodboy/types';
 import { FieldRow } from '@goodboy/ui';
-import {
-  EFFORT_LABEL,
-  PROVIDER_LABEL,
-  clampEffort,
-  modelEffortLevels,
-  modelLabel,
-} from '../../../../../chat/utils/chat-constants';
+import { EFFORT_LABEL, PROVIDER_LABEL, modelLabel } from '../../../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
 import { RoutingStatusControl } from '../RoutingStatusControl';
 
@@ -112,7 +108,7 @@ export const RoleModelRow = ({
   const pendingModel = useRef(primaryModel);
   const compiledRouting = `${PROVIDER_LABEL[defaultProviderId]} · ${modelLabel(defaultModel)}`;
   const defaultSummary =
-    modelEffortLevels(defaultModel) == null
+    modelEffortLevels({ model: defaultModel }) === null
       ? compiledRouting
       : `${compiledRouting} · ${EFFORT_LABEL[compiled.effort]} effort`;
   const isFallbackPickerVisible = resolved.fallback != null || isChoosingFallback;
@@ -223,7 +219,9 @@ export const RoleModelRow = ({
               commit({
                 providerId: next,
                 model: nextModel,
-                effort: clampEffort(nextModel, resolved.effort),
+                effort:
+                  clampEffortForModel({ model: nextModel, effort: resolved.effort }) ??
+                  resolved.effort,
               });
             }}
             onModel={(nextModel) => {
@@ -234,7 +232,9 @@ export const RoleModelRow = ({
               commit({
                 providerId: pendingProvider.current,
                 model: nextModel,
-                effort: clampEffort(nextModel, resolved.effort),
+                effort:
+                  clampEffortForModel({ model: nextModel, effort: resolved.effort }) ??
+                  resolved.effort,
               });
             }}
           />

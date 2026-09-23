@@ -34,11 +34,11 @@ import {
 import type {
   AgentId,
   AttachmentInput,
+  EffortLevel,
   IsoDateTime,
   Message,
   MessageAttachment,
   MessageId,
-  ModelEffort,
   MountId,
   MountTargetSnapshot,
   PermissionRule,
@@ -451,7 +451,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const nodeProvider: ProviderId | null =
       nodeRouting?.provider ?? phaseDefinition?.providerOverride ?? null;
     const nodeModel: string | null = nodeRouting?.model ?? phaseDefinition?.modelOverride ?? null;
-    const nodeEffort: ModelEffort | null =
+    const nodeEffort: EffortLevel | null =
       nodeRouting === null ? (phaseDefinition?.effort ?? null) : nodeRouting.effort;
     const nodeOverride: TurnProviderOverride | undefined =
       nodeProvider !== null

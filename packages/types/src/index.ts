@@ -130,7 +130,6 @@ export type {
   EffortLevel,
   ModelCostTier,
   ModelDescriptor,
-  ModelEffort,
   ModelFamily,
   ModelPrice,
   ModelTier,

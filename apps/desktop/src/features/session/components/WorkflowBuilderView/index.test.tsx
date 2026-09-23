@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { ModelEffort, Session, Workflow } from '@goodboy/types';
+import type { EffortLevel, Session, Workflow } from '@goodboy/types';
 import type { WorkflowBuilderDraft } from '../../../../store/slices/workflowDrafts/types';
 
 const {
@@ -126,11 +126,11 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
     verbosity?: string;
     onVerbosity?: (value: string) => void;
     effort:
-      | { readonly editable: false; readonly value?: ModelEffort }
+      | { readonly editable: false; readonly value?: EffortLevel }
       | {
           readonly editable: true;
-          readonly value: ModelEffort;
-          readonly onChange: (value: ModelEffort) => void;
+          readonly value: EffortLevel;
+          readonly onChange: (value: EffortLevel) => void;
         };
   }) => (
     <div role="group" aria-label={ariaLabel} data-offered-providers={connectedProviders.join(',')}>

@@ -40,6 +40,7 @@ import {
   PROVIDER_CAPABILITIES,
   PlannerClient,
   type PlannerOutput,
+  clampEffortForModel,
   defaultsForRole,
   polishStepInstruction,
   polishWorkflowGoal,
@@ -51,6 +52,7 @@ import {
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import type {
   AgentRole,
+  EffortLevel,
   ProviderId,
   RoleModelPreferences,
   Session,
@@ -81,7 +83,6 @@ import { ROLE_LABEL, classifyStep, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { WorkflowStepCard } from '../WorkflowStepCard';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import { type EffortLevel, clampEffort } from '../../../chat/utils/chat-constants';
 import { isWorkflowRunComplete } from '../../../workflows/isWorkflowRunComplete';
 import { useWorkflowDrag } from '../../../workflows/hooks/useWorkflowDrag';
 import { StepFlowConnector } from '../../../workflows/components/WorkflowStudio/StepFlowConnector';
@@ -387,12 +388,13 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   const orchestratorEffectiveModel =
     orchestratorModelOverride !== '' ? orchestratorModelOverride : recommendedOrchestratorModel;
-  const orchestratorEffort = clampEffort(
-    orchestratorEffectiveModel,
-    orchestratorEffortOverride ??
-      (resolvedOrchestratorTaskModel.effort as EffortLevel | undefined) ??
-      ORCHESTRATOR_EFFORT,
-  );
+  const requestedOrchestratorEffort =
+    orchestratorEffortOverride ?? resolvedOrchestratorTaskModel.effort ?? ORCHESTRATOR_EFFORT;
+  const orchestratorEffort =
+    clampEffortForModel({
+      model: orchestratorEffectiveModel,
+      effort: requestedOrchestratorEffort,
+    }) ?? requestedOrchestratorEffort;
   const isOrchestratorOverridden =
     orchestratorProviderOverride !== '' ||
     orchestratorModelOverride !== '' ||

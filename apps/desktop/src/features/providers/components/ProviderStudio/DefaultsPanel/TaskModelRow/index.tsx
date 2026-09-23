@@ -1,18 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
-import type { AuxTaskId, ModelEffort, ProviderId, TaskModelPreference } from '@goodboy/types';
+import { PROVIDER_CAPABILITIES, clampEffortForModel, resolveTaskModel } from '@goodboy/core';
+import type { AuxTaskId, EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { FieldRow } from '@goodboy/ui';
-import { clampEffort, modelEffortLevels } from '../../../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
 import { RoutingStatusControl } from '../RoutingStatusControl';
 
-const DEFAULT_EFFORT: ModelEffort = 'medium';
+const DEFAULT_EFFORT: EffortLevel = 'medium';
 const AUTO_LABEL = 'Auto';
 const AUTO_REASON =
   'Follows the workspace default provider. Goodboy picks the model this task needs.';
-
-const effortForModel = (model: string, requested: ModelEffort): ModelEffort | null =>
-  modelEffortLevels(model) == null ? null : clampEffort(model, requested);
 
 type Props = {
   readonly task: AuxTaskId;
@@ -86,9 +82,10 @@ export const TaskModelRow = ({
             model={model}
             effort={{
               editable: true,
-              value: effortForModel(effortModel, effortValue) ?? effortValue,
+              value:
+                clampEffortForModel({ model: effortModel, effort: effortValue }) ?? effortValue,
               onChange: (effort) => {
-                const applied = effortForModel(pendingModel.current, effort);
+                const applied = clampEffortForModel({ model: pendingModel.current, effort });
                 onChange({
                   providerId: pendingProvider.current,
                   model: pendingModel.current,
@@ -135,7 +132,9 @@ export const TaskModelRow = ({
                 return;
               }
               const carried =
-                preference?.effort == null ? null : effortForModel(nextModel, preference.effort);
+                preference?.effort == null
+                  ? null
+                  : clampEffortForModel({ model: nextModel, effort: preference.effort });
               pendingModel.current = nextModel;
               onChange({
                 providerId: pendingProvider.current,
