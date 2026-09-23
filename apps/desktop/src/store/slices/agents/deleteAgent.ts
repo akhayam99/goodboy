@@ -91,6 +91,8 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
       delete nextQueue[agentId];
       const nextHistory = { ...s.agentRunHistory };
       delete nextHistory[agentId];
+      const nextRunRouting = { ...s.runRouting };
+      delete nextRunRouting[agentId];
       const nextModelOverride = { ...s.agentModelOverride };
       delete nextModelOverride[agentId];
       const nextProviderOverride = { ...s.agentProviderOverride };
@@ -114,6 +116,7 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
         agentAttachments: nextAttachments,
         agentQueue: nextQueue,
         agentRunHistory: nextHistory,
+        runRouting: nextRunRouting,
         agentModelOverride: nextModelOverride,
         agentProviderOverride: nextProviderOverride,
         agentEffortOverride: nextEffortOverride,
