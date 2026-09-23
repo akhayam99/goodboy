@@ -63,6 +63,14 @@ export const InboxDetail = ({
   }
 
   const payload = record.payload;
+  const dock = (
+    <RecordLaunchDock
+      record={record}
+      workspaceId={workspaceId}
+      onClose={onClose}
+      focusRequest={launchFocusRequest}
+    />
+  );
   const deselectAction = (
     <IconButton
       icon={X}
@@ -79,14 +87,7 @@ export const InboxDetail = ({
           issue={payload.issue}
           editContext={{ workspaceId, rootPath }}
           headerActions={deselectAction}
-          dock={
-            <RecordLaunchDock
-              record={record}
-              workspaceId={workspaceId}
-              onClose={onClose}
-              focusRequest={launchFocusRequest}
-            />
-          }
+          dock={dock}
         />
       );
     case 'gitlab':
@@ -97,14 +98,7 @@ export const InboxDetail = ({
               issue={payload.issue}
               workspaceId={workspaceId}
               headerActions={deselectAction}
-              dock={
-                <RecordLaunchDock
-                  record={record}
-                  workspaceId={workspaceId}
-                  onClose={onClose}
-                  focusRequest={launchFocusRequest}
-                />
-              }
+              dock={dock}
             />
           );
         case 'mr':
@@ -116,14 +110,7 @@ export const InboxDetail = ({
               onRefresh={onRefresh}
               onClose={onClose}
               headerActions={deselectAction}
-              dock={
-                <RecordLaunchDock
-                  record={record}
-                  workspaceId={workspaceId}
-                  onClose={onClose}
-                  focusRequest={launchFocusRequest}
-                />
-              }
+              dock={dock}
             />
           );
         default: {
@@ -137,14 +124,7 @@ export const InboxDetail = ({
           issue={payload.issue}
           workspaceId={workspaceId}
           headerActions={deselectAction}
-          dock={
-            <RecordLaunchDock
-              record={record}
-              workspaceId={workspaceId}
-              onClose={onClose}
-              focusRequest={launchFocusRequest}
-            />
-          }
+          dock={dock}
         />
       );
     case 'jira':
@@ -154,14 +134,7 @@ export const InboxDetail = ({
           workspaceId={workspaceId}
           onIssueWritten={onRefresh}
           headerActions={deselectAction}
-          dock={
-            <RecordLaunchDock
-              record={record}
-              workspaceId={workspaceId}
-              onClose={onClose}
-              focusRequest={launchFocusRequest}
-            />
-          }
+          dock={dock}
         />
       );
     case 'sentry':
@@ -180,18 +153,8 @@ export const InboxDetail = ({
           detail={sentryDetail.detail?.issueId === payload.issue.id ? sentryDetail.detail : null}
           isLoading={sentryDetail.isLoading}
           error={sentryDetail.error}
-          summaryIsLoading={false}
-          summaryError={null}
-          onRetrySummary={() => undefined}
           headerActions={deselectAction}
-          dock={
-            <RecordLaunchDock
-              record={record}
-              workspaceId={workspaceId}
-              onClose={onClose}
-              focusRequest={launchFocusRequest}
-            />
-          }
+          dock={dock}
         />
       );
     case 'slack':
@@ -204,14 +167,7 @@ export const InboxDetail = ({
           fallbackMessage={payload.head}
           fallbackUrl={record.url}
           headerActions={deselectAction}
-          dock={
-            <RecordLaunchDock
-              record={record}
-              workspaceId={workspaceId}
-              onClose={onClose}
-              focusRequest={launchFocusRequest}
-            />
-          }
+          dock={dock}
         />
       );
     case 'bitbucket':
@@ -226,14 +182,7 @@ export const InboxDetail = ({
           onRefresh={onRefresh}
           onClose={onClose}
           headerActions={deselectAction}
-          dock={
-            <RecordLaunchDock
-              record={record}
-              workspaceId={workspaceId}
-              onClose={onClose}
-              focusRequest={launchFocusRequest}
-            />
-          }
+          dock={dock}
         />
       );
     default: {
