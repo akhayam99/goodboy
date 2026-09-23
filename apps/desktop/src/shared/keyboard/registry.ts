@@ -4,6 +4,7 @@ export type ShortcutPlane = 'app' | 'session' | 'lens';
 
 export type ShortcutEntry = {
   readonly combo: string;
+  readonly offMacCombo?: string;
   readonly label: string;
   readonly plane: ShortcutPlane;
 };
@@ -30,6 +31,13 @@ export const SHORTCUTS = {
   'zoom.out': { combo: 'cmd+Minus', label: 'Zoom out', plane: 'app' },
   'zoom.reset': { combo: 'cmd+Digit0', label: 'Reset zoom', plane: 'app' },
   'app.reload': { combo: 'cmd+KeyR', label: 'Reload', plane: 'app' },
+  'terminal.newTab': {
+    combo: 'cmd+KeyT',
+    offMacCombo: 'ctrl+shift+KeyT',
+    label: 'New terminal tab',
+    plane: 'app',
+  },
+  'composer.submit': { combo: 'cmd+Enter', label: 'Submit comment', plane: 'app' },
 
   'session.prev': { combo: 'cmd+shift+BracketLeft', label: 'Previous session', plane: 'session' },
   'session.next': { combo: 'cmd+shift+BracketRight', label: 'Next session', plane: 'session' },
@@ -128,7 +136,15 @@ export const formatCombo = (combo: string): string => {
     .join(onMac ? '' : '+');
 };
 
-export const shortcutGlyphs = (id: ShortcutId): string => formatCombo(SHORTCUTS[id].combo);
+type EntryParams = {
+  readonly entry: ShortcutEntry;
+};
+
+export const platformCombo = ({ entry }: EntryParams): string =>
+  currentPlatform() === 'darwin' ? entry.combo : (entry.offMacCombo ?? entry.combo);
+
+export const shortcutGlyphs = (id: ShortcutId): string =>
+  formatCombo(platformCombo({ entry: SHORTCUTS[id] }));
 
 type HintParams = {
   readonly label: string;

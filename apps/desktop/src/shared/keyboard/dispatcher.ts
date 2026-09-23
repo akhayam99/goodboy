@@ -1,5 +1,5 @@
 import { currentPlatform } from '../platform';
-import { SHORTCUTS, type ShortcutId } from './registry';
+import { SHORTCUTS, platformCombo, type ShortcutEntry, type ShortcutId } from './registry';
 
 type Parsed = {
   readonly code: string;
@@ -20,8 +20,13 @@ const parseCombo = (combo: string): Parsed => {
   };
 };
 
-export const eventMatches = (event: KeyboardEvent, combo: string): boolean => {
-  const parsed = parseCombo(combo);
+type MatchParams = {
+  readonly event: KeyboardEvent;
+  readonly entry: ShortcutEntry;
+};
+
+export const eventMatches = ({ event, entry }: MatchParams): boolean => {
+  const parsed = parseCombo(platformCombo({ entry }));
   const onMac = currentPlatform() === 'darwin';
   const wantsMeta = onMac ? parsed.meta : false;
   const wantsCtrl = onMac ? parsed.ctrl : parsed.ctrl || parsed.meta;
@@ -61,7 +66,7 @@ const onKeyDown = (event: KeyboardEvent): void => {
     return;
   }
   for (const registration of registrations.values()) {
-    if (!eventMatches(event, SHORTCUTS[registration.id].combo)) {
+    if (!eventMatches({ event, entry: SHORTCUTS[registration.id] })) {
       continue;
     }
     event.preventDefault();

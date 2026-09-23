@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { MessageSquarePlus } from 'lucide-react';
 import { Textarea } from '@goodboy/ui';
-import { formatCombo } from '../../../../../shared/keyboard/registry';
+import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
-const SUBMIT_HINT = formatCombo('cmd+Enter');
+const SUBMIT_HINT = shortcutGlyphs('composer.submit');
 
 type Props = {
   onSubmit: (body: string) => void;

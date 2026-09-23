@@ -118,14 +118,15 @@ describe('shortcut dispatcher on darwin', () => {
   });
 
   it('matches on the physical code and every modifier', () => {
+    const entry = SHORTCUTS['palette.open'];
     expect(
-      eventMatches(new KeyboardEvent('keydown', { code: 'KeyK', metaKey: true }), 'cmd+KeyK'),
+      eventMatches({ event: new KeyboardEvent('keydown', { code: 'KeyK', metaKey: true }), entry }),
     ).toBe(true);
     expect(
-      eventMatches(
-        new KeyboardEvent('keydown', { code: 'KeyK', metaKey: true, shiftKey: true }),
-        SHORTCUTS['palette.open'].combo,
-      ),
+      eventMatches({
+        event: new KeyboardEvent('keydown', { code: 'KeyK', metaKey: true, shiftKey: true }),
+        entry,
+      }),
     ).toBe(false);
   });
 
@@ -189,22 +190,23 @@ describe('shortcut dispatcher off darwin', () => {
 
   it('resolves every registry combo to ctrl and never to the command key', () => {
     for (const entry of Object.values(SHORTCUTS)) {
-      const code = entry.combo.split('+').at(-1) ?? '';
-      const shiftKey = entry.combo.includes('shift');
-      const altKey = entry.combo.includes('alt');
+      const combo: string = 'offMacCombo' in entry ? entry.offMacCombo : entry.combo;
+      const code = combo.split('+').at(-1) ?? '';
+      const shiftKey = combo.includes('shift');
+      const altKey = combo.includes('alt');
       expect(
-        eventMatches(
-          new KeyboardEvent('keydown', { code, ctrlKey: true, shiftKey, altKey }),
-          entry.combo,
-        ),
-        `${entry.combo} does not resolve to ctrl`,
+        eventMatches({
+          event: new KeyboardEvent('keydown', { code, ctrlKey: true, shiftKey, altKey }),
+          entry,
+        }),
+        `${combo} does not resolve to ctrl`,
       ).toBe(true);
       expect(
-        eventMatches(
-          new KeyboardEvent('keydown', { code, metaKey: true, shiftKey, altKey }),
-          entry.combo,
-        ),
-        `${entry.combo} still answers to the command key`,
+        eventMatches({
+          event: new KeyboardEvent('keydown', { code, metaKey: true, shiftKey, altKey }),
+          entry,
+        }),
+        `${combo} still answers to the command key`,
       ).toBe(false);
     }
   });

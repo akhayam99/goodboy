@@ -52,6 +52,25 @@ describe('shortcut registry', () => {
     }
   });
 
+  it('binds every combo exactly once off macOS too, with per-OS combos resolved', () => {
+    const seen = new Map<string, string>();
+    for (const [id, entry] of entries) {
+      const combo: string =
+        'offMacCombo' in entry ? entry.offMacCombo : entry.combo.replace('cmd', 'ctrl');
+      const clash = seen.get(combo);
+      expect(clash, `${id} and ${clash} both bind ${combo} off macOS`).toBeUndefined();
+      seen.set(combo, id);
+    }
+  });
+
+  it('renders the per-OS combo where the platform has one', () => {
+    platform.current = 'darwin';
+    expect(shortcutGlyphs('terminal.newTab')).toBe('⌘T');
+
+    platform.current = 'linux';
+    expect(shortcutGlyphs('terminal.newTab')).toBe('Ctrl+Shift+T');
+  });
+
   it('gives the review lens exactly one chord', () => {
     const reviewLensIds = entries
       .filter(([id, entry]) => entry.plane === 'lens' && id.startsWith('lens.'))
