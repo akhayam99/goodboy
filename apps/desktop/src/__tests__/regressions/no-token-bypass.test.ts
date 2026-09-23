@@ -47,6 +47,12 @@ const RULES = [
     allow: NO_ALLOW,
     why: 'neutral surfaces use the opaque ramp or named overlays and shadows',
   },
+  {
+    pattern:
+      /\b(?:bg|text|border|ring|fill|stroke|from|via|to|outline|decoration|divide|shadow|caret|accent)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/,
+    allow: NO_ALLOW,
+    why: 'colour comes from theme tokens, never the raw Tailwind palette',
+  },
 ] satisfies ReadonlyArray<Rule>;
 
 const listSourceFiles = ({ dir, files = [] }: { dir: string; files?: string[] }): string[] => {

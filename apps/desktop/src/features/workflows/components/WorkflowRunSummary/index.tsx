@@ -19,7 +19,7 @@ const RecapGroup = ({ label, entries, tone }: GroupProps) => (
       {entries.map((entry) => (
         <li key={entry} className="flex min-w-0 items-start gap-1.5 text-2xs leading-relaxed">
           {tone === 'done' ? (
-            <Check className="mt-0.5 size-3 shrink-0 text-emerald-400" aria-hidden />
+            <Check className="mt-0.5 size-3 shrink-0 text-success" aria-hidden />
           ) : (
             <Circle
               className="mt-1 size-1.5 shrink-0 fill-current text-muted-foreground"

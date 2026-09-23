@@ -14,11 +14,12 @@ export const AgentKindChip = ({ kind, muted, title, className }: Props) => {
     <span
       className={cn(
         'inline-flex w-24 shrink-0 items-center justify-center rounded px-1.5 py-0.5 text-3xs font-semibold uppercase leading-none tracking-wide',
-        muted ? 'bg-muted-foreground/20 text-faint-foreground' : [palette.bg, 'text-background'],
+        muted
+          ? 'bg-muted text-faint-foreground'
+          : [palette.fg, 'bg-current/12 ring-1 ring-inset ring-current/30'],
         className,
       )}
       title={title}
-      aria-hidden
     >
       {palette.label}
     </span>

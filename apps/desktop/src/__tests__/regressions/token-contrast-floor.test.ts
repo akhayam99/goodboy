@@ -206,6 +206,24 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     expect(failures).toEqual([]);
   });
 
+  it.each(SURFACES)('keeps agent labels readable on their own tint over %s', (surface) => {
+    const failures = Object.keys(palette)
+      .filter((token) => token.startsWith('agent-'))
+      .map((token) => ({
+        token,
+        ratio: contrast(
+          swatch(palette, token),
+          composite({
+            foreground: swatch(palette, token),
+            background: swatch(palette, surface),
+            alpha: 0.12,
+          }),
+        ),
+      }))
+      .filter(({ ratio }) => ratio < BODY_FLOOR);
+    expect(failures).toEqual([]);
+  });
+
   it.each(SURFACES)('keeps identity labels readable on %s', (surface) => {
     const failures = Object.keys(palette)
       .filter((token) => token.startsWith('identity-'))

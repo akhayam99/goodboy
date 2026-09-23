@@ -68,8 +68,9 @@ describe('AgentKindChip', () => {
     expect(container.querySelector('[title="scout agent"]')).not.toBeNull();
   });
 
-  it('marks the chip as aria-hidden so screen readers skip it', () => {
+  it('exposes the role label to assistive tech', () => {
     const { container } = render(<AgentKindChip kind="tester" />);
-    expect(container.querySelector('[aria-hidden]')).not.toBeNull();
+    expect(container.querySelector('[aria-hidden]')).toBeNull();
+    expect(screen.getByText('Test')).toBeDefined();
   });
 });

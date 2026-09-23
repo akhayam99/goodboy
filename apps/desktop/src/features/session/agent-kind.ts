@@ -199,63 +199,63 @@ export type AgentKindPaletteEntry = {
 
 export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {
   scout: {
-    bg: 'bg-sky-400',
-    fg: 'text-sky-400',
+    bg: 'bg-agent-scout',
+    fg: 'text-agent-scout',
     label: AGENT_KIND_META.scout.label,
   },
   planner: {
-    bg: 'bg-violet-400',
-    fg: 'text-violet-400',
+    bg: 'bg-agent-planner',
+    fg: 'text-agent-planner',
     label: AGENT_KIND_META.planner.label,
   },
   implementer: {
-    bg: 'bg-emerald-400',
-    fg: 'text-emerald-400',
+    bg: 'bg-agent-implementer',
+    fg: 'text-agent-implementer',
     label: AGENT_KIND_META.implementer.label,
   },
   debugger: {
-    bg: 'bg-amber-400',
-    fg: 'text-amber-400',
+    bg: 'bg-agent-debugger',
+    fg: 'text-agent-debugger',
     label: AGENT_KIND_META.debugger.label,
   },
   tester: {
-    bg: 'bg-teal-400',
-    fg: 'text-teal-400',
+    bg: 'bg-agent-tester',
+    fg: 'text-agent-tester',
     label: AGENT_KIND_META.tester.label,
   },
   reviewer: {
-    bg: 'bg-cyan-400',
-    fg: 'text-cyan-400',
+    bg: 'bg-agent-reviewer',
+    fg: 'text-agent-reviewer',
     label: AGENT_KIND_META.reviewer.label,
   },
   'pr-reviewer': {
-    bg: 'bg-indigo-400',
-    fg: 'text-indigo-400',
+    bg: 'bg-agent-pr-reviewer',
+    fg: 'text-agent-pr-reviewer',
     label: AGENT_KIND_META['pr-reviewer'].label,
   },
   docs: {
-    bg: 'bg-orange-400',
-    fg: 'text-orange-400',
+    bg: 'bg-agent-docs',
+    fg: 'text-agent-docs',
     label: AGENT_KIND_META.docs.label,
   },
   report: {
-    bg: 'bg-fuchsia-400',
-    fg: 'text-fuchsia-400',
+    bg: 'bg-agent-report',
+    fg: 'text-agent-report',
     label: AGENT_KIND_META.report.label,
   },
   wireframe: {
-    bg: 'bg-purple-400',
-    fg: 'text-purple-400',
+    bg: 'bg-agent-wireframe',
+    fg: 'text-agent-wireframe',
     label: AGENT_KIND_META.wireframe.label,
   },
   resolver: {
-    bg: 'bg-lime-400',
-    fg: 'text-lime-400',
+    bg: 'bg-agent-resolver',
+    fg: 'text-agent-resolver',
     label: AGENT_KIND_META.resolver.label,
   },
   generic: {
-    bg: 'bg-rose-400',
-    fg: 'text-rose-400',
+    bg: 'bg-agent-generic',
+    fg: 'text-agent-generic',
     label: AGENT_KIND_META.generic.label,
   },
 };
@@ -263,7 +263,7 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {
 const UNKNOWN_KIND_LABEL_LENGTH = 9;
 
 const UNKNOWN_KIND_STYLE = {
-  bg: 'bg-muted-foreground/50',
+  bg: 'bg-faint-foreground',
   fg: 'text-muted-foreground',
 } satisfies Pick<AgentKindPaletteEntry, 'bg' | 'fg'>;
 
