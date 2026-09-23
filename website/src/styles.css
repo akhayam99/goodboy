@@ -626,11 +626,10 @@ h2 {
   display: flex;
   width: max-content;
   padding: 2px 0;
-  animation: beltScroll 37s linear infinite;
+  animation: beltScroll 31s linear infinite;
 }
 
 .beltTrackReverse {
-  animation-duration: 35s;
   animation-direction: reverse;
 }
 
@@ -648,26 +647,23 @@ h2 {
 .bchip {
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 52px;
-  min-width: 180px;
-  background: #fff;
-  border: 1px solid var(--gray3);
-  border-radius: 999px;
-  padding: 0 20px;
-  margin-right: 12px;
+  justify-content: center;
+  gap: 10px;
+  height: 46px;
+  min-width: 150px;
+  background: color-mix(in oklch, var(--brand) 8%, #fff);
+  background: oklch(from var(--brand) 0.968 calc(c * 0.1) h);
+  border: 1px solid color-mix(in oklch, var(--brand) 18%, #fff);
+  border-color: oklch(from var(--brand) 0.9 calc(c * 0.3) h);
+  border-radius: 10px;
+  padding: 0 18px;
+  margin-right: 28px;
   flex-shrink: 0;
 }
 
 .bchip .bname {
   font-size: 14px;
   font-weight: 600;
-  line-height: 1.25;
-}
-
-.bchip .bplan {
-  font-size: 12px;
-  color: var(--gray6);
   line-height: 1.25;
 }
 

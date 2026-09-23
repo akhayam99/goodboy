@@ -1,41 +1,37 @@
-import { BrandMark, type BrandId } from '../components/BrandIcons';
+import type { CSSProperties } from 'react';
+import { BRAND_COLOR, BrandMark, type BrandId } from '../components/BrandIcons';
 import { delay } from '../components/Reveal';
 import { SITE } from '../site';
 
 type Chip = {
   readonly brand: BrandId;
   readonly name: string;
-  readonly plan: string;
 };
 
 const PROVIDER_CHIPS: readonly Chip[] = [
-  { brand: 'anthropic', name: 'Claude', plan: 'Claude Max or Pro' },
-  { brand: 'codex', name: 'Codex', plan: 'ChatGPT Plus or Pro' },
-  { brand: 'cursor', name: 'Cursor', plan: 'Cursor Pro' },
-  { brand: 'gemini', name: 'Gemini', plan: 'Antigravity, from Google' },
-  { brand: 'opencode', name: 'OpenCode', plan: 'free models, no key needed' },
-  { brand: 'openrouter', name: 'OpenRouter', plan: 'many models, one place' },
-  { brand: 'moonshot', name: 'Moonshot', plan: 'Kimi, from Moonshot' },
+  { brand: 'anthropic', name: 'Claude' },
+  { brand: 'codex', name: 'Codex' },
+  { brand: 'cursor', name: 'Cursor' },
+  { brand: 'gemini', name: 'Gemini' },
+  { brand: 'opencode', name: 'OpenCode' },
+  { brand: 'openrouter', name: 'OpenRouter' },
+  { brand: 'moonshot', name: 'Moonshot' },
 ];
 
 const TOOL_CHIPS: readonly Chip[] = [
-  { brand: 'github', name: 'GitHub', plan: 'Issues & pull requests' },
-  { brand: 'gitlab', name: 'GitLab', plan: 'Issues & merge requests' },
-  { brand: 'bitbucket', name: 'Bitbucket', plan: 'Pull requests' },
-  { brand: 'linear', name: 'Linear', plan: 'Issues' },
-  { brand: 'jira', name: 'Jira', plan: 'Issues' },
-  { brand: 'sentry', name: 'Sentry', plan: 'Crash reports' },
-  { brand: 'slack', name: 'Slack', plan: 'Notifications' },
+  { brand: 'github', name: 'GitHub' },
+  { brand: 'gitlab', name: 'GitLab' },
+  { brand: 'bitbucket', name: 'Bitbucket' },
+  { brand: 'linear', name: 'Linear' },
+  { brand: 'jira', name: 'Jira' },
+  { brand: 'sentry', name: 'Sentry' },
+  { brand: 'slack', name: 'Slack' },
 ];
 
 const BeltChip = ({ chip }: { chip: Chip }) => (
-  <div className="bchip">
+  <div className="bchip" style={{ '--brand': BRAND_COLOR[chip.brand] } as CSSProperties}>
     <BrandMark brand={chip.brand} size={20} />
-    <span>
-      <span className="bname">{chip.name}</span>
-      <br />
-      <span className="bplan">{chip.plan}</span>
-    </span>
+    <span className="bname">{chip.name}</span>
   </div>
 );
 
