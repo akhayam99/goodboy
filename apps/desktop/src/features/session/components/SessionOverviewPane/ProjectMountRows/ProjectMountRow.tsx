@@ -192,7 +192,7 @@ export const ProjectMountRow = ({
               tone="primary"
               size="3xs"
               bordered={false}
-              label="Next turns"
+              label="Writes here next"
               title={`Next turns write to ${label} unless changed from the chat header.`}
               className="shrink-0"
             />
@@ -257,7 +257,6 @@ export const ProjectMountRow = ({
             <Chip
               tone="neutral"
               size="3xs"
-              uppercase
               bordered={false}
               icon={<CONCEPT_ICONS.worktree size={9} aria-hidden />}
               label={row.isOnDisk ? 'Files kept' : 'Files gone'}

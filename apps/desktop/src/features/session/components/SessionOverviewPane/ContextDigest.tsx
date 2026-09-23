@@ -76,8 +76,8 @@ export const ContextDigest = ({ sessionId, onSelectLens }: Props) => {
         icon={CONCEPT_ICONS.decisions}
         label="Decisions"
         entry={digest.decisions}
-        empty="none yet"
-        unit="row"
+        empty="None yet"
+        unit="decision"
         shortcut="lens.decisions"
         onOpen={() => onSelectLens('decisions')}
       />
@@ -85,8 +85,8 @@ export const ContextDigest = ({ sessionId, onSelectLens }: Props) => {
         icon={CONCEPT_ICONS.sessionSummary}
         label="Session summary"
         entry={digest.summary}
-        empty="none yet"
-        unit="block"
+        empty="None yet"
+        unit="section"
         shortcut="lens.summary"
         onOpen={() => onSelectLens('last_output_summary')}
       />

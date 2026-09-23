@@ -379,7 +379,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
                   <th
                     key={`${key}-h-${j}`}
                     className={cn(
-                      'px-3 py-1.5 text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground wrap-anywhere',
+                      'px-3 py-1.5 text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground break-words',
                       alignClass(block.align[j]),
                     )}
                   >
@@ -395,7 +395,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
                     <td
                       key={`${key}-r-${ri}-c-${ci}`}
                       className={cn(
-                        'px-3 py-1.5 align-top wrap-anywhere',
+                        'px-3 py-1.5 align-top break-words',
                         alignClass(block.align[ci]),
                       )}
                     >

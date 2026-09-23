@@ -11,7 +11,7 @@ import {
 } from '../../explore';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '@goodboy/ui';
+import { LensEmptyState, RefreshIconButton } from '@goodboy/ui';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { InspectorSplit } from '../../../session/components/SessionWorkspace/parts/InspectorSplit';
 import { ExplorePreviewPanel } from './ExplorePreviewPanel';
@@ -384,6 +384,15 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
     return resolveAbsolutePath({ sessionDir, relPath: selectedFile.relPath });
   }, [selectedFile, sessionDir]);
 
+  const refreshTree = () => {
+    void loadDirectory({ relPath: ROOT_PATH });
+    for (const [relPath, isExpanded] of Object.entries(expandedByPath)) {
+      if (isExpanded) {
+        void loadDirectory({ relPath });
+      }
+    }
+  };
+
   return (
     <InspectorSplit
       open={selectedFile != null}
@@ -399,7 +408,18 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
         ) : null
       }
     >
-      <PaneShell title="Explore" description="Browse the files for this session." eyebrow={eyebrow}>
+      <PaneShell
+        title="Explore"
+        description="Browse the files for this session."
+        eyebrow={eyebrow}
+        actions={
+          <RefreshIconButton
+            label="Refresh the files"
+            isLoading={rootLoading}
+            onClick={refreshTree}
+          />
+        }
+      >
         <div className="flex flex-col gap-3">
           {rootLoading ? (
             <>
@@ -428,7 +448,7 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
               tone={CONCEPT_TONE.explore}
               icon={CONCEPT_ICONS.explore}
               title="This session folder is empty"
-              description="Files created while you work on this session appear here. Add one from your editor or terminal and refresh."
+              description="Files created while you work on this session appear here."
             />
           ) : (
             <div className="flex flex-col gap-0.5">{renderEntries({ entries: rootEntries })}</div>

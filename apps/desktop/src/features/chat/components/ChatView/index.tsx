@@ -527,7 +527,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
         <>
           <Divider />
           <div className="px-4 py-3 text-xs text-muted-foreground">
-            session ended. no further turns. branch preserved.
+            Session ended. No more turns run here, and the branch is kept.
           </div>
         </>
       ) : selectedAgentId ? (

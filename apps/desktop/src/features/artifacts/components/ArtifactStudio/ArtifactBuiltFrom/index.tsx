@@ -25,12 +25,12 @@ type ScopeParams = {
 
 const scopeLine = ({ kind, sourceWorkflowRunId }: ScopeParams): string => {
   if (sourceWorkflowRunId === null) {
-    return 'the whole session';
+    return 'The whole session';
   }
   if (kind === 'wireframe') {
-    return `workflow run ${sourceWorkflowRunId}. agents were scoped to that run, session plans were not`;
+    return `Workflow run ${sourceWorkflowRunId}. Agents were scoped to that run, session plans were not`;
   }
-  return `workflow run ${sourceWorkflowRunId}. agents and artifacts were scoped to that run, session events, checks and local change evidence were not`;
+  return `Workflow run ${sourceWorkflowRunId}. Agents and artifacts were scoped to that run, session events, checks and local change evidence were not`;
 };
 
 export const ArtifactBuiltFrom = ({ artifact }: Props) => {
@@ -61,7 +61,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
 
   if (state.kind === 'loading') {
     return (
-      <SectionSurface label="built from" ariaLabel="built from">
+      <SectionSurface label="Built from" ariaLabel="Built from">
         <div role="status" aria-label="Loading built from" className="flex flex-col gap-2">
           <Skeleton className="h-3 w-2/3 rounded-sm" />
           <Skeleton className="h-3 w-1/2 rounded-sm" />
@@ -72,7 +72,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
 
   if (state.kind === 'failed') {
     return (
-      <SectionSurface label="built from" ariaLabel="built from">
+      <SectionSurface label="Built from" ariaLabel="Built from">
         <div data-testid="built-from-failed" className="flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
             The record of this generation did not load.
@@ -88,7 +88,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
 
   if (state.kind === 'missing') {
     return (
-      <SectionSurface label="built from" ariaLabel="built from">
+      <SectionSurface label="Built from" ariaLabel="Built from">
         <p data-testid="built-from-missing" className="text-xs text-muted-foreground">
           nothing was recorded for this generation. artifacts made before goodboy started keeping
           the request and the evidence behind them carry no record of either.
@@ -104,22 +104,22 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
       : provenance.evidence.slice(0, EVIDENCE_PREVIEW);
 
   return (
-    <SectionSurface label="built from" ariaLabel="built from">
+    <SectionSurface label="Built from" ariaLabel="Built from">
       <div data-testid="built-from" className="flex min-w-0 flex-col gap-3">
-        <BuiltFromRow label="brief">{provenance.brief ?? 'no brief was given'}</BuiltFromRow>
-        <BuiltFromRow label="based on">
+        <BuiltFromRow label="Brief">{provenance.brief ?? 'No brief was given'}</BuiltFromRow>
+        <BuiltFromRow label="Based on">
           {scopeLine({
             kind: provenance.kind,
             sourceWorkflowRunId: provenance.sourceWorkflowRunId,
           })}
         </BuiltFromRow>
-        <BuiltFromRow label="ran in">
+        <BuiltFromRow label="Ran in">
           {provenance.executingWorkflowRunId === null
-            ? 'no workflow step, this agent ran on its own'
-            : `workflow run ${provenance.executingWorkflowRunId}`}
+            ? 'No workflow step, this agent ran on its own'
+            : `Workflow run ${provenance.executingWorkflowRunId}`}
         </BuiltFromRow>
         <div className="flex min-w-0 flex-col gap-1">
-          <Eyebrow label="evidence sent" />
+          <Eyebrow label="Evidence sent" />
           {provenance.evidence.length === 0 ? (
             <span className="text-xs text-muted-foreground">
               no session source was named in the pack
@@ -149,9 +149,9 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
             </button>
           ) : null}
         </div>
-        <BuiltFromRow label="left out or truncated">
+        <BuiltFromRow label="Left out or truncated">
           {provenance.omissions.length === 0
-            ? 'nothing was dropped from the pack'
+            ? 'Nothing was dropped from the pack'
             : provenance.omissions.join('\n')}
         </BuiltFromRow>
         {provenance.designProfileSummary === null ? null : (

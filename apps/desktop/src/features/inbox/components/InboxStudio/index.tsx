@@ -191,6 +191,7 @@ export const InboxStudio = ({
           railWidth="xwide"
           rail={
             <InboxRail
+              connected={connected}
               records={filteredRecords}
               allRecords={scopedRecords}
               selectedProviders={selectedProviders}

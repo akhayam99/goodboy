@@ -101,7 +101,7 @@ function Detail({
       measure="reading"
       glyph={
         <Icon
-          size={16}
+          size={ICON_SIZE.hero}
           aria-hidden
           className="shrink-0"
           style={{ color: `var(${PROVIDER_BRAND[id].cssVar})` }}

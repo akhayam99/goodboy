@@ -25,7 +25,7 @@ export const ReviewThreadContent = ({ thread, onOpenUrl }: Props) => {
       <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
         <Avatar url={head.authorAvatarUrl} alt={head.author} />
         <span className="min-w-0 truncate font-medium text-foreground">{head.author}</span>
-        {isBot(head.author) && <Chip tone="info" size="xs" uppercase label="bot" />}
+        {isBot(head.author) && <Chip tone="info" size="xs" label="Bot" />}
         <span className="shrink-0 opacity-50">·</span>
         <span className="shrink-0">{formatRelativeAge({ fromIso: head.createdAt })}</span>
         {isReview && head.resolved === false && <Chip tone="warning" size="xs" label="Open" />}

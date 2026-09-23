@@ -285,27 +285,27 @@ describe('ArtifactStudio', () => {
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     expect(screen.getByRole('heading', { level: 2, name: 'Reports' })).toBeDefined();
     expect(screen.getByText('Session summary')).toBeDefined();
-    expect(screen.getByText('generating')).toBeDefined();
+    expect(screen.getByText('Generating')).toBeDefined();
   });
 
   it('counts a live turn as generating even while the agent row still reads pending', () => {
     state.sessionPhaseRuns = { 'sess-1': [{ ...reportAgent, status: 'pending' }] };
     state.agentTurnState = { 'agent-report-2': { kind: 'running' } };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByText('generating')).toBeDefined();
+    expect(screen.getByText('Generating')).toBeDefined();
   });
 
   it('says no report was produced when the turn finished without one', () => {
     state.sessionPhaseRuns = { 'sess-1': [reportAgent] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByText('no report produced')).toBeDefined();
+    expect(screen.getByText('No report')).toBeDefined();
   });
 
   it('says a wireframe could not be read when the turn finished without one', () => {
     state.sessionPhaseRuns = { 'sess-1': [wireframeAgent] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     expect(screen.getByRole('heading', { level: 2, name: 'Wireframes' })).toBeDefined();
-    expect(screen.getByText('wireframe could not be read')).toBeDefined();
+    expect(screen.getByText("Couldn't read wireframe")).toBeDefined();
   });
 
   it('drops the generation row once that agent produced its artifact', () => {
@@ -425,7 +425,7 @@ describe('ArtifactStudio', () => {
   it('still surfaces superseded on a report because a newer revision replaced it', () => {
     state.sessionArtifacts = { 'sess-1': [{ ...report, status: 'superseded' }] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByText('superseded')).toBeDefined();
+    expect(screen.getByText('Superseded')).toBeDefined();
   });
 
   it('offers markdown export on a report and json export on a wireframe, both printable', () => {

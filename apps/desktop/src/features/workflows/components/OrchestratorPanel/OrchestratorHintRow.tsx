@@ -14,9 +14,9 @@ type StatusParams = {
 
 const statusFor = ({ hint }: StatusParams): string => {
   if (hint.consumedAt == null) {
-    return 'queued';
+    return 'Queued';
   }
-  return hint.consumedAtStep == null ? 'read' : `read at step ${hint.consumedAtStep}`;
+  return hint.consumedAtStep == null ? 'Read' : `Read at step ${hint.consumedAtStep}`;
 };
 
 export const OrchestratorHintRow = ({ hint, disabled, onRemove }: Props) => {

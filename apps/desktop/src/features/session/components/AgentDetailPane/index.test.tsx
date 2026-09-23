@@ -68,7 +68,7 @@ describe('AgentDetailPane', () => {
     );
 
     const title = screen.getByRole('heading', { level: 1, name: 'Implement chat' });
-    const status = screen.getByText('running');
+    const status = screen.getByText('Running');
 
     expect(title.className).toContain('text-xl');
     expect(title.closest('.px-6')?.className).toContain('py-5');

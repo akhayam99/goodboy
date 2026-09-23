@@ -40,10 +40,10 @@ describe('AgentKindChip', () => {
     expect(container.querySelector('[class*="bg-"]')).not.toBeNull();
   });
 
-  it('writes the generalist role out in full, uppercased by the chip styling', () => {
+  it('writes the generalist role out in full, in sentence case', () => {
     render(<AgentKindChip kind="generic" />);
     const chip = screen.getByText('Generalist');
-    expect(chip.className).toContain('uppercase');
+    expect(chip.className).not.toContain('uppercase');
   });
 
   it('holds one width for every role so a column of chips stays aligned', () => {

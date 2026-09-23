@@ -327,7 +327,7 @@ describe('ProjectMountRow write destination', () => {
     };
     renderRow({});
 
-    expect(screen.getByText('Next turns')).toBeDefined();
+    expect(screen.getByText('Writes here next')).toBeDefined();
   });
 
   it('leaves the badge off a row that is not the resolved destination', () => {
@@ -340,7 +340,7 @@ describe('ProjectMountRow write destination', () => {
     };
     renderRow({});
 
-    expect(screen.queryByText('Next turns')).toBeNull();
+    expect(screen.queryByText('Writes here next')).toBeNull();
   });
 });
 
@@ -694,7 +694,7 @@ describe('ProjectMountRow write destination', () => {
         mountId: 'mount-1',
       }),
     );
-    expect(screen.queryByText('Next turns')).toBeNull();
+    expect(screen.queryByText('Writes here next')).toBeNull();
   });
 
   it('badges the destination mount and offers no action on it', () => {
@@ -707,7 +707,7 @@ describe('ProjectMountRow write destination', () => {
     store.sessionActiveMount = { [sessionId]: 'mount-1' };
     renderRow({});
 
-    expect(screen.getByText('Next turns')).toBeTruthy();
+    expect(screen.getByText('Writes here next')).toBeTruthy();
     expect(screen.queryByRole('menuitem', { name: 'Use for next turns' })).toBeNull();
   });
 });

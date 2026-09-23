@@ -229,7 +229,7 @@ describe('DefaultsPanel', () => {
         label === 'Rebase' || label === 'Workflow orchestrator' ? 'sonnet-5' : 'haiku-4.5',
       );
     }
-    expect(screen.getByLabelText('Step summaries routing status: auto').textContent).toBe('auto');
+    expect(screen.getByLabelText('Step summaries routing status: Auto').textContent).toBe('Auto');
 
     openRolesTab();
     expect(screen.queryByLabelText(/Planner routing status/)).toBeNull();
@@ -238,7 +238,7 @@ describe('DefaultsPanel', () => {
   it('marks a task override as custom and resets it to auto', async () => {
     const { rerender } = render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByLabelText('Step summaries routing status: auto')).toBeDefined();
+    expect(screen.getByLabelText('Step summaries routing status: Auto')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing model' }));
 
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
@@ -251,8 +251,8 @@ describe('DefaultsPanel', () => {
     );
 
     rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    expect(screen.getByLabelText('Step summaries routing status: custom').textContent).toBe(
-      'custom',
+    expect(screen.getByLabelText('Step summaries routing status: Custom').textContent).toBe(
+      'Custom',
     );
     const reset = screen.getByRole('button', { name: 'Back to auto' });
     await waitFor(() => expect(reset.hasAttribute('disabled')).toBe(false));
@@ -264,7 +264,7 @@ describe('DefaultsPanel', () => {
     );
 
     rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    expect(screen.getByLabelText('Step summaries routing status: auto')).toBeDefined();
+    expect(screen.getByLabelText('Step summaries routing status: Auto')).toBeDefined();
   });
 
   it('persists an effort for a task model', () => {
@@ -601,7 +601,7 @@ describe('DefaultsPanel', () => {
     expect(screen.getByRole('button', { name: 'Reviewer routing model' }).textContent).toBe(
       'opus-5',
     );
-    expect(screen.getByLabelText('Reviewer routing status: custom')).toBeDefined();
+    expect(screen.getByLabelText('Reviewer routing status: Custom')).toBeDefined();
     const reset = screen.getByRole('button', { name: 'Reset to default' });
     await waitFor(() => expect(reset.hasAttribute('disabled')).toBe(false));
     fireEvent.click(reset);

@@ -46,6 +46,7 @@ vi.mock('../../useInboxRecords', () => ({
     records: h.records,
     isLoading: h.isLoading,
     errors: h.errors,
+    connected: ['github', 'gitlab', 'bitbucket', 'linear', 'jira', 'slack', 'sentry'],
     refetch: h.refetch,
   }),
 }));

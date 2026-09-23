@@ -50,7 +50,7 @@ export const ApiProviderDetail = ({ info }: Props) => {
     <PaneShell
       scroll="body"
       measure="reading"
-      glyph={<Icon size={16} aria-hidden className="shrink-0" style={{ color }} />}
+      glyph={<Icon size={ICON_SIZE.hero} aria-hidden className="shrink-0" style={{ color }} />}
       title={info.label}
       description="Runs through the OpenCode runtime"
       actions={action}

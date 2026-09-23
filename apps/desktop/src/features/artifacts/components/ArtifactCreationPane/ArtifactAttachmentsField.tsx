@@ -16,9 +16,9 @@ type Props = {
   readonly onRemove: (params: { readonly id: string }) => void;
 };
 
-const EMPTY_HINT = 'drop or add files. their paths go in the pack for the agent to read.';
+const EMPTY_HINT = 'Drop or add files. Their paths go in the pack for the agent to read.';
 
-const NO_WORKTREE_HINT = 'this session has no worktree yet, so nothing can be attached.';
+const NO_WORKTREE_HINT = 'This session has no worktree yet, so nothing can be attached.';
 
 export const ArtifactAttachmentsField = ({
   attachments,

@@ -52,16 +52,9 @@ describe('Chip', () => {
     expect(classesOf('small')).toContain('text-2xs');
   });
 
-  it('shouts the label when asked', () => {
-    render(
-      <>
-        <Chip tone="neutral" label="loud" uppercase />
-        <Chip tone="neutral" label="quiet" />
-      </>,
-    );
+  it('never shouts its label', () => {
+    render(<Chip tone="neutral" label="quiet" />);
 
-    expect(classesOf('loud')).toContain('uppercase');
-    expect(classesOf('loud')).toContain('tracking-eyebrow');
     expect(classesOf('quiet')).not.toContain('uppercase');
   });
 

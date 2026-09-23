@@ -319,7 +319,7 @@ describe('QuestionCard delegation', () => {
   it('appends the hand-over as the last row, after the free text one', () => {
     const { container } = render(<QuestionCard {...baseProps} />);
     const rows = [...container.querySelectorAll('button')];
-    const other = rows.findIndex((node) => node.textContent?.trim() === 'other');
+    const other = rows.findIndex((node) => node.textContent?.trim() === 'Other');
     const handOver = rows.findIndex(
       (node) => node.getAttribute('data-testid') === 'delegate-answer-row',
     );

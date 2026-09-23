@@ -74,7 +74,7 @@ export const TaskModelRow = ({
           isCustom={preference != null}
           disabled={disabled}
           onReset={() => onChange(null)}
-          idleLabel="auto"
+          idleLabel="Auto"
           resetLabel="Back to auto"
         />
         <div className="w-80 min-w-0 max-w-full">

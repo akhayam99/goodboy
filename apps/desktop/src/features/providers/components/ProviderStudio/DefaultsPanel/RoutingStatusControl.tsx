@@ -21,7 +21,7 @@ export const RoutingStatusControl = ({
   if (!isCustom && idleLabel === null) {
     return null;
   }
-  const status = isCustom ? 'custom' : idleLabel;
+  const status = isCustom ? 'Custom' : idleLabel;
 
   return (
     <div className="flex shrink-0 items-center justify-end">

@@ -15,7 +15,6 @@ export type ChipProps = {
   readonly width?: 'auto' | 'sm' | 'md' | 'lg';
   readonly shape?: 'pill' | 'badge';
   readonly bordered?: boolean;
-  readonly uppercase?: boolean;
   readonly emphasis?: ChipEmphasis;
   readonly as?: 'span' | 'button';
   readonly title?: string;
@@ -49,7 +48,6 @@ export type ChipClassParams = {
   readonly width?: 'auto' | 'sm' | 'md' | 'lg';
   readonly shape?: 'pill' | 'badge';
   readonly bordered?: boolean;
-  readonly uppercase?: boolean;
   readonly emphasis?: ChipEmphasis;
   readonly isInteractive?: boolean;
 };
@@ -60,7 +58,6 @@ export const chipClasses = ({
   width = 'auto',
   shape = 'pill',
   bordered = true,
-  uppercase = false,
   emphasis = 'soft',
   isInteractive = false,
 }: ChipClassParams): string => {
@@ -71,7 +68,6 @@ export const chipClasses = ({
     emphasis === 'subtle' ? tint.bgSoft : tint.bg,
     tint.text,
     sizeClasses[size],
-    uppercase ? 'uppercase tracking-eyebrow' : '',
     width === 'auto' ? '' : widthClasses[width],
     bordered ? 'ring-1' : '',
     bordered ? (emphasis === 'strong' ? tint.ringStrong : tint.ring) : '',
@@ -95,7 +91,6 @@ export const Chip = ({
   width = 'auto',
   shape = 'pill',
   bordered = true,
-  uppercase = false,
   emphasis = 'soft',
   as = 'span',
   title,
@@ -116,7 +111,6 @@ export const Chip = ({
       width,
       shape,
       bordered,
-      uppercase,
       emphasis,
       isInteractive: isButton,
     }),

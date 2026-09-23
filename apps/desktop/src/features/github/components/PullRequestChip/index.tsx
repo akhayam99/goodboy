@@ -65,7 +65,6 @@ export const PullRequestChip = ({
     <Chip
       tone={meta.tone}
       size="3xs"
-      uppercase
       bordered={false}
       icon={<Icon size={iconSize ?? 10} aria-hidden />}
       label={<span>{meta.label}</span>}

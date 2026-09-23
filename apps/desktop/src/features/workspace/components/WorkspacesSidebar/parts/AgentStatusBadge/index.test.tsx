@@ -25,6 +25,9 @@ describe('AgentStatusBadge', () => {
       </>,
     );
 
-    STATUSES.forEach((status) => expect(screen.getByText(status)).toBeDefined());
+    for (const label of ['Pending', 'Running', 'Done', 'Failed', 'Skipped']) {
+      expect(screen.getByText(label)).toBeDefined();
+    }
+    expect(STATUSES).toHaveLength(5);
   });
 });

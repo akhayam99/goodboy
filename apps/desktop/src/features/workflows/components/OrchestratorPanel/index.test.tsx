@@ -545,7 +545,7 @@ describe('OrchestratorPanel strip', () => {
 
     const rows = screen.getAllByTestId('orchestrator-hint-row');
     expect(rows.map((row) => row.getAttribute('data-status'))).toEqual(['queued', 'read']);
-    expect(rows[1]?.textContent).toContain('read at step 2');
+    expect(rows[1]?.textContent).toContain('Read at step 2');
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Remove hint' })[0]!);
     expect(storeState['removeWorkflowOrchestratorHint']).toHaveBeenCalledWith(

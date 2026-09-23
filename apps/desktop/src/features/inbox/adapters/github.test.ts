@@ -32,7 +32,7 @@ describe('adaptGithubIssues', () => {
       state: 'open',
       updatedAt: '2026-08-01T10:00:00Z',
       url: 'https://github.com/goodboy/goodboy/issues/41',
-      meta: 'GitHub',
+      meta: 'goodboy/goodboy',
       payload: { provider: 'github', kind: 'issue', issue: issue(), sessionId },
     });
   });

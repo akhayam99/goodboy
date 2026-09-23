@@ -9,7 +9,7 @@ import type {
 export const QUESTION_DELEGATE_SOURCE_KIND: AgentSourceKind = 'open_question';
 
 export const QUESTION_DELEGATE_COPY = {
-  offer: 'let an agent answer',
+  offer: 'Let an agent answer',
   running: 'an agent is answering this',
   retry: 'the agent could not answer. hand it over again',
   blocked: "a delegated agent can't delegate again. this one is yours to answer",

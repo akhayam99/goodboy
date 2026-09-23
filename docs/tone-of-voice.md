@@ -55,6 +55,10 @@ talking to a market. There are two voices:
 - **Sentence case** for headings. Not Title Case. The one exception is the
   casing of tiny eyebrow labels, and [DESIGN.md](../DESIGN.md) owns it in
   Voice & copy.
+- **Chips, statuses and toasts use sentence case too.** One set of status words
+  across artifacts, inbox and resolve: "Generating", "Needs you", "No report",
+  "Couldn't read wireframe", "Active", "Used", "Passed", "Failed", "Stopped".
+  `sentence-case-copy.test.ts` checks the named copy maps.
 - **No trailing period on titles, eyebrows, button labels, or list items.**
   Body sentences keep theirs. The one exception is a hero line that stands
   alone, because it is read like a spoken beat ("Stop re-explaining yourself.").

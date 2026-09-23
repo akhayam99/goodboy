@@ -1,5 +1,13 @@
 import type { ReactNode } from 'react';
-import { Divider, EmptyState, InlineConfirm, ScrollFade, SectionHeader, cn } from '@goodboy/ui';
+import {
+  Button,
+  Divider,
+  EmptyState,
+  InlineConfirm,
+  ScrollFade,
+  SectionHeader,
+  cn,
+} from '@goodboy/ui';
 import { Plus, RotateCcw } from 'lucide-react';
 import type { Workflow, WorkflowId } from '@goodboy/types';
 import {
@@ -36,7 +44,12 @@ export const WorkflowsRail = ({
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0 px-3 pb-2 pt-3">
         <SectionHeader
-          label={`Presets (${presets.length})`}
+          label="Workflows"
+          meta={
+            presets.length > 0 ? (
+              <span className="text-2xs tabular-nums text-faint-foreground">{presets.length}</span>
+            ) : undefined
+          }
           action={
             <button
               type="button"
@@ -55,10 +68,16 @@ export const WorkflowsRail = ({
           <EmptyState
             icon={CONCEPT_ICONS.workflows}
             tone={CONCEPT_TONE.workflows}
-            title="No presets yet"
-            description="Create one to chain several agents in a single session."
+            title="No workflows yet"
+            description="Create one to chain several agents in a single session, or bring back the built-in presets."
             size="inline"
             bordered
+            action={
+              <Button variant="secondary" size="sm" onClick={() => setConfirmReset(true)}>
+                <RotateCcw size={ICON_SIZE.row} aria-hidden />
+                Restore defaults
+              </Button>
+            }
           />
         ) : (
           <ul className="flex flex-col gap-0.5">
@@ -78,7 +97,7 @@ export const WorkflowsRail = ({
       <div className="shrink-0 px-3 py-3">{importSection}</div>
       <Divider />
 
-      <div className="shrink-0 px-3 pb-3 pt-1">
+      <div className="shrink-0 px-3 pb-3 pt-1 empty:hidden">
         {confirmReset ? (
           <InlineConfirm
             role="alert"
@@ -90,7 +109,7 @@ export const WorkflowsRail = ({
             onConfirm={onReset}
             onCancel={() => setConfirmReset(false)}
           />
-        ) : (
+        ) : presets.length === 0 ? null : (
           <button
             type="button"
             onClick={() => setConfirmReset(true)}

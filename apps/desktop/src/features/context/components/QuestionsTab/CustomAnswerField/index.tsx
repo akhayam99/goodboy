@@ -35,7 +35,7 @@ export const CustomAnswerField = ({
         )}
       >
         <Pencil size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-        <span>other</span>
+        <span>Other</span>
       </button>
     );
   }

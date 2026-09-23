@@ -14,6 +14,7 @@ import { PaneShell } from '../../../../shared/components/PaneShell';
 import { TurnsTable } from './TurnsTable';
 import { StudioWidget } from '@goodboy/ui';
 import { buildModelBreakdown, coverageTurnCounts, providerLabel, type WorkspaceTurn } from './lib';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly provider: ProviderName;
@@ -61,7 +62,7 @@ export const ProviderPanel = ({
   return (
     <PaneShell
       scroll="body"
-      glyph={<ProviderIcon provider={provider} size={16} />}
+      glyph={<ProviderIcon provider={provider} size={ICON_SIZE.hero} />}
       title={providerLabel(provider)}
       description={`${formatUsd(spent)} total spend`}
     >
@@ -97,7 +98,7 @@ export const ProviderPanel = ({
 
       <CapEditor
         label="monthly cap"
-        hint="cap monthly spend for this provider"
+        hint="Cap the monthly spend for this provider"
         currentCapUsd={rule?.capUsd ?? null}
         {...(rule !== null
           ? { threshold: { pct: rule.alertThresholdPct, onSave: onSaveThreshold } }

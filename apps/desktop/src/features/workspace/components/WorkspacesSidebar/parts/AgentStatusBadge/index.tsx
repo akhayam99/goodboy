@@ -9,6 +9,14 @@ const TONE: Record<AgentStatus, Tone> = {
   skipped: 'neutral',
 };
 
+const LABEL: Record<AgentStatus, string> = {
+  pending: 'Pending',
+  running: 'Running',
+  completed: 'Done',
+  failed: 'Failed',
+  skipped: 'Skipped',
+};
+
 type Props = {
   readonly status: AgentStatus;
 };
@@ -17,9 +25,8 @@ export const AgentStatusBadge = ({ status }: Props) => (
   <Chip
     tone={TONE[status]}
     size="3xs"
-    uppercase
     bordered={false}
-    label={status}
+    label={LABEL[status]}
     className={status === 'skipped' ? 'shrink-0 opacity-70' : 'shrink-0'}
   />
 );

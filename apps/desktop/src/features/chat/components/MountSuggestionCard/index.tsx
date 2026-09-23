@@ -23,10 +23,10 @@ const consequenceSentence = ({ projectName, agentName, cause }: SentenceParams):
   const lead = `Mount ${projectName} so ${agentName} can use it in this session`;
   switch (cause) {
     case 'batch':
-      return `${lead}; this request has already mounted two projects.`;
+      return `${lead}. This request has already mounted two projects.`;
     case 'scope':
     case null:
-      return `${lead}; this expands the session beyond its two-project allowance for unauthorized projects.`;
+      return `${lead}. It adds a third project to this session.`;
     default: {
       const exhaustive: never = cause;
       return exhaustive;

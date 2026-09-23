@@ -94,7 +94,7 @@ export const DiscoveredScriptGroup = ({
               {group.relDir}
             </span>
           ) : null}
-          <Chip tone="neutral" label={group.manager} size="3xs" shape="badge" uppercase />
+          <Chip tone="neutral" label={group.manager} size="3xs" shape="badge" />
           <Chip tone="neutral" label={String(scripts.length)} size="3xs" />
           {isRunning ? (
             <StatusDot tone="info" pulsing ariaLabel={`Running script in ${group.packageName}`} />

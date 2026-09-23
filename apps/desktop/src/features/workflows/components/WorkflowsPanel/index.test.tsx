@@ -146,7 +146,7 @@ const configureSourceWorkspace = () => {
 describe('WorkflowsPanel', () => {
   it('renders the empty-state copy when no workflows exist', () => {
     renderPanel();
-    expect(screen.getByText(/no presets yet/i)).toBeDefined();
+    expect(screen.getByText(/no workflows yet/i)).toBeDefined();
   });
 
   it('renders a New workflow button', () => {
@@ -157,7 +157,7 @@ describe('WorkflowsPanel', () => {
   it('shows the empty import state without another workspace', () => {
     renderPanel();
 
-    expect(screen.getByText('No other workspaces')).toBeDefined();
+    expect(screen.getByText('No projects in other workspaces')).toBeDefined();
   });
 
   it('loads workflows after selecting a source project', async () => {
@@ -327,7 +327,7 @@ describe('WorkflowsPanel', () => {
       ],
     };
     renderPanel();
-    expect(screen.getByText(/no presets yet/i)).toBeDefined();
+    expect(screen.getByText(/no workflows yet/i)).toBeDefined();
   });
 
   it('duplicates a workflow as an independent preset', async () => {

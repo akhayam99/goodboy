@@ -11,6 +11,7 @@ import { FORM_BODIES } from '../../formBodies';
 import { toolIdentity } from './toolIdentity';
 import type { GithubConnection } from '../../github/useGithubConnection';
 import { GithubAccountRows } from './GithubAccountRows';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -42,7 +43,7 @@ export const ToolDetailPanel = ({
       measure="reading"
       title={title}
       description={subtitle}
-      glyph={<IntegrationGlyph provider={provider} size={16} />}
+      glyph={<IntegrationGlyph provider={provider} size={ICON_SIZE.hero} />}
     >
       <section className="flex flex-col gap-2">
         <SectionHeader label="Account" />

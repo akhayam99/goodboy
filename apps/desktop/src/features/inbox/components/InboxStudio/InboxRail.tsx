@@ -1,5 +1,5 @@
 import { Fragment, type KeyboardEvent } from 'react';
-import { Bug, CircleDot, GitPullRequest, MessagesSquare, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import {
   Chip,
   cn,
@@ -20,7 +20,7 @@ import {
 import { groupRecordsByAge } from '../../ageSections';
 import {
   filterInboxRecords,
-  INBOX_KIND_FILTERS,
+  visibleKindFilters,
   kindFilterCounts,
   type InboxKindFilter,
 } from '../../kindFilter';
@@ -35,14 +35,6 @@ const KIND_LABEL: Record<InboxKindFilter, string> = {
   error: 'Errors',
 };
 
-const KIND_ICON: Record<InboxKindFilter, SegmentedTabOption<InboxKindFilter>['icon']> = {
-  all: CONCEPT_ICONS.inbox,
-  issue: CircleDot,
-  'pr-mr': GitPullRequest,
-  thread: MessagesSquare,
-  error: Bug,
-};
-
 const NO_PROVIDER_FILTER: ReadonlySet<InboxProvider> = new Set();
 
 type ErrorEntry = {
@@ -51,6 +43,7 @@ type ErrorEntry = {
 };
 
 type Props = {
+  readonly connected: ReadonlyArray<InboxProvider>;
   readonly records: ReadonlyArray<InboxRecord>;
   readonly allRecords: ReadonlyArray<InboxRecord>;
   readonly selectedProviders: ReadonlySet<InboxProvider>;
@@ -126,6 +119,7 @@ const handleListKeyDown = ({
 };
 
 export const InboxRail = ({
+  connected,
   records,
   allRecords,
   selectedProviders,
@@ -145,14 +139,13 @@ export const InboxRail = ({
   onRefresh,
 }: Props) => {
   const counts = kindFilterCounts({ records: allRecords });
-  const kindOptions: ReadonlyArray<SegmentedTabOption<InboxKindFilter>> = INBOX_KIND_FILTERS.map(
-    (filter) => ({
-      value: filter,
-      label: KIND_LABEL[filter],
-      icon: KIND_ICON[filter],
-      badge: String(counts[filter]),
-    }),
-  );
+  const kindOptions: ReadonlyArray<SegmentedTabOption<InboxKindFilter>> = visibleKindFilters({
+    connected,
+  }).map((filter) => ({
+    value: filter,
+    label: KIND_LABEL[filter],
+    ...(counts[filter] > 0 && { badge: String(counts[filter]) }),
+  }));
   const providerCountRecords = filterInboxRecords({
     records: allRecords,
     query,

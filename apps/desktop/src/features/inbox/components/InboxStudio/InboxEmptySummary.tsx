@@ -4,7 +4,7 @@ import {
   IntegrationGlyph,
   integrationLabel,
 } from '../../../integrations/components/IntegrationGlyph';
-import { kindFilterCounts } from '../../kindFilter';
+import { INBOX_KIND_PROVIDERS, kindFilterCounts, visibleKindFilters } from '../../kindFilter';
 import type { InboxKindFilter } from '../../kindFilter';
 import { INBOX_PROVIDERS, type InboxProvider, type InboxRecord } from '../../types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -24,13 +24,6 @@ type Props = {
 type Reason = 'failed' | 'nothing-connected' | 'all-clear' | 'no-matches' | 'no-selection';
 
 type TileKind = Exclude<InboxKindFilter, 'all'>;
-
-const TILE_PROVIDERS: Record<TileKind, ReadonlyArray<InboxProvider>> = {
-  issue: ['github', 'gitlab', 'linear', 'jira'],
-  'pr-mr': ['gitlab', 'bitbucket'],
-  thread: ['slack'],
-  error: ['sentry'],
-};
 
 type ReasonCopy = {
   readonly title: string;
@@ -89,11 +82,13 @@ export const InboxEmptySummary = ({
   const counts = kindFilterCounts({ records });
   const tile = ({ kind }: { readonly kind: TileKind }) => {
     const isUnknown =
-      counts[kind] === 0 && TILE_PROVIDERS[kind].some((provider) => errors[provider] !== null);
+      counts[kind] === 0 &&
+      INBOX_KIND_PROVIDERS[kind].some((provider) => errors[provider] !== null);
     return isUnknown
       ? { value: UNKNOWN_VALUE, hint: NOT_LOADED_HINT }
       : { value: String(counts[kind]), hint: undefined };
   };
+  const hasPullRequestFeed = visibleKindFilters({ connected }).includes('pr-mr');
   const providerCounts = INBOX_PROVIDERS.map((provider) => ({
     provider,
     count: records.filter((record) => record.provider === provider).length,
@@ -117,13 +112,15 @@ export const InboxEmptySummary = ({
               tone="info"
               valueSize="lg"
             />
-            <StatCard
-              label="PRs & MRs"
-              {...tile({ kind: 'pr-mr' })}
-              icon={<GitPullRequest size={ICON_SIZE.hero} aria-hidden />}
-              tone="merged"
-              valueSize="lg"
-            />
+            {hasPullRequestFeed ? (
+              <StatCard
+                label="PRs & MRs"
+                {...tile({ kind: 'pr-mr' })}
+                icon={<GitPullRequest size={ICON_SIZE.hero} aria-hidden />}
+                tone="merged"
+                valueSize="lg"
+              />
+            ) : null}
             <StatCard
               label="Threads"
               {...tile({ kind: 'thread' })}
