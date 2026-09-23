@@ -1,157 +1,150 @@
 # Repo architecture
 
-> **Read this when** you're touching runtime systems around the app:
-> subprocess environment, provider routing, database migrations. **Not for**
-> where new code goes inside `apps/desktop/src/` (see
+> **Read this when** you are changing how the app runs things: the environment
+> agents start with, how providers are picked, or database migrations. **Not for**
+> deciding where new code goes inside `apps/desktop/src/` (see
 > [file-system.md](file-system.md)).
 
-Goodboy is four pieces working together: a **desktop shell** (Rust, via
-Tauri) that owns the OS process and the filesystem, a **frontend** (React)
-that renders the board and every session, a **local database** (SQLite) that
-holds everything the app remembers, and the **provider CLIs** (Claude, Codex,
-Cursor and the rest) that actually run your agents as subprocesses.
+Goodboy has four pieces that work together.
 
-A task's life through those pieces looks like this: you start a session in
-the frontend, the shell spawns the provider CLI you picked with the right
-environment and working directory, the provider streams its work back over
-that subprocess, and the shell records every step in SQLite so the frontend
-can show it and the next agent can pick up where the last one left off.
+- The **desktop shell** is written in Rust with Tauri. It talks to the operating system and reads and writes files.
+- The **frontend** is written in React. It draws the board and every session.
+- The **local database** is SQLite. It holds everything the app remembers.
+- The **provider CLIs** are Claude, Codex, Cursor and the others. They run your agents as separate processes.
 
-This page covers each of those runtime systems in turn. For the in-app `src/`
-layout, see [file-system.md](file-system.md). For monorepo tooling, see
-[CONVENTIONS.md](../CONVENTIONS.md).
+Here is how a task moves through them. You start a session in the frontend.
+The shell starts the provider CLI you picked, in the right folder and with the
+right environment. The provider sends its work back as it goes. The shell
+saves every step in SQLite. The frontend reads it from there to show you, and
+the next agent reads it to pick up where the last one stopped.
+
+This page walks through each of those systems. For how `src/` is laid out
+inside the app, see [file-system.md](file-system.md). For the tools that run
+the whole repo, see [CONVENTIONS.md](../CONVENTIONS.md).
 
 ## Under the hood
 
 ### Subprocess environment
 
-macOS and Linux GUI apps launched from Finder or the Dock inherit a minimal
-environment, not the one your terminal has. The Rust shell resolves the real
-environment from your login shell and replays it onto spawned processes
-(`apps/desktop/src-tauri/src/path_env.rs`).
+When you open an app from Finder or the Dock on macOS or Linux, it gets a
+bare environment. It does not get the variables your terminal has. The Rust
+shell asks your login shell for the real environment and passes it on to the
+processes it starts (`apps/desktop/src-tauri/src/path_env.rs`).
 
-The rule that decides which helper to use: anything running a user-authored
-script body replays the login environment (`command_with_login_env`, or
-`resolved_env()` for pty spawners that never build a `Command`). Everything
-else takes `PATH` only (`command`). `run_git_push` replays the environment
-because a repo's `pre-push` hook can read variables exported in `~/.zshrc`,
-such as registry tokens or tool config. `PATH` and `TERM` are applied after
-the replay, so they win over whatever the profile exported.
+Which helper to use depends on what the process runs.
 
-`login_shell()` is the single source of truth for which shell to use, so the
-embedded terminal and the environment probe never disagree.
+- If it runs a script the user wrote, it gets the full login environment. Use `command_with_login_env`, or `resolved_env()` for terminal spawners that never build a `Command`.
+- Everything else gets only `PATH`. Use `command`.
 
-Never skip hooks (`git push --no-verify`) to dodge a missing-environment
-failure. Replay the environment instead. This subprocess-environment layer
-is macOS and Linux only: Windows has no login-shell probe.
+`run_git_push` gets the full environment. A repo's `pre-push` hook can read
+variables set in `~/.zshrc`, like registry tokens or tool settings. `PATH`
+and `TERM` are set after the login environment is copied, so they win over
+anything your profile sets.
+
+`login_shell()` is the one place that decides which shell to use. The built-in
+terminal and the environment check always agree because both ask it.
+
+If a push fails because a variable is missing, do not skip hooks with
+`git push --no-verify`. Pass the environment through instead. This layer runs
+on macOS and Linux.
 
 ### Provider routing
 
-- The model registry is compiled, not stored. Ids, family, cost tier, effort
-  ladder, context window, routing weight and price are authored in the
-  provider catalogs under `packages/core/src/providers/`. A model the app
-  can run ships with the app, so there is no row to edit and no migration to
-  write when the registry changes.
-- SQLite holds the overrides on top of that registry, and nothing else, at
-  workspace, project and session scope. A stored value is a pin, never the
-  definition of the thing it pins.
-- A stored pin is validated against the registry at read time. A provider or
-  model id the registry no longer carries falls back to the compiled default
-  instead of reaching a spawn, so removing a model from a catalog can't
-  brick a workspace that pinned it.
+- The list of models is built into the app, not saved in the database. Each model's id, family, cost tier, effort levels, context window, routing weight and price are written in the provider catalogs under `packages/core/src/providers/`. Every model the app can run ships with the app. When the list changes, there is no row to edit and no migration to write.
+- SQLite only stores your choices on top of that list, per workspace, project or session. A saved value points at a model. It never defines one.
+- The app checks each saved choice against the built-in list when it reads it. If a provider or model id is no longer in the list, the app uses the built-in default instead of trying to start it. So removing a model from a catalog never breaks a workspace that picked it.
 
 ### Database migrations
 
-Each migration is one file, `mNNN-kebab-name.ts` under
-`packages/db/src/migrations/`, exporting a single `mNNNName` SQL string.
-Register it in `index.ts` at the version number in its filename. Never edit a
-migration after it has shipped.
+Each migration is one file, `mNNN-kebab-name.ts`, in
+`packages/db/src/migrations/`. It exports one SQL string named `mNNNName`.
+Register it in `index.ts` with the version number from its filename. Once a
+migration has shipped, never edit it.
 
-The runner (`runner.ts`) keeps a set of applied versions, not a high-water
-mark: a version already present in `schema_version` is skipped. So if two
-branches both add version N, whichever merges second finds N already applied
-on every machine that ran the first, and its migration never runs, silently
-and permanently. Renumber before merging. Two migrations that touch
-different tables need no ordering between them once renumbered.
+The runner (`runner.ts`) keeps a list of every version it has applied, not
+only the highest one. It skips any version already in `schema_version`. So if
+two branches both add version N, the second one to merge never runs on
+machines that already ran the first. Nothing warns you, and it never catches
+up. Give it a new number before you merge. Once the numbers are different,
+two migrations that touch different tables can run in any order.
 
-Each migration is split into segments at `PRAGMA foreign_keys` boundaries.
-Every segment commits on its own and writes a checkpoint row in
-`schema_migration_segment`, so an interrupted migration resumes at the next
-segment instead of half-applying. Only the final segment stamps
-`schema_version` and clears the checkpoints. A statement that fails with
-"already exists" or "duplicate column name" is treated as already applied:
-warned, not fatal.
+The runner splits each migration into parts wherever a `PRAGMA foreign_keys`
+line appears. Each part commits on its own and saves a checkpoint row in
+`schema_migration_segment`. If a migration stops halfway, the next start picks
+up at the next part, so nothing is left half done. Only the last part writes
+to `schema_version` and clears the checkpoints. If a statement fails with
+"already exists" or "duplicate column name", the runner treats it as done. It
+logs a warning and keeps going.
 
-`registry.test.ts` is the guard. It fails CI on a duplicate version, a gap in
-the version range, or a filename that disagrees with its registered version,
-and it asserts that upgrading from every intermediate version reaches the
-exact schema of a fresh install.
+`registry.test.ts` guards all of this. It fails CI when two migrations share a
+version, when a version number is skipped, or when a filename does not match
+its registered version. It also checks that upgrading from every older
+version ends up with the exact same schema as a fresh install.
 
-When a file database has pending migrations at boot, the runner first writes
-a snapshot next to the database via `VACUUM INTO`:
-`data.db.pre-m<next>-from-m<current>-<timestamp>.bak`, where `<next>` is the
-lowest pending version (what the snapshot protects against) and `<current>`
-is the highest applied version at that moment (the schema the file actually
-holds). Snapshots written before 0.3.0 use the older
-`data.db.pre-m<current>-<timestamp>.bak` shape. Both are recognised and
-pruned: listing keys off the `data.db.pre-m` prefix, age off the trailing
-timestamp. The two newest snapshots are kept, older ones are removed, and a
-snapshot failure aborts the migrations before any of them runs.
+When the app starts and a database file has migrations waiting, the runner
+first saves a copy next to it with `VACUUM INTO`. The copy is named
+`data.db.pre-m<next>-from-m<current>-<timestamp>.bak`. Here `<next>` is the
+lowest version waiting to run, the one the copy protects you from.
+`<current>` is the highest version already applied, the schema the file
+really has. Copies made before 0.3.0 use the older name
+`data.db.pre-m<current>-<timestamp>.bak`. The runner handles both. It finds
+copies by the `data.db.pre-m` prefix and reads their age from the timestamp
+at the end. It keeps the two newest and deletes the rest. If saving the copy
+fails, no migration runs.
 
-This is the rollback path for irreversible migrations. From m117 onward the
-schema is unreadable by 0.1.x builds ([ADR 001](adr/001-workspace-project-rename.md)),
-so going back means restoring the snapshot file, not downgrading the app in
-place.
+These copies are how you roll back a migration that cannot be undone. From
+m117 on, 0.1.x builds cannot read the schema
+([ADR 001](adr/001-workspace-project-rename.md)). To go back, restore the copy.
+Installing an older version of the app on top does not work.
 
 ### On-disk data layout
 
-Everything the app writes for itself lives under `~/.goodboy`:
+Everything the app saves for itself lives in `~/.goodboy`.
 
-- `data.db`: the SQLite database. Its pre-migration snapshots
-  (`data.db.pre-m*.bak`) sit next to it.
-- `sessions/<workspace-slug>/<session-slug>-<id>/`: a session's container
-  directory, for workspaces that didn't configure their own sessions root.
-- `workspaces/<slug>/PROFILE.md`: a one-way projection of a workspace's
-  profile. The database row is the source of truth and the file is never
-  read back.
-- `file-versions/`: the captured file version blobs.
-- `query-<pid>.sock`: the query bridge socket of a running instance (see
-  [query-bridge.md](query-bridge.md)).
-- `boot-breadcrumbs.log`: boot phase timings.
+- `data.db`: the SQLite database. Its copies from before each migration (`data.db.pre-m*.bak`) sit next to it.
+- `sessions/<workspace-slug>/<session-slug>-<id>/`: a session's own folder, for workspaces that did not set their own place for sessions.
+- `workspaces/<slug>/PROFILE.md`: a copy of a workspace's profile, written out for reading. The database row is the real one, and the app never reads this file back.
+- `file-versions/`: saved versions of files.
+- `query-<pid>.sock`: the socket a running app uses for the query bridge (see [query-bridge.md](query-bridge.md)).
+- `boot-breadcrumbs.log`: how long each startup step took.
 
-Repository project mounts use dedicated git worktrees under the repository's
-`.goodboy/worktrees/` directory instead. Several mounts of one project can
-belong to the same session.
+When a session works on a repository, it gets its own git worktree in the
+repository's `.goodboy/worktrees/` folder. A session can have several
+worktrees of the same project.
 
-Two things live with your code instead of under `~/.goodboy`: a folder
-project's session directories, under `<project-root>/sessions/`, and skills,
-under `<project-root>/.kay/skills/` or `<project-root>/.claude/skills/`.
+Two things live next to your code instead of in `~/.goodboy`. A folder
+project keeps its session folders in `<project-root>/sessions/`. Skills live
+in `<project-root>/.kay/skills/` or `<project-root>/.claude/skills/`.
 
-### Mount persistence and recovery
+### How mounts are saved and recovered
 
-`session_worktrees` is the logical mount table. Its row id is the mount
-identity. A project id identifies the repository that owns the mount, not
-one checkout of it. Each mount owns its current branch, a nullable current
-path, its last path, attachment state, disk observation and revision. The
-active mount is stored on the session.
+A mount is one copy of a repository that a session works in. The
+`session_worktrees` table holds one row per mount, and the row id is the
+mount's identity. The project id points at the repository the mount belongs
+to, not at one checkout of it. Each mount stores its current branch, its
+current path (which can be empty), its last path, whether it is attached,
+what the app last saw on disk, and a revision number. The session stores
+which mount is active.
 
-Pull request ownership lives in `mount_pr_links`, independently of the
-branch-keyed provider caches, so a switch can clear the current provider
-projection without deleting request history. `pr_series` and
-`pr_series_members` store explicit grouping and order. They don't infer a
-stack from commits.
+`mount_pr_links` records which pull requests belong to a mount. It is kept
+apart from the provider caches, which are keyed by branch. So switching
+branches can clear what the provider shows without losing pull request
+history. `pr_series` and `pr_series_members` store how pull requests are
+grouped and in what order. They are set on purpose and never guessed from
+commits.
 
-Filesystem and provider mutations go through `mount_operations` with a
-caller-owned request id. The operation is recorded before the external
-action, so startup can finish a database transition when the worktree
-already exists or has already disappeared, and provider creation refreshes
-the remote before retrying. These checks make retry idempotent across the
-observable interruption points, though they can't infer an unrecorded
-historical request.
+Every change to files or to a provider goes through `mount_operations`, with a
+request id chosen by the caller. The app saves the operation before it acts.
+If the app stops halfway, the next start can finish the database side,
+whether the worktree already exists or is already gone. Before a provider
+retries creating something, the app refreshes the remote first. These checks
+make it safe to run the same request again after a stop at any point the app
+can see.
 
-Hydration and archive restoration inspect every stored repository worktree
-before projecting it as writable. A missing path is detached, kept as the
-last path, and marked missing. Cleanup transfers dirty or otherwise unsafe
-paths to `retained_worktree_paths` when the owning lifecycle needs to
-continue. Every cleanup entry point shares the same checked Rust removal
-boundary, and local branches are preserved.
+When the app loads a session or brings one back from the archive, it checks
+every saved worktree before letting agents write to it. If a path is missing,
+the app detaches it, keeps it as the last path and marks it missing. When
+cleanup finds a path with uncommitted changes or anything else unsafe, and
+the work still needs to go on, it moves the path to `retained_worktree_paths`.
+Every cleanup goes through the same checked removal code in Rust, and local
+branches are always kept.
