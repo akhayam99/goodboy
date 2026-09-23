@@ -134,7 +134,7 @@ export const Extras = () => {
 
   return (
     <section className="block" id="extras" aria-labelledby="h2-extras">
-      <div className="wrap">
+      <div className="wrap split">
         <div className="blockHead">
           <h2 className="rv" id="h2-extras">
             It notices the next step and waits
@@ -146,75 +146,77 @@ export const Extras = () => {
           </p>
         </div>
 
-        <div className="appframe ex-frame rv" style={delay(80)} ref={ref} aria-hidden="true">
-          <div className="tbar">
-            <span className="tl r" />
-            <span className="tl y" />
-            <span className="tl g" />
-            <span className="tname">goodboy, acme / api / Ship LIN-241</span>
-          </div>
-
-          <div className="ex-sec">
-            <p className="ex-eyebrow">Suggestions</p>
-            <div className="ex-list">
-              {OFFERS.map((offer) => (
-                <div className={`ex-row${stage >= offer.at ? ' ex-lit' : ''}`} key={offer.key}>
-                  <span className="ex-ico">{offer.glyph}</span>
-                  <span className="ex-rt">
-                    <span className="ex-title">{offer.title}</span>
-                    {offer.detail !== null && <span className="ex-detail">{offer.detail}</span>}
-                  </span>
-                  {offer.action}
-                </div>
-              ))}
+        <div className="splitBody">
+          <div className="appframe ex-frame rv" style={delay(80)} ref={ref} aria-hidden="true">
+            <div className="tbar">
+              <span className="tl r" />
+              <span className="tl y" />
+              <span className="tl g" />
+              <span className="tname">goodboy, acme / api / Ship LIN-241</span>
             </div>
-          </div>
 
-          <div className="hairline" />
+            <div className="ex-sec">
+              <p className="ex-eyebrow">Suggestions</p>
+              <div className="ex-list">
+                {OFFERS.map((offer) => (
+                  <div className={`ex-row${stage >= offer.at ? ' ex-lit' : ''}`} key={offer.key}>
+                    <span className="ex-ico">{offer.glyph}</span>
+                    <span className="ex-rt">
+                      <span className="ex-title">{offer.title}</span>
+                      {offer.detail !== null && <span className="ex-detail">{offer.detail}</span>}
+                    </span>
+                    {offer.action}
+                  </div>
+                ))}
+              </div>
+            </div>
 
-          <div className="ex-sec">
-            <div className="ex-composer">
-              <p className={`ex-typed${stage >= AT_TYPED ? ' ex-lit' : ''}`}>
-                Rename the Archive button to Archive all
-              </p>
+            <div className="hairline" />
 
-              <div className={`ex-card${stage >= AT_HELD ? ' ex-lit' : ''}`}>
-                <span className="ex-cardglyph">
-                  <LampGlyph />
-                </span>
-                <p className="ex-cardtext">
-                  This looks light. Run with <b>Claude Sonnet</b> instead of <b>Claude Opus</b>?
-                  <span className="ex-cardsub">About 1.7x cheaper.</span>
+            <div className="ex-sec">
+              <div className="ex-composer">
+                <p className={`ex-typed${stage >= AT_TYPED ? ' ex-lit' : ''}`}>
+                  Rename the Archive button to Archive all
                 </p>
-                <span className="ex-cardbtns">
-                  <span className={`mockbtn ex-accept${stage >= AT_PRESS ? ' ex-press' : ''}`}>
-                    Use Sonnet
-                  </span>
-                  <span className="mockbtn ghost">Keep Opus</span>
-                  <span className="ex-quiet">Change model…</span>
-                </span>
-              </div>
 
-              <div className="ex-cfoot">
-                <span className="ex-chip">
-                  <BrandMark brand="anthropic" size={13} />
-                  <span className="ex-chipslot">
-                    <span className={swapped ? '' : 'ex-on'}>Claude Opus · High</span>
-                    <span className={swapped ? 'ex-on' : ''}>Claude Sonnet · High</span>
+                <div className={`ex-card${stage >= AT_HELD ? ' ex-lit' : ''}`}>
+                  <span className="ex-cardglyph">
+                    <LampGlyph />
                   </span>
-                </span>
-                <span className="ex-send">
-                  <SendGlyph />
-                </span>
+                  <p className="ex-cardtext">
+                    This looks light. Run with <b>Claude Sonnet</b> instead of <b>Claude Opus</b>?
+                    <span className="ex-cardsub">About 1.7x cheaper.</span>
+                  </p>
+                  <span className="ex-cardbtns">
+                    <span className={`mockbtn ex-accept${stage >= AT_PRESS ? ' ex-press' : ''}`}>
+                      Use Sonnet
+                    </span>
+                    <span className="mockbtn ghost">Keep Opus</span>
+                    <span className="ex-quiet">Change model…</span>
+                  </span>
+                </div>
+
+                <div className="ex-cfoot">
+                  <span className="ex-chip">
+                    <BrandMark brand="anthropic" size={13} />
+                    <span className="ex-chipslot">
+                      <span className={swapped ? '' : 'ex-on'}>Claude Opus · High</span>
+                      <span className={swapped ? 'ex-on' : ''}>Claude Sonnet · High</span>
+                    </span>
+                  </span>
+                  <span className="ex-send">
+                    <SendGlyph />
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <p className="caption rv" style={delay(110)}>
-          Three offers sitting on the task, one holding the message you just typed. Ignore all four
-          and nothing changes.
-        </p>
+          <p className="caption rv" style={delay(110)}>
+            Three offers sitting on the task, one holding the message you just typed. Ignore all
+            four and nothing changes.
+          </p>
+        </div>
       </div>
     </section>
   );

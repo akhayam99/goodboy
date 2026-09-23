@@ -38,7 +38,7 @@ const FAQS: readonly FaqItem[] = [
 
 export const Faq = () => (
   <section className="block alt" id="faq" aria-labelledby="h2-faq">
-    <div className="wrap">
+    <div className="wrap split splitSticky">
       <div className="blockHead">
         <h2 className="rv" id="h2-faq">
           Questions people ask before they install
@@ -47,7 +47,7 @@ export const Faq = () => (
           The stuff that comes up first, answered straight.
         </p>
       </div>
-      <div className="faq">
+      <div className="faq splitBody">
         {FAQS.map((item, i) => (
           <details key={item.q} className="rv" style={delay(i * 40)} open={i === 0}>
             <summary>{item.q}</summary>
