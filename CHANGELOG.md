@@ -7,6 +7,36 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.3.15
+
+The orchestrator starts on every provider, reads your hints when you say so, and the context bar shows what the model is really holding.
+
+### [#1850] The Codex orchestrator starts outside a git repository
+
+A dynamic run pinned to Codex exited with code 1 before the model ran whenever the session had no git worktree. It starts now, and when a planner call does fail, the error carries the last line the CLI printed instead of a bare exit code.
+
+### [#1853] Hints: queue them or have them read now
+
+Every hint you write lives in the orchestrator's context for the rest of the run, and each decision sees them all, marked new or with the step they were first read at. You pick one thing: Queue, read at the next decision, or Read now, which restarts the decision in flight, or stops the running step and decides again. The list keeps every hint with when it was read, and a queued one can be removed.
+
+### [#1854] The workflow card reads top down
+
+The orchestrator comes first, with autorun and Stop at the top right and one call to action for the state the run is in. Agents and their subagents follow, then what is done and what is missing side by side, then a two-line goal. Hints open under their own button. Role models are gone from the card: a preference for a provider or a model on a step is a hint now.
+
+### [#1852] Task models have an Auto
+
+Every task model row starts on Auto, which shows the model Goodboy picks and why, and Back to auto undoes an override. Auto passes a real effort to the CLI, so a low default in your own CLI config no longer leaks into Goodboy's tasks. Branch naming is gone from the list: no code ever read it.
+
+### [#1856] Context means context
+
+Codex reported the whole turn, so a short task read 2.8M of a 1M window. The bar now reads the last request from the session Codex keeps on disk. Gemini takes the last step of a multi-request turn, and Cursor shows a context only when the turn was a single request, rather than a sum.
+
+### Fixes
+
+- A budget fallback strikes the planned model as soon as the turn starts on the other one, not when it ends [#1851]
+- An invalid model pinned on a run falls back to the task model instead of failing the decision [#1850]
+- Cursor's cache writes count in usage [#1856]
+
 ## Goodboy v0.3.14
 
 The model picker groups by family and splits every model into a version and a variant, and the closed picker says the whole selection.
