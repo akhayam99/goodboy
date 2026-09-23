@@ -16,6 +16,9 @@ import {
   emptyTurnStream,
   resetStorySpies,
   storySpies,
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  type StoryStore,
 } from './storyHarness';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
@@ -75,12 +78,11 @@ const connectedCursorState = () => ({
   authResults: { cursor: { state: 'connected', identity: 'test' } } as never,
 });
 
-type StoreModule = typeof import('./store');
-let useAppStore: StoreModule['useAppStore'];
+let useAppStore: StoryStore;
 
 beforeAll(async () => {
-  ({ useAppStore } = await import('./store'));
-}, 60_000);
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 const mockRouting = async (fallbackUsed: boolean) => {
   const routingMod = await import('../features/providers/routing');

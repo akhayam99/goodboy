@@ -20,6 +20,9 @@ import {
   emptyTurnStream,
   resetStorySpies,
   storySpies,
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  type StoryStore,
 } from './storyHarness';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
@@ -112,12 +115,11 @@ const clusterAgent: Agent = buildStoryAgent({
   name: 'mechanical swaps onto existing primitives',
 });
 
-type StoreModule = typeof import('./store');
-let useAppStore: StoreModule['useAppStore'];
+let useAppStore: StoryStore;
 
 beforeAll(async () => {
-  ({ useAppStore } = await import('./store'));
-}, 60_000);
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 describe('sendTurn session language guard', () => {
   beforeEach(() => {

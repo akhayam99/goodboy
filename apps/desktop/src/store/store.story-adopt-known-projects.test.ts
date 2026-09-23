@@ -6,6 +6,9 @@ import {
   buildStoryWorkspace,
   resetStorySpies,
   storySpies,
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  type StoryStore,
 } from './storyHarness';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
@@ -93,20 +96,19 @@ const seedFakeSession = ({
 const fakeWorkspaces = new Map<WorkspaceId, Workspace>();
 const fakeProjectWorkspace = new Map<ProjectId, WorkspaceId>();
 
-type StoreModule = typeof import('./store');
 type DbModule = typeof import('@goodboy/db');
 type RepoModule = typeof import('../shared/lib/repo');
-let useAppStore: StoreModule['useAppStore'];
+let useAppStore: StoryStore;
 let dbMock: DbModule;
 let repoMock: RepoModule;
 
 beforeAll(async () => {
-  ({ useAppStore } = await import('./store'));
+  useAppStore = await importStore();
   dbMock = await import('@goodboy/db');
   repoMock = await import('../shared/lib/repo');
   const skillsMock = await import('../features/skills/skills');
   vi.mocked(skillsMock.invokeSkillRescan).mockResolvedValue([] as never);
-}, 60_000);
+}, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(() => {
   resetStorySpies();
