@@ -92,6 +92,11 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds, purgedAgentIds } from '../../session-mutators';
 import { claimTurnStart, closeTurnStartWindow } from './turnStartWindow';
+import {
+  claimWorkflowTurn,
+  clearWorkflowTurns,
+  MAX_UNATTENDED_TURNS_PER_AGENT,
+} from './workflowTurnBreaker';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from '../../integrationsGuard';
 import { buildProfileGuard } from '../../profileGuard';
@@ -274,6 +279,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const activeAgentId = agentId ?? before.selectedAgentId[sessionId] ?? null;
     if (!activeAgentId) {
       throw new Error('no agent selected. spawn one before sending a turn');
+    }
+    if (origin === 'operator') {
+      clearWorkflowTurns({ agentId: activeAgentId });
     }
     const activeAgent = (before.sessionPhaseRuns[sessionId] ?? []).find(
       (candidate) => candidate.id === activeAgentId,
@@ -1669,9 +1677,42 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       origin: 'mount-continuation',
     });
   };
+  const haltRunawayWorkflowAgent = async ({
+    sessionId,
+    agentId,
+  }: {
+    readonly sessionId: SessionId;
+    readonly agentId: AgentId;
+  }): Promise<SendTurnResult> => {
+    const name =
+      (get().sessionPhaseRuns[sessionId] ?? []).find((run) => run.id === agentId)?.name ?? 'agent';
+    await invokeAgentUpdateStatus(agentId, {
+      status: 'failed',
+      completedAt: new Date().toISOString() as IsoDateTime,
+    }).catch(() => undefined);
+    const refreshed = await invokeAgentList(sessionId).catch(() => null);
+    if (refreshed !== null) {
+      set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshed } }));
+    }
+    void get().refreshUnreadWorkspaces();
+    void get().emitNotification(
+      'error',
+      'warning',
+      `autorun halted: ${name}`,
+      `the workflow sent this agent ${MAX_UNATTENDED_TURNS_PER_AGENT} turns in the last hour without you stepping in, so goodboy stopped it to protect your usage. open the agent and continue manually.`,
+      { sessionId, action: { kind: 'open-agent' as const, sessionId, agentId } },
+    );
+    return NOT_BLOCKED;
+  };
   const run = async (input: Input): Promise<SendTurnResult> => {
     if (input.origin !== 'mount-continuation') {
       resetMountContinuationChain({ sessionId: input.sessionId });
+    }
+    if (input.agentId !== undefined && input.origin === 'workflow') {
+      const claim = claimWorkflowTurn({ agentId: input.agentId, nowMs: Date.now() });
+      if (claim === 'tripped') {
+        return haltRunawayWorkflowAgent({ sessionId: input.sessionId, agentId: input.agentId });
+      }
     }
     const lease: TurnLease = { path: null, holder: null, token: null, attemptId: undefined };
     try {

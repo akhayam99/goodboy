@@ -645,23 +645,28 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
 
     const children = childrenOf(refreshed, containerId);
-    const completedCount = children.filter((c) => c.status === 'completed').length;
+    const isDone = (c: Agent): boolean => c.id === childAgentId || isSettledChild(c);
+    const settledCount = children.filter(isDone).length;
     const total = clusters.length > 0 ? clusters.length : children.length;
 
-    if (completedCount >= total) {
-      await invokeAgentUpdateStatus(containerId, {
-        status: 'completed',
-        outputSummary: `completed ${completedCount} clusters`,
-        completedAt: nowIso(),
-      });
-      refreshed = await invokeAgentList(sessionId);
-      set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
+    if (settledCount >= total) {
+      const container = refreshed.find((r) => r.id === containerId);
+      if (container != null && !isSettledChild(container)) {
+        await invokeAgentUpdateStatus(containerId, {
+          status: 'completed',
+          outputSummary: `completed ${settledCount} clusters`,
+          completedAt: nowIso(),
+        });
+        refreshed = await invokeAgentList(sessionId);
+        set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
+      }
       void get().refreshUnreadWorkspaces();
       void get().maybeAutoAdvanceWorkflow(sessionId);
       return;
     }
 
-    const next = children[completedCount];
+    const nextIndex = children.findIndex((c) => !isDone(c));
+    const next = nextIndex >= 0 ? children[nextIndex] : undefined;
     if (!next) {
       await invokeAgentUpdateStatus(containerId, { status: 'failed', completedAt: nowIso() });
       const blocked = await invokeAgentList(sessionId);
@@ -676,7 +681,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       );
       return;
     }
-    if (!hasInstructions(clusters[completedCount])) {
+    if (!hasInstructions(clusters[nextIndex])) {
       await invokeAgentUpdateStatus(next.id, { status: 'failed', completedAt: nowIso() });
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
@@ -696,7 +701,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       sessionId,
       child: next,
       role: 'implementer',
-      promptText: `${next.name}\n${clusters[completedCount]?.instructions ?? ''}`,
+      promptText: `${next.name}\n${clusters[nextIndex]?.instructions ?? ''}`,
     });
     if (revalidated.kind === 'blocked') {
       const held = await invokeAgentList(sessionId);
@@ -717,7 +722,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       sessionId,
       containerId,
       childId: next.id,
-      content: composeClusterKickoff(next.id, goalTitle, clusters, completedCount),
+      content: composeClusterKickoff(next.id, goalTitle, clusters, nextIndex),
     });
   };
 };
