@@ -120,8 +120,10 @@ drafts the reply. Nothing is pushed or posted until you approve it.
   <img src=".github/providers.png" alt="Claude, Codex, Cursor, Gemini, OpenCode, OpenRouter and Moonshot" width="860">
 </div>
 
-Claude, Cursor and Codex use the CLI login you already have, the others take
-an API key. In settings you pick the default provider, the pool Goodboy can
+Each provider signs in the way its own tool does: Claude, Cursor and Codex
+with the CLI login you already have, Gemini through the Antigravity app,
+OpenCode with its own login, OpenRouter and Moonshot with an API key. In
+settings you pick the default provider, the pool Goodboy can
 switch between and the model for each kind of task.
 
 Each provider can have a monthly cap. When one runs out, hits a rate limit or
