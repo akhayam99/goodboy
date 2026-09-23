@@ -184,11 +184,7 @@ fn current_month_window_ms() -> (i64, i64) {
         .expect("system clock before epoch")
         .as_millis() as i64;
 
-    // Days elapsed in epoch ÷ average — use integer arithmetic to find month boundaries.
-    // Convert ms → seconds for easier calculation.
     let now_s = now_ms / 1000;
-    // Approximate: find year+month via days since epoch.
-    // Use a simple loop: count years/months from 1970.
     let (year, month) = crate::util::epoch_seconds_to_year_month(now_s);
 
     let start_ms = crate::util::ymd_to_epoch_ms(year, month, 1);

@@ -50,8 +50,6 @@ mod workflows;
 mod worktree;
 mod worktree_writer;
 
-pub use secrets::read as read_secret;
-
 use std::sync::Mutex;
 
 #[cfg(target_os = "macos")]
