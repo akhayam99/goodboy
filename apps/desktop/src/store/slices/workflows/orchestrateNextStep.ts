@@ -347,7 +347,7 @@ const hasOperatorStop = ({ get, sessionId, workflowRunId }: OperatorStopParams):
   return current?.orchestrationStop?.kind === 'operator';
 };
 
-const isRoutingModelKnown = ({ providerId, model }: OrchestratorRouting): boolean =>
+export const isRoutingModelKnown = ({ providerId, model }: OrchestratorRouting): boolean =>
   resolveStoredModelSelection({ provider: providerId, id: model }).report?.kind !== 'unknown';
 
 const STDERR_NOISE = /^Reading additional input from stdin/;

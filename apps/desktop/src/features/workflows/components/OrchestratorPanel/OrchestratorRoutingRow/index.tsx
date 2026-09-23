@@ -10,6 +10,7 @@ import type { EffortLevel, ProviderId, SessionId, WorkflowRun } from '@goodboy/t
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { useAppStore } from '../../../../../store/store';
 import { selectResolvedSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
+import { isRoutingModelKnown } from '../../../../../store/slices/workflows/orchestrateNextStep';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -33,6 +34,9 @@ type ProviderModelParams = {
 };
 
 const DEFAULT_EFFORT: EffortLevel = 'medium';
+const AUTO_LABEL = 'Auto';
+const AUTO_REASON =
+  'Follows the workspace default provider. Goodboy picks the model this task needs.';
 
 const providerModelId = ({ provider, model }: ProviderModelParams): string => {
   const stored = resolveStoredModelSelection({ provider, id: model });
@@ -64,7 +68,10 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
     workspaceDefaultProviderId,
     sessionDefaultProviderId: defaultProvider,
   });
-  const pinned = run.orchestratorRouting ?? null;
+  const pinned =
+    run.orchestratorRouting != null && isRoutingModelKnown(run.orchestratorRouting)
+      ? run.orchestratorRouting
+      : null;
   const preferredProviderId = pinned?.providerId ?? automatic.providerId;
   const [providerId, setProviderId] = useState<ProviderId>(preferredProviderId);
   const pendingProvider = useRef<ProviderId>(preferredProviderId);
@@ -134,7 +141,12 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
             });
           },
         }}
-        recommendation={{ model: recommendedModel }}
+        recommendation={{
+          provider: automatic.providerId,
+          model: automatic.model,
+          label: AUTO_LABEL,
+          reason: AUTO_REASON,
+        }}
         disabled={disabled}
         overridden={pinned != null}
         defaultSummary={`${automatic.providerId} ${automatic.model}`}
