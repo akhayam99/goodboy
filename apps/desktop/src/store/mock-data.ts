@@ -14,7 +14,10 @@ const MOCK_MOUNT_DIFF_STATS = new Map([
   ['/mock/harborline/ledger-core-backfill', { additions: 96, deletions: 23 }],
   ['/mock/harborline/notify-relay-backoff', { additions: 74, deletions: 31 }],
   ['/mock/cascadia/payments-api-idempotency', { additions: 224, deletions: 58 }],
+  ['/mock/cascadia/payments-api-backfill', { additions: 138, deletions: 12 }],
   ['/mock/cascadia/web-console-retry-state', { additions: 41, deletions: 6 }],
+  ['/mock/cascade/payments-api-webhook-credits', { additions: 224, deletions: 58 }],
+  ['/mock/cascade/web-console-webhook-credits', { additions: 41, deletions: 6 }],
 ]);
 
 export const readMockMountDiffStat = (worktreePath: string) =>

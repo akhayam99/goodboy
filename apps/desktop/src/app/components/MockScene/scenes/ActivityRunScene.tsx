@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { SESSION, seedActivityRunScene } from './activityRunSeed';
+import { useHoveredMountRow, useShowCompletedMounts } from './sceneReveal';
 
 export const ActivityRunScene = () => {
   const [isReady, setIsReady] = useState(false);
@@ -9,6 +10,9 @@ export const ActivityRunScene = () => {
     seedActivityRunScene();
     setIsReady(true);
   }, []);
+
+  useShowCompletedMounts({ isReady });
+  useHoveredMountRow({ isReady, rowLabel: 'nw/backfill-processed-events' });
 
   if (!isReady) {
     return null;

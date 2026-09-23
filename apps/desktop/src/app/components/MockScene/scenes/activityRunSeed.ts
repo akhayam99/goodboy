@@ -18,6 +18,7 @@ import type {
   SessionArtifact,
   SessionEvent,
   SessionEventId,
+  SessionExternalTask,
   SessionId,
   SessionProjectMount,
   Step,
@@ -165,7 +166,15 @@ const CONSOLE_MOUNT: SessionProjectMount = {
   revision: 0,
 };
 
-const MOUNTS = [PAYMENTS_MOUNT, CONSOLE_MOUNT];
+const BACKFILL_MOUNT: SessionProjectMount = {
+  ...PAYMENTS_MOUNT,
+  worktreePath: '/mock/cascadia/payments-api-backfill',
+  branch: 'nw/backfill-processed-events',
+  mountId: 'mock-run-mount-payments-backfill' as MountId,
+  parallelIndex: 1,
+};
+
+const MOUNTS = [PAYMENTS_MOUNT, BACKFILL_MOUNT, CONSOLE_MOUNT];
 
 const GOAL =
   'Stop payments-api from double-crediting invoices when Stripe redelivers a webhook, then surface the retry state in web-console so support can see a stuck delivery';
@@ -948,6 +957,16 @@ const CONSOLE_PR = PR({
   reviewDecision: 'review_required',
 });
 
+const BACKFILL_PR = PR({
+  number: 618,
+  title: 'Backfill processed event ids for invoices settled before the guard',
+  headBranch: BACKFILL_MOUNT.branch,
+  repo: 'payments-api',
+  state: 'open',
+  checks: 'success',
+  reviewDecision: 'review_required',
+});
+
 const EMPTY_GITHUB = {
   linkedIssues: [],
   fetchedAt: NOW,
@@ -960,6 +979,43 @@ const EMPTY_GITHUB = {
   detailError: null,
 };
 
+type MountGithubParams = {
+  readonly mount: SessionProjectMount;
+  readonly pr: PullRequestState;
+};
+
+const mountGithubEntry = ({ mount, pr }: MountGithubParams) => ({
+  ...EMPTY_GITHUB,
+  pr,
+  prs: [pr],
+  mountId: mount.mountId,
+  projectId: mount.projectId,
+  revision: 0,
+  repository: `cascadia/${mount.mountName}`,
+  host: 'github.com',
+  branch: mount.branch,
+  links: [],
+});
+
+const externalTask = (
+  provider: SessionExternalTask['provider'],
+  identifier: string,
+  title: string,
+): SessionExternalTask => ({
+  sessionId: SESSION_ID,
+  provider,
+  externalId: `mock-run-${identifier}`,
+  identifier,
+  url: `https://example.invalid/${provider}/${identifier}`,
+  title,
+  createdAt: EARLIER,
+});
+
+const EXTERNAL_TASKS: ReadonlyArray<SessionExternalTask> = [
+  externalTask('linear', 'PAY-418', 'Invoices credited twice after webhook retries'),
+  externalTask('sentry', 'PAYMENTS-API-3F2', 'DuplicateCreditError in handleInvoicePaid'),
+];
+
 export const seedActivityRunScene = () => {
   useAppStore.setState({
     workspaces: [WORKSPACE],
@@ -969,6 +1025,7 @@ export const seedActivityRunScene = () => {
     currentSessionId: SESSION_ID,
     sessionProjectMounts: { [SESSION_ID]: MOUNTS },
     sessionActiveProject: { [SESSION_ID]: PAYMENTS_ID },
+    sessionActiveMount: { [SESSION_ID]: BACKFILL_MOUNT.mountId },
     sessionWorktrees: { [SESSION_ID]: MOUNTS.map((mount) => mount.worktreePath) },
     sessionWorktreeRecords: {
       [SESSION_ID]: MOUNTS.map((mount, index) => ({
@@ -1087,16 +1144,31 @@ export const seedActivityRunScene = () => {
         },
       ],
     },
-    sessionExternalTasks: { [SESSION_ID]: [] },
+    sessionExternalTasks: { [SESSION_ID]: EXTERNAL_TASKS },
     sessionGithub: {
       [SESSION_ID]: {
         ...EMPTY_GITHUB,
+        linkedIssues: [
+          {
+            number: 57,
+            title: 'Retried webhooks post a second credit',
+            url: 'https://example.invalid/cascadia/payments-api/issues/57',
+            closes: true,
+          },
+        ],
         pr: PAYMENTS_PR,
       },
     },
+    mountGithub: {
+      [PAYMENTS_MOUNT.mountId]: mountGithubEntry({ mount: PAYMENTS_MOUNT, pr: PAYMENTS_PR }),
+      [BACKFILL_MOUNT.mountId]: mountGithubEntry({ mount: BACKFILL_MOUNT, pr: BACKFILL_PR }),
+      [CONSOLE_MOUNT.mountId]: mountGithubEntry({ mount: CONSOLE_MOUNT, pr: CONSOLE_PR }),
+    },
+    mountGitlabMr: {},
+    mountBitbucketPr: {},
     sessionProjectPrs: {
       [SESSION_ID]: {
-        [PAYMENTS_ID]: [PAYMENTS_PR],
+        [PAYMENTS_ID]: [PAYMENTS_PR, BACKFILL_PR],
         [CONSOLE_ID]: [CONSOLE_PR],
       },
     },
