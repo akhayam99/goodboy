@@ -61,6 +61,7 @@ const HOT_SLICE_KEYS: ReadonlySet<string> = new Set([
   'agentTurnState',
   'agentRunHistory',
   'unknownPayloadCounts',
+  'sessionProjectMounts',
 ]);
 
 const WHOLE_SLICE_TAIL = /^(?:state|s|store)\.([A-Za-z_$][\w$]*)$/;

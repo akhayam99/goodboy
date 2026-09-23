@@ -1,9 +1,40 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { act, cleanup, renderHook } from '@testing-library/react';
+import type { Session, SessionProjectMount } from '@goodboy/types';
+
+vi.mock('../../store/store', async () => {
+  const zustand = await import('zustand');
+  return {
+    useAppStore: zustand.create(() => ({
+      selectedProjectIds: {},
+      getSelectedProjectIds: () => undefined,
+      sessionProjectMounts: {},
+    })),
+  };
+});
+
+import { useAppStore } from '../../store/store';
+import { useProjectFilteredSessions } from '../../store/selectors';
+
+const viewSession = { id: 'session-in-view' } as Session;
+const mount = { projectId: 'project-ledger' } as SessionProjectMount;
+
+type CountedParams<T> = {
+  readonly hook: () => T;
+};
+
+const renderCounted = <T,>({ hook }: CountedParams<T>) => {
+  const counter = { renders: 0 };
+  const rendered = renderHook(() => {
+    counter.renders += 1;
+    return hook();
+  });
+  return { ...rendered, counter };
+};
 
 type TestState = {
   providers: ReadonlyArray<{ id: string; connection: string }>;
@@ -95,5 +126,32 @@ describe('without useShallow these selectors are unstable', () => {
     const a = select(useStore.getState());
     const b = select(useStore.getState());
     expect(Object.is(a, b)).toBe(false);
+  });
+});
+
+describe('whole-map store keys stay out of consumers that render a few sessions', () => {
+  it('writing mounts of a session out of view does not re-render the project filter', () => {
+    useAppStore.setState({ sessionProjectMounts: { [viewSession.id]: [mount] } });
+    const sessions = [viewSession];
+    const { counter, result } = renderCounted({
+      hook: () => useProjectFilteredSessions({ workspaceId: null, sessions }),
+    });
+    const first = result.current;
+    const before = counter.renders;
+
+    act(() =>
+      useAppStore.setState((state) => ({
+        sessionProjectMounts: { ...state.sessionProjectMounts, 'session-elsewhere': [mount] },
+      })),
+    );
+    expect(counter.renders).toBe(before);
+    expect(result.current).toBe(first);
+
+    act(() =>
+      useAppStore.setState((state) => ({
+        sessionProjectMounts: { ...state.sessionProjectMounts, [viewSession.id]: [] },
+      })),
+    );
+    expect(counter.renders).toBeGreaterThan(before);
   });
 });

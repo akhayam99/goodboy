@@ -14,6 +14,7 @@ import {
   EMPTY_ARRAY,
   NO_PROJECT_FILTER_ID,
   useAppStore,
+  useProjectMountsForSessions,
   useSelectedProjectIds,
 } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -44,7 +45,7 @@ export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
   const selectedProjectIds = useSelectedProjectIds({ workspaceId });
   const setSelectedProjectIds = useAppStore((state) => state.setSelectedProjectIds);
   const projects = useAppStore((state) => state.projects);
-  const sessionProjectMounts = useAppStore((state) => state.sessionProjectMounts);
+  const sessionProjectMounts = useProjectMountsForSessions({ sessions });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdown = useDropdown({
     align: 'end',

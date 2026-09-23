@@ -25,6 +25,7 @@ export {
   useSessionViewPrefs,
   useSelectedProjectIds,
   useProjectFilteredSessions,
+  useProjectMountsForSessions,
   useSlotHistory,
   useSlotHistoryCount,
   useSessions,
