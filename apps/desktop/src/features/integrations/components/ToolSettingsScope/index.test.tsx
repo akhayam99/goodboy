@@ -61,8 +61,37 @@ const BINDINGS = [
 
 const github = vi.hoisted(() => ({ mode: 'absent', scoped: false, user: null as string | null }));
 
+type GithubStatusMap = Record<string, unknown>;
+
+type GithubWriteParams = {
+  readonly workspaceId: WorkspaceId | null;
+};
+
+const readGithubStatus = async ({ workspaceId }: GithubWriteParams): Promise<void> => {
+  if (workspaceId === null) {
+    return;
+  }
+  const status = await invoke('gh_status', { workspaceId }).catch(() => null);
+  store.setState((state) => ({
+    githubWorkspaceStatus: { ...state.githubWorkspaceStatus, [workspaceId]: status },
+  }));
+};
+
 const store = create(() => ({
   currentWorkspaceId: WORKSPACE_ID,
+  githubWorkspaceStatus: {} as GithubStatusMap,
+  refreshGithubConnection: readGithubStatus,
+  setGithubToken: async ({
+    token,
+    workspaceId,
+  }: GithubWriteParams & { readonly token: string }) => {
+    await invoke('gh_set_token', { token, workspaceId });
+    await readGithubStatus({ workspaceId });
+  },
+  clearGithubToken: async ({ workspaceId }: GithubWriteParams) => {
+    await invoke('gh_clear_token', { workspaceId });
+    await readGithubStatus({ workspaceId });
+  },
   workspaceIntegrations: {} as Record<string, ReadonlyArray<IntegrationBinding>>,
   integrationCredentials: [],
   integrationCredentialUsage: {},
@@ -89,7 +118,7 @@ beforeEach(() => {
   github.scoped = false;
   github.user = null;
   vi.mocked(invoke).mockClear();
-  store.setState({ workspaceIntegrations: {} });
+  store.setState({ workspaceIntegrations: {}, githubWorkspaceStatus: {} });
   store.getState().connectLinear.mockReset();
   store.getState().disconnectIntegration.mockReset();
 });

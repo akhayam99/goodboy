@@ -754,8 +754,12 @@ type AppActions = {
   exportConfig(): Promise<string | null>;
   importConfig(): Promise<import('@goodboy/types').ConfigBundleImportResult | null>;
   refreshGithubStatus(): Promise<void>;
-  setGithubPat(token: string): Promise<GhTokenStatus>;
-  clearGithubToken(): Promise<void>;
+  refreshGithubConnection(params: { readonly workspaceId: WorkspaceId | null }): Promise<void>;
+  setGithubToken(params: {
+    readonly token: string;
+    readonly workspaceId: WorkspaceId | null;
+  }): Promise<GhTokenStatus>;
+  clearGithubToken(params: { readonly workspaceId: WorkspaceId | null }): Promise<void>;
   refreshSessionPr(sessionId: SessionId, opts?: RefreshPrOptions): Promise<void>;
   refreshSessionPrDetail(
     sessionId: SessionId,
@@ -1120,6 +1124,7 @@ export const initialState: AppState = {
   unreadWorkspaceIds: new Set<WorkspaceId>(),
   sessionPanelExpanded: {},
   githubStatus: null,
+  githubWorkspaceStatus: {},
   mountGithub: {},
   mountSelectedPr: {},
   sessionGithub: {},

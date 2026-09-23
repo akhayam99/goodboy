@@ -91,10 +91,18 @@ const h = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../../../store', () => ({
-  EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T,>(selector: (state: Store) => T) => selector(h.store),
-}));
+vi.mock('../../../../../../store', async () => {
+  const { createGithubConnectionStore } =
+    await import('../../../../../../__tests__/helpers/githubConnectionStore');
+  const github = createGithubConnectionStore({
+    readStatus: async () => Promise.reject(new Error('gh is not available in tests')),
+  });
+  return {
+    EMPTY_ARRAY: Object.freeze([]),
+    useAppStore: <T,>(selector: (state: Store & ReturnType<typeof github.getState>) => T) =>
+      selector({ ...h.store, ...github() }),
+  };
+});
 
 vi.mock('../../../../../../shared/lib/editor', () => ({
   openUrl: h.openUrl,

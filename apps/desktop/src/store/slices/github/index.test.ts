@@ -266,17 +266,65 @@ describe('store contract', () => {
       warnSpy.mockRestore();
     });
 
-    it('setGithubPat stores the new status', async () => {
+    it('setGithubToken for all workspaces refreshes the global and every workspace status', async () => {
       const store = useAppStore;
+      const workspaceId = 'ws-github' as WorkspaceId;
+      store.setState({
+        githubWorkspaceStatus: { [workspaceId]: { available: true, mode: 'absent', scopes: [] } },
+      });
       storySpies.ghSetToken.mockResolvedValueOnce({
         available: true,
         mode: 'pat',
         user: 'me',
         scopes: ['repo'],
       });
-      const out = await store.getState().setGithubPat('tok');
+      storySpies.ghStatus.mockResolvedValue({
+        available: true,
+        mode: 'pat',
+        user: 'me',
+        scopes: ['repo'],
+        scoped: false,
+      });
+      const out = await store.getState().setGithubToken({ token: 'tok', workspaceId: null });
       expect(out.mode).toBe('pat');
+      expect(storySpies.ghSetToken).toHaveBeenCalledWith('tok', undefined);
       expect(store.getState().githubStatus?.user).toBe('me');
+      expect(store.getState().githubWorkspaceStatus[workspaceId]?.mode).toBe('pat');
+    });
+
+    it('setGithubToken for one workspace writes only that workspace key', async () => {
+      const store = useAppStore;
+      const workspaceId = 'ws-github' as WorkspaceId;
+      const scoped = { available: true, mode: 'pat', user: 'me', scopes: ['repo'], scoped: true };
+      storySpies.ghSetToken.mockResolvedValueOnce(scoped);
+      storySpies.ghStatus.mockImplementation(async (id?: string) =>
+        id === workspaceId
+          ? scoped
+          : { available: true, mode: 'gh-cli', user: 'cli-user', scopes: [], scoped: false },
+      );
+      await store.getState().setGithubToken({ token: 'tok', workspaceId });
+      expect(storySpies.ghSetToken).toHaveBeenCalledWith('tok', workspaceId);
+      expect(store.getState().githubWorkspaceStatus[workspaceId]?.scoped).toBe(true);
+      expect(store.getState().githubStatus?.mode).toBe('gh-cli');
+    });
+
+    it('clearGithubToken clears the named workspace key and re-reads its status', async () => {
+      const store = useAppStore;
+      const workspaceId = 'ws-github' as WorkspaceId;
+      store.setState({
+        githubWorkspaceStatus: {
+          [workspaceId]: { available: true, mode: 'pat', scopes: ['repo'], scoped: true },
+        },
+      });
+      storySpies.ghStatus.mockResolvedValue({
+        available: true,
+        mode: 'absent',
+        scopes: [],
+        scoped: false,
+      });
+      await store.getState().clearGithubToken({ workspaceId });
+      expect(storySpies.ghClearToken).toHaveBeenCalledWith(workspaceId);
+      expect(store.getState().githubWorkspaceStatus[workspaceId]?.scoped).toBe(false);
     });
 
     it('refreshSessionPr noops for a session with no mount', async () => {

@@ -48,14 +48,13 @@ Every event on this page is a browser CustomEvent. It is sent with `window.dispa
 
 ## Misc
 
-| Event                               | Payload             | Dispatched from                          | Listened in                                                                   | Purpose                                                |
-| ----------------------------------- | ------------------- | ---------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `goodboy:open-model-picker`         | none                | useAppShortcuts/index.ts                 | ChatInput/index.tsx (via openEvent prop)                                      | Open the model picker.                                 |
-| `goodboy:open-permission-picker`    | none                | useAppShortcuts/index.ts                 | PermissionModePicker/index.tsx (via openEvent prop)                           | Open the permission mode picker.                       |
-| `goodboy:onboarding-progress`       | none                | onboarding-store.ts (6 dispatch sites)   | OnboardingWizard/useOnboardingWizard/index.ts, useOnboardingProgress/index.ts | Signal that an onboarding step is complete.            |
-| `goodboy:cursor-max-mode-advisory`  | none                | cursorMaxModeAdvisory.ts (via notify fn) | (via cursorMaxModeAdvisory.subscribe)                                         | Signal a change to the Cursor Max Mode advisory.       |
-| `goodboy:github-connection-changed` | none                | useGithubConnection.ts                   | useGithubConnection.ts                                                        | Signal that the workspace's GitHub connection changed. |
-| `goodboy:open-onboarding-wizard`    | `{ mode?: string }` | onboarding-store.ts                      | OnboardingWizard/useOnboardingWizard/index.ts                                 | Open the onboarding wizard in the given mode.          |
+| Event                              | Payload             | Dispatched from                          | Listened in                                                                   | Purpose                                          |
+| ---------------------------------- | ------------------- | ---------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------ |
+| `goodboy:open-model-picker`        | none                | useAppShortcuts/index.ts                 | ChatInput/index.tsx (via openEvent prop)                                      | Open the model picker.                           |
+| `goodboy:open-permission-picker`   | none                | useAppShortcuts/index.ts                 | PermissionModePicker/index.tsx (via openEvent prop)                           | Open the permission mode picker.                 |
+| `goodboy:onboarding-progress`      | none                | onboarding-store.ts (6 dispatch sites)   | OnboardingWizard/useOnboardingWizard/index.ts, useOnboardingProgress/index.ts | Signal that an onboarding step is complete.      |
+| `goodboy:cursor-max-mode-advisory` | none                | cursorMaxModeAdvisory.ts (via notify fn) | (via cursorMaxModeAdvisory.subscribe)                                         | Signal a change to the Cursor Max Mode advisory. |
+| `goodboy:open-onboarding-wizard`   | `{ mode?: string }` | onboarding-store.ts                      | OnboardingWizard/useOnboardingWizard/index.ts                                 | Open the onboarding wizard in the given mode.    |
 
 ## Adding an event
 

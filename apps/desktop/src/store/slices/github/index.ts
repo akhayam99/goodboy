@@ -8,19 +8,21 @@ import { markPrReady } from './markPrReady';
 import { mergePr } from './mergePr';
 import { reopenPr } from './reopenPr';
 import { requestReview } from './requestReview';
+import { refreshGithubConnection } from './refreshGithubConnection';
 import { refreshGithubStatus } from './refreshGithubStatus';
 import { refreshSessionPr } from './refreshSessionPr';
 import { refreshSessionPrDetail } from './refreshSessionPrDetail';
 import { selectSessionPr } from './selectSessionPr';
 import { pushSessionBranch } from './pushSessionBranch';
-import { setGithubPat } from './setGithubPat';
+import { setGithubToken } from './setGithubToken';
 import { sweepGithub } from './sweepGithub';
 import type { GetFn, SetFn } from './types';
 
 export const createGithubSlice = (set: SetFn, get: GetFn) => {
   return {
     refreshGithubStatus: refreshGithubStatus(set),
-    setGithubPat: setGithubPat(set),
+    refreshGithubConnection: refreshGithubConnection(set, get),
+    setGithubToken: setGithubToken(set, get),
     clearGithubToken: clearGithubToken(set, get),
     refreshSessionPr: refreshSessionPr(set, get),
     refreshSessionPrDetail: refreshSessionPrDetail(set, get),

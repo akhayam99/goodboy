@@ -55,6 +55,7 @@ const h = vi.hoisted(() => ({
   } as GhTokenStatus,
   ghStatus: vi.fn(),
   ghSetToken: vi.fn(),
+  resetGithub: (): void => undefined,
   openUrl: vi.fn(async () => undefined),
 }));
 
@@ -72,10 +73,20 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   attributionFooter: null,
 };
 
-vi.mock('../../../../../store', () => ({
-  EMPTY_ARRAY: [],
-  useAppStore: <T,>(selector: (state: Store) => T) => selector(h.store),
-}));
+vi.mock('../../../../../store', async () => {
+  const { createGithubConnectionStore } =
+    await import('../../../../../__tests__/helpers/githubConnectionStore');
+  const github = createGithubConnectionStore({
+    readStatus: async ({ workspaceId }) => h.ghStatus(workspaceId),
+    writeToken: async ({ token, workspaceId }) => h.ghSetToken(token, workspaceId ?? undefined),
+  });
+  h.resetGithub = () => github.setState({ githubWorkspaceStatus: {} });
+  return {
+    EMPTY_ARRAY: [],
+    useAppStore: <T,>(selector: (state: Store & ReturnType<typeof github.getState>) => T) =>
+      selector({ ...h.store, ...github() }),
+  };
+});
 
 vi.mock('../../../../worktree/useRemoteHostKind', () => ({
   useRemoteHostKind: () => h.remoteKind,
@@ -221,6 +232,7 @@ beforeEach(() => {
     user: 'akhayam',
     scoped: false,
   };
+  h.resetGithub();
   h.ghStatus.mockImplementation(async () => h.githubStatus);
   h.ghSetToken.mockImplementation(async () => {
     h.githubStatus = {

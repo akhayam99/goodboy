@@ -8,6 +8,8 @@ const { state } = vi.hoisted(() => {
   const session = { id: 'session-1', workspaceId: 'workspace-1' };
   return {
     state: {
+      githubWorkspaceStatus: { 'workspace-1': null },
+      refreshGithubConnection: vi.fn(async () => undefined),
       hydrate: vi.fn(async () => undefined),
       checkForUpdates: vi.fn(async () => undefined),
       hydrated: true,

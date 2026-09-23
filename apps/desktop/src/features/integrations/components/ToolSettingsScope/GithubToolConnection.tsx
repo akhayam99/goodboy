@@ -28,11 +28,7 @@ export const GithubToolConnection = ({ workspaceId, connection }: Props) => {
         </p>
       ) : null}
       {!connection.isAuthenticated || connection.isScoped ? (
-        <GithubFormBody
-          workspaceId={workspaceId}
-          connection={connection}
-          shouldAutoFocus={!connection.isAuthenticated}
-        />
+        <GithubFormBody workspaceId={workspaceId} shouldAutoFocus={!connection.isAuthenticated} />
       ) : null}
       <div className="flex items-center gap-2">
         <Button variant="secondary" size="sm" onClick={connection.refresh}>

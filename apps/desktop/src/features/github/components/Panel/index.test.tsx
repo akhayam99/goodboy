@@ -16,7 +16,7 @@ type MockState = {
         scopes?: ReadonlyArray<string>;
       };
   refreshGithubStatus: ReturnType<typeof vi.fn>;
-  setGithubPat: ReturnType<typeof vi.fn>;
+  setGithubToken: ReturnType<typeof vi.fn>;
   clearGithubToken: ReturnType<typeof vi.fn>;
 };
 
@@ -24,7 +24,7 @@ const { state } = vi.hoisted<{ state: MockState }>(() => ({
   state: {
     githubStatus: null,
     refreshGithubStatus: vi.fn(async () => undefined),
-    setGithubPat: vi.fn(async () => undefined),
+    setGithubToken: vi.fn(async () => undefined),
     clearGithubToken: vi.fn(async () => undefined),
   },
 }));
@@ -38,7 +38,7 @@ import { GithubPanel } from './index';
 beforeEach(() => {
   state.githubStatus = null;
   state.refreshGithubStatus = vi.fn(async () => undefined);
-  state.setGithubPat = vi.fn(async () => undefined);
+  state.setGithubToken = vi.fn(async () => undefined);
   state.clearGithubToken = vi.fn(async () => undefined);
 });
 afterEach(cleanup);
@@ -56,7 +56,7 @@ describe('GithubPanel', () => {
     expect(screen.getByText(/gh cli not detected/i)).toBeDefined();
   });
 
-  it('submits the token via setGithubPat when Connect is clicked', async () => {
+  it('submits the token as the all-workspaces key when Connect is clicked', async () => {
     state.githubStatus = { available: true, mode: 'absent' };
     render(<GithubPanel />);
     fireEvent.change(screen.getByLabelText(/github personal API key/i), {
@@ -65,7 +65,7 @@ describe('GithubPanel', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /connect/i }));
     });
-    expect(state.setGithubPat).toHaveBeenCalledWith('ghp_token');
+    expect(state.setGithubToken).toHaveBeenCalledWith({ token: 'ghp_token', workspaceId: null });
   });
 
   it('describes where the token goes without claiming it stays on the machine', () => {

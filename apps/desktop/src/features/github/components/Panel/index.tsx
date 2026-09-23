@@ -35,7 +35,7 @@ const CreateTokenLink = () => (
 export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean } = {}) => {
   const status = useAppStore((s) => s.githubStatus);
   const refreshStatus = useAppStore((s) => s.refreshGithubStatus);
-  const setPat = useAppStore((s) => s.setGithubPat);
+  const setGithubToken = useAppStore((s) => s.setGithubToken);
   const clearToken = useAppStore((s) => s.clearGithubToken);
 
   const [token, setToken] = useState('');
@@ -65,7 +65,7 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
     setSave('saving');
     setError(null);
     try {
-      await setPat(token.trim());
+      await setGithubToken({ token: token.trim(), workspaceId: null });
       setToken('');
       setSave('saved');
     } catch (err) {
@@ -78,7 +78,7 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
     setSave('saving');
     setError(null);
     try {
-      await clearToken();
+      await clearToken({ workspaceId: null });
       setSave('saved');
     } catch (err) {
       setSave('error');
