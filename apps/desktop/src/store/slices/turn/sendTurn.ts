@@ -672,6 +672,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
       return {
         agentRunHistory: { ...state.agentRunHistory, [activeAgentId]: [...prev, runId] },
+        runRouting: {
+          ...state.runRouting,
+          [activeAgentId]: {
+            ...state.runRouting[activeAgentId],
+            [runId]: { provider, model: spawnModel },
+          },
+        },
       };
     });
     if (retry == null) {

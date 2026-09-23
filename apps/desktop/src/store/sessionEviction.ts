@@ -104,6 +104,7 @@ export const SESSION_EVICTION = [
   { key: 'activeTerminalTab', keyedBy: 'session', evictOn: 'delete' },
   { key: 'pendingAdvanceSessions', keyedBy: 'session', evictOn: 'delete' },
   { key: 'agentRunHistory', keyedBy: 'agent', evictOn: 'delete' },
+  { key: 'runRouting', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentTurnState', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentTurnDestination', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'clusterStartAttempts', keyedBy: 'agent', evictOn: 'delete' },

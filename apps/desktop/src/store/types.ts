@@ -1,4 +1,5 @@
 import type { ArtifactsState } from './slices/artifacts/state';
+import type { ExecutedAgentRouting } from './slices/turn/executedAgentRouting';
 import type { ResolveState } from './slices/resolve/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
 import type { OrphanWorktree } from '../features/worktree/worktree';
@@ -319,6 +320,9 @@ export type AppState = AppSliceState & {
   readonly announcedRunBudget: Readonly<Record<WorkflowRunId, number>>;
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly agentRunHistory: Readonly<Record<AgentId, ReadonlyArray<ProviderRunId>>>;
+  readonly runRouting: Readonly<
+    Record<AgentId, Readonly<Record<ProviderRunId, ExecutedAgentRouting>>>
+  >;
   readonly agentTurnState: Readonly<Record<AgentId, TurnState>>;
   readonly clusterStartAttempts: Readonly<Record<AgentId, number>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
