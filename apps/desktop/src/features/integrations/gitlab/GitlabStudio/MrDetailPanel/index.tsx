@@ -1,11 +1,10 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import {
   RecordDetailEmptyState,
   RecordDetailHeader,
   StudioDetailLayout,
 } from '../../../../../shared/components/StudioDetail';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Button, formatError, Markdown } from '@goodboy/ui';
+import { Button, formatError, Markdown, cn, tintClasses } from '@goodboy/ui';
 import { AlertTriangle, FileText, GitBranch, GitMerge, MessageSquare } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
@@ -316,10 +315,10 @@ export const MrDetailPanel = ({
       >
         {mr.hasConflicts ? (
           <div
-            className={tokenCn(
+            className={cn(
               'flex items-start gap-2 rounded-lg border',
-              tokenTintClasses('warning').borderSoft,
-              tokenTintClasses('warning').bg,
+              tintClasses('warning').borderSoft,
+              tintClasses('warning').bg,
               'px-3 py-2.5 text-2xs leading-relaxed text-foreground',
             )}
           >

@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { cn, ScrollFade } from '@goodboy/ui';
+import { cn, ScrollFade, tintClasses } from '@goodboy/ui';
 import { listBranchNames } from './worktree';
 
 type Props = {
@@ -120,7 +119,7 @@ export const BaseBranchSelectContent = ({ repoPath, value, onCommit, onClose }: 
                   className={cn(
                     'flex w-full rounded px-2 py-1.5 text-left font-mono text-xs',
                     index === highlightIndex
-                      ? tokenCn(tokenTintClasses('primary').bg, 'text-foreground')
+                      ? cn(tintClasses('primary').bg, 'text-foreground')
                       : 'text-muted-foreground hover:bg-hover hover:text-foreground',
                   )}
                 >

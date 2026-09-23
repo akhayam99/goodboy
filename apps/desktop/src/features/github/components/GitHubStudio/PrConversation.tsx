@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PrComment, PullRequestState } from '@goodboy/types';
-import { Button, EmptyState, cn } from '@goodboy/ui';
+import { Button, EmptyState, cn, tintClasses } from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
 import { type CommentThread, groupThreads, threadPriority } from '../../comment-threads';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -87,9 +86,7 @@ export const PrConversation = ({
               }}
               className={cn(
                 'rounded-lg transition-shadow',
-                tid && tid === flashThreadId
-                  ? tokenCn('ring-2', tokenTintClasses('primary').ringStrong)
-                  : '',
+                tid && tid === flashThreadId ? cn('ring-2', tintClasses('primary').ringStrong) : '',
               )}
             >
               <ConversationThread

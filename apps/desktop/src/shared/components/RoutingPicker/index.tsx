@@ -1,4 +1,3 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import { ChevronDown, RotateCcw } from 'lucide-react';
 import {
@@ -16,6 +15,7 @@ import {
   ScrollFade,
   Tooltip,
   useDropdown,
+  tintClasses,
 } from '@goodboy/ui';
 import type { CatalogModel, ModelSelection, ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL, type EffortLevel } from '../../../features/chat/utils/chat-constants';
@@ -309,15 +309,15 @@ export const RoutingPicker = ({
                   : 'flex w-full rounded-md border px-2 py-1.5 text-left',
                 variant === 'field' &&
                   (open
-                    ? tokenCn('border-primary', tokenTintClasses('primary').bgSoft)
+                    ? cn('border-primary', tintClasses('primary').bgSoft)
                     : 'border-border-soft bg-subtle hover:border-border hover:bg-hover'),
                 variant === 'pill' &&
                   (isOverridden
-                    ? tokenCn(
-                        tokenTintClasses('warning').bg,
+                    ? cn(
+                        tintClasses('warning').bg,
                         'ring-1',
-                        tokenTintClasses('warning').ring,
-                        tokenTintClasses('warning').hoverBg,
+                        tintClasses('warning').ring,
+                        tintClasses('warning').hoverBg,
                       )
                     : 'bg-subtle hover:bg-hover'),
                 disabled && 'cursor-not-allowed opacity-60',

@@ -1,4 +1,3 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import {
   useCallback,
   useDeferredValue,
@@ -21,7 +20,7 @@ import type {
   TurnEvent,
   TurnProviderOverride,
 } from '@goodboy/types';
-import { Button, cn, Divider, ScrollFade, Tooltip } from '@goodboy/ui';
+import { Button, cn, Divider, ScrollFade, Tooltip, tintClasses } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
@@ -529,7 +528,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
             variant="warning"
             emphasis="outline"
             size="sm"
-            className={tokenCn(tokenTintClasses('warning').borderSoft, 'px-3')}
+            className={cn(tintClasses('warning').borderSoft, 'px-3')}
             onClick={() => {
               void selectAgent(session.id, otherAgentId);
               requestOpenQuestionScroll({

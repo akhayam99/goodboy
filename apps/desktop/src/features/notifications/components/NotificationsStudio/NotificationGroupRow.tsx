@@ -1,8 +1,7 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Check, ChevronRight, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { Notification } from '@goodboy/db';
-import { StatusDot, Tooltip, cn } from '@goodboy/ui';
+import { StatusDot, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { NOTIFICATION_SEVERITY } from '../../severity';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -127,9 +126,9 @@ export const NotificationGroupRow = ({
                 type="button"
                 onClick={onDismiss}
                 aria-label={`Dismiss "${latest.title}" group`}
-                className={tokenCn(
+                className={cn(
                   'rounded p-1 text-muted-foreground',
-                  tokenTintClasses('danger').hoverBg,
+                  tintClasses('danger').hoverBg,
                   'hover:text-danger',
                 )}
               >

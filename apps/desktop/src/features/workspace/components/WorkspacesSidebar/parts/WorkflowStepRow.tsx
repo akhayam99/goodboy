@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
-import { StatusDot, cn } from '@goodboy/ui';
+import { StatusDot, cn, tintClasses } from '@goodboy/ui';
 import { AlertTriangle, Check, Clock, CircleHelp, Play } from 'lucide-react';
 import type { Agent, ProviderId, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
@@ -109,13 +108,13 @@ export const WorkflowStepRow = ({
     isPendingFuture
       ? 'border-transparent'
       : isStartable
-        ? tokenCn(tokenTintClasses('primary').border, tokenTintClasses('primary').bgSoft)
+        ? cn(tintClasses('primary').border, tintClasses('primary').bgSoft)
         : isActionable && isBlocked
-          ? tokenCn(tokenTintClasses('warning').border, tokenTintClasses('warning').bgSoft)
+          ? cn(tintClasses('warning').border, tintClasses('warning').bgSoft)
           : isRunning
-            ? cn(tokenCn(tokenTintClasses('info').border), isSelected ? 'bg-elevated' : 'bg-subtle')
+            ? cn(cn(tintClasses('info').border), isSelected ? 'bg-elevated' : 'bg-subtle')
             : hasUnread
-              ? tokenCn(tokenTintClasses('warning').border, 'bg-subtle')
+              ? cn(tintClasses('warning').border, 'bg-subtle')
               : isSelected
                 ? 'border-border bg-elevated'
                 : 'border-transparent bg-subtle',
@@ -125,9 +124,9 @@ export const WorkflowStepRow = ({
     if (isStartable) {
       return (
         <span
-          className={tokenCn(
+          className={cn(
             'flex size-3.5 items-center justify-center rounded-full',
-            tokenTintClasses('primary').bg,
+            tintClasses('primary').bg,
           )}
         >
           <Play size={9} className="text-primary" aria-hidden fill="currentColor" />
@@ -145,7 +144,7 @@ export const WorkflowStepRow = ({
         <span
           className={cn(
             'flex size-3.5 items-center justify-center rounded-full',
-            run.status === 'skipped' ? 'bg-muted' : tokenCn(tokenTintClasses('success').bg),
+            run.status === 'skipped' ? 'bg-muted' : cn(tintClasses('success').bg),
           )}
         >
           <Check
@@ -262,9 +261,9 @@ export const WorkflowStepRow = ({
       </div>
       {pendingConfirm && blockReason !== null ? (
         <div
-          className={tokenCn(
+          className={cn(
             'flex items-center gap-2 rounded-r-md border-l-2',
-            tokenTintClasses('warning').border,
+            tintClasses('warning').border,
             'py-1.5 pl-2.5 pr-2.5 text-xs',
           )}
         >

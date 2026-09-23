@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { CheckCheck, Mail, Trash2 } from 'lucide-react';
-import { CountToggle, InlineConfirm, SegmentedTabs } from '@goodboy/ui';
+import { CountToggle, InlineConfirm, SegmentedTabs, cn, tintClasses } from '@goodboy/ui';
 import type { SegmentedTabOption } from '@goodboy/ui';
 import type { NotificationSeverityFilter } from '../../grouping';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -82,9 +81,9 @@ export const InboxToolbar = ({
       <button
         type="button"
         onClick={onArm}
-        className={tokenCn(
+        className={cn(
           'inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground motion-safe:transition-colors',
-          tokenTintClasses('danger').hoverBg,
+          tintClasses('danger').hoverBg,
           'hover:text-danger',
         )}
       >

@@ -1,4 +1,3 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AnchoredPopover,
@@ -8,6 +7,7 @@ import {
   Skeleton,
   Tooltip,
   useDropdown,
+  tintClasses,
 } from '@goodboy/ui';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import type { IssueCandidate } from '../../fetchIssueCandidates';
@@ -161,7 +161,7 @@ export const IssuePicker = ({
         'bg-subtle',
         isErrorState &&
           !hasOptions &&
-          tokenCn(tokenTintClasses('danger').border, tokenTintClasses('danger').bgSoft),
+          cn(tintClasses('danger').border, tintClasses('danger').bgSoft),
       )}
       anchorClassName="w-full"
       trigger={
@@ -262,7 +262,7 @@ export const IssuePicker = ({
                     }}
                     className={cn(
                       'flex cursor-pointer flex-col gap-0.5 px-2.5 py-1.5',
-                      highlightIdx === index && tokenCn(tokenTintClasses('primary').bg),
+                      highlightIdx === index && cn(tintClasses('primary').bg),
                     )}
                   >
                     <div className="flex items-center gap-2 text-sm">

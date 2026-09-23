@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect } from 'react';
 import { Check, GitBranch, Pencil } from 'lucide-react';
-import { AnchoredPopover, Tooltip, cn, useCopyLink, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Tooltip, cn, useCopyLink, useDropdown, tintClasses } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useToast } from '../../../../../app/components/Toast';
 import { BranchSwitchPanel } from '../../../../worktree/BranchSwitchPanel';
@@ -44,11 +43,7 @@ export const ProjectBranchChip = ({ sessionId, mountId, branch, canSwitch }: Pro
         VITAL_CHIP_FRAME,
         'min-w-0 shrink',
         copied
-          ? tokenCn(
-              tokenTintClasses('success').borderSoft,
-              tokenTintClasses('success').bg,
-              'text-success',
-            )
+          ? cn(tintClasses('success').borderSoft, tintClasses('success').bg, 'text-success')
           : VITAL_CHIP_HOVER,
       )}
     >

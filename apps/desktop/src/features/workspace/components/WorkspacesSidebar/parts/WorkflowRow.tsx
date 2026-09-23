@@ -1,4 +1,3 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Fragment, type Dispatch, type SetStateAction } from 'react';
 import {
   cn,
@@ -10,6 +9,7 @@ import {
   StatusDot,
   TERMINAL_DIM,
   Tooltip,
+  tintClasses,
 } from '@goodboy/ui';
 import { ChevronDown, ChevronRight, ChevronUp, Undo2 } from 'lucide-react';
 import type {
@@ -222,9 +222,9 @@ export const WorkflowRow = ({
         {isDetail ? (
           <div className="col-start-1 row-start-1 flex min-w-0 items-start gap-3">
             <span
-              className={tokenCn(
+              className={cn(
                 'flex size-9 shrink-0 items-center justify-center rounded-lg',
-                tokenTintClasses('primary').bg,
+                tintClasses('primary').bg,
               )}
             >
               <CONCEPT_ICONS.workflows size={ICON_SIZE.hero} aria-hidden className="text-primary" />
@@ -316,9 +316,9 @@ export const WorkflowRow = ({
             </span>
             {unreadCount > 0 ? (
               <span
-                className={tokenCn(
+                className={cn(
                   'inline-flex shrink-0 items-center gap-1 rounded-md',
-                  tokenTintClasses('warning').bg,
+                  tintClasses('warning').bg,
                   'px-1.5 py-0.5 text-2xs font-medium text-warning',
                 )}
                 title={`${unreadCount} agent ${unreadCount === 1 ? 'reply' : 'replies'} to review`}
@@ -571,9 +571,9 @@ export const WorkflowRow = ({
                                   </span>
                                   {clusterUnread > 0 ? (
                                     <span
-                                      className={tokenCn(
+                                      className={cn(
                                         'inline-flex shrink-0 items-center gap-1 rounded-md',
-                                        tokenTintClasses('warning').bg,
+                                        tintClasses('warning').bg,
                                         'px-1 py-0.5 text-2xs font-medium text-warning',
                                       )}
                                       title={`${clusterUnread} subagent ${clusterUnread === 1 ? 'reply' : 'replies'} to review`}

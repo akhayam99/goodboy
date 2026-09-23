@@ -1,6 +1,13 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import type { ReactNode } from 'react';
-import { Divider, EmptyState, ScrollFade, SectionHeader, Tooltip, cn } from '@goodboy/ui';
+import {
+  Divider,
+  EmptyState,
+  ScrollFade,
+  SectionHeader,
+  Tooltip,
+  cn,
+  tintClasses,
+} from '@goodboy/ui';
 import { Check, Plus, RotateCcw, X } from 'lucide-react';
 import type { Workflow, WorkflowId } from '@goodboy/types';
 import {
@@ -82,9 +89,9 @@ export const WorkflowsRail = ({
       <div className="shrink-0 px-3 pb-3 pt-1">
         {confirmReset ? (
           <div
-            className={tokenCn(
+            className={cn(
               'flex items-center gap-1.5 rounded-lg',
-              tokenTintClasses('warning').bgSoft,
+              tintClasses('warning').bgSoft,
               'px-2.5 py-2',
             )}
           >
@@ -98,9 +105,9 @@ export const WorkflowsRail = ({
                 onClick={onReset}
                 disabled={resetting}
                 aria-label="Confirm restore defaults"
-                className={tokenCn(
+                className={cn(
                   'rounded-md p-0.5 text-warning transition-colors',
-                  tokenTintClasses('warning').hoverBg,
+                  tintClasses('warning').hoverBg,
                   'disabled:opacity-50',
                 )}
               >

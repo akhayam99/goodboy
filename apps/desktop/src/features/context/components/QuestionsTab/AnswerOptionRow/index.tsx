@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useId } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { SelectionIndicator } from './SelectionIndicator';
@@ -38,11 +37,7 @@ export const AnswerOptionRow = ({
         'transition-[color,background-color,border-color] duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         selected
-          ? tokenCn(
-              tokenTintClasses('primary').border,
-              tokenTintClasses('primary').bg,
-              'text-primary',
-            )
+          ? cn(tintClasses('primary').border, tintClasses('primary').bg, 'text-primary')
           : 'border-border-soft bg-transparent text-foreground hover:border-border hover:bg-hover',
       )}
     >

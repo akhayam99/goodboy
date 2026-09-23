@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlaskConical, Smartphone } from 'lucide-react';
-import { Divider, formatError, ScrollFade } from '@goodboy/ui';
+import { Divider, formatError, ScrollFade, cn, tintClasses } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import {
@@ -132,10 +131,10 @@ export const CompanionStudio = ({ onClose }: Props) => {
             )}
 
             <div
-              className={tokenCn(
+              className={cn(
                 'flex max-w-[20rem] items-start gap-2 rounded-lg border',
-                tokenTintClasses('warning').borderSoft,
-                tokenTintClasses('warning').bg,
+                tintClasses('warning').borderSoft,
+                tintClasses('warning').bg,
                 'px-3 py-2 text-left',
               )}
             >

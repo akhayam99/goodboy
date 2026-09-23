@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import type { MountCleanupProposal, SessionId } from '@goodboy/types';
-import { Button, formatError } from '@goodboy/ui';
+import { Button, formatError, cn, tintClasses } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { formatDiskSize } from '../../../worktree/utils/formatDiskSize';
@@ -68,11 +67,7 @@ export const MountCleanupProposals = ({ sessionId }: Props) => {
               size="sm"
               disabled={busy !== null}
               onClick={() => void resolve(proposal, 'remove')}
-              className={tokenCn(
-                'text-danger',
-                tokenTintClasses('danger').hoverBg,
-                'hover:text-danger',
-              )}
+              className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
             >
               Remove worktree
             </Button>

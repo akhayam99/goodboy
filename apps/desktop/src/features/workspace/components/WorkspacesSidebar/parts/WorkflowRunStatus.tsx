@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { AlertTriangle, CircleStop, Link2, Pause } from 'lucide-react';
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
-import { StatusDot, cn } from '@goodboy/ui';
+import { StatusDot, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -56,7 +55,7 @@ export const WorkflowRunStatus = ({
   }
   if (isCompleted) {
     return (
-      <span className={cn(baseClass, tokenCn(tokenTintClasses('success').bg, 'text-success'))}>
+      <span className={cn(baseClass, cn(tintClasses('success').bg, 'text-success'))}>
         <CONCEPT_ICONS.runDone size={10} aria-hidden />
         Completed
       </span>
@@ -66,7 +65,7 @@ export const WorkflowRunStatus = ({
   if (stop?.kind === 'operator' && isOrchestrating && !hasOrchestratorStrip) {
     return (
       <span
-        className={cn(baseClass, tokenCn(tokenTintClasses('warning').bg, 'text-warning'))}
+        className={cn(baseClass, cn(tintClasses('warning').bg, 'text-warning'))}
         title="Waiting for the decision already in flight"
         data-testid="workflow-orchestrator-stopping"
       >
@@ -78,7 +77,7 @@ export const WorkflowRunStatus = ({
   if (stop?.kind === 'operator' && !hasOrchestratorStrip) {
     return (
       <span
-        className={cn(baseClass, tokenCn(tokenTintClasses('warning').bg, 'text-warning'))}
+        className={cn(baseClass, cn(tintClasses('warning').bg, 'text-warning'))}
         title={stop.message}
         data-testid="workflow-orchestrator-stopped"
       >
@@ -90,7 +89,7 @@ export const WorkflowRunStatus = ({
   if (stop?.kind === 'budget' && !isRunning && !hasOrchestratorStrip) {
     return (
       <span
-        className={cn(baseClass, tokenCn(tokenTintClasses('warning').bg, 'text-warning'))}
+        className={cn(baseClass, cn(tintClasses('warning').bg, 'text-warning'))}
         title={stop.message}
         data-testid="workflow-orchestrator-budget-paused"
       >
@@ -102,7 +101,7 @@ export const WorkflowRunStatus = ({
   if (stop != null && !isRunning && !hasOrchestratorStrip) {
     return (
       <span
-        className={cn(baseClass, tokenCn(tokenTintClasses('danger').bg, 'text-danger'))}
+        className={cn(baseClass, cn(tintClasses('danger').bg, 'text-danger'))}
         title={stop.message}
         data-testid="workflow-orchestrator-failed"
       >
@@ -113,7 +112,7 @@ export const WorkflowRunStatus = ({
   }
   if (isRunning && !hasOrchestratorStrip) {
     return (
-      <span className={cn(baseClass, tokenCn(tokenTintClasses('info').bg, 'text-info'))}>
+      <span className={cn(baseClass, cn(tintClasses('info').bg, 'text-info'))}>
         <StatusDot tone="info" size="sm" pulsing />
         Running
       </span>
@@ -121,7 +120,7 @@ export const WorkflowRunStatus = ({
   }
   if (isDeciding && !hasOrchestratorStrip) {
     return (
-      <span className={cn(baseClass, tokenCn(tokenTintClasses('primary').bg, 'text-primary'))}>
+      <span className={cn(baseClass, cn(tintClasses('primary').bg, 'text-primary'))}>
         <CONCEPT_ICONS.orchestrator size={10} aria-hidden />
         Next step due
       </span>
@@ -150,8 +149,6 @@ export const WorkflowRunStatus = ({
     return null;
   }
   return (
-    <span className={cn(baseClass, tokenCn(tokenTintClasses('primary').bg, 'text-primary'))}>
-      Ready
-    </span>
+    <span className={cn(baseClass, cn(tintClasses('primary').bg, 'text-primary'))}>Ready</span>
   );
 };

@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import { Check, AlertCircle, RefreshCw } from 'lucide-react';
-import { Button, cn, formatError, Input, Tooltip } from '@goodboy/ui';
+import { Button, cn, formatError, Input, Tooltip, tintClasses } from '@goodboy/ui';
 import { GithubIcon } from '@goodboy/ui';
 import type { SaveState } from '../../../../shared/types/saveState';
 import { useAppStore } from '../../../../store';
@@ -142,10 +141,10 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
 function NotInstalled() {
   return (
     <div
-      className={tokenCn(
+      className={cn(
         'rounded-md border',
-        tokenTintClasses('warning').border,
-        tokenTintClasses('warning').bg,
+        tintClasses('warning').border,
+        tintClasses('warning').bg,
         'px-3 py-2.5 text-xs text-warning',
       )}
     >
@@ -153,7 +152,7 @@ function NotInstalled() {
         <AlertCircle size={ICON_SIZE.control} aria-hidden className="mt-0.5" />
         <div className="flex flex-col gap-1">
           <span className="font-medium">gh CLI not detected</span>
-          <span className={tokenCn(tokenTintClasses('warning').text)}>
+          <span className={cn(tintClasses('warning').text)}>
             install from{' '}
             <a
               href="https://cli.github.com/"
@@ -212,10 +211,10 @@ function Absent({
       </div>
       {error ? (
         <p
-          className={tokenCn(
+          className={cn(
             'rounded-md border',
-            tokenTintClasses('danger').border,
-            tokenTintClasses('danger').bg,
+            tintClasses('danger').border,
+            tintClasses('danger').bg,
             'px-3 py-2 text-xs text-danger',
           )}
         >
@@ -252,10 +251,10 @@ function Connected({
   return (
     <div className="flex flex-col gap-3">
       <div
-        className={tokenCn(
+        className={cn(
           'rounded-md border',
-          tokenTintClasses('success').border,
-          tokenTintClasses('success').bg,
+          tintClasses('success').border,
+          tintClasses('success').bg,
           'px-3 py-2.5 text-xs text-success',
         )}
       >
@@ -263,12 +262,12 @@ function Connected({
           <Check size={ICON_SIZE.control} aria-hidden className="mt-0.5" />
           <div className="flex flex-col gap-0.5">
             <span className="font-medium">connected as {status.user ?? '(unknown user)'}</span>
-            <span className={tokenCn(tokenTintClasses('success').text)}>
+            <span className={cn(tintClasses('success').text)}>
               mode: {status.mode}
               {status.version ? ` · gh ${status.version}` : ''}
             </span>
             {status.scopes && status.scopes.length > 0 ? (
-              <span className={tokenCn(tokenTintClasses('success').text)}>
+              <span className={cn(tintClasses('success').text)}>
                 scopes: {status.scopes.join(', ')}
               </span>
             ) : null}
@@ -316,10 +315,10 @@ function Connected({
           <CreateTokenLink />
           {error ? (
             <p
-              className={tokenCn(
+              className={cn(
                 'rounded-md border',
-                tokenTintClasses('danger').border,
-                tokenTintClasses('danger').bg,
+                tintClasses('danger').border,
+                tintClasses('danger').bg,
                 'px-3 py-2 text-xs text-danger',
               )}
             >

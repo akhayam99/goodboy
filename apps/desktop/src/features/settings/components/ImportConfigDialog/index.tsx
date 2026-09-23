@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Button, Dialog } from '@goodboy/ui';
+import { Button, Dialog, cn, tintClasses } from '@goodboy/ui';
 import type { ConfigBundleImportResult } from '@goodboy/types';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -42,9 +41,9 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
     >
       {error ? (
         <div
-          className={tokenCn(
+          className={cn(
             'flex items-start gap-2 rounded-r-md border-l-2',
-            tokenTintClasses('danger').border,
+            tintClasses('danger').border,
             'p-3',
           )}
         >
@@ -69,9 +68,9 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
         </dl>
       ) : result ? (
         <ul
-          className={tokenCn(
+          className={cn(
             'divide-y divide-border-soft overflow-hidden rounded-md border',
-            tokenTintClasses('danger').borderSoft,
+            tintClasses('danger').borderSoft,
           )}
         >
           {result.errors.map((e) => (

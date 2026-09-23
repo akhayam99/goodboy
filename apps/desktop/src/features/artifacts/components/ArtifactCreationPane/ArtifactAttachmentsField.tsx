@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import type { ChangeEvent, RefObject } from 'react';
 import { Paperclip } from 'lucide-react';
-import { SectionHeader, cn } from '@goodboy/ui';
+import { SectionHeader, cn, tintClasses } from '@goodboy/ui';
 import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
 import type { ArtifactAttachment } from '../../artifactAttachments';
 import { ArtifactAttachmentChip } from './ArtifactAttachmentChip';
@@ -40,7 +39,7 @@ export const ArtifactAttachmentsField = ({
       className={cn(
         'flex min-w-0 flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-colors',
         isDragging
-          ? tokenCn('border-dashed border-primary', tokenTintClasses('primary').bgSoft)
+          ? cn('border-dashed border-primary', tintClasses('primary').bgSoft)
           : 'border-border-soft',
       )}
     >

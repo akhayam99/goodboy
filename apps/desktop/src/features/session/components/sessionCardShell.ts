@@ -1,5 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { SessionStage } from '@goodboy/types';
 
 type Params = {
@@ -13,13 +12,13 @@ type RestBorderParams = Pick<Params, 'stage' | 'selected'>;
 
 const restBorder = ({ stage, selected }: RestBorderParams): string => {
   if (selected === true) {
-    return tokenCn('border-primary', tokenTintClasses('primary').bgSoft);
+    return cn('border-primary', tintClasses('primary').bgSoft);
   }
   if (stage === 'running') {
-    return tokenCn(tokenTintClasses('info').border, 'spin-border spin-border-info');
+    return cn(tintClasses('info').border, 'spin-border spin-border-info');
   }
   if (stage === 'attention') {
-    return tokenCn(tokenTintClasses('warning').border);
+    return cn(tintClasses('warning').border);
   }
   return 'border-border-soft hover:border-border';
 };

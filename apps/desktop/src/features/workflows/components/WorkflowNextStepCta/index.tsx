@@ -1,4 +1,3 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Play, RotateCcw } from 'lucide-react';
 import { Button, InlineConfirm, cn, tintClasses } from '@goodboy/ui';
@@ -132,10 +131,10 @@ export const WorkflowNextStepCta = ({
           disabled={busy || onRecover == null}
           data-testid="workflow-recover-step-cta"
           title="Ask the agent to verify the work, finish anything missing, and emit the completion marker"
-          className={tokenCn(
+          className={cn(
             'h-auto',
-            tokenTintClasses('warning').border,
-            tokenTintClasses('warning').bg,
+            tintClasses('warning').border,
+            tintClasses('warning').bg,
             'px-2 py-1 text-2xs font-semibold',
           )}
         >
@@ -150,10 +149,10 @@ export const WorkflowNextStepCta = ({
           disabled={busy}
           data-testid="workflow-force-next-step-cta"
           title="Discard this step output and continue without it"
-          className={tokenCn(
+          className={cn(
             'h-auto',
-            tokenTintClasses('warning').border,
-            tokenTintClasses('warning').bg,
+            tintClasses('warning').border,
+            tintClasses('warning').bg,
             'px-2 py-1 text-2xs font-semibold',
           )}
         >
@@ -201,17 +200,17 @@ export const WorkflowNextStepCta = ({
         className={cn(
           'flex items-center gap-1.5 rounded-md border px-2 py-1 text-2xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60',
           blockReason != null
-            ? tokenCn(
-                tokenTintClasses('warning').border,
-                tokenTintClasses('warning').bg,
+            ? cn(
+                tintClasses('warning').border,
+                tintClasses('warning').bg,
                 'text-warning hover:border-warning',
-                tokenTintClasses('warning').hoverBg,
+                tintClasses('warning').hoverBg,
               )
-            : tokenCn(
-                tokenTintClasses('primary').border,
-                tokenTintClasses('primary').bg,
+            : cn(
+                tintClasses('primary').border,
+                tintClasses('primary').bg,
                 'text-primary hover:border-primary',
-                tokenTintClasses('primary').hoverBg,
+                tintClasses('primary').hoverBg,
               ),
         )}
         aria-label={`Run next step: ${next.name} (${getModelDescriptor(routing.model)?.label ?? routing.model}, ${effortText} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})${blockReason != null ? `. Blocked: ${WORKFLOW_BLOCK_COPY[blockReason]}` : ''}`}

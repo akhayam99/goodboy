@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Divider, formatError } from '@goodboy/ui';
+import { Divider, formatError, cn, tintClasses } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { FileVersion, FileVersionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
@@ -105,11 +104,11 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose, eyebrow }: Pr
                 type="button"
                 onClick={() => void onDeleteAll()}
                 disabled={deletingAll}
-                className={tokenCn(
+                className={cn(
                   'inline-flex items-center gap-1 rounded-md border',
-                  tokenTintClasses('danger').border,
+                  tintClasses('danger').border,
                   'px-2 py-1 text-xs font-medium text-danger transition-colors',
-                  tokenTintClasses('danger').hoverBg,
+                  tintClasses('danger').hoverBg,
                   'disabled:cursor-not-allowed disabled:opacity-60',
                 )}
               >

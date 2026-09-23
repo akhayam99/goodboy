@@ -1,7 +1,14 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useMemo, useRef } from 'react';
 import { ListFilter, X } from 'lucide-react';
-import { AnchoredPopover, cn, Divider, Eyebrow, IconButton, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  cn,
+  Divider,
+  Eyebrow,
+  IconButton,
+  useDropdown,
+  tintClasses,
+} from '@goodboy/ui';
 import type { Session, WorkspaceId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -126,10 +133,10 @@ export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
           className={cn(
             'size-7 shrink-0',
             (activeCount > 0 || open) &&
-              tokenCn(
-                tokenTintClasses('primary').bg,
+              cn(
+                tintClasses('primary').bg,
                 'text-primary',
-                tokenTintClasses('primary').hoverBg,
+                tintClasses('primary').hoverBg,
                 'hover:text-primary',
               ),
           )}

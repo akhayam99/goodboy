@@ -1,4 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { ScriptRunStatus } from '../../scripts';
 
 export const SCRIPT_RUN_PRESENTATION = {
@@ -8,17 +8,17 @@ export const SCRIPT_RUN_PRESENTATION = {
     pulseClass: null,
   },
   pending: {
-    borderClass: tokenCn(tokenTintClasses('info').border),
+    borderClass: cn(tintClasses('info').border),
     textClass: 'text-info',
     pulseClass: 'motion-safe:animate-pulse',
   },
   ok: {
-    borderClass: tokenCn(tokenTintClasses('success').border),
+    borderClass: cn(tintClasses('success').border),
     textClass: 'text-success',
     pulseClass: null,
   },
   error: {
-    borderClass: tokenCn(tokenTintClasses('danger').border),
+    borderClass: cn(tintClasses('danger').border),
     textClass: 'text-danger',
     pulseClass: null,
   },

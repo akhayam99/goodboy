@@ -1,5 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
-import { Button, ScrollFade, Textarea, cn } from '@goodboy/ui';
+import { Button, ScrollFade, Textarea, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -45,7 +44,7 @@ export const WorkflowStarter = ({
       className={cn(
         'flex max-h-full min-h-0 w-full max-w-2xl flex-col gap-6 rounded-lg border bg-subtle p-5',
         isWorking
-          ? tokenCn('spin-border spin-border-info', tokenTintClasses('info').border)
+          ? cn('spin-border spin-border-info', tintClasses('info').border)
           : 'border-border-soft',
       )}
     >

@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useState } from 'react';
 import { Smartphone, Unplug } from 'lucide-react';
-import { Button, InlineConfirm } from '@goodboy/ui';
+import { Button, InlineConfirm, cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -17,9 +16,9 @@ export const PairedDevices = ({ enrolled, revoking, onRevoke, onPairAnother }: P
   return (
     <div className="flex w-full flex-col items-center gap-3">
       <span
-        className={tokenCn(
+        className={cn(
           'inline-flex items-center gap-1.5 rounded-full',
-          tokenTintClasses('success').bg,
+          tintClasses('success').bg,
           'px-2.5 py-0.5 text-2xs font-semibold text-success',
         )}
       >

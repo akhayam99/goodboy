@@ -1,5 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 
 type Props = {
   readonly index: number;
@@ -11,7 +10,7 @@ const pipClass = ({ position, index }: { readonly position: number; readonly ind
     return 'w-3 bg-primary';
   }
   if (position < index) {
-    return tokenCn('w-1.5', tokenTintClasses('primary').bg);
+    return cn('w-1.5', tintClasses('primary').bg);
   }
   return 'w-1.5 bg-border';
 };

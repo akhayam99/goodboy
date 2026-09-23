@@ -1,5 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { DiffHunkLine } from '@goodboy/types';
 import type { DiffLinePair } from '../../../../../shared/utils/diffLinePairs';
 import { DiffLineText } from '../../../../permissions/components/DiffViewerDialog/DiffLineText';
@@ -30,26 +29,26 @@ const sideTone = ({ line, hasDraft }: SideStateParams): string => {
     return 'bg-subtle';
   }
   if (hasDraft) {
-    return tokenCn(tokenTintClasses('draft').bgSoft);
+    return cn(tintClasses('draft').bgSoft);
   }
   if (line.kind === 'add') {
-    return tokenCn(tokenTintClasses('success').bgSoft);
+    return cn(tintClasses('success').bgSoft);
   }
   if (line.kind === 'del') {
-    return tokenCn(tokenTintClasses('danger').bgSoft);
+    return cn(tintClasses('danger').bgSoft);
   }
   return '';
 };
 
 const sideAccent = ({ line, hasDraft }: SideStateParams): string => {
   if (hasDraft) {
-    return tokenCn(tokenTintClasses('draft').border);
+    return cn(tintClasses('draft').border);
   }
   if (line?.kind === 'add') {
-    return tokenCn(tokenTintClasses('success').border);
+    return cn(tintClasses('success').border);
   }
   if (line?.kind === 'del') {
-    return tokenCn(tokenTintClasses('danger').border);
+    return cn(tintClasses('danger').border);
   }
   return 'border-transparent';
 };

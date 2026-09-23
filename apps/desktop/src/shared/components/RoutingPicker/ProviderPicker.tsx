@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { ChevronDown } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
-import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, cn, useDropdown, tintClasses } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
 import { PickerSection } from './PickerSection';
 import { ProviderGlyph } from './ProviderGlyph';
@@ -53,7 +52,7 @@ export const ProviderPicker = ({
           className={cn(
             'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
             open
-              ? tokenCn('border-primary', tokenTintClasses('primary').bgSoft)
+              ? cn('border-primary', tintClasses('primary').bgSoft)
               : 'border-border-soft bg-subtle hover:border-border hover:bg-hover',
             disabled && 'cursor-not-allowed opacity-60',
           )}

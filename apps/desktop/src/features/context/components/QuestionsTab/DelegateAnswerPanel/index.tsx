@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Bot } from 'lucide-react';
-import { Textarea, cn } from '@goodboy/ui';
+import { Textarea, cn, tintClasses } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { getDefaultTurnModel } from '@goodboy/core';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -66,9 +65,9 @@ export const DelegateAnswerPanel = ({
         data-testid="delegate-answer-panel"
         className={cn(
           'flex w-full min-w-0 flex-col gap-3 rounded-md border px-2 py-2',
-          tokenCn(
-            tokenTintClasses('primary').border,
-            tokenTintClasses('primary').bg,
+          cn(
+            tintClasses('primary').border,
+            tintClasses('primary').bg,
             'motion-safe:animate-fade-in',
           ),
         )}

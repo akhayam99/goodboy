@@ -1,4 +1,3 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Archive, ChevronRight, Plus } from 'lucide-react';
 import {
@@ -10,6 +9,7 @@ import {
   PANE_RHYTHM,
   cn,
   ScrollArea,
+  tintClasses,
 } from '@goodboy/ui';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { useSessionViewPrefs, useSortedGroupedSessions } from '../../../../store';
@@ -245,10 +245,10 @@ export const SessionActivityBar = ({
                 width: lasso.rect.width,
                 height: lasso.rect.height,
               }}
-              className={tokenCn(
+              className={cn(
                 'pointer-events-none absolute z-10 rounded-sm border',
-                tokenTintClasses('primary').border,
-                tokenTintClasses('primary').bg,
+                tintClasses('primary').border,
+                tintClasses('primary').bg,
               )}
             />
           ) : null}

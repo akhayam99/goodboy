@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { Button, formatError, Input, SegmentedTabs } from '@goodboy/ui';
+import { Button, formatError, Input, SegmentedTabs, cn, tintClasses } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useToast } from '../../../app/components/Toast';
 import { useAppStore, useSessionById } from '../../../store';
@@ -178,9 +177,9 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
 
       {needsConfirmation ? (
         <div
-          className={tokenCn(
+          className={cn(
             'flex items-start gap-2 rounded-md',
-            tokenTintClasses('warning').bg,
+            tintClasses('warning').bg,
             'p-3 text-xs',
           )}
         >
@@ -191,7 +190,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
               {isInUseElsewhere ? <li>Checked out in another git worktree</li> : null}
               {isDirty ? <li>That worktree has uncommitted changes</li> : null}
             </ul>
-            <span className={tokenCn('text-2xs', tokenTintClasses('warning').text)}>
+            <span className={cn('text-2xs', tintClasses('warning').text)}>
               Click {isReuseConfirmed ? '"Confirm switch"' : '"Switch branch"'} again to confirm
             </span>
           </div>

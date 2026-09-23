@@ -1,4 +1,3 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import {
@@ -34,6 +33,7 @@ import {
   Textarea,
   Tooltip,
   type SegmentedTabOption,
+  tintClasses,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
@@ -952,12 +952,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           type="button"
                           onClick={onUseSessionGoal}
                           disabled={blocked || polishing || goalText === sessionGoal}
-                          className={tokenCn(
+                          className={cn(
                             'inline-flex items-center gap-1 rounded-md border',
-                            tokenTintClasses('primary').borderSoft,
-                            tokenTintClasses('primary').bgSoft,
+                            tintClasses('primary').borderSoft,
+                            tintClasses('primary').bgSoft,
                             'px-2 py-0.5 text-2xs text-primary transition-colors hover:border-primary',
-                            tokenTintClasses('primary').hoverBg,
+                            tintClasses('primary').hoverBg,
                             'disabled:cursor-not-allowed disabled:opacity-50',
                           )}
                         >
@@ -1008,7 +1008,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                   className={cn(
                     'flex flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-colors',
                     isDragging
-                      ? tokenCn('border-dashed border-primary', tokenTintClasses('primary').bgSoft)
+                      ? cn('border-dashed border-primary', tintClasses('primary').bgSoft)
                       : 'border-border-soft',
                   )}
                 >
@@ -1100,12 +1100,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           <button
                             type="button"
                             onClick={() => setMode('custom')}
-                            className={tokenCn(
+                            className={cn(
                               'inline-flex items-center gap-1.5 rounded-md border',
-                              tokenTintClasses('primary').borderSoft,
-                              tokenTintClasses('primary').bgSoft,
+                              tintClasses('primary').borderSoft,
+                              tintClasses('primary').bgSoft,
                               'px-2.5 py-1 text-xs text-primary transition-colors hover:border-primary',
-                              tokenTintClasses('primary').hoverBg,
+                              tintClasses('primary').hoverBg,
                             )}
                           >
                             <PenLine size={ICON_SIZE.row} aria-hidden /> Describe your own
@@ -1186,9 +1186,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                       type="button"
                                       onClick={() => void onDeletePreset(t)}
                                       aria-label={`Confirm delete ${t.name}`}
-                                      className={tokenCn(
+                                      className={cn(
                                         'rounded-md p-1 text-danger transition-colors',
-                                        tokenTintClasses('danger').hoverBg,
+                                        tintClasses('danger').hoverBg,
                                       )}
                                     >
                                       <Check size={ICON_SIZE.row} aria-hidden />
@@ -1340,9 +1340,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           ) : null}
                           {mode === 'custom' ? (
                             <span
-                              className={tokenCn(
+                              className={cn(
                                 'inline-flex items-center gap-1 rounded-full',
-                                tokenTintClasses('success').bg,
+                                tintClasses('success').bg,
                                 'px-1.5 py-0.5 text-2xs font-medium text-success',
                               )}
                             >
@@ -1350,9 +1350,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             </span>
                           ) : presetDirty || isCustomNameDirty ? (
                             <span
-                              className={tokenCn(
+                              className={cn(
                                 'inline-flex items-center gap-1 rounded-full',
-                                tokenTintClasses('warning').bg,
+                                tintClasses('warning').bg,
                                 'px-1.5 py-0.5 text-2xs font-medium text-warning',
                               )}
                             >
@@ -1360,9 +1360,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             </span>
                           ) : (
                             <span
-                              className={tokenCn(
+                              className={cn(
                                 'inline-flex items-center gap-1 rounded-full',
-                                tokenTintClasses('success').bg,
+                                tintClasses('success').bg,
                                 'px-1.5 py-0.5 text-2xs font-medium text-success',
                               )}
                             >

@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnchoredPopover, cn, ScrollFade, Tooltip, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, cn, ScrollFade, Tooltip, useDropdown, tintClasses } from '@goodboy/ui';
 import { ChevronDown } from 'lucide-react';
 import type { LocalBranchInfo } from './worktree';
 import { ICON_SIZE } from '../../shared/components/conceptIcons';
@@ -207,7 +206,7 @@ export const BranchCombobox = ({
                   className={cn(
                     'flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-sm font-mono',
                     highlightIdx === i
-                      ? tokenCn(tokenTintClasses('primary').bg, 'text-foreground')
+                      ? cn(tintClasses('primary').bg, 'text-foreground')
                       : 'text-muted-foreground',
                   )}
                 >

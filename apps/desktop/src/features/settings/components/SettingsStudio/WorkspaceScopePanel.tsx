@@ -1,4 +1,3 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import type { VerbosityLevel, WorkspaceId } from '@goodboy/types';
 import {
@@ -11,6 +10,7 @@ import {
   ScrollFade,
   SectionHeader,
   Switch,
+  tintClasses,
 } from '@goodboy/ui';
 import { Check, GitBranch, Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
@@ -341,20 +341,16 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   size="sm"
                   onClick={() => setConfirmDisconnect(true)}
                   disabled={disconnecting}
-                  className={tokenCn(
-                    'text-danger',
-                    tokenTintClasses('danger').hoverBg,
-                    'hover:text-danger',
-                  )}
+                  className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
                 >
                   <Unplug size={ICON_SIZE.row} aria-hidden />
                   Disconnect
                 </Button>
               ) : (
                 <div
-                  className={tokenCn(
+                  className={cn(
                     'flex items-center gap-2 rounded-r-md border-l-2',
-                    tokenTintClasses('danger').border,
+                    tintClasses('danger').border,
                     'py-1.5 pl-2 pr-2',
                   )}
                 >

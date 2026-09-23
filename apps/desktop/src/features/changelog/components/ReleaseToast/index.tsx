@@ -1,11 +1,10 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { useInstalledVersion } from '../../hooks/useInstalledVersion';
 import { useUnseenRelease } from '../../hooks/useUnseenRelease';
-import { Tooltip } from '@goodboy/ui';
+import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 
 type Props = {
   readonly onOpenChangelog: () => void;
@@ -25,9 +24,9 @@ export const ReleaseToast = ({ onOpenChangelog }: Props) => {
     <div
       role="status"
       data-testid="release-toast"
-      className={tokenCn(
+      className={cn(
         'fixed bottom-12 right-3 z-toast flex max-w-96 items-start gap-3 rounded-lg border',
-        tokenTintClasses('primary').borderSoft,
+        tintClasses('primary').borderSoft,
         'bg-elevated px-3 py-3 shadow-lg',
       )}
     >

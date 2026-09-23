@@ -1,4 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import { Plus } from 'lucide-react';
 
 type Props = {
@@ -11,9 +11,9 @@ export const DragGhost = ({ ghost }: Props) => {
   }
   return (
     <div
-      className={tokenCn(
+      className={cn(
         'pointer-events-none fixed z-[60] flex items-center gap-1.5 rounded-md border',
-        tokenTintClasses('primary').border,
+        tintClasses('primary').border,
         'bg-background px-2 py-1 text-2xs font-medium text-foreground shadow-lg',
       )}
       style={{ left: ghost.x + 12, top: ghost.y + 12 }}

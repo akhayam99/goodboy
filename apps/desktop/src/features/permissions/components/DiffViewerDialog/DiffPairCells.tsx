@@ -1,5 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { DiffCommentAnchor, DiffHunkLine } from '@goodboy/types';
 import type { DiffLinePair } from '../../../../shared/utils/diffLinePairs';
 import { DiffLineText } from './DiffLineText';
@@ -33,10 +32,10 @@ const sideTone = ({ line }: ToneParams): string => {
     return 'bg-subtle text-transparent';
   }
   if (line.kind === 'add') {
-    return tokenCn(tokenTintClasses('success').bgSoft);
+    return cn(tintClasses('success').bgSoft);
   }
   if (line.kind === 'del') {
-    return tokenCn(tokenTintClasses('danger').bgSoft);
+    return cn(tintClasses('danger').bgSoft);
   }
   return '';
 };
@@ -88,23 +87,17 @@ export const DiffPairCells = ({
           'border-l-2 text-faint-foreground',
           oldTone,
           oldRangeCommented
-            ? tokenCn(tokenTintClasses('warning').border)
+            ? cn(tintClasses('warning').border)
             : pair.old?.kind === 'del'
-              ? tokenCn(tokenTintClasses('danger').border)
+              ? cn(tintClasses('danger').border)
               : 'border-transparent',
           oldCommentable && COMMENTABLE_CLASS,
-          selectingOld && tokenCn(tokenTintClasses('primary').bg),
+          selectingOld && cn(tintClasses('primary').bg),
         )}
       >
         {pair.old?.oldLine ?? ''}
       </td>
-      <td
-        className={cn(
-          CONTENT_CLASS,
-          oldTone,
-          selectingOld && tokenCn(tokenTintClasses('primary').bg),
-        )}
-      >
+      <td className={cn(CONTENT_CLASS, oldTone, selectingOld && cn(tintClasses('primary').bg))}>
         {pair.old === null ? '' : <DiffLineText line={pair.old} lang={lang} />}
       </td>
       <td
@@ -135,23 +128,17 @@ export const DiffPairCells = ({
           'border-l-2 text-faint-foreground',
           newTone,
           newRangeCommented
-            ? tokenCn(tokenTintClasses('warning').border)
+            ? cn(tintClasses('warning').border)
             : pair.new?.kind === 'add'
-              ? tokenCn(tokenTintClasses('success').border)
+              ? cn(tintClasses('success').border)
               : 'border-border-soft',
           newCommentable && COMMENTABLE_CLASS,
-          selectingNew && tokenCn(tokenTintClasses('primary').bg),
+          selectingNew && cn(tintClasses('primary').bg),
         )}
       >
         {pair.new?.newLine ?? ''}
       </td>
-      <td
-        className={cn(
-          CONTENT_CLASS,
-          newTone,
-          selectingNew && tokenCn(tokenTintClasses('primary').bg),
-        )}
-      >
+      <td className={cn(CONTENT_CLASS, newTone, selectingNew && cn(tintClasses('primary').bg))}>
         {pair.new === null ? '' : <DiffLineText line={pair.new} lang={lang} />}
       </td>
     </>

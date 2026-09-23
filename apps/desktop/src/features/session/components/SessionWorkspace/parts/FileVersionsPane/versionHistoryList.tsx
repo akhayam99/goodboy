@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { RotateCcw, Trash2 } from 'lucide-react';
-import { Button, EmptyState, Tooltip } from '@goodboy/ui';
+import { Button, EmptyState, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { FileVersion, FileVersionId } from '@goodboy/types';
 import {
   CONCEPT_ICONS,
@@ -75,9 +74,9 @@ export const VersionHistoryList = ({
                   onClick={() => onDeleteVersion(version.id)}
                   disabled={isDeleting || restoringVersionId != null}
                   aria-label="Delete this version"
-                  className={tokenCn(
+                  className={cn(
                     'inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors',
-                    tokenTintClasses('danger').hoverBg,
+                    tintClasses('danger').hoverBg,
                     'hover:text-danger disabled:cursor-not-allowed disabled:opacity-60',
                   )}
                 >

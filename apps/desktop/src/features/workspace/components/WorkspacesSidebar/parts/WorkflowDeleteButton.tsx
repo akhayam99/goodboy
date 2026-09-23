@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { InlineConfirm } from '@goodboy/ui';
+import { InlineConfirm, cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -17,11 +16,11 @@ export const WorkflowDeleteButton = ({ onConfirm }: Props) => {
         type="button"
         onClick={() => setIsArmed(true)}
         aria-expanded={isArmed}
-        className={tokenCn(
+        className={cn(
           'inline-flex min-h-7 shrink-0 items-center gap-1 rounded-md px-2 text-2xs font-semibold',
-          tokenTintClasses('danger').text,
+          tintClasses('danger').text,
           'transition-colors',
-          tokenTintClasses('danger').hoverBg,
+          tintClasses('danger').hoverBg,
           'hover:text-danger',
         )}
       >

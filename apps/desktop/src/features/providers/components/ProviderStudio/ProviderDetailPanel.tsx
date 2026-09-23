@@ -1,6 +1,13 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, EmptyState, SectionHeader, StatusDot, Tooltip } from '@goodboy/ui';
+import {
+  Button,
+  EmptyState,
+  SectionHeader,
+  StatusDot,
+  Tooltip,
+  cn,
+  tintClasses,
+} from '@goodboy/ui';
 import { RotateCw, type LucideIcon } from 'lucide-react';
 import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider, type ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
@@ -200,7 +207,7 @@ function ConnectedAccount({
             emphasis="outline"
             size="sm"
             onClick={onConfirmDisconnect}
-            className={tokenCn(tokenTintClasses('danger').bg, 'font-semibold')}
+            className={cn(tintClasses('danger').bg, 'font-semibold')}
           >
             Confirm
           </Button>
@@ -216,10 +223,10 @@ function ConnectedAccount({
         <button
           type="button"
           onClick={onAskDisconnect}
-          className={tokenCn(
+          className={cn(
             'rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors',
-            tokenTintClasses('danger').hoverBorder,
-            tokenTintClasses('danger').hoverBg,
+            tintClasses('danger').hoverBorder,
+            tintClasses('danger').hoverBg,
             'hover:text-danger',
           )}
         >

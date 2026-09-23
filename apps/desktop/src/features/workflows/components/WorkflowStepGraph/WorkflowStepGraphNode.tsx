@@ -1,5 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { Agent, ProviderId, ProviderName } from '@goodboy/types';
 import type { AgentKind } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../session/components/AgentKindChip';
@@ -43,7 +42,7 @@ export const WorkflowStepGraphNode = ({
       className={cn(
         'flex min-h-8 min-w-0 flex-1 items-center gap-1.5 rounded-lg border bg-subtle px-2 py-1 text-left transition-colors hover:bg-hover',
         isSelected
-          ? tokenCn(tokenTintClasses('primary').border, tokenTintClasses('primary').bgSoft)
+          ? cn(tintClasses('primary').border, tintClasses('primary').bgSoft)
           : 'border-border-soft',
       )}
     >

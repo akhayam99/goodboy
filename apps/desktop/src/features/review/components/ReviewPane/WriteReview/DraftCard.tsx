@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Chip, cn, Textarea, Tooltip } from '@goodboy/ui';
+import { Chip, cn, Textarea, Tooltip, tintClasses } from '@goodboy/ui';
 import type { PrReviewDraft } from '@goodboy/types';
 import { ComposerActionRow } from './ComposerActionRow';
 
@@ -34,8 +33,8 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
       className={cn(
         'flex flex-col gap-1.5 rounded-md border-l-2 bg-subtle px-3 py-2',
         draft.stale
-          ? tokenCn(tokenTintClasses('warning').border, 'opacity-70')
-          : tokenCn(tokenTintClasses('draft').border),
+          ? cn(tintClasses('warning').border, 'opacity-70')
+          : cn(tintClasses('draft').border),
       )}
     >
       <div className="flex items-center gap-1.5">

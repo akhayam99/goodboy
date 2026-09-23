@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
 import { PROVIDER_BRAND, brandColor } from '../provider-brand';
@@ -34,7 +33,7 @@ export const ProviderChip = ({
       className={cn(
         'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs motion-safe:transition-colors',
         selected
-          ? tokenCn(tokenTintClasses('primary').bg, 'font-medium text-primary')
+          ? cn(tintClasses('primary').bg, 'font-medium text-primary')
           : 'text-muted-foreground hover:bg-hover hover:text-foreground',
         disabled && 'cursor-not-allowed opacity-60',
       )}

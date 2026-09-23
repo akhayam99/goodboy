@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { CheckCircle2 } from 'lucide-react';
-import { KbdPill } from '@goodboy/ui';
+import { KbdPill, cn, tintClasses } from '@goodboy/ui';
 import { SHORTCUTS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { ShortcutId } from '../../../../shared/keyboard/registry';
 
@@ -10,10 +9,10 @@ export const ReadyStep = () => {
   return (
     <div className="flex flex-col items-center gap-6 text-center">
       <span
-        className={tokenCn(
+        className={cn(
           'flex size-14 items-center justify-center rounded-lg border',
-          tokenTintClasses('success').borderSoft,
-          tokenTintClasses('success').bg,
+          tintClasses('success').borderSoft,
+          tintClasses('success').bg,
           'text-success',
         )}
       >

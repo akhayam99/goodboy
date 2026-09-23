@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useRef, useCallback, useEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Paperclip, Send, Square } from 'lucide-react';
-import { cn, Divider, formatUsd, Textarea, Tooltip } from '@goodboy/ui';
+import { cn, Divider, formatUsd, Textarea, Tooltip, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core';
 import { useAppStore, useSessionCost } from '../../../../store';
@@ -432,22 +431,22 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           className={cn(
             'relative flex flex-col rounded-md ring-1 transition-all focus-within:ring-2 focus-within:ring-focus-ring',
             isDragging
-              ? tokenCn(tokenTintClasses('primary').bgSoft, 'ring-2 ring-primary')
+              ? cn(tintClasses('primary').bgSoft, 'ring-2 ring-primary')
               : 'bg-subtle ring-border-soft',
           )}
         >
           <div
-            className={tokenCn(
+            className={cn(
               'pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md transition-opacity duration-150',
-              tokenTintClasses('primary').bgSoft,
+              tintClasses('primary').bgSoft,
               isDragging ? 'opacity-100' : 'opacity-0',
             )}
             aria-hidden
           >
             <div
-              className={tokenCn(
+              className={cn(
                 'flex items-center gap-2 rounded-full border border-border-soft bg-background px-4 py-1.5 text-xs font-medium text-primary ring-1 transition-transform duration-150',
-                tokenTintClasses('primary').ring,
+                tintClasses('primary').ring,
                 isDragging ? 'scale-100' : 'scale-95',
               )}
             >
@@ -501,11 +500,11 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   type="button"
                   onClick={() => void cancelCurrentTurn(session.id)}
                   aria-label="Cancel turn"
-                  className={tokenCn(
+                  className={cn(
                     'absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg',
-                    tokenTintClasses('danger').bg,
+                    tintClasses('danger').bg,
                     'text-danger transition-colors',
-                    tokenTintClasses('danger').hoverBg,
+                    tintClasses('danger').hoverBg,
                   )}
                 >
                   <Square size={ICON_SIZE.control} aria-hidden fill="currentColor" />

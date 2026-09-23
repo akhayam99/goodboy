@@ -1,4 +1,3 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Button,
@@ -8,6 +7,8 @@ import {
   Input,
   SectionHeader,
   Tooltip,
+  cn,
+  tintClasses,
 } from '@goodboy/ui';
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
 import { PROVIDER_API_KEY_ENV, type CredentialId, type ProviderId } from '@goodboy/types';
@@ -144,9 +145,9 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
                     type="button"
                     aria-label={`Remove ${c.label}`}
                     onClick={() => setArmedId(c.id)}
-                    className={tokenCn(
+                    className={cn(
                       'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity',
-                      tokenTintClasses('danger').hoverBg,
+                      tintClasses('danger').hoverBg,
                       'hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring group-hover:opacity-100',
                     )}
                   >

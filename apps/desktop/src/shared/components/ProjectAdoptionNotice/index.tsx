@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, cn, tintClasses } from '@goodboy/ui';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
 
 type Props = {
@@ -16,10 +15,10 @@ export const ProjectAdoptionNotice = ({ conflict, busy, onMove, onKeep }: Props)
   return (
     <div
       role="status"
-      className={tokenCn(
+      className={cn(
         'flex items-center gap-3 rounded-lg border',
-        tokenTintClasses('primary').border,
-        tokenTintClasses('primary').bgSoft,
+        tintClasses('primary').border,
+        tintClasses('primary').bgSoft,
         'px-3 py-2 text-left',
       )}
     >

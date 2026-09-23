@@ -1,4 +1,3 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import { RotateCcw, Smartphone } from 'lucide-react';
 import {
@@ -11,6 +10,7 @@ import {
   ScrollFade,
   SectionHeader,
   Select,
+  tintClasses,
 } from '@goodboy/ui';
 import { GithubPanel } from '../../../../features/github/components/Panel';
 import { ImportConfigDialog } from '../ImportConfigDialog';
@@ -299,9 +299,9 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                 <span className="text-xs text-success">Wiped. Restart the app to start fresh.</span>
               ) : wipeState === 'confirm' || wipeState === 'wiping' ? (
                 <span
-                  className={tokenCn(
+                  className={cn(
                     'flex items-center gap-2 rounded-r-md border-l-2',
-                    tokenTintClasses('danger').border,
+                    tintClasses('danger').border,
                     'py-1.5 pl-2 pr-2',
                   )}
                 >
@@ -332,11 +332,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                   variant="ghost"
                   size="sm"
                   onClick={() => setWipeState('confirm')}
-                  className={tokenCn(
-                    'text-danger',
-                    tokenTintClasses('danger').hoverBg,
-                    'hover:text-danger',
-                  )}
+                  className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
                 >
                   Wipe
                 </Button>

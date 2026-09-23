@@ -1,7 +1,14 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Fragment, useMemo, useState } from 'react';
 import { Bot, ChevronRight, MessageSquarePlus } from 'lucide-react';
-import { Chip, cn, Divider, EmptyState, Tooltip, type DiffLayoutMode } from '@goodboy/ui';
+import {
+  Chip,
+  cn,
+  Divider,
+  EmptyState,
+  Tooltip,
+  type DiffLayoutMode,
+  tintClasses,
+} from '@goodboy/ui';
 import type { DiffHunkLine, FileDiff, PrReviewDraft, ReviewDraftSide } from '@goodboy/types';
 import {
   INITIAL_VISIBLE_LINES,
@@ -282,20 +289,20 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                           <tr
                             className={cn(
                               'group',
-                              line.kind === 'add' && tokenCn(tokenTintClasses('success').bgSoft),
-                              line.kind === 'del' && tokenCn(tokenTintClasses('danger').bgSoft),
-                              hasDraft && tokenCn(tokenTintClasses('draft').bgSoft),
+                              line.kind === 'add' && cn(tintClasses('success').bgSoft),
+                              line.kind === 'del' && cn(tintClasses('danger').bgSoft),
+                              hasDraft && cn(tintClasses('draft').bgSoft),
                             )}
                           >
                             <td
                               className={cn(
                                 'w-11 select-none border-l-2 px-0.5 align-top',
                                 hasDraft
-                                  ? tokenCn(tokenTintClasses('draft').border)
+                                  ? cn(tintClasses('draft').border)
                                   : line.kind === 'add'
-                                    ? tokenCn(tokenTintClasses('success').border)
+                                    ? cn(tintClasses('success').border)
                                     : line.kind === 'del'
-                                      ? tokenCn(tokenTintClasses('danger').border)
+                                      ? cn(tintClasses('danger').border)
                                       : 'border-transparent',
                               )}
                             >

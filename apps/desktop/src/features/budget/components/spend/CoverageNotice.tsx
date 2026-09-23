@@ -1,4 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import { TriangleAlert } from 'lucide-react';
 import type { CoverageTurnCounts } from './lib';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -14,10 +14,10 @@ export const CoverageNotice = ({ counts }: Props) => {
 
   return (
     <p
-      className={tokenCn(
+      className={cn(
         'flex items-center gap-2.5 rounded-lg border',
-        tokenTintClasses('warning').borderSoft,
-        tokenTintClasses('warning').bg,
+        tintClasses('warning').borderSoft,
+        tintClasses('warning').bg,
         'px-3 py-2 text-xs text-foreground',
       )}
     >

@@ -1,5 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
-import { Tooltip, cn } from '@goodboy/ui';
+import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../store';
 import { useAppStore } from '../../../../../store';
@@ -22,7 +21,7 @@ type Props = {
 
 const TEXT_TONE: Record<MountWorktreeState['kind'], string> = {
   reading: 'text-faint-foreground',
-  unknown: tokenCn(tokenTintClasses('warning').text),
+  unknown: cn(tintClasses('warning').text),
   clean: 'text-faint-foreground',
   modified: 'text-muted-foreground',
 };

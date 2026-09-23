@@ -1,5 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
-import { Skeleton, cn } from '@goodboy/ui';
+import { Skeleton, cn, tintClasses } from '@goodboy/ui';
 import { formatRelativeAge } from '../../../../../../shared/utils/relativeDate';
 import type { FileVersionGroup } from './fileVersionGroups';
 
@@ -31,7 +30,7 @@ export const PathSummaryList = ({ groups, selectedPath, loading, onSelectPath }:
             className={cn(
               'flex w-full flex-col gap-1 rounded-lg border border-border-soft bg-background px-3 py-2 text-left transition-colors',
               selectedPath === group.relativePath
-                ? tokenCn(tokenTintClasses('primary').border, tokenTintClasses('primary').bgSoft)
+                ? cn(tintClasses('primary').border, tintClasses('primary').bgSoft)
                 : 'hover:bg-hover',
             )}
           >

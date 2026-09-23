@@ -1,4 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 
 export const WelcomeStep = () => {
@@ -6,11 +6,7 @@ export const WelcomeStep = () => {
     <div className="flex flex-col items-center gap-6 text-center">
       <div className="relative">
         <div
-          className={tokenCn(
-            'absolute -inset-6 rounded-full',
-            tokenTintClasses('primary').bg,
-            'blur-2xl',
-          )}
+          className={cn('absolute -inset-6 rounded-full', tintClasses('primary').bg, 'blur-2xl')}
         />
         <DogMascot size={72} className="relative text-primary" />
       </div>

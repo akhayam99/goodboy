@@ -1,4 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
 import type { ProviderGuide } from './guides';
 
@@ -24,9 +24,9 @@ export const GuidePanel = ({ guide }: Props) => {
           <li key={step.title} className="flex gap-2.5">
             <span
               aria-hidden
-              className={tokenCn(
+              className={cn(
                 'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full',
-                tokenTintClasses('primary').bg,
+                tintClasses('primary').bg,
                 'text-2xs font-semibold text-primary',
               )}
             >

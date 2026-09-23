@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { type ReactNode, useRef } from 'react';
 import { GripVertical, Trash2 } from 'lucide-react';
-import { ClampedProse, cn, Input, Textarea, Tooltip } from '@goodboy/ui';
+import { ClampedProse, cn, Input, Textarea, Tooltip, tintClasses } from '@goodboy/ui';
 import type { AgentRole, ProviderId } from '@goodboy/types';
 import { agentKindPalette, ROLE_LABEL, ROLE_TO_KIND, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
@@ -187,11 +186,7 @@ export const WorkflowStepCard = ({
       className={cn(
         'group relative rounded-lg border motion-safe:transition-colors',
         expanded
-          ? tokenCn(
-              tokenTintClasses('primary').border,
-              tokenTintClasses('primary').bgSoft,
-              'shadow-sm',
-            )
+          ? cn(tintClasses('primary').border, tintClasses('primary').bgSoft, 'shadow-sm')
           : 'border-border-soft bg-subtle hover:border-border hover:bg-hover',
         dragging && 'opacity-40',
       )}

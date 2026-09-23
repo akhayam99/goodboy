@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { FolderGit2, FolderPlus, Layers } from 'lucide-react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { Button, Input, cn } from '@goodboy/ui';
+import { Button, Input, cn, tintClasses } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import type { DetectedChildRepos } from '../../../../shared/hooks/useChildRepoDetection';
 import { DetectedRepoList, type KnownRepo } from '../../../../shared/components/DetectedRepoList';
@@ -129,11 +128,11 @@ export const ShapeStep = ({
               className={cn(
                 'flex items-start gap-3 rounded-lg border px-3 py-3 text-left motion-safe:transition-colors',
                 shape === option.value
-                  ? tokenCn(tokenTintClasses('primary').border, tokenTintClasses('primary').bgSoft)
-                  : tokenCn(
+                  ? cn(tintClasses('primary').border, tintClasses('primary').bgSoft)
+                  : cn(
                       'border-border',
-                      tokenTintClasses('primary').hoverBorder,
-                      tokenTintClasses('primary').hoverBgSoft,
+                      tintClasses('primary').hoverBorder,
+                      tintClasses('primary').hoverBgSoft,
                     ),
               )}
             >

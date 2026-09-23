@@ -1,4 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import { Fragment, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { Agent, AgentId } from '@goodboy/types';
@@ -61,9 +61,9 @@ export const ScoutSubtree = ({
         onClick={() => onToggle(containerId)}
         aria-expanded={expanded}
         aria-label={`${expanded ? 'collapse' : 'expand'} ${groupLabel}`}
-        className={tokenCn(
+        className={cn(
           'flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide',
-          tokenTintClasses('info').text,
+          tintClasses('info').text,
           'transition-colors hover:text-info',
         )}
       >
@@ -75,9 +75,9 @@ export const ScoutSubtree = ({
         {groupLabel} {doneCount}/{children.length}
         {!expanded && unreadCount > 0 ? (
           <span
-            className={tokenCn(
+            className={cn(
               'inline-flex shrink-0 items-center gap-1 rounded',
-              tokenTintClasses('warning').bg,
+              tintClasses('warning').bg,
               'px-1 py-0.5 text-3xs font-medium text-warning',
             )}
             title={`${unreadCount} scout ${unreadCount === 1 ? 'reply' : 'replies'} to review`}

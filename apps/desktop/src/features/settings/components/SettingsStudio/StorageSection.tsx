@@ -1,4 +1,3 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import {
@@ -9,6 +8,8 @@ import {
   ScrollFade,
   SectionHeader,
   Skeleton,
+  cn,
+  tintClasses,
 } from '@goodboy/ui';
 import { useToast } from '../../../../app/components/Toast';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
@@ -140,11 +141,7 @@ export const StorageSection = () => {
                 size="sm"
                 onClick={() => setConfirmTarget('transcripts')}
                 disabled={archivedTranscriptRows === 0}
-                className={tokenCn(
-                  'text-danger',
-                  tokenTintClasses('danger').hoverBg,
-                  'hover:text-danger',
-                )}
+                className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
               >
                 {PRUNE_LABEL}
               </Button>
@@ -183,11 +180,7 @@ export const StorageSection = () => {
                 size="sm"
                 onClick={() => setConfirmTarget('worktrees')}
                 disabled={worktrees.length === 0}
-                className={tokenCn(
-                  'text-danger',
-                  tokenTintClasses('danger').hoverBg,
-                  'hover:text-danger',
-                )}
+                className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
               >
                 {REMOVE_LABEL}
               </Button>

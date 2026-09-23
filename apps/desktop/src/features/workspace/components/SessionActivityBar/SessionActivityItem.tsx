@@ -1,10 +1,9 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useMemo } from 'react';
 import { CostBadge } from '../../../../features/providers/components/CostBadge';
 import { PULL_REQUEST_PRESENTATION } from '../../../../shared/pullRequestPresentation';
 import { EMPTY_ARRAY, useAppStore, useSessionCost, useSessionStageInfo } from '../../../../store';
 import type { Session, SessionId } from '@goodboy/types';
-import { PANE_RHYTHM, StatusDot, TERMINAL_DIM, cn, formatUsd } from '@goodboy/ui';
+import { PANE_RHYTHM, StatusDot, TERMINAL_DIM, cn, formatUsd, tintClasses } from '@goodboy/ui';
 import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
@@ -71,8 +70,7 @@ export const SessionActivityItem = ({
         'flex w-full cursor-pointer items-center gap-2 rounded-md text-left motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         PANE_RHYTHM.navRail.row,
         isActive && 'bg-muted font-medium text-foreground',
-        isSelected &&
-          tokenCn(tokenTintClasses('primary').bg, 'ring-1', tokenTintClasses('primary').ring),
+        isSelected && cn(tintClasses('primary').bg, 'ring-1', tintClasses('primary').ring),
         isDimmed && TERMINAL_DIM,
       )}
     >

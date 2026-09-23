@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Plus } from 'lucide-react';
-import { EmptyState } from '@goodboy/ui';
+import { EmptyState, cn, tintClasses } from '@goodboy/ui';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
@@ -26,12 +25,12 @@ export const CustomStepsEmptyState = ({ disabled, onAddStep }: Props) => (
         type="button"
         onClick={onAddStep}
         disabled={disabled}
-        className={tokenCn(
+        className={cn(
           'inline-flex items-center gap-1.5 rounded-md border',
-          tokenTintClasses('primary').borderSoft,
-          tokenTintClasses('primary').bgSoft,
+          tintClasses('primary').borderSoft,
+          tintClasses('primary').bgSoft,
           'px-2.5 py-1 text-xs text-primary transition-colors hover:border-primary',
-          tokenTintClasses('primary').hoverBg,
+          tintClasses('primary').hoverBg,
           'disabled:cursor-not-allowed disabled:opacity-50',
         )}
       >

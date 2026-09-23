@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useState } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, PermissionScope, ProviderRunId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -73,23 +72,12 @@ export const PermissionScopePicker = ({
 
   const scopeTone = (scope: PermissionScope): string => {
     if (scope === 'session') {
-      return tokenCn(
-        'border-transparent bg-primary text-on-tone',
-        tokenTintClasses('primary').hoverBg,
-      );
+      return cn('border-transparent bg-primary text-on-tone', tintClasses('primary').hoverBg);
     }
     if (scope === 'deny') {
-      return tokenCn(
-        tokenTintClasses('danger').border,
-        'text-danger',
-        tokenTintClasses('danger').hoverBg,
-      );
+      return cn(tintClasses('danger').border, 'text-danger', tintClasses('danger').hoverBg);
     }
-    return tokenCn(
-      tokenTintClasses('success').border,
-      'text-success',
-      tokenTintClasses('success').hoverBg,
-    );
+    return cn(tintClasses('success').border, 'text-success', tintClasses('success').hoverBg);
   };
 
   return (

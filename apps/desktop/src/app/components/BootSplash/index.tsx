@@ -1,4 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import { useCallback, useEffect, useRef } from 'react';
 import type { BootPhase } from '../../../store/types';
 import { openUrl } from '../../../shared/lib/editor';
@@ -137,15 +137,15 @@ function BootErrorRecovery({
   return (
     <div
       role="alert"
-      className={tokenCn(
+      className={cn(
         'flex w-64 flex-col gap-3 rounded-r-md border-l-2',
-        tokenTintClasses('danger').border,
+        tintClasses('danger').border,
         'p-4 font-mono text-2xs',
       )}
     >
       <div className="flex flex-col gap-1">
         <span className="text-danger">✗ {category} failed</span>
-        <p className={tokenCn('leading-relaxed', tokenTintClasses('danger').text)}>{error}</p>
+        <p className={cn('leading-relaxed', tintClasses('danger').text)}>{error}</p>
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -153,11 +153,11 @@ function BootErrorRecovery({
           <button
             type="button"
             onClick={onRetry}
-            className={tokenCn(
+            className={cn(
               'rounded border',
-              tokenTintClasses('danger').borderSoft,
+              tintClasses('danger').borderSoft,
               'bg-background px-3 py-1.5 text-danger motion-safe:transition-colors',
-              tokenTintClasses('danger').hoverBg,
+              tintClasses('danger').hoverBg,
             )}
           >
             › retry

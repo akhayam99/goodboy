@@ -1,7 +1,14 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronRight, ExternalLink, MessageSquarePlus } from 'lucide-react';
-import { Chip, cn, type DiffLayoutMode, Divider, EmptyState, Tooltip } from '@goodboy/ui';
+import {
+  Chip,
+  cn,
+  type DiffLayoutMode,
+  Divider,
+  EmptyState,
+  Tooltip,
+  tintClasses,
+} from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { CopyButton } from '@goodboy/ui';
 import type {
@@ -363,11 +370,7 @@ export const FileDiffCard = ({
               className={cn(
                 'inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-3xs font-medium transition-colors',
                 isReviewed
-                  ? tokenCn(
-                      tokenTintClasses('success').border,
-                      tokenTintClasses('success').bg,
-                      'text-success',
-                    )
+                  ? cn(tintClasses('success').border, tintClasses('success').bg, 'text-success')
                   : 'border-border text-muted-foreground hover:bg-hover hover:text-foreground',
               )}
             >
@@ -538,9 +541,9 @@ export const FileDiffCard = ({
                         <tr
                           onMouseEnter={() => extendDrag({ oldAnchor, newAnchor })}
                           className={cn(
-                            line.kind === 'add' && tokenCn(tokenTintClasses('success').bgSoft),
-                            line.kind === 'del' && tokenCn(tokenTintClasses('danger').bgSoft),
-                            selecting && tokenCn(tokenTintClasses('primary').bg),
+                            line.kind === 'add' && cn(tintClasses('success').bgSoft),
+                            line.kind === 'del' && cn(tintClasses('danger').bgSoft),
+                            selecting && cn(tintClasses('primary').bg),
                           )}
                         >
                           <td
@@ -576,11 +579,11 @@ export const FileDiffCard = ({
                                 oldAnchor !== null &&
                                 'cursor-pointer transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
                               oldRangeCommented
-                                ? tokenCn(tokenTintClasses('warning').border)
+                                ? cn(tintClasses('warning').border)
                                 : line.kind === 'add'
-                                  ? tokenCn(tokenTintClasses('success').border)
+                                  ? cn(tintClasses('success').border)
                                   : line.kind === 'del'
-                                    ? tokenCn(tokenTintClasses('danger').border)
+                                    ? cn(tintClasses('danger').border)
                                     : 'border-transparent',
                             )}
                           >

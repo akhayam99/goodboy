@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import type { PullRequestState } from '@goodboy/types';
-import { AnchoredPopover, cn, ScrollFade, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, cn, ScrollFade, useDropdown, tintClasses } from '@goodboy/ui';
 import { Check, ChevronDown } from 'lucide-react';
 import { PullRequestChip } from '../PullRequestChip';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -56,7 +55,7 @@ export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
                 }}
                 className={cn(
                   'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-hover',
-                  p.number === selected && tokenCn(tokenTintClasses('primary').bgSoft),
+                  p.number === selected && cn(tintClasses('primary').bgSoft),
                 )}
               >
                 <PullRequestChip state={p.state} variant="icon" iconSize={12} />

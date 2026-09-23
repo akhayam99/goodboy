@@ -1,7 +1,14 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { AnchoredPopover, Button, IconButton, cn, formatError, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  IconButton,
+  cn,
+  formatError,
+  useDropdown,
+  tintClasses,
+} from '@goodboy/ui';
 import type {
   MountId,
   ProjectId,
@@ -443,11 +450,11 @@ export const ProjectDetachMenu = ({
                 setConfirming('detach');
                 assess();
               }}
-              className={tokenCn(
+              className={cn(
                 'flex w-full items-center px-2.5 py-1.5 text-left',
-                tokenTintClasses('danger').text,
+                tintClasses('danger').text,
                 'motion-safe:transition-colors',
-                tokenTintClasses('danger').hoverBg,
+                tintClasses('danger').hoverBg,
                 'hover:text-danger',
               )}
             >

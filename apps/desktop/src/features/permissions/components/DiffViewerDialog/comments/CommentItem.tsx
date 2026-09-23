@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { ArrowUpRight, Check, RotateCcw, Trash2 } from 'lucide-react';
-import { Chip, cn, Tooltip, type Tone } from '@goodboy/ui';
+import { Chip, cn, Tooltip, type Tone, tintClasses } from '@goodboy/ui';
 import type { AgentId, DiffComment } from '@goodboy/types';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 
@@ -24,14 +23,10 @@ export const CommentItem = ({
   const agentName = comment.consumedByAgentId ? getAgentName(comment.consumedByAgentId) : undefined;
   const containerClass =
     comment.status === 'resolved'
-      ? tokenCn(
-          tokenTintClasses('success').border,
-          tokenTintClasses('success').bgSoft,
-          'opacity-60',
-        )
+      ? cn(tintClasses('success').border, tintClasses('success').bgSoft, 'opacity-60')
       : comment.status === 'consumed'
-        ? tokenCn(tokenTintClasses('info').border, tokenTintClasses('info').bgSoft)
-        : tokenCn('border-warning', tokenTintClasses('warning').bgSoft);
+        ? cn(tintClasses('info').border, tintClasses('info').bgSoft)
+        : cn('border-warning', tintClasses('warning').bgSoft);
   const statusPill: { label: string; tone: Tone } | null =
     comment.status === 'resolved'
       ? { label: 'resolved', tone: 'success' }
@@ -108,9 +103,9 @@ export const CommentItem = ({
               <button
                 type="button"
                 onClick={() => onViewAgent(comment.consumedByAgentId as AgentId)}
-                className={tokenCn(
+                className={cn(
                   'inline-flex items-center gap-0.5 rounded-sm px-1 py-0.5 text-info',
-                  tokenTintClasses('info').hoverBg,
+                  tintClasses('info').hoverBg,
                   'hover:text-info',
                 )}
               >

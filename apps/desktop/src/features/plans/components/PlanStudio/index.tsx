@@ -1,4 +1,3 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { ArchiveRestore, Eye, Pencil, Play, RotateCw, Trash2 } from 'lucide-react';
 import {
@@ -12,6 +11,7 @@ import {
   Textarea,
   Tooltip,
   cn,
+  tintClasses,
 } from '@goodboy/ui';
 import type { Agent, PlanWithCount, SessionId } from '@goodboy/types';
 import {
@@ -229,9 +229,9 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
                       {selected.status === 'consumed' ? (
                         <Tooltip content="Consumed plans cannot be deleted">
                           <span
-                            className={tokenCn(
+                            className={cn(
                               'inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5',
-                              tokenTintClasses('danger').text,
+                              tintClasses('danger').text,
                             )}
                             aria-label="Consumed plans cannot be deleted"
                           >
@@ -244,12 +244,12 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
                             type="button"
                             onClick={() => handleRestore(selected)}
                             aria-label="Restore plan"
-                            className={tokenCn(
+                            className={cn(
                               'inline-flex items-center justify-center rounded-md border',
-                              tokenTintClasses('info').borderSoft,
+                              tintClasses('info').borderSoft,
                               'p-1.5 text-info transition',
-                              tokenTintClasses('info').hoverBorder,
-                              tokenTintClasses('info').hoverBg,
+                              tintClasses('info').hoverBorder,
+                              tintClasses('info').hoverBg,
                             )}
                           >
                             <ArchiveRestore size={ICON_SIZE.row} aria-hidden />
@@ -261,12 +261,12 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
                             type="button"
                             onClick={() => setDeleteArmed(true)}
                             aria-label="Delete plan"
-                            className={tokenCn(
+                            className={cn(
                               'inline-flex items-center justify-center rounded-md border',
-                              tokenTintClasses('danger').borderSoft,
+                              tintClasses('danger').borderSoft,
                               'p-1.5 text-danger transition',
-                              tokenTintClasses('danger').hoverBorder,
-                              tokenTintClasses('danger').hoverBg,
+                              tintClasses('danger').hoverBorder,
+                              tintClasses('danger').hoverBg,
                             )}
                           >
                             <Trash2 size={ICON_SIZE.row} aria-hidden />

@@ -1,8 +1,17 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useId, useMemo, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { Button, Chip, cn, Divider, formatError, Input, SectionHeader, Tooltip } from '@goodboy/ui';
+import {
+  Button,
+  Chip,
+  cn,
+  Divider,
+  formatError,
+  Input,
+  SectionHeader,
+  Tooltip,
+  tintClasses,
+} from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { AlertTriangle, Folder, FolderGit2, FolderPlus, Layers, Plus, X } from 'lucide-react';
 import { useAppStore } from '../../../../store';
@@ -345,14 +354,11 @@ export const WorkspaceLinkForm = ({
                 className={cn(
                   'flex items-start gap-3 rounded-lg border px-3 py-3 text-left motion-safe:transition-colors',
                   choice === option.value
-                    ? tokenCn(
-                        tokenTintClasses('primary').border,
-                        tokenTintClasses('primary').bgSoft,
-                      )
-                    : tokenCn(
+                    ? cn(tintClasses('primary').border, tintClasses('primary').bgSoft)
+                    : cn(
                         'border-border',
-                        tokenTintClasses('primary').hoverBorder,
-                        tokenTintClasses('primary').hoverBgSoft,
+                        tintClasses('primary').hoverBorder,
+                        tintClasses('primary').hoverBgSoft,
                       ),
                 )}
               >

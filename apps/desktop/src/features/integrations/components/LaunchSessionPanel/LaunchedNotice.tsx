@@ -1,4 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import { MessagesSquare } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
@@ -14,9 +14,9 @@ export const LaunchedNotice = ({ sessionId, isLinkedToIssue, onOpened }: Props) 
   return (
     <div className="flex items-center gap-3">
       <span
-        className={tokenCn(
+        className={cn(
           'flex size-7 shrink-0 items-center justify-center rounded-lg',
-          tokenTintClasses('success').bg,
+          tintClasses('success').bg,
         )}
       >
         <MessagesSquare size={ICON_SIZE.control} className="text-success" aria-hidden />

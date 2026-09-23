@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { ArrowUpRight, GitMerge } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { RefreshIconButton } from '@goodboy/ui';
@@ -50,9 +49,9 @@ export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
               <span className="text-2xs text-muted-foreground">{mr.state}</span>
               {mr.draft ? (
                 <span
-                  className={tokenCn(
+                  className={cn(
                     'rounded',
-                    tokenTintClasses('warning').bg,
+                    tintClasses('warning').bg,
                     'px-1 py-px text-3xs font-medium uppercase tracking-wide text-warning',
                   )}
                 >

@@ -1,5 +1,4 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
-import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, cn, useDropdown, tintClasses } from '@goodboy/ui';
 import type { AgentRole } from '@goodboy/types';
 import { Check, ChevronDown } from 'lucide-react';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
@@ -30,7 +29,7 @@ export const RoleSelect = ({ value, onChange, disabled }: Props) => {
           className={cn(
             'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
             open
-              ? tokenCn('border-primary', tokenTintClasses('primary').bgSoft)
+              ? cn('border-primary', tintClasses('primary').bgSoft)
               : 'border-border-soft bg-subtle hover:border-border hover:bg-hover',
             disabled && 'cursor-not-allowed opacity-50',
           )}
@@ -61,7 +60,7 @@ export const RoleSelect = ({ value, onChange, disabled }: Props) => {
             className={cn(
               'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors',
               active
-                ? tokenCn(tokenTintClasses('primary').bg, 'text-foreground')
+                ? cn(tintClasses('primary').bg, 'text-foreground')
                 : 'text-muted-foreground hover:bg-hover hover:text-foreground',
             )}
           >

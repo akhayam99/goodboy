@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn, Divider, Popover, ScrollFade, SectionHeader, Tooltip } from '@goodboy/ui';
+import { cn, Divider, Popover, ScrollFade, SectionHeader, Tooltip, tintClasses } from '@goodboy/ui';
 import type {
   MountId,
   SessionId,
@@ -227,7 +226,7 @@ function ScriptRow({
       className={cn(
         'group flex items-center gap-2 rounded border border-transparent px-2 py-1.5 transition-colors',
         !isPending && 'hover:bg-hover',
-        isPending && tokenCn(tokenTintClasses('info').border),
+        isPending && cn(tintClasses('info').border),
       )}
     >
       <StatusDot status={status} />
@@ -252,10 +251,10 @@ function ScriptRow({
           className={cn(
             'flex size-6 shrink-0 items-center justify-center rounded transition-colors',
             logOpen
-              ? tokenCn(
-                  tokenTintClasses('primary').bg,
+              ? cn(
+                  tintClasses('primary').bg,
                   'text-primary ring-1',
-                  tokenTintClasses('primary').ring,
+                  tintClasses('primary').ring,
                   'ring-inset',
                 )
               : 'text-faint-foreground hover:bg-hover hover:text-foreground',

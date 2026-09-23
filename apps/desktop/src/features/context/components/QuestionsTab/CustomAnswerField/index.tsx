@@ -1,6 +1,5 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Pencil } from 'lucide-react';
-import { Textarea, cn } from '@goodboy/ui';
+import { Textarea, cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -47,7 +46,7 @@ export const CustomAnswerField = ({
         ROW_FRAME,
         'flex-col gap-2 motion-safe:animate-fade-in',
         filled
-          ? tokenCn(tokenTintClasses('primary').border, tokenTintClasses('primary').bg)
+          ? cn(tintClasses('primary').border, tintClasses('primary').bg)
           : 'border-border-soft',
       )}
     >

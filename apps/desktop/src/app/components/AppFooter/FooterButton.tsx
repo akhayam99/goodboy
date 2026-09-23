@@ -1,4 +1,3 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import type { ReactNode } from 'react';
 import { cn, tintClasses, Tooltip, type Tone } from '@goodboy/ui';
 
@@ -34,7 +33,7 @@ export const FooterButton = ({
         active
           ? 'bg-muted text-foreground'
           : pulse
-            ? tokenCn('text-info motion-safe:animate-soft-pulse', tokenTintClasses('info').hoverBg)
+            ? cn('text-info motion-safe:animate-soft-pulse', tintClasses('info').hoverBg)
             : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >

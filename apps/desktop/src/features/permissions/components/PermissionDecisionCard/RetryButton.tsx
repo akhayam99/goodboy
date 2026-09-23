@@ -1,7 +1,6 @@
-import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -47,11 +46,11 @@ export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
       onClick={() => void handle()}
       title="Re-run the turn so the agent retries the tool with the new rule in place"
       className={cn(
-        tokenCn(
+        cn(
           'flex items-center gap-1 rounded border',
-          tokenTintClasses('primary').border,
+          tintClasses('primary').border,
           'px-2 py-0.5 text-2xs font-medium text-primary transition-colors',
-          tokenTintClasses('primary').hoverBg,
+          tintClasses('primary').hoverBg,
         ),
         disabled && 'cursor-not-allowed opacity-50',
       )}
