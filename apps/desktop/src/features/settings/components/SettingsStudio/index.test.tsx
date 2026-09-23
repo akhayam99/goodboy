@@ -118,7 +118,8 @@ describe('SettingsStudio', () => {
     render(
       <SettingsStudio
         currentWorkspace={workspace}
-        initialFocus={{ scope: 'tools', tool: 'linear' }}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'tools', tool: 'linear' }}
         onClose={vi.fn()}
       />,
     );
@@ -128,7 +129,12 @@ describe('SettingsStudio', () => {
 
   it('renders all settings scopes in a navigation rail', () => {
     render(
-      <SettingsStudio currentWorkspace={null} initialFocus={{ scope: 'app' }} onClose={vi.fn()} />,
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'app' }}
+        onClose={vi.fn()}
+      />,
     );
 
     expect(
@@ -141,9 +147,31 @@ describe('SettingsStudio', () => {
     expect(screen.getByRole('button', { name: 'Providers & models' })).toBeDefined();
   });
 
+  it('reports a rail click as a scope change instead of switching on its own', () => {
+    const onScopeChange = vi.fn();
+    render(
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={onScopeChange}
+        focus={{ scope: 'app' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Providers & models' }));
+
+    expect(onScopeChange).toHaveBeenCalledWith({ scope: 'providers' });
+    expect(screen.getByRole('button', { name: 'App' }).getAttribute('aria-current')).toBe('true');
+  });
+
   it('collapses shortcuts by default', () => {
     render(
-      <SettingsStudio currentWorkspace={null} initialFocus={{ scope: 'app' }} onClose={vi.fn()} />,
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'app' }}
+        onClose={vi.fn()}
+      />,
     );
 
     const toggle = screen.getByRole('button', { name: /expand keyboard shortcuts/i });
@@ -159,7 +187,8 @@ describe('SettingsStudio', () => {
     render(
       <SettingsStudio
         currentWorkspace={null}
-        initialFocus={{ scope: 'app', section: 'shortcuts' }}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'app', section: 'shortcuts' }}
         onClose={vi.fn()}
       />,
     );
@@ -175,7 +204,12 @@ describe('SettingsStudio', () => {
 
   it('leaves GitHub to Tools settings', () => {
     render(
-      <SettingsStudio currentWorkspace={null} initialFocus={{ scope: 'app' }} onClose={vi.fn()} />,
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'app' }}
+        onClose={vi.fn()}
+      />,
     );
 
     expect(screen.queryByText('GitHub')).toBeNull();
@@ -184,7 +218,12 @@ describe('SettingsStudio', () => {
 
   it('wipes only after the row confirm and offers a restart', async () => {
     render(
-      <SettingsStudio currentWorkspace={null} initialFocus={{ scope: 'app' }} onClose={vi.fn()} />,
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'app' }}
+        onClose={vi.fn()}
+      />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
@@ -201,7 +240,12 @@ describe('SettingsStudio', () => {
 
   it('cancels the wipe back to its trigger', () => {
     render(
-      <SettingsStudio currentWorkspace={null} initialFocus={{ scope: 'app' }} onClose={vi.fn()} />,
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'app' }}
+        onClose={vi.fn()}
+      />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
@@ -215,7 +259,12 @@ describe('SettingsStudio', () => {
     const listener = vi.fn();
     window.addEventListener(REPORT_ISSUE_STUDIO_EVENT, listener);
     render(
-      <SettingsStudio currentWorkspace={null} initialFocus={{ scope: 'app' }} onClose={vi.fn()} />,
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'app' }}
+        onClose={vi.fn()}
+      />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: /report an issue/i }));
@@ -228,7 +277,8 @@ describe('SettingsStudio', () => {
     render(
       <SettingsStudio
         currentWorkspace={null}
-        initialFocus={{ scope: 'app', section }}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'app', section }}
         onClose={vi.fn()}
       />,
     );

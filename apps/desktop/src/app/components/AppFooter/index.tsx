@@ -13,79 +13,37 @@ import {
   integrationLabel,
 } from '../../../features/integrations/components/IntegrationGlyph';
 import { MoreStudiosPopover } from './MoreStudiosPopover';
+import type { ConnectedIntegrations, FooterTarget } from '../../hooks/useAppOverlays/overlayState';
 
 const SETTINGS_LABEL = `Open settings (${shortcutGlyphs('settings.open')})`;
 
 type Props = {
-  activeStudio: string | null;
-  onOpenWorkflows: () => void;
-  onOpenProviders: () => void;
-  onOpenSettings: () => void;
-  onOpenImpact: () => void;
-  onOpenChangelog: () => void;
-  onOpenInbox: () => void;
-  onOpenGithub: () => void;
-  onOpenLinear: () => void;
-  onOpenJira: () => void;
-  onOpenSentry: () => void;
-  onOpenGitlab: () => void;
-  onOpenBitbucket: () => void;
-  onOpenSlack: () => void;
-  githubEnabled: boolean;
-  linearEnabled: boolean;
-  jiraEnabled: boolean;
-  sentryEnabled: boolean;
-  gitlabEnabled: boolean;
-  bitbucketEnabled: boolean;
-  slackEnabled: boolean;
+  readonly target: FooterTarget;
+  readonly connected: ConnectedIntegrations;
+  readonly onOpenIntegration: (params: { readonly provider: IntegrationGlyphProvider }) => void;
+  readonly onOpenInbox: () => void;
+  readonly onOpenWorkflows: () => void;
+  readonly onOpenProviders: () => void;
+  readonly onOpenSettings: () => void;
+  readonly onOpenImpact: () => void;
+  readonly onOpenChangelog: () => void;
 };
 
 export const AppFooter = ({
-  activeStudio,
+  target,
+  connected,
+  onOpenIntegration,
+  onOpenInbox,
   onOpenWorkflows,
   onOpenProviders,
   onOpenSettings,
   onOpenImpact,
   onOpenChangelog,
-  onOpenInbox,
-  onOpenGithub,
-  onOpenLinear,
-  onOpenJira,
-  onOpenSentry,
-  onOpenGitlab,
-  onOpenBitbucket,
-  onOpenSlack,
-  githubEnabled,
-  linearEnabled,
-  jiraEnabled,
-  sentryEnabled,
-  gitlabEnabled,
-  bitbucketEnabled,
-  slackEnabled,
 }: Props) => {
   const noProviderConnected = useAppStore(
     (s) => !s.providers.some((p) => p.connection === 'connected'),
   );
-  const enabled = {
-    github: githubEnabled,
-    gitlab: gitlabEnabled,
-    bitbucket: bitbucketEnabled,
-    linear: linearEnabled,
-    jira: jiraEnabled,
-    sentry: sentryEnabled,
-    slack: slackEnabled,
-  } satisfies Record<IntegrationGlyphProvider, boolean>;
-
-  const openers = {
-    github: onOpenGithub,
-    gitlab: onOpenGitlab,
-    bitbucket: onOpenBitbucket,
-    linear: onOpenLinear,
-    jira: onOpenJira,
-    sentry: onOpenSentry,
-    slack: onOpenSlack,
-  } satisfies Record<IntegrationGlyphProvider, () => void>;
-  const connectedMembers = FOOTER_INTEGRATIONS.filter((member) => enabled[member.provider]);
+  const connectedMembers = FOOTER_INTEGRATIONS.filter((member) => connected[member.provider]);
 
   return (
     <div className="flex shrink-0 flex-col">
@@ -105,8 +63,8 @@ export const AppFooter = ({
                   icon={<IntegrationGlyph provider={member.provider} size="xs" useBrandColor />}
                   label={label}
                   title={label}
-                  onClick={openers[member.provider]}
-                  active={activeStudio === member.provider}
+                  onClick={() => onOpenIntegration({ provider: member.provider })}
+                  active={target === member.provider}
                   showLabel={false}
                 />
               );
@@ -117,12 +75,10 @@ export const AppFooter = ({
           ) : null}
           <IntegrationAddPopover
             members={FOOTER_INTEGRATIONS}
-            enabled={enabled}
-            openers={openers}
+            connected={connected}
+            onOpenIntegration={onOpenIntegration}
             isEmpty={connectedMembers.length === 0}
-            active={FOOTER_INTEGRATIONS.some(
-              (member) => member.provider === activeStudio && !enabled[member.provider],
-            )}
+            active={target === 'link'}
           />
         </div>
 
@@ -138,7 +94,7 @@ export const AppFooter = ({
             tone={CONCEPT_TONE.inbox}
             title="Open the inbox for this workspace"
             onClick={onOpenInbox}
-            active={activeStudio === 'inbox'}
+            active={target === 'inbox'}
           />
           <FooterButton
             icon={<CONCEPT_ICONS.workflows size={ICON_SIZE.control} aria-hidden />}
@@ -146,7 +102,7 @@ export const AppFooter = ({
             tone={CONCEPT_TONE.workflows}
             title="Open the workflow library for this workspace"
             onClick={onOpenWorkflows}
-            active={activeStudio === 'workflow'}
+            active={target === 'workflows'}
           />
           <FooterButton
             icon={<CONCEPT_ICONS.providers size={ICON_SIZE.control} aria-hidden />}
@@ -154,8 +110,8 @@ export const AppFooter = ({
             tone={CONCEPT_TONE.providers}
             title="Connect and manage your provider accounts"
             onClick={onOpenProviders}
-            pulse={noProviderConnected && activeStudio !== 'provider'}
-            active={activeStudio === 'provider'}
+            pulse={noProviderConnected && target !== 'providers'}
+            active={target === 'providers'}
           />
           <FooterButton
             icon={<CONCEPT_ICONS.settings size={ICON_SIZE.control} aria-hidden />}
@@ -163,10 +119,10 @@ export const AppFooter = ({
             tone={CONCEPT_TONE.settings}
             title={SETTINGS_LABEL}
             onClick={onOpenSettings}
-            active={activeStudio === 'settings'}
+            active={target === 'settings'}
           />
           <MoreStudiosPopover
-            activeStudio={activeStudio}
+            target={target}
             openers={{
               impact: onOpenImpact,
               changelog: onOpenChangelog,

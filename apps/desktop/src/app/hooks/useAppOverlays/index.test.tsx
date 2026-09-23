@@ -64,12 +64,12 @@ vi.mock('../../../features/permissions/components/DiffViewerDialog', () => ({
   DiffViewerDialog: () => null,
 }));
 vi.mock('../../../features/settings/components/SettingsStudio', () => ({
-  SettingsStudio: ({ initialFocus }: { initialFocus: { scope: string; section?: string } }) => (
+  SettingsStudio: ({ focus }: { focus: { scope: string; section?: string } }) => (
     <div
       data-testid="studio"
       data-kind="settings"
-      data-scope={initialFocus.scope}
-      data-section={initialFocus.section ?? ''}
+      data-scope={focus.scope}
+      data-section={focus.section ?? ''}
     />
   ),
 }));
@@ -196,12 +196,54 @@ describe('app overlay hook', () => {
     expect(await openStudios()).toEqual(['workflow']);
   });
 
-  it('opens the inbox on github when github is connected', async () => {
+  it('opens the inbox on github when github is connected and lights its glyph', async () => {
     renderHarness({ connectedGithub: true });
 
-    act(() => overlays().openGithub());
+    act(() => overlays().openIntegration({ provider: 'github' }));
 
     expect(await openStudios()).toEqual(['inbox']);
     expect(screen.getByTestId('studio').getAttribute('data-provider')).toBe('github');
+    expect(overlays().footer).toBe('github');
+  });
+
+  it('opens the tools form for a disconnected integration and lights the link action', async () => {
+    renderHarness();
+
+    act(() => overlays().openIntegration({ provider: 'github' }));
+
+    expect(await openStudios()).toEqual(['settings']);
+    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('tools');
+    expect(overlays().footer).toBe('link');
+  });
+
+  it('leaves only settings when the shortcut help opens over another studio', async () => {
+    renderHarness();
+
+    act(() => overlays().openInbox());
+    act(() => overlays().openShortcutHelp());
+
+    expect(await openStudios()).toEqual(['settings']);
+    expect(screen.getByTestId('studio').getAttribute('data-section')).toBe('shortcuts');
+  });
+
+  it('leaves only the companion when pairing opens over workflows', async () => {
+    renderHarness();
+
+    act(() => overlays().openWorkflows());
+    fire({ name: 'goodboy:open-pair-device' });
+
+    expect(await openStudios()).toEqual(['companion']);
+  });
+
+  it('leaves nothing open after settings, then pairing, then close', async () => {
+    renderHarness();
+
+    act(() => overlays().openSettings());
+    fire({ name: 'goodboy:open-pair-device' });
+    expect(await openStudios()).toEqual(['companion']);
+
+    fire({ name: 'goodboy:reveal-chat' });
+
+    expect(await openStudios()).toEqual([]);
   });
 });

@@ -6,7 +6,7 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 type Props = {
   readonly scope: SettingsStudioScope;
   readonly workspaceName: string | null;
-  readonly onSelect: (scope: SettingsStudioScope) => void;
+  readonly onSelect: (params: { readonly scope: SettingsStudioScope }) => void;
 };
 
 const ITEMS = [
@@ -26,7 +26,7 @@ export const SettingsRail = ({ scope, workspaceName, onSelect }: Props) => (
           key={item.scope}
           selected={scope === item.scope}
           ariaCurrent={scope === item.scope}
-          onClick={() => onSelect(item.scope)}
+          onClick={() => onSelect({ scope: item.scope })}
           className={`items-center gap-2.5 ${PANE_RHYTHM.navRail.row}`}
         >
           <Icon size={ICON_SIZE.control} aria-hidden className="shrink-0" />

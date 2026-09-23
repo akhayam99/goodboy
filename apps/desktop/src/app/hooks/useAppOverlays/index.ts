@@ -9,15 +9,11 @@ import {
   type Workspace,
   type WorkspaceId,
 } from '@goodboy/types';
-import { openToolSettings } from '../../../features/integrations/openToolSettings';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import { AppOverlayRouter } from '../../components/AppOverlayRouter';
 import type { ImpactScope } from '../../../features/impact/lib';
 import { IMPACT_STUDIO_EVENT } from '../../../features/impact/openImpactStudio';
-import type {
-  SettingsFocus,
-  SettingsStudioScope,
-} from '../../../features/settings/components/SettingsStudio/types';
+import type { SettingsStudioScope } from '../../../features/settings/components/SettingsStudio/types';
 import {
   INBOX_KINDS,
   INBOX_PROVIDERS,
@@ -33,9 +29,10 @@ import { OPEN_COMMAND_PALETTE_EVENT } from '../../../features/onboarding/openCom
 import { useCommitLinkInterceptor } from '../../../shared/hooks/useCommitLinkInterceptor';
 import { useAppStore, useSessionById } from '../../../store';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
+import { footerTarget, type ConnectedIntegrations, type Overlay } from './overlayState';
 
 type Params = {
-  readonly connected: Readonly<Record<IntegrationGlyphProvider, boolean>>;
+  readonly connected: ConnectedIntegrations;
   readonly currentSession: Session | null;
   readonly currentWorkspace: Workspace | null;
   readonly workspaceProjectRoot: string | null;
@@ -49,9 +46,16 @@ type EventValueParams = {
   readonly key: string;
 };
 
-type OpenSettingsEventParams = {
-  readonly event: Event;
-  readonly fallbackScope: SettingsStudioScope;
+type OpenParams = {
+  readonly overlay: Overlay;
+};
+
+type OpenIntegrationParams = {
+  readonly provider: IntegrationGlyphProvider;
+};
+
+type ScopeChangeParams = {
+  readonly scope: SettingsStudioScope;
 };
 
 const eventValue = ({ event, key }: EventValueParams): unknown => {
@@ -83,12 +87,8 @@ const isInboxProvider = (value: unknown): value is InboxProvider =>
 const isInboxKind = (value: unknown): value is InboxKind =>
   typeof value === 'string' && INBOX_KINDS.some((kind) => kind === value);
 
-type InboxStudioFocus = {
-  readonly provider: InboxProvider | null;
-  readonly kind: InboxKind | null;
-  readonly recordKey: string | null;
-  readonly sessionId: SessionId | null;
-};
+const isSettingsScope = (value: unknown): value is SettingsStudioScope =>
+  value === 'app' || value === 'workspace' || value === 'providers' || value === 'tools';
 
 const isImpactScope = (value: unknown): value is ImpactScope => {
   if (typeof value !== 'object' || value === null) {
@@ -107,6 +107,25 @@ const isImpactScope = (value: unknown): value is ImpactScope => {
   return false;
 };
 
+const settingsOverlayFromEvent = (event: Event): Overlay => {
+  const scope = eventValue({ event, key: 'scope' });
+  const tool = eventValue({ event, key: 'tool' });
+  const section = eventValue({ event, key: 'section' });
+  const provider =
+    eventValue({ event, key: 'provider' }) ?? eventValue({ event, key: 'providerId' });
+  const action = eventValue({ event, key: 'action' });
+  return {
+    kind: 'settings',
+    focus: {
+      scope: isSettingsScope(scope) ? scope : 'app',
+      tool: isInboxProvider(tool) ? tool : undefined,
+      section: typeof section === 'string' ? section : undefined,
+      provider: isProviderId(provider) ? provider : undefined,
+      action: isProviderLifecycleAction(action) ? action : undefined,
+    },
+  };
+};
+
 export const useAppOverlays = ({
   connected,
   currentSession,
@@ -116,25 +135,13 @@ export const useAppOverlays = ({
   isWorkspaceLauncherBranch,
   pinSessionSidebar,
 }: Params) => {
-  const [companionOpen, setCompanionOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settingsFocus, setSettingsFocus] = useState<SettingsFocus>({ scope: 'app' });
-  const [guideStudioOpen, setGuideStudioOpen] = useState(false);
-  const [reportIssueStudioOpen, setReportIssueStudioOpen] = useState(false);
+  const [overlay, setOverlay] = useState<Overlay | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteSessionId, setDeleteSessionId] = useState<SessionId | null>(null);
   const deleteTargetSession = useSessionById(deleteSessionId);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [palettePrefix, setPalettePrefix] = useState('');
-  const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [convertWorkspaceOpen, setConvertWorkspaceOpen] = useState(false);
-  const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
-  const [inboxStudioOpen, setInboxStudioOpen] = useState(false);
-  const [inboxStudioFocus, setInboxStudioFocus] = useState<InboxStudioFocus | null>(null);
-  const [impactStudioOpen, setImpactStudioOpen] = useState(false);
-  const [impactStudioFocus, setImpactStudioFocus] = useState<ImpactScope | null>(null);
-  const [changelogStudioOpen, setChangelogStudioOpen] = useState(false);
-  const [notificationsStudioOpen, setNotificationsStudioOpen] = useState(false);
   const setSessionStudio = useAppStore((state) => state.setSessionStudio);
   const { commitDiff, setCommitDiff } = useCommitLinkInterceptor();
   const currentSessionId = useAppStore((state) => state.currentSessionId);
@@ -144,6 +151,9 @@ export const useAppOverlays = ({
       : (resolveSessionRepo({ state, sessionId: currentSessionId })?.worktreePath ?? null),
   );
 
+  const open = useCallback(({ overlay: next }: OpenParams) => setOverlay(next), []);
+  const close = useCallback(() => setOverlay(null), []);
+
   const clearSessionStudio = useCallback(() => {
     const sessionId = useAppStore.getState().currentSessionId;
     if (sessionId === null) {
@@ -152,133 +162,51 @@ export const useAppOverlays = ({
     useAppStore.getState().setSessionStudio(sessionId, null);
   }, []);
 
-  const closeAllStudios = useCallback(() => {
-    setWorkflowStudioOpen(false);
-    setImpactStudioOpen(false);
-    setChangelogStudioOpen(false);
-    setNotificationsStudioOpen(false);
-    setInboxStudioOpen(false);
-    setSettingsOpen(false);
-    setGuideStudioOpen(false);
-    setReportIssueStudioOpen(false);
-    setAddWorkspaceOpen(false);
-  }, []);
-
-  const openAddWorkspace = useCallback(() => {
-    closeAllStudios();
-    setAddWorkspaceOpen(true);
-  }, [closeAllStudios]);
+  const openAddWorkspace = useCallback(() => open({ overlay: { kind: 'addWorkspace' } }), [open]);
 
   const openSettings = useCallback(() => {
-    closeAllStudios();
     clearSessionStudio();
-    setSettingsFocus({ scope: 'app' });
-    setSettingsOpen(true);
-  }, [clearSessionStudio, closeAllStudios]);
+    open({ overlay: { kind: 'settings', focus: { scope: 'app' } } });
+  }, [clearSessionStudio, open]);
 
-  const openSpend = useCallback(() => {
-    closeAllStudios();
-    setImpactStudioFocus({ kind: 'overview' });
-    setImpactStudioOpen(true);
-  }, [closeAllStudios]);
+  const openSpend = useCallback(
+    () => open({ overlay: { kind: 'impact', scope: { kind: 'overview' } } }),
+    [open],
+  );
 
-  const openImpact = useCallback(() => {
-    closeAllStudios();
-    setImpactStudioFocus(null);
-    setImpactStudioOpen(true);
-  }, [closeAllStudios]);
+  const openImpact = useCallback(() => open({ overlay: { kind: 'impact', scope: null } }), [open]);
 
-  const openChangelog = useCallback(() => {
-    closeAllStudios();
-    setChangelogStudioOpen(true);
-  }, [closeAllStudios]);
+  const openChangelog = useCallback(() => open({ overlay: { kind: 'changelog' } }), [open]);
 
-  const openWorkflows = useCallback(() => {
-    closeAllStudios();
-    setWorkflowStudioOpen(true);
-  }, [closeAllStudios]);
+  const openWorkflows = useCallback(() => open({ overlay: { kind: 'workflow' } }), [open]);
 
-  const openProviders = useCallback(() => {
-    closeAllStudios();
-    setSettingsFocus({ scope: 'providers' });
-    setSettingsOpen(true);
-  }, [closeAllStudios]);
+  const openProviders = useCallback(
+    () => open({ overlay: { kind: 'settings', focus: { scope: 'providers' } } }),
+    [open],
+  );
 
-  const openGithub = useCallback(() => {
-    if (!connected.github) {
-      openToolSettings({ tool: 'github' });
-      return;
-    }
-    closeAllStudios();
-    setInboxStudioFocus({ provider: 'github', kind: null, recordKey: null, sessionId: null });
-    setInboxStudioOpen(true);
-  }, [closeAllStudios, connected.github]);
+  const openInbox = useCallback(() => open({ overlay: { kind: 'inbox', focus: null } }), [open]);
 
-  const openLinear = useCallback(() => {
-    if (!connected.linear) {
-      openToolSettings({ tool: 'linear' });
-      return;
-    }
-    closeAllStudios();
-    setInboxStudioFocus({ provider: 'linear', kind: null, recordKey: null, sessionId: null });
-    setInboxStudioOpen(true);
-  }, [closeAllStudios, connected.linear]);
+  const openIntegration = useCallback(
+    ({ provider }: OpenIntegrationParams) => {
+      if (!connected[provider]) {
+        open({ overlay: { kind: 'settings', focus: { scope: 'tools', tool: provider } } });
+        return;
+      }
+      open({
+        overlay: {
+          kind: 'inbox',
+          focus: { provider, kind: null, recordKey: null, sessionId: null },
+        },
+      });
+    },
+    [connected, open],
+  );
 
-  const openJira = useCallback(() => {
-    if (!connected.jira) {
-      openToolSettings({ tool: 'jira' });
-      return;
-    }
-    closeAllStudios();
-    setInboxStudioFocus({ provider: 'jira', kind: null, recordKey: null, sessionId: null });
-    setInboxStudioOpen(true);
-  }, [closeAllStudios, connected.jira]);
-
-  const openSentry = useCallback(() => {
-    if (!connected.sentry) {
-      openToolSettings({ tool: 'sentry' });
-      return;
-    }
-    closeAllStudios();
-    setInboxStudioFocus({ provider: 'sentry', kind: null, recordKey: null, sessionId: null });
-    setInboxStudioOpen(true);
-  }, [closeAllStudios, connected.sentry]);
-
-  const openGitlab = useCallback(() => {
-    if (!connected.gitlab) {
-      openToolSettings({ tool: 'gitlab' });
-      return;
-    }
-    closeAllStudios();
-    setInboxStudioFocus({ provider: 'gitlab', kind: null, recordKey: null, sessionId: null });
-    setInboxStudioOpen(true);
-  }, [closeAllStudios, connected.gitlab]);
-
-  const openBitbucket = useCallback(() => {
-    if (!connected.bitbucket) {
-      openToolSettings({ tool: 'bitbucket' });
-      return;
-    }
-    closeAllStudios();
-    setInboxStudioFocus({ provider: 'bitbucket', kind: null, recordKey: null, sessionId: null });
-    setInboxStudioOpen(true);
-  }, [closeAllStudios, connected.bitbucket]);
-
-  const openSlack = useCallback(() => {
-    if (!connected.slack) {
-      openToolSettings({ tool: 'slack' });
-      return;
-    }
-    closeAllStudios();
-    setInboxStudioFocus({ provider: 'slack', kind: null, recordKey: null, sessionId: null });
-    setInboxStudioOpen(true);
-  }, [closeAllStudios, connected.slack]);
-
-  const openInbox = useCallback(() => {
-    closeAllStudios();
-    setInboxStudioFocus(null);
-    setInboxStudioOpen(true);
-  }, [closeAllStudios]);
+  const changeSettingsScope = useCallback(
+    ({ scope }: ScopeChangeParams) => open({ overlay: { kind: 'settings', focus: { scope } } }),
+    [open],
+  );
 
   const armDeleteConfirm = useCallback(() => {
     if (currentSession === null) {
@@ -288,10 +216,10 @@ export const useAppOverlays = ({
     setDeleteOpen(true);
   }, [currentSession]);
 
-  const openShortcutHelp = useCallback(() => {
-    setSettingsFocus({ scope: 'app', section: 'shortcuts' });
-    setSettingsOpen(true);
-  }, []);
+  const openShortcutHelp = useCallback(
+    () => open({ overlay: { kind: 'settings', focus: { scope: 'app', section: 'shortcuts' } } }),
+    [open],
+  );
 
   const openPalette = useCallback((prefix = '') => {
     setPalettePrefix(prefix);
@@ -300,90 +228,55 @@ export const useAppOverlays = ({
   }, []);
 
   useEffect(() => {
-    const openSettingsEvent = ({ event, fallbackScope }: OpenSettingsEventParams) => {
-      const requestedScope = eventValue({ event, key: 'scope' });
-      const tool = eventValue({ event, key: 'tool' });
-      const section = eventValue({ event, key: 'section' });
-      const provider =
-        eventValue({ event, key: 'provider' }) ?? eventValue({ event, key: 'providerId' });
-      const action = eventValue({ event, key: 'action' });
-      const scope: SettingsStudioScope =
-        requestedScope === 'app' ||
-        requestedScope === 'workspace' ||
-        requestedScope === 'providers' ||
-        requestedScope === 'tools'
-          ? requestedScope
-          : fallbackScope;
-      closeAllStudios();
-      setSettingsFocus({
-        scope,
-        tool: isInboxProvider(tool) ? tool : undefined,
-        section: typeof section === 'string' ? section : undefined,
-        provider: isProviderId(provider) ? provider : undefined,
-        action: isProviderLifecycleAction(action) ? action : undefined,
-      });
-      setSettingsOpen(true);
-    };
-    const onOpenSettings = (event: Event) => openSettingsEvent({ event, fallbackScope: 'app' });
-    const onOpenGuide = () => {
-      closeAllStudios();
-      setGuideStudioOpen(true);
-    };
-    const onOpenReportIssue = () => {
-      closeAllStudios();
-      setReportIssueStudioOpen(true);
-    };
+    const onOpenSettings = (event: Event) => open({ overlay: settingsOverlayFromEvent(event) });
+    const onOpenGuide = () => open({ overlay: { kind: 'guide' } });
+    const onOpenReportIssue = () => open({ overlay: { kind: 'report' } });
     const onOpenPlanStudio = (event: Event) => {
       const sessionId = eventValue({ event, key: 'sessionId' });
       if (!isSessionId(sessionId) || sessionId === '') {
         return;
       }
       const planId = eventValue({ event, key: 'planId' });
-      setSettingsOpen(false);
+      close();
       const state = useAppStore.getState();
       state.setFocusedPlanId(sessionId, isPlanId(planId) ? planId : null);
       state.setActiveLens(sessionId, 'plans');
     };
     const onOpenImpactStudio = (event: Event) => {
       const scope = eventValue({ event, key: 'scope' });
-      closeAllStudios();
-      setImpactStudioFocus(isImpactScope(scope) ? scope : null);
-      setImpactStudioOpen(true);
+      open({ overlay: { kind: 'impact', scope: isImpactScope(scope) ? scope : null } });
     };
     const onRevealChat = () => {
-      setSettingsOpen(false);
-      const state = useAppStore.getState();
-      const sessionId = state.currentSessionId;
-      if (sessionId !== null) {
-        state.setSessionStudio(sessionId, null);
-      }
+      close();
+      clearSessionStudio();
     };
-    const onOpenNotificationsStudio = () => {
-      closeAllStudios();
-      setNotificationsStudioOpen(true);
-    };
+    const onOpenNotificationsStudio = () => open({ overlay: { kind: 'notifications' } });
     const onOpenInboxStudio = (event: Event) => {
       const workspaceId = eventValue({ event, key: 'workspaceId' });
       const provider = eventValue({ event, key: 'provider' });
       const kind = eventValue({ event, key: 'kind' });
       const recordKey = eventValue({ event, key: 'recordKey' });
       const sessionId = eventValue({ event, key: 'sessionId' });
-      closeAllStudios();
-      setInboxStudioFocus({
-        provider: isInboxProvider(provider) ? provider : null,
-        kind: isInboxKind(kind) ? kind : null,
-        recordKey: typeof recordKey === 'string' ? recordKey : null,
-        sessionId: isSessionId(sessionId) && sessionId !== '' ? sessionId : null,
-      });
-      const openStudio = () => setInboxStudioOpen(true);
+      const inbox: Overlay = {
+        kind: 'inbox',
+        focus: {
+          provider: isInboxProvider(provider) ? provider : null,
+          kind: isInboxKind(kind) ? kind : null,
+          recordKey: typeof recordKey === 'string' ? recordKey : null,
+          sessionId: isSessionId(sessionId) && sessionId !== '' ? sessionId : null,
+        },
+      };
+      const openStudio = () => open({ overlay: inbox });
       if (isWorkspaceId(workspaceId) && workspaceId !== useAppStore.getState().currentWorkspaceId) {
+        close();
         void useAppStore.getState().setCurrentWorkspace(workspaceId).then(openStudio, openStudio);
         return;
       }
       openStudio();
     };
-    const onAddWorkspace = () => openAddWorkspace();
-    const onPairDevice = () => setCompanionOpen(true);
+    const onAddWorkspace = () => open({ overlay: { kind: 'addWorkspace' } });
+    const onPairDevice = () => open({ overlay: { kind: 'companion' } });
+    const onOpenWorkflowStudio = () => open({ overlay: { kind: 'workflow' } });
     window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, onOpenNotificationsStudio);
     window.addEventListener('goodboy:open-settings', onOpenSettings);
     window.addEventListener('goodboy:open-guide', onOpenGuide);
@@ -394,6 +287,7 @@ export const useAppOverlays = ({
     window.addEventListener('goodboy:reveal-chat', onRevealChat);
     window.addEventListener('goodboy:add-workspace', onAddWorkspace);
     window.addEventListener('goodboy:open-pair-device', onPairDevice);
+    window.addEventListener('goodboy:open-workflow-studio', onOpenWorkflowStudio);
     return () => {
       window.removeEventListener(NOTIFICATIONS_STUDIO_EVENT, onOpenNotificationsStudio);
       window.removeEventListener('goodboy:open-settings', onOpenSettings);
@@ -405,8 +299,9 @@ export const useAppOverlays = ({
       window.removeEventListener('goodboy:reveal-chat', onRevealChat);
       window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
       window.removeEventListener('goodboy:open-pair-device', onPairDevice);
+      window.removeEventListener('goodboy:open-workflow-studio', onOpenWorkflowStudio);
     };
-  }, [closeAllStudios, openAddWorkspace]);
+  }, [clearSessionStudio, close, open]);
 
   useEffect(() => {
     if (!deleteOpen) {
@@ -423,56 +318,39 @@ export const useAppOverlays = ({
   }, [deleteOpen]);
 
   useEffect(() => {
-    const handler = () => openWorkflows();
-    window.addEventListener('goodboy:open-workflow-studio', handler);
-    return () => window.removeEventListener('goodboy:open-workflow-studio', handler);
-  }, [openWorkflows]);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
+    const openSessionStudio = ({
+      event,
+      kind,
+    }: {
+      readonly event: Event;
+      readonly kind: 'mr' | 'bitbucket' | 'workflow';
+    }) => {
       const sessionId = eventValue({ event, key: 'sessionId' });
       if (!isSessionId(sessionId) || sessionId === '') {
         return;
       }
-      setSettingsOpen(false);
-      setSessionStudio(sessionId, { kind: 'mr' });
+      close();
+      setSessionStudio(sessionId, { kind });
     };
-    window.addEventListener('goodboy:open-gitlab-mr', handler);
-    return () => window.removeEventListener('goodboy:open-gitlab-mr', handler);
-  }, [setSessionStudio]);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const sessionId = eventValue({ event, key: 'sessionId' });
-      if (!isSessionId(sessionId) || sessionId === '') {
-        return;
-      }
-      setSettingsOpen(false);
-      setSessionStudio(sessionId, { kind: 'bitbucket' });
+    const onGitlabMr = (event: Event) => openSessionStudio({ event, kind: 'mr' });
+    const onBitbucketPr = (event: Event) => openSessionStudio({ event, kind: 'bitbucket' });
+    const onWorkflowBuilder = (event: Event) => openSessionStudio({ event, kind: 'workflow' });
+    window.addEventListener('goodboy:open-gitlab-mr', onGitlabMr);
+    window.addEventListener('goodboy:open-bitbucket-pr', onBitbucketPr);
+    window.addEventListener('goodboy:open-workflow-builder', onWorkflowBuilder);
+    return () => {
+      window.removeEventListener('goodboy:open-gitlab-mr', onGitlabMr);
+      window.removeEventListener('goodboy:open-bitbucket-pr', onBitbucketPr);
+      window.removeEventListener('goodboy:open-workflow-builder', onWorkflowBuilder);
     };
-    window.addEventListener('goodboy:open-bitbucket-pr', handler);
-    return () => window.removeEventListener('goodboy:open-bitbucket-pr', handler);
-  }, [setSessionStudio]);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const sessionId = eventValue({ event, key: 'sessionId' });
-      if (!isSessionId(sessionId) || sessionId === '') {
-        return;
-      }
-      setSettingsOpen(false);
-      setSessionStudio(sessionId, { kind: 'workflow' });
-    };
-    window.addEventListener('goodboy:open-workflow-builder', handler);
-    return () => window.removeEventListener('goodboy:open-workflow-builder', handler);
-  }, [setSessionStudio]);
+  }, [close, setSessionStudio]);
 
   useEffect(() => {
     const handler = () => {
       if (currentWorkspace === null) {
         return;
       }
-      setSettingsOpen(false);
+      close();
       clearSessionStudio();
       if (currentSession !== null && isSessionSidebarCollapsed) {
         pinSessionSidebar();
@@ -482,6 +360,7 @@ export const useAppOverlays = ({
     return () => window.removeEventListener('goodboy:new-session', handler);
   }, [
     clearSessionStudio,
+    close,
     currentSession,
     currentWorkspace,
     isSessionSidebarCollapsed,
@@ -489,7 +368,7 @@ export const useAppOverlays = ({
   ]);
 
   useEffect(() => {
-    setSettingsOpen(false);
+    setOverlay((current) => (current?.kind === 'settings' ? null : current));
   }, [currentWorkspace?.id]);
 
   useEffect(() => {
@@ -514,24 +393,14 @@ export const useAppOverlays = ({
     return ghCommitDiff(commitDiff.repo, commitDiff.sha);
   }, [commitDiff, currentSessionWorktree]);
 
-  const closeSettings = useCallback(() => setSettingsOpen(false), []);
-  const closeGuideStudio = useCallback(() => setGuideStudioOpen(false), []);
-  const closeReportIssueStudio = useCallback(() => setReportIssueStudioOpen(false), []);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
-  const closeAddWorkspace = useCallback(() => setAddWorkspaceOpen(false), []);
   const offerWorkspaceRepo = useCallback(() => setConvertWorkspaceOpen(true), []);
   const closeConvertWorkspace = useCallback(() => setConvertWorkspaceOpen(false), []);
-  const closeWorkflowStudio = useCallback(() => setWorkflowStudioOpen(false), []);
-  const closeImpactStudio = useCallback(() => setImpactStudioOpen(false), []);
-  const closeChangelogStudio = useCallback(() => setChangelogStudioOpen(false), []);
-  const closeNotificationsStudio = useCallback(() => setNotificationsStudioOpen(false), []);
-  const closeInboxStudio = useCallback(() => setInboxStudioOpen(false), []);
   const closeCommitDiff = useCallback(() => setCommitDiff(null), [setCommitDiff]);
   const closeDeleteConfirm = useCallback(() => {
     setDeleteOpen(false);
     setDeleteSessionId(null);
   }, []);
-  const closeCompanion = useCallback(() => setCompanionOpen(false), []);
   const openSettingsFromPalette = useCallback(() => {
     openSettings();
     setPaletteOpen(false);
@@ -546,85 +415,43 @@ export const useAppOverlays = ({
     setPaletteOpen(false);
   }, [openShortcutHelp]);
 
-  const activeStudio: string | null = workflowStudioOpen
-    ? 'workflow'
-    : impactStudioOpen
-      ? 'impact'
-      : changelogStudioOpen
-        ? 'changelog'
-        : notificationsStudioOpen
-          ? 'notifications'
-          : inboxStudioOpen
-            ? 'inbox'
-            : settingsOpen
-              ? 'settings'
-              : guideStudioOpen
-                ? 'guide'
-                : null;
-
   const overlays: ReactNode = createElement(AppOverlayRouter, {
+    overlay,
+    close,
+    onSettingsScopeChange: changeSettingsScope,
     currentWorkspace,
     workspaceProjectRoot,
     isWorkspaceLauncherBranch,
-    companionOpen,
-    settingsOpen,
-    settingsFocus,
-    guideStudioOpen,
-    reportIssueStudioOpen,
     deleteOpen,
     deleteTargetSession,
     paletteOpen,
     palettePrefix,
-    addWorkspaceOpen,
     convertWorkspaceOpen,
-    workflowStudioOpen,
-    inboxStudioOpen,
-    inboxStudioFocus,
-    impactStudioOpen,
-    impactStudioFocus,
-    changelogStudioOpen,
-    notificationsStudioOpen,
     commitDiff,
     commitDiffLoader,
-    closeSettings,
-    closeGuideStudio,
-    closeReportIssueStudio,
     closePalette,
     openSettingsFromPalette,
     closePaletteForNewSession,
     openProvidersFromPalette,
     openShortcutHelpFromPalette,
-    closeAddWorkspace,
     offerWorkspaceRepo,
     closeConvertWorkspace,
-    closeWorkflowStudio,
-    closeImpactStudio,
-    closeChangelogStudio,
-    closeNotificationsStudio,
-    closeInboxStudio,
     closeCommitDiff,
     closeDeleteConfirm,
-    closeCompanion,
   });
 
   return {
-    activeStudio,
+    footer: footerTarget({ overlay, connected }),
     armDeleteConfirm,
     openAddWorkspace,
-    openBitbucket,
     openChangelog,
-    openGithub,
-    openGitlab,
     openImpact,
     openInbox,
-    openJira,
-    openLinear,
+    openIntegration,
     openPalette,
     openProviders,
-    openSentry,
     openSettings,
     openShortcutHelp,
-    openSlack,
     openSpend,
     openWorkflows,
     overlays,

@@ -121,27 +121,23 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
         footer={
           arrangement.hasFooter ? (
             <AppFooter
-              activeStudio={null}
-              githubEnabled
-              linearEnabled
-              jiraEnabled
-              sentryEnabled
-              gitlabEnabled={false}
-              bitbucketEnabled={false}
-              slackEnabled
+              target={null}
+              connected={{
+                github: true,
+                linear: true,
+                jira: true,
+                sentry: true,
+                gitlab: false,
+                bitbucket: false,
+                slack: true,
+              }}
+              onOpenIntegration={noop}
+              onOpenInbox={noop}
               onOpenWorkflows={noop}
               onOpenProviders={noop}
               onOpenSettings={noop}
               onOpenImpact={noop}
               onOpenChangelog={noop}
-              onOpenGithub={noop}
-              onOpenLinear={noop}
-              onOpenJira={noop}
-              onOpenSentry={noop}
-              onOpenGitlab={noop}
-              onOpenBitbucket={noop}
-              onOpenInbox={noop}
-              onOpenSlack={noop}
             />
           ) : undefined
         }

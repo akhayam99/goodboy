@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { ScrollFade, StudioRailLayout } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { ToolSettingsScope } from '../../../integrations/components/ToolSettingsScope';
@@ -12,16 +11,13 @@ import { WorkspaceScopePanel } from './WorkspaceScopePanel';
 
 type Props = {
   readonly currentWorkspace: Workspace | null;
-  readonly initialFocus: SettingsFocus;
+  readonly focus: SettingsFocus;
+  readonly onScopeChange: (params: { readonly scope: SettingsStudioScope }) => void;
   readonly onClose: () => void;
 };
 
-export const SettingsStudio = ({ currentWorkspace, initialFocus, onClose }: Props) => {
-  const [scope, setScope] = useState<SettingsStudioScope>(initialFocus.scope);
-
-  useEffect(() => setScope(initialFocus.scope), [initialFocus]);
-
-  const availableScope = currentWorkspace === null && scope !== 'app' ? 'app' : scope;
+export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose }: Props) => {
+  const availableScope = currentWorkspace === null && focus.scope !== 'app' ? 'app' : focus.scope;
 
   return (
     <StudioShell
@@ -41,30 +37,30 @@ export const SettingsStudio = ({ currentWorkspace, initialFocus, onClose }: Prop
               <SettingsRail
                 scope={availableScope}
                 workspaceName={currentWorkspace?.name ?? null}
-                onSelect={setScope}
+                onSelect={onScopeChange}
               />
             </ScrollFade>
           }
           detail={
             availableScope === 'app' ? (
-              <AppScopePanel initialSection={initialFocus.section} requestClose={requestClose} />
+              <AppScopePanel initialSection={focus.section} requestClose={requestClose} />
             ) : availableScope === 'workspace' && currentWorkspace !== null ? (
               <WorkspaceScopePanel
                 workspaceId={currentWorkspace.id}
-                initialSection={initialFocus.section}
+                initialSection={focus.section}
                 requestClose={requestClose}
               />
             ) : availableScope === 'providers' && currentWorkspace !== null ? (
               <ProviderSettingsScope
                 workspaceId={currentWorkspace.id}
-                initialFocus={initialFocus.provider}
-                initialAction={initialFocus.action}
+                initialFocus={focus.provider}
+                initialAction={focus.action}
               />
             ) : availableScope === 'tools' && currentWorkspace !== null ? (
               <ToolSettingsScope
                 key={currentWorkspace.id}
                 workspaceId={currentWorkspace.id}
-                initialFocus={initialFocus.tool}
+                initialFocus={focus.tool}
               />
             ) : null
           }

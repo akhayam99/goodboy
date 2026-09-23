@@ -1,4 +1,3 @@
-import { openToolSettings } from '../../../features/integrations/openToolSettings';
 import { AnchoredPopover, cn, ScrollFade, Tooltip, useDropdown } from '@goodboy/ui';
 import { Plus } from 'lucide-react';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
@@ -8,8 +7,8 @@ import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly members: ReadonlyArray<FooterIntegrationEntry>;
-  readonly enabled: Record<IntegrationGlyphProvider, boolean>;
-  readonly openers: Record<IntegrationGlyphProvider, () => void>;
+  readonly connected: Readonly<Record<IntegrationGlyphProvider, boolean>>;
+  readonly onOpenIntegration: (params: { readonly provider: IntegrationGlyphProvider }) => void;
   readonly isEmpty: boolean;
   readonly active: boolean;
 };
@@ -19,7 +18,13 @@ type SelectParams = { readonly provider: IntegrationGlyphProvider };
 const PANEL_WIDTH = 224;
 const PANEL_MAX_HEIGHT = 240;
 
-export const IntegrationAddPopover = ({ members, enabled, openers, isEmpty, active }: Props) => {
+export const IntegrationAddPopover = ({
+  members,
+  connected,
+  onOpenIntegration,
+  isEmpty,
+  active,
+}: Props) => {
   const dropdown = useDropdown({
     align: 'center',
     width: 'w-56',
@@ -29,11 +34,7 @@ export const IntegrationAddPopover = ({ members, enabled, openers, isEmpty, acti
 
   const select = ({ provider }: SelectParams) => {
     dropdown.close();
-    if (!enabled[provider]) {
-      openToolSettings({ tool: provider });
-      return;
-    }
-    openers[provider]();
+    onOpenIntegration({ provider });
   };
 
   const actionLabel = isEmpty ? 'Link your first integration' : 'Link integration';
@@ -72,7 +73,7 @@ export const IntegrationAddPopover = ({ members, enabled, openers, isEmpty, acti
             <IntegrationAddRow
               key={member.provider}
               member={member}
-              connected={enabled[member.provider]}
+              connected={connected[member.provider]}
               onSelect={() => select({ provider: member.provider })}
             />
           ))}

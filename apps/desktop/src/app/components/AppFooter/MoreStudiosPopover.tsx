@@ -1,9 +1,10 @@
 import { AnchoredPopover, cn, tintClasses, Tooltip, useDropdown } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { MORE_STUDIOS, type MoreStudioId } from './moreStudios';
+import type { FooterTarget } from '../../hooks/useAppOverlays/overlayState';
 
 type Props = {
-  readonly activeStudio: string | null;
+  readonly target: FooterTarget;
   readonly openers: Record<MoreStudioId, () => void>;
 };
 
@@ -12,7 +13,7 @@ const PANEL_MAX_HEIGHT = 200;
 const PANEL_LABEL = 'More studios';
 const TRIGGER_LABEL = 'More studios: impact and changelog';
 
-export const MoreStudiosPopover = ({ activeStudio, openers }: Props) => {
+export const MoreStudiosPopover = ({ target, openers }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-52',
@@ -25,7 +26,7 @@ export const MoreStudiosPopover = ({ activeStudio, openers }: Props) => {
     openers[id]();
   };
 
-  const holdsActiveStudio = MORE_STUDIOS.some((entry) => entry.id === activeStudio);
+  const holdsActiveStudio = MORE_STUDIOS.some((entry) => entry.id === target);
 
   return (
     <AnchoredPopover
@@ -56,7 +57,7 @@ export const MoreStudiosPopover = ({ activeStudio, openers }: Props) => {
       <ul aria-label={PANEL_LABEL} className="flex flex-col py-1">
         {MORE_STUDIOS.map((entry) => {
           const Icon = CONCEPT_ICONS[entry.id];
-          const isActive = activeStudio === entry.id;
+          const isActive = target === entry.id;
           return (
             <li key={entry.id}>
               <button

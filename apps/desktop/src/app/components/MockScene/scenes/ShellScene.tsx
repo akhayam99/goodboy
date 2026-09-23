@@ -256,27 +256,23 @@ export const ShellScene = () => {
         footer={
           arrangement.hasFooter ? (
             <AppFooter
-              activeStudio={null}
-              githubEnabled
-              linearEnabled
-              jiraEnabled={false}
-              sentryEnabled={false}
-              gitlabEnabled={false}
-              bitbucketEnabled={false}
-              slackEnabled={false}
+              target={null}
+              connected={{
+                github: true,
+                linear: true,
+                jira: false,
+                sentry: false,
+                gitlab: false,
+                bitbucket: false,
+                slack: false,
+              }}
+              onOpenIntegration={noop}
+              onOpenInbox={noop}
               onOpenWorkflows={noop}
               onOpenProviders={noop}
               onOpenSettings={noop}
               onOpenImpact={noop}
               onOpenChangelog={noop}
-              onOpenGithub={noop}
-              onOpenLinear={noop}
-              onOpenJira={noop}
-              onOpenSentry={noop}
-              onOpenGitlab={noop}
-              onOpenBitbucket={noop}
-              onOpenInbox={noop}
-              onOpenSlack={noop}
             />
           ) : undefined
         }

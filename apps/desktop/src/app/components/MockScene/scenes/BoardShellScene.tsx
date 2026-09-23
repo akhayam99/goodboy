@@ -62,27 +62,23 @@ const BoardShellSceneContent = () => {
       footer={
         arrangement.hasFooter ? (
           <AppFooter
-            activeStudio={null}
-            githubEnabled
-            linearEnabled
-            jiraEnabled
-            sentryEnabled
-            gitlabEnabled={false}
-            bitbucketEnabled={false}
-            slackEnabled={false}
+            target={null}
+            connected={{
+              github: true,
+              linear: true,
+              jira: true,
+              sentry: true,
+              gitlab: false,
+              bitbucket: false,
+              slack: false,
+            }}
+            onOpenIntegration={noop}
+            onOpenInbox={noop}
             onOpenWorkflows={noop}
             onOpenProviders={noop}
             onOpenSettings={noop}
             onOpenImpact={noop}
             onOpenChangelog={noop}
-            onOpenGithub={noop}
-            onOpenLinear={noop}
-            onOpenJira={noop}
-            onOpenSentry={noop}
-            onOpenGitlab={noop}
-            onOpenBitbucket={noop}
-            onOpenInbox={noop}
-            onOpenSlack={noop}
           />
         ) : undefined
       }

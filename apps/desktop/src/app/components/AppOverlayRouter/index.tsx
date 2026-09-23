@@ -1,14 +1,13 @@
-import { Suspense, lazy } from 'react';
-import type { Session, SessionId, Workspace } from '@goodboy/types';
-import type { InboxKind, InboxProvider } from '../../../features/inbox/types';
-import type { ImpactScope } from '../../../features/impact/lib';
+import { Suspense, lazy, type ReactNode } from 'react';
+import type { Session, Workspace } from '@goodboy/types';
 import { CommandPalette } from '../../../features/session/components/CommandPalette';
 import { DeleteSessionConfirm } from '../../../features/session/components/DeleteSessionConfirm';
 import { ConvertWorkspaceDialog } from '../../../features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
-import type { SettingsFocus } from '../../../features/settings/components/SettingsStudio/types';
+import type { SettingsStudioScope } from '../../../features/settings/components/SettingsStudio/types';
 import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard';
 import type { CommitDiffTarget } from '../../../shared/hooks/useCommitLinkInterceptor';
+import type { Overlay } from '../../hooks/useAppOverlays/overlayState';
 
 const SettingsStudio = lazy(() =>
   import('../../../features/settings/components/SettingsStudio').then((module) => ({
@@ -67,118 +66,158 @@ const CompanionStudio = lazy(() =>
 );
 
 type Props = {
+  readonly overlay: Overlay | null;
+  readonly close: () => void;
+  readonly onSettingsScopeChange: (params: { readonly scope: SettingsStudioScope }) => void;
   readonly currentWorkspace: Workspace | null;
   readonly workspaceProjectRoot: string | null;
   readonly isWorkspaceLauncherBranch: boolean;
-  readonly companionOpen: boolean;
-  readonly settingsOpen: boolean;
-  readonly settingsFocus: SettingsFocus;
-  readonly guideStudioOpen: boolean;
-  readonly reportIssueStudioOpen: boolean;
   readonly deleteOpen: boolean;
   readonly deleteTargetSession: Session | null;
   readonly paletteOpen: boolean;
   readonly palettePrefix: string;
-  readonly addWorkspaceOpen: boolean;
   readonly convertWorkspaceOpen: boolean;
-  readonly workflowStudioOpen: boolean;
-  readonly inboxStudioOpen: boolean;
-  readonly inboxStudioFocus: {
-    readonly provider: InboxProvider | null;
-    readonly kind: InboxKind | null;
-    readonly recordKey: string | null;
-    readonly sessionId: SessionId | null;
-  } | null;
-  readonly impactStudioOpen: boolean;
-  readonly impactStudioFocus: ImpactScope | null;
-  readonly changelogStudioOpen: boolean;
-  readonly notificationsStudioOpen: boolean;
   readonly commitDiff: CommitDiffTarget | null;
   readonly commitDiffLoader: () => Promise<string>;
-  readonly closeSettings: () => void;
-  readonly closeGuideStudio: () => void;
-  readonly closeReportIssueStudio: () => void;
   readonly closePalette: () => void;
   readonly openSettingsFromPalette: () => void;
   readonly closePaletteForNewSession: () => void;
   readonly openProvidersFromPalette: () => void;
   readonly openShortcutHelpFromPalette: () => void;
-  readonly closeAddWorkspace: () => void;
   readonly offerWorkspaceRepo: () => void;
   readonly closeConvertWorkspace: () => void;
-  readonly closeWorkflowStudio: () => void;
-  readonly closeImpactStudio: () => void;
-  readonly closeChangelogStudio: () => void;
-  readonly closeNotificationsStudio: () => void;
-  readonly closeInboxStudio: () => void;
   readonly closeCommitDiff: () => void;
   readonly closeDeleteConfirm: () => void;
-  readonly closeCompanion: () => void;
+};
+
+type StudioParams = {
+  readonly overlay: Overlay;
+  readonly close: () => void;
+  readonly onSettingsScopeChange: (params: { readonly scope: SettingsStudioScope }) => void;
+  readonly currentWorkspace: Workspace | null;
+  readonly workspaceProjectRoot: string | null;
+  readonly offerWorkspaceRepo: () => void;
+};
+
+const renderStudio = ({
+  overlay,
+  close,
+  onSettingsScopeChange,
+  currentWorkspace,
+  workspaceProjectRoot,
+  offerWorkspaceRepo,
+}: StudioParams): ReactNode => {
+  switch (overlay.kind) {
+    case 'settings':
+      return (
+        <SettingsStudio
+          currentWorkspace={currentWorkspace}
+          focus={overlay.focus}
+          onScopeChange={onSettingsScopeChange}
+          onClose={close}
+        />
+      );
+    case 'guide':
+      return <GuideStudio onClose={close} />;
+    case 'report':
+      return <ReportIssueStudio onClose={close} />;
+    case 'companion':
+      return <CompanionStudio onClose={close} />;
+    case 'addWorkspace':
+      return <WorkspaceLinkStudio onClose={close} onOfferRepo={offerWorkspaceRepo} />;
+    case 'workflow':
+      return currentWorkspace === null ? null : (
+        <WorkflowStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          onClose={close}
+        />
+      );
+    case 'inbox':
+      return currentWorkspace === null ? null : (
+        <InboxStudio
+          workspaceId={currentWorkspace.id}
+          rootPath={workspaceProjectRoot ?? ''}
+          workspaceName={currentWorkspace.name}
+          initialProvider={overlay.focus?.provider ?? null}
+          initialKind={overlay.focus?.kind ?? null}
+          initialRecordKey={overlay.focus?.recordKey ?? null}
+          initialSessionId={overlay.focus?.sessionId ?? null}
+          onClose={close}
+        />
+      );
+    case 'impact':
+      return currentWorkspace === null ? null : (
+        <ImpactStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          initialScope={overlay.scope ?? undefined}
+          onClose={close}
+        />
+      );
+    case 'changelog':
+      return currentWorkspace === null ? null : (
+        <ChangelogStudio workspaceName={currentWorkspace.name} onClose={close} />
+      );
+    case 'notifications':
+      return currentWorkspace === null ? null : (
+        <NotificationsStudio workspaceName={currentWorkspace.name} onClose={close} />
+      );
+    default: {
+      const unreachable: never = overlay;
+      return unreachable;
+    }
+  }
 };
 
 export const AppOverlayRouter = ({
+  overlay,
+  close,
+  onSettingsScopeChange,
   currentWorkspace,
   workspaceProjectRoot,
   isWorkspaceLauncherBranch,
-  companionOpen,
-  settingsOpen,
-  settingsFocus,
-  guideStudioOpen,
-  reportIssueStudioOpen,
   deleteOpen,
   deleteTargetSession,
   paletteOpen,
   palettePrefix,
-  addWorkspaceOpen,
   convertWorkspaceOpen,
-  workflowStudioOpen,
-  inboxStudioOpen,
-  inboxStudioFocus,
-  impactStudioOpen,
-  impactStudioFocus,
-  changelogStudioOpen,
-  notificationsStudioOpen,
   commitDiff,
   commitDiffLoader,
-  closeSettings,
-  closeGuideStudio,
-  closeReportIssueStudio,
   closePalette,
   openSettingsFromPalette,
   closePaletteForNewSession,
   openProvidersFromPalette,
   openShortcutHelpFromPalette,
-  closeAddWorkspace,
   offerWorkspaceRepo,
   closeConvertWorkspace,
-  closeWorkflowStudio,
-  closeImpactStudio,
-  closeChangelogStudio,
-  closeNotificationsStudio,
-  closeInboxStudio,
   closeCommitDiff,
   closeDeleteConfirm,
-  closeCompanion,
 }: Props) => {
-  const addWorkspaceSurface = addWorkspaceOpen ? (
-    <WorkspaceLinkStudio onClose={closeAddWorkspace} onOfferRepo={offerWorkspaceRepo} />
-  ) : null;
-
   if (isWorkspaceLauncherBranch) {
-    return <Suspense fallback={null}>{addWorkspaceSurface ?? <WorkspaceLauncher />}</Suspense>;
+    return (
+      <Suspense fallback={null}>
+        {overlay?.kind === 'addWorkspace' ? (
+          <WorkspaceLinkStudio onClose={close} onOfferRepo={offerWorkspaceRepo} />
+        ) : (
+          <WorkspaceLauncher />
+        )}
+      </Suspense>
+    );
   }
 
   return (
     <Suspense fallback={null}>
-      {settingsOpen ? (
-        <SettingsStudio
-          currentWorkspace={currentWorkspace}
-          initialFocus={settingsFocus}
-          onClose={closeSettings}
-        />
-      ) : null}
-      {guideStudioOpen ? <GuideStudio onClose={closeGuideStudio} /> : null}
-      {reportIssueStudioOpen ? <ReportIssueStudio onClose={closeReportIssueStudio} /> : null}
+      {overlay === null
+        ? null
+        : renderStudio({
+            overlay,
+            close,
+            onSettingsScopeChange,
+            currentWorkspace,
+            workspaceProjectRoot,
+            offerWorkspaceRepo,
+          })}
       {paletteOpen ? (
         <CommandPalette
           initialQuery={palettePrefix}
@@ -189,48 +228,11 @@ export const AppOverlayRouter = ({
           onOpenShortcutHelp={openShortcutHelpFromPalette}
         />
       ) : null}
-      {addWorkspaceSurface}
       {currentWorkspace !== null ? (
         <ConvertWorkspaceDialog
           open={convertWorkspaceOpen}
           workspace={currentWorkspace}
           onClose={closeConvertWorkspace}
-        />
-      ) : null}
-      {workflowStudioOpen && currentWorkspace !== null ? (
-        <WorkflowStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          onClose={closeWorkflowStudio}
-        />
-      ) : null}
-      {impactStudioOpen && currentWorkspace !== null ? (
-        <ImpactStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          initialScope={impactStudioFocus ?? undefined}
-          onClose={closeImpactStudio}
-        />
-      ) : null}
-      {changelogStudioOpen && currentWorkspace !== null ? (
-        <ChangelogStudio workspaceName={currentWorkspace.name} onClose={closeChangelogStudio} />
-      ) : null}
-      {notificationsStudioOpen && currentWorkspace !== null ? (
-        <NotificationsStudio
-          workspaceName={currentWorkspace.name}
-          onClose={closeNotificationsStudio}
-        />
-      ) : null}
-      {inboxStudioOpen && currentWorkspace !== null ? (
-        <InboxStudio
-          workspaceId={currentWorkspace.id}
-          rootPath={workspaceProjectRoot ?? ''}
-          workspaceName={currentWorkspace.name}
-          initialProvider={inboxStudioFocus?.provider ?? null}
-          initialKind={inboxStudioFocus?.kind ?? null}
-          initialRecordKey={inboxStudioFocus?.recordKey ?? null}
-          initialSessionId={inboxStudioFocus?.sessionId ?? null}
-          onClose={closeInboxStudio}
         />
       ) : null}
       {commitDiff !== null ? (
@@ -246,7 +248,6 @@ export const AppOverlayRouter = ({
           <DeleteSessionConfirm session={deleteTargetSession} onClose={closeDeleteConfirm} />
         </div>
       ) : null}
-      {companionOpen ? <CompanionStudio onClose={closeCompanion} /> : null}
       <OnboardingWizard />
     </Suspense>
   );

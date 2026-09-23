@@ -63,46 +63,43 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   };
 });
 
+type FooterProvider = 'linear' | 'slack' | 'bitbucket' | 'github';
+
 type FooterProps = {
-  readonly onOpenLinear: () => void;
-  readonly linearEnabled: boolean;
-  readonly onOpenSlack: () => void;
-  readonly slackEnabled: boolean;
-  readonly onOpenBitbucket: () => void;
-  readonly bitbucketEnabled: boolean;
-  readonly onOpenGithub: () => void;
-  readonly githubEnabled: boolean;
+  readonly target: string | null;
+  readonly connected: Readonly<Record<FooterProvider, boolean>>;
+  readonly onOpenIntegration: (params: { readonly provider: FooterProvider }) => void;
+  readonly onOpenProviders: () => void;
   readonly onOpenSettings: () => void;
   readonly onOpenImpact: () => void;
   readonly onOpenChangelog: () => void;
 };
 
+const FOOTER_LABELS: ReadonlyArray<readonly [FooterProvider, string, string]> = [
+  ['linear', 'Open Linear', 'Connect Linear'],
+  ['slack', 'Launch a session from a Slack thread', 'Connect Slack'],
+  ['bitbucket', 'Review pull requests across this workspace', 'Connect Bitbucket'],
+  ['github', 'Review pull requests and issues', 'Connect GitHub'],
+];
+
 vi.mock('../app/components/AppFooter', () => ({
   AppFooter: ({
-    onOpenLinear,
-    linearEnabled,
-    onOpenSlack,
-    slackEnabled,
-    onOpenBitbucket,
-    bitbucketEnabled,
-    onOpenGithub,
-    githubEnabled,
+    target,
+    connected,
+    onOpenIntegration,
+    onOpenProviders,
     onOpenSettings,
     onOpenImpact,
     onOpenChangelog,
   }: FooterProps) => (
-    <>
-      <button type="button" onClick={onOpenLinear}>
-        {linearEnabled ? 'Open Linear' : 'Connect Linear'}
-      </button>
-      <button type="button" onClick={onOpenSlack}>
-        {slackEnabled ? 'Launch a session from a Slack thread' : 'Connect Slack'}
-      </button>
-      <button type="button" onClick={onOpenBitbucket}>
-        {bitbucketEnabled ? 'Review pull requests across this workspace' : 'Connect Bitbucket'}
-      </button>
-      <button type="button" onClick={onOpenGithub}>
-        {githubEnabled ? 'Review pull requests and issues' : 'Connect GitHub'}
+    <div data-testid="footer" data-target={target ?? ''}>
+      {FOOTER_LABELS.map(([provider, openLabel, connectLabel]) => (
+        <button key={provider} type="button" onClick={() => onOpenIntegration({ provider })}>
+          {connected[provider] ? openLabel : connectLabel}
+        </button>
+      ))}
+      <button type="button" onClick={onOpenProviders}>
+        Open providers
       </button>
       <button type="button" onClick={onOpenSettings}>
         Open settings
@@ -113,7 +110,7 @@ vi.mock('../app/components/AppFooter', () => ({
       <button type="button" onClick={onOpenChangelog}>
         Open changelog
       </button>
-    </>
+    </div>
   ),
 }));
 
@@ -169,12 +166,8 @@ vi.mock('../features/session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: () => null,
 }));
 vi.mock('../features/settings/components/SettingsStudio', () => ({
-  SettingsStudio: ({ initialFocus }: { initialFocus: { scope: string; tool?: string } }) => (
-    <div
-      data-testid="settings-studio"
-      data-scope={initialFocus.scope}
-      data-tool={initialFocus.tool}
-    />
+  SettingsStudio: ({ focus }: { focus: { scope: string; tool?: string } }) => (
+    <div data-testid="settings-studio" data-scope={focus.scope} data-tool={focus.tool} />
   ),
 }));
 vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
@@ -484,6 +477,36 @@ describe('Spend reachability through the impact studio', () => {
 
     expect(screen.getByTestId('impact-studio').getAttribute('data-scope')).toBe('provider');
     expect(screen.queryByTestId('settings-studio')).toBeNull();
+  });
+});
+
+describe('Footer highlight follows the open studio', () => {
+  const litTarget = (): string | null => screen.getByTestId('footer').getAttribute('data-target');
+
+  it('lights the github glyph while its inbox is open', () => {
+    githubAuth.isAuthenticated = true;
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Review pull requests and issues' }));
+
+    expect(litTarget()).toBe('github');
+  });
+
+  it('lights providers while the providers scope is open', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open providers' }));
+
+    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('providers');
+    expect(litTarget()).toBe('providers');
+  });
+
+  it('lights the link action while a disconnected glyph opens its tools form', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Connect Linear' }));
+
+    expect(litTarget()).toBe('link');
   });
 });
 

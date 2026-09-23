@@ -106,37 +106,32 @@ export const App = () => {
   );
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
   const isWorkspaceLauncherBranch = hasWorkspaces && currentWorkspace === null && isMainWindow();
+  const connected = {
+    github: githubConnection.isAuthenticated,
+    linear: hasLinear,
+    sentry: hasSentry,
+    jira: hasJira,
+    gitlab: hasGitlab,
+    bitbucket: hasBitbucket,
+    slack: hasSlack,
+  };
   const {
-    activeStudio,
+    footer,
     armDeleteConfirm,
     openAddWorkspace,
-    openBitbucket,
     openChangelog,
-    openGithub,
-    openGitlab,
     openImpact,
     openInbox,
-    openJira,
-    openLinear,
+    openIntegration,
     openPalette,
     openProviders,
-    openSentry,
     openSettings,
     openShortcutHelp,
-    openSlack,
     openSpend,
     openWorkflows,
     overlays,
   } = useAppOverlays({
-    connected: {
-      github: githubConnection.isAuthenticated,
-      linear: hasLinear,
-      sentry: hasSentry,
-      jira: hasJira,
-      gitlab: hasGitlab,
-      bitbucket: hasBitbucket,
-      slack: hasSlack,
-    },
+    connected,
     currentSession,
     currentWorkspace,
     workspaceProjectRoot,
@@ -320,27 +315,15 @@ export const App = () => {
         footer={
           arrangement.hasFooter ? (
             <AppFooter
-              activeStudio={activeStudio}
-              githubEnabled={githubConnection.isAuthenticated}
-              linearEnabled={hasLinear}
-              jiraEnabled={hasJira}
-              sentryEnabled={hasSentry}
-              gitlabEnabled={hasGitlab}
-              bitbucketEnabled={hasBitbucket}
-              slackEnabled={hasSlack}
+              target={footer}
+              connected={connected}
+              onOpenIntegration={openIntegration}
+              onOpenInbox={openInbox}
               onOpenWorkflows={openWorkflows}
               onOpenProviders={openProviders}
               onOpenSettings={openSettings}
               onOpenImpact={openImpact}
               onOpenChangelog={openChangelog}
-              onOpenInbox={openInbox}
-              onOpenGithub={openGithub}
-              onOpenLinear={openLinear}
-              onOpenJira={openJira}
-              onOpenSentry={openSentry}
-              onOpenGitlab={openGitlab}
-              onOpenBitbucket={openBitbucket}
-              onOpenSlack={openSlack}
             />
           ) : undefined
         }
