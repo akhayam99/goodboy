@@ -22,8 +22,10 @@ controls. Opacity modifiers do not create additional text steps.
 
 `background`, `subtle`, `muted` and `elevated` express distance from the canvas
 in both themes. Components step between those opaque surfaces instead of
-mixing one surface through opacity. `hover` and `selected` are interaction
-overlays; `scrim` is reserved for modal backdrops.
+mixing one surface through opacity. `bg-hover` and `bg-selected` are
+interaction overlays painted as a background-image layer, so they stack on
+whatever fill the element rests on instead of replacing it, and `cn` keeps them
+beside a surface class. `scrim` is reserved for modal backdrops.
 
 ## Type scale
 
