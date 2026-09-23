@@ -115,6 +115,7 @@ import { createProjectMountsSlice } from '../store/slices/project-mounts';
 import { recordMountBranchObservation } from '../store/slices/project-mounts/mountBranchObservations';
 import { loadSessionMounts } from '../store/slices/project-mounts/loadSessionMounts';
 import { verifyAvailableWorktrees } from '../store/slices/project-mounts/verifyAvailableWorktrees';
+import { withRepositoryAndMountLock } from '../store/slices/project-mounts/mountLocks';
 
 const SESSION_ID = 'session-recovery' as SessionId;
 const PROJECT_ID = 'project-recovery' as ProjectId;
@@ -386,6 +387,37 @@ describe('interrupted mount recovery', () => {
 
     expect(h.mounts.get('mount-one')).toMatchObject({ isAttached: true, revision: 0 });
     expect(h.operations.get('request-remove')?.status).toBe('failed');
+  });
+
+  it('waits for an operation holding the repository lock and skips it once settled', async () => {
+    h.mounts.set('mount-one', mountFixture());
+    const inFlight = operationFixture({ kind: 'unmount', status: 'running', result: null });
+    h.operations.set('request-unmount', inFlight);
+    h.inspection = { kind: 'missing', path: '/repo/.goodboy/worktrees/mount-one' };
+    let release = (): void => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const holder = withRepositoryAndMountLock({
+      repoRoot: '/repo',
+      mountKey: `${SESSION_ID}:mount-one`,
+      run: async () => {
+        await held;
+        h.operations.set('request-unmount', { ...inFlight, status: 'succeeded' });
+      },
+    });
+
+    const recovering = recovery()({ sessionId: SESSION_ID });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(h.operations.get('request-unmount')?.status).toBe('running');
+    release();
+    await holder;
+    const settled = await recovering;
+
+    expect(settled).toBe(0);
+    expect(h.operations.get('request-unmount')?.status).toBe('succeeded');
+    expect(h.mounts.get('mount-one')?.diskState).not.toBe('removed');
   });
 
   it('keeps a removal uncertain while its repository cannot be read', async () => {

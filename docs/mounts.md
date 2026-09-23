@@ -88,8 +88,14 @@ which is what keeps the two apart.
 
 ## Recovery
 
-Loading a session's mounts runs recovery once per session. Recovery reads
-every unsettled operation and finishes the database step when the disk
+Loading a session's mounts runs recovery once per session, and again on the
+next load after any operation turns `uncertain` (marking one re-arms the
+session; recovery's own `uncertain` marks do not, so an unreadable repository
+is not retried on every load). There are no timers. Each operation is handled
+under its repository lock and re-read once the lock is held, so recovery never
+touches an operation that is still in flight, and skips one that settled while
+it waited. Recovery reads every unsettled operation and finishes the database
+step when the disk
 already reached the target: a forked worktree that exists gets its row, an
 unmounted worktree that is gone gets its row cleared. An operation whose
 repository cannot be read stays `uncertain`.

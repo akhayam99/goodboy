@@ -1,5 +1,6 @@
 import {
   deleteSessionMount,
+  getMountOperation,
   insertSessionMount,
   listMountOperations,
   updateSessionMountLifecycle,
@@ -14,6 +15,7 @@ import {
   succeedMountOperation,
 } from './mountOperations';
 import { applyMountViews, loadMountViews } from './mountViews';
+import { withMountLock } from './mountLocks';
 import { MOUNT_REMOVAL_FINISHES } from './runMountRemoval';
 import { settleMountCleanupProposals } from './settleMountProposals';
 import { verifyMountViews } from './verifyMountViews';
@@ -220,7 +222,11 @@ const recoverRemoval = async ({
   }
   const inspection = await inspectWorktree({ repoPath: repoRoot, worktreePath }).catch(() => null);
   if (inspection === null || inspection.kind === 'repository-unavailable') {
-    await markMountOperationUncertain({ operation: settled, errorCode: 'repository-unavailable' });
+    await markMountOperationUncertain({
+      operation: settled,
+      errorCode: 'repository-unavailable',
+      shouldRearmRecovery: false,
+    });
     return 'uncertain';
   }
   const isGone = inspection.kind === 'missing';
@@ -247,93 +253,126 @@ const recoverRemoval = async ({
     updatedAt: new Date().toISOString() as IsoDateTime,
   });
   if (!written) {
-    await markMountOperationUncertain({ operation: settled, errorCode: 'revision-conflict' });
+    await markMountOperationUncertain({
+      operation: settled,
+      errorCode: 'revision-conflict',
+      shouldRearmRecovery: false,
+    });
     return 'uncertain';
   }
   await succeedMountOperation({ operation: settled });
   return 'succeeded';
 };
 
+type RecoverOperationParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly operation: MountOperation;
+  readonly views: Awaited<ReturnType<typeof loadMountViews>>;
+};
+
+const recoverOperation = async ({
+  set,
+  get,
+  operation,
+  views,
+}: RecoverOperationParams): Promise<boolean> => {
+  if (operation.kind === 'remove') {
+    const outcome = await recoverRemoval({ set, operation, views });
+    return outcome !== 'uncertain';
+  }
+  const recorded = views.find((candidate) => candidate.id === operation.mountId);
+  if (recorded !== undefined && operation.kind === 'unmount') {
+    if (recorded.worktreePath === null && !recorded.isAttached) {
+      await succeedMountOperation({ operation });
+      return true;
+    }
+    const recovered = await recoverUnmount({
+      operation,
+      mountId: recorded.id,
+      revision: recorded.revision,
+    });
+    if (recovered) {
+      return true;
+    }
+    await markMountOperationUncertain({
+      operation,
+      errorCode: 'unknown-state',
+      shouldRearmRecovery: false,
+    });
+    return false;
+  }
+  if (recorded !== undefined) {
+    await succeedMountOperation({ operation });
+    return true;
+  }
+  if (operation.kind === 'fork') {
+    const recovered = await recoverFork({ get, operation, views }).catch(() => false);
+    if (recovered) {
+      return true;
+    }
+  }
+  const worktreePath = readPath({ operation });
+  const repoRoot = readRepoRoot({ operation });
+  if (worktreePath === null || repoRoot === null) {
+    await failMountOperation({ operation, errorCode: 'unknown-state' });
+    return true;
+  }
+  const inspection = await inspectWorktree({ repoPath: repoRoot, worktreePath }).catch(() => null);
+  if (inspection === null || inspection.kind === 'repository-unavailable') {
+    await markMountOperationUncertain({
+      operation,
+      errorCode: 'repository-unavailable',
+      shouldRearmRecovery: false,
+    });
+    return false;
+  }
+  if (inspection.kind === 'missing') {
+    await failMountOperation({ operation, errorCode: 'unknown-state' });
+    return true;
+  }
+  await markMountOperationUncertain({
+    operation,
+    errorCode: 'directory-occupied',
+    shouldRearmRecovery: false,
+  });
+  return false;
+};
+
+const isRecoverable = ({ operation }: { readonly operation: MountOperation }): boolean =>
+  operation.status === 'running' || operation.status === 'uncertain';
+
 export const recoverMountOperations = (set: SetFn, get: GetFn) => {
   return async ({ sessionId }: SessionKeyInput): Promise<number> => {
     const operations = await listMountOperations({ db: tauriDatabase, sessionId });
-    const unsettled = operations.filter(
-      (operation) =>
-        operation.status === 'pending' ||
-        operation.status === 'running' ||
-        operation.status === 'uncertain',
-    );
+    const unsettled = operations.filter((operation) => isRecoverable({ operation }));
     if (unsettled.length === 0) {
       return 0;
     }
-    let views = await loadMountViews({ get, sessionId });
     let settled = 0;
-    for (const operation of unsettled) {
-      if (operation.kind === 'remove' && operation.status === 'pending') {
-        continue;
-      }
-      if (operation.kind === 'remove') {
-        const outcome = await recoverRemoval({ set, operation, views });
-        if (outcome !== 'uncertain') {
-          views = await loadMountViews({ get, sessionId });
-          settled += 1;
+    for (const listed of unsettled) {
+      const recover = async (): Promise<boolean> => {
+        const operation = await getMountOperation({
+          db: tauriDatabase,
+          sessionId,
+          requestId: listed.requestId,
+        });
+        if (operation === null || !isRecoverable({ operation })) {
+          return false;
         }
-        continue;
-      }
-      const recorded = views.find((candidate) => candidate.id === operation.mountId);
-      if (recorded !== undefined) {
-        if (operation.kind === 'unmount') {
-          if (recorded.worktreePath === null && !recorded.isAttached) {
-            await succeedMountOperation({ operation });
-            settled += 1;
-            continue;
-          }
-          const recovered = await recoverUnmount({
-            operation,
-            mountId: recorded.id,
-            revision: recorded.revision,
-          });
-          if (recovered) {
-            views = await loadMountViews({ get, sessionId });
-            settled += 1;
-          } else {
-            await markMountOperationUncertain({ operation, errorCode: 'unknown-state' });
-          }
-          continue;
-        }
-        await succeedMountOperation({ operation });
+        const views = await loadMountViews({ get, sessionId });
+        return recoverOperation({ set, get, operation, views });
+      };
+      const repoRoot = readRepoRoot({ operation: listed });
+      const isSettled =
+        repoRoot === null
+          ? await recover()
+          : await withMountLock({ key: `repo:${repoRoot}`, run: recover });
+      if (isSettled) {
         settled += 1;
-        continue;
       }
-      if (operation.kind === 'fork') {
-        const recovered = await recoverFork({ get, operation, views }).catch(() => false);
-        if (recovered) {
-          views = await loadMountViews({ get, sessionId });
-          settled += 1;
-          continue;
-        }
-      }
-      const worktreePath = readPath({ operation });
-      const repoRoot = readRepoRoot({ operation });
-      if (worktreePath === null || repoRoot === null) {
-        await failMountOperation({ operation, errorCode: 'unknown-state' });
-        settled += 1;
-        continue;
-      }
-      const inspection = await inspectWorktree({ repoPath: repoRoot, worktreePath }).catch(
-        () => null,
-      );
-      if (inspection === null || inspection.kind === 'repository-unavailable') {
-        await markMountOperationUncertain({ operation, errorCode: 'repository-unavailable' });
-        continue;
-      }
-      if (inspection.kind === 'missing') {
-        await failMountOperation({ operation, errorCode: 'unknown-state' });
-        settled += 1;
-        continue;
-      }
-      await markMountOperationUncertain({ operation, errorCode: 'directory-occupied' });
     }
+    const views = await loadMountViews({ get, sessionId });
     applyMountViews({ set, sessionId, views: await verifyMountViews({ get, sessionId, views }) });
     return settled;
   };
