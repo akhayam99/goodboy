@@ -1,184 +1,140 @@
 # Query bridge
 
-> **Read this when** you are changing what a spawned agent can ask a connected
-> integration, or how it asks. **Not for** connecting an integration in the UI
-> (`concepts.md`) or the subprocess environment in general
-> (`architecture.md`).
+> **Read this when** you want to know what an agent can read or do in your
+> connected tools, or you are changing what it can ask and how it asks.
+> **Not for** connecting an integration in the UI (`concepts.md`) or the
+> subprocess environment in general (`architecture.md`).
 
-An agent running under Goodboy is a child process on the user's machine. It can
-read the repository and it can run `gh`, but the Linear, Jira, GitLab,
-Bitbucket, Sentry and Slack connections the workspace owns are unreachable to
-it: the secrets behind them live in the OS keychain, and only the Goodboy
-process may open them. The bridge closes that gap without ever moving a secret.
+The query bridge lets an agent working in a Goodboy session use the tools your workspace is connected to. The agent asks Goodboy, Goodboy makes the call with your connection, and the answer comes back to the agent.
 
-## The invariant
+Your tokens and keys stay inside Goodboy the whole time. The agent never sees them.
 
-**A secret never leaves the Goodboy process.** The agent does not receive a
-token, a key, a header, or a URL that carries one. It names a workspace, a
-provider and a verb; Goodboy resolves the credential, performs the call, and
-returns the result. Anything that would hand an agent a usable credential, even
-indirectly, is out of bounds and no convenience justifies it.
+## What agents can do
 
-That is the whole reason the bridge exists rather than an MCP server or an
-injected environment variable. It is also why the transport is a Unix socket
-owned by the user with no other reader: the trust boundary is the OS account,
-not a token the agent could copy, log, or forward.
+While they work, agents can read from your tools:
 
-## One catalog, three readers
+- Issues, comments and transitions
+- Pull requests, diffs, checks and review threads
+- Errors with stack frames, tags and breadcrumbs
+- Slack channels, threads and members
 
-A verb is declared once. The dispatcher routes it, the CLI parses and prints
-it, and the prompt advertises it. None of the three owns the list; all three
-read the same declaration, and a test fails when the advertisement drifts from
-what the dispatcher can actually serve.
+They can also act on them, the same way you can from Goodboy:
 
-The dispatcher never reimplements a provider call. Every verb lands on the
-function the app itself already uses for that integration, so a fix to a query
-reaches the UI and the agent at the same time and there is no second GraphQL
-document to keep honest.
+- Comment, reply in a review thread, resolve a thread
+- Update an issue description or move it through a transition
+- Approve, request changes, mark ready, merge or decline
+- Push their branch and open a pull request or merge request
+- Manage their own checkouts in the session: list, fork, switch, unmount
+- Group a split into an ordered series of pull requests
 
-## Read and write are not the same act
+## Tools it reaches
 
-Reading an issue is inert. Posting a comment, merging, approving, or moving a
-ticket is visible to other humans and cannot be taken back by re-running the
-command. The two are dispatched through separate paths for that reason, and a
-verb declares which one it is. Today both are allowed; the split exists so that
-gating writes later is a policy change, not a refactor, and so that no write
-can ever arrive by way of the read path.
+| Tool      | Reads                                      | Acts                                              |
+| --------- | ------------------------------------------ | ------------------------------------------------- |
+| GitHub    | PRs, diffs, checks, threads, issues        | comment, resolve, merge, push, open PR            |
+| GitLab    | MRs, diffs, discussions, approvals, issues | note, resolve, approve, merge, open MR            |
+| Bitbucket | PRs, diffs, comments, build statuses       | comment, approve, request changes, merge, decline |
+| Jira      | issues, comments, transitions              | comment, update, transition                       |
+| Linear    | issues, comments                           | comment, update description                       |
+| Sentry    | issues and issue detail                    |                                                   |
+| Slack     | channels, threads, users, permalinks       | reply, add reaction                               |
 
-Connecting, disconnecting and validating a connection are deliberately absent.
-Those manage the credential itself and belong to the person at the keyboard.
+## What you control
 
-## The advertisement is a cost
+- **Which tools.** An agent is told only about the integrations this workspace has connected through **Link integration**. With nothing connected, the agent hears nothing about the bridge.
+- **Which account.** Each connection belongs to the workspace, and a project can override it with its own account. GitHub also works with your `gh` CLI login when the workspace has no GitHub token.
+- **The connection itself.** Connecting, disconnecting and checking a connection are yours. No agent can do any of them.
+- **Draft first.** Pull requests and merge requests an agent opens start as drafts unless it asks for ready.
 
-The list of available commands ships inside every prompt of every turn, for
-every provider, forever. It names only the integrations this workspace actually
-connected, and it stays at one line per provider: detail belongs in the CLI's
-own help, which costs nothing until an agent asks for it. A workspace with no
-connection produces no block at all.
+## What you see
 
-The same text reaches every provider through the guard-block channel, so the
-bridge is advertised identically whether the agent is Claude, Codex, Cursor,
-Gemini or opencode. Nothing about it is provider-specific.
+- Comments, replies, approvals and merges land in the tool itself, and in Goodboy wherever you read that tool
+- A pull request an agent opens is linked to the checkout it came from in the session
+- A fork or a switch of a checkout shows up in the session, and a fork continues in a new turn on the new checkout
 
-## The workspace is the container
+## Where it runs
 
-`--workspace` (or `GOODBOY_WORKSPACE_ID`) names the workspace container, and a
-connection is a binding on that container: one credential and one shared
-configuration, with an optional per-project override row. A verb that reads
-per-repository configuration accepts `--project <name>` to resolve against that
-project's override first, falling back to the workspace-level binding when the
-project carries none. On a verb that already owns a `project` argument, such as
-a GitLab project path or a Jira project key, the flag keeps its verb-specific
-meaning and sets no scope.
+The bridge runs on macOS and Linux, and only while Goodboy is open. When you quit, agents started by that instance get a clear error instead of waiting.
 
-## A mount is named, never guessed
+Each running copy of Goodboy has its own bridge, so an installed build and a development build side by side never answer each other's agents.
 
-A session holds several mounts of the same project, each with its own worktree,
-branch and pull request. `--mount <id>` is a universal flag, like `--workspace`
-and `--project`, and `mount list` prints the ids. When a command that acts on a
-mount is given none, the bridge serves it only if exactly one mount is eligible;
-otherwise it refuses with `ambiguous_mount` and the candidates, and never falls
-back to the first row.
+## For contributors
 
-`git checkout -b` is ambiguous, and no reading of git state settles it: the
-worktree looks the same whether the agent moved this line of work to another
-branch or opened a second one beside it. So the agent declares the intent.
-`mount switch` moves the mount and leaves earlier pull requests as history;
-`mount fork` creates another mount with its own worktree and leaves the source
-untouched. When the observed head disagrees with the recorded branch, the app
-stores the observation and refuses to act until `mount resolve --intent
-switch|fork` says which reading is right.
+### Design rules
 
-Every mutation takes a `--reason` and a `--request-id`. The request id is
-recorded before the app is asked to do anything, so a socket timeout answers
-`operation_pending` rather than a failure: the work may well have happened, and
-retrying with the same id returns the original result instead of creating a
-second mount. The same id with different arguments is a `request_conflict`.
-`mount operation --request-id <id>` reads that record back.
+**A secret never leaves the Goodboy process.** The agent never receives a token, a key, a header or a URL that carries one. It names a workspace, a provider and a verb. Goodboy resolves the credential, performs the call and returns the result. Anything that would hand an agent a usable credential, even indirectly, is out of bounds.
 
-Creating a pull request is a mutation of the same kind: `github pr-create` and
-`gitlab mr-create` need an explicit `--mount`, open a draft unless `--ready`,
-and look the request up before creating another one, so a retry after a lost
-answer does not open a duplicate.
+That is why the bridge is not an MCP server or an injected environment variable. The transport is a Unix socket owned by the user with no other reader, so the trust boundary is the OS account, not a token the agent could copy, log or forward.
 
-A refusal may carry a machine-readable code beside its sentence:
-`ambiguous_mount`, `mount_unavailable`, `branch_mismatch`, `branch_in_use`,
-`unsafe_cleanup`, `operation_pending`, `request_conflict`, `fork_unsatisfied`.
-`fork_unsatisfied` says the fork came back with the mount it forked from, or on
-a branch other than the one asked for, so no new turn starts. Codes are additive;
-the envelope stays `{ok, data, error}`.
+**One catalog, three readers.** A verb is declared once, in `CATALOG`. The dispatcher routes it, the CLI parses and prints it, and the prompt advertises it. A test fails when the advertisement drifts from what the dispatcher can serve, and another when a catalogued verb is never dispatched.
 
-## No verb writes an event
+**No second implementation.** Every verb lands on the function the app already uses for that integration. A fix to a query reaches the UI and the agent at once, and there is no second GraphQL document to keep honest.
 
-There is no `session event` command. Typed actions record their own events
-inside the transaction that performed them, and polling records the requests it
-discovers on the host. Letting an agent write a lifecycle event would let it
-assert a merge that never happened, and nothing downstream could tell the
-difference.
+**Read and write are separate paths.** Reading an issue is inert. Posting a comment, merging, approving or moving a ticket is visible to other people and cannot be undone by re-running the command. Each verb declares its `Access`, the two are dispatched through separate arms, and no write can arrive by way of the read path.
 
-## Where it is reachable
+**The credential stays with the person.** Connect, disconnect and validate are deliberately absent from the catalog.
 
-The socket is created when the app starts and removed when it stops, so an
-agent outliving the app fails loudly instead of hanging. Windows has no Unix
-socket and is not served.
+**The advertisement is a cost.** The `[integrations]` block ships in every prompt of every turn. It names only the providers this workspace connected, one line per provider, and detail lives in the CLI's `--help`, which costs nothing until an agent asks. A workspace with no connection produces no block.
 
-## One socket per running instance
+**Same text for every provider.** The block reaches Claude, Codex, Cursor, Gemini and opencode through the guard-block channel. Nothing about the bridge is provider-specific.
 
-The socket file is named after the process that binds it, `query-<pid>.sock` in
-the state directory. A fixed name can only ever belong to the newest process
-that started, and the loss is silent: an installed build and a development
-build both bind it, the second one wins, and the agents of the first keep
-talking to a bridge that answers from another database with another set of
-credentials. Naming the file after the owner removes the collision instead of
-detecting it, and it is what lets a second window hold its own bridge later.
+**No verb writes an event.** There is no `session event` command. Typed actions record their own events inside the transaction that performed them, and polling records the requests it discovers on the host. An agent that could write a lifecycle event could assert a merge that never happened.
 
-Nothing has to be cleaned up by hand. Before binding, a starting instance
-removes the sockets in that directory whose owning pid no longer exists, which
-is what a crash leaves behind, and never touches one whose owner is still
-alive, including another live instance. The fixed-name socket earlier versions
-bound is removed only when no listener answers on it, so upgrading does not
-disturb an older build that is still running.
+### Calling the bridge
 
-The CLI is not a second program. It is the same executable the user launched,
-entered through the `query` first argument, which is answered and exited before
-any window or plugin exists. One binary is what a macOS bundle actually ships,
-so nothing has to be packaged beside it or resolved on PATH.
+The CLI is the same executable the user launched, entered through the `query` first argument. It answers and exits before any window or plugin exists, so nothing is packaged beside the binary or resolved on PATH.
 
-A spawned agent is told where that executable lives through `GOODBOY_BIN`, an
-absolute path injected next to the socket and workspace variables. The prompt
-advertises the call as `"$GOODBOY_BIN" query <provider> <verb>`, quoted because
-the path may contain a space.
+A spawned turn receives these environment variables:
 
-## Advertised and injected are the same condition
+- `GOODBOY_BIN`: absolute path of the executable
+- `GOODBOY_QUERY_SOCKET`: the socket this instance bound
+- `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`: the turn's workspace and session
+- `GOODBOY_MOUNT_ID`, `GOODBOY_RUN_ID`: the mount and run the turn is bound to
 
-Having a connected integration is not the same thing as having a reachable
-bridge, and a prompt that names a command the child cannot run is worse than
-silence: the agent runs an empty path and reads a shell error instead of an
-answer. So the advertisement is not gated on credentials. Both the injection
-and the prompt read one predicate, true only when this process owns a bound
-listener and its socket file is still there, and the frontend reaches it
-through `query_bridge_serving` rather than inferring it. A frontend that cannot
-reach that command reads it as false. The path handed to the child is the one
-this process bound, so a child never inherits an address another instance owns.
+The prompt advertises the call as `"$GOODBOY_BIN" query <provider> <verb>`, quoted because the path may contain a space. Output is plain text, and `--json` returns the raw payload. `"$GOODBOY_BIN" query <provider> --help` prints the exact arguments of each verb.
 
-That is what suppresses the block on Windows, where nothing ever binds, and
-before the listener is up or after it is gone. The two can still disagree only
-inside the instant between composing a prompt and spawning the child, and the
-cost of losing that race is a command the agent is told about for one turn.
+Three scope flags work on every verb:
 
-## Mount workflow
+- `--workspace <id>` (or `GOODBOY_WORKSPACE_ID`) names the workspace container
+- `--project <name>` resolves per-repository configuration against that project's override row first, then the workspace binding
+- `--mount <id>` names the mount a command acts on
 
-Start by reading the mounts. A spawned turn already has the workspace, session,
-mount and run ids in `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
-`GOODBOY_MOUNT_ID` and `GOODBOY_RUN_ID`. Pass `--mount` whenever the command
-should address a mount other than the one bound to the turn.
+A connection is a binding on the workspace container: one credential and one shared configuration, with an optional per-project override row. On a verb that already owns a `project` argument, such as a GitLab project path or a Jira project key, `--project` keeps its verb-specific meaning and sets no scope.
+
+The response envelope is `{ok, data, error}`. A refusal may add a machine-readable `code` and `candidates` beside its sentence:
+
+- `ambiguous_mount`: more than one mount is eligible, candidates attached
+- `mount_unavailable`: no eligible mount, or its folder, branch or project is missing
+- `branch_mismatch`: the checked-out head differs from the recorded branch
+- `branch_in_use`: that branch is already taken
+- `unsafe_cleanup`: removal would lose work or hit a live process
+- `operation_pending`: the request may have run, read it back
+- `request_conflict`: same request id, different arguments
+- `fork_unsatisfied`: the fork came back as the source mount, or on another branch, so no new turn starts
+
+Codes are additive. The envelope does not change.
+
+Besides the integration verbs, the catalog carries `project materialize`, which mounts a workspace project into the session as a worktree and branch.
+
+### Mounts
+
+A session holds several mounts of the same project, each with its own worktree, branch and pull request. `mount list` prints their ids. When a command that acts on a mount is given no `--mount`, the bridge serves it only if exactly one mount is eligible. Otherwise it refuses with `ambiguous_mount` and never falls back to the first row.
+
+The GitHub verbs and `gitlab mr-create` act on one mount. They default to the mount the turn is bound to.
+
+`git checkout -b` is ambiguous: the worktree looks the same whether the agent moved this line of work to another branch or opened a second one beside it. So the agent declares the intent:
+
+- `mount switch` moves the mount and leaves earlier pull requests as history
+- `mount fork` creates another mount with its own worktree and leaves the source untouched
+
+Start by reading the mounts:
 
 ```
 "$GOODBOY_BIN" query mount list --json
 "$GOODBOY_BIN" query mount inspect --mount <mount-id> --size --json
 ```
 
-`mount list` returns mount records with this shape:
+`mount list` returns records with this shape:
 
 ```json
 {
@@ -195,12 +151,9 @@ should address a mount other than the one bound to the turn.
 }
 ```
 
-`mount inspect` adds `head`, `safety` and optional `size` objects. Check
-`head.matchesMount` before changing files. Check `safety.canRemove` and its
-`blockers` before asking to remove a directory.
+`mount inspect` adds `head`, `safety` and an optional `size` object. Check `head.matchesMount` before changing files. Check `safety.canRemove` and its `blockers` before asking to remove a directory.
 
-Fork when both lines of work must remain. The new branch is cut from the named
-base, and the source mount, directory, branch and request links do not change.
+Fork when both lines of work must remain. The new branch is cut from the named base, and the source mount, directory, branch and request links do not change.
 
 ```
 "$GOODBOY_BIN" query mount fork \
@@ -212,14 +165,9 @@ base, and the source mount, directory, branch and request links do not change.
   --json
 ```
 
-The response names `sourceMountId`, the new `mount`, its `operationId`, and
-`requiresNewTurn: true`. Stop work in the current turn after a successful fork.
-Goodboy queues one continuation turn bound to the new mount and directory. That
-turn is told that uncommitted files from the source are absent, so it can
-cherry-pick the selected commits and resolve conflicts there.
+The response names `sourceMountId`, the new `mount`, its `operationId`, and `requiresNewTurn: true`. Stop work in the current turn after a successful fork. Goodboy queues one continuation turn bound to the new mount and directory. That turn is told that uncommitted files from the source are absent, so it can cherry-pick the selected commits and resolve conflicts there.
 
-Switch only when the current mount is the same line of work on a different
-branch.
+Switch only when the current mount is the same line of work on a different branch.
 
 ```
 "$GOODBOY_BIN" query mount switch \
@@ -231,18 +179,13 @@ branch.
   --json
 ```
 
-The response keeps the same `mountId` and `mountPath`, and includes
-`previousBranch`. Request links on the previous branch remain historical.
-`mount activate --mount <mount-id> --request-id <id>` changes only the mount for
-the next turn. It does not redirect a running or queued git or provider action,
-because those actions retain the mount id and revision captured when they were
-queued.
+The response keeps the same `mountId` and `mountPath`, and includes `previousBranch`. Request links on the previous branch remain historical.
 
-## Mismatch recovery
+`mount activate --mount <mount-id> --request-id <id>` changes only the mount for the next turn. It does not redirect a running or queued git or provider action, because those keep the mount id and revision captured when they were queued.
 
-A raw `git checkout`, `git switch`, or detached HEAD never rewrites stored
-ownership. Inspection records the mismatch and mount-scoped writes refuse with
-`branch_mismatch`. Choose one interpretation explicitly:
+### Mismatch recovery
+
+A raw `git checkout`, `git switch` or detached HEAD never rewrites stored ownership. Inspection records the mismatch, and mount-scoped writes refuse with `branch_mismatch` until `mount resolve` says which reading is right:
 
 ```
 "$GOODBOY_BIN" query mount resolve \
@@ -260,16 +203,14 @@ ownership. Inspection records the mismatch and mount-scoped writes refuse with
   --json
 ```
 
-`switch` adopts the observed branch on the existing mount. `fork` adopts it on
-the existing directory and creates a second mount for the previously recorded
-branch. Both return the resulting `mounts` array. Finish an in-progress merge,
-rebase or cherry-pick before resolving a mismatch.
+- `switch` adopts the observed branch on the existing mount
+- `fork` adopts it on the existing directory and creates a second mount for the previously recorded branch
 
-## Pull requests and series
+Both return the resulting `mounts` array. Finish an in-progress merge, rebase or cherry-pick before resolving a mismatch.
 
-Request creation is always mount-scoped. Goodboy refreshes the provider before
-creation, so retrying after the remote accepted a request but before the local
-answer arrived discovers and attaches the existing request.
+### Pull requests and series
+
+Request creation is always mount-scoped. `github pr-create` and `gitlab mr-create` need an explicit `--mount`, open a draft unless `--ready`, and refresh the provider before creating. A retry after the remote accepted a request, but before the answer arrived, finds and attaches the existing request instead of opening a duplicate.
 
 ```
 "$GOODBOY_BIN" query github pr-create \
@@ -291,13 +232,9 @@ answer arrived discovers and attaches the existing request.
   --json
 ```
 
-The result contains `mountId`, `provider`, `host`, `repo`, `number`, `url`,
-`state` and `created`. GitHub and GitLab requests are drafts unless `--ready` is
-passed. Bitbucket request reads are mount-aware, but the app has no Bitbucket
-creation path.
+The result contains `mountId`, `provider`, `host`, `repo`, `number`, `url`, `state` and `created`.
 
-Declare a split and its order instead of asking Goodboy to infer a stack from
-git:
+Declare a split and its order instead of asking Goodboy to infer a stack from git:
 
 ```
 "$GOODBOY_BIN" query series create \
@@ -328,24 +265,22 @@ git:
 "$GOODBOY_BIN" query series list --project api --json
 ```
 
-A member with a mount is active. One without `--mount` is a planned position.
-Generated request text for a series member includes `Part of ENG-3240` and its
-declared position. It never adds a closing reference for that series.
+A member with a mount is active. One without `--mount` is a planned position. Generated request text for a series member includes `Part of ENG-3240` and its declared position, and never adds a closing reference for that series.
 
-## Retry and cleanup
+### Retry and cleanup
 
-Reuse the exact `--request-id` after a timeout. Do not invent a second id for the
-same attempted mutation. Read the operation before deciding what to do next:
+Every mutation takes a `--reason` and a `--request-id`. The request id is recorded before the app is asked to do anything, so a socket timeout answers `operation_pending` rather than a failure: the filesystem or provider may already have changed.
+
+- Reuse the exact `--request-id` after a timeout, never a new one for the same attempt
+- The same completed request id returns the original result
+- The same id with different input is refused with `request_conflict`
+- Startup recovery reconciles recorded operations with the worktree and database
+
+Read the record back before deciding what to do next:
 
 ```
 "$GOODBOY_BIN" query mount operation --request-id eng-3240-auth-fork --json
 ```
-
-A timeout can return `operation_pending` because the filesystem or provider may
-already have changed. Startup recovery reconciles recorded operations with the
-worktree and database. The same completed request id returns the original
-result, while the same id with different input is refused with
-`request_conflict`.
 
 Unmount through the bridge instead of deleting a folder:
 
@@ -357,31 +292,50 @@ Unmount through the bridge instead of deleting a folder:
   --json
 ```
 
-The response reports `disposition` as `removed`, `missing`, or `kept`, plus a
-reason when kept. Cleanup counts dependency directories in its size estimate.
-It refuses a running agent, bound terminal, writer lease, lock, git operation,
-or dirty tracked and untracked work. Archive, delete, Settings cleanup, merge
-cleanup, unmount and orphan cleanup use this same policy. If a dirty directory
-must be detached, Goodboy retains a path ownership record so it remains visible
-for later cleanup. Removing a worktree never deletes its local branch. An
-unmounted mount can be attached again from that preserved branch.
+The response reports `disposition` as `removed`, `missing` or `kept`, plus a reason when kept. `--keep` detaches the mount and leaves its directory.
 
-## Recovery limits
+Cleanup counts dependency directories in its size estimate. It refuses when any of these hold the directory:
 
-Mount rows, request links, operations and series survive restart. A missing
-folder is marked unavailable during hydration and restoration and is never
-offered as a runnable mount. If the branch still exists, `mount attach` can
-recreate its worktree.
+- A running agent or a bound terminal
+- A writer lease or a lock
+- A git operation in progress
+- Dirty tracked or untracked work
 
-Historical pull requests that were already lost from the database cannot be
-reconstructed by the migration. Recover them only after a verified provider
-lookup identifies the provider, host, repository, request number and head
-branch, then attach that identity to the chosen mount and branch explicitly.
-Branch names alone do not prove the user's earlier intent.
+Archive, delete, **Settings** cleanup, merge cleanup, unmount and orphan cleanup all use this same policy. If a dirty directory must be detached, Goodboy keeps a path ownership record so it stays visible for later cleanup.
 
-The current transport uses Unix domain sockets and therefore runs only on macOS
-and Linux. Windows does not advertise or serve the bridge. The socket exists
-only while its owning Goodboy process is running, belongs to the current OS
-user, is local to one machine, and cannot continue an operation while the app
-is stopped. Very long state-directory paths can also hit the platform's Unix
-socket path-length limit before a listener can bind.
+Removing a worktree never deletes its local branch, so `mount attach` can give an unmounted mount a worktree again from that branch.
+
+### Restart and restore
+
+Mount rows, request links, operations and series survive restart. A missing folder is marked unavailable during hydration and restoration and is never offered as a runnable mount. If the branch still exists, `mount attach` recreates its worktree.
+
+A pull request is attached to a mount only from a verified provider lookup that identifies the provider, host, repository, request number and head branch, and only onto a mount and branch chosen explicitly. Branch names alone do not prove the user's earlier intent.
+
+### Socket lifecycle
+
+The socket is created when the app starts and removed when it stops. It belongs to the current OS user, is local to one machine, and serves only while its owning process runs. The bridge uses Unix domain sockets, so it serves macOS and Linux. Unix socket paths have a platform length limit, so a very long state-directory path can keep the listener from binding.
+
+**One socket per running instance.** The file is `query-<pid>.sock` in `~/.goodboy`, named after the process that binds it. A fixed name would belong to whichever process started last, and the loss would be silent: agents of the first instance would talk to a bridge answering from another database with other credentials. Naming the file after its owner removes the collision instead of detecting it.
+
+**No manual cleanup.** Before binding, a starting instance removes the sockets in that directory whose owning pid no longer exists, which is what a crash leaves behind. It never touches one whose owner is alive, including another live instance. The fixed-name `query.sock` of earlier versions is removed only when no listener answers on it, so an older build still running is left alone.
+
+**Advertised and injected are the same condition.** A connected integration does not imply a reachable bridge, and a prompt naming a command the child cannot run makes the agent read a shell error instead of an answer. So the advertisement is not gated on credentials. The env injection and the prompt both read one predicate: this process owns a bound listener and its socket file still exists. The frontend reaches it through `query_bridge_serving` and reads a failed call as false. The path handed to the child is the one this process bound, so a child never inherits another instance's address.
+
+That predicate suppresses the block on Windows, where nothing binds, and before the listener is up or after it is gone.
+
+### Code map
+
+- `apps/desktop/src-tauri/src/query_bridge/protocol.rs`: request and response types, env var names, error codes, `CATALOG`, argv parsing and help text
+- `apps/desktop/src-tauri/src/query_bridge/dispatch.rs`: connection check, mount scope, read and write arms
+- `apps/desktop/src-tauri/src/query_bridge/github.rs`: GitHub verbs over `gh`, with the workspace token or the CLI login
+- `apps/desktop/src-tauri/src/query_bridge/mount.rs`: mount verbs and request creation, relayed to the frontend on `query-bridge://mount-command`
+- `apps/desktop/src-tauri/src/query_bridge/series.rs`: series verbs
+- `apps/desktop/src-tauri/src/query_bridge/project.rs`: `project materialize`, relayed on `query-bridge://project-materialize`
+- `apps/desktop/src-tauri/src/query_bridge/cli.rs`: the `query` entry point run by `run_cli`
+- `apps/desktop/src-tauri/src/query_bridge/mod.rs`: socket path, stale-socket sweep, listener, `query_bridge_serving`, `apply_turn_env`
+- `apps/desktop/src-tauri/src/lib.rs`: runs the CLI before any window, starts and shuts down the listener
+- `apps/desktop/src-tauri/src/turn.rs`: injects the bridge env into a spawned turn
+- `apps/desktop/src/store/integrationsGuard.ts`: `QUERY_BRIDGE_VERBS` and the `[integrations]` guard block, tested against `protocol.rs`
+- `apps/desktop/src/features/integrations/queryBridge.ts`: `isQueryBridgeServing`
+- `apps/desktop/src/features/session/mountQueryBridge/`: frontend executor for mount and series commands
+- `apps/desktop/src/features/session/projectMaterializeBridge.ts`: frontend executor for `project materialize`
