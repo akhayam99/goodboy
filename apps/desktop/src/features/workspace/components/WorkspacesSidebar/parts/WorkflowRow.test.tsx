@@ -269,7 +269,9 @@ describe('WorkflowRow detail dashboard', () => {
       navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor workflow' })),
     ).toBe(true);
     expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Autorun off' }))).toBe(true);
-    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete' }))).toBe(true);
+    expect(
+      lifecycleSlot.contains(screen.getByRole('button', { name: 'Refactor workflow actions' })),
+    ).toBe(true);
   });
 
   it('renames the run from its own header', () => {
@@ -337,7 +339,7 @@ describe('WorkflowRow detail dashboard', () => {
 
     const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
     const toggle = screen.getByTestId('workflow-autorun-toggle');
-    const remove = screen.getByRole('button', { name: 'Delete' });
+    const remove = screen.getByRole('button', { name: 'Refactor workflow actions' });
 
     expect(toggle.getAttribute('aria-pressed')).toBe('false');
     expect(toggle.className).toContain('rounded-full');
@@ -384,7 +386,9 @@ describe('WorkflowRow detail dashboard', () => {
       navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor workflow' })),
     ).toBe(true);
     expect(screen.queryByRole('button', { name: 'Autorun off' })).toBeNull();
-    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete' }))).toBe(true);
+    expect(
+      lifecycleSlot.contains(screen.getByRole('button', { name: 'Refactor workflow actions' })),
+    ).toBe(true);
   });
 
   it('answers where the run is and what it cost, leaving the step name to the strip', () => {
@@ -471,7 +475,9 @@ describe('WorkflowRow detail dashboard', () => {
     const onDeleteWorkflow = vi.fn(async () => undefined);
     renderDetail({ onDeleteWorkflow });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Refactor workflow actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete workflow run' }));
     const confirm = screen.getByRole('group', { name: 'Delete workflow run?' });
     fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
 
@@ -665,6 +671,22 @@ describe('WorkflowRow dynamic runs', () => {
 
     expect(screen.getByText('2 steps')).toBeDefined();
     expect(screen.queryByText(/step 2 of 2/i)).toBeNull();
+  });
+
+  it('adds the agent count only when it differs from the step count', () => {
+    renderDetail({ runOverride: dynamicRun, agentsOverride: doneAgents, actionableStepId: null });
+    expect(screen.queryByText(/agents?$/)).toBeNull();
+    cleanup();
+
+    renderDetail({
+      runOverride: dynamicRun,
+      agentsOverride: [
+        ...doneAgents,
+        { ...agents[0]!, id: 'agent-extra' as AgentId, name: 'Extra', ordinal: 9 },
+      ],
+      actionableStepId: null,
+    });
+    expect(screen.getByText('3 agents')).toBeDefined();
   });
 
   it('bills a dynamic run on the spend enforcement reads, not on the step aggregates', () => {

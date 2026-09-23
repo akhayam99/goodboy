@@ -57,7 +57,7 @@ import { WorkflowStepRow } from './WorkflowStepRow';
 import { ScoutSubtree } from './ScoutSubtree';
 import { ClusterChildRow } from './ClusterChildRow';
 import { WorkflowKillButton } from './WorkflowKillButton';
-import { WorkflowDeleteButton } from './WorkflowDeleteButton';
+import { WorkflowRunMenu } from './WorkflowRunMenu';
 import { WorkflowRunStatus } from './WorkflowRunStatus';
 
 type Props = {
@@ -105,6 +105,17 @@ type Props = {
 };
 
 const isRunning = (agent: Agent): boolean => agent.status === 'running';
+
+type TreeCountParams = {
+  readonly agent: Agent;
+  readonly childrenByParentId: ReadonlyMap<string, ReadonlyArray<Agent>>;
+};
+
+const countAgentTree = ({ agent, childrenByParentId }: TreeCountParams): number =>
+  (childrenByParentId.get(agent.id) ?? []).reduce(
+    (sum, child) => sum + countAgentTree({ agent: child, childrenByParentId }),
+    1,
+  );
 
 export const WorkflowRow = ({
   run,
@@ -176,6 +187,10 @@ export const WorkflowRow = ({
   const isCompleted =
     !isDiscarded && (isDynamic ? run.orchestrationOutcome === 'done' : total > 0 && done >= total);
   const unreadCount = countUnread(wfAgents);
+  const agentCount = wfAgents.reduce(
+    (sum, agent) => sum + countAgentTree({ agent, childrenByParentId }),
+    0,
+  );
   const isDetail = variant === 'detail';
   const defaultExpanded = isDetail || (!isDiscarded && (!isCompleted || unreadCount > 0));
   const expanded =
@@ -288,6 +303,11 @@ export const WorkflowRow = ({
                         : `Step ${Math.min(done + 1, total)} of ${total}`}
                     </span>
                   ) : null,
+                  total > 0 && agentCount !== total ? (
+                    <span className="tabular-nums">
+                      {`${agentCount} ${agentCount === 1 ? 'agent' : 'agents'}`}
+                    </span>
+                  ) : null,
                   <CostBadge value={costUsd} title={`${formatUsdPrecise(costUsd)} for this run`} />,
                   isDynamic && !isDiscarded ? (
                     <RunSpendLimitPopover sessionId={task.id} run={run} variant="meta" />
@@ -379,7 +399,7 @@ export const WorkflowRow = ({
               ) : (
                 <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
               )}
-              <WorkflowDeleteButton onConfirm={() => void onDeleteWorkflow(run.id)} />
+              <WorkflowRunMenu workflowName={name} onDelete={() => void onDeleteWorkflow(run.id)} />
             </CardActionSlot>
           </div>
         ) : (

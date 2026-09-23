@@ -8,7 +8,15 @@ import {
   SkipForward,
   Wallet,
 } from 'lucide-react';
-import { ConfirmPopover, Eyebrow, Markdown, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import {
+  ConfirmPopover,
+  Eyebrow,
+  GhostActionButton,
+  Markdown,
+  StatusDot,
+  cn,
+  tintClasses,
+} from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type {
   Agent,
@@ -260,18 +268,8 @@ export const OrchestratorPanel = ({
               description="The step in flight is cancelled and marked skipped. Everything it already wrote is kept."
               confirmLabel="Stop now"
               onConfirm={() => void stopWorkflowRunNow(sessionId, run.id)}
-              trigger={({ isArmed, arm }) => (
-                <button
-                  type="button"
-                  aria-expanded={isArmed}
-                  onClick={arm}
-                  className={cn(
-                    'rounded-md px-1.5 py-0.5 text-2xs font-medium text-danger',
-                    tintClasses('danger').hoverBg,
-                  )}
-                >
-                  Stop now
-                </button>
+              trigger={({ arm }) => (
+                <GhostActionButton icon={CircleStop} tone="danger" label="Stop now" onClick={arm} />
               )}
             />
           ) : null}

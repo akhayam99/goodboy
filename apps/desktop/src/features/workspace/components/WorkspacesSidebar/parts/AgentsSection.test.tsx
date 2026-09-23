@@ -524,7 +524,8 @@ describe('AgentsSection collapse defaults', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: /workflow actions$/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete workflow run' }));
     const confirm = screen.getByRole('group', { name: 'Delete workflow run?' });
     fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
 
