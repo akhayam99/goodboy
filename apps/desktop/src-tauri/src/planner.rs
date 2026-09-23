@@ -119,6 +119,9 @@ fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
                 "--json".to_string(),
                 "--model".to_string(),
                 args.model.clone(),
+                "--sandbox".to_string(),
+                "read-only".to_string(),
+                "--skip-git-repo-check".to_string(),
             ];
             crate::aux_spawn::push_effort_args("codex", args.effort.as_deref(), &mut cli_args);
             cli_args.push("--".to_string());
@@ -228,6 +231,20 @@ mod tests {
                 .windows(2)
                 .any(|pair| pair[0] == "--disallowedTools" && pair[1] == "mcp__*"));
         }
+    }
+
+    #[test]
+    fn codex_args_run_outside_git_repositories() {
+        let cli = build_cli_args(&make_args("codex")).expect("codex args");
+        let sep_idx = cli.iter().position(|a| a == "--").expect("separator");
+        let skip_idx = cli
+            .iter()
+            .position(|a| a == "--skip-git-repo-check")
+            .expect("--skip-git-repo-check");
+        assert!(skip_idx < sep_idx);
+        assert!(cli
+            .windows(2)
+            .any(|pair| pair[0] == "--sandbox" && pair[1] == "read-only"));
     }
 
     #[test]

@@ -98,7 +98,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import type { OrchestratorClientDeps, OrchestratorInput } from '@goodboy/core';
-import { OrchestratorClient, ROLE_REGISTRY } from '@goodboy/core';
+import { OrchestratorClient, OrchestratorClientSpawnError, ROLE_REGISTRY } from '@goodboy/core';
 import { orchestrateNextStep, persistOrchestrationStop } from './orchestrateNextStep';
 import { addStepToWorkflowRun } from './addStepToWorkflowRun';
 import { continueWorkflowRun } from './continueWorkflowRun';
@@ -1587,6 +1587,25 @@ describe('orchestrateNextStep', () => {
 
     expect(decideSpy).toHaveBeenCalledTimes(1);
   });
+  it('names the cli cause instead of a bare exit code', async () => {
+    decideSpy.mockRejectedValueOnce(
+      new OrchestratorClientSpawnError(
+        1,
+        'Reading additional input from stdin...\nNot inside a trusted directory and --skip-git-repo-check was not specified.\n',
+      ),
+    );
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(updateStopSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, {
+      kind: 'failure',
+      message: expect.stringContaining(
+        'orchestrator cli exited with code 1: Not inside a trusted directory',
+      ),
+    });
+  });
   it('persists the failure so the run can explain itself, and clears it on the next decision', async () => {
     decideSpy.mockRejectedValueOnce(new Error('usage limit reached'));
     const state = baseState();
@@ -1895,6 +1914,37 @@ describe('orchestrateNextStep', () => {
 
     expect(OrchestratorClient).toHaveBeenCalledWith(
       expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' }),
+    );
+  });
+
+  it('falls back to the task model when the pinned routing pairs a model with the wrong provider', async () => {
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    const sessions = state['sessions'] as ReadonlyArray<Session>;
+    state['sessions'] = [
+      {
+        ...sessions[0]!,
+        workflowRuns: [
+          {
+            ...sessions[0]!.workflowRuns[0]!,
+            orchestratorRouting: { providerId: 'anthropic', model: 'glm-5.2-high' },
+          },
+        ],
+      },
+    ];
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(OrchestratorClient).not.toHaveBeenCalledWith(
+      expect.objectContaining({ model: 'glm-5.2-high' }),
+    );
+    expect(OrchestratorClient).toHaveBeenCalledWith(
+      expect.objectContaining({ providerId: 'anthropic' }),
     );
   });
 

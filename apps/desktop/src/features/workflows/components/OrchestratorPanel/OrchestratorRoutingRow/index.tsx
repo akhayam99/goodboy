@@ -22,6 +22,10 @@ type ApplyParams = {
   readonly effort?: ModelEffort;
 };
 
+type ProviderRoutingParams = {
+  readonly provider: ProviderId;
+};
+
 type ProviderModelParams = {
   readonly provider: ProviderId;
   readonly model: string;
@@ -69,12 +73,16 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
   const [providerId, setProviderId] = useState<ProviderId>(preferredProviderId);
   const pendingProvider = useRef<ProviderId>(preferredProviderId);
   const model = pinned?.model ?? '';
-  const recommendedModel = resolveTaskModel({
-    task: 'workflow_orchestrator',
-    preferences: taskModels,
-    workspaceDefaultProviderId: providerId,
-    sessionDefaultProviderId: defaultProvider,
-  }).model;
+  const routingFor = ({ provider }: ProviderRoutingParams) =>
+    provider === automatic.providerId
+      ? automatic
+      : resolveTaskModel({
+          task: 'workflow_orchestrator',
+          preferences: null,
+          workspaceDefaultProviderId: provider,
+          sessionDefaultProviderId: defaultProvider,
+        });
+  const recommendedModel = routingFor({ provider: providerId }).model;
   const effortModel = providerModelId({
     provider: providerId,
     model: model === '' ? recommendedModel : model,
@@ -144,14 +152,7 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
           if (pinned == null) {
             return;
           }
-          apply(
-            resolveTaskModel({
-              task: 'workflow_orchestrator',
-              preferences: taskModels,
-              workspaceDefaultProviderId: next,
-              sessionDefaultProviderId: defaultProvider,
-            }),
-          );
+          apply(routingFor({ provider: next }));
         }}
         onModel={(nextModel) => {
           if (nextModel === '') {

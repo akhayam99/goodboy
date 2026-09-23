@@ -22,6 +22,7 @@ import type {
 } from '@goodboy/types';
 import {
   OrchestratorClient,
+  OrchestratorClientSpawnError,
   OrchestratorProviderError,
   ROLE_REGISTRY,
   SELECTABLE_AGENT_ROLES,
@@ -31,6 +32,7 @@ import {
   parseWorkflowRoutingProposal,
   recommendedModelForRole,
   resolveRoleRouting,
+  resolveStoredModelSelection,
   resolveTaskModel,
   resolveWorkflowRouting,
   runsForWorkflowRun,
@@ -344,7 +346,26 @@ const hasOperatorStop = ({ get, sessionId, workflowRunId }: OperatorStopParams):
   return current?.orchestrationStop?.kind === 'operator';
 };
 
+const isRoutingModelKnown = ({ providerId, model }: OrchestratorRouting): boolean =>
+  resolveStoredModelSelection({ provider: providerId, id: model }).report?.kind !== 'unknown';
+
+const STDERR_NOISE = /^Reading additional input from stdin/;
+const STDERR_LINE_MAX = 200;
+
+const lastStderrLine = ({ stderr }: OrchestratorClientSpawnError): string | null => {
+  const line = stderr
+    .split('\n')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry !== '' && !STDERR_NOISE.test(entry))
+    .at(-1);
+  return line == null ? null : line.slice(0, STDERR_LINE_MAX);
+};
+
 const failureLabel = (error: unknown): string => {
+  if (error instanceof OrchestratorClientSpawnError) {
+    const cause = lastStderrLine(error);
+    return cause == null ? error.message : `${error.message}: ${cause}`;
+  }
   if (error instanceof OrchestratorProviderError) {
     return `provider refused the request: ${error.detail}`;
   }
@@ -611,7 +632,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           get().workspaceOverrides?.[session.workspaceId]?.defaultProviderId,
         sessionDefaultProviderId: defaultProvider,
       });
-      const routing = options?.routing ?? run.orchestratorRouting ?? taskModel;
+      const pinnedRouting =
+        run.orchestratorRouting != null && isRoutingModelKnown(run.orchestratorRouting)
+          ? run.orchestratorRouting
+          : null;
+      const routing = options?.routing ?? pinnedRouting ?? taskModel;
       const profileBlock = buildProfileGuard({
         profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)
           ?.profile,
