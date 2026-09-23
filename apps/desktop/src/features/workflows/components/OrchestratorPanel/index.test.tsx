@@ -545,6 +545,15 @@ describe('OrchestratorPanel strip', () => {
     );
   });
 
+  it('disables hint delivery while the orchestrator is deciding', () => {
+    renderPanel({ isOrchestrating: true });
+
+    openHints();
+    expect(screen.getByTestId('orchestrator-hint-input').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('orchestrator-hint-queue').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('orchestrator-hint-now').hasAttribute('disabled')).toBe(true);
+  });
+
   it('lists every hint newest first with the step that first read it', () => {
     renderPanel({
       runOverride: run({

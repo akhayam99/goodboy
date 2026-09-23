@@ -62,6 +62,6 @@ export const addWorkflowOrchestratorHint = (set: SetFn, get: GetFn) => {
     if (draft.delivery === 'queue' || run.executionMode !== 'dynamic' || run.discardedAt != null) {
       return;
     }
-    await deliverNow({ set, get, sessionId, workflowRunId });
+    void deliverNow({ set, get, sessionId, workflowRunId });
   };
 };

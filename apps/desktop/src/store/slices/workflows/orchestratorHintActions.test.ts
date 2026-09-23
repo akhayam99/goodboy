@@ -130,6 +130,26 @@ describe('orchestrator hint actions', () => {
     expect(cancelRunningStepsSpy).not.toHaveBeenCalled();
   });
 
+  it('resolves after persisting before the restarted decision settles', async () => {
+    const state = baseState({ isDeciding: true });
+    const { set, get } = harness(state);
+    let resolveDecision: (() => void) | undefined;
+    const decision = new Promise<void>((resolve) => {
+      resolveDecision = resolve;
+    });
+    state['orchestrateNextStep'] = vi.fn(() => decision);
+
+    await addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
+      text: 'no PR, commit locally',
+      delivery: 'now',
+    });
+
+    expect(updateHintsSpy).toHaveBeenCalledTimes(1);
+    expect(resolveDecision).toBeDefined();
+    resolveDecision?.();
+    await decision;
+  });
+
   it('stops the step in flight and decides again when the hint is read now', async () => {
     const state = baseState({ isStepRunning: true });
     const { set, get } = harness(state);

@@ -349,7 +349,7 @@ export const OrchestratorPanel = ({
           <OrchestratorHintComposer
             isDeciding={isOrchestrating}
             isStepRunning={agents.some((agent) => agent.status === 'running')}
-            disabled={busy}
+            disabled={busy || isOrchestrating}
             onSubmit={(draft) => addWorkflowOrchestratorHint(sessionId, run.id, draft)}
           />
           <OrchestratorHintLog
