@@ -58,7 +58,7 @@ vi.mock('../../../features/workspace/components/ConvertWorkspaceDialog', () => (
   ConvertWorkspaceDialog: () => null,
 }));
 vi.mock('../../../features/workspace/components/WorkspaceLauncher', () => ({
-  WorkspaceLauncher: () => null,
+  WorkspaceLauncher: () => <div data-testid="launcher" />,
 }));
 vi.mock('../../../features/permissions/components/DiffViewerDialog', () => ({
   DiffViewerDialog: () => null,
@@ -118,7 +118,13 @@ const WORKSPACE = { id: WORKSPACE_ID, name: 'Northwind' } as unknown as Workspac
 
 const handle: { current: Overlays | null } = { current: null };
 
-const Harness = ({ connectedGithub }: { readonly connectedGithub: boolean }) => {
+const Harness = ({
+  connectedGithub,
+  isLauncher = false,
+}: {
+  readonly connectedGithub: boolean;
+  readonly isLauncher?: boolean;
+}) => {
   const overlays = useAppOverlays({
     connected: {
       github: connectedGithub,
@@ -130,10 +136,10 @@ const Harness = ({ connectedGithub }: { readonly connectedGithub: boolean }) => 
       slack: false,
     },
     currentSession: null,
-    currentWorkspace: WORKSPACE,
+    currentWorkspace: isLauncher ? null : WORKSPACE,
     workspaceProjectRoot: '/repo',
     isSessionSidebarCollapsed: false,
-    isWorkspaceLauncherBranch: false,
+    isWorkspaceLauncherBranch: isLauncher,
     pinSessionSidebar: () => undefined,
   });
   useEffect(() => {
@@ -316,6 +322,47 @@ describe('app overlay hook', () => {
     expect(await openStudios()).toEqual(['companion']);
 
     fire({ name: 'goodboy:reveal-chat' });
+
+    expect(await openStudios()).toEqual([]);
+  });
+});
+
+describe('app overlay hook, workspace launcher', () => {
+  const renderLauncher = () => render(<Harness connectedGithub={false} isLauncher />);
+
+  it('mounts settings over the launcher from the settings opener', async () => {
+    renderLauncher();
+
+    act(() => overlays().openSettings());
+
+    expect(await openStudios()).toEqual(['settings']);
+    expect(screen.getByTestId('launcher')).toBeDefined();
+    expect(overlays().studio).toBeNull();
+  });
+
+  it('mounts the palette over the launcher', async () => {
+    renderLauncher();
+
+    act(() => overlays().openPalette());
+
+    expect(await openStudios()).toEqual(['palette']);
+  });
+
+  it.each([
+    ['goodboy:open-guide', 'guide'],
+    ['goodboy:open-report-issue', 'report'],
+  ])('mounts the app studio that %s names over the launcher', async (name, kind) => {
+    renderLauncher();
+
+    fire({ name });
+
+    expect(await openStudios()).toEqual([kind]);
+  });
+
+  it('keeps workspace studios closed while no workspace is open', async () => {
+    renderLauncher();
+
+    fire({ name: 'goodboy:open-workflow-studio' });
 
     expect(await openStudios()).toEqual([]);
   });

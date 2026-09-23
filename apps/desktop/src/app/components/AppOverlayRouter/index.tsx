@@ -1,13 +1,13 @@
 import { Suspense, lazy, type ReactNode } from 'react';
 import type { Session, Workspace } from '@goodboy/types';
-import { CommandPalette } from '../../../features/session/components/CommandPalette';
 import { DeleteSessionConfirm } from '../../../features/session/components/DeleteSessionConfirm';
 import { ConvertWorkspaceDialog } from '../../../features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
 import type { SettingsStudioScope } from '../../../features/settings/components/SettingsStudio/types';
 import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard';
 import type { CommitDiffTarget } from '../../../shared/hooks/useCommitLinkInterceptor';
-import type { Overlay } from '../../hooks/useAppOverlays/overlayState';
+import { isAppScopeOverlay, type Overlay } from '../../hooks/useAppOverlays/overlayState';
+import { AppScopeOverlays } from './AppScopeOverlays';
 
 const SettingsStudio = lazy(() =>
   import('../../../features/settings/components/SettingsStudio').then((module) => ({
@@ -68,6 +68,7 @@ const CompanionStudio = lazy(() =>
 type Props = {
   readonly overlay: Overlay | null;
   readonly close: () => void;
+  readonly onSettingsScopeChange: (params: { readonly scope: SettingsStudioScope }) => void;
   readonly currentWorkspace: Workspace | null;
   readonly isWorkspaceLauncherBranch: boolean;
   readonly deleteOpen: boolean;
@@ -198,6 +199,7 @@ export const AppStudio = ({
 export const AppOverlayRouter = ({
   overlay,
   close,
+  onSettingsScopeChange,
   currentWorkspace,
   isWorkspaceLauncherBranch,
   deleteOpen,
@@ -214,6 +216,17 @@ export const AppOverlayRouter = ({
   closeDeleteConfirm,
 }: Props) => {
   if (isWorkspaceLauncherBranch) {
+    const launcherStudio =
+      overlay !== null && isAppScopeOverlay({ overlay }) ? (
+        <AppStudio
+          overlay={overlay}
+          close={close}
+          onSettingsScopeChange={onSettingsScopeChange}
+          currentWorkspace={currentWorkspace}
+          workspaceProjectRoot={null}
+          offerWorkspaceRepo={offerWorkspaceRepo}
+        />
+      ) : null;
     return (
       <Suspense fallback={null}>
         {overlay?.kind === 'addWorkspace' ? (
@@ -225,13 +238,24 @@ export const AppOverlayRouter = ({
         ) : (
           <WorkspaceLauncher />
         )}
+        <AppScopeOverlays
+          studio={launcherStudio}
+          paletteOpen={paletteOpen}
+          palettePrefix={palettePrefix}
+          closePalette={closePalette}
+        />
       </Suspense>
     );
   }
 
   return (
     <Suspense fallback={null}>
-      {paletteOpen ? <CommandPalette initialQuery={palettePrefix} onClose={closePalette} /> : null}
+      <AppScopeOverlays
+        studio={null}
+        paletteOpen={paletteOpen}
+        palettePrefix={palettePrefix}
+        closePalette={closePalette}
+      />
       {currentWorkspace !== null ? (
         <ConvertWorkspaceDialog
           open={convertWorkspaceOpen}

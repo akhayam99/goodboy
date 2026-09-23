@@ -166,6 +166,7 @@ export const useAppOverlays = ({
   const layers: ReactNode = createElement(AppOverlayRouter, {
     overlay,
     close,
+    onSettingsScopeChange: changeSettingsScope,
     currentWorkspace,
     isWorkspaceLauncherBranch,
     deleteOpen,

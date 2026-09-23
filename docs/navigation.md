@@ -252,8 +252,10 @@ terminal, never fires a shortcut.
 Utility studios render in the shell's studio slot, between the top bar and the
 footer, so both bars stay visible and usable. The one exception is the
 workspace launcher, which has no shell. There, Add workspace takes the whole
-window. Studios are not part of the breadcrumb IA. They exit on close or Esc,
-and only one is open at a time.
+window, and so do the app studios: Settings (its corner gear, ⌘, or ⌘/ for
+shortcuts), the guide and Report an issue. The palette opens there too.
+Studios are not part of the breadcrumb IA. They exit on close or Esc, and only
+one is open at a time.
 
 - **Navigating closes the studio.** Moving to another workspace, session, or
   lens of the current session closes whatever studio is open, whether the move

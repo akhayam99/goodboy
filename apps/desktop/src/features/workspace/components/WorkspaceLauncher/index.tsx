@@ -5,6 +5,7 @@ import {
   Checkbox,
   EmptyState,
   Eyebrow,
+  IconButton,
   InlineConfirm,
   ScrollFade,
   Tooltip,
@@ -15,6 +16,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/compo
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { UpdateIndicator } from '../../../updater/components/UpdateIndicator';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { WorkspaceRow } from '../WorkspaceRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 
@@ -78,8 +80,22 @@ export const WorkspaceLauncher = () => {
       className="h-full w-full"
       viewportClassName="relative flex items-center justify-center bg-background px-6 py-10"
     >
-      <div data-tauri-drag-region="false" className="absolute right-4 top-3">
+      <div
+        data-tauri-drag-region="false"
+        className="absolute right-4 top-3 flex items-center gap-2"
+      >
         <UpdateIndicator variant="bar" />
+        <IconButton
+          icon={CONCEPT_ICONS.settings}
+          label="Open settings"
+          tooltip={`Open settings (${shortcutGlyphs('settings.open')})`}
+          variant="ghost"
+          onClick={() =>
+            window.dispatchEvent(
+              new CustomEvent('goodboy:open-settings', { detail: { scope: 'app' } }),
+            )
+          }
+        />
       </div>
       <div className="flex w-full max-w-xl flex-col gap-6 motion-safe:animate-fade-in">
         <div className="flex flex-col items-center gap-3 pb-2 text-center">

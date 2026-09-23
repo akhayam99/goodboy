@@ -24,6 +24,27 @@ export type Overlay =
   | { readonly kind: 'changelog' }
   | { readonly kind: 'notifications' };
 
+export const isAppScopeOverlay = ({ overlay }: { readonly overlay: Overlay }): boolean => {
+  switch (overlay.kind) {
+    case 'settings':
+    case 'guide':
+    case 'report':
+    case 'companion':
+      return true;
+    case 'addWorkspace':
+    case 'workflow':
+    case 'inbox':
+    case 'impact':
+    case 'changelog':
+    case 'notifications':
+      return false;
+    default: {
+      const unreachable: never = overlay;
+      return unreachable;
+    }
+  }
+};
+
 export type ConnectedIntegrations = Readonly<Record<IntegrationGlyphProvider, boolean>>;
 
 export type FooterTarget =
