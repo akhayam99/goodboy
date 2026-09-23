@@ -574,7 +574,7 @@ describe('ProjectDetachMenu', () => {
     await waitFor(() =>
       expect(showToast).toHaveBeenCalledWith(
         'error',
-        'Could not finish removing the worktree. The mount is retained; check again before retrying.',
+        'Could not remove /worktrees/api. Its mount stays; check again before retrying.',
       ),
     );
     expect(screen.getByText('Detach api?')).toBeDefined();

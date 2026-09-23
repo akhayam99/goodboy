@@ -32,6 +32,7 @@ import {
   BLOCKER_SENTENCE,
   REMOVAL_STAGE,
   buildDetachPlan,
+  detachFailureMessage,
   detachOutcomeMessage,
   summarizeDetachOutcomes,
   type MountAssessment,
@@ -246,18 +247,19 @@ export const ProjectDetachMenu = ({
       const outcomes = await detachProject({ sessionId, projectId, disposition });
       const summary = summarizeDetachOutcomes({ outcomes });
       const summarized = outcomes.find((outcome) => outcome.kind === summary);
+      if (summary === 'failed') {
+        showToast('error', detachFailureMessage({ outcomes }));
+        assess();
+        return;
+      }
       showToast(
-        summary === 'failed' ? 'error' : 'info',
+        'info',
         detachOutcomeMessage({
           kind: summary,
           projectName,
           worktreePath: summarized?.worktreePath ?? worktreePath,
         }),
       );
-      if (summary === 'failed') {
-        assess();
-        return;
-      }
       dropdown.close();
       setConfirming(null);
     } catch (error) {
