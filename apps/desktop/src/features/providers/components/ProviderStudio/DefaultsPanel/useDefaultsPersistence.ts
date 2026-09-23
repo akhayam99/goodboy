@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import { TASKS } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
-import { TASKS } from '@goodboy/types';
 import type {
   AgentRole,
   AuxTaskId,
