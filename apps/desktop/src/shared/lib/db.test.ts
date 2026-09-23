@@ -61,4 +61,59 @@ describe('tauriDatabase', () => {
       params: ['x'],
     });
   });
+
+  it('sends a guarded batch as one transaction and returns its outcome', async () => {
+    invokeMock.mockResolvedValue({ status: 'aborted', abortCode: 'STALE', index: 1 });
+
+    const outcome = await tauriDatabase.transaction({
+      statements: [
+        { sql: 'INSERT INTO items (id) VALUES (?)', params: ['a'] },
+        {
+          sql: 'UPDATE items SET id = ?',
+          params: ['b'],
+          abortWhen: 'noChanges',
+          abortCode: 'STALE',
+        },
+      ],
+    });
+
+    expect(outcome).toEqual({ status: 'aborted', abortCode: 'STALE', index: 1 });
+    expect(invokeMock).toHaveBeenCalledWith('db_transaction', {
+      statements: [
+        { sql: 'INSERT INTO items (id) VALUES (?)', params: ['a'] },
+        {
+          sql: 'UPDATE items SET id = ?',
+          params: ['b'],
+          abortWhen: 'noChanges',
+          abortCode: 'STALE',
+        },
+      ],
+    });
+  });
+
+  it('sends an empty params list when a statement has none', async () => {
+    invokeMock.mockResolvedValue({ status: 'committed', results: [{ rowsAffected: 0, rows: [] }] });
+
+    await tauriDatabase.transaction({ statements: [{ sql: 'SELECT 1' }] });
+
+    expect(invokeMock).toHaveBeenCalledWith('db_transaction', {
+      statements: [{ sql: 'SELECT 1', params: [] }],
+    });
+  });
+
+  it('refuses a transaction response it cannot read', async () => {
+    invokeMock.mockResolvedValue(null);
+
+    await expect(tauriDatabase.transaction({ statements: [{ sql: 'SELECT 1' }] })).rejects.toThrow(
+      'unreadable transaction result',
+    );
+  });
+
+  it('refuses a committed response whose results carry no row count', async () => {
+    invokeMock.mockResolvedValue({ status: 'committed', results: [{ rows: [] }] });
+
+    await expect(tauriDatabase.transaction({ statements: [{ sql: 'SELECT 1' }] })).rejects.toThrow(
+      'unreadable transaction result',
+    );
+  });
 });

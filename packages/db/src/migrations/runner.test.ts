@@ -108,6 +108,7 @@ const makeForwardingDatabase = ({
     },
     select: async <T>(sql: string, params?: ReadonlyArray<unknown>) =>
       database.select<T>(sql, params),
+    transaction: (transactionParams) => database.transaction(transactionParams),
   };
 };
 
@@ -136,6 +137,7 @@ const makeSnapshotDatabase = ({
   },
   select: async <T>(sql: string, params?: ReadonlyArray<unknown>) =>
     database.select<T>(sql, params),
+  transaction: (transactionParams) => database.transaction(transactionParams),
 });
 
 describe('runRuntimeMigrations', () => {

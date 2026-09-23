@@ -216,6 +216,7 @@ pub fn run() {
             db::db_path,
             db::db_remove_migration_snapshot,
             db::db_select,
+            db::db_transaction,
             db::db_wipe,
             bridge::bridge_start,
             bridge::bridge_status,

@@ -1,4 +1,15 @@
-export type { Database } from './client';
+export type {
+  AbortedTransaction,
+  CommittedTransaction,
+  Database,
+  GuardedStatement,
+  PlainStatement,
+  Statement,
+  StatementGuard,
+  StatementResult,
+  TransactionOutcome,
+  TransactionParams,
+} from './client';
 
 export { migrate, type MigrateResult } from './migrations/runner';
 export {

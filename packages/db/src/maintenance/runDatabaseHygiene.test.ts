@@ -82,6 +82,7 @@ describe('runDatabaseHygiene', () => {
         }
         return rows;
       },
+      transaction: (transactionParams) => sourceDb.transaction(transactionParams),
     };
 
     const result = await runDatabaseHygiene({ db, now: NOW });

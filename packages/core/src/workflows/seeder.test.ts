@@ -1,31 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import Database from 'better-sqlite3';
 import type { IsoDateTime, WorkspaceId } from '@goodboy/types';
 import { migrate, listWorkflows, insertWorkspace, type Database as DbInterface } from '@goodboy/db';
 import { WORKFLOW_LIBRARY } from './library';
 import { seedWorkflowLibrary } from './seeder';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
+import { makeTestDatabase } from '@goodboy/db/test-helpers';
 
 const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
-function makeDb(): DbInterface {
-  const db = new Database(':memory:');
-  db.pragma('foreign_keys = ON');
-  return {
-    async exec(sql) {
-      db.exec(sql);
-    },
-    async execute(sql, params = []) {
-      const stmt = db.prepare(sql);
-      const result = stmt.run(...(params as ReadonlyArray<never>));
-      return { rowsAffected: result.changes };
-    },
-    async select<T>(sql: string, params: ReadonlyArray<unknown> = []) {
-      const stmt = db.prepare(sql);
-      return stmt.all(...(params as ReadonlyArray<never>)) as unknown as ReadonlyArray<T>;
-    },
-  };
-}
+const makeDb = (): DbInterface => makeTestDatabase();
 
 async function setup() {
   const db = makeDb();

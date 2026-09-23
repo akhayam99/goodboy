@@ -1,7 +1,38 @@
 import Database from 'better-sqlite3';
-import type { Database as DatabaseInterface } from '../client';
+import {
+  guardTrips,
+  isGuardedStatement,
+  type AbortedTransaction,
+  type Database as DatabaseInterface,
+  type Statement,
+  type StatementResult,
+} from '../client';
 import { migrations } from '../migrations/index';
 import { migrate } from '../migrations/runner';
+
+type RunStatementParams = {
+  readonly db: Database.Database;
+  readonly statement: Statement;
+};
+
+const runStatement = ({ db, statement }: RunStatementParams): StatementResult => {
+  const stmt = db.prepare(statement.sql);
+  const params = (statement.params ?? []) as ReadonlyArray<never>;
+  if (stmt.reader) {
+    return {
+      rowsAffected: 0,
+      rows: stmt.all(...params) as ReadonlyArray<Readonly<Record<string, unknown>>>,
+    };
+  }
+  return { rowsAffected: stmt.run(...params).changes, rows: [] };
+};
+
+type AbortSignal = {
+  readonly aborted: AbortedTransaction;
+};
+
+const isAbortSignal = (value: unknown): value is AbortSignal =>
+  typeof value === 'object' && value !== null && 'aborted' in value;
 
 const wrapDatabase = (db: Database.Database): DatabaseInterface => ({
   async exec(sql) {
@@ -15,6 +46,30 @@ const wrapDatabase = (db: Database.Database): DatabaseInterface => ({
   async select<T>(sql: string, params: ReadonlyArray<unknown> = []) {
     const stmt = db.prepare(sql);
     return stmt.all(...(params as ReadonlyArray<never>)) as unknown as ReadonlyArray<T>;
+  },
+  async transaction({ statements }) {
+    const run = db.transaction((): ReadonlyArray<StatementResult> => {
+      const results: StatementResult[] = [];
+      for (const [index, statement] of statements.entries()) {
+        const result = runStatement({ db, statement });
+        if (isGuardedStatement(statement) && guardTrips({ guard: statement.abortWhen, result })) {
+          const signal: AbortSignal = {
+            aborted: { status: 'aborted', abortCode: statement.abortCode, index },
+          };
+          throw signal;
+        }
+        results.push(result);
+      }
+      return results;
+    });
+    try {
+      return { status: 'committed', results: run.immediate() };
+    } catch (error) {
+      if (isAbortSignal(error)) {
+        return error.aborted;
+      }
+      throw error;
+    }
   },
 });
 
