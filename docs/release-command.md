@@ -99,6 +99,15 @@ and never edited onto the release after the build.
 ## Finish
 
 6. Once the draft release exists (step 5), its body and `latest.json` are
-   already filled in from `CHANGELOG.md`. Review the draft, then publish it:
-   `gh release edit vX --draft=false`. Then confirm `homebrew.yml` starts and
-   succeeds (`gh run list --workflow=homebrew.yml`).
+   already filled in from `CHANGELOG.md`. Review the draft. The real tag is a
+   fresh build, so the rc check in step 4 does not cover this dmg. Check
+   notarization again on the draft's own dmg:
+   `gh release download vX --repo akhayam99/goodboy --pattern 'Goodboy_X_universal.dmg'`,
+   `hdiutil attach`, copy `Goodboy.app` out, run `spctl -a -vvv` and
+   `codesign -dv --verbose=4` against the copy with the same expectations as
+   step 4, then detach. Any failure stops the release here, still a draft.
+   Then publish it: `gh release edit vX --draft=false`. Confirm `homebrew.yml`
+   starts and succeeds (`gh run list --workflow=homebrew.yml`). Compare
+   `shasum -a 256` of the checked dmg with the `sha256` in
+   `akhayam99/homebrew-tap` `Casks/goodboy.rb`. They must match, or the cask
+   points at a file nobody checked.

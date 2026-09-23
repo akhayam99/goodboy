@@ -65,8 +65,11 @@ run that can fail in a place you can throw away. Rc tags and their draft
 pre-releases are the only release artifacts you may delete.
 
 An rc is verified when Gatekeeper accepts the app from a normal double-click
-and `spctl` reports `accepted, source=Notarized Developer ID`. What to run and
-when is in [release-command.md](release-command.md) step 4.
+and `spctl` reports `accepted, source=Notarized Developer ID`. The rc proves
+the pipeline, not the file you ship. The real tag builds the dmg again, so the
+same check runs on the draft's own dmg before it is published, and the cask
+sha is compared with that checked file. What to run and when is in
+[release-command.md](release-command.md) steps 4 and 6.
 
 ## Signing and notarization
 
