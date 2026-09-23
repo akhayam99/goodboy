@@ -4,7 +4,7 @@ import { cancelRunningSteps } from './cancelRunningSteps';
 import { requestDecisionRestart } from './decisionRestart';
 import { findWorkflowRun } from './findWorkflowRun';
 import type { GetFn, SetFn } from './types';
-import { writeOrchestratorHints } from './writeOrchestratorHints';
+import { updateOrchestratorHints } from './updateOrchestratorHints';
 
 export type OrchestratorHintDelivery = 'queue' | 'now';
 
@@ -52,11 +52,12 @@ export const addWorkflowOrchestratorHint = (set: SetFn, get: GetFn) => {
       text,
       createdAt: new Date().toISOString() as IsoDateTime,
     };
-    await writeOrchestratorHints({
+    await updateOrchestratorHints({
       set,
+      get,
       sessionId,
       workflowRunId,
-      hints: [...(run.orchestratorHints ?? []), hint],
+      update: (hints) => [...hints, hint],
     });
     if (draft.delivery === 'queue' || run.executionMode !== 'dynamic' || run.discardedAt != null) {
       return;

@@ -173,6 +173,28 @@ describe('orchestrator hint actions', () => {
     expect(hintsOf(state)[0]?.consumedAt).toBeUndefined();
   });
 
+  it('keeps both hints when two are sent at the same time', async () => {
+    const state = baseState({});
+    const { set, get } = harness(state);
+    updateHintsSpy.mockImplementation(
+      () => new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), 5)),
+    );
+
+    await Promise.all([
+      addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
+        text: 'first',
+        delivery: 'queue',
+      }),
+      addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
+        text: 'second',
+        delivery: 'queue',
+      }),
+    ]);
+
+    expect(hintsOf(state).map((hint) => hint.text)).toEqual(['first', 'second']);
+    updateHintsSpy.mockImplementation(async () => undefined);
+  });
+
   it('ignores a blank hint', async () => {
     const state = baseState({});
     const { set, get } = harness(state);

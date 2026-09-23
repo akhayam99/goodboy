@@ -1801,6 +1801,29 @@ describe('orchestrateNextStep', () => {
     );
   });
 
+  it('does not add the step when read now lands after the decision came back', async () => {
+    const state = baseState();
+    const { set, get } = harness(state);
+    decideSpy.mockResolvedValueOnce({
+      decision: {
+        action: 'next',
+        reason: 'Keep going.',
+        step: { name: 'Implement', role: 'implementer', promptPrefix: 'Implement it.' },
+        runSummary: { kind: 'structured', done: ['mapped'], left: ['implement'] },
+      },
+      usage: BILLED_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    updateSummarySpy.mockImplementationOnce(async () => {
+      requestDecisionRestart({ workflowRunId: WORKFLOW_RUN_ID });
+    });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
+    expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
+  });
+
   it('keeps a decision when a hint is only queued while it is in flight', async () => {
     const state = baseState();
     const { set, get } = harness(state);

@@ -64,10 +64,9 @@ import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { buildProfileGuard } from '../../profileGuard';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
-import { findWorkflowRun } from './findWorkflowRun';
 import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';
 import { decisionRestartMark } from './decisionRestart';
-import { writeOrchestratorHints } from './writeOrchestratorHints';
+import { updateOrchestratorHints } from './updateOrchestratorHints';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import { recordOrchestratorUsage } from './recordOrchestratorUsage';
 import { findWorkflowActivationBlock } from './workflowActivationGate';
@@ -735,7 +734,8 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         );
         return;
       }
-      if (isDecisionDiscarded()) {
+      const decisionUsage = result;
+      const discardWithUsage = async (): Promise<void> => {
         await recordOrchestratorUsage({
           set,
           get,
@@ -743,23 +743,28 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           agentId: null,
           workflowRunId,
           provider: routing.providerId,
-          model: result.model,
-          usage: result.usage,
+          model: decisionUsage.model,
+          usage: decisionUsage.usage,
         });
+      };
+      if (isDecisionDiscarded()) {
+        await discardWithUsage();
         return;
       }
       await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
       if (readHintIds.size > 0) {
-        await writeOrchestratorHints({
+        await updateOrchestratorHints({
           set,
+          get,
           sessionId,
           workflowRunId,
-          hints: consumeOrchestratorHints({
-            hints: findWorkflowRun({ get, sessionId, workflowRunId })?.orchestratorHints ?? [],
-            readIds: readHintIds,
-            consumedAt: new Date().toISOString() as IsoDateTime,
-            step: workflow.steps.length + 1,
-          }),
+          update: (hints) =>
+            consumeOrchestratorHints({
+              hints,
+              readIds: readHintIds,
+              consumedAt: new Date().toISOString() as IsoDateTime,
+              step: workflow.steps.length + 1,
+            }),
         });
       }
       try {
@@ -837,6 +842,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         const routingDecision = resolution.decision;
         const selected = routingDecision.selected;
         const reason = decision.reason.trim();
+        if (isDecisionDiscarded()) {
+          await discardWithUsage();
+          return;
+        }
         const agent = await appendStep({
           set,
           get,
@@ -890,6 +899,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           focus: 'announce',
           bypassGate: true,
         });
+        return;
+      }
+      if (isDecisionDiscarded()) {
+        await discardWithUsage();
         return;
       }
       await persistOrchestrationOutcome({
