@@ -44,7 +44,7 @@ export const MoreStudiosPopover = ({ activeStudio, openers }: Props) => {
               'flex items-center gap-1.5 rounded-md px-2 py-1 text-2xs font-medium transition-colors',
               holdsActiveStudio || dropdown.open
                 ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                : 'text-muted-foreground hover:bg-hover hover:text-foreground',
             )}
           >
             <CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />
@@ -64,7 +64,7 @@ export const MoreStudiosPopover = ({ activeStudio, openers }: Props) => {
                 onClick={() => select(entry.id)}
                 aria-label={entry.title}
                 className={cn(
-                  'flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-muted/50',
+                  'flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-hover',
                   isActive && 'bg-muted',
                 )}
               >

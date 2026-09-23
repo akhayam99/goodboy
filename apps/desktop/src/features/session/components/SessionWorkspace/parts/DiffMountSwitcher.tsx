@@ -50,7 +50,7 @@ export const DiffMountSwitcher = ({
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                   isSelected
                     ? 'bg-elevated font-semibold text-foreground ring-1 ring-inset ring-border'
-                    : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
+                    : 'text-muted-foreground hover:bg-hover hover:text-foreground',
                   !isSelected && hasChanges && 'text-foreground',
                 )}
               >

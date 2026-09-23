@@ -120,7 +120,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose, eyebrow }: Pr
                 type="button"
                 onClick={() => setDeleteAllArmed(false)}
                 disabled={deletingAll}
-                className="inline-flex items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Cancel
               </button>
@@ -130,7 +130,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose, eyebrow }: Pr
               type="button"
               onClick={() => setDeleteAllArmed(true)}
               disabled={versions.length === 0 || loading}
-              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Trash2 size={ICON_SIZE.row} aria-hidden />
               Delete all
@@ -176,7 +176,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose, eyebrow }: Pr
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+              className="inline-flex rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-hover"
             >
               Close
             </button>

@@ -104,7 +104,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
           })}
           hasPopup="dialog"
           expanded={open}
-          className="gap-1.5 bg-subtle px-2.5 py-0.5 hover:bg-muted hover:opacity-100"
+          className="gap-1.5 bg-subtle px-2.5 py-0.5 hover:bg-hover hover:opacity-100"
           icon={<StatusDot tone={current.tone} size="sm" />}
           label={<span className={cn(current.text)}>{current.label}</span>}
           trailing={<ChevronDown size={11} aria-hidden className="text-faint-foreground" />}
@@ -124,7 +124,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
             type="button"
             onClick={() => onPick(m.value)}
             className={cn(
-              'flex w-full items-start gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-muted',
+              'flex w-full items-start gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-hover',
               active ? '' : 'opacity-80',
             )}
           >

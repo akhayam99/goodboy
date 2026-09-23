@@ -19,7 +19,7 @@ export const DelegateWaitingRow = ({ onOpen, onTakeBack }: Props) => (
         'group flex min-w-0 flex-1 items-center gap-2 rounded-md border border-border-soft px-2 py-1.5',
         'text-left text-sm font-medium text-muted-foreground',
         'transition-[color,background-color,border-color] duration-150',
-        'enabled:hover:border-border enabled:hover:bg-muted/40 enabled:hover:text-foreground',
+        'enabled:hover:border-border enabled:hover:bg-hover enabled:hover:text-foreground',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
       )}
     >
@@ -43,7 +43,7 @@ export const DelegateWaitingRow = ({ onOpen, onTakeBack }: Props) => (
         className={cn(
           'shrink-0 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground',
           'transition-[color,background-color] duration-150',
-          'hover:bg-muted hover:text-foreground',
+          'hover:bg-hover hover:text-foreground',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         )}
       >

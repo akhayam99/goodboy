@@ -90,7 +90,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
                 onClick={() => setEditing('title')}
                 title="Edit title"
                 aria-label="Edit title"
-                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-3xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-3xs font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <Pencil size={11} aria-hidden />
                 Edit
@@ -124,7 +124,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
           <button
             type="button"
             onClick={() => setEditing('title')}
-            className="w-full cursor-text rounded-md border border-transparent px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-border-soft hover:bg-muted/20"
+            className="w-full cursor-text rounded-md border border-transparent px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-border-soft hover:bg-hover"
           >
             {pr.title}
           </button>
@@ -144,7 +144,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
               <button
                 type="button"
                 onClick={() => setEditing('body')}
-                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-3xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-3xs font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <Pencil size={11} aria-hidden />
                 Edit
@@ -176,7 +176,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
         ) : pr.body.trim() !== '' ? (
           <div
             onClick={onDescClick}
-            className="cursor-text rounded-md border border-transparent px-3 py-2 transition-colors hover:border-border-soft hover:bg-muted/20"
+            className="cursor-text rounded-md border border-transparent px-3 py-2 transition-colors hover:border-border-soft hover:bg-hover"
           >
             <Markdown text={pr.body} className="text-sm leading-relaxed" />
           </div>

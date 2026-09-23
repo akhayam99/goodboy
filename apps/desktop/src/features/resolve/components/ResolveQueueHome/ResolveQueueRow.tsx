@@ -76,7 +76,7 @@ export const ResolveQueueRow = ({
         onClick={onOpen}
         onKeyDown={onKeyDown}
         className={cn(
-          'group/resolve-row grid cursor-pointer grid-cols-[minmax(0,1fr)_auto_auto] grid-rows-[auto_auto] gap-x-4 gap-y-2 rounded-md px-3 py-2 text-left text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring data-[selected=true]:bg-muted data-[selected=true]:font-medium data-[selected=true]:text-foreground',
+          'group/resolve-row grid cursor-pointer grid-cols-[minmax(0,1fr)_auto_auto] grid-rows-[auto_auto] gap-x-4 gap-y-2 rounded-md px-3 py-2 text-left text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring data-[selected=true]:bg-muted data-[selected=true]:font-medium data-[selected=true]:text-foreground',
           status === 'working' && 'spin-border spin-border-info',
         )}
       >

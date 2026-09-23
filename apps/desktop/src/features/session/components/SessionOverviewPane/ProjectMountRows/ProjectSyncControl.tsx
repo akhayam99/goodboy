@@ -138,7 +138,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
           disabled={!rebase.canRebase || rebase.isRunning}
           onClick={() => void rebase.run({ mountId })}
           className={cn(
-            'flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/40',
+            'flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-hover',
             (!rebase.canRebase || rebase.isRunning) && 'opacity-40',
           )}
         >
@@ -150,7 +150,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
           disabled={!canPush || push.isBusy}
           onClick={() => void push.run()}
           className={cn(
-            'flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/40',
+            'flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-hover',
             (!canPush || push.isBusy) && 'opacity-40',
           )}
         >

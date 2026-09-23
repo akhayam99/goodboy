@@ -250,7 +250,7 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
 
   return (
     <li className="flex flex-col gap-1">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] gap-x-2 rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] gap-x-2 rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground">
         <button
           type="button"
           onClick={onEdit}

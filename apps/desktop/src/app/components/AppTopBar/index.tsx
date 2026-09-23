@@ -45,7 +45,7 @@ export const AppTopBar = ({ onOpenSpend }: Props) => {
                 type="button"
                 onClick={toggleTheme}
                 aria-label={themeActionLabel}
-                className="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                className="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 {theme === 'dark' ? (
                   <Moon size={ICON_SIZE.control} aria-hidden />

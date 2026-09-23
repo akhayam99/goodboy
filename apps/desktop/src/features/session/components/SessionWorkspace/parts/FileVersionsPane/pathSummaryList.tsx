@@ -32,7 +32,7 @@ export const PathSummaryList = ({ groups, selectedPath, loading, onSelectPath }:
               'flex w-full flex-col gap-1 rounded-lg border border-border-soft bg-background px-3 py-2 text-left transition-colors',
               selectedPath === group.relativePath
                 ? tokenCn(tokenTintClasses('primary').border, tokenTintClasses('primary').bgSoft)
-                : 'hover:bg-muted/40',
+                : 'hover:bg-hover',
             )}
           >
             <span className="truncate font-mono text-xs text-foreground">{group.relativePath}</span>

@@ -368,7 +368,7 @@ export const OnboardingWizard = () => {
             <button
               type="button"
               onClick={dismiss}
-              className="rounded-md px-2 py-1 text-xs font-medium text-faint-foreground transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className="rounded-md px-2 py-1 text-xs font-medium text-faint-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               Skip setup
             </button>

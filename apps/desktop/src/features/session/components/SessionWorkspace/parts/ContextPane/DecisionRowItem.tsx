@@ -52,7 +52,7 @@ export const DecisionRowItem = ({ text, position, isLocked, onCommit, onDelete }
       <div
         className={cn(
           'group/decision-row flex items-center gap-2 rounded-lg bg-muted/30 px-3 py-2 motion-safe:transition-colors',
-          isLocked ? '' : 'hover:bg-muted/50',
+          isLocked ? '' : 'hover:bg-hover',
         )}
       >
         <button

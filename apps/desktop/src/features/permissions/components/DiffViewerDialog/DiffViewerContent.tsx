@@ -805,7 +805,7 @@ export const DiffViewerContent = ({
                       title={
                         rebase.isRunning ? 'Rebase agent is still running' : 'Rebase onto main'
                       }
-                      className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-2xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-2xs font-medium text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <GitBranch size={11} aria-hidden />
                       Rebase

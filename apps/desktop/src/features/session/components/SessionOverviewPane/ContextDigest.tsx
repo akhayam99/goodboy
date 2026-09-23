@@ -38,7 +38,7 @@ const DigestRow = ({ icon: Icon, label, entry, empty, unit, shortcut, onOpen }: 
       title={tooltip}
       className={cn(
         'flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-left motion-safe:transition-colors',
-        'hover:bg-foreground/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+        'hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
       )}
     >
       <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />

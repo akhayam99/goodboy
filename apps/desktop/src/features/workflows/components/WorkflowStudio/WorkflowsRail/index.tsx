@@ -43,7 +43,7 @@ export const WorkflowsRail = ({
               type="button"
               onClick={onNew}
               aria-label="New workflow"
-              className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
+              className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground transition-colors hover:border-border hover:bg-hover hover:text-foreground"
             >
               <Plus size={11} aria-hidden /> New
             </button>
@@ -113,7 +113,7 @@ export const WorkflowsRail = ({
                 onClick={() => setConfirmReset(false)}
                 disabled={resetting}
                 aria-label="Cancel restore defaults"
-                className="rounded-md p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
+                className="rounded-md p-0.5 text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:opacity-50"
               >
                 <X size={ICON_SIZE.row} aria-hidden />
               </button>
@@ -126,7 +126,7 @@ export const WorkflowsRail = ({
             className={cn(
               'inline-flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5',
               'text-2xs font-medium text-faint-foreground transition-colors',
-              'hover:bg-muted/40 hover:text-foreground',
+              'hover:bg-hover hover:text-foreground',
             )}
           >
             <RotateCcw size={11} aria-hidden /> Restore defaults

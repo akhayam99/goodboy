@@ -281,7 +281,7 @@ export const RoleModelRow = ({
                   disabled={disabled}
                   onClick={() => setIsChoosingFallback(true)}
                   aria-label={`${label} fallback: automatic`}
-                  className="rounded-full px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-full px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {AUTOMATIC_FALLBACK_SUMMARY}
                 </button>

@@ -136,7 +136,7 @@ export const SegmentedTabs = <T extends string>({
                     'bg-elevated font-semibold text-foreground ring-1 ring-inset',
                     option.accent != null || tone == null ? 'ring-border' : tone.ring,
                   )
-                : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
+                : 'text-muted-foreground hover:bg-hover hover:text-foreground',
               option.disabled === true &&
                 'cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground',
             )}

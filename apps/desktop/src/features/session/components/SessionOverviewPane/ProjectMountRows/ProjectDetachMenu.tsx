@@ -421,7 +421,7 @@ export const ProjectDetachMenu = ({
               type="button"
               role="menuitem"
               onClick={() => setConfirming('unmount')}
-              className="flex w-full items-center px-2.5 py-1.5 text-left motion-safe:transition-colors hover:bg-muted/40"
+              className="flex w-full items-center px-2.5 py-1.5 text-left motion-safe:transition-colors hover:bg-hover"
             >
               Unmount branch
             </button>
@@ -430,7 +430,7 @@ export const ProjectDetachMenu = ({
               type="button"
               role="menuitem"
               onClick={() => setConfirming('forget')}
-              className="flex w-full items-center px-2.5 py-1.5 text-left motion-safe:transition-colors hover:bg-muted/40"
+              className="flex w-full items-center px-2.5 py-1.5 text-left motion-safe:transition-colors hover:bg-hover"
             >
               Remove from session
             </button>

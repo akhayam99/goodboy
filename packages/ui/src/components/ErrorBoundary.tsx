@@ -116,7 +116,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <button
               type="button"
               onClick={this.reload}
-              className="rounded border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+              className="rounded border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-hover"
             >
               Reload
             </button>
@@ -125,7 +125,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 type="button"
                 onClick={this.report}
                 aria-label="Report this on GitHub"
-                className="inline-flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+                className="inline-flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-hover"
               >
                 Report this
                 <ExternalLink size={11} aria-hidden />

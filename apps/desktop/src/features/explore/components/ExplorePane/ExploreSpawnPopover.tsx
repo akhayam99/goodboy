@@ -112,7 +112,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
           type="button"
           onClick={toggle}
           aria-label={`Ask an agent to work on ${entry.name}`}
-          className="rounded-md p-1.5 text-faint-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+          className="rounded-md p-1.5 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
         >
           <CONCEPT_ICONS.agents size={ICON_SIZE.control} aria-hidden />
         </button>

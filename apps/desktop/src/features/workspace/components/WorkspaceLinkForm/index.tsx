@@ -474,7 +474,7 @@ export const WorkspaceLinkForm = ({
                       aria-label={`Unlink ${project.name}`}
                       disabled={busy}
                       onClick={() => void removeProject({ projectId: project.id })}
-                      className="rounded-md p-1 text-faint-foreground hover:bg-foreground/5 hover:text-foreground"
+                      className="rounded-md p-1 text-faint-foreground hover:bg-hover hover:text-foreground"
                     >
                       <X size={ICON_SIZE.control} aria-hidden />
                     </button>

@@ -57,7 +57,7 @@ export const IntegrationAddPopover = ({ members, enabled, openers, isEmpty, acti
               'flex items-center gap-1.5 rounded-md px-2 py-1 text-2xs font-medium transition-colors',
               active
                 ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                : 'text-muted-foreground hover:bg-hover hover:text-foreground',
             )}
           >
             <Plus size={ICON_SIZE.row} aria-hidden />

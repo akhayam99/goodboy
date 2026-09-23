@@ -62,7 +62,7 @@ export const ClusterChildRow = ({
         hasUnread && !isSelected && tokenCn(tokenTintClasses('warning').border),
         isSelected
           ? 'bg-elevated text-foreground'
-          : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+          : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >
       <span className="tabular-nums text-faint-foreground">

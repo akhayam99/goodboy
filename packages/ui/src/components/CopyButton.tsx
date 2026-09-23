@@ -38,7 +38,7 @@ export const CopyButton = ({
         aria-label={presentation === 'text' ? `copy ${label === 'Copy' ? 'text' : label}` : label}
         className={cn(
           'inline-flex shrink-0 items-center rounded-md p-1 transition-colors',
-          state === 'idle' && 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+          state === 'idle' && 'text-muted-foreground hover:bg-hover hover:text-foreground',
           state === 'copied' && 'text-success',
           state === 'failed' && 'text-danger',
           className,

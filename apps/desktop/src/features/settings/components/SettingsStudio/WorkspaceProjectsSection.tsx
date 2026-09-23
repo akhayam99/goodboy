@@ -194,7 +194,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
                     aria-label={`Disconnect ${project.name}`}
                     disabled={busy}
                     onClick={() => void onUnlink(project.id, project.name)}
-                    className="rounded-md p-1 text-faint-foreground hover:bg-foreground/5 hover:text-foreground"
+                    className="rounded-md p-1 text-faint-foreground hover:bg-hover hover:text-foreground"
                   >
                     <X size={ICON_SIZE.control} aria-hidden />
                   </button>

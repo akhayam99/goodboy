@@ -26,7 +26,7 @@ export const NeedsYouSessionRow = ({ session, onSelect }: Props) => {
         type="button"
         onClick={() => onSelect({ sessionId: session.id as SessionId })}
         title={`${stripInlineMarkdown({ text: session.goal })} · ${reason}`}
-        className="flex w-full items-start gap-2 px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
+        className="flex w-full items-start gap-2 px-3 py-2.5 text-left transition-colors hover:bg-hover"
       >
         <Icon
           size={ICON_SIZE.control}

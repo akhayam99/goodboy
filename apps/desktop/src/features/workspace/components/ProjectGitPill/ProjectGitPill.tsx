@@ -39,8 +39,8 @@ export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props
           className={cn(
             'relative inline-flex h-7 min-w-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             actionableCount > 0 || isWarning
-              ? 'text-foreground hover:bg-muted/60'
-              : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
+              ? 'text-foreground hover:bg-hover'
+              : 'text-muted-foreground hover:bg-hover hover:text-foreground',
           )}
         >
           <GitBranch size={ICON_SIZE.row} aria-hidden className="shrink-0" />

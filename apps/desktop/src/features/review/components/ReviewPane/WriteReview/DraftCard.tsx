@@ -65,7 +65,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
             type="button"
             onClick={onDiscard}
             aria-label={`Discard draft on ${draft.path}:${draft.line}`}
-            className="flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-danger"
+            className="flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-hover hover:text-danger"
           >
             <Trash2 size={11} aria-hidden />
           </button>
@@ -104,7 +104,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
           type="button"
           onClick={startEditing}
           title="Edit draft"
-          className="whitespace-pre-wrap rounded-sm text-left text-xs leading-relaxed text-foreground transition-colors hover:bg-muted/40"
+          className="whitespace-pre-wrap rounded-sm text-left text-xs leading-relaxed text-foreground transition-colors hover:bg-hover"
         >
           {draft.body}
         </button>

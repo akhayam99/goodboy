@@ -51,7 +51,7 @@ export const SpendBar = ({ label, valueLabel, pct, metaLabel, icon, onClick }: P
       onClick={onClick}
       className={cn(
         'flex flex-col gap-1.5 rounded-md px-2 py-1.5 text-left transition-colors',
-        'hover:bg-muted/40',
+        'hover:bg-hover',
       )}
     >
       {body}

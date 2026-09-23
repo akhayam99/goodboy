@@ -171,7 +171,7 @@ export const CreateAgentPopover = ({
               aria-expanded={isRoutingOpen}
               aria-controls={ROUTING_PANEL_ID}
               aria-label={`${AGENT_FORM_GRAMMAR.routing.ariaLabel}: ${routingSummary}`}
-              className="flex w-full items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1.5 text-left text-xs text-foreground motion-safe:transition-colors hover:border-border hover:bg-muted/50"
+              className="flex w-full items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1.5 text-left text-xs text-foreground motion-safe:transition-colors hover:border-border hover:bg-hover"
             >
               <span className="min-w-0 flex-1 truncate">{routingSummary}</span>
               <ChevronDown

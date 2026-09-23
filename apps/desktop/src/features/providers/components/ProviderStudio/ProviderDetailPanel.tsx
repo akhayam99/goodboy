@@ -88,7 +88,7 @@ function Detail({
           aria-label="Re-detect CLIs"
           disabled={refreshing}
           onClick={() => void onRefresh()}
-          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-hover hover:text-foreground disabled:opacity-50"
         >
           <RotateCw size={ICON_SIZE.control} aria-hidden />
         </button>
@@ -188,7 +188,7 @@ function ConnectedAccount({
         <button
           type="button"
           onClick={onReauth}
-          className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
         >
           Re-authenticate
         </button>

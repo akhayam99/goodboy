@@ -18,7 +18,7 @@ export const ShowMoreBar = ({ step, rendered, total, onShowMore }: Props) => {
         <button
           type="button"
           onClick={onShowMore}
-          className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-3 py-1 text-xs font-medium text-foreground hover:bg-muted"
+          className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-3 py-1 text-xs font-medium text-foreground hover:bg-hover"
         >
           <ChevronsDown size={ICON_SIZE.row} aria-hidden />
           Show {formatInteger(step)} more lines

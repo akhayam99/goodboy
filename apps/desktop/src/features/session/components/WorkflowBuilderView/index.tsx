@@ -970,7 +970,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           onClick={onUndoGoal}
                           disabled={blocked || polishing}
                           aria-label="Undo goal change"
-                          className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <Undo2 size={10} aria-hidden /> Undo
                         </button>
@@ -981,7 +981,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         disabled={blocked || polishing || goalText.trim().length === 0}
                         aria-label="Polish goal"
                         className={cn(
-                          'inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
+                          'inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
                           polishing && 'animate-border-pulse',
                         )}
                       >
@@ -1028,7 +1028,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       'inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2 py-0.5 text-2xs transition-colors',
                       blocked
                         ? 'cursor-not-allowed text-muted-foreground'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                        : 'text-muted-foreground hover:bg-hover hover:text-foreground',
                     )}
                   >
                     <Paperclip size={11} aria-hidden /> Add files
@@ -1129,7 +1129,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 'flex items-center gap-1 rounded-lg border border-l-2 pr-1.5 transition-colors',
                                 selected
                                   ? 'border-l-primary border-border-soft bg-subtle'
-                                  : 'border-l-transparent border-border-soft hover:border-border hover:bg-muted/40',
+                                  : 'border-l-transparent border-border-soft hover:border-border hover:bg-hover',
                               )}
                             >
                               <button
@@ -1199,7 +1199,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                       type="button"
                                       onClick={() => setConfirmDeleteId(null)}
                                       aria-label="Cancel delete"
-                                      className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                                      className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
                                     >
                                       <X size={ICON_SIZE.row} aria-hidden />
                                     </button>
@@ -1333,7 +1333,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                               type="button"
                               onClick={onRedesign}
                               disabled={blocked}
-                              className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <CONCEPT_ICONS.enhance size={10} aria-hidden /> Re-design
                             </button>
@@ -1466,7 +1466,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           type="button"
                           onClick={addStep}
                           disabled={blocked}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-md border border-dashed border-border-soft px-2.5 py-1.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-md border border-dashed border-border-soft px-2.5 py-1.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <Plus size={11} aria-hidden /> Add step
                         </button>

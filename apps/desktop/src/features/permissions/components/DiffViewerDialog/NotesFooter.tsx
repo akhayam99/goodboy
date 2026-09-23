@@ -24,7 +24,7 @@ export const NotesFooter = ({ openCount, spawning, routing, onPropose }: Props) 
             onClick={onPropose}
             disabled={spawning}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50',
+              'inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-hover disabled:opacity-50',
               spawning && 'animate-border-pulse',
             )}
             title="Spawn a reviewer agent that proposes fixes without touching code"

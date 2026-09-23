@@ -25,7 +25,7 @@ export const ChecklistBody = ({ progress }: Props) => {
             type="button"
             onClick={() => collapse()}
             aria-label="Hide onboarding checklist"
-            className="rounded-md p-0.5 text-faint-foreground motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
+            className="rounded-md p-0.5 text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
           >
             <X size={11} aria-hidden />
           </button>

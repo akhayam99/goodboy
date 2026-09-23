@@ -49,7 +49,7 @@ export const ReleaseToast = ({ onOpenChangelog }: Props) => {
             setDismissed(true);
             onOpenChangelog();
           }}
-          className="mt-1.5 rounded px-1.5 py-0.5 text-2xs font-medium text-foreground ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
+          className="mt-1.5 rounded px-1.5 py-0.5 text-2xs font-medium text-foreground ring-1 ring-inset ring-foreground/20 hover:bg-hover hover:text-foreground"
         >
           Read the changelog
         </button>
@@ -59,7 +59,7 @@ export const ReleaseToast = ({ onOpenChangelog }: Props) => {
           type="button"
           aria-label="Dismiss release notice"
           onClick={() => setDismissed(true)}
-          className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-faint-foreground hover:bg-muted hover:text-foreground"
+          className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-faint-foreground hover:bg-hover hover:text-foreground"
         >
           <X size={ICON_SIZE.row} aria-hidden />
         </button>

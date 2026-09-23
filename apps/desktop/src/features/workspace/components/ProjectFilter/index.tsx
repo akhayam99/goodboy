@@ -142,7 +142,7 @@ export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
           <button
             type="button"
             onClick={() => setSelectedProjectIds({ workspaceId, selectedProjectIds: [] })}
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground hover:bg-hover hover:text-foreground"
           >
             <X size={10} aria-hidden />
             Clear

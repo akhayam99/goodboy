@@ -91,7 +91,7 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdopti
                   type="button"
                   disabled={linkingKey != null}
                   onClick={() => void pickIssue({ candidate: row })}
-                  className="group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left motion-safe:transition-colors hover:bg-muted/60 disabled:opacity-60"
+                  className="group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left motion-safe:transition-colors hover:bg-hover disabled:opacity-60"
                 >
                   <IntegrationGlyph provider={row.provider} size="xs" />
                   <span className="shrink-0 font-mono text-2xs text-muted-foreground">

@@ -36,7 +36,7 @@ const ROLE_TONE: Record<ConfirmRole, Tone> = {
 };
 
 const SECONDARY_BUTTON =
-  'inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 
 const ROLE_CONFIRM: Record<ConfirmRole, string> = {
   primary: 'bg-primary text-on-tone',

@@ -78,7 +78,7 @@ export const StatCard = ({
       <button
         type="button"
         onClick={onClick}
-        className={cn(shell, 'text-left motion-safe:transition-colors hover:bg-muted/40')}
+        className={cn(shell, 'text-left motion-safe:transition-colors hover:bg-hover')}
       >
         {body}
       </button>

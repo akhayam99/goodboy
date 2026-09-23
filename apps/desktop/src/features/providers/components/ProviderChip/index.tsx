@@ -35,7 +35,7 @@ export const ProviderChip = ({
         'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs motion-safe:transition-colors',
         selected
           ? tokenCn(tokenTintClasses('primary').bg, 'font-medium text-primary')
-          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+          : 'text-muted-foreground hover:bg-hover hover:text-foreground',
         disabled && 'cursor-not-allowed opacity-60',
       )}
     >

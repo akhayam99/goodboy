@@ -35,7 +35,7 @@ export const FooterButton = ({
           ? 'bg-muted text-foreground'
           : pulse
             ? tokenCn('text-info motion-safe:animate-soft-pulse', tokenTintClasses('info').hoverBg)
-            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+            : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >
       <span className={cn('flex items-center', active && tintClasses(tone).icon)}>{icon}</span>

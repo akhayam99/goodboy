@@ -74,7 +74,7 @@ export const OverflowMenu = ({
               'shrink-0 rounded p-1 motion-safe:transition-colors',
               disabled
                 ? 'cursor-not-allowed text-faint-foreground'
-                : 'text-faint-foreground hover:bg-foreground/10 hover:text-foreground',
+                : 'text-faint-foreground hover:bg-hover hover:text-foreground',
               dropdown.open && 'bg-foreground/10 text-foreground',
               triggerClassName,
             )}
@@ -125,7 +125,7 @@ export const OverflowMenu = ({
                 ? 'cursor-not-allowed text-muted-foreground'
                 : item.destructive
                   ? cn(dangerTint.text, dangerTint.hoverBg, dangerTint.hoverText)
-                  : 'text-foreground hover:bg-muted hover:text-foreground',
+                  : 'text-foreground hover:bg-hover hover:text-foreground',
             )}
           >
             {Icon ? (

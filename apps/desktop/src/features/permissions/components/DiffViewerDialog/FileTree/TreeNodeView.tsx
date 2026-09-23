@@ -39,7 +39,7 @@ export const TreeNodeView = ({
           'group relative flex w-full items-center gap-2 py-1 pr-1 font-mono text-xs transition-colors',
           isSelected
             ? 'border-l-2 border-primary bg-muted/60 text-foreground'
-            : 'border-l-2 border-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground',
+            : 'border-l-2 border-transparent text-muted-foreground hover:bg-hover hover:text-foreground',
           reviewState === 'reviewed' && !isSelected && 'opacity-50',
         )}
         style={{ paddingLeft: 10 + indent }}
@@ -95,7 +95,7 @@ export const TreeNodeView = ({
           label="copy file path"
           size={10}
           className={cn(
-            'shrink-0 rounded-md p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground',
+            'shrink-0 rounded-md p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-hover hover:text-foreground',
             'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             'group-hover:opacity-100 motion-reduce:opacity-60',
           )}

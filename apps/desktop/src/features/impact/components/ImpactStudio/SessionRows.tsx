@@ -29,7 +29,7 @@ export const SessionRows = ({ sessions, valueLabel, formatValue, onOpenSession }
           key={session.sessionId}
           type="button"
           onClick={() => onOpenSession(session.sessionId)}
-          className="flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted/60"
+          className="flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-hover"
         >
           <InlineMarkdown text={session.goal} className="min-w-0 flex-1 truncate text-foreground" />
           <span className="shrink-0 font-mono tabular-nums text-muted-foreground">

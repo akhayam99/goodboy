@@ -74,7 +74,7 @@ export const SuggestionActionButton = ({ action, appearance }: Props) => {
             type="button"
             role="menuitem"
             onClick={() => choose({ choice, close: dropdown.close })}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-foreground motion-safe:transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-foreground motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             <span className="flex min-w-0 flex-1 items-baseline gap-2">
               <span className="truncate text-xs font-medium">{choice.label}</span>

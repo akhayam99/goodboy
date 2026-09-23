@@ -43,7 +43,7 @@ export const AnswerOptionRow = ({
               tokenTintClasses('primary').bg,
               'text-primary',
             )
-          : 'border-border-soft bg-transparent text-foreground hover:border-border hover:bg-muted/40',
+          : 'border-border-soft bg-transparent text-foreground hover:border-border hover:bg-hover',
       )}
     >
       <span className="flex min-w-0 items-start gap-2">

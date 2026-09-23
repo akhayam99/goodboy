@@ -42,7 +42,7 @@ export const ShortcutsSection = ({ initiallyExpanded }: Props) => {
             aria-expanded={isExpanded}
             aria-controls="keyboard-shortcuts-list"
             aria-label={isExpanded ? 'Collapse keyboard shortcuts' : 'Expand keyboard shortcuts'}
-            className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
+            className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
           >
             <span className="rounded-full bg-muted px-2 py-0.5">
               {SHORTCUT_IDS.length} shortcuts

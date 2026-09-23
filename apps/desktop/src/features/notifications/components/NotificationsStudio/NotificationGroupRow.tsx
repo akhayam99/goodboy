@@ -50,7 +50,7 @@ export const NotificationGroupRow = ({
                 onClick={() => setIsExpanded((value) => !value)}
                 aria-label={isExpanded ? 'Collapse notifications' : 'Expand notifications'}
                 aria-expanded={isExpanded}
-                className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-hover hover:text-foreground"
               >
                 <ChevronRight
                   size={ICON_SIZE.row}
@@ -105,7 +105,7 @@ export const NotificationGroupRow = ({
               <button
                 type="button"
                 onClick={onAction}
-                className="rounded px-1.5 py-1 text-2xs hover:bg-muted"
+                className="rounded px-1.5 py-1 text-2xs hover:bg-hover"
               >
                 {actionLabel}
               </button>
@@ -116,7 +116,7 @@ export const NotificationGroupRow = ({
                   type="button"
                   onClick={onMarkRead}
                   aria-label={`Mark "${latest.title}" group as read`}
-                  className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className="rounded p-1 text-muted-foreground hover:bg-hover hover:text-foreground"
                 >
                   <Check size={ICON_SIZE.row} aria-hidden />
                 </button>

@@ -77,8 +77,8 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
             className={cn(
               'inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-2xs motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               limitUsd == null
-                ? 'text-faint-foreground hover:bg-foreground/10 hover:text-foreground'
-                : 'text-muted-foreground hover:bg-foreground/10 hover:text-foreground',
+                ? 'text-faint-foreground hover:bg-hover hover:text-foreground'
+                : 'text-muted-foreground hover:bg-hover hover:text-foreground',
             )}
           >
             <CircleDollarSign size={11} aria-hidden className="shrink-0" />

@@ -35,7 +35,7 @@ export const WriteDestinationAction = ({ sessionId, mountId, label, className }:
       title={`The next turns of this session write to ${label}.`}
       onClick={() => void apply()}
       className={cn(
-        'shrink-0 rounded-md px-1.5 py-0.5 text-3xs text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+        'shrink-0 rounded-md px-1.5 py-0.5 text-3xs text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}

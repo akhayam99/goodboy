@@ -88,7 +88,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
             >
               <Plus size={ICON_SIZE.row} aria-hidden /> Add key
             </button>
@@ -126,7 +126,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
             ) : (
               <li
                 key={c.id}
-                className="group flex items-center gap-3 rounded-lg border border-border-soft bg-muted/20 p-3 transition-colors hover:bg-muted/30"
+                className="group flex items-center gap-3 rounded-lg border border-border-soft bg-muted/20 p-3 transition-colors hover:bg-hover"
               >
                 <span
                   className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"

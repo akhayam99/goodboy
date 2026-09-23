@@ -44,7 +44,7 @@ export const GhostActionButton = ({
       className={cn(
         'inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:pointer-events-none disabled:opacity-40',
         tone === 'neutral'
-          ? 'text-muted-foreground hover:bg-foreground/10 hover:text-foreground'
+          ? 'text-muted-foreground hover:bg-hover hover:text-foreground'
           : cn(tint.text, tint.hoverBg),
         highlighted && cn(tint.bg, tint.text),
       )}

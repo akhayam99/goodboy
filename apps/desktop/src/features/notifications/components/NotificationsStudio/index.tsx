@@ -108,7 +108,7 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
                     setSeverity('all');
                     setIsUnreadOnly(false);
                   }}
-                  className="rounded-md px-2 py-1 text-xs font-medium text-foreground ring-1 ring-inset ring-border hover:bg-muted"
+                  className="rounded-md px-2 py-1 text-xs font-medium text-foreground ring-1 ring-inset ring-border hover:bg-hover"
                 >
                   Clear filters
                 </button>

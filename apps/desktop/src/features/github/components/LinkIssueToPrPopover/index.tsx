@@ -72,7 +72,7 @@ export const LinkIssueToPrPopover = ({ sessionId, prNumber, body, candidates }: 
                 disabled={pendingNumber !== null}
                 onClick={() => void handlePick(candidate)}
                 aria-label={`Link issue ${candidate.identifier} to this pull request`}
-                className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:pointer-events-none disabled:opacity-40"
+                className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:pointer-events-none disabled:opacity-40"
               >
                 <span className="shrink-0 font-mono text-xs font-semibold text-foreground">
                   {candidate.identifier}

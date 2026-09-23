@@ -88,7 +88,7 @@ const CategoryRow = ({ category, isActive, onToggle }: CategoryRowProps) => {
       onClick={() => onToggle({ toggle: category, enabled: !isActive })}
       className={cn(
         'group flex w-full items-center gap-2 px-3 py-2 text-left motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
-        isActive ? 'bg-muted/60 hover:bg-muted' : 'hover:bg-muted/40',
+        isActive ? 'bg-muted/60 hover:bg-hover' : 'hover:bg-hover',
       )}
     >
       <Icon
@@ -134,10 +134,8 @@ const ChildChip = ({ toggle, isActive, isParentActive, onToggle }: ChildChipProp
         isOn
           ? 'border-border bg-muted text-foreground'
           : 'border-border-soft bg-elevated/30 text-muted-foreground',
-        isParentActive && !isOn
-          ? 'hover:border-border hover:bg-muted/60 hover:text-foreground'
-          : '',
-        isParentActive && isOn ? 'hover:bg-muted/80' : '',
+        isParentActive && !isOn ? 'hover:border-border hover:bg-hover hover:text-foreground' : '',
+        isParentActive && isOn ? 'hover:bg-hover' : '',
       )}
     >
       <Check
@@ -212,8 +210,8 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
           className={cn(
             'inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-2xs motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             hiddenCount > 0
-              ? 'text-foreground hover:bg-muted/60'
-              : 'text-faint-foreground hover:bg-muted/60 hover:text-foreground',
+              ? 'text-foreground hover:bg-hover'
+              : 'text-faint-foreground hover:bg-hover hover:text-foreground',
           )}
         >
           <ListFilter size={ICON_SIZE.control} aria-hidden className="shrink-0" />
@@ -245,7 +243,7 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
           type="button"
           role="menuitem"
           onClick={() => onAll({ enabled: true })}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-2xs text-muted-foreground hover:bg-muted/40 hover:text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-2xs text-muted-foreground hover:bg-hover hover:text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring"
         >
           <Eye size={11} aria-hidden className="shrink-0" />
           Show all
@@ -254,7 +252,7 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
           type="button"
           role="menuitem"
           onClick={() => onAll({ enabled: false })}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-2xs text-muted-foreground hover:bg-muted/40 hover:text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-2xs text-muted-foreground hover:bg-hover hover:text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring"
         >
           <EyeOff size={11} aria-hidden className="shrink-0" />
           Hide all

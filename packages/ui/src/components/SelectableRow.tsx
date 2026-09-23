@@ -15,7 +15,7 @@ export type SelectableRowProps = {
 };
 
 const ROW_CLASSES =
-  'flex w-full rounded-md text-left text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground data-[selected=true]:bg-muted data-[selected=true]:font-medium data-[selected=true]:text-foreground data-[selected=true]:ring-1 data-[selected=true]:ring-border';
+  'flex w-full rounded-md text-left text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground data-[selected=true]:bg-muted data-[selected=true]:font-medium data-[selected=true]:text-foreground data-[selected=true]:ring-1 data-[selected=true]:ring-border';
 
 export const SelectableRow = ({
   selected,

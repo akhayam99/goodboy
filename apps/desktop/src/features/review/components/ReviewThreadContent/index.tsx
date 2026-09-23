@@ -39,7 +39,7 @@ export const ReviewThreadContent = ({ thread, onOpenUrl }: Props) => {
               type="button"
               onClick={() => onOpenUrl(head.url)}
               aria-label="Open in browser"
-              className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="rounded p-0.5 text-muted-foreground hover:bg-hover hover:text-foreground"
             >
               <ExternalLink size={ICON_SIZE.row} aria-hidden />
             </button>

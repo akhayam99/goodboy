@@ -198,7 +198,7 @@ export const WorkflowStepRow = ({
           }}
           className={cn(
             'flex items-center gap-2 px-2 py-1.5 transition-colors',
-            !isEditing && !isPendingFuture && 'cursor-pointer hover:bg-foreground/[0.04]',
+            !isEditing && !isPendingFuture && 'cursor-pointer hover:bg-hover',
           )}
         >
           <span

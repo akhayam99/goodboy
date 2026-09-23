@@ -368,7 +368,7 @@ export const FileDiffCard = ({
                       tokenTintClasses('success').bg,
                       'text-success',
                     )
-                  : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
+                  : 'border-border text-muted-foreground hover:bg-hover hover:text-foreground',
               )}
             >
               <span
@@ -394,7 +394,7 @@ export const FileDiffCard = ({
               <button
                 type="button"
                 onClick={() => setShowResolved((v) => !v)}
-                className="inline-flex items-center gap-1 rounded-sm px-1 py-0.5 text-3xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-sm px-1 py-0.5 text-3xs text-muted-foreground hover:bg-hover hover:text-foreground"
               >
                 <ChevronRight
                   size={10}
@@ -574,7 +574,7 @@ export const FileDiffCard = ({
                               'w-9 select-none border-l-2 px-1.5 text-right text-3xs tabular-nums text-faint-foreground',
                               canComment &&
                                 oldAnchor !== null &&
-                                'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
+                                'cursor-pointer transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
                               oldRangeCommented
                                 ? tokenCn(tokenTintClasses('warning').border)
                                 : line.kind === 'add'
@@ -617,7 +617,7 @@ export const FileDiffCard = ({
                               'w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-3xs tabular-nums text-faint-foreground',
                               canComment &&
                                 newAnchor !== null &&
-                                'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
+                                'cursor-pointer transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
                             )}
                           >
                             {line.newLine ?? ''}

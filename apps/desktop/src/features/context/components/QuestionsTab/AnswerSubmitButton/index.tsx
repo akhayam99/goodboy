@@ -69,7 +69,7 @@ export const AnswerSubmitButton = ({
             className={cn(
               'inline-flex items-center rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground',
               'transition-[color,background-color] duration-150',
-              'hover:bg-muted hover:text-foreground',
+              'hover:bg-hover hover:text-foreground',
               'disabled:pointer-events-none disabled:opacity-40',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             )}
@@ -84,7 +84,7 @@ export const AnswerSubmitButton = ({
             className={cn(
               'inline-flex shrink-0 items-center rounded-md border border-border px-2.5 py-1 text-2xs font-semibold text-foreground',
               'transition-[color,background-color,border-color] duration-150',
-              'hover:bg-muted active:scale-[0.98]',
+              'hover:bg-hover active:scale-[0.98]',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             )}
           >

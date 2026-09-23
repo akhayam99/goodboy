@@ -42,7 +42,7 @@ export const WorkspaceIdentityRow = () => {
             data-tauri-drag-region="false"
             aria-label={`Switch workspace: ${currentWorkspace.name}`}
             aria-expanded={dropdown.open}
-            className="group flex w-full min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-muted/50"
+            className="group flex w-full min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-hover"
             title={`${currentWorkspace.name}, ${subtitle} (${shortcutGlyphs('workspace.switcher')})`}
           >
             <span
@@ -77,7 +77,7 @@ export const WorkspaceIdentityRow = () => {
             )
           }
           aria-label="Preferences"
-          className="flex shrink-0 items-center justify-center rounded-md p-1 text-faint-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+          className="flex shrink-0 items-center justify-center rounded-md p-1 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
         >
           <SlidersHorizontal size={ICON_SIZE.row} aria-hidden />
         </button>

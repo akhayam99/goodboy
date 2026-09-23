@@ -63,7 +63,7 @@ export const TrackerStudioLinks = ({ links, connected }: Props) => {
             <button
               type="button"
               aria-label={label}
-              className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60"
+              className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-hover"
               onClick={() => {
                 if (!connected[link.provider]) {
                   openToolSettings({ tool: link.provider });

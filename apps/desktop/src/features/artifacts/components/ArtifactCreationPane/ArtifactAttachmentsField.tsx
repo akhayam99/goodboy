@@ -61,7 +61,7 @@ export const ArtifactAttachmentsField = ({
           'inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2 py-0.5 text-2xs transition-colors',
           worktree === null
             ? 'cursor-not-allowed text-muted-foreground'
-            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            : 'text-muted-foreground hover:bg-hover hover:text-foreground',
         )}
       >
         <Paperclip size={11} aria-hidden /> Add files

@@ -32,7 +32,7 @@ export const PrRequestSlot = ({ linkedRequest, isGitlab, prFetchState, onOpen }:
           type="button"
           aria-label={tooltip}
           onClick={onOpen}
-          className={cn(SLOT_CLASS, 'rounded-md transition-colors hover:bg-muted')}
+          className={cn(SLOT_CLASS, 'rounded-md transition-colors hover:bg-hover')}
         >
           <PullRequestChip
             state={linkedRequest.state}

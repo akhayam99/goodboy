@@ -47,7 +47,7 @@ export const AgentTitle = ({ agent, sessionId }: Props) => {
           aria-label="Rename agent"
           className={cn(
             'inline-flex size-5 shrink-0 items-center justify-center rounded text-faint-foreground',
-            'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
+            'opacity-0 transition-[opacity,color,background-color] hover:bg-hover hover:text-foreground',
             'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             'group-hover/title:opacity-100 motion-reduce:opacity-60',
           )}

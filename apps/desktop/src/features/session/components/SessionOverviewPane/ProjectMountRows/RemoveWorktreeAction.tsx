@@ -208,7 +208,7 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
             void check();
           }}
           className={cn(
-            'shrink-0 rounded-md px-1.5 py-1 text-xs text-faint-foreground hover:bg-muted/40 hover:text-danger',
+            'shrink-0 rounded-md px-1.5 py-1 text-xs text-faint-foreground hover:bg-hover hover:text-danger',
             'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-faint-foreground',
             triggerClassName,
           )}
@@ -232,14 +232,14 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
               type="button"
               disabled={isChecking}
               onClick={() => void check()}
-              className="rounded-md px-2 py-0.5 text-2xs font-semibold hover:bg-muted"
+              className="rounded-md px-2 py-0.5 text-2xs font-semibold hover:bg-hover"
             >
               Check again
             </button>
             <button
               type="button"
               onClick={() => cancel()}
-              className="rounded-md px-2 py-0.5 text-2xs font-semibold hover:bg-muted"
+              className="rounded-md px-2 py-0.5 text-2xs font-semibold hover:bg-hover"
             >
               Cancel
             </button>

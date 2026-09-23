@@ -41,7 +41,7 @@ export const WorkflowStepGraphNode = ({
       onClick={onSelect}
       aria-pressed={isSelected}
       className={cn(
-        'flex min-h-8 min-w-0 flex-1 items-center gap-1.5 rounded-lg border bg-muted/30 px-2 py-1 text-left transition-colors hover:bg-muted/60',
+        'flex min-h-8 min-w-0 flex-1 items-center gap-1.5 rounded-lg border bg-muted/30 px-2 py-1 text-left transition-colors hover:bg-hover',
         isSelected
           ? tokenCn(tokenTintClasses('primary').border, tokenTintClasses('primary').bgSoft)
           : 'border-border-soft',

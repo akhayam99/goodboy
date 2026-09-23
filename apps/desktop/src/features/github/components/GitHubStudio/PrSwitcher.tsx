@@ -30,7 +30,7 @@ export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
         <button
           type="button"
           onClick={dropdown.toggle}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border-soft px-2 py-1 text-xs font-medium text-foreground transition-colors hover:border-border hover:bg-muted/50"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border-soft px-2 py-1 text-xs font-medium text-foreground transition-colors hover:border-border hover:bg-hover"
           aria-haspopup="listbox"
           aria-expanded={dropdown.open}
           title={`${prs.length} pull requests on this branch`}
@@ -55,7 +55,7 @@ export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
                   dropdown.close();
                 }}
                 className={cn(
-                  'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted/50',
+                  'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-hover',
                   p.number === selected && tokenCn(tokenTintClasses('primary').bgSoft),
                 )}
               >

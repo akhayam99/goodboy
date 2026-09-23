@@ -30,6 +30,6 @@ export const DIFF_SCROLL_CONTENT_CLASS = 'sticky left-0 box-border w-[var(--diff
 export const DIFF_CAPPED_COLUMN_CLASS = 'mx-auto w-full max-w-5xl' as const;
 
 export const TOOLBAR_ICON_BTN =
-  'rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
+  'rounded-sm p-1 text-muted-foreground hover:bg-hover hover:text-foreground' as const;
 
 export const anchorKey = (a: DiffCommentAnchor): string => `${a.side}:${a.lineNumber}`;

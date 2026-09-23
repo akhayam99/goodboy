@@ -141,7 +141,7 @@ export const WorkflowStepCard = ({
         }}
         disabled={disabled}
         aria-label="Reorder step (drag or arrow keys)"
-        className="flex shrink-0 cursor-grab touch-none items-center self-stretch rounded-l-lg px-1 text-faint-foreground transition-colors hover:bg-muted/40 hover:text-muted-foreground active:cursor-grabbing disabled:cursor-not-allowed"
+        className="flex shrink-0 cursor-grab touch-none items-center self-stretch rounded-l-lg px-1 text-faint-foreground transition-colors hover:bg-hover hover:text-muted-foreground active:cursor-grabbing disabled:cursor-not-allowed"
       >
         <GripVertical size={ICON_SIZE.control} aria-hidden />
       </button>
@@ -173,7 +173,7 @@ export const WorkflowStepCard = ({
         onClick={onRemove}
         disabled={disabled}
         aria-label="Remove step"
-        className="inline-flex items-center justify-center rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted/60 hover:text-danger focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30 group-hover:opacity-100"
+        className="inline-flex items-center justify-center rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-hover hover:text-danger focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30 group-hover:opacity-100"
       >
         <Trash2 size={ICON_SIZE.row} aria-hidden />
       </button>
@@ -192,7 +192,7 @@ export const WorkflowStepCard = ({
               tokenTintClasses('primary').bgSoft,
               'shadow-sm',
             )
-          : 'border-border-soft bg-subtle/40 hover:border-border hover:bg-muted/30',
+          : 'border-border-soft bg-subtle/40 hover:border-border hover:bg-hover',
         dragging && 'opacity-40',
       )}
     >
@@ -261,7 +261,7 @@ export const WorkflowStepCard = ({
                   aria-label="Polish step instruction"
                   title="Polish step instruction"
                   className={cn(
-                    'absolute right-1.5 top-1.5 inline-flex items-center justify-center rounded p-1 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40',
+                    'absolute right-1.5 top-1.5 inline-flex items-center justify-center rounded p-1 text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40',
                     polishing && 'animate-border-pulse',
                   )}
                 >

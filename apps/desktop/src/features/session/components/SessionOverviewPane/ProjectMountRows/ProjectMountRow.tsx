@@ -126,7 +126,7 @@ export const ProjectMountRow = ({
       aria-label={label}
       className="group/mount-row flex w-full flex-col"
     >
-      <div className="flex min-h-8 w-full items-center gap-2 rounded-md px-2 py-1 hover:bg-muted/40">
+      <div className="flex min-h-8 w-full items-center gap-2 rounded-md px-2 py-1 hover:bg-hover">
         <div className={SLOT_BRANCH}>
           <MountKindGlyph
             projectKind={row.projectKind}
@@ -250,7 +250,7 @@ export const ProjectMountRow = ({
               aria-label={`Mount ${label}`}
               onClick={() => void mount()}
               className={cn(
-                'shrink-0 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground hover:bg-muted/40 hover:text-foreground',
+                'shrink-0 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground hover:bg-hover hover:text-foreground',
                 'disabled:cursor-not-allowed disabled:opacity-50',
               )}
             >

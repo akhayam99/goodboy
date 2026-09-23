@@ -166,7 +166,7 @@ export const GoalOverviewRegion = ({
           aria-label="Edit goal"
           className={cn(
             'min-w-0 max-w-full rounded-md text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-            isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-foreground/[0.03]',
+            isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-hover',
           )}
         >
           <ClampedProse text={value} lines={4} className="text-sm text-foreground" />

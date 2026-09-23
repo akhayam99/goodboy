@@ -37,7 +37,7 @@ export const DelegateAnswerRow = ({ state, onChoose }: Props) => {
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         isInert
           ? 'border-border-soft text-faint-foreground'
-          : 'border-border-soft text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground',
+          : 'border-border-soft text-muted-foreground hover:border-border hover:bg-hover hover:text-foreground',
       )}
     >
       {state === 'retry' ? (

@@ -97,7 +97,7 @@ export const NotificationCenter = () => {
                 'relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors',
                 open
                   ? 'bg-muted text-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                  : 'text-muted-foreground hover:text-foreground hover:bg-hover',
               )}
               aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`}
             >
@@ -312,7 +312,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
             <Tooltip content="Retry">
               <button
                 type="button"
-                className="rounded p-1 hover:bg-muted"
+                className="rounded p-1 hover:bg-hover"
                 onClick={action.onClick}
                 aria-label="Retry"
               >
@@ -323,7 +323,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
           <Tooltip content="Dismiss the group">
             <button
               type="button"
-              className="rounded p-1 hover:bg-muted"
+              className="rounded p-1 hover:bg-hover"
               onClick={onDismiss}
               aria-label="Dismiss group"
             >
@@ -346,7 +346,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
                 mapNotificationAction(entry.action, useAppStore.getState()) != null ? (
                   <button
                     type="button"
-                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-muted"
+                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-hover"
                     onClick={mapNotificationAction(entry.action, useAppStore.getState())?.onClick}
                   >
                     Retry
@@ -356,7 +356,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
                 entry.action?.kind === 'retry-step-summary' ? (
                   <button
                     type="button"
-                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-muted"
+                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-hover"
                     onClick={() => setPickerOpen((value) => !value)}
                   >
                     Retry with…
@@ -365,7 +365,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
                 {canSendToDevelopers ? (
                   <button
                     type="button"
-                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-muted"
+                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-hover"
                     onClick={() => sendNotificationToDevelopers({ notification: entry })}
                   >
                     Send to developers
@@ -482,7 +482,7 @@ const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
       </div>
       <button
         type="button"
-        className="rounded px-1.5 py-0.5 text-2xs font-medium text-foreground ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
+        className="rounded px-1.5 py-0.5 text-2xs font-medium text-foreground ring-1 ring-inset ring-foreground/20 hover:bg-hover hover:text-foreground"
         onClick={dispatch}
         aria-label="Confirm retry with selected model"
       >

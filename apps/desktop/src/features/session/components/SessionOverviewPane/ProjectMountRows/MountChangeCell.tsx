@@ -38,7 +38,7 @@ export const MountChangeCell = ({ sessionId, label, worktreePath, diffStat, stat
           type="button"
           aria-label={`View the changes of ${label}`}
           onClick={() => openMountDiff(sessionId, worktreePath)}
-          className="flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-xs tabular-nums hover:bg-muted/40"
+          className="flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-xs tabular-nums hover:bg-hover"
         >
           <CONCEPT_ICONS.diff
             size={ICON_SIZE.row}

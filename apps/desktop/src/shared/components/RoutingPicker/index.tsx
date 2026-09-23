@@ -285,7 +285,7 @@ export const RoutingPicker = ({
                 type="button"
                 onClick={onReset}
                 aria-label={resetAriaLabel}
-                className="shrink-0 rounded-full p-1 text-faint-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="shrink-0 rounded-full p-1 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <RotateCcw size={10} aria-hidden />
               </button>
@@ -310,7 +310,7 @@ export const RoutingPicker = ({
                 variant === 'field' &&
                   (open
                     ? tokenCn('border-primary', tokenTintClasses('primary').bgSoft)
-                    : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50'),
+                    : 'border-border-soft bg-subtle hover:border-border hover:bg-hover'),
                 variant === 'pill' &&
                   (isOverridden
                     ? tokenCn(
@@ -319,7 +319,7 @@ export const RoutingPicker = ({
                         tokenTintClasses('warning').ring,
                         tokenTintClasses('warning').hoverBg,
                       )
-                    : 'bg-subtle hover:bg-muted'),
+                    : 'bg-subtle hover:bg-hover'),
                 disabled && 'cursor-not-allowed opacity-60',
               )}
             >

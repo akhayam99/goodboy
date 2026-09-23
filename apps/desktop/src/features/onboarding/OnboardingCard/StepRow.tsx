@@ -51,7 +51,7 @@ export const StepRow = ({ id, title, why, done }: Props) => {
           onClick={activate}
           title={why}
           aria-label={`Set up ${title}`}
-          className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-2xs text-foreground motion-safe:transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-2xs text-foreground motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <span
             aria-hidden

@@ -95,7 +95,7 @@ export const ReviewerPicker = ({ projectRoot, projectId, exclude, onAdd }: Props
                     close();
                     setQuery('');
                   }}
-                  className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-xs text-foreground hover:bg-muted/60"
+                  className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-xs text-foreground hover:bg-hover"
                 >
                   <Avatar url={null} alt={login} size="xs" />
                   <span className="min-w-0 flex-1 truncate">{login}</span>

@@ -254,7 +254,7 @@ export const WorkflowRow = ({
                         aria-label="Edit workflow name"
                         className={cn(
                           'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-faint-foreground',
-                          'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
+                          'opacity-0 transition-[opacity,color,background-color] hover:bg-hover hover:text-foreground',
                           'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                           'group-hover/name:opacity-100 motion-reduce:opacity-60',
                         )}
@@ -302,7 +302,7 @@ export const WorkflowRow = ({
             title={workflow.name || name}
             aria-expanded={expanded}
             aria-label={`${name} workflow`}
-            className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5 rounded-md py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-muted/50"
+            className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5 rounded-md py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-hover"
           >
             {forceExpanded ? (
               <CONCEPT_ICONS.workflows

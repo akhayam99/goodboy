@@ -124,7 +124,7 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
               key={candidate.provider}
               type="button"
               onClick={() => setPickedTracker(candidate)}
-              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground motion-safe:transition-colors hover:bg-muted/60"
+              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground motion-safe:transition-colors hover:bg-hover"
             >
               <IntegrationGlyph provider={candidate.provider} size="xs" />
               {candidate.label}

@@ -410,7 +410,7 @@ export const CommandPalette = ({
                     inputRef.current?.focus();
                   }}
                   aria-label={`Filter by ${p.hint}`}
-                  className="inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                  className="inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-hover hover:text-foreground"
                   title={p.hint}
                 >
                   <kbd className="font-mono text-foreground">{p.symbol}</kbd>
@@ -453,7 +453,7 @@ export const CommandPalette = ({
                       <li
                         key={item.id}
                         className={`flex cursor-pointer items-center gap-2 px-4 py-2 text-sm ${
-                          idx === selectedIndex ? 'bg-muted' : 'hover:bg-muted/50'
+                          idx === selectedIndex ? 'bg-muted' : 'hover:bg-hover'
                         }`}
                         onMouseEnter={() => setSelectedIndex(idx)}
                         onMouseDown={(e) => {

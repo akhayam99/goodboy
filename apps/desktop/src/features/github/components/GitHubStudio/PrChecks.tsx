@@ -56,7 +56,7 @@ export const PrChecks = ({ checks, fallbackUrl, hostLabel, onOpenUrl }: Props) =
               type="button"
               onClick={() => onOpenUrl(c.detailsUrl ?? fallbackUrl)}
               title={c.detailsUrl ?? c.name}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/50"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-hover"
             >
               <ConclusionIcon conclusion={c.conclusion} />
               <span className="min-w-0 flex-1 truncate text-foreground">{c.name}</span>

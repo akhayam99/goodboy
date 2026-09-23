@@ -80,7 +80,7 @@ export const QueuedMessages = ({
                 type="button"
                 onClick={() => onRemove(item.id)}
                 aria-label="Remove from queue"
-                className="flex size-5 shrink-0 items-center justify-center rounded-md text-faint-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+                className="flex size-5 shrink-0 items-center justify-center rounded-md text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <X size={11} aria-hidden />
               </button>

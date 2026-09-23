@@ -30,7 +30,7 @@ export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props)
         density === 'card' ? 'py-2.5' : 'py-2',
         highlighted
           ? 'border-border bg-muted/60'
-          : 'border-transparent hover:border-border-soft hover:bg-muted/40',
+          : 'border-transparent hover:border-border-soft hover:bg-hover',
       )}
     >
       <span

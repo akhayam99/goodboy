@@ -36,6 +36,11 @@ const RULES = [
     allow: TONE_ALPHA_ALLOW,
     why: 'tone alpha is owned by tintClasses and solid button hover treatment',
   },
+  {
+    pattern: /hover:bg-(?:muted(?:\/(?:\d+|\[[^\]]+\]))?|foreground\/(?:\d+|\[[^\]]+\]))/,
+    allow: NO_ALLOW,
+    why: 'interactive hover surfaces use the shared hover overlay',
+  },
 ] satisfies ReadonlyArray<Rule>;
 
 const listSourceFiles = ({ dir, files = [] }: { dir: string; files?: string[] }): string[] => {

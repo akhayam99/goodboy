@@ -81,7 +81,7 @@ export const ShippedPanel = ({
                 key={`${entry.sessionId}-${entry.number}`}
                 type="button"
                 onClick={() => onOpenSession(entry.sessionId)}
-                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/60"
+                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-hover"
               >
                 <CONCEPT_ICONS.pr
                   size={ICON_SIZE.row}

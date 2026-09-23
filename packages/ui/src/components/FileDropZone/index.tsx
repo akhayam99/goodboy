@@ -42,7 +42,7 @@ export const FileDropZone = ({
         'inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-md px-3 text-xs motion-safe:transition-colors',
         isDisabled
           ? 'cursor-not-allowed text-muted-foreground opacity-50'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+          : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >
       {actionIcon}

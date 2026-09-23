@@ -15,7 +15,7 @@ const railButton = (isActive: boolean): string =>
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
     isActive
       ? cn(tintClasses('primary').bg, tintClasses('primary').text)
-      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+      : 'text-muted-foreground hover:bg-hover hover:text-foreground',
   );
 
 export const CollapsedRail = ({ onExpand }: Props) => {

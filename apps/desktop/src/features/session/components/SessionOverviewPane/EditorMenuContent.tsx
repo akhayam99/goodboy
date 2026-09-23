@@ -53,7 +53,7 @@ export const EditorMenuContent = ({ items, onClose }: Props) => (
                     tokenTintClasses('danger').hoverBg,
                     'hover:text-danger',
                   )
-                : 'text-foreground hover:bg-muted hover:text-foreground',
+                : 'text-foreground hover:bg-hover hover:text-foreground',
           )}
         >
           {Icon != null ? (

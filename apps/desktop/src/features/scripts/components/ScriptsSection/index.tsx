@@ -111,7 +111,7 @@ export const ScriptsSection = ({
                 onClick={() => setPanelSectionExpanded(sessionId, 'scripts', !storedExpanded)}
                 aria-expanded={expanded}
                 aria-label={`${expanded ? 'collapse' : 'expand'} scripts`}
-                className="flex size-5 shrink-0 items-center justify-center rounded text-faint-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+                className="flex size-5 shrink-0 items-center justify-center rounded text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 {expanded ? (
                   <ChevronDown size={ICON_SIZE.row} aria-hidden />
@@ -154,7 +154,7 @@ export const ScriptsSection = ({
           <button
             type="button"
             onClick={openScripts}
-            className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+            className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-hover hover:text-foreground"
           >
             <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             <span className="min-w-0 truncate">Create script</span>
@@ -226,7 +226,7 @@ function ScriptRow({
     <div
       className={cn(
         'group flex items-center gap-2 rounded border border-transparent px-2 py-1.5 transition-colors',
-        !isPending && 'hover:bg-muted/60',
+        !isPending && 'hover:bg-hover',
         isPending && tokenCn(tokenTintClasses('info').border),
       )}
     >
@@ -258,7 +258,7 @@ function ScriptRow({
                   tokenTintClasses('primary').ring,
                   'ring-inset',
                 )
-              : 'text-faint-foreground hover:bg-foreground/10 hover:text-foreground',
+              : 'text-faint-foreground hover:bg-hover hover:text-foreground',
           )}
         >
           <CONCEPT_ICONS.terminal size={ICON_SIZE.row} aria-hidden />
@@ -270,7 +270,7 @@ function ScriptRow({
             type="button"
             onClick={onCancel}
             aria-label="Stop script"
-            className="flex size-6 shrink-0 items-center justify-center rounded text-faint-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+            className="flex size-6 shrink-0 items-center justify-center rounded text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
           >
             <Square size={11} aria-hidden />
           </button>
@@ -288,7 +288,7 @@ function ScriptRow({
             }}
             disabled={disabledReason != null}
             aria-label="Run script"
-            className="flex size-6 shrink-0 items-center justify-center rounded text-faint-foreground transition-colors hover:bg-foreground/10 hover:text-primary group-hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex size-6 shrink-0 items-center justify-center rounded text-faint-foreground transition-colors hover:bg-hover hover:text-primary group-hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Play size={ICON_SIZE.row} aria-hidden />
           </button>
@@ -373,7 +373,7 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
             type="button"
             onClick={onClose}
             aria-label="Close log"
-            className="flex size-6 shrink-0 items-center justify-center rounded text-faint-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+            className="flex size-6 shrink-0 items-center justify-center rounded text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
           >
             <X size={ICON_SIZE.row} aria-hidden />
           </button>

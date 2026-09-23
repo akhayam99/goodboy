@@ -81,7 +81,7 @@ export const WorkflowStarter = ({
                 type="button"
                 onClick={() => onExample(example.prompt)}
                 disabled={isWorking}
-                className="rounded-md px-2 py-1 text-left text-2xs text-faint-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:bg-muted/40 hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                className="rounded-md px-2 py-1 text-left text-2xs text-faint-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:bg-hover hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
               >
                 {example.label}
               </button>

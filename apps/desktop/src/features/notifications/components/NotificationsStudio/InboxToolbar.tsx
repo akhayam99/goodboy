@@ -73,7 +73,7 @@ export const InboxToolbar = ({
         <button
           type="button"
           onClick={onMarkAllRead}
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
         >
           <CheckCheck size={ICON_SIZE.row} aria-hidden />
           Mark all read

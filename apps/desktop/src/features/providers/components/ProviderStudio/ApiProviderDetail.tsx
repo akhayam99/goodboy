@@ -38,7 +38,7 @@ export const ApiProviderDetail = ({ info }: Props) => {
           aria-label="Re-detect OpenCode"
           disabled={isRefreshing}
           onClick={() => void onRefresh()}
-          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-hover hover:text-foreground disabled:opacity-50"
         >
           <RotateCw size={ICON_SIZE.control} aria-hidden />
         </button>
@@ -90,7 +90,7 @@ export const ApiProviderDetail = ({ info }: Props) => {
             type="button"
             disabled={isRefreshing}
             onClick={() => void onRefresh()}
-            className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+            className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-hover hover:text-foreground disabled:opacity-50"
           >
             Detect
           </button>

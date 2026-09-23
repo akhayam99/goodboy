@@ -16,7 +16,7 @@ const OUTCOME_TONE = {
 } as const satisfies Record<'done' | 'blocked', Tone>;
 
 const ROW_BUTTON =
-  'flex min-w-0 items-baseline gap-2 rounded-md text-left text-2xs transition-colors hover:bg-muted/40';
+  'flex min-w-0 items-baseline gap-2 rounded-md text-left text-2xs transition-colors hover:bg-hover';
 
 type Props = {
   readonly steps: ReadonlyArray<Step>;

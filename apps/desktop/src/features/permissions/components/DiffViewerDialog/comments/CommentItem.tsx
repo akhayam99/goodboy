@@ -63,7 +63,7 @@ export const CommentItem = ({
                 type="button"
                 onClick={() => onResolve(comment.id)}
                 aria-label="Mark resolved"
-                className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-success"
+                className="rounded-sm p-0.5 text-muted-foreground hover:bg-hover hover:text-success"
               >
                 <Check size={11} />
               </button>
@@ -75,7 +75,7 @@ export const CommentItem = ({
                 type="button"
                 onClick={() => onReopen(comment.id)}
                 aria-label="Reopen note"
-                className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-warning"
+                className="rounded-sm p-0.5 text-muted-foreground hover:bg-hover hover:text-warning"
               >
                 <RotateCcw size={11} />
               </button>
@@ -86,7 +86,7 @@ export const CommentItem = ({
               type="button"
               onClick={() => onDelete(comment.id)}
               aria-label="Delete"
-              className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-danger"
+              className="rounded-sm p-0.5 text-muted-foreground hover:bg-hover hover:text-danger"
             >
               <Trash2 size={11} />
             </button>

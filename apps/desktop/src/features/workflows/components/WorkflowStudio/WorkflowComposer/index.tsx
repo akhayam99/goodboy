@@ -169,7 +169,7 @@ export const WorkflowComposer = ({
                     type="button"
                     aria-expanded={isLibraryOpen}
                     onClick={() => setIsLibraryOpen((current) => !current)}
-                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:bg-muted/40 hover:text-foreground"
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:bg-hover hover:text-foreground"
                   >
                     {isLibraryOpen ? (
                       <X size={11} aria-hidden />
@@ -180,7 +180,7 @@ export const WorkflowComposer = ({
                   </button>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
+                    className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:border-border hover:bg-hover hover:text-foreground"
                     onClick={onAddBlank}
                   >
                     <Plus size={11} aria-hidden /> Add blank step

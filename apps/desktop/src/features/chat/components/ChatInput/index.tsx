@@ -540,7 +540,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   onClick={() => fileInputRef.current?.click()}
                   disabled={providerDisconnected}
                   aria-label="Attach files"
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Paperclip size={ICON_SIZE.control} aria-hidden />
                 </button>
@@ -562,7 +562,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 disabled={providerDisconnected}
                 title="Run a project script"
                 aria-label="Run a project script"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md font-mono text-sm text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md font-mono text-sm text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 $
               </button>

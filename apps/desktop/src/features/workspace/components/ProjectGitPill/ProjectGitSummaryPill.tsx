@@ -66,8 +66,8 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
           className={cn(
             'relative inline-flex h-7 min-w-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             actionableCount > 0 || hasWarning
-              ? 'text-foreground hover:bg-muted/60'
-              : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
+              ? 'text-foreground hover:bg-hover'
+              : 'text-muted-foreground hover:bg-hover hover:text-foreground',
           )}
         >
           <GitBranch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
@@ -97,7 +97,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
               key={entry.project.id}
               type="button"
               onClick={() => setSelectedProjectId(entry.project.id)}
-              className="flex h-9 w-full items-center gap-2 px-3 text-left transition-colors hover:bg-muted/50"
+              className="flex h-9 w-full items-center gap-2 px-3 text-left transition-colors hover:bg-hover"
             >
               <span className="min-w-0 flex-1 truncate text-xs font-medium">
                 {entry.project.name}
@@ -122,7 +122,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
           <button
             type="button"
             onClick={() => setSelectedProjectId(null)}
-            className="flex h-9 items-center gap-1.5 border-b border-border-soft px-3 text-xs font-medium transition-colors hover:bg-muted/50"
+            className="flex h-9 items-center gap-1.5 border-b border-border-soft px-3 text-xs font-medium transition-colors hover:bg-hover"
           >
             <ChevronLeft size={ICON_SIZE.row} aria-hidden />
             <span className="truncate">{selectedEntry.project.name}</span>

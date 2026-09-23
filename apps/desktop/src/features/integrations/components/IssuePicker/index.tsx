@@ -206,7 +206,7 @@ export const IssuePicker = ({
                   void openUrl(value.url);
                 }}
                 aria-label="Open issue in browser"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <ExternalLink size={ICON_SIZE.row} aria-hidden />
               </button>
@@ -218,7 +218,7 @@ export const IssuePicker = ({
               tabIndex={-1}
               onClick={togglePanel}
               aria-label={isOpen ? 'Close issue list' : 'Open issue list'}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
             >
               <ChevronDown
                 size={ICON_SIZE.row}

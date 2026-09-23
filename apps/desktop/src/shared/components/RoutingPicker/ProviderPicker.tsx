@@ -54,7 +54,7 @@ export const ProviderPicker = ({
             'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
             open
               ? tokenCn('border-primary', tokenTintClasses('primary').bgSoft)
-              : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50',
+              : 'border-border-soft bg-subtle hover:border-border hover:bg-hover',
             disabled && 'cursor-not-allowed opacity-60',
           )}
         >

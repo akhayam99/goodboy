@@ -73,7 +73,7 @@ export const ToolCallCard = ({ item }: Props) => {
           type="button"
           onClick={() => setRawMode((value) => !value)}
           data-testid="raw-toggle"
-          className="rounded-md px-1.5 py-0.5 text-2xs text-faint-foreground hover:bg-muted/40 hover:text-foreground"
+          className="rounded-md px-1.5 py-0.5 text-2xs text-faint-foreground hover:bg-hover hover:text-foreground"
         >
           {rawMode ? 'structured' : 'raw json'}
         </button>

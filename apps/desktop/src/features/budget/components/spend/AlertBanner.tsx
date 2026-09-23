@@ -63,7 +63,7 @@ export const AlertBanner = ({ alerts, onDismiss }: Props) => {
                 type="button"
                 onClick={() => onDismiss(alert.id)}
                 aria-label="Dismiss alert"
-                className="shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                className="shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <X size={ICON_SIZE.row} aria-hidden />
               </button>

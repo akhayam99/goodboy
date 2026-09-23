@@ -50,7 +50,7 @@ export const TimelineStreamRow = ({
     'flex min-w-0 flex-1 items-center gap-2 rounded-md pl-2 pr-1.5 text-left',
     openTarget == null
       ? null
-      : 'motion-safe:transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+      : 'motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
     needsUser && tintClasses('warning').bgSoft,
     !needsUser && item.hasUnread && tintClasses('primary').bgSoft,
   );

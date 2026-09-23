@@ -36,7 +36,7 @@ export const ChainAfterSelect = ({ runs, value, disabled, onChange }: Props) => 
             'flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
             open
               ? tokenCn('border-primary', tokenTintClasses('primary').bgSoft)
-              : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50',
+              : 'border-border-soft bg-subtle hover:border-border hover:bg-hover',
             disabled && 'cursor-not-allowed opacity-50',
           )}
         >
@@ -69,7 +69,7 @@ export const ChainAfterSelect = ({ runs, value, disabled, onChange }: Props) => 
               'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors',
               active
                 ? tokenCn(tokenTintClasses('primary').bg, 'text-foreground')
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                : 'text-muted-foreground hover:bg-hover hover:text-foreground',
             )}
           >
             <span className="flex-1 truncate">{template.name}</span>
