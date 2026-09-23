@@ -75,6 +75,15 @@ not land). A retried request whose operation `succeeded` reuses its result,
 which makes retry idempotent across the observable interruption points. It
 cannot infer a request that was never recorded.
 
+Every directory removal outside unmount runs through `runMountRemoval` as a
+`remove` operation: it is logged `running` before the disk is touched, with
+the mount id, path, whether the directory was meant to stay, and how the row
+finishes (`clear-path` keeps the row without a path, `drop-row` deletes it).
+A cleanup that fails closes the operation `failed` with the row untouched; a
+row write that throws or loses its revision leaves it `uncertain`. A cleanup
+proposal is also a `remove` operation, but it only ever sits in `pending`,
+which is what keeps the two apart.
+
 ## Recovery
 
 Loading a session's mounts runs recovery once per session. Recovery reads
@@ -82,6 +91,12 @@ every unsettled operation and finishes the database step when the disk
 already reached the target: a forked worktree that exists gets its row, an
 unmounted worktree that is gone gets its row cleared. An operation whose
 repository cannot be read stays `uncertain`.
+
+A `remove` operation is finished from its recorded input, never from a live
+closure: a row that is already gone closes it; a path git reports missing gets
+the recorded finish applied; a directory that is still there closes it
+`failed` and stays on disk for the user to retry. Recovery never deletes a
+directory.
 
 ## Cleanup proposals
 

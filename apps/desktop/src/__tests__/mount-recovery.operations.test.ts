@@ -170,6 +170,25 @@ const operationFixture = ({
   updatedAt: NOW,
 });
 
+const removalFixture = ({
+  finish,
+  keepDirectory = false,
+  status = 'running',
+}: {
+  readonly finish: 'clear-path' | 'drop-row';
+  readonly keepDirectory?: boolean;
+  readonly status?: MountOperation['status'];
+}): MountOperation => ({
+  ...operationFixture({ kind: 'remove', status, result: null }),
+  input: {
+    mountId: 'mount-one',
+    repoRoot: '/repo',
+    worktreePath: '/repo/.goodboy/worktrees/mount-one',
+    keepDirectory,
+    finish,
+  },
+});
+
 type State = Record<string, unknown>;
 
 const makeState = (): State => ({
@@ -279,6 +298,58 @@ describe('interrupted mount recovery', () => {
 
     expect(settled).toBe(0);
     expect(h.operations.get('request-remove')?.status).toBe('pending');
+  });
+
+  it('finishes a clear-path removal that crashed between the disk and the row', async () => {
+    h.mounts.set('mount-one', mountFixture());
+    h.operations.set('request-remove', removalFixture({ finish: 'clear-path' }));
+    h.inspection = { kind: 'missing', path: '/repo/.goodboy/worktrees/mount-one' };
+
+    const settled = await recovery()({ sessionId: SESSION_ID });
+
+    expect(settled).toBe(1);
+    expect(h.mounts.get('mount-one')).toMatchObject({
+      worktreePath: null,
+      isAttached: false,
+      diskState: 'removed',
+    });
+    expect(h.operations.get('request-remove')?.status).toBe('succeeded');
+  });
+
+  it('closes a removal as failed and keeps the directory when the worktree is still registered', async () => {
+    h.mounts.set('mount-one', mountFixture());
+    h.operations.set('request-remove', removalFixture({ finish: 'clear-path' }));
+
+    const settled = await recovery()({ sessionId: SESSION_ID });
+
+    expect(settled).toBe(1);
+    expect(h.mounts.get('mount-one')).toMatchObject({
+      worktreePath: '/repo/.goodboy/worktrees/mount-one',
+      isAttached: true,
+      revision: 0,
+    });
+    expect(h.operations.get('request-remove')).toMatchObject({
+      status: 'failed',
+      errorCode: 'cleanup-failed',
+    });
+  });
+
+  it('keeps a removal uncertain while its repository cannot be read', async () => {
+    h.mounts.set('mount-one', mountFixture());
+    h.operations.set('request-remove', removalFixture({ finish: 'clear-path' }));
+    h.inspection = {
+      kind: 'repository-unavailable',
+      path: '/repo/.goodboy/worktrees/mount-one',
+    };
+
+    const settled = await recovery()({ sessionId: SESSION_ID });
+
+    expect(settled).toBe(0);
+    expect(h.operations.get('request-remove')).toMatchObject({
+      status: 'uncertain',
+      errorCode: 'repository-unavailable',
+    });
+    expect(h.mounts.get('mount-one')?.revision).toBe(0);
   });
 
   it('marks a nonexistent seeded path unavailable before hydration or restoration projects it', async () => {
