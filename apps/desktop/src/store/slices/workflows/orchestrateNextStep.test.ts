@@ -236,6 +236,7 @@ const baseState = (): State => {
     agentProviderOverride: {},
     agentEffortOverride: {},
     announcedRunBudget: {},
+    decisionRestartMarks: {},
     loadSessionTelemetry: vi.fn(async () => undefined),
     appendTurnEvent: vi.fn(),
     activateWorkflowAgent: vi.fn(async () => undefined),
@@ -1790,7 +1791,7 @@ describe('orchestrateNextStep', () => {
         state,
         withHints(state, [hintFixture({ id: 'late', text: 'no PR, commit locally' })]),
       );
-      requestDecisionRestart({ workflowRunId: WORKFLOW_RUN_ID });
+      requestDecisionRestart({ set, workflowRunId: WORKFLOW_RUN_ID });
       return {
         decision: {
           action: 'next',
@@ -1834,7 +1835,7 @@ describe('orchestrateNextStep', () => {
       model: 'claude-haiku-4-5',
     });
     updateSummarySpy.mockImplementationOnce(async () => {
-      requestDecisionRestart({ workflowRunId: WORKFLOW_RUN_ID });
+      requestDecisionRestart({ set, workflowRunId: WORKFLOW_RUN_ID });
     });
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
@@ -1874,7 +1875,7 @@ describe('orchestrateNextStep', () => {
         state,
         withHints(state, [hintFixture({ id: 'late', text: 'no PR, commit locally' })]),
       );
-      requestDecisionRestart({ workflowRunId: WORKFLOW_RUN_ID });
+      requestDecisionRestart({ set, workflowRunId: WORKFLOW_RUN_ID });
       throw new Error('the orchestrator timed out after 120s');
     });
 

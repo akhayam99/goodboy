@@ -60,6 +60,7 @@ const buildHarness = () => {
     sessionWorkflows: {},
     workflowContinueAttempts: { [RUNNING_ID]: 1, [OTHER_ID]: 1 },
     clusterStepStartAttempts: { [STARTING_ID]: 2, [OTHER_ID]: 3 },
+    decisionRestartMarks: { [RUN_ID]: 2, 'run-other': 3 },
     recordSessionEvent: recordSessionEventSpy,
   };
   const set = vi.fn((updater: (s: typeof state) => Partial<typeof state>) => {
@@ -97,5 +98,13 @@ describe('discardWorkflow', () => {
 
     expect(state.workflowContinueAttempts).toEqual({ [OTHER_ID]: 1 });
     expect(state.clusterStepStartAttempts).toEqual({ [OTHER_ID]: 3 });
+  });
+
+  it('clears the restart mark for the discarded run only', async () => {
+    const { discard, state } = buildHarness();
+
+    await discard(SESSION_ID, RUN_ID);
+
+    expect(state.decisionRestartMarks).toEqual({ 'run-other': 3 });
   });
 });

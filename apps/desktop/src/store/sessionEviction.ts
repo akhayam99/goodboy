@@ -120,6 +120,7 @@ export const SESSION_EVICTION = [
   { key: 'wireframeScoutVerification', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'workflowRunAttachments', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'orchestratingWorkflowRuns', keyedBy: 'workflowRun', evictOn: 'delete' },
+  { key: 'decisionRestartMarks', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'announcedWorkflowBlocks', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'announcedRunBudget', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'pendingOrchestrations', keyedBy: 'workflowRun', evictOn: 'delete' },

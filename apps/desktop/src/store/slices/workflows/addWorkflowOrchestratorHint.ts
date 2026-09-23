@@ -22,7 +22,7 @@ type DeliverParams = {
 
 const deliverNow = async ({ set, get, sessionId, workflowRunId }: DeliverParams): Promise<void> => {
   if (get().orchestratingWorkflowRuns[workflowRunId] === true) {
-    requestDecisionRestart({ workflowRunId });
+    requestDecisionRestart({ set, workflowRunId });
     await get().orchestrateNextStep(sessionId, workflowRunId);
     return;
   }

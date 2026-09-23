@@ -74,6 +74,9 @@ export const discardWorkflow = (set: SetFn, get: GetFn) => {
         agentTurnState: nextTurnState,
         workflowContinueAttempts: withoutOwn(s.workflowContinueAttempts),
         clusterStepStartAttempts: withoutOwn(s.clusterStepStartAttempts),
+        decisionRestartMarks: Object.fromEntries(
+          Object.entries(s.decisionRestartMarks).filter(([runId]) => runId !== workflowRunId),
+        ),
         sessions: s.sessions.map((sess) =>
           sess.id === sessionId
             ? {

@@ -653,10 +653,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       });
       const readHints = run.orchestratorHints ?? [];
       const readHintIds = new Set(readHints.map((hint) => hint.id));
-      const restartMark = decisionRestartMark({ workflowRunId });
+      const restartMark = decisionRestartMark({ get, workflowRunId });
       const isDecisionDiscarded = (): boolean =>
         hasOperatorStop({ get, sessionId, workflowRunId }) ||
-        decisionRestartMark({ workflowRunId }) !== restartMark;
+        decisionRestartMark({ get, workflowRunId }) !== restartMark;
       const hints = [profileBlock, formatOrchestratorHints({ hints: readHints }), operatorNote]
         .map((entry) => entry?.trim() ?? '')
         .filter((entry) => entry !== '')
