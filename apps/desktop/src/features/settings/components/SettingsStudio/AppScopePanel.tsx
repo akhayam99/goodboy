@@ -27,6 +27,7 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 import { REPORT_ISSUE_STUDIO_EVENT } from '../../reportIssueStudioEvent';
 import { ShortcutsSection } from './ShortcutsSection';
 import { StorageSection } from './StorageSection';
+import { UpdatesSection } from './UpdatesSection';
 import { useSectionAnchors } from '../../hooks/useSectionAnchors';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 
@@ -129,6 +130,12 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
     <ScrollFade className="h-full w-full" viewportClassName={PANE_RHYTHM.body}>
       <div className={`flex flex-col ${PANE_RHYTHM.column} ${PANE_RHYTHM.measure.reading}`}>
         <div className="flex flex-col gap-6">
+          <section id="updates" ref={anchor({ id: 'updates' })}>
+            <UpdatesSection />
+          </section>
+
+          <Divider />
+
           <section
             id="appearance"
             ref={anchor({ id: 'appearance' })}

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Button, EmptyState, Markdown, Skeleton, SkeletonText } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '@goodboy/ui';
@@ -13,16 +14,24 @@ type Props = {
   readonly staleError: Error | null;
   readonly staleSince: string | null;
   readonly onRetry: () => void;
+  readonly action?: ReactNode;
 };
 
-export const ReleaseDetail = ({ release, view, staleError, staleSince, onRetry }: Props) => {
+export const ReleaseDetail = ({
+  release,
+  view,
+  staleError,
+  staleSince,
+  onRetry,
+  action,
+}: Props) => {
   const subtitle =
     view === 'ready' && release != null
       ? formatReleaseDate({ iso: release.publishedAt, style: 'full' })
       : undefined;
 
   return (
-    <StudioPanel title={release?.version ?? 'Release notes'} subtitle={subtitle}>
+    <StudioPanel title={release?.version ?? 'Release notes'} subtitle={subtitle} action={action}>
       {view === 'loading' ? (
         <div className="flex flex-col gap-5" role="status" aria-label="Loading releases">
           <Skeleton className="h-6 w-36" />

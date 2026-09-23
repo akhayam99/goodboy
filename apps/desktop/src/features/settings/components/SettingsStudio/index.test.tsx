@@ -34,6 +34,11 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     loadStorageStats: vi.fn(async () => undefined),
     pruneArchivedTranscripts: vi.fn(async () => 0),
     removeArchivedWorktrees: vi.fn(async () => ({ removed: 0, failed: 0 })),
+    updaterStatus: 'idle',
+    updateVersion: null,
+    updateFailure: null,
+    updateCheckedAt: null,
+    checkForUpdates: vi.fn(async () => undefined),
   },
   toastMock: vi.fn(),
 }));

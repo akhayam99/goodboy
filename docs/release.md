@@ -109,7 +109,12 @@ size is unknown). If the install fails, including a failed relaunch, the
 pending update is kept. The chip turns into "Update failed", with the reason
 in its tooltip, and the same confirm offers Retry. A notification also offers
 Retry, which installs again without a new check. A failed background check
-shows no chip and no notification. This is macOS only. The Linux job writes no
+shows no chip and no notification. It shows up in **Settings > App > Updates**
+instead, next to the installed version, the last check time and **Check now**.
+The changelog opens on the focused or installed release and marks newer ones
+"available".
+
+This is macOS only. The Linux job writes no
 `latest.json` and no `.sig`, so nothing tells a Linux build that a newer
 version exists. Adding it would mean signing the AppImage with the updater
 keypair and pointing the plugin at a Linux target.

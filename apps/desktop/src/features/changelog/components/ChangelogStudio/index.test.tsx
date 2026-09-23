@@ -9,6 +9,9 @@ const mocks = vi.hoisted(() => ({
   loadChangelog: vi.fn(async () => undefined),
   reloadChangelog: vi.fn(async () => undefined),
   markChangelogSeen: vi.fn(async () => undefined),
+  focusChangelogRelease: vi.fn(),
+  installUpdate: vi.fn(async () => undefined),
+  updater: { status: 'idle', version: null as string | null },
   installedVersion: null as string | null,
 }));
 
@@ -19,6 +22,12 @@ vi.mock('../../../../store', () => ({
       loadChangelog: mocks.loadChangelog,
       reloadChangelog: mocks.reloadChangelog,
       markChangelogSeen: mocks.markChangelogSeen,
+      focusChangelogRelease: mocks.focusChangelogRelease,
+      installUpdate: mocks.installUpdate,
+      updaterStatus: mocks.updater.status,
+      updateVersion: mocks.updater.version,
+      updateFailure: null,
+      agentTurnState: {},
     }),
 }));
 
@@ -48,6 +57,7 @@ beforeEach(() => {
     changelogFocusVersion: null,
   };
   mocks.installedVersion = null;
+  mocks.updater = { status: 'idle', version: null };
 });
 
 afterEach(() => {
@@ -79,6 +89,60 @@ describe('ChangelogStudio', () => {
     const newerRow = rows.find((row) => row.textContent?.includes('v0.1.56'));
     expect(installedRow?.textContent).toContain('installed');
     expect(newerRow?.textContent).not.toContain('installed');
+    expect(newerRow?.textContent).toContain('available');
+    expect(installedRow?.textContent).not.toContain('available');
+  });
+
+  const threeReleases = () => ({
+    changelogReleases: [
+      buildRelease('v0.3.14', '2026-09-20T10:00:00Z'),
+      buildRelease('v0.3.13', '2026-09-10T10:00:00Z'),
+      buildRelease('v0.3.12', '2026-09-01T10:00:00Z'),
+    ],
+    changelogStatus: 'ready' as const,
+    changelogError: null,
+    changelogFetchedAt: '2026-09-21T10:00:00Z',
+    changelogSeenVersion: null,
+    changelogSeenHydrated: true,
+    changelogFocusVersion: null,
+  });
+
+  it('opens on the focused release and clears the focus', () => {
+    mocks.state = { ...threeReleases(), changelogFocusVersion: '0.3.12' };
+    mocks.installedVersion = '0.3.13';
+
+    renderStudio();
+
+    expect(screen.getByRole('heading', { name: 'v0.3.12' })).toBeDefined();
+    expect(mocks.focusChangelogRelease).toHaveBeenCalledWith({ version: null });
+  });
+
+  it('opens on the installed release when nothing is focused', () => {
+    mocks.state = threeReleases();
+    mocks.installedVersion = '0.3.13';
+
+    renderStudio();
+
+    expect(screen.getByRole('heading', { name: 'v0.3.13' })).toBeDefined();
+  });
+
+  it('falls back to the newest release when the installed one is not listed', () => {
+    mocks.state = threeReleases();
+    mocks.installedVersion = '0.2.0';
+
+    renderStudio();
+
+    expect(screen.getByRole('heading', { name: 'v0.3.14' })).toBeDefined();
+  });
+
+  it('offers the download on the release the updater found', () => {
+    mocks.state = { ...threeReleases(), changelogFocusVersion: '0.3.14' };
+    mocks.installedVersion = '0.3.13';
+    mocks.updater = { status: 'available', version: '0.3.14' };
+
+    renderStudio();
+
+    expect(screen.getByRole('button', { name: 'Download and restart' })).toBeDefined();
   });
 
   it('renders the newest release body in full, with no redundant external link', () => {
