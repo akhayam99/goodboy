@@ -156,14 +156,15 @@ vi.mock('../integrations/linear/client', () => ({
   linearFetchAssignedIssues: integ.linearFetch,
 }));
 vi.mock('../integrations/linear/goal-from-issue', () => ({
-  goalFromIssue: (i: { identifier: string; title: string }) => `[${i.identifier}] ${i.title}`,
+  goalFromIssue: ({ issue }: { issue: { identifier: string; title: string } }) =>
+    `[${issue.identifier}] ${issue.title}`,
 }));
 vi.mock('../integrations/sentry/client', () => ({
   sentryFetchIssues: integ.sentryFetch,
   sentryFetchIssueDetail: vi.fn(async () => null),
 }));
 vi.mock('../integrations/sentry/goal-from-sentry', () => ({
-  goalFromSentry: (i: { title: string }) => i.title,
+  goalFromSentry: ({ issue }: { issue: { title: string } }) => issue.title,
 }));
 vi.mock('../integrations/gitlab/client', () => ({
   gitlabFetchAssignedIssues: integ.gitlabFetch,
@@ -171,7 +172,7 @@ vi.mock('../integrations/gitlab/client', () => ({
     i.references?.full ?? `#${i.iid}`,
 }));
 vi.mock('../integrations/gitlab/goal-from-issue', () => ({
-  goalFromIssue: (i: { title: string }) => i.title,
+  goalFromIssue: ({ issue }: { issue: { title: string } }) => issue.title,
 }));
 vi.mock('../integrations/jira/client', () => ({
   jiraListIssues: integ.jiraListFetch,

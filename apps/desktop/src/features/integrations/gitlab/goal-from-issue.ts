@@ -1,16 +1,16 @@
+import { capText } from '../../../shared/utils/capText';
+import { GOAL_BODY_CHAR_CAP } from '../shared/goalBodyCap';
 import { issueIdentifier, type GitlabIssue } from './client';
 
-const DESCRIPTION_CHAR_CAP = 1200;
+type Params = {
+  readonly issue: GitlabIssue;
+};
 
-export const goalFromIssue = (issue: GitlabIssue): string => {
+export const goalFromIssue = ({ issue }: Params): string => {
   const heading = `[${issueIdentifier(issue)}] ${issue.title.trim()}`;
   const description = (issue.description ?? '').trim();
-  if (!description) {
+  if (description === '') {
     return heading;
   }
-  const trimmed =
-    description.length > DESCRIPTION_CHAR_CAP
-      ? `${description.slice(0, DESCRIPTION_CHAR_CAP).trimEnd()}…`
-      : description;
-  return `${heading}\n\n${trimmed}`;
+  return `${heading}\n\n${capText({ text: description, capChars: GOAL_BODY_CHAR_CAP })}`;
 };

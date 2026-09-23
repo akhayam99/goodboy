@@ -344,7 +344,7 @@ async function resolveIssueForSession(
         throw new BridgeSafeError(`linear issue not found: ${identifier}`);
       }
       return {
-        goal: linearGoalFromIssue(issue),
+        goal: linearGoalFromIssue({ issue }),
         externalTask: {
           provider: 'linear',
           externalId: issue.id,
@@ -362,7 +362,7 @@ async function resolveIssueForSession(
       }
       const detail = await sentryFetchIssueDetail(workspaceId, issue.id).catch(() => null);
       return {
-        goal: goalFromSentry(issue, detail),
+        goal: goalFromSentry({ issue, detail }),
         externalTask: {
           provider: 'sentry',
           externalId: issue.id,
@@ -384,7 +384,7 @@ async function resolveIssueForSession(
         throw new BridgeSafeError(`gitlab issue not found: ${identifier}`);
       }
       return {
-        goal: gitlabGoalFromIssue(issue),
+        goal: gitlabGoalFromIssue({ issue }),
         externalTask: {
           provider: 'gitlab',
           externalId: String(issue.id),

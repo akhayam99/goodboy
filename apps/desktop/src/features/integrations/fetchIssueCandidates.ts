@@ -56,7 +56,7 @@ export const fetchIssueCandidates = async ({
         identifier: issue.identifier,
         title: issue.title,
         url: issue.url,
-        goal: goalFromLinearIssue(issue),
+        goal: goalFromLinearIssue({ issue }),
         branchSlug: slugifyBranch({ input: issue.title, maxLength: 48 }),
       }));
     }
@@ -92,7 +92,7 @@ export const fetchIssueCandidates = async ({
         identifier: issueIdentifier(issue),
         title: issue.title,
         url: issue.webUrl,
-        goal: goalFromGitlabIssue(issue),
+        goal: goalFromGitlabIssue({ issue }),
         branchSlug: gitlabBranchSlug(issue),
       }));
     }
@@ -125,7 +125,7 @@ export const fetchIssueCandidates = async ({
         identifier: issue.shortId ?? issue.id,
         title: issue.title,
         url: issue.permalink ?? '',
-        goal: goalFromSentry(issue),
+        goal: goalFromSentry({ issue }),
         branchSlug: slugifyBranch({ input: issue.title, maxLength: SENTRY_SLUG_MAX_LEN }),
       }));
     }
