@@ -139,6 +139,25 @@ export const mapNotificationAction = (
       },
     };
   }
+  if (action.kind === 'retry-update') {
+    return {
+      label: 'Retry',
+      onClick: () => {
+        void store.installUpdate();
+      },
+    };
+  }
+  if (action.kind === 'open-lens') {
+    const { sessionId, lens } = action;
+    return {
+      label: 'Open scripts',
+      onClick: () => {
+        void store.setCurrentSession(sessionId).then(() => {
+          store.setActiveLens(sessionId, lens);
+        });
+      },
+    };
+  }
   const _exhaustive: never = action;
   return undefined;
 };

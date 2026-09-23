@@ -35,7 +35,9 @@ export type NotificationAction =
     }
   | { readonly kind: 'open-budget'; readonly sessionId: SessionId | null }
   | { readonly kind: 'open-orphan-worktrees'; readonly workspaceId: WorkspaceId }
-  | { readonly kind: 'retry-publication'; readonly sessionId: SessionId };
+  | { readonly kind: 'retry-publication'; readonly sessionId: SessionId }
+  | { readonly kind: 'retry-update' }
+  | { readonly kind: 'open-lens'; readonly sessionId: SessionId; readonly lens: 'scripts' };
 
 export type Notification = {
   readonly id: string;
@@ -72,6 +74,8 @@ const NOTIFICATION_ACTION_KINDS = {
   'open-budget': true,
   'open-orphan-worktrees': true,
   'retry-publication': true,
+  'retry-update': true,
+  'open-lens': true,
 } satisfies Record<NotificationAction['kind'], true>;
 
 const isNotificationAction = (value: unknown): value is NotificationAction =>

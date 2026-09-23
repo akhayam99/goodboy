@@ -100,8 +100,13 @@ and update `APPLE_CERTIFICATE_PASSWORD`.
 
 On launch, packaged builds check
 `releases/latest/download/latest.json` through `tauri-plugin-updater`. If a
-newer version exists, an "Update and restart" control shows up in `AppFooter`
-and in `WorkspaceLauncher`. This is macOS only. The Linux job writes no
+newer version exists, an "Update to X" chip shows up in `AppFooter` and in
+`WorkspaceLauncher`. While the update downloads, the chip reads "Downloading
+42%" (or "Downloading" when the size is unknown). If the install fails,
+including a failed relaunch, the pending update is kept. The chip turns into
+"Update failed", with the reason in its tooltip, and a notification offers
+Retry, which installs again without a new check. A failed background check
+shows no chip and no notification. This is macOS only. The Linux job writes no
 `latest.json` and no `.sig`, so nothing tells a Linux build that a newer
 version exists. Adding it would mean signing the AppImage with the updater
 keypair and pointing the plugin at a Linux target.
