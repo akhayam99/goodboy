@@ -490,30 +490,53 @@ describe('OrchestratorPanel strip', () => {
     expect(screen.queryByTestId('step-routing')).toBeNull();
   });
 
-  it('sends a hint from the disclosure', () => {
+  it('queues a hint from the disclosure', () => {
     renderPanel();
 
     openHints();
     fireEvent.change(screen.getByTestId('orchestrator-hint-input'), {
       target: { value: 'ignore the website' },
     });
-    fireEvent.click(screen.getByTestId('orchestrator-hint-send'));
+    fireEvent.click(screen.getByTestId('orchestrator-hint-queue'));
 
     expect(storeState['addWorkflowOrchestratorHint']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
       text: 'ignore the website',
+      delivery: 'queue',
     });
   });
 
-  it('says a hint restarts the decision in flight, and nothing otherwise', () => {
+  it('sends a hint to be read now', () => {
+    renderPanel();
+
+    openHints();
+    fireEvent.change(screen.getByTestId('orchestrator-hint-input'), {
+      target: { value: 'look at the payout domain first' },
+    });
+    fireEvent.click(screen.getByTestId('orchestrator-hint-now'));
+
+    expect(storeState['addWorkflowOrchestratorHint']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
+      text: 'look at the payout domain first',
+      delivery: 'now',
+    });
+  });
+
+  it('says what read now does in the state the run is in', () => {
     renderPanel();
     openHints();
-    expect(screen.queryByTestId('orchestrator-hint-timing')).toBeNull();
+    expect(screen.getByTestId('orchestrator-hint-timing').textContent).toContain(
+      'asks for a decision right away',
+    );
+
+    cleanup();
+    renderPanel({ agents: [agent(0, 'running')] });
+    openHints();
+    expect(screen.getByTestId('orchestrator-hint-timing').textContent).toContain(
+      'stops the step in flight',
+    );
 
     cleanup();
     renderPanel({ isOrchestrating: true });
-
     openHints();
-
     expect(screen.getByTestId('orchestrator-hint-timing').textContent).toContain(
       'restarts the decision in flight',
     );

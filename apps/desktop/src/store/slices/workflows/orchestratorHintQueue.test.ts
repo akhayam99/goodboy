@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, OrchestratorHint } from '@goodboy/types';
-import {
-  consumeOrchestratorHints,
-  formatOrchestratorHints,
-  hasHintArrivedSince,
-} from './orchestratorHintQueue';
+import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';
 
 const AT = '2026-09-23T10:00:00.000Z' as IsoDateTime;
 const LATER = '2026-09-23T10:05:00.000Z' as IsoDateTime;
@@ -31,12 +27,6 @@ describe('orchestratorHintQueue', () => {
 
   it('has nothing to say without hints', () => {
     expect(formatOrchestratorHints({ hints: [] })).toBe('');
-  });
-
-  it('spots a hint written after the decision started', () => {
-    const hints = [hint({ id: 'seen' }), hint({ id: 'new' })];
-    expect(hasHintArrivedSince({ hints, seenIds: new Set(['seen']) })).toBe(true);
-    expect(hasHintArrivedSince({ hints, seenIds: new Set(['seen', 'new']) })).toBe(false);
   });
 
   it('stamps the first decision that read a hint and never restamps it', () => {

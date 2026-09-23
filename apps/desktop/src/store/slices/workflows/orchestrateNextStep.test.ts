@@ -104,6 +104,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 import type { OrchestratorClientDeps, OrchestratorInput } from '@goodboy/core';
 import { OrchestratorClient, ROLE_REGISTRY } from '@goodboy/core';
 import { orchestrateNextStep, persistOrchestrationStop } from './orchestrateNextStep';
+import { requestDecisionRestart } from './decisionRestart';
 import { addStepToWorkflowRun } from './addStepToWorkflowRun';
 import { continueWorkflowRun } from './continueWorkflowRun';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
@@ -1762,7 +1763,7 @@ describe('orchestrateNextStep', () => {
     expect(updateHintsSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, hints);
   });
 
-  it('throws away a decision when a hint lands while it is in flight', async () => {
+  it('throws away a decision when a hint asks to be read now while it is in flight', async () => {
     const state = baseState();
     const { set, get } = harness(state);
     decideSpy.mockImplementationOnce(async () => {
@@ -1770,6 +1771,7 @@ describe('orchestrateNextStep', () => {
         state,
         withHints(state, [hintFixture({ id: 'late', text: 'no PR, commit locally' })]),
       );
+      requestDecisionRestart({ workflowRunId: WORKFLOW_RUN_ID });
       return {
         decision: {
           action: 'next',
@@ -1799,7 +1801,30 @@ describe('orchestrateNextStep', () => {
     );
   });
 
-  it('does not report a failure when a hint lands while the failing decision was in flight', async () => {
+  it('keeps a decision when a hint is only queued while it is in flight', async () => {
+    const state = baseState();
+    const { set, get } = harness(state);
+    decideSpy.mockImplementationOnce(async () => {
+      Object.assign(
+        state,
+        withHints(state, [hintFixture({ id: 'queued', text: 'no PR, commit locally' })]),
+      );
+      return {
+        decision: { action: 'done', reason: 'all set' },
+        usage: NO_USAGE,
+        model: 'claude-haiku-4-5',
+      };
+    });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(updateStopSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, null);
+    const queued = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!
+      .orchestratorHints?.[0];
+    expect(queued?.consumedAt).toBeUndefined();
+  });
+
+  it('does not report a failure when a read now hint landed while the failing decision was in flight', async () => {
     const state = baseState();
     const { set, get } = harness(state);
     decideSpy.mockImplementationOnce(async () => {
@@ -1807,6 +1832,7 @@ describe('orchestrateNextStep', () => {
         state,
         withHints(state, [hintFixture({ id: 'late', text: 'no PR, commit locally' })]),
       );
+      requestDecisionRestart({ workflowRunId: WORKFLOW_RUN_ID });
       throw new Error('the orchestrator timed out after 120s');
     });
 

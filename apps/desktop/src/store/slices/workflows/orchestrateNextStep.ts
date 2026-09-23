@@ -65,11 +65,8 @@ import { buildProfileGuard } from '../../profileGuard';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { findWorkflowRun } from './findWorkflowRun';
-import {
-  consumeOrchestratorHints,
-  formatOrchestratorHints,
-  hasHintArrivedSince,
-} from './orchestratorHintQueue';
+import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';
+import { decisionRestartMark } from './decisionRestart';
 import { writeOrchestratorHints } from './writeOrchestratorHints';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import { recordOrchestratorUsage } from './recordOrchestratorUsage';
@@ -625,12 +622,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       });
       const readHints = run.orchestratorHints ?? [];
       const readHintIds = new Set(readHints.map((hint) => hint.id));
+      const restartMark = decisionRestartMark({ workflowRunId });
       const isDecisionDiscarded = (): boolean =>
         hasOperatorStop({ get, sessionId, workflowRunId }) ||
-        hasHintArrivedSince({
-          hints: findWorkflowRun({ get, sessionId, workflowRunId })?.orchestratorHints ?? [],
-          seenIds: readHintIds,
-        });
+        decisionRestartMark({ workflowRunId }) !== restartMark;
       const hints = [profileBlock, formatOrchestratorHints({ hints: readHints }), operatorNote]
         .map((entry) => entry?.trim() ?? '')
         .filter((entry) => entry !== '')
