@@ -271,6 +271,7 @@ export const WorkflowRow = ({
                   predecessorName={predecessorName}
                   isOrchestrating={isOrchestrating}
                   hasOrchestratorStrip={hasOrchestratorStrip}
+                  blockReason={wfBlockReason}
                 />
               </div>
               {rename.editing && workflow.isPreset !== false ? (
@@ -334,6 +335,7 @@ export const WorkflowRow = ({
               predecessorName={predecessorName}
               isOrchestrating={isOrchestrating}
               hasOrchestratorStrip={hasOrchestratorStrip}
+              blockReason={wfBlockReason}
             />
             {total > 0 ? (
               <span className="shrink-0 font-mono text-2xs text-faint-foreground">

@@ -2,6 +2,7 @@ import { AlertTriangle, CircleStop, Link2, Pause } from 'lucide-react';
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
 import { StatusDot, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 
 type Props = {
   readonly run: WorkflowRun;
@@ -10,6 +11,7 @@ type Props = {
   readonly predecessorName: string;
   readonly isOrchestrating: boolean;
   readonly hasOrchestratorStrip?: boolean;
+  readonly blockReason?: WorkflowBlockReason | null;
 };
 
 export const WorkflowRunStatus = ({
@@ -19,6 +21,7 @@ export const WorkflowRunStatus = ({
   predecessorName,
   isOrchestrating,
   hasOrchestratorStrip = false,
+  blockReason = null,
 }: Props) => {
   const completedSteps = agents.filter(
     (agent) => agent.status === 'completed' || agent.status === 'skipped',
@@ -115,6 +118,17 @@ export const WorkflowRunStatus = ({
       <span className={cn(baseClass, cn(tintClasses('info').bg, 'text-info'))}>
         <StatusDot tone="info" size="sm" pulsing />
         Running
+      </span>
+    );
+  }
+  if (blockReason === 'questions' && !hasOrchestratorStrip) {
+    return (
+      <span
+        className={cn(baseClass, cn(tintClasses('warning').bg, 'text-warning'))}
+        title="An open question blocks the next step"
+      >
+        <CONCEPT_ICONS.questions size={10} aria-hidden />
+        Blocked
       </span>
     );
   }

@@ -191,4 +191,41 @@ describe('WorkflowRunStatus', () => {
 
     expect(screen.getByTitle('After Scout')).toBeDefined();
   });
+
+  it('reads blocked instead of ready while an open question holds the run', () => {
+    const started: ReadonlyArray<Agent> = [
+      {
+        id: 'agent-1' as AgentId,
+        sessionId: 'session-1' as SessionId,
+        workflowRunId: RUN_ID,
+        ordinal: 0,
+        name: 'Scout',
+        status: 'completed',
+      },
+    ];
+    const staticRun: WorkflowRun = { ...run, executionMode: 'static' };
+    const { rerender } = render(
+      <WorkflowRunStatus
+        run={staticRun}
+        workflow={workflow}
+        agents={started}
+        predecessorName=""
+        isOrchestrating={false}
+      />,
+    );
+    expect(screen.getByText('Ready')).toBeDefined();
+
+    rerender(
+      <WorkflowRunStatus
+        run={staticRun}
+        workflow={workflow}
+        agents={started}
+        predecessorName=""
+        isOrchestrating={false}
+        blockReason="questions"
+      />,
+    );
+    expect(screen.getByText('Blocked')).toBeDefined();
+    expect(screen.queryByText('Ready')).toBeNull();
+  });
 });
