@@ -39,7 +39,6 @@ export const AuthRequiredCallout = ({ providerId, identity, onRefresh }: Props) 
           {isConnecting ? (
             <ProviderInlineConnect
               providerId={providerId}
-              action="login"
               onDone={() => {
                 setIsConnecting(false);
                 onRefresh();

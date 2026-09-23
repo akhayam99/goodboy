@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Button, ScrollFade } from '@goodboy/ui';
-import { isApiProvider, type ProviderId, type ProviderLifecycleAction } from '@goodboy/types';
+import { isApiProvider, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
 import { ProviderConnect } from '../ProviderConnect';
@@ -9,7 +9,6 @@ import { ProviderCredentialsSection } from '../ProviderStudio/ProviderCredential
 
 type Props = {
   readonly providerId: ProviderId;
-  readonly action?: ProviderLifecycleAction;
   readonly onDone: () => void;
   readonly onInFlightChange?: (isInFlight: boolean) => void;
 };
