@@ -1,5 +1,5 @@
 import { UserRound } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Textarea } from '@goodboy/ui';
 
 type Props = {
   readonly bio: string;
@@ -21,17 +21,13 @@ export const ProfileStep = ({ bio, onBioChange }: Props) => (
       </p>
     </div>
 
-    <textarea
+    <Textarea
       value={bio}
       aria-label="Tell agents who you are and what you do here"
       placeholder="I lead design for the checkout team. I do not write code, so walk me through changes as outcomes…"
       rows={5}
       onChange={(event) => onBioChange(event.target.value)}
-      className={cn(
-        'w-full rounded-md border border-border bg-background px-3 py-2 text-left text-sm text-foreground motion-safe:transition-colors',
-        'placeholder:text-faint-foreground',
-        'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
-      )}
+      className="w-full text-left"
     />
   </div>
 );

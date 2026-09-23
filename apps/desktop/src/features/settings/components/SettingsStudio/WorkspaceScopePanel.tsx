@@ -7,6 +7,7 @@ import {
   FieldRow,
   formatError,
   InlineConfirm,
+  Input,
   PANE_RHYTHM,
   ScrollFade,
   SectionHeader,
@@ -202,7 +203,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   hint="How this workspace is labelled across the app."
                 />
                 <FieldRow label="Display name" help={`The folder on disk stays ${folderName}.`}>
-                  <input
+                  <Input
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
@@ -219,12 +220,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                     disabled={renaming}
                     maxLength={60}
                     aria-label="Display name"
-                    className={cn(
-                      'h-8 w-56 rounded-md border border-border bg-background px-2 text-sm text-foreground motion-safe:transition-colors',
-                      'placeholder:text-faint-foreground',
-                      'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
-                      renaming && 'cursor-not-allowed opacity-50',
-                    )}
+                    className="w-56"
                   />
                 </FieldRow>
               </section>
@@ -258,7 +254,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                     aria-hidden
                     className="shrink-0 text-muted-foreground"
                   />
-                  <input
+                  <Input
                     type="text"
                     value={branchPrefix}
                     onChange={(e) => setBranchPrefix(sanitized(e.target.value))}
@@ -273,12 +269,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                     maxLength={16}
                     size={12}
                     aria-label="Branch prefix"
-                    className={cn(
-                      'h-8 rounded-md border border-border bg-background px-2 font-mono text-sm text-foreground motion-safe:transition-colors',
-                      'placeholder:text-faint-foreground',
-                      'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
-                      busy && 'cursor-not-allowed opacity-50',
-                    )}
+                    className="w-auto font-mono"
                   />
                   <span className="font-mono text-sm text-muted-foreground">/&lt;slug&gt;</span>
                 </div>

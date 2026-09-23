@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { cn, ScrollFade, tintClasses } from '@goodboy/ui';
+import { cn, Input, ScrollFade, tintClasses } from '@goodboy/ui';
 import { listBranchNames } from './worktree';
 
 type Props = {
@@ -65,7 +65,7 @@ export const BaseBranchSelectContent = ({ repoPath, value, onCommit, onClose }: 
 
   return (
     <div className="flex w-64 flex-col gap-1.5 p-2">
-      <input
+      <Input
         ref={inputRef}
         type="text"
         role="combobox"
@@ -96,7 +96,7 @@ export const BaseBranchSelectContent = ({ repoPath, value, onCommit, onClose }: 
           event.preventDefault();
           commit({ candidate: query });
         }}
-        className="h-8 rounded-md border border-border bg-background px-2 font-mono text-xs text-foreground outline-none placeholder:text-faint-foreground focus:border-primary focus:ring-1 focus:ring-primary"
+        className="px-2 font-mono text-xs"
       />
       {isLoading ? (
         <span className="px-1 text-2xs text-muted-foreground">Loading branches</span>

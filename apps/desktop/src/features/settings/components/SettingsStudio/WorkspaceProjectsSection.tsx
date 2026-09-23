@@ -2,7 +2,15 @@ import { useMemo, useState } from 'react';
 import { Folder, FolderGit2, FolderPlus, Plus, Unplug, X } from 'lucide-react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button, Chip, ConfirmPopover, SectionHeader, Tooltip, cn, formatError } from '@goodboy/ui';
+import {
+  Button,
+  Chip,
+  ConfirmPopover,
+  Input,
+  SectionHeader,
+  Tooltip,
+  formatError,
+} from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { initRepo } from '../../../../shared/lib/repo';
 import { useChildRepoDetection } from '../../../../shared/hooks/useChildRepoDetection';
@@ -217,7 +225,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
         )}
 
         <div className="flex items-center gap-2">
-          <input
+          <Input
             type="text"
             value={path}
             aria-label="Project path"
@@ -230,11 +238,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
                 void link(path.trim());
               }
             }}
-            className={cn(
-              'h-8 flex-1 rounded-md border border-border bg-background px-2 text-sm text-foreground motion-safe:transition-colors',
-              'placeholder:text-faint-foreground',
-              'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
-            )}
+            className="flex-1"
           />
           <Button variant="secondary" size="sm" onClick={() => void onBrowse()} disabled={busy}>
             Browse
