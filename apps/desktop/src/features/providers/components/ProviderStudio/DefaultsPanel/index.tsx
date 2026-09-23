@@ -64,7 +64,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
     });
 
   const [group, setGroup] = useState<DefaultsGroup>('task');
-  const taskOverrideCount = Object.keys(overrides.taskModels ?? {}).length;
+  const taskOverrideCount = TASKS.filter((task) => overrides.taskModels?.[task.id] != null).length;
   const roleOverrideCount = Object.keys(overrides.roleModels ?? {}).length;
   const groupOptions = [
     { value: 'task' as const, label: `Task models (${taskOverrideCount})` },

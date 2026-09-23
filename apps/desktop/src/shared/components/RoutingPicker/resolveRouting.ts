@@ -19,6 +19,7 @@ export type Recommendation = {
   readonly model?: string;
   readonly effort?: ModelEffort | null;
   readonly reason?: string;
+  readonly label?: string;
 };
 
 type Params = {

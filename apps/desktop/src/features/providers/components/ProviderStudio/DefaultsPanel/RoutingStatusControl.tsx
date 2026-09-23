@@ -6,10 +6,19 @@ type Props = {
   readonly isCustom: boolean;
   readonly disabled: boolean;
   readonly onReset: () => void;
+  readonly idleLabel?: string;
+  readonly resetLabel?: string;
 };
 
-export const RoutingStatusControl = ({ label, isCustom, disabled, onReset }: Props) => {
-  const status = isCustom ? 'custom' : 'default';
+export const RoutingStatusControl = ({
+  label,
+  isCustom,
+  disabled,
+  onReset,
+  idleLabel = 'default',
+  resetLabel = 'Reset to default',
+}: Props) => {
+  const status = isCustom ? 'custom' : idleLabel;
 
   return (
     <div className="flex shrink-0 items-center justify-end">
@@ -21,12 +30,12 @@ export const RoutingStatusControl = ({ label, isCustom, disabled, onReset }: Pro
         bordered={false}
         trailing={
           isCustom ? (
-            <Tooltip content="Reset to default">
+            <Tooltip content={resetLabel}>
               <button
                 type="button"
                 onClick={onReset}
                 disabled={disabled}
-                aria-label="Reset to default"
+                aria-label={resetLabel}
                 className="inline-flex items-center justify-center rounded-full text-current opacity-70 transition-opacity hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <RotateCcw size={11} aria-hidden />

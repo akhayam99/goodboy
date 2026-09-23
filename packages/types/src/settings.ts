@@ -28,11 +28,6 @@ export const TASKS: ReadonlyArray<{
     description: 'Condenses each finished step into the summary the next step starts from',
   },
   {
-    id: 'branch_naming',
-    label: 'Branch naming',
-    description: 'Turns the session goal into a git branch name when the session is created',
-  },
-  {
     id: 'plan_generation',
     label: 'Plan drafting',
     description: 'Writes step plans in the workflow builder and Plan Studio',

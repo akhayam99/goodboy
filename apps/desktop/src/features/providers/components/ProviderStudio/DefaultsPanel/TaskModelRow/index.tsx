@@ -7,6 +7,9 @@ import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker
 import { RoutingStatusControl } from '../RoutingStatusControl';
 
 const DEFAULT_EFFORT: ModelEffort = 'medium';
+const AUTO_LABEL = 'Auto';
+const AUTO_REASON =
+  'Follows the workspace default provider. Goodboy picks the model this task needs.';
 
 const effortForModel = (model: string, requested: ModelEffort): ModelEffort | null =>
   modelEffortLevels(model) == null ? null : clampEffort(model, requested);
@@ -72,6 +75,8 @@ export const TaskModelRow = ({
           isCustom={preference != null}
           disabled={disabled}
           onReset={() => onChange(null)}
+          idleLabel="auto"
+          resetLabel="Back to auto"
         />
         <div className="w-80">
           <RoutingPicker
@@ -91,10 +96,17 @@ export const TaskModelRow = ({
                 });
               },
             }}
-            recommendation={{ model: recommendedModel }}
+            recommendation={{
+              provider: automatic.providerId,
+              model: automatic.model,
+              label: AUTO_LABEL,
+              reason: AUTO_REASON,
+            }}
+            overridden={preference != null}
             disabled={disabled}
             onProvider={(next) => {
               if (next === '') {
+                onChange(null);
                 return;
               }
               setProviderId(next);
