@@ -35,11 +35,10 @@ export const pickRelease = ({
   null;
 
 type Props = {
-  readonly workspaceName: string;
   readonly onClose: () => void;
 };
 
-export const ChangelogStudio = ({ workspaceName, onClose }: Props) => {
+export const ChangelogStudio = ({ onClose }: Props) => {
   const releases = useAppStore((state) => state.changelogReleases);
   const status = useAppStore((state) => state.changelogStatus);
   const error = useAppStore((state) => state.changelogError);
@@ -111,7 +110,7 @@ export const ChangelogStudio = ({ workspaceName, onClose }: Props) => {
       icon={CONCEPT_ICONS.changelog}
       tone={CONCEPT_TONE.changelog}
       title="Changelog"
-      workspaceName={workspaceName}
+      {...(installedVersion !== null && { subtitle: `Installed ${installedVersion}` })}
       closeLabel="close changelog"
       onClose={onClose}
     >

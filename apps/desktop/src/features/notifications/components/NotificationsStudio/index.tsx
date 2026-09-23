@@ -16,11 +16,10 @@ import { NotificationsToolbar } from './NotificationsToolbar';
 import { NotificationGroupRow } from './NotificationGroupRow';
 
 type Props = {
-  readonly workspaceName: string;
   readonly onClose: () => void;
 };
 
-export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
+export const NotificationsStudio = ({ onClose }: Props) => {
   const notifications = useAppStore((state) => state.notifications);
   const notificationCounts = useAppStore((state) => state.notificationCounts);
   const isLoading = useAppStore((state) => state.notificationsLoading);
@@ -54,7 +53,6 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
       icon={CONCEPT_ICONS.notifications}
       tone={CONCEPT_TONE.notifications}
       title="Notifications"
-      workspaceName={workspaceName}
       closeLabel="close notifications"
       onClose={onClose}
     >

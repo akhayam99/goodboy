@@ -220,7 +220,7 @@ describe('ReportIssueStudio', () => {
 
     const preview = screen.getByRole('region', { name: 'Preview' });
     const footer = screen.getByRole('button', { name: 'Send' }).closest('footer');
-    const measure = preview.closest('.max-w-2xl');
+    const measure = preview.closest('.max-w-3xl');
 
     expect(measure).not.toBeNull();
     expect(measure?.contains(footer as Node)).toBe(true);

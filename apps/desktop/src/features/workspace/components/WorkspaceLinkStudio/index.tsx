@@ -1,4 +1,4 @@
-import { PANE_RHYTHM, ScrollFade } from '@goodboy/ui';
+import { cn, PANE_RHYTHM, ScrollFade } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -41,14 +41,16 @@ export const WorkspaceLinkStudio = ({ variant, onClose, onOfferRepo }: Props) =>
       icon={CONCEPT_ICONS.workspace}
       tone={CONCEPT_TONE.workspace}
       title="Add workspace"
-      workspaceName="Create a workspace, then add the projects it works on."
+      subtitle="Create a workspace, then add the projects it works on."
       closeLabel="close add workspace"
       variant={variant}
       onClose={onClose}
     >
       {(requestClose) => (
         <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-          <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+          <div
+            className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.reading, 'flex flex-col gap-6')}
+          >
             <WorkspaceLinkForm
               onComplete={({ mode, workspace }) => onComplete({ mode, workspace, requestClose })}
             />

@@ -21,8 +21,9 @@
   studio that owns that number, the impact overview.
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
-  is always pinned at the left of the top bar. The sidebar shows no workspace
-  name, on the board or inside a session.
+  is always pinned at the left of the top bar. Neither the sidebar nor a studio
+  header shows the workspace name again. A studio subtitle is a one-line
+  purpose or the installed version, never the workspace.
 - **Pin the structure, flex the density.** A control keeps a fixed position so
   people can learn it. No control appears or disappears when a count crosses a
   threshold. The counts themselves may: a chip that reads zero is noise, not

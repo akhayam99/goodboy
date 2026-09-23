@@ -64,7 +64,7 @@ export const GuideStudio = ({ onClose }: Props) => {
     <StudioShell
       icon={BookOpen}
       title="Getting started"
-      workspaceName="How Goodboy fits together"
+      subtitle="How Goodboy fits together"
       closeLabel="close getting started"
       onClose={onClose}
     >

@@ -22,7 +22,6 @@ import { InboxRail } from './InboxRail';
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly rootPath: string;
-  readonly workspaceName: string;
   readonly initialProvider?: InboxProvider | null;
   readonly initialKind?: InboxKind | null;
   readonly initialRecordKey?: string | null;
@@ -55,7 +54,6 @@ const kindToFilter = ({ kind }: KindToFilterParams): InboxKindFilter => {
 export const InboxStudio = ({
   workspaceId,
   rootPath,
-  workspaceName,
   initialProvider = null,
   initialKind = null,
   initialRecordKey = null,
@@ -175,7 +173,6 @@ export const InboxStudio = ({
       icon={CONCEPT_ICONS.inbox}
       tone={CONCEPT_TONE.inbox}
       title="Inbox"
-      workspaceName={workspaceName}
       closeLabel="close inbox studio"
       headerAccessory={
         <IconButton

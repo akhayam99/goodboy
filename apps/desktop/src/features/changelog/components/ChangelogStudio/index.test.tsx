@@ -44,7 +44,7 @@ const buildRelease = (version: string, publishedAt: string): ReleaseNote => ({
   htmlUrl: `https://github.com/akhayam99/goodboy/releases/tag/${version}`,
 });
 
-const renderStudio = () => render(<ChangelogStudio workspaceName="goodboy" onClose={vi.fn()} />);
+const renderStudio = () => render(<ChangelogStudio onClose={vi.fn()} />);
 
 beforeEach(() => {
   mocks.state = {

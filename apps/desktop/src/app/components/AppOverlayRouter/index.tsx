@@ -128,18 +128,13 @@ const renderStudio = ({
       );
     case 'workflow':
       return currentWorkspace === null ? null : (
-        <WorkflowStudio
-          workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
-          onClose={close}
-        />
+        <WorkflowStudio workspaceId={currentWorkspace.id} onClose={close} />
       );
     case 'inbox':
       return currentWorkspace === null ? null : (
         <InboxStudio
           workspaceId={currentWorkspace.id}
           rootPath={workspaceProjectRoot ?? ''}
-          workspaceName={currentWorkspace.name}
           initialProvider={overlay.focus?.provider ?? null}
           initialKind={overlay.focus?.kind ?? null}
           initialRecordKey={overlay.focus?.recordKey ?? null}
@@ -151,19 +146,14 @@ const renderStudio = ({
       return currentWorkspace === null ? null : (
         <ImpactStudio
           workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
           initialScope={overlay.scope ?? undefined}
           onClose={close}
         />
       );
     case 'changelog':
-      return currentWorkspace === null ? null : (
-        <ChangelogStudio workspaceName={currentWorkspace.name} onClose={close} />
-      );
+      return currentWorkspace === null ? null : <ChangelogStudio onClose={close} />;
     case 'notifications':
-      return currentWorkspace === null ? null : (
-        <NotificationsStudio workspaceName={currentWorkspace.name} onClose={close} />
-      );
+      return currentWorkspace === null ? null : <NotificationsStudio onClose={close} />;
     default: {
       const unreachable: never = overlay;
       return unreachable;

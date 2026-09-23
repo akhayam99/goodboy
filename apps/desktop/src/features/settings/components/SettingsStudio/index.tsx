@@ -48,7 +48,6 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
       icon={CONCEPT_ICONS.settings}
       tone={CONCEPT_TONE.settings}
       title="Settings"
-      workspaceName={currentWorkspace?.name ?? 'App settings'}
       closeLabel="close settings"
       onClose={onClose}
     >

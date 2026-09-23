@@ -10,7 +10,7 @@ afterEach(cleanup);
 const defaults = {
   icon: Settings,
   title: 'Test Studio',
-  workspaceName: 'acme',
+  subtitle: 'acme',
   closeLabel: 'close test studio',
   onClose: vi.fn(),
 };
@@ -51,7 +51,7 @@ describe('StudioShell variant rendering', () => {
 });
 
 describe('StudioShell header', () => {
-  it('renders title and workspace name', () => {
+  it('renders the title and its subtitle', () => {
     render(<StudioShell {...defaults}>{() => <p>body</p>}</StudioShell>);
     expect(screen.getByText('Test Studio')).toBeDefined();
     expect(screen.getByText('acme')).toBeDefined();
@@ -135,5 +135,17 @@ describe('StudioShell animation classes', () => {
     const shell = container.firstElementChild as HTMLElement;
     expect(shell.className).toContain('animate-studio-out');
     expect(shell.className).not.toContain('animate-studio-in');
+  });
+});
+
+describe('StudioShell subtitle', () => {
+  it('renders no subtitle line when none is given', () => {
+    render(
+      <StudioShell icon={Settings} title="Changelog" closeLabel="close" onClose={() => undefined}>
+        {() => <p>body</p>}
+      </StudioShell>,
+    );
+    const header = screen.getByRole('banner', { name: 'Changelog' });
+    expect(header.textContent?.replace(/\s+/g, '')).toBe('ChangelogDone');
   });
 });

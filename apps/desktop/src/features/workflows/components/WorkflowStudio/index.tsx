@@ -7,11 +7,10 @@ import { useAppStore } from '../../../../store';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly workspaceName: string;
   readonly onClose: () => void;
 };
 
-export const WorkflowStudio = ({ workspaceId, workspaceName, onClose }: Props) => {
+export const WorkflowStudio = ({ workspaceId, onClose }: Props) => {
   const setWorkflowStudioVisible = useAppStore((state) => state.setWorkflowStudioVisible);
 
   useEffect(() => {
@@ -24,7 +23,6 @@ export const WorkflowStudio = ({ workspaceId, workspaceName, onClose }: Props) =
       icon={CONCEPT_ICONS.workflows}
       tone={CONCEPT_TONE.workflows}
       title="Workflow studio"
-      workspaceName={workspaceName}
       closeLabel="close workflow studio"
       onClose={onClose}
     >

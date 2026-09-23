@@ -126,12 +126,7 @@ describe('transient popover stacking above a full-page studio', () => {
         topBar={<NotificationCenter />}
         main={<p>board</p>}
         studio={
-          <StudioShell
-            title="GitHub"
-            workspaceName="acme"
-            closeLabel="close github studio"
-            onClose={() => {}}
-          >
+          <StudioShell title="GitHub" closeLabel="close github studio" onClose={() => {}}>
             {() => <p>studio body</p>}
           </StudioShell>
         }

@@ -106,7 +106,6 @@ const renderStudio = ({ initialScope, onClose = vi.fn() }: RenderParams = {}) =>
   render(
     <ImpactStudio
       workspaceId={'workspace-1' as WorkspaceId}
-      workspaceName="Goodboy"
       initialScope={initialScope}
       onClose={onClose}
     />,

@@ -89,7 +89,7 @@ describe('WorkspaceLinkStudio', () => {
     );
 
     expect(screen.getByRole('radio', { name: /start from a project/i })).toBeDefined();
-    expect(screen.getByRole('heading', { name: 'Add workspace' })).toBeDefined();
+    expect(screen.getByRole('banner', { name: 'Add workspace' })).toBeDefined();
     expect(container.querySelector('dialog')).toBeNull();
   });
 
@@ -114,7 +114,7 @@ describe('WorkspaceLinkStudio', () => {
     render(<WorkspaceLinkStudio variant="fullscreen" onClose={vi.fn()} onOfferRepo={vi.fn()} />);
 
     expect(state.workspaces).toHaveLength(0);
-    expect(screen.getByRole('heading', { name: 'Add workspace' })).toBeDefined();
+    expect(screen.getByRole('banner', { name: 'Add workspace' })).toBeDefined();
     expect(screen.getByRole('radio', { name: /a workspace with several projects/i })).toBeDefined();
   });
 

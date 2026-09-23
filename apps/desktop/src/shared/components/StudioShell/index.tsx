@@ -9,7 +9,7 @@ type Props = {
   readonly tone?: Tone;
   readonly glyph?: ReactNode;
   readonly title: string;
-  readonly workspaceName: string;
+  readonly subtitle?: string;
   readonly closeLabel: string;
   readonly headerAccessory?: ReactNode;
   readonly onClose: () => void;
@@ -22,7 +22,7 @@ export const StudioShell = ({
   tone,
   glyph,
   title,
-  workspaceName,
+  subtitle,
   closeLabel,
   headerAccessory,
   onClose,
@@ -49,7 +49,7 @@ export const StudioShell = ({
         {...(tone != null && { tone })}
         glyph={glyph}
         title={title}
-        subtitle={workspaceName}
+        {...(subtitle !== undefined && { subtitle })}
         onClose={requestClose}
         closeLabel={closeLabel}
         variant={variant === 'slot' ? 'compact' : 'fullscreen'}

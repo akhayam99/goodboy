@@ -143,13 +143,7 @@ afterEach(cleanup);
 describe('ImpactStudio', () => {
   it('renders the overview outcome verdict and opens session drill-down', () => {
     const onClose = vi.fn();
-    render(
-      <ImpactStudio
-        workspaceId={'workspace-1' as never}
-        workspaceName="Goodboy"
-        onClose={onClose}
-      />,
-    );
+    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={onClose} />);
 
     expect(screen.getByText('orchestrated')).toBeDefined();
     expect(screen.getByText('75%')).toBeDefined();
@@ -170,13 +164,7 @@ describe('ImpactStudio', () => {
       ...base,
       overview: result({ ...base.overview.data!, spendUsd: null, spendSessions: [] }),
     };
-    render(
-      <ImpactStudio
-        workspaceId={'workspace-1' as never}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
 
     expect(screen.getByText('No spend recorded in this window')).toBeDefined();
     expect(screen.queryByText('$0')).toBeNull();
@@ -185,13 +173,7 @@ describe('ImpactStudio', () => {
   });
 
   it('switches to Shipped and renders its key outcome rows', () => {
-    render(
-      <ImpactStudio
-        workspaceId={'workspace-1' as never}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Shipped' }));
     expect(screen.getByText('PR funnel')).toBeDefined();
@@ -210,13 +192,7 @@ describe('ImpactStudio', () => {
         entries: prs.entries.map((entry) => ({ ...entry, spendUsd: null })),
       }),
     };
-    render(
-      <ImpactStudio
-        workspaceId={'workspace-1' as never}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Shipped' }));
     expect(screen.getByText('PR funnel')).toBeDefined();
@@ -225,13 +201,7 @@ describe('ImpactStudio', () => {
   });
 
   it('switches to Flow and renders tempo and blocker rows', () => {
-    render(
-      <ImpactStudio
-        workspaceId={'workspace-1' as never}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Flow' }));
     expect(screen.getByText('agent duration by kind')).toBeDefined();
@@ -244,13 +214,7 @@ describe('ImpactStudio', () => {
       ...buildMetrics(),
       flowHealth: { data: null, error: new Error('database is locked') },
     };
-    render(
-      <ImpactStudio
-        workspaceId={'workspace-1' as never}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Flow' }));
     expect(screen.getAllByText('not loaded')).toHaveLength(4);
@@ -259,13 +223,7 @@ describe('ImpactStudio', () => {
   });
 
   it('switches to Efficiency and stops pointing at a separate budget studio', () => {
-    render(
-      <ImpactStudio
-        workspaceId={'workspace-1' as never}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Efficiency' }));
     expect(screen.getByText('cache reuse by provider')).toBeDefined();
@@ -274,13 +232,7 @@ describe('ImpactStudio', () => {
   });
 
   it('carries spend into the overview and keeps the rail free of empty spend groups', () => {
-    render(
-      <ImpactStudio
-        workspaceId={'workspace-1' as never}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
 
     expect(screen.getByText('Spend')).toBeDefined();
     expect(screen.queryByText('spend by provider')).toBeNull();
@@ -288,13 +240,7 @@ describe('ImpactStudio', () => {
   });
 
   it('updates the query window from the header toggle', () => {
-    render(
-      <ImpactStudio
-        workspaceId={'workspace-1' as never}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('tab', { name: 'All time' }));
     expect(mocks.useImpactMetrics).toHaveBeenLastCalledWith({
@@ -308,13 +254,7 @@ describe('ImpactStudio', () => {
       ...buildMetrics(),
       overview: { data: null, error: new Error('database unavailable') },
     };
-    render(
-      <ImpactStudio
-        workspaceId={'workspace-1' as never}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
 
     expect(screen.getByRole('alert').textContent).toContain('database unavailable');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));

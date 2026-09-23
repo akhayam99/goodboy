@@ -78,11 +78,7 @@ import { BitbucketStudio } from '.';
 
 const studioElement = () => (
   <ToastProvider>
-    <BitbucketStudio
-      sessionId={'session-1' as SessionId}
-      workspaceName="Goodboy"
-      onClose={vi.fn()}
-    />
+    <BitbucketStudio sessionId={'session-1' as SessionId} onClose={vi.fn()} />
   </ToastProvider>
 );
 

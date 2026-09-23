@@ -626,7 +626,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   const sessionGoal = (sessionSlots.find((s) => s.key === 'goal')?.value ?? '').trim();
   const selectedPreset = presets.find((t) => t.id === selectedPresetId) ?? null;
-  const workspaceName = useCurrentWorkspace()?.name ?? '';
 
   const replaceGoal = (next: string) => {
     setGoalHistory((h) => [...h, goalText]);
@@ -938,7 +937,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     <StudioShell
       icon={CONCEPT_ICONS.workflows}
       title="Start a workflow"
-      workspaceName={workspaceName}
       closeLabel="cancel workflow builder"
       onClose={handleClose}
       variant="slot"

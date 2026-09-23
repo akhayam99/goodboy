@@ -5,15 +5,13 @@ import { StudioShell } from '../../../../shared/components/StudioShell';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly workspaceName: string;
   readonly onClose: () => void;
 };
 
-export const MrSessionPane = ({ sessionId, workspaceName, onClose }: Props) => (
+export const MrSessionPane = ({ sessionId, onClose }: Props) => (
   <StudioShell
     icon={GitMerge}
     title="Merge request"
-    workspaceName={workspaceName}
     closeLabel="close merge request"
     onClose={onClose}
     variant="slot"

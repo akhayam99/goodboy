@@ -346,7 +346,6 @@ export const ImpactScene = () => {
       main={
         <ImpactStudio
           workspaceId={WORKSPACE_ID}
-          workspaceName={WORKSPACE_NAME}
           initialScope={{ kind: 'provider', provider: 'anthropic' }}
           onClose={() => undefined}
         />

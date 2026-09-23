@@ -23,14 +23,13 @@ import { ShippedPanel } from './ShippedPanel';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly workspaceName: string;
   readonly initialScope?: ImpactScope;
   readonly onClose: () => void;
 };
 
 const DAY_MS = 86_400_000;
 
-export const ImpactStudio = ({ workspaceId, workspaceName, initialScope, onClose }: Props) => {
+export const ImpactStudio = ({ workspaceId, initialScope, onClose }: Props) => {
   const [windowId, setWindowId] = useState<ImpactWindowId>('last30');
   const [scope, setScope] = useState<ImpactScope>(initialScope ?? { kind: 'overview' });
   const setCurrentSession = useAppStore((state) => state.setCurrentSession);
@@ -173,7 +172,6 @@ export const ImpactStudio = ({ workspaceId, workspaceName, initialScope, onClose
       icon={CONCEPT_ICONS.impact}
       tone={CONCEPT_TONE.impact}
       title="Impact studio"
-      workspaceName={workspaceName}
       closeLabel="close impact studio"
       headerAccessory={
         <SegmentedTabs
