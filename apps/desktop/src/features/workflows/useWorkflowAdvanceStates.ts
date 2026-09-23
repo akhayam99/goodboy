@@ -51,7 +51,7 @@ export const useWorkflowAdvanceStates = ({
         resolveWorkflowAdvance({
           workflow: attached.workflow,
           agents: runAgents,
-          hasOpenQuestions: workflowRunHasOpenQuestions(questions, attached.run.id),
+          hasOpenQuestions: workflowRunHasOpenQuestions({ questions, run: attached.run }),
           isSummarizerRunning,
           isTurnRunning: turning.has(attached.run.id),
           isAutoRun: attached.run.autoRun === true,

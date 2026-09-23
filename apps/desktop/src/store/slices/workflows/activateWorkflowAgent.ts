@@ -63,6 +63,9 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       const blocked = await findWorkflowActivationBlock({
         sessionId,
         workflowRunId: agent.workflowRunId,
+        workflowId:
+          session.workflowRuns.find((candidate) => candidate.id === agent.workflowRunId)
+            ?.workflowId ?? null,
       });
       if (blocked !== null) {
         throw new WorkflowGateError({ reason: blocked });

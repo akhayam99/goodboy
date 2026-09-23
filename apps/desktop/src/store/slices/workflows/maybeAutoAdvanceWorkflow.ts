@@ -135,7 +135,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   let dynamicRunId = null as (typeof activeRuns)[number]['id'] | null;
   const nextPendingAgent = (() => {
     for (const run of runnableRuns) {
-      if (workflowRunHasOpenQuestions(openQuestions, run.id)) {
+      if (workflowRunHasOpenQuestions({ questions: openQuestions, run })) {
         continue;
       }
       const template = templates.find((t) => t.id === run.workflowId);

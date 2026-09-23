@@ -175,7 +175,7 @@ The schema is in `packages/db/src/migrations/`. A few things it does not tell yo
 
 - A run is keyed by `workflow_run_id`, not by workflow. That is how one workflow can be added to a session many times
 - Every per-run flag lives on `session_workflows`. The agents of a run carry the same id
-- A run's plan and open questions belong to the run, not the session. Two runs on one session never read each other's state
+- A run's plan and open questions belong to the run, not the session. Two runs on one session never read each other's state. A question blocks a run when it carries that run's id, or, for old rows with no run id, that run's workflow id (`workflowRunHasOpenQuestions`). A question with neither blocks only the agent that asked it, never a run
 - `is_preset = 0` marks a one-off run. It does not show up in the preset picker
 - A `step_library` row with a `NULL` `workspace_id` is a built-in step for every workspace
 

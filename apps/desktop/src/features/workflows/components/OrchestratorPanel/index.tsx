@@ -85,7 +85,7 @@ export const OrchestratorPanel = ({
     run,
     agents,
     isOrchestrating,
-    hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
+    hasOpenQuestions: workflowRunHasOpenQuestions({ questions: openQuestions, run }),
     costUsd,
   });
   const elapsed = useElapsedLabel({ since: state.waitingSince });

@@ -150,7 +150,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
         state: resolveWorkflowAdvance({
           workflow,
           agents: runAgents,
-          hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
+          hasOpenQuestions: workflowRunHasOpenQuestions({ questions: openQuestions, run }),
           isSummarizerRunning: summarizerBusy,
           isTurnRunning: runAgents.some((agent) => {
             const turn = agentTurnState[agent.id];

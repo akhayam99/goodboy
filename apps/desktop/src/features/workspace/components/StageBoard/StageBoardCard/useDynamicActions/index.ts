@@ -85,7 +85,7 @@ export const useDynamicActions = (
         state: resolveWorkflowAdvance({
           workflow,
           agents: runAgents,
-          hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
+          hasOpenQuestions: workflowRunHasOpenQuestions({ questions: openQuestions, run }),
           isSummarizerRunning,
           isTurnRunning: false,
         }),

@@ -587,7 +587,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         announceRunBudget({ set, get, sessionId, workflowRunId, stop: spendStop });
       }
       if (options?.bypassGate !== true) {
-        const blocked = await findWorkflowActivationBlock({ sessionId, workflowRunId });
+        const blocked = await findWorkflowActivationBlock({
+          sessionId,
+          workflowRunId,
+          workflowId: run.workflowId,
+        });
         if (blocked !== null) {
           await persistOrchestrationStop({
             set,
