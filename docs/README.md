@@ -125,6 +125,9 @@ only when your task reaches the case it covers.
 - [workflows.md](workflows.md): when you touch the workflow tables, the
   logic that moves a run to its next step, or the summary written after
   each step.
+- [turns.md](turns.md): when you change how a turn picks its route, starts
+  and reads a CLI, falls back on failure, or hands off to the session
+  summarizer.
 - [adr/001-workspace-project-rename.md](adr/001-workspace-project-rename.md):
   when you need to know why the schema calls the old workspaces table
   `projects`, or what the 0.2.0 migrations did to existing data.
