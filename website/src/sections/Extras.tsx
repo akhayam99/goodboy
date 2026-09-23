@@ -140,11 +140,9 @@ export const Extras = () => {
             It notices the next step and waits
           </h2>
           <p className="sub rv" style={delay(40)}>
-            Goodboy reads the state of a task and offers what comes next: the workflow step waiting
-            to run, the review comments nobody answered, the branch that fell behind main. Finish a
-            plan on its own and it offers to spawn the implementer. Send a one-line rename to the
-            biggest model and it holds the message to ask whether a smaller one will do. Each of
-            those is one button, and none of them fires itself.
+            Goodboy reads the state of a task and offers what comes next: the step waiting to run,
+            the comments nobody answered, the branch that fell behind main. Each offer is one
+            button, and none of them fires itself.
           </p>
         </div>
 

@@ -1,4 +1,3 @@
-import './Providers.css';
 import { BrandMark, type BrandId } from '../components/BrandIcons';
 import { delay } from '../components/Reveal';
 import { SITE } from '../site';
@@ -25,11 +24,9 @@ const TOOL_CHIPS: readonly Chip[] = [
   { brand: 'bitbucket', name: 'Bitbucket', plan: 'Pull requests' },
   { brand: 'linear', name: 'Linear', plan: 'Issues' },
   { brand: 'jira', name: 'Jira', plan: 'Issues' },
-  { brand: 'sentry', name: 'Sentry', plan: 'Crash reports, read-only' },
+  { brand: 'sentry', name: 'Sentry', plan: 'Crash reports' },
   { brand: 'slack', name: 'Slack', plan: 'Notifications' },
 ];
-
-const BELT_COPIES = 4;
 
 const BeltChip = ({ chip }: { chip: Chip }) => (
   <div className="bchip">
@@ -42,22 +39,18 @@ const BeltChip = ({ chip }: { chip: Chip }) => (
   </div>
 );
 
-const BeltCopy = ({ chips }: { chips: readonly Chip[] }) => (
-  <>
+const BeltCopy = ({ chips, clone }: { chips: readonly Chip[]; clone?: boolean }) => (
+  <div className={clone ? 'beltCopy beltClone' : 'beltCopy'} aria-hidden={clone || undefined}>
     {chips.map((chip) => (
       <BeltChip chip={chip} key={chip.brand} />
     ))}
-  </>
+  </div>
 );
 
 const renderBelt = (chips: readonly Chip[]) => (
   <>
     <BeltCopy chips={chips} />
-    {Array.from({ length: BELT_COPIES - 1 }, (_, copyIndex) => (
-      <div className="pv-loop" aria-hidden="true" key={`loop-${copyIndex}`}>
-        <BeltCopy chips={chips} />
-      </div>
-    ))}
+    <BeltCopy chips={chips} clone />
   </>
 );
 

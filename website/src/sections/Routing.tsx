@@ -345,9 +345,7 @@ export const Routing = () => {
           </h2>
           <p className="sub rv" style={delay(40)}>
             One chat carries every earlier turn into the next, so the last small change costs the
-            most, whatever model does it. A fresh agent per step reads a short brief instead. Both
-            columns run the same six tasks on models of comparable weight, so what changes is how
-            much context each agent has to read.
+            most. Goodboy gives each step a fresh agent and a short brief.
           </p>
         </div>
 
@@ -361,7 +359,7 @@ export const Routing = () => {
           <div className="panel dull ro-col ro-heavy">
             <div className="phead">
               One chat, everything carried forward
-              <span className="ro-sub2">Claude Code, one chat from start to finish</span>
+              <span className="ro-sub2">One chat, from start to finish</span>
             </div>
             <div className="pbody">
               <div className="ro-rows">

@@ -144,7 +144,11 @@ const DialControl = ({ dial, set }: { readonly dial: Dial | null; readonly set: 
     <span className="rl-dialslot">
       <span className="rl-seg">
         {dial.options.map((value) => (
-          <span className="rl-sv" key={value} data-on={set && value === dial.pick ? 'y' : undefined}>
+          <span
+            className="rl-sv"
+            key={value}
+            data-on={set && value === dial.pick ? 'y' : undefined}
+          >
             {value}
           </span>
         ))}
@@ -178,10 +182,8 @@ export const Roles = () => {
             The right model for each step
           </h2>
           <p className="sub rv" style={delay(40)}>
-            Seven roles come in the box: scout, planner, implementer, tester, reviewer, investigator
-            and resolver. Each step picks its own provider and model, then whatever that model lets
-            you tune: how hard it thinks, which variant, standard or fast. Any of it is one click
-            from being changed.
+            Seven roles come in the box, from scout to resolver. Each step picks its own provider,
+            its model and how hard that model thinks, and any of it is one click from being changed.
           </p>
         </div>
 

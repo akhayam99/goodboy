@@ -30,11 +30,6 @@ export const Privacy = () => (
       <p className="caption rv" style={delay(200)}>
         Your prompts go straight from your computer to the provider you picked.
       </p>
-      <div className="pledge rv" style={delay(220)}>
-        <span>every feature free</span>
-        <span>source-available (FSL)</span>
-        <span>delete the file and the data is gone</span>
-      </div>
       <a className="more rv" style={delay(260)} href={SITE.privacy}>
         Read the full pledge <span className="arr">→</span>
       </a>

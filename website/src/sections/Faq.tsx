@@ -12,7 +12,7 @@ const FAQS: readonly FaqItem[] = [
   },
   {
     q: 'Is it really free?',
-    a: 'Yes. Free and source-available, every feature included from the first launch, and no account to create.',
+    a: 'Yes. Free and source-available, with no account to create.',
   },
   {
     q: 'Will it cost me anything on top of what I already pay?',
@@ -32,7 +32,7 @@ const FAQS: readonly FaqItem[] = [
   },
   {
     q: 'Which platforms does it run on?',
-    a: 'macOS and Linux today. One build for Mac, packages for Linux.',
+    a: 'macOS and Linux. Download the Mac app from this page, the Linux builds are on the release page.',
   },
 ];
 

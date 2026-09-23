@@ -94,7 +94,7 @@ export const Hero = () => (
     <div className="wrap heroGrid hr-grid">
       <div className="heroCopy">
         <h1 className="rvi-lead" id="h2-hero">
-          Stop <span className="hl">re&#8209;explaining yourself.</span>
+          Stop <span className="hl">re&#8209;explaining yourself</span>
         </h1>
         <p className="sub rvi-lead" style={delay(80)}>
           Goodboy is a free desktop app that runs a team of coding agents on your work. You describe
@@ -109,15 +109,10 @@ export const Hero = () => (
           </a>
         </div>
         <p className="reassure rvi" style={delay(240)}>
-          <b>Free and source-available, every feature included.</b> It lives on your computer, no
-          account.
+          <b>Free and source-available.</b> It lives on your computer, no account.
         </p>
         <p className="reassure rvi" style={delay(300)}>
           <b>No new bill.</b> It runs on the Claude, ChatGPT or Cursor plan you already pay for.
-        </p>
-        <p className="reassure rvi" style={delay(360)}>
-          <b>Switch model mid-task and nothing resets.</b> The goal, the decisions and the summary
-          belong to the task, so the next agent already has them.
         </p>
       </div>
       <div className="wall rvi" style={delay(200)} aria-hidden="true">
