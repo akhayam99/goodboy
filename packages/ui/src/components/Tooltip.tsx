@@ -108,18 +108,29 @@ export const Tooltip = ({ content, side = 'top', anchorClassName, children }: To
   const anchorRef = useRef<HTMLElement>(null);
   const tipRef = useRef<HTMLSpanElement>(null);
 
+  const clearDelay = () => {
+    if (delayRef.current === null) {
+      return;
+    }
+    clearTimeout(delayRef.current);
+    delayRef.current = null;
+  };
+
   const show = () => {
-    delayRef.current = setTimeout(() => setVisible(true), 400);
+    clearDelay();
+    delayRef.current = setTimeout(() => {
+      delayRef.current = null;
+      setVisible(true);
+    }, 400);
   };
 
   const hide = () => {
-    if (delayRef.current !== null) {
-      clearTimeout(delayRef.current);
-      delayRef.current = null;
-    }
+    clearDelay();
     setVisible(false);
     setCoords(null);
   };
+
+  useEffect(() => clearDelay, []);
 
   const reposition = useCallback(() => {
     const anchor = anchorRef.current;
