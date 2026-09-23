@@ -3,6 +3,7 @@ import { addStepToWorkflowRun } from './addStepToWorkflowRun';
 import { advanceClusterImplementation } from './clusterImplementation';
 import { retryStepSummary } from './retryStepSummary';
 import { recoverStuckStep } from './recoverStuckStep';
+import { recordPlannerUsage } from './recordPlannerUsage';
 import { attachWorkflowToSession } from './attachWorkflowToSession';
 import { deleteStepDef } from './deleteStepDef';
 import { deleteWorkflow } from './deleteWorkflow';
@@ -78,5 +79,6 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     setWorkflowRoleModelOverrides: setWorkflowRoleModelOverrides(set, get),
     retryStepSummary: retryStepSummary(set, get),
     recoverStuckStep: recoverStuckStep(get),
+    recordPlannerUsage: recordPlannerUsage(set, get),
   };
 };
