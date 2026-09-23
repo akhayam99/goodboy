@@ -1,12 +1,13 @@
-use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read};
 use std::process::{Child, ChildStderr, ChildStdout, Command, Stdio};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::thread;
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
 use thiserror::Error;
+
+use crate::live_child::{wait_and_remove, LiveChild, LiveChildRegistry};
 
 #[derive(Debug, Error)]
 pub enum TurnError {
@@ -33,8 +34,7 @@ impl TurnError {
     }
 }
 
-type ChildSlot = Arc<Mutex<Option<Child>>>;
-type ChildRegistry = Arc<Mutex<HashMap<String, ChildSlot>>>;
+type ChildRegistry = LiveChildRegistry;
 
 #[derive(Default)]
 pub struct TurnRegistry(pub ChildRegistry);
@@ -43,6 +43,10 @@ impl TurnRegistry {
     pub fn new() -> Self {
         Self::default()
     }
+}
+
+pub fn shutdown(registry: &TurnRegistry) {
+    crate::live_child::shutdown(&registry.0);
 }
 
 #[derive(Debug, Deserialize)]
@@ -432,11 +436,11 @@ fn spawn_one(
         .take()
         .ok_or_else(|| TurnError::Io(std::io::Error::other("no stderr")))?;
 
-    let slot = Arc::new(Mutex::new(Some(child)));
+    let live = LiveChild::new(child);
     registry
         .lock()
         .map_err(|_| TurnError::Poisoned)?
-        .insert(args.run_id.to_string(), Arc::clone(&slot));
+        .insert(args.run_id.to_string(), live.clone());
 
     let app_clone = app.clone();
     let registry_clone = Arc::clone(registry);
@@ -451,7 +455,7 @@ fn spawn_one(
     thread::spawn(move || {
         forward_lines(&app_clone, &run_id_owned, stdout);
         let stderr_buf = stderr_handle.join().unwrap_or_default();
-        let exit_code = wait_and_remove(&slot, &registry_clone, &run_id_owned);
+        let exit_code = wait_and_remove(&live, &registry_clone, &run_id_owned);
         let _ = app_clone.emit(
             EVENT_NAME,
             TurnEventEnvelope {
@@ -524,17 +528,13 @@ pub async fn turn_list_live(state: State<'_, TurnRegistry>) -> Result<Vec<String
 #[tauri::command]
 pub async fn turn_cancel(state: State<'_, TurnRegistry>, run_id: String) -> Result<(), TurnError> {
     let map = state.0.lock().map_err(|_| TurnError::Poisoned)?;
-    let slot = map
+    let live = map
         .get(&run_id)
         .cloned()
         .ok_or_else(|| TurnError::NotFound(run_id.clone()))?;
     drop(map);
 
-    if let Ok(mut guard) = slot.lock() {
-        if let Some(child) = guard.as_mut() {
-            let _ = child.kill();
-        }
-    }
+    live.kill();
     Ok(())
 }
 
@@ -584,18 +584,6 @@ fn capture_stderr(mut stderr: ChildStderr) -> String {
     buf
 }
 
-fn wait_and_remove(slot: &ChildSlot, registry: &ChildRegistry, run_id: &str) -> Option<i32> {
-    let exit = {
-        let mut guard = slot.lock().ok()?;
-        let child = guard.as_mut()?;
-        child.wait().ok().and_then(|status| status.code())
-    };
-    if let Ok(mut map) = registry.lock() {
-        map.remove(run_id);
-    }
-    exit
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -615,6 +603,26 @@ mod tests {
         let mut command = Command::new("/bin/echo");
         let result = spawn_leased_child(&mut command, &leases.0, Some(&binding), "run-1", || {});
         assert!(matches!(result, Err(TurnError::WriterLeaseNotOwned)));
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn shutdown_kills_live_turns() {
+        use crate::live_child::test_support::{
+            assert_waiter_returns, register_sleeping, spawn_waiter,
+        };
+        let registry = TurnRegistry::new();
+        let live = register_sleeping(&registry.0, "run-1");
+        let waiter = spawn_waiter(&registry.0, "run-1", &live);
+
+        shutdown(&registry);
+
+        assert_waiter_returns(
+            waiter,
+            std::time::Duration::from_secs(2),
+            "shutdown left the turn running",
+        );
+        assert!(registry.0.lock().unwrap().is_empty());
     }
 
     #[test]

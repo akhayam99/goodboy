@@ -1,12 +1,12 @@
-use std::collections::HashMap;
-use std::io::Read;
-use std::process::{Child, Stdio};
-use std::sync::{Arc, Mutex};
+use std::process::Stdio;
+use std::sync::Arc;
 use std::thread;
 
 use serde::{Deserialize, Serialize};
 use tauri::State;
 use thiserror::Error;
+
+use crate::live_child::{drain_lossy, wait_and_remove, LiveChild, LiveChildRegistry};
 
 #[derive(Debug, Error)]
 pub enum SummarizeError {
@@ -27,8 +27,7 @@ impl SummarizeError {
     }
 }
 
-type ChildSlot = Arc<Mutex<Option<Child>>>;
-type ChildRegistry = Arc<Mutex<HashMap<String, ChildSlot>>>;
+type ChildRegistry = LiveChildRegistry;
 
 #[derive(Default)]
 pub struct SummarizeRegistry(pub ChildRegistry);
@@ -37,6 +36,10 @@ impl SummarizeRegistry {
     pub fn new() -> Self {
         Self::default()
     }
+}
+
+pub fn shutdown(registry: &SummarizeRegistry) {
+    crate::live_child::shutdown(&registry.0);
 }
 
 #[derive(Debug, Deserialize)]
@@ -111,19 +114,18 @@ fn run_summarize(
         .take()
         .ok_or_else(|| SummarizeError::Io(std::io::Error::other("no stderr")))?;
 
-    let slot: ChildSlot = Arc::new(Mutex::new(Some(child)));
-    let run_id = args.run_id.clone();
-    if let Some(id) = run_id.as_deref() {
-        if let Ok(mut map) = registry.lock() {
-            map.insert(id.to_string(), Arc::clone(&slot));
-        }
-    }
+    let key = args
+        .run_id
+        .clone()
+        .unwrap_or_else(|| crate::live_child::anonymous_key("summary"));
+    let live = LiveChild::new(child);
+    crate::live_child::register(registry, &key, &live);
 
-    let stdout_handle = thread::spawn(move || drain(stdout));
-    let stderr_handle = thread::spawn(move || drain(stderr));
+    let stdout_handle = thread::spawn(move || drain_lossy(stdout));
+    let stderr_handle = thread::spawn(move || drain_lossy(stderr));
     let stdout_buf = stdout_handle.join().unwrap_or_default();
     let stderr_buf = stderr_handle.join().unwrap_or_default();
-    let exit_code = wait_and_remove(&slot, registry, run_id.as_deref());
+    let exit_code = wait_and_remove(&live, registry, &key);
 
     Ok(SummarizeResult {
         stdout: stdout_buf,
@@ -132,46 +134,8 @@ fn run_summarize(
     })
 }
 
-fn drain<R: Read>(mut source: R) -> String {
-    let mut buf = Vec::new();
-    let _ = source.read_to_end(&mut buf);
-    String::from_utf8_lossy(&buf).into_owned()
-}
-
 fn kill_run(registry: &ChildRegistry, run_id: &str) {
-    let slot = {
-        let Ok(map) = registry.lock() else {
-            return;
-        };
-        map.get(run_id).cloned()
-    };
-    let Some(slot) = slot else {
-        return;
-    };
-    let Ok(mut guard) = slot.lock() else {
-        return;
-    };
-    if let Some(child) = guard.as_mut() {
-        let _ = child.kill();
-    }
-}
-
-fn wait_and_remove(
-    slot: &ChildSlot,
-    registry: &ChildRegistry,
-    run_id: Option<&str>,
-) -> Option<i32> {
-    let exit = {
-        let mut guard = slot.lock().ok()?;
-        let child = guard.as_mut()?;
-        child.wait().ok().and_then(|status| status.code())
-    };
-    if let Some(id) = run_id {
-        if let Ok(mut map) = registry.lock() {
-            map.remove(id);
-        }
-    }
-    exit
+    crate::live_child::kill_one(registry, run_id);
 }
 
 fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
@@ -256,6 +220,8 @@ fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
+    use std::sync::Mutex;
 
     fn make_args(provider_id: &str) -> SummarizeArgs {
         SummarizeArgs {
@@ -353,24 +319,16 @@ mod tests {
     }
 
     #[cfg(unix)]
-    fn register_sleeping_child(registry: &ChildRegistry, run_id: &str) -> ChildSlot {
-        let child = std::process::Command::new("sleep")
-            .arg("30")
-            .spawn()
-            .expect("spawn sleep");
-        let slot: ChildSlot = Arc::new(Mutex::new(Some(child)));
-        registry
-            .lock()
-            .expect("registry")
-            .insert(run_id.to_string(), Arc::clone(&slot));
-        slot
+    fn register_sleeping_child(registry: &ChildRegistry, run_id: &str) -> LiveChild {
+        crate::live_child::test_support::register_sleeping(registry, run_id)
     }
 
     #[cfg(unix)]
-    fn assert_exits_within(slot: &ChildSlot, budget: std::time::Duration, message: &str) {
+    fn assert_exits_within(live: &LiveChild, budget: std::time::Duration, message: &str) {
         let deadline = std::time::Instant::now() + budget;
         loop {
-            let exited = slot
+            let exited = live
+                .slot
                 .lock()
                 .expect("slot")
                 .as_mut()
@@ -416,6 +374,7 @@ mod tests {
             "cancel left the child running",
         );
         assert!(other
+            .slot
             .lock()
             .expect("slot")
             .as_mut()
@@ -440,8 +399,26 @@ mod tests {
         let slot = register_sleeping_child(&registry, "run-1");
         kill_run(&registry, "run-1");
 
-        wait_and_remove(&slot, &registry, Some("run-1"));
+        wait_and_remove(&slot, &registry, "run-1");
 
         assert!(registry.lock().expect("registry").is_empty());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn shutdown_kills_live_summaries() {
+        use crate::live_child::test_support::{assert_waiter_returns, spawn_waiter};
+        let registry = SummarizeRegistry::new();
+        let live = register_sleeping_child(&registry.0, "run-1");
+        let waiter = spawn_waiter(&registry.0, "run-1", &live);
+
+        shutdown(&registry);
+
+        assert_waiter_returns(
+            waiter,
+            std::time::Duration::from_secs(2),
+            "shutdown left the summary running",
+        );
+        assert!(registry.0.lock().expect("registry").is_empty());
     }
 }

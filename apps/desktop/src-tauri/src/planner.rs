@@ -1,7 +1,12 @@
 use std::process::Stdio;
+use std::sync::Arc;
+use std::thread;
 
 use serde::{Deserialize, Serialize};
+use tauri::State;
 use thiserror::Error;
+
+use crate::live_child::{drain_lossy, wait_and_remove, LiveChild, LiveChildRegistry};
 
 #[derive(Debug, Error)]
 pub enum PlannerError {
@@ -20,6 +25,19 @@ impl PlannerError {
             PlannerError::UnknownProvider(_) => "unknown_provider",
         }
     }
+}
+
+#[derive(Default)]
+pub struct PlannerRegistry(pub LiveChildRegistry);
+
+impl PlannerRegistry {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+pub fn shutdown(registry: &PlannerRegistry) {
+    crate::live_child::shutdown(&registry.0);
 }
 
 #[derive(Debug, Deserialize)]
@@ -47,37 +65,59 @@ pub struct PlannerResult {
 }
 
 #[tauri::command]
-pub async fn planner_run(args: PlannerArgs) -> Result<PlannerResult, PlannerError> {
-    tauri::async_runtime::spawn_blocking(move || {
-        let cli_args = build_cli_args(&args)?;
+pub async fn planner_run(
+    state: State<'_, PlannerRegistry>,
+    args: PlannerArgs,
+) -> Result<PlannerResult, PlannerError> {
+    let registry = Arc::clone(&state.0);
+    tauri::async_runtime::spawn_blocking(move || run_planner(&registry, args))
+        .await
+        .map_err(|e| PlannerError::Io(std::io::Error::other(e.to_string())))?
+}
 
-        let mut command = crate::path_env::command(&args.binary);
-        crate::aux_spawn::scrub_nested_session_env(&mut command);
-        if let Some(dir) = args.working_dir.as_deref() {
-            if !dir.is_empty() {
-                command.current_dir(dir);
-            }
+fn run_planner(
+    registry: &LiveChildRegistry,
+    args: PlannerArgs,
+) -> Result<PlannerResult, PlannerError> {
+    let cli_args = build_cli_args(&args)?;
+
+    let mut command = crate::path_env::command(&args.binary);
+    crate::aux_spawn::scrub_nested_session_env(&mut command);
+    if let Some(dir) = args.working_dir.as_deref() {
+        if !dir.is_empty() {
+            command.current_dir(dir);
         }
+    }
 
-        let output = command
-            .args(&cli_args)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output()?;
+    let mut child = command
+        .args(&cli_args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| PlannerError::Io(std::io::Error::other("no stdout")))?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| PlannerError::Io(std::io::Error::other("no stderr")))?;
 
-        Ok(PlannerResult {
-            stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-            exit_code: output.status.code(),
-        })
+    let key = crate::live_child::anonymous_key("planner");
+    let live = LiveChild::new(child);
+    crate::live_child::register(registry, &key, &live);
+
+    let stdout_handle = thread::spawn(move || drain_lossy(stdout));
+    let stderr_handle = thread::spawn(move || drain_lossy(stderr));
+    let stdout_buf = stdout_handle.join().unwrap_or_default();
+    let stderr_buf = stderr_handle.join().unwrap_or_default();
+    let exit_code = wait_and_remove(&live, registry, &key);
+
+    Ok(PlannerResult {
+        stdout: stdout_buf,
+        stderr: stderr_buf,
+        exit_code,
     })
-    .await
-    .map_err(|e| {
-        PlannerError::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            e.to_string(),
-        ))
-    })?
 }
 
 fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
@@ -285,5 +325,25 @@ mod tests {
     fn unknown_provider_is_rejected() {
         let err = build_cli_args(&make_args("nonexistent")).expect_err("unknown provider");
         assert_eq!(err.kind(), "unknown_provider");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn shutdown_kills_live_planner_runs() {
+        use crate::live_child::test_support::{
+            assert_waiter_returns, register_sleeping, spawn_waiter,
+        };
+        let registry = PlannerRegistry::new();
+        let live = register_sleeping(&registry.0, "planner-test");
+        let waiter = spawn_waiter(&registry.0, "planner-test", &live);
+
+        shutdown(&registry);
+
+        assert_waiter_returns(
+            waiter,
+            std::time::Duration::from_secs(2),
+            "shutdown left the planner running",
+        );
+        assert!(registry.0.lock().expect("registry").is_empty());
     }
 }

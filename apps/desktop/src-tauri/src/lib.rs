@@ -18,6 +18,7 @@ mod gitlab;
 mod integration_credentials;
 mod jira;
 mod linear;
+mod live_child;
 mod local_image;
 mod path_env;
 mod permissions;
@@ -71,6 +72,9 @@ fn suppress_webkit_media_remote() {
 /// drained, so a second call after the window teardown finds nothing left.
 fn drain_child_processes(app: &tauri::AppHandle) {
     use tauri::Manager;
+    turn::shutdown(&app.state::<turn::TurnRegistry>());
+    summarize::shutdown(&app.state::<summarize::SummarizeRegistry>());
+    planner::shutdown(&app.state::<planner::PlannerRegistry>());
     scripts::shutdown(&app.state::<scripts::ScriptRegistry>());
     terminal::shutdown(&app.state::<terminal::TerminalRegistry>());
     provider_lifecycle::shutdown(&app.state::<provider_lifecycle::ProviderLifecycleRegistry>());
@@ -111,6 +115,7 @@ pub fn run() {
     )));
     let turn_registry = turn::TurnRegistry::new();
     let summarize_registry = summarize::SummarizeRegistry::new();
+    let planner_registry = planner::PlannerRegistry::new();
     let script_registry = scripts::ScriptRegistry::new();
     let terminal_registry = terminal::TerminalRegistry::new();
     let writer_leases = worktree_writer::WriterLeases::new();
@@ -157,6 +162,7 @@ pub fn run() {
         .manage(turn_registry)
         .manage(writer_leases)
         .manage(summarize_registry)
+        .manage(planner_registry)
         .manage(script_registry)
         .manage(terminal_registry)
         .manage(provider_lifecycle_registry)
