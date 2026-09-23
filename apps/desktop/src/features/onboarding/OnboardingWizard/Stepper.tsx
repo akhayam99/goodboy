@@ -1,4 +1,5 @@
 import { cn, tintClasses } from '@goodboy/ui';
+import type { WizardStepId } from './wizardSteps';
 
 type DotState = 'done' | 'current' | 'pending';
 
@@ -25,8 +26,8 @@ const dotState = ({
 };
 
 type Props = {
-  readonly current: number;
-  readonly steps: ReadonlyArray<number>;
+  readonly current: WizardStepId;
+  readonly steps: ReadonlyArray<WizardStepId>;
 };
 
 export const Stepper = ({ current, steps }: Props) => {

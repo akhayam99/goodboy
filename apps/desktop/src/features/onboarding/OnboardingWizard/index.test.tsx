@@ -39,7 +39,7 @@ vi.mock('../onboarding-store', () => ({
 }));
 
 vi.mock('./Stepper', () => ({
-  Stepper: ({ current, steps }: { current: number; steps: ReadonlyArray<number> }) => (
+  Stepper: ({ current, steps }: { current: string; steps: ReadonlyArray<string> }) => (
     <div data-testid="stepper">{`${current}/${steps.join(',')}`}</div>
   ),
 }));
@@ -302,6 +302,17 @@ describe('OnboardingWizard', () => {
       expect(storeActions.setCurrentWorkspace).toHaveBeenCalledWith(WORKSPACE.id);
     });
 
+    it('renders no dead Continue while a single project is being picked', () => {
+      setHook({ providersConnected: 1, hasWorkspace: false });
+      render(<OnboardingWizard />);
+      advance(/get started/i, 1);
+      advance(/continue/i, 1);
+      fireEvent.click(screen.getByRole('button', { name: /pick single shape/i }));
+      expect(screen.queryByRole('button', { name: /^continue$/i })).toBeNull();
+      expect(screen.queryByRole('button', { name: /create workspace/i })).toBeNull();
+      expect(screen.getByRole('button', { name: /^back$/i })).toBeDefined();
+    });
+
     it('creates the container implicitly from a picked git folder and skips the projects step', async () => {
       setHook({ providersConnected: 1, hasWorkspace: false });
       storeActions.createWorkspace.mockImplementation(async ({ name }: { name: string }) => {
@@ -496,7 +507,9 @@ describe('OnboardingWizard', () => {
       setHook({ ...connectedWorkspaceState, mode: 'setup' });
       render(<OnboardingWizard />);
       fireEvent.click(screen.getByRole('button', { name: /continue/i }));
-      await waitFor(() => expect(screen.getByTestId('stepper').textContent).toBe('5/4,5'));
+      await waitFor(() =>
+        expect(screen.getByTestId('stepper').textContent).toBe('ready/profile,ready'),
+      );
     });
   });
 
