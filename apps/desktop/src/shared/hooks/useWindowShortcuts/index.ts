@@ -4,7 +4,7 @@ import { writeReloadIntent } from '../../../features/workspace/windowView';
 import { useShortcut } from '../../keyboard/useShortcut';
 import { useAppStore } from '../../../store';
 
-export const useZoomShortcuts = (): void => {
+export const useWindowShortcuts = (): void => {
   useEffect(() => {
     void applyStoredZoom();
   }, []);

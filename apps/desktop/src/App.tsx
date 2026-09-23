@@ -28,7 +28,7 @@ import { listenMountCommands } from './features/session/mountQueryBridge';
 import { startWorktreeWriterBridge } from './features/session/resolve/worktreeWriterBridge';
 import { startPrWriteBridge } from './features/review/prWriteBridge';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
-import { useZoomShortcuts } from './shared/hooks/useZoomShortcuts';
+import { useWindowShortcuts } from './shared/hooks/useWindowShortcuts';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
 import {
   useAppStore,
@@ -108,7 +108,7 @@ export const App = () => {
   useProviderRefreshOnFocus();
   useUpdaterPolling();
   useWindowPresence();
-  useZoomShortcuts();
+  useWindowShortcuts();
   useUnhandledRejectionNotice();
   useAsyncSubscription({ start: listenBridgeCommands });
   useAsyncSubscription({ start: listenProjectMaterializeRequests });

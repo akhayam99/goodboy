@@ -29,7 +29,7 @@ export const StudioShell = ({
   variant = 'fullscreen',
   children,
 }: Props) => {
-  const { closing, requestClose } = useStudioOverlay(onClose);
+  const { closing, requestClose } = useStudioOverlay({ onClose });
 
   return (
     <div
@@ -44,7 +44,7 @@ export const StudioShell = ({
       )}
     >
       <OverlayHeader
-        heightClassName="h-[var(--chat-header-h)]"
+        {...(variant === 'slot' && { heightClassName: 'h-[var(--chat-header-h)]' })}
         icon={Icon}
         {...(tone != null && { tone })}
         glyph={glyph}
