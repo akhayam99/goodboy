@@ -12,7 +12,7 @@ const STUDIO_COMPONENT = 'NotificationsStudio';
 const BELL_FILE = 'features/notifications/components/NotificationCenter/index.tsx';
 const PALETTE_FILE = 'features/session/components/CommandPalette/index.tsx';
 const DISPATCHER_FILES = [BELL_FILE, PALETTE_FILE];
-const EVENT_LISTENER_FILE = 'app/hooks/useAppOverlays/index.ts';
+const EVENT_LISTENER_FILE = 'app/hooks/useAppOverlays/useStudioEvents.ts';
 const MOUNT_FILE = 'app/components/AppOverlayRouter/index.tsx';
 
 function listSourceFiles(dir: string, acc: string[] = []): string[] {
