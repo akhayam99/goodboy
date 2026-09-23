@@ -1,5 +1,5 @@
 import { Kanban } from 'lucide-react';
-import { KbdPill, cn, tintClasses } from '@goodboy/ui';
+import { KbdPill, cn } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -9,7 +9,6 @@ type Props = {
 };
 
 export const BoardCta = ({ onNavigate }: Props) => {
-  const primaryTint = tintClasses('primary');
   const shortcut = shortcutGlyphs('session.board');
   const label = `Back to board (${shortcut})`;
   return (
@@ -19,13 +18,9 @@ export const BoardCta = ({ onNavigate }: Props) => {
       aria-label={label}
       title={label}
       className={cn(
-        'group relative flex w-full items-center justify-center gap-2 rounded-md text-center text-sm font-medium',
+        'group relative flex w-full items-center gap-2 rounded-md text-left text-sm font-medium',
         PANE_RHYTHM.navRail.row,
-        'ring-1 motion-safe:transition-colors',
-        primaryTint.bg,
-        primaryTint.text,
-        primaryTint.ring,
-        primaryTint.hoverBg,
+        'text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
       )}
     >

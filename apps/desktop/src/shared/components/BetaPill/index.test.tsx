@@ -27,6 +27,17 @@ describe('BetaPill', () => {
     expect(trigger.textContent).toBe('BetaSponsor');
   });
 
+  it('stays neutral at rest and takes the primary tint only on hover and focus', () => {
+    render(<BetaPill />);
+
+    const classes = screen.getByRole('button', { name: TRIGGER_LABEL }).className.split(' ');
+
+    expect(classes).toContain('text-muted-foreground');
+    expect(classes).not.toContain('text-primary');
+    expect(classes).toContain('hover:text-primary');
+    expect(classes).toContain('focus-visible:text-primary');
+  });
+
   it('opens the support popover on click', () => {
     render(<BetaPill />);
 

@@ -4,6 +4,7 @@ import { openUrl } from '../../lib/editor';
 
 const SPONSOR_URL = 'https://github.com/sponsors/akhayam99';
 const TRIGGER_LABEL = 'Beta build, open the sponsor panel';
+const PRIMARY_TINT = tintClasses('primary');
 
 type Props = {
   readonly className?: string;
@@ -31,20 +32,22 @@ export const BetaPill = ({ className }: Props) => {
       trigger={
         <Chip
           as="button"
-          tone="primary"
+          tone="neutral"
           size="sm"
           ariaLabel={TRIGGER_LABEL}
           label={
             <span className="flex items-center gap-1.5">
               <span className="font-semibold">Beta</span>
-              <span aria-hidden className={cn('h-2.5 w-px', tintClasses('primary').bg)} />
+              <span aria-hidden className="h-2.5 w-px bg-current opacity-40" />
               <span className="font-medium">Sponsor</span>
             </span>
           }
           onClick={toggle}
           testId="beta-badge-trigger"
           className={cn(
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            PRIMARY_TINT.hoverBgSoft,
+            PRIMARY_TINT.hoverText,
+            'focus-visible:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             className,
           )}
         />

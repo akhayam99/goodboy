@@ -34,9 +34,10 @@
   the pointer rests at the window edge. Peek floats the one sidebar over the
   page instead of laying it out.
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
-  never an inversion. The app has no inverted navigation control. One
-  exception: "Back to board" is tinted `primary`, because it is the only
-  sidebar action that leaves the session.
+  never an inversion. The app has no inverted navigation control. New session
+  is the only emphasised sidebar control. Navigation rows, Board included, are
+  neutral at rest, and the footer's beta pill takes its tint only on hover and
+  focus.
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
   Save/Cancel footer, and no settings surface stacked on another.
@@ -211,8 +212,9 @@ flow.
   workspace into one backed by a git repository happens in the workspace link
   and convert flow, not in the footer.
 
-Right: the launchers reached by name, the update control while an update is
-pending, and a `More` popover for the rest.
+Centre: the beta pill and, while an update is pending, the update pip.
+
+Right: the launchers reached by name and a `More` popover for the rest.
 
 - **The release dot answers "have you read the notes for what you're
   running"**, not "has a new release been published". It works offline. It
