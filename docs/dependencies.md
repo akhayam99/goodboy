@@ -1,51 +1,52 @@
 # Dependency policy
 
-> **Read this when** adding a new package or reviewing whether one is
-> justified. **Not for** workspace import boundaries (see that workspace's
-> `CONVENTIONS.md`).
+> **Read this when** adding a new package or checking whether one is
+> justified. **Not for** which workspace may import which (see that
+> workspace's `CONVENTIONS.md`).
 
-The single source of truth for adding and vetting dependencies. Every dependency is a liability. Add the minimum, vet each one, audit regularly.
+This is the single source of truth for adding and checking dependencies. Every dependency is a liability. Add the fewest you can, check each one, and audit them regularly.
 
 ## Before adding any dependency, verify
 
-1. **Necessary?** Can we use the standard library, a Web API, Tauri APIs, or 20 lines of code instead?
-2. **Maintenance**: last release within 6 months, active issues/PRs, multiple maintainers if possible.
-3. **Adoption**: at least 100k weekly downloads on npm, OR strong reputation (known org/individual).
-4. **Size**: bundle impact known. No hidden 5MB transitive trees.
+1. **Necessary?** Could we use the standard library, a Web API, Tauri APIs, or 20 lines of our own code instead?
+2. **Maintenance**: last release within 6 months, active issues and PRs, more than one maintainer if possible.
+3. **Adoption**: at least 100k weekly downloads on npm, OR a strong reputation (a known org or person).
+4. **Size**: you know how much it adds to the bundle. No hidden 5MB trees of sub-dependencies.
 5. **License**: MIT, Apache 2.0, BSD, or ISC only. No copyleft, no custom licenses.
-6. **Security**: `pnpm audit` clean. No known unpatched CVEs.
-7. **Transitive deps**: `pnpm why <pkg>` after install. If it pulls in 50 packages, reconsider.
+6. **Security**: `pnpm audit` is clean. No known unpatched CVEs.
+7. **Transitive deps**: run `pnpm why <pkg>` after install. If it pulls in 50 packages, think again.
 
 ## Rules of thumb
 
 - Prefer Web APIs, Node built-ins, and Tauri APIs over npm packages.
-- Prefer one well-maintained package over multiple small ones doing similar things.
-- No utility libraries (lodash, ramda, etc.): write the function or use native methods.
-- No CSS-in-JS runtimes: Tailwind only.
-- No date libraries unless absolutely needed: use `Intl` and native `Date`.
-- No HTTP clients: use `fetch`.
+- Prefer one well-maintained package over several small ones that do similar things.
+- No utility libraries (lodash, ramda, etc.). Write the function or use native methods.
+- No CSS-in-JS runtimes. Tailwind only.
+- No date libraries unless truly needed. Use `Intl` and native `Date`.
+- No HTTP clients. Use `fetch`.
 - Approved core deps: `react`, `react-dom`, `typescript`, `vite`, `tailwindcss`, `@tauri-apps/*`, `zustand`.
-- Anything else requires justification in the PR description.
+- Anything else needs a justification in the PR description.
 
-Internal workspace deps (the `workspace:*` protocol, no phantom deps) are governed by [CONVENTIONS.md](../CONVENTIONS.md) → pnpm.
+The rules for internal workspace deps (the `workspace:*` protocol, no phantom deps) live in [CONVENTIONS.md](../CONVENTIONS.md) → pnpm.
 
 ## Upgrades: stable over newest
 
-A version that just shipped is a version nobody has run in anger yet. Track the
-stable, widely adopted release, not the latest tag.
+A brand-new version is one that nobody has used in real work yet.
+Follow the stable release most people use, not the latest tag.
 
 - **Runtimes and their types move together, on LTS.** We ship on Node 24, so
-  `@types/node` is pinned to `^24`: types ahead of the runtime make the
-  typechecker accept APIs that do not exist at run time.
-- **Majors are never automatic.** A major bump is a migration: its own branch,
-  clean install, typecheck, full suite, real build. Majors that share a
-  toolchain (Vite, its plugins, vitest) land together, not as separate PRs.
+  `@types/node` is pinned to `^24`. If the types are ahead of the runtime, the
+  typechecker accepts APIs that do not exist at run time.
+- **Majors are never automatic.** A major bump is a migration. It gets its own
+  branch, a clean install, typecheck, the full suite, and a real build. Majors
+  that share a toolchain (Vite, its plugins, vitest) land together, not as
+  separate PRs.
 - **A `0.x` minor is a major.** Cargo and npm both treat it as breaking.
-- **Minor and patch bumps are the routine path**, and still need install +
+- **Minor and patch bumps are the normal path.** They still need install +
   typecheck + suite before merging, plus `cargo test --locked` when
-  `Cargo.lock` moved.
-- **Close what we are not ready to migrate**, with the reason written in the PR.
+  `Cargo.lock` changed.
+- **Close the upgrades we are not ready to migrate**, and write the reason in the PR.
 
 ## Enforcement
 
-`pnpm audit` runs on CI. Manual review of `pnpm-lock.yaml` diff on every PR.
+`pnpm audit` runs on CI. Someone reviews the `pnpm-lock.yaml` diff by hand on every PR.
