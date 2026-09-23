@@ -138,6 +138,7 @@ const lab = ({ labs, token }: { labs: Readonly<Record<string, Lab>>; token: stri
 };
 
 const TONE_SEPARATION = 6;
+const IDENTITY_SEPARATION = 4.5;
 
 const readThemes = (): Readonly<Record<'dark' | 'light', Palette>> => {
   const blocks = themeBlocks();
@@ -205,6 +206,17 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     expect(failures).toEqual([]);
   });
 
+  it.each(SURFACES)('keeps identity labels readable on %s', (surface) => {
+    const failures = Object.keys(palette)
+      .filter((token) => token.startsWith('identity-'))
+      .map((token) => ({
+        token,
+        ratio: contrast(swatch(palette, token), swatch(palette, surface)),
+      }))
+      .filter(({ ratio }) => ratio < BODY_FLOOR);
+    expect(failures).toEqual([]);
+  });
+
   it.each(SURFACES)('keeps provider glyphs visible on %s', (surface) => {
     const failures = Object.keys(palette)
       .filter((token) => token.startsWith('provider-'))
@@ -245,7 +257,7 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
   });
 });
 
-describe.each(Object.entries(readLabThemes()))('%s tone separation', (_theme, labs) => {
+describe.each(Object.entries(readLabThemes()))('%s oklab separation', (_theme, labs) => {
   it('keeps every tone pair apart in oklab', () => {
     const failures = TONES.flatMap((first, index) =>
       TONES.slice(index + 1).map((second) => ({
@@ -256,6 +268,23 @@ describe.each(Object.entries(readLabThemes()))('%s tone separation', (_theme, la
         }),
       })),
     ).filter(({ distance }) => distance < TONE_SEPARATION);
+    expect(failures).toEqual([]);
+  });
+
+  it('keeps every identity colour apart from every tone', () => {
+    const identities = Object.keys(labs).filter((token) => token.startsWith('identity-'));
+    expect(identities).toHaveLength(8);
+    const failures = identities
+      .flatMap((identity) =>
+        TONES.map((tone) => ({
+          pair: `${identity}-${tone}`,
+          distance: deltaE({
+            first: lab({ labs, token: identity }),
+            second: lab({ labs, token: tone }),
+          }),
+        })),
+      )
+      .filter(({ distance }) => distance < IDENTITY_SEPARATION);
     expect(failures).toEqual([]);
   });
 });

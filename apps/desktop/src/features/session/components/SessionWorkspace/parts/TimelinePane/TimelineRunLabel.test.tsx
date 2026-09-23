@@ -133,7 +133,7 @@ describe('TimelineRunLabel', () => {
 
     render(<TimelineRunLabel entry={entryOf({ discardedAt: '2026-08-18T10:00:00Z' })} />);
 
-    expect(mutedChip).toContain('text-run-');
+    expect(mutedChip).toContain('text-identity-');
     expect(chipOf().className).toContain(mutedChip);
   });
 

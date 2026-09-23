@@ -144,37 +144,46 @@ Eight tones (`success`, `info`, `warning`, `danger`, `primary`, `merged`,
 hand-write `bg-warning/10`. Every solid semantic fill uses the shared `on-tone`
 text colour.
 
-### The one identity exception
+### Identity palettes
 
-The session timeline spine is the only place where colour names an object
-instead of describing its state. A reader has to see at a glance that a step
-belongs to one workflow run. Stage cannot show that. Two workflows running at
-once are both `info`, and that is exactly the pair a reader needs to tell
-apart.
+Identity colour names an object instead of describing its state. Two workflows
+running at once are both `info`, and that is exactly the pair a reader needs to
+tell apart. So a run and a workspace get a colour that says "this one" and
+nothing more.
 
-So the lane of a run gets an **identity** colour from a five-entry palette,
-`--color-run-1` to `--color-run-5` in `apps/desktop/src/styles.css`. Colours
-are handed out in order across workflow runs and agent chains, by creation time
-and id. `runIdentity` in
-`apps/desktop/src/features/session/timeline/runIdentity.ts` is the only accessor.
-It gives exactly two versions of one slot: `stroke` for an SVG lane and `chip`
-for the run's own chip. `runIdentityStroke`, next to it, turns the index the
-rail geometry carries back into a stroke.
+One set serves every object that needs a name: `--color-identity-1` to
+`--color-identity-8` in `apps/desktop/src/styles.css`, chroma 0.09 on eight
+hues, with no red. Two accessors read it, and nothing else does:
 
-Three limits keep the exception small:
+- `runIdentity` in `apps/desktop/src/features/session/timeline/runIdentity.ts`
+  picks a start slot per session from a hash of the session id. Then it walks
+  the set with stride 3 across workflow runs and agent chains, ordered by
+  creation time and id. 3 and 8 share no factor, so every slot is used before
+  one repeats. It gives four versions of one slot: `stroke` for an SVG lane,
+  `chip` for the run's own chip, `mutedChip` for a discarded run's chip, and
+  `spin` for the running border. `runIdentityStroke`, next to it, turns the
+  index the rail geometry carries back into a stroke.
+- `workspaceAccent` in `apps/desktop/src/features/workspace/color.ts` hashes a
+  workspace id onto the same eight slots for its sidebar dot.
 
-- The identity palette is **separate from the ten tones** and never overlaps
-  them. A violet lane is not a plan. A red lane is not a failure. A lane colour
-  says nothing beyond "these rows are one run".
-- Identity colours the lane and the run chip that names it, nothing else.
-  Stage stays in the marker on top of the lane, which still goes through
-  `tintClasses(tone)` like everything else.
+Three limits keep identity small:
+
+- Identity never reads as a tone. `token-contrast-floor.test.ts` keeps every
+  identity colour at oklab delta e 4.5 or more from every tone, and at 4.5:1
+  as text on every surface. A violet lane is not a plan. A lane colour says
+  nothing beyond "these rows are one run".
+- Identity colours the lane, the run chip that names it and the workspace dot,
+  nothing else. Stage stays in the marker on top of the lane, which still goes
+  through `tintClasses(tone)` like everything else.
 - The run chip is the only component tinted from identity instead of from a
   tone. So on purpose it is **not** a `Chip`. `TimelineRunChip` in the
   timeline feature owns its own surface, and the palette never enters
-  `packages/ui`. A pink chip there means "this run" and nothing more.
+  `packages/ui`.
 
-Anything else that uses the run palette is a bug. Add a tone instead.
+Agent kinds (`--color-agent-*`) and provider glyphs (`--color-provider-*`) are
+identity palettes of their own. Each has a single accessor and is held to the
+same floor test. Anything else that reaches for an identity colour is a bug.
+Add a tone instead.
 
 ### Lane vocabulary
 
@@ -191,35 +200,16 @@ make up the whole grammar. Nothing outside this list may appear on the rail:
 The spine is the backbone of the feed. It is full height, always drawn, never
 tinted and never broken.
 
-### The two channels a rail line speaks through
-
-Every line on the rail says two separate things. Keeping them separate means
-nobody has to guess at either one.
+### What a rail line says
 
 **Pattern is time.** Solid means this line's own work has happened. Dashed
 means it has not happened yet. The switch from solid to dashed sits at the
 running step, so the switch itself reads as progress. Dashed means nothing
 else, on any line, at any depth. A dashed stretch always points toward NOW.
 
-**Strength is attention.** When a line's activity has moved onto a live
-branch, the line stays solid but fades to `--rail-strength-receded`. It fades
-over exactly the rows where that branch is live. Only the deepest live branch
-is drawn at full strength. Every ancestor over those rows steps back. The token
-mixes the stroke toward the surface colour: 45% of the stroke on dark, 50% on
-light. So the faded line reads as background structure on both themes. It does
-not vanish on the light theme, and it does not look disabled on the dark one.
-
-The rule is one test over a line and a range of rows. It is asked the same way
-of the spine and of a lane. So it holds from spine to run, from run to fan-out,
-and at any deeper level the column cap allows, with no second rule. When two
-branches are live over the same rows, their shared ancestor fades once. The
-rule is about the ancestor, not about either branch.
-
-The two channels are independent, so both messages survive together, even in
-greyscale. Take a run's lane past its own running step while one of its own
-fan-outs is live. It is drawn **dashed and receded**. The pattern says its
-remaining work is in the future. The strength says attention is one level
-further out.
+A discarded run keeps its pattern and its identity hue, and dims to
+`TERMINAL_DIM` on every lane segment and join it owns. That is the same dim a
+finished row uses. Its chip switches to the `mutedChip` version.
 
 The stub exists because identity names a run and nothing else. A standalone
 agent's children are still session work. So their offset line stays in the
@@ -227,9 +217,9 @@ neutral spine colour and does not borrow a run's colour.
 
 Geometry is computed in
 `apps/desktop/src/features/session/timeline/railGeometry.ts`. The lane offset is
-one 16px unit per level, and depth is capped at three columns. Rows are laid
-out against `timelineRhythm.ts`. Its grades fix line height, box height and
-marker size, so a marker centres on its label's line and not on its row box.
+one 16px unit per level. Rows are laid out against `timelineRhythm.ts`. Its
+grades fix line height, box height and marker size, so a marker centres on its
+label's line and not on its row box.
 
 Two rules follow from the direction of time. Newer sits above older at every
 level. So a run's origin row is the bottom of its group and its steps stack

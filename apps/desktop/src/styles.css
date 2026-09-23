@@ -52,24 +52,14 @@
   --color-provider-github: oklch(0.88 0 0);
   --color-provider-slack: #bf7cc4;
 
-  --color-workspace-1: oklch(0.72 0.1 180);
-  --color-workspace-2: oklch(0.72 0.14 260);
-  --color-workspace-3: oklch(0.72 0.14 290);
-  --color-workspace-4: oklch(0.75 0.1 350);
-  --color-workspace-5: oklch(0.75 0.11 70);
-  --color-workspace-6: oklch(0.75 0.12 140);
-  --color-workspace-7: oklch(0.68 0.15 25);
-  --color-workspace-8: oklch(0.72 0.11 220);
-
-  /* Run identity, the one palette where color names an object instead of
-     describing its state.      Only the timeline spine reads from it, and it is
-     deliberately outside the ten tones so a violet spine is never a plan.
-     See packages/ui/DESIGN-SYSTEM.md, "The one identity exception". */
-  --color-run-1: oklch(0.68 0.17 320);
-  --color-run-2: oklch(0.72 0.15 65);
-  --color-run-3: oklch(0.7 0.15 120);
-  --color-run-4: oklch(0.66 0.16 265);
-  --color-run-5: oklch(0.68 0.17 12);
+  --color-identity-1: oklch(0.7 0.09 180);
+  --color-identity-2: oklch(0.7 0.09 262);
+  --color-identity-3: oklch(0.7 0.09 292);
+  --color-identity-4: oklch(0.7 0.09 350);
+  --color-identity-5: oklch(0.7 0.09 70);
+  --color-identity-6: oklch(0.7 0.09 130);
+  --color-identity-7: oklch(0.7 0.09 330);
+  --color-identity-8: oklch(0.7 0.09 225);
 
   --color-agent-generic: oklch(0.71 0.16 17);
   --color-agent-scout: oklch(0.74 0.13 233);
@@ -323,19 +313,14 @@ html[data-theme='light'] {
   --color-provider-gitlab: oklch(0.56 0.18 45);
   --color-provider-github: oklch(0.24 0 0);
   --color-provider-slack: #4a154b;
-  --color-workspace-1: oklch(0.5 0.1 180);
-  --color-workspace-2: oklch(0.5 0.15 260);
-  --color-workspace-3: oklch(0.52 0.15 290);
-  --color-workspace-4: oklch(0.55 0.14 350);
-  --color-workspace-5: oklch(0.52 0.13 70);
-  --color-workspace-6: oklch(0.52 0.13 140);
-  --color-workspace-7: oklch(0.5 0.17 25);
-  --color-workspace-8: oklch(0.5 0.12 220);
-  --color-run-1: oklch(0.52 0.18 320);
-  --color-run-2: oklch(0.55 0.14 75);
-  --color-run-3: oklch(0.5 0.15 120);
-  --color-run-4: oklch(0.5 0.17 265);
-  --color-run-5: oklch(0.53 0.18 12);
+  --color-identity-1: oklch(0.508 0.09 180);
+  --color-identity-2: oklch(0.522 0.09 262);
+  --color-identity-3: oklch(0.528 0.09 292);
+  --color-identity-4: oklch(0.532 0.09 350);
+  --color-identity-5: oklch(0.524 0.09 70);
+  --color-identity-6: oklch(0.512 0.09 130);
+  --color-identity-7: oklch(0.532 0.09 330);
+  --color-identity-8: oklch(0.514 0.09 225);
   --color-agent-generic: oklch(0.52 0.16 17);
   --color-agent-scout: oklch(0.508 0.13 233);
   --color-agent-planner: oklch(0.5 0.16 295);
@@ -525,20 +510,29 @@ dialog[open]::backdrop {
 .spin-border-primary {
   --spin-border-color: var(--color-primary);
 }
-.spin-border-run-1 {
-  --spin-border-color: var(--color-run-1);
+.spin-border-identity-1 {
+  --spin-border-color: var(--color-identity-1);
 }
-.spin-border-run-2 {
-  --spin-border-color: var(--color-run-2);
+.spin-border-identity-2 {
+  --spin-border-color: var(--color-identity-2);
 }
-.spin-border-run-3 {
-  --spin-border-color: var(--color-run-3);
+.spin-border-identity-3 {
+  --spin-border-color: var(--color-identity-3);
 }
-.spin-border-run-4 {
-  --spin-border-color: var(--color-run-4);
+.spin-border-identity-4 {
+  --spin-border-color: var(--color-identity-4);
 }
-.spin-border-run-5 {
-  --spin-border-color: var(--color-run-5);
+.spin-border-identity-5 {
+  --spin-border-color: var(--color-identity-5);
+}
+.spin-border-identity-6 {
+  --spin-border-color: var(--color-identity-6);
+}
+.spin-border-identity-7 {
+  --spin-border-color: var(--color-identity-7);
+}
+.spin-border-identity-8 {
+  --spin-border-color: var(--color-identity-8);
 }
 
 @media (prefers-reduced-motion: no-preference) {

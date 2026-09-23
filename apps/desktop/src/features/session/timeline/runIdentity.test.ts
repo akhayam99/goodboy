@@ -2,15 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { runIdentity, runIdentitySeed, runIdentityStroke } from './runIdentity';
 
 describe('runIdentity', () => {
-  it('walks the palette with stride two from the seed', () => {
+  it('walks every palette slot with stride three from the seed', () => {
     expect(
-      Array.from({ length: 5 }, (_, laneIndex) => runIdentity({ laneIndex, seed: 3 }).index),
-    ).toEqual([3, 0, 2, 4, 1]);
-    expect(runIdentity({ laneIndex: 5, seed: 3 }).index).toBe(3);
+      Array.from({ length: 8 }, (_, laneIndex) => runIdentity({ laneIndex, seed: 3 }).index),
+    ).toEqual([3, 6, 1, 4, 7, 2, 5, 0]);
+    expect(runIdentity({ laneIndex: 8, seed: 3 }).index).toBe(3);
   });
 
-  it('cycles the five-slot palette', () => {
-    expect(runIdentity({ laneIndex: 5, seed: 0 })).toEqual(runIdentity({ laneIndex: 0, seed: 0 }));
+  it('cycles the eight-slot palette', () => {
+    expect(runIdentity({ laneIndex: 8, seed: 0 })).toEqual(runIdentity({ laneIndex: 0, seed: 0 }));
   });
 
   it('returns a deterministic seed for a session', () => {
@@ -25,7 +25,7 @@ describe('runIdentity', () => {
       const identity = runIdentity({ laneIndex: index, seed: 0 });
       expect(tones.some((tone) => identity.stroke.includes(tone))).toBe(false);
       expect(tones.some((tone) => identity.chip.includes(tone))).toBe(false);
-      expect(identity.stroke.startsWith('var(--color-run-')).toBe(true);
+      expect(identity.stroke.startsWith('var(--color-identity-')).toBe(true);
     }
   });
 
@@ -33,8 +33,8 @@ describe('runIdentity', () => {
     const identity = runIdentity({ laneIndex: 4, seed: 0 });
     const slot = identity.index + 1;
 
-    expect(identity.stroke).toBe(`var(--color-run-${slot})`);
-    expect(identity.chip).toContain(`text-run-${slot}`);
+    expect(identity.stroke).toBe(`var(--color-identity-${slot})`);
+    expect(identity.chip).toContain(`text-identity-${slot}`);
   });
 
   it('reads a lane stroke back from the index the geometry carries', () => {
