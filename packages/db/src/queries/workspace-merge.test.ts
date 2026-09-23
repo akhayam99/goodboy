@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { mergeWorkspaces } from './workspace-merge';
 
 const target = 'ws-target' as WorkspaceId;
@@ -11,8 +10,7 @@ const sourceB = 'ws-source-b' as WorkspaceId;
 const NOW = 1755900000000;
 
 const seed = async () => {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   const ordered = [target, source, sourceB];
   for (const [index, id] of ordered.entries()) {
     await db.execute(

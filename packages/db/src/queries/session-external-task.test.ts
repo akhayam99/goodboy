@@ -6,7 +6,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { migrations } from '../migrations';
 import { migrate } from '../migrations/runner';
 import {
@@ -26,11 +26,7 @@ type SeedParams = {
 const LATEST_VERSION = migrations[migrations.length - 1]?.version ?? 0;
 
 const seed = async ({ throughVersion = LATEST_VERSION }: SeedParams) => {
-  const db = makeTestDatabase();
-  await migrate(
-    db,
-    migrations.filter((migration) => migration.version <= throughVersion),
-  );
+  const db = await makeMigratedTestDatabase({ throughVersion });
   const now = Date.now();
   if (throughVersion < 118) {
     await db.execute(

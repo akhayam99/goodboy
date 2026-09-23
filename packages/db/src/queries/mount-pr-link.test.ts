@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MountId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
-import { migrations } from '../migrations';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { insertSessionWorktree } from './session-worktree';
 import { hydrateGithubMountPullRequestLink, listMountPullRequestLinks } from './mount-pr-link';
 
@@ -13,8 +11,7 @@ const mountId = 'mount' as MountId;
 const now = Date.parse('2026-09-08T10:00:00.000Z');
 
 const seed = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(db, migrations);
+  const db = await makeMigratedTestDatabase();
   await db.execute(
     'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
     [workspaceId, 'Workspace', 'workspace', now, now],

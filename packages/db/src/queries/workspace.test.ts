@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, OverrideSettings, Workspace, WorkspaceId } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   deleteWorkspace,
   disconnectWorkspace,
@@ -49,8 +48,7 @@ const makeWorkspace = ({ id = 'workspace-1', overrides = {} }: MakeWorkspacePara
 });
 
 const makeDb = async () => {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   return db;
 };
 

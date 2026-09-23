@@ -2,8 +2,7 @@ import type { IsoDateTime, MountId, Session, SessionId, WorkspaceId } from '@goo
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../client';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   getSessionById,
   insertSession,
@@ -41,8 +40,7 @@ describe('purgeSessionForDelete', () => {
   let db: Database;
 
   beforeEach(async () => {
-    db = makeTestDatabase();
-    await migrate(db);
+    db = await makeMigratedTestDatabase();
     await db.execute(
       'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, 1, 1)',
       [workspaceId, 'Workspace', '/tmp/workspace'],
@@ -235,8 +233,7 @@ describe('updateSessionWriteDestination', () => {
   };
 
   beforeEach(async () => {
-    db = makeTestDatabase();
-    await migrate(db);
+    db = await makeMigratedTestDatabase();
     await db.execute(
       'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, 1, 1)',
       [workspaceId, 'Workspace', '/tmp/workspace'],
@@ -380,8 +377,7 @@ describe('session auto_run', () => {
   });
 
   beforeEach(async () => {
-    db = makeTestDatabase();
-    await migrate(db);
+    db = await makeMigratedTestDatabase();
     await db.execute(
       'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, 1, 1)',
       [workspaceId, 'Workspace', '/tmp/workspace'],

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, OverrideSettings, ProjectId, WorkspaceId } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { insertWorkspace } from './workspace';
 import { insertProject } from './project';
 import {
@@ -29,8 +28,7 @@ const EMPTY: OverrideSettings = {
 };
 
 async function makeDb() {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   const now = new Date().toISOString() as IsoDateTime;
   await insertWorkspace({
     db,

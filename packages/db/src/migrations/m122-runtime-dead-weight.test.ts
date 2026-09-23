@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { WorkflowRunId } from '@goodboy/types';
 import type { Database } from '../client';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { updateWorkflowOrder } from '../queries/session-workflow';
 import { migrations } from './index';
 import { migrate } from './runner';
@@ -10,11 +10,7 @@ const NOW = 1_775_000_000_123;
 const ACTIVITY_AT = '2026-04-01T10:20:30.456Z';
 
 const seedThrough121 = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(
-    db,
-    migrations.filter((migration) => migration.version <= 121),
-  );
+  const db = await makeMigratedTestDatabase({ throughVersion: 121 });
   await db.execute(
     `INSERT INTO workspaces (id, name, slug, created_at, updated_at)
      VALUES ('workspace-1', 'Workspace', 'workspace', ?, ?)`,

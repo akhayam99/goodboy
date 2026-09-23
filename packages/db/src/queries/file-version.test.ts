@@ -7,8 +7,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   deleteFileVersion,
   deleteFileVersionsForSession,
@@ -23,8 +22,7 @@ const sessionId = 's1' as SessionId;
 const providerRunId = 'run-1' as ProviderRunId;
 
 const seed = async () => {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   const now = Date.now();
   await db.execute(
     `INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,

@@ -9,9 +9,8 @@ import type {
   ResolveThread,
   SessionId,
 } from '@goodboy/types';
-import { makeTestDatabase } from '../../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../../test-helpers/test-db';
 import { migrate } from '../../migrations/runner';
-import { migrations } from '../../migrations';
 import { listResolveThreads, setResolveThreadState, upsertResolveThread } from '../resolve-thread';
 import {
   insertResolveAttempt,
@@ -36,11 +35,7 @@ import {
 
 const SESSION = 'session' as SessionId;
 const seed = async () => {
-  const db = makeTestDatabase();
-  await migrate(
-    db,
-    migrations.filter((migration) => migration.version < 140),
-  );
+  const db = await makeMigratedTestDatabase({ throughVersion: 139 });
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Workspace', 'workspace', 1, 1)",
   );

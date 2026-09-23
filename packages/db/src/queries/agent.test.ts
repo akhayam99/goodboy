@@ -14,7 +14,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase, makeTestDatabase } from '../test-helpers/test-db';
 import {
   getAgentById,
   listAgentsForSession,
@@ -37,8 +37,7 @@ describe('agent queries', () => {
   let db: Database;
 
   beforeEach(async () => {
-    db = makeTestDatabase();
-    await migrate(db);
+    db = await makeMigratedTestDatabase();
     const now = Date.now();
     await db.execute(
       'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',

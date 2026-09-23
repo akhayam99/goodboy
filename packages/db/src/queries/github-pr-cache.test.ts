@@ -1,8 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { getGithubPrCache, upsertGithubPrCache } from './github-pr-cache';
 
 const NOW = Date.UTC(2026, 7, 22, 12, 0, 0);
@@ -10,8 +9,7 @@ const workspaceId = 'workspace-1' as WorkspaceId;
 const sessionId = 'session-1' as SessionId;
 
 const seed = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   await db.execute(
     'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
     [workspaceId, 'workspace', 'workspace', NOW, NOW],

@@ -8,8 +8,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import type { Database } from '../client';
 import {
   attachWorkflowToSession,
@@ -73,8 +72,7 @@ const readPlanStatus = async ({ db }: ReadPlanStatusParams): Promise<string> => 
 };
 
 async function seed(): Promise<Database> {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   const now = Date.now();
   await db.execute(
     'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',

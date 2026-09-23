@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, MountId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrations } from '../migrations';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { deleteSession } from './session';
 import {
   deleteSessionMount,
@@ -22,8 +20,7 @@ const sessionId = 's1' as SessionId;
 const otherSessionId = 's2' as SessionId;
 
 const seed = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(db, migrations);
+  const db = await makeMigratedTestDatabase();
   const now = Date.now();
   await db.execute(
     'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',

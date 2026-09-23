@@ -6,8 +6,7 @@ import type {
   ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   deleteProject,
   disconnectProject,
@@ -59,8 +58,7 @@ const makeProject = ({ id = 'project-1', overrides = {} }: MakeProjectParams): P
 });
 
 const makeDb = async () => {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   const now = Date.now();
   await db.execute(
     `INSERT INTO workspaces (id, name, slug, created_at, updated_at)

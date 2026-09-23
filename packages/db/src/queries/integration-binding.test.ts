@@ -8,8 +8,7 @@ import type {
   IntegrationBinding,
   IntegrationBindingId,
 } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   deleteIntegrationBinding,
   deleteIntegrationBindingsForProvider,
@@ -22,8 +21,7 @@ const workspaceId = 'w1' as WorkspaceId;
 const projectId = 'p1' as ProjectId;
 
 const seed = async () => {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   const now = Date.now();
   await db.execute(
     'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',

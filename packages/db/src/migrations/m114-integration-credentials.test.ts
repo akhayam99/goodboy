@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Database } from '../client';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase, makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
 import { migrations } from './index';
 
@@ -9,11 +9,7 @@ const THROUGH = 113;
 const throughM130 = migrations.filter((migration) => migration.version <= 130);
 
 const seedThrough113 = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(
-    db,
-    migrations.filter((migration) => migration.version <= THROUGH),
-  );
+  const db = await makeMigratedTestDatabase({ throughVersion: THROUGH });
   const now = Date.now();
   for (const [id, name] of [
     ['ws-1', 'first'],

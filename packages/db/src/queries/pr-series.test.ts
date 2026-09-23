@@ -11,9 +11,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
-import { migrations } from '../migrations';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { insertSessionWorktree } from './session-worktree';
 import { upsertMountPullRequestLink } from './mount-pr-link';
 import {
@@ -32,8 +30,7 @@ const now = Date.parse('2026-09-08T10:00:00.000Z');
 const iso = new Date(now).toISOString() as IsoDateTime;
 
 const seed = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(db, migrations);
+  const db = await makeMigratedTestDatabase();
   await db.execute(
     'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
     [workspaceId, 'Workspace', 'workspace', now, now],

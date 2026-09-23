@@ -15,6 +15,10 @@ This file says what to test and how. Where test files go: [file-system.md](file-
 - For hooks: `renderHook` from `@testing-library/react`.
 - Some suites have a per-test hook that dynamically `import()`s a large module graph. Such a suite loads that import once in `beforeAll`, with a timeout that fits it (60s for the store, see `apps/desktop/src/store/slices/sessions/index.test.ts`). Never in `beforeEach`. There, the import cost lands on whichever test runs first, and on a busy machine it goes past vitest's default 10s hook timeout.
 
+## Database tests start from a migrated template
+
+A `packages/db` test that needs a migrated schema calls `await makeMigratedTestDatabase()` (or `{ throughVersion: N }` to stop before the migration under test) from `test-helpers/test-db.ts`. The first call per version in a file runs the real migration chain once and keeps the serialized result; every call returns an independent in-memory clone with `foreign_keys` on. A migration test still runs the migration under test with a real `migrate(db)` on top of the clone. Tests whose subject is the runner itself (`runner*.test.ts`, `registry.test.ts`, segment checkpoints, crash resume, anything reading `MigrateResult` or passing a custom migration list) and file-backed databases keep `makeTestDatabase` plus `migrate`.
+
 ## Migration convergence sampling
 
 For speed, `packages/db/src/migrations/registry.test.ts` tests a sample of the intermediate versions instead of all of them. That sample does not replace the per-version sql hash manifest checked into the same file. The manifest is what really stops anyone from editing a migration after release. The sample has its own minimum number of intermediate points it must reach. So if someone cuts the sample size, the test fails, instead of quietly shrinking to the first and last version. No test pins the sampled versions or the total number of migrations. Both change every release. A test that goes red for that reason teaches people to edit the expected values, and that is exactly how a hash manifest gets regenerated without anyone looking.

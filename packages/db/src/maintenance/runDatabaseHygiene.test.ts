@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Database } from '../client';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { runDatabaseHygiene } from './runDatabaseHygiene';
 
 const NOW = Date.UTC(2026, 7, 22, 12, 0, 0);
@@ -26,8 +25,7 @@ const seedSession = async ({ db }: { readonly db: Database }): Promise<void> => 
 
 describe('runDatabaseHygiene', () => {
   it('cancels only stale in-flight provider runs through the status updater', async () => {
-    const db = makeTestDatabase();
-    await migrate(db);
+    const db = await makeMigratedTestDatabase();
     await seedSession({ db });
     await db.execute(
       `INSERT INTO provider_runs
@@ -59,8 +57,7 @@ describe('runDatabaseHygiene', () => {
   });
 
   it('does not cancel a stale run that finishes after zombie selection', async () => {
-    const sourceDb = makeTestDatabase();
-    await migrate(sourceDb);
+    const sourceDb = await makeMigratedTestDatabase();
     await seedSession({ db: sourceDb });
     await sourceDb.execute(
       `INSERT INTO provider_runs
@@ -99,8 +96,7 @@ describe('runDatabaseHygiene', () => {
   });
 
   it('removes expired audit events, old turn events, and orphaned PR cache rows', async () => {
-    const db = makeTestDatabase();
-    await migrate(db);
+    const db = await makeMigratedTestDatabase();
     await seedSession({ db });
     await db.execute(
       `INSERT INTO session_worktrees
@@ -160,8 +156,7 @@ describe('runDatabaseHygiene', () => {
   });
 
   it('caps audit and turn event tables to their newest rows', async () => {
-    const db = makeTestDatabase();
-    await migrate(db);
+    const db = await makeMigratedTestDatabase();
     await seedSession({ db });
     await db.execute(
       `WITH RECURSIVE sequence(value) AS (

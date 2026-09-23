@@ -7,9 +7,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
-import { migrations } from '../migrations';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { insertSessionWorktree, listSessionMounts } from './session-worktree';
 import { listRetainedWorktreePaths, transferMountPathToRetained } from './retained-worktree-path';
 
@@ -19,8 +17,7 @@ const mountId = 'mount' as MountId;
 const now = new Date('2026-09-08T10:00:00.000Z').toISOString() as IsoDateTime;
 
 const seed = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(db, migrations);
+  const db = await makeMigratedTestDatabase();
   const timestamp = Date.parse(now);
   await db.execute(
     'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',

@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { IsoDateTime, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import type { Database } from '../client';
 import { deleteWorkflow, getWorkflow, listWorkflows, upsertWorkflow } from './workflow';
 
@@ -41,8 +40,7 @@ describe('workflow queries', () => {
   let db: Database;
 
   beforeEach(async () => {
-    db = makeTestDatabase();
-    await migrate(db);
+    db = await makeMigratedTestDatabase();
     await db.execute(
       'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
       [workspaceId, 'ws', 'ws', Date.now(), Date.now()],
