@@ -304,4 +304,36 @@ describe('pr series', () => {
     expect(membership?.series.workItemIdentifier).toBe('ENG-3240');
     expect(membership?.member.ordinal).toBe(3);
   });
+
+  it('lists several series with only their own members in position order', async () => {
+    const otherId = 'series-b' as PrSeriesId;
+    await insertPrSeries({ db, series: series() });
+    await insertPrSeries({
+      db,
+      series: series({
+        id: otherId,
+        name: 'follow-up',
+        createdAt: new Date(now + 1).toISOString() as IsoDateTime,
+      }),
+    });
+    await upsertPrSeriesMember({
+      db,
+      member: member({ id: 'm-a2' as PrSeriesMemberId, ordinal: 2, label: '2/6' }),
+    });
+    await upsertPrSeriesMember({
+      db,
+      member: member({ id: 'm-a1' as PrSeriesMemberId, ordinal: 1 }),
+    });
+    await upsertPrSeriesMember({
+      db,
+      member: member({ id: 'm-b1' as PrSeriesMemberId, seriesId: otherId, ordinal: 1 }),
+    });
+
+    const listed = await listPrSeries({ db, sessionId });
+
+    expect(listed.map((view) => [view.id, view.members.map((entry) => entry.id)])).toEqual([
+      [seriesId, ['m-a1', 'm-a2']],
+      [otherId, ['m-b1']],
+    ]);
+  });
 });

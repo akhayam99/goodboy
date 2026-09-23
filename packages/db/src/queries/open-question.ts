@@ -286,13 +286,11 @@ export const markOpenQuestionsResolvedByText = async (
   }
 
   const now = Date.now();
-  for (const id of toResolve) {
-    await db.execute(
-      `UPDATE open_questions
-       SET status = 'answered', user_answer = ?, answered_at = ?, answer_delivered_at = ?
-       WHERE id = ? AND status = 'open'`,
-      ['[resolved by agent]', now, now, id],
-    );
-  }
-  return toResolve.length;
+  const result = await db.execute(
+    `UPDATE open_questions
+     SET status = 'answered', user_answer = ?, answered_at = ?, answer_delivered_at = ?
+     WHERE id IN (${toResolve.map(() => '?').join(', ')}) AND status = 'open'`,
+    ['[resolved by agent]', now, now, ...toResolve],
+  );
+  return result.rowsAffected;
 };

@@ -124,16 +124,23 @@ export const listWorkflows = async (
     [workspaceId],
   );
 
-  const workflows: Workflow[] = [];
-  for (const row of rows) {
-    const stepRows = await db.select<StepRow>(
-      'SELECT * FROM steps WHERE workflow_id = ? AND deleted_at IS NULL ORDER BY ordinal ASC',
-      [row.id],
-    );
-    workflows.push(toWorkflow(row, stepRows.map(toStep)));
+  if (rows.length === 0) {
+    return [];
   }
-
-  return workflows;
+  const workflowIds = rows.map((row) => row.id);
+  const stepRows = await db.select<StepRow>(
+    `SELECT * FROM steps
+     WHERE workflow_id IN (${workflowIds.map(() => '?').join(', ')}) AND deleted_at IS NULL
+     ORDER BY workflow_id, ordinal ASC`,
+    workflowIds,
+  );
+  const stepsByWorkflow = new Map<string, Step[]>();
+  for (const stepRow of stepRows) {
+    const bucket = stepsByWorkflow.get(stepRow.workflow_id) ?? [];
+    bucket.push(toStep(stepRow));
+    stepsByWorkflow.set(stepRow.workflow_id, bucket);
+  }
+  return rows.map((row) => toWorkflow(row, stepsByWorkflow.get(row.id) ?? []));
 };
 
 export const getWorkflow = async (db: Database, id: WorkflowId): Promise<Workflow | null> => {

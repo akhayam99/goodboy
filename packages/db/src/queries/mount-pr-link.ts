@@ -7,7 +7,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-type Row = {
+export type MountPullRequestLinkRow = {
   readonly id: string;
   readonly mountId: MountId;
   readonly provider: MountPullRequestLink['provider'];
@@ -44,7 +44,14 @@ const parseSnapshot = ({ value }: { readonly value: string }): unknown => {
   }
 };
 
-const toDomain = (row: Row): MountPullRequestLink => ({
+export const MOUNT_PR_LINK_COLUMNS = `link.id, link.mount_id AS mountId, link.provider, link.host,
+  link.repo_slug AS repoSlug, link.pr_number AS prNumber,
+  link.head_branch AS headBranch, link.base_branch AS baseBranch,
+  link.url, link.state, link.snapshot_json AS snapshot,
+  link.last_observed_at AS lastObservedAt,
+  link.created_at AS createdAt, link.updated_at AS updatedAt`;
+
+export const toMountPullRequestLink = (row: MountPullRequestLinkRow): MountPullRequestLink => ({
   ...row,
   snapshot: parseSnapshot({ value: row.snapshot }),
   lastObservedAt: new Date(row.lastObservedAt).toISOString() as IsoDateTime,
@@ -100,18 +107,13 @@ export const listMountPullRequestLinks = async ({
   sessionId,
   mountId,
 }: ListMountPullRequestLinksParams): Promise<ReadonlyArray<MountPullRequestLink>> => {
-  const rows = await db.select<Row>(
-    `SELECT link.id, link.mount_id AS mountId, link.provider, link.host,
-            link.repo_slug AS repoSlug, link.pr_number AS prNumber,
-            link.head_branch AS headBranch, link.base_branch AS baseBranch,
-            link.url, link.state, link.snapshot_json AS snapshot,
-            link.last_observed_at AS lastObservedAt,
-            link.created_at AS createdAt, link.updated_at AS updatedAt
+  const rows = await db.select<MountPullRequestLinkRow>(
+    `SELECT ${MOUNT_PR_LINK_COLUMNS}
      FROM mount_pr_links link
      JOIN session_worktrees mount ON mount.id = link.mount_id
      WHERE mount.session_id = ? AND mount.id = ?
      ORDER BY link.created_at, link.id`,
     [sessionId, mountId],
   );
-  return rows.map(toDomain);
+  return rows.map(toMountPullRequestLink);
 };

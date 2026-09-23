@@ -200,4 +200,38 @@ describe('workflow queries', () => {
     expect(stored?.name).toBe('Refactor');
     expect(stored?.steps[0]?.name).toBe('Scout');
   });
+
+  it('lists each workflow with only its own steps in step order', async () => {
+    const second: Workflow = {
+      ...buildWorkflow(),
+      id: 'wf-2' as WorkflowId,
+      name: 'Review',
+      createdAt: '2026-07-26T00:00:00.000Z' as IsoDateTime,
+      steps: [
+        {
+          id: 'step-b2' as StepId,
+          workflowId: 'wf-2' as WorkflowId,
+          ordinal: 1,
+          name: 'Report',
+          promptPrefix: 'write it up',
+        },
+        {
+          id: 'step-b1' as StepId,
+          workflowId: 'wf-2' as WorkflowId,
+          ordinal: 0,
+          name: 'Read',
+          promptPrefix: 'read the diff',
+        },
+      ],
+    };
+    await upsertWorkflow(db, buildWorkflow());
+    await upsertWorkflow(db, second);
+
+    const listed = await listWorkflows(db, workspaceId);
+
+    expect(listed.map((workflow) => [workflow.id, workflow.steps.map((step) => step.id)])).toEqual([
+      ['wf-1', ['step-1', 'step-2']],
+      ['wf-2', ['step-b1', 'step-b2']],
+    ]);
+  });
 });
