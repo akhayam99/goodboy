@@ -17,7 +17,7 @@ import { loadArtifactProvenance } from '../../../features/artifacts/artifactProv
 import { worktreeChangedFiles } from '../../../features/worktree/worktree';
 import {
   KIND_TO_ROLE,
-  inferAgentKindFromName,
+  classifyAgent,
   resolveRootAgent,
   type AgentKind,
 } from '../../../features/session/agent-kind';
@@ -59,14 +59,15 @@ export const scoutDepth = (runs: ReadonlyArray<Agent>, agentId: AgentId): number
   return depth;
 };
 
-const resolveAgentKind = (agent: Agent): AgentKind => {
-  const persisted = agent.kind as AgentKind | undefined;
-  return persisted ?? inferAgentKindFromName(agent.name);
+type AgentKindLookupParams = {
+  readonly agent: Agent;
+  readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
 };
 
-const resolveAgentRole = (agent: Agent): AgentRole => {
-  return KIND_TO_ROLE[resolveAgentKind(agent)] ?? 'custom';
-};
+const agentKindOf = ({ agent, agentKindOverride }: AgentKindLookupParams): AgentKind =>
+  classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null });
+
+const agentRoleOf = (params: AgentKindLookupParams): AgentRole => KIND_TO_ROLE[agentKindOf(params)];
 
 const depthCapForRole = (role: AgentRole): number => {
   if (role === 'scout') {
@@ -472,7 +473,7 @@ export const fanOutAgents = async ({
     sessionId,
     container,
     role,
-    childKind: resolveAgentKind(container),
+    childKind: agentKindOf({ agent: container, agentKindOverride: get().agentKindOverride }),
     specs: clamped.map((area) => ({
       name: area.area,
       promptText: `${area.area}\n${area.query}`,
@@ -533,7 +534,7 @@ const maybeSynthesizeParent = async ({
     sessionId,
     agentId: parentId,
     content: composeSynthesisKickoff({
-      role: resolveAgentRole(container),
+      role: agentRoleOf({ agent: container, agentKindOverride: get().agentKindOverride }),
       containerName: container.name,
       children: siblings,
     }),
@@ -575,7 +576,9 @@ export const advanceScoutTree = (set: SetFn, get: GetFn) => {
 
     const root = resolveRootAgent({ agents: runs, agentId });
     const isWireframeScout =
-      root !== null && root.id !== agentId && resolveAgentKind(root) === 'wireframe';
+      root !== null &&
+      root.id !== agentId &&
+      agentKindOf({ agent: root, agentKindOverride: get().agentKindOverride }) === 'wireframe';
     if (isWireframeScout) {
       await settleAgent({
         set,
@@ -587,7 +590,7 @@ export const advanceScoutTree = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    const role = resolveAgentRole(agent);
+    const role = agentRoleOf({ agent, agentKindOverride: get().agentKindOverride });
     const capability = fanOutCapabilityForRole(role);
     const split = extractFanOut({
       assistantText,

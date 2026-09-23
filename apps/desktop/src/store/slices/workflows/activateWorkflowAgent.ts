@@ -8,11 +8,7 @@ import {
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
   listPlansForSession as invokeListPlansForSession,
 } from '../../../features/plans/plans';
-import {
-  inferAgentKindFromName,
-  kindConsumesPlan,
-  type AgentKind,
-} from '../../../features/session/agent-kind';
+import { classifyAgent, kindConsumesPlan } from '../../../features/session/agent-kind';
 import {
   buildGoalKickoffSection,
   buildPlanKickoffSection,
@@ -105,8 +101,10 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       );
     }
 
-    const effectiveKind: AgentKind =
-      (agent.kind as AgentKind | undefined) ?? inferAgentKindFromName(agent.name);
+    const effectiveKind = classifyAgent({
+      agent,
+      override: get().agentKindOverride[agent.id] ?? null,
+    });
     const consumesPlan = kindConsumesPlan({ kind: effectiveKind });
     const explicitPlan =
       explicitPlanId !== undefined

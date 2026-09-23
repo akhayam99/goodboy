@@ -4,11 +4,7 @@ import type { Agent, AgentId, Session, Workflow, WorkspaceId } from '@goodboy/ty
 import { Divider, cn } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import {
-  AGENT_KIND_META,
-  inferAgentKindFromName,
-  type AgentKind,
-} from '../../../session/agent-kind';
+import { AGENT_KIND_META, classifyAgent, type AgentKind } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
@@ -107,11 +103,10 @@ export const ChatBreadcrumb = ({ session }: Props) => {
     if (!selectedAgent) {
       return null;
     }
-    const override = agentKindOverride[selectedAgent.id];
-    if (override) {
-      return override;
-    }
-    return inferAgentKindFromName(selectedAgent.name);
+    return classifyAgent({
+      agent: selectedAgent,
+      override: agentKindOverride[selectedAgent.id] ?? null,
+    });
   }, [selectedAgent, agentKindOverride]);
 
   const sessionLabel = session.goal.trim() || 'untitled session';

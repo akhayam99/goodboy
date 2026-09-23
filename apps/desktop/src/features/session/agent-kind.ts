@@ -496,7 +496,7 @@ export const inferAgentKindFromName = (name: string): AgentKind => {
 };
 
 type ClassifyAgentParams = {
-  readonly agent: Agent;
+  readonly agent: Pick<Agent, 'kind' | 'name'>;
   readonly override: AgentKind | null;
 };
 

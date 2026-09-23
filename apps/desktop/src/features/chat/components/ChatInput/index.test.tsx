@@ -867,6 +867,33 @@ describe('ChatInput, all providers over budget', () => {
   });
 });
 
+describe('ChatInput, scope nudge', () => {
+  it('reads the persisted agent kind when no override is set', async () => {
+    mockStore.setState({
+      sessionPhaseRuns: {
+        'session-1': [
+          {
+            id: 'agent-1',
+            sessionId: 'session-1',
+            ordinal: 0,
+            name: 'agent 1',
+            status: 'pending',
+            kind: 'planner',
+          },
+        ],
+      },
+    });
+    const user = userEvent.setup();
+    render(<ChatInput session={makeSession()} />);
+
+    await user.type(screen.getByRole('textbox'), 'implement the retry');
+    await user.keyboard('{Enter}');
+
+    expect(await screen.findByTestId('scope-mismatch-nudge')).toBeTruthy();
+    expect(sendTurnMock).not.toHaveBeenCalled();
+  });
+});
+
 describe('ChatInput, cursor combo axes', () => {
   const cursorSession = (defaultModel?: string): Session =>
     makeSession({

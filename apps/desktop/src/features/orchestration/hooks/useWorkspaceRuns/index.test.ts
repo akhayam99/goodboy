@@ -448,6 +448,57 @@ describe('useWorkspaceRuns', () => {
     expect(result.current.lanes[0]!.steps[0]!.status).toBe('done');
   });
 
+  it('lets a kind override win over the persisted kind and the name', () => {
+    store.state = baseState({
+      sessionPhaseRuns: {
+        [SID]: [
+          makeAgent({
+            id: 'scout-1',
+            name: 'scout',
+            kind: 'scout',
+            workflowRunId: 'run-1',
+            stepId: 'step-scout',
+          }),
+        ],
+      },
+      agentKindOverride: { 'scout-1': 'reviewer' },
+    });
+    const { result } = renderHook(() => useWorkspaceRuns(WS, [session]));
+    const scoutStep = result.current.lanes[0]!.steps[0]!;
+    expect(scoutStep.kind).toBe('reviewer');
+    expect(scoutStep.children[0]!.kind).toBe('reviewer');
+  });
+
+  it('normalizes a legacy persisted kind alias', () => {
+    store.state = baseState({
+      sessionPhaseRuns: {
+        [SID]: [
+          makeAgent({
+            id: 'impl-1',
+            name: 'agent 1',
+            kind: 'investigator',
+            workflowRunId: 'run-1',
+            stepId: 'step-impl',
+          }),
+        ],
+      },
+    });
+    const { result } = renderHook(() => useWorkspaceRuns(WS, [session]));
+    expect(result.current.lanes[0]!.steps[1]!.kind).toBe('debugger');
+  });
+
+  it('reads an unspawned step kind from its role before its name', () => {
+    const roled = {
+      ...workflow,
+      steps: workflow.steps.map((step) =>
+        step.id === 'step-review' ? { ...step, role: 'tester' } : step,
+      ),
+    } as unknown as Workflow;
+    store.state = baseState({ phaseTemplates: { [WS]: [roled] } });
+    const { result } = renderHook(() => useWorkspaceRuns(WS, [session]));
+    expect(result.current.lanes[0]!.steps[2]!.kind).toBe('tester');
+  });
+
   it('places a done resolver in completedResolveQueue and a running one in resolveQueue', () => {
     store.state = baseState({
       sessionPhaseRuns: {

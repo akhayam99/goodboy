@@ -9,12 +9,7 @@ import {
   useSessions,
   useWorkspaces,
 } from '../../../../store';
-import {
-  AGENT_KIND_META,
-  agentKindPalette,
-  inferAgentKindFromName,
-  type AgentKind,
-} from '../../agent-kind';
+import { AGENT_KIND_META, agentKindPalette, classifyAgent, type AgentKind } from '../../agent-kind';
 import { parseQuery } from '../../../quick-actions';
 import { PALETTE_PREFIXES, palettePlaceholder, type PaletteGroup } from './palettePrefixes';
 import { lensDestinations } from '../../lens-destinations';
@@ -189,8 +184,10 @@ export const CommandPalette = ({
 
     if (currentSession) {
       for (const a of agents) {
-        const kind: AgentKind =
-          agentKindOverride[a.id as AgentId] ?? inferAgentKindFromName(a.name);
+        const kind: AgentKind = classifyAgent({
+          agent: a,
+          override: agentKindOverride[a.id as AgentId] ?? null,
+        });
         out.push({
           id: `agent:${a.id}`,
           label: a.name,

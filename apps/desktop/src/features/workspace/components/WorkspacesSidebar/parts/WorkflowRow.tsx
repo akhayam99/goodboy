@@ -25,7 +25,7 @@ import type {
 import { EMPTY_ARRAY, useAppStore, useRunSpendUsd } from '../../../../../store';
 import type { AppStore } from '../../../../../store/store';
 import { selectWritableMounts } from '../../../../../store/slices/project-mounts/selectors';
-import { inferAgentKindFromName, type AgentKind } from '../../../../../features/session/agent-kind';
+import { classifyAgent, type AgentKind } from '../../../../../features/session/agent-kind';
 import { agentRoutingOverrides } from '../../../../../features/workflows/agentRoutingOverrides';
 import { resolveStepRouting } from '../../../../../features/workflows/resolveStepRouting';
 import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRoleModels';
@@ -504,7 +504,10 @@ export const WorkflowRow = ({
                   {wfAgents.map((run, index) => {
                     const isActionable =
                       run.stepId === actionableStepId && run.status === 'pending';
-                    const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
+                    const kind = classifyAgent({
+                      agent: run,
+                      override: agentKindOverride[run.id] ?? null,
+                    });
                     const step = run.stepId != null ? stepById.get(run.stepId) : undefined;
                     const resolvedRouting = resolveStepRouting({
                       step: step ?? null,

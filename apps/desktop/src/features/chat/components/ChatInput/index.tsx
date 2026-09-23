@@ -14,7 +14,7 @@ import { PANE_RHYTHM } from '@goodboy/ui';
 import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
 import { ATTACHMENT_ACCEPT } from '../../attachment-kinds';
-import { inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
+import { classifyAgent, type AgentKind } from '../../../session/agent-kind';
 import { CHAT_PLACEHOLDER, RUNNING_KINDS, type PendingAttachment, type QueuedTurn } from './lib';
 import { useAttachments } from './hooks/useAttachments';
 import { useChatPrefix } from './hooks/useChatPrefix';
@@ -55,8 +55,18 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     const runs = s.sessionPhaseRuns[session.id] ?? [];
     return runs.find((r) => r.id === selectedAgentId)?.name ?? null;
   });
+  const selectedAgentPersistedKind = useAppStore((s) => {
+    if (!selectedAgentId) return null;
+    const runs = s.sessionPhaseRuns[session.id] ?? [];
+    return runs.find((r) => r.id === selectedAgentId)?.kind ?? null;
+  });
   const activeAgentKind: AgentKind | null =
-    agentKindOverride ?? (selectedAgentName ? inferAgentKindFromName(selectedAgentName) : null);
+    selectedAgentName !== null
+      ? classifyAgent({
+          agent: { name: selectedAgentName, kind: selectedAgentPersistedKind ?? undefined },
+          override: agentKindOverride,
+        })
+      : agentKindOverride;
   const sessionWorktree = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const sessionCost = useSessionCost(session.id);
   const loadScripts = useAppStore((s) => s.loadScripts);

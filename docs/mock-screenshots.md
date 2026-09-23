@@ -84,15 +84,12 @@ the component instead of a gap in the mock.
 
 ## Gotchas hit while building the scenes
 
-- **The same "role" badge is computed two different ways depending on
-  which component you're in.** `useWorkspaceRuns`'s `kindOf` reads
-  `agent.kind` directly. `WorkflowStepGraphRow`'s badge reads the
-  `agentKindOverride` **prop** instead (keyed by agent id). If that is empty
-  it falls back to `inferAgentKindFromName(agent.name)`, and it ignores
-  `agent.kind` entirely. Setting `kind: 'implementer'` on the agent object did
-  nothing there. The fix was to fill `agentKindOverride={{ [id]: 'implementer', ... }}`
-  on `WorkflowStepGraph` itself. Check where a field is really read before
-  you assume its name works the same in another component.
+- **Every "role" badge goes through `classifyAgent`.** The
+  `agentKindOverride` entry for the agent id wins, then `agent.kind`, then the
+  agent name. Setting `kind: 'implementer'` on the agent is enough.
+  Components that take `agentKindOverride` as a prop (`WorkflowStepGraph`)
+  read the prop instead of the store, so an override set only in the store
+  does not reach them.
 - **`useWorkspaceRuns`'s Activity lane builds its workflow lookup from
   `state.phaseTemplates[workspaceId]`, not `state.sessionWorkflows`.**
   `SessionOverviewPane`'s own `workflowById` union does read

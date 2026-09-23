@@ -13,7 +13,7 @@ import type {
 import { EMPTY_ARRAY, useAppStore, agentHasUnread } from '../../../../store';
 import { deriveSessionStage, isPrReviewSession } from '../../../../store/slices/session-view';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
-import { classifyStep, inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
+import { classifyAgent, classifyStep, type AgentKind } from '../../../session/agent-kind';
 import { agentThreadIds } from '../../../session/agentThreadIds';
 import {
   statusToNodeStatus,
@@ -66,10 +66,12 @@ const isRunningOrPending = (status: SpawnNodeStatus): boolean =>
 
 type CostByAgentId = ReadonlyMap<string, number>;
 
-const kindOf = (agent: Agent): AgentKind =>
-  agent.kind != null ? (agent.kind as AgentKind) : inferAgentKindFromName(agent.name);
+type StepKindParams = {
+  readonly workflow: Workflow;
+  readonly stepId: string;
+};
 
-const stepKind = (workflow: Workflow, stepId: string): AgentKind => {
+const stepKind = ({ workflow, stepId }: StepKindParams): AgentKind => {
   const step = workflow.steps.find((s) => s.id === stepId);
   return step != null ? classifyStep({ step }) : 'generic';
 };
@@ -129,21 +131,26 @@ const buildCostByAgentId = (
   return rolled;
 };
 
-const agentToNode = (
-  agent: Agent,
-  childrenByParentId: ReadonlyMap<string, Agent[]>,
-  costByAgentId: CostByAgentId,
-  selectedAgentId: AgentId | null,
-  depth: number,
-): SpawnNode => {
+type AgentToNodeParams = {
+  readonly agent: Agent;
+  readonly childrenByParentId: ReadonlyMap<string, Agent[]>;
+  readonly costByAgentId: CostByAgentId;
+  readonly kindByAgentId: ReadonlyMap<string, AgentKind>;
+  readonly selectedAgentId: AgentId | null;
+  readonly depth: number;
+};
+
+const agentToNode = (params: AgentToNodeParams): SpawnNode => {
+  const { agent, childrenByParentId, costByAgentId, kindByAgentId, selectedAgentId, depth } =
+    params;
   const kids = depth < 6 ? (childrenByParentId.get(agent.id) ?? EMPTY_ARRAY) : EMPTY_ARRAY;
   const children = [...kids]
     .sort((a, b) => a.ordinal - b.ordinal)
-    .map((c) => agentToNode(c, childrenByParentId, costByAgentId, selectedAgentId, depth + 1));
+    .map((c) => agentToNode({ ...params, agent: c, depth: depth + 1 }));
   return {
     id: agent.id,
     name: agent.name,
-    kind: kindOf(agent),
+    kind: kindByAgentId.get(agent.id) ?? 'generic',
     status: statusToNodeStatus(agent.status),
     costUsd: costByAgentId.get(agent.id) ?? 0,
     outputSummary: agent.outputSummary ?? null,
@@ -300,13 +307,15 @@ export const useWorkspaceRuns = (
         spendUsd += rec.estimatedCostUsd;
       }
 
-      const withKind = phaseRuns.map((agent) => {
-        const override = agentKindOverride[agent.id];
-        return override ? { ...agent, kind: override } : agent;
-      });
+      const kindByAgentId = new Map<string, AgentKind>(
+        phaseRuns.map((agent) => [
+          agent.id,
+          classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null }),
+        ]),
+      );
 
       const childrenByParentId = new Map<string, Agent[]>();
-      for (const agent of withKind) {
+      for (const agent of phaseRuns) {
         if (agent.parentAgentId == null) {
           continue;
         }
@@ -314,19 +323,19 @@ export const useWorkspaceRuns = (
         bucket.push(agent);
         childrenByParentId.set(agent.parentAgentId, bucket);
       }
-      const costByAgentId = buildCostByAgentId(withKind, telemetry, agentRunHistory);
+      const costByAgentId = buildCostByAgentId(phaseRuns, telemetry, agentRunHistory);
 
-      for (const agent of withKind) {
+      for (const agent of phaseRuns) {
         if (agent.status === 'running') {
           runningCount += 1;
         } else if (agent.status === 'failed') {
           stalledCount += 1;
         }
       }
-      agentCount += withKind.length;
+      agentCount += phaseRuns.length;
 
       const rootByRunStep = new Map<string, Agent>();
-      const sortedRoots = [...withKind].sort((a, b) => a.ordinal - b.ordinal);
+      const sortedRoots = [...phaseRuns].sort((a, b) => a.ordinal - b.ordinal);
       for (const agent of sortedRoots) {
         if (agent.parentAgentId != null || agent.workflowRunId == null || agent.stepId == null) {
           continue;
@@ -353,13 +362,20 @@ export const useWorkspaceRuns = (
           .map((step) => {
             const root = rootByRunStep.get(`${run.id}::${step.id}`) ?? null;
             const rootNode = root
-              ? agentToNode(root, childrenByParentId, costByAgentId, selectedAgentId, 0)
+              ? agentToNode({
+                  agent: root,
+                  childrenByParentId,
+                  costByAgentId,
+                  kindByAgentId,
+                  selectedAgentId,
+                  depth: 0,
+                })
               : null;
             const children = rootNode ? [rootNode] : (EMPTY_ARRAY as ReadonlyArray<SpawnNode>);
             return {
               stepId: step.id,
               name: step.name,
-              kind: root ? kindOf(root) : stepKind(workflow, step.id),
+              kind: rootNode !== null ? rootNode.kind : stepKind({ workflow, stepId: step.id }),
               status: stepStatus(rootNode),
               rootAgentId: root ? root.id : null,
               children,
@@ -391,11 +407,18 @@ export const useWorkspaceRuns = (
         }
       }
 
-      for (const agent of withKind) {
+      for (const agent of phaseRuns) {
         if (agent.parentAgentId != null || agent.workflowRunId != null) {
           continue;
         }
-        const node = agentToNode(agent, childrenByParentId, costByAgentId, selectedAgentId, 0);
+        const node = agentToNode({
+          agent,
+          childrenByParentId,
+          costByAgentId,
+          kindByAgentId,
+          selectedAgentId,
+          depth: 0,
+        });
         const nodeActive = isRunningOrPending(node.status);
         if (agentThreadIds(agent).length > 0) {
           if (nodeActive) {

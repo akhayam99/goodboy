@@ -16,11 +16,7 @@ import {
   type WorkflowRoutingAvailabilitySnapshot,
   type WorkflowRoutingProposalParseOutcome,
 } from '@goodboy/core';
-import {
-  KIND_TO_ROLE,
-  inferAgentKindFromName,
-  type AgentKind,
-} from '../../../features/session/agent-kind';
+import { KIND_TO_ROLE, classifyAgent, type AgentKind } from '../../../features/session/agent-kind';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { AppStore } from '../../store';
@@ -130,9 +126,7 @@ export const workflowNodeRoutingContext = ({
   const kind: AgentKind =
     agent === null
       ? 'generic'
-      : ((state.agentKindOverride[agent.id] ??
-          agent.kind ??
-          inferAgentKindFromName(agent.name)) as AgentKind);
+      : classifyAgent({ agent, override: state.agentKindOverride[agent.id] ?? null });
   const role = step?.role ?? (agent === null ? null : KIND_TO_ROLE[kind]);
   const run =
     agent?.workflowRunId == null

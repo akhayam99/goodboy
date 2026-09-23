@@ -6,7 +6,7 @@ import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import {
   AGENT_KIND_META,
-  inferAgentKindFromName,
+  classifyAgent,
   type AgentKind as AgentKindLabel,
 } from '../../../session/agent-kind';
 import { useAppStore } from '../../../../store';
@@ -42,7 +42,10 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
     if (!selectedAgent) {
       return null;
     }
-    return agentKindOverride[selectedAgent.id] ?? inferAgentKindFromName(selectedAgent.name);
+    return classifyAgent({
+      agent: selectedAgent,
+      override: agentKindOverride[selectedAgent.id] ?? null,
+    });
   }, [selectedAgent, agentKindOverride]);
 
   const scenario = useMemo<EmptyScenario>(() => {

@@ -82,7 +82,6 @@ import {
   AGENT_KIND_DEFAULTS,
   KIND_TO_ROLE,
   classifyAgent,
-  inferAgentKindFromName,
   kindWritesFiles,
 } from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
@@ -526,7 +525,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const turnAgentKind =
       activeAgent != null
         ? classifyAgent({ agent: activeAgent, override: agentKindOverrideForTurn })
-        : (agentKindOverrideForTurn ?? inferAgentKindFromName(''));
+        : (agentKindOverrideForTurn ?? 'generic');
     const autoStepModel =
       phaseDefinition != null && nodeModel === null
         ? autoModelForRole({

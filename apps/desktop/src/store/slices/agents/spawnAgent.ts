@@ -22,9 +22,9 @@ import {
   listPlansForSession as invokeListPlansForSession,
 } from '../../../features/plans/plans';
 import {
-  inferAgentKindFromName,
   kindRouting,
   kindConsumesPlan,
+  resolveAgentKind,
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../../kickoff';
@@ -114,7 +114,11 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
             : `agent ${nextOrdinal + 1}`;
         const settings = selectResolvedSettings({ state, sessionId });
         const workspaceVerbositySeed = settings?.defaultVerbosityOverride ?? undefined;
-        const resolvedKind = args.kindOverride ?? inferAgentKindFromName(agentName);
+        const resolvedKind = resolveAgentKind({
+          name: agentName,
+          firstUserText: null,
+          override: args.kindOverride ?? null,
+        });
         const roleModels = settings?.roleModels ?? null;
         const routing = kindRouting({ kind: resolvedKind, roleModels });
         const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;

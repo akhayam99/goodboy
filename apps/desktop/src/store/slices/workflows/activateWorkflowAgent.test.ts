@@ -174,6 +174,7 @@ function buildHarness(opts: {
     ensureSessionSlots: async (sessionId: SessionId): Promise<ReadonlyArray<ContextSlot>> =>
       sessionSlots[sessionId] ?? [],
     sessionPhaseRuns: { [SESSION_ID]: [opts.agent, ...(opts.extraAgents ?? [])] },
+    agentKindOverride: {},
     sessions: [session],
     projects: opts.projects ?? [],
     sessionProjectMounts: {},
