@@ -1,8 +1,8 @@
 # @goodboy/db
 
-> **Read this when** you need the shape of `@goodboy/db` before touching schema, migrations, or queries. **Not for** the specific rules. See `CONVENTIONS.md`.
+> **Read this when** you need an overview of `@goodboy/db` before you touch the schema, migrations, or queries. **Not for** the detailed rules. See `CONVENTIONS.md`.
 
-SQLite schema, migrations, and typed query functions. Local-only persistence via `tauri-plugin-sql`, consumed by `apps/desktop`. No business logic, no Tauri bindings.
+The SQLite schema, migrations, and typed query functions. Data stays on the user's machine, stored through `tauri-plugin-sql`, and `apps/desktop` uses it. No business logic, no Tauri bindings.
 
 ## Conventions
 
