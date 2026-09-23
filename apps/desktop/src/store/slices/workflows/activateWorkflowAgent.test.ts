@@ -1050,16 +1050,21 @@ describe('activateWorkflowAgent, artifact evidence', () => {
     expect(sendTurn.mock.calls[0]?.[0].content).toContain('# evidence pack');
   });
 
-  it('leaves the plan-consuming kickoff unchanged', async () => {
+  it('leaves the plan-consuming kickoff without an evidence pack', async () => {
     const { sendTurn, activate } = buildHarness({
       agent: makeAgent('generic', 'Execute'),
       workflow: makeWorkflow('Execute'),
       plans: [makePlan()],
     });
     await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
-    expect(sendTurn.mock.calls[0]?.[0].content).toBe(
-      '**Plan**\ndo the thing\n\nrun the step\n\n**Scope** this step only, never a later one. Emit `<<step-done id="agent-step">>` on its own line once it is truly done.',
-    );
+    const content: string = sendTurn.mock.calls[0]?.[0].content ?? '';
+    const planAt = content.indexOf('**Plan**\ndo the thing');
+    const promptAt = content.indexOf('run the step');
+    const boundaryAt = content.indexOf('<<step-done id="agent-step">>');
+    expect(planAt).toBe(0);
+    expect(promptAt).toBeGreaterThan(planAt);
+    expect(boundaryAt).toBeGreaterThan(promptAt);
+    expect(content).not.toContain('# evidence pack');
     expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, AGENT_ID);
     expect(putArtifactProvenanceSpy).not.toHaveBeenCalled();
   });
