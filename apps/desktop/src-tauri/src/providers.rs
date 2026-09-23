@@ -4,9 +4,26 @@ use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager, State};
+use thiserror::Error;
 use tokio::sync::watch;
 
 use crate::path_env;
+
+#[derive(Debug, Error)]
+pub enum ProviderStatusError {
+    #[error("provider detection did not finish: {0}")]
+    JoinFailed(String),
+}
+
+impl ProviderStatusError {
+    fn kind(&self) -> &'static str {
+        match self {
+            ProviderStatusError::JoinFailed(_) => "join_failed",
+        }
+    }
+}
+
+crate::util::impl_error_serialize!(ProviderStatusError);
 
 const DETECT_TIMEOUT: Duration = Duration::from_secs(2);
 const AUTH_TIMEOUT: Duration = Duration::from_secs(5);
@@ -777,7 +794,7 @@ fn parse_codex_auth_output(output: &str) -> AuthState {
 pub async fn get_provider_status(
     gate: State<'_, DetectionGate>,
     state: State<'_, ProviderState>,
-) -> Result<ProviderStatus, String> {
+) -> Result<ProviderStatus, ProviderStatusError> {
     gate.wait().await;
     Ok(get_status(&state.0, "anthropic", "claude"))
 }
@@ -785,7 +802,7 @@ pub async fn get_provider_status(
 #[tauri::command]
 pub async fn refresh_provider_status(
     state: State<'_, ProviderState>,
-) -> Result<ProviderStatus, String> {
+) -> Result<ProviderStatus, ProviderStatusError> {
     refresh_status(&state.0, detect_claude).await
 }
 
@@ -793,7 +810,7 @@ pub async fn refresh_provider_status(
 pub async fn get_cursor_status(
     gate: State<'_, DetectionGate>,
     state: State<'_, CursorState>,
-) -> Result<ProviderStatus, String> {
+) -> Result<ProviderStatus, ProviderStatusError> {
     gate.wait().await;
     Ok(get_status(&state.0, "cursor", "cursor-agent"))
 }
@@ -801,7 +818,7 @@ pub async fn get_cursor_status(
 #[tauri::command]
 pub async fn refresh_cursor_status(
     state: State<'_, CursorState>,
-) -> Result<ProviderStatus, String> {
+) -> Result<ProviderStatus, ProviderStatusError> {
     refresh_status(&state.0, detect_cursor).await
 }
 
@@ -809,13 +826,15 @@ pub async fn refresh_cursor_status(
 pub async fn get_codex_status(
     gate: State<'_, DetectionGate>,
     state: State<'_, CodexState>,
-) -> Result<ProviderStatus, String> {
+) -> Result<ProviderStatus, ProviderStatusError> {
     gate.wait().await;
     Ok(get_status(&state.0, "codex", "codex"))
 }
 
 #[tauri::command]
-pub async fn refresh_codex_status(state: State<'_, CodexState>) -> Result<ProviderStatus, String> {
+pub async fn refresh_codex_status(
+    state: State<'_, CodexState>,
+) -> Result<ProviderStatus, ProviderStatusError> {
     refresh_status(&state.0, detect_codex).await
 }
 
@@ -823,7 +842,7 @@ pub async fn refresh_codex_status(state: State<'_, CodexState>) -> Result<Provid
 pub async fn get_gemini_status(
     gate: State<'_, DetectionGate>,
     state: State<'_, GeminiState>,
-) -> Result<ProviderStatus, String> {
+) -> Result<ProviderStatus, ProviderStatusError> {
     gate.wait().await;
     Ok(get_status(&state.0, "gemini", "agy"))
 }
@@ -831,7 +850,7 @@ pub async fn get_gemini_status(
 #[tauri::command]
 pub async fn refresh_gemini_status(
     state: State<'_, GeminiState>,
-) -> Result<ProviderStatus, String> {
+) -> Result<ProviderStatus, ProviderStatusError> {
     refresh_status(&state.0, detect_gemini).await
 }
 
@@ -839,7 +858,7 @@ pub async fn refresh_gemini_status(
 pub async fn get_opencode_status(
     gate: State<'_, DetectionGate>,
     state: State<'_, OpencodeState>,
-) -> Result<ProviderStatus, String> {
+) -> Result<ProviderStatus, ProviderStatusError> {
     gate.wait().await;
     Ok(get_status(&state.0, "opencode", "opencode"))
 }
@@ -848,7 +867,7 @@ pub async fn get_opencode_status(
 pub async fn get_openrouter_status(
     gate: State<'_, DetectionGate>,
     state: State<'_, OpencodeState>,
-) -> Result<ProviderStatus, String> {
+) -> Result<ProviderStatus, ProviderStatusError> {
     gate.wait().await;
     Ok(aliased(
         get_status(&state.0, "openrouter", "opencode"),
@@ -860,7 +879,7 @@ pub async fn get_openrouter_status(
 pub async fn get_moonshot_status(
     gate: State<'_, DetectionGate>,
     state: State<'_, OpencodeState>,
-) -> Result<ProviderStatus, String> {
+) -> Result<ProviderStatus, ProviderStatusError> {
     gate.wait().await;
     Ok(aliased(
         get_status(&state.0, "moonshot", "opencode"),
@@ -878,7 +897,7 @@ fn aliased(status: ProviderStatus, id: &str) -> ProviderStatus {
 #[tauri::command]
 pub async fn refresh_openrouter_status(
     state: State<'_, OpencodeState>,
-) -> Result<ProviderStatus, String> {
+) -> Result<ProviderStatus, ProviderStatusError> {
     let mut status = refresh_status(&state.0, detect_opencode).await?;
     status.id = "openrouter".to_string();
     Ok(status)
@@ -887,7 +906,7 @@ pub async fn refresh_openrouter_status(
 #[tauri::command]
 pub async fn refresh_moonshot_status(
     state: State<'_, OpencodeState>,
-) -> Result<ProviderStatus, String> {
+) -> Result<ProviderStatus, ProviderStatusError> {
     let mut status = refresh_status(&state.0, detect_opencode).await?;
     status.id = "moonshot".to_string();
     Ok(status)
@@ -896,7 +915,7 @@ pub async fn refresh_moonshot_status(
 #[tauri::command]
 pub async fn refresh_opencode_status(
     state: State<'_, OpencodeState>,
-) -> Result<ProviderStatus, String> {
+) -> Result<ProviderStatus, ProviderStatusError> {
     refresh_status(&state.0, detect_opencode).await
 }
 
@@ -916,10 +935,10 @@ fn get_status(state: &Mutex<ProviderStatus>, id: &str, binary: &str) -> Provider
 async fn refresh_status(
     state: &Mutex<ProviderStatus>,
     detect: fn() -> ProviderStatus,
-) -> Result<ProviderStatus, String> {
+) -> Result<ProviderStatus, ProviderStatusError> {
     let next = tauri::async_runtime::spawn_blocking(detect)
         .await
-        .map_err(|err| err.to_string())?;
+        .map_err(|err| ProviderStatusError::JoinFailed(err.to_string()))?;
     if let Ok(mut current) = state.lock() {
         *current = next.clone();
     }
@@ -962,6 +981,19 @@ pub async fn check_provider_auth(provider_id: String) -> AuthState {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn provider_status_error_serializes_kind_and_message() {
+        let value = serde_json::to_value(ProviderStatusError::JoinFailed(
+            "task cancelled".to_string(),
+        ))
+        .expect("serializes");
+        assert_eq!(value["kind"], "join_failed");
+        assert_eq!(
+            value["message"],
+            "provider detection did not finish: task cancelled"
+        );
+    }
 
     #[test]
     fn claude_parses_logged_in_json() {

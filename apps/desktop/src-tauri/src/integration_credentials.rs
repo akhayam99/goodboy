@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use rusqlite::{Connection, OptionalExtension};
@@ -9,6 +9,31 @@ use crate::db;
 use crate::secrets;
 
 pub type SecretCache = Mutex<HashMap<String, String>>;
+
+macro_rules! token_cache {
+    ($name:ident) => {
+        pub struct $name($crate::integration_credentials::SecretCache);
+
+        impl $name {
+            pub fn new() -> Self {
+                Self(std::sync::Mutex::new(std::collections::HashMap::new()))
+            }
+        }
+
+        impl Default for $name {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+    };
+}
+
+pub(crate) use token_cache;
+
+pub(crate) fn http_client() -> &'static reqwest::Client {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+    CLIENT.get_or_init(reqwest::Client::new)
+}
 
 #[derive(Debug, Error)]
 pub enum IntegrationCredentialError {
@@ -691,6 +716,26 @@ fn integration_credential_forget_blocking(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn token_caches_stay_distinct_state_types() {
+        use std::any::TypeId;
+        let ids = [
+            TypeId::of::<crate::bitbucket::BitbucketTokenCache>(),
+            TypeId::of::<crate::gitlab::GitlabTokenCache>(),
+            TypeId::of::<crate::jira::JiraTokenCache>(),
+            TypeId::of::<crate::linear::LinearTokenCache>(),
+            TypeId::of::<crate::sentry::SentryTokenCache>(),
+            TypeId::of::<crate::slack::SlackTokenCache>(),
+        ];
+        let unique: std::collections::HashSet<TypeId> = ids.iter().copied().collect();
+        assert_eq!(unique.len(), ids.len());
+    }
+
+    #[test]
+    fn http_client_is_shared() {
+        assert!(std::ptr::eq(http_client(), http_client()));
+    }
     use std::cell::RefCell;
 
     fn cache() -> SecretCache {
