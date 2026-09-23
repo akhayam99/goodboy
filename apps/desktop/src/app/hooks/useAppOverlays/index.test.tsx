@@ -228,6 +228,23 @@ describe('app overlay hook', () => {
     expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('providers');
   });
 
+  it.each([
+    ['goodboy:open-inbox', 'inbox'],
+    ['goodboy:open-workflow-studio', 'workflow'],
+    ['goodboy:open-impact-studio', 'impact'],
+    ['goodboy:open-changelog', 'changelog'],
+    ['goodboy:open-notifications-studio', 'notifications'],
+    ['goodboy:add-workspace', 'addWorkspace'],
+    ['goodboy:open-guide', 'guide'],
+    ['goodboy:open-report-issue', 'report'],
+  ])('mounts the studio that %s names', async (name, kind) => {
+    renderHarness();
+
+    fire({ name });
+
+    expect(await openStudios()).toEqual([kind]);
+  });
+
   it('mounts the inbox focused on the provider the event names', async () => {
     renderHarness();
 

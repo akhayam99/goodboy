@@ -50,6 +50,15 @@ A second entry point reuses the existing mount and never builds a parallel one.
 The palette dispatches an event that the owning component listens for. The
 keyboard path calls the same hook method as the button.
 
+The palette renders one ordered list: the current session's agents, sessions,
+workspaces, a **Go to** group, scripts, actions and help. Workspaces are rows
+of its own that open the chosen workspace. Go to reaches studios by name: Back
+to board inside a session, then Inbox, Workflows, Impact, Changelog,
+Notifications and Workspace settings inside a workspace, and Add workspace
+everywhere. It never lists archive or delete, which are lifecycle, not
+navigation. The first row is highlighted on open, and the highlighted row is
+the one Enter runs.
+
 ## Surfaces
 
 **Shell layout.** One strip of chrome sits above, one footer below, and between
@@ -172,12 +181,13 @@ The wordmark drops below `brand-word` and the mascot below `brand-mark`. No
 control ever moves into an overflow menu.
 
 - Workspace identity opens an anchored popover that switches and creates
-  workspaces. ⌘O and the palette open that same popover, never a second one.
-  Workspace settings has its own control next to identity. Buried inside the
-  switcher, a common per-workspace preference was easy to never find.
+  workspaces. ⌘O opens that same popover, never a second one, and the palette
+  lists workspaces as rows of its own. Workspace settings has its own control
+  next to identity. Buried inside the switcher, a common per-workspace
+  preference was easy to never find.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
-  switcher is live, and ⌘O and the palette open its single anchored popover.
+  switcher is live, and ⌘O opens its single anchored popover.
 - Theme is the one set-once preference kept here. People flip it often enough
   to earn the slot. The guide and pair-device live in the settings studio and
   the palette.
@@ -235,11 +245,11 @@ breadcrumb IA. They exit on close or Esc, and only one is open at a time.
   not count: workflow steps select agents on their own.
 
 - **Not every studio earns a footer entry.** Notifications opens from the bell
-  popover (its header's Open all) and from the palette's Open notifications,
-  never from the footer, since the bell already shows the unread count. The
-  popover never deletes history. That lives in the studio, behind its confirm.
-  Report an issue opens from the top bar, the App scope panel in Settings and
-  the palette. It sits next to settings, not beside the named launchers.
+  popover (its header's Open all) and from the palette's Go to group, never
+  from the footer, since the bell already shows the unread count. The popover
+  never deletes history. That lives in the studio, behind its confirm. Report
+  an issue opens from the top bar, the App scope panel in Settings and the
+  palette. It sits next to settings, not beside the named launchers.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
   beside a detail panel is fine. "no left panel and right panel at once" is
   about two sidebars on either side of the content, which the app does not do.

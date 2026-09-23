@@ -217,6 +217,47 @@ describe('CommandPalette', () => {
     expect(screen.getByText('Sessions').getAttribute('role')).toBe('presentation');
   });
 
+  it.each([
+    ['Inbox', 'goodboy:open-inbox', null],
+    ['Workflows', 'goodboy:open-workflow-studio', null],
+    ['Impact', 'goodboy:open-impact-studio', { scope: undefined }],
+    ['Changelog', 'goodboy:open-changelog', null],
+    ['Notifications', 'goodboy:open-notifications-studio', null],
+    ['Workspace settings', 'goodboy:open-settings', { scope: 'workspace' }],
+    ['Add workspace', 'goodboy:add-workspace', null],
+  ] as const)('goes to %s through its studio event', (label, eventName, detail) => {
+    hooks.currentWorkspace = { id: 'workspace-1', name: 'Harborline' };
+    const listener = vi.fn();
+    window.addEventListener(eventName, listener);
+    render(<CommandPalette onClose={vi.fn()} initialQuery={label} />);
+
+    fireEvent.mouseDown(screen.getByRole('option', { name: label }));
+
+    window.removeEventListener(eventName, listener);
+    const [event] = listener.mock.calls[0] ?? [];
+    expect(event instanceof CustomEvent ? event.detail : 'missing').toEqual(detail);
+  });
+
+  it('lists the go to studios under one group, with board only inside a session', () => {
+    hooks.currentWorkspace = { id: 'workspace-1', name: 'Harborline' };
+    const { unmount } = render(<CommandPalette onClose={vi.fn()} initialQuery="board" />);
+    expect(screen.queryByRole('option', { name: /back to board/i })).toBeNull();
+    unmount();
+
+    hooks.currentSession = { id: 'session-1' };
+    render(<CommandPalette onClose={vi.fn()} initialQuery="board" />);
+    fireEvent.mouseDown(screen.getByRole('option', { name: /back to board/i }));
+
+    expect(state.setCurrentSession).toHaveBeenCalledWith(null);
+    expect(screen.getByText('Go to').getAttribute('role')).toBe('presentation');
+  });
+
+  it('keeps workspace studios out of the palette without a workspace', () => {
+    render(<CommandPalette onClose={vi.fn()} initialQuery="inbox" />);
+
+    expect(screen.queryByRole('option', { name: 'Inbox' })).toBeNull();
+  });
+
   it('teaches each navigation destination with the chord that reaches it', () => {
     hooks.currentSession = { id: 'session-1' };
     render(<CommandPalette onClose={vi.fn()} initialQuery="Open Agents" />);

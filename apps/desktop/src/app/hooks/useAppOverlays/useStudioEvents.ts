@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { CHANGELOG_STUDIO_EVENT } from '../../../features/changelog/changelogStudioEvent';
 import { IMPACT_STUDIO_EVENT } from '../../../features/impact/openImpactStudio';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../../features/notifications/studioEvent';
 import { OPEN_COMMAND_PALETTE_EVENT } from '../../../features/onboarding/openCommandPaletteEvent';
@@ -44,6 +45,7 @@ export const useStudioEvents = ({ open, close, openPalette }: Params) => {
       ['goodboy:add-workspace', () => open({ overlay: { kind: 'addWorkspace' } })],
       ['goodboy:open-pair-device', () => open({ overlay: { kind: 'companion' } })],
       ['goodboy:open-workflow-studio', () => open({ overlay: { kind: 'workflow' } })],
+      [CHANGELOG_STUDIO_EVENT, () => open({ overlay: { kind: 'changelog' } })],
       [OPEN_COMMAND_PALETTE_EVENT, () => openPalette()],
     ];
     listeners.forEach(([name, listener]) => window.addEventListener(name, listener));

@@ -24,6 +24,8 @@ import { useThemeStore } from '../../../../shared/lib/theme';
 import { linkedProjectsLabel } from '../../../workspace/linkedProjectsLabel';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { requestNewSession } from '../../requestNewSession';
+import { openImpactStudio } from '../../../impact/openImpactStudio';
+import { openChangelogStudio } from '../../../changelog/changelogStudioEvent';
 import type { SettingsFocus } from '../../../settings/components/SettingsStudio/types';
 
 type PaletteItem = {
@@ -38,6 +40,7 @@ type PaletteItem = {
 };
 
 const GROUP_LABELS: Record<PaletteGroup, string> = {
+  goto: 'Go to',
   workspace: 'Workspaces',
   session: 'Sessions',
   agent: 'Agents',
@@ -50,6 +53,7 @@ const GROUP_ORDER: ReadonlyArray<PaletteGroup> = [
   'agent',
   'session',
   'workspace',
+  'goto',
   'script',
   'action',
   'help',
@@ -61,6 +65,7 @@ const EMPTY_QUERY_QUOTA = {
   agent: 5,
   session: 8,
   workspace: 3,
+  goto: 8,
   script: 3,
   action: 12,
   destination: 20,
@@ -75,6 +80,7 @@ const withGroupQuota = (items: ReadonlyArray<PaletteItem>): ReadonlyArray<Palett
     agent: 0,
     session: 0,
     workspace: 0,
+    goto: 0,
     script: 0,
     action: 0,
     destination: 0,
@@ -206,6 +212,62 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
       }
     }
 
+    if (currentSession) {
+      out.push({
+        id: 'goto:board',
+        label: 'Back to board',
+        sublabel: shortcutGlyphs('session.board'),
+        group: 'goto',
+        onSelect: () => void setCurrentSession(null),
+      });
+    }
+    if (currentWorkspace !== null) {
+      out.push(
+        {
+          id: 'goto:inbox',
+          label: 'Inbox',
+          group: 'goto',
+          onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-inbox')),
+        },
+        {
+          id: 'goto:workflows',
+          label: 'Workflows',
+          group: 'goto',
+          onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-workflow-studio')),
+        },
+        {
+          id: 'goto:impact',
+          label: 'Impact',
+          group: 'goto',
+          onSelect: () => openImpactStudio({}),
+        },
+        {
+          id: 'goto:changelog',
+          label: 'Changelog',
+          group: 'goto',
+          onSelect: openChangelogStudio,
+        },
+        {
+          id: 'goto:notifications',
+          label: 'Notifications',
+          group: 'goto',
+          onSelect: () => window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT)),
+        },
+        {
+          id: 'goto:workspace-settings',
+          label: 'Workspace settings',
+          group: 'goto',
+          onSelect: () => openSettings({ scope: 'workspace' }),
+        },
+      );
+    }
+    out.push({
+      id: 'goto:add-workspace',
+      label: 'Add workspace',
+      group: 'goto',
+      onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:add-workspace')),
+    });
+
     for (const sc of scripts) {
       out.push({
         id: `script:${sc.id}`,
@@ -270,12 +332,6 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
       label: 'Pair your iPhone',
       group: 'action',
       onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-pair-device')),
-    });
-    out.push({
-      id: 'action:open-notifications',
-      label: 'Open notifications',
-      group: 'action',
-      onSelect: () => window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT)),
     });
     out.push({
       id: 'action:report-issue',
