@@ -3,12 +3,10 @@ import { PROVIDER_CAPABILITIES, clampEffortForModel, resolveTaskModel } from '@g
 import type { AuxTaskId, EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { FieldRow } from '@goodboy/ui';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
+import { AUTO_RECOMMENDATION_COPY } from '../../../../../../shared/components/RoutingPicker/autoRecommendationCopy';
 import { RoutingStatusControl } from '../RoutingStatusControl';
 
 const DEFAULT_EFFORT: EffortLevel = 'medium';
-const AUTO_LABEL = 'Auto';
-const AUTO_REASON =
-  'Follows the workspace default provider. Goodboy picks the model this task needs.';
 
 type Props = {
   readonly task: AuxTaskId;
@@ -96,8 +94,7 @@ export const TaskModelRow = ({
             recommendation={{
               provider: automatic.providerId,
               model: automatic.model,
-              label: AUTO_LABEL,
-              reason: AUTO_REASON,
+              ...AUTO_RECOMMENDATION_COPY,
             }}
             overridden={preference != null}
             disabled={disabled}

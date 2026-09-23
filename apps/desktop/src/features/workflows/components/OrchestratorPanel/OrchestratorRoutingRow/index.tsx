@@ -8,6 +8,7 @@ import {
 } from '@goodboy/core';
 import type { EffortLevel, ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
+import { AUTO_RECOMMENDATION_COPY } from '../../../../../shared/components/RoutingPicker/autoRecommendationCopy';
 import { useAppStore } from '../../../../../store/store';
 import { selectResolvedSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 import { isRoutingModelKnown } from '../../../../../store/slices/workflows/orchestrateNextStep';
@@ -34,9 +35,6 @@ type ProviderModelParams = {
 };
 
 const DEFAULT_EFFORT: EffortLevel = 'medium';
-const AUTO_LABEL = 'Auto';
-const AUTO_REASON =
-  'Follows the workspace default provider. Goodboy picks the model this task needs.';
 
 const providerModelId = ({ provider, model }: ProviderModelParams): string => {
   const stored = resolveStoredModelSelection({ provider, id: model });
@@ -144,8 +142,7 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
         recommendation={{
           provider: automatic.providerId,
           model: automatic.model,
-          label: AUTO_LABEL,
-          reason: AUTO_REASON,
+          ...AUTO_RECOMMENDATION_COPY,
         }}
         disabled={disabled}
         overridden={pinned != null}
