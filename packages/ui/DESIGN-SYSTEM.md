@@ -43,9 +43,8 @@ status dot is `StatusRailItem`.
 
 `text-3xs` 10px/14px, `2xs` 11px/16px, `xs` 12px, `sm` 14px/20px, `base` 15px,
 `lg` 17px, `xl` 20px, and one display grade, `2xl` 24px/32px, kept for the
-onboarding titles, the `EmptyState` hero and the Impact headline. Any
-`text-[Npx]` is rejected. The standing exceptions live in `docs/styling.md`,
-which owns the authoring rule.
+onboarding titles, the `EmptyState` hero and the Impact headline. Arbitrary
+sizes are covered by [docs/styling.md](../../docs/styling.md).
 
 **Every size a repeated row uses declares its own line-height.** Without that
 pair, the box height follows whatever `line-height` the size inherits. For
@@ -308,11 +307,11 @@ dashed box.
 
 ## Action zones
 
-The fixed chrome row has one flexible context region, followed by one action region that never shrinks away. `StudioShell` exposes that region as `headerAccessory`, `HeaderBand` exposes it as `actions`, and inspector headers use the same `actions` slot. Generic object, lifecycle and destructive controls go there. The action region is pushed to the far end and never enters the content scroller.
+Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action-zones). The slots that carry it:
 
-The focused object's primary action uses the same fixed header action region. A creation or edit flow is different. It puts its commit in one action row, in the scrolling flow, right after the last section. Supporting error copy sits at the start of that row. Cancel plus exactly one primary action sit at the end. Alternates and reset controls join the same row as ghost or secondary buttons. A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome. If a surface truly needs a dock, argue for it at review. Docking is no longer the default for any composition.
-
-That row also uses the same width as the content it commits. It is never stretched across a shell or container that also holds unrelated content.
+- The fixed chrome row has one flexible context region, followed by one action region that never shrinks away. It is pushed to the far end and stays outside the content scroller. `StudioShell` exposes it as `headerAccessory`, `HeaderBand` as `actions`, and inspector headers use the same `actions` slot. The focused object's primary action uses it too.
+- A creation or edit flow's action row is the one the creation grammar below describes. It is never stretched across a shell or container that also holds unrelated content.
+- A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 
 `InlineConfirm` stays attached to a destructive trigger in its action region. A confirmation detached in the body, or a destructive footer dock, is not another zone. It is the only confirmation body, and it shows in exactly one of three placements, picked by how much room the trigger has:
 
@@ -436,8 +435,8 @@ states and sit outside the registry.
   its agent starts. It replaces a spinner next to the label.
 - Skeleton pulse (`animate-pulse` inside `Skeleton` only): loading.
 
-`no-token-bypass.test.ts` rejects spinners, and any `animate-pulse` or
-`animate-ping` outside `Skeleton`.
+`no-token-bypass.test.ts` rejects any `animate-pulse` or `animate-ping`
+outside `Skeleton`.
 
 Motion-safe gating, "motion confirms, never decorates", "motion names who is
 working, and for how long", and "Spinners are forbidden" are product rules and

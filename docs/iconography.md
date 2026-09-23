@@ -21,8 +21,8 @@ Rules that hold everywhere:
   `apps/desktop/src/__tests__/regressions/no-ai-sparkle-glyphs.test.ts`. An AI
   control uses the glyph of its concept (`orchestrator`, `enhance`,
   `suggestion`, `autorun`, `agents`), not a vague sparkle.
-- Spinners are banned. Loading is a skeleton, running is a pulsing `StatusDot`.
-  That is why the run-state family below has no glyph for `running`.
+- Spinners are banned ([DESIGN.md](../DESIGN.md#motion) owns the rule). That
+  is why the run-state family below has no glyph for `running`.
 - An icon-only control carries a `Tooltip`, enforced by
   `icon-only-controls-carry-a-tooltip.test.ts`.
 - Emoji never appear in the UI.

@@ -15,18 +15,15 @@ instead of a list here, because a list here goes stale on the next addition.
 
 Three exports are required, not optional ([docs/styling.md](../../docs/styling.md) owns the rules):
 
-- `ScrollFade` wraps every scroll region. A bare `overflow-y-auto` is a bug.
-- `Divider` separates regions. [docs/styling.md](../../docs/styling.md) owns
-  the rule about siblings and container borders.
-- `tintClasses(tone)` resolves every semantic tone. A tone map inside one file is a bug ([DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md)).
+- `ScrollFade` wraps every scroll region.
+- `Divider` separates regions.
+- `tintClasses(tone)` resolves every semantic tone ([DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md) owns the tone map).
 
 `AppShell` is the app skeleton, and the one exception to "presentational only". It owns the column template, the saved column widths, the smaller states a column can shrink to, and the overlay slots. It offers those states. [docs/navigation.md](../../docs/navigation.md) decides which ones the product uses, and why. What each surface is for lives in [DESIGN.md](../../DESIGN.md).
 
 ## Design tokens
 
-The tokens live in `apps/desktop/src/styles.css` under `@theme`. Scales, color and tone, and the z-index registry are documented in [DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md).
-
-- **Motion policy**: every `transition-*`, `animate-*`, or `duration-*` class needs the `motion-safe:` prefix (it respects `prefers-reduced-motion: reduce`). No tool enforces this: there is no eslint config, and pre-commit runs only prettier. Review catches it, or it ships.
+The tokens live in `apps/desktop/src/styles.css` under `@theme`. Scales, color and tone, the z-index registry and the motion registry are documented in [DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md). The motion gating rule belongs to [DESIGN.md](../../DESIGN.md#motion).
 
 ## Conventions
 

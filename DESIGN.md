@@ -265,13 +265,25 @@ rule with the exception in Status & signals.
 
 ### Action zones
 
-Actions sit with the object they affect, and stay visible while its content scrolls.
+Actions sit with the object they affect. The slots that carry each zone are in
+[DESIGN-SYSTEM.md](./packages/ui/DESIGN-SYSTEM.md#action-zones).
 
-- The context row is the fixed breadcrumb or object-title row. Generic object actions such as open folder, archive, restore and delete sit at its far end. Lifecycle actions such as mark done and reopen sit there too, because they change the object, not the current section. Destructive actions use the same zone and open `InlineConfirm` beside the button that triggered them.
-- The primary action for the focused object sits in the fixed detail header. It is the action that moves the object forward. A creation or edit flow is different: it commits through its single fixed footer primary action, with cancel and errors in that same footer.
-- Section actions affect only one section and use `SectionHeader`'s action slot. Row and card actions follow the card action grammar.
+- **Object actions live on the context row.** The fixed breadcrumb or
+  object-title row holds generic object actions (open folder, archive,
+  restore, delete) at its far end. Lifecycle actions (mark done, reopen) sit
+  there too, because they change the object, not the current section. A
+  destructive action confirms inline, next to its trigger.
+- **The focused object's primary action sits in the fixed header.** It is the
+  action that moves the object forward.
+- **A creation or edit flow commits in the flow.** Its one action row follows
+  the last section, at the width of the content it commits. A dock has to be
+  argued for at review. It is never the default.
+- **Section actions stay in their section.** Row and card actions follow the
+  card action grammar.
 
-An action row must not scroll away with the content. Generic object actions do not belong at the bottom of a transcript, a detail body or a long form. A footer is not a second home for object actions.
+Object actions never scroll away with the content. They do not belong at the
+bottom of a transcript, a detail body or a long form, and a footer is not a
+second home for them.
 
 - **Tabs when you return, accordion when you'd forget.** Studio detail panels
   are tabs.
