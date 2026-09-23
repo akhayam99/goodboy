@@ -17,6 +17,7 @@ import { openLens } from '../../openLens';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEvent';
+import { NOTIFICATIONS_STUDIO_EVENT } from '../../../notifications/studioEvent';
 import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useThemeStore } from '../../../../shared/lib/theme';
@@ -278,6 +279,12 @@ export const CommandPalette = ({
       label: 'Pair your iPhone',
       group: 'action',
       onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-pair-device')),
+    });
+    out.push({
+      id: 'action:open-notifications',
+      label: 'Open notifications',
+      group: 'action',
+      onSelect: () => window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT)),
     });
     out.push({
       id: 'action:report-issue',

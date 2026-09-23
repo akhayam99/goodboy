@@ -12,8 +12,8 @@ import {
   sortNotificationGroupsNewestFirst,
   type NotificationSeverityFilter,
 } from '../../grouping';
-import { InboxSkeleton } from './InboxSkeleton';
-import { InboxToolbar } from './InboxToolbar';
+import { NotificationsSkeleton } from './NotificationsSkeleton';
+import { NotificationsToolbar } from './NotificationsToolbar';
 import { NotificationGroupRow } from './NotificationGroupRow';
 
 type Props = {
@@ -61,12 +61,12 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
     >
       {() => (
         <StudioPanel
-          title="Inbox"
+          title="All notifications"
           subtitle={subtitle}
           maxWidthClass={PANE_RHYTHM.measure.reading}
           action={
             notifications.length > 0 ? (
-              <InboxToolbar
+              <NotificationsToolbar
                 unreadCount={unread}
                 severity={severity}
                 isUnreadOnly={isUnreadOnly}
@@ -84,7 +84,7 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
             ) : undefined
           }
         >
-          {isLoading && notifications.length === 0 ? <InboxSkeleton /> : null}
+          {isLoading && notifications.length === 0 ? <NotificationsSkeleton /> : null}
           {!isLoading && notifications.length === 0 ? (
             <EmptyState
               icon={CONCEPT_ICONS.notifications}

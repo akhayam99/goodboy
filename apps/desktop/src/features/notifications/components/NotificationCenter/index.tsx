@@ -10,16 +10,16 @@ import {
   tintClasses,
   Tooltip,
   useDropdown,
-  inlineMarkdownText,
 } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { Notification, NotificationAction } from '@goodboy/db';
 import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
 import type { EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { mapNotificationAction } from '../NotificationToastBridge';
+import { mapNotificationAction, notificationContext } from '../NotificationToastBridge';
+import { NOTIFICATION_SEVERITY } from '../../severity';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
 import { sendNotificationToDevelopers } from '../../../settings/sendNotificationToDevelopers';
@@ -132,7 +132,7 @@ export const NotificationCenter = () => {
             }}
             className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
           >
-            Open studio
+            Open all
             <ChevronRight size={11} aria-hidden />
           </button>
         </header>
@@ -165,19 +165,26 @@ export const NotificationCenter = () => {
         ) : (
           <ScrollFade className="max-h-[25rem]" fadeSize={16} fadeFrom="elevated">
             <ul>
-              {groups.map((group) => (
-                <NotificationGroup
-                  key={group[0]?.coalesceKey ?? group[0]?.id}
-                  notifications={group}
-                  onNavigated={close}
-                  onDismiss={() => {
-                    for (const notification of group) {
-                      void markNotificationRead(notification.id);
-                      void dismissNotification(notification.id);
-                    }
-                  }}
-                />
-              ))}
+              {groups.map((group) => {
+                const [latest] = group;
+                if (latest === undefined) {
+                  return null;
+                }
+                return (
+                  <NotificationGroup
+                    key={latest.coalesceKey ?? latest.id}
+                    latest={latest}
+                    notifications={group}
+                    onNavigated={close}
+                    onDismiss={() => {
+                      for (const notification of group) {
+                        void markNotificationRead(notification.id);
+                        void dismissNotification(notification.id);
+                      }
+                    }}
+                  />
+                );
+              })}
             </ul>
           </ScrollFade>
         )}
@@ -187,20 +194,25 @@ export const NotificationCenter = () => {
 };
 
 type NotificationGroupProps = {
+  readonly latest: Notification;
   readonly notifications: ReadonlyArray<Notification>;
   readonly onNavigated: () => void;
   readonly onDismiss: () => void;
 };
 
-const NotificationGroup = ({ notifications, onNavigated, onDismiss }: NotificationGroupProps) => {
-  const n = notifications[0];
-  if (n == null) {
-    return null;
-  }
+const NotificationGroup = ({
+  latest: n,
+  notifications,
+  onNavigated,
+  onDismiss,
+}: NotificationGroupProps) => {
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const reportError = useAppStore((s) => s.reportError);
+  const sessions = useAppStore((s) => s.sessions);
+  const workspaces = useAppStore((s) => s.workspaces);
   const store = useAppStore.getState();
   const action = n.action != null ? mapNotificationAction(n.action, store) : undefined;
   const retryAction =
@@ -214,17 +226,15 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
   const canSendToDevelopers = n.severity === 'warning' || n.severity === 'error';
 
   const isUnread = notifications.some((notification) => !notification.read);
-  const sessionGoal = useAppStore(
-    (s) => s.sessions.find((session) => session.id === n.sessionId)?.goal,
-  );
-  const source = sessionGoal == null ? 'Goodboy' : inlineMarkdownText({ text: sessionGoal });
+  const context = notificationContext(n, sessions, workspaces);
+  const severity = NOTIFICATION_SEVERITY[n.severity];
   const border =
     n.severity === 'error'
       ? 'border-l-danger/40'
       : n.severity === 'warning'
         ? 'border-l-warning/40'
         : 'border-l-transparent';
-  const ConceptIcon = CONCEPT_ICONS.notifications;
+  const SeverityIcon = severity.icon;
 
   const navigate = () => {
     if (sessionId == null) {
@@ -248,7 +258,9 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
         return;
       }
       await selectAgent(sessionId, agentId);
-    })().catch(() => {});
+    })().catch((error: unknown) => {
+      void reportError({ title: "Couldn't open this notification", error });
+    });
     onNavigated();
   };
 
@@ -270,10 +282,10 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
             </button>
           </Tooltip>
         ) : null}
-        <ConceptIcon
+        <SeverityIcon
           size={ICON_SIZE.control}
-          className={tintClasses(CONCEPT_TONE.notifications).icon}
-          aria-hidden
+          className={cn('shrink-0', tintClasses(severity.tone).icon)}
+          aria-label={severity.label}
         />
         {notifications.length === 1 && sessionId != null ? (
           <button type="button" onClick={navigate} className="min-w-0 flex-1 truncate text-left">
@@ -329,7 +341,9 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
           </Tooltip>
         </span>
       </div>
-      <span className="truncate pl-5 text-2xs text-muted-foreground">{source}</span>
+      {context !== undefined ? (
+        <span className="truncate pl-5 text-2xs text-muted-foreground">{context}</span>
+      ) : null}
       {expanded ? (
         <div className="flex flex-col gap-2 border-l border-border-soft pl-3">
           {notifications.slice(0, 5).map((entry) => (
@@ -374,16 +388,6 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
           {pickerOpen && retryAction != null ? (
             <RetryWithPicker action={retryAction} onDone={() => setPickerOpen(false)} />
           ) : null}
-          <button
-            type="button"
-            className="text-left text-2xs font-medium text-muted-foreground hover:text-foreground"
-            onClick={() => {
-              onNavigated();
-              openNotificationsStudio();
-            }}
-          >
-            View all in studio
-          </button>
         </div>
       ) : null}
     </li>

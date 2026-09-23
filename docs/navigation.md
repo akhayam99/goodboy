@@ -228,12 +228,12 @@ Utility studios are fullscreen overlays drawn between the top bar and the
 footer, so both bars stay visible and usable. They are not part of the
 breadcrumb IA. They exit on close or Esc, and only one is open at a time.
 
-- **Not every studio earns a footer entry.** Notifications opens only from the
-  bell popover (its header's Open studio), since the bell already shows the
-  unread count. The popover never deletes history. That lives in the studio,
-  behind its confirm. Report an issue opens from the top bar, the App scope
-  panel in Settings and the palette. It sits next to settings, not beside the
-  named launchers.
+- **Not every studio earns a footer entry.** Notifications opens from the bell
+  popover (its header's Open all) and from the palette's Open notifications,
+  never from the footer, since the bell already shows the unread count. The
+  popover never deletes history. That lives in the studio, behind its confirm.
+  Report an issue opens from the top bar, the App scope panel in Settings and
+  the palette. It sits next to settings, not beside the named launchers.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
   beside a detail panel is fine. "no left panel and right panel at once" is
   about two sidebars on either side of the content, which the app does not do.

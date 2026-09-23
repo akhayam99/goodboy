@@ -1,6 +1,6 @@
 import { Skeleton } from '@goodboy/ui';
 
-export const InboxSkeleton = () => {
+export const NotificationsSkeleton = () => {
   return (
     <div className="flex flex-col gap-3" role="status" aria-label="Loading notifications">
       {Array.from({ length: 4 }).map((_, index) => (

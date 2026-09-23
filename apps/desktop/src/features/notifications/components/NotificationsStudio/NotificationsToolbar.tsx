@@ -24,7 +24,7 @@ type Props = {
   readonly onUnreadOnlyChange: (isUnreadOnly: boolean) => void;
 };
 
-export const InboxToolbar = ({
+export const NotificationsToolbar = ({
   unreadCount,
   severity,
   isUnreadOnly,

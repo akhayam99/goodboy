@@ -9,7 +9,9 @@ const EVENT_NAME = 'goodboy:open-notifications-studio';
 const EVENT_CONSTANT = 'NOTIFICATIONS_STUDIO_EVENT';
 const STUDIO_COMPONENT = 'NotificationsStudio';
 
-const DISPATCHER_FILE = 'features/notifications/components/NotificationCenter/index.tsx';
+const BELL_FILE = 'features/notifications/components/NotificationCenter/index.tsx';
+const PALETTE_FILE = 'features/session/components/CommandPalette/index.tsx';
+const DISPATCHER_FILES = [BELL_FILE, PALETTE_FILE];
 const EVENT_LISTENER_FILE = 'app/hooks/useAppOverlays/index.ts';
 const MOUNT_FILE = 'app/components/AppOverlayRouter/index.tsx';
 
@@ -65,22 +67,25 @@ const isDispatch = (line: string): boolean =>
 
 const mountsStudio = (line: string): boolean => line.includes(`<${STUDIO_COMPONENT}`);
 
-describe('the notifications studio has exactly one entrance', () => {
+describe('the notifications studio has two entrances, the bell and the palette', () => {
   const files = listSourceFiles(SRC_ROOT);
 
-  it('only the bell dispatches the open event', () => {
+  it('only the bell and the palette dispatch the open event', () => {
     const dispatchers = files.flatMap((path) => scan(path, isDispatch));
+    const dispatcherFiles = [...new Set(dispatchers.map((hit) => hit.file))].sort();
 
-    if (dispatchers.length !== 1 || dispatchers[0]?.file !== DISPATCHER_FILE) {
+    if (
+      dispatchers.length !== DISPATCHER_FILES.length ||
+      dispatcherFiles.join(',') !== [...DISPATCHER_FILES].sort().join(',')
+    ) {
       throw new Error(
-        `The notifications studio must be reachable only from the bell popover, so ` +
-          `exactly one place may dispatch ${EVENT_NAME}, and it must be ` +
-          `${DISPATCHER_FILE}. Found ${dispatchers.length} dispatcher(s). Do not add a ` +
-          `footer entry, a keyboard shortcut, or a command palette entry for it.\n\n` +
-          `${format(dispatchers)}`,
+        `The notifications studio opens from the bell popover header and the command ` +
+          `palette, so exactly ${DISPATCHER_FILES.join(' and ')} may dispatch ` +
+          `${EVENT_NAME}, once each. Found ${dispatchers.length} dispatcher(s). Do not add a ` +
+          `footer entry or a keyboard shortcut for it.\n\n${format(dispatchers)}`,
       );
     }
-    expect(dispatchers).toHaveLength(1);
+    expect(dispatcherFiles).toEqual([...DISPATCHER_FILES].sort());
   });
 
   it('only AppOverlayRouter mounts the studio', () => {
@@ -95,18 +100,18 @@ describe('the notifications studio has exactly one entrance', () => {
     expect(mounts).toHaveLength(1);
   });
 
-  it('nothing outside the bell and the app shell references the open event', () => {
+  it('nothing outside the two entrances and the app shell references the open event', () => {
     const referrers = files.flatMap((path) => scan(path, referencesEvent));
     const unexpected = referrers.filter(
       (hit) =>
-        hit.file !== DISPATCHER_FILE &&
+        !DISPATCHER_FILES.includes(hit.file) &&
         hit.file !== EVENT_LISTENER_FILE &&
         hit.file !== 'features/notifications/studioEvent.ts',
     );
 
     if (unexpected.length > 0) {
       throw new Error(
-        `Only the bell (${DISPATCHER_FILE}), the app overlay hook (${EVENT_LISTENER_FILE}), and the event ` +
+        `Only the bell (${BELL_FILE}), the palette (${PALETTE_FILE}), the app overlay hook (${EVENT_LISTENER_FILE}), and the event ` +
           `declaration may reference ${EVENT_NAME}. Found ${unexpected.length} other ` +
           `reference(s).\n\n${format(unexpected)}`,
       );

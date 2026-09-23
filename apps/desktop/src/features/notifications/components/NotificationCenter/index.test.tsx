@@ -29,6 +29,8 @@ const { state } = vi.hoisted(() => ({
     setCurrentWorkspace: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
     selectAgent: vi.fn(async () => undefined),
+    reportError: vi.fn(async () => undefined),
+    workspaces: [] as ReadonlyArray<{ readonly id: string; readonly name: string }>,
   },
 }));
 
@@ -89,6 +91,8 @@ beforeEach(() => {
   state.markNotificationRead.mockClear();
   state.setCurrentSession.mockClear();
   state.selectAgent.mockClear();
+  state.reportError.mockClear();
+  state.workspaces = [];
 });
 
 afterEach(cleanup);
@@ -113,7 +117,7 @@ describe('NotificationCenter', () => {
     await openCenter();
 
     expect(screen.queryByRole('button', { name: /clear all/i })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open studio' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open all' }));
 
     expect(listener).toHaveBeenCalledOnce();
     expect(state.clearNotifications).not.toHaveBeenCalled();
@@ -135,7 +139,7 @@ describe('NotificationCenter', () => {
     expect(screen.queryByText('middle title')).toBeNull();
   });
 
-  it('expands a group to show its entries and studio link', async () => {
+  it('expands a group to show its entries, leaving the studio link in the header', async () => {
     state.notifications = [
       buildNotification({ id: 'n2', title: 'newest title', coalesceKey: 'shared' }),
       buildNotification({ id: 'n1', title: 'older title', coalesceKey: 'shared' }),
@@ -145,7 +149,60 @@ describe('NotificationCenter', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Expand notifications' }));
 
     expect(screen.getByText('older title')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'View all in studio' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'View all in studio' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Open all' })).toBeDefined();
+  });
+
+  it('opens the studio from the header with no notifications at all', async () => {
+    const listener = vi.fn();
+    window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
+    render(<NotificationCenter />);
+    await openCenter();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open all' }));
+    expect(listener).toHaveBeenCalledOnce();
+    window.removeEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
+  });
+
+  it('marks each row with its severity and the studio context line', async () => {
+    state.sessions = [{ id: 'session-1', goal: 'Ship grouping' }];
+    state.workspaces = [{ id: 'ws-1', name: 'Harborline' }];
+    state.notifications = [
+      buildNotification({
+        id: 'n1',
+        title: 'Handoff degraded',
+        coalesceKey: 'single',
+        sessionId: 'session-1',
+      }),
+    ];
+    render(<NotificationCenter />);
+    await openCenter();
+
+    expect(screen.getByLabelText('Warning')).toBeDefined();
+    expect(screen.getByText('Harborline · Ship grouping')).toBeDefined();
+    expect(screen.queryByText('Goodboy')).toBeNull();
+  });
+
+  it('reports a notification it could not open', async () => {
+    state.sessions = [{ id: 'session-1', goal: 'Ship grouping' }];
+    state.setCurrentSession.mockRejectedValueOnce(new Error('session gone'));
+    state.notifications = [
+      buildNotification({
+        id: 'n1',
+        title: 'open session',
+        coalesceKey: 'single',
+        sessionId: 'session-1',
+      }),
+    ];
+    render(<NotificationCenter />);
+    await openCenter();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'open session' }));
+    });
+
+    expect(state.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't open this notification" }),
+    );
   });
 
   it('dismisses every notification in a group', async () => {
