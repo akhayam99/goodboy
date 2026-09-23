@@ -32,7 +32,6 @@ async function makeSeededDb(): Promise<DbInterface> {
       id: WORKSPACE_ID,
       name: 'test',
       slug: 'test',
-      sessionsRoot: ROOT,
       overrides: {
         defaultProviderId: null,
         defaultWorkflowId: null,

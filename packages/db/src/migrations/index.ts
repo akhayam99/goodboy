@@ -25,6 +25,7 @@ import { m163OpenQuestionAnswerDelivery } from './m163-open-question-answer-deli
 import { m164OrchestratorHintLog } from './m164-orchestrator-hint-log';
 import { m165ProviderRunsStatusIndex } from './m165-provider-runs-status-index';
 import { m166DropWorkflowRunRoleModels } from './m166-drop-workflow-run-role-models';
+import { m167DropDeadWorkspaceAndHintColumns } from './m167-drop-dead-workspace-and-hint-columns';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -337,4 +338,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 164, sql: m164OrchestratorHintLog },
   { version: 165, sql: m165ProviderRunsStatusIndex },
   { version: 166, sql: m166DropWorkflowRunRoleModels },
+  { version: 167, sql: m167DropDeadWorkspaceAndHintColumns },
 ];

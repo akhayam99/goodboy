@@ -20,7 +20,6 @@ async function setup() {
       id: workspaceId,
       name: 'seed-test',
       slug: 'seed-test',
-      sessionsRoot: '/tmp/seed-test',
       overrides: {
         defaultProviderId: null,
         defaultWorkflowId: null,

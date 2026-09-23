@@ -148,7 +148,6 @@ const WORKSPACE = {
   id: 'workspace-1' as WorkspaceId,
   name: 'Goodboy desktop',
   slug: 'goodboy-desktop',
-  sessionsRoot: '/Users/dev/goodboy',
   overrides: {
     defaultProviderId: null,
     defaultWorkflowId: null,

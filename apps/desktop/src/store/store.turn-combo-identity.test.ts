@@ -152,9 +152,7 @@ describe('sendTurn keeps the executed combo across a retry', () => {
       agentModelOverride: {},
       providerCooldowns: {},
       notifications: [],
-      workspaces: [
-        buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws', sessionsRoot: '/tmp' }),
-      ],
+      workspaces: [buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws' })],
       ...connectedCursorState(),
     });
   };
@@ -274,9 +272,7 @@ describe('sendTurn checks the model it ran against the model that was picked', (
       agentModelOverride: {},
       providerCooldowns: {},
       notifications: [],
-      workspaces: [
-        buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws', sessionsRoot: '/tmp' }),
-      ],
+      workspaces: [buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws' })],
       ...connectedCursorState(),
     });
   };

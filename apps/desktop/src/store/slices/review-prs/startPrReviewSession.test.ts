@@ -54,7 +54,6 @@ const buildWorkspace = (): Workspace => {
     id: WS_ID,
     name: 'ws',
     slug: 'ws',
-    sessionsRoot: '/tmp/repo',
     overrides: {
       defaultProviderId: null,
       defaultWorkflowId: null,

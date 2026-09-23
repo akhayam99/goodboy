@@ -40,7 +40,6 @@ describe.skipIf(!shouldSeed)('qa seed', () => {
       id: workspaceId,
       name: 'QA Sandbox',
       slug: 'qa-sandbox',
-      sessionsRoot: '/tmp/goodboy-qa-sandbox',
       overrides: {
         defaultProviderId: null,
         defaultWorkflowId: null,

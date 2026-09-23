@@ -11,7 +11,6 @@ const { workspaceRef } = vi.hoisted(() => ({
       id: 'ws-1' as WorkspaceId,
       name: 'Acme',
       slug: 'acme',
-      sessionsRoot: '/code/monorepo',
     } as Workspace | null,
   },
 }));
@@ -95,7 +94,6 @@ describe('WorkspaceIdentityRow', () => {
       id: 'ws-1' as WorkspaceId,
       name: 'Acme',
       slug: 'acme',
-      sessionsRoot: '/code/monorepo',
     } as Workspace;
   });
 });

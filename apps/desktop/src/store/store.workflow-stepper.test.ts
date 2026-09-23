@@ -45,7 +45,6 @@ vi.mock('@goodboy/db', () => ({
     id,
     name: 'ws',
     slug: 'ws',
-    sessionsRoot: '/tmp',
     overrides: {
       defaultProviderId: null,
       defaultWorkflowId: null,

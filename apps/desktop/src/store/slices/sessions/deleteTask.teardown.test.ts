@@ -81,7 +81,7 @@ const SESSION_ID = 'sess-1' as never;
 const makeStore = (state: { kind: string; runId?: string } = { kind: 'idle' }) => ({
   sessions: [{ id: 'sess-1', workspaceId: 'ws-1', goal: 'ship it', state }],
   archivedSessions: {},
-  workspaces: [{ id: 'ws-1', sessionsRoot: '/repo' }],
+  workspaces: [{ id: 'ws-1' }],
   projects: [
     { id: 'project-1', workspaceId: 'ws-1', rootPath: '/repo', kind: 'repo', name: 'repo' },
   ],

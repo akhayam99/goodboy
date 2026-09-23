@@ -723,7 +723,6 @@ type WorkspaceOverridesInput = Partial<Workspace> & { readonly id: WorkspaceId }
 export const buildStoryWorkspace = (overrides: WorkspaceOverridesInput): Workspace => ({
   name: 'Acme',
   slug: 'acme',
-  sessionsRoot: null,
   overrides: emptyOverrides,
   createdAt: STORY_NOW,
   updatedAt: STORY_NOW,

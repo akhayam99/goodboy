@@ -116,7 +116,6 @@ describe('sendTurn boundary drift', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
         }),
       ],
       ...connectedAnthropicState(),

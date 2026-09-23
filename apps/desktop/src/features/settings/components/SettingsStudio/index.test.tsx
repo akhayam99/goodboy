@@ -109,7 +109,6 @@ describe('SettingsStudio', () => {
       id: 'workspace-1' as WorkspaceId,
       name: 'Workspace',
       slug: 'workspace',
-      sessionsRoot: null,
       overrides: {
         defaultProviderId: null,
         defaultWorkflowId: null,

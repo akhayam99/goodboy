@@ -193,7 +193,6 @@ beforeEach(() => {
       id: session.workspaceId,
       name: 'Goodboy',
       slug: 'goodboy',
-      sessionsRoot: '/tmp/goodboy',
       overrides: EMPTY_OVERRIDES,
       createdAt: DATE,
       updatedAt: DATE,

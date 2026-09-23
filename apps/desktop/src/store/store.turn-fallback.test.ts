@@ -124,9 +124,7 @@ describe('sendTurn, provider failure fallback', () => {
       agentEffortOverride: {},
       agentProviderOverride: {},
       agentModelOverride: {},
-      workspaces: [
-        buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws', sessionsRoot: '/tmp' }),
-      ],
+      workspaces: [buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws' })],
       ...connectedAnthropicState(),
     });
   };

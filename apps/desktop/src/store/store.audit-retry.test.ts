@@ -280,7 +280,6 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,

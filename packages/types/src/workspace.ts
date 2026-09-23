@@ -51,7 +51,6 @@ export type Workspace = Readonly<{
   id: WorkspaceId;
   name: string;
   slug: string;
-  sessionsRoot: string | null;
   profile?: WorkspaceProfile;
   overrides: OverrideSettings;
   createdAt: IsoDateTime;

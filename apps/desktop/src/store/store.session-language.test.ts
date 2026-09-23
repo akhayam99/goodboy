@@ -156,9 +156,7 @@ describe('sendTurn session language guard', () => {
       selectedAgentId: { [SESSION_ID]: STEP_AGENT_ID },
       phaseTemplates: { [WORKSPACE_ID]: [buildWorkflow({ goal: workflowGoal })] },
       sessionLanguageAnchor: {},
-      workspaces: [
-        buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws', sessionsRoot: '/tmp' }),
-      ],
+      workspaces: [buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws' })],
       ...connectedAnthropicState(),
     });
   };

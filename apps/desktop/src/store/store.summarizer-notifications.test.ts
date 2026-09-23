@@ -255,7 +255,6 @@ describe('summarizer notifications', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -321,7 +320,6 @@ describe('summarizer notifications', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -392,7 +390,6 @@ describe('summarizer notifications', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -471,7 +468,6 @@ const seedSummarizerState = async ({ connected, cooldowns }: SeedParams) => {
         id: WORKSPACE_ID,
         name: 'ws',
         slug: 'ws',
-        sessionsRoot: '/tmp',
         overrides: overridesWithAttribution({ attributionFooter: null }),
         createdAt: NOW,
         updatedAt: NOW,

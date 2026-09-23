@@ -72,7 +72,6 @@ const SCRIPTS_WORKSPACE: Workspace = {
   id: SCRIPTS_WORKSPACE_ID,
   name: 'Harborline',
   slug: 'harborline',
-  sessionsRoot: '/mock/harborline/sessions',
   overrides: OVERRIDES,
   createdAt: SCRIPTS_EARLIER,
   updatedAt: SCRIPTS_NOW,

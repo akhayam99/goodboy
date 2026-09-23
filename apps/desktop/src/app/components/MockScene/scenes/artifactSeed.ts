@@ -74,7 +74,6 @@ const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
   name: 'Harborline',
   slug: 'harborline',
-  sessionsRoot: '/mock/harborline/sessions',
   overrides: OVERRIDES,
   createdAt: EARLIER,
   updatedAt: NOW,

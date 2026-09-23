@@ -122,7 +122,6 @@ const workspace = {
   id: wsId,
   name: 'fresh-idea',
   slug: 'fresh-idea',
-  sessionsRoot: '/tmp/fresh-idea',
 } as Workspace;
 
 const boxOf = (left: number, top: number, width: number, height: number) =>

@@ -7,7 +7,6 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
     id: 'ws-1' as WorkspaceId,
     name: 'Test WS',
     slug: 'test-ws',
-    sessionsRoot: '/code/test-ws',
     overrides: {
       defaultProviderId: null,
       defaultWorkflowId: null,

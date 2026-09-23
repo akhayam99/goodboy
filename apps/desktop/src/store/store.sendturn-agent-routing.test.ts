@@ -507,7 +507,6 @@ describe('sendTurn, agent routing', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -995,7 +994,6 @@ describe('sendTurn, workflow carry-forward', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -1167,7 +1165,6 @@ describe('sendTurn, workflow carry-forward', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -1263,7 +1260,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -1476,7 +1472,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -1571,7 +1566,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -1680,7 +1674,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -1791,7 +1784,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -2326,7 +2318,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -2426,7 +2417,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -2739,7 +2729,6 @@ describe('sendTurn, budget routing notice', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -2958,7 +2947,6 @@ describe('sendTurn, role fallback model', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,

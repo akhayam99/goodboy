@@ -5,11 +5,10 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 
 const { state, repoMocks, dialogMock, onboarding } = vi.hoisted(() => ({
   state: {
-    addWorkspace: vi.fn(async () => ({ id: 'ws-new', name: 'repo', sessionsRoot: '/some/repo' })),
+    addWorkspace: vi.fn(async () => ({ id: 'ws-new', name: 'repo' })),
     createWorkspace: vi.fn(async ({ name }: { name: string }) => ({
       id: 'ws-created',
       name,
-      sessionsRoot: null,
     })),
     addProject: vi.fn(async () => ({ id: 'proj-1', rootPath: '/some/repo' })),
     addProjects: vi.fn(async () => []),
@@ -65,7 +64,6 @@ beforeEach(() => {
   state.addWorkspace = vi.fn(async () => ({
     id: 'ws-new',
     name: 'repo',
-    sessionsRoot: '/some/repo',
   }));
   state.projects = [];
   state.workspaces = [];
@@ -165,7 +163,6 @@ describe('WorkspaceLinkStudio', () => {
     state.addWorkspace = vi.fn(async () => ({
       id: 'ws-new',
       name: 'fresh-idea',
-      sessionsRoot: '/some/fresh-idea',
     }));
     dialogMock.open.mockResolvedValue('/some/fresh-idea');
     repoMocks.validateGitRepo.mockResolvedValue({

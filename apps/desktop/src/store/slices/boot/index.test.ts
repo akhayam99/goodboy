@@ -110,7 +110,6 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
     id: WS_ID,
     name: 'ws',
     slug: 'ws',
-    sessionsRoot: '/tmp/repo',
     overrides: {
       defaultProviderId: null,
       defaultWorkflowId: null,
@@ -430,7 +429,6 @@ describe('store contract', () => {
           id: 'ws-1' as WorkspaceId,
           name: 'demo',
           slug: 'demo',
-          sessionsRoot: '/repo',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,

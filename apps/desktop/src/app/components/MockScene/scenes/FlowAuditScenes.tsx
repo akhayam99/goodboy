@@ -156,7 +156,6 @@ const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
   name: 'Harborline',
   slug: 'harborline',
-  sessionsRoot: '/mock/harborline/sessions',
   overrides: OVERRIDES,
   createdAt: '2026-09-02T08:30:00.000Z' as IsoDateTime,
   updatedAt: NOW,

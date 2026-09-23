@@ -69,14 +69,7 @@ const insertCurrentWorkspace = async ({
   await db.execute(
     `INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
      VALUES (?, ?, ?, ?, 'repo', ?, ?)`,
-    [
-      workspace.id,
-      workspace.id,
-      workspace.name,
-      workspace.sessionsRoot ?? `/tmp/${workspace.slug}`,
-      Date.now(),
-      Date.now(),
-    ],
+    [workspace.id, workspace.id, workspace.name, `/tmp/${workspace.slug}`, Date.now(), Date.now()],
   );
 };
 
@@ -658,7 +651,6 @@ describe('migrate', () => {
       id: 'ws_1' as WorkspaceId,
       name: 'demo',
       slug: 'demo',
-      sessionsRoot: '/tmp/demo',
       overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),
@@ -668,7 +660,7 @@ describe('migrate', () => {
 
     expect(fetched).not.toBeNull();
     expect(fetched?.name).toBe('demo');
-    expect(fetched?.sessionsRoot).toBe('/tmp/demo');
+    expect(fetched?.slug).toBe('demo');
   });
 
   it('round-trips a session with discriminated turn state', async () => {
@@ -679,7 +671,6 @@ describe('migrate', () => {
       id: 'ws_2' as WorkspaceId,
       name: 'demo',
       slug: 'demo-2',
-      sessionsRoot: '/tmp/demo2',
       overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),
@@ -716,7 +707,6 @@ describe('migrate', () => {
       id: 'ws_3' as WorkspaceId,
       name: 'prov-test',
       slug: 'prov-test',
-      sessionsRoot: '/tmp/demo3',
       overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),
@@ -752,7 +742,6 @@ describe('migrate', () => {
       id: 'ws_4' as WorkspaceId,
       name: 'workflow-test',
       slug: 'workflow-test',
-      sessionsRoot: '/tmp/demo4',
       overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),
@@ -879,7 +868,6 @@ describe('migrate', () => {
       id: 'ws_wt' as WorkspaceId,
       name: 'wt-test',
       slug: 'wt-test',
-      sessionsRoot: '/tmp/wt-test',
       overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),

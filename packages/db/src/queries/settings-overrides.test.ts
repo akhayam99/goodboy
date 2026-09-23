@@ -29,7 +29,6 @@ async function makeDb() {
       id: WS_ID,
       name: 'my-repo',
       slug: 'my-repo',
-      sessionsRoot: '/tmp/my-repo',
       overrides: EMPTY,
       createdAt: now,
       updatedAt: now,

@@ -160,7 +160,6 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
     id: WS_ID,
     name: 'ws',
     slug: 'ws',
-    sessionsRoot: '/tmp/repo',
     overrides: {
       defaultProviderId: null,
       defaultWorkflowId: null,

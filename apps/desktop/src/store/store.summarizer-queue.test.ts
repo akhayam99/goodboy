@@ -273,7 +273,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -357,7 +356,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -597,7 +595,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -736,7 +733,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -807,7 +803,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -873,7 +868,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -931,7 +925,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -980,7 +973,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,

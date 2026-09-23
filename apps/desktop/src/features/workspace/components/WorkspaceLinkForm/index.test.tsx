@@ -8,12 +8,10 @@ const { state, repoMocks, dialogMock } = vi.hoisted(() => ({
     addWorkspace: vi.fn(async () => ({
       id: 'ws-direct',
       name: 'alpha',
-      sessionsRoot: '/repos/alpha',
     })),
     createWorkspace: vi.fn(async ({ name }: { name: string }) => ({
       id: 'ws-created',
       name,
-      sessionsRoot: null,
     })),
     addProject: vi.fn(async (): Promise<Record<string, unknown>> => ({
       kind: 'linked',

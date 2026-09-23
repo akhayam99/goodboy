@@ -12,7 +12,6 @@ type WorkspaceRow = OverrideRow & {
   readonly id: string;
   readonly name: string;
   readonly slug: string;
-  readonly sessions_root: string | null;
   readonly created_at: number;
   readonly updated_at: number;
   readonly deleted_at: number | null;
@@ -51,7 +50,6 @@ const toDomain = ({ row }: ToDomainParams): Workspace => {
     id: row.id as WorkspaceId,
     name: row.name,
     slug: row.slug,
-    sessionsRoot: row.sessions_root,
     ...(profile === undefined ? {} : { profile }),
     overrides: overridesFromRow({ row }),
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
@@ -89,16 +87,15 @@ export const insertWorkspace = async ({ db, workspace }: InsertWorkspaceParams):
     workspace.lastAccessedAt === undefined ? updatedAt : Date.parse(workspace.lastAccessedAt);
   await db.execute(
     `INSERT INTO workspaces (
-       id, name, slug, sessions_root, default_provider_id, default_workflow_id,
+       id, name, slug, default_provider_id, default_workflow_id,
        default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings,
        task_models, role_models, parallel_agents, provider_pool, created_at, updated_at,
        deleted_at, disconnected_at, last_accessed_at, attribution_footer
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       workspace.id,
       workspace.name,
       workspace.slug,
-      workspace.sessionsRoot,
       workspace.overrides.defaultProviderId,
       workspace.overrides.defaultWorkflowId,
       workspace.overrides.defaultBranchPrefix,
