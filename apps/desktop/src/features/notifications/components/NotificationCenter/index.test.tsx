@@ -39,6 +39,7 @@ vi.mock('../../../../store', () => {
 });
 
 import { NotificationCenter } from './index';
+import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
 
 type BuildNotificationParams = {
   readonly id: string;
@@ -100,6 +101,24 @@ describe('NotificationCenter', () => {
     expect(screen.getByText('No notifications')).toBeDefined();
     expect(screen.getByText('Run activity and alerts land here.')).toBeDefined();
     expect(state.markNotificationsRead).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends history management to the studio instead of deleting from the bell', async () => {
+    state.notifications = [
+      buildNotification({ id: 'n1', title: 'build failed', coalesceKey: 'build' }),
+    ];
+    const listener = vi.fn();
+    window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
+    render(<NotificationCenter />);
+    await openCenter();
+
+    expect(screen.queryByRole('button', { name: /clear all/i })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open studio' }));
+
+    expect(listener).toHaveBeenCalledOnce();
+    expect(state.clearNotifications).not.toHaveBeenCalled();
+    expect(screen.queryByText('build failed')).toBeNull();
+    window.removeEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
   });
 
   it('coalesces three rows and uses the newest title', async () => {

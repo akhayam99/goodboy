@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell, ChevronRight, RotateCcw, Trash2, X } from 'lucide-react';
+import { Bell, ChevronRight, RotateCcw, X } from 'lucide-react';
 import {
   AnchoredPopover,
   cn,
@@ -31,12 +31,15 @@ const HEADER_HEIGHT = 37;
 const DROPDOWN_MAX_HEIGHT = LIST_MAX_HEIGHT + HEADER_HEIGHT;
 const OPEN_EVENT = 'goodboy:open-notifications';
 
+const openNotificationsStudio = () => {
+  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT));
+};
+
 export const NotificationCenter = () => {
   const notifications = useAppStore((s) => s.notifications);
   const notificationsLoading = useAppStore((s) => s.notificationsLoading);
   const loadNotifications = useAppStore((s) => s.loadNotifications);
   const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
-  const clearNotifications = useAppStore((s) => s.clearNotifications);
   const dismissNotification = useAppStore((s) => s.dismissNotification);
   const markNotificationRead = useAppStore((s) => s.markNotificationRead);
   const dropdown = useDropdown({
@@ -121,22 +124,17 @@ export const NotificationCenter = () => {
               ? `${unread} unread · ${total} total`
               : `${total} ${total === 1 ? 'notification' : 'notifications'}`}
           </span>
-          {notifications.length > 0 && (
-            <button
-              type="button"
-              onClick={() => void clearNotifications()}
-              className={cn(
-                'inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors',
-                tintClasses('danger').hoverBg,
-                'hover:text-danger',
-              )}
-              aria-label="Clear all notifications"
-              title="Clear all notifications"
-            >
-              <Trash2 size={11} aria-hidden />
-              Clear all
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => {
+              close();
+              openNotificationsStudio();
+            }}
+            className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
+          >
+            Open studio
+            <ChevronRight size={11} aria-hidden />
+          </button>
         </header>
         <Divider />
         {notificationsLoading && notifications.length === 0 ? (
@@ -381,7 +379,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
             className="text-left text-2xs font-medium text-muted-foreground hover:text-foreground"
             onClick={() => {
               onNavigated();
-              window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT));
+              openNotificationsStudio();
             }}
           >
             View all in studio
