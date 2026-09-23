@@ -3,7 +3,7 @@ import { SITE } from '../site';
 
 export const Privacy = () => (
   <section className="block" id="privacy" aria-labelledby="h2-privacy">
-    <div className="wrap split">
+    <div className="wrap split splitCenter">
       <div className="blockHead">
         <h2 className="rv" id="h2-privacy">
           Everything stays on your computer
