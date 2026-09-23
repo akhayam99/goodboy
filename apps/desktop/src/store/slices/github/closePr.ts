@@ -36,7 +36,7 @@ export const closePr = (_set: SetFn, get: GetFn) => {
           void get().emitNotification({
             kind: 'error',
             severity: 'error',
-            title: `Close of #${num} failed`,
+            title: `Couldn't close #${num}`,
             body: errMsg,
             sessionId,
             workspaceId: workspace.id,

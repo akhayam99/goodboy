@@ -42,7 +42,7 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
           void get().emitNotification({
             kind: 'error',
             severity: 'error',
-            title: `Merge of #${num} failed`,
+            title: `Couldn't merge #${num}`,
             body: errMsg,
             sessionId,
             workspaceId: workspace.id,

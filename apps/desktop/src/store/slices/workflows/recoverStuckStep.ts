@@ -62,7 +62,7 @@ export const recoverStuckStep = (get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'the blocked step could not be checked',
+        title: "Couldn't check the blocked step",
         body: `${formatError(error)}. You can still skip this step.`,
         sessionId,
       });

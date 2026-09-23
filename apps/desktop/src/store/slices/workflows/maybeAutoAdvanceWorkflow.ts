@@ -196,7 +196,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'workflow blocked',
+        title: 'Workflow blocked',
         body: `Autorun stopped at ${chain.failedStep.name} because the step failed.`,
         sessionId,
       });

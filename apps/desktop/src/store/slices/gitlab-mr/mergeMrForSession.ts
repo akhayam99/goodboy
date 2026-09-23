@@ -31,7 +31,7 @@ export const mergeMrForSession = (_set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'error',
-        title: `Merge of !${mr.iid} failed`,
+        title: `Couldn't merge !${mr.iid}`,
         body: errMsg,
         sessionId,
         workspaceId: context.workspaceId,

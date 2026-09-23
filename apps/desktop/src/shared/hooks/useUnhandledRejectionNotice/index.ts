@@ -15,7 +15,7 @@ export const useUnhandledRejectionNotice = () => {
         .emitNotification({
           kind: 'error',
           severity: 'warning',
-          title: 'an action failed in the background',
+          title: 'An action failed in the background',
           body: formatError(event.reason),
         })
         .catch(() => undefined)

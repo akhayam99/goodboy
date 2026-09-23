@@ -15,7 +15,7 @@ export const bulkDeleteTask = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: `failed to delete ${failures.length} of ${ids.length} sessions`,
+        title: `Couldn't delete ${failures.length} of ${ids.length} sessions`,
       });
     }
   };

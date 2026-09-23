@@ -15,7 +15,7 @@ export const notifyWorkflowGateBlock = ({ error, sessionId, emitNotification }: 
   void emitNotification({
     kind: 'error',
     severity: 'warning',
-    title: 'workflow step held back',
+    title: 'Workflow step held back',
     body: error.message,
     sessionId,
   });

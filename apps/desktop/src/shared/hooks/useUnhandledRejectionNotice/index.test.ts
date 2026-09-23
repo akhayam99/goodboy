@@ -33,7 +33,7 @@ describe('useUnhandledRejectionNotice', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'an action failed in the background',
+        title: 'An action failed in the background',
         body: 'agent list refused',
       }),
     );

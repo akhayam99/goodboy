@@ -276,7 +276,7 @@ export const MountActionsMenu = ({
       dropdown.close();
       setConfirming(null);
     } catch (error) {
-      fail('could not detach the project', error);
+      fail("Couldn't detach the project", error);
     } finally {
       setIsBusy(false);
       setStage(null);
@@ -299,7 +299,7 @@ export const MountActionsMenu = ({
           : `Removed ${branch === '' ? 'the mount' : branch} from this session. Files remain at ${result.keptPath}.`,
       );
     } catch (error) {
-      fail('could not remove the mount', error);
+      fail("Couldn't remove the mount", error);
     } finally {
       setIsBusy(false);
     }
@@ -318,7 +318,7 @@ export const MountActionsMenu = ({
         showToast('info', `Worktree kept at ${worktreePath}`);
       }
     } catch (error) {
-      fail('could not unmount the branch', error);
+      fail("Couldn't unmount the branch", error);
     } finally {
       setIsBusy(false);
     }

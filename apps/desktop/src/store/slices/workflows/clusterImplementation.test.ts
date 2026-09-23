@@ -954,7 +954,7 @@ describe('cluster child routing lifecycle', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'cluster blocked: heavy rewrite',
+        title: 'Cluster heavy rewrite is blocked',
         body: expect.stringContaining('codex/gpt-5.6-sol'),
         sessionId: SID,
       }),
@@ -990,7 +990,7 @@ describe('cluster child routing lifecycle', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'cluster blocked: container',
+        title: 'Cluster container is blocked',
         body: expect.any(String),
         sessionId: SID,
       }),
@@ -1078,8 +1078,8 @@ describe('advanceClusterImplementation', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: expect.stringContaining('cluster paused'),
-        body: expect.stringContaining('autorun is off'),
+        title: expect.stringContaining('Cluster paused'),
+        body: expect.stringContaining('Autorun is off'),
         sessionId: SID,
       }),
     );
@@ -1455,7 +1455,7 @@ describe('advanceClusterImplementation', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: expect.stringContaining('cluster blocked'),
+        title: expect.stringContaining('is blocked'),
         body: expect.stringContaining('no instructions'),
         sessionId: SID,
       }),
@@ -1496,7 +1496,7 @@ describe('advanceClusterImplementation', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'cluster blocked: missing implementer',
+        title: 'This cluster has no implementer',
         body: expect.stringContaining('more clusters'),
         sessionId: SID,
       }),
@@ -1750,7 +1750,7 @@ describe('resumeClusterChildren', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'cluster blocked: child-1',
+        title: 'Cluster child-1 is blocked',
         body: expect.any(String),
         sessionId: SID,
       }),
@@ -1810,7 +1810,7 @@ describe('cluster child start retry', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: expect.stringContaining('cluster could not start'),
+        title: expect.stringContaining("couldn't start"),
         body: expect.any(String),
         sessionId: SID,
       }),

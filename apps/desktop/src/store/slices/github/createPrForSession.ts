@@ -170,7 +170,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'error',
-        title: 'PR creation failed',
+        title: "Couldn't create the pull request",
         body: errMsg,
         sessionId,
         workspaceId: workspace.id,
@@ -241,7 +241,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     void get().emitNotification({
       kind: 'pr-created',
       severity: 'success',
-      title: `PR created for: ${session.goal}`,
+      title: `Pull request created for ${session.goal}`,
       sessionId,
       workspaceId: workspace.id,
     });

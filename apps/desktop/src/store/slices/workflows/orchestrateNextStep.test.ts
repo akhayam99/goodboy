@@ -1283,7 +1283,7 @@ describe('orchestrateNextStep', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'dynamic workflow blocked',
+        title: 'Dynamic workflow blocked',
         body: 'A product choice is required.',
         sessionId: SESSION_ID,
       }),
@@ -1310,7 +1310,7 @@ describe('orchestrateNextStep', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'orchestrator failed',
+        title: 'The orchestrator failed',
         body: expect.stringContaining('the orchestrator timed out after 120s'),
         sessionId: SESSION_ID,
       }),
@@ -1416,7 +1416,7 @@ describe('orchestrateNextStep', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'orchestrator reply unparseable',
+        title: "Couldn't read the orchestrator's reply",
         body: 'the decision could not be parsed, use next step to retry',
         sessionId: SESSION_ID,
       }),

@@ -64,8 +64,8 @@ describe('continueOrPause', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'cluster paused: cluster 1',
-        body: 'the implementer stopped before completing this cluster. open the agent and continue manually.',
+        title: 'Cluster paused on cluster 1',
+        body: 'The implementer stopped before completing this cluster. Open the agent and continue manually.',
         sessionId: SESSION_ID,
       }),
     );
@@ -92,8 +92,8 @@ describe('continueOrPause', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'step paused: cluster 1',
-        body: expect.stringContaining('autorun is off'),
+        title: 'Step paused on cluster 1',
+        body: expect.stringContaining('Autorun is off'),
         sessionId: SESSION_ID,
       }),
     );

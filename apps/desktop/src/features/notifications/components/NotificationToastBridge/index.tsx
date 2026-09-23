@@ -116,7 +116,7 @@ export const mapNotificationAction = (
           void store.emitNotification({
             kind: 'error',
             severity: 'error',
-            title: 'retry failed, conversations left open',
+            title: 'Retry failed, the conversations stay open',
             body: formatError(err),
             sessionId,
           });

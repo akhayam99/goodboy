@@ -220,7 +220,7 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
               void get().emitNotification({
                 kind: 'error',
                 severity: 'error',
-                title: 'could not load resolver outcomes',
+                title: "Couldn't load resolver outcomes",
                 body: formatError(error),
                 sessionId: id,
               });

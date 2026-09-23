@@ -36,7 +36,7 @@ export const markPrReady = (_set: SetFn, get: GetFn) => {
           void get().emitNotification({
             kind: 'error',
             severity: 'error',
-            title: 'Mark ready failed',
+            title: "Couldn't mark the pull request ready",
             body: errMsg,
             sessionId,
             workspaceId: workspace.id,

@@ -188,7 +188,7 @@ export const publishConversations = async ({
             void get().emitNotification({
               kind: 'error',
               severity: 'error',
-              title: 'nothing was pushed',
+              title: 'Nothing was pushed',
               body: `${error}. The conversations stayed as they were.`,
               sessionId,
               action: { kind: 'retry-publication', sessionId },

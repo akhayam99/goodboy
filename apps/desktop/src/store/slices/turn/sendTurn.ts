@@ -568,7 +568,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'the turn did not run on the model you picked',
+        title: "The turn didn't run on the model you picked",
         body: `you picked ${pickedOverride.providerId}/${picked.kind === 'unspecified' ? spawnModel : picked.id}, the turn ran on ${provider}/${spawnModel}`,
         sessionId,
       });
@@ -969,7 +969,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       await get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'Could not capture a recoverable file version for this turn',
+        title: "Couldn't capture a recoverable file version for this turn",
         body: `stage: ${stage}. details: ${message}`,
         sessionId,
         workspaceId: session.workspaceId,
@@ -1614,7 +1614,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         void get().emitNotification({
           kind: 'boundary-drift',
           severity: 'warning',
-          title: `${agentRowEarly?.name ?? 'agent'} drifted from ${earlyAgentKind} role`,
+          title: `${agentRowEarly?.name ?? 'Agent'} drifted from ${earlyAgentKind} role`,
           body: driftViolations[0]!.detail,
           sessionId,
           ...(activeAgentId != null && {

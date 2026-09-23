@@ -17,18 +17,18 @@ type PauseCopy = {
 
 const PAUSE_COPY = {
   step: {
-    title: 'step paused',
+    title: 'Step paused',
     handsFree:
-      'the agent stopped before emitting a step-done marker. open the agent and continue manually.',
+      'The agent stopped before emitting a step-done marker. Open the agent and continue manually.',
     manual:
-      'autorun is off, so this step will not continue on its own. open the agent and continue manually, or enable autorun.',
+      'Autorun is off, so this step will not continue on its own. Open the agent and continue manually, or turn on autorun.',
   },
   cluster: {
-    title: 'cluster paused',
+    title: 'Cluster paused',
     handsFree:
-      'the implementer stopped before completing this cluster. open the agent and continue manually.',
+      'The implementer stopped before completing this cluster. Open the agent and continue manually.',
     manual:
-      'autorun is off, so this cluster will not continue on its own. open the agent and continue manually, or enable autorun.',
+      'Autorun is off, so this cluster will not continue on its own. Open the agent and continue manually, or turn on autorun.',
   },
 } as const satisfies Record<ContinueUnit, PauseCopy>;
 
@@ -87,7 +87,7 @@ export const continueOrPause = async ({
   void get().emitNotification({
     kind: 'error',
     severity: 'warning',
-    title: `${copy.title}: ${agent.name}`,
+    title: `${copy.title} on ${agent.name}`,
     body: handsFree ? copy.handsFree : copy.manual,
     sessionId,
   });

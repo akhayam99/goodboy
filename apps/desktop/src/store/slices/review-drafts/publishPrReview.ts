@@ -195,7 +195,7 @@ const publishGitlab = async ({
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'review summary note failed to post',
+        title: "Couldn't post the review summary note",
         body: formatError(err),
         sessionId,
         workspaceId: workspace.id,

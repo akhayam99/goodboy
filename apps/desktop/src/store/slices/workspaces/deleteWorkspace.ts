@@ -99,7 +99,7 @@ export const deleteWorkspace = (set: SetFn, get: GetFn) => {
     void get().emitNotification({
       kind: 'workspace-deleted',
       severity: 'info',
-      title: `Workspace disconnected: ${workspace.name}`,
+      title: `Disconnected ${workspace.name}`,
       body: 'Re-add the same path to bring it back with all its sessions.',
     });
   };

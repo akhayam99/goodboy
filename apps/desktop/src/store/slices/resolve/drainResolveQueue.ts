@@ -239,7 +239,7 @@ const failStart = async ({ get, sessionId, attempt, error, isCleanExit = false }
   void get().emitNotification({
     kind: 'error',
     severity: 'error',
-    title: 'Fix failed to start',
+    title: "The fix didn't start",
     body: error,
     sessionId,
   });

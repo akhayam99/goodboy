@@ -741,10 +741,10 @@ describe('store contract', () => {
         await store.getState().bulkDeleteTask([MISSING, SESSION_ID]);
         expect(store.getState().archivedSessions[WS_ID]?.map((x) => x.id)).toEqual([SESSION_ID_2]);
         const summary = emitSpy.mock.calls.find((c) =>
-          String((c[0] as { title: string }).title).startsWith('failed to delete'),
+          String((c[0] as { title: string }).title).startsWith("Couldn't delete"),
         );
         expect((summary?.[0] as { title: string } | undefined)?.title).toBe(
-          'failed to delete 1 of 2 sessions',
+          "Couldn't delete 1 of 2 sessions",
         );
       });
 
@@ -804,10 +804,10 @@ describe('store contract', () => {
           [SESSION_ID, SESSION_ID_2].sort(),
         );
         const summary = emitSpy.mock.calls.find((c) =>
-          String((c[0] as { title: string }).title).startsWith('failed to restore'),
+          String((c[0] as { title: string }).title).startsWith("Couldn't restore"),
         );
         expect((summary?.[0] as { title: string } | undefined)?.title).toBe(
-          'failed to restore 2 of 2 sessions',
+          "Couldn't restore 2 of 2 sessions",
         );
       });
     });

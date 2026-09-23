@@ -128,7 +128,7 @@ const failChildStart = async ({
   void get().emitNotification({
     kind: 'error',
     severity: 'warning',
-    title: `cluster could not start: ${name}`,
+    title: `Cluster ${name} couldn't start`,
     body: `${reason} open the agent and continue it manually. the step stays open until this cluster finishes.`,
     sessionId,
   });
@@ -261,7 +261,7 @@ export const fanOutClusters = async (
     void get().emitNotification({
       kind: 'error',
       severity: 'warning',
-      title: `cluster blocked: ${container.name}`,
+      title: `Cluster ${container.name} is blocked`,
       body: batch.reason,
       sessionId,
     });
@@ -521,7 +521,7 @@ export const resumeClusterChildren = async ({
     void get().emitNotification({
       kind: 'error',
       severity: 'warning',
-      title: `cluster blocked: ${next.name}`,
+      title: `Cluster ${next.name} is blocked`,
       body: 'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
       sessionId,
     });
@@ -539,7 +539,7 @@ export const resumeClusterChildren = async ({
     void get().emitNotification({
       kind: 'error',
       severity: 'warning',
-      title: `cluster blocked: ${next.name}`,
+      title: `Cluster ${next.name} is blocked`,
       body: revalidated.reason,
       sessionId,
     });
@@ -671,7 +671,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'cluster blocked: missing implementer',
+        title: 'This cluster has no implementer',
         body: 'the resolved plan has more clusters than this implementation contains, so the next cluster cannot start. open the plan and re-run the implementer.',
         sessionId,
       });
@@ -685,7 +685,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: `cluster blocked: ${next.name}`,
+        title: `Cluster ${next.name} is blocked`,
         body: 'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
         sessionId,
       });
@@ -705,7 +705,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: `cluster blocked: ${next.name}`,
+        title: `Cluster ${next.name} is blocked`,
         body: revalidated.reason,
         sessionId,
       });

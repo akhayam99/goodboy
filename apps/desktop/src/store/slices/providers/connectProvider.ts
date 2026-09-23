@@ -5,7 +5,8 @@ import {
   type ProviderLifecycleAction,
 } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { PROVIDER_LABEL_LOWER, checkProviderAuth } from '../../../features/providers/providers';
+import { checkProviderAuth } from '../../../features/providers/providers';
+import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
 import {
   invokeProviderLifecycleCancel,
   invokeProviderLifecycleRun,
@@ -218,7 +219,7 @@ const finishSuccess = ({ set, get, providerId, run, identity }: FinishSuccessPar
   void get().emitNotification({
     kind: 'provider-connected',
     severity: 'success',
-    title: `${PROVIDER_LABEL_LOWER[providerId]} is connected`,
+    title: `${PROVIDER_LABEL[providerId]} is connected`,
     body: identity ?? undefined,
   });
   void get().refreshProviders();

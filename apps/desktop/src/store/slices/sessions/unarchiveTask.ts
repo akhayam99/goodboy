@@ -144,7 +144,7 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'session restored, but some data failed to load',
+        title: 'Session restored, but some data failed to load',
         body: formatError(error),
         sessionId,
       });

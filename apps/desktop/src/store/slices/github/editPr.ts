@@ -44,7 +44,7 @@ export const editPr = (_set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'error',
-        title: 'Edit failed',
+        title: "Couldn't edit the pull request",
         body: errMsg,
         sessionId,
         workspaceId: workspace.id,

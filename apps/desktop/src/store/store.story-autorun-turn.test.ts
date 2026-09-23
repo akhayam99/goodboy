@@ -355,7 +355,7 @@ describe('story: an autorun step turn and what follows it', () => {
         ?.prompt ?? '',
     );
     expect(continuePrompt).toContain('Continue with the remaining work now.');
-    expect(notificationTitles()).toContain('step paused: Implement');
+    expect(notificationTitles()).toContain('Step paused on Implement');
     expect(statusWrites({ agentId: REVIEW_AGENT })).toEqual([]);
     expect(useAppStore.getState().workflowContinueAttempts).toEqual({});
   });
@@ -375,7 +375,7 @@ describe('story: an autorun step turn and what follows it', () => {
       expect.objectContaining({ status: 'completed' }),
     );
     expect(statusWrites({ agentId: REVIEW_AGENT })).toEqual([]);
-    expect(notificationTitles()).not.toContain('step paused: Implement');
+    expect(notificationTitles()).not.toContain('Step paused on Implement');
   });
 
   it('records a cancelled resolver turn as cancelled and never advances', async () => {

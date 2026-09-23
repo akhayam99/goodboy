@@ -785,7 +785,7 @@ describe('scout child routing lifecycle', () => {
       expect.objectContaining({
         kind: 'agent-auto-spawn',
         severity: 'warning',
-        title: `agent fan-out held: ${root.name}`,
+        title: `Agent fan-out held for ${root.name}`,
         body: expect.any(String),
         sessionId: SID,
       }),

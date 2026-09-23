@@ -393,7 +393,7 @@ describe('finalizeWorkflowStep output summary', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'step paused: Implement',
+        title: 'Step paused on Implement',
         body: expect.stringContaining('step-done marker'),
         sessionId: SESSION_ID,
       }),
@@ -579,7 +579,7 @@ describe('finalizeWorkflowStep output summary', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: `step waiting on clusters: ${agent.name}`,
+        title: `${agent.name} is waiting on clusters`,
         body: expect.stringContaining('1 cluster agent has not finished'),
         sessionId: SESSION_ID,
       }),

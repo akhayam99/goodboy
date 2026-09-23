@@ -146,7 +146,7 @@ describe('deleting a session', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'failed to remove 1 session paths',
+        title: "Couldn't remove 1 session paths",
         body: expect.stringContaining('untracked-files'),
       }),
     );

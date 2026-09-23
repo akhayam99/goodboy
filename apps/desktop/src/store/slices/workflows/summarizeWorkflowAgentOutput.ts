@@ -55,7 +55,7 @@ const notifyModelUnavailable = ({
   void get().emitNotification({
     kind: 'summarizer-degraded',
     severity: 'warning',
-    title: `summarizer model unavailable: ${label}`,
+    title: `Summarizer model ${label} is unavailable`,
     body: `${label} is not available to this account and ${outcome}. change the summarizer model in Providers then Defaults.`,
     sessionId,
     action: { kind: 'retry-step-summary', sessionId, agentId: agent.id as AgentId },
@@ -73,7 +73,7 @@ const notifyDegraded = ({ get, sessionId, agent, modelLabel, reason }: NotifyPar
   void get().emitNotification({
     kind: 'summarizer-degraded',
     severity: 'warning',
-    title: `step summary degraded: ${agent.name}`,
+    title: `Step summary degraded for ${agent.name}`,
     body: `${modelLabel}: ${reason}`,
     sessionId,
     action: { kind: 'retry-step-summary', sessionId, agentId: agent.id as AgentId },

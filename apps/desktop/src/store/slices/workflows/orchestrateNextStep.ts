@@ -222,7 +222,7 @@ const announceRunBudget = ({
   void get().emitNotification({
     kind: 'budget-cap',
     severity: 'warning',
-    title: 'workflow run over its spend limit',
+    title: 'Workflow run is over its spend limit',
     body: stop.message,
     sessionId,
     action: { kind: 'open-budget', sessionId },
@@ -694,7 +694,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         void get().emitNotification({
           kind: 'error',
           severity: 'warning',
-          title: 'orchestrator failed',
+          title: 'The orchestrator failed',
           body: message,
           sessionId,
         });
@@ -741,7 +741,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         void get().emitNotification({
           kind: 'error',
           severity: 'warning',
-          title: 'orchestrator reply unparseable',
+          title: "Couldn't read the orchestrator's reply",
           body: 'the decision could not be parsed, use next step to retry',
           sessionId,
         });
@@ -943,7 +943,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'dynamic workflow blocked',
+        title: 'Dynamic workflow blocked',
         body: decision.reason,
         sessionId,
       });

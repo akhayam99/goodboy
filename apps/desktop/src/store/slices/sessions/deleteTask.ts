@@ -186,7 +186,7 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: `failed to remove ${cleanupFailures.length} session paths`,
+        title: `Couldn't remove ${cleanupFailures.length} session paths`,
         body: cleanupFailures.map((error) => formatError(error)).join('\n'),
         sessionId,
         workspaceId: session.workspaceId,

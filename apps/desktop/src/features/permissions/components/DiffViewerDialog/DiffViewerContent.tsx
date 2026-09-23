@@ -702,7 +702,7 @@ export const DiffViewerContent = ({
         void emitNotification({
           kind: 'error',
           severity: 'error',
-          title: 'Could not open file in editor',
+          title: "Couldn't open the file in your editor",
           body: formatError(err),
           sessionId,
         });

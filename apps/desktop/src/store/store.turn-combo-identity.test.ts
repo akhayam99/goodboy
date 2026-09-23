@@ -284,9 +284,7 @@ describe('sendTurn checks the model it ran against the model that was picked', (
   const mismatchWarning = () =>
     useAppStore
       .getState()
-      .notifications.find(
-        (entry) => entry.title === 'the turn did not run on the model you picked',
-      );
+      .notifications.find((entry) => entry.title === "The turn didn't run on the model you picked");
 
   it('stays quiet when the pick names the combo by its slug', async () => {
     setup();

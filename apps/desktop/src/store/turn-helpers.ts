@@ -312,7 +312,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
     void get().emitNotification({
       kind: 'error',
       severity: 'error',
-      title: 'summarizer paused',
+      title: 'Summarizer paused',
       body: 'every summarizer provider is cooling down',
       sessionId,
       action: { kind: 'retry-summarizer', sessionId },
@@ -598,7 +598,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
     void get().emitNotification({
       kind: 'error',
       severity: 'error',
-      title: 'summarizer failed',
+      title: 'Summarizer failed',
       body: `${taskModel.providerId}: ${message}`,
       sessionId,
       action: { kind: 'retry-summarizer', sessionId },

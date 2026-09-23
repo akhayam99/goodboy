@@ -97,7 +97,7 @@ export const createMrForSession = (_set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'error',
-        title: 'MR creation failed',
+        title: "Couldn't create the merge request",
         body: errMsg,
         sessionId,
         workspaceId: context.workspaceId,
@@ -134,7 +134,7 @@ export const createMrForSession = (_set: SetFn, get: GetFn) => {
     void get().emitNotification({
       kind: 'pr-created',
       severity: 'success',
-      title: `MR created for: ${context.goal}`,
+      title: `Merge request created for ${context.goal}`,
       sessionId,
       workspaceId: context.workspaceId,
     });

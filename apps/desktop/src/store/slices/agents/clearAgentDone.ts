@@ -16,7 +16,7 @@ export const clearAgentDone = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'error',
-        title: 'could not reopen this agent',
+        title: "Couldn't reopen this agent",
         body: formatError(error),
         sessionId,
       });

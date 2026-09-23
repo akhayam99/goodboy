@@ -167,7 +167,7 @@ export const useDynamicActions = (
             void emitNotification({
               kind: 'error',
               severity: 'error',
-              title: 'Mount failed',
+              title: "Couldn't mount the project",
               body: formatError(error),
               sessionId: id,
             });

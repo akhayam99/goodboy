@@ -131,7 +131,7 @@ describe('recoverStuckStep', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'the blocked step could not be checked',
+        title: "Couldn't check the blocked step",
         body: 'provider unavailable. You can still skip this step.',
         sessionId: SESSION_ID,
       }),

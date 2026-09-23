@@ -456,7 +456,7 @@ export const fanOutAgents = async ({
     void get().emitNotification({
       kind: 'agent-auto-spawn',
       severity: 'info',
-      title: `agent fan-out capped: ${container.name}`,
+      title: `Agent fan-out capped for ${container.name}`,
       body: `dropped ${dropped} area(s) over the ${FAN_OUT_MAX_CHILDREN}-child limit`,
       sessionId,
     });
@@ -484,7 +484,7 @@ export const fanOutAgents = async ({
     void get().emitNotification({
       kind: 'agent-auto-spawn',
       severity: 'warning',
-      title: `agent fan-out held: ${container.name}`,
+      title: `Agent fan-out held for ${container.name}`,
       body: started.reason,
       sessionId,
     });

@@ -59,7 +59,7 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
         void get().emitNotification({
           kind: 'error',
           severity: 'warning',
-          title: `step waiting on clusters: ${agent.name}`,
+          title: `${agent.name} is waiting on clusters`,
           body: `${unsettledChildren.length} cluster ${unsettledChildren.length === 1 ? 'agent has' : 'agents have'} not finished, so this step stays open. open the cluster agents and continue them.`,
           sessionId,
         });

@@ -38,7 +38,7 @@ export const stopWorkflowRunNow = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'the run was not fully stopped',
+        title: "The run didn't fully stop",
         body: formatError(error),
         sessionId,
       });

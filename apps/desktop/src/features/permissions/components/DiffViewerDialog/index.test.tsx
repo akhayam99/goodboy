@@ -1016,7 +1016,7 @@ describe('open in editor', () => {
         expect.objectContaining({
           kind: 'error',
           severity: 'error',
-          title: 'Could not open file in editor',
+          title: "Couldn't open the file in your editor",
           body: 'editor not found',
           sessionId: SID,
         }),

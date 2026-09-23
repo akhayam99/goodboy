@@ -50,7 +50,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
       void emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'could not add the project',
+        title: "Couldn't add the project",
         body: formatError(error),
         sessionId,
         workspaceId: project.workspaceId,

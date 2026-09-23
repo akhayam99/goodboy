@@ -35,7 +35,7 @@ export const requestReview = (_set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'error',
-        title: 'Request review failed',
+        title: "Couldn't request a review",
         body: errMsg,
         sessionId,
         workspaceId: workspace.id,

@@ -186,7 +186,7 @@ describe('mapNotificationAction', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'error',
-        title: 'retry failed, conversations left open',
+        title: 'Retry failed, the conversations stay open',
         body: expect.stringContaining('the pull request could not be read'),
         sessionId: SESSION_ID,
       }),
@@ -213,7 +213,7 @@ describe('mapNotificationAction', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'error',
-        title: 'retry failed, conversations left open',
+        title: 'Retry failed, the conversations stay open',
         body: expect.stringContaining('github refused the reply'),
         sessionId: SESSION_ID,
       }),

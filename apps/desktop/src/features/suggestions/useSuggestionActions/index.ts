@@ -122,7 +122,7 @@ export const useSuggestionActions = ({
     sessionId,
     mountId: behind?.mountId ?? null,
     status: behind?.status ?? null,
-    onError: reportError('Rebase failed'),
+    onError: reportError("Couldn't rebase the branch"),
   });
 
   const unresolvedThreads = useMemo(() => eligibleReviewThreads({ github, rows }), [github, rows]);
@@ -150,13 +150,13 @@ export const useSuggestionActions = ({
     })
       .then(() => setActiveLens(sessionId, 'review'))
       .catch((error: unknown) => {
-        reportError('Fix failed to start')(formatError(error));
+        reportError("The fix didn't start")(formatError(error));
       });
   };
 
   const startRebase = ({ target }: StartRebaseParams) => {
     void rebase.run({ mountId: target.mountId, behind: target.behind }).catch((error: unknown) => {
-      reportError('Rebase failed')(formatError(error));
+      reportError("Couldn't rebase the branch")(formatError(error));
     });
   };
 

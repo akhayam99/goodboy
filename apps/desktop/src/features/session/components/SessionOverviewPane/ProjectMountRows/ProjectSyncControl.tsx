@@ -51,12 +51,12 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
     sessionId,
     mountId,
     status,
-    onError: (message) => notify({ title: 'Rebase failed', message }),
+    onError: (message) => notify({ title: "Couldn't rebase the branch", message }),
   });
   const push = usePushBranch({
     sessionId,
     mountId,
-    onError: (message) => notify({ title: 'Push failed', message }),
+    onError: (message) => notify({ title: "Couldn't push the branch", message }),
   });
 
   const distance = status?.mainDistance.kind === 'known' ? status.mainDistance : null;

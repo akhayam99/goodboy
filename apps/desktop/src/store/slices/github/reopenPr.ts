@@ -35,7 +35,7 @@ export const reopenPr = (_set: SetFn, get: GetFn) => {
           void get().emitNotification({
             kind: 'error',
             severity: 'error',
-            title: `Reopen of #${num} failed`,
+            title: `Couldn't reopen #${num}`,
             body: errMsg,
             sessionId,
             workspaceId: workspace.id,

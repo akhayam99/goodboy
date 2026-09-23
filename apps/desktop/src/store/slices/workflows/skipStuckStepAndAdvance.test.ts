@@ -235,7 +235,7 @@ describe('skipStuckStepAndAdvance', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'the blocked step was not skipped',
+        title: "Couldn't skip the blocked step",
         body: 'agent row is gone',
         sessionId: SESSION_ID,
       }),

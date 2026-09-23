@@ -98,7 +98,7 @@ export const skipStuckStepAndAdvance = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'the blocked step was not skipped',
+        title: "Couldn't skip the blocked step",
         body: formatError(error),
         sessionId,
       });

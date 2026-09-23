@@ -32,7 +32,7 @@ describe('useStartAnywayConfirm', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'the next step did not start',
+        title: "The next step didn't start",
         body: 'open questions are waiting for an answer',
       }),
     );

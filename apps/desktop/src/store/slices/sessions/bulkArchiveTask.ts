@@ -7,9 +7,7 @@ type FailureParams = {
 };
 
 const failureMessage = ({ failed, total }: FailureParams): string =>
-  total === 1
-    ? 'failed to archive the session'
-    : `failed to archive ${failed} of ${total} sessions`;
+  total === 1 ? "Couldn't archive the session" : `Couldn't archive ${failed} of ${total} sessions`;
 
 export const bulkArchiveTask = (set: SetFn, get: GetFn) => {
   return async (ids: ReadonlyArray<SessionId>): Promise<BulkSessionResult> => {

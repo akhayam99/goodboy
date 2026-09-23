@@ -67,7 +67,7 @@ export const drainAuditRetryQueue = async (get: GetFn): Promise<void> => {
           .emitNotification({
             kind: 'error',
             severity: 'error',
-            title: 'Audit write failed',
+            title: "Couldn't write the audit entry",
             body: `A permission audit record could not be saved after ${AUDIT_RETRY_MAX_ATTEMPTS} attempts. Entry ${entry.id}: ${errMsg}`,
             coalesceKey: 'audit-retry:exhausted',
           })

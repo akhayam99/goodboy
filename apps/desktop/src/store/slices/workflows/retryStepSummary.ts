@@ -57,7 +57,7 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'summarizer-degraded',
         severity: 'warning',
-        title: 'step summary retry unavailable',
+        title: "Step summary retry isn't available",
         body: 'every summarizer provider is cooling down',
         sessionId,
         action: { kind: 'retry-step-summary', sessionId, agentId },
@@ -87,7 +87,7 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'summarizer-degraded',
         severity: 'warning',
-        title: 'step summary retry failed',
+        title: "Couldn't retry the step summary",
         body: result.error ?? 'summarization failed',
         sessionId,
         action: { kind: 'retry-step-summary', sessionId, agentId },

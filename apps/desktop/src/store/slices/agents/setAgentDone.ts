@@ -15,7 +15,7 @@ export const setAgentDone = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'error',
-        title: 'could not mark this agent done',
+        title: "Couldn't mark this agent done",
         body: formatError(error),
         sessionId,
       });
