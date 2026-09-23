@@ -1,5 +1,8 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { cn } from '../../cn';
+import { tintClasses } from '../../tint';
+
+const primaryTint = tintClasses('primary');
 
 export type FileDropZoneProps = Omit<ComponentPropsWithRef<'div'>, 'children'> & {
   readonly actionIcon?: ReactNode;
@@ -25,7 +28,7 @@ export const FileDropZone = ({
     ref={ref}
     className={cn(
       'flex w-full flex-col gap-2 rounded-lg border border-dashed p-2 motion-safe:transition-colors',
-      isDragging ? 'border-primary bg-primary/5' : 'border-border-soft',
+      isDragging ? cn('border-primary', primaryTint.bgSoft) : 'border-border-soft',
       className,
     )}
     {...rest}

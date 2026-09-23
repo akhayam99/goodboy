@@ -1,5 +1,9 @@
 import { Button } from './Button';
 import { AlertTriangle } from 'lucide-react';
+import { cn } from '../cn';
+import { tintClasses } from '../tint';
+
+const dangerTint = tintClasses('danger');
 
 type Props = {
   readonly label: string;
@@ -15,7 +19,12 @@ export const ErrorStrip = ({ label, error, onRetry }: Props) => {
   return (
     <div
       role="alert"
-      className="flex items-center gap-3 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger"
+      className={cn(
+        'flex items-center gap-3 rounded-lg border px-3 py-2 text-xs',
+        dangerTint.border,
+        dangerTint.bg,
+        dangerTint.text,
+      )}
     >
       <AlertTriangle size={14} aria-hidden className="shrink-0" />
       <span className="min-w-0 flex-1">

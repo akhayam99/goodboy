@@ -4,6 +4,9 @@ import { cn } from '../cn';
 import { AnchoredPopover } from './AnchoredPopover';
 import { Tooltip } from './Tooltip';
 import { useDropdown } from '../useDropdown';
+import { tintClasses } from '../tint';
+
+const dangerTint = tintClasses('danger');
 
 type IconProps = {
   readonly size?: number;
@@ -121,7 +124,7 @@ export const OverflowMenu = ({
               item.disabled
                 ? 'cursor-not-allowed text-muted-foreground'
                 : item.destructive
-                  ? 'text-danger/90 hover:bg-danger/10 hover:text-danger'
+                  ? cn(dangerTint.text, dangerTint.hoverBg, dangerTint.hoverText)
                   : 'text-foreground hover:bg-muted hover:text-foreground',
             )}
           >

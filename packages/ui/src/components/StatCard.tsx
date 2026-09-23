@@ -22,6 +22,8 @@ const valueSizeClasses: Record<'lg' | 'xl', string> = {
   xl: 'text-xl',
 };
 
+const warningTint = tintClasses('warning');
+
 export const StatCard = ({
   value,
   label,
@@ -67,7 +69,7 @@ export const StatCard = ({
   const shell = cn(
     icon && tint ? 'flex items-start gap-3' : 'flex flex-col gap-1',
     'rounded-lg border bg-muted/20 px-4 py-3',
-    alert ? 'border-warning/40' : 'border-border-soft',
+    alert ? warningTint.border : 'border-border-soft',
     className,
   );
 

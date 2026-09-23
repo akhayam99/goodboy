@@ -13,6 +13,8 @@ import {
   TriangleAlert,
   type LucideIcon,
 } from 'lucide-react';
+import { cn } from '../../cn';
+import { tintClasses, type Tone } from '../../tint';
 
 export type CtxTone = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'muted';
 
@@ -31,37 +33,22 @@ type ToneClasses = Pick<
   'iconClass' | 'chipClass' | 'calloutClass' | 'calloutLabelClass'
 >;
 
+const tinted = (tone: Tone): ToneClasses => {
+  const tint = tintClasses(tone);
+  return {
+    iconClass: tint.icon,
+    chipClass: cn(tint.bg, tint.text),
+    calloutClass: cn(tint.borderSoft, tint.bgSoft),
+    calloutLabelClass: tint.text,
+  };
+};
+
 const TONE_CLASSES: Record<CtxTone, ToneClasses> = {
-  primary: {
-    iconClass: 'text-primary',
-    chipClass: 'bg-primary/10 text-primary',
-    calloutClass: 'border-primary/20 bg-primary/5',
-    calloutLabelClass: 'text-primary',
-  },
-  success: {
-    iconClass: 'text-success',
-    chipClass: 'bg-success/10 text-success',
-    calloutClass: 'border-success/20 bg-success/5',
-    calloutLabelClass: 'text-success',
-  },
-  warning: {
-    iconClass: 'text-warning',
-    chipClass: 'bg-warning/10 text-warning',
-    calloutClass: 'border-warning/25 bg-warning/5',
-    calloutLabelClass: 'text-warning',
-  },
-  danger: {
-    iconClass: 'text-danger',
-    chipClass: 'bg-danger/10 text-danger',
-    calloutClass: 'border-danger/25 bg-danger/5',
-    calloutLabelClass: 'text-danger',
-  },
-  info: {
-    iconClass: 'text-info',
-    chipClass: 'bg-info/10 text-info',
-    calloutClass: 'border-info/20 bg-info/5',
-    calloutLabelClass: 'text-info',
-  },
+  primary: tinted('primary'),
+  success: tinted('success'),
+  warning: tinted('warning'),
+  danger: tinted('danger'),
+  info: tinted('info'),
   muted: {
     iconClass: 'text-muted-foreground',
     chipClass: 'bg-muted text-muted-foreground',

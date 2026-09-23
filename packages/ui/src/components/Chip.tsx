@@ -41,17 +41,6 @@ const widthClasses: Record<'sm' | 'md' | 'lg', string> = {
   lg: 'min-w-32 justify-center',
 };
 
-const strongRing: Record<Tone, string> = {
-  success: 'ring-success/40',
-  info: 'ring-info/40',
-  warning: 'ring-warning/40',
-  danger: 'ring-danger/40',
-  primary: 'ring-primary/40',
-  merged: 'ring-merged/40',
-  draft: 'ring-draft/40',
-  neutral: 'ring-border-soft',
-};
-
 export const Chip = ({
   tone,
   label,
@@ -84,7 +73,7 @@ export const Chip = ({
     uppercase ? 'uppercase tracking-wide' : '',
     width === 'auto' ? '' : widthClasses[width],
     bordered ? 'ring-1' : '',
-    bordered ? (emphasis === 'strong' ? strongRing[tone] : tint.ring) : '',
+    bordered ? (emphasis === 'strong' ? tint.ringStrong : tint.ring) : '',
     className,
   );
 

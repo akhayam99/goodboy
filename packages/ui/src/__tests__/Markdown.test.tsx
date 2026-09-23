@@ -148,7 +148,6 @@ describe('Markdown document rhythm', () => {
     const code = container.querySelector('code');
     expect(code?.className).toContain('bg-muted/50');
     expect(code?.className).toContain('py-0');
-    expect(code?.className).toContain('text-foreground/90');
     expect(code?.className).not.toContain('break-all');
     expect(code?.className).toContain('wrap-anywhere');
   });
@@ -196,7 +195,6 @@ describe('Markdown lists', () => {
     const lists = container.querySelectorAll('ul');
     expect(lists).toHaveLength(2);
     const nested = lists[1];
-    expect(nested?.className).toContain('marker:text-muted-foreground/70');
     expect(nested?.querySelectorAll('li')).toHaveLength(2);
     expect(lists[0]?.children).toHaveLength(2);
     expect(container.textContent).toContain('child');

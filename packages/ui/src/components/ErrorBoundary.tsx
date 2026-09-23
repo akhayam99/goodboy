@@ -1,6 +1,10 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { ExternalLink } from 'lucide-react';
+import { cn } from '../cn';
+import { tintClasses } from '../tint';
 import { ScrollFade } from './ScrollFade';
+
+const dangerTint = tintClasses('danger');
 
 export type ErrorReportRequest = {
   readonly error: Error;
@@ -84,7 +88,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         role="alert"
         className="flex h-screen w-screen flex-col items-center justify-center bg-background p-6 text-foreground"
       >
-        <div className="flex max-w-md flex-col gap-4 rounded-lg border border-danger/40 bg-subtle p-6 shadow-md">
+        <div
+          className={cn(
+            'flex max-w-md flex-col gap-4 rounded-lg border bg-subtle p-6 shadow-md',
+            dangerTint.border,
+          )}
+        >
           <h1 className="text-base font-semibold tracking-tight">Something went wrong</h1>
           <p className="text-sm text-muted-foreground">
             Goodboy hit a runtime error and stopped rendering. Your data is safe: sessions, agents,
