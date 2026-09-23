@@ -67,10 +67,9 @@ Configuration lives at four scopes, and a value set closer to the work wins:
 - **Permission rules** exist at all four scopes; when several rules match a
   tool call, the most specific applicable scope decides.
 - **Settings overrides** (default provider, branch prefix, verbosity, model
-  pins, provider pool) are stored as an override row at workspace, project
-  and session scope on top of the global defaults; an unset value inherits
-  from an outer scope. The reading side still resolves session over workspace
-  over global; the project row is stored but not yet consulted.
+  pins, provider pool) are stored as an override row at workspace and session
+  scope on top of the global defaults; an unset value inherits from an outer
+  scope. A project override sets the branch prefix of that project's mounts.
 - **Workflows, the step library, and skills** are owned by the workspace. A
   step library row with no workspace is a global seed. Skills are discovered
   from the project roots but registered per workspace.
@@ -165,7 +164,7 @@ has to be readable inside Goodboy, not linked out to a browser tab.
 - **Route it**: turn it into a session with the goal written, and follow it
   back out when the work ships.
 
-Where each connected source stands, honestly:
+What each connected source does:
 
 - **GitHub.** Pull requests read and acted on (approve, request changes,
   comment, reply, resolve threads, merge, close); issues read and commented.
@@ -174,25 +173,20 @@ Where each connected source stands, honestly:
   edited.
 - **Bitbucket.** Pull requests end to end: description, diff, build statuses
   in plain language, review threads, and eight verbs (approve, revoke,
-  request changes, withdraw, comment, reply, merge, decline). No issue
-  tracking by design: Atlassian points issues at Jira and Goodboy follows.
+  request changes, withdraw, comment, reply, merge, decline). Issues live in
+  Jira, as Atlassian intends.
 - **Jira.** Issues read in full and acted on: comment, assign, transition,
-  edit description. Cloud only, one project key per binding, no sprints or
-  boards yet.
-- **Linear.** Issues read and routed, with two writes: the description and a
-  comment. Assign and transition are still the open gap, because the state
-  and team we read carry no id to send back. Linear is where the PM persona
-  lives.
-- **Sentry.** Issues and events read; no write path yet.
+  edit description.
+- **Linear.** Issues read and routed, with the description and comments
+  written back. Linear is where the PM persona lives.
+- **Sentry.** Issues and events read and routed into sessions.
 - **Slack.** Threads read and replied to (replies post as the connected user),
   routed into sessions with the goal pre-filled. The connection is per
-  workspace; only the public channels the connected person has joined, and no
-  call has run against a live workspace yet, only contract tests.
+  workspace.
 
 The rule for every integration: share the layout, never the logic. A Sentry
 issue and a GitHub pull request look coherent side by side because the page
-anatomy is one primitive, not because we pretended their data models are the
-same. They are not.
+anatomy is one primitive.
 
 ## Core concepts
 

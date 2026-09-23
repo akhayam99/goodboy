@@ -111,31 +111,21 @@ being short. The lead line is the pitch; everything under it is plain fact.
   how the fix works inside. The internals are the PR description and the commit
   message, and nobody outside the team reads a changelog to learn them. The
   announcement post lives by this rule too.
-- **State a limit inside the sentence that promises the thing**, not in a
-  paragraph of its own. "Goodboy reads the public channels you have joined and
-  asks Slack for nothing beyond the five scopes it needs" beats four sentences
-  of scope caveats.
-- **Work not yet exercised against a live service is a follow-up, never a
-  confession.** Never write "not verified", "this has not run against a live
-  X", or "proves nothing". Write what the work stands on and what the app does
-  when reality disagrees:
+- **Say what ships, and stop there.** Public copy (README, docs, website,
+  changelog, posts) describes what Goodboy does. Verification status,
+  open gaps, trade-offs and work not done yet belong in the pull request
+  description and the issue tracker, not in the copy. No "Follow-up:" lines,
+  no "known limits" sections, no "not yet", no caveat paragraphs.
 
-  > Follow-up: the mutation and its input come from Linear's published
-  > schema, though no call has gone out to a live Linear workspace yet. If a
-  > shape differs, Linear's own error comes back in the composer with the
-  > draft still in it.
+### Grounded
 
-  One line at the end of the feature it belongs to, and one line can cover
-  several features sharing the same follow-up.
-
-### Honesty
-
-- **Don't oversell the roadmap.** "A proper Linear Studio is on the way" not
-  "Full Linear integration".
-- **Name the limits.** "Needs a Rust toolchain. Prebuilt binaries for Linux
-  and Windows coming." Not silence.
-- **Admit when something is rough.** "Try it, break it, send feedback" >
-  "Production-ready since day one".
+- **Don't oversell.** "Reads and comments on Linear issues" not "Full Linear
+  integration". Claim what the app does today, nothing bigger.
+- **Invite, don't disclaim.** "Try it on real work, open an issue when
+  something feels off" beats "Production-ready since day one" and beats a list
+  of what is missing.
+- **The license is one line.** Name it, link it, stop. Its terms live in
+  `LICENSE.md`.
 
 ## Examples
 
