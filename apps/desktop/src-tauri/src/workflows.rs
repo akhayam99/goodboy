@@ -1494,7 +1494,8 @@ fn record_cluster_execution_graph(
     input: ClusterExecutionGraphInput,
 ) -> Result<ClusterExecutionGraphRow, PhaseError> {
     let now = crate::util::now_ms();
-    conn.execute(
+    let transaction = conn.unchecked_transaction()?;
+    let created = transaction.execute(
         "INSERT OR IGNORE INTO cluster_execution_graphs
            (container_agent_id, session_id, workflow_run_id, plan_id, goal_title,
             execution_version, graph_json, created_at)
@@ -1510,8 +1511,13 @@ fn record_cluster_execution_graph(
             now,
         ],
     )?;
-    for node in input.nodes.iter() {
-        conn.execute(
+    let nodes_to_record = if created == 1 {
+        input.nodes.as_slice()
+    } else {
+        &[]
+    };
+    for node in nodes_to_record {
+        transaction.execute(
             "INSERT OR IGNORE INTO cluster_execution_nodes
                (container_agent_id, node_id, agent_id, ordinal, role)
              VALUES (?1, ?2, ?3, ?4, ?5)",
@@ -1524,6 +1530,7 @@ fn record_cluster_execution_graph(
             ],
         )?;
     }
+    transaction.commit()?;
     let sql = format!(
         "SELECT {CLUSTER_EXECUTION_GRAPH_COLUMNS} FROM cluster_execution_graphs WHERE container_agent_id = ?1"
     );
@@ -2093,6 +2100,46 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].nodes.len(), 1);
         assert_eq!(rows[0].nodes[0].role, "scout");
+    }
+
+    #[test]
+    fn cluster_execution_graph_rerecord_adds_no_node_binding() {
+        let conn = execution_graphs_conn();
+        record_cluster_execution_graph(&conn, execution_graph_input("[{\"id\":\"discovery\"}]"))
+            .unwrap();
+        let mut repeat = execution_graph_input("[{\"id\":\"discovery\"}]");
+        repeat.nodes.push(ClusterExecutionNodeRow {
+            node_id: "extra".to_string(),
+            agent_id: Some("agent-2".to_string()),
+            ordinal: 1,
+            role: "tester".to_string(),
+        });
+        let second = record_cluster_execution_graph(&conn, repeat).unwrap();
+
+        assert_eq!(second.nodes.len(), 1);
+        assert_eq!(second.nodes[0].node_id, "discovery");
+    }
+
+    #[test]
+    fn cluster_execution_graph_record_rolls_back_on_a_failed_node() {
+        let conn = execution_graphs_conn();
+        conn.execute_batch(
+            "CREATE TRIGGER reject_extra BEFORE INSERT ON cluster_execution_nodes
+             WHEN NEW.node_id = 'extra' BEGIN SELECT RAISE(ABORT, 'rejected'); END;",
+        )
+        .unwrap();
+        let mut failing = execution_graph_input("[{\"id\":\"discovery\"}]");
+        failing.nodes.push(ClusterExecutionNodeRow {
+            node_id: "extra".to_string(),
+            agent_id: None,
+            ordinal: 1,
+            role: "tester".to_string(),
+        });
+
+        assert!(record_cluster_execution_graph(&conn, failing).is_err());
+        assert!(list_cluster_execution_graphs(&conn, "session")
+            .unwrap()
+            .is_empty());
     }
 
     #[test]
