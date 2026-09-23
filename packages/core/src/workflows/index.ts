@@ -1,12 +1,9 @@
 export {
   buildStepPrompt,
   classifyWorkflowChain,
-  currentStep,
   findReusableAgent,
   isWorkflowComplete,
-  nextStep,
   runsForWorkflowRun,
-  upcomingSteps,
   type WorkflowChainState,
 } from './sequencer';
 export {
