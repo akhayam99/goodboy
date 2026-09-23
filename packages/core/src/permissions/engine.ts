@@ -6,17 +6,43 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { formatToolPattern, parseToolPattern } from './matcher';
+import { compiledToolMatcher, formatToolPattern } from './matcher';
 import { SCOPE_RANK, isApplicable } from './shared';
 
 export type PermissionEngineDeps = {
   readonly defaultDecision?: 'allow' | 'deny';
 };
 
-function isSpecific(rule: PermissionRule): boolean {
-  const pattern = formatToolPattern(rule.pattern);
-  return !pattern.includes('*');
-}
+type DecideParams = {
+  readonly request: PermissionRequest;
+  readonly rules: ReadonlyArray<PermissionRule>;
+  readonly context: { readonly sessionId: SessionId; readonly workspaceId: WorkspaceId };
+};
+
+type RuleParams = {
+  readonly rule: PermissionRule;
+};
+
+const specificity = ({ rule }: RuleParams): number =>
+  formatToolPattern({ pattern: rule.pattern }).includes('*') ? 0 : 1;
+
+const denyRank = ({ rule }: RuleParams): number =>
+  rule.decision === 'deny' || rule.decision === 'ask' ? 1 : 0;
+
+const compareRules = (a: PermissionRule, b: PermissionRule): number => {
+  if (b.priority !== a.priority) {
+    return b.priority - a.priority;
+  }
+  const scopeDiff = SCOPE_RANK[b.scope] - SCOPE_RANK[a.scope];
+  if (scopeDiff !== 0) {
+    return scopeDiff;
+  }
+  const specificityDiff = specificity({ rule: b }) - specificity({ rule: a });
+  if (specificityDiff !== 0) {
+    return specificityDiff;
+  }
+  return denyRank({ rule: b }) - denyRank({ rule: a });
+};
 
 export class PermissionEngine {
   private readonly defaultDecision: 'allow' | 'deny';
@@ -25,19 +51,17 @@ export class PermissionEngine {
     this.defaultDecision = deps?.defaultDecision ?? 'deny';
   }
 
-  decide(
-    request: PermissionRequest,
-    rules: ReadonlyArray<PermissionRule>,
-    context: { sessionId: SessionId; workspaceId: WorkspaceId },
-  ): PermissionDecision {
-    const applicable = rules.filter((r) => isApplicable(r, context));
-
-    const matched = applicable.filter((r) => {
-      const matcher = parseToolPattern(formatToolPattern(r.pattern));
-      return matcher.matches(request.toolName, request.input);
-    });
-
-    if (matched.length === 0) {
+  decide({ request, rules, context }: DecideParams): PermissionDecision {
+    const matched = rules.filter(
+      (rule) =>
+        isApplicable(rule, context) &&
+        compiledToolMatcher({ pattern: rule.pattern }).matches({
+          toolName: request.toolName,
+          input: request.input,
+        }),
+    );
+    const winner = [...matched].sort(compareRules)[0];
+    if (winner === undefined) {
       return {
         requestId: request.id,
         decision: this.defaultDecision,
@@ -46,27 +70,7 @@ export class PermissionEngine {
         at: request.at,
       };
     }
-
-    const sorted = [...matched].sort((a, b) => {
-      if (b.priority !== a.priority) {
-        return b.priority - a.priority;
-      }
-      const scopeDiff = SCOPE_RANK[b.scope] - SCOPE_RANK[a.scope];
-      if (scopeDiff !== 0) {
-        return scopeDiff;
-      }
-      const aSpec = isSpecific(a) ? 1 : 0;
-      const bSpec = isSpecific(b) ? 1 : 0;
-      if (bSpec !== aSpec) {
-        return bSpec - aSpec;
-      }
-      const denyRank = (d: string) => (d === 'deny' || d === 'ask' ? 1 : 0);
-      return denyRank(b.decision) - denyRank(a.decision);
-    });
-
-    const winner = sorted[0] as PermissionRule;
     const outcome: PermissionDecisionOutcome = winner.decision === 'allow' ? 'allow' : 'deny';
-
     return {
       requestId: request.id,
       decision: outcome,
