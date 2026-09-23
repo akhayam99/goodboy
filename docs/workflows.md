@@ -1,50 +1,50 @@
 # Workflows
 
 > **Read this when** you want to know how workflows, the orchestrator and
-> hands-free runs behave, or you are touching workflow tables, run advance
-> logic or the post-step summarizer. **Not for** workflow chrome or
-> breadcrumbs ([navigation.md](navigation.md)).
+> hands-free runs work, or you are changing the workflow tables, the code that
+> moves a run to its next step, or the summarizer that runs after each step.
+> **Not for** the workflow header and breadcrumbs ([navigation.md](navigation.md)).
 
 A workflow splits a task into steps and runs each step as its own agent. This
 page covers how you pick or build one, what the orchestrator does and how a
-run moves from step to step, with the implementation detail at the end.
+run moves from step to step. The code details come at the end.
 
-Product concepts live in [concepts.md](concepts.md), chrome in
-[navigation.md](navigation.md).
+Each object in Goodboy is explained in [concepts.md](concepts.md). The
+header and breadcrumbs are covered in [navigation.md](navigation.md).
 
 ## What a workflow is
 
-A workflow is a reusable sequence of steps, for example scout, plan,
-implement, test. Each step starts a new agent with a short brief, and that
-agent hands a summary to the next one.
+A workflow is a list of steps you can use again and again, for example scout,
+plan, implement, test. Each step starts a new agent with a short brief. When
+that agent is done, it hands a summary to the next one.
 
-- A workflow can carry a goal, which you can override per run
-- Attaching a workflow to a session starts a **run**
-- The same workflow can run any number of times in one session, each run independent
-- A session needs no workflow: you can always add free agents next to a run
+- A workflow can have a goal, and you can change it for each run
+- Adding a workflow to a session starts a **run**
+- The same workflow can run as many times as you like in one session, and each run is separate
+- A session does not need a workflow. You can always add free agents next to a run
 
 ## Picking or building one
 
 Open the workflow builder in a session and choose one of three modes.
 
-1. **Preset**: pick a ready workflow. Goodboy ships **Refactor (example)**, a scout, plan, implement and test sequence you can clone and tune.
+1. **Preset**: pick a ready workflow. Goodboy comes with **Refactor (example)**, a scout, plan, implement and test sequence you can copy and adjust.
 2. **Custom**: write the steps yourself, or describe what you want and Goodboy drafts the steps for you to edit.
 3. **Orchestrated**: give a goal and let the orchestrator choose each step as the work goes.
 
-Every workflow gets a name in the **Workflow name** field, which shows a
-default until you type over it. Renaming a preset inside the builder starts a
-workflow of its own, and the shared preset keeps its name.
+Every workflow has a name in the **Workflow name** field. It shows a default
+name until you type your own. If you rename a preset inside the builder, you
+get a new workflow of your own, and the shared preset keeps its name.
 
-A workflow you are still building survives switching sessions, and is cleared
-once you create or discard it. **Workflow Studio** is where you keep presets
-and the step library, and it can import a custom workflow from another
-workspace.
+A workflow you are still building stays there when you switch sessions. It
+goes away once you create it or discard it. **Workflow Studio** is where you
+keep presets and the step library. It can also import a custom workflow from
+another workspace.
 
 ### When a run starts
 
-- **Immediately** on attach, the default
+- **Immediately** when you add it. This is the default
 - **Manually**, when you press start
-- **After another run** completes, then it goes on by itself
+- **After another run** finishes, and then it carries on by itself
 
 ## What a step carries
 
@@ -52,141 +52,147 @@ Each step is one agent with its own brief and its own model.
 
 - **Name** and **role**: scout, investigator, planner, implementer, reviewer, tester, resolver, docs, report, wireframe or custom
 - **Prompt**: the instruction the agent starts from
-- **Expected output**: what the next step was promised, pulled to the top of the handoff
-- **Provider**, **model** and **effort**: scout on a cheap model, plan on a strong one
+- **Expected output**: what this step promised the next one. It goes at the top of the handoff
+- **Provider**, **model** and **effort**: for example scout on a cheap model, plan on a strong one
 
-When you leave the model on auto, Goodboy picks it by role, tier and cost. An
-explicit pin on the step overrides that choice.
+If you leave the model on auto, Goodboy picks one based on the role, the model
+tier and the cost. A model you set on the step wins over that choice.
 
-Steps run one after another. Parallelism lives inside a step: a scout step can
-fan out into several agents.
+Steps run one after another. Parallel work happens inside a step, where a
+scout step can split into several agents.
 
 ## The orchestrator
 
-In an **Orchestrated** run there is no fixed list of steps. After each step
+The orchestrator is an agent that plans the run for you. In an
+**Orchestrated** run there is no fixed list of steps. After each step
 finishes, the orchestrator reads the goal, your process notes and what the
-steps so far produced, then decides one thing: the next step, done, or
+steps so far produced. Then it decides one thing: the next step, done, or
 blocked.
 
-- It never does the work itself: it has no tools and no repository access
+- It never does the work itself. It has no tools and cannot open your repository
 - A run usually starts with discovery, then a plan, then the work
-- It picks the provider, model and effort for each step, with a short reason
+- It picks the provider, model and effort for each step, and gives a short reason
 - It keeps a running recap of what is done and what is left
-- It ends the run when the goal is met, or blocks when a decision needs you
+- It ends the run when the goal is met, or stops and asks you when a decision needs you
 
-You choose the model the orchestrator itself runs on in the launch form.
+You choose the model the orchestrator runs on in the launch form.
 
 ### Hints
 
-Hints steer the orchestrator while it runs. Every hint stays in its context
-for the rest of the run, marked new or with the step it was first read at.
+A hint is a note you send the orchestrator while the run is going. Every hint
+stays with the orchestrator for the rest of the run. It is marked as new, or
+with the step where the orchestrator first read it.
 
-- **Queue** waits for the next decision
-- **Read now** restarts a decision in flight, or stops the running step, keeps what it wrote, and decides again
-- A queued hint can be removed before it is read
+- **Queue** waits until the next decision
+- **Read now** restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
+- You can remove a queued hint before it is read
 
-A preference for a provider or model on a step is a hint too.
+Asking for a certain provider or model on a step is a hint too.
 
 ### Spend limit
 
 Each run can have a spending limit in dollars. You set it on the run, in the
-orchestrator panel or in the creation form, and choose whether reaching it
-notifies you or pauses the run. The limit starts at unlimited, and the
-orchestrator sizes its own number of steps from the goal.
+orchestrator panel or in the creation form. You also choose what happens when
+the run reaches it: Goodboy notifies you, or pauses the run. The limit starts
+at unlimited. The orchestrator decides how many steps to plan based on the goal.
 
 ## How a run advances
 
-When a step finishes, its transcript is condensed into a handoff, and the next
-step reads that handoff instead of the previous chat. A run then either moves
-on or waits for you.
+When a step finishes, Goodboy turns its chat into a short summary called a
+handoff. The next step reads that handoff instead of the whole previous chat.
+Then the run either moves on or waits for you.
 
 A run waits when:
 
-- An agent asked a question that is still open
+- An agent asked a question you have not answered yet
 - A step failed
 - The summarizer is still writing the handoff
 - An agent is still running
 
-When a run waits for more than one reason, Goodboy shows the one you have to
-act on first. An open question comes before a failed step.
+When a run waits for more than one reason, Goodboy shows the one you need to
+deal with first. An open question comes before a failed step.
 
 ### Skipping a failed step
 
-Moving past a block is never one click. A failed step takes two: you confirm
-the skip, then the next agent starts. The failed step is marked **skipped**,
-not left as failed.
+Getting past a blocked run always takes more than one click. A failed step
+takes two. First you confirm the skip, then the next agent starts. The failed
+step is marked **skipped**, not left as failed.
 
 ### Hands-free runs
 
-**Autorun** makes a run hands-free: each next step starts without your click.
-Turn it on per run, or on the session, and a run without its own setting
-follows the session.
+**Autorun** makes a run hands-free. Each next step starts without you
+clicking. You can turn it on for one run or for the whole session. A run
+without its own setting follows the session.
 
 - The session's autorun also covers agents running outside a workflow
-- A workflow attached to a session with autorun on starts with autorun on
-- **Stop** ends a hands-free run, and a stopped run can resume
+- A workflow you add to a session with autorun on starts with autorun on
+- **Stop now** ends a hands-free run. Goodboy asks you to confirm first. The step that is running is cancelled and marked skipped, and everything it already wrote is kept
+- **Resume the run** starts a stopped run again. It turns autorun back on and asks for the next step
 
-A hands-free run still stops for you when:
+A hands-free run still stops and waits for you when:
 
-- An agent has an open question
-- A step failed, and you get one **workflow blocked** notification naming it
-- The run's budget alert is up and not dismissed
-- It waits for another run to complete
+- An agent has a question for you
+- A step failed. You get one **workflow blocked** notification that names it
+- The run's budget alert is showing and you have not dismissed it
+- It is waiting for another run to finish
 
-A hands-free step that stops without saying it is done gets one nudge. If it
-stops again, the step fails and waits for you.
+If a hands-free step stops without saying it is done, Goodboy nudges it once.
+If it stops again, the step fails and waits for you.
 
 ## For contributors
 
-Everything below is the implementation behind the sections above.
+Everything below is the code behind the sections above.
 
 ### Where it lives
 
 - `packages/db/src/migrations/`: the workflow schema
 - `apps/desktop/src-tauri/src/workflows.rs`: `workflow_upsert`, `step_def_upsert`, `agent_insert_batch`
-- `apps/desktop/src/features/workflows/advanceGate.ts`: `resolveWorkflowAdvance`
-- `apps/desktop/src/store/slices/workflows/maybeAutoAdvanceWorkflow.ts`: autorun advance
-- `apps/desktop/src/store/slices/workflows/handsFree.ts`: `isHandsFree`, run then session
-- `apps/desktop/src/store/slices/workflows/preSpawnWorkflowAgents.ts`: agents spawned on attach
-- `apps/desktop/src/store/slices/workflows/notifyWorkflowGateBlock.ts`: the blocked notification
-- `apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts`: one orchestrator decision
-- `apps/desktop/src/store/slices/workflows/summarizeWorkflowAgentOutput.ts`: the post-step summarizer
-- `packages/core/src/summarizer/step-output.ts`: the handoff contract
+- `apps/desktop/src/features/workflows/advanceGate.ts`: `resolveWorkflowAdvance`, which decides if a run can move on
+- `apps/desktop/src/store/slices/workflows/maybeAutoAdvanceWorkflow.ts`: moves a hands-free run to its next step
+- `apps/desktop/src/store/slices/workflows/handsFree.ts`: `isHandsFree`, which checks the run first, then the session
+- `apps/desktop/src/store/slices/workflows/preSpawnWorkflowAgents.ts`: creates the run's agents when a workflow is added
+- `apps/desktop/src/store/slices/workflows/notifyWorkflowGateBlock.ts`: sends the blocked notification
+- `apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts`: asks the orchestrator for one decision
+- `apps/desktop/src/store/slices/workflows/summarizeWorkflowAgentOutput.ts`: the summarizer that runs after each step
+- `packages/core/src/summarizer/step-output.ts`: the rules every handoff follows
 - `packages/core/src/orchestrator/prompt.ts`: `ORCHESTRATOR_SYSTEM_PROMPT`
-- `packages/core/src/workflows/library.ts`: `WORKFLOW_LIBRARY`, the shipped presets
+- `packages/core/src/workflows/library.ts`: `WORKFLOW_LIBRARY`, the presets that come with the app
 - `packages/core/src/roles.ts`: `ROLE_REGISTRY`, the roles a step can take
 
 ### `phaseTemplate*` means workflow
 
-There is no phase-template concept and no `phase_templates` table. It, plus
-`phase_definitions`, `session_phase_runs` and `parallel_phase_groups`, was
-dropped in `packages/db/src/migrations/m014-rename-domain.ts`.
+There is no phase template anymore, and no `phase_templates` table. That
+table was removed in `packages/db/src/migrations/m014-rename-domain.ts`,
+together with `phase_definitions`, `session_phase_runs` and
+`parallel_phase_groups`.
 
-Every surviving `phase*` identifier in the store, the workflow slices and
-`workflows.rs` is an unrenamed alias for a workflow. Do not hunt for a second
-system.
+Any `phase*` name still in the store, the workflow slices and `workflows.rs`
+is an old name for a workflow. There is no second system to look for.
 
 ### The tables
 
-The schema is in `packages/db/src/migrations/`. What it does not tell you:
+The schema is in `packages/db/src/migrations/`. A few things it does not tell you:
 
-- A run is keyed by `workflow_run_id`, not by workflow, which lets one workflow attach to a session N times
-- Every per-run flag lives on `session_workflows`, and the agents of a run carry the same id
-- A run's plan and open questions belong to the run, not the session, so two runs on one session never read each other's state
-- `is_preset = 0` marks a one-off run, kept out of the preset picker
-- A `step_library` row with a `NULL` `workspace_id` is a global seed
+- A run is keyed by `workflow_run_id`, not by workflow. That is how one workflow can be added to a session many times
+- Every per-run flag lives on `session_workflows`. The agents of a run carry the same id
+- A run's plan and open questions belong to the run, not the session. Two runs on one session never read each other's state
+- `is_preset = 0` marks a one-off run. It does not show up in the preset picker
+- A `step_library` row with a `NULL` `workspace_id` is a built-in step for every workspace
 
-Attaching pre-spawns every agent `pending` in one go. Each step's overrides
-are resolved per agent, with the role recommendation as the fallback, so a
-run's shape is fixed at attach time rather than discovered step by step.
+Adding a workflow creates every agent of the run at once, each one `pending`.
+Each step's settings are worked out per agent. When a step sets nothing, the
+role's recommended model fills in. So the shape of a run is fixed the moment
+you add it. It is not worked out step by step.
 
-Every authoring surface writes through the same upsert command. A second write
-path would let a workflow exist that the picker cannot see.
+Every screen that creates or edits a workflow saves it through the same
+upsert command. A second way of saving could create a workflow the picker
+cannot see.
 
 ### Advance states
 
-`resolveWorkflowAdvance` is the only gate. It returns exactly one state, and
-the order it tests them in is the contract.
+`resolveWorkflowAdvance` is the only place that decides if a run can move on.
+It returns exactly one state. The order it checks them in is part of the
+contract.
 
 | Order | Result                   | When                            |
 | ----- | ------------------------ | ------------------------------- |
@@ -198,71 +204,72 @@ the order it tests them in is the contract.
 | 6     | `blocked` `turn-running` | a turn or agent is running      |
 | 7     | `ready`                  | the user can advance            |
 
-The reason returned is the one the user has to act on first, so a run with
-both an open question and a failed step reads `questions`. Reordering the
-tests changes what every surface tells the user to do.
+The reason it returns is the one the user has to deal with first. A run with
+both an open question and a failed step returns `questions`. If you change the
+order, you change what every screen tells the user to do.
 
-A blocked result carries the failed step whichever reason won. Surfaces that
-name the failed step keep naming it while a transient gate is up.
+A blocked result always carries the failed step, whichever reason came first.
+So screens that name the failed step keep naming it while a short-lived block
+is showing.
 
-Every surface reads that one resolver through one exhaustive view of the
-union. A surface does not narrow the union itself. The chat CTA is the single
-deliberate exception, because it renders nothing under `automatic`.
+Every screen reads this one resolver through one view that handles every case
+of the union. No screen narrows the union on its own. The one exception on
+purpose is the chat button, because it shows nothing under `automatic`.
 
 ### Autorun logic
 
-`automatic` is what `auto_run` collapses the summarizer and turn-running cases
-into: manual controls do not render, because automation is about to make that
-click.
+With `auto_run` on, the summarizer case and the turn-running case both become
+`automatic`. The manual buttons do not show, because autorun is about to make
+that click.
 
-An open question and a failed step both survive autorun, because automation
-bails on both. `maybeAutoAdvanceWorkflow` skips a run with open questions, and
-it only activates the next agent when every agent is `completed` or `skipped`,
-which a `failed` one never is.
+An open question and a failed step both still show with autorun on, because
+autorun stops on both. `maybeAutoAdvanceWorkflow` skips a run with open
+questions. It only starts the next agent when every agent is `completed` or
+`skipped`, and a `failed` agent is never either.
 
-Hands-free (`auto_run`, per run, falling back to the session) waits on a busy
-summarizer through a bounded gate, polling every 100ms for up to 60 seconds,
-then advances regardless of whether it finished. It still bails on any
-undismissed budget-exceeded alert, and a run can also be held until another
-named run completes.
+A hands-free run (`auto_run`, set on the run or taken from the session) waits
+for a busy summarizer. It checks every 100ms for up to 60 seconds, then moves
+on whether the summarizer finished or not. It still stops on any budget alert
+you have not dismissed. A run can also be held until another named run
+finishes.
 
-Bailing on a failed step raises a `workflow blocked` warning notification
-naming the step, **once per stop, not once per pass**. The announcement is
-keyed by the failed step and the agent that failed on it:
+When autorun stops on a failed step, Goodboy sends a `workflow blocked`
+warning that names the step, **once per stop, not once per check**. The
+warning is keyed by the failed step and the agent that failed on it.
 
-- A live sibling run does not re-announce an unchanged stop
-- A retry is a new agent row, so it does announce
+- Another run on the same session that is still going does not repeat the warning for the same stop
+- A retry creates a new agent row, so it does send a new warning
 
-Surfaces outside the lens name the block and offer the skip, and they
-deliberately do not claim autorun. Out there the resolver cannot see the
-budget stop or a deferred trigger, so it would call a run automatic that will
-never take another step, and the manual control would go missing.
+Screens outside the lens name the block and offer the skip. They do not say
+the run is on autorun. Outside the lens the resolver cannot see the budget
+stop or a run waiting on another run. It would call a run automatic even
+though that run will never take another step, and the manual button would
+disappear.
 
 ### The post-step summarizer
 
-A step finishes when its agent emits a `<<step-done ...>>` marker or captures
-a plan. The transcript is then condensed into the handoff the next step reads,
-so step N+1 never re-reads step N's scrollback.
+A step finishes when its agent writes a `<<step-done ...>>` marker or saves a
+plan. Goodboy then turns the chat into the handoff the next step reads. So
+step N+1 never reads step N's full chat.
 
-The summary is a contract, not free text:
+The summary follows fixed rules. It is not free text.
 
-- A one-line outcome first
-- A bounded whole
-- Facts in priority order: file paths, decisions, actions, problems, blockers
-- The step's expected output pulled out ahead of everything else, so the handoff leads with what the next step was promised
+- It starts with a one-line outcome
+- It has a maximum length
+- Facts come in order of importance: file paths, decisions, actions, problems, blockers
+- The step's expected output comes before everything else, so the handoff starts with what the next step was promised
 
-**Summarization never decides whether the step succeeded.** On model failure,
-timeout or a contract violation it falls back to a deterministic head-and-tail
-truncation with no model involved.
+**The summarizer never decides if the step succeeded.** If the model fails,
+times out or breaks the rules, Goodboy falls back to cutting the chat down to
+its start and end. No model is involved in that fallback.
 
-The step still completes, the result is flagged `degraded`, and a notification
-offers the retry. Either way the summary becomes the next step's carry-forward
-context.
+The step still completes, the result is marked `degraded`, and a notification
+offers to retry. Either way, the summary is what the next step starts from.
 
 ### Step sequencing
 
-Steps run in sequence. Parallelism lives inside a step: the `parallel_agents`
-override gates scout fan-out.
+Steps run one after another. Parallel work happens inside a step. The
+`parallel_agents` setting decides whether a scout step can split into several agents.
 
-A hands-free step that stops without a `step-done` marker gets one nudge. If
-it stops again, the step fails and waits for the user.
+If a hands-free step stops without a `step-done` marker, Goodboy nudges it
+once. If it stops again, the step fails and waits for the user.
