@@ -61,7 +61,7 @@ describe('Chip', () => {
     );
 
     expect(classesOf('loud')).toContain('uppercase');
-    expect(classesOf('loud')).toContain('tracking-wide');
+    expect(classesOf('loud')).toContain('tracking-eyebrow');
     expect(classesOf('quiet')).not.toContain('uppercase');
   });
 
@@ -89,5 +89,22 @@ describe('Chip', () => {
     render(<Chip tone="neutral" label="plain" />);
 
     expect(screen.getByText('plain').getAttribute('role')).toBeNull();
+  });
+
+  it('frames a control chip at the h-6 control height', () => {
+    render(<Chip as="button" tone="neutral" shape="badge" size="control" label="Context" />);
+
+    const chip = screen.getByRole('button', { name: 'Context' });
+    expect(chip.className).toContain('h-6');
+    expect(chip.className).toContain('rounded-md');
+  });
+
+  it('gives a button chip the focus ring and a tone hover instead of fading', () => {
+    render(<Chip as="button" tone="neutral" label="Open" onClick={() => undefined} />);
+
+    const chip = screen.getByRole('button', { name: 'Open' });
+    expect(chip.className).toContain('focus-visible:ring-2');
+    expect(chip.className).toContain('hover:bg-hover');
+    expect(chip.className).not.toContain('hover:opacity-80');
   });
 });

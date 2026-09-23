@@ -438,6 +438,11 @@ width follows its content breaks the column for every row under it.
   prop). `auto` is for one-off chips in a detail panel, never a column. A
   fixed-width wrapper around the chip does not count. It aligns what comes
   after the chip and leaves the chip ragged.
+- A chip that works as a control next to buttons (the session overview's
+  context, attention, linked-work and branch chips) is `Chip size="control"`
+  with `shape="badge"`. That gives the `h-6` control height, the focus ring,
+  and a tone hover. A custom element that needs the same frame (a popover
+  trigger with its own ref) takes `chipClasses`, never a local class string.
 - In a right-aligned cluster, variable text comes first and glyphs last. What
   sits nearest the edge must be constant-width, or it wanders from row to row.
   In a left-aligned cluster the glyph comes first. The test is where the group

@@ -7,7 +7,7 @@ import {
   formatUsd,
   formatUsdPrecise,
   ScrollFade,
-  tintClasses,
+  chipClasses,
   useDropdown,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -18,7 +18,6 @@ import { EMPTY_ARRAY, useAppStore, useSessionCost } from '../../../../store';
 import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 import { sessionTitle } from '../../sessionTitle';
 import { manageDialogFocus } from './manageDialogFocus';
-import { VITAL_CHIP_FOCUS, VITAL_CHIP_FRAME, VITAL_CHIP_HOVER } from './vitalChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -61,7 +60,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
     width: 'w-[40rem] max-w-[calc(100vw-2rem)]',
   });
   const { open, toggle, popupRef } = dropdown;
-  const capTint = capState === 'clear' ? null : tintClasses(CAP_TONE[capState]);
+  const capTone = capState === 'clear' ? 'neutral' : CAP_TONE[capState];
   const spent = formatUsd(sessionCost);
   const label = sessionBudget != null ? `${spent} / ${formatUsd(sessionBudget)}` : spent;
   const capNote = CAP_NOTE[capState];
@@ -147,11 +146,8 @@ export const SessionCostChip = ({ sessionId }: Props) => {
           title={title}
           onAnimationEnd={() => setPulse(false)}
           className={cn(
-            VITAL_CHIP_FRAME,
-            VITAL_CHIP_FOCUS,
-            'px-2 font-mono tabular-nums',
-            capState === 'clear' && VITAL_CHIP_HOVER,
-            capTint != null && `${capTint.borderSoft} ${capTint.bg} ${capTint.text}`,
+            chipClasses({ tone: capTone, shape: 'badge', size: 'control', isInteractive: true }),
+            'font-mono tabular-nums',
             pulse && 'cost-chip-pulse',
           )}
         >

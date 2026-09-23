@@ -72,8 +72,8 @@ export type { ButtonEmphasis, ButtonProps, ButtonSize, ButtonVariant } from './c
 export type { CardActionProps } from './components/CardAction';
 export { Checkbox } from './components/Checkbox';
 export type { CheckboxProps } from './components/Checkbox';
-export { Chip } from './components/Chip';
-export type { ChipEmphasis, ChipProps, ChipSize } from './components/Chip';
+export { Chip, chipClasses } from './components/Chip';
+export type { ChipClassParams, ChipEmphasis, ChipProps, ChipSize } from './components/Chip';
 export { ClampedProse } from './components/ClampedProse';
 export type { ClampLines, ClampedProseProps } from './components/ClampedProse';
 export { Collapsible } from './components/Collapsible';

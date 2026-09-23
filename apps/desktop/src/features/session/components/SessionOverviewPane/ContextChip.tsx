@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
-import { cn, formatUsd, Tooltip } from '@goodboy/ui';
+import { Chip, cn, formatUsd, Tooltip } from '@goodboy/ui';
 import type { SessionId, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSummarizerStatus } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { SummarizerBadge } from '../SummarizerBadge';
-import { VITAL_CHIP } from './vitalChip';
 import { withShortcutHint } from '../../../../shared/keyboard/registry';
 
 type Props = {
@@ -46,19 +45,23 @@ export const ContextChip = ({ sessionId, onSelectLens }: Props) => {
   return (
     <span className="flex shrink-0 items-center gap-1">
       <Tooltip content={tooltip}>
-        <button
-          type="button"
+        <Chip
+          as="button"
+          tone="neutral"
+          shape="badge"
+          size="control"
           onClick={() => onSelectLens('context')}
-          className={cn(VITAL_CHIP, isWorking && 'spin-border spin-border-primary')}
-        >
-          <CONCEPT_ICONS.context size={11} aria-hidden className="text-primary" />
-          <span>Context</span>
-          {hasSpend ? (
-            <span className="font-mono tabular-nums text-faint-foreground">
-              Σ {formatUsd(summarizerSpend.estimatedCostUsd)}
-            </span>
-          ) : null}
-        </button>
+          icon={<CONCEPT_ICONS.context size={11} aria-hidden className="text-primary" />}
+          label="Context"
+          trailing={
+            hasSpend ? (
+              <span className="font-mono tabular-nums text-faint-foreground">
+                Σ {formatUsd(summarizerSpend.estimatedCostUsd)}
+              </span>
+            ) : null
+          }
+          className={cn(isWorking && 'spin-border spin-border-primary')}
+        />
       </Tooltip>
       {isWorking ? null : <SummarizerBadge sessionId={sessionId} />}
     </span>

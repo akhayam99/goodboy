@@ -1,12 +1,11 @@
 import type { LucideIcon } from 'lucide-react';
-import { Tooltip } from '@goodboy/ui';
+import { Chip, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { standaloneArtifacts } from '../../../artifacts/standaloneArtifacts';
 import { useDestinationCounts } from '../../hooks/useDestinationCounts';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { VITAL_CHIP } from './vitalChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -23,11 +22,16 @@ type ChipProps = {
 
 const AttentionChip = ({ icon: Icon, label, count, tooltip, onOpen }: ChipProps) => (
   <Tooltip content={tooltip}>
-    <button type="button" onClick={onOpen} className={VITAL_CHIP}>
-      <Icon size={11} aria-hidden className="text-muted-foreground" />
-      <span>{label}</span>
-      <span className="font-mono tabular-nums text-foreground">{count}</span>
-    </button>
+    <Chip
+      as="button"
+      tone="neutral"
+      shape="badge"
+      size="control"
+      onClick={onOpen}
+      icon={<Icon size={11} aria-hidden className="text-muted-foreground" />}
+      label={label}
+      trailing={<span className="font-mono tabular-nums text-foreground">{count}</span>}
+    />
   </Tooltip>
 );
 

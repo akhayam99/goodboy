@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
 import { History, Plus } from 'lucide-react';
-import { Button, ClampedProse, SectionHeader, Skeleton, Textarea, Tooltip, cn } from '@goodboy/ui';
+import {
+  Button,
+  Chip,
+  ClampedProse,
+  SectionHeader,
+  Skeleton,
+  Textarea,
+  Tooltip,
+  cn,
+} from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { VITAL_CHIP } from './vitalChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -100,20 +108,18 @@ export const GoalOverviewRegion = ({
       <section aria-label="Goal" className="flex min-w-0 flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Tooltip content={isSameAsTitle ? 'The title is the whole goal so far' : 'No goal yet'}>
-            <button
-              type="button"
+            <Chip
+              as="button"
+              tone="neutral"
+              shape="badge"
+              size="control"
+              bordered={false}
               disabled={isSummarizing}
               onClick={startEditing}
-              aria-label={isSameAsTitle ? 'Detail the goal' : 'Add a goal'}
-              className={cn(
-                VITAL_CHIP,
-                'border-dashed border-border bg-transparent px-2',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-              )}
-            >
-              <Plus size={11} aria-hidden />
-              {isSameAsTitle ? 'Detail the goal' : 'Add a goal'}
-            </button>
+              icon={<Plus size={11} aria-hidden />}
+              label={isSameAsTitle ? 'Detail the goal' : 'Add a goal'}
+              className="border border-dashed border-border bg-transparent"
+            />
           </Tooltip>
           {historyAction}
         </div>
