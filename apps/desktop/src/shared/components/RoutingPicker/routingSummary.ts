@@ -5,11 +5,8 @@ import type {
   ProviderId,
   VerbosityLevel,
 } from '@goodboy/types';
-import {
-  EFFORT_LABEL,
-  PROVIDER_LABEL,
-  modelLabel,
-} from '../../../features/chat/utils/chat-constants';
+import { EFFORT_LABEL, modelLabel } from '../../../features/chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { VERBOSITY_LABEL } from '../../../features/settings/verbosity';
 
 export type RoutingTriggerLabel = {

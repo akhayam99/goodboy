@@ -20,7 +20,7 @@ import type {
 import { useAppStore } from '../../store/store';
 import { resolveSessionRepo } from '../../store/slices/worktrees/resolveSessionRepo';
 import { WorkflowGateError } from '../../store/slices/workflows/workflowActivationGate';
-import { PROVIDER_LABEL_LOWER } from '../providers/providers';
+import { PROVIDER_LABEL } from '../providers/providerLabel';
 import { isMainWindow } from '../workspace/window';
 import { worktreeDiffFile } from '../worktree/worktree';
 import {
@@ -174,7 +174,7 @@ function buildProviderMenu(): {
     const info = known.find((p) => p.id === id);
     return {
       id,
-      label: info?.label ?? PROVIDER_LABEL_LOWER[id],
+      label: info?.label ?? PROVIDER_LABEL[id],
       connection: info?.connection ?? 'missing',
       defaultModel: getDefaultTurnModel({ id }),
       models: PROVIDER_CAPABILITIES[id].models.map((m) => ({

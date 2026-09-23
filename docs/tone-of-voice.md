@@ -41,6 +41,9 @@ talking to a market. There are two voices:
   only where the copy is really about it (a Claude error, a Codex setup step).
 - **No hardcoded user nickname.** If a greeting needs a name, it reads it from
   the user's profile, never from a constant. If in doubt, drop the greeting.
+- **Brand names keep brand casing, mid-sentence too.** "Sign in to Claude",
+  "Install Codex", "OpenRouter". Provider names come from `PROVIDER_LABEL`.
+  There is no lowercase variant.
 - **Product copy is in English.** That means every label, placeholder, empty
   state, tooltip and button. A new string in another language is a bug:
   translate it.

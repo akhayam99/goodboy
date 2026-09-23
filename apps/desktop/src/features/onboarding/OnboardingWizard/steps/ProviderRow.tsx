@@ -1,7 +1,8 @@
 import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider } from '@goodboy/core';
 import { Button } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
-import { PROVIDER_LABEL_LOWER, type ProviderDisplayInfo } from '../../../providers/providers';
+import { type ProviderDisplayInfo } from '../../../providers/providers';
+import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
 import { StatusPill } from '../../../providers/components/ProviderLifecycleTile/StatusPill';
 import { ProviderInlineConnect } from '../../../providers/components/ProviderInlineConnect';
@@ -35,7 +36,7 @@ export const providerRowAction = ({
 
 export const ProviderRow = ({ info, isExpanded, onExpandedChange }: Props) => {
   const Icon = PROVIDER_BRAND[info.id].icon;
-  const label = PROVIDER_LABEL_LOWER[info.id];
+  const label = PROVIDER_LABEL[info.id];
   const action = providerRowAction({ info });
   const isApi = isApiProvider({ id: info.id });
   const collapse = () => onExpandedChange({ providerId: null });

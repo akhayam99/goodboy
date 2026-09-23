@@ -2,11 +2,8 @@ import { Tooltip, cn } from '@goodboy/ui';
 import type { ProviderId, EffortLevel } from '@goodboy/types';
 import { getModelProvider, modelCatalogKey, clampEffortForModel } from '@goodboy/core';
 import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
-import {
-  EFFORT_LABEL,
-  PROVIDER_LABEL,
-  modelLabel,
-} from '../../../features/chat/utils/chat-constants';
+import { EFFORT_LABEL, modelLabel } from '../../../features/chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 
 type PlannedRouting = {
   readonly provider?: string | null;

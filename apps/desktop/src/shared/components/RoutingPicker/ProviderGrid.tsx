@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
 import { cn, Tooltip } from '@goodboy/ui';
-import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { ProviderGlyph } from './ProviderGlyph';
 import { ROUTING_PICKER_CONSTANTS } from './constants';
 

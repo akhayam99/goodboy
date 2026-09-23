@@ -93,17 +93,7 @@ const core = vi.hoisted(() => {
 
 vi.mock('../../store/store', () => ({ useAppStore: { getState: () => h.state.value } }));
 vi.mock('@goodboy/core', () => core);
-vi.mock('../providers/providers', () => ({
-  PROVIDER_LABEL_LOWER: {
-    anthropic: 'claude',
-    cursor: 'cursor',
-    codex: 'codex',
-    gemini: 'gemini',
-    opencode: 'OpenCode',
-    openrouter: 'OpenRouter',
-    moonshot: 'Moonshot',
-  },
-}));
+vi.mock('../providers/providers', () => ({}));
 vi.mock('../workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));

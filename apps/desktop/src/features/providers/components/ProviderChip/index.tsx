@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn, tintClasses } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
-import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../providerLabel';
 import { PROVIDER_BRAND, brandColor } from '../provider-brand';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 

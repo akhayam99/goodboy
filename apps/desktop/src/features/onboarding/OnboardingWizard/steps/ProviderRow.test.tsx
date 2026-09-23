@@ -76,36 +76,36 @@ describe('ProviderRow', () => {
 
   it('offers Install when the CLI is missing', () => {
     render(<Harness info={provider({ id: 'codex', connection: 'missing' })} />);
-    expect(screen.getByRole('button', { name: 'Install codex' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Install Codex' })).toBeDefined();
   });
 
   it('offers Connect when the CLI is installed but signed out', () => {
     render(<Harness info={provider({ id: 'cursor', connection: 'installed_disconnected' })} />);
-    expect(screen.getByRole('button', { name: 'Connect cursor' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect Cursor' })).toBeDefined();
   });
 
   it('offers Add key on an API key provider', () => {
     render(<Harness info={provider({ id: 'openrouter', connection: 'missing' })} />);
-    expect(screen.getByRole('button', { name: 'Add key openrouter' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add key OpenRouter' })).toBeDefined();
   });
 
   it('expands the connect flow inside the row, started, with no dialog', () => {
     render(<Harness info={provider({ id: 'codex', connection: 'missing' })} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Install codex' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Install Codex' }));
 
     expect(screen.getByRole('region', { name: 'inline connect codex' })).toBeDefined();
     expect(screen.getByText('auto start')).toBeDefined();
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Install codex' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Install Codex' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(screen.queryByRole('region', { name: 'inline connect codex' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Install codex' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Install Codex' })).toBeDefined();
   });
 
   it('closes a CLI connect flow from the row header', () => {
     render(<Harness info={provider({ id: 'cursor', connection: 'installed_disconnected' })} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Connect cursor' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect Cursor' }));
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('region', { name: 'inline connect cursor' })).toBeNull();
   });

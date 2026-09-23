@@ -72,7 +72,7 @@ export const ScopeRail = ({ scope, providers, sessions, onSelect }: Props) => (
                   <div className="flex w-full items-center gap-2.5">
                     <ProviderIcon provider={entry.provider} size={ICON_SIZE.control} />
                     <span className="flex-1 truncate text-sm font-medium capitalize text-foreground">
-                      {providerLabel(entry.provider)}
+                      {providerLabel({ provider: entry.provider })}
                     </span>
                     <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
                       {formatUsd(entry.spentUsd)}

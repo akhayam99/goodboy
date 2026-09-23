@@ -74,7 +74,7 @@ describe('ProviderConnect', () => {
     setConnect({ phase: 'working', step: 'install', command: 'npm i -g claude' });
     renderConnect();
 
-    expect(screen.getByText('Installing the claude tool…')).toBeDefined();
+    expect(screen.getByText('Installing the Claude tool…')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Connect' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(state.cancelProviderConnect).toHaveBeenCalledWith('anthropic');
@@ -220,7 +220,7 @@ describe('ProviderConnect', () => {
     setConnect({ phase: 'blocked', step: 'login', command: 'claude auth login' });
     renderConnect();
 
-    expect(screen.getByText(/Another window is already signing in to claude/)).toBeDefined();
+    expect(screen.getByText(/Another window is already signing in to Claude/)).toBeDefined();
     expect(screen.queryByText("Sign-in didn't finish.")).toBeNull();
     expect(screen.queryByText(/If this keeps failing/)).toBeNull();
     expect(screen.getByRole('button', { name: 'Try again' })).toBeDefined();

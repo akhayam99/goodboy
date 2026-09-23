@@ -1,16 +1,6 @@
 import type { EffortLevel, ModelCostTier, ModelFamily, ProviderId } from '@goodboy/types';
 import { getModelDescriptor, getProviderModelPrice } from '@goodboy/core';
 
-export const PROVIDER_LABEL: Record<ProviderId, string> = {
-  anthropic: 'Claude',
-  cursor: 'Cursor',
-  codex: 'Codex',
-  gemini: 'Gemini',
-  opencode: 'OpenCode',
-  openrouter: 'OpenRouter',
-  moonshot: 'Moonshot',
-};
-
 export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 
 export const EFFORT_LABEL: Record<EffortLevel, string> = {

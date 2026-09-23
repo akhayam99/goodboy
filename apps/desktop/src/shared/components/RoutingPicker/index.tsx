@@ -25,7 +25,7 @@ import type {
   ProviderId,
   VerbosityLevel,
 } from '@goodboy/types';
-import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { VERBOSITY_LABEL, VERBOSITY_LEVELS } from '../../../features/settings/verbosity';
 import { AxesSection } from './AxesSection';
 import { verbosityTone } from './chipTone';

@@ -9,8 +9,13 @@ type Props = {
   readonly onDismiss: (id: string) => void;
 };
 
-function alertMessage(alert: BudgetAlert): string {
-  const who = alert.provider ? providerLabel(alert.provider) : 'this session';
+type AlertMessageParams = {
+  readonly alert: BudgetAlert;
+};
+
+const alertMessage = ({ alert }: AlertMessageParams): string => {
+  const who =
+    alert.provider === undefined ? 'This session' : providerLabel({ provider: alert.provider });
   const usage = `${formatUsd(alert.currentUsd)} of ${formatUsd(alert.capUsd)}`;
   switch (alert.kind) {
     case 'provider-exceeded':
@@ -19,11 +24,15 @@ function alertMessage(alert: BudgetAlert): string {
     case 'provider-threshold':
     case 'session-threshold':
       return `${who} is nearing its cap (${usage})`;
+    default: {
+      const exhaustive: never = alert.kind;
+      return exhaustive;
+    }
   }
-}
+};
 
 export const AlertBanner = ({ alerts, onDismiss }: Props) => {
-  const active = alerts.filter((a) => !a.dismissedAt);
+  const active = alerts.filter((a) => a.dismissedAt === undefined);
   if (active.length === 0) {
     return null;
   }
@@ -56,7 +65,7 @@ export const AlertBanner = ({ alerts, onDismiss }: Props) => {
               aria-hidden
               className={exceeded ? 'shrink-0 text-danger' : 'shrink-0 text-warning'}
             />
-            <span className="flex-1 text-xs text-foreground">{alertMessage(alert)}</span>
+            <span className="flex-1 text-xs text-foreground">{alertMessage({ alert })}</span>
             <Tooltip content="Dismiss alert">
               <button
                 type="button"

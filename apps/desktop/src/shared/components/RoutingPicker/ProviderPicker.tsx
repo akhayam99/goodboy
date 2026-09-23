@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
 import { AnchoredPopover, cn, useDropdown, tintClasses } from '@goodboy/ui';
-import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { PickerSection } from './PickerSection';
 import { ProviderGlyph } from './ProviderGlyph';
 import { ProviderGrid } from './ProviderGrid';

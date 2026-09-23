@@ -11,7 +11,8 @@ import {
 } from '@goodboy/ui';
 import { stripControlMarkers } from '@goodboy/core';
 import { PROVIDER_IDS, type Agent, type ResolveAttempt, type SessionId } from '@goodboy/types';
-import { PROVIDER_LABEL, modelLabel } from '../../../chat/utils/chat-constants';
+import { modelLabel } from '../../../chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useTranscript } from '../../../../store/transcript';
 import { reduceTranscript } from '../../../chat/utils/transcript-items';

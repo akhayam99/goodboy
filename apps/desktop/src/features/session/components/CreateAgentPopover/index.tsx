@@ -14,7 +14,6 @@ import {
 } from '@goodboy/ui';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { EFFORT_LABEL, PROVIDER_LABEL, modelLabel } from '../../../chat/utils/chat-constants';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import {
@@ -30,6 +29,7 @@ import { AgentRoleField } from '../AgentRoleField';
 import { AgentKindGrid } from './AgentKindGrid';
 import { AgentRoutingSections } from './AgentRoutingSections';
 import { CreateAgentTrigger, type CreateAgentTriggerVariant } from './CreateAgentTrigger';
+import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 
 const ROUTING_PANEL_ID = 'create-agent-routing';
 
@@ -77,9 +77,11 @@ export const CreateAgentPopover = ({
   const spawnDefault = resolveSpawnRouting({ kind: selectedKind, roleModels, session });
   const effective: AgentKindRouting = routing ?? spawnDefault;
   const [viewProvider, setViewProvider] = useState<ProviderId>(spawnDefault.provider);
-  const routingSummary = `${PROVIDER_LABEL[effective.provider]} · ${modelLabel(effective.model)} · ${
-    EFFORT_LABEL[effective.effort]
-  }`;
+  const routingSummary = recommendationSummary({
+    provider: effective.provider,
+    model: effective.model,
+    effort: effective.effort,
+  });
 
   useEffect(() => {
     setViewProvider(routing?.provider ?? spawnDefault.provider);

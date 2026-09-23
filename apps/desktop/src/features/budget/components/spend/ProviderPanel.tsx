@@ -63,7 +63,7 @@ export const ProviderPanel = ({
     <PaneShell
       scroll="body"
       glyph={<ProviderIcon provider={provider} size={ICON_SIZE.hero} />}
-      title={providerLabel(provider)}
+      title={providerLabel({ provider })}
       description={`${formatUsd(spent)} total spend`}
     >
       <ErrorStrip label="budget rules" error={rulesResult.error} onRetry={onRetryRules} />

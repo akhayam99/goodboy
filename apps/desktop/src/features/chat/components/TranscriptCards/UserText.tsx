@@ -1,7 +1,8 @@
 import { Markdown, MetaRow } from '@goodboy/ui';
 import type { MessageAttachment, ProviderId } from '@goodboy/types';
 import { PROVIDER_BRAND } from '../../../providers/components/provider-brand';
-import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
+import { modelLabel } from '../../utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { readAttachment } from '../../turn';
 import { AttachmentChip } from '../../../attachments/components/AttachmentChip';
 import { useAttachmentThumbnail } from '../../../attachments/hooks/useAttachmentThumbnail';

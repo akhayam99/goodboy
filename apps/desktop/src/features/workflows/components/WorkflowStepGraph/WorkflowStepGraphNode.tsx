@@ -4,7 +4,8 @@ import type { AgentKind } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../session/components/AgentKindChip';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { WorkflowStepStatus } from '../WorkflowStepStatus';
-import { PROVIDER_LABEL, modelLabel } from '../../../chat/utils/chat-constants';
+import { modelLabel } from '../../../chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 
 type Props = {
   readonly run: Agent;

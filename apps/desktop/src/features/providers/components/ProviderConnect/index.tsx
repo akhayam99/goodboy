@@ -5,7 +5,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openUrl } from '../../../../shared/lib/editor';
-import { PROVIDER_LABEL_LOWER } from '../../providers';
+import { PROVIDER_LABEL } from '../../providerLabel';
 import { PROVIDER_BRAND } from '../provider-brand';
 import { guideFor } from './guides';
 import { ConnectDetails } from './ConnectDetails';
@@ -31,7 +31,7 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
   const startedRef = useRef<ProviderId | null>(null);
 
   const capability = PROVIDER_CONNECT_CAPABILITIES[providerId];
-  const label = PROVIDER_LABEL_LOWER[providerId];
+  const label = PROVIDER_LABEL[providerId];
   const guide = guideFor(providerId, connect.step ?? 'login');
   const view = connectView({
     phase: connect.phase,

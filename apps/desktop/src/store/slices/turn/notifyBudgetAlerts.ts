@@ -1,6 +1,6 @@
 import { formatUsd } from '@goodboy/ui';
 import type { BudgetAlert, BudgetAlertKind, ProviderId } from '@goodboy/types';
-import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import type { GetFn } from './types';
 
 type Params = {

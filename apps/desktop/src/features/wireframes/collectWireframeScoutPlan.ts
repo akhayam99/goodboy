@@ -5,7 +5,8 @@ import {
   childRoutingBatch,
   type ChildRoutingBatch,
 } from '../../store/slices/workflows/childRoutingBatch';
-import { PROVIDER_LABEL, modelLabel } from '../chat/utils/chat-constants';
+import { modelLabel } from '../chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../providers/providerLabel';
 import { exploreList, exploreRead } from '../explore/explore';
 import { kindRouting } from '../session/agent-kind';
 import { workflowAvailabilitySnapshot } from '../workflows/workflowAvailabilitySnapshot';

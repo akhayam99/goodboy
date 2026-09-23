@@ -6,7 +6,8 @@ import {
 } from '../../artifactCollection';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { PROVIDER_LABEL, modelLabel } from '../../../chat/utils/chat-constants';
+import { modelLabel } from '../../../chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
 import { wireframeScoutLine } from '../../../wireframes/wireframeScoutProgress';
 

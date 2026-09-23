@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { Button, ScrollFade } from '@goodboy/ui';
 import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../providerLabel';
 import { ProviderConnect } from '../ProviderConnect';
 import { isConnectRunning } from '../ProviderConnect/isConnectRunning';
 import { ProviderCredentialsSection } from '../ProviderStudio/ProviderCredentialsSection';

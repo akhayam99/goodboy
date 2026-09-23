@@ -1,5 +1,6 @@
 import { isApiProvider } from '@goodboy/core';
 import { invoke } from '@tauri-apps/api/core';
+import { PROVIDER_LABEL } from './providerLabel';
 import type {
   ProviderConnectionState,
   ProviderInfo as ProviderInfoBase,
@@ -27,16 +28,6 @@ export type ProviderDisplayInfo = ProviderInfoBase & {
   readonly label: string;
   readonly error: string | null;
   readonly docsUrl: string;
-};
-
-export const PROVIDER_LABEL_LOWER: Record<ProviderId, string> = {
-  anthropic: 'claude',
-  cursor: 'cursor',
-  codex: 'codex',
-  gemini: 'gemini',
-  opencode: 'opencode',
-  openrouter: 'openrouter',
-  moonshot: 'moonshot',
 };
 
 const PROVIDER_DOCS: Record<ProviderId, string> = {
@@ -146,7 +137,7 @@ function providerInfoFromStatus(
 ): ProviderDisplayInfo {
   const base = {
     id,
-    label: PROVIDER_LABEL_LOWER[id],
+    label: PROVIDER_LABEL[id],
     binary: status?.binary ?? PROVIDER_DEFAULT_BINARY[id],
     capabilities: EMPTY_CAPABILITIES,
     identity: auth?.identity ?? null,
@@ -184,7 +175,7 @@ const apiProviderInfo = ({ id, status, hasCredential }: ApiInfoParams): Provider
   const isAvailable = status?.available === true;
   return {
     id,
-    label: PROVIDER_LABEL_LOWER[id],
+    label: PROVIDER_LABEL[id],
     binary: PROVIDER_DEFAULT_BINARY[id],
     capabilities: EMPTY_CAPABILITIES,
     identity: null,

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { Button, cn, tintClasses } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
-import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
+import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { ProviderInlineConnect } from '../../../providers/components/ProviderInlineConnect';
 import { TranscriptShell } from '../TranscriptShell';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -16,7 +16,7 @@ type Props = {
 };
 
 export const AuthRequiredCallout = ({ providerId, identity, onRefresh }: Props) => {
-  const label = PROVIDER_LABEL_LOWER[providerId];
+  const label = PROVIDER_LABEL[providerId];
   const [isConnecting, setIsConnecting] = useState(false);
 
   return (

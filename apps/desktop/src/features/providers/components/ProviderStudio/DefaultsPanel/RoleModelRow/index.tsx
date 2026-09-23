@@ -18,9 +18,9 @@ import type {
   RoleModelPreferences,
 } from '@goodboy/types';
 import { FieldRow } from '@goodboy/ui';
-import { EFFORT_LABEL, PROVIDER_LABEL, modelLabel } from '../../../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
 import { RoutingStatusControl } from '../RoutingStatusControl';
+import { recommendationSummary } from '../../../../../../shared/components/RoutingPicker/recommendationSummary';
 
 const AUTOMATIC_FALLBACK_SUMMARY = 'Automatic';
 
@@ -106,11 +106,11 @@ export const RoleModelRow = ({
   const defaultModel = recommendedModelForRole({ role, provider: defaultProviderId });
   const primaryModel = resolved.isOverride ? resolved.model : recommendedModel;
   const pendingModel = useRef(primaryModel);
-  const compiledRouting = `${PROVIDER_LABEL[defaultProviderId]} · ${modelLabel(defaultModel)}`;
-  const defaultSummary =
-    modelEffortLevels({ model: defaultModel }) === null
-      ? compiledRouting
-      : `${compiledRouting} · ${EFFORT_LABEL[compiled.effort]} effort`;
+  const defaultSummary = recommendationSummary({
+    provider: defaultProviderId,
+    model: defaultModel,
+    effort: modelEffortLevels({ model: defaultModel }) === null ? null : compiled.effort,
+  });
   const isFallbackPickerVisible = resolved.fallback != null || isChoosingFallback;
 
   useEffect(() => {

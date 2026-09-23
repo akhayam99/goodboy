@@ -6,7 +6,7 @@ import {
 } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { checkProviderAuth } from '../../../features/providers/providers';
-import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import {
   invokeProviderLifecycleCancel,
   invokeProviderLifecycleRun,

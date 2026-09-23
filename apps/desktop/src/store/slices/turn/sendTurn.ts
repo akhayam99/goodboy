@@ -76,7 +76,8 @@ import {
 import { encodeAuthRequiredMessage, runTurn } from '../../../features/chat/turn';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';
 import { createTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
-import { EFFORT_LEVELS, PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
+import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
 import {
