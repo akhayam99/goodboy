@@ -85,7 +85,7 @@ The steps are in `.github/workflows/ci.yml`, in this order. All of them block. A
 - `build`: `turbo run build --affected`.
 - `pnpm audit --prod` (its own job): known vulnerabilities in production dependencies.
 
-Outside `ci.yml`, `rust.yml` runs `cargo fmt --check` and `clippy` as advisory (`continue-on-error`). Only `cargo test --locked` blocks. `main` is not clean under fmt or clippy.
+Outside `ci.yml`, `website.yml` builds `website/` (`pnpm install --ignore-workspace --frozen-lockfile && pnpm build`) on pull requests that touch it. It is not a required check, because a required check with a path filter blocks unrelated pull requests as "expected". `rust.yml` runs `cargo fmt --check` and `clippy` as advisory (`continue-on-error`). Only `cargo test --locked` blocks. `main` is not clean under fmt or clippy.
 
 ## Naming conventions
 
