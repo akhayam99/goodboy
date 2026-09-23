@@ -79,6 +79,7 @@ describe('resolveTaskModel', () => {
     ).toEqual({
       providerId: 'codex',
       model: 'gpt-5.6-luna',
+      effort: 'medium',
     });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('invalid plan_generation model'));
     warn.mockRestore();
@@ -126,8 +127,8 @@ describe('resolveTaskModel', () => {
       sessionDefaultProviderId: 'anthropic',
     });
 
-    expect(anthropic).toEqual({ providerId: 'anthropic', model: 'sonnet-5' });
-    expect(codex).toEqual({ providerId: 'codex', model: 'gpt-5.6-terra' });
+    expect(anthropic).toEqual({ providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' });
+    expect(codex).toEqual({ providerId: 'codex', model: 'gpt-5.6-terra', effort: 'medium' });
     expect(anthropic.model).not.toBe(getCheapModel('anthropic'));
     expect(codex.model).not.toBe(getCheapModel('codex'));
   });
@@ -172,7 +173,7 @@ describe('resolveTaskModel', () => {
         workspaceDefaultProviderId: 'codex',
         sessionDefaultProviderId: 'anthropic',
       }),
-    ).toEqual({ providerId: 'codex', model: 'gpt-5.6-luna' });
+    ).toEqual({ providerId: 'codex', model: 'gpt-5.6-luna', effort: 'medium' });
   });
 
   it('preserves an explicit codex model variant', () => {
@@ -188,5 +189,44 @@ describe('resolveTaskModel', () => {
         sessionDefaultProviderId: 'anthropic',
       }),
     ).toEqual({ providerId: 'codex', model: 'gpt-5.6-terra', effort: 'high' });
+  });
+
+  it('passes a real effort for automatic tasks, so the CLI config never decides it', () => {
+    expect(
+      resolveTaskModel({
+        task: 'workflow_orchestrator',
+        preferences: null,
+        workspaceDefaultProviderId: 'codex',
+        sessionDefaultProviderId: 'anthropic',
+      }).effort,
+    ).toBe('medium');
+  });
+
+  it('fills the effort of a picked model that has none, and keeps a picked effort', () => {
+    const picked = resolveTaskModel({
+      task: 'summarizer',
+      preferences: { summarizer: { providerId: 'codex', model: 'gpt-5.6-sol' } },
+      workspaceDefaultProviderId: 'codex',
+      sessionDefaultProviderId: 'codex',
+    });
+    expect(picked.effort).toBe('medium');
+
+    const pinned = resolveTaskModel({
+      task: 'summarizer',
+      preferences: { summarizer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'low' } },
+      workspaceDefaultProviderId: 'codex',
+      sessionDefaultProviderId: 'codex',
+    });
+    expect(pinned.effort).toBe('low');
+  });
+
+  it('leaves the effort of agent preselects to the agent spawn', () => {
+    const draft = resolveTaskModel({
+      task: 'pr_draft',
+      preferences: null,
+      workspaceDefaultProviderId: 'codex',
+      sessionDefaultProviderId: 'codex',
+    });
+    expect(draft.effort).toBeUndefined();
   });
 });

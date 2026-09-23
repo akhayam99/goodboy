@@ -1,14 +1,37 @@
 import type {
   AuxTaskId,
+  ModelEffort,
   ProviderId,
   TaskModelPreference,
   TaskModelPreferences,
 } from '@goodboy/types';
 import { devWarn } from '../dev-log';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
+import { clampEffort } from './clampEffort';
 import { getCheapModel, getMidModel } from './cli-defaults';
+import { getModelDescriptor } from './model-display';
 import { resolvedStoredModelId } from './resolvedStoredModelId';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
+
+type EffortParams = {
+  readonly task: AuxTaskId;
+  readonly model: string;
+};
+
+const AUTOMATIC_EFFORT: ModelEffort = 'medium';
+
+const AGENT_PRESELECT_TASKS: ReadonlySet<AuxTaskId> = new Set(['pr_draft', 'rebase']);
+
+const automaticEffort = ({ task, model }: EffortParams): ModelEffort | null => {
+  if (AGENT_PRESELECT_TASKS.has(task)) {
+    return null;
+  }
+  const levels = getModelDescriptor(model)?.effort ?? [];
+  if (levels.length === 0) {
+    return null;
+  }
+  return clampEffort({ requested: AUTOMATIC_EFFORT, available: levels });
+};
 
 type AutomaticParams = {
   readonly task: AuxTaskId;
@@ -59,13 +82,15 @@ const preferredTaskModel = ({
     );
     return null;
   }
+  const model = resolvedStoredModelId({
+    provider: preference.providerId,
+    selection: stored.selection,
+  });
+  const effort = preference.effort ?? automaticEffort({ task, model });
   return {
     providerId: preference.providerId,
-    model: resolvedStoredModelId({
-      provider: preference.providerId,
-      selection: stored.selection,
-    }),
-    ...(preference.effort != null && { effort: preference.effort }),
+    model,
+    ...(effort != null && { effort }),
   };
 };
 
@@ -82,8 +107,11 @@ export const resolveTaskModel = ({
   if (preferred != null) {
     return preferred;
   }
+  const model = automaticModelForTask({ task, providerId: defaultProviderId });
+  const effort = automaticEffort({ task, model });
   return {
     providerId: defaultProviderId,
-    model: automaticModelForTask({ task, providerId: defaultProviderId }),
+    model,
+    ...(effort != null && { effort }),
   };
 };
