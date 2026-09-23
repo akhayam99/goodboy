@@ -64,7 +64,7 @@ export const QuestionClusterHeader = ({
         className={cn(
           'flex min-w-0 items-center gap-1.5 rounded-md px-0.5 text-2xs font-medium',
           'hover:opacity-70 motion-safe:transition-opacity',
-          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         )}
         title={`Open ${label}`}
       >

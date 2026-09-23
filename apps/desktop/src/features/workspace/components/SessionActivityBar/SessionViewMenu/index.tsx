@@ -91,7 +91,7 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
             aria-expanded={open}
             aria-label="Display options"
             className={cn(
-              'inline-flex shrink-0 items-center justify-center rounded p-1 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
+              'inline-flex shrink-0 items-center justify-center rounded p-1 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               open
                 ? 'bg-foreground/10 text-foreground'
                 : 'text-faint-foreground hover:bg-foreground/10 hover:text-foreground',

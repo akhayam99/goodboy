@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react';
 import { cn } from '../cn';
+import { FOCUS_RING } from '../focusRing';
 import { tintClasses, type Tone } from '../tint';
 import { StatusDot } from './StatusDot';
 
@@ -67,7 +68,8 @@ export const Button = ({
       disabled={disabled || isBusy}
       aria-busy={isBusy ? true : undefined}
       className={cn(
-        'inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+        'inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50',
+        FOCUS_RING,
         emphasis === 'outline' ? outlineClasses(variant) : variantClasses[variant],
         sizeClasses[size],
         className,

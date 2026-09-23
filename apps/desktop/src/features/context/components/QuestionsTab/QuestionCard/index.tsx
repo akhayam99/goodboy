@@ -163,7 +163,7 @@ export const QuestionCard = ({
                   'shrink-0 rounded-md p-1 text-faint-foreground',
                   'transition-[color,background-color] duration-150',
                   'hover:bg-muted hover:text-foreground',
-                  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                 )}
                 aria-label="Dismiss question"
               >

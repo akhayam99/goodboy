@@ -67,7 +67,7 @@ export const SessionActivityItem = ({
       }}
       title={`${plainGoal} · ${stateDescription({ presentation: stagePresentation })}${prMeta != null ? ` · PR ${prMeta.label}` : ''}${externalTasks.length > 0 ? ` · ${externalTasks.map((task) => task.identifier).join(', ')}` : ''}`}
       className={cn(
-        'flex w-full cursor-pointer items-center gap-2 rounded-md text-left motion-safe:transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+        'flex w-full cursor-pointer items-center gap-2 rounded-md text-left motion-safe:transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         PANE_RHYTHM.navRail.row,
         isActive && 'bg-muted font-medium text-foreground',
         isSelected && 'bg-primary/10 ring-1 ring-primary/30',

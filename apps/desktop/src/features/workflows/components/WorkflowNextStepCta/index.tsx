@@ -188,7 +188,7 @@ export const WorkflowNextStepCta = ({
             : `effort: ${effortText}${stepVerbosity ? ` · verbosity: ${stepVerbosity}` : ''}`
         }
         className={cn(
-          'flex items-center gap-1.5 rounded-md border px-2 py-1 text-2xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+          'flex items-center gap-1.5 rounded-md border px-2 py-1 text-2xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60',
           blockReason != null
             ? 'border-warning/50 bg-warning/10 text-warning hover:border-warning hover:bg-warning/20'
             : 'border-primary/40 bg-primary/10 text-primary hover:border-primary hover:bg-primary/20',

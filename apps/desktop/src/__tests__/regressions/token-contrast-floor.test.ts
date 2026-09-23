@@ -81,6 +81,10 @@ const readPalette = (block: string): Palette => {
       Number.parseInt(value.slice(4, 6), 16) / 255,
     ];
   }
+  const aliasPattern = /--color-([a-z0-9-]+):\s*var\(--color-([a-z0-9-]+)\)\s*;/gi;
+  for (const match of block.matchAll(aliasPattern)) {
+    palette[String(match[1])] = swatch(palette, String(match[2]));
+  }
   return palette;
 };
 

@@ -34,7 +34,7 @@ export const DelegateAnswerRow = ({ state, onChoose }: Props) => {
       className={cn(
         ROW_FRAME,
         'transition-[color,background-color,border-color] duration-150',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         isInert
           ? 'border-border-soft text-faint-foreground'
           : 'border-border-soft text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground',

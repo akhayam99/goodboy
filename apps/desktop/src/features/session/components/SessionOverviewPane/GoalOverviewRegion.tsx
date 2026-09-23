@@ -165,7 +165,7 @@ export const GoalOverviewRegion = ({
           onKeyDown={onKeyDown}
           aria-label="Edit goal"
           className={cn(
-            'min-w-0 max-w-full rounded-md text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]',
+            'min-w-0 max-w-full rounded-md text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-foreground/[0.03]',
           )}
         >

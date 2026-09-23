@@ -77,7 +77,7 @@ export const LinkedWorkRow = ({
         }}
         title={tooltip}
         aria-label={ariaLabel}
-        className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+        className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
         {glyph}
         <span className="shrink-0 font-mono text-xs font-semibold text-foreground">

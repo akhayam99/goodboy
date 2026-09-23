@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
+import { FOCUS_RING } from '../focusRing';
 import { tintClasses, type Tone } from '../tint';
 import { Tooltip } from './Tooltip';
 
@@ -47,7 +48,7 @@ export const IconButton = ({
             ? 'border border-border-soft hover:border-border hover:bg-muted/50'
             : 'border border-transparent hover:bg-muted/60',
           'hover:text-foreground disabled:opacity-50',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+          FOCUS_RING,
           tone !== 'neutral' && toneClasses(tone, variant),
           busy && 'animate-border-pulse',
           className,

@@ -12,7 +12,7 @@ type Props = {
 const railButton = (isActive: boolean): string =>
   cn(
     'flex size-8 shrink-0 items-center justify-center rounded-md motion-safe:transition-colors',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
     isActive
       ? cn(tintClasses('primary').bg, tintClasses('primary').text)
       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',

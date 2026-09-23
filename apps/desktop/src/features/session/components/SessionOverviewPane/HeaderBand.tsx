@@ -92,7 +92,7 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
                   event.preventDefault();
                   rename.start();
                 }}
-                className="min-w-0 flex-1 cursor-text truncate rounded-md text-xl font-semibold leading-snug text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                className="min-w-0 flex-1 cursor-text truncate rounded-md text-xl font-semibold leading-snug text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 <InlineMarkdown text={titleText} />
               </h1>

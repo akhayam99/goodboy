@@ -158,7 +158,7 @@ export const ScriptRow = ({
                   }
                 }}
                 aria-label="Edit script name"
-                className="min-h-7 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-sm font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                className="min-h-7 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-sm font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               />
             ) : (
               <button

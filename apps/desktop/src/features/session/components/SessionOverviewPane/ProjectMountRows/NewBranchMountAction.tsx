@@ -56,7 +56,7 @@ export const NewBranchMountAction = ({
             onClick={() => dropdown.toggle()}
             className={cn(
               triggerClassName ??
-                'inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-2xs text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                'inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-2xs text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             )}
           >
             <GitFork size={ICON_SIZE.row} aria-hidden />

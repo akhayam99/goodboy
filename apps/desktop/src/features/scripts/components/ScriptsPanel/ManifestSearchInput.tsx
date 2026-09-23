@@ -31,7 +31,7 @@ export const ManifestSearchInput = ({ value, onChange }: Props) => (
           type="button"
           aria-label="Clear search"
           onClick={() => onChange('')}
-          className="rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+          className="rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           <X size={ICON_SIZE.control} aria-hidden />
         </button>

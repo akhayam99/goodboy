@@ -259,7 +259,7 @@ export const InboxRail = ({
             <button
               type="button"
               onClick={onClearFilters}
-              className="text-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
+              className="text-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               Clear filters
             </button>
@@ -310,7 +310,7 @@ export const InboxRail = ({
                   ? undefined
                   : inboxOptionId({ key: selectedKey })
               }
-              className="flex flex-col gap-0.5 rounded-md focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+              className="flex flex-col gap-0.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               onKeyDown={(event) =>
                 handleListKeyDown({ event, orderedRecords, selectedKey, onSelect, onActivate })
               }

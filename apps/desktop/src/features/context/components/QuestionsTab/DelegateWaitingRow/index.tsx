@@ -20,7 +20,7 @@ export const DelegateWaitingRow = ({ onOpen, onTakeBack }: Props) => (
         'text-left text-sm font-medium text-muted-foreground',
         'transition-[color,background-color,border-color] duration-150',
         'enabled:hover:border-border enabled:hover:bg-muted/40 enabled:hover:text-foreground',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
       )}
     >
       <StatusDot tone="info" size="sm" pulsing />
@@ -44,7 +44,7 @@ export const DelegateWaitingRow = ({ onOpen, onTakeBack }: Props) => (
           'shrink-0 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground',
           'transition-[color,background-color] duration-150',
           'hover:bg-muted hover:text-foreground',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         )}
       >
         {QUESTION_DELEGATE_COPY.back}

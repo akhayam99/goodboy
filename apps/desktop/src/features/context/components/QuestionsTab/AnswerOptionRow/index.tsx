@@ -35,7 +35,7 @@ export const AnswerOptionRow = ({
       className={cn(
         'flex w-full items-start justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-sm font-medium',
         'transition-[color,background-color,border-color] duration-150',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         selected
           ? 'border-primary/40 bg-primary/10 text-primary'
           : 'border-border-soft bg-transparent text-foreground hover:border-border hover:bg-muted/40',

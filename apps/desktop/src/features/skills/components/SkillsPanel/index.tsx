@@ -255,7 +255,7 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
           type="button"
           onClick={onEdit}
           title={`Edit ${skill.name}`}
-          className="flex min-w-0 flex-col items-start gap-0.5 rounded-md px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+          className="flex min-w-0 flex-col items-start gap-0.5 rounded-md px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           <span className="truncate text-sm font-medium text-foreground" title={skill.filePath}>
             /{skill.name}

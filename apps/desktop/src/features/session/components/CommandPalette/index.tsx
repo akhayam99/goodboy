@@ -393,7 +393,7 @@ export const CommandPalette = ({
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           aria-label="Command palette search"
-          className="w-full bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+          className="w-full bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         />
         <Divider />
 

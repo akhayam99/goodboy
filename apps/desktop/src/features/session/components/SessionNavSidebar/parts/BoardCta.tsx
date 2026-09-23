@@ -26,7 +26,7 @@ export const BoardCta = ({ onNavigate }: Props) => {
         primaryTint.text,
         primaryTint.ring,
         primaryTint.hoverBg,
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
       )}
     >
       <Kanban size={ICON_SIZE.control} aria-hidden />

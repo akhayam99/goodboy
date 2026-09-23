@@ -76,7 +76,7 @@ export const DiscoveredScriptGroup = ({
                 type="button"
                 onClick={onToggle}
                 aria-expanded={isOpen}
-                className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 {isOpen ? (
                   <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0" />

@@ -55,7 +55,7 @@ export const OverlayHeader = ({
             'inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5',
             'text-xs font-semibold text-muted-foreground transition-colors',
             'hover:bg-muted hover:text-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             closeDisabled && 'cursor-not-allowed opacity-50',
           )}
         >
@@ -86,7 +86,7 @@ export const OverlayHeader = ({
           className={cn(
             'flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors',
             'hover:bg-muted/50 hover:text-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             closeDisabled && 'cursor-not-allowed opacity-50',
           )}
         >

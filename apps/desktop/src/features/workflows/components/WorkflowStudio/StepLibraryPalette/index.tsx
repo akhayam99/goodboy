@@ -31,7 +31,7 @@ export const StepLibraryPalette = ({
     <button
       type="button"
       onClick={() => setEditing('new')}
-      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
+      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
     >
       <Plus size={11} aria-hidden /> New step
     </button>

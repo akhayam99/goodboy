@@ -64,7 +64,7 @@ export const DecisionRowItem = ({ text, position, isLocked, onCommit, onDelete }
             setIsEditing(true);
           }}
           className={cn(
-            'min-w-0 flex-1 rounded-md text-left [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] [&_pre]:whitespace-pre-wrap',
+            'min-w-0 flex-1 rounded-md text-left [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring [&_pre]:whitespace-pre-wrap',
             isLocked ? 'cursor-default' : 'cursor-text',
           )}
         >

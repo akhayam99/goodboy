@@ -31,7 +31,7 @@ export const CustomAnswerField = ({
           'items-center gap-2 border-border-soft text-left text-sm font-medium text-muted-foreground',
           'transition-[color,background-color,border-color] duration-150',
           'hover:border-border hover:bg-muted/40 hover:text-foreground',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         )}
       >
         <Pencil size={ICON_SIZE.row} aria-hidden className="shrink-0" />

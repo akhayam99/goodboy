@@ -4,6 +4,6 @@ export const VITAL_CHIP_FRAME =
 export const VITAL_CHIP_HOVER = 'hover:border-border hover:bg-muted/50 hover:text-foreground';
 
 export const VITAL_CHIP_FOCUS =
-  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
 export const VITAL_CHIP = `${VITAL_CHIP_FRAME} gap-1.5 px-2 ${VITAL_CHIP_HOVER} ${VITAL_CHIP_FOCUS}`;

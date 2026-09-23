@@ -29,7 +29,7 @@ export const RailCard = ({
     aria-label={ariaLabel}
     onClick={onSelect}
     className={cn(
-      'flex w-full items-center gap-3 rounded-lg border border-border-soft bg-elevated/40 px-3 py-2.5 text-left transition-colors hover:border-border hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+      'flex w-full items-center gap-3 rounded-lg border border-border-soft bg-elevated/40 px-3 py-2.5 text-left transition-colors hover:border-border hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
       muted && ['border-border-soft/60 bg-transparent', TERMINAL_DIM],
       className,
     )}

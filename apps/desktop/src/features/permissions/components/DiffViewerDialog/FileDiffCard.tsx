@@ -569,7 +569,7 @@ export const FileDiffCard = ({
                               'w-9 select-none border-l-2 px-1.5 text-right text-3xs tabular-nums text-faint-foreground',
                               canComment &&
                                 oldAnchor !== null &&
-                                'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60',
+                                'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
                               oldRangeCommented
                                 ? 'border-warning/60'
                                 : line.kind === 'add'
@@ -612,7 +612,7 @@ export const FileDiffCard = ({
                               'w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-3xs tabular-nums text-faint-foreground',
                               canComment &&
                                 newAnchor !== null &&
-                                'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60',
+                                'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
                             )}
                           >
                             {line.newLine ?? ''}

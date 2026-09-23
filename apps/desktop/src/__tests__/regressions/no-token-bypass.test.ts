@@ -23,6 +23,12 @@ const RULES = [
     allow: NO_ALLOW,
     why: 'text hierarchy uses foreground, muted, faint or disabled tokens without opacity',
   },
+  {
+    pattern:
+      /focus-visible:ring-1(?!\d)|focus-visible:ring-\[|focus-(?:visible|within):ring-primary\/\d+/,
+    allow: NO_ALLOW,
+    why: 'focus treatment uses the two-pixel focus-ring token',
+  },
 ] satisfies ReadonlyArray<Rule>;
 
 const listSourceFiles = ({ dir, files = [] }: { dir: string; files?: string[] }): string[] => {

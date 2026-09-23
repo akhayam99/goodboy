@@ -249,7 +249,7 @@ export const WorkflowRow = ({
                         className={cn(
                           'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-faint-foreground',
                           'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
-                          'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                          'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                           'group-hover/name:opacity-100 motion-reduce:opacity-60',
                         )}
                       >

@@ -139,7 +139,7 @@ export const TurnsTable = ({
                           type="button"
                           aria-label={`Open session ${sessionGoal}`}
                           onClick={() => onOpenSession(sessionId)}
-                          className="inline-flex size-5 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] group-hover:opacity-100"
+                          className="inline-flex size-5 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring group-hover:opacity-100"
                         >
                           <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
                         </button>

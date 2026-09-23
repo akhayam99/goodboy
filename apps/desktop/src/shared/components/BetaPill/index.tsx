@@ -44,7 +44,7 @@ export const BetaPill = ({ className }: Props) => {
           onClick={toggle}
           testId="beta-badge-trigger"
           className={cn(
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             className,
           )}
         />

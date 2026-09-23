@@ -429,7 +429,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           ref={composerRef}
           data-drop-composer
           className={cn(
-            'relative flex flex-col rounded-md ring-1 transition-all focus-within:ring-2 focus-within:ring-primary/40',
+            'relative flex flex-col rounded-md ring-1 transition-all focus-within:ring-2 focus-within:ring-focus-ring',
             isDragging ? 'bg-primary/5 ring-2 ring-primary' : 'bg-subtle/80 ring-border-soft',
           )}
         >

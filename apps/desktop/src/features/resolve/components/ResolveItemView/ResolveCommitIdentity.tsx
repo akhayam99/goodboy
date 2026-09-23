@@ -20,7 +20,7 @@ const shaLink = ({
     <button
       type="button"
       onClick={() => onOpenCommit({ sha })}
-      className="rounded font-mono text-3xs tabular-nums text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+      className="rounded font-mono text-3xs tabular-nums text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
     >
       {shortSha({ sha })}
     </button>

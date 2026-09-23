@@ -1,4 +1,5 @@
 export { cn } from './cn';
+export { FOCUS_RING } from './focusRing';
 export { registerEscapeLayer } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';
 export { useCopyLink } from './useCopyLink';

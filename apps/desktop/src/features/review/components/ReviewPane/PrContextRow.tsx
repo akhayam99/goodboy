@@ -68,7 +68,7 @@ export const PrContextRow = ({
                 type="button"
                 onClick={onOpenChecks}
                 aria-label={`Checks ${rollup}`}
-                className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 <Chip size="3xs" tone="neutral" label={`Checks ${rollup}`} />
               </button>

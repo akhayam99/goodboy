@@ -187,6 +187,13 @@ pane, and never compared against a full-page studio. This is why the footer
 builds its own popover instead of raising the shared one. Many pane menus use
 the shared popover, and raising it would raise all of them at once.
 
+## Focus rings
+
+Interactive controls compose `FOCUS_RING` from `@goodboy/ui`. It draws a
+two-pixel `focus-ring` token and removes the native outline. A control clipped
+inside an overflow-hidden row adds `ring-inset`; it does not weaken or resize
+the shared ring.
+
 ## An expanded row is one group, not two
 
 A disclosure (a header plus the body it opens) is a single surface. The

@@ -66,7 +66,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
             onPointerDown={(e) => e.stopPropagation()}
             onClick={onAdd}
             aria-label={`Add ${def.name} to workflow`}
-            className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
+            className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <Plus size={ICON_SIZE.row} aria-hidden />
           </button>
@@ -109,7 +109,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={onEdit}
                 aria-label={`Edit ${def.name}`}
-                className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
+                className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
               >
                 <Pencil size={ICON_SIZE.row} aria-hidden />
               </button>
@@ -121,7 +121,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => setConfirming(true)}
                   aria-label={`Delete ${def.name}`}
-                  className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10 hover:text-danger"
+                  className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:bg-danger/10 hover:text-danger"
                 >
                   <Trash2 size={ICON_SIZE.row} aria-hidden />
                 </button>

@@ -81,7 +81,7 @@ export const SwitcherCrumb = ({
             aria-label={`${label}. ${menuLabel}.`}
             aria-haspopup="menu"
             aria-expanded={open}
-            className="rounded p-0.5 text-faint-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+            className="rounded p-0.5 text-faint-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             <ChevronDown size={11} aria-hidden className={cn(open && 'rotate-180')} />
           </button>

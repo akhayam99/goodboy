@@ -94,7 +94,7 @@ export const LaunchSessionPanel = ({
     <section
       ref={sectionRef}
       aria-label="Launch session"
-      className="flex flex-col gap-1 rounded-md bg-subtle/80 p-2 ring-1 ring-border-soft motion-safe:transition-shadow focus-within:ring-2 focus-within:ring-primary/40"
+      className="flex flex-col gap-1 rounded-md bg-subtle/80 p-2 ring-1 ring-border-soft motion-safe:transition-shadow focus-within:ring-2 focus-within:ring-focus-ring"
     >
       <Textarea
         value={goal}

@@ -129,7 +129,7 @@ export const SegmentedTabs = <T extends string>({
             onKeyDown={(event) => onKeyDown({ event, index })}
             style={activeStyle}
             className={cn(
-              'relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+              'relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               isMedium ? 'px-3 py-2 text-sm font-semibold' : 'px-2.5 py-1 text-xs',
               isActive
                 ? cn(

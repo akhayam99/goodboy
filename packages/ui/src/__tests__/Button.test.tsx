@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { Button } from '../components/Button';
+import { FOCUS_RING } from '../focusRing';
 
 describe('Button', () => {
   afterEach(cleanup);
@@ -28,6 +29,12 @@ describe('Button', () => {
   it('disables the button while busy', () => {
     render(<Button isBusy>Save</Button>);
     expect(screen.getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('uses the shared focus treatment', () => {
+    render(<Button>Save</Button>);
+    const classes = screen.getByRole('button', { name: 'Save' }).className.split(' ');
+    expect(classes).toEqual(expect.arrayContaining(FOCUS_RING.split(' ')));
   });
 
   it('keeps every emphasis as an enabled button', () => {

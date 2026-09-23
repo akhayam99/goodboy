@@ -25,7 +25,7 @@ const restBorder = ({ stage, selected }: RestBorderParams): string => {
 
 export const sessionCardShell = ({ stage, selected, active, dimmed }: Params): string =>
   cn(
-    'rounded-lg border bg-elevated text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+    'rounded-lg border bg-elevated text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
     active === true ? 'border-border shadow-sm' : restBorder({ stage, selected }),
     dimmed === true && 'opacity-50',
   );

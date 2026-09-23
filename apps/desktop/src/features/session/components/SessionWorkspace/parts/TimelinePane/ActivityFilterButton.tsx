@@ -87,7 +87,7 @@ const CategoryRow = ({ category, isActive, onToggle }: CategoryRowProps) => {
       aria-checked={isActive}
       onClick={() => onToggle({ toggle: category, enabled: !isActive })}
       className={cn(
-        'group flex w-full items-center gap-2 px-3 py-2 text-left motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-focus-ring)]',
+        'group flex w-full items-center gap-2 px-3 py-2 text-left motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
         isActive ? 'bg-muted/60 hover:bg-muted' : 'hover:bg-muted/40',
       )}
     >
@@ -130,7 +130,7 @@ const ChildChip = ({ toggle, isActive, isParentActive, onToggle }: ChildChipProp
       disabled={!isParentActive}
       onClick={() => onToggle({ toggle, enabled: !isActive })}
       className={cn(
-        'inline-flex items-center gap-1 whitespace-nowrap rounded-md border px-2 py-0.5 text-2xs motion-safe:transition-colors disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-focus-ring)]',
+        'inline-flex items-center gap-1 whitespace-nowrap rounded-md border px-2 py-0.5 text-2xs motion-safe:transition-colors disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
         isOn
           ? 'border-border bg-muted text-foreground'
           : 'border-border-soft bg-elevated/30 text-muted-foreground',
@@ -210,7 +210,7 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
           aria-haspopup="menu"
           aria-expanded={open}
           className={cn(
-            'inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-2xs motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+            'inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-2xs motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             hiddenCount > 0
               ? 'text-foreground hover:bg-muted/60'
               : 'text-faint-foreground hover:bg-muted/60 hover:text-foreground',
@@ -245,7 +245,7 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
           type="button"
           role="menuitem"
           onClick={() => onAll({ enabled: true })}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-2xs text-muted-foreground hover:bg-muted/40 hover:text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-focus-ring)]"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-2xs text-muted-foreground hover:bg-muted/40 hover:text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring"
         >
           <Eye size={11} aria-hidden className="shrink-0" />
           Show all
@@ -254,7 +254,7 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
           type="button"
           role="menuitem"
           onClick={() => onAll({ enabled: false })}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-2xs text-muted-foreground hover:bg-muted/40 hover:text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-focus-ring)]"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-2xs text-muted-foreground hover:bg-muted/40 hover:text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring"
         >
           <EyeOff size={11} aria-hidden className="shrink-0" />
           Hide all
