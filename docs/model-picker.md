@@ -3,126 +3,128 @@
 > **Read this when** building or changing how a user picks a model or effort.
 > **Not for** installing/connecting a provider CLI (`docs/providers.md`).
 
-Owns one question: how a user chooses which model runs the next turn, and how
-much thinking to buy, without learning a different control per provider. The
-catalog data behind it is [providers.md](providers.md).
+This page answers one question. How does a user choose which model runs the
+next turn, and how much thinking to pay for, without learning a different
+control for each provider? The catalog data behind it is in
+[providers.md](providers.md).
 
-The rule that keeps this alive: **the catalog describes, the picker renders.**
-Every grouping, ordering and label decision is authored data on the catalog
-entry. No component parses a model id, and no component branches on a provider.
+The rule that keeps this working: **the catalog describes, the picker renders.**
+Every grouping, ordering and label is data written on the catalog entry. No
+component parses a model id, and no component branches on a provider.
 
 ## One picker, many mounts
 
-Choosing a model happens in a dozen places and has to read as the same act in
-all of them. There is one implementation; a mount composes it, never forks it.
-A surface needing a different arrangement composes the same parts differently.
-It never grows a private model list, a private effort control, or a native
-`select`.
+People choose a model in a dozen places, and it has to feel like the same act
+in all of them. There is one implementation. A mount builds on it and never
+forks it. A surface that needs a different arrangement puts the same parts
+together differently. It never grows its own model list, its own effort
+control, or a native `select`.
 
 ## What a catalog entry declares
 
 Grouping, ordering and chip text come from the `presentation` object on the
-entry, authored, not derived at render time. Two invariants, both guarded by
-`catalog.test.ts`: `order` is unique within a provider, and all entries sharing
-a `group` share a `family`.
+entry. They are written by hand, not worked out at render time. `catalog.test.ts`
+guards two rules. `order` is unique within a provider. All entries that share a
+`group` also share a `family`.
 
-The trap the types do not catch: `presentation.version` is the only source of
-visible chip text. The sibling `label` field looks interchangeable and is not,
-it carries the accessible name and the tooltip only.
+One trap the types do not catch: `presentation.version` is the only source of
+the chip text you see. The `label` field next to it looks the same but is not.
+It carries only the accessible name and the tooltip.
 
 ## Axes: one shape for every provider
 
-Providers disagree about what tuning is: an effort ladder, a named variant, an
-independent toggle, an account-level gate. The picker refuses to learn those
-differences. One provider-aware layer, `modelAxes`, normalizes them into a
-single shape, and every surface renders that shape.
+Providers disagree about what tuning is. It can be an effort ladder, a named
+variant, an independent toggle or an account-level gate. The
+picker refuses to learn those differences. One provider-aware layer,
+`modelAxes`, turns them all into a single shape (the axes), and every surface
+renders that shape.
 
-- **An axis the model does not have is omitted. An axis the current selection
+- **An axis the model does not have is left out. An axis the current selection
   cannot reach stays mounted and disabled.** The ladder must not jump around as
   the user toggles things.
 - **Every control here is a chip**, never a `select`.
 - **One effort control exists in the app.** A second one anywhere is a bug.
-- A tuning concept that is not a ladder, a variant list or a toggle is added to
-  the axes shape and renders for everyone, never special-cased in a mount.
+- A tuning idea that is not a ladder, a variant list or a toggle gets added to
+  the axes shape and renders for everyone. It is never special-cased in a mount.
 
 The picker renders one ladder in this order: Provider, Model, Model Version,
-Variant and Effort. Model names and versions come directly from the catalog
-entry's authored `presentation.group` and `presentation.version`. `modelAxes`
-turns those entries into separate model and version axes alongside variant and
-effort, so mounts never regroup catalog entries themselves.
+Variant and Effort. Model names and versions come straight from the catalog
+entry's `presentation.group` and `presentation.version`. `modelAxes` turns
+those entries into separate model and version axes, next to variant and
+effort. So mounts never regroup catalog entries themselves.
 
-An absent axis is `null` in `modelAxes` and renders no row. A model whose
+A missing axis is `null` in `modelAxes` and renders no row. A model whose
 `presentation.group` is `null` has no version axis. A model with no variants
-has no variant axis, and a model or provider with no effort control has no
-effort axis. Opus 5 therefore renders no Variant row.
+has no variant axis. A model or provider with no effort control has no effort
+axis. That is why Opus 5 renders no Variant row.
 
-No shipped model has variants today. Codex was the last provider that did, and
-its Sol, Terra and Luna checkpoints became separate catalog keys once it turned
-out that one key covering three prices let a routing slot spawn the wrong one.
-The axis stays in the shape for the next provider that ships a real variant
-list, which is a tuning choice within one billable model, never a set of
+No shipped model has variants today. Codex was the last provider that did. Its
+Sol, Terra and Luna checkpoints became separate catalog keys. The reason: one
+key covering three prices let a routing slot spawn the wrong one. The axis
+stays in the shape for the next provider that ships a real variant list. A
+variant list is a tuning choice inside one billable model, never a set of
 models that bill differently.
 
-A present axis remains mounted when the current selection makes some or all of
-its authored choices unreachable. Those choices render disabled. A partially
-reachable effort ladder keeps every authored level visible and disables only
-the unavailable chips. This preserves the ladder's height, reading order and
-keyboard order while the user changes a higher selection.
+A present axis stays mounted when the current selection makes some or all of
+its choices unreachable. Those choices render disabled. A partly reachable
+effort ladder keeps every level visible and disables only the chips that are
+not available. This keeps the ladder's height, reading order and keyboard
+order steady while the user changes a selection higher up.
 
 ## Selection to spawn
 
-The picker owns and persists a selection: a catalog key plus its tuning. One
-resolver turns that into CLI arguments. Provider quirks live there, not in the
-UI: clamping an effort the chosen combination cannot serve, a flag only one
-provider needs. A clamp is reported back so the surface can say what it did,
-rather than silently changing the user's choice.
+The picker owns and saves a selection: a catalog key plus its tuning. One
+resolver turns that into CLI arguments. Provider quirks live in the resolver,
+not in the UI. For example, it clamps an effort the chosen combination cannot
+serve, or adds a flag only one provider needs. A clamp is reported back, so the
+surface can say what it did instead of quietly changing the user's choice.
 
-In the other direction, an id resolves from the catalog descriptor only when it
-is a catalog key. Raw CLI ids and provider slugs keep their regex parsing,
-because transcripts store what the provider echoed and those strings carry
-effort suffixes the catalog key does not.
+Going the other way, an id resolves from the catalog descriptor only when it is
+a catalog key. Raw CLI ids and provider slugs keep their regex parsing.
+Transcripts store what the provider echoed, and those strings carry effort
+suffixes that the catalog key does not.
 
 ## Max Mode
 
-Cursor gates some models behind Max Mode, an account preference that also
-changes billing. A gated model refuses the turn with
+Cursor puts some models behind Max Mode, an account preference that also
+changes billing. A model that needs it refuses the turn with
 `ActionRequiredError: Max Mode Required` and exits non-zero.
 
-Max Mode is a persisted preference in the Cursor CLI config (`cli-config.json`,
-top-level `maxMode`), and the CLI resolves its config directory from
+Max Mode is a saved preference in the Cursor CLI config (`cli-config.json`,
+top-level `maxMode`). The CLI finds its config directory from
 `CURSOR_CONFIG_DIR`, then `XDG_CONFIG_HOME/cursor`, then `~/.cursor`. When a
-spawn resolves to a combo that requires it, Goodboy mirrors the user's config
-into a Goodboy-owned directory with `maxMode` set and points that one spawn at
-it with `CURSOR_CONFIG_DIR`. **The user's own config is never written to.**
+spawn resolves to a combo that needs Max Mode, Goodboy copies the user's config
+into a directory Goodboy owns, with `maxMode` set. It then points that one
+spawn at the copy with `CURSOR_CONFIG_DIR`. **The user's own config is never written to.**
 
-Which combos need it is authored on the catalog from probing the CLI, never
-inferred from the slug. To check a new slug:
+Which combos need it is written on the catalog after probing the CLI. It is
+never guessed from the slug. To check a new slug:
 
 ```
 cursor-agent -p "say ok" --output-format stream-json --workspace /tmp --model <slug> --force
 ```
 
-Exit 0 means no Max Mode needed; a `Max Mode Required` stderr means it does.
+Exit 0 means Max Mode is not needed. A `Max Mode Required` stderr means it is.
 The picker says so before the first turn is spent.
 
 ## Adding to the catalog
 
 **A model** in an existing family: add the entry with its `presentation` and an
-`order`, and for Cursor probe each combo's Max Mode. Nothing in the picker
-changes; if something has to change, the entry was under-authored. **A
-family**: add the `ModelFamily` value. **A provider**: author its catalog, then
+`order`. For Cursor, probe each combo for Max Mode. Nothing in the picker
+changes. If something has to change, the entry is missing data. **A
+family**: add the `ModelFamily` value. **A provider**: write its catalog, then
 teach `modelAxes` its tuning.
 
 ## Settled decisions
 
-Tried, or shipped and reverted. Do not reintroduce:
+These were tried, or shipped and reverted. Do not bring them back:
 
 - A flat searchable model list. It lost the version ladder, the cost signal and
   the tuning context.
 - A native `select` for variants or effort. Every control here is a chip.
 - Provider or family bands above the model rows. Removed on purpose: the user
   already knows which provider they selected.
-- Deriving family, version or cost from the model id with a regex. That is what
-  authored `presentation` replaces.
+- Deriving family, version or cost from the model id with a regex. Authored
+  `presentation` replaces that.
 - Hiding levels the current toggle combination cannot reach, instead of
   disabling them.
