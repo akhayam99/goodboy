@@ -27,8 +27,8 @@ const CHIP_CLASS =
 
 const INLINE_CODE_CLASS: Record<MarkdownVariant, string> = {
   document:
-    'rounded-md bg-muted/50 px-1 py-0 font-mono text-[0.875em] text-foreground/90 wrap-anywhere',
-  preview: 'font-mono text-[0.875em] text-foreground/90 wrap-anywhere',
+    'rounded-md bg-muted/50 px-1 py-0 font-mono text-[0.875em] text-foreground wrap-anywhere',
+  preview: 'font-mono text-[0.875em] text-foreground wrap-anywhere',
 };
 
 const CODE_TOKEN_CLASS: Record<CodeTokenKind, string> = {
@@ -270,7 +270,7 @@ const listClass = (variant: MarkdownVariant, depth: number): string => {
     return 'flex flex-col gap-0.5 pl-4 marker:text-muted-foreground';
   }
   if (depth > 0) {
-    return 'flex flex-col gap-1 pl-5 marker:text-muted-foreground/70';
+    return 'flex flex-col gap-1 pl-5 marker:text-faint-foreground';
   }
   return 'flex flex-col gap-1 pl-5 marker:text-muted-foreground';
 };
@@ -454,7 +454,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
           </div>
           <div
             data-block="callout-body"
-            className="flex flex-col gap-2 leading-relaxed text-foreground/90 wrap-anywhere"
+            className="flex flex-col gap-2 leading-relaxed text-foreground wrap-anywhere"
           >
             {block.blocks.map((child, ci) =>
               renderBlock({ block: child, id: `${key}-c${ci}`, variant, depth }),
@@ -603,7 +603,7 @@ const MarkdownImpl = ({ text, className, variant = 'document' }: MarkdownProps) 
 
   if (variant === 'preview') {
     return (
-      <div className={cn('flex flex-col gap-1 text-sm text-foreground/85', className)}>
+      <div className={cn('flex flex-col gap-1 text-sm text-foreground', className)}>
         {document.blocks.map((block, idx) =>
           renderBlock({ block, id: `b-${idx}`, variant, depth: 0 }),
         )}
@@ -612,7 +612,7 @@ const MarkdownImpl = ({ text, className, variant = 'document' }: MarkdownProps) 
   }
 
   return (
-    <div className={cn('flex flex-col gap-5 text-sm text-foreground/85', className)}>
+    <div className={cn('flex flex-col gap-5 text-sm text-foreground', className)}>
       {document.sections.map((section, si) => (
         <div key={`s-${si}`} className="flex flex-col gap-2.5">
           {section.map((block, bi) =>

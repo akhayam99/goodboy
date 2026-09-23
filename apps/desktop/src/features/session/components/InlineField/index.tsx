@@ -12,7 +12,7 @@ export const InlineField = ({ label, children, onEdit, editLabel }: Props) => {
   return (
     <div className="group/inline flex flex-col gap-1">
       <div className="flex items-center gap-1.5">
-        <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70">
+        <span className="text-2xs font-semibold uppercase tracking-wide text-faint-foreground">
           {label}
         </span>
         {onEdit ? (
@@ -22,7 +22,7 @@ export const InlineField = ({ label, children, onEdit, editLabel }: Props) => {
               onClick={onEdit}
               aria-label={editLabel ?? `edit ${label}`}
               className={cn(
-                'inline-flex size-4 items-center justify-center rounded text-muted-foreground/50',
+                'inline-flex size-4 items-center justify-center rounded text-faint-foreground',
                 'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
                 'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
                 'group-hover/inline:opacity-100 motion-reduce:opacity-60',

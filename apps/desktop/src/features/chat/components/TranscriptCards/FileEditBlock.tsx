@@ -27,7 +27,7 @@ export const FileEditBlock = ({ path, editType, workingDir, onOpenDiff }: Props)
       <span className={`text-2xs uppercase tracking-wide ${infoAccent.text}`}>
         {EDIT_LABEL[editType]}
       </span>
-      <code className="min-w-0 truncate font-mono text-xs text-foreground/80" title={path}>
+      <code className="min-w-0 truncate font-mono text-xs text-foreground" title={path}>
         {rel}
       </code>
       {onOpenDiff ? (

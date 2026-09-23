@@ -34,7 +34,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
     >
       <GripVertical
         size={ICON_SIZE.row}
-        className="shrink-0 text-muted-foreground/25 motion-safe:transition-colors group-hover:text-muted-foreground/60"
+        className="shrink-0 text-faint-foreground motion-safe:transition-colors group-hover:text-faint-foreground"
         aria-hidden
       />
       <AgentAvatar kind={kind} size="sm" />
@@ -49,7 +49,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
           <ClampedProse
             text={def.promptPrefix}
             lines={2}
-            className="text-2xs leading-relaxed text-muted-foreground/60"
+            className="text-2xs leading-relaxed text-faint-foreground"
           />
         ) : null}
       </div>

@@ -183,7 +183,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <p className="text-2xs text-muted-foreground/70">
+            <p className="text-2xs text-faint-foreground">
               Applies to every agent spawned in this role unless pinned per agent or per step.
             </p>
             <div className="flex flex-col">

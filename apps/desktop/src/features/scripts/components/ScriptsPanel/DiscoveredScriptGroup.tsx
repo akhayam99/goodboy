@@ -116,7 +116,7 @@ export const DiscoveredScriptGroup = ({
                   label={
                     <span className="flex items-center gap-1.5">
                       <span>{category.label}</span>
-                      <span className="tabular-nums text-muted-foreground/60">
+                      <span className="tabular-nums text-faint-foreground">
                         {categoryScripts.length}
                       </span>
                     </span>

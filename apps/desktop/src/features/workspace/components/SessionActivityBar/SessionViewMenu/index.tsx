@@ -94,7 +94,7 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
               'inline-flex shrink-0 items-center justify-center rounded p-1 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
               open
                 ? 'bg-foreground/10 text-foreground'
-                : 'text-muted-foreground/70 hover:bg-foreground/10 hover:text-foreground',
+                : 'text-faint-foreground hover:bg-foreground/10 hover:text-foreground',
             )}
           >
             <SlidersHorizontal size={11} aria-hidden />
@@ -173,7 +173,7 @@ function MenuItem({ label, hint, selected, onClick }: MenuItemProps) {
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate font-medium">{label}</span>
-        <span className="truncate text-2xs text-muted-foreground/60">{hint}</span>
+        <span className="truncate text-2xs text-faint-foreground">{hint}</span>
       </span>
     </button>
   );

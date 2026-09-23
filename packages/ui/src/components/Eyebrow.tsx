@@ -41,7 +41,7 @@ export const Eyebrow = ({
     <span
       className={cn(
         'text-2xs font-semibold uppercase tracking-eyebrow',
-        muted ? 'text-muted-foreground/60' : 'text-muted-foreground',
+        muted ? 'text-faint-foreground' : 'text-muted-foreground',
         icon ? 'inline-flex items-center gap-1' : '',
         className,
       )}

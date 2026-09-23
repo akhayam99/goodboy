@@ -21,7 +21,7 @@ export const SpendBar = ({ label, valueLabel, pct, metaLabel, icon, onClick }: P
           {label}
         </span>
         {metaLabel !== undefined ? (
-          <span className="ml-auto shrink-0 text-2xs text-muted-foreground/70">{metaLabel}</span>
+          <span className="ml-auto shrink-0 text-2xs text-faint-foreground">{metaLabel}</span>
         ) : null}
         <span
           className={cn(

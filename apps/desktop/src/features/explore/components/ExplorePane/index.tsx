@@ -314,7 +314,7 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
                     type="button"
                     onClick={() => void runOpenAction({ entry, reveal: false })}
                     aria-label={`Open ${entry.name} outside the app`}
-                    className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                    className="rounded-md p-1.5 text-faint-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
                   >
                     <ExternalLink size={ICON_SIZE.control} aria-hidden />
                   </button>
@@ -324,7 +324,7 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
                     type="button"
                     onClick={() => void runOpenAction({ entry, reveal: true })}
                     aria-label={`Reveal ${entry.name} in file manager`}
-                    className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                    className="rounded-md p-1.5 text-faint-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
                   >
                     <FolderSearch size={ICON_SIZE.control} aria-hidden />
                   </button>

@@ -70,8 +70,8 @@ export const OverflowMenu = ({
             className={cn(
               'shrink-0 rounded p-1 motion-safe:transition-colors',
               disabled
-                ? 'cursor-not-allowed text-muted-foreground/30'
-                : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground',
+                ? 'cursor-not-allowed text-faint-foreground'
+                : 'text-faint-foreground hover:bg-foreground/10 hover:text-foreground',
               dropdown.open && 'bg-foreground/10 text-foreground',
               triggerClassName,
             )}
@@ -89,7 +89,7 @@ export const OverflowMenu = ({
           return (
             <div
               key={item.key}
-              className="px-2.5 pt-1.5 pb-0.5 text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70"
+              className="px-2.5 pt-1.5 pb-0.5 text-2xs font-semibold uppercase tracking-wide text-faint-foreground"
             >
               {item.label}
             </div>
@@ -97,7 +97,7 @@ export const OverflowMenu = ({
         }
         if (item.kind === 'empty') {
           return (
-            <div key={item.key} className="px-2.5 py-1.5 text-muted-foreground/50 italic">
+            <div key={item.key} className="px-2.5 py-1.5 text-faint-foreground italic">
               {item.label}
             </div>
           );
@@ -122,15 +122,15 @@ export const OverflowMenu = ({
                 ? 'cursor-not-allowed text-muted-foreground'
                 : item.destructive
                   ? 'text-danger/90 hover:bg-danger/10 hover:text-danger'
-                  : 'text-foreground/80 hover:bg-muted hover:text-foreground',
+                  : 'text-foreground hover:bg-muted hover:text-foreground',
             )}
           >
             {Icon ? (
-              <Icon size={11} aria-hidden className="shrink-0 text-muted-foreground/70" />
+              <Icon size={11} aria-hidden className="shrink-0 text-faint-foreground" />
             ) : null}
             <span className="flex-1 truncate">{item.label}</span>
             {item.hint ? (
-              <kbd className="font-mono text-2xs text-muted-foreground/60">{item.hint}</kbd>
+              <kbd className="font-mono text-2xs text-faint-foreground">{item.hint}</kbd>
             ) : null}
           </button>
         );

@@ -100,7 +100,7 @@ export const WireframeAdjustments = ({ adjustments }: Props) => {
                 key={`${adjustment.path}-${adjustment.message}`}
                 className="text-2xs text-muted-foreground"
               >
-                <span className="font-mono text-foreground/80">{adjustment.path}</span>
+                <span className="font-mono text-foreground">{adjustment.path}</span>
                 {': '}
                 {adjustment.message}
                 {adjustment.count > 1 ? ` (${adjustment.count} places)` : null}

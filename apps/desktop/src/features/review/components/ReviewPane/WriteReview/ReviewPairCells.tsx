@@ -55,7 +55,7 @@ const sideAccent = ({ line, hasDraft }: SideStateParams): string => {
 
 const ACTIONS_CLASS = 'select-none border-l-2 px-0.5 align-top';
 const GUTTER_CLASS = 'select-none px-1.5 text-right align-top text-3xs tabular-nums';
-const CONTENT_CLASS = 'whitespace-pre-wrap wrap-anywhere px-2.5 align-top text-foreground/80';
+const CONTENT_CLASS = 'whitespace-pre-wrap wrap-anywhere px-2.5 align-top text-foreground';
 
 export const ReviewPairCells = ({
   pair,
@@ -88,7 +88,7 @@ export const ReviewPairCells = ({
           onAskAgent={onAskAgent}
         />
       </td>
-      <td className={cn(GUTTER_CLASS, 'text-muted-foreground/50', oldTone)}>
+      <td className={cn(GUTTER_CLASS, 'text-faint-foreground', oldTone)}>
         {pair.old?.oldLine ?? ''}
       </td>
       <td className={cn(CONTENT_CLASS, oldTone)}>
@@ -108,7 +108,7 @@ export const ReviewPairCells = ({
           onAskAgent={onAskAgent}
         />
       </td>
-      <td className={cn(GUTTER_CLASS, 'text-muted-foreground/50', newTone)}>
+      <td className={cn(GUTTER_CLASS, 'text-faint-foreground', newTone)}>
         {pair.new?.newLine ?? ''}
       </td>
       <td className={cn(CONTENT_CLASS, newTone)}>

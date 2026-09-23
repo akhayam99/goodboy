@@ -48,7 +48,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
     <div className="flex h-full flex-col">
       <div className="shrink-0 p-3 pb-2">
         <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-background px-2.5 focus-within:border-primary">
-          <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/60" />
+          <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
           <input
             type="text"
             value={query}
@@ -56,7 +56,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
             placeholder="Search pull requests…"
             aria-label="Search Bitbucket pull requests"
             autoComplete="off"
-            className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
+            className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-faint-foreground"
           />
         </div>
       </div>
@@ -108,7 +108,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
                   className="px-1"
                   label={group.label}
                   action={
-                    <span className="text-2xs tabular-nums text-muted-foreground/50">
+                    <span className="text-2xs tabular-nums text-faint-foreground">
                       {group.rows.length}
                     </span>
                   }
@@ -135,14 +135,14 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
                               {pullRequest.title}
                             </span>
                           </span>
-                          <span className="flex items-center gap-1.5 text-2xs text-muted-foreground/70">
+                          <span className="flex items-center gap-1.5 text-2xs text-faint-foreground">
                             <span className="shrink-0 font-mono tabular-nums">
                               #{pullRequest.id}
                             </span>
-                            <span aria-hidden className="text-muted-foreground/40">
+                            <span aria-hidden className="text-faint-foreground">
                               ·
                             </span>
-                            <span className="shrink-0 tabular-nums text-muted-foreground/50">
+                            <span className="shrink-0 tabular-nums text-faint-foreground">
                               {formatAdaptiveAge({ iso: pullRequest.updatedOn })}
                             </span>
                             <InboxStatusIcons
@@ -151,7 +151,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
                                 <CONCEPT_ICONS.bitbucket
                                   size={11}
                                   aria-label="Bitbucket pull request"
-                                  className="text-muted-foreground/70"
+                                  className="text-faint-foreground"
                                 />
                               }
                             />

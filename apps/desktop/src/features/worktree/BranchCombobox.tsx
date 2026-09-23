@@ -146,7 +146,7 @@ export const BranchCombobox = ({
             aria-expanded={open}
             aria-autocomplete="list"
             autoComplete="off"
-            className="flex-1 truncate bg-transparent px-2 text-sm font-mono text-foreground outline-none placeholder:text-muted-foreground/50 disabled:cursor-not-allowed"
+            className="flex-1 truncate bg-transparent px-2 text-sm font-mono text-foreground outline-none placeholder:text-faint-foreground disabled:cursor-not-allowed"
             onChange={(e) => {
               setQuery(e.target.value);
               if (!open) {

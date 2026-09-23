@@ -93,11 +93,11 @@ export const SessionActivityItem = ({
             <CostBadge
               value={sessionCost}
               title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
-              className="shrink-0 font-sans text-3xs font-medium tabular-nums text-muted-foreground/70"
+              className="shrink-0 font-sans text-3xs font-medium tabular-nums text-faint-foreground"
             />
           ) : null}
           {age !== '' ? (
-            <span className="shrink-0 text-3xs tabular-nums text-muted-foreground/70">{age}</span>
+            <span className="shrink-0 text-3xs tabular-nums text-faint-foreground">{age}</span>
           ) : null}
         </span>
       </span>

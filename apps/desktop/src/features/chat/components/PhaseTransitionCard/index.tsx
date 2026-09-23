@@ -104,7 +104,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
       <span className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
         carried forward
       </span>
-      <div className="overflow-x-auto text-xs text-foreground/80">
+      <div className="overflow-x-auto text-xs text-foreground">
         <Markdown text={context} />
       </div>
     </TranscriptDisclosure>

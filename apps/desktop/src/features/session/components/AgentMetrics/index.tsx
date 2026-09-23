@@ -71,7 +71,7 @@ export const AgentMetrics = ({
       <div data-testid="agent-metrics-inline" className={cn('flex min-w-0', muted && 'opacity-60')}>
         <MetaRow
           className={cn(
-            'min-w-0 text-muted-foreground/80',
+            'min-w-0 text-muted-foreground',
             !isLane && 'flex-nowrap whitespace-nowrap',
           )}
           items={[
@@ -134,13 +134,13 @@ export const AgentMetrics = ({
       {showTokens ? (
         <div
           data-testid="agent-metrics-block"
-          className="flex items-center gap-1.5 whitespace-nowrap text-2xs text-muted-foreground/55"
+          className="flex items-center gap-1.5 whitespace-nowrap text-2xs text-faint-foreground"
         >
           <span
             className="inline-flex items-baseline gap-0.5 tabular-nums"
             title={`In: ${formatInteger(inputTokens)} tokens (cumulative)`}
           >
-            <span aria-hidden className="text-muted-foreground/70">
+            <span aria-hidden className="text-faint-foreground">
               ↓
             </span>
             {formatTokens(inputTokens)}
@@ -149,12 +149,12 @@ export const AgentMetrics = ({
             className="inline-flex items-baseline gap-0.5 tabular-nums"
             title={`Out: ${formatInteger(outputTokens)} tokens (cumulative)`}
           >
-            <span aria-hidden className="text-muted-foreground/70">
+            <span aria-hidden className="text-faint-foreground">
               ↑
             </span>
             {formatTokens(outputTokens)}
           </span>
-          <span aria-hidden className="text-muted-foreground/30">
+          <span aria-hidden className="text-faint-foreground">
             ·
           </span>
           <AgentDuration run={run} />

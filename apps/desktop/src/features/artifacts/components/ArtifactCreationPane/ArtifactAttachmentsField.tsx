@@ -74,7 +74,7 @@ export const ArtifactAttachmentsField = ({
           />
         ))
       ) : (
-        <span className="text-2xs text-muted-foreground/60">
+        <span className="text-2xs text-faint-foreground">
           {worktree === null ? NO_WORKTREE_HINT : EMPTY_HINT}
         </span>
       )}

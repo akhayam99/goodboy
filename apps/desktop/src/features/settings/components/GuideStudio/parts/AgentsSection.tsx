@@ -49,13 +49,13 @@ export const AgentsSection = ({}: Props) => (
         </span>
         <div className="flex flex-wrap items-center gap-2 font-mono text-foreground">
           <Chip tone="primary">model</Chip>
-          <span className="text-muted-foreground/40">·</span>
+          <span className="text-faint-foreground">·</span>
           <Chip tone="info">↓ input</Chip>
-          <span className="text-muted-foreground/40">·</span>
+          <span className="text-faint-foreground">·</span>
           <Chip tone="warning">↑ output</Chip>
-          <span className="text-muted-foreground/40">·</span>
+          <span className="text-faint-foreground">·</span>
           <Chip tone="success">cost</Chip>
-          <span className="text-muted-foreground/40">·</span>
+          <span className="text-faint-foreground">·</span>
           <Chip tone="neutral">⏱ age</Chip>
         </div>
         <p className="text-2xs leading-relaxed text-muted-foreground">

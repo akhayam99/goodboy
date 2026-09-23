@@ -52,21 +52,21 @@ export const BranchSurgery = ({ commits, headSha, onAmend, onSquash }: Props) =>
 
   return (
     <div className="flex flex-col gap-1.5 px-2.5 py-1.5">
-      <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70">
+      <span className="text-2xs font-semibold uppercase tracking-wide text-faint-foreground">
         Rewrite the branch
       </span>
       <ul className="flex flex-col gap-1.5">
         {commits.map((commit, index) => (
           <li key={commit.sha} className="flex min-w-0 flex-col gap-1">
             <div className="flex min-w-0 items-baseline gap-2">
-              <GitCommit size={11} aria-hidden className="shrink-0 text-muted-foreground/60" />
-              <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground/80">
+              <GitCommit size={11} aria-hidden className="shrink-0 text-faint-foreground" />
+              <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
                 {commit.shortSha}
               </span>
               <span
                 className={cn(
                   'truncate text-2xs',
-                  commit.pushed ? 'text-muted-foreground/60' : 'text-foreground/80',
+                  commit.pushed ? 'text-faint-foreground' : 'text-foreground',
                 )}
                 title={commit.subject}
               >
@@ -75,7 +75,7 @@ export const BranchSurgery = ({ commits, headSha, onAmend, onSquash }: Props) =>
             </div>
             {commit.pushed ? (
               <span
-                className="pl-5 text-2xs italic text-muted-foreground/60"
+                className="pl-5 text-2xs italic text-faint-foreground"
                 title="Rewriting it would need a force push"
               >
                 already pushed

@@ -93,7 +93,7 @@ export const AgentFollowUps = ({
             <ArrowRight
               size={ICON_SIZE.row}
               aria-hidden
-              className="shrink-0 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5"
+              className="shrink-0 text-faint-foreground transition-transform group-hover:translate-x-0.5"
             />
           </button>
         ))}

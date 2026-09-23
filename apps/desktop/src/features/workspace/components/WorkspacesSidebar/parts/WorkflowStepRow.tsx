@@ -144,7 +144,7 @@ export const WorkflowStepRow = ({
         >
           <Check
             size={9}
-            className={run.status === 'skipped' ? 'text-muted-foreground/60' : 'text-success'}
+            className={run.status === 'skipped' ? 'text-faint-foreground' : 'text-success'}
             aria-hidden
           />
         </span>
@@ -153,7 +153,7 @@ export const WorkflowStepRow = ({
     if (run.status === 'failed') {
       return <StatusDot tone="danger" size="sm" />;
     }
-    return <Clock size={11} className="text-muted-foreground/50" aria-hidden />;
+    return <Clock size={11} className="text-faint-foreground" aria-hidden />;
   };
 
   const stableTitle =
@@ -196,7 +196,7 @@ export const WorkflowStepRow = ({
             aria-hidden
             className={cn(
               'w-4 shrink-0 text-right text-2xs tabular-nums',
-              isPendingFuture ? 'text-muted-foreground' : 'text-muted-foreground/60',
+              isPendingFuture ? 'text-muted-foreground' : 'text-faint-foreground',
             )}
           >
             {index + 1}.
@@ -227,7 +227,7 @@ export const WorkflowStepRow = ({
               className={cn(
                 'line-clamp-1 flex-1 text-left text-2xs font-medium',
                 isPendingFuture
-                  ? 'text-muted-foreground/50'
+                  ? 'text-faint-foreground'
                   : isSelected
                     ? 'text-foreground'
                     : 'text-muted-foreground',

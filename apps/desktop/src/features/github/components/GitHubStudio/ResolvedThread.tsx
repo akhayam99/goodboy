@@ -32,7 +32,7 @@ export const ResolvedThread = ({ thread, onOpenUrl }: Props) => {
           eyebrow="resolved"
           badge={
             <span className="flex shrink-0 items-center gap-1.5">
-              <span className="text-2xs font-medium text-foreground/70">{head.author}</span>
+              <span className="text-2xs font-medium text-muted-foreground">{head.author}</span>
               {head.outdated === true ? (
                 <Chip
                   tone="neutral"

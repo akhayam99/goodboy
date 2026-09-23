@@ -15,6 +15,8 @@
   --color-muted: oklch(0.265 0.01 255);
   --color-elevated: oklch(0.3 0.011 255);
   --color-muted-foreground: oklch(0.77 0.015 255);
+  --color-faint-foreground: oklch(0.674 0.012 255);
+  --color-disabled-foreground: oklch(0.566 0.01 255);
   --color-border: oklch(0.575 0.012 255);
   --color-border-soft: oklch(0.36 0.012 255);
 
@@ -295,6 +297,8 @@ html[data-theme='light'] {
   --color-muted: oklch(0.94 0.005 250);
   --color-elevated: oklch(1 0 250);
   --color-muted-foreground: oklch(0.43 0.006 250);
+  --color-faint-foreground: oklch(0.52 0.006 250);
+  --color-disabled-foreground: oklch(0.624 0.005 250);
   --color-border: oklch(0.62 0.006 250);
   --color-border-soft: oklch(0.9 0.005 250);
   --color-primary: oklch(0.455 0.14 210);

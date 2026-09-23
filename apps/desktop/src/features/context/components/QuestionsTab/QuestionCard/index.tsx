@@ -160,7 +160,7 @@ export const QuestionCard = ({
                 type="button"
                 onClick={() => onDismiss(question.id)}
                 className={cn(
-                  'shrink-0 rounded-md p-1 text-muted-foreground/60',
+                  'shrink-0 rounded-md p-1 text-faint-foreground',
                   'transition-[color,background-color] duration-150',
                   'hover:bg-muted hover:text-foreground',
                   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',

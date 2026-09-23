@@ -136,7 +136,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
           label="Description"
           action={
             editing === 'body' ? (
-              <span className="inline-flex items-center gap-1 text-3xs text-muted-foreground/60">
+              <span className="inline-flex items-center gap-1 text-3xs text-faint-foreground">
                 <ImagePlus size={11} aria-hidden />
                 paste an image url to embed it
               </span>
@@ -184,7 +184,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
           <button
             type="button"
             onClick={() => setEditing('body')}
-            className="rounded-md border border-dashed border-border-soft px-3 py-4 text-left text-sm text-muted-foreground/60 transition-colors hover:border-border hover:text-muted-foreground"
+            className="rounded-md border border-dashed border-border-soft px-3 py-4 text-left text-sm text-faint-foreground transition-colors hover:border-border hover:text-muted-foreground"
           >
             No description yet. Click to add one.
           </button>

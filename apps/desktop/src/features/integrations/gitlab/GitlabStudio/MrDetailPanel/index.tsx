@@ -329,7 +329,7 @@ export const MrDetailPanel = ({
             {mr.description != null && mr.description !== '' ? (
               <Markdown text={mr.description} className="text-sm leading-relaxed" />
             ) : (
-              <p className="text-sm italic text-muted-foreground/60">No description.</p>
+              <p className="text-sm italic text-faint-foreground">No description.</p>
             )}
           </StudioWidget>
         ) : (

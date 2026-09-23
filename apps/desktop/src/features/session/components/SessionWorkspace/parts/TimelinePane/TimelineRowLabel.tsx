@@ -150,7 +150,7 @@ export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
     <>
       {chipOf({ entry, grade })}
       {item.ordinal != null ? (
-        <span className="w-4 shrink-0 text-right text-3xs tabular-nums text-muted-foreground/60">
+        <span className="w-4 shrink-0 text-right text-3xs tabular-nums text-faint-foreground">
           {item.ordinal}
         </span>
       ) : null}
@@ -170,7 +170,7 @@ export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
                   : item.markerState === 'running' || item.hasUnread
                     ? 'font-medium text-foreground'
                     : isStep
-                      ? 'text-foreground/85'
+                      ? 'text-foreground'
                       : 'text-foreground',
         )}
       >

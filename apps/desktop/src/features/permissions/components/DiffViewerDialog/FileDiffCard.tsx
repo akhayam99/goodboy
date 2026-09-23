@@ -461,7 +461,7 @@ export const FileDiffCard = ({
                             <div
                               className={cn(
                                 isSplit ? undefined : DIFF_SCROLL_CONTENT_CLASS,
-                                'px-2.5 py-1 text-3xs font-medium tabular-nums text-muted-foreground/70',
+                                'px-2.5 py-1 text-3xs font-medium tabular-nums text-faint-foreground',
                               )}
                             >
                               {row.header}
@@ -566,7 +566,7 @@ export const FileDiffCard = ({
                                 : undefined
                             }
                             className={cn(
-                              'w-9 select-none border-l-2 px-1.5 text-right text-3xs tabular-nums text-muted-foreground/50',
+                              'w-9 select-none border-l-2 px-1.5 text-right text-3xs tabular-nums text-faint-foreground',
                               canComment &&
                                 oldAnchor !== null &&
                                 'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60',
@@ -609,7 +609,7 @@ export const FileDiffCard = ({
                                 : undefined
                             }
                             className={cn(
-                              'w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-3xs tabular-nums text-muted-foreground/50',
+                              'w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-3xs tabular-nums text-faint-foreground',
                               canComment &&
                                 newAnchor !== null &&
                                 'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60',
@@ -617,7 +617,7 @@ export const FileDiffCard = ({
                           >
                             {line.newLine ?? ''}
                           </td>
-                          <td className="whitespace-pre px-2.5 text-foreground/80">
+                          <td className="whitespace-pre px-2.5 text-foreground">
                             <DiffLineText line={line} lang={lang} />
                           </td>
                         </tr>

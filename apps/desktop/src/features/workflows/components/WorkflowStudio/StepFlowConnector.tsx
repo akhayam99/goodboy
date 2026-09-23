@@ -38,7 +38,7 @@ export const StepFlowConnector = ({ index, interior, dragging, active }: Props) 
           </span>
         )
       ) : interior ? (
-        <ArrowDown size={ICON_SIZE.control} className="text-muted-foreground/40" aria-hidden />
+        <ArrowDown size={ICON_SIZE.control} className="text-faint-foreground" aria-hidden />
       ) : null}
     </div>
   );

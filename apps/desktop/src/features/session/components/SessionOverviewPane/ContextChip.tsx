@@ -54,7 +54,7 @@ export const ContextChip = ({ sessionId, onSelectLens }: Props) => {
           <CONCEPT_ICONS.context size={11} aria-hidden className="text-primary" />
           <span>Context</span>
           {hasSpend ? (
-            <span className="font-mono tabular-nums text-muted-foreground/70">
+            <span className="font-mono tabular-nums text-faint-foreground">
               Σ {formatUsd(summarizerSpend.estimatedCostUsd)}
             </span>
           ) : null}

@@ -201,7 +201,7 @@ export const SessionActivityBar = ({
                       size={ICON_SIZE.row}
                       aria-hidden
                       className={cn(
-                        'shrink-0 text-muted-foreground/40 motion-safe:transition-transform group-hover:text-muted-foreground',
+                        'shrink-0 text-faint-foreground motion-safe:transition-transform group-hover:text-muted-foreground',
                         !isGroupCollapsed && 'rotate-90',
                       )}
                     />
@@ -210,7 +210,7 @@ export const SessionActivityBar = ({
                       tone={groupPresentation?.tone ?? 'neutral'}
                     />
                     {group.sessions.length > 0 ? (
-                      <span aria-hidden className="text-2xs tabular-nums text-muted-foreground/60">
+                      <span aria-hidden className="text-2xs tabular-nums text-faint-foreground">
                         {group.sessions.length}
                       </span>
                     ) : null}

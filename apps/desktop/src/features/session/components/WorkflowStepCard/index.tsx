@@ -53,7 +53,7 @@ type Props = {
 };
 
 const FieldLabel = ({ children }: { readonly children: ReactNode }) => (
-  <span className="px-0.5 text-3xs font-medium uppercase tracking-wide text-muted-foreground/50">
+  <span className="px-0.5 text-3xs font-medium uppercase tracking-wide text-faint-foreground">
     {children}
   </span>
 );
@@ -140,7 +140,7 @@ export const WorkflowStepCard = ({
         }}
         disabled={disabled}
         aria-label="Reorder step (drag or arrow keys)"
-        className="flex shrink-0 cursor-grab touch-none items-center self-stretch rounded-l-lg px-1 text-muted-foreground/30 transition-colors hover:bg-muted/40 hover:text-muted-foreground active:cursor-grabbing disabled:cursor-not-allowed"
+        className="flex shrink-0 cursor-grab touch-none items-center self-stretch rounded-l-lg px-1 text-faint-foreground transition-colors hover:bg-muted/40 hover:text-muted-foreground active:cursor-grabbing disabled:cursor-not-allowed"
       >
         <GripVertical size={ICON_SIZE.control} aria-hidden />
       </button>

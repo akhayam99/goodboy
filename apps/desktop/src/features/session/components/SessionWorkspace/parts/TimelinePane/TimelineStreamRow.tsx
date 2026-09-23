@@ -74,7 +74,7 @@ export const TimelineStreamRow = ({
     >
       <span className={cn('flex shrink-0 flex-col justify-end', TIMELINE_GUTTER)}>
         <span
-          className="flex items-center justify-end pr-2 text-3xs tabular-nums text-muted-foreground/70"
+          className="flex items-center justify-end pr-2 text-3xs tabular-nums text-faint-foreground"
           style={{ height: boxHeight }}
         >
           {item.at == null ? null : formatCardTime(item.at)}

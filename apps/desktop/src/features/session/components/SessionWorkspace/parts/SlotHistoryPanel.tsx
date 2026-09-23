@@ -36,7 +36,7 @@ const HistoryEntry = ({
             presentation="icon"
             value={entry.value}
             label="copy this version"
-            className="rounded-md p-0.5 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+            className="rounded-md p-0.5 text-faint-foreground hover:bg-muted hover:text-foreground"
           />
           <button
             type="button"

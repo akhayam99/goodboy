@@ -40,7 +40,7 @@ export const QuestionClusterHeader = ({
   const inner = (
     <>
       <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
-      <span className="truncate text-foreground/80">{label}</span>
+      <span className="truncate text-foreground">{label}</span>
       {ownerAgent != null && (
         <RoutingBadge
           provider={ownerAgent.providerOverride ?? null}
@@ -52,9 +52,7 @@ export const QuestionClusterHeader = ({
       {creatorAgentName !== null && (
         <span className="truncate text-muted-foreground">via {creatorAgentName}</span>
       )}
-      {canOpen && (
-        <ChevronRight size={11} aria-hidden className="shrink-0 text-muted-foreground/60" />
-      )}
+      {canOpen && <ChevronRight size={11} aria-hidden className="shrink-0 text-faint-foreground" />}
     </>
   );
 

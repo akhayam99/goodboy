@@ -41,9 +41,9 @@ const DigestRow = ({ icon: Icon, label, entry, empty, unit, shortcut, onOpen }: 
         'hover:bg-foreground/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]',
       )}
     >
-      <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/70" />
+      <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
       <span className="shrink-0 text-2xs font-medium text-foreground">{label}</span>
-      <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground/70">
+      <span className="shrink-0 font-mono text-2xs tabular-nums text-faint-foreground">
         {entry.count === 0 ? empty : count}
       </span>
       {entry.excerpt === '' ? null : (

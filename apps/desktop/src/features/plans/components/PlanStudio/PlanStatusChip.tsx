@@ -5,7 +5,7 @@ import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const PLAN_STATUS_OVERRIDE: Partial<Record<PlanStatus, string>> = {
-  discarded: 'bg-muted/60 text-muted-foreground/70 line-through',
+  discarded: 'bg-muted/60 text-faint-foreground line-through',
 };
 
 type Props = {

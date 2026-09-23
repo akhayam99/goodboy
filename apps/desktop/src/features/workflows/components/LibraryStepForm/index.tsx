@@ -138,7 +138,7 @@ export const LibraryStepForm = ({
       </div>
 
       {isGlobal ? (
-        <p className="text-2xs leading-relaxed text-muted-foreground/70">
+        <p className="text-2xs leading-relaxed text-faint-foreground">
           Editing a global step saves a copy in this workspace. The shared original stays unchanged.
         </p>
       ) : null}

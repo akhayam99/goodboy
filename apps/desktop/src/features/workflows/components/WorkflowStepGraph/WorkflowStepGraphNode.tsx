@@ -69,7 +69,7 @@ export const WorkflowStepGraphNode = ({
     {childCount > 0 ? (
       <span
         title={`${doneChildCount} of ${childCount} agents under ${run.name} are done`}
-        className="shrink-0 px-1 py-1 font-mono text-2xs tabular-nums text-muted-foreground/70"
+        className="shrink-0 px-1 py-1 font-mono text-2xs tabular-nums text-faint-foreground"
       >
         {doneChildCount}/{childCount}
       </span>

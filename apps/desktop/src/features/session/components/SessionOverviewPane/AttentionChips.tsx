@@ -24,7 +24,7 @@ type ChipProps = {
 const AttentionChip = ({ icon: Icon, label, count, tooltip, onOpen }: ChipProps) => (
   <Tooltip content={tooltip}>
     <button type="button" onClick={onOpen} className={VITAL_CHIP}>
-      <Icon size={11} aria-hidden className="text-muted-foreground/80" />
+      <Icon size={11} aria-hidden className="text-muted-foreground" />
       <span>{label}</span>
       <span className="font-mono tabular-nums text-foreground">{count}</span>
     </button>

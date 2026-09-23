@@ -19,7 +19,7 @@ type Props = {
 };
 
 const GUTTER_CLASS = 'w-9 select-none px-1.5 text-right text-3xs tabular-nums';
-const CONTENT_CLASS = 'whitespace-pre-wrap wrap-anywhere px-2.5 align-top text-foreground/80';
+const CONTENT_CLASS = 'whitespace-pre-wrap wrap-anywhere px-2.5 align-top text-foreground';
 const COMMENTABLE_CLASS =
   'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60';
 
@@ -84,7 +84,7 @@ export const DiffPairCells = ({
         aria-label={oldCommentable ? `comment on old line ${oldAnchor.lineNumber}` : undefined}
         className={cn(
           GUTTER_CLASS,
-          'border-l-2 text-muted-foreground/50',
+          'border-l-2 text-faint-foreground',
           oldTone,
           oldRangeCommented
             ? 'border-warning/60'
@@ -125,7 +125,7 @@ export const DiffPairCells = ({
         aria-label={newCommentable ? `comment on new line ${newAnchor.lineNumber}` : undefined}
         className={cn(
           GUTTER_CLASS,
-          'border-l-2 text-muted-foreground/50',
+          'border-l-2 text-faint-foreground',
           newTone,
           newRangeCommented
             ? 'border-warning/60'

@@ -13,7 +13,7 @@ export const PlainCrumb = ({ crumb, isLast }: PlainCrumbProps) => {
   const content = (
     <>
       {Icon == null ? null : (
-        <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/70" />
+        <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
       )}
       <span aria-current={isLast ? 'page' : undefined} className="min-w-0 truncate">
         {crumb.label}

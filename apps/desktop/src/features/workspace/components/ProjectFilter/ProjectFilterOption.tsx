@@ -16,7 +16,7 @@ export const ProjectFilterOption = ({ label, count, checked, onChange }: Props) 
     label={
       <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
         <span className="truncate font-medium">{label}</span>
-        <span className="shrink-0 tabular-nums text-muted-foreground/60">{count}</span>
+        <span className="shrink-0 tabular-nums text-faint-foreground">{count}</span>
       </span>
     }
   />

@@ -67,7 +67,7 @@ export const DetectedRepoList = ({ repos, busy, known = {}, onConfirm, onDismiss
                       <span className="truncate text-sm font-medium text-foreground">
                         {repo.name}
                       </span>
-                      <span className="truncate font-mono text-xs text-muted-foreground/70">
+                      <span className="truncate font-mono text-xs text-faint-foreground">
                         {repo.path}
                       </span>
                     </span>

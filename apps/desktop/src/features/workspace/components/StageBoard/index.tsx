@@ -184,7 +184,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             <span className="flex min-w-0 items-baseline gap-2">
               <Eyebrow label="Stage board" />
               {activeSessions.length > 0 && (
-                <span className="text-2xs tabular-nums text-muted-foreground/60">
+                <span className="text-2xs tabular-nums text-faint-foreground">
                   {activeSessions.length}
                 </span>
               )}

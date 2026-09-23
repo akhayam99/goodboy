@@ -41,7 +41,7 @@ export const RailCard = ({
     </span>
     <span className="flex shrink-0 items-center gap-2">
       {trailing}
-      <ChevronRight size={14} aria-hidden className="text-muted-foreground/50" />
+      <ChevronRight size={14} aria-hidden className="text-faint-foreground" />
     </span>
   </button>
 );

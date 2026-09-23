@@ -123,7 +123,7 @@ export const RoutingBadge = ({
       <Tooltip content={divergenceTooltip}>
         <span
           data-testid="routing-divergence"
-          className="min-w-0 truncate text-muted-foreground/60 line-through"
+          className="min-w-0 truncate text-faint-foreground line-through"
         >
           {plannedShortLabel}
         </span>
@@ -184,7 +184,7 @@ export const RoutingBadge = ({
           {modelLabel(model)}
         </span>
       ) : (
-        <span className="text-muted-foreground/50">{missingLabel}</span>
+        <span className="text-faint-foreground">{missingLabel}</span>
       )}
       {model != null && resolvedEffort != null && (
         <span className="shrink-0 text-muted-foreground" title="Effort">

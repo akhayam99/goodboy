@@ -190,7 +190,7 @@ export const uniqueWorkflowName = (
 };
 
 const SECTION_LABEL_CLS =
-  'inline-flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground/70';
+  'inline-flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-faint-foreground';
 
 export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
@@ -1032,7 +1032,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       />
                     ))
                   ) : (
-                    <span className="text-2xs text-muted-foreground/60">
+                    <span className="text-2xs text-faint-foreground">
                       Drop or add files. Routed to the agents that need them.
                     </span>
                   )}
@@ -1137,7 +1137,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                     </span>
                                   </span>
                                   {desc ? (
-                                    <span className="truncate text-3xs leading-snug text-muted-foreground/70">
+                                    <span className="truncate text-3xs leading-snug text-faint-foreground">
                                       {desc}
                                     </span>
                                   ) : null}
@@ -1343,7 +1343,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           <span className={SECTION_LABEL_CLS}>
                             <ListChecks size={11} aria-hidden /> Steps
                           </span>
-                          <span className="text-2xs tabular-nums text-muted-foreground/60">
+                          <span className="text-2xs tabular-nums text-faint-foreground">
                             {stepCount} step{stepCount === 1 ? '' : 's'}
                           </span>
                         </div>
@@ -1433,7 +1433,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         >
                           <Plus size={11} aria-hidden /> Add step
                         </button>
-                        <p className="px-1 text-2xs leading-relaxed text-muted-foreground/50">
+                        <p className="px-1 text-2xs leading-relaxed text-faint-foreground">
                           Each step is one agent; its output feeds the next. Drag to reorder.
                         </p>
                         <DragGhost ghost={ghost} />
@@ -1451,7 +1451,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           {Array.from({ length: 3 }).map((_, i) => (
                             <li key={i} className="flex flex-col gap-1.5 px-1 py-3 first:pt-1">
                               <div className="flex items-center gap-2">
-                                <span className="w-3 shrink-0 text-right font-mono text-2xs tabular-nums text-muted-foreground/40">
+                                <span className="w-3 shrink-0 text-right font-mono text-2xs tabular-nums text-faint-foreground">
                                   {i + 1}
                                 </span>
                                 <Skeleton className="size-4 shrink-0 rounded-full" />
@@ -1504,7 +1504,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             ) : null}
                           </div>
                         </div>
-                        <p className="text-2xs leading-relaxed text-muted-foreground/60">
+                        <p className="text-2xs leading-relaxed text-faint-foreground">
                           {triggerMode === 'immediate'
                             ? 'Runs as soon as you start it.'
                             : triggerMode === 'manual'
@@ -1518,7 +1518,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       <div className="flex items-center justify-between gap-4 px-3 py-2.5">
                         <div className="flex min-w-0 flex-col gap-1">
                           <span className="text-2xs font-medium text-foreground">Step handoff</span>
-                          <span className="text-2xs leading-relaxed text-muted-foreground/60">
+                          <span className="text-2xs leading-relaxed text-faint-foreground">
                             {autoRun
                               ? 'Continue automatically after each completed step.'
                               : 'Pause after each step so you can review the result.'}

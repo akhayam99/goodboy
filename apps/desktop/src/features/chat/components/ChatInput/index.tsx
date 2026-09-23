@@ -486,7 +486,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               autoGrow
               rows={1}
               maxRows={12}
-              className="resize-none border-0 bg-transparent px-3 py-2 pr-12 text-sm text-foreground shadow-none placeholder:text-muted-foreground/60 focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
+              className="resize-none border-0 bg-transparent px-3 py-2 pr-12 text-sm text-foreground shadow-none placeholder:text-faint-foreground focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
             />
             {isRunning && value.trim().length === 0 && attachments.length === 0 ? (
               <Tooltip content="Cancel turn">

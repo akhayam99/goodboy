@@ -49,7 +49,7 @@ export const QueuedMessages = ({
               disabled={!canEdit}
               onClick={() => onEdit(item.id)}
               title={canEdit ? 'Edit, moves it back to the composer' : 'Clear the composer to edit'}
-              className="min-w-0 flex-1 truncate text-left text-xs text-foreground/80 transition-colors enabled:hover:text-foreground disabled:cursor-default"
+              className="min-w-0 flex-1 truncate text-left text-xs text-foreground transition-colors enabled:hover:text-foreground disabled:cursor-default"
             >
               {preview}
             </button>
@@ -73,7 +73,7 @@ export const QueuedMessages = ({
                 type="button"
                 onClick={() => onRemove(item.id)}
                 aria-label="Remove from queue"
-                className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+                className="flex size-5 shrink-0 items-center justify-center rounded-md text-faint-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
               >
                 <X size={11} aria-hidden />
               </button>

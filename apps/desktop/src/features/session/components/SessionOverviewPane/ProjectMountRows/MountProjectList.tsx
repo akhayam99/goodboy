@@ -82,7 +82,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
           placeholder="Search projects…"
           autoComplete="off"
           onChange={(event) => setQuery(event.target.value)}
-          className="border-b border-border-soft bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
+          className="border-b border-border-soft bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-faint-foreground"
         />
       ) : null}
       {filtered.length === 0 ? (

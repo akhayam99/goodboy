@@ -131,13 +131,13 @@ export const ChatBreadcrumb = ({ session }: Props) => {
               {workspace.name}
             </span>
           ) : (
-            <span className="truncate text-muted-foreground/50">no workspace</span>
+            <span className="truncate text-faint-foreground">no workspace</span>
           )}
 
           <Separator />
 
           <span
-            className="min-w-0 truncate font-medium text-foreground/90"
+            className="min-w-0 truncate font-medium text-foreground"
             title={stripInlineMarkdown({ text: sessionLabel })}
           >
             <InlineMarkdown text={sessionLabel} />
@@ -192,5 +192,5 @@ export const ChatBreadcrumb = ({ session }: Props) => {
 };
 
 function Separator() {
-  return <ChevronRight size={11} aria-hidden className="shrink-0 text-muted-foreground/40" />;
+  return <ChevronRight size={11} aria-hidden className="shrink-0 text-faint-foreground" />;
 }

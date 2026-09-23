@@ -284,7 +284,7 @@ export const RoutingPicker = ({
                 type="button"
                 onClick={onReset}
                 aria-label={resetAriaLabel}
-                className="shrink-0 rounded-full p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+                className="shrink-0 rounded-full p-1 text-faint-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 <RotateCcw size={10} aria-hidden />
               </button>

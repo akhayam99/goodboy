@@ -19,7 +19,7 @@ export const ReadyStep = () => {
         </p>
       </div>
 
-      <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground/70">
+      <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs text-faint-foreground">
         {READY_HINTS.map((id) => (
           <span key={id} className="inline-flex items-center gap-1.5">
             <KbdPill>{shortcutGlyphs(id)}</KbdPill>

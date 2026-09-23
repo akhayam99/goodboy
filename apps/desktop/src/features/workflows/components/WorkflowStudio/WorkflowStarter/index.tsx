@@ -71,14 +71,14 @@ export const WorkflowStarter = ({
             className="flex flex-wrap items-center gap-2"
             aria-label="Example workflow descriptions"
           >
-            <span className="text-2xs text-muted-foreground/60">Examples</span>
+            <span className="text-2xs text-faint-foreground">Examples</span>
             {EXAMPLES.map((example) => (
               <button
                 key={example.label}
                 type="button"
                 onClick={() => onExample(example.prompt)}
                 disabled={isWorking}
-                className="rounded-md px-2 py-1 text-left text-2xs text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/40 hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                className="rounded-md px-2 py-1 text-left text-2xs text-faint-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/40 hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
               >
                 {example.label}
               </button>

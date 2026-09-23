@@ -43,7 +43,7 @@ export const ClusterChildRow = ({
     ) : child.status === 'failed' ? (
       <StatusDot tone="danger" size="sm" />
     ) : (
-      <Clock size={10} className="text-muted-foreground/60" aria-hidden />
+      <Clock size={10} className="text-faint-foreground" aria-hidden />
     );
   return (
     <button
@@ -56,10 +56,10 @@ export const ClusterChildRow = ({
         hasUnread && !isSelected && 'border-warning/70',
         isSelected
           ? 'bg-elevated text-foreground'
-          : 'text-foreground/70 hover:bg-muted/60 hover:text-foreground',
+          : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
       )}
     >
-      <span className="tabular-nums text-muted-foreground/50">
+      <span className="tabular-nums text-faint-foreground">
         {index + 1}/{total}
       </span>
       {icon}
@@ -87,7 +87,7 @@ export const ClusterChildRow = ({
       ) : null}
       {costUsd > 0 ? (
         <span
-          className="shrink-0 tabular-nums text-muted-foreground/60"
+          className="shrink-0 tabular-nums text-faint-foreground"
           title={formatUsdPrecise(costUsd)}
         >
           {formatUsd(costUsd)}

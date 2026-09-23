@@ -48,14 +48,14 @@ export const SwitcherCrumb = ({
         className={cn(CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS)}
       >
         {Icon == null ? null : (
-          <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/70" />
+          <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
         )}
         <span className="min-w-0 max-w-48 truncate">{label}</span>
         {accessory}
         <ChevronDown
           size={11}
           aria-hidden
-          className={cn('shrink-0 text-muted-foreground/60', open && 'rotate-180')}
+          className={cn('shrink-0 text-faint-foreground', open && 'rotate-180')}
         />
       </button>
     ) : (
@@ -69,7 +69,7 @@ export const SwitcherCrumb = ({
           className={cn(CRUMB_BUTTON_CLASS, CRUMB_LINK_CLASS)}
         >
           {Icon == null ? null : (
-            <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/70" />
+            <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
           )}
           <span className="min-w-0 truncate">{label}</span>
           {accessory}
@@ -81,7 +81,7 @@ export const SwitcherCrumb = ({
             aria-label={`${label}. ${menuLabel}.`}
             aria-haspopup="menu"
             aria-expanded={open}
-            className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+            className="rounded p-0.5 text-faint-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
           >
             <ChevronDown size={11} aria-hidden className={cn(open && 'rotate-180')} />
           </button>

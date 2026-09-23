@@ -18,7 +18,7 @@ export const AppBreadcrumb = ({ crumbs }: Props) => {
         return (
           <span key={crumb.id} className="flex min-w-0 items-center gap-2">
             {index > 0 && (
-              <ChevronRight size={11} aria-hidden className="shrink-0 text-muted-foreground/40" />
+              <ChevronRight size={11} aria-hidden className="shrink-0 text-faint-foreground" />
             )}
             {isLast ? (
               <span
@@ -30,7 +30,7 @@ export const AppBreadcrumb = ({ crumbs }: Props) => {
                   <Icon
                     size={ICON_SIZE.row}
                     aria-hidden
-                    className="shrink-0 text-muted-foreground/70"
+                    className="shrink-0 text-faint-foreground"
                   />
                 )}
                 <InlineMarkdown text={crumb.label} className="min-w-0 truncate" />
@@ -47,7 +47,7 @@ export const AppBreadcrumb = ({ crumbs }: Props) => {
                   <Icon
                     size={ICON_SIZE.row}
                     aria-hidden
-                    className="shrink-0 text-muted-foreground/70"
+                    className="shrink-0 text-faint-foreground"
                   />
                 )}
                 <InlineMarkdown text={crumb.label} className="min-w-0 truncate" />

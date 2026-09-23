@@ -77,10 +77,10 @@ export const DelegateAnswerPanel = ({
         <p className="text-2xs text-muted-foreground">{QUESTION_DELEGATE_COPY.panelHint}</p>
         <div className="flex flex-col gap-1">
           <span className="flex items-baseline gap-1.5">
-            <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/80">
+            <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground">
               {QUESTION_DELEGATE_COPY.hintsLabel}
             </span>
-            <span className="text-2xs lowercase tracking-normal text-muted-foreground/60">
+            <span className="text-2xs lowercase tracking-normal text-faint-foreground">
               optional
             </span>
           </span>

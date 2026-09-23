@@ -67,7 +67,7 @@ const EyeMark = ({ isActive }: EyeMarkProps) =>
     <EyeOff
       size={ICON_SIZE.row}
       aria-hidden
-      className="shrink-0 text-muted-foreground/40 motion-safe:transition-colors group-hover:text-muted-foreground"
+      className="shrink-0 text-faint-foreground motion-safe:transition-colors group-hover:text-muted-foreground"
     />
   );
 
@@ -96,7 +96,7 @@ const CategoryRow = ({ category, isActive, onToggle }: CategoryRowProps) => {
         aria-hidden
         className={cn(
           'shrink-0',
-          isActive ? tintClasses(CONCEPT_TONE[concept]).icon : 'text-muted-foreground/50',
+          isActive ? tintClasses(CONCEPT_TONE[concept]).icon : 'text-faint-foreground',
         )}
       />
       <span
@@ -213,7 +213,7 @@ export const ActivityFilterButton = ({ filter, hiddenCount, onToggle, onAll }: P
             'inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-2xs motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             hiddenCount > 0
               ? 'text-foreground hover:bg-muted/60'
-              : 'text-muted-foreground/70 hover:bg-muted/60 hover:text-foreground',
+              : 'text-faint-foreground hover:bg-muted/60 hover:text-foreground',
           )}
         >
           <ListFilter size={ICON_SIZE.control} aria-hidden className="shrink-0" />

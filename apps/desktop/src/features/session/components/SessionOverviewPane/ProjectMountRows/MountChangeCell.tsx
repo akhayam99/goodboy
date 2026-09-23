@@ -20,9 +20,9 @@ type Props = {
 };
 
 const TEXT_TONE: Record<MountWorktreeState['kind'], string> = {
-  reading: 'text-muted-foreground/50',
+  reading: 'text-faint-foreground',
   unknown: 'text-warning/80',
-  clean: 'text-muted-foreground/50',
+  clean: 'text-faint-foreground',
   modified: 'text-muted-foreground',
 };
 

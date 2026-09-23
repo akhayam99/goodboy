@@ -118,7 +118,7 @@ export const WorkflowComposer = ({
               aria-label="Workflow description"
               className="border-transparent bg-transparent px-0 text-xs text-muted-foreground shadow-none hover:border-border-soft focus:border-border"
             />
-            <span className="text-2xs text-muted-foreground/60">Changes save automatically</span>
+            <span className="text-2xs text-faint-foreground">Changes save automatically</span>
             {error !== null ? (
               <span className="text-2xs font-medium text-danger" role="alert">
                 {error}

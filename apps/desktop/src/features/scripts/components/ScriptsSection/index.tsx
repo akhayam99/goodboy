@@ -110,7 +110,7 @@ export const ScriptsSection = ({
                 onClick={() => setPanelSectionExpanded(sessionId, 'scripts', !storedExpanded)}
                 aria-expanded={expanded}
                 aria-label={`${expanded ? 'collapse' : 'expand'} scripts`}
-                className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+                className="flex size-5 shrink-0 items-center justify-center rounded text-faint-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
               >
                 {expanded ? (
                   <ChevronDown size={ICON_SIZE.row} aria-hidden />
@@ -160,7 +160,7 @@ export const ScriptsSection = ({
           </button>
         </div>
       ) : (
-        <p className="pb-1 pl-2 text-2xs text-muted-foreground/60">
+        <p className="pb-1 pl-2 text-2xs text-faint-foreground">
           {list.length === 0
             ? 'No scripts yet'
             : `${list.length} script${list.length === 1 ? '' : 's'}`}
@@ -252,7 +252,7 @@ function ScriptRow({
             'flex size-6 shrink-0 items-center justify-center rounded transition-colors',
             logOpen
               ? 'bg-primary/15 text-primary ring-1 ring-primary/30 ring-inset'
-              : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground',
+              : 'text-faint-foreground hover:bg-foreground/10 hover:text-foreground',
           )}
         >
           <CONCEPT_ICONS.terminal size={ICON_SIZE.row} aria-hidden />
@@ -264,7 +264,7 @@ function ScriptRow({
             type="button"
             onClick={onCancel}
             aria-label="Stop script"
-            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            className="flex size-6 shrink-0 items-center justify-center rounded text-faint-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
             <Square size={11} aria-hidden />
           </button>
@@ -282,7 +282,7 @@ function ScriptRow({
             }}
             disabled={disabledReason != null}
             aria-label="Run script"
-            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-primary group-hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex size-6 shrink-0 items-center justify-center rounded text-faint-foreground transition-colors hover:bg-foreground/10 hover:text-primary group-hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Play size={ICON_SIZE.row} aria-hidden />
           </button>
@@ -367,7 +367,7 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
             type="button"
             onClick={onClose}
             aria-label="Close log"
-            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            className="flex size-6 shrink-0 items-center justify-center rounded text-faint-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
             <X size={ICON_SIZE.row} aria-hidden />
           </button>
@@ -375,7 +375,7 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
       </div>
       <Divider className="shrink-0" />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-2">
-        <pre className="m-0 whitespace-pre-wrap break-all font-mono text-2xs leading-relaxed text-foreground/80">
+        <pre className="m-0 whitespace-pre-wrap break-all font-mono text-2xs leading-relaxed text-foreground">
           {result.stdout}
           {result.stderr ? (
             <span className="text-danger">

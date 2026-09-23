@@ -15,7 +15,7 @@ export const EditorMenuContent = ({ items, onClose }: Props) => (
         return (
           <div
             key={item.key}
-            className="px-2.5 pb-0.5 pt-1.5 text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70"
+            className="px-2.5 pb-0.5 pt-1.5 text-2xs font-semibold uppercase tracking-wide text-faint-foreground"
           >
             {item.label}
           </div>
@@ -23,7 +23,7 @@ export const EditorMenuContent = ({ items, onClose }: Props) => (
       }
       if (item.kind === 'empty') {
         return (
-          <div key={item.key} className="px-2.5 py-1.5 italic text-muted-foreground/50">
+          <div key={item.key} className="px-2.5 py-1.5 italic text-faint-foreground">
             {item.label}
           </div>
         );
@@ -48,15 +48,15 @@ export const EditorMenuContent = ({ items, onClose }: Props) => (
               ? 'cursor-not-allowed text-muted-foreground'
               : item.destructive === true
                 ? 'text-danger/90 hover:bg-danger/10 hover:text-danger'
-                : 'text-foreground/80 hover:bg-muted hover:text-foreground',
+                : 'text-foreground hover:bg-muted hover:text-foreground',
           )}
         >
           {Icon != null ? (
-            <Icon size={11} aria-hidden className="shrink-0 text-muted-foreground/70" />
+            <Icon size={11} aria-hidden className="shrink-0 text-faint-foreground" />
           ) : null}
           <span className="flex-1 truncate">{item.label}</span>
           {item.hint != null && item.hint !== '' ? (
-            <kbd className="font-mono text-2xs text-muted-foreground/60">{item.hint}</kbd>
+            <kbd className="font-mono text-2xs text-faint-foreground">{item.hint}</kbd>
           ) : null}
         </button>
       );

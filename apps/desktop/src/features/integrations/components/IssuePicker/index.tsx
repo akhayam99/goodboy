@@ -177,7 +177,7 @@ export const IssuePicker = ({
             aria-expanded={isOpen}
             aria-autocomplete="list"
             autoComplete="off"
-            className="flex-1 truncate bg-transparent px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 disabled:cursor-not-allowed"
+            className="flex-1 truncate bg-transparent px-2 text-sm text-foreground outline-none placeholder:text-faint-foreground disabled:cursor-not-allowed"
             onChange={(event) => {
               setQuery(event.target.value);
               if (!isOpen) {

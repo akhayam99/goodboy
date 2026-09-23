@@ -64,7 +64,7 @@ export const SectionHeader = ({
         )}
         {action ?? null}
       </div>
-      {hint != null ? <p className="text-2xs text-muted-foreground/70">{hint}</p> : null}
+      {hint != null ? <p className="text-2xs text-faint-foreground">{hint}</p> : null}
     </div>
   );
 };

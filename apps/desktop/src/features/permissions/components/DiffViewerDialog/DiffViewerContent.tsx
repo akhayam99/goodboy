@@ -791,7 +791,7 @@ export const DiffViewerContent = ({
                   {isGitAware ? <span>{commitCountLabel}</span> : null}
                   {commitsBehindMain != null && commitsBehindMain > 0 ? (
                     <span
-                      className="text-muted-foreground/70"
+                      className="text-faint-foreground"
                       title="Commits on main not in this branch"
                     >
                       behind main by {commitsBehindMain}

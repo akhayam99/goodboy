@@ -25,7 +25,7 @@ export const PresetCard = ({ template, active, onSelect }: Props) => {
           <span className="truncate text-xs font-medium text-foreground">{template.name}</span>
           <span className="ml-auto flex shrink-0 items-center gap-1.5">
             {template.origin != null ? <WorkflowOriginTag origin={template.origin} /> : null}
-            <span className="text-2xs tabular-nums text-muted-foreground/50">
+            <span className="text-2xs tabular-nums text-faint-foreground">
               {steps.length} {steps.length === 1 ? 'step' : 'steps'}
             </span>
           </span>
@@ -41,11 +41,7 @@ export const PresetCard = ({ template, active, onSelect }: Props) => {
       </SelectableRow>
       {description ? (
         <div className="px-2.5 py-1">
-          <ClampedProse
-            text={description}
-            lines={2}
-            className="text-2xs text-muted-foreground/70"
-          />
+          <ClampedProse text={description} lines={2} className="text-2xs text-faint-foreground" />
         </div>
       ) : null}
     </li>

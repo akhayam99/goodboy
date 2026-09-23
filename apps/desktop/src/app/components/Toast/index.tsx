@@ -218,12 +218,12 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
             </p>
           ) : null}
           {toast.context ? (
-            <p className="mt-1.5 line-clamp-2 text-2xs text-muted-foreground/70">{toast.context}</p>
+            <p className="mt-1.5 line-clamp-2 text-2xs text-faint-foreground">{toast.context}</p>
           ) : null}
           {toast.action != null ? (
             <button
               type="button"
-              className="mt-1.5 rounded px-1.5 py-0.5 text-2xs font-medium text-foreground/80 ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
+              className="mt-1.5 rounded px-1.5 py-0.5 text-2xs font-medium text-foreground ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
               onClick={() => {
                 toast.action!.onClick();
                 onDismiss(toast.id);
@@ -236,7 +236,7 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
         <Tooltip content="Dismiss notification">
           <button
             type="button"
-            className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+            className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-faint-foreground hover:bg-muted hover:text-foreground"
             onClick={() => onDismiss(toast.id)}
             aria-label="Dismiss notification"
           >

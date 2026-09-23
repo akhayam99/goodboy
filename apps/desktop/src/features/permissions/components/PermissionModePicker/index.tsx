@@ -107,12 +107,12 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
           className="gap-1.5 bg-subtle px-2.5 py-0.5 hover:bg-muted hover:opacity-100"
           icon={<StatusDot tone={current.tone} size="sm" />}
           label={<span className={cn(current.text)}>{current.label}</span>}
-          trailing={<ChevronDown size={11} aria-hidden className="text-muted-foreground/70" />}
+          trailing={<ChevronDown size={11} aria-hidden className="text-faint-foreground" />}
         />
       }
     >
       <div className="flex items-center px-2.5 pb-0.5 pt-1">
-        <span className="text-2xs uppercase tracking-wide text-muted-foreground/70">
+        <span className="text-2xs uppercase tracking-wide text-faint-foreground">
           Permission mode
         </span>
       </div>
@@ -142,7 +142,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
         );
       })}
       {unenforced ? (
-        <p className="px-2.5 pb-1 pt-1.5 text-2xs text-muted-foreground/80">
+        <p className="px-2.5 pb-1 pt-1.5 text-2xs text-muted-foreground">
           Not enforced for cursor and gemini.
         </p>
       ) : null}

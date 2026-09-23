@@ -11,6 +11,13 @@ The tokens are stored in `apps/desktop/src/styles.css` under `@theme`. That
 file is only where they sit. The rules for what they mean and how they combine
 live here.
 
+## Text hierarchy
+
+Text uses four opaque semantic steps. `foreground` is primary content,
+`muted-foreground` is supporting content, and `faint-foreground` is metadata,
+placeholders and trailing hints. `disabled-foreground` is reserved for disabled
+controls. Opacity modifiers do not create additional text steps.
+
 ## Type scale
 
 `text-3xs` 10px/14px, `2xs` 11px/16px, `xs` 12px, `sm` 14px/20px, `base` 15px,

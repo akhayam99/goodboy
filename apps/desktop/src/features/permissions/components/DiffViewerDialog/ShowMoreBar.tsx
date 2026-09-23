@@ -23,7 +23,7 @@ export const ShowMoreBar = ({ step, rendered, total, onShowMore }: Props) => {
           <ChevronsDown size={ICON_SIZE.row} aria-hidden />
           Show {formatInteger(step)} more lines
         </button>
-        <span className="text-3xs text-muted-foreground/60">
+        <span className="text-3xs text-faint-foreground">
           showing {formatInteger(rendered)} of {formatInteger(total)} lines
         </span>
       </div>

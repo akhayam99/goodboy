@@ -28,10 +28,10 @@ export const RecommendationRow = ({
       )}
     >
       <span>{label}</span>
-      <span className="truncate text-2xs text-muted-foreground/70">{summary}</span>
+      <span className="truncate text-2xs text-faint-foreground">{summary}</span>
     </button>
     {reason != null && reason !== '' ? (
-      <p className="px-2.5 pb-1.5 text-2xs leading-relaxed text-muted-foreground/80">{reason}</p>
+      <p className="px-2.5 pb-1.5 text-2xs leading-relaxed text-muted-foreground">{reason}</p>
     ) : null}
   </div>
 );

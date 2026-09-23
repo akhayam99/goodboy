@@ -51,7 +51,7 @@ export const WorkspaceProfileSection = ({ workspaceId }: Props) => {
         onBlur={() => void commitBio()}
         className={cn(
           'w-full max-w-md rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground motion-safe:transition-colors',
-          'placeholder:text-muted-foreground/40',
+          'placeholder:text-faint-foreground',
           'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
         )}
       />

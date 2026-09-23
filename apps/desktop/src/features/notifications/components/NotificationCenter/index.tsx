@@ -477,7 +477,7 @@ const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
       </div>
       <button
         type="button"
-        className="rounded px-1.5 py-0.5 text-2xs font-medium text-foreground/80 ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
+        className="rounded px-1.5 py-0.5 text-2xs font-medium text-foreground ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
         onClick={dispatch}
         aria-label="Confirm retry with selected model"
       >

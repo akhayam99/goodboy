@@ -114,7 +114,7 @@ export const WorkflowsRail = ({
             onClick={() => setConfirmReset(true)}
             className={cn(
               'inline-flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5',
-              'text-2xs font-medium text-muted-foreground/70 transition-colors',
+              'text-2xs font-medium text-faint-foreground transition-colors',
               'hover:bg-muted/40 hover:text-foreground',
             )}
           >

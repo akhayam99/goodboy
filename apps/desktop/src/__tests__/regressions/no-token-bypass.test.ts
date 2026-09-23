@@ -1,0 +1,68 @@
+import { readdirSync, readFileSync, statSync } from 'fs';
+import { join, relative, sep } from 'path';
+import { describe, expect, it } from 'vitest';
+
+const REPO_ROOT = join(__dirname, '..', '..', '..', '..', '..');
+const SOURCE_ROOTS = [
+  join(REPO_ROOT, 'apps', 'desktop', 'src'),
+  join(REPO_ROOT, 'packages', 'ui', 'src'),
+];
+const SKIP_SEGMENTS = new Set(['__tests__', 'node_modules', 'dist']);
+
+type Rule = {
+  readonly pattern: RegExp;
+  readonly allow: ReadonlyArray<string>;
+  readonly why: string;
+};
+
+const NO_ALLOW: ReadonlyArray<string> = [];
+
+const RULES = [
+  {
+    pattern: /(?:text|placeholder:text)-(?:muted-)?foreground\/\d+/,
+    allow: NO_ALLOW,
+    why: 'text hierarchy uses foreground, muted, faint or disabled tokens without opacity',
+  },
+] satisfies ReadonlyArray<Rule>;
+
+const listSourceFiles = ({ dir, files = [] }: { dir: string; files?: string[] }): string[] => {
+  for (const entry of readdirSync(dir)) {
+    if (SKIP_SEGMENTS.has(entry)) {
+      continue;
+    }
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      listSourceFiles({ dir: full, files });
+      continue;
+    }
+    if (entry.includes('.test.')) {
+      continue;
+    }
+    if (entry.endsWith('.ts') || entry.endsWith('.tsx')) {
+      files.push(full);
+    }
+  }
+  return files;
+};
+
+describe('token boundaries', () => {
+  it.each(RULES)('$why', ({ pattern, allow }) => {
+    const offenders: string[] = [];
+    for (const root of SOURCE_ROOTS) {
+      for (const file of listSourceFiles({ dir: root })) {
+        const path = relative(REPO_ROOT, file).split(sep).join('/');
+        if (allow.includes(path)) {
+          continue;
+        }
+        readFileSync(file, 'utf8')
+          .split('\n')
+          .forEach((line, index) => {
+            if (pattern.test(line)) {
+              offenders.push(`${path}:${index + 1} ${line.trim()}`);
+            }
+          });
+      }
+    }
+    expect(offenders, offenders.join('\n')).toEqual([]);
+  });
+});

@@ -456,7 +456,7 @@ export const WorkspaceLinkForm = ({
                         className="shrink-0"
                       />
                     </span>
-                    <span className="block truncate font-mono text-xs text-muted-foreground/80">
+                    <span className="block truncate font-mono text-xs text-muted-foreground">
                       {project.rootPath}
                     </span>
                   </span>
@@ -466,7 +466,7 @@ export const WorkspaceLinkForm = ({
                       aria-label={`Unlink ${project.name}`}
                       disabled={busy}
                       onClick={() => void removeProject({ projectId: project.id })}
-                      className="rounded-md p-1 text-muted-foreground/70 hover:bg-foreground/5 hover:text-foreground"
+                      className="rounded-md p-1 text-faint-foreground hover:bg-foreground/5 hover:text-foreground"
                     >
                       <X size={ICON_SIZE.control} aria-hidden />
                     </button>

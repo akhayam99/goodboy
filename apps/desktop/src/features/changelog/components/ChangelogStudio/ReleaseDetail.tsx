@@ -69,7 +69,7 @@ export const ReleaseDetail = ({ release, view, staleError, staleSince, onRetry }
             </div>
           ) : null}
           {release.body.trim() === '' ? (
-            <p className="text-sm italic text-muted-foreground/60">no notes for this release.</p>
+            <p className="text-sm italic text-faint-foreground">no notes for this release.</p>
           ) : (
             <Markdown text={release.body} className="text-sm leading-relaxed" />
           )}

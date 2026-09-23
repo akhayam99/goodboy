@@ -198,7 +198,7 @@ export const ScriptRow = ({
                 {preview}
               </span>
               {lineCount > 1 ? (
-                <span className="shrink-0 text-2xs text-muted-foreground/60">
+                <span className="shrink-0 text-2xs text-faint-foreground">
                   +{lineCount - 1} {lineCount === 2 ? 'line' : 'lines'}
                 </span>
               ) : null}
@@ -315,7 +315,7 @@ export const ScriptRow = ({
                 onClick={() => startEditing({ field: 'body' })}
                 className="cursor-text rounded-lg bg-subtle/40 p-3 text-left transition-colors hover:bg-subtle/70"
               >
-                <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground/80">
+                <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground">
                   {bodyDraft}
                 </pre>
               </button>

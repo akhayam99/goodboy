@@ -96,7 +96,7 @@ export const BaseBranchSelectContent = ({ repoPath, value, onCommit, onClose }: 
           event.preventDefault();
           commit({ candidate: query });
         }}
-        className="h-8 rounded-md border border-border bg-background px-2 font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary focus:ring-1 focus:ring-primary"
+        className="h-8 rounded-md border border-border bg-background px-2 font-mono text-xs text-foreground outline-none placeholder:text-faint-foreground focus:border-primary focus:ring-1 focus:ring-primary"
       />
       {isLoading ? (
         <span className="px-1 text-2xs text-muted-foreground">Loading branches</span>

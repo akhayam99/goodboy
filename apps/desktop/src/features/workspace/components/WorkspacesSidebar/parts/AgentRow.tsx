@@ -124,7 +124,7 @@ export const AgentRow = ({
         <>
           <span
             aria-hidden
-            className="w-4 shrink-0 text-right text-2xs tabular-nums text-muted-foreground/60"
+            className="w-4 shrink-0 text-right text-2xs tabular-nums text-faint-foreground"
           >
             {run.ordinal + 1}.
           </span>

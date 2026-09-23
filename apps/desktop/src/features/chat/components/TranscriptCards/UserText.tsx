@@ -91,7 +91,7 @@ export const UserText = ({ text, at, attachments, provider, model, workingDir = 
             presentation="icon"
             value={text}
             label="copy message"
-            className="rounded-md p-0.5 text-foreground/60 transition-opacity hover:opacity-80 hover:text-foreground"
+            className="rounded-md p-0.5 text-muted-foreground transition-opacity hover:opacity-80 hover:text-foreground"
           />
         )}
       </div>

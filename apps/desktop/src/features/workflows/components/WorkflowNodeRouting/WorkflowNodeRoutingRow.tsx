@@ -76,7 +76,7 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
         >
           {agent.name}
         </button>
-        <span className="shrink-0 text-3xs font-medium uppercase tracking-wide text-muted-foreground/70">
+        <span className="shrink-0 text-3xs font-medium uppercase tracking-wide text-faint-foreground">
           {view.sourceLabel}
         </span>
       </div>

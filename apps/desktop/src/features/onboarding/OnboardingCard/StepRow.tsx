@@ -28,7 +28,7 @@ export const StepRow = ({ id, title, why, done }: Props) => {
         <span
           className={cn(
             'flex items-center gap-2 px-1.5 py-1 text-2xs',
-            done ? 'text-muted-foreground/60' : 'text-foreground',
+            done ? 'text-faint-foreground' : 'text-foreground',
           )}
         >
           <span

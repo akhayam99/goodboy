@@ -110,7 +110,7 @@ export const MountSuggestionCard = ({
       {isOpen ? (
         <div className="flex min-w-0 flex-col gap-1.5 pl-6">
           <span className="text-2xs uppercase tracking-wide text-muted-foreground">Reason</span>
-          <span className="min-w-0 text-xs text-foreground/80">{reason}</span>
+          <span className="min-w-0 text-xs text-foreground">{reason}</span>
           <span className="text-2xs text-muted-foreground">
             Requested by {agentName} for {projectName}.
           </span>

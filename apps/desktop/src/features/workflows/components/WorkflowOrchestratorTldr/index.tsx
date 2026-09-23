@@ -97,7 +97,7 @@ export const WorkflowOrchestratorTldr = ({ steps, run }: Props) => {
                       onClick={() => toggleRow(entry.id)}
                       className={ROW_BUTTON}
                     >
-                      <span className="shrink-0 tabular-nums text-muted-foreground/60">
+                      <span className="shrink-0 tabular-nums text-faint-foreground">
                         {entries.length - visible.length + index + 1}
                       </span>
                       <span className="min-w-0 max-w-[50%] truncate font-medium text-foreground">

@@ -322,16 +322,16 @@ export const DiffViewSelector = ({
           <GitCommit size={11} aria-hidden className="text-muted-foreground" />
           <span className="font-medium">{label}</span>
           {loading ? (
-            <span className="text-muted-foreground/60">…</span>
+            <span className="text-faint-foreground">…</span>
           ) : (
-            <span className="text-muted-foreground/70 tabular-nums">{countLabel}</span>
+            <span className="text-faint-foreground tabular-nums">{countLabel}</span>
           )}
-          <ChevronDown size={11} aria-hidden className="text-muted-foreground/70" />
+          <ChevronDown size={11} aria-hidden className="text-faint-foreground" />
         </button>
       }
     >
       <div className="flex items-center gap-1.5 px-2.5 py-2">
-        <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/60" />
+        <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
         <input
           ref={searchRef}
           value={query}
@@ -341,7 +341,7 @@ export const DiffViewSelector = ({
           }}
           onKeyDown={handleKeyDown}
           placeholder="filter commits by sha or subject…"
-          className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground/60"
+          className="w-full bg-transparent text-xs outline-none placeholder:text-faint-foreground"
           aria-label="Filter commits"
         />
       </div>
@@ -356,7 +356,7 @@ export const DiffViewSelector = ({
                     return (
                       <span
                         key={`${section.label}-${row.label}`}
-                        className="px-1.5 py-1 text-2xs italic text-muted-foreground/50"
+                        className="px-1.5 py-1 text-2xs italic text-faint-foreground"
                       >
                         {row.label}
                       </span>
@@ -378,7 +378,7 @@ export const DiffViewSelector = ({
                         'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors',
                         isActive
                           ? 'bg-background text-foreground shadow-sm ring-1 ring-inset ring-border-soft'
-                          : 'text-foreground/85 hover:bg-background/60',
+                          : 'text-foreground hover:bg-background/60',
                         isFocused && !isActive && 'bg-background/60 text-foreground',
                       )}
                     >
@@ -408,7 +408,7 @@ export const DiffViewSelector = ({
                               className="shrink-0"
                             />
                           )}
-                          <span className="shrink-0 text-3xs tabular-nums text-muted-foreground/70">
+                          <span className="shrink-0 text-3xs tabular-nums text-faint-foreground">
                             {formatAdaptiveAge({ iso: row.commit.timestamp * 1000 })}
                           </span>
                         </>
@@ -422,7 +422,7 @@ export const DiffViewSelector = ({
             </PickerSection>
           ))}
           {hasQuery && !hasCommitMatch ? (
-            <span className="px-3.5 py-1.5 text-2xs italic text-muted-foreground/50">
+            <span className="px-3.5 py-1.5 text-2xs italic text-faint-foreground">
               no commits match
             </span>
           ) : null}

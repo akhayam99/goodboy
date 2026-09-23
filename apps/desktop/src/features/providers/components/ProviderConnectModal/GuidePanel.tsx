@@ -12,7 +12,7 @@ export const GuidePanel = ({ guide }: Props) => {
         <h3 className="text-sm font-semibold text-foreground">{guide.headline}</h3>
         {guide.subscription ? (
           <p className="text-2xs text-muted-foreground">
-            <span className="font-medium text-foreground/70">Needs: </span>
+            <span className="font-medium text-muted-foreground">Needs: </span>
             {guide.subscription}
           </p>
         ) : null}

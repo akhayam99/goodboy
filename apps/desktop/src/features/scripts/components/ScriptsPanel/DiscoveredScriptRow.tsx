@@ -80,7 +80,7 @@ export const DiscoveredScriptRow = ({
               {cwd}
             </p>
             <div className="rounded-lg bg-subtle/40 p-3">
-              <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground/80">
+              <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground">
                 {command}
               </pre>
             </div>

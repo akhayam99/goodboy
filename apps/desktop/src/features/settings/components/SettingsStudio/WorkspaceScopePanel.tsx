@@ -202,7 +202,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                     aria-label="Display name"
                     className={cn(
                       'h-8 w-56 rounded-md border border-border bg-background px-2 text-sm text-foreground motion-safe:transition-colors',
-                      'placeholder:text-muted-foreground/40',
+                      'placeholder:text-faint-foreground',
                       'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
                       renaming && 'cursor-not-allowed opacity-50',
                     )}
@@ -256,7 +256,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                     aria-label="Branch prefix"
                     className={cn(
                       'h-8 rounded-md border border-border bg-background px-2 font-mono text-sm text-foreground motion-safe:transition-colors',
-                      'placeholder:text-muted-foreground/40',
+                      'placeholder:text-faint-foreground',
                       'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
                       busy && 'cursor-not-allowed opacity-50',
                     )}

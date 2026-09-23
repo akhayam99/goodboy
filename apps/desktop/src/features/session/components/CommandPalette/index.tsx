@@ -413,7 +413,7 @@ export const CommandPalette = ({
                   className="inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-foreground/5 hover:text-foreground"
                   title={p.hint}
                 >
-                  <kbd className="font-mono text-foreground/80">{p.symbol}</kbd>
+                  <kbd className="font-mono text-foreground">{p.symbol}</kbd>
                   <span>{p.hint}</span>
                 </button>
               ))}
@@ -443,7 +443,7 @@ export const CommandPalette = ({
                 return [
                   <li
                     key={`group:${group}`}
-                    className="bg-subtle px-4 py-1 text-2xs font-medium tracking-wide text-muted-foreground/80"
+                    className="bg-subtle px-4 py-1 text-2xs font-medium tracking-wide text-muted-foreground"
                   >
                     {GROUP_LABELS[group]}
                   </li>,

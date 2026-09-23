@@ -109,13 +109,19 @@ const readThemes = (): Readonly<Record<'dark' | 'light', Palette>> => {
 
 describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
   it.each(SURFACES)('carries body and tone text at 4.5:1 on %s', (surface) => {
-    const failures = ['foreground', 'muted-foreground', ...TONES]
+    const failures = ['foreground', 'muted-foreground', 'faint-foreground', ...TONES]
       .map((token) => ({
         token,
         ratio: contrast(swatch(palette, token), swatch(palette, surface)),
       }))
       .filter(({ ratio }) => ratio < BODY_FLOOR);
     expect(failures).toEqual([]);
+  });
+
+  it.each(SURFACES)('keeps disabled text distinguishable on %s', (surface) => {
+    expect(
+      contrast(swatch(palette, 'disabled-foreground'), swatch(palette, surface)),
+    ).toBeGreaterThanOrEqual(LARGE_FLOOR);
   });
 
   it.each(CODE_SURFACES)('keeps every syntax colour readable on %s', (surface) => {

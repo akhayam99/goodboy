@@ -117,7 +117,7 @@ export const OperationsCluster = ({
               <span className="flex min-w-0 items-center gap-1.5">
                 <span className="truncate font-mono">{running.toolName}</span>
                 {duration != null && (
-                  <span className="shrink-0 font-mono tabular-nums text-muted-foreground/70">
+                  <span className="shrink-0 font-mono tabular-nums text-faint-foreground">
                     {duration}
                   </span>
                 )}
@@ -135,7 +135,7 @@ export const OperationsCluster = ({
                 ]}
               />
             ) : summary.length > 0 ? (
-              <span className="truncate text-2xs text-muted-foreground/60">{summary}</span>
+              <span className="truncate text-2xs text-faint-foreground">{summary}</span>
             ) : undefined
           }
           meta={running == null && duration != null ? duration : undefined}

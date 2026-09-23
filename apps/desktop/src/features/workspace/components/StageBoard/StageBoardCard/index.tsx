@@ -233,7 +233,7 @@ export const StageBoardCard = memo(function StageBoardCard({
         <ChevronRight
           size={ICON_SIZE.row}
           aria-hidden
-          className="shrink-0 text-muted-foreground/40 group-hover/session-card:text-muted-foreground/70"
+          className="shrink-0 text-faint-foreground group-hover/session-card:text-faint-foreground"
         />
       </span>
 
@@ -243,7 +243,7 @@ export const StageBoardCard = memo(function StageBoardCard({
             <Tooltip content={agentCountLabel} side="top">
               <span
                 aria-label={agentCountLabel}
-                className="inline-flex shrink-0 items-center gap-1 text-3xs tabular-nums text-muted-foreground/70"
+                className="inline-flex shrink-0 items-center gap-1 text-3xs tabular-nums text-faint-foreground"
               >
                 <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />
                 <span>{agentCount}</span>
@@ -298,11 +298,11 @@ export const StageBoardCard = memo(function StageBoardCard({
             <CostBadge
               value={sessionCost}
               title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
-              className="shrink-0 text-3xs tabular-nums text-muted-foreground/70"
+              className="shrink-0 text-3xs tabular-nums text-faint-foreground"
             />
           )}
           {age && (
-            <span className="shrink-0 text-3xs tabular-nums text-muted-foreground/70">{age}</span>
+            <span className="shrink-0 text-3xs tabular-nums text-faint-foreground">{age}</span>
           )}
         </span>
       </span>

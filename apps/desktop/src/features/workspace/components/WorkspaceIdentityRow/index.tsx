@@ -61,7 +61,7 @@ export const WorkspaceIdentityRow = () => {
             <ChevronsUpDown
               size={ICON_SIZE.row}
               aria-hidden
-              className="shrink-0 text-muted-foreground/40 transition-colors group-hover:text-muted-foreground"
+              className="shrink-0 text-faint-foreground transition-colors group-hover:text-muted-foreground"
             />
           </button>
         }
@@ -77,7 +77,7 @@ export const WorkspaceIdentityRow = () => {
             )
           }
           aria-label="Preferences"
-          className="flex shrink-0 items-center justify-center rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-muted/50 hover:text-foreground"
+          className="flex shrink-0 items-center justify-center rounded-md p-1 text-faint-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
         >
           <SlidersHorizontal size={ICON_SIZE.row} aria-hidden />
         </button>

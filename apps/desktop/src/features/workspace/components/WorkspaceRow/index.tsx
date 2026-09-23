@@ -45,11 +45,9 @@ export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props)
             <Chip tone="warning" size="3xs" bordered={false} label="unread" className="shrink-0" />
           ) : null}
         </span>
-        <span className="block truncate text-xs text-muted-foreground/80">{projectsLabel}</span>
+        <span className="block truncate text-xs text-muted-foreground">{projectsLabel}</span>
       </span>
-      {lastSeen ? (
-        <span className="shrink-0 text-xs text-muted-foreground/60">{lastSeen}</span>
-      ) : null}
+      {lastSeen ? <span className="shrink-0 text-xs text-faint-foreground">{lastSeen}</span> : null}
     </button>
   );
 };

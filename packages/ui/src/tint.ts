@@ -167,7 +167,7 @@ const TINT: Record<Tone, TintClasses> = {
     hoverBg: 'hover:bg-muted/50',
     hoverBgSoft: 'hover:bg-muted/30',
     hoverText: 'hover:text-foreground',
-    text: 'text-foreground/80',
+    text: 'text-foreground',
     icon: 'text-primary/60',
     dot: 'bg-primary/60',
     solid: 'bg-muted text-foreground',

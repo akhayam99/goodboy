@@ -182,7 +182,7 @@ export const InboxRail = ({
         )}
       >
         <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-background px-2.5 focus-within:border-primary">
-          <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/60" />
+          <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
           <input
             type="text"
             value={query}
@@ -190,7 +190,7 @@ export const InboxRail = ({
             placeholder="Search the inbox"
             aria-label="Search the inbox"
             autoComplete="off"
-            className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
+            className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-faint-foreground"
           />
         </div>
         <SegmentedTabs
@@ -248,7 +248,7 @@ export const InboxRail = ({
             ) : null}
           </div>
         ) : null}
-        <div className="flex items-center justify-between gap-2 text-3xs text-muted-foreground/60">
+        <div className="flex items-center justify-between gap-2 text-3xs text-faint-foreground">
           <span className="flex items-center gap-1.5">
             <KbdPill className="h-4 min-w-4 text-3xs">↑↓</KbdPill>
             <span>navigate</span>
@@ -338,7 +338,7 @@ export const InboxRail = ({
               </p>
             ) : null}
             {hasFiltersActive && records.length > 0 ? (
-              <p className="px-1 text-2xs text-muted-foreground/60">
+              <p className="px-1 text-2xs text-faint-foreground">
                 {records.length} of {totalCount} shown
               </p>
             ) : null}

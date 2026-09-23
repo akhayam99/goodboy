@@ -60,7 +60,7 @@ export const PrChecks = ({ checks, fallbackUrl, hostLabel, onOpenUrl }: Props) =
             >
               <ConclusionIcon conclusion={c.conclusion} />
               <span className="min-w-0 flex-1 truncate text-foreground">{c.name}</span>
-              <span className="shrink-0 text-xs tabular-nums text-muted-foreground/70">
+              <span className="shrink-0 text-xs tabular-nums text-faint-foreground">
                 {formatDuration(c.durationMs)}
               </span>
             </button>

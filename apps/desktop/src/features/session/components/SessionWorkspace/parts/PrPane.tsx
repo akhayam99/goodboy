@@ -63,7 +63,7 @@ const SessionBranchTag = ({ branch }: { readonly branch: string | null }) =>
   branch == null ? null : (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/[0.04] px-2.5 py-1 font-mono text-2xs text-muted-foreground ring-1 ring-border-soft/60">
       <GitBranch size={11} aria-hidden className="shrink-0" />
-      <span className="truncate text-foreground/80">{branch}</span>
+      <span className="truncate text-foreground">{branch}</span>
     </span>
   );
 

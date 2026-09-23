@@ -37,11 +37,11 @@ export const ArtifactRail = ({
 }: Props) => (
   <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-background">
     <div className={cn('flex shrink-0 items-baseline gap-2', PANE_RHYTHM.rail.header)}>
-      <h1 className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70">
+      <h1 className="text-2xs font-semibold uppercase tracking-wide text-faint-foreground">
         Artifacts
       </h1>
       {counts.all > 0 ? (
-        <span className="text-2xs tabular-nums text-muted-foreground/70">{counts.all}</span>
+        <span className="text-2xs tabular-nums text-faint-foreground">{counts.all}</span>
       ) : null}
     </div>
     <Divider />

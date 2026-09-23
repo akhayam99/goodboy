@@ -45,7 +45,7 @@ export const CommentItem = ({
           ME
         </span>
         <span className="text-2xs font-medium text-foreground">you</span>
-        <span className="text-3xs text-muted-foreground/70">
+        <span className="text-3xs text-faint-foreground">
           {formatRelativeAge({ fromIso: comment.createdAt })}
         </span>
         {statusPill ? (

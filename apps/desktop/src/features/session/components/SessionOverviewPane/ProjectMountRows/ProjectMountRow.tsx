@@ -178,7 +178,7 @@ export const ProjectMountRow = ({
           <div className={SLOT_SERIES}>
             {row.series === null ? null : (
               <Tooltip content={`Part ${row.series.label} of ${row.series.name}`}>
-                <span className="truncate text-3xs tabular-nums text-muted-foreground/70">
+                <span className="truncate text-3xs tabular-nums text-faint-foreground">
                   {`Part ${row.series.label}`}
                 </span>
               </Tooltip>

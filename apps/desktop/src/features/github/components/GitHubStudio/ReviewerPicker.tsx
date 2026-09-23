@@ -63,7 +63,7 @@ export const ReviewerPicker = ({ projectRoot, projectId, exclude, onAdd }: Props
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="filter collaborators"
-          className="w-full bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground/60"
+          className="w-full bg-transparent text-xs text-foreground outline-none placeholder:text-faint-foreground"
         />
       </div>
       {isLoading ? (

@@ -247,7 +247,7 @@ export const WorkflowRow = ({
                         onClick={rename.start}
                         aria-label="Edit workflow name"
                         className={cn(
-                          'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50',
+                          'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-faint-foreground',
                           'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
                           'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
                           'group-hover/name:opacity-100 motion-reduce:opacity-60',
@@ -268,7 +268,7 @@ export const WorkflowRow = ({
                 />
               </div>
               {rename.editing && workflow.isPreset !== false ? (
-                <p className="text-2xs leading-relaxed text-muted-foreground/70">
+                <p className="text-2xs leading-relaxed text-faint-foreground">
                   This preset is shared: the new name shows on every run and every future attach.
                 </p>
               ) : null}
@@ -326,7 +326,7 @@ export const WorkflowRow = ({
               hasOrchestratorStrip={hasOrchestratorStrip}
             />
             {total > 0 ? (
-              <span className="shrink-0 font-mono text-2xs text-muted-foreground/50">
+              <span className="shrink-0 font-mono text-2xs text-faint-foreground">
                 {isDynamic ? `${total} ${total === 1 ? 'step' : 'steps'}` : `${done}/${total}`}
               </span>
             ) : null}
@@ -599,7 +599,7 @@ export const WorkflowRow = ({
                 </div>
               )
             ) : (
-              <p className={cn('pb-1 text-2xs text-muted-foreground/60', !isDetail && 'pl-3')}>
+              <p className={cn('pb-1 text-2xs text-faint-foreground', !isDetail && 'pl-3')}>
                 No agents yet for this workflow.
               </p>
             )

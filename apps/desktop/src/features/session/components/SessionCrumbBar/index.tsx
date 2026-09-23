@@ -158,7 +158,7 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
               <ChevronRight
                 size={ICON_SIZE.row}
                 aria-hidden
-                className="shrink-0 text-muted-foreground/40"
+                className="shrink-0 text-faint-foreground"
               />
             ) : null}
             {index === crumbs.length - 1 && canSwitchAgent && selectedAgent != null ? (

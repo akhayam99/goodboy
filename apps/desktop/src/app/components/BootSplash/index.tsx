@@ -70,7 +70,7 @@ export const BootSplash = ({ phase, error, onRetry, onFinished }: BootSplashProp
     >
       <BootBrand />
       <div className="flex flex-col items-center gap-3">
-        <span className="text-2xs tracking-tight text-muted-foreground/50 motion-safe:animate-pulse">
+        <span className="text-2xs tracking-tight text-faint-foreground motion-safe:animate-pulse">
           {BOOT_PHASE_LABEL[phase]}
         </span>
         {isSlow ? <BootSlowNotice elapsedMs={elapsedMs} onRetry={onRetry} /> : null}
@@ -85,7 +85,7 @@ function BootBrand() {
       <DogMascot size={64} className="text-primary" />
       <div className="flex flex-col items-center gap-0.5">
         <span className="text-lg font-bold tracking-tight">Goodboy</span>
-        <span className="text-xs tracking-tight text-muted-foreground/60">
+        <span className="text-xs tracking-tight text-faint-foreground">
           workspace orchestrator for coding agents
         </span>
       </div>
@@ -157,7 +157,7 @@ function BootErrorRecovery({
         <button
           type="button"
           onClick={openIssue}
-          className="text-left text-muted-foreground/60 underline-offset-2 hover:underline"
+          className="text-left text-faint-foreground underline-offset-2 hover:underline"
         >
           report on github ↗
         </button>

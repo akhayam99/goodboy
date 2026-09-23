@@ -101,7 +101,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
           type="button"
           onClick={startEditing}
           title="Edit draft"
-          className="whitespace-pre-wrap rounded-sm text-left text-xs leading-relaxed text-foreground/85 transition-colors hover:bg-muted/40"
+          className="whitespace-pre-wrap rounded-sm text-left text-xs leading-relaxed text-foreground transition-colors hover:bg-muted/40"
         >
           {draft.body}
         </button>

@@ -38,7 +38,7 @@ export const TreeNodeView = ({
           'group relative flex w-full items-center gap-2 py-1 pr-1 font-mono text-xs transition-colors',
           isSelected
             ? 'border-l-2 border-primary bg-muted/60 text-foreground'
-            : 'border-l-2 border-transparent text-muted-foreground/80 hover:bg-muted/30 hover:text-foreground',
+            : 'border-l-2 border-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground',
           reviewState === 'reviewed' && !isSelected && 'opacity-50',
         )}
         style={{ paddingLeft: 10 + indent }}
@@ -108,7 +108,7 @@ export const TreeNodeView = ({
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
-        className="flex w-full items-center gap-1 py-1 pr-2.5 text-left text-xs text-muted-foreground/60 hover:text-foreground"
+        className="flex w-full items-center gap-1 py-1 pr-2.5 text-left text-xs text-faint-foreground hover:text-foreground"
         style={{ paddingLeft: 6 + indent }}
         title={node.name}
       >

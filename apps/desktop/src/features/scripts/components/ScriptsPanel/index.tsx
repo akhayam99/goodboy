@@ -718,7 +718,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
     );
 
   const topHeading = hasHostHeading ? (
-    <p className="shrink-0 text-2xs text-muted-foreground/70">{SCRIPTS_HINT}</p>
+    <p className="shrink-0 text-2xs text-faint-foreground">{SCRIPTS_HINT}</p>
   ) : (
     <SectionHeader
       label="Scripts"
@@ -790,7 +790,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                   {selectedProject.name}
                 </h2>
                 <p
-                  className="truncate font-mono text-2xs text-muted-foreground/70"
+                  className="truncate font-mono text-2xs text-faint-foreground"
                   title={selectedProject.rootPath}
                 >
                   {shortenPath({ path: selectedProject.rootPath })}

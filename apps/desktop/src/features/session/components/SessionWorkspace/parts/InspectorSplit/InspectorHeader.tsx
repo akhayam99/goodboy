@@ -27,7 +27,7 @@ export const InspectorHeader = ({ title, closeLabel = 'close panel', actions, on
               type="button"
               onClick={onClose}
               aria-label={closeLabel}
-              className="rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
+              className="rounded-md p-1 text-faint-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
             >
               <X size={ICON_SIZE.control} aria-hidden />
             </button>

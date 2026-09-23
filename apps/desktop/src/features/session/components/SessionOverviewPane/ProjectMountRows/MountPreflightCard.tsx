@@ -22,7 +22,7 @@ type RowProps = {
 
 const PreflightRow = ({ label, value, isPending }: RowProps) => (
   <div className="flex min-w-0 items-baseline gap-2">
-    <dt className="w-12 shrink-0 text-2xs uppercase tracking-wide text-muted-foreground/70">
+    <dt className="w-12 shrink-0 text-2xs uppercase tracking-wide text-faint-foreground">
       {label}
     </dt>
     <dd

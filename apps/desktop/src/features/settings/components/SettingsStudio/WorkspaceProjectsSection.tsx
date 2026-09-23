@@ -183,7 +183,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
                       className="shrink-0"
                     />
                   </span>
-                  <span className="block truncate font-mono text-xs text-muted-foreground/80">
+                  <span className="block truncate font-mono text-xs text-muted-foreground">
                     {project.rootPath}
                   </span>
                 </span>
@@ -194,7 +194,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
                     aria-label={`Disconnect ${project.name}`}
                     disabled={busy}
                     onClick={() => void onUnlink(project.id, project.name)}
-                    className="rounded-md p-1 text-muted-foreground/70 hover:bg-foreground/5 hover:text-foreground"
+                    className="rounded-md p-1 text-faint-foreground hover:bg-foreground/5 hover:text-foreground"
                   >
                     <X size={ICON_SIZE.control} aria-hidden />
                   </button>
@@ -220,7 +220,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
             }}
             className={cn(
               'h-8 flex-1 rounded-md border border-border bg-background px-2 text-sm text-foreground motion-safe:transition-colors',
-              'placeholder:text-muted-foreground/40',
+              'placeholder:text-faint-foreground',
               'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
             )}
           />

@@ -32,7 +32,7 @@ export const WireframeScreenTabs = ({ screens, currentScreenId, onSelect }: Prop
             )}
           >
             <span className="max-w-40 truncate">{screen.title}</span>
-            <span className="shrink-0 text-muted-foreground/70">{screen.viewport}</span>
+            <span className="shrink-0 text-faint-foreground">{screen.viewport}</span>
           </button>
         );
       })}

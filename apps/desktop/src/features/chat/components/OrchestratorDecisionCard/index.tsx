@@ -25,7 +25,7 @@ export const OrchestratorDecisionCard = ({ item }: Props) => {
     <TranscriptDisclosure
       tone="neutral"
       open={open}
-      bodyClassName="gap-2 text-xs text-foreground/80"
+      bodyClassName="gap-2 text-xs text-foreground"
       header={
         <TranscriptRowHeader
           grouped

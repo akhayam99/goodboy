@@ -24,7 +24,7 @@ export const SiblingRow = ({ entry, selectedAgentId, onSelect }: SiblingRowProps
   >
     <AgentAvatar kind={entry.kind} size="sm" />
     <span className="min-w-0 flex-1 truncate">{entry.agent.name}</span>
-    <span className="shrink-0 text-2xs uppercase tracking-wide text-muted-foreground/70">
+    <span className="shrink-0 text-2xs uppercase tracking-wide text-faint-foreground">
       {entry.agent.status}
     </span>
   </button>
