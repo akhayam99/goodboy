@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { RotateCcw, Smartphone } from 'lucide-react';
+import { RotateCcw, Smartphone, Trash2 } from 'lucide-react';
 import {
   Button,
   cn,
   Divider,
   FieldRow,
   formatError,
+  InlineConfirm,
   PANE_RHYTHM,
   ScrollFade,
   SectionHeader,
@@ -47,6 +48,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
   const exportConfig = useAppStore((s) => s.exportConfig);
   const importConfig = useAppStore((s) => s.importConfig);
   const wipeLocalDatabase = useAppStore((s) => s.wipeLocalDatabase);
+  const relaunchApp = useAppStore((s) => s.relaunchApp);
   const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
   const detectedEditors = useAppStore((s) => s.detectedEditors);
   const { showToast } = useToast();
@@ -296,37 +298,25 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
               help="Every workspace, session, transcript, and rule. Keychain keys are untouched. Fresh schema on next boot."
             >
               {wipeState === 'done' ? (
-                <span className="text-xs text-success">Wiped. Restart the app to start fresh.</span>
-              ) : wipeState === 'confirm' || wipeState === 'wiping' ? (
-                <span
-                  className={cn(
-                    'flex items-center gap-2 rounded-r-md border-l-2',
-                    tintClasses('danger').border,
-                    'py-1.5 pl-2 pr-2',
-                  )}
-                >
-                  <span className="text-xs font-medium text-danger">Irreversible.</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setWipeState('idle')}
-                    disabled={wipeState === 'wiping'}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => void onWipe()}
-                    disabled={wipeState === 'wiping'}
-                    className={cn(
-                      'text-danger',
-                      wipeState === 'wiping' && 'animate-border-pulse spin-border-danger',
-                    )}
-                  >
-                    {wipeState === 'wiping' ? 'Wiping…' : 'Confirm'}
+                <span className="flex items-center gap-3">
+                  <span className="text-xs text-success">Local data wiped.</span>
+                  <Button variant="secondary" size="sm" onClick={() => void relaunchApp()}>
+                    <RotateCcw size={ICON_SIZE.row} aria-hidden />
+                    Restart now
                   </Button>
                 </span>
+              ) : wipeState === 'confirm' || wipeState === 'wiping' ? (
+                <InlineConfirm
+                  role="danger"
+                  icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+                  title="Wipe every workspace, session and rule?"
+                  description="This cannot be undone. Keychain keys stay. The app starts on a fresh schema after a restart."
+                  confirmLabel="Wipe"
+                  isBusy={wipeState === 'wiping'}
+                  onConfirm={onWipe}
+                  onCancel={() => setWipeState('idle')}
+                  className="w-80 text-left"
+                />
               ) : (
                 <Button
                   variant="ghost"

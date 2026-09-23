@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Folder, FolderGit2, FolderPlus, Plus, X } from 'lucide-react';
+import { Folder, FolderGit2, FolderPlus, Plus, Unplug, X } from 'lucide-react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button, Chip, SectionHeader, Tooltip, cn, formatError } from '@goodboy/ui';
+import { Button, Chip, ConfirmPopover, SectionHeader, Tooltip, cn, formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { initRepo } from '../../../../shared/lib/repo';
 import { useChildRepoDetection } from '../../../../shared/hooks/useChildRepoDetection';
@@ -188,17 +188,29 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
                   </span>
                 </span>
                 {project.kind === 'repo' ? <ProjectBaseBranchInput project={project} /> : null}
-                <Tooltip content={`Disconnect ${project.name}`} anchorClassName="shrink-0">
-                  <button
-                    type="button"
-                    aria-label={`Disconnect ${project.name}`}
-                    disabled={busy}
-                    onClick={() => void onUnlink(project.id, project.name)}
-                    className="rounded-md p-1 text-faint-foreground hover:bg-hover hover:text-foreground"
-                  >
-                    <X size={ICON_SIZE.control} aria-hidden />
-                  </button>
-                </Tooltip>
+                <ConfirmPopover
+                  role="alert"
+                  icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
+                  title={`Disconnect ${project.name}?`}
+                  description="The folder stays on disk. Link it again any time."
+                  confirmLabel="Disconnect"
+                  isBusy={busy}
+                  onConfirm={() => onUnlink(project.id, project.name)}
+                  trigger={({ isArmed, arm }) => (
+                    <Tooltip content={`Disconnect ${project.name}`} anchorClassName="shrink-0">
+                      <button
+                        type="button"
+                        aria-label={`Disconnect ${project.name}`}
+                        aria-expanded={isArmed}
+                        disabled={busy}
+                        onClick={arm}
+                        className="rounded-md p-1 text-faint-foreground hover:bg-hover hover:text-foreground"
+                      >
+                        <X size={ICON_SIZE.control} aria-hidden />
+                      </button>
+                    </Tooltip>
+                  )}
+                />
               </li>
             ))}
           </ul>

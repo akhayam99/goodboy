@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const { state, toastMock } = vi.hoisted(() => ({
   state: {
@@ -19,6 +19,8 @@ const { state, toastMock } = vi.hoisted(() => ({
       ReadonlyArray<{ path: string; name: string; sizeBytes: number }>
     >,
     removeOrphanWorktrees: vi.fn(async () => undefined),
+    currentWorkspaceId: null as string | null,
+    sessions: [] as ReadonlyArray<{ id: string; state: { kind: string } }>,
   },
   toastMock: vi.fn(),
 }));
@@ -65,6 +67,8 @@ beforeEach(() => {
   state.providers = [];
   state.orphanWorktrees = {};
   state.removeOrphanWorktrees = vi.fn(async () => undefined);
+  state.currentWorkspaceId = null;
+  state.sessions = [];
   toastMock.mockReset();
 });
 afterEach(cleanup);
@@ -181,11 +185,51 @@ describe('WorkspaceScopePanel', () => {
     expect((input as HTMLInputElement).value).toBe('billing');
   });
 
-  it('shows the disconnect action with inline confirm', () => {
+  it('disconnects only after the row confirm and closes settings', async () => {
+    const requestClose = vi.fn();
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={requestClose} />);
+    fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
+    expect(state.deleteWorkspace).not.toHaveBeenCalled();
+
+    const confirm = screen.getByRole('group', { name: 'Disconnect billing?' });
+    expect(within(confirm).getByText(/Choose New workspace with the same folder/)).toBeDefined();
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Disconnect' }));
+
+    await waitFor(() => expect(state.deleteWorkspace).toHaveBeenCalledWith('ws-1'));
+    await waitFor(() => expect(requestClose).toHaveBeenCalledOnce());
+  });
+
+  it('cancels the disconnect back to its trigger', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
-    expect(screen.getByRole('button', { name: /confirm/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /cancel/i })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(state.deleteWorkspace).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /disconnect/i })).toBeDefined();
+  });
+
+  it('counts the running sessions it stops when the workspace is current', () => {
+    state.currentWorkspaceId = 'ws-1';
+    state.sessions = [
+      { id: 's-1', state: { kind: 'running' } },
+      { id: 's-2', state: { kind: 'running' } },
+      { id: 's-3', state: { kind: 'idle' } },
+    ];
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
+
+    expect(
+      screen.getByRole('group', { name: 'Disconnect billing and stop 2 running sessions?' }),
+    ).toBeDefined();
+  });
+
+  it('claims no stopped sessions for a workspace that is not current', () => {
+    state.currentWorkspaceId = 'ws-2';
+    state.sessions = [{ id: 's-1', state: { kind: 'running' } }];
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
+
+    expect(screen.getByRole('group', { name: 'Disconnect billing?' })).toBeDefined();
   });
 
   it('hides the leftover folders section when there is nothing to clean', () => {

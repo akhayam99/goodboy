@@ -67,7 +67,7 @@ export const OrphanWorktreesSection = ({ workspaceId }: Props) => {
           <InlineConfirm
             role="danger"
             icon={<FolderX size={ICON_SIZE.row} aria-hidden />}
-            title={`Delete ${folderLabel}`}
+            title={`Delete ${folderLabel}?`}
             description={`${formatDiskSize({ bytes: totalBytes })} will be removed from disk. This cannot be undone.`}
             confirmLabel="Delete"
             onConfirm={onConfirm}
@@ -75,7 +75,12 @@ export const OrphanWorktreesSection = ({ workspaceId }: Props) => {
           />
         ) : (
           <div className="flex justify-start">
-            <Button variant="danger" size="sm" onClick={() => setIsArmed(true)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsArmed(true)}
+              className="text-danger hover:text-danger"
+            >
               <Trash2 size={ICON_SIZE.row} aria-hidden />
               Delete {folderLabel} ({formatDiskSize({ bytes: totalBytes })})
             </Button>

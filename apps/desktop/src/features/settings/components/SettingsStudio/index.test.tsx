@@ -2,7 +2,7 @@
 
 import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
   scrollIntoViewMock: vi.fn(),
@@ -12,6 +12,7 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     exportConfig: vi.fn(async () => null),
     importConfig: vi.fn(async () => null),
     wipeLocalDatabase: vi.fn(async () => undefined),
+    relaunchApp: vi.fn(async () => undefined),
     loadDetectedEditors: vi.fn(async () => undefined),
     detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
     workspaceIntegrations: {},
@@ -77,6 +78,8 @@ beforeEach(() => {
   scrollIntoViewMock.mockReset();
   state.loadSetting.mockClear();
   state.loadDetectedEditors.mockClear();
+  state.wipeLocalDatabase.mockClear();
+  state.relaunchApp.mockClear();
   toastMock.mockReset();
 });
 
@@ -172,6 +175,35 @@ describe('SettingsStudio', () => {
     expect(
       screen.queryByText('Per-workspace overrides live in Workspace settings, Integrations.'),
     ).toBeNull();
+  });
+
+  it('wipes only after the row confirm and offers a restart', async () => {
+    render(
+      <SettingsStudio currentWorkspace={null} initialFocus={{ scope: 'app' }} onClose={vi.fn()} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
+    expect(state.wipeLocalDatabase).not.toHaveBeenCalled();
+
+    const confirm = screen.getByRole('group', { name: 'Wipe every workspace, session and rule?' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Wipe' }));
+    await waitFor(() => expect(state.wipeLocalDatabase).toHaveBeenCalledOnce());
+
+    expect(await screen.findByText('Local data wiped.')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Restart now' }));
+    expect(state.relaunchApp).toHaveBeenCalledOnce();
+  });
+
+  it('cancels the wipe back to its trigger', () => {
+    render(
+      <SettingsStudio currentWorkspace={null} initialFocus={{ scope: 'app' }} onClose={vi.fn()} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(state.wipeLocalDatabase).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Wipe' })).toBeDefined();
   });
 
   it('opens the report issue studio through the shared studio event', () => {

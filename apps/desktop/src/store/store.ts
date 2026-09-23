@@ -322,6 +322,7 @@ type AppActions = {
   retryHydrate(): Promise<void>;
   checkForUpdates(): Promise<void>;
   installUpdate(): Promise<void>;
+  relaunchApp(): Promise<void>;
   loadChangelog(): Promise<void>;
   reloadChangelog(): Promise<void>;
   hydrateChangelogSeen(): Promise<void>;

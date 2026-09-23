@@ -6,13 +6,14 @@ import {
   Divider,
   FieldRow,
   formatError,
+  InlineConfirm,
   PANE_RHYTHM,
   ScrollFade,
   SectionHeader,
   Switch,
   tintClasses,
 } from '@goodboy/ui';
-import { Check, GitBranch, Unplug } from 'lucide-react';
+import { GitBranch, Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { WorkspaceProfileSection } from './WorkspaceProfileSection';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
@@ -27,6 +28,18 @@ import { useSectionAnchors } from '../../hooks/useSectionAnchors';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
 
+type DisconnectTitleParams = {
+  readonly name: string;
+  readonly runningCount: number;
+};
+
+const disconnectTitle = ({ name, runningCount }: DisconnectTitleParams): string => {
+  if (runningCount === 0) {
+    return `Disconnect ${name}?`;
+  }
+  return `Disconnect ${name} and stop ${runningCount} running ${runningCount === 1 ? 'session' : 'sessions'}?`;
+};
+
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly initialSection?: string;
@@ -40,6 +53,11 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
   const renameWorkspace = useAppStore((s) => s.renameWorkspace);
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const storeSetWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
+  const runningCount = useAppStore((s) =>
+    s.currentWorkspaceId === workspaceId
+      ? s.sessions.filter((session) => session.state.kind === 'running').length
+      : 0,
+  );
   const { showToast } = useToast();
 
   const [displayName, setDisplayName] = useState(workspace?.name ?? '');
@@ -333,52 +351,33 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
             <SectionHeader label="Danger zone" hint="Destructive workspace controls." />
             <FieldRow
               label="Disconnect workspace"
-              help="Hides it from the sidebar. Nothing on disk is deleted, re-add the path to bring it back."
+              help="Hides it from the sidebar. Nothing on disk is deleted."
             >
-              {!confirmDisconnect ? (
+              {confirmDisconnect ? (
+                <InlineConfirm
+                  role="danger"
+                  icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
+                  title={disconnectTitle({
+                    name: workspace?.name ?? 'this workspace',
+                    runningCount,
+                  })}
+                  description="Projects, branches and worktrees stay on disk. Choose New workspace with the same folder to bring it back with its sessions."
+                  confirmLabel="Disconnect"
+                  isBusy={disconnecting}
+                  onConfirm={onDisconnect}
+                  onCancel={() => setConfirmDisconnect(false)}
+                  className="w-80 text-left"
+                />
+              ) : (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setConfirmDisconnect(true)}
-                  disabled={disconnecting}
                   className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
                 >
                   <Unplug size={ICON_SIZE.row} aria-hidden />
                   Disconnect
                 </Button>
-              ) : (
-                <div
-                  className={cn(
-                    'flex items-center gap-2 rounded-r-md border-l-2',
-                    tintClasses('danger').border,
-                    'py-1.5 pl-2 pr-2',
-                  )}
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setConfirmDisconnect(false)}
-                    disabled={disconnecting}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => void onDisconnect()}
-                    disabled={disconnecting}
-                    className={disconnecting ? 'animate-border-pulse' : undefined}
-                  >
-                    {disconnecting ? (
-                      'Disconnecting…'
-                    ) : (
-                      <>
-                        <Check size={ICON_SIZE.row} aria-hidden />
-                        Confirm
-                      </>
-                    )}
-                  </Button>
-                </div>
               )}
             </FieldRow>
           </section>

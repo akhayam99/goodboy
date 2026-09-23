@@ -2,13 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Button,
   EmptyState,
+  InlineConfirm,
   SectionHeader,
   StatusDot,
   Tooltip,
   cn,
   tintClasses,
 } from '@goodboy/ui';
-import { RotateCw, type LucideIcon } from 'lucide-react';
+import { RotateCw, Unplug, type LucideIcon } from 'lucide-react';
 import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider, type ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
@@ -133,6 +134,7 @@ function Detail({
           />
         ) : showConnected ? (
           <ConnectedAccount
+            label={info.label}
             identity={info.identity}
             canReauth={PROVIDER_CONNECT_CAPABILITIES[id].tier !== 'manual'}
             confirmDisconnect={confirmDisconnect}
@@ -164,15 +166,8 @@ function Detail({
   );
 }
 
-function ConnectedAccount({
-  identity,
-  canReauth,
-  confirmDisconnect,
-  onReauth,
-  onAskDisconnect,
-  onCancelDisconnect,
-  onConfirmDisconnect,
-}: {
+type ConnectedAccountProps = {
+  readonly label: string;
   readonly identity: string | null;
   readonly canReauth: boolean;
   readonly confirmDisconnect: boolean;
@@ -180,59 +175,54 @@ function ConnectedAccount({
   readonly onAskDisconnect: () => void;
   readonly onCancelDisconnect: () => void;
   readonly onConfirmDisconnect: () => void;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-subtle p-4">
-      <StatusDot tone="success" size="md" />
-      <div className="flex min-w-0 flex-col">
-        <span className="truncate text-sm font-medium text-foreground">
-          {identity ?? 'connected'}
-        </span>
-        <span className="text-2xs text-muted-foreground">connected</span>
-      </div>
-      <div className="flex-1" />
-      {canReauth && (
-        <button
-          type="button"
-          onClick={onReauth}
-          className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
-        >
-          Re-authenticate
-        </button>
-      )}
-      {confirmDisconnect ? (
-        <>
-          <Button
-            variant="danger"
-            emphasis="outline"
-            size="sm"
-            onClick={onConfirmDisconnect}
-            className={cn(tintClasses('danger').bg, 'font-semibold')}
-          >
-            Confirm
+};
+
+const ConnectedAccount = ({
+  label,
+  identity,
+  canReauth,
+  confirmDisconnect,
+  onReauth,
+  onAskDisconnect,
+  onCancelDisconnect,
+  onConfirmDisconnect,
+}: ConnectedAccountProps) => (
+  <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-subtle p-4">
+    <StatusDot tone="success" size="md" />
+    <div className="flex min-w-0 flex-col">
+      <span className="truncate text-sm font-medium text-foreground">
+        {identity ?? 'connected'}
+      </span>
+      <span className="text-2xs text-muted-foreground">connected</span>
+    </div>
+    <div className="flex-1" />
+    {confirmDisconnect ? (
+      <InlineConfirm
+        role="alert"
+        icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
+        title={`Disconnect ${label}?`}
+        description="Signs the CLI out on this machine. Connect again to sign back in."
+        confirmLabel="Disconnect"
+        onConfirm={onConfirmDisconnect}
+        onCancel={onCancelDisconnect}
+        className="w-80 text-left"
+      />
+    ) : (
+      <>
+        {canReauth && (
+          <Button variant="secondary" size="sm" onClick={onReauth}>
+            Re-authenticate
           </Button>
-          <button
-            type="button"
-            onClick={onCancelDisconnect}
-            className="rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground"
-          >
-            Cancel
-          </button>
-        </>
-      ) : (
-        <button
-          type="button"
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onAskDisconnect}
-          className={cn(
-            'rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors',
-            tintClasses('danger').hoverBorder,
-            tintClasses('danger').hoverBg,
-            'hover:text-danger',
-          )}
+          className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
         >
           Disconnect
-        </button>
-      )}
-    </div>
-  );
-}
+        </Button>
+      </>
+    )}
+  </div>
+);

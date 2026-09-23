@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 
 const { state, repoMocks, showToast } = vi.hoisted(() => ({
@@ -119,5 +119,47 @@ describe('WorkspaceProjectsSection', () => {
     await addPath('/repos/api');
 
     await waitFor(() => expect(showToast).toHaveBeenCalledWith('success', 'linked api'));
+  });
+
+  it('unlinks a project only after its anchored confirm', async () => {
+    state.projects = [
+      {
+        id: 'proj-docs',
+        name: 'notify-relay',
+        rootPath: '/repos/notify-relay',
+        kind: 'folder',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect notify-relay' }));
+    expect(state.removeProject).not.toHaveBeenCalled();
+
+    const confirm = screen.getByRole('dialog', { name: 'Disconnect notify-relay?' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Disconnect' }));
+
+    await waitFor(() =>
+      expect(state.removeProject).toHaveBeenCalledWith({ projectId: 'proj-docs' }),
+    );
+  });
+
+  it('keeps the project when the unlink confirm is cancelled', async () => {
+    state.projects = [
+      {
+        id: 'proj-docs',
+        name: 'notify-relay',
+        rootPath: '/repos/notify-relay',
+        kind: 'folder',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect notify-relay' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(state.removeProject).not.toHaveBeenCalled();
   });
 });

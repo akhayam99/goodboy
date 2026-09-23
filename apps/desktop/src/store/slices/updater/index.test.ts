@@ -58,4 +58,10 @@ describe('updater slice', () => {
     expect(relaunchMock).toHaveBeenCalled();
     expect(getState().updaterStatus).toBe('downloading');
   });
+
+  it('relaunches the app on request', async () => {
+    const { slice } = harness();
+    await slice.relaunchApp();
+    expect(relaunchMock).toHaveBeenCalledOnce();
+  });
 });
