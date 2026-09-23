@@ -108,6 +108,11 @@ export type ResolvedSettings = Readonly<{
   defaultBranchPrefix: string;
   parallelEnabled: boolean;
   defaultVerbosity: VerbosityLevel;
+  roleModels: RoleModelPreferences | null;
+  taskModels: TaskModelPreferences | null;
+  providerPool: ReadonlyArray<ProviderId> | null;
+  parallelAgents: boolean;
+  providerBindings: ProviderBindings;
 }>;
 
 export type GlobalSettings = Readonly<{
