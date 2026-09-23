@@ -140,7 +140,7 @@ export const ProvidersScene = () => {
 
   return (
     <StudioFrame
-      activeStudio={null}
+      activeStudio="settings"
       main={
         <SettingsStudio
           currentWorkspace={WORKSPACE}

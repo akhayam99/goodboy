@@ -55,14 +55,17 @@ export const useHoveredMountRow = ({ isReady, rowLabel }: HoverParams) => {
       style.textContent = HOVER_STYLE;
       document.head.appendChild(style);
     }
-    return pollUntil(() => {
+    const markRow = () => {
       const row = [
         ...document.querySelectorAll<HTMLElement>('[data-testid="project-mount-row"]'),
       ].find((element) => element.textContent?.includes(rowLabel));
       if (row !== undefined && !row.hasAttribute(HOVER_ATTRIBUTE)) {
         row.setAttribute(HOVER_ATTRIBUTE, '');
       }
-      return false;
-    });
+    };
+    markRow();
+    const observer = new MutationObserver(markRow);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, [isReady, rowLabel]);
 };
