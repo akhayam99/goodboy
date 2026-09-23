@@ -1,5 +1,5 @@
 import { cn } from '@goodboy/ui';
-import type { BreadcrumbCrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
+import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import { CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS, CRUMB_LINK_CLASS } from './crumbClasses';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 

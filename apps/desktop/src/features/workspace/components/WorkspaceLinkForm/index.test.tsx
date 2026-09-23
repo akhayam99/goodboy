@@ -91,9 +91,7 @@ afterEach(cleanup);
 type FormProps = Parameters<typeof WorkspaceLinkForm>[0];
 
 const renderForm = (props: Partial<FormProps> = {}) =>
-  render(
-    <WorkspaceLinkForm onComplete={vi.fn()} onCancel={vi.fn()} showBreadcrumb={false} {...props} />,
-  );
+  render(<WorkspaceLinkForm onComplete={vi.fn()} {...props} />);
 
 describe('WorkspaceLinkForm', () => {
   it('renders the two setup choices without dialog chrome', () => {
@@ -105,11 +103,19 @@ describe('WorkspaceLinkForm', () => {
     expect(screen.queryByText(/mount names/i)).toBeNull();
   });
 
-  it('renders a Cancel button that calls the form cancellation handler', () => {
-    const onCancel = vi.fn();
-    renderForm({ onCancel });
-    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
-    expect(onCancel).toHaveBeenCalledOnce();
+  it('leaves the exit to the studio header: no breadcrumb and no Cancel', () => {
+    renderForm();
+    expect(screen.queryByRole('button', { name: /cancel/i })).toBeNull();
+    expect(screen.queryByRole('navigation', { name: /breadcrumb/i })).toBeNull();
+  });
+
+  it('keeps its actions inline at the end of the form', () => {
+    renderForm();
+    fireEvent.click(screen.getByRole('radio', { name: /a workspace with several projects/i }));
+
+    const submit = screen.getByRole('button', { name: 'Create workspace' });
+    expect(submit.closest('form')).not.toBeNull();
+    expect(submit.closest('footer')?.parentElement?.tagName).toBe('FORM');
   });
 
   it('links a picked git repository directly as a project-shaped workspace', async () => {

@@ -84,45 +84,54 @@ afterEach(cleanup);
 
 describe('WorkspaceLinkStudio', () => {
   it('mounts the shared form on a page surface instead of a dialog', () => {
-    const { container } = render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={vi.fn()} />);
+    const { container } = render(
+      <WorkspaceLinkStudio variant="fullscreen" onClose={vi.fn()} onOfferRepo={vi.fn()} />,
+    );
 
     expect(screen.getByRole('radio', { name: /start from a project/i })).toBeDefined();
     expect(screen.getByRole('heading', { name: 'Add workspace' })).toBeDefined();
     expect(container.querySelector('dialog')).toBeNull();
   });
 
-  it('takes the whole viewport instead of leaving the bars behind it', () => {
-    const { container } = render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={vi.fn()} />);
+  it('takes the whole viewport in the launcher, where there are no bars', () => {
+    const { container } = render(
+      <WorkspaceLinkStudio variant="viewport" onClose={vi.fn()} onOfferRepo={vi.fn()} />,
+    );
     const surface = container.firstElementChild;
 
     expect(surface?.className).toContain('inset-0');
-    expect(surface?.className).not.toContain('top-9');
+  });
+
+  it('sits between the bars like every studio inside the shell', () => {
+    const { container } = render(
+      <WorkspaceLinkStudio variant="fullscreen" onClose={vi.fn()} onOfferRepo={vi.fn()} />,
+    );
+
+    expect(container.firstElementChild?.className).not.toContain('inset-0');
   });
 
   it('renders with no workspace in the store at all', () => {
-    render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={vi.fn()} />);
+    render(<WorkspaceLinkStudio variant="fullscreen" onClose={vi.fn()} onOfferRepo={vi.fn()} />);
 
     expect(state.workspaces).toHaveLength(0);
     expect(screen.getByRole('heading', { name: 'Add workspace' })).toBeDefined();
     expect(screen.getByRole('radio', { name: /a workspace with several projects/i })).toBeDefined();
   });
 
-  it('pins the form actions in the page footer instead of the scrolling body', () => {
-    render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={vi.fn()} />);
+  it('keeps the form actions inline at the end of the form', () => {
+    render(<WorkspaceLinkStudio variant="fullscreen" onClose={vi.fn()} onOfferRepo={vi.fn()} />);
     fireEvent.click(screen.getByRole('radio', { name: /a workspace with several projects/i }));
 
     const submit = screen.getByRole('button', { name: 'Create workspace' });
     const form = screen.getByRole('radio', { name: /start from a project/i }).closest('form');
 
-    expect(submit.closest('footer')).not.toBeNull();
-    expect(form).not.toBeNull();
-    expect(form?.contains(submit)).toBe(false);
-    expect(submit.getAttribute('form')).toBe(form?.getAttribute('id'));
+    expect(submit.closest('form')).toBe(form);
+    expect(screen.queryByRole('button', { name: /^cancel$/i })).toBeNull();
   });
 
   it('closes the page when the shell close affordance is used', async () => {
     const onClose = vi.fn();
-    render(<WorkspaceLinkStudio onClose={onClose} onOfferRepo={vi.fn()} />);
+    render(<WorkspaceLinkStudio variant="fullscreen" onClose={onClose} onOfferRepo={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: /close add workspace/i }));
 
@@ -131,7 +140,7 @@ describe('WorkspaceLinkStudio', () => {
 
   it('closes the page on escape', async () => {
     const onClose = vi.fn();
-    render(<WorkspaceLinkStudio onClose={onClose} onOfferRepo={vi.fn()} />);
+    render(<WorkspaceLinkStudio variant="fullscreen" onClose={onClose} onOfferRepo={vi.fn()} />);
 
     fireEvent.keyDown(window, { key: 'Escape' });
 
@@ -140,7 +149,7 @@ describe('WorkspaceLinkStudio', () => {
 
   it('links a picked repository and closes on success', async () => {
     const onClose = vi.fn();
-    render(<WorkspaceLinkStudio onClose={onClose} onOfferRepo={vi.fn()} />);
+    render(<WorkspaceLinkStudio variant="fullscreen" onClose={onClose} onOfferRepo={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
     fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
@@ -167,7 +176,9 @@ describe('WorkspaceLinkStudio', () => {
     });
     state.projects = [{ id: 'proj-folder', workspaceId: 'ws-new', kind: 'folder' }];
     const onOfferRepo = vi.fn();
-    render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={onOfferRepo} />);
+    render(
+      <WorkspaceLinkStudio variant="fullscreen" onClose={vi.fn()} onOfferRepo={onOfferRepo} />,
+    );
 
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
     fireEvent.click(screen.getByRole('button', { name: /link a plain folder/i }));
@@ -178,7 +189,9 @@ describe('WorkspaceLinkStudio', () => {
   it('leaves a git-backed folder alone instead of offering it a repository', async () => {
     state.projects = [{ id: 'proj-repo', workspaceId: 'ws-new', kind: 'repo' }];
     const onOfferRepo = vi.fn();
-    render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={onOfferRepo} />);
+    render(
+      <WorkspaceLinkStudio variant="fullscreen" onClose={vi.fn()} onOfferRepo={onOfferRepo} />,
+    );
 
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
     fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
@@ -189,7 +202,7 @@ describe('WorkspaceLinkStudio', () => {
 
   it('resumes an unfinished setup wizard once the workspace exists', async () => {
     onboarding.wizardDone = false;
-    render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={vi.fn()} />);
+    render(<WorkspaceLinkStudio variant="fullscreen" onClose={vi.fn()} onOfferRepo={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
     fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));

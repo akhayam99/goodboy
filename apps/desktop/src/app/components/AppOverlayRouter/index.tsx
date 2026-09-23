@@ -120,7 +120,13 @@ const renderStudio = ({
     case 'companion':
       return <CompanionStudio onClose={close} />;
     case 'addWorkspace':
-      return <WorkspaceLinkStudio onClose={close} onOfferRepo={offerWorkspaceRepo} />;
+      return (
+        <WorkspaceLinkStudio
+          variant="fullscreen"
+          onClose={close}
+          onOfferRepo={offerWorkspaceRepo}
+        />
+      );
     case 'workflow':
       return currentWorkspace === null ? null : (
         <WorkflowStudio
@@ -190,7 +196,11 @@ export const AppOverlayRouter = ({
     return (
       <Suspense fallback={null}>
         {overlay?.kind === 'addWorkspace' ? (
-          <WorkspaceLinkStudio onClose={close} onOfferRepo={offerWorkspaceRepo} />
+          <WorkspaceLinkStudio
+            variant="viewport"
+            onClose={close}
+            onOfferRepo={offerWorkspaceRepo}
+          />
         ) : (
           <WorkspaceLauncher />
         )}

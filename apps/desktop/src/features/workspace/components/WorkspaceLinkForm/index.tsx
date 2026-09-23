@@ -1,5 +1,4 @@
 import { useId, useMemo, useState, type FormEvent } from 'react';
-import { createPortal } from 'react-dom';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import {
   Button,
@@ -15,8 +14,6 @@ import {
 import type { Workspace } from '@goodboy/types';
 import { AlertTriangle, Folder, FolderGit2, FolderPlus, Layers, Plus, X } from 'lucide-react';
 import { useAppStore } from '../../../../store';
-import { AppBreadcrumb } from '../../../../app/components/AppBreadcrumb';
-import { buildBreadcrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
 import { initRepo, validateGitRepo } from '../../../../shared/lib/repo';
 import { useChildRepoDetection } from '../../../../shared/hooks/useChildRepoDetection';
 import { useProjectAdoption } from '../../../../shared/hooks/useProjectAdoption';
@@ -33,9 +30,6 @@ type Props = {
     readonly mode: WorkspaceLinkMode;
     readonly workspace: Workspace;
   }) => void;
-  readonly onCancel: () => void;
-  readonly showBreadcrumb: boolean;
-  readonly footerContainer?: HTMLElement | null;
 };
 
 const CHOICE_OPTIONS = [
@@ -53,12 +47,7 @@ const CHOICE_OPTIONS = [
   },
 ] as const;
 
-export const WorkspaceLinkForm = ({
-  onComplete,
-  onCancel,
-  showBreadcrumb,
-  footerContainer,
-}: Props) => {
+export const WorkspaceLinkForm = ({ onComplete }: Props) => {
   const formId = useId();
   const addWorkspace = useAppStore((state) => state.addWorkspace);
   const createWorkspace = useAppStore((state) => state.createWorkspace);
@@ -280,20 +269,6 @@ export const WorkspaceLinkForm = ({
     }
   };
 
-  const breadcrumbCrumbs = buildBreadcrumb({
-    workspace: null,
-    session: null,
-    chrome: { kind: 'workspace-create' },
-    handlers: {
-      toOverview: onCancel,
-      toWorkspaceLauncher: () => {
-        onCancel();
-        window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'));
-      },
-      toWorkspaceBoard: onCancel,
-    },
-  });
-
   const primary =
     created !== null
       ? { label: 'Done', disabled: busy || linked.length === 0 }
@@ -314,11 +289,6 @@ export const WorkspaceLinkForm = ({
       ) : (
         <span className="min-w-0 flex-1" aria-hidden />
       )}
-      {created === null ? (
-        <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
-          Cancel
-        </Button>
-      ) : null}
       {primary !== null ? (
         <Button type="submit" form={formId} disabled={primary.disabled} aria-busy={busy}>
           {primary.label}
@@ -329,8 +299,6 @@ export const WorkspaceLinkForm = ({
 
   return (
     <form id={formId} onSubmit={onSubmit} className="flex w-full flex-col gap-6">
-      {showBreadcrumb ? <AppBreadcrumb crumbs={breadcrumbCrumbs} /> : null}
-
       {created === null ? (
         <section className="flex flex-col gap-4">
           <SectionHeader
@@ -551,14 +519,8 @@ export const WorkspaceLinkForm = ({
         </section>
       )}
 
-      {footerContainer == null ? (
-        <>
-          <Divider />
-          <footer className="flex items-center justify-end gap-2">{actions}</footer>
-        </>
-      ) : (
-        createPortal(actions, footerContainer)
-      )}
+      <Divider />
+      <footer className="flex items-center justify-end gap-2">{actions}</footer>
     </form>
   );
 };
