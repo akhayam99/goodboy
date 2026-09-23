@@ -1,5 +1,5 @@
 import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider } from '@goodboy/core';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Button,
   EmptyState,
@@ -14,7 +14,6 @@ import { RotateCw, Unplug, type LucideIcon } from 'lucide-react';
 import { type ProviderId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
 import { PROVIDER_BRAND } from '../provider-brand';
 import { ProviderConnect } from '../ProviderConnect';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
@@ -62,7 +61,6 @@ function Detail({
   const connectProvider = useAppStore((s) => s.connectProvider);
   const logoutProvider = useAppStore((s) => s.logoutProvider);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
-  const { showToast } = useToast();
 
   const [refreshing, setRefreshing] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
@@ -75,14 +73,6 @@ function Detail({
       setRefreshing(false);
     }
   }, [refreshProviders]);
-
-  const wasError = useRef(info.connection === 'error');
-  useEffect(() => {
-    if (info.connection === 'error' && !wasError.current) {
-      showToast('error', info.error ?? `${info.label} detection failed`);
-    }
-    wasError.current = info.connection === 'error';
-  }, [info.connection, info.error, info.label, showToast]);
 
   const settled =
     connectPhase === 'idle' || connectPhase === 'cancelled' || connectPhase === 'success';
@@ -127,6 +117,7 @@ function Detail({
             tone={CONCEPT_TONE.providers}
             icon={CONCEPT_ICONS.providers}
             title="Detection failed"
+            description={info.error ?? `Goodboy couldn't detect the ${info.label} CLI.`}
             action={
               <Button size="sm" onClick={() => void onRefresh()} disabled={refreshing}>
                 Retry

@@ -5,7 +5,6 @@ import {
   cn,
   Divider,
   FieldRow,
-  formatError,
   InlineConfirm,
   Input,
   PANE_RHYTHM,
@@ -24,7 +23,6 @@ import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';
 import { primaryProjectRoot } from '../../../../features/workspace/primaryProjectRoot';
-import { useToast } from '../../../../app/components/Toast';
 import { useSectionAnchors } from '../../hooks/useSectionAnchors';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
@@ -59,7 +57,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       ? s.sessions.filter((session) => session.state.kind === 'running').length
       : 0,
   );
-  const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
 
   const [displayName, setDisplayName] = useState(workspace?.name ?? '');
   const [renaming, setRenaming] = useState(false);
@@ -85,15 +83,18 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
     setDisplayName(workspace?.name ?? '');
   }, [workspace?.name]);
 
-  const persistOverrides = async (
+  const persistOverrides = async ({
+    partial,
+    failureTitle,
+  }: {
     partial: Partial<{
       defaultVerbosity: VerbosityLevel;
       parallelAgents: boolean;
       attributionFooter: boolean;
       defaultBranchPrefix: string;
-    }>,
-    successMessage: string,
-  ) => {
+    }>;
+    failureTitle: string;
+  }) => {
     setBusy(true);
     try {
       await storeSetWorkspaceOverrides(workspaceId, {
@@ -110,9 +111,8 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
         attributionFooter: wsOverrides?.attributionFooter ?? null,
         ...partial,
       });
-      showToast('success', successMessage);
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: failureTitle, error: err, workspaceId });
     } finally {
       setBusy(false);
     }
@@ -127,9 +127,8 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
     setRenaming(true);
     try {
       await renameWorkspace({ workspaceId, name: next });
-      showToast('success', 'workspace renamed');
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't rename the workspace", error: err, workspaceId });
       setDisplayName(workspace.name);
     } finally {
       setRenaming(false);
@@ -159,9 +158,8 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       });
       setBranchPrefix(next);
       setSavedBranchPrefix(next);
-      showToast('success', 'branch prefix saved');
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't save the branch prefix", error: err, workspaceId });
     } finally {
       setBusy(false);
     }
@@ -173,7 +171,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       await disconnect(workspaceId);
       requestClose();
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't disconnect the workspace", error: err, workspaceId });
       setDisconnecting(false);
     }
   };
@@ -280,7 +278,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   <VerbositySelect
                     value={verbosity}
                     onChange={(v) =>
-                      void persistOverrides({ defaultVerbosity: v }, 'verbosity updated')
+                      void persistOverrides({
+                        partial: { defaultVerbosity: v },
+                        failureTitle: "Couldn't save the output verbosity",
+                      })
                     }
                     disabled={busy}
                   />
@@ -296,10 +297,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   checked={parallelAgents}
                   disabled={busy}
                   onChange={(next) =>
-                    void persistOverrides(
-                      { parallelAgents: next },
-                      next ? 'parallel agents on' : 'parallel agents off',
-                    )
+                    void persistOverrides({
+                      partial: { parallelAgents: next },
+                      failureTitle: "Couldn't save the parallel agents setting",
+                    })
                   }
                 />
               </FieldRow>
@@ -313,10 +314,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   checked={attributionFooter}
                   disabled={busy}
                   onChange={(next) =>
-                    void persistOverrides(
-                      { attributionFooter: next },
-                      next ? 'attribution line on' : 'attribution line off',
-                    )
+                    void persistOverrides({
+                      partial: { attributionFooter: next },
+                      failureTitle: "Couldn't save the attribution line setting",
+                    })
                   }
                 />
               </FieldRow>

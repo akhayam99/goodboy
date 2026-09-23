@@ -34,15 +34,6 @@ const SCOPE_TITLES: Record<PermissionScope, string> = {
   global: 'Allowed in every session of every workspace',
 };
 
-const SCOPE_TOAST: Record<PermissionScope, string> = {
-  global: 'rule added: allow globally',
-  workspace: 'rule added: allow for this workspace',
-  project: 'rule added: allow for this project',
-  session: 'rule added: allow for this session',
-  once: 'allowed once, not saved',
-  deny: 'rule added: deny for this session',
-};
-
 const BROAD_SCOPES: ReadonlyArray<BroadScope> = ['project', 'workspace', 'global'];
 
 type Props = {
@@ -63,6 +54,7 @@ export const PermissionScopePicker = ({
   onResolved,
 }: Props) => {
   const resolvePermissionRequest = useAppStore((s) => s.resolvePermissionRequest);
+  const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
   const [busy, setBusy] = useState(false);
   const [isGlobalArmed, setIsGlobalArmed] = useState(false);
@@ -91,11 +83,13 @@ export const PermissionScopePicker = ({
     setBusy(true);
     try {
       await resolvePermissionRequest({ sessionId, agentId, toolUseId, toolName, runId, scope });
-      showToast(scope === 'deny' ? 'warning' : 'success', SCOPE_TOAST[scope]);
+      if (scope === 'deny') {
+        showToast('info', `${toolName} denied for the rest of this session`);
+      }
       close();
       onResolved();
     } catch (err) {
-      showToast('error', err instanceof Error ? err.message : 'failed to resolve permission');
+      void reportError({ title: `Couldn't answer the ${toolName} request`, error: err, sessionId });
     } finally {
       setBusy(false);
     }

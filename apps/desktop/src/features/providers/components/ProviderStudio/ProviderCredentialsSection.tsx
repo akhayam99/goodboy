@@ -3,7 +3,6 @@ import { useCallback, useMemo, useState } from 'react';
 import {
   Button,
   EmptyState,
-  formatError,
   InlineConfirm,
   Input,
   SectionHeader,
@@ -14,7 +13,6 @@ import {
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
 import { type CredentialId, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -27,7 +25,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
   const deleteCredential = useAppStore((s) => s.deleteCredential);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
   const apiKeyEnv = PROVIDER_API_KEY_ENV[providerId];
-  const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
 
   const mine = useMemo(
     () => credentials.filter((c) => c.providerId === providerId),
@@ -56,11 +54,11 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
       await refreshProviders();
       reset();
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't save the API key", error: err });
     } finally {
       setBusy(false);
     }
-  }, [apiKey, label, providerId, createCredential, refreshProviders, reset, showToast]);
+  }, [apiKey, label, providerId, createCredential, refreshProviders, reset, reportError]);
 
   const onDelete = useCallback(
     async (credentialId: CredentialId) => {
@@ -68,12 +66,12 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
         await deleteCredential(credentialId);
         await refreshProviders();
       } catch (err) {
-        showToast('error', formatError(err));
+        void reportError({ title: "Couldn't remove the API key", error: err });
       } finally {
         setArmedId(null);
       }
     },
-    [deleteCredential, refreshProviders, showToast],
+    [deleteCredential, refreshProviders, reportError],
   );
 
   if (apiKeyEnv === undefined) {

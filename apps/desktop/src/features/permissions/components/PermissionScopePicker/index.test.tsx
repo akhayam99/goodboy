@@ -3,14 +3,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 
-const { resolveMock, toastMock } = vi.hoisted(() => ({
+const { resolveMock, toastMock, reportErrorMock } = vi.hoisted(() => ({
   resolveMock: vi.fn(async () => undefined),
   toastMock: vi.fn(),
+  reportErrorMock: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (s: { resolvePermissionRequest: typeof resolveMock }) => T) =>
-    selector({ resolvePermissionRequest: resolveMock }),
+  useAppStore: <T,>(
+    selector: (s: {
+      resolvePermissionRequest: typeof resolveMock;
+      reportError: typeof reportErrorMock;
+    }) => T,
+  ) => selector({ resolvePermissionRequest: resolveMock, reportError: reportErrorMock }),
 }));
 
 vi.mock('../../../../app/components/Toast', () => ({
@@ -31,6 +36,7 @@ const props = {
 beforeEach(() => {
   resolveMock.mockReset().mockResolvedValue(undefined);
   toastMock.mockReset();
+  reportErrorMock.mockClear();
   props.onResolved = vi.fn();
 });
 afterEach(cleanup);
@@ -63,10 +69,27 @@ describe('PermissionScopePicker', () => {
     });
     expect(resolveMock).toHaveBeenCalledWith(expect.objectContaining({ scope: 'session' }));
     expect(props.onResolved).toHaveBeenCalledOnce();
-    expect(toastMock).toHaveBeenCalledWith(
-      'success',
-      expect.stringMatching(/allow for this session/i),
+    expect(toastMock).not.toHaveBeenCalled();
+  });
+
+  it('says a deny holds for the rest of the session', async () => {
+    render(<PermissionScopePicker {...props} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Deny' }));
+    });
+    expect(toastMock).toHaveBeenCalledWith('info', 'bash denied for the rest of this session');
+  });
+
+  it('reports a failed answer to the log and keeps the picker', async () => {
+    resolveMock.mockRejectedValueOnce(new Error('database is locked'));
+    render(<PermissionScopePicker {...props} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Allow for this session' }));
+    });
+    expect(reportErrorMock).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't answer the bash request" }),
     );
+    expect(props.onResolved).not.toHaveBeenCalled();
   });
 
   it.each([

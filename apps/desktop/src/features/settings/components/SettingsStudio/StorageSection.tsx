@@ -3,7 +3,6 @@ import { Trash2 } from 'lucide-react';
 import {
   Button,
   FieldRow,
-  formatError,
   InlineConfirm,
   ScrollFade,
   SectionHeader,
@@ -33,6 +32,7 @@ export const StorageSection = () => {
   const reconcileOrphanWorktrees = useAppStore((s) => s.reconcileOrphanWorktrees);
   const pruneArchivedTranscripts = useAppStore((s) => s.pruneArchivedTranscripts);
   const removeArchivedWorktrees = useAppStore((s) => s.removeArchivedWorktrees);
+  const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
 
   const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget | null>(null);
@@ -44,7 +44,7 @@ export const StorageSection = () => {
     void reconcileOrphanWorktrees()
       .catch(() => undefined)
       .then(() => loadStorageStats())
-      .catch((err: unknown) => showToast('error', formatError(err)));
+      .catch((err: unknown) => reportError({ title: "Couldn't read storage usage", error: err }));
   }, []);
 
   const onPrune = async () => {
@@ -54,10 +54,10 @@ export const StorageSection = () => {
       setConfirmTarget(null);
       showToast(
         'success',
-        `pruned ${formatInteger(deleted)} transcript event${deleted === 1 ? '' : 's'}`,
+        `Pruned ${formatInteger(deleted)} transcript event${deleted === 1 ? '' : 's'}`,
       );
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't prune archived transcripts", error: err });
     } finally {
       setBusyTarget(null);
     }
@@ -69,18 +69,19 @@ export const StorageSection = () => {
       const result = await removeArchivedWorktrees();
       setConfirmTarget(null);
       if (result.failed > 0) {
-        showToast(
-          'error',
-          `removed ${formatInteger(result.removed)} worktree${result.removed === 1 ? '' : 's'}, ${formatInteger(result.failed)} failed`,
-        );
+        void reportError({
+          severity: 'warning',
+          title: `Couldn't remove ${formatInteger(result.failed)} archived worktree${result.failed === 1 ? '' : 's'}`,
+          error: `Removed ${formatInteger(result.removed)}. The others stay on disk.`,
+        });
         return;
       }
       showToast(
         'success',
-        `removed ${formatInteger(result.removed)} worktree${result.removed === 1 ? '' : 's'}`,
+        `Removed ${formatInteger(result.removed)} worktree${result.removed === 1 ? '' : 's'}`,
       );
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't remove archived worktrees", error: err });
     } finally {
       setBusyTarget(null);
     }

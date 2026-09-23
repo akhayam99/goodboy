@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { ConfirmPopover, formatError, IconButton } from '@goodboy/ui';
+import { ConfirmPopover, IconButton } from '@goodboy/ui';
 import { Unplug } from 'lucide-react';
-import { useToast } from '../../../../app/components/Toast';
+import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -12,14 +12,14 @@ type Props = {
 
 export const IntegrationDisconnect = ({ label, description, onDisconnect }: Props) => {
   const [isArmed, setIsArmed] = useState(false);
-  const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
 
   const confirm = async () => {
     try {
       await onDisconnect();
       setIsArmed(false);
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: `Couldn't disconnect ${label}`, error: err });
     }
   };
 

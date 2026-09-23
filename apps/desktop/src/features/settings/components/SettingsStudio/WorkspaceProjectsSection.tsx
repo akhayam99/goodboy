@@ -33,6 +33,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
   const addProjects = useAppStore((s) => s.addProjects);
   const removeProject = useAppStore((s) => s.removeProject);
   const { detected, detect, clear } = useChildRepoDetection();
+  const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
   const [path, setPath] = useState('');
   const [busy, setBusy] = useState(false);
@@ -59,7 +60,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
         adoption.noteConflicts([result.conflict]);
         return;
       }
-      showToast('success', `linked ${result.project.name}`);
+      showToast('success', `Linked ${result.project.name}`);
     } catch (linkError) {
       setError(formatError(linkError));
     } finally {
@@ -85,7 +86,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
       setPath('');
       const total = result.linked.length + knownConflicts.length;
       if (total > 0) {
-        showToast('success', total === 1 ? 'linked 1 project' : `linked ${total} projects`);
+        showToast('success', total === 1 ? 'Linked 1 project' : `Linked ${total} projects`);
       }
     } catch (linkError) {
       setError(formatError(linkError));
@@ -99,7 +100,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
     setError(null);
     try {
       await adoption.adoptConflict(conflict);
-      showToast('success', `moved ${conflict.project.name} here`);
+      showToast('success', `Moved ${conflict.project.name} here`);
     } catch (moveError) {
       setError(formatError(moveError));
     } finally {
@@ -144,10 +145,14 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
       await removeProject({ projectId });
       showToast(
         'success',
-        `disconnected ${name}. The folder stays on disk, link it again any time.`,
+        `Disconnected ${name}. The folder stays on disk, link it again any time.`,
       );
     } catch (unlinkError) {
-      showToast('error', formatError(unlinkError));
+      void reportError({
+        title: `Couldn't disconnect ${name}`,
+        error: unlinkError,
+        workspaceId,
+      });
     } finally {
       setBusy(false);
     }

@@ -3,7 +3,6 @@ import { RotateCcw } from 'lucide-react';
 import { cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -14,7 +13,7 @@ type Props = {
 export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
   const retryBlockedTool = useAppStore((s) => s.retryBlockedTool);
   const isRunning = useAppStore((s) => s.agentTurnState[agentId]?.kind === 'running');
-  const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -27,7 +26,7 @@ export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
       await retryBlockedTool({ sessionId, agentId, toolName });
       setSent(true);
     } catch (err) {
-      showToast('error', err instanceof Error ? err.message : 'retry failed');
+      void reportError({ title: `Couldn't retry ${toolName}`, error: err, sessionId });
     } finally {
       setBusy(false);
     }

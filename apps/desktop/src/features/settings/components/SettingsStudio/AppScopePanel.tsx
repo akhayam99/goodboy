@@ -51,6 +51,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
   const relaunchApp = useAppStore((s) => s.relaunchApp);
   const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
   const detectedEditors = useAppStore((s) => s.detectedEditors);
+  const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
 
   const [editorBinary, setEditorBinary] = useState(DEFAULT_EDITOR_BINARY);
@@ -78,10 +79,15 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
     setExportState('busy');
     try {
       const path = await exportConfig();
-      setExportState(path ? 'done' : 'idle');
+      if (path === null || path === '') {
+        setExportState('idle');
+        return;
+      }
+      setExportState('done');
+      showToast('success', path, { title: 'Config exported' });
     } catch (err) {
       setExportState('error');
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't export the config", error: err });
     }
   };
 
@@ -105,9 +111,8 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
     setEditorBinary(binary);
     try {
       await saveSetting(SETTING_EDITOR_BINARY, binary || DEFAULT_EDITOR_BINARY);
-      showToast('success', 'default editor saved');
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't save the default editor", error: err });
     }
   };
 
@@ -118,7 +123,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
       setWipeState('done');
     } catch (err) {
       setWipeState('confirm');
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't wipe the local database", error: err });
     }
   };
 

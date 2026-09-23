@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { SectionHeader, Textarea, formatError } from '@goodboy/ui';
+import { SectionHeader, Textarea } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -13,7 +12,7 @@ export const WorkspaceProfileSection = ({ workspaceId }: Props) => {
     (s) => s.workspaces?.find((candidate) => candidate.id === workspaceId)?.profile,
   );
   const updateWorkspaceProfile = useAppStore((s) => s.updateWorkspaceProfile);
-  const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
   const [bioDraft, setBioDraft] = useState(profile?.bio ?? '');
   const [busy, setBusy] = useState(false);
 
@@ -30,9 +29,8 @@ export const WorkspaceProfileSection = ({ workspaceId }: Props) => {
     setBusy(true);
     try {
       await updateWorkspaceProfile({ workspaceId, profile: { bio: next } });
-      showToast('success', 'profile saved');
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({ title: "Couldn't save the workspace profile", error, workspaceId });
     } finally {
       setBusy(false);
     }
