@@ -30,7 +30,7 @@ import {
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
 import { composeClusterOutcomeBoundary, composeKickoff, composeUnitBoundary } from '../../kickoff';
-import { bindGeneration, reserveGeneration } from '../agents/reserveGeneration';
+import { reserveGeneration } from '../agents/reserveGeneration';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { revalidateChildRouting } from './revalidateChildRouting';
 import { isHandsFree } from './handsFree';
@@ -523,6 +523,7 @@ export const fanOutClusters = async (
         ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
         ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
         ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
+        generationReservationId: reservation.reservations[index]!.reservationId,
       };
     }),
   });
@@ -530,7 +531,6 @@ export const fanOutClusters = async (
     return;
   }
   const childIds: AgentId[] = materialized.agents.map((agent) => agent.id);
-  await bindGeneration({ reservations: reservation.reservations, agentIds: childIds });
 
   const bindings: ReadonlyArray<ClusterExecutionNode> = nodes.map((node, index) => ({
     nodeId: node.id,

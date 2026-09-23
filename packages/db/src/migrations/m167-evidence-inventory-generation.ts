@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS agent_generation_ledger (
   causal_root_agent_id TEXT NOT NULL,
   agent_id TEXT,
   depth INTEGER NOT NULL,
-  creation_path TEXT NOT NULL CHECK (creation_path IN ('cluster', 'fan-out', 'capability', 'question-delegate', 'workflow-step')),
+  creation_path TEXT NOT NULL CHECK (creation_path IN ('cluster', 'fan-out', 'capability', 'question-delegate', 'workflow-step', 'legacy')),
   obligation_id TEXT,
   purpose TEXT,
   created_at INTEGER NOT NULL,
@@ -60,17 +60,44 @@ CREATE INDEX IF NOT EXISTS idx_agent_generation_ledger_obligation
 CREATE INDEX IF NOT EXISTS idx_agent_generation_ledger_agent
   ON agent_generation_ledger(agent_id);
 
+INSERT OR IGNORE INTO agent_generation_ledger
+  (id, session_id, workflow_run_id, parent_agent_id, causal_root_agent_id, agent_id, depth,
+   creation_path, obligation_id, purpose, created_at)
+WITH RECURSIVE lineage(agent_id, ancestor_id, depth) AS (
+  SELECT id, id, 0 FROM agents
+  UNION ALL
+  SELECT lineage.agent_id, agents.parent_agent_id, lineage.depth + 1
+    FROM lineage
+    JOIN agents ON agents.id = lineage.ancestor_id
+   WHERE agents.parent_agent_id IS NOT NULL
+     AND lineage.depth < 64
+),
+roots AS (
+  SELECT agent_id, ancestor_id, depth
+    FROM lineage
+   WHERE depth = (SELECT MAX(inner_lineage.depth) FROM lineage AS inner_lineage
+                   WHERE inner_lineage.agent_id = lineage.agent_id)
+)
+SELECT 'legacy:' || agents.id, agents.session_id, agents.workflow_run_id, agents.parent_agent_id,
+       roots.ancestor_id, agents.id, roots.depth, 'legacy', NULL, NULL,
+       CAST(strftime('%s', 'now') AS INTEGER) * 1000
+  FROM agents
+  JOIN roots ON roots.agent_id = agents.id
+ WHERE agents.session_id IN (SELECT id FROM sessions)
+   AND (agents.parent_agent_id IS NOT NULL OR agents.workflow_run_id IS NOT NULL);
+
 CREATE TABLE IF NOT EXISTS generation_refusals (
   id TEXT PRIMARY KEY,
   session_id TEXT NOT NULL,
   workflow_run_id TEXT,
-  parent_agent_id TEXT NOT NULL,
+  parent_agent_id TEXT,
+  scope_key TEXT NOT NULL,
   causal_root_agent_id TEXT,
   obligation_id TEXT,
   limit_name TEXT NOT NULL,
   reason TEXT NOT NULL,
   created_at INTEGER NOT NULL,
-  UNIQUE (parent_agent_id, limit_name),
+  UNIQUE (session_id, scope_key, limit_name),
   FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
 );
 
