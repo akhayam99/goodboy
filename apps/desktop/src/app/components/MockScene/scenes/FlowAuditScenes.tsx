@@ -481,7 +481,28 @@ const DYNAMIC_RUN: WorkflowRun = {
   autoRun: true,
   triggerMode: 'immediate',
   executionMode: 'dynamic',
-  orchestratorHints: 'Open one PR per project and keep the dry run flag off by default.',
+  orchestratorHints: [
+    {
+      id: 'flow-hint-pinned',
+      text: 'Open one PR per project and keep the dry run flag off by default.',
+      isPinned: true,
+      createdAt: '2026-09-23T09:10:00.000Z' as IsoDateTime,
+    },
+    {
+      id: 'flow-hint-read',
+      text: 'Map ledger-core before touching the payout reader.',
+      isPinned: false,
+      createdAt: '2026-09-23T09:12:00.000Z' as IsoDateTime,
+      consumedAt: '2026-09-23T09:13:00.000Z' as IsoDateTime,
+      consumedAtStep: 2,
+    },
+    {
+      id: 'flow-hint-queued',
+      text: 'Cover the half cent cases before the backfill leaves dry run.',
+      isPinned: false,
+      createdAt: '2026-09-23T09:40:00.000Z' as IsoDateTime,
+    },
+  ],
   orchestratorSummary:
     'Rounding now happens once per batch in ledger-core and the payout reader was left alone. The backfill is replaying the settled quarter behind a dry run flag, and the half cent cases still need coverage.',
   orchestratorRouting: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },

@@ -81,6 +81,7 @@ export type {
   JiraIntegrationBinding,
   LinearIntegrationConfig,
   LinearIntegrationBinding,
+  OrchestratorHint,
   OrchestratorRouting,
   Session,
   Project,

@@ -3,6 +3,7 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  OrchestratorHint,
   OpenQuestion,
   OpenQuestionId,
   ProviderRunId,
@@ -35,9 +36,11 @@ const {
   summarizeSessionSpy,
   summarizeWorkspaceSpy,
   repointWorkflowRunTemplateSpy,
+  updateHintsSpy,
 } = vi.hoisted(() => ({
   decideSpy: vi.fn(),
   repointWorkflowRunTemplateSpy: vi.fn(async () => undefined),
+  updateHintsSpy: vi.fn(async () => undefined),
   invokeWorkflowUpsertSpy: vi.fn(),
   invokeAgentInsertSpy: vi.fn(),
   listOpenQuestionsSpy: vi.fn(async () => [] as ReadonlyArray<OpenQuestion>),
@@ -83,6 +86,7 @@ vi.mock('@goodboy/db', () => ({
   updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
   updateWorkflowRunOrchestrationStop: updateStopSpy,
   updateWorkflowRunOrchestratorSummary: updateSummarySpy,
+  updateWorkflowRunOrchestratorHints: updateHintsSpy,
   insertProviderRun: insertProviderRunSpy,
   updateProviderRunStatus: updateProviderRunStatusSpy,
   insertTelemetry: insertTelemetrySpy,
@@ -313,6 +317,30 @@ const stopFromOperator = async (set: never): Promise<void> =>
     workflowRunId: WORKFLOW_RUN_ID,
     stop: OPERATOR_STOP,
   });
+
+const HINT_AT = '2026-09-23T10:00:00.000Z' as IsoDateTime;
+
+const hintFixture = (over: Partial<OrchestratorHint>): OrchestratorHint => ({
+  id: 'hint',
+  text: 'keep it to one PR',
+  isPinned: false,
+  createdAt: HINT_AT,
+  ...over,
+});
+
+const withHints = (state: State, hints: ReadonlyArray<OrchestratorHint>): State => {
+  const sessions = state['sessions'] as ReadonlyArray<Session>;
+  return {
+    ...state,
+    sessions: [
+      {
+        ...sessions[0]!,
+        workflowRuns: [{ ...sessions[0]!.workflowRuns[0]!, orchestratorHints: hints }],
+      },
+      ...sessions.slice(1),
+    ],
+  };
+};
 
 const harness = (state: State) => {
   const set = vi.fn((updater: unknown) => {
@@ -1693,15 +1721,12 @@ describe('orchestrateNextStep', () => {
     );
   });
 
-  it('hands the operator hints of the run to the orchestrator', async () => {
-    const state = baseState();
-    const sessions = state['sessions'] as ReadonlyArray<Session>;
-    state['sessions'] = [
-      {
-        ...sessions[0]!,
-        workflowRuns: [{ ...sessions[0]!.workflowRuns[0]!, orchestratorHints: 'ignore the docs' }],
-      },
-    ];
+  it('hands the pinned and queued hints of the run to the orchestrator, never a read one', async () => {
+    const state = withHints(baseState(), [
+      hintFixture({ id: 'pinned', text: 'ignore the docs', isPinned: true }),
+      hintFixture({ id: 'queued', text: 'run a reviewer first' }),
+      hintFixture({ id: 'read', text: 'old advice', consumedAt: HINT_AT, consumedAtStep: 1 }),
+    ]);
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
       usage: NO_USAGE,
@@ -1711,9 +1736,91 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(decideSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ operatorHints: 'ignore the docs' }),
+    const input = decideSpy.mock.calls[0]?.[0] as OrchestratorInput;
+    expect(input.operatorHints).toContain('ignore the docs');
+    expect(input.operatorHints).toContain('run a reviewer first');
+    expect(input.operatorHints).not.toContain('old advice');
+  });
+
+  it('marks the queued hints read by the decision, and keeps pinned ones standing', async () => {
+    const state = withHints(baseState(), [
+      hintFixture({ id: 'pinned', text: 'ignore the docs', isPinned: true }),
+      hintFixture({ id: 'queued', text: 'run a reviewer first' }),
+    ]);
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const hints = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!
+      .orchestratorHints;
+    const queued = hints?.find((hint) => hint.id === 'queued');
+    expect(queued?.consumedAt).toBeDefined();
+    expect(queued?.consumedAtStep).toBeGreaterThan(0);
+    expect(hints?.find((hint) => hint.id === 'pinned')?.consumedAt).toBeUndefined();
+    expect(updateHintsSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, hints);
+  });
+
+  it('throws away a decision when a hint lands while it is in flight', async () => {
+    const state = baseState();
+    const { set, get } = harness(state);
+    decideSpy.mockImplementationOnce(async () => {
+      Object.assign(
+        state,
+        withHints(state, [hintFixture({ id: 'late', text: 'no PR, commit locally' })]),
+      );
+      return {
+        decision: {
+          action: 'next',
+          reason: 'Keep going.',
+          step: {
+            name: 'Implement',
+            role: 'implementer',
+            promptPrefix: 'Implement the mapped change.',
+          },
+        },
+        usage: BILLED_USAGE,
+        model: 'claude-haiku-4-5',
+      };
+    });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
+    expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
+    expect(updateHintsSpy).not.toHaveBeenCalled();
+    const late = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!
+      .orchestratorHints?.[0];
+    expect(late?.consumedAt).toBeUndefined();
+    expect(insertTelemetrySpy).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({ kind: 'orchestrator', estimatedCostUsd: 0.0123 }),
     );
+  });
+
+  it('does not report a failure when a hint lands while the failing decision was in flight', async () => {
+    const state = baseState();
+    const { set, get } = harness(state);
+    decideSpy.mockImplementationOnce(async () => {
+      Object.assign(
+        state,
+        withHints(state, [hintFixture({ id: 'late', text: 'no PR, commit locally' })]),
+      );
+      throw new Error('the orchestrator timed out after 120s');
+    });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(updateStopSpy).not.toHaveBeenCalledWith(
+      {},
+      WORKFLOW_RUN_ID,
+      expect.objectContaining({ kind: 'failure' }),
+    );
+    expect(state['emitNotification']).not.toHaveBeenCalled();
   });
 
   it('records the note on the decision it triggered, not only in the prompt', async () => {

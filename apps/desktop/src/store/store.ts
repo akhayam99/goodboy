@@ -200,6 +200,7 @@ import { createCredentialsSlice } from './slices/credentials';
 import { createWorkflowsSlice } from './slices/workflows';
 import type { CopyWorkflowFromWorkspaceParams } from './slices/workflows/copyWorkflowFromWorkspace';
 import type { OrchestrateOptions } from './slices/workflows/orchestrateNextStep';
+import type { OrchestratorHintDraft } from './slices/workflows/addWorkflowOrchestratorHint';
 import type {
   AddStepToWorkflowRunParams,
   AddStepToWorkflowRunResult,
@@ -591,10 +592,21 @@ type AppActions = {
     workflowRunId: WorkflowRunId,
     note?: string,
   ): Promise<void>;
-  setWorkflowOrchestratorHints(
+  addWorkflowOrchestratorHint(
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
-    hints: string,
+    draft: OrchestratorHintDraft,
+  ): Promise<void>;
+  removeWorkflowOrchestratorHint(
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    hintId: string,
+  ): Promise<void>;
+  pinWorkflowOrchestratorHint(
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    hintId: string,
+    isPinned: boolean,
   ): Promise<void>;
   setWorkflowOrchestratorRouting(
     sessionId: SessionId,

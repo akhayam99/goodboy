@@ -107,6 +107,15 @@ export type OrchestratorRouting = Readonly<{
   effort?: ModelEffort;
 }>;
 
+export type OrchestratorHint = Readonly<{
+  id: string;
+  text: string;
+  isPinned: boolean;
+  createdAt: IsoDateTime;
+  consumedAt?: IsoDateTime;
+  consumedAtStep?: number;
+}>;
+
 export type WorkflowRun = Readonly<{
   id: WorkflowRunId;
   workflowId: WorkflowId;
@@ -118,7 +127,7 @@ export type WorkflowRun = Readonly<{
   orchestrationOutcome?: WorkflowOrchestrationOutcome;
   orchestrationReason?: string;
   orchestrationStop?: WorkflowOrchestrationStop;
-  orchestratorHints?: string;
+  orchestratorHints?: ReadonlyArray<OrchestratorHint>;
   orchestratorSummary?: string;
   orchestratorRouting?: OrchestratorRouting;
   roleModelOverrides?: RoleModelPreferences;

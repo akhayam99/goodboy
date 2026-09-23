@@ -17,7 +17,9 @@ import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 import { continueWorkflowRun } from './continueWorkflowRun';
 import { copyWorkflowFromWorkspace } from './copyWorkflowFromWorkspace';
 import { orchestrateNextStep } from './orchestrateNextStep';
-import { setWorkflowOrchestratorHints } from './setWorkflowOrchestratorHints';
+import { addWorkflowOrchestratorHint } from './addWorkflowOrchestratorHint';
+import { pinWorkflowOrchestratorHint } from './pinWorkflowOrchestratorHint';
+import { removeWorkflowOrchestratorHint } from './removeWorkflowOrchestratorHint';
 import { setWorkflowOrchestratorRouting } from './setWorkflowOrchestratorRouting';
 import { setWorkflowRoleModelOverrides } from './setWorkflowRoleModelOverrides';
 import { renameWorkflow } from './renameWorkflow';
@@ -71,7 +73,9 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     orchestrateNextStep: orchestrateNextStep(set, get),
     retryWorkflowOrchestration: retryWorkflowOrchestration(set, get),
     continueWorkflowRun: continueWorkflowRun(set, get),
-    setWorkflowOrchestratorHints: setWorkflowOrchestratorHints(set, get),
+    addWorkflowOrchestratorHint: addWorkflowOrchestratorHint(set, get),
+    removeWorkflowOrchestratorHint: removeWorkflowOrchestratorHint(set, get),
+    pinWorkflowOrchestratorHint: pinWorkflowOrchestratorHint(set, get),
     setWorkflowOrchestratorRouting: setWorkflowOrchestratorRouting(set, get),
     setWorkflowRoleModelOverrides: setWorkflowRoleModelOverrides(set, get),
     retryStepSummary: retryStepSummary(set, get),

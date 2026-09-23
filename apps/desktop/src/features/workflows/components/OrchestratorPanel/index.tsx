@@ -16,6 +16,7 @@ import type {
   Agent,
   BudgetAlert,
   OpenQuestion,
+  OrchestratorHint,
   SessionId,
   Step,
   WorkflowRun,
@@ -30,6 +31,8 @@ import { WorkflowOrchestratorTldr } from '../WorkflowOrchestratorTldr';
 import { RunSpendLimitPopover } from '../RunSpendLimitPopover';
 import { OrchestratorAction } from './OrchestratorAction';
 import { OrchestratorDrawer } from './OrchestratorDrawer';
+import { OrchestratorHintComposer } from './OrchestratorHintComposer';
+import { OrchestratorHintLog } from './OrchestratorHintLog';
 import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
 import { RunRoleModels } from './RunRoleModels';
 import { resolveOrchestratorState } from './orchestratorState';
@@ -46,6 +49,7 @@ type Props = {
 
 const EMPTY_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
 const EMPTY_ALERTS: ReadonlyArray<BudgetAlert> = [];
+const EMPTY_HINTS: ReadonlyArray<OrchestratorHint> = [];
 
 export const OrchestratorPanel = ({
   sessionId,
@@ -58,7 +62,11 @@ export const OrchestratorPanel = ({
   const orchestrateNextStep = useAppStore((state) => state.orchestrateNextStep);
   const retryWorkflowOrchestration = useAppStore((state) => state.retryWorkflowOrchestration);
   const continueWorkflowRun = useAppStore((state) => state.continueWorkflowRun);
-  const setWorkflowOrchestratorHints = useAppStore((state) => state.setWorkflowOrchestratorHints);
+  const addWorkflowOrchestratorHint = useAppStore((state) => state.addWorkflowOrchestratorHint);
+  const removeWorkflowOrchestratorHint = useAppStore(
+    (state) => state.removeWorkflowOrchestratorHint,
+  );
+  const pinWorkflowOrchestratorHint = useAppStore((state) => state.pinWorkflowOrchestratorHint);
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
   const setWorkflowRunAutoRun = useAppStore((state) => state.setWorkflowRunAutoRun);
   const stopWorkflowRunNow = useAppStore((state) => state.stopWorkflowRunNow);
@@ -70,11 +78,14 @@ export const OrchestratorPanel = ({
     isBudgetBlocked({ alerts: state.budgetAlerts ?? EMPTY_ALERTS, sessionId }),
   );
   const [openDrawer, setOpenDrawer] = useState<'none' | 'continue' | 'hints' | 'roles'>('none');
-  const [hintsDraft, setHintsDraft] = useState(run.orchestratorHints ?? '');
   const [continueNote, setContinueNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [isStopArmed, setIsStopArmed] = useState(false);
-  const savedHints = run.orchestratorHints ?? '';
+  const hints = run.orchestratorHints ?? EMPTY_HINTS;
+  const pinnedHintCount = hints.filter((hint) => hint.isPinned).length;
+  const queuedHintCount = hints.filter(
+    (hint) => hint.isPinned === false && hint.consumedAt == null,
+  ).length;
   const continueOpen = openDrawer === 'continue';
   const hintsOpen = openDrawer === 'hints';
   const rolesOpen = openDrawer === 'roles';
@@ -264,8 +275,15 @@ export const OrchestratorPanel = ({
                 · {elapsed}
               </span>
             )}
-            {savedHints === '' ? null : (
-              <span className="font-normal text-muted-foreground">· Standing hints on</span>
+            {pinnedHintCount === 0 ? null : (
+              <span className="font-normal text-muted-foreground">
+                · {pinnedHintCount} {pinnedHintCount === 1 ? 'hint' : 'hints'} on every step
+              </span>
+            )}
+            {queuedHintCount === 0 ? null : (
+              <span data-testid="orchestrator-queued-hints" className="font-normal text-warning">
+                · {queuedHintCount} {queuedHintCount === 1 ? 'hint' : 'hints'} queued
+              </span>
             )}
             {overriddenRoleCount === 0 ? null : (
               <span
@@ -327,7 +345,7 @@ export const OrchestratorPanel = ({
             label="Hints"
             variant="ghost"
             testId="orchestrator-hints-toggle"
-            title={savedHints === '' ? 'Set standing hints for every step' : 'Edit standing hints'}
+            title="Tell the orchestrator something, once or for every step"
             expanded={hintsOpen}
             onClick={() => toggleDrawer('hints')}
           />
@@ -388,50 +406,23 @@ export const OrchestratorPanel = ({
 
         {hintsOpen ? (
           <OrchestratorDrawer
-            inputId="orchestrator-hints-field"
-            title="Standing hints for every step"
-            help="The orchestrator reads these before each step it decides, until you clear them."
+            inputId="orchestrator-hint-field"
+            title="Hints"
+            help="A hint is read once by the next decision, or by every decision when you keep it for every step."
           >
-            <textarea
-              id="orchestrator-hints-field"
-              value={hintsDraft}
-              onChange={(event) => setHintsDraft(event.target.value)}
-              rows={3}
-              placeholder="e.g. open a PR and push a single commit, use the project skill"
-              data-testid="orchestrator-hints-input"
-              className="w-full rounded-md border border-border-soft bg-background px-2 py-1 text-2xs text-foreground focus:outline-none focus:ring-1 focus:ring-[var(--color-focus-ring)]"
+            <OrchestratorHintComposer
+              isDeciding={isOrchestrating}
+              disabled={busy}
+              onSubmit={(draft) => addWorkflowOrchestratorHint(sessionId, run.id, draft)}
             />
-            <div className="flex flex-wrap items-center gap-1.5">
-              <OrchestratorAction
-                icon={PenLine}
-                label="Save hints"
-                variant="primary"
-                testId="orchestrator-hints-save"
-                disabled={busy}
-                onClick={() =>
-                  void guard(async () => {
-                    await setWorkflowOrchestratorHints(sessionId, run.id, hintsDraft);
-                    setOpenDrawer('none');
-                  })
-                }
-              />
-              {savedHints === '' ? null : (
-                <OrchestratorAction
-                  icon={Eraser}
-                  label="Clear hints"
-                  variant="ghost"
-                  testId="orchestrator-hints-clear"
-                  disabled={busy}
-                  onClick={() =>
-                    void guard(async () => {
-                      await setWorkflowOrchestratorHints(sessionId, run.id, '');
-                      setHintsDraft('');
-                      setOpenDrawer('none');
-                    })
-                  }
-                />
-              )}
-            </div>
+            <OrchestratorHintLog
+              hints={hints}
+              disabled={busy}
+              onRemove={(hintId) => void removeWorkflowOrchestratorHint(sessionId, run.id, hintId)}
+              onPin={(hintId, isPinned) =>
+                void pinWorkflowOrchestratorHint(sessionId, run.id, hintId, isPinned)
+              }
+            />
           </OrchestratorDrawer>
         ) : null}
       </div>

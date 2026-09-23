@@ -15,7 +15,6 @@ vi.mock('@goodboy/db', () => ({
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { continueWorkflowRun } from './continueWorkflowRun';
-import { setWorkflowOrchestratorHints } from './setWorkflowOrchestratorHints';
 
 const SESSION_ID = 'session-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
@@ -68,8 +67,6 @@ const baseState = (overrides: Record<string, unknown> = {}): State => {
     sessions: [session(overrides)],
     orchestrateNextStep: vi.fn(async () => undefined),
   };
-  const { set, get } = harness(state);
-  state['setWorkflowOrchestratorHints'] = setWorkflowOrchestratorHints(set, get);
   return state;
 };
 
@@ -92,7 +89,8 @@ describe('continueWorkflowRun', () => {
   });
 
   it('hands the note to the orchestrator once without pinning it to the hints', async () => {
-    const state = baseState({ orchestratorHints: 'skip the docs' });
+    const pinned = { id: 'hint-1', text: 'skip the docs', isPinned: true, createdAt: NOW };
+    const state = baseState({ orchestratorHints: [pinned] });
     const { set, get } = harness(state);
 
     await continueWorkflowRun(set, get)(SESSION_ID, RUN_ID, '  also check the migrations  ');
@@ -102,7 +100,7 @@ describe('continueWorkflowRun', () => {
       extraHints: 'also check the migrations',
     });
     const run = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
-    expect(run.orchestratorHints).toBe('skip the docs');
+    expect(run.orchestratorHints).toEqual([pinned]);
   });
 
   it('leaves a static run alone', async () => {
@@ -113,18 +111,5 @@ describe('continueWorkflowRun', () => {
 
     expect(updateOutcomeSpy).not.toHaveBeenCalled();
     expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
-  });
-});
-
-describe('setWorkflowOrchestratorHints', () => {
-  it('drops the hints when the operator clears the field', async () => {
-    const state = baseState({ orchestratorHints: 'skip the docs' });
-    const { set, get } = harness(state);
-
-    await setWorkflowOrchestratorHints(set, get)(SESSION_ID, RUN_ID, '   ');
-
-    expect(updateHintsSpy).toHaveBeenCalledWith({}, RUN_ID, null);
-    const run = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
-    expect(run.orchestratorHints).toBeUndefined();
   });
 });

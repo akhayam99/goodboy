@@ -64,6 +64,13 @@ import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { buildProfileGuard } from '../../profileGuard';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
+import { findWorkflowRun } from './findWorkflowRun';
+import {
+  activeOrchestratorHints,
+  consumeOrchestratorHints,
+  hasHintArrivedSince,
+} from './orchestratorHintQueue';
+import { writeOrchestratorHints } from './writeOrchestratorHints';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import { recordOrchestratorUsage } from './recordOrchestratorUsage';
 import { findWorkflowActivationBlock } from './workflowActivationGate';
@@ -616,7 +623,15 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)
           ?.profile,
       });
-      const hints = [profileBlock, run.orchestratorHints, operatorNote]
+      const readHints = activeOrchestratorHints({ hints: run.orchestratorHints ?? [] });
+      const readHintIds = new Set(readHints.map((hint) => hint.id));
+      const isDecisionDiscarded = (): boolean =>
+        hasOperatorStop({ get, sessionId, workflowRunId }) ||
+        hasHintArrivedSince({
+          hints: findWorkflowRun({ get, sessionId, workflowRunId })?.orchestratorHints ?? [],
+          seenIds: readHintIds,
+        });
+      const hints = [profileBlock, ...readHints.map((hint) => hint.text), operatorNote]
         .map((entry) => entry?.trim() ?? '')
         .filter((entry) => entry !== '')
         .join('\n');
@@ -659,7 +674,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           }),
         });
       } catch (error) {
-        if (hasOperatorStop({ get, sessionId, workflowRunId })) {
+        if (isDecisionDiscarded()) {
           return;
         }
         const message = `${failureLabel(error)} (${routing.providerId}/${routing.model})`;
@@ -679,7 +694,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       }
       const decision = result.decision;
       if (decision == null) {
-        if (hasOperatorStop({ get, sessionId, workflowRunId })) {
+        if (isDecisionDiscarded()) {
           await recordOrchestratorUsage({
             set,
             get,
@@ -725,7 +740,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         );
         return;
       }
-      if (hasOperatorStop({ get, sessionId, workflowRunId })) {
+      if (isDecisionDiscarded()) {
         await recordOrchestratorUsage({
           set,
           get,
@@ -739,6 +754,19 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         return;
       }
       await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
+      if (readHintIds.size > 0) {
+        await writeOrchestratorHints({
+          set,
+          sessionId,
+          workflowRunId,
+          hints: consumeOrchestratorHints({
+            hints: findWorkflowRun({ get, sessionId, workflowRunId })?.orchestratorHints ?? [],
+            readIds: readHintIds,
+            consumedAt: new Date().toISOString() as IsoDateTime,
+            step: workflow.steps.length + 1,
+          }),
+        });
+      }
       try {
         await persistRunSummary({ set, sessionId, workflowRunId, summary: decision.runSummary });
       } catch {}
