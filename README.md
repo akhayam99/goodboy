@@ -5,7 +5,7 @@
 [![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&style=flat-square&label=ci&labelColor=15181b)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/akhayam99/goodboy?style=flat-square&label=release&labelColor=15181b&color=0e9aa4)](https://github.com/akhayam99/goodboy/releases/latest)
 [![stars](https://img.shields.io/github/stars/akhayam99/goodboy?style=flat-square&label=stars&labelColor=15181b&color=3d444d)](https://github.com/akhayam99/goodboy/stargazers)
-[![license](https://img.shields.io/github/license/akhayam99/goodboy?style=flat-square&label=license&labelColor=15181b&color=3d444d)](./LICENSE)
+[![license](https://img.shields.io/badge/license-FSL--1.1--MIT-3d444d?style=flat-square&labelColor=15181b)](./LICENSE.md)
 
 [Install](#install) &nbsp;·&nbsp; [Providers](#providers-and-integrations) &nbsp;·&nbsp; [Concepts](./docs/concepts.md) &nbsp;·&nbsp; [Documentation](./docs/README.md) &nbsp;·&nbsp; [goodboy-ai.dev](https://goodboy-ai.dev)
 
@@ -15,7 +15,7 @@
 
 <br>
 
-Goodboy is a free, open-source desktop app for macOS and Linux that runs
+Goodboy is a free, source-available desktop app for macOS and Linux that runs
 coding agents on your work.
 
 You describe a task once. The goal, the decisions and the running summary
@@ -233,4 +233,17 @@ off" is a valid bug report. Before changing code, read
 
 ## License
 
-[MIT](./LICENSE) © Amin Khayam
+[FSL-1.1-MIT](./LICENSE.md) © Amin Khayam
+
+Goodboy is source-available under the Functional Source License. You can use
+it for anything, at work included, read it, change it and share your changes.
+The one thing it rules out is shipping it, or something built from it, as a
+commercial product that competes with Goodboy. Two years after each version
+is published, that version becomes MIT.
+
+Releases up to v0.3.15 stay under the MIT license they shipped with.
+
+## Trademark
+
+The Goodboy name and logo are not covered by the license. A fork is welcome,
+under its own name and its own logo.

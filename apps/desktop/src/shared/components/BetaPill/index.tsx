@@ -52,7 +52,7 @@ export const BetaPill = ({ className }: Props) => {
     >
       <p className="text-xs font-semibold leading-snug text-foreground">Goodboy is in beta</p>
       <p className="text-2xs leading-relaxed text-muted-foreground">
-        Releases land often, so expect rough edges. The app is free and open source, and a
+        Releases land often, so expect rough edges. The app is free and source-available, and a
         sponsorship pays for the time that goes into it.
       </p>
       <Button size="sm" onClick={openSponsorPage} className="self-start">

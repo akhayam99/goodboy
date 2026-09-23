@@ -281,7 +281,7 @@ const createOgHtml = ({ format, accent, mascotBase64, providerBrands, date }) =>
     <div class="foot">
       <span class="dom">goodboy-ai.dev</span>
       <span class="marks-wrap"><span class="marks">${marks}</span><small>providers as of ${date}</small></span>
-      <span class="note">free and open source</span>
+      <span class="note">free and source-available</span>
     </div>`;
   return createBaseHtml({
     width: format.width,

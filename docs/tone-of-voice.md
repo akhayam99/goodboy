@@ -89,8 +89,8 @@ addressing a market. Two voices:
 
 ### Layout
 
-- **Put the reassurance next to the action.** "Goodboy is free and open
-  source" belongs right above the Install button, where the cursor already is.
+- **Put the reassurance next to the action.** "Goodboy is free and
+  source-available" belongs right above the Install button, where the cursor already is.
 - **Keep the sharp word.** "You micromanage which model gets which task" lands
   harder than "you babysit". Between two true words, take the one with edge.
 

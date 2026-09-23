@@ -12,7 +12,7 @@ const FAQS: readonly FaqItem[] = [
   },
   {
     q: 'Is it really free, and what is the catch?',
-    a: 'Free and open source, every feature included from the first launch. No account, no paid tier waiting for you further down.',
+    a: 'Free and source-available, every feature included from the first launch. No account, no paid tier waiting for you further down.',
   },
   {
     q: 'Will it cost me anything on top of what I already pay?',
