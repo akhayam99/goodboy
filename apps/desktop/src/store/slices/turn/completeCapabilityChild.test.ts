@@ -7,6 +7,7 @@ import type {
   ClusterCompletionHold,
   IsoDateTime,
   SessionId,
+  StepId,
   WorkflowRunId,
 } from '@goodboy/types';
 import type { GetFn, SetFn } from './types';
@@ -151,6 +152,8 @@ const createHarness = ({ obligation, grant, agent = child }: HarnessParams) => {
   const sendTurn = vi.fn(async () => undefined);
   const resolveClusterCompletionHold = vi.fn(async () => undefined);
   const decideCapabilityNeed = vi.fn(async () => ({ kind: 'unavailable', reason: 'stub' }));
+  const finalizeWorkflowStep = vi.fn(async () => ({ shouldAutoAdvance: true }));
+  const maybeAutoAdvanceWorkflow = vi.fn(async () => undefined);
   const state = {
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
     capabilityObligations: { [SESSION_ID]: [obligation] },
@@ -160,6 +163,8 @@ const createHarness = ({ obligation, grant, agent = child }: HarnessParams) => {
     sendTurn,
     resolveClusterCompletionHold,
     decideCapabilityNeed,
+    finalizeWorkflowStep,
+    maybeAutoAdvanceWorkflow,
     refreshUnreadWorkspaces: vi.fn(),
     emitNotification: vi.fn(async () => undefined),
   };
@@ -179,6 +184,8 @@ const createHarness = ({ obligation, grant, agent = child }: HarnessParams) => {
     sendTurn,
     resolveClusterCompletionHold,
     decideCapabilityNeed,
+    finalizeWorkflowStep,
+    maybeAutoAdvanceWorkflow,
   };
 };
 
@@ -483,6 +490,54 @@ describe('completeCapabilityChild', () => {
     expect(resolveClusterCompletionHold).toHaveBeenCalledWith(
       expect.objectContaining({ holdId: 'hold-1' }),
     );
+  });
+
+  it('finishes the step of a phase requester once the work it handed off is verified', async () => {
+    const stepRequester: Agent = {
+      ...child,
+      id: REQUESTER_ID,
+      name: 'review the change',
+      kind: 'reviewer',
+      parentAgentId: undefined,
+      executionPurpose: undefined,
+      stepId: 'step-review' as StepId,
+    };
+    h.settle.mockImplementation(async () =>
+      obligationOf({ state: 'satisfied', satisfiedRevision: 'sha-verified', holdIds: [] }),
+    );
+    h.agentList.mockImplementation(async () => [verifierAgent, stepRequester]);
+    const harness = createHarness({
+      obligation: obligationOf({ holdIds: [] }),
+      grant: grantOf({ verificationAgentId: verifierAgent.id }),
+      agent: verifierAgent,
+    });
+
+    const outcome = await completeCapabilityChild({
+      set: harness.set,
+      get: harness.get,
+      sessionId: SESSION_ID,
+      child: verifierAgent,
+      assistantText: `the repair holds.\n${clearVerdict('verifier-1')}`,
+      now,
+    });
+
+    expect(outcome).toEqual({ kind: 'settled', verifiedRevision: 'sha-verified' });
+    expect(harness.finalizeWorkflowStep).toHaveBeenCalledWith(
+      SESSION_ID,
+      REQUESTER_ID,
+      expect.stringContaining('verified it'),
+      false,
+      { force: true },
+    );
+    expect(harness.maybeAutoAdvanceWorkflow).toHaveBeenCalledWith(SESSION_ID);
+  });
+
+  it('leaves a held cluster requester to its hold instead of finishing a step', async () => {
+    const { finalizeWorkflowStep } = await completeVerifier({
+      assistantText: `the repair holds.\n${clearVerdict('verifier-1')}`,
+    });
+
+    expect(finalizeWorkflowStep).not.toHaveBeenCalled();
   });
 
   it('leaves the node open for a resumed requester and lets its own completion close it', async () => {

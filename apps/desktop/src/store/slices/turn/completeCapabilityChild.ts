@@ -212,6 +212,48 @@ const settleAndRelease = async ({
   return revision;
 };
 
+type FinishRequesterParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly obligationId: string;
+  readonly output: string;
+};
+
+const finishHandedOffRequester = async ({
+  get,
+  sessionId,
+  obligationId,
+  output,
+}: FinishRequesterParams): Promise<void> => {
+  const obligation = (get().capabilityObligations[sessionId] ?? []).find(
+    (candidate) => candidate.id === obligationId,
+  );
+  if (obligation?.state !== 'satisfied' || obligation.holdIds.length > 0) {
+    return;
+  }
+  const requester = (get().sessionPhaseRuns[sessionId] ?? []).find(
+    (agent) => agent.id === obligation.requesterAgentId,
+  );
+  if (
+    requester === undefined ||
+    !requester.stepId ||
+    !requester.workflowRunId ||
+    requester.status === 'completed'
+  ) {
+    return;
+  }
+  const { shouldAutoAdvance } = await get().finalizeWorkflowStep(
+    sessionId,
+    requester.id,
+    output,
+    false,
+    { force: true },
+  );
+  if (shouldAutoAdvance) {
+    void get().maybeAutoAdvanceWorkflow(sessionId);
+  }
+};
+
 type AdoptProposalParams = {
   readonly set: SetFn;
   readonly get: GetFn;
@@ -755,9 +797,16 @@ export const completeCapabilityChild = async ({
       receipt: `${obligation.purpose} verified by ${child.name}: ${outputSummary}`,
       isRequesterContinuing: false,
     });
-    return revision === null
-      ? { kind: 'unverified', reason: UNREAD_REVISION }
-      : { kind: 'settled', verifiedRevision: revision };
+    if (revision === null) {
+      return { kind: 'unverified', reason: UNREAD_REVISION };
+    }
+    await finishHandedOffRequester({
+      get,
+      sessionId,
+      obligationId: obligation.id,
+      output: `The ${grant.grantedRole} this step handed off to finished and ${child.name} verified it: ${outputSummary}`,
+    });
+    return { kind: 'settled', verifiedRevision: revision };
   }
 
   if (obligation.purpose === 'replan') {
@@ -845,7 +894,14 @@ export const completeCapabilityChild = async ({
     receipt: `${obligation.purpose} answered by ${child.name}`,
     isRequesterContinuing: false,
   });
-  return revision === null
-    ? { kind: 'unverified', reason: UNREAD_REVISION }
-    : { kind: 'settled', verifiedRevision: revision };
+  if (revision === null) {
+    return { kind: 'unverified', reason: UNREAD_REVISION };
+  }
+  await finishHandedOffRequester({
+    get,
+    sessionId,
+    obligationId: obligation.id,
+    output: assistantText,
+  });
+  return { kind: 'settled', verifiedRevision: revision };
 };
