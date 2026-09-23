@@ -244,7 +244,9 @@ describe('WorkspaceLinkForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create workspace' }));
     await waitFor(() => expect(state.createWorkspace).toHaveBeenCalled());
 
-    fireEvent.change(screen.getByLabelText('Project path'), { target: { value: '/repos/api' } });
+    fireEvent.change(await screen.findByLabelText('Project path'), {
+      target: { value: '/repos/api' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /add/i }));
 
     await waitFor(() => screen.getByText('already in Legacy with 5 sessions'));
@@ -274,7 +276,9 @@ describe('WorkspaceLinkForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create workspace' }));
     await waitFor(() => expect(state.createWorkspace).toHaveBeenCalled());
 
-    fireEvent.change(screen.getByLabelText('Project path'), { target: { value: '/repos/api' } });
+    fireEvent.change(await screen.findByLabelText('Project path'), {
+      target: { value: '/repos/api' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /add/i }));
     await waitFor(() => screen.getByText('already in Legacy with 5 sessions'));
 
