@@ -47,16 +47,23 @@ const isGrantShape = (value: unknown): value is GrantShape => {
 
 const asText = (value: string | null): string => value ?? 'unknown';
 
-export const acquireWriterLease = async ({
-  holder,
-  resources,
-  runId,
-}: {
+type AcquireParams = {
   readonly holder: string;
   readonly resources: ReadonlyArray<string>;
   readonly runId?: string;
-}): Promise<WriterLeaseOutcome> => {
-  const raw = await invoke<unknown>('writer_lease_acquire', {
+};
+
+type RequestParams = AcquireParams & {
+  readonly command: 'writer_lease_acquire' | 'writer_lease_acquire_waiting';
+};
+
+const requestWriterLease = async ({
+  command,
+  holder,
+  resources,
+  runId,
+}: RequestParams): Promise<WriterLeaseOutcome> => {
+  const raw = await invoke<unknown>(command, {
     holder,
     resources: [...resources],
     runId: runId ?? null,
@@ -74,6 +81,30 @@ export const acquireWriterLease = async ({
     blockedResource: asText(raw.blockedResource),
   };
 };
+
+export const acquireWriterLease = async ({
+  holder,
+  resources,
+  runId,
+}: AcquireParams): Promise<WriterLeaseOutcome> =>
+  requestWriterLease({
+    command: 'writer_lease_acquire',
+    holder,
+    resources,
+    ...(runId != null && { runId }),
+  });
+
+export const acquireWriterLeaseWaiting = async ({
+  holder,
+  resources,
+  runId,
+}: AcquireParams): Promise<WriterLeaseOutcome> =>
+  requestWriterLease({
+    command: 'writer_lease_acquire_waiting',
+    holder,
+    resources,
+    ...(runId != null && { runId }),
+  });
 
 export const releaseWriterLease = async ({ token }: { readonly token: string }): Promise<boolean> =>
   invoke<boolean>('writer_lease_release', { token }).catch(() => false);

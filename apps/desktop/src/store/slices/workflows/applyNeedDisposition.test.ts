@@ -227,7 +227,11 @@ describe('applyNeedDisposition', () => {
     });
     expect(spawnAgent).toHaveBeenCalledWith(
       SESSION_ID,
-      expect.objectContaining({ kindOverride: 'implementer', executionPurpose: 'capability' }),
+      expect.objectContaining({
+        kindOverride: 'implementer',
+        executionPurpose: 'capability',
+        generationPurpose: 'repair',
+      }),
     );
     expect(h.claim).toHaveBeenCalledWith(
       expect.objectContaining({ parentOutcome: 'handed-off', grantedRole: 'implementer' }),
@@ -348,6 +352,41 @@ describe('applyNeedDisposition', () => {
     expect(h.updateStatus).not.toHaveBeenCalled();
   });
 
+  it('resumes a parent with no provider override on the provider its session belongs to', async () => {
+    const requester = agentOf({
+      kind: 'implementer',
+      name: 'apply the change',
+      status: 'running',
+      providerSessionId: 'sess-1',
+      providerSessionProviderId: 'anthropic',
+    });
+    const { set, get } = createHarness({ requester });
+    const obligation = obligationOf({
+      targetRole: 'investigator',
+      purpose: 'diagnosis',
+      identity: 'agent-1:investigator:diagnosis',
+      requests: [
+        {
+          ...obligationOf().requests[0]!,
+          targetRole: 'investigator',
+          purpose: 'diagnosis',
+          continuation: 'resume',
+        },
+      ],
+    });
+
+    const outcome = await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation,
+      decision: { ...grantDecision({ role: 'investigator' }), obligationId: obligation.id },
+    });
+
+    expect(outcome.kind === 'granted' ? outcome.plan.kind : '').toBe('resume');
+    expect(h.updateStatus).not.toHaveBeenCalled();
+  });
+
   it('transfers explicitly when the launcher discards the session id', async () => {
     const requester = agentOf({
       kind: 'implementer',
@@ -387,6 +426,10 @@ describe('applyNeedDisposition', () => {
         transferredWork: expect.stringContaining('the first two files are done'),
       }),
     );
+    const transferred = JSON.parse(
+      (h.claim.mock.calls[0]![0] as { transferredWork: string }).transferredWork,
+    ) as { evidenceRefs: ReadonlyArray<string> };
+    expect(transferred.evidenceRefs).toEqual(['review:finding-1']);
     expect(h.updateStatus).toHaveBeenCalledWith(
       REQUESTER_ID,
       expect.objectContaining({
@@ -565,7 +608,7 @@ describe('applyNeedDisposition', () => {
 
   it('reaches the requester with a refusal and with a refinement, each carrying its reason', async () => {
     const requester = agentOf({});
-    const { set, get, state } = createHarness({ requester });
+    const { set, get, state, sendTurn } = createHarness({ requester });
     h.decide.mockImplementation(async () =>
       obligationOf({
         state: 'refused',
@@ -595,6 +638,13 @@ describe('applyNeedDisposition', () => {
       'no allowance is left in this run',
       { sessionId: SESSION_ID },
     );
+    expect(sendTurn).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        sessionId: SESSION_ID,
+        agentId: REQUESTER_ID,
+        content: expect.stringContaining('no allowance is left in this run'),
+      }),
+    );
 
     h.decide.mockImplementation(async () =>
       obligationOf({ decision: 'refinement', decisionReason: 'name the failing test' }),
@@ -614,6 +664,13 @@ describe('applyNeedDisposition', () => {
     expect(refinement).toEqual({ kind: 'refined', reason: 'name the failing test' });
     expect(h.decide).toHaveBeenLastCalledWith(
       expect.objectContaining({ decision: 'refinement', reason: 'name the failing test' }),
+    );
+    expect(sendTurn).toHaveBeenCalledTimes(2);
+    expect(sendTurn).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        agentId: REQUESTER_ID,
+        content: expect.stringContaining('Narrow the request'),
+      }),
     );
   });
 
@@ -767,6 +824,7 @@ describe('a structural escalation', () => {
       grant: grantOf({ purpose: 'replan', grantedRole: 'planner' }),
       isFirstDelivery: true,
     }));
+    h.freeze.mockImplementation(async () => ({ containerAgentId: 'container-1' }));
 
     const outcome = await applyNeedDisposition({
       set,
@@ -784,6 +842,29 @@ describe('a structural escalation', () => {
       SESSION_ID,
       expect.objectContaining({ kindOverride: 'planner' }),
     );
+  });
+
+  it('starts no planner when the execution graph cannot be frozen', async () => {
+    const requester = agentOf({ parentAgentId: 'container-1' as AgentId });
+    const { set, get, spawnAgent, state } = createHarness({ requester });
+    const obligation = replanObligation();
+    h.decide.mockImplementation(async () =>
+      replanObligation({ state: 'refused', decision: 'refused' }),
+    );
+
+    const outcome = await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation,
+      decision: { ...grantDecision({ role: 'planner' }), obligationId: obligation.id },
+    });
+
+    expect(outcome.kind).toBe('refused');
+    expect(outcome.kind === 'refused' ? outcome.reason : '').toContain('could not be frozen');
+    expect(spawnAgent).not.toHaveBeenCalled();
+    expect(h.claim).not.toHaveBeenCalled();
+    expect(state.capabilityObligations[SESSION_ID]?.[0]?.state).toBe('refused');
   });
 
   it('refuses the escalation once the structural replan allowance is spent', async () => {

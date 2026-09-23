@@ -16,6 +16,7 @@ export type EvidenceSourceRequest = Readonly<{
 
 export type EvidenceDeliveryOutcome =
   | Readonly<{ kind: 'refused'; reason: string }>
+  | Readonly<{ kind: 'held'; reason: string }>
   | Readonly<{
       kind: 'delivered';
       inventoryRevision: string;
@@ -129,7 +130,11 @@ export const deliverEvidenceSources = async ({
       receipts,
     });
   } catch {
-    return { kind: 'refused', reason: 'the delivery receipt could not be recorded' };
+    return {
+      kind: 'held',
+      reason:
+        'the delivery receipt could not be recorded, so nothing was handed over and the agent is held until it asks again',
+    };
   }
 
   set((state) => ({

@@ -12,6 +12,8 @@ pub enum PlannerError {
     UnknownProvider(String),
     #[error("invocation admission error: {0}")]
     Admission(#[from] crate::invocation_admission::AdmissionError),
+    #[error("{0}")]
+    WriterLease(#[from] crate::writer_lease::ExposureLeaseError),
 }
 
 crate::util::impl_error_serialize!(PlannerError);
@@ -22,6 +24,7 @@ impl PlannerError {
             PlannerError::Io(_) => "io",
             PlannerError::UnknownProvider(_) => "unknown_provider",
             PlannerError::Admission(_) => "admission",
+            PlannerError::WriterLease(_) => "writer_lease",
         }
     }
 }
@@ -42,6 +45,8 @@ pub struct PlannerArgs {
     pub effort: Option<String>,
     #[serde(default)]
     pub invocation: Option<crate::invocation_admission::InvocationContext>,
+    #[serde(default)]
+    pub managed_checkouts: Vec<crate::writer_lease::ManagedCheckout>,
 }
 
 #[derive(Debug, Serialize)]
@@ -52,31 +57,58 @@ pub struct PlannerResult {
     pub exit_code: Option<i32>,
 }
 
+fn exposure(args: &PlannerArgs) -> Vec<String> {
+    let Some(working_dir) = args.working_dir.as_deref().filter(|dir| !dir.is_empty()) else {
+        return Vec::new();
+    };
+    crate::writer_lease::invocation_exposure(&crate::writer_lease::InvocationExposure {
+        binary: &args.binary,
+        permission_mode: "default",
+        is_read_only_role: matches!(args.provider_id.as_str(), "anthropic" | "codex"),
+        working_dir,
+        writable_roots: &[],
+        checkouts: &args.managed_checkouts,
+    })
+}
+
 #[tauri::command]
 pub async fn planner_run(
     admission: State<'_, crate::invocation_admission::InvocationAdmission>,
+    queue: State<'_, crate::writer_lease::WriterLeaseQueue>,
     database: State<'_, crate::db::Db>,
     args: PlannerArgs,
 ) -> Result<PlannerResult, PlannerError> {
     let admission = admission.inner().clone();
     let database = database.inner().clone();
+    let cli_args = build_cli_args(&args)?;
+    let invocation = args.invocation.clone().unwrap_or_else(|| {
+        crate::invocation_admission::InvocationContext {
+            invocation_id: format!("planner-{}-{}", std::process::id(), crate::util::now_ms()),
+            workspace_id: None,
+            session_id: None,
+            workflow_run_id: None,
+            agent_id: None,
+            provider_identity: None,
+            purpose: "planner".to_string(),
+            is_heavyweight: false,
+            limits: crate::invocation_admission::InvocationLimits::default(),
+            spend_reservation: None,
+        }
+    });
+    let lease = crate::writer_lease::hold_exposure(
+        &database,
+        queue.inner(),
+        &invocation.invocation_id,
+        &exposure(&args),
+    )
+    .await?;
     tauri::async_runtime::spawn_blocking(move || {
-        let cli_args = build_cli_args(&args)?;
-        let invocation = args.invocation.clone().unwrap_or_else(|| {
-            crate::invocation_admission::InvocationContext {
-                invocation_id: format!("planner-{}-{}", std::process::id(), crate::util::now_ms()),
-                workspace_id: None,
-                session_id: None,
-                workflow_run_id: None,
-                agent_id: None,
-                provider_identity: None,
-                purpose: "planner".to_string(),
-                is_heavyweight: false,
-                limits: crate::invocation_admission::InvocationLimits::default(),
-                spend_reservation: None,
-            }
-        });
-        let mut permit = admission.admit(database, invocation.request(&args.provider_id))?;
+        let cancel_key = invocation.invocation_id.clone();
+        let mut permit = admission.admit(
+            database,
+            invocation.request(&args.provider_id),
+            &cancel_key,
+        )?;
 
         let mut command = crate::path_env::command(&args.binary);
         crate::aux_spawn::scrub_nested_session_env(&mut command);
@@ -91,8 +123,17 @@ pub async fn planner_run(
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()?;
-        permit.bind_process(child.id())?;
+        let process_id = child.id();
+        let armed = crate::aux_spawn::KillOnDrop::new(child);
+        permit.bind_process(process_id)?;
+        if let Some(lease) = lease.as_ref() {
+            lease.bind_process(process_id);
+        }
+        let child = armed
+            .disarm()
+            .ok_or_else(|| PlannerError::Io(std::io::Error::other("planner child missing")))?;
         let output = child.wait_with_output()?;
+        drop(lease);
         let exit_code = output.status.code();
         let reason = if exit_code == Some(0) {
             "completed"
@@ -127,14 +168,17 @@ fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
                 "--system-prompt".to_string(),
                 args.system_prompt.clone(),
                 "--setting-sources".to_string(),
-                crate::aux_spawn::CLAUDE_SETTING_SOURCES.to_string(),
+                crate::aux_spawn::claude_setting_sources(!args.tools_disabled).to_string(),
                 "--output-format".to_string(),
                 "json".to_string(),
                 "--no-session-persistence".to_string(),
+                "--permission-mode".to_string(),
+                "default".to_string(),
+                "--tools".to_string(),
             ];
-            if args.tools_disabled {
-                cli_args.push("--tools".to_string());
-                cli_args.push(String::new());
+            match args.tools_disabled {
+                true => cli_args.push(String::new()),
+                false => cli_args.push(crate::aux_spawn::CLAUDE_READ_ONLY_TOOLS.to_string()),
             }
             crate::aux_spawn::push_claude_mcp_deny(&mut cli_args);
             crate::aux_spawn::push_effort_args("anthropic", args.effort.as_deref(), &mut cli_args);
@@ -155,6 +199,8 @@ fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
                 "--json".to_string(),
                 "--model".to_string(),
                 args.model.clone(),
+                "-s".to_string(),
+                "read-only".to_string(),
             ];
             crate::aux_spawn::push_effort_args("codex", args.effort.as_deref(), &mut cli_args);
             cli_args.push("--".to_string());
@@ -205,6 +251,7 @@ mod tests {
             tools_disabled: false,
             effort: None,
             invocation: None,
+            managed_checkouts: Vec::new(),
         }
     }
 
@@ -249,12 +296,54 @@ mod tests {
     }
 
     #[test]
-    fn anthropic_args_keep_tools_by_default() {
+    fn anthropic_args_keep_only_read_only_tools_by_default() {
         let cli = build_cli_args(&make_args("anthropic")).expect("anthropic args");
-        assert!(!cli.iter().any(|a| a == "--tools"));
+        let idx = cli.iter().position(|a| a == "--tools").expect("--tools");
+        assert_eq!(cli[idx + 1], crate::aux_spawn::CLAUDE_READ_ONLY_TOOLS);
+        let mode = cli
+            .iter()
+            .position(|a| a == "--permission-mode")
+            .expect("--permission-mode");
+        assert_eq!(cli[mode + 1], "default");
         assert!(cli
             .windows(2)
             .any(|pair| pair[0] == "--disallowedTools" && pair[1] == "mcp__*"));
+    }
+
+    #[test]
+    fn codex_args_run_in_the_read_only_sandbox() {
+        let cli = build_cli_args(&make_args("codex")).expect("codex args");
+        assert!(cli
+            .windows(2)
+            .any(|pair| pair[0] == "-s" && pair[1] == "read-only"));
+    }
+
+    #[test]
+    fn only_an_unproven_planner_launcher_leases_its_checkout() {
+        let mut claude = make_args("anthropic");
+        claude.working_dir = Some("/repos/app/.worktrees/one".to_string());
+        assert!(exposure(&claude).is_empty());
+
+        let mut codex = make_args("codex");
+        codex.binary = "codex".to_string();
+        codex.working_dir = Some("/repos/app/.worktrees/one".to_string());
+        assert!(exposure(&codex).is_empty());
+
+        let mut cursor = make_args("cursor");
+        cursor.binary = "cursor-agent".to_string();
+        cursor.working_dir = Some("/repos/app/.worktrees/one".to_string());
+        cursor.managed_checkouts = vec![crate::writer_lease::ManagedCheckout {
+            repo_root: "/repos/app".to_string(),
+            worktree_path: "/repos/app/.worktrees/one".to_string(),
+            git_dir: None,
+        }];
+        assert_eq!(
+            exposure(&cursor),
+            vec![crate::writer_lease::worktree_resource(
+                "/repos/app",
+                "/repos/app/.worktrees/one"
+            )]
+        );
     }
 
     #[test]
@@ -274,7 +363,7 @@ mod tests {
             .iter()
             .position(|a| a == "--setting-sources")
             .expect("--setting-sources");
-        assert_eq!(cli[idx + 1], "project,local");
+        assert_eq!(cli[idx + 1], "local");
         assert!(!cli.iter().any(|a| a == "--bare"));
     }
 

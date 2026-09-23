@@ -193,6 +193,52 @@ describe('serveContextRead', () => {
     expect(h.invokeEvidenceDeliveryRecord).not.toHaveBeenCalled();
   });
 
+  it('holds the agent and says so when the receipt cannot be recorded', async () => {
+    const { set, get, emitNotification, sendTurn } = createHarness();
+    h.invokeEvidenceDeliveryRecord.mockRejectedValueOnce(new Error('database is locked'));
+
+    const service = await serveContextRead({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      runId: RUN_ID,
+      assistantText: readBody({ v: 1, inventoryRevision: revisionOf(get), sources: ['slot:goal'] }),
+    });
+
+    expect(service.kind).toBe('held');
+    expect(contextReadBlocksCompletion({ service })).toBe(true);
+    expect(emitNotification).toHaveBeenCalled();
+    expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('refuses a read that lists one source twice', async () => {
+    const { set, get, sendTurn } = createHarness();
+
+    const service = await serveContextRead({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      runId: RUN_ID,
+      assistantText: readBody({
+        v: 1,
+        inventoryRevision: revisionOf(get),
+        sources: [
+          { id: 'slot:goal', range: '1-1' },
+          { id: 'slot:goal', range: '2-2' },
+        ],
+      }),
+    });
+
+    expect(service).toEqual({
+      kind: 'refused',
+      reason: 'a context-read source is listed more than once',
+    });
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(h.invokeEvidenceDeliveryRecord).not.toHaveBeenCalled();
+  });
+
   it('reports no read for a turn that carries none', async () => {
     const { set, get } = createHarness();
 

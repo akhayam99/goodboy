@@ -33,7 +33,7 @@ import {
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
 import { composeClusterOutcomeBoundary, composeKickoff, composeUnitBoundary } from '../../kickoff';
-import { bindGeneration, reserveGeneration } from '../agents/reserveGeneration';
+import { reserveGeneration } from '../agents/reserveGeneration';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { clusterSourceProgress, isCompletedAmong } from './clusterSourceProgress';
 import { revalidateChildRouting } from './revalidateChildRouting';
@@ -275,7 +275,7 @@ function composeClusterKickoff({
 }): string {
   const total = pairs.length > 0 ? pairs.length : 1;
   const priorTitles = pairs
-    .filter((pair) => pair.node.ordinal < target.ordinal)
+    .filter((pair) => pair.node.ordinal < target.ordinal && pair.isCompleted)
     .map((pair) => `${pair.node.ordinal + 1}. ${pair.node.title}`);
   const priorBlock =
     priorTitles.length > 0
@@ -527,6 +527,7 @@ export const fanOutClusters = async (
         ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
         ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
         ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
+        generationReservationId: reservation.reservations[index]!.reservationId,
       };
     }),
   });
@@ -534,7 +535,6 @@ export const fanOutClusters = async (
     return;
   }
   const childIds: AgentId[] = materialized.agents.map((agent) => agent.id);
-  await bindGeneration({ reservations: reservation.reservations, agentIds: childIds });
 
   const bindings: ReadonlyArray<ClusterExecutionNodeSeed> = nodes.map((node, index) => ({
     nodeId: node.id,
