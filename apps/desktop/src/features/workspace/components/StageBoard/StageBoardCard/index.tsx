@@ -1,11 +1,12 @@
 import { memo, useEffect, useMemo } from 'react';
-import { Archive, ChevronRight, Code, MessageSquareDiff, RotateCcw, Trash2 } from 'lucide-react';
+import { Archive, ChevronRight, Code, MessageSquareDiff, Trash2 } from 'lucide-react';
 import {
   Chip,
   cn,
   formatUsd,
   Tooltip,
   InlineMarkdown,
+  inlineMarkdownText,
   OverflowMenu,
   type OverflowMenuItem,
 } from '@goodboy/ui';
@@ -171,37 +172,26 @@ export const StageBoardCard = memo(function StageBoardCard({
     nav.openGithub(session);
   };
 
+  const selectFromEvent = (event: CardSelectionEvent): boolean => {
+    if (onModifierClick && (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey)) {
+      onModifierClick(id, event);
+      return true;
+    }
+    return false;
+  };
+
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <article
       data-archived={archived || undefined}
       data-select-id={id}
-      aria-pressed={selected === true}
-      aria-keyshortcuts="Alt+Enter"
       onClick={(event) => {
-        if (onModifierClick && (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey)) {
-          onModifierClick(id, event);
-          return;
-        }
-        nav.selectCard(session);
-      }}
-      onKeyDown={(event) => {
-        if (event.target !== event.currentTarget) {
-          return;
-        }
-        if (event.key !== 'Enter' && event.key !== ' ') {
-          return;
-        }
-        event.preventDefault();
-        if (onModifierClick && event.altKey) {
-          onModifierClick(id, event);
+        if (selectFromEvent(event)) {
           return;
         }
         nav.selectCard(session);
       }}
       className={cn(
-        'group/session-card grid h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 text-left',
+        'group/session-card grid min-h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 text-left',
         sessionCardShell({ stage, selected }),
       )}
     >
@@ -213,10 +203,29 @@ export const StageBoardCard = memo(function StageBoardCard({
             prFetchState={prFetchState}
             onOpen={handlePrClick}
           />
-          <InlineMarkdown
-            text={session.goal}
-            className="line-clamp-2 min-h-10 min-w-0 flex-1 text-sm font-medium leading-5"
-          />
+          <button
+            type="button"
+            title={inlineMarkdownText({ text: session.goal })}
+            aria-pressed={selected === true}
+            aria-keyshortcuts="Alt+Enter"
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter' && event.key !== ' ') {
+                return;
+              }
+              event.preventDefault();
+              event.stopPropagation();
+              if (event.altKey && selectFromEvent(event)) {
+                return;
+              }
+              nav.selectCard(session);
+            }}
+            className="min-w-0 flex-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            <InlineMarkdown
+              text={session.goal}
+              className="line-clamp-3 min-h-10 text-sm font-medium leading-5"
+            />
+          </button>
         </span>
 
         {reason && <span className="truncate text-2xs text-muted-foreground">{reason}</span>}
@@ -236,7 +245,7 @@ export const StageBoardCard = memo(function StageBoardCard({
           )}
           {archived === true && (
             <CardAction
-              icon={RotateCcw}
+              icon={CONCEPT_ICONS.restore}
               tone="primary"
               label="Restore"
               onClick={() => onRestore?.(session)}
@@ -325,6 +334,6 @@ export const StageBoardCard = memo(function StageBoardCard({
           trigger={<CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />}
         />
       </CardActionSlot>
-    </div>
+    </article>
   );
 });

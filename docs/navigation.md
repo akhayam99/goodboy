@@ -11,6 +11,14 @@
   (needs you / running / in review / building / done). You reach chat, diff,
   terminal and open-in-IDE from the cards. You never land on them. Every
   capability stays one step away.
+- **The board frame.** The header has the pane title grade (`Board` plus a
+  session count), with its actions on the right, on the same left edge as the
+  columns. Active stage columns share the width equally, down to a minimum.
+  Empty ones show a dashed "Nothing here". Done and Archived fold into narrow
+  vertical rails that stay on screen at the minimum window width. A card's goal
+  is its one button (up to three lines, with the full goal in the tooltip). Its
+  quick and lifecycle actions sit next to it, never nested inside it. Restoring
+  an archived card uses the `restore` glyph.
 - **Four surfaces, four jobs, no competition.** The top bar is chrome ("where am I
   and what is it costing"). The footer is access ("where do I go"). The sidebar is
   presence ("what else is going on"). The ⌘K palette is transit ("where do I

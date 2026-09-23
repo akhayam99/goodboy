@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { HelpCircle, Play, type LucideIcon } from 'lucide-react';
 import type {
   PullRequestState,
@@ -141,19 +141,21 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
+const cardTitle = () => screen.getByRole('button', { name: session.goal });
+
 describe('StageBoardCard layout', () => {
-  it('uses fixed card and title slots while always rendering the footer row', () => {
+  it('grows with a three-line goal while always rendering the footer row', () => {
     render(<StageBoardCard session={session} nav={nav} />);
-    const card = screen.getAllByRole('button')[0];
+    const card = screen.getByRole('article');
     const title = screen.getByText(session.goal);
-    const metaRow = card?.children[2];
-    expect(card?.className).toContain('h-28');
-    expect(card?.className).toContain('gap-y-1');
-    expect(card?.className).not.toContain('h-[8.25rem]');
-    expect(card?.className).not.toContain('shadow-sm');
-    expect(title.className).toContain('line-clamp-2');
+    const metaRow = card.children[2];
+    expect(card.className).toContain('min-h-28');
+    expect(card.className).toContain('gap-y-1');
+    expect(card.className).not.toContain('shadow-sm');
+    expect(title.className).toContain('line-clamp-3');
     expect(title.className).toContain('min-h-10');
     expect(title.className).toContain('leading-5');
+    expect(cardTitle().getAttribute('title')).toBe(session.goal);
     expect(metaRow?.className).not.toContain('col-span-2');
     expect(metaRow?.className).toContain('col-start-1');
     expect(metaRow?.className).toContain('row-start-2');
@@ -200,7 +202,7 @@ describe('StageBoardCard selection', () => {
   it('selects on an alt click instead of opening the session', () => {
     const onModifierClick = vi.fn();
     render(<StageBoardCard session={session} nav={nav} onModifierClick={onModifierClick} />);
-    fireEvent.click(screen.getAllByRole('button')[0] as HTMLElement, { altKey: true });
+    fireEvent.click(cardTitle(), { altKey: true });
     expect(onModifierClick).toHaveBeenCalledWith(SESSION_ID, expect.anything());
     expect(nav.selectCard).not.toHaveBeenCalled();
   });
@@ -208,7 +210,7 @@ describe('StageBoardCard selection', () => {
   it('selects from the keyboard with alt and Enter', () => {
     const onModifierClick = vi.fn();
     render(<StageBoardCard session={session} nav={nav} onModifierClick={onModifierClick} />);
-    const card = screen.getAllByRole('button')[0] as HTMLElement;
+    const card = cardTitle();
     expect(card.getAttribute('aria-keyshortcuts')).toBe('Alt+Enter');
     fireEvent.keyDown(card, { key: 'Enter', altKey: true });
     expect(onModifierClick).toHaveBeenCalledWith(SESSION_ID, expect.anything());
@@ -217,28 +219,37 @@ describe('StageBoardCard selection', () => {
 
   it('opens the session on a plain Enter', () => {
     render(<StageBoardCard session={session} nav={nav} onModifierClick={vi.fn()} />);
-    fireEvent.keyDown(screen.getAllByRole('button')[0] as HTMLElement, { key: 'Enter' });
+    fireEvent.keyDown(cardTitle(), { key: 'Enter' });
     expect(nav.selectCard).toHaveBeenCalledWith(session);
   });
 
   it('exposes the id the lasso hit-tests against', () => {
     render(<StageBoardCard session={session} nav={nav} />);
-    expect((screen.getAllByRole('button')[0] as HTMLElement).getAttribute('data-select-id')).toBe(
-      SESSION_ID,
+    expect(screen.getByRole('article').getAttribute('data-select-id')).toBe(SESSION_ID);
+  });
+
+  it('keeps the title as the only card button and its actions as siblings', () => {
+    render(<StageBoardCard session={session} nav={nav} />);
+    const card = screen.getByRole('article');
+    const buttons = within(card).getAllByRole('button');
+    expect(buttons.filter((button) => button.contains(cardTitle()))).toEqual([cardTitle()]);
+    expect(buttons.every((button) => button === cardTitle() || !cardTitle().contains(button))).toBe(
+      true,
     );
+    expect(card.getAttribute('role')).toBeNull();
   });
 
   it('routes a modifier click on the card to selection instead of navigation', () => {
     const onModifierClick = vi.fn();
     render(<StageBoardCard session={session} nav={nav} onModifierClick={onModifierClick} />);
-    fireEvent.click(screen.getAllByRole('button')[0] as HTMLElement, { metaKey: true });
+    fireEvent.click(cardTitle(), { metaKey: true });
     expect(onModifierClick).toHaveBeenCalledWith(SESSION_ID, expect.anything());
     expect(nav.selectCard).not.toHaveBeenCalled();
   });
 
   it('navigates on a plain click even when selection is available', () => {
     render(<StageBoardCard session={session} nav={nav} onModifierClick={vi.fn()} />);
-    fireEvent.click(screen.getAllByRole('button')[0] as HTMLElement);
+    fireEvent.click(cardTitle());
     expect(nav.selectCard).toHaveBeenCalledWith(session);
   });
 });
@@ -324,7 +335,7 @@ describe('StageBoardCard linked request', () => {
 describe('StageBoardCard actions visibility', () => {
   it('keeps session details navigation only on the card body and keyboard', () => {
     render(<StageBoardCard session={session} nav={nav} />);
-    const card = screen.getAllByRole('button')[0] as HTMLElement;
+    const card = cardTitle();
     expect(screen.queryByLabelText('Open session details')).toBeNull();
     fireEvent.click(card);
     fireEvent.keyDown(card, { key: 'Enter' });
@@ -374,7 +385,7 @@ describe('StageBoardCard actions visibility', () => {
 
   it('keeps nothing hover-only on the card', () => {
     render(<StageBoardCard session={session} nav={nav} />);
-    const card = screen.getAllByRole('button')[0] as HTMLElement;
+    const card = cardTitle();
     expect(card.querySelector('.opacity-0')).toBeNull();
     expect(screen.getByRole('button', { name: 'Session actions' })).toBeDefined();
   });
@@ -548,7 +559,7 @@ describe('StageBoardCard footer', () => {
 
   it('keeps the lifecycle slot bottom right over the trailing metadata', () => {
     render(<StageBoardCard session={session} nav={nav} />);
-    const card = screen.getAllByRole('button')[0];
+    const card = screen.getByRole('article');
     const group = screen.getByRole('group', { name: 'Session lifecycle actions' });
     expect(group.className).toContain('col-start-2');
     expect(group.className).toContain('row-start-2');
