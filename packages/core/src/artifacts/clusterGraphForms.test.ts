@@ -103,3 +103,79 @@ describe('both plan forms', () => {
     expect(envelope.status === 'error' && envelope.message).toContain('planner');
   });
 });
+
+describe('write scopes in both plan forms', () => {
+  const SCOPED = [
+    {
+      id: 'impl-a',
+      title: 'rewrite the resolver',
+      instructions: 'do it',
+      writeScope: { version: 1, files: ['src/resolver.ts'], directories: ['src/routing/'] },
+    },
+    {
+      id: 'impl-b',
+      title: 'rewrite the docs',
+      instructions: 'do it',
+      writeScope: { version: 1, files: [], directories: [] },
+    },
+    { id: 'review', title: 'review', instructions: 'audit', dependsOn: ['impl-a', 'impl-b'] },
+  ];
+
+  const marker = (clusters: unknown) =>
+    `<<plan>>T\n\nbody\n<</plan>>\n<<clusters>>${JSON.stringify(clusters)}<</clusters>>`;
+
+  const envelope = (clusters: unknown) =>
+    `<<artifact v=1 kind=plan>>\n${JSON.stringify({
+      title: 'T',
+      format: 'markdown',
+      content: 'body',
+      metadata: { clusters },
+    })}\n<</artifact>>`;
+
+  it('normalize to the same scoped graph', () => {
+    const fromMarker = normalizeClusterGraph({ clusters: clustersOf(marker(SCOPED)) });
+    const fromEnvelope = normalizeClusterGraph({ clusters: clustersOf(envelope(SCOPED)) });
+
+    expect(fromEnvelope).toEqual(fromMarker);
+    expect(
+      fromMarker.kind === 'valid' && fromMarker.graph.nodes.map((node) => node.writeScope),
+    ).toEqual([
+      { version: 1, files: ['src/resolver.ts'], directories: ['src/routing'] },
+      { version: 1, files: [], directories: [] },
+      undefined,
+    ]);
+  });
+
+  it('reject an aliased or absolute scope in either form with a stated reason', () => {
+    for (const path of ['../outside.ts', '/etc/hosts']) {
+      const broken = [
+        {
+          id: 'a',
+          title: 'one',
+          instructions: 'x',
+          writeScope: { version: 1, files: [path] },
+        },
+      ];
+      const fromMarker = captureArtifactFromTurnText({
+        assistantText: marker(broken),
+        emittingProvider: null,
+      });
+      const fromEnvelope = captureArtifactFromTurnText({
+        assistantText: envelope(broken),
+        emittingProvider: null,
+      });
+
+      expect(fromMarker.status === 'error' && fromMarker.message).toContain(`"${path}"`);
+      expect(fromEnvelope.status === 'error' && fromEnvelope.message).toContain(`"${path}"`);
+    }
+  });
+
+  it('keep a legacy plan without scopes exactly as before', () => {
+    const fromMarker = normalizeClusterGraph({ clusters: clustersOf(markerForm) });
+
+    expect(
+      fromMarker.kind === 'valid' &&
+        fromMarker.graph.nodes.every((node) => node.writeScope === undefined),
+    ).toBe(true);
+  });
+});

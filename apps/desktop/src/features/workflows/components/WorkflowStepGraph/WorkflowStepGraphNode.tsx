@@ -8,6 +8,7 @@ import { useAppStore } from '../../../../store';
 import { CapabilityObligationAction } from '../../../../shared/components/CapabilityObligationAction';
 import { ClusterCompletionHoldAction } from '../../../../shared/components/ClusterCompletionHoldAction';
 import { useClusterNode } from '../../useClusterNode';
+import { ClusterExecutionEligibilityNote } from '../ClusterExecutionEligibilityNote';
 
 type Props = {
   readonly run: Agent;
@@ -111,6 +112,7 @@ export const WorkflowStepGraphNode = ({
           {doneChildCount}/{childCount}
         </span>
       ) : null}
+      <ClusterExecutionEligibilityNote sessionId={run.sessionId} containerAgentId={run.id} />
       {completionHold === null ? null : <ClusterCompletionHoldAction hold={completionHold} />}
       {obligation === null ? null : <CapabilityObligationAction obligation={obligation} />}
     </div>

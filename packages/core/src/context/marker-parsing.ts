@@ -2,6 +2,7 @@ import type {
   AgentRole,
   CapabilityContinuation,
   CapabilityPurpose,
+  ClusterWriteScope,
   PlanClusterRole,
   ProviderId,
   TurnEvent,
@@ -12,6 +13,7 @@ import { isAgentRole, normalizeAgentRole } from '../roles';
 import type { AgentKindLabel } from '../first-turn-classifier';
 import {
   normalizeClusterGraph,
+  parseClusterWriteScope,
   resolvePlanClusterRole,
   unsupportedClusterRoleReason,
   type ClusterGraphRevisionProposal,
@@ -613,6 +615,7 @@ export type ExtractedCluster = {
   readonly role?: PlanClusterRole;
   readonly dependsOn?: ReadonlyArray<string>;
   readonly expectedOutput?: string;
+  readonly writeScope?: ClusterWriteScope;
   readonly routingProposal?: WorkflowRoutingProposal | null;
 };
 
@@ -624,7 +627,7 @@ export type ClusterMarkerExtraction =
 type ClusterGraphFieldsResult =
   | Readonly<{
       kind: 'valid';
-      fields: Pick<ExtractedCluster, 'id' | 'role' | 'dependsOn' | 'expectedOutput'>;
+      fields: Pick<ExtractedCluster, 'id' | 'role' | 'dependsOn' | 'expectedOutput' | 'writeScope'>;
     }>
   | Readonly<{ kind: 'invalid'; reason: string }>;
 
@@ -651,6 +654,10 @@ const clusterGraphFields = ({
       reason: unsupportedClusterRoleReason({ label, declared: role.declared }),
     };
   }
+  const writeScope = parseClusterWriteScope({ value: entry.writeScope, label });
+  if (writeScope.kind === 'invalid') {
+    return { kind: 'invalid', reason: writeScope.reason };
+  }
   return {
     kind: 'valid',
     fields: {
@@ -658,6 +665,7 @@ const clusterGraphFields = ({
       ...(entry.role !== undefined && { role: role.role }),
       ...(dependsOn !== undefined && { dependsOn }),
       ...(expectedOutput.length > 0 && { expectedOutput }),
+      ...(writeScope.kind === 'valid' && { writeScope: writeScope.scope }),
     },
   };
 };

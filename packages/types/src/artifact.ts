@@ -1,4 +1,5 @@
 import type { AgentId, IsoDateTime, MountId, SessionId, WorkflowRunId } from './ids';
+import type { CheckoutBaseline } from './worktree';
 import type { AgentRole } from './workflow';
 import type { WorkflowRoutingProposal } from './workflow-routing';
 
@@ -24,6 +25,14 @@ export const PLAN_CLUSTER_ROLES = [
   'docs',
 ] as const satisfies ReadonlyArray<PlanClusterRole>;
 
+export const CLUSTER_EXECUTION_CONTRACT_VERSION = 1;
+
+export type ClusterWriteScope = Readonly<{
+  version: number;
+  files: ReadonlyArray<string>;
+  directories: ReadonlyArray<string>;
+}>;
+
 export type ImplementationCluster = Readonly<{
   id?: string;
   title: string;
@@ -31,6 +40,7 @@ export type ImplementationCluster = Readonly<{
   role?: PlanClusterRole;
   dependsOn?: ReadonlyArray<string>;
   expectedOutput?: string;
+  writeScope?: ClusterWriteScope;
   routingProposal?: WorkflowRoutingProposal | null;
 }>;
 
@@ -46,6 +56,7 @@ export type ClusterGraphNode = Readonly<{
   role: PlanClusterRole;
   dependsOn: ReadonlyArray<string>;
   expectedOutput: string | null;
+  writeScope?: ClusterWriteScope;
 }>;
 
 export type ClusterGraph = Readonly<{
@@ -91,6 +102,85 @@ export type ClusterExecutionGraph = Readonly<{
   frozenReason: string | null;
   frozenObligationId: string | null;
   createdAt: IsoDateTime;
+}>;
+
+export type ClusterAttemptState =
+  'claimed' | 'allocated' | 'prepared' | 'ineligible' | 'failed' | 'released';
+
+export const CLUSTER_ATTEMPT_STATES = [
+  'claimed',
+  'allocated',
+  'prepared',
+  'ineligible',
+  'failed',
+  'released',
+] as const satisfies ReadonlyArray<ClusterAttemptState>;
+
+export type ClusterAttemptSetupResult =
+  'pending' | 'succeeded' | 'failed' | 'source-changed' | 'shared-dependencies' | 'unset';
+
+export const CLUSTER_ATTEMPT_SETUP_RESULTS = [
+  'pending',
+  'succeeded',
+  'failed',
+  'source-changed',
+  'shared-dependencies',
+  'unset',
+] as const satisfies ReadonlyArray<ClusterAttemptSetupResult>;
+
+export type ClusterAttemptTarget = Readonly<{
+  mountId: MountId;
+  mountRevision: number;
+  worktreePath: string;
+  branch: string;
+  repoRoot: string;
+}>;
+
+export type ClusterAttemptSetup = Readonly<{
+  revision: number | null;
+  command: string | null;
+  result: ClusterAttemptSetupResult;
+  exitCode: number | null;
+  output: string | null;
+}>;
+
+export type ClusterAttemptBinding = Readonly<{
+  id: string;
+  requestId: string;
+  containerAgentId: AgentId;
+  sessionId: SessionId;
+  nodeId: string;
+  attemptNumber: number;
+  graphRevision: number;
+  scopeRevision: number;
+  writeScope: ClusterWriteScope;
+  baseSha: string;
+  state: ClusterAttemptState;
+  target: ClusterAttemptTarget | null;
+  leaseId: string | null;
+  setup: ClusterAttemptSetup;
+  baseline: CheckoutBaseline | null;
+  reason: string | null;
+  createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+}>;
+
+export type ClusterExecutionEligibilityState = 'eligible' | 'sequential';
+
+export const CLUSTER_EXECUTION_ELIGIBILITY_STATES = [
+  'eligible',
+  'sequential',
+] as const satisfies ReadonlyArray<ClusterExecutionEligibilityState>;
+
+export type ClusterExecutionEligibility = Readonly<{
+  containerAgentId: AgentId;
+  sessionId: SessionId;
+  graphRevision: number;
+  state: ClusterExecutionEligibilityState;
+  reason: string | null;
+  targetMountId: MountId | null;
+  targetHeadSha: string | null;
+  evaluatedAt: IsoDateTime;
 }>;
 
 export type PlanArtifactMetadata = Readonly<{

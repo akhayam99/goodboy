@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { normalizeAgentRole } from '@goodboy/core';
+import { normalizeAgentRole, parseClusterWriteScope } from '@goodboy/core';
 import {
   isWorkflowRoutingDecision,
   isWorkflowRoutingLock,
@@ -1046,6 +1046,7 @@ const parseGraphNodes = ({
     if (!isRecord(entry) || typeof entry.id !== 'string' || entry.id.length === 0) {
       continue;
     }
+    const writeScope = parseClusterWriteScope({ value: entry.writeScope, label: `"${entry.id}"` });
     nodes.push({
       id: entry.id,
       ordinal: typeof entry.ordinal === 'number' ? entry.ordinal : nodes.length,
@@ -1056,6 +1057,7 @@ const parseGraphNodes = ({
         ? entry.dependsOn.filter((dep): dep is string => typeof dep === 'string')
         : [],
       expectedOutput: typeof entry.expectedOutput === 'string' ? entry.expectedOutput : null,
+      ...(writeScope.kind === 'valid' && { writeScope: writeScope.scope }),
     });
   }
   return nodes;

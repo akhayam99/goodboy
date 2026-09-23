@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { acquireSpy, releaseSpy } = vi.hoisted(() => ({
+const { acquireSpy, acquireOwnedSpy, releaseSpy } = vi.hoisted(() => ({
   acquireSpy: vi.fn(),
+  acquireOwnedSpy: vi.fn(),
   releaseSpy: vi.fn(),
 }));
 
 vi.mock('../../../features/worktree/writerLease', () => ({
   acquireWriterLease: acquireSpy,
+  acquireOwnedWriterLease: acquireOwnedSpy,
   releaseWriterLease: releaseSpy,
   repositoryWriterResource: ({ repoRoot }: { readonly repoRoot: string }) => `repo:${repoRoot}`,
 }));
@@ -16,6 +18,7 @@ import { withRepositoryAndMountLock } from './mountLocks';
 describe('withRepositoryAndMountLock', () => {
   beforeEach(() => {
     acquireSpy.mockReset();
+    acquireOwnedSpy.mockReset();
     releaseSpy.mockReset();
     releaseSpy.mockResolvedValue(true);
   });
@@ -81,5 +84,61 @@ describe('withRepositoryAndMountLock', () => {
 
     expect(result).toBe('done');
     expect(releaseSpy).not.toHaveBeenCalled();
+  });
+
+  it('takes the repository through the owned path when the caller presents its reservations', async () => {
+    acquireOwnedSpy.mockResolvedValue({ outcome: 'granted', leaseId: 'op-1', token: 'token-op' });
+    const owners = [{ leaseId: 'lease-attempt-1', token: 'secret-1' }];
+
+    const result = await withRepositoryAndMountLock({
+      repoRoot: '/repo/api',
+      mountKey: 'session:attempt:2',
+      ownedReservations: owners,
+      run: async () => 'allocated',
+    });
+
+    expect(result).toBe('allocated');
+    expect(acquireSpy).not.toHaveBeenCalled();
+    expect(acquireOwnedSpy).toHaveBeenCalledWith({
+      holder: 'mount:session:attempt:2',
+      resources: ['repo:/repo/api'],
+      owners,
+    });
+    expect(releaseSpy).toHaveBeenCalledWith({ token: 'token-op' });
+  });
+
+  it('refuses the mutation when a foreign holder still blocks the owned path', async () => {
+    acquireOwnedSpy.mockResolvedValue({
+      outcome: 'denied',
+      blockedBy: 'run-foreign',
+      blockedState: 'active',
+      blockedResource: 'tree:/repo/api|/repo/api/other',
+    });
+    const run = vi.fn(async () => 'never');
+
+    await expect(
+      withRepositoryAndMountLock({
+        repoRoot: '/repo/api',
+        mountKey: 'session:attempt:3',
+        ownedReservations: [{ leaseId: 'lease-attempt-1', token: 'secret-1' }],
+        run,
+      }),
+    ).rejects.toThrow(/run-foreign/);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('refuses the mutation when the presented ownership does not authenticate', async () => {
+    acquireOwnedSpy.mockResolvedValue({ outcome: 'refused', reason: 'forged token' });
+    const run = vi.fn(async () => 'never');
+
+    await expect(
+      withRepositoryAndMountLock({
+        repoRoot: '/repo/api',
+        mountKey: 'session:attempt:4',
+        ownedReservations: [{ leaseId: 'lease-attempt-1', token: 'forged' }],
+        run,
+      }),
+    ).rejects.toThrow(/forged token/);
+    expect(run).not.toHaveBeenCalled();
   });
 });

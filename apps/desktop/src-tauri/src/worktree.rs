@@ -196,6 +196,8 @@ pub struct CreateArgs {
     pub base_branch: Option<String>,
     #[serde(rename = "dirName", default)]
     pub dir_name: Option<String>,
+    #[serde(rename = "exactBaseSha", default)]
+    pub exact_base_sha: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -515,6 +517,24 @@ fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, Worktre
         .as_deref()
         .map(str::trim)
         .filter(|s| !s.is_empty());
+    let exact_base = args
+        .exact_base_sha
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    if let Some(sha) = exact_base {
+        let has_branch_base = args
+            .base_branch
+            .as_deref()
+            .map(str::trim)
+            .is_some_and(|s| !s.is_empty());
+        if existing_branch.is_some() || has_branch_base {
+            return Err(WorktreeError::Git {
+                message: "an exact base commit cannot be combined with a base branch or an existing branch".to_string(),
+            });
+        }
+        require_local_commit(&repo_path, sha)?;
+    }
     let branch_name = existing_branch
         .map(|b| b.to_string())
         .unwrap_or_else(|| new_branch_name.clone());
@@ -548,6 +568,16 @@ fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, Worktre
     }
 
     if let Some(existing) = find_existing(&repo_path, &worktree_path)? {
+        if let Some(sha) = exact_base {
+            if !is_ancestor(&worktree_path, sha, "HEAD") {
+                return Err(WorktreeError::Git {
+                    message: format!(
+                        "the checkout at {} does not descend from base commit {sha}",
+                        worktree_path.to_string_lossy()
+                    ),
+                });
+            }
+        }
         return Ok(CreatedWorktree {
             worktree_path: existing.path,
             branch_name: existing.branch.unwrap_or(branch_name),
@@ -557,6 +587,26 @@ fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, Worktre
     }
 
     std::fs::create_dir_all(&parent)?;
+
+    if let Some(sha) = exact_base {
+        git(
+            &repo_path,
+            &[
+                "worktree",
+                "add",
+                "-b",
+                &branch_name,
+                worktree_path.to_string_lossy().as_ref(),
+                sha,
+            ],
+        )?;
+        return Ok(CreatedWorktree {
+            worktree_path: worktree_path.to_string_lossy().to_string(),
+            branch_name,
+            slug,
+            reused: false,
+        });
+    }
 
     if let Some(name) = existing_branch {
         let local_exists = git(
@@ -784,7 +834,23 @@ fn worktree_has_uncommitted(path: &str) -> bool {
 }
 
 #[tauri::command]
-pub async fn worktree_change_branch(args: ChangeBranchArgs) -> Result<(), WorktreeError> {
+pub async fn worktree_change_branch(
+    database: tauri::State<'_, crate::db::Db>,
+    args: ChangeBranchArgs,
+) -> Result<(), WorktreeError> {
+    let reserved =
+        crate::writer_lease::application_reservation_holder(database.inner(), &args.worktree_path)
+            .map_err(|error| WorktreeError::Git {
+                message: format!("the checkout reservation could not be read: {error}"),
+            })?;
+    if let Some(holder) = reserved {
+        return Err(WorktreeError::Git {
+            message: format!(
+                "{} is reserved by {holder}; its branch cannot be switched while the attempt owns it",
+                args.worktree_path
+            ),
+        });
+    }
     tauri::async_runtime::spawn_blocking(move || worktree_change_branch_blocking(args))
         .await
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
@@ -1184,6 +1250,7 @@ pub async fn worktree_git_common_dir(repo_path: String) -> Option<String> {
 
 pub(crate) fn remove_worktree_checked_leased(
     registry: &crate::worktree_writer::WriterLeaseRegistry,
+    is_reserved: &dyn Fn(&Path) -> bool,
     repo_path: &Path,
     worktree_path: &Path,
     mode: WorktreeRemovalMode,
@@ -1195,6 +1262,7 @@ pub(crate) fn remove_worktree_checked_leased(
         &mut |cwd, args| git(cwd, args),
         &mut |path| {
             crate::worktree_writer::is_lease_live(registry, path.to_string_lossy().as_ref())
+                || is_reserved(path)
         },
     )
 }
@@ -1202,15 +1270,27 @@ pub(crate) fn remove_worktree_checked_leased(
 #[tauri::command]
 pub async fn worktree_remove_checked(
     leases: tauri::State<'_, crate::worktree_writer::WriterLeases>,
+    database: tauri::State<'_, crate::db::Db>,
     repo_path: String,
     worktree_path: String,
     mode: Option<WorktreeRemovalMode>,
 ) -> Result<WorktreeRemovalResult, WorktreeError> {
     let registry = leases.0.clone();
+    let db = database.inner().clone();
     let selected = mode.unwrap_or(WorktreeRemovalMode::Safe);
     tauri::async_runtime::spawn_blocking(move || {
+        let is_reserved = |path: &Path| {
+            !matches!(
+                crate::writer_lease::application_reservation_holder(
+                    &db,
+                    path.to_string_lossy().as_ref()
+                ),
+                Ok(None)
+            )
+        };
         remove_worktree_checked_leased(
             &registry,
+            &is_reserved,
             Path::new(&repo_path),
             Path::new(&worktree_path),
             selected,
@@ -3054,6 +3134,39 @@ pub(crate) fn in_progress_operation(cwd: &Path) -> Option<GitOperation> {
     None
 }
 
+fn is_full_commit_id(value: &str) -> bool {
+    matches!(value.len(), 40 | 64)
+        && value
+            .chars()
+            .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c))
+}
+
+pub(crate) fn require_local_commit(repo_path: &Path, sha: &str) -> Result<(), WorktreeError> {
+    if !is_full_commit_id(sha) {
+        return Err(WorktreeError::Git {
+            message: format!("base commit {sha} is not a full lowercase commit id"),
+        });
+    }
+    let resolved = git(
+        repo_path,
+        &[
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            &format!("{sha}^{{commit}}"),
+        ],
+    )
+    .map_err(|_| WorktreeError::Git {
+        message: format!("base commit {sha} is not a commit in this repository"),
+    })?;
+    match resolved.trim() == sha {
+        true => Ok(()),
+        false => Err(WorktreeError::Git {
+            message: format!("base commit {sha} resolved to a different object"),
+        }),
+    }
+}
+
 fn git_strs(cwd: &Path, args: &[String]) -> Result<String, WorktreeError> {
     let refs: Vec<&str> = args.iter().map(String::as_str).collect();
     git(cwd, &refs)
@@ -3868,6 +3981,7 @@ mod rewrite_tests {
             fallback_ref: None,
             base_branch: None,
             dir_name: Some("second".to_string()),
+            exact_base_sha: None,
         })
         .unwrap_err();
 
@@ -4011,6 +4125,7 @@ mod rewrite_tests {
             base_branch: Some("release-42".to_string()),
             parent_dir: None,
             dir_name: None,
+            exact_base_sha: None,
         })
         .unwrap_err();
 
@@ -4053,6 +4168,7 @@ mod rewrite_tests {
             base_branch: None,
             parent_dir: None,
             dir_name: None,
+            exact_base_sha: None,
         })
         .unwrap_err();
 
@@ -4074,6 +4190,7 @@ mod rewrite_tests {
             base_branch: None,
             parent_dir: None,
             dir_name: None,
+            exact_base_sha: None,
         })
         .unwrap_err();
 
@@ -4234,6 +4351,7 @@ mod rewrite_tests {
             fallback_ref: None,
             base_branch: None,
             dir_name: Some(slug.to_string()),
+            exact_base_sha: None,
         })
         .unwrap()
     }
@@ -4253,6 +4371,7 @@ mod rewrite_tests {
             fallback_ref: None,
             base_branch: Some("main".to_string()),
             dir_name: Some("mount-parent".to_string()),
+            exact_base_sha: None,
         })
         .unwrap();
         let parent_path = PathBuf::from(&parent.worktree_path);
@@ -4278,6 +4397,7 @@ mod rewrite_tests {
             fallback_ref: None,
             base_branch: Some("main".to_string()),
             dir_name: Some("mount-split".to_string()),
+            exact_base_sha: None,
         })
         .unwrap();
         let split_path = PathBuf::from(&split.worktree_path);
@@ -4813,12 +4933,41 @@ mod teardown_tests {
             None,
         );
 
-        let result =
-            remove_worktree_checked_leased(&registry, &root, &target, WorktreeRemovalMode::Safe)
-                .unwrap();
+        let result = remove_worktree_checked_leased(
+            &registry,
+            &|_| false,
+            &root,
+            &target,
+            WorktreeRemovalMode::Safe,
+        )
+        .unwrap();
 
         assert!(granted.is_granted);
         assert_ne!(path_the_agent_sees, target);
+        assert_eq!(
+            kept_reasons(result),
+            vec![WorktreeRemovalReason::WriterLeaseHeld]
+        );
+        assert!(target.join("tracked.txt").exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn an_application_reservation_keeps_the_worktree() {
+        let root = init_repo("remove-reserved");
+        let target = add_worktree(&root, "reserved");
+        let registry = crate::worktree_writer::WriterLeases::new().0;
+        let reserved = target.clone();
+
+        let result = remove_worktree_checked_leased(
+            &registry,
+            &|path| path == reserved.as_path(),
+            &root,
+            &target,
+            WorktreeRemovalMode::Confirmed,
+        )
+        .unwrap();
+
         assert_eq!(
             kept_reasons(result),
             vec![WorktreeRemovalReason::WriterLeaseHeld]
@@ -4845,9 +4994,14 @@ mod teardown_tests {
             granted.token.as_deref(),
         );
 
-        let result =
-            remove_worktree_checked_leased(&registry, &root, &target, WorktreeRemovalMode::Safe)
-                .unwrap();
+        let result = remove_worktree_checked_leased(
+            &registry,
+            &|_| false,
+            &root,
+            &target,
+            WorktreeRemovalMode::Safe,
+        )
+        .unwrap();
 
         assert!(matches!(result, WorktreeRemovalResult::Removed { .. }));
         assert!(!target.exists());
@@ -5750,5 +5904,146 @@ mod candidate_tests {
             "the deferred candidate is reachable from the branch tip"
         );
         assert!(!root.join("b.txt").exists(), "deferred work is in the tree");
+    }
+}
+
+#[cfg(test)]
+mod exact_base_tests {
+    use super::{git, worktree_create_blocking, CreateArgs};
+    use std::path::{Path, PathBuf};
+
+    fn temp_root(name: &str) -> PathBuf {
+        let root = std::env::temp_dir().join(format!(
+            "goodboy-{name}-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::canonicalize(&root).unwrap()
+    }
+
+    fn git_ok(cwd: &Path, args: &[&str]) -> String {
+        git(cwd, args)
+            .unwrap_or_else(|err| panic!("git {} failed: {err}", args.join(" ")))
+            .trim()
+            .to_string()
+    }
+
+    fn commit(root: &Path, file: &str, body: &str) -> String {
+        std::fs::write(root.join(file), body).unwrap();
+        git_ok(root, &["add", file]);
+        git_ok(root, &["commit", "--no-verify", "-m", file]);
+        git_ok(root, &["rev-parse", "HEAD"])
+    }
+
+    fn repo_ahead_of_origin(name: &str) -> (PathBuf, String, String) {
+        let root = temp_root(name);
+        git_ok(&root, &["init", "-b", "main"]);
+        git_ok(&root, &["config", "user.email", "test@example.com"]);
+        git_ok(&root, &["config", "user.name", "test"]);
+        git_ok(&root, &["config", "commit.gpgsign", "false"]);
+        let published = commit(&root, "base.txt", "base");
+        git_ok(
+            &root,
+            &["update-ref", "refs/remotes/origin/main", &published],
+        );
+        let local = commit(&root, "local.txt", "local only");
+        (root, published, local)
+    }
+
+    fn args(root: &Path, slug: &str) -> CreateArgs {
+        CreateArgs {
+            repo_path: root.to_string_lossy().into_owned(),
+            branch_prefix: "ak".to_string(),
+            slug: slug.to_string(),
+            parent_dir: Some(
+                root.join(".goodboy/worktrees")
+                    .to_string_lossy()
+                    .into_owned(),
+            ),
+            existing_branch: None,
+            fallback_ref: None,
+            base_branch: None,
+            dir_name: None,
+            exact_base_sha: None,
+        }
+    }
+
+    #[test]
+    fn an_exact_local_base_is_used_even_when_origin_differs() {
+        let (root, published, local) = repo_ahead_of_origin("exact-base-local");
+        assert_ne!(published, local);
+
+        let created = worktree_create_blocking(CreateArgs {
+            exact_base_sha: Some(local.clone()),
+            ..args(&root, "attempt-one")
+        })
+        .expect("worktree from the exact local base");
+
+        let head = git_ok(Path::new(&created.worktree_path), &["rev-parse", "HEAD"]);
+        assert_eq!(head, local);
+        assert!(Path::new(&created.worktree_path).join("local.txt").exists());
+        assert_eq!(created.branch_name, "ak/attempt-one");
+    }
+
+    #[test]
+    fn a_base_branch_still_resolves_the_origin_ref() {
+        let (root, published, _local) = repo_ahead_of_origin("exact-base-origin");
+
+        let created = worktree_create_blocking(CreateArgs {
+            base_branch: Some("main".to_string()),
+            ..args(&root, "ordinary")
+        })
+        .expect("worktree from origin");
+
+        let head = git_ok(Path::new(&created.worktree_path), &["rev-parse", "HEAD"]);
+        assert_eq!(head, published);
+    }
+
+    #[test]
+    fn a_repeated_exact_base_creation_reuses_the_checkout() {
+        let (root, _published, local) = repo_ahead_of_origin("exact-base-reuse");
+        let request = || CreateArgs {
+            exact_base_sha: Some(local.clone()),
+            dir_name: Some("attempt-dir".to_string()),
+            ..args(&root, "attempt-reuse")
+        };
+
+        let first = worktree_create_blocking(request()).expect("first allocation");
+        let second = worktree_create_blocking(request()).expect("duplicate allocation");
+
+        assert!(!first.reused);
+        assert!(second.reused);
+        assert_eq!(first.worktree_path, second.worktree_path);
+    }
+
+    #[test]
+    fn an_exact_base_refuses_abbreviations_unknown_commits_and_branch_bases() {
+        let (root, _published, local) = repo_ahead_of_origin("exact-base-refusals");
+
+        for bad in [
+            local[..12].to_string(),
+            "f".repeat(40),
+            local.to_uppercase(),
+            "main".to_string(),
+        ] {
+            assert!(
+                worktree_create_blocking(CreateArgs {
+                    exact_base_sha: Some(bad.clone()),
+                    ..args(&root, "refused")
+                })
+                .is_err(),
+                "{bad} must be refused"
+            );
+        }
+        assert!(worktree_create_blocking(CreateArgs {
+            exact_base_sha: Some(local.clone()),
+            base_branch: Some("main".to_string()),
+            ..args(&root, "mixed")
+        })
+        .is_err());
     }
 }

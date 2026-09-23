@@ -261,4 +261,73 @@ describe('mount operations against a real database', () => {
     const rows = await listSessionMounts({ db, sessionId: RECOVERY_SESSION_ID });
     expect(rows).toHaveLength(0);
   });
+
+  it('forks from an exact local commit without resolving the base branch', async () => {
+    const { slice } = makeSlice();
+    const base = 'c'.repeat(40);
+
+    const mount = await slice.forkMount({
+      sessionId: RECOVERY_SESSION_ID,
+      projectId: RECOVERY_PROJECT_ID,
+      requestId: 'attempt:one',
+      exactBaseSha: base,
+    });
+
+    expect(h.createWorktree).toHaveBeenCalledTimes(1);
+    const args = h.createWorktree.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(args.exactBaseSha).toBe(base);
+    expect(args.baseBranch).toBeUndefined();
+    const rows = await listSessionMounts({ db, sessionId: RECOVERY_SESSION_ID });
+    expect(rows.map((row) => row.id)).toEqual([mount.id]);
+  });
+
+  it('allocates one private mount for a duplicated exact-base request', async () => {
+    const { slice } = makeSlice();
+    const request = {
+      sessionId: RECOVERY_SESSION_ID,
+      projectId: RECOVERY_PROJECT_ID,
+      requestId: 'attempt:dup',
+      exactBaseSha: 'd'.repeat(40),
+    };
+
+    const first = await slice.forkMount(request);
+    const again = await slice.forkMount(request);
+
+    expect(again.id).toBe(first.id);
+    expect(h.createWorktree).toHaveBeenCalledTimes(1);
+    expect(await listSessionMounts({ db, sessionId: RECOVERY_SESSION_ID })).toHaveLength(1);
+  });
+
+  it('lands the planned mount after a crash between the checkout and its record', async () => {
+    const { slice } = makeSlice();
+    const request = {
+      sessionId: RECOVERY_SESSION_ID,
+      projectId: RECOVERY_PROJECT_ID,
+      requestId: 'attempt:crash',
+      exactBaseSha: 'e'.repeat(40),
+    };
+    h.createWorktree.mockRejectedValueOnce(new Error('the app quit mid allocation'));
+
+    await expect(slice.forkMount(request)).rejects.toThrow('the app quit mid allocation');
+    const recovered = await slice.forkMount(request);
+    const replayed = await slice.forkMount(request);
+
+    expect(replayed.id).toBe(recovered.id);
+    expect(h.createWorktree).toHaveBeenCalledTimes(2);
+    expect(await listSessionMounts({ db, sessionId: RECOVERY_SESSION_ID })).toHaveLength(1);
+  });
+
+  it('refuses an exact base combined with a base branch', async () => {
+    const { slice } = makeSlice();
+
+    await expect(
+      slice.forkMount({
+        sessionId: RECOVERY_SESSION_ID,
+        projectId: RECOVERY_PROJECT_ID,
+        exactBaseSha: 'f'.repeat(40),
+        baseBranch: 'main',
+      }),
+    ).rejects.toThrow(/exact base commit/);
+    expect(h.createWorktree).not.toHaveBeenCalled();
+  });
 });

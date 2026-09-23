@@ -16,3 +16,12 @@ export {
   type ClusterGraphResult,
   type ClusterNodeProgress,
 } from './normalizeClusterGraph';
+export {
+  hasClusterExecutionContract,
+  parseClusterWriteScope,
+  type ClusterWriteScopeResult,
+} from './parseClusterWriteScope';
+export {
+  evaluateClusterExecutionEligibility,
+  type ClusterExecutionEligibilityVerdict,
+} from './evaluateClusterExecutionEligibility';

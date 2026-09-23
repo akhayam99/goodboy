@@ -40,6 +40,9 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeClusterExecutionGraphs: h.loadGraphs,
 }));
 vi.mock('../../../features/worktree/worktree', () => ({ worktreeStatus: h.worktreeStatus }));
+vi.mock('../cluster-attempts/loadClusterAttemptLedgers', () => ({
+  loadClusterAttemptLedgers: async () => ({ clusterAttempts: {}, clusterExecutionEligibility: {} }),
+}));
 vi.mock('../workflows/summarizeWorkflowAgentOutput', () => ({
   summarizeWorkflowAgentOutput: h.summarize,
 }));

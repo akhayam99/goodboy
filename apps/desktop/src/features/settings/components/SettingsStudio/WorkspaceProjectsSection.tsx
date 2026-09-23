@@ -11,6 +11,7 @@ import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList
 import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
 import { useToast } from '../../../../app/components/Toast';
 import { ProjectBaseBranchInput } from './ProjectBaseBranchInput';
+import { ProjectSetupCommandField } from './ProjectSetupCommandField';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -161,44 +162,47 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
             {linked.map((project) => (
               <li
                 key={project.id}
-                className="flex items-center gap-3 rounded-lg border border-border-soft/60 bg-subtle/20 px-3 py-2"
+                className="flex flex-col gap-2 rounded-lg border border-border-soft/60 bg-subtle/20 px-3 py-2"
               >
-                <span className="shrink-0 text-muted-foreground">
-                  {project.kind === 'repo' ? (
-                    <FolderGit2 size={ICON_SIZE.row} aria-hidden />
-                  ) : (
-                    <Folder size={ICON_SIZE.row} aria-hidden />
-                  )}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium text-foreground">
-                      {project.name}
+                <div className="flex items-center gap-3">
+                  <span className="shrink-0 text-muted-foreground">
+                    {project.kind === 'repo' ? (
+                      <FolderGit2 size={ICON_SIZE.row} aria-hidden />
+                    ) : (
+                      <Folder size={ICON_SIZE.row} aria-hidden />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium text-foreground">
+                        {project.name}
+                      </span>
+                      <Chip
+                        tone="neutral"
+                        size="3xs"
+                        bordered={false}
+                        label={project.kind === 'repo' ? 'Repository' : 'Folder'}
+                        className="shrink-0"
+                      />
                     </span>
-                    <Chip
-                      tone="neutral"
-                      size="3xs"
-                      bordered={false}
-                      label={project.kind === 'repo' ? 'Repository' : 'Folder'}
-                      className="shrink-0"
-                    />
+                    <span className="block truncate font-mono text-xs text-muted-foreground/80">
+                      {project.rootPath}
+                    </span>
                   </span>
-                  <span className="block truncate font-mono text-xs text-muted-foreground/80">
-                    {project.rootPath}
-                  </span>
-                </span>
-                {project.kind === 'repo' ? <ProjectBaseBranchInput project={project} /> : null}
-                <Tooltip content={`Disconnect ${project.name}`} anchorClassName="shrink-0">
-                  <button
-                    type="button"
-                    aria-label={`Disconnect ${project.name}`}
-                    disabled={busy}
-                    onClick={() => void onUnlink(project.id, project.name)}
-                    className="rounded-md p-1 text-muted-foreground/70 hover:bg-foreground/5 hover:text-foreground"
-                  >
-                    <X size={ICON_SIZE.control} aria-hidden />
-                  </button>
-                </Tooltip>
+                  {project.kind === 'repo' ? <ProjectBaseBranchInput project={project} /> : null}
+                  <Tooltip content={`Disconnect ${project.name}`} anchorClassName="shrink-0">
+                    <button
+                      type="button"
+                      aria-label={`Disconnect ${project.name}`}
+                      disabled={busy}
+                      onClick={() => void onUnlink(project.id, project.name)}
+                      className="rounded-md p-1 text-muted-foreground/70 hover:bg-foreground/5 hover:text-foreground"
+                    >
+                      <X size={ICON_SIZE.control} aria-hidden />
+                    </button>
+                  </Tooltip>
+                </div>
+                {project.kind === 'repo' ? <ProjectSetupCommandField project={project} /> : null}
               </li>
             ))}
           </ul>

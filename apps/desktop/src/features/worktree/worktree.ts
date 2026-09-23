@@ -1,6 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
+import { formatError } from '@goodboy/ui';
 import type {
   BranchCommit,
+  CheckoutCleanliness,
+  CheckoutPreparation,
   SessionId,
   WorkspaceId,
   WorktreeDetachAssessment,
@@ -10,6 +13,7 @@ import type {
   WorktreeRemovalMode,
   WorktreeRemovalResult,
   WorktreeStatus,
+  WriteScopeViolation,
 } from '@goodboy/types';
 
 export type CreatedWorktree = {
@@ -28,11 +32,60 @@ export type CreateWorktreeArgs = {
   readonly fallbackRef?: string;
   readonly baseBranch?: string;
   readonly dirName?: string;
+  readonly exactBaseSha?: string;
 };
 
 export const createWorktree = async (args: CreateWorktreeArgs): Promise<CreatedWorktree> => {
   return invoke<CreatedWorktree>('worktree_create', { args });
 };
+
+type ReadCheckoutCleanlinessParams = {
+  readonly path: string;
+};
+
+export const readCheckoutCleanliness = async ({
+  path,
+}: ReadCheckoutCleanlinessParams): Promise<CheckoutCleanliness> =>
+  invoke<CheckoutCleanliness>('worktree_checkout_cleanliness', { path }).catch(
+    (error: unknown): CheckoutCleanliness => ({
+      kind: 'unknown',
+      reason: formatError(error),
+    }),
+  );
+
+export type PrepareCheckoutParams = {
+  readonly worktreePath: string;
+  readonly repoRoot: string;
+  readonly command: string | null;
+  readonly expectedHeadSha: string;
+  readonly siblingRoots: ReadonlyArray<string>;
+};
+
+export const prepareCheckout = async ({
+  worktreePath,
+  repoRoot,
+  command,
+  expectedHeadSha,
+  siblingRoots,
+}: PrepareCheckoutParams): Promise<CheckoutPreparation> =>
+  invoke<CheckoutPreparation>('worktree_prepare_checkout', {
+    args: { worktreePath, repoRoot, command, expectedHeadSha, siblingRoots: [...siblingRoots] },
+  });
+
+export type ValidateWriteScopeParams = {
+  readonly repoPath: string;
+  readonly files: ReadonlyArray<string>;
+  readonly directories: ReadonlyArray<string>;
+};
+
+export const validateWriteScope = async ({
+  repoPath,
+  files,
+  directories,
+}: ValidateWriteScopeParams): Promise<ReadonlyArray<WriteScopeViolation>> =>
+  invoke<ReadonlyArray<WriteScopeViolation>>('worktree_validate_write_scope', {
+    args: { repoPath, files: [...files], directories: [...directories] },
+  });
 
 type IntegrateCandidateParams = {
   readonly worktreePath: string;

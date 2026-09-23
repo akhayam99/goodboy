@@ -43,17 +43,29 @@ export const forkMount = (set: SetFn, get: GetFn) => {
         withRepositoryAndMountLock({
           repoRoot: project.rootPath,
           mountKey: `${sessionId}:${requestId}`,
+          ...(input.ownedReservations !== undefined && {
+            ownedReservations: input.ownedReservations,
+          }),
           run: async () => {
             const views = await loadMountViews({ get, sessionId });
             const requested = input.branch?.trim() ?? '';
             const adopt = input.adoptExistingBranch === true;
             const recordedBase = input.baseBranch ?? project.baseBranch ?? null;
+            const exactBaseSha = input.exactBaseSha?.trim() ?? '';
+            if (exactBaseSha !== '' && (adopt || input.baseBranch !== undefined)) {
+              throw mountError({
+                code: 'unknown-state',
+                message:
+                  'an exact base commit cannot be combined with a base branch or an adopted branch',
+              });
+            }
             const identity = {
               projectId,
               repoRoot: project.rootPath,
               baseBranch: recordedBase,
               branch: requested,
               adoptExistingBranch: adopt,
+              ...(exactBaseSha !== '' && { exactBaseSha }),
             };
             const operation = await beginMountOperation({
               sessionId,
@@ -121,6 +133,12 @@ export const forkMount = (set: SetFn, get: GetFn) => {
               });
             }
             const baseBranch = input.baseBranch ?? project.baseBranch ?? undefined;
+            const baseInput =
+              exactBaseSha !== ''
+                ? { exactBaseSha }
+                : baseBranch !== undefined
+                  ? { baseBranch }
+                  : {};
             let created;
             try {
               created = await createWorktree({
@@ -130,7 +148,7 @@ export const forkMount = (set: SetFn, get: GetFn) => {
                 parentDir: `${project.rootPath}/.goodboy/worktrees`,
                 dirName: mountDirName({ sessionSlug, mountId }),
                 ...(adopt ? { existingBranch: `${branchPrefix}/${branchSlug}` } : {}),
-                ...(baseBranch !== undefined ? { baseBranch } : {}),
+                ...baseInput,
               });
             } catch (error) {
               const branchInUse = branchInUseError({ error });

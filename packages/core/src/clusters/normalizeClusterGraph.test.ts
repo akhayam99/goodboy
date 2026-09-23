@@ -159,3 +159,55 @@ describe('selectReadyClusterNode', () => {
     expect(first?.id).toBe('cluster-1');
   });
 });
+
+describe('normalizeClusterGraph write scopes', () => {
+  it('carries a declared write scope and leaves an undeclared node without one', () => {
+    const result = normalizeClusterGraph({
+      clusters: [
+        {
+          id: 'a',
+          title: 'one',
+          instructions: 'x',
+          writeScope: { version: 1, files: ['src/a.ts'], directories: [] },
+        },
+        { id: 'b', title: 'two', instructions: 'y' },
+      ],
+    });
+
+    expect(result.kind).toBe('valid');
+    expect(result.kind === 'valid' && result.graph.nodes[0]?.writeScope).toEqual({
+      version: 1,
+      files: ['src/a.ts'],
+      directories: [],
+    });
+    expect(result.kind === 'valid' && 'writeScope' in result.graph.nodes[1]!).toBe(false);
+  });
+
+  it('keeps a legacy list with a write scope on its array-order chain', () => {
+    const result = normalizeClusterGraph({
+      clusters: [
+        { title: 'one', instructions: 'x', writeScope: { version: 1, files: [], directories: [] } },
+        { title: 'two', instructions: 'y' },
+      ],
+    });
+
+    expect(result.kind === 'valid' && result.graph.executionVersion).toBe(1);
+    expect(result.kind === 'valid' && result.graph.nodes[1]?.dependsOn).toEqual(['cluster-1']);
+  });
+
+  it('rejects the whole graph when a scope uses a path alias', () => {
+    const result = normalizeClusterGraph({
+      clusters: [
+        {
+          id: 'a',
+          title: 'one',
+          instructions: 'x',
+          writeScope: { version: 1, files: ['../escape.ts'], directories: [] },
+        },
+      ],
+    });
+
+    expect(result.kind).toBe('invalid');
+    expect(result.kind === 'invalid' && result.reason).toContain('"../escape.ts"');
+  });
+});

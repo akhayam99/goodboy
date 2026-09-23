@@ -10,6 +10,7 @@ import {
   PLAN_CLUSTER_ROLES,
 } from '@goodboy/types';
 import { normalizeAgentRole } from '../roles';
+import { parseClusterWriteScope } from './parseClusterWriteScope';
 
 export type ClusterGraphResult =
   Readonly<{ kind: 'valid'; graph: ClusterGraph }> | Readonly<{ kind: 'invalid'; reason: string }>;
@@ -153,6 +154,10 @@ export const normalizeClusterGraph = ({ clusters }: NormalizeParams): ClusterGra
     const legacyDeps = index === 0 ? [] : [ids[index - 1]!];
     const dependsOn = isGraph ? [...new Set(declaredDeps)] : legacyDeps;
     const expectedOutput = trimmed(cluster.expectedOutput);
+    const writeScope = parseClusterWriteScope({ value: cluster.writeScope, label: `"${id}"` });
+    if (writeScope.kind === 'invalid') {
+      return { kind: 'invalid', reason: writeScope.reason };
+    }
     nodes.push({
       id,
       ordinal: index,
@@ -161,6 +166,7 @@ export const normalizeClusterGraph = ({ clusters }: NormalizeParams): ClusterGra
       role: role.role,
       dependsOn,
       expectedOutput: expectedOutput.length > 0 ? expectedOutput : null,
+      ...(writeScope.kind === 'valid' && { writeScope: writeScope.scope }),
     });
   }
 
