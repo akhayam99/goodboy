@@ -22,6 +22,7 @@ const { state, hooks, toastMock } = vi.hoisted(() => ({
     currentSession: null as { readonly id: string } | null,
     sessions: [] as ReadonlyArray<{ readonly id: string; readonly goal: string }>,
     workspaces: [] as ReadonlyArray<{ readonly id: string; readonly name: string }>,
+    currentWorkspace: null as { readonly id: string; readonly name: string } | null,
   },
   toastMock: vi.fn(),
 }));
@@ -33,7 +34,7 @@ vi.mock('../../../../store', () => ({
   }),
   useWorkspaces: () => hooks.workspaces,
   useSessions: () => hooks.sessions,
-  useCurrentWorkspace: () => null,
+  useCurrentWorkspace: () => hooks.currentWorkspace,
   useCurrentSession: () => hooks.currentSession,
 }));
 
@@ -56,6 +57,7 @@ beforeEach(() => {
   hooks.currentSession = null;
   hooks.sessions = [];
   hooks.workspaces = [];
+  hooks.currentWorkspace = null;
   toastMock.mockReset();
 });
 afterEach(cleanup);
@@ -71,19 +73,40 @@ describe('CommandPalette', () => {
     expect(screen.getByText(/no results/i)).toBeDefined();
   });
 
-  it('routes to the provider studio, the one mandatory first-run action', () => {
-    const onOpenProviders = vi.fn();
-    render(
-      <CommandPalette
-        onClose={vi.fn()}
-        onOpenProviders={onOpenProviders}
-        initialQuery="provider"
-      />,
-    );
+  it.each([
+    ['Connect a provider', 'provider', { scope: 'providers' }],
+    ['Open settings', 'open settings', { scope: 'app' }],
+    ['Keyboard shortcuts', 'keyboard', { scope: 'app', section: 'shortcuts' }],
+  ] as const)('opens %s through the settings event', (label, query, detail) => {
+    const listener = vi.fn();
+    const onClose = vi.fn();
+    window.addEventListener('goodboy:open-settings', listener);
+    render(<CommandPalette onClose={onClose} initialQuery={query} />);
 
-    fireEvent.mouseDown(screen.getByText('Connect a provider'));
+    fireEvent.mouseDown(screen.getByText(label));
 
-    expect(onOpenProviders).toHaveBeenCalledOnce();
+    window.removeEventListener('goodboy:open-settings', listener);
+    const [event] = listener.mock.calls[0] ?? [];
+    expect(event instanceof CustomEvent ? event.detail : null).toEqual(detail);
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('starts a session from New session, as the shortcut does', () => {
+    hooks.currentWorkspace = { id: 'workspace-1', name: 'Harborline' };
+    const listener = vi.fn();
+    window.addEventListener('goodboy:new-session', listener);
+    render(<CommandPalette onClose={vi.fn()} initialQuery="new session" />);
+
+    fireEvent.mouseDown(screen.getByText('New session'));
+
+    window.removeEventListener('goodboy:new-session', listener);
+    expect(listener).toHaveBeenCalledOnce();
+  });
+
+  it('offers New session only inside a workspace', () => {
+    render(<CommandPalette onClose={vi.fn()} initialQuery="new session" />);
+
+    expect(screen.queryByText('New session')).toBeNull();
   });
 
   it('opens the report issue studio through the shared studio event', () => {
@@ -133,7 +156,7 @@ describe('CommandPalette', () => {
 
   it('keeps the global actions in the empty palette behind every destination', () => {
     hooks.currentSession = { id: 'session-1' };
-    render(<CommandPalette onClose={vi.fn()} onOpenSettings={vi.fn()} onNewSession={vi.fn()} />);
+    render(<CommandPalette onClose={vi.fn()} />);
 
     expect(screen.getByText('Open Terminal')).toBeDefined();
     expect(screen.getByText('Open settings')).toBeDefined();

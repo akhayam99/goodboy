@@ -132,17 +132,8 @@ vi.mock('../features/inbox/components/InboxStudio', () => ({
   }) => <div data-testid="inbox-studio">{`${workspaceName}:${initialProvider ?? 'all'}`}</div>,
 }));
 
-type PaletteProps = {
-  readonly onOpenProviders?: () => void;
-};
-
 vi.mock('../features/session/components/CommandPalette', () => ({
-  CommandPalette: ({ onOpenProviders }: PaletteProps) =>
-    onOpenProviders ? (
-      <button type="button" onClick={onOpenProviders}>
-        Connect a provider
-      </button>
-    ) : null,
+  CommandPalette: () => null,
 }));
 vi.mock('../app/components/BootSplash', () => ({
   BootSplash: ({ onFinished }: { onFinished: () => void }) => {
@@ -326,32 +317,6 @@ describe('GitHub footer state', () => {
     expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('tools');
     expect(screen.getByTestId('settings-studio').getAttribute('data-tool')).toBe('github');
     expect(screen.queryByTestId('inbox-studio')).toBeNull();
-  });
-});
-
-describe('Provider studio reachability from the command palette', () => {
-  const openPalette = (): void => {
-    fireEvent.keyDown(window, { key: 'k', code: 'KeyK', metaKey: true });
-  };
-
-  it('hands the palette a way to open the provider studio', () => {
-    render(<App />);
-
-    openPalette();
-
-    expect(screen.getByRole('button', { name: 'Connect a provider' })).toBeDefined();
-  });
-
-  it('opens the provider studio when the palette entry is chosen', async () => {
-    render(<App />);
-    openPalette();
-
-    expect(screen.queryByTestId('settings-studio')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Connect a provider' }));
-
-    expect((await screen.findByTestId('settings-studio')).getAttribute('data-scope')).toBe(
-      'providers',
-    );
   });
 });
 

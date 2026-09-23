@@ -80,10 +80,6 @@ type Props = {
   readonly commitDiff: CommitDiffTarget | null;
   readonly commitDiffLoader: () => Promise<string>;
   readonly closePalette: () => void;
-  readonly openSettingsFromPalette: () => void;
-  readonly closePaletteForNewSession: () => void;
-  readonly openProvidersFromPalette: () => void;
-  readonly openShortcutHelpFromPalette: () => void;
   readonly offerWorkspaceRepo: () => void;
   readonly closeConvertWorkspace: () => void;
   readonly closeCommitDiff: () => void;
@@ -185,10 +181,6 @@ export const AppOverlayRouter = ({
   commitDiff,
   commitDiffLoader,
   closePalette,
-  openSettingsFromPalette,
-  closePaletteForNewSession,
-  openProvidersFromPalette,
-  openShortcutHelpFromPalette,
   offerWorkspaceRepo,
   closeConvertWorkspace,
   closeCommitDiff,
@@ -218,16 +210,7 @@ export const AppOverlayRouter = ({
             workspaceProjectRoot,
             offerWorkspaceRepo,
           })}
-      {paletteOpen ? (
-        <CommandPalette
-          initialQuery={palettePrefix}
-          onClose={closePalette}
-          onOpenSettings={openSettingsFromPalette}
-          onNewSession={closePaletteForNewSession}
-          onOpenProviders={openProvidersFromPalette}
-          onOpenShortcutHelp={openShortcutHelpFromPalette}
-        />
-      ) : null}
+      {paletteOpen ? <CommandPalette initialQuery={palettePrefix} onClose={closePalette} /> : null}
       {currentWorkspace !== null ? (
         <ConvertWorkspaceDialog
           open={convertWorkspaceOpen}

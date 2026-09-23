@@ -151,19 +151,6 @@ export const useAppOverlays = ({
     setDeleteOpen(false);
     setDeleteSessionId(null);
   }, []);
-  const openSettingsFromPalette = useCallback(() => {
-    openSettings();
-    setPaletteOpen(false);
-  }, [openSettings]);
-  const closePaletteForNewSession = useCallback(() => setPaletteOpen(false), []);
-  const openProvidersFromPalette = useCallback(() => {
-    openProviders();
-    setPaletteOpen(false);
-  }, [openProviders]);
-  const openShortcutHelpFromPalette = useCallback(() => {
-    openShortcutHelp();
-    setPaletteOpen(false);
-  }, [openShortcutHelp]);
 
   const overlays: ReactNode = createElement(AppOverlayRouter, {
     overlay,
@@ -180,10 +167,6 @@ export const useAppOverlays = ({
     commitDiff,
     commitDiffLoader,
     closePalette,
-    openSettingsFromPalette,
-    closePaletteForNewSession,
-    openProvidersFromPalette,
-    openShortcutHelpFromPalette,
     offerWorkspaceRepo,
     closeConvertWorkspace,
     closeCommitDiff,

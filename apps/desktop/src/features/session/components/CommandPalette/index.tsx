@@ -23,6 +23,8 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { useThemeStore } from '../../../../shared/lib/theme';
 import { linkedProjectsLabel } from '../../../workspace/linkedProjectsLabel';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { requestNewSession } from '../../requestNewSession';
+import type { SettingsFocus } from '../../../settings/components/SettingsStudio/types';
 
 type PaletteItem = {
   readonly id: string;
@@ -107,22 +109,14 @@ function fuzzyScore(query: string, text: string): number {
 }
 
 export type Props = {
-  onClose: () => void;
-  onOpenSettings?: () => void;
-  onNewSession?: () => void;
-  onOpenProviders?: () => void;
-  onOpenShortcutHelp?: () => void;
-  initialQuery?: string;
+  readonly onClose: () => void;
+  readonly initialQuery?: string;
 };
 
-export const CommandPalette = ({
-  onClose,
-  onOpenSettings,
-  onNewSession,
-  onOpenProviders,
-  onOpenShortcutHelp,
-  initialQuery = '',
-}: Props) => {
+const openSettings = (detail: SettingsFocus) =>
+  window.dispatchEvent(new CustomEvent('goodboy:open-settings', { detail }));
+
+export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
   const [query, setQuery] = useState(initialQuery);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -241,22 +235,20 @@ export const CommandPalette = ({
       });
     }
 
-    if (onOpenSettings) {
-      out.push({
-        id: 'action:settings',
-        label: 'Open settings',
-        sublabel: shortcutGlyphs('settings.open'),
-        group: 'action',
-        onSelect: () => onOpenSettings(),
-      });
-    }
-    if (onNewSession) {
+    out.push({
+      id: 'action:settings',
+      label: 'Open settings',
+      sublabel: shortcutGlyphs('settings.open'),
+      group: 'action',
+      onSelect: () => openSettings({ scope: 'app' }),
+    });
+    if (currentWorkspace !== null) {
       out.push({
         id: 'action:new-session',
         label: 'New session',
         sublabel: shortcutGlyphs('session.new'),
         group: 'action',
-        onSelect: () => onNewSession(),
+        onSelect: requestNewSession,
       });
     }
 
@@ -266,14 +258,12 @@ export const CommandPalette = ({
       group: 'action',
       onSelect: () => toggleTheme(),
     });
-    if (onOpenProviders) {
-      out.push({
-        id: 'action:connect-provider',
-        label: 'Connect a provider',
-        group: 'action',
-        onSelect: () => onOpenProviders(),
-      });
-    }
+    out.push({
+      id: 'action:connect-provider',
+      label: 'Connect a provider',
+      group: 'action',
+      onSelect: () => openSettings({ scope: 'providers' }),
+    });
     out.push({
       id: 'action:pair-device',
       label: 'Pair your iPhone',
@@ -293,15 +283,13 @@ export const CommandPalette = ({
       onSelect: () => window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT)),
     });
 
-    if (onOpenShortcutHelp) {
-      out.push({
-        id: 'help:shortcuts',
-        label: 'Keyboard shortcuts',
-        sublabel: shortcutGlyphs('settings.shortcuts'),
-        group: 'help',
-        onSelect: () => onOpenShortcutHelp(),
-      });
-    }
+    out.push({
+      id: 'help:shortcuts',
+      label: 'Keyboard shortcuts',
+      sublabel: shortcutGlyphs('settings.shortcuts'),
+      group: 'help',
+      onSelect: () => openSettings({ scope: 'app', section: 'shortcuts' }),
+    });
     out.push({
       id: 'help:guide',
       label: 'Getting started',
@@ -317,6 +305,7 @@ export const CommandPalette = ({
     agents,
     scripts,
     currentSession,
+    currentWorkspace,
     runScript,
     reportError,
     showToast,
@@ -325,10 +314,6 @@ export const CommandPalette = ({
     openWorkspace,
     setCurrentSession,
     selectAgent,
-    onOpenSettings,
-    onNewSession,
-    onOpenProviders,
-    onOpenShortcutHelp,
     theme,
     toggleTheme,
   ]);

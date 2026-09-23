@@ -1580,13 +1580,7 @@ export const CommandPaletteScene = () => {
       <div className={PANE_RHYTHM.body}>
         <TranscriptFeed />
       </div>
-      <CommandPalette
-        onClose={noop}
-        onOpenSettings={noop}
-        onNewSession={noop}
-        onOpenProviders={noop}
-        onOpenShortcutHelp={noop}
-      />
+      <CommandPalette onClose={noop} />
     </main>
   );
 };

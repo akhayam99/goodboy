@@ -117,7 +117,7 @@ vi.mock('../../shared/hooks/useCommitLinkInterceptor', () => ({
 vi.mock('../../store', () => {
   const useAppStore = Object.assign(
     vi.fn((selector: (store: typeof state) => unknown) => selector(state)),
-    { getState: () => state },
+    { getState: () => state, subscribe: () => () => undefined },
   );
   return {
     EMPTY_ARRAY: [],
