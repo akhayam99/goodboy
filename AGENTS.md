@@ -108,7 +108,8 @@ it.
   and reading them out anywhere. They are never an input to a change.
 - Telemetry, analytics, tracking, crash reporting that phones home, or any
   network call that sends user data anywhere except the provider the user
-  chose.
+  chose, in the app or its packages. The website's cookieless visit counter is
+  the one exception, written down in SECURITY.md.
 - Absolute home paths, personal configuration, or any mention of the state
   directory `~/.goodboy-autonomous/` in code, commits, PR bodies, or replies.
 - Making up a product fact: a vendor nobody can identify, a logo guessed from
