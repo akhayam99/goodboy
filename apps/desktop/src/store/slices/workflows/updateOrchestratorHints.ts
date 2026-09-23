@@ -1,6 +1,7 @@
 import type { OrchestratorHint, SessionId, WorkflowRunId } from '@goodboy/types';
 import { updateWorkflowRunOrchestratorHints } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import { findWorkflowRun } from './findWorkflowRun';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
@@ -13,7 +14,7 @@ type Params = {
   readonly update: (hints: ReadonlyArray<OrchestratorHint>) => ReadonlyArray<OrchestratorHint>;
 };
 
-const writesInFlight = new Map<WorkflowRunId, Promise<void>>();
+const writes = createKeyedQueue();
 
 const applyUpdate = async ({ set, get, sessionId, workflowRunId, update }: Params) => {
   const current = findWorkflowRun({ get, sessionId, workflowRunId })?.orchestratorHints ?? [];
@@ -34,12 +35,8 @@ const applyUpdate = async ({ set, get, sessionId, workflowRunId, update }: Param
 };
 
 export const updateOrchestratorHints = (params: Params): Promise<void> => {
-  const previous = writesInFlight.get(params.workflowRunId) ?? Promise.resolve();
-  const next = previous.catch(() => undefined).then(() => applyUpdate(params));
-  writesInFlight.set(params.workflowRunId, next);
-  return next.finally(() => {
-    if (writesInFlight.get(params.workflowRunId) === next) {
-      writesInFlight.delete(params.workflowRunId);
-    }
+  return writes.run({
+    key: params.workflowRunId,
+    task: () => applyUpdate(params),
   });
 };
