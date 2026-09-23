@@ -585,7 +585,6 @@ describe('store contract', () => {
       expect(cleanupSessionMounts).toHaveBeenCalledWith({
         sessionId: SESSION_ID,
         reason: 'archive',
-        keepDirectories: true,
       });
     });
 

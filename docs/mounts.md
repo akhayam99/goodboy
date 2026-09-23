@@ -105,8 +105,11 @@ on disk for the user to retry. Recovery never deletes a directory.
 ## Cleanup proposals
 
 When a lifecycle step must continue but a directory cannot go (dirty, locked,
-in use), cleanup records a `pending` proposal instead of deleting. The user
-resolves it inline: remove runs a normal unmount, keep settles it. Paths that
+in use), cleanup records a `pending` proposal instead of deleting. Archiving a
+session never deletes either: it proposes cleanup for every mount still on
+disk. Deleting a directory is always a named user action (unmount, remove,
+detach). The user resolves a proposal inline: remove runs a normal unmount,
+keep settles it. Paths that
 outlive their row move to `retained_worktree_paths` and are probed later;
 anything a worktree scan finds that no row, retained path or unsettled
 operation owns is reported as an orphan.
