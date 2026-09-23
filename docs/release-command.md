@@ -4,50 +4,53 @@
 > order plus the gotchas that bit previous runs. **Not for** signing,
 > notarization or updater detail (`docs/release.md`).
 
-Agent playbook for cutting a release. When the user says **"release the next
-version"**, **"rilascia la prossima minor/patch"**, **"ship the next release"**,
-or similar, follow this file end to end. No further instructions needed.
+This is the agent's playbook for making a release. When the user says
+**"release the next version"**, **"rilascia la prossima minor/patch"**,
+**"ship the next release"**, or something similar, follow this file from start
+to end. You need no other instructions.
 
 [release.md](release.md) is the technical runbook (signing, notarization,
-updater, homebrew). This file is the step order plus the gotchas that bit
-previous runs.
+updater, homebrew). This file has the steps in order, plus the gotchas that
+caught earlier runs.
 
 ## Figure out the version yourself
 
 1. Find the current latest: `gh release list --limit 5` (the one tagged
    `Latest`) and `git tag | sort -V | tail`.
-2. Compute the next version from what the user asked: patch by default
-   (`0.1.11 -> 0.1.12`), "next minor" resets the patch (`0.1.11 -> 0.2.0`),
-   "next major" gives `1.0.0`. Ambiguous means patch, and say so.
-3. Confirm the computed target with the user in one line before bumping. An
-   autonomous run has no user to ask and arrives with the version already
-   decided: it skips this step rather than stalling on it.
+2. Work out the next version from what the user asked. Patch is the default
+   (`0.1.11 -> 0.1.12`). "next minor" resets the patch (`0.1.11 -> 0.2.0`).
+   "next major" gives `1.0.0`. If the request is ambiguous, pick patch and say
+   so.
+3. Before bumping, confirm the target version with the user in one line. An
+   autonomous run has no user to ask, and it starts with the version already
+   decided. So it skips this step instead of stalling on it.
 
 Below, `X` is the new version and `X-1` is the current latest.
 
 ## Process
 
-1. Apply the version bump across the six places listed in
+1. Apply the version bump in the six places listed in
    [release.md](release.md) → The version bump.
-   In the same commit add the `## Goodboy vX` section to `CHANGELOG.md` (see
-   "Release notes" below): the build reads its body from there and fails if the
-   section is missing.
-2. Create the release branch under the branch-naming rule in
+   In the same commit, add the `## Goodboy vX` section to `CHANGELOG.md` (see
+   "Release notes" below). The build reads its body from there, and fails if
+   the section is missing.
+2. Create the release branch following the branch-naming rule in
    [CONVENTIONS.md](../CONVENTIONS.md). Commit
    `chore(repo): bump version to X`, push, open PR.
-3. Wait for ALL CI checks green (`gh pr checks`). Then merge server-side
-   (`gh pr merge --squash`). DO NOT advance/checkout/pull local `main`, it
-   restarts the app. Use `git fetch origin main` to get the merge SHA, tag that
-   SHA directly. NOTE: background poll commands may get killed at the turn
-   boundary, so poll CI and builds with a foreground until-loop, not
+3. Wait until ALL CI checks are green (`gh pr checks`). Then merge on the
+   server (`gh pr merge --squash`). DO NOT advance/checkout/pull local `main`:
+   that restarts the app. Use `git fetch origin main` to get the merge SHA, then
+   tag that SHA directly. NOTE: background poll commands can get killed when a
+   turn ends. So poll CI and builds with a foreground until-loop, not
    `run_in_background`.
-4. rc dry-run: `git tag vX-rc.1 <merge-sha> && git push origin vX-rc.1`.
+4. rc dry-run (a practice release):
+   `git tag vX-rc.1 <merge-sha> && git push origin vX-rc.1`.
    Wait for `release.yml` to finish green. VERIFY notarization: download the
    dmg, `hdiutil attach`, copy `Goodboy.app` out of the mounted volume, then
-   run `spctl -a -vvv` and `codesign -dv --verbose=4` against the copy (expect
-   `accepted, source=Notarized Developer ID`; the required team and the
-   failure condition are in [release.md](release.md)). Detach. Then delete the
-   rc, all three of it:
+   run `spctl -a -vvv` and `codesign -dv --verbose=4` against the copy. Expect
+   `accepted, source=Notarized Developer ID`. The required team and what
+   counts as a failure are in [release.md](release.md). Detach. Then delete
+   the rc in all three places (release, remote tag, local tag):
 
    ```bash
    gh release delete vX-rc.1 --repo akhayam99/goodboy --yes
@@ -55,24 +58,26 @@ Below, `X` is the new version and `X-1` is the current latest.
    git tag -d vX-rc.1
    ```
 
-5. Cut real: `git tag vX <merge-sha> && git push origin vX`. Wait for the build
-   to produce the draft release: macOS gives dmg + app.tar.gz + .sig +
-   latest.json, Linux gives AppImage + deb + rpm (x86_64, no updater manifest
-   and no signatures). Seven assets, and a missing Linux one is a red job, not
-   an expected skip.
+5. Cut the real release: `git tag vX <merge-sha> && git push origin vX`. Wait
+   for the build to create the draft release. macOS gives dmg + app.tar.gz +
+   .sig + latest.json. Linux gives AppImage + deb + rpm (x86_64, no updater
+   manifest and no signatures). That is seven assets. A missing Linux asset is
+   a red job, not an expected skip.
 
 ## Release notes (from source, not memory)
 
-Notes live in `CHANGELOG.md`, written BEFORE the tag exists (step 1), never
-edited onto the release after the build.
+Notes live in `CHANGELOG.md`. They are written BEFORE the tag exists (step 1),
+and never edited onto the release after the build.
 
 - Get the ACTUAL merged PRs since `X-1`:
-  `gh pr list --state merged --base main --json number,title,mergedAt` filtered to
-  `mergedAt` after the `X-1` release timestamp (`gh release view vX-1`).
+  `gh pr list --state merged --base main --json number,title,mergedAt`, keeping
+  only PRs whose `mergedAt` is after the `X-1` release timestamp
+  (`gh release view vX-1`).
 - READ EACH app-facing PR body (`gh pr view <n> --json title,body`) and write
   ONLY from what those bodies say. NOT commit messages, NOT private memory
-  notes (in-flight or planned work, they WILL be wrong). If a PR dropped a
-  feature, say so. Promise follow-up work only when the PR commits to it.
+  notes (they hold in-flight or planned work, and they WILL be wrong). If a PR
+  dropped a feature, say so. Never promise follow-up work: the notes say what
+  ships, see [tone-of-voice.md](tone-of-voice.md).
 - Include only `desktop`/`ui`/`core` PRs in the app notes. Exclude
   `website`/`repo`/`docs` PRs.
 - BEFORE writing, read [tone-of-voice.md](tone-of-voice.md) and obey it, its
@@ -80,19 +85,20 @@ edited onto the release after the build.
 
 ### Format (match the curated changelog of v0.1.7 through v0.1.11)
 
-- Section heading `## Goodboy vX`, no codename (dropped from v0.1.8 on), added
-  above the previous one. Under it, a one-line lead summary.
-- Each feature is an `### sentence-case heading` with its PR ref(s) in square
+- Section heading `## Goodboy vX`, with no codename (dropped from v0.1.8 on).
+  Add it above the previous one. Under it, write a one-line lead summary.
+- Each feature is an `### sentence-case heading`, with its PR ref(s) in square
   brackets at the START, e.g.
-  `### [#1241, #1243] Review a Bitbucket pull request in place`. When
+  `### [#1241, #1243] Review a Bitbucket pull request in place`. If
   `CHANGELOG.md` and this doc disagree, match the file and fix this doc.
 - Marquee feature first, then the rest in priority order.
-- End with `### Fixes` (or `### Smaller fixes`): one bullet per fix, PR ref at
-  the end of the line, repeating a PR across bullets when it covered several.
+- End with `### Fixes` (or `### Smaller fixes`): one bullet per fix, with the
+  PR ref at the end of the line. If one PR covered several fixes, repeat it on
+  each of those bullets.
 
 ## Finish
 
 6. Once the draft release exists (step 5), its body and `latest.json` are
-   already filled in from `CHANGELOG.md`: review the draft, then publish:
-   `gh release edit vX --draft=false`, then confirm `homebrew.yml` fires and
+   already filled in from `CHANGELOG.md`. Review the draft, then publish it:
+   `gh release edit vX --draft=false`. Then confirm `homebrew.yml` starts and
    succeeds (`gh run list --workflow=homebrew.yml`).

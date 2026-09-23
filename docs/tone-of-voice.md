@@ -5,18 +5,18 @@
 > outside product copy (see `CONVENTIONS.md`) or visual layout and typography
 > (see `DESIGN.md`).
 
-How Goodboy talks. README, website, release notes, in-app copy, error
-messages: if a human reads the string, it lives by these rules.
+How Goodboy talks. If a human reads the string, these rules apply. That
+covers the README, the website, release notes, in-app copy and error messages.
 
 ## The shape
 
 Write like someone who's been in the trenches with the reader, not a brand
-addressing a market. Two voices:
+talking to a market. There are two voices:
 
 - **Product voice** ("Goodboy does X"): direct, second person, concrete.
   README, feature sections, in-app copy.
-- **Author voice** ("I built this because…"): first person, conversational,
-  reserved for the founder note and release blog posts. Never bleeds into
+- **Author voice** ("I built this because…"): first person, conversational.
+  Only for the founder note and release blog posts. It never leaks into
   product copy.
 
 ## Rules
@@ -35,27 +35,29 @@ addressing a market. Two voices:
 
 ### Neutrality
 
-- **No single-provider assumption in chrome.** Launch screens, empty states and
-  headers never address the user as a Claude session or imply Claude is the
-  runtime. Name a provider only where the copy is genuinely about it (a Claude
-  error, a Codex setup step).
-- **No hardcoded user nickname.** A greeting that needs a name reads it from the
-  user's profile, never a constant. In doubt, drop the greeting.
-- **Product copy is in English.** Every label, placeholder, empty state, tooltip
-  and button. A new string in another language is a bug: translate it.
-- **Don't leak a contributor's assistant config.** Nicknames, casing, house
-  style and conversational language from a local setup are a bug in a mock or a
-  PR: strip them.
+- **No single-provider assumption in chrome.** Chrome is the app's frame:
+  launch screens, empty states and headers. It never talks to the user as a
+  Claude session or hints that Claude is what runs underneath. Name a provider
+  only where the copy is really about it (a Claude error, a Codex setup step).
+- **No hardcoded user nickname.** If a greeting needs a name, it reads it from
+  the user's profile, never from a constant. If in doubt, drop the greeting.
+- **Product copy is in English.** That means every label, placeholder, empty
+  state, tooltip and button. A new string in another language is a bug:
+  translate it.
+- **Don't leak a contributor's assistant config.** A local setup can carry
+  nicknames, casing, a house style and chatty language. In a mock or a PR, any
+  of these is a bug: strip them.
 
 ### Punctuation
 
 - **No em dashes.** Period, comma, colon or parentheses instead.
 - **One sentence per idea.** Don't chain three clauses with semicolons.
-- **Sentence case** for headings. Not Title Case. The tiny-eyebrow casing
-  exception is owned by [DESIGN.md](../DESIGN.md) in Voice & copy.
+- **Sentence case** for headings. Not Title Case. The one exception is the
+  casing of tiny eyebrow labels, and [DESIGN.md](../DESIGN.md) owns it in
+  Voice & copy.
 - **No trailing period on titles, eyebrows, button labels, or list items.**
-  Body sentences keep theirs. A standalone hero line is the one exception, for
-  the spoken beat ("Stop re-explaining yourself.").
+  Body sentences keep theirs. The one exception is a hero line that stands
+  alone, because it is read like a spoken beat ("Stop re-explaining yourself.").
 - **Code identifiers in backticks**: `pnpm tauri:dev`, not "the pnpm tauri:dev
   command".
 
@@ -69,23 +71,24 @@ addressing a market. Two voices:
   mid one to implement" beats "intelligent multi-model routing".
 - **Specific friction the reader has felt.** "Re-pasting the goal into a new
   window." "Burning Opus on a one-liner."
-- **No feature inventory dumps.** Pick the few that matter, write them as
-  scenarios, leave the rest in a short list with one line each.
+- **No feature inventory dumps.** Pick the few features that matter and write
+  them as scenarios. Leave the rest in a short list, one line each.
 - **Don't echo the label in its own title.** Eyebrow "Workflow Studio", title
   "Build it once, reuse it forever", not "Build the workflow once".
 - **Don't repeat a phrase across sections.** "In one place", then "in one
   rail", then "all in one place" reads as a tic. Say it once, then vary it.
-- **Don't leak internals.** Not the names ("rail", "slice", "turn blob"), not
-  the mechanism (which thread, function or table, why it broke in the code).
-  Name what the reader sees on screen and what changed for them.
-- **Phrase titles to scale.** "Turn any issue into a session" outlives "Turn a
-  Linear issue into a session". Pin the integration in the body, not the title.
+- **Don't leak internals.** No internal names ("rail", "slice", "turn blob").
+  No mechanism either: which thread, function or table, or why it broke in the
+  code. Name what the reader sees on screen and what changed for them.
+- **Phrase titles so they still fit as the app grows.** "Turn any issue into a
+  session" outlives "Turn a Linear issue into a session". Name the integration
+  in the body, not the title.
 - **A generated reply's structure is the app's, not the model's.** In the
-  resolver the verdict and resolution lines are generated and the agent's block
-  supplies only the middle. A resolver opening with "Fixed in `abc1234`." makes
-  the reader read the outcome twice.
+  resolver, the app writes the verdict and resolution lines, and the agent's
+  block fills only the middle. If the agent's block opens with "Fixed in
+  `abc1234`.", the reader reads the outcome twice.
 - **Thread the headline through the page.** If the hero promises "stop
-  re-explaining yourself", let it resurface where it pays off.
+  re-explaining yourself", bring it back where the page delivers on it.
 
 ### Layout
 
@@ -96,25 +99,25 @@ addressing a market. Two voices:
 
 ### Release notes
 
-The changelog is the one place that gets to sell a little, and earns that by
-being short. The lead line is the pitch; everything under it is plain fact.
+The changelog is the one place allowed to sell a little, and it earns that by
+being short. The lead line is the pitch. Everything under it is plain fact.
 
 - **The heading names the capability, not a mood.** "Pull requests carry the
   queued check state" not "The pull request tells the truth". Objects do not
   tell, know, feel or remember.
 - **Budget the length.** The headline feature gets a lead line plus at most
-  three short paragraphs. Every other feature one or two. A fix one line. Cut
-  any paragraph explaining why the old behavior existed.
+  three short paragraphs. Every other feature gets one or two. A fix gets one
+  line. Cut any paragraph that explains why the old behavior existed.
 - **Never explain the mechanism.** A fix says what the reader saw before and
   what they see now, then stops. No thread names, no function, variable, table
   or module names, no "the cause was X", no account of how the bug happened or
-  how the fix works inside. The internals are the PR description and the commit
-  message, and nobody outside the team reads a changelog to learn them. The
-  announcement post lives by this rule too.
+  how the fix works inside. The internals belong in the PR description and the
+  commit message. Nobody outside the team reads a changelog to learn them. The
+  announcement post follows this rule too.
 - **Say what ships, and stop there.** Public copy (README, docs, website,
-  changelog, posts) describes what Goodboy does. Verification status,
-  open gaps, trade-offs and work not done yet belong in the pull request
-  description and the issue tracker, not in the copy. No "Follow-up:" lines,
+  changelog, posts) describes what Goodboy does. Some things belong in the pull
+  request description and the issue tracker, not in the copy: verification
+  status, open gaps, trade-offs and work not done yet. No "Follow-up:" lines,
   no "known limits" sections, no "not yet", no caveat paragraphs.
 
 ### Grounded
@@ -209,5 +212,5 @@ Good:
 
 ## When in doubt
 
-Read it out loud. Sounds like a press release: rewrite. Sounds like something
-you'd say to a friend after the third coffee of the day: ship it.
+Read it out loud. If it sounds like a press release, rewrite it. If it sounds
+like something you'd say to a friend after the third coffee of the day, ship it.
