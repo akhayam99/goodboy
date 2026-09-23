@@ -70,6 +70,16 @@ The rules for tests that check behavior live in
 [docs/testing.md](./docs/testing.md). The rules for adding and upgrading
 dependencies live in [docs/dependencies.md](./docs/dependencies.md).
 
+## Docs move with the code
+
+A change that alters behavior, a contract, a name, or a trap updates the doc
+that owns that concept in the same PR. Find the owner through
+[docs/README.md](./docs/README.md); if none exists and a reader would break
+something without knowing it, add the line to the nearest owner or to
+[docs/traps.md](./docs/traps.md). Renaming or deleting a symbol, file, or route
+means grepping `*.md` for it first. A lesson learned while working here goes
+into the owning doc, never only into an agent's private memory.
+
 ## Git and releases
 
 Rules for branches, commits, PRs, hooks, CI, and the repository language live

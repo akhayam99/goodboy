@@ -48,7 +48,7 @@ Example: `feat(core): add anthropic provider adapter`
 ### PR rules
 
 - The title follows the conventional commits format.
-- Description: what + why + test plan. Link the issue: `Closes #N`.
+- Description: fill in [the PR template](./.github/pull_request_template.md). Link the issue: `Closes #N`.
 - Every blocking step in the [CI pipeline](#ci-pipeline) must be green.
 - No squash-merge for PRs with several commits, unless every commit is chore-level. Prefer rebase or merge.
 - Review your own PR before you ask for a review.

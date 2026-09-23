@@ -23,4 +23,5 @@ Goodboy is an AI workspace orchestrator. It manages macro sessions (one session 
 - When you extract a hook, use the folder convention by default (`useFoo/index.ts`). Add an `index.test.ts` if the behavior is non-trivial.
 - Worktrees (`.claude/worktrees/`) and personal skill files under `.claude/` stay local. Never commit them.
 - `REFACTOR_PLAN.md` and similar planning docs at the repo root are gitignored. Keep them out of commits.
+- Before you finish, apply [AGENTS.md](./AGENTS.md) → Docs move with the code. Auto-memory does not replace the doc that owns the fact.
 - Product direction and the autonomous delivery organization live in the private `goodboy-atlas` repository, not here. Do not rebuild either one from this repo. Ask the owner.
