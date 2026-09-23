@@ -81,6 +81,7 @@ The steps are in `.github/workflows/ci.yml`, in this order. All of them block. A
 - `knip`: unused files, duplicate exports, unlisted dependencies and declared dependencies nothing imports, across the repo.
 - `knip production`: unused files, exports and types in `apps/desktop` production code.
 - `test`: `turbo run test --affected`, vitest in every package.
+- `a11y`: `pnpm --filter @goodboy/desktop test:a11y`, axe over the smoke cases and every mock scene, compared to the violation baseline.
 - `build`: `turbo run build --affected`.
 - `pnpm audit --prod` (its own job): known vulnerabilities in production dependencies.
 

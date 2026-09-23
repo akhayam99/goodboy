@@ -25,6 +25,14 @@ Every desktop test that loads the real store goes through `apps/desktop/src/stor
 - The store loads once: `useAppStore = await importStore()` in `beforeAll` with `STORE_IMPORT_TIMEOUT_MS`. Then `await resetStoryStore()` runs in `beforeEach` (spies reset, `initialState` applied, local storage cleared) before the test seeds its own state.
 - `__tests__/regressions/store-import-pattern.test.ts` fails on any test that `import()`s the store module itself. A test that needs another export of the store module (`summarizerQueues`) takes it from `importStoreModule()`.
 
+## Accessibility suite
+
+`apps/desktop/src/__tests__/a11y/` runs as its own vitest project: `pnpm --filter @goodboy/desktop test:a11y` (CI step `a11y`, blocking). `pnpm test` skips it to stay fast.
+
+- Every case calls `expectBaseline({ name, container })`, which runs axe and compares the sorted violation ids to `A11Y_BASELINE` in `baseline.ts`. A new violation fails; a fixed one also fails until its id is deleted from the baseline. The baseline only shrinks: never add an entry to silence a violation you introduced. Delete the file when it is empty.
+- Seeds follow the mock vocabulary (Harborline, Northwind, ledger-core, payments-api), never real names.
+- happy-dom has no layout, so axe reports `color-contrast` as incomplete, never as a violation. Contrast belongs to the token contrast guard (`__tests__/regressions/token-contrast-floor.test.ts`); this suite covers structure only, in either theme.
+
 ## Database tests start from a migrated template
 
 A `packages/db` test that needs a migrated schema calls `await makeMigratedTestDatabase()` (or `{ throughVersion: N }` to stop before the migration under test) from `test-helpers/test-db.ts`. The first call per version in a file runs the real migration chain once and keeps the serialized result; every call returns an independent in-memory clone with `foreign_keys` on. A migration test still runs the migration under test with a real `migrate(db)` on top of the clone. Tests whose subject is the runner itself (`runner*.test.ts`, `registry.test.ts`, segment checkpoints, crash resume, anything reading `MigrateResult` or passing a custom migration list) and file-backed databases keep `makeTestDatabase` plus `migrate`.

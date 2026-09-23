@@ -66,6 +66,9 @@ jobs:
       - name: test
         run: pnpm turbo run test --affected --continue
 
+      - name: a11y
+        run: pnpm --filter @goodboy/desktop test:a11y
+
       - name: build
         run: pnpm turbo run build --affected
 
