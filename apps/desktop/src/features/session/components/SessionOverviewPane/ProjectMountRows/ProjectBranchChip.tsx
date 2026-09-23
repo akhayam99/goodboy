@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Check, GitBranch, Pencil } from 'lucide-react';
 import {
   AnchoredPopover,
@@ -10,7 +9,6 @@ import {
   useDropdown,
 } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
-import { useToast } from '../../../../../app/components/Toast';
 import { BranchSwitchPanel } from '../../../../worktree/BranchSwitchPanel';
 import { splitBranchLabel } from './branchLabel';
 
@@ -22,21 +20,10 @@ type Props = {
 };
 
 export const ProjectBranchChip = ({ sessionId, mountId, branch, canSwitch }: Props) => {
-  const { showToast } = useToast();
-  const { copied, failed, copy } = useCopyLink();
+  const { copiedKey, failedKey, copy } = useCopyLink();
   const dropdown = useDropdown({ width: 'w-96', expectedHeight: 360 });
-
-  useEffect(() => {
-    if (copied) {
-      showToast('success', 'branch copied');
-    }
-  }, [copied, showToast]);
-
-  useEffect(() => {
-    if (failed) {
-      showToast('error', 'copy failed');
-    }
-  }, [failed, showToast]);
+  const copied = copiedKey !== null;
+  const failed = failedKey !== null;
 
   if (branch === '') {
     return null;
@@ -47,18 +34,18 @@ export const ProjectBranchChip = ({ sessionId, mountId, branch, canSwitch }: Pro
   return (
     <Chip
       as="span"
-      tone={copied ? 'success' : 'neutral'}
+      tone={copied ? 'success' : failed ? 'danger' : 'neutral'}
       shape="badge"
       size="control"
       className={cn(
         'min-w-0 shrink gap-0 px-0',
-        copied ? '' : 'hover:bg-hover hover:text-foreground',
+        copied || failed ? '' : 'hover:bg-hover hover:text-foreground',
       )}
       label={
-        <Tooltip content={copied ? 'Copied' : 'Copy the branch name'}>
+        <Tooltip content={copied ? 'Copied' : failed ? 'Copy failed' : 'Copy the branch name'}>
           <button
             type="button"
-            onClick={() => void copy(branch)}
+            onClick={() => void copy({ text: branch })}
             aria-label={`Copy branch ${branch}`}
             className={cn(
               'inline-flex h-full min-w-0 items-center gap-1.5 rounded-md px-2',

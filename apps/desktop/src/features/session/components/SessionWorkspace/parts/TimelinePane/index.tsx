@@ -17,7 +17,6 @@ import {
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
 import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
 import { useWorkflowAdvanceStates } from '../../../../../workflows/useWorkflowAdvanceStates';
-import { useToast } from '../../../../../../app/components/Toast';
 import { filterTimelineEntries, isActivityChildShown } from '../../../../timeline/activityFilter';
 import { buildTimelineGroups } from '../../../../timeline/buildTimelineGroups';
 import {
@@ -87,8 +86,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
     onSelectQuestions: () => setActiveLens(sessionId, 'questions'),
   });
   const diffStats = useMountDiffStats(sessionId);
-  const { showToast } = useToast();
-  const { copied, failed, copy } = useCopyLink();
+  const { copiedKey, failedKey, copy } = useCopyLink();
 
   useEffect(() => {
     void loadSessionEvents({ sessionId });
@@ -102,18 +100,6 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
     void loadSessionAnsweredQuestions(sessionId);
     void loadSessionDismissedQuestions(sessionId);
   }, [loadSessionAnsweredQuestions, loadSessionDismissedQuestions, sessionId]);
-
-  useEffect(() => {
-    if (copied) {
-      showToast('success', 'path copied');
-    }
-  }, [copied, showToast]);
-
-  useEffect(() => {
-    if (failed) {
-      showToast('error', 'copy failed');
-    }
-  }, [failed, showToast]);
 
   const questions = useMemo(
     () => [...openQuestions, ...answeredQuestions, ...dismissedQuestions],
@@ -270,8 +256,13 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         };
       }
       return {
-        label: copied ? 'Copied' : 'Copy path',
-        onAct: () => void copy(mountPath),
+        label:
+          copiedKey === mountPath
+            ? 'Copied'
+            : failedKey === mountPath
+              ? 'Copy failed'
+              : 'Copy path',
+        onAct: () => void copy({ text: mountPath }),
       };
     }
     if (entry.kind === 'agent' && entry.openQuestions.length > 0) {

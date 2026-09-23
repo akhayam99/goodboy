@@ -6,6 +6,7 @@ import {
   Tooltip,
   cn,
   formatError,
+  useCopyLink,
   useDropdown,
   type OverflowMenuItem,
 } from '@goodboy/ui';
@@ -49,6 +50,7 @@ export const EditorMenu = ({
   const detectedEditors = useAppStore((state) => state.detectedEditors);
   const loadDetectedEditors = useAppStore((state) => state.loadDetectedEditors);
   const { showToast } = useToast();
+  const { failedKey, copy } = useCopyLink();
   const dropdown = useDropdown({
     align: 'start',
     width: 'min-w-[180px]',
@@ -73,16 +75,18 @@ export const EditorMenu = ({
     }
   };
 
-  const copyPath = async () => {
+  useEffect(() => {
+    if (failedKey === null) {
+      return;
+    }
+    showToast('error', "couldn't copy the path");
+  }, [failedKey, showToast]);
+
+  const copyPath = () => {
     if (worktreePath == null) {
       return;
     }
-    try {
-      await navigator.clipboard.writeText(worktreePath);
-      showToast('success', 'worktree path copied');
-    } catch (error) {
-      showToast('error', `couldn't copy path: ${formatError(error)}`);
-    }
+    void copy({ text: worktreePath });
   };
 
   const items = useMemo<ReadonlyArray<OverflowMenuItem>>(() => {
@@ -120,7 +124,7 @@ export const EditorMenu = ({
         key: 'copy-path',
         label: 'Copy path',
         icon: Copy,
-        onClick: () => void copyPath(),
+        onClick: copyPath,
         disabled: worktreePath == null,
       },
     ];

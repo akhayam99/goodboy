@@ -10,6 +10,7 @@ import {
   ScrollFade,
   SectionHeader,
   cn,
+  useCopyLink,
 } from '@goodboy/ui';
 import type {
   Project,
@@ -251,7 +252,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
   const [newDraft, setNewDraft] = useState<NewDraft | null>(null);
   const [pendingNewAction, setPendingNewAction] = useState<PendingNewAction | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<ProjectScriptId | null>(null);
+  const { copiedKey, copy } = useCopyLink();
   const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [manifestOpenByProject, setManifestOpenByProject] = useState<
@@ -621,15 +622,12 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
     [saveScript, workspaceId],
   );
 
-  const onCopy = useCallback(({ id, body }: CopyParams) => {
-    void navigator.clipboard
-      .writeText(body)
-      .then(() => {
-        setCopiedId(id);
-        window.setTimeout(() => setCopiedId((current) => (current === id ? null : current)), 1200);
-      })
-      .catch(() => undefined);
-  }, []);
+  const onCopy = useCallback(
+    ({ id, body }: CopyParams) => {
+      void copy({ text: body, key: id });
+    },
+    [copy],
+  );
 
   const onDelete = useCallback(
     async ({ id }: DeleteParams) => {
@@ -865,7 +863,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                           runnable={runnable}
                           canRun={mountPath != null}
                           runDisabledReason={runDisabledReason}
-                          copied={copiedId === script.id}
+                          copied={copiedKey === script.id}
                           onToggle={() => onToggle({ id: script.id })}
                           onSave={(name, body, projectId) =>
                             onSaveExisting({ script, name, body, projectId })
