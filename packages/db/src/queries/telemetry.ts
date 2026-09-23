@@ -133,17 +133,6 @@ export const summarizeWorkspaceTelemetry = async (
   return toSummary(rows[0]);
 };
 
-export const summarizeProviderTelemetry = async (
-  db: Database,
-  provider: ProviderName,
-): Promise<TelemetrySummary> => {
-  const rows = await db.select<SummaryRow>(
-    `SELECT ${SUMMARY_SELECT} FROM telemetry_records WHERE provider = ?`,
-    [provider],
-  );
-  return toSummary(rows[0]);
-};
-
 export type ProviderTelemetrySummary = {
   readonly provider: ProviderName;
   readonly estimatedCostUsd: number;

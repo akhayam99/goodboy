@@ -390,46 +390,6 @@ export const updateSessionWorktreeBranch = async (
   );
 };
 
-type UpdateSessionWorktreePathParams = {
-  readonly db: Database;
-  readonly sessionId: SessionId;
-  readonly parallelIndex: number;
-  readonly worktreePath: string;
-};
-
-export const updateSessionWorktreePath = async ({
-  db,
-  sessionId,
-  parallelIndex,
-  worktreePath,
-}: UpdateSessionWorktreePathParams): Promise<void> => {
-  await db.exec('BEGIN IMMEDIATE');
-  try {
-    const mountRows = await db.select<{ readonly id: string }>(
-      'SELECT id FROM session_worktrees WHERE session_id = ? AND parallel_index = ? LIMIT 1',
-      [sessionId, parallelIndex],
-    );
-    const mountId = mountRows[0]?.id as MountId | undefined;
-    if (
-      mountId !== undefined &&
-      (await hasPathOwner({ db, worktreePath, excludedMountId: mountId }))
-    ) {
-      throw new UniqueViolationError('session mount', 'worktreePath');
-    }
-    await db.execute(
-      `UPDATE session_worktrees
-       SET worktree_path = ?, last_worktree_path = ?, is_attached = 1,
-           disk_state = 'unchecked', revision = revision + 1, updated_at = ?
-       WHERE session_id = ? AND parallel_index = ?`,
-      [worktreePath, worktreePath, Date.now(), sessionId, parallelIndex],
-    );
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
-  }
-};
-
 type UpdateSessionWorktreeRepoSlugParams = {
   readonly db: Database;
   readonly sessionId: SessionId;

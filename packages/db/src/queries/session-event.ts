@@ -173,12 +173,3 @@ export const listSessionEvents = async ({
   );
   return rows.map((row) => toDomain({ row }));
 };
-
-type DeleteParams = {
-  readonly db: Database;
-  readonly sessionId: SessionId;
-};
-
-export const deleteSessionEvents = async ({ db, sessionId }: DeleteParams): Promise<void> => {
-  await db.execute('DELETE FROM session_events WHERE session_id = ?', [sessionId]);
-};

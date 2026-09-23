@@ -26,7 +26,7 @@ import { migrations, type Migration } from './index';
 import { getWorkspaceById, insertWorkspace } from '../queries/workspace';
 import { getSessionById, insertSession } from '../queries/session';
 import { listWorkflows, getWorkflow, upsertWorkflow, deleteWorkflow } from '../queries/workflow';
-import { listAgentsForSession, updateAgentStatus } from '../queries/agent';
+import { listAgentsForSessions, updateAgentStatus } from '../queries/agent';
 import {
   insertSessionWorktree,
   listWorktreesForSession,
@@ -835,7 +835,7 @@ describe('migrate', () => {
         JSON.stringify(agent.domains),
       ],
     );
-    const agents = await listAgentsForSession(db, session.id);
+    const agents = (await listAgentsForSessions(db, [session.id])).get(session.id) ?? [];
 
     expect(agents).toHaveLength(1);
     if (!agents[0]) {
@@ -848,7 +848,7 @@ describe('migrate', () => {
       status: 'completed',
       outputSummary: 'Found issues',
     });
-    const updated = await listAgentsForSession(db, session.id);
+    const updated = (await listAgentsForSessions(db, [session.id])).get(session.id) ?? [];
 
     if (!updated[0]) {
       throw new Error('updated[0] should exist');

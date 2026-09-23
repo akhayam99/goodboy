@@ -483,14 +483,6 @@ export const purgeSessionForDelete = async ({
   }
 };
 
-export const softDeleteSession = async (db: Database, id: SessionId): Promise<void> => {
-  await db.execute('UPDATE sessions SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
-};
-
-export const restoreSession = async (db: Database, id: SessionId): Promise<void> => {
-  await db.execute('UPDATE sessions SET deleted_at = NULL WHERE id = ?', [id]);
-};
-
 export const archiveSession = async (db: Database, id: SessionId): Promise<void> => {
   await db.execute('UPDATE sessions SET archived_at = ? WHERE id = ?', [Date.now(), id]);
 };

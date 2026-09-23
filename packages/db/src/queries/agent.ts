@@ -15,14 +15,7 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { Database } from '../client';
-import {
-  isWorkflowRoutingDecision,
-  isWorkflowRoutingLock,
-  isWorkflowTaskProfile,
-  legacyAgentRoutingDecision,
-  parseWorkflowRouting,
-  stringifyRoutingJson,
-} from './workflowRoutingCodec';
+import { legacyAgentRoutingDecision, parseWorkflowRouting } from './workflowRoutingCodec';
 
 type AgentRow = {
   id: string;
@@ -143,17 +136,6 @@ const toAgent = ({ row }: ToAgentParams): Agent => {
   };
 };
 
-export const listAgentsForSession = async (
-  db: Database,
-  sessionId: SessionId,
-): Promise<ReadonlyArray<Agent>> => {
-  const rows = await db.select<AgentRow>(
-    'SELECT * FROM live_agents WHERE session_id = ? ORDER BY ordinal ASC',
-    [sessionId],
-  );
-  return rows.map((row) => toAgent({ row }));
-};
-
 export const listAgentsForSessions = async (
   db: Database,
   sessionIds: ReadonlyArray<SessionId>,
@@ -234,14 +216,6 @@ export const updateAgentStatus = async (
 
   values.push(id);
   await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values);
-};
-
-export const softDeleteAgent = async (db: Database, id: AgentId): Promise<void> => {
-  await db.execute('UPDATE agents SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
-};
-
-export const restoreAgent = async (db: Database, id: AgentId): Promise<void> => {
-  await db.execute('UPDATE agents SET deleted_at = NULL WHERE id = ?', [id]);
 };
 
 export const purgeAgentForDelete = async ({
@@ -325,41 +299,3 @@ export type AgentRoutingUpdate = Readonly<{
   modelOverride: string | null;
   effort: ModelEffort | null;
 }>;
-
-export const updateAgentRouting = async ({
-  db,
-  id,
-  update,
-}: {
-  readonly db: Database;
-  readonly id: AgentId;
-  readonly update: AgentRoutingUpdate;
-}): Promise<boolean> => {
-  const result = await db.execute(
-    `UPDATE agents SET routing_lock = ?, routing_decision = ?, task_profile = ?,
-       provider_override = ?, model_override = ?, effort = ?
-     WHERE id = ? AND status NOT IN ('starting', 'running', 'completed')`,
-    [
-      stringifyRoutingJson({
-        value: update.routingLock,
-        isValid: isWorkflowRoutingLock,
-        field: 'routing lock',
-      }),
-      stringifyRoutingJson({
-        value: update.routingDecision,
-        isValid: isWorkflowRoutingDecision,
-        field: 'routing decision',
-      }),
-      stringifyRoutingJson({
-        value: update.taskProfile,
-        isValid: isWorkflowTaskProfile,
-        field: 'task profile',
-      }),
-      update.providerOverride,
-      update.modelOverride,
-      update.effort,
-      id,
-    ],
-  );
-  return result.rowsAffected === 1;
-};

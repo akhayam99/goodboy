@@ -5,6 +5,7 @@ import type {
   SessionId,
   StepId,
   WorkflowId,
+  WorkflowRun,
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -13,7 +14,6 @@ import type { Database } from '../client';
 import {
   attachWorkflowToSession,
   discardWorkflowInSession,
-  listWorkflowsForSession,
   restoreWorkflowInSession,
   repointWorkflowRunTemplate,
   updateSessionWorkflowTriggerMode,
@@ -24,7 +24,7 @@ import {
   updateWorkflowRunRoleModelOverrides,
   updateWorkflowRunSpendLimit,
 } from './session-workflow';
-import { listSessionsForWorkspace } from './session';
+import { getSessionById, listSessionsForWorkspace } from './session';
 
 const workspaceId = 'ws-1' as WorkspaceId;
 const sessionId = 'ses-1' as SessionId;
@@ -58,6 +58,15 @@ const insertActivePlan = async ({ db, workflowRunId }: InsertActivePlanParams): 
       Date.parse(NOW),
     ],
   );
+};
+
+type ReadRunsParams = {
+  readonly db: Database;
+};
+
+const readRunsNewestFirst = async ({ db }: ReadRunsParams): Promise<ReadonlyArray<WorkflowRun>> => {
+  const session = await getSessionById(db, sessionId);
+  return [...(session?.workflowRuns ?? [])].reverse();
 };
 
 type ReadPlanStatusParams = {
@@ -131,7 +140,7 @@ describe('session_workflows trigger-mode queries', () => {
         stepRepoints: [{ fromStepId: 'step-1' as StepId, toStepId: 'clone-step-1' as StepId }],
       });
 
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs[0]!.workflowId).toBe(workflowId2);
       const agents = await db.select<{ readonly step_id: string }>(
         'SELECT step_id FROM agents WHERE id = ?',
@@ -151,7 +160,7 @@ describe('session_workflows trigger-mode queries', () => {
         autoRun: true,
         updatedAt: NOW,
       });
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs).toHaveLength(1);
       expect(runs[0]!.triggerMode).toBe('immediate');
       expect(runs[0]!.chainAfterId).toBeUndefined();
@@ -168,7 +177,7 @@ describe('session_workflows trigger-mode queries', () => {
         updatedAt: NOW,
         triggerMode: 'manual',
       });
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs[0]!.triggerMode).toBe('manual');
       expect(runs[0]!.autoRun).toBe(false);
     });
@@ -184,7 +193,7 @@ describe('session_workflows trigger-mode queries', () => {
         triggerMode: 'immediate',
         executionMode: 'dynamic',
       });
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs[0]!.executionMode).toBe('dynamic');
     });
 
@@ -200,7 +209,7 @@ describe('session_workflows trigger-mode queries', () => {
         orchestratorRouting: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
       });
 
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
 
       expect(runs[0]!.orchestratorRouting).toEqual({
         providerId: 'codex',
@@ -220,7 +229,7 @@ describe('session_workflows trigger-mode queries', () => {
         executionMode: 'dynamic',
       });
 
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
 
       expect(runs[0]!.orchestratorRouting).toBeUndefined();
     });
@@ -244,7 +253,7 @@ describe('session_workflows trigger-mode queries', () => {
       });
       await updateWorkflowRunRoleModelOverrides(db, 'run-1' as WorkflowRunId, roleModelOverrides);
 
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
 
       expect(runs[0]!.roleModelOverrides).toEqual(roleModelOverrides);
 
@@ -263,7 +272,7 @@ describe('session_workflows trigger-mode queries', () => {
         NOW,
       );
 
-      const reordered = await listWorkflowsForSession(db, sessionId);
+      const reordered = await readRunsNewestFirst({ db });
       expect(
         reordered.find((run) => run.id === ('run-1' as WorkflowRunId))!.roleModelOverrides,
       ).toEqual(roleModelOverrides);
@@ -284,7 +293,7 @@ describe('session_workflows trigger-mode queries', () => {
       });
       await updateWorkflowRunRoleModelOverrides(db, 'run-1' as WorkflowRunId, {});
 
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
 
       expect(runs[0]!.roleModelOverrides).toBeUndefined();
     });
@@ -334,7 +343,7 @@ describe('session_workflows trigger-mode queries', () => {
         ],
       );
 
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
 
       expect(runs[0]!.roleModelOverrides).toEqual({
         implementer: {
@@ -364,7 +373,7 @@ describe('session_workflows trigger-mode queries', () => {
         triggerMode: 'after_run',
         chainAfterRunId: 'pred' as WorkflowRunId,
       });
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       const chained = runs.find((r) => r.id === ('chained' as WorkflowRunId));
       expect(chained!.triggerMode).toBe('after_run');
       expect(chained!.chainAfterId).toBe('pred');
@@ -387,7 +396,7 @@ describe('session_workflows trigger-mode queries', () => {
         autoRun: true,
         updatedAt: NOW,
       });
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs.map((r) => [r.id, r.ordinal])).toEqual([
         ['r1', 1],
         ['r0', 0],
@@ -423,7 +432,7 @@ describe('session_workflows trigger-mode queries', () => {
         '2026-08-05 09:14:22',
         'r0',
       ]);
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs[0]!.createdAt).toBe('2026-08-05T09:14:22.000Z');
     });
 
@@ -440,7 +449,7 @@ describe('session_workflows trigger-mode queries', () => {
         '',
         'r0',
       ]);
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs[0]!.createdAt).toBeUndefined();
     });
 
@@ -466,38 +475,10 @@ describe('session_workflows trigger-mode queries', () => {
         'r0',
       ]);
       await updateWorkflowOrder(db, sessionId, ['r1' as WorkflowRunId, 'r0' as WorkflowRunId], NOW);
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs.find((r) => r.id === ('r0' as WorkflowRunId))!.createdAt).toBe(
         '2026-08-05T09:14:22.000Z',
       );
-    });
-  });
-
-  describe('listWorkflowsForSession ordering', () => {
-    it('returns runs newest first, by ordinal descending', async () => {
-      await attachWorkflowToSession({
-        db,
-        sessionId,
-        workflowRunId: 'r0' as WorkflowRunId,
-        workflowId,
-        autoRun: true,
-        updatedAt: NOW,
-      });
-      await attachWorkflowToSession({
-        db,
-        sessionId,
-        workflowRunId: 'r1' as WorkflowRunId,
-        workflowId: workflowId2,
-        autoRun: true,
-        updatedAt: NOW,
-      });
-      const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs.map((r) => r.id)).toEqual(['r1', 'r0']);
-    });
-
-    it('returns empty for a session with no workflows', async () => {
-      const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs).toEqual([]);
     });
   });
 
@@ -528,7 +509,7 @@ describe('session_workflows trigger-mode queries', () => {
         'immediate',
         NOW,
       );
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs[0]!.triggerMode).toBe('immediate');
     });
 
@@ -558,7 +539,7 @@ describe('session_workflows trigger-mode queries', () => {
         'manual',
         NOW,
       );
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs[0]!.triggerMode).toBe('manual');
       expect(runs[0]!.chainAfterId).toBe('pred');
     });
@@ -590,7 +571,7 @@ describe('session_workflows trigger-mode queries', () => {
         ['chained' as WorkflowRunId, 'pred' as WorkflowRunId],
         NOW,
       );
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs.map((r) => [r.id, r.ordinal])).toEqual([
         ['pred', 1],
         ['chained', 0],
@@ -612,7 +593,7 @@ describe('session_workflows trigger-mode queries', () => {
         autoRun: true,
         updatedAt: NOW,
       });
-      const run = (await listWorkflowsForSession(db, sessionId))[0]!;
+      const run = (await readRunsNewestFirst({ db }))[0]!;
       expect(run.spendLimitUsd).toBeUndefined();
       expect(run.spendLimitMode).toBe('pause');
     });
@@ -627,12 +608,12 @@ describe('session_workflows trigger-mode queries', () => {
         updatedAt: NOW,
       });
       await updateWorkflowRunSpendLimit(db, 'run-1' as WorkflowRunId, 7.5, 'notify');
-      const capped = (await listWorkflowsForSession(db, sessionId))[0]!;
+      const capped = (await readRunsNewestFirst({ db }))[0]!;
       expect(capped.spendLimitUsd).toBe(7.5);
       expect(capped.spendLimitMode).toBe('notify');
 
       await updateWorkflowRunSpendLimit(db, 'run-1' as WorkflowRunId, null, 'pause');
-      const uncapped = (await listWorkflowsForSession(db, sessionId))[0]!;
+      const uncapped = (await readRunsNewestFirst({ db }))[0]!;
       expect(uncapped.spendLimitUsd).toBeUndefined();
       expect(uncapped.spendLimitMode).toBe('pause');
     });
@@ -661,7 +642,7 @@ describe('session_workflows trigger-mode queries', () => {
         ['run-2' as WorkflowRunId, 'run-1' as WorkflowRunId],
         NOW,
       );
-      const run = (await listWorkflowsForSession(db, sessionId)).find(
+      const run = (await readRunsNewestFirst({ db })).find(
         (candidate) => candidate.id === ('run-1' as WorkflowRunId),
       )!;
       expect(run.spendLimitUsd).toBe(12.5);
@@ -680,7 +661,7 @@ describe('session_workflows trigger-mode queries', () => {
         updatedAt: NOW,
         goal: 'just the auth module',
       });
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs[0]!.goal).toBe('just the auth module');
     });
 
@@ -693,7 +674,7 @@ describe('session_workflows trigger-mode queries', () => {
         autoRun: false,
         updatedAt: NOW,
       });
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs[0]!.goal).toBeUndefined();
     });
 
@@ -722,7 +703,7 @@ describe('session_workflows trigger-mode queries', () => {
         ['run-2' as WorkflowRunId, 'run-1' as WorkflowRunId],
         NOW,
       );
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs.map((r) => [r.id, r.goal])).toEqual([
         ['run-1', 'first goal'],
         ['run-2', 'second goal'],
@@ -742,7 +723,7 @@ describe('session_workflows trigger-mode queries', () => {
         triggerMode: 'immediate',
         executionMode: 'dynamic',
       });
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs[0]!.orchestrationOutcome).toBeUndefined();
     });
 
@@ -758,15 +739,11 @@ describe('session_workflows trigger-mode queries', () => {
         executionMode: 'dynamic',
       });
       await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, 'done');
-      expect((await listWorkflowsForSession(db, sessionId))[0]!.orchestrationOutcome).toBe('done');
+      expect((await readRunsNewestFirst({ db }))[0]!.orchestrationOutcome).toBe('done');
       await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, 'blocked');
-      expect((await listWorkflowsForSession(db, sessionId))[0]!.orchestrationOutcome).toBe(
-        'blocked',
-      );
+      expect((await readRunsNewestFirst({ db }))[0]!.orchestrationOutcome).toBe('blocked');
       await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, null);
-      expect(
-        (await listWorkflowsForSession(db, sessionId))[0]!.orchestrationOutcome,
-      ).toBeUndefined();
+      expect((await readRunsNewestFirst({ db }))[0]!.orchestrationOutcome).toBeUndefined();
     });
 
     it('keeps the outcome when runs are reordered', async () => {
@@ -795,7 +772,7 @@ describe('session_workflows trigger-mode queries', () => {
         ['run-2' as WorkflowRunId, 'run-1' as WorkflowRunId],
         NOW,
       );
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       const first = runs.find((r) => r.id === ('run-1' as WorkflowRunId));
       expect(first!.orchestrationOutcome).toBe('done');
     });
@@ -820,7 +797,7 @@ describe('session_workflows trigger-mode queries', () => {
         kind: 'budget',
         message: 'the budget cap is reached, raise it in Budget to keep this run going',
       });
-      expect((await listWorkflowsForSession(db, sessionId))[0]!.orchestrationStop).toEqual({
+      expect((await readRunsNewestFirst({ db }))[0]!.orchestrationStop).toEqual({
         kind: 'budget',
         message: 'the budget cap is reached, raise it in Budget to keep this run going',
       });
@@ -829,13 +806,13 @@ describe('session_workflows trigger-mode queries', () => {
         kind: 'failure',
         message: 'usage limit reached (anthropic/haiku-4.5)',
       });
-      expect((await listWorkflowsForSession(db, sessionId))[0]!.orchestrationStop).toEqual({
+      expect((await readRunsNewestFirst({ db }))[0]!.orchestrationStop).toEqual({
         kind: 'failure',
         message: 'usage limit reached (anthropic/haiku-4.5)',
       });
 
       await updateWorkflowRunOrchestrationStop(db, 'run-1' as WorkflowRunId, null);
-      expect((await listWorkflowsForSession(db, sessionId))[0]!.orchestrationStop).toBeUndefined();
+      expect((await readRunsNewestFirst({ db }))[0]!.orchestrationStop).toBeUndefined();
     });
 
     it('keeps the budget stop a budget stop when runs are reordered', async () => {
@@ -858,7 +835,7 @@ describe('session_workflows trigger-mode queries', () => {
         ['run-2' as WorkflowRunId, 'run-1' as WorkflowRunId],
         NOW,
       );
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs.find((r) => r.id === ('run-1' as WorkflowRunId))!.orchestrationStop?.kind).toBe(
         'budget',
       );
@@ -886,7 +863,7 @@ describe('session_workflows trigger-mode queries', () => {
         'done',
         'the fix and its test are in, the docs are left',
       );
-      const run = (await listWorkflowsForSession(db, sessionId))[0]!;
+      const run = (await readRunsNewestFirst({ db }))[0]!;
       expect(run.orchestrationReason).toBe('the fix and its test are in, the docs are left');
     });
 
@@ -894,7 +871,7 @@ describe('session_workflows trigger-mode queries', () => {
       await attachDynamic();
       await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, 'done', 'all set');
       await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, null);
-      const run = (await listWorkflowsForSession(db, sessionId))[0]!;
+      const run = (await readRunsNewestFirst({ db }))[0]!;
       expect(run.orchestrationReason).toBeUndefined();
     });
 
@@ -905,15 +882,13 @@ describe('session_workflows trigger-mode queries', () => {
         model: 'gpt-5.6',
         effort: 'high',
       });
-      expect((await listWorkflowsForSession(db, sessionId))[0]!.orchestratorRouting).toEqual({
+      expect((await readRunsNewestFirst({ db }))[0]!.orchestratorRouting).toEqual({
         providerId: 'codex',
         model: 'gpt-5.6',
         effort: 'high',
       });
       await updateWorkflowRunOrchestratorRouting(db, 'run-1' as WorkflowRunId, null);
-      expect(
-        (await listWorkflowsForSession(db, sessionId))[0]!.orchestratorRouting,
-      ).toBeUndefined();
+      expect((await readRunsNewestFirst({ db }))[0]!.orchestratorRouting).toBeUndefined();
     });
 
     it('carries the reason and the routing through a reorder', async () => {
@@ -937,7 +912,7 @@ describe('session_workflows trigger-mode queries', () => {
         ['run-2' as WorkflowRunId, 'run-1' as WorkflowRunId],
         NOW,
       );
-      const run = (await listWorkflowsForSession(db, sessionId)).find(
+      const run = (await readRunsNewestFirst({ db })).find(
         (candidate) => candidate.id === ('run-1' as WorkflowRunId),
       )!;
       expect(run.orchestrationReason).toBe('all set');
@@ -957,7 +932,7 @@ describe('session_workflows trigger-mode queries', () => {
       });
       await insertActivePlan({ db, workflowRunId: 'run-1' as WorkflowRunId });
       await discardWorkflowInSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs[0]!.discardedAt).toBe(NOW);
       expect(await readPlanStatus({ db })).toBe('superseded');
     });
@@ -976,7 +951,7 @@ describe('session_workflows trigger-mode queries', () => {
       await insertActivePlan({ db, workflowRunId: 'run-1' as WorkflowRunId });
       await discardWorkflowInSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
       await restoreWorkflowInSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs[0]!.discardedAt).toBeUndefined();
       expect(await readPlanStatus({ db })).toBe('active');
     });
@@ -988,7 +963,7 @@ describe('session_workflows trigger-mode queries', () => {
         'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
         ['legacy', sessionId, workflowId, 0, 0, 1, Date.parse(NOW)],
       );
-      const runs = await listWorkflowsForSession(db, sessionId);
+      const runs = await readRunsNewestFirst({ db });
       expect(runs[0]!.triggerMode).toBe('immediate');
       expect(runs[0]!.chainAfterId).toBeUndefined();
     });

@@ -250,17 +250,6 @@ export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
   };
 };
 
-export const listWorkflowsForSession = async (
-  db: Database,
-  sessionId: SessionId,
-): Promise<ReadonlyArray<WorkflowRun>> => {
-  const rows = await db.select<SessionWorkflowRow>(
-    `SELECT ${SESSION_WORKFLOW_COLS} FROM session_workflows WHERE session_id = ? ORDER BY ordinal DESC`,
-    [sessionId],
-  );
-  return rows.map(toWorkflowRun);
-};
-
 async function bumpSessionUpdatedAt(
   db: Database,
   sessionId: SessionId,

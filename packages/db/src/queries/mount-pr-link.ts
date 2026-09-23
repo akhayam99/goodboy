@@ -36,37 +36,6 @@ type UpsertMountPullRequestLinkParams = {
   readonly link: MountPullRequestLink;
 };
 
-type HydrateGithubLinkParams = {
-  readonly db: Database;
-  readonly sessionId: SessionId;
-  readonly mountId: MountId;
-  readonly linkId: string;
-};
-
-type CacheRow = {
-  readonly branch: string;
-  readonly repo_slug: string;
-  readonly pr_json: string | null;
-  readonly fetched_at: number;
-};
-
-type MountRow = {
-  readonly branch: string;
-  readonly repo_slug: string | null;
-};
-
-const VALID_STATES: ReadonlySet<string> = new Set([
-  'draft',
-  'open',
-  'approved',
-  'queued',
-  'merged',
-  'closed',
-]);
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
 const parseSnapshot = ({ value }: { readonly value: string }): unknown => {
   try {
     return JSON.parse(value) as unknown;
@@ -82,18 +51,6 @@ const toDomain = (row: Row): MountPullRequestLink => ({
   createdAt: new Date(row.createdAt).toISOString() as IsoDateTime,
   updatedAt: new Date(row.updatedAt).toISOString() as IsoDateTime,
 });
-
-const validatedHost = ({ value }: { readonly value: string }): string | null => {
-  try {
-    const url = new URL(value);
-    if (url.protocol !== 'https:' || url.hostname.length === 0) {
-      return null;
-    }
-    return url.hostname.toLowerCase();
-  } catch {
-    return null;
-  }
-};
 
 export const upsertMountPullRequestLink = async ({
   db,
@@ -157,77 +114,4 @@ export const listMountPullRequestLinks = async ({
     [sessionId, mountId],
   );
   return rows.map(toDomain);
-};
-
-export const hydrateGithubMountPullRequestLink = async ({
-  db,
-  sessionId,
-  mountId,
-  linkId,
-}: HydrateGithubLinkParams): Promise<MountPullRequestLink | null> => {
-  const mountRows = await db.select<MountRow>(
-    'SELECT branch, repo_slug FROM session_worktrees WHERE session_id = ? AND id = ? LIMIT 1',
-    [sessionId, mountId],
-  );
-  const mount = mountRows[0];
-  if (mount === undefined || mount.repo_slug === null) {
-    return null;
-  }
-  const cacheRows = await db.select<CacheRow>(
-    `SELECT branch, repo_slug, pr_json, fetched_at FROM github_pr_cache
-     WHERE repo_slug = ? AND branch = ? LIMIT 1`,
-    [mount.repo_slug, mount.branch],
-  );
-  const cache = cacheRows[0];
-  if (
-    cache === undefined ||
-    cache.pr_json === null ||
-    cache.repo_slug !== mount.repo_slug ||
-    cache.branch !== mount.branch
-  ) {
-    return null;
-  }
-  const snapshot = parseSnapshot({ value: cache.pr_json });
-  if (!isRecord(snapshot)) {
-    return null;
-  }
-  const number = snapshot.number;
-  const url = snapshot.url;
-  const state = snapshot.state;
-  const updatedAt = snapshot.updatedAt;
-  if (
-    typeof number !== 'number' ||
-    !Number.isInteger(number) ||
-    number <= 0 ||
-    typeof url !== 'string' ||
-    typeof state !== 'string' ||
-    !VALID_STATES.has(state) ||
-    typeof updatedAt !== 'string'
-  ) {
-    return null;
-  }
-  const host = validatedHost({ value: url });
-  const requestUpdatedAt = Date.parse(updatedAt);
-  if (host === null || Number.isNaN(requestUpdatedAt) || !Number.isFinite(cache.fetched_at)) {
-    return null;
-  }
-  const now = Date.now();
-  const link: MountPullRequestLink = {
-    id: linkId,
-    mountId,
-    provider: 'github',
-    host,
-    repoSlug: mount.repo_slug,
-    prNumber: number,
-    headBranch: mount.branch,
-    baseBranch: null,
-    url,
-    state: state as MountPullRequestState,
-    snapshot,
-    lastObservedAt: new Date(cache.fetched_at).toISOString() as IsoDateTime,
-    createdAt: new Date(now).toISOString() as IsoDateTime,
-    updatedAt: new Date(now).toISOString() as IsoDateTime,
-  };
-  const stored = await upsertMountPullRequestLink({ db, sessionId, link });
-  return stored ? link : null;
 };

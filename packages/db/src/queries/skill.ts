@@ -38,11 +38,6 @@ export const listSkillsForWorkspace = async (
   return rows.map(toSkill);
 };
 
-export const getSkillById = async (db: Database, skillId: SkillId): Promise<Skill | null> => {
-  const rows = await db.select<SkillRow>('SELECT * FROM skills WHERE id = ?', [skillId]);
-  return rows[0] ? toSkill(rows[0]) : null;
-};
-
 export const upsertSkill = async (db: Database, skill: Skill): Promise<void> => {
   await db.execute(
     `INSERT INTO skills
@@ -71,11 +66,4 @@ export const upsertSkill = async (db: Database, skill: Skill): Promise<void> => 
 
 export const deleteSkill = async (db: Database, skillId: SkillId): Promise<void> => {
   await db.execute('DELETE FROM skills WHERE id = ?', [skillId]);
-};
-
-export const deleteSkillsForWorkspace = async (
-  db: Database,
-  workspaceId: WorkspaceId,
-): Promise<void> => {
-  await db.execute('DELETE FROM skills WHERE workspace_id = ?', [workspaceId]);
 };

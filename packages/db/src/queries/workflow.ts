@@ -7,9 +7,6 @@ import type {
   StepDefId,
   StepId,
   VerbosityLevel,
-  WorkflowRoutingDecision,
-  WorkflowRoutingLock,
-  WorkflowTaskProfile,
   Workflow,
   WorkflowId,
   WorkflowOrigin,
@@ -242,54 +239,4 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
 
 export const deleteWorkflow = async (db: Database, id: WorkflowId): Promise<void> => {
   await db.execute('UPDATE workflows SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
-};
-
-export type StepRoutingUpdate = Readonly<{
-  routingLock: WorkflowRoutingLock | null;
-  routingDecision: WorkflowRoutingDecision;
-  taskProfile: WorkflowTaskProfile | null;
-  providerOverride: ProviderId | null;
-  modelOverride: string | null;
-  effort: AgentEffort | null;
-}>;
-
-export const updateStepRouting = async ({
-  db,
-  id,
-  update,
-}: {
-  readonly db: Database;
-  readonly id: StepId;
-  readonly update: StepRoutingUpdate;
-}): Promise<boolean> => {
-  const result = await db.execute(
-    `UPDATE steps SET routing_lock = ?, routing_decision = ?, task_profile = ?,
-       provider_override = ?, model_override = ?, effort = ?
-     WHERE id = ? AND NOT EXISTS (
-       SELECT 1 FROM live_agents
-       WHERE live_agents.step_id = steps.id AND status IN ('starting', 'running', 'completed')
-     )`,
-    [
-      stringifyRoutingJson({
-        value: update.routingLock,
-        isValid: isWorkflowRoutingLock,
-        field: 'routing lock',
-      }),
-      stringifyRoutingJson({
-        value: update.routingDecision,
-        isValid: isWorkflowRoutingDecision,
-        field: 'routing decision',
-      }),
-      stringifyRoutingJson({
-        value: update.taskProfile,
-        isValid: isWorkflowTaskProfile,
-        field: 'task profile',
-      }),
-      update.providerOverride,
-      update.modelOverride,
-      update.effort,
-      id,
-    ],
-  );
-  return result.rowsAffected === 1;
 };

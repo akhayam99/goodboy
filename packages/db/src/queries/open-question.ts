@@ -296,17 +296,3 @@ export const markOpenQuestionsResolvedByText = async (
   }
   return toResolve.length;
 };
-
-export const transferOpenQuestionOwnership = async (
-  db: Database,
-  workflowRunId: WorkflowRunId,
-  fromOrdinal: number,
-  toOrdinal: number,
-): Promise<void> => {
-  await db.execute(
-    `UPDATE open_questions
-     SET owned_by_step_ordinal = ?
-     WHERE workflow_run_id = ? AND owned_by_step_ordinal = ? AND status = 'open'`,
-    [toOrdinal, workflowRunId, fromOrdinal],
-  );
-};

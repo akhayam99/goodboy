@@ -1,11 +1,8 @@
-import {
-  isProviderName,
-  type IsoDateTime,
-  type ProviderRun,
-  type ProviderRunId,
-  type ProviderRunStatus,
-  type RoutingDecision,
-  type SessionId,
+import type {
+  ProviderRun,
+  ProviderRunId,
+  ProviderRunStatus,
+  RoutingDecision,
 } from '@goodboy/types';
 import type { Database } from '../client';
 
@@ -23,18 +20,6 @@ type ParsedPayload = {
   routingDecision?: RoutingDecision;
   [key: string]: unknown;
 };
-
-function toStatus(kind: ProviderRunStatus['kind'], payload: string): ProviderRunStatus {
-  const data = JSON.parse(payload) as Record<string, unknown>;
-  const { routingDecision: _, ...statusData } = data;
-  if (typeof statusData.startedAt === 'number') {
-    statusData.startedAt = new Date(statusData.startedAt).toISOString();
-  }
-  if (typeof statusData.finishedAt === 'number') {
-    statusData.finishedAt = new Date(statusData.finishedAt).toISOString();
-  }
-  return { kind, ...statusData } as ProviderRunStatus;
-}
 
 function extractRoutingDecision(payload: string): RoutingDecision | undefined {
   const data = JSON.parse(payload) as ParsedPayload;
@@ -59,22 +44,6 @@ function splitStatus(
   const merged =
     routingDecision !== undefined ? { ...storedStatus, routingDecision } : storedStatus;
   return { kind, payload: JSON.stringify(merged) };
-}
-
-function toDomain(row: ProviderRunRow): ProviderRun {
-  if (isProviderName(row.provider) === false) {
-    throw new Error(`invalid provider run provider: ${row.provider}`);
-  }
-  const routingDecision = extractRoutingDecision(row.status_payload);
-  return {
-    id: row.id as ProviderRunId,
-    sessionId: row.session_id as SessionId,
-    provider: row.provider,
-    model: row.model,
-    status: toStatus(row.status_kind, row.status_payload),
-    ...(routingDecision !== undefined ? { routingDecision } : {}),
-    createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
-  };
 }
 
 export const insertProviderRun = async (db: Database, run: ProviderRun): Promise<void> => {
@@ -129,13 +98,4 @@ export const updateProviderRunStatusIfInFlight = async ({
     [kind, payload, id],
   );
   return result.rowsAffected;
-};
-
-export const getProviderRunById = async (
-  db: Database,
-  id: ProviderRunId,
-): Promise<ProviderRun | null> => {
-  const rows = await db.select<ProviderRunRow>('SELECT * FROM provider_runs WHERE id = ?', [id]);
-  const row = rows[0];
-  return row ? toDomain(row) : null;
 };

@@ -5,11 +5,8 @@ import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   deleteArtifact,
   getArtifact,
-  getArtifactRendition,
   insertArtifact,
-  listArtifactsForRun,
   listArtifactsForSession,
-  putArtifactRendition,
   removeArtifact,
   restoreArtifact,
   setArtifactStatus,
@@ -68,7 +65,7 @@ describe('artifact queries', () => {
     expect(loaded).toEqual(created);
   });
 
-  it('lists artifacts by session and by run', async () => {
+  it('lists artifacts by session', async () => {
     const db = await seed();
     await insertReport(db, 'report-1');
     await insertArtifact({
@@ -88,8 +85,6 @@ describe('artifact queries', () => {
     });
     const forSession = await listArtifactsForSession({ db, sessionId });
     expect(forSession.map((artifact) => artifact.id)).toEqual(['report-1', 'wireframe-1']);
-    const forRun = await listArtifactsForRun({ db, workflowRunId: runId });
-    expect(forRun.map((artifact) => artifact.id)).toEqual(['wireframe-1']);
   });
 
   it('rejects metadata that does not match the kind', async () => {
@@ -115,16 +110,12 @@ describe('artifact queries', () => {
   it('bumps the revision and drops stale renditions on source updates', async () => {
     const db = await seed();
     await insertReport(db, 'report-1');
-    await putArtifactRendition({
-      db,
-      input: {
-        artifactId: 'report-1' as ArtifactId,
-        revision: 1,
-        format: 'pdf',
-        rendererVersion: 'v1',
-        bytes: Uint8Array.from([1, 2, 3]),
-      },
-    });
+    await db.execute(
+      `INSERT INTO artifact_renditions (
+         artifact_id, revision, format, renderer_version, bytes, created_at
+       ) VALUES (?, 1, 'pdf', 'v1', ?, ?)`,
+      ['report-1', Uint8Array.from([1, 2, 3]), Date.now()],
+    );
     const updated = await updateArtifactSource({
       db,
       input: {
@@ -137,41 +128,11 @@ describe('artifact queries', () => {
     });
     expect(updated.revision).toBe(2);
     expect(updated.title).toBe('Session report v2');
-    const stale = await getArtifactRendition({
-      db,
-      input: {
-        artifactId: 'report-1' as ArtifactId,
-        revision: 1,
-        format: 'pdf',
-        rendererVersion: 'v1',
-      },
-    });
-    expect(stale).toBeNull();
-  });
-
-  it('stores and reads back rendition bytes', async () => {
-    const db = await seed();
-    await insertReport(db, 'report-1');
-    await putArtifactRendition({
-      db,
-      input: {
-        artifactId: 'report-1' as ArtifactId,
-        revision: 1,
-        format: 'pdf',
-        rendererVersion: 'v1',
-        bytes: Uint8Array.from([9, 8, 7]),
-      },
-    });
-    const rendition = await getArtifactRendition({
-      db,
-      input: {
-        artifactId: 'report-1' as ArtifactId,
-        revision: 1,
-        format: 'pdf',
-        rendererVersion: 'v1',
-      },
-    });
-    expect([...(rendition?.bytes ?? [])]).toEqual([9, 8, 7]);
+    const stale = await db.select<{ readonly revision: number }>(
+      'SELECT revision FROM artifact_renditions WHERE artifact_id = ?',
+      ['report-1'],
+    );
+    expect(stale).toEqual([]);
   });
 
   it('discards, restores and removes', async () => {

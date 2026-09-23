@@ -6,7 +6,6 @@ import {
   disconnectWorkspace,
   getWorkspaceById,
   insertWorkspace,
-  listDisconnectedWorkspaces,
   listWorkspaces,
   reconnectWorkspace,
   renameWorkspace,
@@ -78,7 +77,7 @@ describe('workspace queries', () => {
     });
   });
 
-  it('keeps active and disconnected containers in separate lists', async () => {
+  it('lists only the active containers', async () => {
     const db = await makeDb();
     const active = makeWorkspace({ id: 'active' });
     const disconnected = makeWorkspace({
@@ -89,9 +88,6 @@ describe('workspace queries', () => {
     await insertWorkspace({ db, workspace: disconnected });
 
     expect((await listWorkspaces({ db })).map((workspace) => workspace.id)).toEqual([active.id]);
-    expect((await listDisconnectedWorkspaces({ db })).map((workspace) => workspace.id)).toEqual([
-      disconnected.id,
-    ]);
   });
 
   it('updates container identity and presence timestamps', async () => {

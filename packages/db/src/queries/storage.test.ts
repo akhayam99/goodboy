@@ -9,9 +9,9 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import { listAgentsForSession } from './agent';
+import { listAgentsForSessions } from './agent';
 import { insertMessage, listMessagesForSession } from './message';
-import { archiveSession, listArchivedSessionRefs, softDeleteSession } from './session';
+import { archiveSession, listArchivedSessionRefs } from './session';
 import {
   deleteTurnEventsForSessions,
   getTurnEventStatsForSessions,
@@ -61,7 +61,10 @@ describe('archived storage queries', () => {
     await insertAgentRow(db, liveSessionId, liveAgentId);
     await archiveSession(db, archivedSessionId);
     await archiveSession(db, deletedSessionId);
-    await softDeleteSession(db, deletedSessionId);
+    await db.execute('UPDATE sessions SET deleted_at = ? WHERE id = ?', [
+      Date.now(),
+      deletedSessionId,
+    ]);
 
     await insertTurnEvent(db, {
       id: 'event-archived-1',
@@ -126,7 +129,8 @@ describe('archived storage queries', () => {
     await deleteTurnEventsForSessions({ db, sessionIds: [archivedSessionId] });
 
     await expect(listMessagesForSession(db, archivedSessionId)).resolves.toHaveLength(1);
-    await expect(listAgentsForSession(db, archivedSessionId)).resolves.toHaveLength(1);
+    const agents = await listAgentsForSessions(db, [archivedSessionId]);
+    expect(agents.get(archivedSessionId)).toHaveLength(1);
     const sessionRows = await db.select<{ id: string }>('SELECT id FROM sessions');
     expect(sessionRows).toHaveLength(3);
   });

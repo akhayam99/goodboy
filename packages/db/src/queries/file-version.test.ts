@@ -12,7 +12,6 @@ import {
   deleteFileVersion,
   deleteFileVersionsForSession,
   insertFileVersion,
-  listFileVersionsForPath,
   listFileVersionsForSession,
   pruneFileVersionsForPath,
 } from './file-version';
@@ -110,29 +109,6 @@ describe('file_versions queries', () => {
     expect(versions[0]?.snapshotSource).toBe('restore');
   });
 
-  it('lists versions for one session path only', async () => {
-    const db = await seed();
-    await insertFileVersion({
-      db,
-      fileVersion: makeFileVersion({
-        id: 'fv-1' as FileVersionId,
-        relativePath: 'a.md',
-        capturedAt: '2026-08-02T01:00:00Z',
-      }),
-    });
-    await insertFileVersion({
-      db,
-      fileVersion: makeFileVersion({
-        id: 'fv-2' as FileVersionId,
-        relativePath: 'b.md',
-        capturedAt: '2026-08-02T02:00:00Z',
-      }),
-    });
-
-    const versions = await listFileVersionsForPath({ db, sessionId, relativePath: 'a.md' });
-    expect(versions.map((version) => version.id)).toEqual(['fv-1' as FileVersionId]);
-  });
-
   it('prunes oldest entries for one path and returns pruned rows', async () => {
     const db = await seed();
     for (let i = 0; i < 5; i += 1) {
@@ -158,11 +134,7 @@ describe('file_versions queries', () => {
       'fv-1' as FileVersionId,
       'fv-0' as FileVersionId,
     ]);
-    const remaining = await listFileVersionsForPath({
-      db,
-      sessionId,
-      relativePath: 'docs/spec.md',
-    });
+    const remaining = await listFileVersionsForSession({ db, sessionId });
     expect(remaining.map((version) => version.id)).toEqual([
       'fv-4' as FileVersionId,
       'fv-3' as FileVersionId,

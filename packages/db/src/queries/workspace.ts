@@ -164,25 +164,6 @@ export const listWorkspaces = async ({
   return rows.map((row) => toDomain({ row }));
 };
 
-type ListDisconnectedParams = {
-  readonly db: Database;
-  readonly limit?: number;
-};
-
-export const listDisconnectedWorkspaces = async ({
-  db,
-  limit = 10,
-}: ListDisconnectedParams): Promise<ReadonlyArray<Workspace>> => {
-  const rows = await db.select<WorkspaceRow>(
-    `${WORKSPACE_SELECT}
-     WHERE w.disconnected_at IS NOT NULL
-     ORDER BY w.disconnected_at DESC
-     LIMIT ?`,
-    [limit],
-  );
-  return rows.map((row) => toDomain({ row }));
-};
-
 type WorkspaceTimestampParams = {
   readonly db: Database;
   readonly id: WorkspaceId;
