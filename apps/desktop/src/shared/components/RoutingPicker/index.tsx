@@ -18,12 +18,7 @@ import {
   useDropdown,
 } from '@goodboy/ui';
 import type { CatalogModel, ModelSelection, ProviderId } from '@goodboy/types';
-import {
-  EFFORT_LABEL,
-  PROVIDER_LABEL,
-  modelLabel,
-  type EffortLevel,
-} from '../../../features/chat/utils/chat-constants';
+import { PROVIDER_LABEL, type EffortLevel } from '../../../features/chat/utils/chat-constants';
 import {
   VERBOSITY_LABEL,
   VERBOSITY_LEVELS,
@@ -38,6 +33,7 @@ import { RecommendationRow } from './RecommendationRow';
 import { TriggerLabel } from './TriggerLabel';
 import { ROUTING_PICKER_CONSTANTS } from './constants';
 import { recommendationSummary } from './recommendationSummary';
+import { routingSummary, routingTriggerLabel } from './routingSummary';
 import { resolvePickerSelection } from './resolvePickerSelection';
 import { resolveRouting, type Recommendation } from './resolveRouting';
 import { selectionForModel } from './selectionForModel';
@@ -167,16 +163,15 @@ export const RoutingPicker = ({
   const routingModel = MODEL_CATALOGS[routing.provider].find(
     (candidate) => candidate.key === routing.model,
   );
-  const routingVariant =
-    routingModel?.provider === 'codex' && routingModel.variants.length > 1
-      ? routingModel.variants.find((candidate) => candidate.id === routing.selection.variant)
-      : null;
-  const summaryModel = `${modelLabel(routing.model)}${
-    routingVariant != null ? ` ${routingVariant.label}` : ''
-  }`;
-  const summary = `${PROVIDER_LABEL[routing.provider]} · ${summaryModel}${
-    showEffort ? ` · ${EFFORT_LABEL[routing.effort]}` : ''
-  }${verbosity != null ? ` · ${VERBOSITY_LABEL[verbosity]}` : ''}`;
+  const triggerLabel = routingTriggerLabel({
+    model: routingModel ?? null,
+    modelId: routing.model,
+    selection: routing.selection,
+    effort: routing.effort,
+    showEffort,
+    ...(verbosity != null && { verbosity }),
+  });
+  const summary = routingSummary({ provider: routing.provider, label: triggerLabel });
   const viewedModel =
     viewedRouting.catalog.find((candidate) => candidate.key === viewedRouting.model) ??
     viewedRouting.catalog[0];
@@ -327,14 +322,7 @@ export const RoutingPicker = ({
               )}
             >
               <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                <TriggerLabel
-                  provider={routing.provider}
-                  model={routing.model}
-                  modelDetail={routingVariant?.label}
-                  effort={routing.effort}
-                  showEffort={showEffort}
-                  verbosity={verbosity}
-                />
+                <TriggerLabel provider={routing.provider} label={triggerLabel} />
               </span>
               <ChevronDown
                 size={11}

@@ -26,6 +26,16 @@ const baseProps = {
   onProvider: vi.fn(),
   onModel: vi.fn(),
 };
+type SegmentParams = {
+  readonly element: HTMLElement;
+};
+
+const triggerSegments = ({ element }: SegmentParams): ReadonlyArray<string> =>
+  (element.textContent ?? '')
+    .split('·')
+    .map((segment) => segment.trim())
+    .filter((segment) => segment !== '');
+
 const providers = Object.keys(PROVIDER_CAPABILITIES).filter(
   (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
 );
@@ -40,7 +50,7 @@ describe('RoutingPicker', () => {
   it('reads model and effort in the closed trigger, never the provider name', () => {
     render(<RoutingPicker {...baseProps} />);
     const trigger = screen.getByRole('button', { name: /routing/i });
-    expect(trigger.textContent).toContain('Opus 5');
+    expect(trigger.textContent).toContain('Opus · 5');
     expect(trigger.textContent).toContain('High');
     expect(trigger.textContent).not.toContain('Claude');
   });
@@ -48,8 +58,8 @@ describe('RoutingPicker', () => {
   it('keeps the full routing in the accessible name and the tooltip', () => {
     render(<RoutingPicker {...baseProps} verbosity="brief" onVerbosity={vi.fn()} />);
     const trigger = screen.getByRole('button', { name: /routing/i });
-    expect(trigger.getAttribute('aria-label')).toBe('routing: Claude · Opus 5 · High · Brief');
-    expect(tooltipTextOf({ element: trigger })).toContain('Claude · Opus 5 · High · Brief');
+    expect(trigger.getAttribute('aria-label')).toBe('routing: Claude · Opus · 5 · High · Brief');
+    expect(tooltipTextOf({ element: trigger })).toContain('Claude · Opus · 5 · High · Brief');
   });
 
   it('still explains a disabled trigger when the caller gives no reason', () => {
@@ -57,7 +67,58 @@ describe('RoutingPicker', () => {
       <RoutingPicker {...baseProps} disabled={true} verbosity="brief" onVerbosity={vi.fn()} />,
     );
     expect(tooltipTextOf({ element: screen.getByRole('button', { name: /routing/i }) })).toBe(
-      'Claude · Opus 5 · High · Brief',
+      'Claude · Opus · 5 · High · Brief',
+    );
+  });
+
+  it('says the Cursor mode in the trigger and carries no effort the model refuses', () => {
+    const view = render(
+      <RoutingPicker
+        {...baseProps}
+        provider="cursor"
+        model="claude-opus-5-5-high"
+        effort={{ editable: true, value: 'high', onChange: vi.fn() }}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /^routing:/ }).getAttribute('aria-label')).toBe(
+      'routing: Cursor · Opus · 5.5 · High',
+    );
+
+    view.rerender(
+      <RoutingPicker
+        {...baseProps}
+        provider="cursor"
+        model="composer-2.5-fast"
+        effort={{ editable: true, value: 'high', onChange: vi.fn() }}
+      />,
+    );
+    const trigger = screen.getByRole('button', { name: /^routing:/ });
+    expect(triggerSegments({ element: trigger })).toEqual(['Composer', '2.5', 'Fast']);
+    expect(trigger.getAttribute('aria-label')).toBe('routing: Cursor · Composer · 2.5 · Fast');
+  });
+
+  it.each([
+    {
+      provider: 'codex' as ProviderId,
+      model: 'gpt-5.6-sol',
+      summary: 'Codex · GPT · 5.6 · Sol · High',
+    },
+    {
+      provider: 'codex' as ProviderId,
+      model: 'gpt-6-astra',
+      summary: 'Codex · GPT · 6 · Astra · High',
+    },
+    {
+      provider: 'cursor' as ProviderId,
+      model: 'kimi-k3-high',
+      summary: 'Cursor · Kimi · K3 · High',
+    },
+    { provider: 'cursor' as ProviderId, model: 'gpt-5.3-codex', summary: 'Cursor · Codex · 5.3' },
+    { provider: 'cursor' as ProviderId, model: 'auto', summary: 'Cursor · Auto' },
+  ])('spells $summary in the closed trigger', ({ provider, model, summary }) => {
+    render(<RoutingPicker {...baseProps} provider={provider} model={model} />);
+    expect(screen.getByRole('button', { name: /^routing:/ }).getAttribute('aria-label')).toBe(
+      `routing: ${summary}`,
     );
   });
 
@@ -78,7 +139,7 @@ describe('RoutingPicker', () => {
       />,
     );
     const trigger = screen.getByRole('button', { name: /^routing:/ });
-    expect(trigger.textContent).toContain('3.8 Flash');
+    expect(triggerSegments({ element: trigger })).toEqual(['Flash', '3.8', 'High']);
     fireEvent.click(trigger);
     const effort = within(screen.getByRole('group', { name: 'Effort' }));
     expect(effort.getAllByRole('button').map((button) => button.textContent)).toEqual([
@@ -104,7 +165,7 @@ describe('RoutingPicker', () => {
       <RoutingPicker {...baseProps} model="" recommendation={{ model: 'claude-sonnet-4-6' }} />,
     );
     const trigger = screen.getByRole('button', { name: /routing/i });
-    expect(trigger.textContent).toContain('Sonnet 4.6');
+    expect(triggerSegments({ element: trigger })).toEqual(['Sonnet', '4.6', 'High']);
     fireEvent.click(trigger);
     expect(screen.getByRole('button', { name: 'Sonnet' }).getAttribute('aria-pressed')).toBe(
       'true',
