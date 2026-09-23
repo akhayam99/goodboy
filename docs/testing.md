@@ -67,6 +67,12 @@ behavior. Every release runs this step by hand and records the result.
    missing but the window is visible, the breadcrumb logging broke, not the
    window reveal.
 
+A covered window suspends CSS animations. `WorkspaceLauncher` and
+`SessionOverviewPane` hold their whole content inside the `fade-in`
+animation, which starts at `opacity: 0`, so a capture of an occluded window
+shows both blank. Uncover the window before judging either surface; a blank
+capture of a covered window is not a paint failure.
+
 ## Reaching a state that only exists in memory
 
 The orchestrator "stopping" state lives only in the store while a decision is
