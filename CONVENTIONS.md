@@ -79,7 +79,7 @@ The steps are in `.github/workflows/ci.yml`, in this order. All of them block. A
 - `typecheck`: `turbo run typecheck --affected`, `tsc --noEmit` in each package.
 - `tauri commands`: `check:tauri-commands`. Every frontend `invoke` name is registered in `generate_handler!`, and every registered command is invoked somewhere.
 - `knip`: unused files, duplicate exports, unlisted dependencies and declared dependencies nothing imports, across the repo.
-- `knip production`: unused files, exports and types in `apps/desktop` production code.
+- `knip production`: walks `apps/desktop` from `src/main.tsx` over production code only (the `!` project patterns). Tests, `src/__tests__/`, `testing/` folders and `storyHarness.ts` are left out, so code that only its own tests keep alive fails as unused files, exports and types. Module-state test seams (`reset*`, `clear*`) and exports that another change still has to remove sit in `ignoreIssues` by file. That list only shrinks.
 - `test`: `turbo run test --affected`, vitest in every package.
 - `a11y`: `pnpm --filter @goodboy/desktop test:a11y`, axe over the smoke cases and every mock scene, compared to the violation baseline.
 - `build`: `turbo run build --affected`.
