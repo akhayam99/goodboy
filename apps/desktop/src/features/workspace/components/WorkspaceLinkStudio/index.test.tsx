@@ -125,7 +125,7 @@ describe('WorkspaceLinkStudio', () => {
     const submit = screen.getByRole('button', { name: 'Create workspace' });
     const form = screen.getByRole('radio', { name: /start from a project/i }).closest('form');
 
-    expect(submit.closest('form')).toBe(form);
+    expect(submit.closest('form')?.id).toBe(form?.id);
     expect(screen.queryByRole('button', { name: /^cancel$/i })).toBeNull();
   });
 

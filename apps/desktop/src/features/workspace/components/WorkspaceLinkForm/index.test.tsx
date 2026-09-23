@@ -109,6 +109,11 @@ describe('WorkspaceLinkForm', () => {
     expect(screen.queryByRole('navigation', { name: /breadcrumb/i })).toBeNull();
   });
 
+  it('draws no action row before a setup shape is picked', () => {
+    const { container } = renderForm();
+    expect(container.querySelector('footer')).toBeNull();
+  });
+
   it('keeps its actions inline at the end of the form', () => {
     renderForm();
     fireEvent.click(screen.getByRole('radio', { name: /a workspace with several projects/i }));

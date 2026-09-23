@@ -519,8 +519,12 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
         </section>
       )}
 
-      <Divider />
-      <footer className="flex items-center justify-end gap-2">{actions}</footer>
+      {primary !== null || error != null ? (
+        <>
+          <Divider />
+          <footer className="flex items-center justify-end gap-2">{actions}</footer>
+        </>
+      ) : null}
     </form>
   );
 };
