@@ -1061,20 +1061,6 @@ section.block.alt {
   color: var(--accent-bright);
 }
 
-.pledge {
-  display: flex;
-  gap: 24px;
-  margin-top: 24px;
-  flex-wrap: wrap;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.pledge span:before {
-  content: '✓ ';
-  color: var(--ok);
-}
-
 .faq {
   margin-top: 40px;
   border-top: 1px solid var(--gray3);
