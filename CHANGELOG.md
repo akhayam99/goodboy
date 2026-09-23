@@ -13,7 +13,7 @@ The model picker groups by family and splits every model into a version and a va
 
 ### [#1846] One family, one chip
 
-Gemini, Kimi, Grok, GLM, DeepSeek and Nemotron used to sit as flat rows next to families that already collapsed into a ladder. They are grouped now, under every provider, so Cursor goes from about twenty chips to eleven.
+Gemini, Kimi, Grok, GLM, DeepSeek and Nemotron used to sit as flat rows next to families that already collapsed into a ladder. They are grouped now, under every provider, so Cursor goes from nineteen chips to eleven.
 
 ### [#1846] Version is the number, variant is the size
 
