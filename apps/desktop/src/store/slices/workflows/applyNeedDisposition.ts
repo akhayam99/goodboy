@@ -304,13 +304,23 @@ export const applyNeedDisposition = async ({
         reason: `none of the named sources could be delivered (${unmet})`,
       };
     }
+    if (unmet.length > 0) {
+      void get().emitNotification(
+        'error',
+        'warning',
+        `need only partly answered from evidence: ${requester.name}`,
+        `${deliveredRefs.join(', ')} reached ${requester.name}, but not every named source did (${unmet}), so the obligation stays open.`,
+        { sessionId },
+      );
+      return {
+        kind: 'unavailable',
+        reason: `not every named source could be delivered (${unmet})`,
+      };
+    }
     const settled = await invokeCapabilityObligationSettle({
       obligationId: obligation.id,
       verifiedRevision: delivery.inventoryRevision,
-      deliveryReceipt:
-        unmet.length === 0
-          ? `answered from existing evidence: ${deliveredRefs.join(', ')}`
-          : `answered from existing evidence: ${deliveredRefs.join(', ')}; not supplied: ${unmet}`,
+      deliveryReceipt: `answered from existing evidence: ${deliveredRefs.join(', ')}`,
     });
     refreshObligation({ set, sessionId, obligation: settled });
     await releaseCapabilityHolds({

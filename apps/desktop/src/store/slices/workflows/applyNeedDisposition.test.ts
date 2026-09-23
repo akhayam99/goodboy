@@ -486,6 +486,30 @@ describe('applyNeedDisposition', () => {
     expect(sendTurn.mock.calls[0]?.[0]?.content ?? '').toContain('not supplied');
   });
 
+  it('leaves the obligation open when only some named sources can be retrieved', async () => {
+    const requester = agentOf({});
+    const { set, get, sendTurn } = createHarness({ requester, plans: [planOf()] });
+
+    const outcome = await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation: obligationOf(),
+      decision: reuseDecision(['artifact:report-4', 'artifact:report-missing']),
+    });
+
+    expect(outcome).toEqual(
+      expect.objectContaining({
+        kind: 'unavailable',
+        reason: expect.stringContaining('artifact:report-missing'),
+      }),
+    );
+    expect(h.settle).not.toHaveBeenCalled();
+    const content = sendTurn.mock.calls[0]?.[0]?.content ?? '';
+    expect(content).toContain('the guard was dropped in the routing rewrite');
+    expect(content).toContain('not supplied');
+  });
+
   it('refuses an unauthorized source instead of delivering it', async () => {
     const requester = agentOf({});
     const { set, get, sendTurn } = createHarness({ requester });
