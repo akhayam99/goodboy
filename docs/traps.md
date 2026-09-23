@@ -101,6 +101,23 @@ fails silently at runtime.
   and not a real run. When the green has to mean something, run
   `pnpm exec turbo run test --force` and look for a log line reading
   `0 cached`.
+- `pnpm test -- <arg>` never reaches turbo. pnpm passes the `--` through, and
+  turbo hands everything after it to every package's vitest. `--force` dies
+  there with `CACError: Unknown option`, and a file name still runs every
+  package. Force a run with `pnpm exec turbo run test --force`. Run one file
+  with `pnpm --filter @goodboy/<pkg> exec vitest run <path>`.
+- commitlint requires a lower-case subject, so a camelCase identifier in the
+  subject fails the `commit-msg` hook. Name it in the body instead. The whole
+  header is capped at 72 characters.
+- `registry.test.ts` requires migration versions to form a contiguous range
+  from 1. Two open pull requests that each add a migration merge in numeric
+  order. If the higher one merges first, it leaves a gap and turns `main` red.
+  Renumbering is covered in [architecture.md](architecture.md) → Database
+  migrations.
+- `cargo fmt` formats the whole crate, whatever file you give it, and `main`
+  is not fmt-clean (`rust.yml` runs the check as advisory). A local run
+  rewrites files the change never touched. Revert those hunks before you
+  commit.
 - Neither `ci.yml` nor `rust.yml` has a `workflow_dispatch` trigger, so there
   is no "run workflow" button. Pushing another commit to the PR starts them
   again. A finished run can also be re-run from the Actions UI. Closing and

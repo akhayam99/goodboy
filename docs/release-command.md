@@ -31,6 +31,9 @@ Below, `X` is the new version and `X-1` is the current latest.
 
 1. Apply the version bump in the six places listed in
    [release.md](release.md) → The version bump.
+   Bump each file in its own command. One `perl -i -pe '... if $. <= 5'` over
+   several files never resets `$.` between them, so every file after the first
+   is left unbumped.
    In the same commit, add the `## Goodboy vX` section to `CHANGELOG.md` (see
    "Release notes" below). The build reads its body from there, and fails if
    the section is missing.
@@ -49,8 +52,11 @@ Below, `X` is the new version and `X-1` is the current latest.
    dmg, `hdiutil attach`, copy `Goodboy.app` out of the mounted volume, then
    run `spctl -a -vvv` and `codesign -dv --verbose=4` against the copy. Expect
    `accepted, source=Notarized Developer ID`. The required team and what
-   counts as a failure are in [release.md](release.md). Detach. Then delete
-   the rc in all three places (release, remote tag, local tag):
+   counts as a failure are in [release.md](release.md). Detach. If a Goodboy
+   volume is already mounted, `hdiutil attach` mounts the new one at
+   `/Volumes/Goodboy 1`. So detach earlier volumes first, and take the mount
+   point from the attach output. Then delete the rc in all three places
+   (release, remote tag, local tag):
 
    ```bash
    gh release delete vX-rc.1 --repo akhayam99/goodboy --yes
