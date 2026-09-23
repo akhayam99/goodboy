@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
-import { getDefaultBinary, resolveTaskModel, runAuxOneShot } from '@goodboy/core';
+import { devWarn, getDefaultBinary, resolveTaskModel, runAuxOneShot } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import type { SessionId, TaskModelPreference, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { parseGeneratedTitle } from '../turn/applyHeuristicTitle/parseGeneratedTitle';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
@@ -145,8 +146,8 @@ export const generateWorkflowTitle = (set: SetFn, get: GetFn) => {
           ),
         },
       }));
-    } catch {
-      return;
+    } catch (error) {
+      devWarn(`[workflow] title generation failed: ${formatError(error)}`);
     }
   };
 };

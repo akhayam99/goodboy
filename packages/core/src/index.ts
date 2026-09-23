@@ -384,6 +384,7 @@ export {
 } from './permissions';
 
 export { resolveSettings, type ResolveSettingsInput } from './settings/resolver';
+export { devWarn } from './dev-log';
 
 export {
   DEFAULT_GH_TIMEOUT_MS,

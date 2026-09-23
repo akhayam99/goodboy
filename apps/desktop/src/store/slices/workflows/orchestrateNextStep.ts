@@ -35,6 +35,7 @@ import {
   resolveStoredModelSelection,
   resolveTaskModel,
   resolveWorkflowRouting,
+  devWarn,
   runsForWorkflowRun,
   serializeRunSummary,
   type OrchestratorRoleDefault,
@@ -42,6 +43,7 @@ import {
   type WorkflowRoutingAvailabilitySnapshot,
   type WorkflowRoutingProposalParseOutcome,
 } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import {
   listOpenQuestionsForSession,
   updateWorkflowRunOrchestrationOutcome,
@@ -799,7 +801,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       }
       try {
         await persistRunSummary({ set, sessionId, workflowRunId, summary: decision.runSummary });
-      } catch {}
+      } catch (error) {
+        devWarn(`[workflow] run summary could not be saved: ${formatError(error)}`);
+      }
       if (decision.action === 'next') {
         const proposed = decision.step;
         const compiled = defaultsForRole(proposed.role);
