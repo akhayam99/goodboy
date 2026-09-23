@@ -69,7 +69,7 @@ vi.mock('../../../../../app/components/Toast', () => ({
 
 vi.mock('../../../../worktree/worktree', () => ({ worktreeDetachAssessment }));
 
-import { ProjectDetachMenu } from './ProjectDetachMenu';
+import { MountActionsMenu } from './MountActionsMenu';
 
 const typedString = <Value extends string>({ value }: { readonly value: string }): Value =>
   JSON.parse(JSON.stringify(value));
@@ -104,7 +104,7 @@ const assessed = ({
 
 const renderMenu = () =>
   render(
-    <ProjectDetachMenu
+    <MountActionsMenu
       sessionId={typedString<SessionId>({ value: 'session-1' })}
       projectId={typedString<ProjectId>({ value: 'project-1' })}
       workspaceId={undefined}
@@ -112,13 +112,12 @@ const renderMenu = () =>
       worktreePath="/worktrees/api"
       worktreeStatus={null}
       branch="ak/feat"
-      triggerClassName="trigger"
     />,
   );
 
 const renderRowMenu = () =>
   render(
-    <ProjectDetachMenu
+    <MountActionsMenu
       sessionId={typedString<SessionId>({ value: 'session-1' })}
       projectId={typedString<ProjectId>({ value: 'project-1' })}
       workspaceId={undefined}
@@ -178,7 +177,7 @@ beforeEach(() => {
   );
 });
 
-describe('ProjectDetachMenu', () => {
+describe('MountActionsMenu', () => {
   it('shows the checking status without a destructive action while it assesses', () => {
     worktreeDetachAssessment.mockReturnValue(new Promise(() => undefined));
     renderMenu();
@@ -738,5 +737,44 @@ describe('ProjectDetachMenu', () => {
 
     expect(screen.getByRole('menuitem', { name: 'Detach project' })).toBeDefined();
     expect(state.detachProject).not.toHaveBeenCalled();
+  });
+
+  it('renders no trigger for a project with no mount to detach', () => {
+    state.sessionMounts = { 'session-1': [] };
+    renderMenu();
+
+    expect(screen.queryByRole('button', { name: 'api actions' })).toBeNull();
+  });
+
+  it('lists the row actions before the mount action, and runs one on click', () => {
+    const onTerminal = vi.fn();
+    render(
+      <MountActionsMenu
+        sessionId={typedString<SessionId>({ value: 'session-1' })}
+        projectId={typedString<ProjectId>({ value: 'project-1' })}
+        workspaceId={undefined}
+        projectName="api"
+        menuLabel="api on ak/feat actions"
+        worktreePath="/worktrees/api"
+        worktreeStatus={null}
+        branch="ak/feat"
+        mountId={typedString<MountId>({ value: 'mount-1' })}
+        isMountAttached
+        canDetachProject={false}
+        items={[
+          { kind: 'item', key: 'terminal', label: 'Open terminal', onClick: onTerminal },
+          { kind: 'item', key: 'scripts', label: 'Open scripts', onClick: vi.fn() },
+        ]}
+      />,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'api on ak/feat actions' });
+    expect(trigger.className).not.toContain('opacity-0');
+    fireEvent.click(trigger);
+    const names = screen.getAllByRole('menuitem').map((item) => item.textContent);
+    expect(names).toEqual(['Open terminal', 'Open scripts', 'Unmount branch']);
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Open terminal' }));
+    expect(onTerminal).toHaveBeenCalledOnce();
   });
 });

@@ -8,6 +8,7 @@ import {
   formatError,
   useDropdown,
   tintClasses,
+  type OverflowMenuItem,
 } from '@goodboy/ui';
 import type {
   MountId,
@@ -27,6 +28,7 @@ import {
 } from '../../../../../store/slices/mount-cleanup/cleanupPolicy';
 import type { DetachDisposition } from '../../../../../store/slices/project-mounts/detachProject';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { EditorMenuContent } from '../EditorMenuContent';
 import { DetachConfirm } from './DetachConfirm';
 import {
   BLOCKER_SENTENCE,
@@ -45,12 +47,12 @@ type Props = {
   readonly projectName: string;
   readonly worktreePath: string;
   readonly worktreeStatus: WorktreeStatus | null;
-  readonly triggerClassName?: string;
   readonly mountId?: MountId;
   readonly branch?: string;
   readonly menuLabel?: string;
   readonly canDetachProject?: boolean;
   readonly isMountAttached?: boolean;
+  readonly items?: ReadonlyArray<OverflowMenuItem>;
 };
 
 type Confirming = 'detach' | 'forget' | 'unmount' | null;
@@ -85,19 +87,19 @@ const BLOCKER_CODES = [
   'terminal-open',
 ] satisfies ReadonlyArray<MountCleanupBlocker>;
 
-export const ProjectDetachMenu = ({
+export const MountActionsMenu = ({
   sessionId,
   projectId,
   workspaceId,
   projectName,
   worktreePath,
   worktreeStatus,
-  triggerClassName,
   mountId,
   branch = '',
   menuLabel,
   canDetachProject = true,
   isMountAttached,
+  items = [],
 }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
@@ -337,6 +339,11 @@ export const ProjectDetachMenu = ({
     </div>
   );
 
+  const canDetach = canDetachProject && detachTargets.length > 0;
+  if (mountId === undefined && !canDetach && items.length === 0) {
+    return null;
+  }
+
   return (
     <AnchoredPopover
       dropdown={dropdown}
@@ -359,7 +366,7 @@ export const ProjectDetachMenu = ({
           }}
           aria-haspopup="menu"
           aria-expanded={dropdown.open}
-          className={cn('size-7', triggerClassName, dropdown.open && 'opacity-100')}
+          className={cn('size-7', dropdown.open && 'bg-muted')}
         />
       }
     >
@@ -424,6 +431,14 @@ export const ProjectDetachMenu = ({
       ) : null}
       {confirming === null ? (
         <div className="flex flex-col">
+          {items.length === 0 ? null : (
+            <>
+              <EditorMenuContent items={items} onClose={dropdown.close} />
+              {mountId === undefined && !canDetach ? null : (
+                <div aria-hidden className="h-px bg-border-soft" />
+              )}
+            </>
+          )}
           {mountId === undefined ? null : isAttached ? (
             <button
               type="button"
@@ -443,7 +458,7 @@ export const ProjectDetachMenu = ({
               Remove from session
             </button>
           )}
-          {canDetachProject && detachTargets.length > 0 ? (
+          {canDetach ? (
             <button
               type="button"
               role="menuitem"

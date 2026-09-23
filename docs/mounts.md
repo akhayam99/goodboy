@@ -128,3 +128,15 @@ operation owns is reported as an orphan.
 writing the row when git cannot confirm a worktree. A guard on an action the
 UI offers reads the rendered view, not a fresh DB row; otherwise it refuses an
 action the user can see, or allows one on a mount the user sees as gone.
+
+## Mount row
+
+Rows of one project share a grid: branch, series part, sync, diff, state,
+action, menu. A column no row fills takes no width, and below a 36rem
+container the sync and diff cells empty out (the Changes lens still has the
+diff). Every row action lives in the always visible row menu
+(`MountActionsMenu`): use for next turns, terminal, scripts, editors, copy
+path, then unmount or remove. The terminal and scripts icons on the row are
+hover accelerators, shown at rest only while something runs there; a hover
+icon is never the only way to an action. The project menu holds Detach
+project and renders nothing when the project has no mount to detach.
