@@ -79,6 +79,16 @@ const RULES = [
     allow: NO_ALLOW,
     why: 'radius comes from the sm, md, lg and full steps',
   },
+  {
+    pattern:
+      /(?<![\w&#])#(?=[0-9a-fA-F]*[a-fA-F])(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![\w-])/,
+    allow: [
+      'apps/desktop/src/shared/components/GenericTerminalPanel/terminal-theme.ts',
+      'apps/desktop/src/features/wireframes/wireframePalette.ts',
+      'apps/desktop/src/app/components/MockScene/scenes/artifactSeed.ts',
+    ],
+    why: 'raw colour lives only in the xterm and wireframe content quarantines',
+  },
 ] satisfies ReadonlyArray<Rule>;
 
 const listSourceFiles = ({ dir, files = [] }: { dir: string; files?: string[] }): string[] => {

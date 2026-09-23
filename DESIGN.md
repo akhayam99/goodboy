@@ -193,8 +193,10 @@ about its effect is a worse defect than one that reads badly.
   user picks the theme, and the choice is saved.
 - Color comes from **semantic tokens**: `success`, `warning`, `danger`, `info`,
   `merged`, the elevation ramp, per-provider accents. A raw hex or `oklch` in a
-  component is a bug. The xterm palette is the only place where raw colors are
-  allowed.
+  component is a bug. Raw colors are allowed in two places only, because they
+  paint content the app does not theme: the xterm palette (`terminal-theme.ts`)
+  and the wireframe content palette (`wireframePalette.ts`), low-fidelity
+  placeholder included. `no-token-bypass.test.ts` rejects hex anywhere else.
 - **The stage palette tracks the life of the work**, not its mood. Done uses
   the merged purple on purpose. A finished session is almost always a merged
   pull request, and one outcome must not show in two colors.
@@ -261,7 +263,7 @@ An action row must not scroll away with the content. Generic object actions do n
 - **One creation grammar, one card action grammar.** There is only one of
   each. A second shape for either is a defect, not a variant. A stepper is
   only for information that truly does not fit one screen. Only the workflow
-  builder and the first-run wizard have one.
+  builder, the first-run wizard and the question answer flow have one.
 - **Empty states teach the board model.** They say what the thing is, why it
   matters, and offer one action to create it. Teach the board, not the chat.
   Never a dead end, never a "start chatting" prompt.
@@ -300,7 +302,7 @@ An action row must not scroll away with the content. Generic object actions do n
 
 ## Accessibility
 
-- Every icon-only button has an `aria-label`. You can reach every interactive
+- Every icon-only button has a `Tooltip` and an `aria-label`. You can reach every interactive
   element with the keyboard, and it shows a visible `focus-visible` ring.
 - Color is never the only carrier of meaning. Pair it with an icon, a word, or
   a shape.

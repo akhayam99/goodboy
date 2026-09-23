@@ -176,7 +176,6 @@ export const WireframeStudioBody = ({ artifact, fidelity, document, adjustments 
         <WireframeContactSheet
           document={document}
           palette={palette}
-          isLowFidelity={fidelity === 'low'}
           interaction={{
             currentScreenId: navigation.currentScreenId,
             selectedNodeId: navigation.selectedNodeId,
@@ -196,7 +195,6 @@ export const WireframeStudioBody = ({ artifact, fidelity, document, adjustments 
             ref={canvasRef}
             screen={screen}
             palette={palette}
-            isLowFidelity={fidelity === 'low'}
             zoom={navigation.zoom}
             maxHeight={canvasHeight}
             selectedNodeId={navigation.selectedNodeId}

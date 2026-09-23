@@ -10,7 +10,6 @@ import { WireframeSheetFrame } from './WireframeSheetFrame';
 type Props = {
   readonly document: WireframeDocument;
   readonly palette: WireframePalette;
-  readonly isLowFidelity: boolean;
   readonly surface?: WireframeSheetSurface;
   readonly interaction?: WireframeSheetInteraction | null;
 };
@@ -18,7 +17,6 @@ type Props = {
 export const WireframeContactSheet = ({
   document,
   palette,
-  isLowFidelity,
   surface = 'app',
   interaction = null,
 }: Props) => {
@@ -94,7 +92,6 @@ export const WireframeContactSheet = ({
                 screen={screen}
                 palette={palette}
                 plates={plates}
-                isLowFidelity={isLowFidelity}
                 isCurrent={isCurrent}
                 surface={surface}
                 interaction={interaction}
