@@ -2131,6 +2131,56 @@ describe('cluster roles and dependencies', () => {
     expect(call.content).toContain('do it');
   });
 
+  it('does not claim a still-blocked earlier node is done when a later node starts', async () => {
+    const reviewFirst = executionGraph({
+      nodes: [
+        {
+          id: 'review',
+          ordinal: 0,
+          title: 'review the change',
+          instructions: 'audit it',
+          role: 'reviewer',
+          dependsOn: ['impl'],
+        },
+        {
+          id: 'impl',
+          ordinal: 1,
+          title: 'rewrite the resolver',
+          instructions: 'do it',
+          role: 'implementer',
+          dependsOn: [],
+        },
+      ],
+      bindings: [
+        { nodeId: 'review', agentId: 'b-review' },
+        { nodeId: 'impl', agentId: 'b-impl' },
+      ],
+    });
+    const seed = childAgent({ id: 'b-seed', ordinal: 0, status: 'running' });
+    const review = childAgent({ id: 'b-review', ordinal: 1, name: 'review the change' });
+    const impl = childAgent({ id: 'b-impl', ordinal: 2, name: 'rewrite the resolver' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), seed, review, impl] },
+      clusterExecutionGraphs: { [SID]: [reviewFirst] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'b-seed', ordinal: 0, status: 'completed' }),
+      review,
+      impl,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, seed.id, done('b-seed'));
+
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as {
+      agentId: AgentId;
+      content: string;
+    };
+    expect(call.agentId).toBe('b-impl');
+    expect(call.content).not.toContain('**Done before you**');
+    expect(call.content).not.toContain('review the change');
+  });
+
   it('releases the reviewer node once its dependency completes', async () => {
     const graph = executionGraph({
       nodes: [
