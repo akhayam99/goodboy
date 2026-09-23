@@ -67,9 +67,9 @@ Configuration lives at four scopes, and a value set closer to the work wins:
 - **Permission rules** exist at all four scopes; when several rules match a
   tool call, the most specific applicable scope decides.
 - **Settings overrides** (default provider, branch prefix, verbosity, model
-  pins, provider pool) are stored as an override row at workspace, project
-  and session scope on top of the global defaults; an unset value inherits
-  from an outer scope.
+  pins, provider pool) are stored as an override row at workspace and session
+  scope on top of the global defaults; an unset value inherits from an outer
+  scope. A project override sets the branch prefix of that project's mounts.
 - **Workflows, the step library, and skills** are owned by the workspace. A
   step library row with no workspace is a global seed. Skills are discovered
   from the project roots but registered per workspace.

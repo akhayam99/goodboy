@@ -72,7 +72,8 @@ macOS builds are signed and notarized under the Apple team named in
 `accepted, source=Notarized Developer ID`). Autonomous release cycles cannot
 touch signing material or secrets.
 
-On Linux, every new version is a package taken from the release page.
+The Linux AppImage, deb and rpm carry no signature and no in-app update: every
+new version is a package taken from the release page.
 The OS credential store is the Keychain on macOS, and on Linux the
 freedesktop Secret Service (GNOME Keyring or KWallet), so a keyring daemon
 must be running before a credential can be saved there.
