@@ -5,11 +5,32 @@ import type { OrchestratorHintDraft } from '../../../../store/slices/workflows/a
 
 type Props = {
   readonly isDeciding: boolean;
+  readonly isStepRunning: boolean;
   readonly disabled: boolean;
   readonly onSubmit: (draft: OrchestratorHintDraft) => Promise<void>;
 };
 
-export const OrchestratorHintComposer = ({ isDeciding, disabled, onSubmit }: Props) => {
+type TimingParams = {
+  readonly isDeciding: boolean;
+  readonly isStepRunning: boolean;
+};
+
+const timingCopy = ({ isDeciding, isStepRunning }: TimingParams): string => {
+  if (isDeciding) {
+    return 'Sending restarts the decision in flight with your hint';
+  }
+  if (isStepRunning) {
+    return 'Read when the step in flight finishes';
+  }
+  return 'Read at the next decision';
+};
+
+export const OrchestratorHintComposer = ({
+  isDeciding,
+  isStepRunning,
+  disabled,
+  onSubmit,
+}: Props) => {
   const [text, setText] = useState('');
   const [isPinned, setIsPinned] = useState(false);
   const canSend = disabled === false && text.trim() !== '';
@@ -60,9 +81,7 @@ export const OrchestratorHintComposer = ({ isDeciding, disabled, onSubmit }: Pro
           label={<span className="text-2xs text-muted-foreground">Keep for every step</span>}
         />
         <span data-testid="orchestrator-hint-timing" className="text-2xs text-muted-foreground">
-          {isDeciding
-            ? 'Sending restarts the decision in flight with your hint'
-            : 'Read at the next decision'}
+          {timingCopy({ isDeciding, isStepRunning })}
         </span>
       </div>
     </form>

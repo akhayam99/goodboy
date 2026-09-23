@@ -427,15 +427,17 @@ describe('WorkflowRow detail dashboard', () => {
     expect(screen.getByTestId('workflow-next-step-cta')).toBeDefined();
   });
 
-  it('places workflow attachments between the goal and the steps', () => {
-    renderDetail();
+  it('puts the goal and its attachments after the steps and the recap', () => {
+    renderDetail({ runOverride: { ...run, orchestratorSummary: '- shipped the gate' } });
 
+    const steps = screen.getByTestId('workflow-step-graph');
+    const recap = screen.getByTestId('workflow-run-summary');
     const goal = screen.getByRole('region', { name: 'What you asked for' });
     const attachments = screen.getByTestId('goal-attachments');
-    const steps = screen.getByTestId('workflow-step-graph');
 
+    expect(steps.compareDocumentPosition(recap)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(recap.compareDocumentPosition(goal)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(goal.compareDocumentPosition(attachments)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(attachments.compareDocumentPosition(steps)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it('opens the chat of a step when its chip is clicked', () => {

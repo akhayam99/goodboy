@@ -301,6 +301,12 @@ export const OrchestratorPanel = ({
               <Markdown text={state.detail} className="text-2xs leading-relaxed" />
             </div>
           ) : null}
+        </div>
+
+        <div
+          data-testid="orchestrator-controls"
+          className="flex shrink-0 flex-wrap items-center justify-end gap-1.5"
+        >
           {showStopNow ? (
             <div className="relative flex">
               <button
@@ -312,7 +318,7 @@ export const OrchestratorPanel = ({
                 Stop now
               </button>
               {isStopArmed ? (
-                <div className="absolute left-0 top-full z-popover w-72 rounded-lg bg-background shadow-lg">
+                <div className="absolute right-0 top-full z-popover w-72 rounded-lg bg-background shadow-lg">
                   <InlineConfirm
                     role="alert"
                     icon={<CircleStop size={ICON_SIZE.row} aria-hidden />}
@@ -329,9 +335,6 @@ export const OrchestratorPanel = ({
               ) : null}
             </div>
           ) : null}
-        </div>
-
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
           {isRunOver ? null : (
             <WorkflowAutorunToggle
               variant="detail"
@@ -340,15 +343,17 @@ export const OrchestratorPanel = ({
             />
           )}
           {primaryAction}
-          <OrchestratorAction
-            icon={PenLine}
-            label="Hints"
-            variant="ghost"
-            testId="orchestrator-hints-toggle"
-            title="Tell the orchestrator something, once or for every step"
-            expanded={hintsOpen}
-            onClick={() => toggleDrawer('hints')}
-          />
+          {hints.length === 0 ? null : (
+            <OrchestratorAction
+              icon={PenLine}
+              label={`Hints (${hints.length})`}
+              variant="ghost"
+              testId="orchestrator-hints-toggle"
+              title="Every hint you wrote, and which decision read it"
+              expanded={hintsOpen}
+              onClick={() => toggleDrawer('hints')}
+            />
+          )}
           <OrchestratorAction
             icon={Users}
             label="Role models"
@@ -368,6 +373,15 @@ export const OrchestratorPanel = ({
           disabled={busy || isOrchestrating}
         />
       </div>
+
+      {isRunOver ? null : (
+        <OrchestratorHintComposer
+          isDeciding={isOrchestrating}
+          isStepRunning={agents.some((agent) => agent.status === 'running')}
+          disabled={busy}
+          onSubmit={(draft) => addWorkflowOrchestratorHint(sessionId, run.id, draft)}
+        />
+      )}
 
       <div className="flex min-w-0 flex-col gap-1.5">
         {rolesOpen ? <RunRoleModels sessionId={sessionId} run={run} disabled={busy} /> : null}
@@ -410,11 +424,6 @@ export const OrchestratorPanel = ({
             title="Hints"
             help="A hint is read once by the next decision, or by every decision when you keep it for every step."
           >
-            <OrchestratorHintComposer
-              isDeciding={isOrchestrating}
-              disabled={busy}
-              onSubmit={(draft) => addWorkflowOrchestratorHint(sessionId, run.id, draft)}
-            />
             <OrchestratorHintLog
               hints={hints}
               disabled={busy}

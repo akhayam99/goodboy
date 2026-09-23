@@ -53,7 +53,10 @@ export const WorkflowRunSummary = ({ summary }: Props) => {
       {structured === null ? (
         <Markdown text={text} className="text-2xs leading-relaxed" />
       ) : (
-        <div className="flex min-w-0 flex-col gap-2">
+        <div
+          data-testid="workflow-run-summary-groups"
+          className="grid min-w-0 gap-3 sm:grid-cols-2"
+        >
           {structured.done.length > 0 && (
             <RecapGroup label="Done" entries={structured.done} tone="done" />
           )}

@@ -423,15 +423,6 @@ export const WorkflowRow = ({
           {isDetail && !isDiscarded && writableMountCount > 1 ? (
             <WriteDestinationControl sessionId={task.id} agentId={null} fallback="automatic" />
           ) : null}
-          {isDetail && expanded ? (
-            <div className="flex flex-col gap-2">
-              <WorkflowRunAsk
-                goal={(run.goal ?? workflow.goal ?? '').trim()}
-                processText={(workflow.processText ?? '').trim()}
-              />
-              <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
-            </div>
-          ) : null}
           {expanded &&
           !isDiscarded &&
           !isDynamic &&
@@ -622,6 +613,15 @@ export const WorkflowRow = ({
             />
           ) : null}
           {isDetail ? <WorkflowRunSummary summary={run.orchestratorSummary} /> : null}
+          {isDetail && expanded ? (
+            <div className="flex flex-col gap-2">
+              <WorkflowRunAsk
+                goal={(run.goal ?? workflow.goal ?? '').trim()}
+                processText={(workflow.processText ?? '').trim()}
+              />
+              <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
+            </div>
+          ) : null}
           {isDetail && isCompleted ? (
             <div className="flex shrink-0 flex-wrap items-center gap-1">
               <CreateReportCta sessionId={task.id} workflowRunId={run.id} />
