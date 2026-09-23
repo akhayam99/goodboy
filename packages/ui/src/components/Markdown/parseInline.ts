@@ -1,7 +1,7 @@
 export type InlineNode =
   | { readonly kind: 'text'; readonly value: string }
   | { readonly kind: 'code'; readonly value: string }
-  | { readonly kind: 'chip'; readonly tag: string }
+  | { readonly kind: 'chip'; readonly tag: string; readonly label: string | null }
   | { readonly kind: 'strong'; readonly children: ReadonlyArray<InlineNode> }
   | { readonly kind: 'em'; readonly children: ReadonlyArray<InlineNode> }
   | { readonly kind: 'del'; readonly children: ReadonlyArray<InlineNode> }
@@ -12,7 +12,7 @@ type Params = {
   readonly text: string;
 };
 
-const CTX_TAG_RE = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
+const CTX_TAG_RE = /^([a-zA-Z][a-zA-Z0-9_-]*)(?::[^\S\n]*([^<>\n]{1,48}?))?[^\S\n]*$/;
 const CTX_CODE_RE = /^<<([a-zA-Z][a-zA-Z0-9_-]*)>>$/;
 const EM_BOUNDARY_RE = /\s|[(\[{,.!?]/;
 const SAFE_LINK_RE = /^(https?:|mailto:)/i;
@@ -35,9 +35,10 @@ export const parseInline = ({ text }: Params): ReadonlyArray<InlineNode> => {
       const close = text.indexOf('>>', i + 2);
       if (close > i) {
         const inner = text.slice(i + 2, close);
-        if (CTX_TAG_RE.test(inner)) {
+        const chip = inner.match(CTX_TAG_RE);
+        if (chip !== null) {
           flush();
-          out.push({ kind: 'chip', tag: inner });
+          out.push({ kind: 'chip', tag: chip[1] ?? inner, label: chip[2] ?? null });
           i = close + 2;
           continue;
         }
@@ -51,7 +52,7 @@ export const parseInline = ({ text }: Params): ReadonlyArray<InlineNode> => {
         const ctxMatch = inner.match(CTX_CODE_RE);
         flush();
         if (ctxMatch) {
-          out.push({ kind: 'chip', tag: ctxMatch[1]! });
+          out.push({ kind: 'chip', tag: ctxMatch[1]!, label: null });
           i = end + 1;
           continue;
         }
