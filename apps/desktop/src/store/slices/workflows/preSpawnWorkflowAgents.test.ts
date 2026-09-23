@@ -12,7 +12,7 @@ import type {
   AgentId,
   IsoDateTime,
   ProviderId,
-  ModelEffort,
+  EffortLevel,
   RoleModelPreferences,
   Session,
   SessionId,
@@ -454,7 +454,7 @@ const executionOf = ({
 }: {
   readonly provider: ProviderId;
   readonly model: string;
-  readonly effort: ModelEffort | undefined;
+  readonly effort: EffortLevel | undefined;
 }): ReadonlyArray<string> =>
   resolveModelArgs({
     provider,

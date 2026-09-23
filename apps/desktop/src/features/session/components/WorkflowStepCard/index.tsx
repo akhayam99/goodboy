@@ -1,11 +1,10 @@
 import { type ReactNode, useRef } from 'react';
 import { GripVertical, Trash2 } from 'lucide-react';
 import { ClampedProse, cn, Input, Textarea, Tooltip, tintClasses, Eyebrow } from '@goodboy/ui';
-import type { AgentRole, ProviderId } from '@goodboy/types';
+import type { AgentRole, ProviderId, EffortLevel } from '@goodboy/types';
 import { agentKindPalette, ROLE_LABEL, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { type VerbosityLevel } from '../../../settings/verbosity';
-import { type EffortLevel } from '../../../chat/utils/chat-constants';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { WORKFLOW_ROUTING_COPY } from '../../../workflows/workflowRoutingCopy';

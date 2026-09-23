@@ -1,7 +1,7 @@
 import type {
   AgentRole,
   IsoDateTime,
-  ModelEffort,
+  EffortLevel,
   OrchestratorHint,
   OrchestratorRouting,
   ProviderId,
@@ -66,7 +66,7 @@ const toRouting = ({ provider, model, effort }: RoutingColumns): OrchestratorRou
   return {
     providerId: provider as ProviderId,
     model,
-    ...(effort != null && { effort: effort as ModelEffort }),
+    ...(effort != null && { effort: effort as EffortLevel }),
   };
 };
 
@@ -104,7 +104,7 @@ const MODEL_EFFORTS = [
   'high',
   'xhigh',
   'max',
-] satisfies ReadonlyArray<ModelEffort>;
+] satisfies ReadonlyArray<EffortLevel>;
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -122,7 +122,7 @@ type EffortValueParams = {
   readonly value: unknown;
 };
 
-const effortFor = ({ value }: EffortValueParams): ModelEffort | null =>
+const effortFor = ({ value }: EffortValueParams): EffortLevel | null =>
   MODEL_EFFORTS.find((effort) => effort === value) ?? null;
 
 type FallbackValueParams = {

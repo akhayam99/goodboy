@@ -2,7 +2,7 @@ import { CLAUDE_PERMISSION_MODES, PROVIDER_IDS } from '@goodboy/types';
 import type {
   ClaudePermissionMode,
   IsoDateTime,
-  ModelEffort,
+  EffortLevel,
   MountId,
   ProjectId,
   ProviderId,
@@ -126,7 +126,7 @@ const toDomain = (
     }),
     ...(row.verbosity && { verbosity: row.verbosity as 'brief' | 'normal' | 'verbose' }),
     ...(row.effort && {
-      effort: row.effort as ModelEffort,
+      effort: row.effort as EffortLevel,
     }),
     ...(row.model_override && { modelOverride: row.model_override }),
     ...(row.provider_override && { providerOverride: row.provider_override }),
@@ -148,7 +148,7 @@ async function loadWorkflowsForSession(
 
 export type SessionConfigUpdate = {
   verbosity?: VerbosityLevel | null;
-  effort?: ModelEffort | null;
+  effort?: EffortLevel | null;
   modelOverride?: string | null;
   providerOverride?: string | null;
   defaultProvider?: ProviderId | null;

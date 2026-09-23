@@ -1,8 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, ProviderId, Session, WorkspaceId } from '@goodboy/types';
+import type { AgentId, ProviderId, Session, WorkspaceId, EffortLevel } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import type { EffortLevel } from '../../../utils/chat-constants';
 import { useAgentSwitchSync } from './useAgentSwitchSync';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;

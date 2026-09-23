@@ -12,7 +12,7 @@ import type {
   MountId,
 } from './ids';
 import type { SessionProviderPreference } from './provider-preference';
-import type { ModelEffort, ProviderId } from './provider-registry';
+import type { EffortLevel, ProviderId } from './provider-registry';
 import type { ClaudePermissionMode } from './permission';
 import type { OverrideSettings, RoleModelPreferences } from './settings';
 import type { GitDistance, GitOperation, GitWorkingTree } from './worktree';
@@ -104,7 +104,7 @@ export type WorkflowSpendLimitMode = 'notify' | 'pause';
 export type OrchestratorRouting = Readonly<{
   providerId: ProviderId;
   model: string;
-  effort?: ModelEffort;
+  effort?: EffortLevel;
 }>;
 
 export type OrchestratorHint = Readonly<{
@@ -154,7 +154,7 @@ export type Session = Readonly<{
   archivedAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
   verbosity?: 'brief' | 'normal' | 'verbose';
-  effort?: ModelEffort;
+  effort?: EffortLevel;
   modelOverride?: string;
   providerOverride?: string;
   createdAt: IsoDateTime;

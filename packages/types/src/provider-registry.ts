@@ -33,7 +33,9 @@ export type ModelPrice = {
   readonly assumed?: true;
 };
 
-export type ModelEffort = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+export type EffortLevel = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+
+export type ModelEffort = EffortLevel;
 
 export type ModelTier = 'turn' | 'cheap';
 
@@ -47,7 +49,7 @@ export type ModelDescriptor = {
   readonly variantLabel: string;
   readonly costTier: ModelCostTier;
   readonly weight: number;
-  readonly effort: ReadonlyArray<ModelEffort> | null;
+  readonly effort: ReadonlyArray<EffortLevel> | null;
   readonly thinkerOnly: boolean;
   readonly routingProfile: ModelRoutingProfile | null;
 };

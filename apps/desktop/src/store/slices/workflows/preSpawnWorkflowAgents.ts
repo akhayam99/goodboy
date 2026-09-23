@@ -1,7 +1,7 @@
 import type {
   Agent,
   AgentRole,
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   RoleModelPreferences,
   SessionId,
@@ -30,7 +30,7 @@ type Params = {
   readonly roleModels: RoleModelPreferences | null;
   readonly runRoleModels?: RoleModelPreferences | null;
   readonly sessionModel?: string | null;
-  readonly sessionEffort?: ModelEffort | null;
+  readonly sessionEffort?: EffortLevel | null;
   readonly defaultVerbosity?: VerbosityLevel;
   readonly availability?: WorkflowRoutingAvailabilitySnapshot;
 };
@@ -46,7 +46,7 @@ type PreSpawnWorkflowAgentsResult = {
   readonly modelOverrides: Readonly<Record<string, string>>;
   readonly kindOverrides: Readonly<Record<string, string>>;
   readonly providerOverrides: Readonly<Record<string, ProviderId>>;
-  readonly effortOverrides: Readonly<Record<string, ModelEffort>>;
+  readonly effortOverrides: Readonly<Record<string, EffortLevel>>;
   readonly blocked: ReadonlyArray<BlockedWorkflowStep>;
 };
 
@@ -86,7 +86,7 @@ export const preSpawnWorkflowAgents = async ({
   const modelOverrides: Record<string, string> = {};
   const kindOverrides: Record<string, string> = {};
   const providerOverrides: Record<string, ProviderId> = {};
-  const effortOverrides: Record<string, ModelEffort> = {};
+  const effortOverrides: Record<string, EffortLevel> = {};
   const blocked: Array<BlockedWorkflowStep> = [];
   const sortedSteps = [...steps].sort((left, right) => left.ordinal - right.ordinal);
 

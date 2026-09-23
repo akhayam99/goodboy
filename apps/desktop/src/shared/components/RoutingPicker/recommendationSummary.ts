@@ -1,4 +1,4 @@
-import type { ModelEffort, ProviderId } from '@goodboy/types';
+import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core';
 import {
   EFFORT_LABEL,
@@ -9,7 +9,7 @@ import {
 type Params = {
   readonly provider: ProviderId;
   readonly model?: string;
-  readonly effort?: ModelEffort | null;
+  readonly effort?: EffortLevel | null;
 };
 
 export const recommendationSummary = ({ provider, model, effort }: Params): string => {

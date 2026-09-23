@@ -1,6 +1,6 @@
 import type {
   Agent,
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   RoleModelPreferences,
   Session,
@@ -25,7 +25,7 @@ type Params = {
 type AgentReferenceRouting = {
   readonly provider: ProviderId;
   readonly model: string;
-  readonly effort: ModelEffort;
+  readonly effort: EffortLevel;
 };
 
 const sessionProviderOf = ({ session }: { readonly session: Session }): ProviderId => {

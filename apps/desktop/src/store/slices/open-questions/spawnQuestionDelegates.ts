@@ -2,7 +2,7 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
-  ModelEffort,
+  EffortLevel,
   OpenQuestion,
   OpenQuestionId,
   ProviderId,
@@ -25,7 +25,7 @@ export type QuestionDelegateRequest = {
   readonly hints: string;
   readonly provider: ProviderId | '';
   readonly model: string;
-  readonly effort: ModelEffort;
+  readonly effort: EffortLevel;
 };
 
 export type QuestionDelegateOutcome = {

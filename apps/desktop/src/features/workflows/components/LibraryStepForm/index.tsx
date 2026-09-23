@@ -9,9 +9,9 @@ import type {
   StepDef,
   VerbosityLevel,
   WorkspaceId,
+  EffortLevel,
 } from '@goodboy/types';
 import type { StepDefUpsertArgs } from '../../workflows';
-import { type EffortLevel } from '../../../chat/utils/chat-constants';
 import { stepDraftWithModel } from '../../engine';
 import { RoleSelect } from '../../../session/components/RoleSelect';
 import { InlineField } from '../../../session/components/InlineField';

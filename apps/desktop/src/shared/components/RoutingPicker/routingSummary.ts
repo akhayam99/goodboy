@@ -1,9 +1,8 @@
-import type { CatalogModel, ModelSelection, ProviderId } from '@goodboy/types';
+import type { CatalogModel, ModelSelection, ProviderId, EffortLevel } from '@goodboy/types';
 import {
   EFFORT_LABEL,
   PROVIDER_LABEL,
   modelLabel,
-  type EffortLevel,
 } from '../../../features/chat/utils/chat-constants';
 import { VERBOSITY_LABEL, type VerbosityLevel } from '../../../features/settings/verbosity';
 

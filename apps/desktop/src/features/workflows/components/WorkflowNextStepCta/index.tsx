@@ -4,7 +4,7 @@ import { Button, ConfirmPopover, cn, tintClasses } from '@goodboy/ui';
 import { classifyWorkflowChain, getModelDescriptor } from '@goodboy/core';
 import type {
   Agent,
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   RoleModelPreferences,
   Step,
@@ -40,9 +40,9 @@ export type Props = {
   readonly roleModels?: RoleModelPreferences | null;
   readonly agentModel?: string | null;
   readonly agentProvider?: ProviderId | null;
-  readonly agentEffort?: ModelEffort | null;
+  readonly agentEffort?: EffortLevel | null;
   readonly sessionProvider?: ProviderId | null;
-  readonly sessionEffort?: ModelEffort | null;
+  readonly sessionEffort?: EffortLevel | null;
 };
 
 export const WorkflowNextStepCta = ({

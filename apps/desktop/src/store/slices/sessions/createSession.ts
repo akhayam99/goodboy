@@ -2,7 +2,7 @@ import type {
   Agent,
   AttachmentInput,
   IsoDateTime,
-  ModelEffort,
+  EffortLevel,
   ProjectId,
   ProviderId,
   Session,
@@ -260,7 +260,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const agentModelOverrides: Record<string, string> = {};
     const agentKindOverrides: Record<string, string> = {};
     const agentProviderOverrides: Record<string, ProviderId> = {};
-    const agentEffortOverrides: Record<string, ModelEffort> = {};
+    const agentEffortOverrides: Record<string, EffortLevel> = {};
 
     const creationSettings = resolveScopedSettings({
       state: get(),

@@ -3,7 +3,7 @@ import type {
   AgentId,
   AgentStatus,
   IsoDateTime,
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   ProviderRunId,
   SessionId,
@@ -115,7 +115,7 @@ const toAgent = ({ row }: ToAgentParams): Agent => {
     }),
     ...(row.verbosity && { verbosity: row.verbosity as 'brief' | 'normal' | 'verbose' }),
     ...(row.effort && {
-      effort: row.effort as ModelEffort,
+      effort: row.effort as EffortLevel,
     }),
     ...(row.model_override && { modelOverride: row.model_override }),
     ...(row.provider_override && { providerOverride: row.provider_override as ProviderId }),
@@ -245,7 +245,7 @@ export const purgeAgentForDelete = async ({
 
 export type AgentConfigUpdate = {
   verbosity?: VerbosityLevel | null;
-  effort?: ModelEffort | null;
+  effort?: EffortLevel | null;
   modelOverride?: string | null;
   providerOverride?: ProviderId | null;
   kind?: string | null;
@@ -291,5 +291,5 @@ export type AgentRoutingUpdate = Readonly<{
   taskProfile: WorkflowTaskProfile | null;
   providerOverride: ProviderId | null;
   modelOverride: string | null;
-  effort: ModelEffort | null;
+  effort: EffortLevel | null;
 }>;

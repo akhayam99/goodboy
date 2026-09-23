@@ -1,5 +1,5 @@
 import { Tooltip, cn } from '@goodboy/ui';
-import type { ProviderId } from '@goodboy/types';
+import type { ProviderId, EffortLevel } from '@goodboy/types';
 import { getModelProvider, modelCatalogKey } from '@goodboy/core';
 import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
 import {
@@ -7,7 +7,6 @@ import {
   PROVIDER_LABEL,
   clampEffort,
   modelLabel,
-  type EffortLevel,
 } from '../../../features/chat/utils/chat-constants';
 
 type PlannedRouting = {

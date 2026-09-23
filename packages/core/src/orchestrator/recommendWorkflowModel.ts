@@ -1,6 +1,6 @@
 import type {
   ModelCostTier,
-  ModelEffort,
+  EffortLevel,
   ModelPrice,
   ModelRoutingProfile,
   ProviderId,
@@ -12,7 +12,7 @@ import { MODEL_COST_RANK } from '../providers/modelCostRank';
 export type WorkflowModelCandidate = Readonly<{
   provider: ProviderId;
   model: string;
-  effort: ModelEffort | null;
+  effort: EffortLevel | null;
   contextWindow: number;
   costTier: ModelCostTier;
   profile: ModelRoutingProfile | null;

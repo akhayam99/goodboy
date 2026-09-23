@@ -136,6 +136,7 @@ export type {
 } from './adapter';
 export type { TelemetryKind, TelemetryRecord } from './telemetry';
 export type {
+  EffortLevel,
   ModelCostTier,
   ModelDescriptor,
   ModelEffort,
@@ -157,7 +158,6 @@ export type {
   CursorModel,
   EffortAxis,
   EffortAxisLevel,
-  EffortLevel,
   GeminiModel,
   ModelAxes,
   ModelCatalogs,

@@ -9,7 +9,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from './ids';
-import type { ModelEffort, ProviderId } from './provider-registry';
+import type { EffortLevel, ProviderId } from './provider-registry';
 import type { VerbosityLevel } from './settings';
 import type {
   WorkflowRoutingDecision,
@@ -17,7 +17,7 @@ import type {
   WorkflowTaskProfile,
 } from './workflow-routing';
 
-export type AgentEffort = ModelEffort;
+export type AgentEffort = EffortLevel;
 
 export type AgentRole =
   | 'scout'
@@ -114,7 +114,7 @@ export type Agent = Readonly<{
   doneAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
   verbosity?: VerbosityLevel;
-  effort?: ModelEffort;
+  effort?: EffortLevel;
   modelOverride?: string;
   providerOverride?: ProviderId;
   kind?: string;

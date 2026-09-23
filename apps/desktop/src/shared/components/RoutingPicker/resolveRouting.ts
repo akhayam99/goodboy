@@ -1,10 +1,4 @@
-import type {
-  CatalogModel,
-  EffortLevel,
-  ModelEffort,
-  ModelSelection,
-  ProviderId,
-} from '@goodboy/types';
+import type { CatalogModel, EffortLevel, ModelSelection, ProviderId } from '@goodboy/types';
 import {
   MODEL_CATALOGS,
   getDefaultTurnModel,
@@ -17,7 +11,7 @@ import {
 export type Recommendation = {
   readonly provider?: ProviderId;
   readonly model?: string;
-  readonly effort?: ModelEffort | null;
+  readonly effort?: EffortLevel | null;
   readonly reason?: string;
   readonly label?: string;
 };

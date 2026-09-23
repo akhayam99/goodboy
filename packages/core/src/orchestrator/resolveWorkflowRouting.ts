@@ -1,5 +1,5 @@
 import type {
-  ModelEffort,
+  EffortLevel,
   WorkflowModelPick,
   WorkflowRoutingDecision,
   WorkflowRoutingLock,
@@ -48,7 +48,7 @@ type PickParams = {
 };
 
 type EffortNormalization = Readonly<{
-  effort: ModelEffort | null;
+  effort: EffortLevel | null;
   wasAdjusted: boolean;
 }>;
 
@@ -76,7 +76,7 @@ const normalizeAutomaticEffort = ({ pick }: PickParams): EffortNormalization => 
   return { effort: clamped.applied, wasAdjusted: true };
 };
 
-const normalizeLockedEffort = ({ pick }: PickParams): ModelEffort | null | 'rejected' => {
+const normalizeLockedEffort = ({ pick }: PickParams): EffortLevel | null | 'rejected' => {
   const efforts = supportedModelEfforts(pick);
   if (efforts.length === 0) {
     if (pick.effort !== null) {

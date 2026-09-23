@@ -1,6 +1,6 @@
 import type {
   AgentRole,
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   SessionId,
   WorkflowRoutingDecision,
@@ -26,7 +26,7 @@ export type ChildRoutingFields = Readonly<{
   taskProfile: WorkflowTaskProfile | null;
   providerOverride: ProviderId | null;
   modelOverride: string | null;
-  effort: ModelEffort | null;
+  effort: EffortLevel | null;
 }>;
 
 export type ChildRoutingBatch =

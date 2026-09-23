@@ -1,6 +1,6 @@
 import type {
   AgentRole,
-  ModelEffort,
+  EffortLevel,
   ModelPrice,
   ProviderId,
   WorkflowTaskDifficulty,
@@ -14,7 +14,7 @@ export type OrchestratorStep = {
   readonly expectedOutput?: string;
   readonly provider?: string;
   readonly model?: string;
-  readonly effort?: ModelEffort;
+  readonly effort?: EffortLevel;
   readonly taskType?: WorkflowTaskType;
   readonly difficulty?: WorkflowTaskDifficulty;
   readonly modelReason?: string;
@@ -58,7 +58,7 @@ export type OrchestratorModelOption = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly label: string;
-  readonly efforts: ReadonlyArray<ModelEffort>;
+  readonly efforts: ReadonlyArray<EffortLevel>;
   readonly taskTypes: ReadonlyArray<WorkflowTaskType>;
   readonly preferredDifficulty: ReadonlyArray<WorkflowTaskDifficulty>;
   readonly contextWindow: number;
@@ -69,7 +69,7 @@ export type OrchestratorRoleDefault = {
   readonly role: AgentRole;
   readonly provider: ProviderId;
   readonly model: string;
-  readonly effort: ModelEffort;
+  readonly effort: EffortLevel;
 };
 
 export type OrchestratorInput = {

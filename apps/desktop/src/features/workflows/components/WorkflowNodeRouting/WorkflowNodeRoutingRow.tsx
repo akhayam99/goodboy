@@ -2,7 +2,7 @@ import { Eyebrow } from '@goodboy/ui';
 import { useEffect, useRef } from 'react';
 import type {
   Agent,
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   SessionId,
   Step,
@@ -13,14 +13,13 @@ import { selectWorkflowNodeRouting } from '../../../../store/slices/workflowRout
 import { workflowNodeRoutingKey } from '../../../../store/slices/workflowRouting/workflowNodeRoutingKey';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import type { EffortLevel } from '../../../chat/utils/chat-constants';
 import { WORKFLOW_ROUTING_COPY } from '../../workflowRoutingCopy';
 import { lockableEffort } from './lockableEffort';
 
 type LockParams = {
   readonly provider: ProviderId;
   readonly model: string;
-  readonly effort: ModelEffort;
+  readonly effort: EffortLevel;
 };
 
 type Props = {

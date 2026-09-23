@@ -1,4 +1,4 @@
-import type { ModelCostTier, ModelEffort, ModelFamily, ProviderId } from '@goodboy/types';
+import type { EffortLevel, ModelCostTier, ModelFamily, ProviderId } from '@goodboy/types';
 import { getModelDescriptor, getProviderModelPrice } from '@goodboy/core';
 
 export const PROVIDER_LABEL: Record<ProviderId, string> = {
@@ -12,7 +12,7 @@ export const PROVIDER_LABEL: Record<ProviderId, string> = {
 };
 
 export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
-export type EffortLevel = ModelEffort;
+export type { EffortLevel } from '@goodboy/types';
 
 const SONNET_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high'];
 const OPUS_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high', 'xhigh', 'max'];
@@ -65,11 +65,9 @@ export const EFFORT_LABEL: Record<EffortLevel, string> = {
   max: 'Max',
 };
 
-export type CostTier = ModelCostTier;
-
 const FALLBACK_WEIGHT = 10;
 
-export const TIER_TEXT: Record<CostTier, string> = {
+export const TIER_TEXT: Record<ModelCostTier, string> = {
   cheap: 'text-success',
   mid: 'text-warning',
   expensive: 'text-danger',
@@ -231,7 +229,7 @@ export const parseModelId = (id: string): ParsedModel => {
   return { family: 'other', subfamily: null, variantLabel: local };
 };
 
-export const modelTier = (model: string): CostTier => {
+export const modelTier = (model: string): ModelCostTier => {
   const descriptor = getModelDescriptor(model);
   if (descriptor) {
     return descriptor.costTier;
@@ -249,7 +247,7 @@ const modelWeight = (model: string): number => {
   return getModelDescriptor(model)?.weight ?? FALLBACK_WEIGHT;
 };
 
-const TIER_RANK: Record<CostTier, number> = { cheap: 0, mid: 1, expensive: 2 };
+const TIER_RANK: Record<ModelCostTier, number> = { cheap: 0, mid: 1, expensive: 2 };
 
 export type ModelSuggestion = {
   readonly id: string;

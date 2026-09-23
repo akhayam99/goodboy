@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
   AgentId,
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   SessionId,
   WorkflowRoutingDecision,
@@ -577,7 +577,7 @@ type ExecutionRecord = Readonly<{
   agentId: AgentId;
   provider: ProviderId | null;
   model: string | null;
-  effort: ModelEffort | null;
+  effort: EffortLevel | null;
   args: ReadonlyArray<string>;
 }>;
 
@@ -593,7 +593,7 @@ const captureExecutions = ({ state, sendTurn }: CaptureParams): ReadonlyArray<Ex
     const agent = runs.find((candidate) => candidate.id === agentId) ?? null;
     const provider = (agent?.providerOverride ?? null) as ProviderId | null;
     const model = agent?.modelOverride ?? null;
-    const effort = (agent?.effort ?? null) as ModelEffort | null;
+    const effort = (agent?.effort ?? null) as EffortLevel | null;
     if (provider === null || model === null) {
       records.push({ agentId, provider, model, effort, args: [] });
       return undefined;
@@ -652,7 +652,7 @@ const reloadedScout = ({
       providerOverride: args.providerOverride as ProviderId,
     }),
     ...(args.modelOverride !== undefined && { modelOverride: args.modelOverride as string }),
-    ...(args.effort !== undefined && { effort: args.effort as ModelEffort }),
+    ...(args.effort !== undefined && { effort: args.effort as EffortLevel }),
     ...(decision !== null && { routingDecision: decision }),
     ...(profile !== null && { taskProfile: profile }),
   } as Agent;

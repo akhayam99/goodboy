@@ -5,7 +5,7 @@ import {
   resolveStoredModelSelection,
   resolveTaskModel,
 } from '@goodboy/core';
-import type { ModelEffort, ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
+import type { EffortLevel, ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
 import { clampEffort, modelEffortLevels } from '../../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { useAppStore } from '../../../../../store/store';
@@ -20,7 +20,7 @@ type Props = {
 type ApplyParams = {
   readonly providerId: ProviderId;
   readonly model: string;
-  readonly effort?: ModelEffort;
+  readonly effort?: EffortLevel;
 };
 
 type ProviderRoutingParams = {
@@ -32,7 +32,7 @@ type ProviderModelParams = {
   readonly model: string;
 };
 
-const DEFAULT_EFFORT: ModelEffort = 'medium';
+const DEFAULT_EFFORT: EffortLevel = 'medium';
 
 const providerModelId = ({ provider, model }: ProviderModelParams): string => {
   const stored = resolveStoredModelSelection({ provider, id: model });
@@ -41,7 +41,7 @@ const providerModelId = ({ provider, model }: ProviderModelParams): string => {
     : modelIdForSelection({ provider, selection: stored.selection });
 };
 
-const effortForModel = (model: string, requested: ModelEffort): ModelEffort | null =>
+const effortForModel = (model: string, requested: EffortLevel): EffortLevel | null =>
   modelEffortLevels(model) == null ? null : clampEffort(model, requested);
 
 export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {

@@ -1,5 +1,5 @@
 import type { ProjectId, SessionId, WorkflowId, WorkspaceId } from './ids';
-import type { ModelEffort, ProviderId } from './provider-registry';
+import type { EffortLevel, ProviderId } from './provider-registry';
 import type { AgentRole } from './workflow';
 
 export type VerbosityLevel = 'brief' | 'normal' | 'verbose';
@@ -68,7 +68,7 @@ export const TASKS: ReadonlyArray<{
 export type TaskModelPreference = Readonly<{
   providerId: ProviderId;
   model: string;
-  effort?: ModelEffort;
+  effort?: EffortLevel;
 }>;
 
 export type TaskModelPreferences = Readonly<Partial<Record<AuxTaskId, TaskModelPreference>>>;
@@ -76,13 +76,13 @@ export type TaskModelPreferences = Readonly<Partial<Record<AuxTaskId, TaskModelP
 export type RoleModelFallback = Readonly<{
   providerId: ProviderId;
   model: string;
-  effort?: ModelEffort;
+  effort?: EffortLevel;
 }>;
 
 export type RoleModelPreference = Readonly<{
   providerId: ProviderId;
   model: string;
-  effort: ModelEffort;
+  effort: EffortLevel;
   fallback?: RoleModelFallback;
 }>;
 

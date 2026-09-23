@@ -1,6 +1,6 @@
 import type {
   AuxTaskId,
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   TaskModelPreference,
   TaskModelPreferences,
@@ -18,11 +18,11 @@ type EffortParams = {
   readonly model: string;
 };
 
-const AUTOMATIC_EFFORT: ModelEffort = 'medium';
+const AUTOMATIC_EFFORT: EffortLevel = 'medium';
 
 const AGENT_PRESELECT_TASKS: ReadonlySet<AuxTaskId> = new Set(['pr_draft', 'rebase']);
 
-const automaticEffort = ({ task, model }: EffortParams): ModelEffort | null => {
+const automaticEffort = ({ task, model }: EffortParams): EffortLevel | null => {
   if (AGENT_PRESELECT_TASKS.has(task)) {
     return null;
   }

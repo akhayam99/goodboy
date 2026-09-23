@@ -17,8 +17,8 @@ import {
   useDropdown,
   tintClasses,
 } from '@goodboy/ui';
-import type { CatalogModel, ModelSelection, ProviderId } from '@goodboy/types';
-import { PROVIDER_LABEL, type EffortLevel } from '../../../features/chat/utils/chat-constants';
+import type { CatalogModel, ModelSelection, ProviderId, EffortLevel } from '@goodboy/types';
+import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
 import {
   VERBOSITY_LABEL,
   VERBOSITY_LEVELS,

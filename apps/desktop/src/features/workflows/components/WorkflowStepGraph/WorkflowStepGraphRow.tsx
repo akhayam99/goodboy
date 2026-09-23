@@ -1,4 +1,4 @@
-import type { AgentId, ModelEffort, ProviderId, RoleModelPreferences } from '@goodboy/types';
+import type { AgentId, EffortLevel, ProviderId, RoleModelPreferences } from '@goodboy/types';
 import { classifyAgent, type AgentKind } from '../../../session/agent-kind';
 import { railColumnX, type RailRow } from '../../../session/timeline/railGeometry';
 import { TimelineRail } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRail';
@@ -17,7 +17,7 @@ type Props = {
   readonly agentProviderOverride: Readonly<Record<string, ProviderId>>;
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
-  readonly sessionEffort: ModelEffort | null;
+  readonly sessionEffort: EffortLevel | null;
   readonly selectedAgentId: AgentId | null;
   readonly onSelect: (id: AgentId) => void;
 };

@@ -1,6 +1,10 @@
-import type { ModelCostTier, ModelFamily, ModelTier, ProviderId } from './provider-registry';
-
-export type EffortLevel = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+import type {
+  EffortLevel,
+  ModelCostTier,
+  ModelFamily,
+  ModelTier,
+  ProviderId,
+} from './provider-registry';
 
 export type ModelKey = string;
 

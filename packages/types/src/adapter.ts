@@ -3,7 +3,8 @@ import type { MessageAttachment } from './message';
 import type { ClaudePermissionMode, PermissionScope } from './permission';
 import type { ProviderName } from './provider';
 import type { ProviderId } from './provider-registry';
-import type { EffortLevel, ModelSelection } from './model-catalog';
+import type { ModelSelection } from './model-catalog';
+import type { EffortLevel } from './provider-registry';
 
 export type ProviderCapabilities = {
   readonly streaming: boolean;

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { ProviderId, Session, TurnProviderOverride } from '@goodboy/types';
+import type { ProviderId, Session, TurnProviderOverride, EffortLevel } from '@goodboy/types';
 import {
   PROVIDER_CAPABILITIES,
   canonicalModelId,
@@ -14,7 +14,7 @@ import { agentPinApplies } from '../../../../../store/slices/turn/agentPinApplie
 import { agentReferenceRouting } from '../../../../../store/slices/turn/agentReferenceRouting';
 import { stepConfigForAgent } from '../../../../../store/slices/turn/stepConfigForAgent';
 import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
-import { type EffortLevel, clampEffort } from '../../../utils/chat-constants';
+import { clampEffort } from '../../../utils/chat-constants';
 import { asEffortLevel, asProvider } from '../lib';
 import { resolveSessionSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 

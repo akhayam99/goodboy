@@ -1,6 +1,5 @@
 import { Divider, Input, Textarea } from '@goodboy/ui';
-import type { ProviderId } from '@goodboy/types';
-import type { EffortLevel } from '../../../chat/utils/chat-constants';
+import type { ProviderId, EffortLevel } from '@goodboy/types';
 import { OrchestratorModelPicker } from './OrchestratorModelPicker';
 
 type Props = {

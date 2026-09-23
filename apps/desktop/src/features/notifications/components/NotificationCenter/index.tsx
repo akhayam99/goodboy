@@ -15,7 +15,7 @@ import {
 import { useShallow } from 'zustand/react/shallow';
 import type { Notification, NotificationAction } from '@goodboy/db';
 import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
-import type { ModelEffort, ProviderId, TaskModelPreference } from '@goodboy/types';
+import type { EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
@@ -416,7 +416,7 @@ const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
       : availableProviderIds[0];
   const [providerId, setProviderId] = useState<ProviderId | undefined>(initialProvider);
   const [model, setModel] = useState('');
-  const [effort, setEffort] = useState<ModelEffort>('medium');
+  const [effort, setEffort] = useState<EffortLevel>('medium');
   if (providerId == null) {
     return null;
   }

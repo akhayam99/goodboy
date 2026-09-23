@@ -1,5 +1,5 @@
 import type {
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   WorkflowTaskDifficulty,
   WorkflowTaskType,
@@ -145,7 +145,7 @@ const requestedModel = ({ provider, id }: ModelParams): string | null => {
   return resolvedStoredModelId({ provider, selection: stored.selection });
 };
 
-const requestedEffort = (level: string | null): ModelEffort | null => {
+const requestedEffort = (level: string | null): EffortLevel | null => {
   if (level === null) {
     return null;
   }

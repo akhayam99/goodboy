@@ -1,9 +1,14 @@
-import type { AgentSourceKind, PrComment, ProviderId, PullRequestState } from '@goodboy/types';
+import type {
+  AgentSourceKind,
+  PrComment,
+  ProviderId,
+  PullRequestState,
+  EffortLevel,
+} from '@goodboy/types';
 import type { AgentKind } from '../session/agent-kind';
 import type { CommentThread } from '../github/comment-threads';
 import { prCommentLocation } from '../session/pr-comment-location';
 import { RESOLVER_KICKOFF_LABELS } from './utils/resolverKickoffLabels';
-import type { EffortLevel } from './utils/chat-constants';
 
 const TITLE_MAX = 60;
 
