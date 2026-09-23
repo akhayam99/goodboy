@@ -4,6 +4,16 @@
   margin-right: auto;
 }
 
+@media (min-width: 960px) and (max-width: 1079px) {
+  #extras .split {
+    display: block;
+  }
+
+  #extras .split > .splitBody > .ex-frame {
+    margin-top: 48px;
+  }
+}
+
 .ex-sec {
   padding: 16px 18px;
 }

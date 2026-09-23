@@ -715,6 +715,44 @@ section.block.alt {
   max-width: 760px;
 }
 
+@media (min-width: 960px) {
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    grid-template-rows: auto auto 1fr;
+    column-gap: 64px;
+  }
+
+  .split > .blockHead {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+  }
+
+  .split > .more {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+    align-self: start;
+  }
+
+  .split > .splitBody {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    min-width: 0;
+  }
+
+  .split > .splitBody,
+  .split > .splitBody > :first-child {
+    margin-top: 0;
+  }
+
+  .split.splitSticky > .blockHead {
+    position: sticky;
+    top: 96px;
+  }
+}
+
 .appframe {
   margin-top: 48px;
   background: #fff;
@@ -791,7 +829,6 @@ section.block.alt {
   font-size: 12px;
   color: var(--gray6);
 }
-
 
 .mockbtn {
   display: inline-block;
