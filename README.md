@@ -252,4 +252,5 @@ The best support is using it.
 ## License
 
 Source-available under [FSL-1.1-MIT](./LICENSE.md) © Amin Khayam. Use it for
-your own projects or at work, just don't turn it into a competing product.
+your own projects or at work, just don't offer it, or something built on it,
+as a competing product or service.
