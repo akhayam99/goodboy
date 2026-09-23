@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { CheckCircle2 } from 'lucide-react';
 import { KbdPill } from '@goodboy/ui';
 import { SHORTCUTS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
@@ -8,7 +9,14 @@ const READY_HINTS: ReadonlyArray<ShortcutId> = ['palette.open', 'session.new'];
 export const ReadyStep = () => {
   return (
     <div className="flex flex-col items-center gap-6 text-center">
-      <span className="flex size-14 items-center justify-center rounded-lg border border-success/30 bg-success/10 text-success">
+      <span
+        className={tokenCn(
+          'flex size-14 items-center justify-center rounded-lg border',
+          tokenTintClasses('success').borderSoft,
+          tokenTintClasses('success').bg,
+          'text-success',
+        )}
+      >
         <CheckCircle2 size={26} aria-hidden />
       </span>
 

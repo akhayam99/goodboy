@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import type { PullRequestState } from '@goodboy/types';
 import { AnchoredPopover, cn, ScrollFade, useDropdown } from '@goodboy/ui';
 import { Check, ChevronDown } from 'lucide-react';
@@ -55,7 +56,7 @@ export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
                 }}
                 className={cn(
                   'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted/50',
-                  p.number === selected && 'bg-primary/5',
+                  p.number === selected && tokenCn(tokenTintClasses('primary').bgSoft),
                 )}
               >
                 <PullRequestChip state={p.state} variant="icon" iconSize={12} />

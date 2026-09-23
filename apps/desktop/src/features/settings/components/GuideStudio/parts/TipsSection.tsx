@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Lightbulb } from 'lucide-react';
 import { SectionHeader } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -46,7 +47,13 @@ export const TipsSection = ({}: Props) => {
             className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-subtle/40 p-4 motion-safe:transition-colors hover:border-border hover:bg-subtle/60"
           >
             <div className="flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-warning/15 font-mono text-2xs font-semibold tabular-nums text-warning">
+              <span
+                className={tokenCn(
+                  'flex h-5 w-5 items-center justify-center rounded-full',
+                  tokenTintClasses('warning').bg,
+                  'font-mono text-2xs font-semibold tabular-nums text-warning',
+                )}
+              >
                 {i + 1}
               </span>
               <span className="text-sm font-semibold text-foreground">{t.title}</span>

@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, GitCommit, Search } from 'lucide-react';
 import { AnchoredPopover, Chip, cn, Divider, ScrollFade, useDropdown } from '@goodboy/ui';
@@ -387,7 +388,7 @@ export const DiffViewSelector = ({
                         className={cn(
                           'size-1.5 shrink-0 rounded-full ring-1 ring-inset',
                           isActive
-                            ? 'bg-primary ring-primary/40'
+                            ? tokenCn('bg-primary', tokenTintClasses('primary').ringStrong)
                             : 'bg-transparent ring-transparent',
                         )}
                       />

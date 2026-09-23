@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { type ReactNode, useRef } from 'react';
 import { GripVertical, Trash2 } from 'lucide-react';
 import { ClampedProse, cn, Input, Textarea, Tooltip } from '@goodboy/ui';
@@ -186,7 +187,11 @@ export const WorkflowStepCard = ({
       className={cn(
         'group relative rounded-lg border motion-safe:transition-colors',
         expanded
-          ? 'border-primary/40 bg-primary/[0.03] shadow-sm'
+          ? tokenCn(
+              tokenTintClasses('primary').border,
+              tokenTintClasses('primary').bgSoft,
+              'shadow-sm',
+            )
           : 'border-border-soft bg-subtle/40 hover:border-border hover:bg-muted/30',
         dragging && 'opacity-40',
       )}

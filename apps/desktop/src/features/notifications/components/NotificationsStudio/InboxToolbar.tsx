@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { CheckCheck, Mail, Trash2 } from 'lucide-react';
 import { CountToggle, InlineConfirm, SegmentedTabs } from '@goodboy/ui';
 import type { SegmentedTabOption } from '@goodboy/ui';
@@ -81,7 +82,11 @@ export const InboxToolbar = ({
       <button
         type="button"
         onClick={onArm}
-        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-danger/10 hover:text-danger"
+        className={tokenCn(
+          'inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground motion-safe:transition-colors',
+          tokenTintClasses('danger').hoverBg,
+          'hover:text-danger',
+        )}
       >
         <Trash2 size={ICON_SIZE.row} aria-hidden />
         Delete all

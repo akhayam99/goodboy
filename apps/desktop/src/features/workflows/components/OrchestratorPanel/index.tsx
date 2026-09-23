@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import {
   CircleHelp,
@@ -264,7 +265,10 @@ export const OrchestratorPanel = ({
                 type="button"
                 aria-expanded={isStopArmed}
                 onClick={() => setIsStopArmed(true)}
-                className="rounded-md px-1.5 py-0.5 text-2xs font-medium text-danger hover:bg-danger/10"
+                className={tokenCn(
+                  'rounded-md px-1.5 py-0.5 text-2xs font-medium text-danger',
+                  tokenTintClasses('danger').hoverBg,
+                )}
               >
                 Stop now
               </button>

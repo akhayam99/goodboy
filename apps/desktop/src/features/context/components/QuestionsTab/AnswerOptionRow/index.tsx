@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useId } from 'react';
 import { cn } from '@goodboy/ui';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
@@ -37,7 +38,11 @@ export const AnswerOptionRow = ({
         'transition-[color,background-color,border-color] duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         selected
-          ? 'border-primary/40 bg-primary/10 text-primary'
+          ? tokenCn(
+              tokenTintClasses('primary').border,
+              tokenTintClasses('primary').bg,
+              'text-primary',
+            )
           : 'border-border-soft bg-transparent text-foreground hover:border-border hover:bg-muted/40',
       )}
     >

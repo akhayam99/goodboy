@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useRef, useState } from 'react';
 import { Bell, ChevronRight, RotateCcw, Trash2, X } from 'lucide-react';
 import {
@@ -125,7 +126,11 @@ export const NotificationCenter = () => {
             <button
               type="button"
               onClick={() => void clearNotifications()}
-              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
+              className={tokenCn(
+                'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors',
+                tokenTintClasses('danger').hoverBg,
+                'hover:text-danger',
+              )}
               aria-label="Clear all notifications"
               title="Clear all notifications"
             >

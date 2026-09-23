@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AnchoredPopover,
@@ -156,7 +157,12 @@ export const IssuePicker = ({
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      className={cn('bg-subtle', isErrorState && !hasOptions && 'border-danger/40 bg-danger/5')}
+      className={cn(
+        'bg-subtle',
+        isErrorState &&
+          !hasOptions &&
+          tokenCn(tokenTintClasses('danger').border, tokenTintClasses('danger').bgSoft),
+      )}
       anchorClassName="w-full"
       trigger={
         <div
@@ -256,7 +262,7 @@ export const IssuePicker = ({
                     }}
                     className={cn(
                       'flex cursor-pointer flex-col gap-0.5 px-2.5 py-1.5',
-                      highlightIdx === index && 'bg-primary/10',
+                      highlightIdx === index && tokenCn(tokenTintClasses('primary').bg),
                     )}
                   >
                     <div className="flex items-center gap-2 text-sm">

@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PrComment, PullRequestState } from '@goodboy/types';
 import { Button, EmptyState, cn } from '@goodboy/ui';
@@ -86,7 +87,9 @@ export const PrConversation = ({
               }}
               className={cn(
                 'rounded-lg transition-shadow',
-                tid && tid === flashThreadId ? 'ring-2 ring-primary/60' : '',
+                tid && tid === flashThreadId
+                  ? tokenCn('ring-2', tokenTintClasses('primary').ringStrong)
+                  : '',
               )}
             >
               <ConversationThread

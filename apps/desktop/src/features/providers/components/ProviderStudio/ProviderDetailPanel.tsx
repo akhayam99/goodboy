@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, EmptyState, SectionHeader, StatusDot, Tooltip } from '@goodboy/ui';
 import { RotateCw, type LucideIcon } from 'lucide-react';
@@ -199,7 +200,7 @@ function ConnectedAccount({
             emphasis="outline"
             size="sm"
             onClick={onConfirmDisconnect}
-            className="bg-danger/10 font-semibold"
+            className={tokenCn(tokenTintClasses('danger').bg, 'font-semibold')}
           >
             Confirm
           </Button>
@@ -215,7 +216,12 @@ function ConnectedAccount({
         <button
           type="button"
           onClick={onAskDisconnect}
-          className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger"
+          className={tokenCn(
+            'rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors',
+            tokenTintClasses('danger').hoverBorder,
+            tokenTintClasses('danger').hoverBg,
+            'hover:text-danger',
+          )}
         >
           Disconnect
         </button>

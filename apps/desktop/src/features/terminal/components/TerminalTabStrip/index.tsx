@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Plus, X } from 'lucide-react';
 import { cn, StatusDot, Tooltip, type Tone } from '@goodboy/ui';
 import type {
@@ -42,7 +43,11 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
             className={cn(
               'group flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs motion-safe:transition-colors',
               active
-                ? 'bg-primary/10 text-foreground ring-1 ring-primary/30'
+                ? tokenCn(
+                    tokenTintClasses('primary').bg,
+                    'text-foreground ring-1',
+                    tokenTintClasses('primary').ring,
+                  )
                 : 'text-muted-foreground hover:bg-muted/50',
             )}
           >

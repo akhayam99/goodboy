@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -24,7 +25,11 @@ export const ReleaseToast = ({ onOpenChangelog }: Props) => {
     <div
       role="status"
       data-testid="release-toast"
-      className="fixed bottom-12 right-3 z-toast flex max-w-96 items-start gap-3 rounded-lg border border-primary/25 bg-elevated px-3 py-3 shadow-lg"
+      className={tokenCn(
+        'fixed bottom-12 right-3 z-toast flex max-w-96 items-start gap-3 rounded-lg border',
+        tokenTintClasses('primary').borderSoft,
+        'bg-elevated px-3 py-3 shadow-lg',
+      )}
     >
       <CONCEPT_ICONS.changelog
         size={ICON_SIZE.control}

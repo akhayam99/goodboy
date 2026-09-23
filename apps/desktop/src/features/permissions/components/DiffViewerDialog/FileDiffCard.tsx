@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronRight, ExternalLink, MessageSquarePlus } from 'lucide-react';
 import { Chip, cn, type DiffLayoutMode, Divider, EmptyState, Tooltip } from '@goodboy/ui';
@@ -362,7 +363,11 @@ export const FileDiffCard = ({
               className={cn(
                 'inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-3xs font-medium transition-colors',
                 isReviewed
-                  ? 'border-success/40 bg-success/10 text-success'
+                  ? tokenCn(
+                      tokenTintClasses('success').border,
+                      tokenTintClasses('success').bg,
+                      'text-success',
+                    )
                   : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >
@@ -533,9 +538,9 @@ export const FileDiffCard = ({
                         <tr
                           onMouseEnter={() => extendDrag({ oldAnchor, newAnchor })}
                           className={cn(
-                            line.kind === 'add' && 'bg-success/[0.07]',
-                            line.kind === 'del' && 'bg-danger/[0.07]',
-                            selecting && 'bg-primary/15',
+                            line.kind === 'add' && tokenCn(tokenTintClasses('success').bgSoft),
+                            line.kind === 'del' && tokenCn(tokenTintClasses('danger').bgSoft),
+                            selecting && tokenCn(tokenTintClasses('primary').bg),
                           )}
                         >
                           <td
@@ -571,11 +576,11 @@ export const FileDiffCard = ({
                                 oldAnchor !== null &&
                                 'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
                               oldRangeCommented
-                                ? 'border-warning/60'
+                                ? tokenCn(tokenTintClasses('warning').border)
                                 : line.kind === 'add'
-                                  ? 'border-success/50'
+                                  ? tokenCn(tokenTintClasses('success').border)
                                   : line.kind === 'del'
-                                    ? 'border-danger/50'
+                                    ? tokenCn(tokenTintClasses('danger').border)
                                     : 'border-transparent',
                             )}
                           >

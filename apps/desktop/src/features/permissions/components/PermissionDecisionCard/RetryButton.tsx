@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { cn } from '@goodboy/ui';
@@ -46,7 +47,12 @@ export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
       onClick={() => void handle()}
       title="Re-run the turn so the agent retries the tool with the new rule in place"
       className={cn(
-        'flex items-center gap-1 rounded border border-primary/40 px-2 py-0.5 text-2xs font-medium text-primary transition-colors hover:bg-primary/10',
+        tokenCn(
+          'flex items-center gap-1 rounded border',
+          tokenTintClasses('primary').border,
+          'px-2 py-0.5 text-2xs font-medium text-primary transition-colors',
+          tokenTintClasses('primary').hoverBg,
+        ),
         disabled && 'cursor-not-allowed opacity-50',
       )}
     >

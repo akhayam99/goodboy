@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnchoredPopover, cn, ScrollFade, Tooltip, useDropdown } from '@goodboy/ui';
 import { ChevronDown } from 'lucide-react';
@@ -205,7 +206,9 @@ export const BranchCombobox = ({
                   }}
                   className={cn(
                     'flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-sm font-mono',
-                    highlightIdx === i ? 'bg-primary/10 text-foreground' : 'text-muted-foreground',
+                    highlightIdx === i
+                      ? tokenCn(tokenTintClasses('primary').bg, 'text-foreground')
+                      : 'text-muted-foreground',
                   )}
                 >
                   <span className="min-w-0 flex-1 truncate">{b.name}</span>

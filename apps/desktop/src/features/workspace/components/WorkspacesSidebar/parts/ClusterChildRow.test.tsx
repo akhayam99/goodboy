@@ -6,6 +6,10 @@ import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 
 vi.mock('@goodboy/ui', () => ({
   cn: (...a: unknown[]) => a.filter(Boolean).join(' '),
+  tintClasses: (tone: string) => ({
+    bg: `bg-${tone}/10`,
+    border: `border-${tone}/40`,
+  }),
   StatusDot: () => null,
 }));
 
@@ -61,7 +65,7 @@ describe('ClusterChildRow unread border', () => {
     const { button } = renderRow(buildAgent({ id: 'c1' as AgentId, lastFinishedAt: NOW }), {
       isSelected: false,
     });
-    expect(button.className).toContain('border-warning/70');
+    expect(button.className).toContain('border-warning/40');
     expect(button.className).not.toContain('bg-warning/5');
   });
 
@@ -70,26 +74,26 @@ describe('ClusterChildRow unread border', () => {
       isSelected: true,
       isTaskActive: true,
     });
-    expect(button.className).not.toContain('border-warning/70');
+    expect(button.className).not.toContain('border-warning/40');
   });
 
   it('hides the warning border when finished work was already viewed', () => {
     const { button } = renderRow(
       buildAgent({ id: 'c1' as AgentId, lastFinishedAt: NOW, lastViewedAt: NOW }),
     );
-    expect(button.className).not.toContain('border-warning/70');
+    expect(button.className).not.toContain('border-warning/40');
   });
 
   it('hides the warning border for a skipped child', () => {
     const { button } = renderRow(
       buildAgent({ id: 'c1' as AgentId, status: 'skipped', lastFinishedAt: NOW }),
     );
-    expect(button.className).not.toContain('border-warning/70');
+    expect(button.className).not.toContain('border-warning/40');
   });
 
   it('hides the warning border for a child that has not finished', () => {
     const { button } = renderRow(buildAgent({ id: 'c1' as AgentId, status: 'running' }));
-    expect(button.className).not.toContain('border-warning/70');
+    expect(button.className).not.toContain('border-warning/40');
   });
 
   it('selected wins over unread even when the task is inactive', () => {
@@ -97,7 +101,7 @@ describe('ClusterChildRow unread border', () => {
       isSelected: true,
       isTaskActive: false,
     });
-    expect(button.className).not.toContain('border-warning/70');
+    expect(button.className).not.toContain('border-warning/40');
   });
 
   it('invokes onSelect when clicked', () => {

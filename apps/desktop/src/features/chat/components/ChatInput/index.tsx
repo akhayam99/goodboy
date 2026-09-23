@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useRef, useCallback, useEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Paperclip, Send, Square } from 'lucide-react';
 import { cn, Divider, formatUsd, Textarea, Tooltip } from '@goodboy/ui';
@@ -430,19 +431,25 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           data-drop-composer
           className={cn(
             'relative flex flex-col rounded-md ring-1 transition-all focus-within:ring-2 focus-within:ring-focus-ring',
-            isDragging ? 'bg-primary/5 ring-2 ring-primary' : 'bg-subtle/80 ring-border-soft',
+            isDragging
+              ? tokenCn(tokenTintClasses('primary').bgSoft, 'ring-2 ring-primary')
+              : 'bg-subtle/80 ring-border-soft',
           )}
         >
           <div
-            className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md bg-primary/5 transition-opacity duration-150 ${
-              isDragging ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={tokenCn(
+              'pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md transition-opacity duration-150',
+              tokenTintClasses('primary').bgSoft,
+              isDragging ? 'opacity-100' : 'opacity-0',
+            )}
             aria-hidden
           >
             <div
-              className={`flex items-center gap-2 rounded-full border border-border-soft bg-background px-4 py-1.5 text-xs font-medium text-primary ring-1 ring-primary/30 transition-transform duration-150 ${
-                isDragging ? 'scale-100' : 'scale-95'
-              }`}
+              className={tokenCn(
+                'flex items-center gap-2 rounded-full border border-border-soft bg-background px-4 py-1.5 text-xs font-medium text-primary ring-1 transition-transform duration-150',
+                tokenTintClasses('primary').ring,
+                isDragging ? 'scale-100' : 'scale-95',
+              )}
             >
               <Paperclip size={ICON_SIZE.control} aria-hidden />
               drop to attach
@@ -494,7 +501,12 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   type="button"
                   onClick={() => void cancelCurrentTurn(session.id)}
                   aria-label="Cancel turn"
-                  className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg bg-danger/10 text-danger transition-colors hover:bg-danger/20"
+                  className={tokenCn(
+                    'absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg',
+                    tokenTintClasses('danger').bg,
+                    'text-danger transition-colors',
+                    tokenTintClasses('danger').hoverBg,
+                  )}
                 >
                   <Square size={ICON_SIZE.control} aria-hidden fill="currentColor" />
                 </button>

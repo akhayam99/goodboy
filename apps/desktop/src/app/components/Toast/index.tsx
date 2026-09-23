@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AlertCircle, AlertTriangle, Bell, CheckCircle2, Info, X } from 'lucide-react';
 import { cn, Tooltip } from '@goodboy/ui';
@@ -124,7 +125,12 @@ function ErrorOverflowChip({ count }: { count: number }) {
     <button
       type="button"
       onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-notifications'))}
-      className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-danger/25 bg-elevated px-3 py-1 text-2xs font-medium text-danger shadow-lg motion-safe:transition-colors hover:bg-danger/10"
+      className={tokenCn(
+        'pointer-events-auto inline-flex items-center gap-1.5 rounded-full border',
+        tokenTintClasses('danger').borderSoft,
+        'bg-elevated px-3 py-1 text-2xs font-medium text-danger shadow-lg motion-safe:transition-colors',
+        tokenTintClasses('danger').hoverBg,
+      )}
     >
       <Bell size={11} aria-hidden />
       <span className="tabular-nums">+{count} more errors</span>
@@ -146,22 +152,22 @@ const KIND_ICON = {
 
 const KIND_CLASSES = {
   error: {
-    card: 'border-danger/25 bg-elevated',
+    card: tokenCn(tokenTintClasses('danger').borderSoft, 'bg-elevated'),
     strip: 'bg-danger',
     icon: 'text-danger',
   },
   warning: {
-    card: 'border-warning/25 bg-elevated',
+    card: tokenCn(tokenTintClasses('warning').borderSoft, 'bg-elevated'),
     strip: 'bg-warning',
     icon: 'text-warning',
   },
   success: {
-    card: 'border-success/25 bg-elevated',
+    card: tokenCn(tokenTintClasses('success').borderSoft, 'bg-elevated'),
     strip: 'bg-success',
     icon: 'text-success',
   },
   info: {
-    card: 'border-info/25 bg-elevated',
+    card: tokenCn(tokenTintClasses('info').borderSoft, 'bg-elevated'),
     strip: 'bg-info',
     icon: 'text-info',
   },

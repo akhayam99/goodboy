@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect } from 'react';
 import { Check, GitBranch, Pencil } from 'lucide-react';
 import { AnchoredPopover, Tooltip, cn, useCopyLink, useDropdown } from '@goodboy/ui';
@@ -42,7 +43,13 @@ export const ProjectBranchChip = ({ sessionId, mountId, branch, canSwitch }: Pro
       className={cn(
         VITAL_CHIP_FRAME,
         'min-w-0 shrink',
-        copied ? 'border-success/30 bg-success/10 text-success' : VITAL_CHIP_HOVER,
+        copied
+          ? tokenCn(
+              tokenTintClasses('success').borderSoft,
+              tokenTintClasses('success').bg,
+              'text-success',
+            )
+          : VITAL_CHIP_HOVER,
       )}
     >
       <Tooltip content={copied ? 'Copied' : 'Copy the branch name'}>

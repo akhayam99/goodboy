@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Check, ChevronRight, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { Notification } from '@goodboy/db';
@@ -126,7 +127,11 @@ export const NotificationGroupRow = ({
                 type="button"
                 onClick={onDismiss}
                 aria-label={`Dismiss "${latest.title}" group`}
-                className="rounded p-1 text-muted-foreground hover:bg-danger/10 hover:text-danger"
+                className={tokenCn(
+                  'rounded p-1 text-muted-foreground',
+                  tokenTintClasses('danger').hoverBg,
+                  'hover:text-danger',
+                )}
               >
                 <Trash2 size={ICON_SIZE.row} aria-hidden />
               </button>

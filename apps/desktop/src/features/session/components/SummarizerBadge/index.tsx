@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import { AlertTriangle, RotateCw } from 'lucide-react';
 import { cn } from '@goodboy/ui';
@@ -28,9 +29,15 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
         title={canRetry ? `${errorTitle}, click to retry` : errorTitle}
         aria-label={canRetry ? 'Retry summarizer' : 'Summarizer failed'}
         className={cn(
-          'inline-flex h-6 shrink-0 items-center gap-1 rounded-md bg-danger/10 px-2 text-2xs text-danger motion-safe:transition-colors',
+          tokenCn(
+            'inline-flex h-6 shrink-0 items-center gap-1 rounded-md',
+            tokenTintClasses('danger').bg,
+            'px-2 text-2xs text-danger motion-safe:transition-colors',
+          ),
           retrying && 'animate-border-pulse',
-          canRetry ? 'hover:bg-danger/15 hover:text-on-tone' : 'cursor-not-allowed opacity-70',
+          canRetry
+            ? tokenCn(tokenTintClasses('danger').hoverBg, 'hover:text-on-tone')
+            : 'cursor-not-allowed opacity-70',
         )}
       >
         <AlertTriangle size={10} aria-hidden />

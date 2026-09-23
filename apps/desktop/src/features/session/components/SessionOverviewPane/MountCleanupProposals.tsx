@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import type { MountCleanupProposal, SessionId } from '@goodboy/types';
 import { Button, formatError } from '@goodboy/ui';
@@ -67,7 +68,11 @@ export const MountCleanupProposals = ({ sessionId }: Props) => {
               size="sm"
               disabled={busy !== null}
               onClick={() => void resolve(proposal, 'remove')}
-              className="text-danger hover:bg-danger/10 hover:text-danger"
+              className={tokenCn(
+                'text-danger',
+                tokenTintClasses('danger').hoverBg,
+                'hover:text-danger',
+              )}
             >
               Remove worktree
             </Button>

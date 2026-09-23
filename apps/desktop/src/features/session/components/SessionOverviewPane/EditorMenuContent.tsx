@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { cn, type OverflowMenuItem } from '@goodboy/ui';
 
 type Props = {
@@ -47,7 +48,11 @@ export const EditorMenuContent = ({ items, onClose }: Props) => (
             item.disabled === true
               ? 'cursor-not-allowed text-muted-foreground'
               : item.destructive === true
-                ? 'text-danger/90 hover:bg-danger/10 hover:text-danger'
+                ? tokenCn(
+                    tokenTintClasses('danger').text,
+                    tokenTintClasses('danger').hoverBg,
+                    'hover:text-danger',
+                  )
                 : 'text-foreground hover:bg-muted hover:text-foreground',
           )}
         >

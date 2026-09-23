@@ -16,6 +16,7 @@ type Rule = {
 };
 
 const NO_ALLOW: ReadonlyArray<string> = [];
+const TONE_ALPHA_ALLOW = ['packages/ui/src/tint.ts', 'packages/ui/src/components/Button.tsx'];
 
 const RULES = [
   {
@@ -28,6 +29,12 @@ const RULES = [
       /focus-visible:ring-1(?!\d)|focus-visible:ring-\[|focus-(?:visible|within):ring-primary\/\d+/,
     allow: NO_ALLOW,
     why: 'focus treatment uses the two-pixel focus-ring token',
+  },
+  {
+    pattern:
+      /(?:bg|text|border|ring|divide)-(?:primary|info|success|warning|danger|merged|draft)\/(?:\d+|\[[^\]]+\])/,
+    allow: TONE_ALPHA_ALLOW,
+    why: 'tone alpha is owned by tintClasses and solid button hover treatment',
   },
 ] satisfies ReadonlyArray<Rule>;
 

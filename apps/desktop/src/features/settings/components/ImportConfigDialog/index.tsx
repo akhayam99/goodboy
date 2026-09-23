@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button, Dialog } from '@goodboy/ui';
 import type { ConfigBundleImportResult } from '@goodboy/types';
@@ -40,7 +41,13 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
       footer={<Button onClick={onClose}>Close</Button>}
     >
       {error ? (
-        <div className="flex items-start gap-2 rounded-r-md border-l-2 border-danger/40 p-3">
+        <div
+          className={tokenCn(
+            'flex items-start gap-2 rounded-r-md border-l-2',
+            tokenTintClasses('danger').border,
+            'p-3',
+          )}
+        >
           <AlertCircle
             size={ICON_SIZE.control}
             aria-hidden
@@ -61,7 +68,12 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
           ))}
         </dl>
       ) : result ? (
-        <ul className="divide-y divide-border-soft/50 overflow-hidden rounded-md border border-danger/20">
+        <ul
+          className={tokenCn(
+            'divide-y divide-border-soft/50 overflow-hidden rounded-md border',
+            tokenTintClasses('danger').borderSoft,
+          )}
+        >
           {result.errors.map((e) => (
             <li key={e.field} className="flex items-start gap-2 px-3 py-2 text-xs">
               <AlertCircle

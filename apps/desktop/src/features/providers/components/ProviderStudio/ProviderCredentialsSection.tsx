@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Button,
@@ -143,7 +144,11 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
                     type="button"
                     aria-label={`Remove ${c.label}`}
                     onClick={() => setArmedId(c.id)}
-                    className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-danger/10 hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring group-hover:opacity-100"
+                    className={tokenCn(
+                      'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity',
+                      tokenTintClasses('danger').hoverBg,
+                      'hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring group-hover:opacity-100',
+                    )}
                   >
                     <Trash2 size={ICON_SIZE.row} aria-hidden />
                   </button>

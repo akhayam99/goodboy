@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useState } from 'react';
 import { Smartphone, Unplug } from 'lucide-react';
 import { Button, InlineConfirm } from '@goodboy/ui';
@@ -15,7 +16,13 @@ export const PairedDevices = ({ enrolled, revoking, onRevoke, onPairAnother }: P
 
   return (
     <div className="flex w-full flex-col items-center gap-3">
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-2.5 py-0.5 text-2xs font-semibold text-success">
+      <span
+        className={tokenCn(
+          'inline-flex items-center gap-1.5 rounded-full',
+          tokenTintClasses('success').bg,
+          'px-2.5 py-0.5 text-2xs font-semibold text-success',
+        )}
+      >
         <span aria-hidden className="size-1.5 rounded-full bg-success" />
         {enrolled} paired {enrolled === 1 ? 'device' : 'devices'}
       </span>

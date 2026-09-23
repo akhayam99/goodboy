@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Pencil } from 'lucide-react';
 import { Textarea, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -45,7 +46,9 @@ export const CustomAnswerField = ({
       className={cn(
         ROW_FRAME,
         'flex-col gap-2 motion-safe:animate-fade-in',
-        filled ? 'border-primary/40 bg-primary/10' : 'border-border-soft',
+        filled
+          ? tokenCn(tokenTintClasses('primary').border, tokenTintClasses('primary').bg)
+          : 'border-border-soft',
       )}
     >
       <span

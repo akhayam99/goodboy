@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Clock, Paperclip, X } from 'lucide-react';
 import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
 import type { QueuedTurn } from '../lib';
@@ -41,7 +42,13 @@ export const QueuedMessages = ({
             key={item.id}
             className="group flex items-center gap-2 rounded-md bg-background/60 px-1.5 py-1"
           >
-            <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/15 text-2xs font-medium text-primary">
+            <span
+              className={tokenCn(
+                'flex size-4 shrink-0 items-center justify-center rounded-full',
+                tokenTintClasses('primary').bg,
+                'text-2xs font-medium text-primary',
+              )}
+            >
               {i + 1}
             </span>
             <button

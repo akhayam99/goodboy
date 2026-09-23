@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import {
@@ -139,7 +140,11 @@ export const StorageSection = () => {
                 size="sm"
                 onClick={() => setConfirmTarget('transcripts')}
                 disabled={archivedTranscriptRows === 0}
-                className="text-danger hover:bg-danger/10 hover:text-danger"
+                className={tokenCn(
+                  'text-danger',
+                  tokenTintClasses('danger').hoverBg,
+                  'hover:text-danger',
+                )}
               >
                 {PRUNE_LABEL}
               </Button>
@@ -178,7 +183,11 @@ export const StorageSection = () => {
                 size="sm"
                 onClick={() => setConfirmTarget('worktrees')}
                 disabled={worktrees.length === 0}
-                className="text-danger hover:bg-danger/10 hover:text-danger"
+                className={tokenCn(
+                  'text-danger',
+                  tokenTintClasses('danger').hoverBg,
+                  'hover:text-danger',
+                )}
               >
                 {REMOVE_LABEL}
               </Button>

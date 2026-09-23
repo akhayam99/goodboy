@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { ArrowUpRight, Check, RotateCcw, Trash2 } from 'lucide-react';
 import { Chip, cn, Tooltip, type Tone } from '@goodboy/ui';
 import type { AgentId, DiffComment } from '@goodboy/types';
@@ -23,10 +24,14 @@ export const CommentItem = ({
   const agentName = comment.consumedByAgentId ? getAgentName(comment.consumedByAgentId) : undefined;
   const containerClass =
     comment.status === 'resolved'
-      ? 'border-success/40 bg-success/5 opacity-60'
+      ? tokenCn(
+          tokenTintClasses('success').border,
+          tokenTintClasses('success').bgSoft,
+          'opacity-60',
+        )
       : comment.status === 'consumed'
-        ? 'border-info/40 bg-info/5'
-        : 'border-warning bg-warning/5';
+        ? tokenCn(tokenTintClasses('info').border, tokenTintClasses('info').bgSoft)
+        : tokenCn('border-warning', tokenTintClasses('warning').bgSoft);
   const statusPill: { label: string; tone: Tone } | null =
     comment.status === 'resolved'
       ? { label: 'resolved', tone: 'success' }
@@ -103,7 +108,11 @@ export const CommentItem = ({
               <button
                 type="button"
                 onClick={() => onViewAgent(comment.consumedByAgentId as AgentId)}
-                className="inline-flex items-center gap-0.5 rounded-sm px-1 py-0.5 text-info hover:bg-info/10 hover:text-info"
+                className={tokenCn(
+                  'inline-flex items-center gap-0.5 rounded-sm px-1 py-0.5 text-info',
+                  tokenTintClasses('info').hoverBg,
+                  'hover:text-info',
+                )}
               >
                 <span className="font-medium">{agentName}</span>
                 <ArrowUpRight size={9} aria-hidden />

@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { cn } from '@goodboy/ui';
 import { ArrowDown, Plus } from 'lucide-react';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -31,7 +32,11 @@ export const StepFlowConnector = ({ index, interior, dragging, active }: Props) 
           </div>
         ) : (
           <span
-            className="flex size-5 items-center justify-center rounded-full border border-dashed border-primary/40 text-primary/50"
+            className={tokenCn(
+              'flex size-5 items-center justify-center rounded-full border border-dashed',
+              tokenTintClasses('primary').border,
+              tokenTintClasses('primary').text,
+            )}
             aria-hidden
           >
             <Plus size={11} />

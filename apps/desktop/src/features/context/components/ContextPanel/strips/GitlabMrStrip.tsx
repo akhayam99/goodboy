@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { ArrowUpRight, GitMerge } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -48,7 +49,13 @@ export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
               </span>
               <span className="text-2xs text-muted-foreground">{mr.state}</span>
               {mr.draft ? (
-                <span className="rounded bg-warning/15 px-1 py-px text-3xs font-medium uppercase tracking-wide text-warning">
+                <span
+                  className={tokenCn(
+                    'rounded',
+                    tokenTintClasses('warning').bg,
+                    'px-1 py-px text-3xs font-medium uppercase tracking-wide text-warning',
+                  )}
+                >
                   draft
                 </span>
               ) : null}

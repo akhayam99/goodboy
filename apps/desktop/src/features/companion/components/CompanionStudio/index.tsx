@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlaskConical, Smartphone } from 'lucide-react';
 import { Divider, formatError, ScrollFade } from '@goodboy/ui';
@@ -130,7 +131,14 @@ export const CompanionStudio = ({ onClose }: Props) => {
               </div>
             )}
 
-            <div className="flex max-w-[20rem] items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-left">
+            <div
+              className={tokenCn(
+                'flex max-w-[20rem] items-start gap-2 rounded-lg border',
+                tokenTintClasses('warning').borderSoft,
+                tokenTintClasses('warning').bg,
+                'px-3 py-2 text-left',
+              )}
+            >
               <FlaskConical
                 size={ICON_SIZE.row}
                 aria-hidden

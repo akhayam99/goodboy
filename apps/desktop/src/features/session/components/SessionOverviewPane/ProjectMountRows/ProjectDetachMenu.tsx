@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AnchoredPopover, Button, IconButton, cn, formatError, useDropdown } from '@goodboy/ui';
@@ -442,7 +443,13 @@ export const ProjectDetachMenu = ({
                 setConfirming('detach');
                 assess();
               }}
-              className="flex w-full items-center px-2.5 py-1.5 text-left text-danger/90 motion-safe:transition-colors hover:bg-danger/10 hover:text-danger"
+              className={tokenCn(
+                'flex w-full items-center px-2.5 py-1.5 text-left',
+                tokenTintClasses('danger').text,
+                'motion-safe:transition-colors',
+                tokenTintClasses('danger').hoverBg,
+                'hover:text-danger',
+              )}
             >
               Detach project
             </button>

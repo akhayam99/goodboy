@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { cn } from '@goodboy/ui';
 
 type Props = {
@@ -21,8 +22,12 @@ export const DiffStat = ({ additions, deletions, size = 'sm' }: Props) => {
       data-testid="diff-stat"
       className={cn('flex shrink-0 items-center gap-1 tabular-nums', SIZE_CLASS[size])}
     >
-      {additions === 0 ? null : <span className="text-success/80">{`+${additions}`}</span>}
-      {deletions === 0 ? null : <span className="text-danger/80">{`-${deletions}`}</span>}
+      {additions === 0 ? null : (
+        <span className={tokenCn(tokenTintClasses('success').text)}>{`+${additions}`}</span>
+      )}
+      {deletions === 0 ? null : (
+        <span className={tokenCn(tokenTintClasses('danger').text)}>{`-${deletions}`}</span>
+      )}
     </span>
   );
 };

@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { InlineConfirm } from '@goodboy/ui';
@@ -16,7 +17,13 @@ export const WorkflowDeleteButton = ({ onConfirm }: Props) => {
         type="button"
         onClick={() => setIsArmed(true)}
         aria-expanded={isArmed}
-        className="inline-flex min-h-7 shrink-0 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-danger/70 transition-colors hover:bg-danger/10 hover:text-danger"
+        className={tokenCn(
+          'inline-flex min-h-7 shrink-0 items-center gap-1 rounded-md px-2 text-2xs font-semibold',
+          tokenTintClasses('danger').text,
+          'transition-colors',
+          tokenTintClasses('danger').hoverBg,
+          'hover:text-danger',
+        )}
       >
         <Trash2 size={ICON_SIZE.control} aria-hidden />
         Delete

@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { StatusDot, cn, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import { Check, Clock } from 'lucide-react';
 import type { Agent } from '@goodboy/types';
@@ -37,7 +38,12 @@ export const ClusterChildRow = ({
     child.status === 'running' ? (
       <StatusDot tone="info" size="sm" pulsing />
     ) : child.status === 'completed' ? (
-      <span className="flex size-3 items-center justify-center rounded-full bg-success/15">
+      <span
+        className={tokenCn(
+          'flex size-3 items-center justify-center rounded-full',
+          tokenTintClasses('success').bg,
+        )}
+      >
         <Check size={8} className="text-success" aria-hidden />
       </span>
     ) : child.status === 'failed' ? (
@@ -53,7 +59,7 @@ export const ClusterChildRow = ({
       onMouseLeave={hoverMarkViewed.onMouseLeave}
       className={cn(
         'flex w-full items-center gap-2 rounded border-l-2 border-transparent px-2 py-1 text-2xs font-medium transition-colors',
-        hasUnread && !isSelected && 'border-warning/70',
+        hasUnread && !isSelected && tokenCn(tokenTintClasses('warning').border),
         isSelected
           ? 'bg-elevated text-foreground'
           : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
@@ -66,7 +72,11 @@ export const ClusterChildRow = ({
       <span className="min-w-0 flex-1 truncate text-left">{child.name}</span>
       {startAttempt > 1 && child.status !== 'completed' && child.status !== 'skipped' ? (
         <span
-          className="shrink-0 rounded bg-warning/15 px-1 py-0.5 text-2xs font-normal text-warning"
+          className={tokenCn(
+            'shrink-0 rounded',
+            tokenTintClasses('warning').bg,
+            'px-1 py-0.5 text-2xs font-normal text-warning',
+          )}
           title={`this cluster agent failed to start and is on attempt ${startAttempt}`}
         >
           attempt {startAttempt}

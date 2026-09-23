@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import { ChevronDown, RotateCcw } from 'lucide-react';
 import {
@@ -308,11 +309,16 @@ export const RoutingPicker = ({
                   : 'flex w-full rounded-md border px-2 py-1.5 text-left',
                 variant === 'field' &&
                   (open
-                    ? 'border-primary bg-primary/5'
+                    ? tokenCn('border-primary', tokenTintClasses('primary').bgSoft)
                     : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50'),
                 variant === 'pill' &&
                   (isOverridden
-                    ? 'bg-warning/10 ring-1 ring-warning/30 hover:bg-warning/15'
+                    ? tokenCn(
+                        tokenTintClasses('warning').bg,
+                        'ring-1',
+                        tokenTintClasses('warning').ring,
+                        tokenTintClasses('warning').hoverBg,
+                      )
                     : 'bg-subtle hover:bg-muted'),
                 disabled && 'cursor-not-allowed opacity-60',
               )}

@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Plus } from 'lucide-react';
@@ -302,7 +303,11 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                   width: lasso.rect.width,
                   height: lasso.rect.height,
                 }}
-                className="pointer-events-none absolute z-10 rounded-sm border border-primary/60 bg-primary/10"
+                className={tokenCn(
+                  'pointer-events-none absolute z-10 rounded-sm border',
+                  tokenTintClasses('primary').border,
+                  tokenTintClasses('primary').bg,
+                )}
               />
             )}
           </div>

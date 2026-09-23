@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { cn } from '@goodboy/ui';
 import type { Agent, ProviderId, ProviderName } from '@goodboy/types';
 import type { AgentKind } from '../../../session/agent-kind';
@@ -41,7 +42,9 @@ export const WorkflowStepGraphNode = ({
       aria-pressed={isSelected}
       className={cn(
         'flex min-h-8 min-w-0 flex-1 items-center gap-1.5 rounded-lg border bg-muted/30 px-2 py-1 text-left transition-colors hover:bg-muted/60',
-        isSelected ? 'border-primary/50 bg-primary/[0.06]' : 'border-border-soft',
+        isSelected
+          ? tokenCn(tokenTintClasses('primary').border, tokenTintClasses('primary').bgSoft)
+          : 'border-border-soft',
       )}
     >
       <span className="sr-only">{marker}</span>

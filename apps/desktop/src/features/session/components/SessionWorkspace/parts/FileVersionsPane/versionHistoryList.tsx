@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { RotateCcw, Trash2 } from 'lucide-react';
 import { Button, EmptyState, Tooltip } from '@goodboy/ui';
 import type { FileVersion, FileVersionId } from '@goodboy/types';
@@ -74,7 +75,11 @@ export const VersionHistoryList = ({
                   onClick={() => onDeleteVersion(version.id)}
                   disabled={isDeleting || restoringVersionId != null}
                   aria-label="Delete this version"
-                  className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
+                  className={tokenCn(
+                    'inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors',
+                    tokenTintClasses('danger').hoverBg,
+                    'hover:text-danger disabled:cursor-not-allowed disabled:opacity-60',
+                  )}
                 >
                   <Trash2 size={ICON_SIZE.row} aria-hidden />
                 </button>

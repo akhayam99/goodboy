@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
@@ -389,7 +390,13 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
                       <button
                         type="button"
                         onClick={() => void markAllAgentsSeen(sessionId)}
-                        className="inline-flex h-6 items-center gap-1 rounded-full bg-primary/10 px-2.5 text-2xs font-medium text-primary motion-safe:transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                        className={tokenCn(
+                          'inline-flex h-6 items-center gap-1 rounded-full',
+                          tokenTintClasses('primary').bg,
+                          'px-2.5 text-2xs font-medium text-primary motion-safe:transition-colors',
+                          tokenTintClasses('primary').hoverBg,
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                        )}
                       >
                         <CheckCheck size={ICON_SIZE.row} aria-hidden />
                         Mark all seen

@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button, formatError, Input, SegmentedTabs } from '@goodboy/ui';
@@ -176,7 +177,13 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
       )}
 
       {needsConfirmation ? (
-        <div className="flex items-start gap-2 rounded-md bg-warning/10 p-3 text-xs">
+        <div
+          className={tokenCn(
+            'flex items-start gap-2 rounded-md',
+            tokenTintClasses('warning').bg,
+            'p-3 text-xs',
+          )}
+        >
           <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0 text-warning" />
           <div className="flex flex-col gap-1">
             <ul className="list-disc pl-4 text-muted-foreground">
@@ -184,7 +191,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
               {isInUseElsewhere ? <li>Checked out in another git worktree</li> : null}
               {isDirty ? <li>That worktree has uncommitted changes</li> : null}
             </ul>
-            <span className="text-2xs text-warning/80">
+            <span className={tokenCn('text-2xs', tokenTintClasses('warning').text)}>
               Click {isReuseConfirmed ? '"Confirm switch"' : '"Switch branch"'} again to confirm
             </span>
           </div>

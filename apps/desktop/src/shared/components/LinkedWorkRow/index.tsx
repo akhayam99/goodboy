@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import type { ReactNode } from 'react';
 import { ArrowRight, ArrowUpRight, type LucideIcon } from 'lucide-react';
 import { cn, tintClasses } from '@goodboy/ui';
@@ -65,7 +66,7 @@ export const LinkedWorkRow = ({
       className={cn(
         'group flex w-full items-center gap-2 rounded-lg border bg-elevated px-3.5 py-2.5 shadow-sm transition-colors',
         isSelected
-          ? 'border-primary/40 ring-1 ring-primary/25'
+          ? tokenCn(tokenTintClasses('primary').border, 'ring-1', tokenTintClasses('primary').ring)
           : 'border-border-soft hover:border-border',
       )}
     >

@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { formatUsd, Tooltip } from '@goodboy/ui';
 import { TriangleAlert, X } from 'lucide-react';
 import type { BudgetAlert } from '@goodboy/types';
@@ -37,8 +38,18 @@ export const AlertBanner = ({ alerts, onDismiss }: Props) => {
             key={alert.id}
             className={
               exceeded
-                ? 'flex items-center gap-2.5 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2'
-                : 'flex items-center gap-2.5 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2'
+                ? tokenCn(
+                    'flex items-center gap-2.5 rounded-lg border',
+                    tokenTintClasses('danger').borderSoft,
+                    tokenTintClasses('danger').bg,
+                    'px-3 py-2',
+                  )
+                : tokenCn(
+                    'flex items-center gap-2.5 rounded-lg border',
+                    tokenTintClasses('warning').borderSoft,
+                    tokenTintClasses('warning').bg,
+                    'px-3 py-2',
+                  )
             }
           >
             <TriangleAlert

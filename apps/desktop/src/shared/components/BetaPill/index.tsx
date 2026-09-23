@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
 import { AnchoredPopover, Button, Chip, cn, useDropdown } from '@goodboy/ui';
 import { openUrl } from '../../lib/editor';
@@ -37,7 +38,7 @@ export const BetaPill = ({ className }: Props) => {
           label={
             <span className="flex items-center gap-1.5">
               <span className="font-semibold">Beta</span>
-              <span aria-hidden className="h-2.5 w-px bg-primary/40" />
+              <span aria-hidden className={tokenCn('h-2.5 w-px', tokenTintClasses('primary').bg)} />
               <span className="font-medium opacity-80">Sponsor</span>
             </span>
           }

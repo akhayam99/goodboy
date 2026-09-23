@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Fragment, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { Agent, AgentId } from '@goodboy/types';
@@ -60,7 +61,11 @@ export const ScoutSubtree = ({
         onClick={() => onToggle(containerId)}
         aria-expanded={expanded}
         aria-label={`${expanded ? 'collapse' : 'expand'} ${groupLabel}`}
-        className="flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-info/70 transition-colors hover:text-info"
+        className={tokenCn(
+          'flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide',
+          tokenTintClasses('info').text,
+          'transition-colors hover:text-info',
+        )}
       >
         {expanded ? (
           <ChevronDown size={10} aria-hidden className="shrink-0" />
@@ -70,7 +75,11 @@ export const ScoutSubtree = ({
         {groupLabel} {doneCount}/{children.length}
         {!expanded && unreadCount > 0 ? (
           <span
-            className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1 py-0.5 text-3xs font-medium text-warning"
+            className={tokenCn(
+              'inline-flex shrink-0 items-center gap-1 rounded',
+              tokenTintClasses('warning').bg,
+              'px-1 py-0.5 text-3xs font-medium text-warning',
+            )}
             title={`${unreadCount} scout ${unreadCount === 1 ? 'reply' : 'replies'} to review`}
           >
             <span aria-hidden className="size-1 rounded-full bg-warning" />

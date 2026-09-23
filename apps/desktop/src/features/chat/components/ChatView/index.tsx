@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import {
   useCallback,
   useDeferredValue,
@@ -528,7 +529,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
             variant="warning"
             emphasis="outline"
             size="sm"
-            className="border-warning/20 px-3"
+            className={tokenCn(tokenTintClasses('warning').borderSoft, 'px-3')}
             onClick={() => {
               void selectAgent(session.id, otherAgentId);
               requestOpenQuestionScroll({

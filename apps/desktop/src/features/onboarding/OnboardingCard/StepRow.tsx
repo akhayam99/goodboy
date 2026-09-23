@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { openToolSettings } from '../../integrations/openToolSettings';
 import { Check } from 'lucide-react';
 import { cn } from '@goodboy/ui';
@@ -36,7 +37,7 @@ export const StepRow = ({ id, title, why, done }: Props) => {
             className={cn(
               'inline-flex size-3.5 shrink-0 items-center justify-center rounded-full border',
               done
-                ? 'border-success bg-success/15 text-success'
+                ? tokenCn('border-success', tokenTintClasses('success').bg, 'text-success')
                 : 'border-border-soft bg-transparent',
             )}
           >

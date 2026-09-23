@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useState } from 'react';
 import { ClampedProse, Tooltip, cn } from '@goodboy/ui';
 import { Check, GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react';
@@ -85,7 +86,10 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
                   onDelete();
                 }}
                 aria-label={`Confirm delete ${def.name}`}
-                className="rounded-md p-0.5 text-danger motion-safe:transition-colors hover:bg-danger/10"
+                className={tokenCn(
+                  'rounded-md p-0.5 text-danger motion-safe:transition-colors',
+                  tokenTintClasses('danger').hoverBg,
+                )}
               >
                 <Check size={ICON_SIZE.row} aria-hidden />
               </button>
@@ -121,7 +125,11 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onAdd, onEdit, onD
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => setConfirming(true)}
                   aria-label={`Delete ${def.name}`}
-                  className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:bg-danger/10 hover:text-danger"
+                  className={tokenCn(
+                    'rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors',
+                    tokenTintClasses('danger').hoverBg,
+                    'hover:text-danger',
+                  )}
                 >
                   <Trash2 size={ICON_SIZE.row} aria-hidden />
                 </button>

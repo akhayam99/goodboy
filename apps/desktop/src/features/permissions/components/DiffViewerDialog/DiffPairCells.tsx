@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { cn } from '@goodboy/ui';
 import type { DiffCommentAnchor, DiffHunkLine } from '@goodboy/types';
 import type { DiffLinePair } from '../../../../shared/utils/diffLinePairs';
@@ -32,10 +33,10 @@ const sideTone = ({ line }: ToneParams): string => {
     return 'bg-muted/20 text-transparent';
   }
   if (line.kind === 'add') {
-    return 'bg-success/[0.07]';
+    return tokenCn(tokenTintClasses('success').bgSoft);
   }
   if (line.kind === 'del') {
-    return 'bg-danger/[0.07]';
+    return tokenCn(tokenTintClasses('danger').bgSoft);
   }
   return '';
 };
@@ -87,17 +88,23 @@ export const DiffPairCells = ({
           'border-l-2 text-faint-foreground',
           oldTone,
           oldRangeCommented
-            ? 'border-warning/60'
+            ? tokenCn(tokenTintClasses('warning').border)
             : pair.old?.kind === 'del'
-              ? 'border-danger/50'
+              ? tokenCn(tokenTintClasses('danger').border)
               : 'border-transparent',
           oldCommentable && COMMENTABLE_CLASS,
-          selectingOld && 'bg-primary/15',
+          selectingOld && tokenCn(tokenTintClasses('primary').bg),
         )}
       >
         {pair.old?.oldLine ?? ''}
       </td>
-      <td className={cn(CONTENT_CLASS, oldTone, selectingOld && 'bg-primary/15')}>
+      <td
+        className={cn(
+          CONTENT_CLASS,
+          oldTone,
+          selectingOld && tokenCn(tokenTintClasses('primary').bg),
+        )}
+      >
         {pair.old === null ? '' : <DiffLineText line={pair.old} lang={lang} />}
       </td>
       <td
@@ -128,17 +135,23 @@ export const DiffPairCells = ({
           'border-l-2 text-faint-foreground',
           newTone,
           newRangeCommented
-            ? 'border-warning/60'
+            ? tokenCn(tokenTintClasses('warning').border)
             : pair.new?.kind === 'add'
-              ? 'border-success/50'
+              ? tokenCn(tokenTintClasses('success').border)
               : 'border-border-soft/40',
           newCommentable && COMMENTABLE_CLASS,
-          selectingNew && 'bg-primary/15',
+          selectingNew && tokenCn(tokenTintClasses('primary').bg),
         )}
       >
         {pair.new?.newLine ?? ''}
       </td>
-      <td className={cn(CONTENT_CLASS, newTone, selectingNew && 'bg-primary/15')}>
+      <td
+        className={cn(
+          CONTENT_CLASS,
+          newTone,
+          selectingNew && tokenCn(tokenTintClasses('primary').bg),
+        )}
+      >
         {pair.new === null ? '' : <DiffLineText line={pair.new} lang={lang} />}
       </td>
     </>

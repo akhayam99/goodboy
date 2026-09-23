@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { ChevronDown } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
 import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
@@ -52,7 +53,7 @@ export const ProviderPicker = ({
           className={cn(
             'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
             open
-              ? 'border-primary bg-primary/5'
+              ? tokenCn('border-primary', tokenTintClasses('primary').bgSoft)
               : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50',
             disabled && 'cursor-not-allowed opacity-60',
           )}

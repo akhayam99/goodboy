@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useState } from 'react';
 import { Check, ChevronRight } from 'lucide-react';
 import { Chip, cn } from '@goodboy/ui';
@@ -123,9 +124,13 @@ export const TreeNodeView = ({
         <span className="min-w-0 flex-1 truncate font-mono">{node.name}</span>
         {!expanded && (node.additions > 0 || node.deletions > 0) ? (
           <span className="shrink-0 text-3xs tabular-nums">
-            {node.additions > 0 && <span className="text-success/70">+{node.additions}</span>}
+            {node.additions > 0 && (
+              <span className={tokenCn(tokenTintClasses('success').text)}>+{node.additions}</span>
+            )}
             {node.additions > 0 && node.deletions > 0 && <span className="opacity-40"> </span>}
-            {node.deletions > 0 && <span className="text-danger/70">−{node.deletions}</span>}
+            {node.deletions > 0 && (
+              <span className={tokenCn(tokenTintClasses('danger').text)}>−{node.deletions}</span>
+            )}
           </span>
         ) : null}
       </button>

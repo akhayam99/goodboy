@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { MessagesSquare } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
@@ -12,7 +13,12 @@ type Props = {
 export const LaunchedNotice = ({ sessionId, isLinkedToIssue, onOpened }: Props) => {
   return (
     <div className="flex items-center gap-3">
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-success/15">
+      <span
+        className={tokenCn(
+          'flex size-7 shrink-0 items-center justify-center rounded-lg',
+          tokenTintClasses('success').bg,
+        )}
+      >
         <MessagesSquare size={ICON_SIZE.control} className="text-success" aria-hidden />
       </span>
       <div className="flex min-w-0 flex-1 flex-col">

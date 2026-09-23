@@ -1,10 +1,11 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { cn } from '@goodboy/ui';
 
 type DotState = 'done' | 'current' | 'pending';
 
 const DOT_CLASS: Readonly<Record<DotState, string>> = {
   done: 'w-6 bg-primary',
-  current: 'w-3 bg-primary/50 ring-1 ring-primary',
+  current: tokenCn('w-3', tokenTintClasses('primary').bg, 'ring-1 ring-primary'),
   pending: 'w-1.5 bg-border',
 };
 

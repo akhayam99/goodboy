@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import { RotateCcw, Smartphone } from 'lucide-react';
 import {
@@ -297,7 +298,13 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
               {wipeState === 'done' ? (
                 <span className="text-xs text-success">Wiped. Restart the app to start fresh.</span>
               ) : wipeState === 'confirm' || wipeState === 'wiping' ? (
-                <span className="flex items-center gap-2 rounded-r-md border-l-2 border-danger/40 py-1.5 pl-2 pr-2">
+                <span
+                  className={tokenCn(
+                    'flex items-center gap-2 rounded-r-md border-l-2',
+                    tokenTintClasses('danger').border,
+                    'py-1.5 pl-2 pr-2',
+                  )}
+                >
                   <span className="text-xs font-medium text-danger">Irreversible.</span>
                   <Button
                     variant="ghost"
@@ -325,7 +332,11 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                   variant="ghost"
                   size="sm"
                   onClick={() => setWipeState('confirm')}
-                  className="text-danger hover:bg-danger/10 hover:text-danger"
+                  className={tokenCn(
+                    'text-danger',
+                    tokenTintClasses('danger').hoverBg,
+                    'hover:text-danger',
+                  )}
                 >
                   Wipe
                 </Button>

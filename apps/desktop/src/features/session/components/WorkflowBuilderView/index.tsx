@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import {
@@ -951,7 +952,14 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           type="button"
                           onClick={onUseSessionGoal}
                           disabled={blocked || polishing || goalText === sessionGoal}
-                          className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5 text-2xs text-primary transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          className={tokenCn(
+                            'inline-flex items-center gap-1 rounded-md border',
+                            tokenTintClasses('primary').borderSoft,
+                            tokenTintClasses('primary').bgSoft,
+                            'px-2 py-0.5 text-2xs text-primary transition-colors hover:border-primary',
+                            tokenTintClasses('primary').hoverBg,
+                            'disabled:cursor-not-allowed disabled:opacity-50',
+                          )}
                         >
                           <Target size={10} aria-hidden /> Use session goal
                         </button>
@@ -999,7 +1007,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                   data-drop-composer
                   className={cn(
                     'flex flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-colors',
-                    isDragging ? 'border-dashed border-primary bg-primary/5' : 'border-border-soft',
+                    isDragging
+                      ? tokenCn('border-dashed border-primary', tokenTintClasses('primary').bgSoft)
+                      : 'border-border-soft',
                   )}
                 >
                   <input
@@ -1090,7 +1100,13 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           <button
                             type="button"
                             onClick={() => setMode('custom')}
-                            className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs text-primary transition-colors hover:border-primary hover:bg-primary/10"
+                            className={tokenCn(
+                              'inline-flex items-center gap-1.5 rounded-md border',
+                              tokenTintClasses('primary').borderSoft,
+                              tokenTintClasses('primary').bgSoft,
+                              'px-2.5 py-1 text-xs text-primary transition-colors hover:border-primary',
+                              tokenTintClasses('primary').hoverBg,
+                            )}
                           >
                             <PenLine size={ICON_SIZE.row} aria-hidden /> Describe your own
                           </button>
@@ -1170,7 +1186,10 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                       type="button"
                                       onClick={() => void onDeletePreset(t)}
                                       aria-label={`Confirm delete ${t.name}`}
-                                      className="rounded-md p-1 text-danger transition-colors hover:bg-danger/10"
+                                      className={tokenCn(
+                                        'rounded-md p-1 text-danger transition-colors',
+                                        tokenTintClasses('danger').hoverBg,
+                                      )}
                                     >
                                       <Check size={ICON_SIZE.row} aria-hidden />
                                     </button>
@@ -1320,15 +1339,33 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             </button>
                           ) : null}
                           {mode === 'custom' ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-2xs font-medium text-success">
+                            <span
+                              className={tokenCn(
+                                'inline-flex items-center gap-1 rounded-full',
+                                tokenTintClasses('success').bg,
+                                'px-1.5 py-0.5 text-2xs font-medium text-success',
+                              )}
+                            >
                               <Check size={10} aria-hidden /> Ready
                             </span>
                           ) : presetDirty || isCustomNameDirty ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-1.5 py-0.5 text-2xs font-medium text-warning">
+                            <span
+                              className={tokenCn(
+                                'inline-flex items-center gap-1 rounded-full',
+                                tokenTintClasses('warning').bg,
+                                'px-1.5 py-0.5 text-2xs font-medium text-warning',
+                              )}
+                            >
                               <Pencil size={9} aria-hidden /> Customized
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-2xs font-medium text-success">
+                            <span
+                              className={tokenCn(
+                                'inline-flex items-center gap-1 rounded-full',
+                                tokenTintClasses('success').bg,
+                                'px-1.5 py-0.5 text-2xs font-medium text-success',
+                              )}
+                            >
                               <Check size={10} aria-hidden /> Selected
                             </span>
                           )}

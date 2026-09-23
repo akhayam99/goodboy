@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { IconButton } from '@goodboy/ui';
 import { Check, X } from 'lucide-react';
 
@@ -17,7 +18,11 @@ export const SaveCancel = ({ isBusy, onSave, onCancel }: Props) => {
         onClick={onSave}
         disabled={isBusy}
         busy={isBusy}
-        className="border-primary bg-primary text-on-tone hover:border-primary hover:bg-primary/90 hover:text-on-tone"
+        className={tokenCn(
+          'border-primary bg-primary text-on-tone hover:border-primary',
+          tokenTintClasses('primary').hoverBg,
+          'hover:text-on-tone',
+        )}
       />
       <IconButton icon={X} iconSize={14} label="Cancel" onClick={onCancel} disabled={isBusy} />
     </div>

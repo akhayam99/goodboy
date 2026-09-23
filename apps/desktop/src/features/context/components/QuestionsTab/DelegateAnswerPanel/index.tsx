@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Bot } from 'lucide-react';
 import { Textarea, cn } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
@@ -65,7 +66,11 @@ export const DelegateAnswerPanel = ({
         data-testid="delegate-answer-panel"
         className={cn(
           'flex w-full min-w-0 flex-col gap-3 rounded-md border px-2 py-2',
-          'border-primary/40 bg-primary/10 motion-safe:animate-fade-in',
+          tokenCn(
+            tokenTintClasses('primary').border,
+            tokenTintClasses('primary').bg,
+            'motion-safe:animate-fade-in',
+          ),
         )}
       >
         <div className="flex min-w-0 items-center gap-2">

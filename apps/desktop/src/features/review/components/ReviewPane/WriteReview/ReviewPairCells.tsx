@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { cn } from '@goodboy/ui';
 import type { DiffHunkLine } from '@goodboy/types';
 import type { DiffLinePair } from '../../../../../shared/utils/diffLinePairs';
@@ -29,26 +30,26 @@ const sideTone = ({ line, hasDraft }: SideStateParams): string => {
     return 'bg-muted/20';
   }
   if (hasDraft) {
-    return 'bg-draft/[0.07]';
+    return tokenCn(tokenTintClasses('draft').bgSoft);
   }
   if (line.kind === 'add') {
-    return 'bg-success/[0.07]';
+    return tokenCn(tokenTintClasses('success').bgSoft);
   }
   if (line.kind === 'del') {
-    return 'bg-danger/[0.07]';
+    return tokenCn(tokenTintClasses('danger').bgSoft);
   }
   return '';
 };
 
 const sideAccent = ({ line, hasDraft }: SideStateParams): string => {
   if (hasDraft) {
-    return 'border-draft/50';
+    return tokenCn(tokenTintClasses('draft').border);
   }
   if (line?.kind === 'add') {
-    return 'border-success/50';
+    return tokenCn(tokenTintClasses('success').border);
   }
   if (line?.kind === 'del') {
-    return 'border-danger/50';
+    return tokenCn(tokenTintClasses('danger').border);
   }
   return 'border-transparent';
 };

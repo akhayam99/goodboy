@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useMemo, useRef } from 'react';
 import { ListFilter, X } from 'lucide-react';
 import { AnchoredPopover, cn, Divider, Eyebrow, IconButton, useDropdown } from '@goodboy/ui';
@@ -125,7 +126,12 @@ export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
           className={cn(
             'size-7 shrink-0',
             (activeCount > 0 || open) &&
-              'bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary',
+              tokenCn(
+                tokenTintClasses('primary').bg,
+                'text-primary',
+                tokenTintClasses('primary').hoverBg,
+                'hover:text-primary',
+              ),
           )}
         />
       }

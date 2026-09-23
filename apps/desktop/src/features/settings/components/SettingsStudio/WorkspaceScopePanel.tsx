@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import type { VerbosityLevel, WorkspaceId } from '@goodboy/types';
 import {
@@ -340,13 +341,23 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   size="sm"
                   onClick={() => setConfirmDisconnect(true)}
                   disabled={disconnecting}
-                  className="text-danger hover:bg-danger/10 hover:text-danger"
+                  className={tokenCn(
+                    'text-danger',
+                    tokenTintClasses('danger').hoverBg,
+                    'hover:text-danger',
+                  )}
                 >
                   <Unplug size={ICON_SIZE.row} aria-hidden />
                   Disconnect
                 </Button>
               ) : (
-                <div className="flex items-center gap-2 rounded-r-md border-l-2 border-danger/40 py-1.5 pl-2 pr-2">
+                <div
+                  className={tokenCn(
+                    'flex items-center gap-2 rounded-r-md border-l-2',
+                    tokenTintClasses('danger').border,
+                    'py-1.5 pl-2 pr-2',
+                  )}
+                >
                   <Button
                     variant="ghost"
                     size="sm"

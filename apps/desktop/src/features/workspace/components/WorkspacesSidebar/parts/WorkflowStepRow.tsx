@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import { StatusDot, cn } from '@goodboy/ui';
 import { AlertTriangle, Check, Clock, CircleHelp, Play } from 'lucide-react';
@@ -108,13 +109,16 @@ export const WorkflowStepRow = ({
     isPendingFuture
       ? 'border-transparent'
       : isStartable
-        ? 'border-primary/45 bg-primary/[0.06]'
+        ? tokenCn(tokenTintClasses('primary').border, tokenTintClasses('primary').bgSoft)
         : isActionable && isBlocked
-          ? 'border-warning/60 bg-warning/[0.06]'
+          ? tokenCn(tokenTintClasses('warning').border, tokenTintClasses('warning').bgSoft)
           : isRunning
-            ? cn('border-info/60', isSelected ? 'bg-elevated' : 'bg-muted/40')
+            ? cn(
+                tokenCn(tokenTintClasses('info').border),
+                isSelected ? 'bg-elevated' : 'bg-muted/40',
+              )
             : hasUnread
-              ? 'border-warning/70 bg-muted/40'
+              ? tokenCn(tokenTintClasses('warning').border, 'bg-muted/40')
               : isSelected
                 ? 'border-border bg-elevated'
                 : 'border-transparent bg-muted/40',
@@ -123,7 +127,12 @@ export const WorkflowStepRow = ({
   const renderStatusIcon = () => {
     if (isStartable) {
       return (
-        <span className="flex size-3.5 items-center justify-center rounded-full bg-primary/15">
+        <span
+          className={tokenCn(
+            'flex size-3.5 items-center justify-center rounded-full',
+            tokenTintClasses('primary').bg,
+          )}
+        >
           <Play size={9} className="text-primary" aria-hidden fill="currentColor" />
         </span>
       );
@@ -139,7 +148,7 @@ export const WorkflowStepRow = ({
         <span
           className={cn(
             'flex size-3.5 items-center justify-center rounded-full',
-            run.status === 'skipped' ? 'bg-muted' : 'bg-success/15',
+            run.status === 'skipped' ? 'bg-muted' : tokenCn(tokenTintClasses('success').bg),
           )}
         >
           <Check
@@ -255,7 +264,13 @@ export const WorkflowStepRow = ({
         </div>
       </div>
       {pendingConfirm && blockReason !== null ? (
-        <div className="flex items-center gap-2 rounded-r-md border-l-2 border-warning/40 py-1.5 pl-2.5 pr-2.5 text-xs">
+        <div
+          className={tokenCn(
+            'flex items-center gap-2 rounded-r-md border-l-2',
+            tokenTintClasses('warning').border,
+            'py-1.5 pl-2.5 pr-2.5 text-xs',
+          )}
+        >
           <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0 text-warning" />
           <span className="min-w-0 flex-1 truncate text-foreground">
             {WORKFLOW_BLOCK_COPY[blockReason]}

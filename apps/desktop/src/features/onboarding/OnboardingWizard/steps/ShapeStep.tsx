@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { FolderGit2, FolderPlus, Layers } from 'lucide-react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Input, cn } from '@goodboy/ui';
@@ -128,8 +129,12 @@ export const ShapeStep = ({
               className={cn(
                 'flex items-start gap-3 rounded-lg border px-3 py-3 text-left motion-safe:transition-colors',
                 shape === option.value
-                  ? 'border-primary/60 bg-primary/5'
-                  : 'border-border hover:border-primary/50 hover:bg-primary/5',
+                  ? tokenCn(tokenTintClasses('primary').border, tokenTintClasses('primary').bgSoft)
+                  : tokenCn(
+                      'border-border',
+                      tokenTintClasses('primary').hoverBorder,
+                      tokenTintClasses('primary').hoverBgSoft,
+                    ),
               )}
             >
               <span className="mt-0.5 shrink-0 text-primary">

@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { TriangleAlert } from 'lucide-react';
 import type { CoverageTurnCounts } from './lib';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -12,7 +13,14 @@ export const CoverageNotice = ({ counts }: Props) => {
   }
 
   return (
-    <p className="flex items-center gap-2.5 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-foreground">
+    <p
+      className={tokenCn(
+        'flex items-center gap-2.5 rounded-lg border',
+        tokenTintClasses('warning').borderSoft,
+        tokenTintClasses('warning').bg,
+        'px-3 py-2 text-xs text-foreground',
+      )}
+    >
       <TriangleAlert size={ICON_SIZE.control} aria-hidden className="shrink-0 text-warning" />
       <span>
         {`No price for ${counts.unpriced} of ${counts.total} turns, so a cap cannot include them`}

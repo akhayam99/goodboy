@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Divider, formatError } from '@goodboy/ui';
@@ -104,7 +105,13 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose, eyebrow }: Pr
                 type="button"
                 onClick={() => void onDeleteAll()}
                 disabled={deletingAll}
-                className="inline-flex items-center gap-1 rounded-md border border-danger/40 px-2 py-1 text-xs font-medium text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
+                className={tokenCn(
+                  'inline-flex items-center gap-1 rounded-md border',
+                  tokenTintClasses('danger').border,
+                  'px-2 py-1 text-xs font-medium text-danger transition-colors',
+                  tokenTintClasses('danger').hoverBg,
+                  'disabled:cursor-not-allowed disabled:opacity-60',
+                )}
               >
                 <Trash2 size={ICON_SIZE.row} aria-hidden />
                 {deletingAll ? 'Deleting' : 'Confirm delete all'}

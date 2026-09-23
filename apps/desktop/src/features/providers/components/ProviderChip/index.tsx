@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import type { ReactNode } from 'react';
 import { cn } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
@@ -33,7 +34,7 @@ export const ProviderChip = ({
       className={cn(
         'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs motion-safe:transition-colors',
         selected
-          ? 'bg-primary/10 font-medium text-primary'
+          ? tokenCn(tokenTintClasses('primary').bg, 'font-medium text-primary')
           : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
         disabled && 'cursor-not-allowed opacity-60',
       )}

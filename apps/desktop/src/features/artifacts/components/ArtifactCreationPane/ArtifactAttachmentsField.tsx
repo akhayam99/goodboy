@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import type { ChangeEvent, RefObject } from 'react';
 import { Paperclip } from 'lucide-react';
 import { SectionHeader, cn } from '@goodboy/ui';
@@ -38,7 +39,9 @@ export const ArtifactAttachmentsField = ({
       data-testid="artifact-attachments"
       className={cn(
         'flex min-w-0 flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-colors',
-        isDragging ? 'border-dashed border-primary bg-primary/5' : 'border-border-soft',
+        isDragging
+          ? tokenCn('border-dashed border-primary', tokenTintClasses('primary').bgSoft)
+          : 'border-border-soft',
       )}
     >
       <input

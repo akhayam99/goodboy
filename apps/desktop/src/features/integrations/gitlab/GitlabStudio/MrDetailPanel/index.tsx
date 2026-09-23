@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import {
   RecordDetailEmptyState,
   RecordDetailHeader,
@@ -314,7 +315,14 @@ export const MrDetailPanel = ({
         dock={dock}
       >
         {mr.hasConflicts ? (
-          <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-2xs leading-relaxed text-foreground">
+          <div
+            className={tokenCn(
+              'flex items-start gap-2 rounded-lg border',
+              tokenTintClasses('warning').borderSoft,
+              tokenTintClasses('warning').bg,
+              'px-3 py-2.5 text-2xs leading-relaxed text-foreground',
+            )}
+          >
             <AlertTriangle
               size={ICON_SIZE.row}
               aria-hidden

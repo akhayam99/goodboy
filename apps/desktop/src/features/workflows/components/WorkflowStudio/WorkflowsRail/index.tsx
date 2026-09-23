@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import type { ReactNode } from 'react';
 import { Divider, EmptyState, ScrollFade, SectionHeader, Tooltip, cn } from '@goodboy/ui';
 import { Check, Plus, RotateCcw, X } from 'lucide-react';
@@ -80,7 +81,13 @@ export const WorkflowsRail = ({
 
       <div className="shrink-0 px-3 pb-3 pt-1">
         {confirmReset ? (
-          <div className="flex items-center gap-1.5 rounded-lg bg-warning/5 px-2.5 py-2">
+          <div
+            className={tokenCn(
+              'flex items-center gap-1.5 rounded-lg',
+              tokenTintClasses('warning').bgSoft,
+              'px-2.5 py-2',
+            )}
+          >
             <span className="flex-1 text-2xs leading-tight text-muted-foreground">
               Restore the built-in presets? Your edits to them are overwritten. Custom presets you
               made are kept.
@@ -91,7 +98,11 @@ export const WorkflowsRail = ({
                 onClick={onReset}
                 disabled={resetting}
                 aria-label="Confirm restore defaults"
-                className="rounded-md p-0.5 text-warning transition-colors hover:bg-warning/10 disabled:opacity-50"
+                className={tokenCn(
+                  'rounded-md p-0.5 text-warning transition-colors',
+                  tokenTintClasses('warning').hoverBg,
+                  'disabled:opacity-50',
+                )}
               >
                 <Check size={ICON_SIZE.row} aria-hidden />
               </button>

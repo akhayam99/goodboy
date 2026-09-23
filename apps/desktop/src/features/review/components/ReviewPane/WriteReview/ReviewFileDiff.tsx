@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Fragment, useMemo, useState } from 'react';
 import { Bot, ChevronRight, MessageSquarePlus } from 'lucide-react';
 import { Chip, cn, Divider, EmptyState, Tooltip, type DiffLayoutMode } from '@goodboy/ui';
@@ -281,20 +282,20 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                           <tr
                             className={cn(
                               'group',
-                              line.kind === 'add' && 'bg-success/[0.07]',
-                              line.kind === 'del' && 'bg-danger/[0.07]',
-                              hasDraft && 'bg-draft/[0.07]',
+                              line.kind === 'add' && tokenCn(tokenTintClasses('success').bgSoft),
+                              line.kind === 'del' && tokenCn(tokenTintClasses('danger').bgSoft),
+                              hasDraft && tokenCn(tokenTintClasses('draft').bgSoft),
                             )}
                           >
                             <td
                               className={cn(
                                 'w-11 select-none border-l-2 px-0.5 align-top',
                                 hasDraft
-                                  ? 'border-draft/50'
+                                  ? tokenCn(tokenTintClasses('draft').border)
                                   : line.kind === 'add'
-                                    ? 'border-success/50'
+                                    ? tokenCn(tokenTintClasses('success').border)
                                     : line.kind === 'del'
-                                      ? 'border-danger/50'
+                                      ? tokenCn(tokenTintClasses('danger').border)
                                       : 'border-transparent',
                               )}
                             >

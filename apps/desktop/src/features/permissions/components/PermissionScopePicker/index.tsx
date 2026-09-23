@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { useState } from 'react';
 import { cn } from '@goodboy/ui';
 import type { AgentId, PermissionScope, ProviderRunId, SessionId } from '@goodboy/types';
@@ -72,12 +73,23 @@ export const PermissionScopePicker = ({
 
   const scopeTone = (scope: PermissionScope): string => {
     if (scope === 'session') {
-      return 'border-transparent bg-primary text-on-tone hover:bg-primary/90';
+      return tokenCn(
+        'border-transparent bg-primary text-on-tone',
+        tokenTintClasses('primary').hoverBg,
+      );
     }
     if (scope === 'deny') {
-      return 'border-danger/40 text-danger hover:bg-danger/10';
+      return tokenCn(
+        tokenTintClasses('danger').border,
+        'text-danger',
+        tokenTintClasses('danger').hoverBg,
+      );
     }
-    return 'border-success/40 text-success hover:bg-success/10';
+    return tokenCn(
+      tokenTintClasses('success').border,
+      'text-success',
+      tokenTintClasses('success').hoverBg,
+    );
   };
 
   return (

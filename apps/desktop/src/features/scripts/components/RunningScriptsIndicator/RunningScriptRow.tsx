@@ -1,3 +1,4 @@
+import { cn as tokenCn, tintClasses as tokenTintClasses } from '@goodboy/ui';
 import { Square } from 'lucide-react';
 import { StatusDot, Tooltip } from '@goodboy/ui';
 import type { RunningScript } from './useRunningScripts';
@@ -41,7 +42,11 @@ export const RunningScriptRow = ({ run, now, onOpen, onStop }: Props) => (
         type="button"
         onClick={() => onStop(run)}
         aria-label={`Stop ${run.scriptName}`}
-        className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
+        className={tokenCn(
+          'shrink-0 rounded p-1 text-muted-foreground transition-colors',
+          tokenTintClasses('danger').hoverBg,
+          'hover:text-danger',
+        )}
       >
         <Square size={11} aria-hidden />
       </button>
