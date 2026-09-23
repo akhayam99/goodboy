@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 import { createResolveQueryMocks } from './slices/resolve/testing/createResolveQueryMocks';
+import { resetWorkflowTurnBreaker } from './slices/turn/workflowTurnBreaker';
 import type {
   Agent,
   AgentId,
@@ -113,6 +114,7 @@ const freeWriterLease = ({ path }: { readonly path: string }) => ({
 });
 
 export const resetStorySpies = () => {
+  resetWorkflowTurnBreaker();
   for (const spy of Object.values(storySpies)) {
     spy.mockReset();
   }

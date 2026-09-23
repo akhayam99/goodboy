@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { resetWorkflowTurnBreaker } from './slices/turn/workflowTurnBreaker';
 import type {
   ProjectId,
   Agent,
@@ -395,6 +396,7 @@ describe('autorun plan consumption ordering', () => {
   let idleSpy: typeof globalThis.requestIdleCallback | undefined;
 
   beforeEach(async () => {
+    resetWorkflowTurnBreaker();
     planBacking.plans = [];
     planBacking.consumptions = {};
     planBacking.seq = 0;

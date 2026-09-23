@@ -645,7 +645,8 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
 
     const children = childrenOf(refreshed, containerId);
-    const settledCount = children.filter(isSettledChild).length;
+    const isDone = (c: Agent): boolean => c.id === childAgentId || isSettledChild(c);
+    const settledCount = children.filter(isDone).length;
     const total = clusters.length > 0 ? clusters.length : children.length;
 
     if (settledCount >= total) {
@@ -664,7 +665,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    const nextIndex = children.findIndex((c) => !isSettledChild(c) && c.id !== childAgentId);
+    const nextIndex = children.findIndex((c) => !isDone(c));
     const next = nextIndex >= 0 ? children[nextIndex] : undefined;
     if (!next) {
       await invokeAgentUpdateStatus(containerId, { status: 'failed', completedAt: nowIso() });

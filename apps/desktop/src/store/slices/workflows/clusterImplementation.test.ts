@@ -1606,6 +1606,29 @@ describe('advanceClusterImplementation', () => {
     const call = (sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId };
     expect(call.agentId).toBe('st1');
   });
+
+  it('completes the container when a stale list still shows the last child running', async () => {
+    const c0 = childAgent({ id: 'sl0', ordinal: 0, status: 'completed' });
+    const c1 = childAgent({ id: 'sl1', ordinal: 1, status: 'running' });
+    const { get, set, sendTurn, maybeAutoAdvanceWorkflow } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([container({ status: 'running' }), c0, c1]);
+
+    await advanceClusterImplementation(set, get)(SID, 'sl1' as AgentId, done('sl1'));
+
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      PARENT,
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      PARENT,
+      expect.objectContaining({ status: 'failed' }),
+    );
+    expect(maybeAutoAdvanceWorkflow).toHaveBeenCalledWith(SID);
+  });
 });
 
 describe('unsettledClusterChildren', () => {

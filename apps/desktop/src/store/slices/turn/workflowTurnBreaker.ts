@@ -1,6 +1,6 @@
 import type { AgentId } from '@goodboy/types';
 
-export const MAX_UNATTENDED_WORKFLOW_TURNS = 8;
+export const MAX_UNATTENDED_TURNS_PER_AGENT = 4;
 
 export const UNATTENDED_WINDOW_MS = 60 * 60 * 1000;
 
@@ -17,7 +17,7 @@ export const claimWorkflowTurn = ({
   nowMs,
 }: Params & Readonly<{ nowMs: number }>): WorkflowTurnClaim => {
   const recent = (sends.get(agentId) ?? []).filter((at) => nowMs - at < UNATTENDED_WINDOW_MS);
-  if (recent.length >= MAX_UNATTENDED_WORKFLOW_TURNS) {
+  if (recent.length >= MAX_UNATTENDED_TURNS_PER_AGENT) {
     sends.set(agentId, recent);
     return 'tripped';
   }

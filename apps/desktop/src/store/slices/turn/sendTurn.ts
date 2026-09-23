@@ -95,7 +95,7 @@ import { claimTurnStart, closeTurnStartWindow } from './turnStartWindow';
 import {
   claimWorkflowTurn,
   clearWorkflowTurns,
-  MAX_UNATTENDED_WORKFLOW_TURNS,
+  MAX_UNATTENDED_TURNS_PER_AGENT,
 } from './workflowTurnBreaker';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from '../../integrationsGuard';
@@ -279,6 +279,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const activeAgentId = agentId ?? before.selectedAgentId[sessionId] ?? null;
     if (!activeAgentId) {
       throw new Error('no agent selected. spawn one before sending a turn');
+    }
+    if (origin === 'operator') {
+      clearWorkflowTurns({ agentId: activeAgentId });
     }
     const activeAgent = (before.sessionPhaseRuns[sessionId] ?? []).find(
       (candidate) => candidate.id === activeAgentId,
@@ -1696,7 +1699,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       'error',
       'warning',
       `autorun halted: ${name}`,
-      `the workflow sent this agent ${MAX_UNATTENDED_WORKFLOW_TURNS} turns in the last hour without you stepping in, so goodboy stopped it to protect your usage. open the agent and continue manually.`,
+      `the workflow sent this agent ${MAX_UNATTENDED_TURNS_PER_AGENT} turns in the last hour without you stepping in, so goodboy stopped it to protect your usage. open the agent and continue manually.`,
       { sessionId, action: { kind: 'open-agent' as const, sessionId, agentId } },
     );
     return NOT_BLOCKED;
@@ -1710,8 +1713,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       if (claim === 'tripped') {
         return haltRunawayWorkflowAgent({ sessionId: input.sessionId, agentId: input.agentId });
       }
-    } else if (input.agentId !== undefined && input.origin !== 'mount-continuation') {
-      clearWorkflowTurns({ agentId: input.agentId });
     }
     const lease: TurnLease = { path: null, holder: null, token: null, attemptId: undefined };
     try {
