@@ -809,7 +809,7 @@ mod tests {
             &conn,
             "b-proj",
             "container-1",
-            Some("app-web"),
+            Some("ledger-core"),
             "linear",
             "cred-live",
         );
@@ -818,7 +818,7 @@ mod tests {
             _ => Ok(None),
         };
 
-        let scoped = resolve_and_read(&conn, "linear", "container-1", Some("app-web"), read)
+        let scoped = resolve_and_read(&conn, "linear", "container-1", Some("ledger-core"), read)
             .expect("resolves");
         let unscoped = resolve_and_read(&conn, "linear", "container-1", None, read);
 
