@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use rusqlite::types::{Value, ValueRef};
-use rusqlite::{params_from_iter, Connection};
+use rusqlite::{params_from_iter, Connection, Statement, TransactionBehavior};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Number};
 use tauri::State;
@@ -26,6 +26,8 @@ pub enum DbError {
     InvalidSnapshotPath,
     #[error("migration snapshot filesystem error: {0}")]
     MigrationSnapshotFilesystem(String),
+    #[error("statement {0} has a guard without an abort code")]
+    GuardWithoutAbortCode(usize),
 }
 
 crate::util::impl_error_serialize!(DbError);
@@ -39,6 +41,7 @@ impl DbError {
             DbError::Poisoned => "poisoned",
             DbError::InvalidSnapshotPath => "invalid_snapshot_path",
             DbError::MigrationSnapshotFilesystem(_) => "migration_snapshot_filesystem",
+            DbError::GuardWithoutAbortCode(_) => "guard_without_abort_code",
         }
     }
 }
@@ -232,9 +235,15 @@ pub fn db_select(
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(&sql)?;
     let bound = params.unwrap_or_default();
-    let values: Vec<Value> = bound.iter().map(SqlParam::to_value).collect();
-    let column_names: Vec<String> = stmt.column_names().into_iter().map(String::from).collect();
+    Ok(collect_rows(&mut stmt, &bound)?)
+}
 
+fn collect_rows(
+    stmt: &mut Statement<'_>,
+    params: &[SqlParam],
+) -> Result<Vec<Map<String, serde_json::Value>>, rusqlite::Error> {
+    let values: Vec<Value> = params.iter().map(SqlParam::to_value).collect();
+    let column_names: Vec<String> = stmt.column_names().into_iter().map(String::from).collect();
     let mut rows = stmt.query(params_from_iter(values.iter()))?;
     let mut out = Vec::new();
     while let Some(row) = rows.next()? {
@@ -245,6 +254,110 @@ pub fn db_select(
         out.push(record);
     }
     Ok(out)
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum StatementGuard {
+    Rows,
+    NoRows,
+    NoChanges,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TxStatement {
+    pub sql: String,
+    #[serde(default)]
+    pub params: Vec<SqlParam>,
+    #[serde(default)]
+    pub abort_when: Option<StatementGuard>,
+    #[serde(default)]
+    pub abort_code: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TxStatementResult {
+    pub rows_affected: i64,
+    pub rows: Vec<Map<String, serde_json::Value>>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "status", rename_all = "camelCase")]
+pub enum TxOutcome {
+    Committed {
+        results: Vec<TxStatementResult>,
+    },
+    #[serde(rename_all = "camelCase")]
+    Aborted {
+        abort_code: String,
+        index: usize,
+    },
+}
+
+fn run_statement(
+    conn: &Connection,
+    statement: &TxStatement,
+) -> Result<TxStatementResult, rusqlite::Error> {
+    let mut stmt = conn.prepare(&statement.sql)?;
+    let is_readonly = stmt.readonly();
+    let rows = collect_rows(&mut stmt, &statement.params)?;
+    let rows_affected = if is_readonly {
+        0
+    } else {
+        conn.changes() as i64
+    };
+    Ok(TxStatementResult {
+        rows_affected,
+        rows,
+    })
+}
+
+fn guard_trips(guard: StatementGuard, result: &TxStatementResult) -> bool {
+    match guard {
+        StatementGuard::Rows => !result.rows.is_empty(),
+        StatementGuard::NoRows => result.rows.is_empty(),
+        StatementGuard::NoChanges => result.rows_affected == 0,
+    }
+}
+
+pub fn run_transaction(
+    conn: &mut Connection,
+    statements: &[TxStatement],
+) -> Result<TxOutcome, DbError> {
+    if let Some(index) = statements
+        .iter()
+        .position(|statement| statement.abort_when.is_some() && statement.abort_code.is_none())
+    {
+        return Err(DbError::GuardWithoutAbortCode(index));
+    }
+    let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    let mut results = Vec::with_capacity(statements.len());
+    for (index, statement) in statements.iter().enumerate() {
+        let result = run_statement(&tx, statement)?;
+        if let (Some(guard), Some(abort_code)) = (statement.abort_when, &statement.abort_code) {
+            if guard_trips(guard, &result) {
+                tx.rollback()?;
+                return Ok(TxOutcome::Aborted {
+                    abort_code: abort_code.clone(),
+                    index,
+                });
+            }
+        }
+        results.push(result);
+    }
+    tx.commit()?;
+    Ok(TxOutcome::Committed { results })
+}
+
+#[tauri::command(async)]
+pub fn db_transaction(
+    state: State<'_, Db>,
+    statements: Vec<TxStatement>,
+) -> Result<TxOutcome, DbError> {
+    let mut conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
+    run_transaction(&mut conn, &statements)
 }
 
 pub fn value_to_json(value: ValueRef<'_>) -> serde_json::Value {
@@ -271,5 +384,180 @@ mod tests {
     fn exec_result_serializes_rows_affected_in_camel_case() {
         let value = serde_json::to_value(ExecResult { rows_affected: 3 }).unwrap();
         assert_eq!(value, serde_json::json!({ "rowsAffected": 3 }));
+    }
+
+    fn memory_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE workspaces (id TEXT PRIMARY KEY, name TEXT NOT NULL);")
+            .unwrap();
+        conn
+    }
+
+    fn statement(sql: &str, params: Vec<SqlParam>) -> TxStatement {
+        TxStatement {
+            sql: sql.to_string(),
+            params,
+            abort_when: None,
+            abort_code: None,
+        }
+    }
+
+    fn guarded(sql: &str, params: Vec<SqlParam>, guard: StatementGuard) -> TxStatement {
+        TxStatement {
+            abort_when: Some(guard),
+            abort_code: Some("STALE".to_string()),
+            ..statement(sql, params)
+        }
+    }
+
+    fn insert(id: &str) -> TxStatement {
+        statement(
+            "INSERT INTO workspaces (id, name) VALUES (?, ?)",
+            vec![
+                SqlParam::Text(id.to_string()),
+                SqlParam::Text("x".to_string()),
+            ],
+        )
+    }
+
+    fn count(conn: &Connection) -> i64 {
+        conn.query_row("SELECT COUNT(*) FROM workspaces", [], |row| row.get(0))
+            .unwrap()
+    }
+
+    #[test]
+    fn commits_every_statement_and_reports_changes() {
+        let mut conn = memory_db();
+        let outcome = run_transaction(&mut conn, &[insert("a"), insert("b")]).unwrap();
+        let TxOutcome::Committed { results } = outcome else {
+            panic!("expected a commit");
+        };
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].rows_affected, 1);
+        assert_eq!(count(&conn), 2);
+    }
+
+    #[test]
+    fn a_tripped_guard_rolls_back_earlier_writes() {
+        let mut conn = memory_db();
+        let outcome = run_transaction(
+            &mut conn,
+            &[
+                insert("a"),
+                guarded(
+                    "UPDATE workspaces SET name = 'y' WHERE id = ?",
+                    vec![SqlParam::Text("missing".to_string())],
+                    StatementGuard::NoChanges,
+                ),
+                insert("b"),
+            ],
+        )
+        .unwrap();
+        let TxOutcome::Aborted { abort_code, index } = outcome else {
+            panic!("expected an abort");
+        };
+        assert_eq!(abort_code, "STALE");
+        assert_eq!(index, 1);
+        assert_eq!(count(&conn), 0);
+    }
+
+    #[test]
+    fn row_guards_trip_on_presence_and_absence() {
+        let mut conn = memory_db();
+        run_transaction(&mut conn, &[insert("a")]).unwrap();
+        let present = run_transaction(
+            &mut conn,
+            &[guarded(
+                "SELECT id FROM workspaces WHERE id = ?",
+                vec![SqlParam::Text("a".to_string())],
+                StatementGuard::Rows,
+            )],
+        )
+        .unwrap();
+        assert!(matches!(present, TxOutcome::Aborted { .. }));
+        let absent = run_transaction(
+            &mut conn,
+            &[guarded(
+                "SELECT id FROM workspaces WHERE id = ?",
+                vec![SqlParam::Text("z".to_string())],
+                StatementGuard::NoRows,
+            )],
+        )
+        .unwrap();
+        assert!(matches!(absent, TxOutcome::Aborted { .. }));
+    }
+
+    #[test]
+    fn a_sql_error_rolls_back_the_batch() {
+        let mut conn = memory_db();
+        let outcome = run_transaction(&mut conn, &[insert("a"), insert("a")]);
+        assert!(outcome.is_err());
+        assert_eq!(count(&conn), 0);
+    }
+
+    #[test]
+    fn selects_inside_a_batch_return_rows_without_changes() {
+        let mut conn = memory_db();
+        let outcome = run_transaction(
+            &mut conn,
+            &[
+                insert("a"),
+                statement("SELECT id, name FROM workspaces", Vec::new()),
+            ],
+        )
+        .unwrap();
+        let TxOutcome::Committed { results } = outcome else {
+            panic!("expected a commit");
+        };
+        assert_eq!(results[1].rows_affected, 0);
+        assert_eq!(results[1].rows[0].get("id"), Some(&serde_json::json!("a")));
+    }
+
+    #[test]
+    fn a_guard_without_an_abort_code_is_refused_before_writing() {
+        let mut conn = memory_db();
+        let mut unguarded = insert("b");
+        unguarded.abort_when = Some(StatementGuard::NoChanges);
+        let outcome = run_transaction(&mut conn, &[insert("a"), unguarded]);
+        assert!(matches!(outcome, Err(DbError::GuardWithoutAbortCode(1))));
+        assert_eq!(count(&conn), 0);
+    }
+
+    #[test]
+    fn outcomes_serialize_with_camel_case_keys() {
+        let committed = serde_json::to_value(TxOutcome::Committed {
+            results: vec![TxStatementResult {
+                rows_affected: 2,
+                rows: Vec::new(),
+            }],
+        })
+        .unwrap();
+        assert_eq!(
+            committed,
+            serde_json::json!({ "status": "committed", "results": [{ "rowsAffected": 2, "rows": [] }] })
+        );
+        let aborted = serde_json::to_value(TxOutcome::Aborted {
+            abort_code: "STALE".to_string(),
+            index: 1,
+        })
+        .unwrap();
+        assert_eq!(
+            aborted,
+            serde_json::json!({ "status": "aborted", "abortCode": "STALE", "index": 1 })
+        );
+    }
+
+    #[test]
+    fn statements_deserialize_from_the_client_shape() {
+        let parsed: TxStatement = serde_json::from_value(serde_json::json!({
+            "sql": "UPDATE workspaces SET name = ?",
+            "params": ["y"],
+            "abortWhen": "noChanges",
+            "abortCode": "STALE"
+        }))
+        .unwrap();
+        assert!(matches!(parsed.abort_when, Some(StatementGuard::NoChanges)));
+        assert_eq!(parsed.abort_code.as_deref(), Some("STALE"));
+        assert_eq!(parsed.params.len(), 1);
     }
 }
