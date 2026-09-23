@@ -49,7 +49,7 @@ import {
   ModelPickerTriggersScene,
 } from './scenes/ModelPickerScenes';
 
-const SCENES = {
+export const MOCK_SCENES = {
   workspace: WorkspaceScene,
   workflow: WorkflowScene,
   shell: ShellScene,
@@ -98,7 +98,7 @@ export const MockScene = () => {
   }, []);
 
   const sceneName = new URLSearchParams(window.location.search).get('scene') ?? 'workspace';
-  const Scene = SCENES[sceneName as keyof typeof SCENES] ?? WorkspaceScene;
+  const Scene = MOCK_SCENES[sceneName as keyof typeof MOCK_SCENES] ?? WorkspaceScene;
 
   return (
     <ToastProvider>

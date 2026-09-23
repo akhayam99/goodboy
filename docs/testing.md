@@ -30,6 +30,7 @@ Every desktop test that loads the real store goes through `apps/desktop/src/stor
 `apps/desktop/src/__tests__/a11y/` runs as its own vitest project: `pnpm --filter @goodboy/desktop test:a11y` (CI step `a11y`, blocking). `pnpm test` skips it to stay fast.
 
 - Every case calls `expectBaseline({ name, container })`, which runs axe and compares the sorted violation ids to `A11Y_BASELINE` in `baseline.ts`. A new violation fails; a fixed one also fails until its id is deleted from the baseline. The baseline only shrinks: never add an entry to silence a violation you introduced. Delete the file when it is empty.
+- `scenes.test.tsx` renders every entry of `MOCK_SCENES` (the tracked registry in `app/components/MockScene/index.tsx`) with a fresh store and a Tauri bridge that never answers, so a new scene is scanned the day it is registered.
 - Seeds follow the mock vocabulary (Harborline, Northwind, ledger-core, payments-api), never real names.
 - happy-dom has no layout, so axe reports `color-contrast` as incomplete, never as a violation. Contrast belongs to the token contrast guard (`__tests__/regressions/token-contrast-floor.test.ts`); this suite covers structure only, in either theme.
 
