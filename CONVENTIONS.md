@@ -78,7 +78,7 @@ The steps are in `.github/workflows/ci.yml`, in this order. All of them block. A
 - `lint`: `turbo run lint --affected`. No package has a `lint` script and the repo has no eslint config, so this step checks nothing today. Root `pnpm lint` also runs `check:tauri-commands`.
 - `typecheck`: `turbo run typecheck --affected`, `tsc --noEmit` in each package.
 - `tauri commands`: `check:tauri-commands`. Every frontend `invoke` name is registered in `generate_handler!`, and every registered command is invoked somewhere.
-- `knip`: unused files, duplicate exports and unlisted dependencies across the repo.
+- `knip`: unused files, duplicate exports, unlisted dependencies and declared dependencies nothing imports, across the repo.
 - `knip production`: unused files, exports and types in `apps/desktop` production code.
 - `test`: `turbo run test --affected`, vitest in every package.
 - `build`: `turbo run build --affected`.

@@ -58,7 +58,7 @@ jobs:
         run: pnpm run check:tauri-commands
 
       - name: knip
-        run: pnpm knip --include files,duplicates,unlisted
+        run: pnpm knip --include files,duplicates,unlisted,dependencies,devDependencies
 
       - name: knip production
         run: pnpm run knip:production
