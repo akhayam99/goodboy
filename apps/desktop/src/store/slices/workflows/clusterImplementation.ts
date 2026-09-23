@@ -191,6 +191,9 @@ const pairClusterNodes = ({
   });
 };
 
+const isCompletedPair = ({ pair }: { readonly pair: ClusterNodePair }): boolean =>
+  pair.isReleased || pair.agent?.status === 'completed';
+
 const clusterProgress = ({
   pairs,
 }: {
@@ -199,7 +202,7 @@ const clusterProgress = ({
   pairs.map((pair) => ({
     nodeId: pair.node.id,
     isSettled: pair.isReleased || (pair.agent !== null && isSettledChild(pair.agent)),
-    isCompleted: pair.isReleased || pair.agent?.status === 'completed',
+    isCompleted: isCompletedPair({ pair }),
     isStartable:
       pair.isReleased === false && (pair.agent === null || pair.agent.status === 'pending'),
   }));
@@ -271,7 +274,7 @@ function composeClusterKickoff({
 }): string {
   const total = pairs.length > 0 ? pairs.length : 1;
   const priorTitles = pairs
-    .filter((pair) => pair.node.ordinal < target.ordinal)
+    .filter((pair) => pair.node.ordinal < target.ordinal && isCompletedPair({ pair }))
     .map((pair) => `${pair.node.ordinal + 1}. ${pair.node.title}`);
   const priorBlock =
     priorTitles.length > 0

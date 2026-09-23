@@ -126,7 +126,7 @@ export const recordClusterExecutionGraph = async ({
   snapshot,
 }: RecordParams): Promise<ClusterExecutionGraph> => {
   const now = Date.now();
-  await db.execute(
+  const created = await db.execute(
     `INSERT OR IGNORE INTO cluster_execution_graphs
        (container_agent_id, session_id, workflow_run_id, plan_id, goal_title,
         execution_version, graph_json, created_at)
@@ -142,7 +142,8 @@ export const recordClusterExecutionGraph = async ({
       now,
     ],
   );
-  for (const node of snapshot.nodes) {
+  const nodesToRecord = created.rowsAffected === 1 ? snapshot.nodes : [];
+  for (const node of nodesToRecord) {
     await db.execute(
       `INSERT OR IGNORE INTO cluster_execution_nodes
          (container_agent_id, node_id, agent_id, ordinal, role)
