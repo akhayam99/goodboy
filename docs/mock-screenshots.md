@@ -5,63 +5,64 @@
 > testing (see `docs/testing.md`) or the rule that a post needs a screenshot
 > at all (`goodboy-atlas/docs/autonomy/announcement.md`).
 
-The rule for any published screenshot is: real components, fake data, never
-an empty state, never real client or project names. Getting there the slow
-way costs an afternoon. This is the fast way, learned once, in full.
+Every published screenshot follows one rule: real components, fake data, never
+an empty state, never real client or project names. Getting there the slow way
+takes an afternoon. This page is the fast way, written down once, in full.
 
 ## Do not run the Tauri desktop app
 
-The instinct is to launch the real `.app` and drive it. Don't. Two problems
-compound: launching a second instance fights the production build over
-window focus and the same bundle identifier, and (unexplained, given up on
-after exhausting every diagnostic) a Tauri dev build's WKWebView can keep
-rendering stale content even after confirming, byte for byte via `curl`,
-that the served source is correct. No root cause was found; the fix was to
-stop using the desktop shell entirely.
+Your first instinct is to launch the real `.app` and drive it. Don't. Two
+problems add up. First, a second instance fights the production build over
+window focus and the same bundle identifier. Second, a Tauri dev build's
+WKWebView can keep showing old content, even after `curl` confirms, byte for
+byte, that the served source is correct. Nobody found out why. Every
+diagnostic was tried, then the hunt was dropped. No root cause was found, and
+the fix was to stop using the desktop shell entirely.
 
-Run `pnpm dev` in `apps/desktop` (starts the Vite dev server, port from
-`tauri.conf.json`'s `devUrl`, currently 1421) and open that URL in an
-ordinary browser. Nothing about the app's own code depends on the Tauri
-runtime unless a component calls `invoke()` directly; the mock scenes below
-never do, so this just works, and the browser's own devtools (console,
-network, DOM) give visibility Tauri's webview does not.
+Run `pnpm dev` in `apps/desktop` and open its URL in an ordinary browser. It
+starts the Vite dev server on the port set by `tauri.conf.json`'s `devUrl`,
+currently 1421. The app's own code only needs the Tauri runtime when a
+component calls `invoke()` directly. The mock scenes below never do, so this
+works as is. The browser's own devtools (console, network, DOM) also let you
+see things the Tauri webview hides.
 
 ## Turn on mock mode
 
 - `apps/desktop/.env.local` (gitignored) must contain `VITE_GOODBOY_MOCK=1`.
-  A shell-exported env var before `pnpm dev` is **not** picked up the same
-  way; it has to be this file.
+  An env var exported in the shell before `pnpm dev` is **not** picked up the
+  same way. It has to be this file.
 - `apps/desktop/src/store/mock-data.ts` exports `MOCK_ENABLED =
 import.meta.env.VITE_GOODBOY_MOCK === '1' && import.meta.env.MODE !== 'test'`.
-  The test-mode half is not optional: vitest reads the same `.env.local`, so
-  without it every suite that renders `App` gets a mock scene instead and fails
-  in a way that looks like a regression in the feature under test.
-- `App.tsx` checks it as the literal first line of the `App` component body,
+  The test-mode half is not optional. Vitest reads the same `.env.local`.
+  Without that half, every suite that renders `App` gets a mock scene instead.
+  It then fails in a way that looks like a regression in the feature under
+  test.
+- `App.tsx` checks it on the very first line of the `App` component body,
   before any hook: `if (MOCK_ENABLED) { return <MockScene />; }`. It has to
-  be before the hooks, not after, or React's hook-count invariant breaks on
-  the next hot-reload.
+  come before the hooks, not after. Otherwise React's rule about a fixed number
+  of hooks breaks on the next hot-reload.
 - `MockScene` (`apps/desktop/src/app/components/MockScene/`) reads a
   `?scene=` query param and renders one of several scene components, one per
-  screenshot needed. Add a new scene by adding a file under `scenes/` and a
-  line in the `SCENES` map.
+  screenshot. To add a scene, add a file under `scenes/` and a line in the
+  `SCENES` map.
 
 ## Reuse the real components, never rebuild the UI
 
-Every scene should render the actual production component the feature uses,
-fed fake props or fake store state. Rebuilding the visual by hand drifts
-from the real app the moment either one changes, and it looks like it.
+Every scene should render the real production component the feature uses, fed
+with fake props or fake store state. A hand-built copy drifts away from the
+real app as soon as either one changes, and it shows.
 
-Two situations, and they need different tactics:
+There are two cases, and each needs a different approach:
 
-**The component is pure props.** `WorkflowStepGraph`, `ResolveBoard`,
-`RoleModelRow` are like this: read the component's prop type, construct
-matching fake data (real branded id casts, e.g. `'x' as Agent['id']`, real
-enum values), pass it straight in. No store involved.
+**The component is pure props.** `WorkflowStepGraph`, `ResolveBoard` and
+`RoleModelRow` work this way. Read the component's prop type and build fake
+data that matches it. Use real branded id casts (e.g. `'x' as Agent['id']`)
+and real enum values. Pass it straight in. No store involved.
 
 **The component reads the zustand store.** `SessionOverviewPane`,
-`DefaultsPanel`, `SessionNavSidebar`, `AppFooter`'s enabling flags are like
-this. `useAppStore` is a bare `create()` store: no `persist` middleware, no
-Tauri-backed side effect on `setState`. That makes it safe to seed directly:
+`DefaultsPanel`, `SessionNavSidebar` and `AppFooter`'s enabling flags work
+this way. `useAppStore` is a bare `create()` store: no `persist` middleware,
+and no Tauri side effect on `setState`. So it is safe to fill it directly:
 
 ```tsx
 useEffect(() => {
@@ -75,61 +76,63 @@ useEffect(() => {
 }, []);
 ```
 
-The hard part is knowing which keys. Read the component's hook calls
-(`useAppStore((s) => s.foo[id])`) and every hook it calls in turn, not just
-the top-level props. A hook one level down needing a key you didn't seed
-does not crash; it silently renders empty, which looks like a bug in the
-component instead of a gap in the mock.
+The hard part is knowing which keys to fill. Read the component's hook calls
+(`useAppStore((s) => s.foo[id])`), then every hook those call in turn, not
+only the top-level props. If a hook one level down needs a key you didn't
+fill, nothing crashes. It quietly renders empty, and that looks like a bug in
+the component instead of a gap in the mock.
 
 ## Gotchas hit while building the scenes
 
 - **The same "role" badge is computed two different ways depending on
   which component you're in.** `useWorkspaceRuns`'s `kindOf` reads
-  `agent.kind` directly. `WorkflowStepGraphBranch`'s badge instead reads the
-  `agentKindOverride` **prop** (keyed by agent id) and falls back to
-  `inferAgentKindFromName(agent.name)`, ignoring `agent.kind` entirely.
-  Setting `kind: 'implementer'` on the agent object did nothing there; the
-  fix was populating `agentKindOverride={{ [id]: 'implementer', ... }}` on
-  `WorkflowStepGraph` itself. Check the actual read site before assuming a
-  field name carries across components.
+  `agent.kind` directly. `WorkflowStepGraphBranch`'s badge reads the
+  `agentKindOverride` **prop** instead (keyed by agent id). If that is empty
+  it falls back to `inferAgentKindFromName(agent.name)`, and it ignores
+  `agent.kind` entirely. Setting `kind: 'implementer'` on the agent object did
+  nothing there. The fix was to fill `agentKindOverride={{ [id]: 'implementer', ... }}`
+  on `WorkflowStepGraph` itself. Check where a field is really read before
+  you assume its name works the same in another component.
 - **`useWorkspaceRuns`'s Activity lane builds its workflow lookup from
   `state.phaseTemplates[workspaceId]`, not `state.sessionWorkflows`.**
-  Seeding only `sessionWorkflows` (which `SessionOverviewPane`'s own
-  `workflowById` union does read) leaves the Activity card empty. Seed both.
+  `SessionOverviewPane`'s own `workflowById` union does read
+  `sessionWorkflows`. But if you fill only `sessionWorkflows`, the Activity
+  card stays empty. Fill both.
 - **Provider/model routing badges** fall back to `run.modelOverride` /
   `run.providerOverride` on the `Agent` object when the
   `agentModelOverride`/`agentProviderOverride` prop maps are empty. Use real
   ids from `packages/core/src/providers/*/catalog.ts` (e.g. cursor's
-  `composer-2.5-fast`, codex's `gpt-6-astra` or `gpt-5.6-sol`), not invented strings; the
-  catalog is what `RoutingBadge` and the model picker resolve labels from.
-- **Fan-out / sub-agents** render via `WorkflowStepGraph`'s
+  `composer-2.5-fast`, codex's `gpt-6-astra` or `gpt-5.6-sol`), not made-up
+  strings. `RoutingBadge` and the model picker look up their labels in that
+  catalog.
+- **Fan-out / sub-agents** render through `WorkflowStepGraph`'s
   `childrenByParentId: ReadonlyMap<string, ReadonlyArray<Agent>>` prop, keyed
   by the parent agent's id. The node shows a `doneChildCount/childCount`
-  badge automatically; you don't compute or render that yourself.
+  badge on its own. You don't compute or render that yourself.
 - **Mounting `SessionNavSidebar` (or anything under it, like
-  `SessionNavFooter`) standalone throws `useToast must be used inside
-ToastProvider`.** The real app tree wraps everything in `ToastProvider`
-  before `MockScene` would ever mount under the current `MOCK_ENABLED` gate,
-  so `MockScene`'s own root has to wrap itself in `ToastProvider` too.
-- **`AppShell` already has `leftSidebar` and `footer` slots.** No layout
-  code is needed to add the real session sidebar or the real app footer to a
-  scene; pass the components into those two props.
+  `SessionNavFooter`) on its own throws `useToast must be used inside
+ToastProvider`.** In the real app tree, `ToastProvider` wraps everything, but
+  with the current `MOCK_ENABLED` gate `MockScene` mounts before that wrapper.
+  So `MockScene`'s own root has to wrap itself in `ToastProvider` too.
+- **`AppShell` already has `leftSidebar` and `footer` slots.** You need no
+  layout code to add the real session sidebar or the real app footer to a
+  scene. Pass the components into those two props.
 
 - **A studio can reach `invoke()` through a hook you never render.** The rule
-  above is about the render never depending on the Tauri runtime, and
-  `ImpactStudio` keeps it: its `useImpactMetrics` queries the database
-  directly, fails, and catches its own error, and the provider scope the
-  scene opens on renders nothing from it. Seeding cannot reach that hook,
+  above says the render must never depend on the Tauri runtime, and
+  `ImpactStudio` keeps it. Its `useImpactMetrics` queries the database
+  directly, fails, and catches its own error. The provider scope the scene
+  opens on renders nothing from it. Filling the store cannot reach that hook,
   because it does not go through a store action. When a scene mounts a studio,
-  open it on the scope whose panels are store-backed and check the console
-  before trusting a full-looking screenshot.
+  open it on the scope whose panels read from the store. Check the console
+  before you trust a screenshot that looks full.
 
 ## Capture the actual image, not a browser-pane screenshot
 
-An interactive browser pane's own screenshot tool adds its own chrome (a tab
-badge, capture-indicator artifacts) and is capped to a scaled-down size. For
-the file that actually gets committed and posted, shell out to headless
-Chrome against the same localhost URL:
+The screenshot tool of an interactive browser pane adds its own chrome (a tab
+badge, capture-indicator artifacts), and it caps the image at a smaller size.
+For the file that gets committed and posted, run headless Chrome from the
+shell against the same localhost URL:
 
 ```bash
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
@@ -141,36 +144,39 @@ Chrome against the same localhost URL:
 `--window-size=1440,900` matches the Tauri window's fixed default size in
 `tauri.conf.json`, so the crop matches what the real app looks like.
 `--force-device-scale-factor=2` gives a retina image. `--virtual-time-budget`
-gives the mock scene's `useEffect` time to seed the store and React time to
-render before the snapshot is taken.
+gives the mock scene's `useEffect` time to fill the store, and React time to
+render, before the snapshot is taken.
 
 ## Data hygiene
 
-Fake workspace names, session goals, usernames, must be generic but
-plausible, and never a real client, project, or person. Include at least one
-"hard" task among the fake ones (a rate-limiting bug, a rounding bug), not
-only trivial ones: an easy-looking task makes the product look like it's
-only for easy tasks.
+Fake workspace names, session goals and usernames must be generic but
+believable. They must never be a real client, project or person. Include at
+least one "hard" task among the fake ones (a rate-limiting bug, a rounding
+bug), not only trivial ones. If every task looks easy, the product looks like
+it's only for easy tasks.
 
 ## What already exists
 
 `apps/desktop/src/app/components/MockScene/` holds one scene component per
-screenshot, registered by key in the `SCENES` map, seeded from
-`apps/desktop/src/store/mock-data.ts` and from a per-scene seed module. Read
-the map before building anything: the surface you need is often already
-there, and the keys are the `?scene=` values. They cost nothing at runtime
-when `VITE_GOODBOY_MOCK` is unset.
+screenshot. Each one is registered by key in the `SCENES` map and filled from
+`apps/desktop/src/store/mock-data.ts` plus its own seed module. Read the map
+before you build anything. The surface you need is often already there, and
+the keys are the `?scene=` values. The scenes cost nothing at runtime when
+`VITE_GOODBOY_MOCK` is unset.
 
 README images always show the app around the feature. `scenes/shellChrome.tsx`
-holds the two frames: `ShellFrame` (top bar, sessions sidebar, crumb bar,
-footer) for anything inside a session, seeded with `seedShellChrome`, and
-`StudioFrame` (top bar and footer) for studios such as Settings, Impact and the
-Inbox, seeded with `seedStudioChrome`. `scenes/sceneReveal.ts` opens the
-completed mounts and holds a mount row in its hover state, so the row actions
-show up in a still image.
+holds the two frames:
 
-The README's feature guide is captured from these scenes, and the images live
-in `docs/images/`, named after the scene that produced them, so a re-capture
-is one command with no lookup. A shorter `--window-size` height than 900 is
-the way to crop a short surface: the layout keeps its own proportions and the
-footer stays pinned.
+- `ShellFrame` (top bar, sessions sidebar, crumb bar, footer) is for anything
+  inside a session. Fill it with `seedShellChrome`.
+- `StudioFrame` (top bar and footer) is for studios such as Settings, Impact
+  and the Inbox. Fill it with `seedStudioChrome`.
+
+`scenes/sceneReveal.ts` opens the completed mounts and keeps a mount row in
+its hover state, so the row actions show up in a still image.
+
+The README's feature guide is captured from these scenes. The images live in
+`docs/images/`, named after the scene that made them, so a re-capture is one
+command with no lookup. To crop a short surface, use a `--window-size` height
+shorter than 900. The layout keeps its own proportions and the footer stays
+pinned.
