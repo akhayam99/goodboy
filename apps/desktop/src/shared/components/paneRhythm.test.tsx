@@ -5,7 +5,6 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { PaneShell } from './PaneShell';
 import { FocusedPane } from './PaneShell/FocusedPane';
-import { StudioPanel } from './StudioPanel';
 import { StudioDetailLayout } from './StudioDetail/StudioDetailLayout';
 
 afterEach(cleanup);
@@ -49,7 +48,7 @@ const focusedPaneHeader = () => {
     </FocusedPane>,
   );
   const inset = nearestClasses({
-    node: screen.getByRole('heading', { name: 'Lens' }),
+    node: screen.getByText('Lens'),
     pattern: INSET,
   });
   unmount();
@@ -97,11 +96,11 @@ const studioDetailBleedDock = () => {
   return { header, dock };
 };
 
-const studioPanel = () => {
+const paneShellFramed = () => {
   const { unmount } = render(
-    <StudioPanel title="Panel">
+    <PaneShell title="Panel" scroll="body">
       <p>Panel body</p>
-    </StudioPanel>,
+    </PaneShell>,
   );
   const header = nearestClasses({ node: screen.getByText('Panel'), pattern: INSET });
   const body = nearestClasses({ node: screen.getByText('Panel body'), pattern: INSET });
@@ -112,7 +111,7 @@ const studioPanel = () => {
 describe('pane rhythm', () => {
   it('gives every shell header the same inset', () => {
     const detail = studioDetail();
-    const panel = studioPanel();
+    const panel = paneShellFramed();
 
     expect(focusedPaneHeader()).toBe(detail.header.inset);
     expect(panel.header).toBe(detail.header.inset);
@@ -121,7 +120,7 @@ describe('pane rhythm', () => {
 
   it('gives every shell body the same inset', () => {
     const detail = studioDetail();
-    const panel = studioPanel();
+    const panel = paneShellFramed();
 
     expect(paneShellBody().inset).toBe(detail.body.inset);
     expect(panel.body).toBe(detail.body.inset);
@@ -143,16 +142,13 @@ describe('pane rhythm', () => {
     expect(detail.dock.measure).toBe(PANE_RHYTHM.measure.pane);
   });
 
-  it('fills its parent so the studio column centers instead of hugging the left edge', () => {
-    const { container } = render(
-      <StudioPanel title="Panel">
+  it('centers the studio column instead of hugging the left edge', () => {
+    render(
+      <PaneShell title="Panel" scroll="body">
         <p>Panel body</p>
-      </StudioPanel>,
+      </PaneShell>,
     );
 
-    const root = container.firstElementChild as HTMLElement;
-
-    expect(root.className).toContain('w-full');
     expect(nearestClasses({ node: screen.getByText('Panel body'), pattern: /^mx-auto$/ })).toBe(
       'mx-auto',
     );

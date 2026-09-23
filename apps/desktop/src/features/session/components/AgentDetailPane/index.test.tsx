@@ -69,7 +69,7 @@ describe('AgentDetailPane', () => {
       <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
     );
 
-    const title = screen.getByRole('heading', { level: 2, name: 'Implement chat' });
+    const title = screen.getByRole('heading', { level: 1, name: 'Implement chat' });
     const status = screen.getByText('running');
 
     expect(title.className).toContain('text-xl');
@@ -126,7 +126,7 @@ describe('AgentDetailPane', () => {
     );
 
     const eyebrow = screen.getByText('Ship the lens eyebrow');
-    const title = screen.getByRole('heading', { level: 2 });
+    const title = screen.getByRole('heading', { level: 1 });
     expect(eyebrow.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 

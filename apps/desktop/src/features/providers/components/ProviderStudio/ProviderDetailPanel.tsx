@@ -20,7 +20,7 @@ import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 import { ApiProviderDetail } from './ApiProviderDetail';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 
 type Props = {
   readonly info: ProviderDisplayInfo | null;
@@ -96,18 +96,20 @@ function Detail({
   );
 
   return (
-    <StudioPanel
-      icon={
+    <PaneShell
+      scroll="body"
+      measure="reading"
+      glyph={
         <Icon
-          size={20}
+          size={16}
           aria-hidden
           className="shrink-0"
           style={{ color: `var(${PROVIDER_BRAND[id].cssVar})` }}
         />
       }
       title={info.label}
-      subtitle={subtitle}
-      action={action}
+      description={subtitle}
+      actions={action}
     >
       <section className="flex flex-col gap-2">
         <SectionHeader label="Account" />
@@ -154,7 +156,7 @@ function Detail({
           <ProviderBindingsSection providerId={id} cliIdentity={info.identity} />
         </>
       )}
-    </StudioPanel>
+    </PaneShell>
   );
 }
 

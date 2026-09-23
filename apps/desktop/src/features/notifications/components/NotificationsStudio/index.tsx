@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { PANE_RHYTHM } from '@goodboy/ui';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
@@ -60,11 +59,12 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
       onClose={onClose}
     >
       {() => (
-        <StudioPanel
+        <PaneShell
+          scroll="body"
+          measure="reading"
           title="All notifications"
-          subtitle={subtitle}
-          maxWidthClass={PANE_RHYTHM.measure.reading}
-          action={
+          description={subtitle}
+          actions={
             notifications.length > 0 ? (
               <NotificationsToolbar
                 unreadCount={unread}
@@ -150,7 +150,7 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
               })}
             </ul>
           ) : null}
-        </StudioPanel>
+        </PaneShell>
       )}
     </StudioShell>
   );

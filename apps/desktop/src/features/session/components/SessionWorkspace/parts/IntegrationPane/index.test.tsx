@@ -349,7 +349,7 @@ describe('IntegrationPane', () => {
 
     const detail = screen.getByTestId('task-detail');
 
-    expect(screen.getByRole('heading', { name: 'Linear' })).toBeDefined();
+    expect(screen.getByText('Linear')).toBeDefined();
     expect(within(detail).queryByRole('button', { name: 'Unlink GB-42' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Unlink GB-42' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Link issue' })).toBeDefined();

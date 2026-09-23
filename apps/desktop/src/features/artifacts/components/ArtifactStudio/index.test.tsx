@@ -525,7 +525,7 @@ describe('ArtifactStudio', () => {
     state.focusedPlanId = { 'sess-1': 'plan-1' };
     state.sessionArtifacts = { 'sess-1': [report] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByRole('heading', { level: 1, name: 'Plans' })).toBeDefined();
+    expect(screen.getByText('Plans')).toBeDefined();
     expect(screen.getByRole('button', { name: /start/i })).toBeDefined();
     expect(screen.getByLabelText('Delete plan')).toBeDefined();
     expect(screen.getByRole('tab', { name: /edit/i })).toBeDefined();

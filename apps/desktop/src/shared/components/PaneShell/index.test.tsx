@@ -183,7 +183,8 @@ describe('FocusedPane', () => {
       </FocusedPane>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Workflows' })).toBeDefined();
+    expect(screen.getByText('Workflows')).toBeDefined();
+    expect(screen.queryByRole('heading')).toBeNull();
     expect(screen.getByText('2')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Close' })).toBeDefined();
     expect(screen.getByText('Body copy')).toBeDefined();
@@ -197,7 +198,7 @@ describe('FocusedPane', () => {
     );
 
     const eyebrow = screen.getByText('Ship the lens eyebrow');
-    const lens = screen.getByRole('heading', { name: 'Workflows' });
+    const lens = screen.getByText('Workflows');
     expect(eyebrow.compareDocumentPosition(lens) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -209,7 +210,7 @@ describe('FocusedPane', () => {
     );
 
     const header = closestWith({
-      node: screen.getByRole('heading', { name: 'Workflows' }),
+      node: screen.getByText('Workflows'),
       pattern: /^p[xy]-/,
     }) as HTMLElement;
     expect(header.className).toContain(PANE_RHYTHM.header);

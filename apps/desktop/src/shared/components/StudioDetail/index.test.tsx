@@ -382,7 +382,7 @@ describe('HeaderBand', () => {
       />,
     );
 
-    const title = screen.getByRole('heading', { level: 2, name: 'Improve detail layout' });
+    const title = screen.getByRole('heading', { level: 1, name: 'Improve detail layout' });
     const meta = screen.getByText('GB-42');
     const subtitle = screen.getByText('api/items');
     const action = screen.getByRole('link', { name: 'Open' });

@@ -5,7 +5,7 @@ import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { SessionRows } from './SessionRows';
 import { StudioWidget } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -38,7 +38,7 @@ export const FlowPanel = ({
   const countOrUnknown = (value: number | undefined): string =>
     value === undefined ? UNKNOWN_VALUE : String(value);
   return (
-    <StudioPanel title="Flow" subtitle="How quickly work moves and where it waits">
+    <PaneShell scroll="body" title="Flow" description="How quickly work moves and where it waits">
       <ErrorStrip label="agent duration" error={agentDurations.error} onRetry={onRetry} />
       <ErrorStrip label="flow health" error={flowHealth.error} onRetry={onRetry} />
       {isLoading && agents === null && health === null ? (
@@ -135,6 +135,6 @@ export const FlowPanel = ({
           onOpenSession={onOpenSession}
         />
       </StudioWidget>
-    </StudioPanel>
+    </PaneShell>
   );
 };

@@ -325,10 +325,11 @@ describe('ToolSettingsScope', () => {
       render(<ToolSettingsScope workspaceId={WORKSPACE_ID} initialFocus="linear" />);
     });
     const title = screen.getByRole('heading', { name: 'Linear' });
-    expect(title.parentElement?.textContent).toBe('LinearConnect Linear');
+    const header = title.parentElement?.parentElement ?? null;
+    expect(header?.textContent).toBe('LinearConnect Linear');
     expect(screen.getAllByRole('heading')).toHaveLength(1);
     act(() => store.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [LINEAR] } }));
-    expect(title.parentElement?.textContent).toBe('LinearAda · acme');
+    expect(header?.textContent).toBe('LinearAda · acme');
     expect(screen.getAllByRole('heading')).toHaveLength(1);
   });
 

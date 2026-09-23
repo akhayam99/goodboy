@@ -16,7 +16,7 @@ import { TaskModelRow } from './TaskModelRow';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { ProviderPicker } from '../../../../../shared/components/RoutingPicker/ProviderPicker';
-import { StudioPanel } from '../../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -101,9 +101,11 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
   };
 
   return (
-    <StudioPanel
+    <PaneShell
+      scroll="body"
+      measure="reading"
       title="Defaults"
-      subtitle="Choose provider defaults for this workspace, its agent roles, and its auxiliary tasks."
+      description="Choose provider defaults for this workspace, its agent roles, and its auxiliary tasks."
     >
       <section className="flex flex-col gap-1">
         <SectionHeader
@@ -209,6 +211,6 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
       </section>
 
       {error != null ? <p className="text-xs text-danger">{error}</p> : null}
-    </StudioPanel>
+    </PaneShell>
   );
 };

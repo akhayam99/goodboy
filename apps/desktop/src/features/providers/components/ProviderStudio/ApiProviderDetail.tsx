@@ -6,7 +6,7 @@ import { useAppStore } from '../../../../store';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -47,11 +47,13 @@ export const ApiProviderDetail = ({ info }: Props) => {
   );
 
   return (
-    <StudioPanel
-      icon={<Icon size={20} aria-hidden className="shrink-0" style={{ color }} />}
+    <PaneShell
+      scroll="body"
+      measure="reading"
+      glyph={<Icon size={16} aria-hidden className="shrink-0" style={{ color }} />}
       title={info.label}
-      subtitle="Runs through the OpenCode runtime"
-      action={action}
+      description="Runs through the OpenCode runtime"
+      actions={action}
     >
       <section className="flex flex-col gap-2">
         <SectionHeader
@@ -99,6 +101,6 @@ export const ApiProviderDetail = ({ info }: Props) => {
 
       <ProviderCredentialsSection providerId={info.id} />
       <ProviderBindingsSection providerId={info.id} cliIdentity={null} />
-    </StudioPanel>
+    </PaneShell>
   );
 };

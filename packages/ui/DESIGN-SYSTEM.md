@@ -287,6 +287,15 @@ surface. `meta` holds counts and totals in `tabular-nums`, never a control. The
 header row wraps, so actions drop under the title instead of squeezing it. The
 pane owns the gap below the header, and children add no top margins.
 
+**One title grade.** Every lens pane and studio detail gets its title from
+`PaneShell`: an `h1` at `text-xl`, then an optional description, meta and
+actions. `icon` takes a concept glyph, `glyph` takes a brand mark. A detail
+that needs its own header row passes `HeaderBand` (also an `h1`) through the
+custom `header` slot. `scroll="body"` keeps the header fixed above a divider
+for studio details. Studio chrome (`OverlayHeader`) and the focused-pane lens
+label are window chrome, not headings. The header is named with `aria-label`,
+so the detail title is the only `h1` on the surface.
+
 **The reading column caps at `max-w-5xl` and centres.** That is 1024px, which
 is also the window's minimum width. So the cap never applies at minimum size.
 There, the sidebar and the pane insets set the width. The cap is for wide

@@ -1,7 +1,7 @@
 import { Button, SectionHeader } from '@goodboy/ui';
 import type { IntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { FOOTER_INTEGRATIONS } from '../../../../app/components/AppFooter/categories';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import {
   IntegrationGlyph,
   integrationLabel,
@@ -37,10 +37,12 @@ export const ToolDetailPanel = ({
       : toolIdentity({ binding })
     : FOOTER_INTEGRATIONS.find((entry) => entry.provider === provider)?.connectLabel;
   return (
-    <StudioPanel
+    <PaneShell
+      scroll="body"
+      measure="reading"
       title={title}
-      subtitle={subtitle}
-      icon={<IntegrationGlyph provider={provider} size={20} />}
+      description={subtitle}
+      glyph={<IntegrationGlyph provider={provider} size={16} />}
     >
       <section className="flex flex-col gap-2">
         <SectionHeader label="Account" />
@@ -63,6 +65,6 @@ export const ToolDetailPanel = ({
           </Button>
         </div>
       ) : null}
-    </StudioPanel>
+    </PaneShell>
   );
 };

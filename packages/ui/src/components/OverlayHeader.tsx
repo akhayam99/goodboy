@@ -33,13 +33,13 @@ export const OverlayHeader = ({
 }: Props) => {
   if (variant === 'fullscreen') {
     return (
-      <header className="flex shrink-0 items-center gap-3 px-6 py-3">
+      <header aria-label={title} className="flex shrink-0 items-center gap-3 px-6 py-3">
         {glyph ??
           (Icon != null ? (
             <Icon size={18} className={cn('shrink-0', tintClasses(tone).icon)} aria-hidden />
           ) : null)}
         <div className="flex min-w-0 flex-col">
-          <h1 className="text-sm font-semibold text-foreground">{title}</h1>
+          <span className="text-sm font-semibold text-foreground">{title}</span>
           {subtitle != null ? (
             <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
           ) : null}
@@ -66,12 +66,15 @@ export const OverlayHeader = ({
   }
 
   return (
-    <header className={cn('flex shrink-0 items-center gap-1.5 px-3', heightClassName)}>
+    <header
+      aria-label={title}
+      className={cn('flex shrink-0 items-center gap-1.5 px-3', heightClassName)}
+    >
       {glyph ??
         (Icon != null ? (
           <Icon size={12} className={cn('shrink-0', tintClasses(tone).icon)} aria-hidden />
         ) : null)}
-      <h1 className="shrink-0 text-2xs font-semibold text-foreground">{title}</h1>
+      <span className="shrink-0 text-2xs font-semibold text-foreground">{title}</span>
       {subtitle != null && subtitle !== '' ? (
         <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
       ) : null}

@@ -10,7 +10,7 @@ import { CapEditor } from './CapEditor';
 import { CostRing } from './CostRing';
 import { CoverageNotice } from './CoverageNotice';
 import { ModelTable } from './ModelTable';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { TurnsTable } from './TurnsTable';
 import { StudioWidget } from '@goodboy/ui';
 import { buildModelBreakdown, coverageTurnCounts, providerLabel, type WorkspaceTurn } from './lib';
@@ -59,10 +59,11 @@ export const ProviderPanel = ({
   const coverage = useMemo(() => coverageTurnCounts(models), [models]);
 
   return (
-    <StudioPanel
-      icon={<ProviderIcon provider={provider} size={20} />}
+    <PaneShell
+      scroll="body"
+      glyph={<ProviderIcon provider={provider} size={16} />}
       title={providerLabel(provider)}
-      subtitle={`${formatUsd(spent)} total spend`}
+      description={`${formatUsd(spent)} total spend`}
     >
       <ErrorStrip label="budget rules" error={rulesResult.error} onRetry={onRetryRules} />
       <ErrorStrip
@@ -110,6 +111,6 @@ export const ProviderPanel = ({
       </StudioWidget>
 
       <TurnsTable turns={filtered} showSession onOpenSession={onOpenSession} />
-    </StudioPanel>
+    </PaneShell>
   );
 };

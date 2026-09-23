@@ -7,7 +7,7 @@ import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { SessionRows } from './SessionRows';
 import { TrendStatCard } from './TrendStatCard';
 import { StudioWidget } from '@goodboy/ui';
@@ -49,9 +49,10 @@ export const OverviewPanel = ({
       ? ((data.previousOrchestratedSessions ?? 0) / data.previousSessionCount) * 100
       : null;
   return (
-    <StudioPanel
+    <PaneShell
+      scroll="body"
       title="Overview"
-      subtitle="What orchestration shipped and how quickly work reached done"
+      description="What orchestration shipped and how quickly work reached done"
     >
       <ErrorStrip label="overview" error={overview.error} onRetry={onRetryOverview} />
       <ErrorStrip
@@ -166,6 +167,6 @@ export const OverviewPanel = ({
         </>
       ) : null}
       {spendSection}
-    </StudioPanel>
+    </PaneShell>
   );
 };

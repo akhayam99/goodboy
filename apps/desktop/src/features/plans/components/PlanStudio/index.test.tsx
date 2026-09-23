@@ -432,7 +432,7 @@ describe('PlanStudio subpage', () => {
     ];
     state.focusedPlanId = { 'sess-1': 'plan-2' };
     const { container } = render(<PlanStudio sessionId={'sess-1' as never} />);
-    const title = screen.getByRole('heading', { level: 2, name: 'Second plan' });
+    const title = screen.getByRole('heading', { level: 1, name: 'Second plan' });
     const status = screen.getByText('active');
 
     expect(screen.getByText('body two')).toBeDefined();

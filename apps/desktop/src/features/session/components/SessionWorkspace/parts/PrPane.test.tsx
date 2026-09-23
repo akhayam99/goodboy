@@ -254,7 +254,7 @@ describe('PrPane', () => {
     render(<PrPane session={session} eyebrow={<span>Ship the lens eyebrow</span>} />);
 
     const eyebrow = screen.getByText('Ship the lens eyebrow');
-    const title = screen.getByRole('heading', { level: 2 });
+    const title = screen.getByRole('heading', { level: 1 });
     expect(eyebrow.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -277,7 +277,7 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} />);
 
-    const title = screen.getByRole('heading', { name: 'Refactor authentication', level: 2 });
+    const title = screen.getByRole('heading', { name: 'Refactor authentication', level: 1 });
     const host = screen.getByText('GitLab');
 
     expect(title.compareDocumentPosition(host) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

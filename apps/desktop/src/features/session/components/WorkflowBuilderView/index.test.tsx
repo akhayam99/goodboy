@@ -301,7 +301,7 @@ describe('uniqueWorkflowName', () => {
 describe('WorkflowBuilderView (studio chrome)', () => {
   it('renders the studio header with the title and workspace name', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    expect(screen.getByRole('heading', { name: /start a workflow/i })).toBeDefined();
+    expect(screen.getByRole('banner', { name: /start a workflow/i })).toBeDefined();
     expect(screen.getByText('Test workspace')).toBeDefined();
   });
 });

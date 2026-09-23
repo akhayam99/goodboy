@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Button, EmptyState, Markdown, Skeleton, SkeletonText } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '@goodboy/ui';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import type { ReleaseNote } from '../../changelog';
 import { formatReleaseDate } from '../../formatReleaseDate';
@@ -31,7 +31,13 @@ export const ReleaseDetail = ({
       : undefined;
 
   return (
-    <StudioPanel title={release?.version ?? 'Release notes'} subtitle={subtitle} action={action}>
+    <PaneShell
+      scroll="body"
+      measure="reading"
+      title={release?.version ?? 'Release notes'}
+      description={subtitle}
+      actions={action}
+    >
       {view === 'loading' ? (
         <div className="flex flex-col gap-5" role="status" aria-label="Loading releases">
           <Skeleton className="h-6 w-36" />
@@ -84,6 +90,6 @@ export const ReleaseDetail = ({
           )}
         </>
       ) : null}
-    </StudioPanel>
+    </PaneShell>
   );
 };
