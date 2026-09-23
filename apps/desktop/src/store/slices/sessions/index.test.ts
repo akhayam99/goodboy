@@ -1705,7 +1705,8 @@ describe('store contract', () => {
         title: 'Ship the retry',
       };
       const store = useAppStore;
-      store.setState({ currentWorkspaceId: WS_ID });
+      const emitSpy = vi.fn(async () => undefined);
+      store.setState({ currentWorkspaceId: WS_ID, emitNotification: emitSpy as never });
       await primeWorktree();
       const { upsertSessionExternalTask } = await import('@goodboy/db');
       (upsertSessionExternalTask as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
@@ -1721,6 +1722,14 @@ describe('store contract', () => {
       expect(
         store.getState().sessionExternalTasks[session.id]?.map((task) => task.identifier),
       ).toEqual(['ENG-9']);
+      expect(emitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          severity: 'warning',
+          title: "Couldn't link acme/web#7 to this session",
+          body: 'acme/web#7: db down',
+          sessionId: session.id,
+        }),
+      );
     });
 
     it('still creates the session and keys an empty task list when persistence fails', async () => {

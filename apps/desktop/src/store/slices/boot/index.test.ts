@@ -204,6 +204,28 @@ describe('store contract', () => {
       expect(s.bootPhase).toBe('ready');
     });
 
+    it('warns once, grouped across launches, when saved integration keys stay out of the keychain', async () => {
+      const store = useAppStore;
+      const invokeImpl = storySpies.tauriInvoke.getMockImplementation();
+      storySpies.tauriInvoke.mockImplementation(async (command?: unknown, args?: unknown) => {
+        if (command === 'integration_credentials_adopt') {
+          throw new Error('keychain is locked');
+        }
+        return invokeImpl?.(command, args);
+      });
+
+      await store.getState().hydrate();
+
+      expect(store.getState().notifications).toContainEqual(
+        expect.objectContaining({
+          severity: 'warning',
+          title: "Couldn't move saved integration keys to the keychain",
+          body: 'keychain is locked',
+          coalesceKey: 'boot:integration-key-adoption',
+        }),
+      );
+    });
+
     it('reattaches live scripts and terminals during hydration', async () => {
       const store = useAppStore;
 

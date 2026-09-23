@@ -20,6 +20,8 @@ import { drainAuditRetryQueue } from './auditRetryQueue';
 import type { GetFn, SetFn } from './types';
 import type { BootPhase } from '../../types';
 
+const INTEGRATION_KEY_ADOPTION_COALESCE_KEY = 'boot:integration-key-adoption';
+
 type RecordBootBreadcrumbParams = {
   phase: BootPhase;
   detail?: string;
@@ -108,7 +110,15 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           )
         ).flat();
         set({ workspaces, projects });
-        await adoptLegacyIntegrationSecrets();
+        const adoption = await adoptLegacyIntegrationSecrets();
+        if (adoption.ok === false) {
+          void get().reportError({
+            severity: 'warning',
+            title: "Couldn't move saved integration keys to the keychain",
+            error: adoption.error,
+            coalesceKey: INTEGRATION_KEY_ADOPTION_COALESCE_KEY,
+          });
+        }
         await get()
           .loadIntegrationCredentials()
           .catch(() => {});

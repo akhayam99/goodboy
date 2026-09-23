@@ -1,4 +1,5 @@
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import type {
   Agent,
   AttachmentInput,
@@ -213,6 +214,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     }
 
     const externalTaskRows: Array<SessionExternalTask> = [];
+    const failedTaskLinks: Array<{ readonly identifier: string; readonly error: unknown }> = [];
     for (const externalTask of externalTasks ?? []) {
       const row: SessionExternalTask = {
         sessionId: session.id,
@@ -227,9 +229,23 @@ export const createSession = (set: SetFn, get: GetFn) => {
       try {
         await upsertSessionExternalTask({ db: tauriDatabase, task: row });
         externalTaskRows.push(row);
-      } catch {
-        continue;
+      } catch (error) {
+        failedTaskLinks.push({ identifier: externalTask.identifier, error });
       }
+    }
+    const firstFailedLink = failedTaskLinks[0];
+    if (firstFailedLink !== undefined) {
+      void get().reportError({
+        severity: 'warning',
+        title:
+          failedTaskLinks.length === 1
+            ? `Couldn't link ${firstFailedLink.identifier} to this session`
+            : `Couldn't link ${failedTaskLinks.length} tasks to this session`,
+        error: failedTaskLinks
+          .map(({ identifier, error }) => `${identifier}: ${formatError(error)}`)
+          .join('\n'),
+        sessionId: session.id,
+      });
     }
     for (const row of externalTaskRows) {
       await get().recordSessionEvent({
