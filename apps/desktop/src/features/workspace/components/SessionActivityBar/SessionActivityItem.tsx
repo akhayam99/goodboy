@@ -3,9 +3,16 @@ import { CostBadge } from '../../../../features/providers/components/CostBadge';
 import { PULL_REQUEST_PRESENTATION } from '../../../../shared/pullRequestPresentation';
 import { EMPTY_ARRAY, useAppStore, useSessionCost, useSessionStageInfo } from '../../../../store';
 import type { Session, SessionId } from '@goodboy/types';
-import { PANE_RHYTHM, StatusDot, TERMINAL_DIM, cn, formatUsd, tintClasses } from '@goodboy/ui';
-import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
+import {
+  PANE_RHYTHM,
+  StatusDot,
+  TERMINAL_DIM,
+  cn,
+  formatUsd,
+  tintClasses,
+  InlineMarkdown,
+  inlineMarkdownText,
+} from '@goodboy/ui';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { describeSessionStage } from '../../../../features/session/session-stage';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
@@ -43,7 +50,7 @@ export const SessionActivityItem = ({
   );
   const sessionCost = useSessionCost(session.id as SessionId);
   const age = formatRelativeAge({ fromIso: session.updatedAt });
-  const plainGoal = useMemo(() => stripInlineMarkdown({ text: session.goal }), [session.goal]);
+  const plainGoal = useMemo(() => inlineMarkdownText({ text: session.goal }), [session.goal]);
 
   return (
     <button

@@ -1,9 +1,8 @@
 import type { ImpactSession } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
-import { FilledEmptyState } from '@goodboy/ui';
+import { FilledEmptyState, InlineMarkdown } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 
 type Props = {
   readonly sessions: ReadonlyArray<ImpactSession>;

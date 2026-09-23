@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react';
 import type { Notification, NotificationAction } from '@goodboy/db';
-import { formatError } from '@goodboy/ui';
+import { formatError, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, Workspace } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast, type ToastAction } from '../../../../app/components/Toast';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import type { ImpactScope } from '../../../impact/lib';
 import { openImpactStudio } from '../../../impact/openImpactStudio';
 
@@ -42,7 +41,7 @@ export const notificationContext = (
   }
   const session = n.sessionId ? sessions.find((s) => s.id === n.sessionId) : undefined;
   if (session) {
-    parts.push(stripInlineMarkdown({ text: session.goal }).trim() || 'untitled session');
+    parts.push(inlineMarkdownText({ text: session.goal }).trim() || 'untitled session');
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
 };

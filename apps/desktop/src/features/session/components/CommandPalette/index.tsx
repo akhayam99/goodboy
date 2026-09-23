@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
+import { Divider, EmptyState, ScrollFade, inlineMarkdownText } from '@goodboy/ui';
 import type { Agent, AgentId, SessionId, ProjectScript } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -19,7 +19,6 @@ import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEvent';
 import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { useThemeStore } from '../../../../shared/lib/theme';
 import { linkedProjectsLabel } from '../../../workspace/linkedProjectsLabel';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
@@ -175,7 +174,7 @@ export const CommandPalette = ({
       const ws = workspaces.find((w) => w.id === s.workspaceId);
       out.push({
         id: `session:${s.id}`,
-        label: stripInlineMarkdown({ text: s.goal }) || 'untitled session',
+        label: inlineMarkdownText({ text: s.goal }) || 'untitled session',
         sublabel: ws?.name,
         group: 'session',
         onSelect: () => void setCurrentSession(s.id),

@@ -7,9 +7,9 @@ import {
   InteractiveRow,
   Tooltip,
   cn,
+  inlineMarkdownText,
 } from '@goodboy/ui';
 import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { RESOLVE_COMMENT_UNAVAILABLE, RESOLVE_QUEUE_ACTION_LABEL } from '../../resolveQueueCopy';
 import { deliverySupportLine } from '../../resolveDeliverySupport';
 import { heldBackChipLabel } from '../../resolvePublishCopy';
@@ -41,7 +41,7 @@ export const ResolveQueueRow = ({
   const { status, reviewerNote, item } = row;
   const body = reviewerNote?.body ?? null;
   const accessibleName =
-    body === null ? RESOLVE_COMMENT_UNAVAILABLE : stripInlineMarkdown({ text: body });
+    body === null ? RESOLVE_COMMENT_UNAVAILABLE : inlineMarkdownText({ text: body });
   const support = deliverySupportLine({ row });
   const integratedSha = item.integratedSha;
   const postedAtMs = deliveryTimeMs({ row });

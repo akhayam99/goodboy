@@ -1,5 +1,4 @@
-import { Chip } from '@goodboy/ui';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
+import { Chip, inlineMarkdownText } from '@goodboy/ui';
 import {
   PARTIAL_ACCEPTANCE,
   PARTIAL_REFUSAL,
@@ -41,9 +40,7 @@ export const SharedCandidateNote = ({ members, onSelectMember }: Props) => {
               onClick={() => onSelectMember(member.threadId)}
               className="min-w-0 flex-1 truncate rounded-sm text-left text-2xs text-muted-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
-              {member.title === null
-                ? member.threadId
-                : stripInlineMarkdown({ text: member.title })}
+              {member.title === null ? member.threadId : inlineMarkdownText({ text: member.title })}
             </button>
             {member.approvalState === 'deferred' && (
               <Chip size="3xs" tone="warning" bordered={false} label="Later" />

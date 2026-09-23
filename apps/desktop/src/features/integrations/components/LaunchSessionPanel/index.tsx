@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { Button, cn, formatError, Textarea } from '@goodboy/ui';
+import { Button, cn, formatError, Textarea, inlineMarkdownText } from '@goodboy/ui';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { LaunchedNotice } from './LaunchedNotice';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 
 type ExternalTask = {
   readonly provider: SessionExternalTaskProvider;
@@ -66,7 +65,7 @@ export const LaunchSessionPanel = ({
         goal,
         externalTasks: [externalTask],
       });
-      showToast('success', `Session created: ${stripInlineMarkdown({ text: session.goal })}`);
+      showToast('success', `Session created: ${inlineMarkdownText({ text: session.goal })}`);
       onClose();
     } catch (launchError) {
       setError(formatError(launchError));

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { Input, Tooltip } from '@goodboy/ui';
+import { Input, Tooltip, InlineMarkdown } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
@@ -12,7 +12,6 @@ import { ContextChip } from './ContextChip';
 import { ContextDigest } from './ContextDigest';
 import { LinkedWorkChips } from './LinkedWorkChips';
 import { AttentionChips } from './AttentionChips';
-import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 import { ProjectMountRows } from './ProjectMountRows';
 import { SessionCostChip } from './SessionCostChip';
 

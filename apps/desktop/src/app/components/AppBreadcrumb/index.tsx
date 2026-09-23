@@ -1,8 +1,7 @@
+import { InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
 import { ChevronRight } from 'lucide-react';
 import type { BreadcrumbCrumb } from './buildBreadcrumb';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
-import { InlineMarkdown } from '../../../shared/components/InlineMarkdown';
-import { stripInlineMarkdown } from '../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 
 type Props = {
   readonly crumbs: BreadcrumbCrumb[];
@@ -14,7 +13,7 @@ export const AppBreadcrumb = ({ crumbs }: Props) => {
       {crumbs.map((crumb, index) => {
         const isLast = index === crumbs.length - 1;
         const Icon = crumb.icon;
-        const plainLabel = stripInlineMarkdown({ text: crumb.label });
+        const plainLabel = inlineMarkdownText({ text: crumb.label });
         return (
           <span key={crumb.id} className="flex min-w-0 items-center gap-2">
             {index > 0 && (

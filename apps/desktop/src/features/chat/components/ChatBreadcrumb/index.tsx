@@ -1,13 +1,11 @@
 import { useMemo } from 'react';
 import { ChevronRight, CornerLeftUp, GitBranch } from 'lucide-react';
 import type { Agent, AgentId, Session, Workflow, WorkspaceId } from '@goodboy/types';
-import { Divider, cn } from '@goodboy/ui';
+import { Divider, cn, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { AGENT_KIND_META, classifyAgent, type AgentKind } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
-import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { tintClasses } from '@goodboy/ui';
 import { WriteDestinationControl } from '../WriteDestinationControl';
 
@@ -133,7 +131,7 @@ export const ChatBreadcrumb = ({ session }: Props) => {
 
           <span
             className="min-w-0 truncate font-medium text-foreground"
-            title={stripInlineMarkdown({ text: sessionLabel })}
+            title={inlineMarkdownText({ text: sessionLabel })}
           >
             <InlineMarkdown text={sessionLabel} />
           </span>

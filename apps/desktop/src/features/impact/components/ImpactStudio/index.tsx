@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { ScrollFade, SegmentedTabs, StudioRailLayout } from '@goodboy/ui';
+import { ScrollFade, SegmentedTabs, StudioRailLayout, inlineMarkdownText } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { useAppStore } from '../../../../store';
 import { ProviderPanel } from '../../../budget/components/spend/ProviderPanel';
 import { SessionPanel } from '../../../budget/components/spend/SessionPanel';
@@ -149,7 +148,7 @@ export const ImpactStudio = ({ workspaceId, workspaceName, initialScope, onClose
         return selectedSession === null ? null : (
           <SessionPanel
             sessionId={selectedSession.sessionId}
-            goal={stripInlineMarkdown({ text: selectedSession.goal })}
+            goal={inlineMarkdownText({ text: selectedSession.goal })}
             isCurrent={selectedSession.isCurrent}
             turns={spend.turns.filter((turn) => turn.sessionId === selectedSession.sessionId)}
             softCapUsd={spend.softCapUsd(selectedSession.sessionId)}

@@ -1,11 +1,10 @@
 import { openToolSettings } from '../../../integrations/openToolSettings';
 import { useEffect, useMemo, useState } from 'react';
-import { IconButton, StudioRailLayout } from '@goodboy/ui';
+import { IconButton, StudioRailLayout, inlineMarkdownText } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { useSessionById } from '../../../../store';
 import { recordSessionId } from '../../recordSessionId';
 import { useInboxRecords } from '../../useInboxRecords';
@@ -102,7 +101,7 @@ export const InboxStudio = ({
       return null;
     }
     const goal =
-      filteredSession == null ? '' : stripInlineMarkdown({ text: filteredSession.goal }).trim();
+      filteredSession == null ? '' : inlineMarkdownText({ text: filteredSession.goal }).trim();
     return goal === '' ? 'Linked session' : goal;
   })();
 

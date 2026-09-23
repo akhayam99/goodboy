@@ -9,13 +9,13 @@ import {
   ScrollFade,
   chipClasses,
   useDropdown,
+  InlineMarkdown,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { openImpactStudio } from '../../../impact/openImpactStudio';
 import { SessionBudgetContent } from '../../../budget/components/spend/SessionBudgetContent';
 import type { WorkspaceTurn } from '../../../budget/components/spend/lib';
 import { EMPTY_ARRAY, useAppStore, useSessionCost } from '../../../../store';
-import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 import { sessionTitle } from '../../sessionTitle';
 import { manageDialogFocus } from './manageDialogFocus';
 

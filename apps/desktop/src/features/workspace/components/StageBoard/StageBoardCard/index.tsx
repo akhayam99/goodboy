@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo } from 'react';
 import { Archive, ChevronRight, Code, MessageSquareDiff, RotateCcw, Trash2 } from 'lucide-react';
-import { Chip, cn, formatUsd, Tooltip } from '@goodboy/ui';
+import { Chip, cn, formatUsd, Tooltip, InlineMarkdown } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -19,7 +19,6 @@ import {
   CONCEPT_TONE,
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
-import { InlineMarkdown } from '../../../../../shared/components/InlineMarkdown';
 import { sessionCardShell } from '../../../../session/components/sessionCardShell';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { useOpenSession } from '../../../../../shared/hooks/useOpenSession';
