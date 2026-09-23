@@ -761,7 +761,7 @@ describe('completeCapabilityChild', () => {
     expect(outcome).toEqual({ kind: 'replacement-started', replacementAgentId: 'verifier-1' });
     expect(spawnAgent).toHaveBeenCalledWith(
       SESSION_ID,
-      expect.objectContaining({ kindOverride: 'implementer' }),
+      expect.objectContaining({ kindOverride: 'implementer', obligationId: OBLIGATION_ID }),
     );
     expect(sendTurn).not.toHaveBeenCalled();
   });

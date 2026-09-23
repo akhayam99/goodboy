@@ -553,6 +553,7 @@ const startReplacement = async ({
     kindOverride: ROLE_TO_KIND[role],
     parentAgentId: obligation.requesterAgentId,
     executionPurpose: 'capability',
+    obligationId: obligation.id,
     ...(obligation.workflowRunId !== null && { workflowRunId: obligation.workflowRunId }),
     initialPrompt: [
       'You are taking over work that was transferred, not resumed. None of the earlier context survives.',
