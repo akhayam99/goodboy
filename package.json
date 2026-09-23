@@ -17,7 +17,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint && pnpm run check:tauri-commands",
+    "lint": "turbo run lint && pnpm run check:tauri-commands && pnpm run check:doc-refs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test --continue",
     "tauri:dev": "pnpm --filter @goodboy/desktop tauri:dev",
@@ -27,6 +27,7 @@
     "knip": "knip",
     "knip:production": "knip --workspace apps/desktop --production --include files,exports,types",
     "check:tauri-commands": "node scripts/check-tauri-commands.mjs",
+    "check:doc-refs": "node scripts/check-doc-refs.mjs",
     "prepare": "lefthook install"
   },
   "devDependencies": {

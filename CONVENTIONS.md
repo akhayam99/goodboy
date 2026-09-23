@@ -75,9 +75,10 @@ Code rules and the forbidden-patterns checklist live in [AGENTS.md](./AGENTS.md)
 
 The steps are in `.github/workflows/ci.yml`, in this order. All of them block. A warning never counts as green.
 
-- `lint`: `turbo run lint --affected`. No package has a `lint` script and the repo has no eslint config, so this step checks nothing today. Root `pnpm lint` also runs `check:tauri-commands`.
+- `lint`: `turbo run lint --affected`. No package has a `lint` script and the repo has no eslint config, so this step checks nothing today. Root `pnpm lint` also runs `check:tauri-commands` and `check:doc-refs`.
 - `typecheck`: `turbo run typecheck --affected`, `tsc --noEmit` in each package.
 - `tauri commands`: `check:tauri-commands`. Every frontend `invoke` name is registered in `generate_handler!`, and every registered command is invoked somewhere.
+- `doc refs`: `check:doc-refs`. Outside fenced code, every relative link in a tracked doc must resolve, every backticked repo path must exist, and every backticked PascalCase, camelCase or SCREAMING_SNAKE name must occur in tracked source. Each allowlist entry carries a reason: `vocabulary` for words that are not code, `stale` for a known dead reference that another change removes. An unused entry fails, so the list only shrinks.
 - `knip`: unused files, duplicate exports, unlisted dependencies and declared dependencies nothing imports, across the repo.
 - `knip production`: walks `apps/desktop` from `src/main.tsx` over production code only (the `!` project patterns). Tests, `src/__tests__/`, `testing/` folders and `storyHarness.ts` are left out, so code that only its own tests keep alive fails as unused files, exports and types. Module-state test seams (`reset*`, `clear*`) and exports that another change still has to remove sit in `ignoreIssues` by file. That list only shrinks.
 - `test`: `turbo run test --affected`, vitest in every package.

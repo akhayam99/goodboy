@@ -151,6 +151,8 @@ that matches its task. Whoever starts the agent points it here.
 - Root hubs use capital letters. Topic docs use kebab case under `docs/`.
 - A folder of related docs is listed directly in this map. It does not need
   its own small index.
+- Before you rename or delete a symbol, file, or route, grep `*.md` for it.
+  The `doc refs` CI step fails on a doc that still names it.
 - A doc is an orphan when neither this map nor the root hubs link to it.
   An orphan gets listed here or deleted. It never stays unlinked.
 - Generated files have no `Read this when` header. The release flow writes
