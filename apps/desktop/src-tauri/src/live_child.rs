@@ -101,6 +101,28 @@ pub fn drain_lossy<R: Read>(mut source: R) -> String {
     String::from_utf8_lossy(&buf).into_owned()
 }
 
+pub const MAX_STDERR_BYTES: usize = 256 * 1024;
+
+pub fn drain_tail_lossy<R: Read>(mut source: R, max_bytes: usize) -> String {
+    let mut tail: Vec<u8> = Vec::new();
+    let mut chunk = [0u8; 8192];
+    loop {
+        match source.read(&mut chunk) {
+            Ok(0) => break,
+            Ok(read) => {
+                tail.extend_from_slice(&chunk[..read]);
+                if tail.len() > max_bytes {
+                    let excess = tail.len() - max_bytes;
+                    tail.drain(..excess);
+                }
+            }
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(_) => break,
+        }
+    }
+    String::from_utf8_lossy(&tail).into_owned()
+}
+
 #[cfg(test)]
 pub mod test_support {
     use super::*;
@@ -169,6 +191,18 @@ mod tests {
     fn kill_for_an_unknown_key_is_a_no_op() {
         let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
         assert!(!kill_one(&registry, "missing"));
+    }
+
+    #[test]
+    fn drain_tail_keeps_the_last_bytes() {
+        let source: &[u8] = b"0123456789";
+        assert_eq!(drain_tail_lossy(source, 4), "6789");
+    }
+
+    #[test]
+    fn drain_tail_survives_invalid_utf8() {
+        let source: &[u8] = b"ok \xff\xfe done";
+        assert_eq!(drain_tail_lossy(source, 64), "ok \u{fffd}\u{fffd} done");
     }
 
     #[test]

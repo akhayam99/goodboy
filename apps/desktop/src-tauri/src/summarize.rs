@@ -6,7 +6,9 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use thiserror::Error;
 
-use crate::live_child::{drain_lossy, wait_and_remove, LiveChild, LiveChildRegistry};
+use crate::live_child::{
+    drain_lossy, drain_tail_lossy, wait_and_remove, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
+};
 
 #[derive(Debug, Error)]
 pub enum SummarizeError {
@@ -123,7 +125,7 @@ fn run_summarize(
     crate::live_child::register(registry, &key, &live);
 
     let stdout_handle = thread::spawn(move || drain_lossy(stdout));
-    let stderr_handle = thread::spawn(move || drain_lossy(stderr));
+    let stderr_handle = thread::spawn(move || drain_tail_lossy(stderr, MAX_STDERR_BYTES));
     let stdout_buf = stdout_handle.join().unwrap_or_default();
     let stderr_buf = stderr_handle.join().unwrap_or_default();
     let exit_code = wait_and_remove(&live, registry, &key);

@@ -1,4 +1,4 @@
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader};
 use std::process::{Child, ChildStderr, ChildStdout, Command, Stdio};
 use std::sync::Arc;
 use std::thread;
@@ -7,7 +7,11 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
 use thiserror::Error;
 
-use crate::live_child::{wait_and_remove, LiveChild, LiveChildRegistry};
+use crate::live_child::{
+    drain_tail_lossy, wait_and_remove, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
+};
+
+const MAX_TURN_LINE_BYTES: usize = 64 * 1024 * 1024;
 
 #[derive(Debug, Error)]
 pub enum TurnError {
@@ -454,7 +458,7 @@ fn spawn_one(
     let stderr_handle = thread::spawn(move || capture_stderr(stderr));
 
     thread::spawn(move || {
-        forward_lines(&app_clone, &run_id_owned, stdout);
+        forward_lines(&app_clone, &run_id_owned, &live, stdout);
         let stderr_buf = stderr_handle.join().unwrap_or_default();
         let exit_code = wait_and_remove(&live, &registry_clone, &run_id_owned);
         let _ = app_clone.emit(
@@ -539,38 +543,90 @@ pub async fn turn_cancel(state: State<'_, TurnRegistry>, run_id: String) -> Resu
     Ok(())
 }
 
-fn forward_lines(app: &AppHandle, run_id: &str, stdout: ChildStdout) {
+#[derive(Debug, PartialEq, Eq)]
+enum CappedLine {
+    Line,
+    Eof,
+    Overflow,
+}
+
+fn read_capped_line<R: BufRead>(
+    reader: &mut R,
+    buf: &mut Vec<u8>,
+    cap: usize,
+) -> std::io::Result<CappedLine> {
+    buf.clear();
+    loop {
+        let available = match reader.fill_buf() {
+            Ok(available) => available,
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(err) => return Err(err),
+        };
+        if available.is_empty() {
+            if buf.is_empty() {
+                return Ok(CappedLine::Eof);
+            }
+            strip_line_ending(buf);
+            return Ok(CappedLine::Line);
+        }
+        let newline = available.iter().position(|byte| *byte == b'\n');
+        let content = newline.unwrap_or(available.len());
+        if buf.len() + content > cap {
+            return Ok(CappedLine::Overflow);
+        }
+        let consumed = newline.map_or(available.len(), |index| index + 1);
+        buf.extend_from_slice(&available[..consumed]);
+        reader.consume(consumed);
+        if newline.is_some() {
+            strip_line_ending(buf);
+            return Ok(CappedLine::Line);
+        }
+    }
+}
+
+fn strip_line_ending(buf: &mut Vec<u8>) {
+    while matches!(buf.last(), Some(b'\n') | Some(b'\r')) {
+        buf.pop();
+    }
+}
+
+fn emit_turn_event(app: &AppHandle, run_id: &str, event: TurnEventPayload) {
+    let _ = app.emit(
+        EVENT_NAME,
+        TurnEventEnvelope {
+            run_id: run_id.to_string(),
+            event,
+        },
+    );
+}
+
+fn forward_lines(app: &AppHandle, run_id: &str, live: &LiveChild, stdout: ChildStdout) {
     let mut reader = BufReader::new(stdout);
     let mut buf: Vec<u8> = Vec::new();
     loop {
-        buf.clear();
-        // read_until + from_utf8_lossy instead of BufRead::lines(): lines()
-        // yields Err on the first non-UTF8 byte, and the old code `break`ed on
-        // that, abandoning the rest of the turn. A stray byte in passthrough
-        // tool output must not truncate the stream.
-        match reader.read_until(b'\n', &mut buf) {
-            Ok(0) => break,
-            Ok(_) => {
-                while matches!(buf.last(), Some(b'\n') | Some(b'\r')) {
-                    buf.pop();
-                }
+        match read_capped_line(&mut reader, &mut buf, MAX_TURN_LINE_BYTES) {
+            Ok(CappedLine::Eof) => break,
+            Ok(CappedLine::Line) => {
                 let line = String::from_utf8_lossy(&buf).into_owned();
-                let _ = app.emit(
-                    EVENT_NAME,
-                    TurnEventEnvelope {
-                        run_id: run_id.to_string(),
-                        event: TurnEventPayload::Line { line },
+                emit_turn_event(app, run_id, TurnEventPayload::Line { line });
+            }
+            Ok(CappedLine::Overflow) => {
+                emit_turn_event(
+                    app,
+                    run_id,
+                    TurnEventPayload::Error {
+                        message: "agent output line exceeded 64 MiB".to_string(),
                     },
                 );
+                crate::process_group::terminate(live.pid);
+                break;
             }
             Err(err) => {
-                let _ = app.emit(
-                    EVENT_NAME,
-                    TurnEventEnvelope {
-                        run_id: run_id.to_string(),
-                        event: TurnEventPayload::Error {
-                            message: err.to_string(),
-                        },
+                emit_turn_event(
+                    app,
+                    run_id,
+                    TurnEventPayload::Error {
+                        message: err.to_string(),
                     },
                 );
                 break;
@@ -579,10 +635,8 @@ fn forward_lines(app: &AppHandle, run_id: &str, stdout: ChildStdout) {
     }
 }
 
-fn capture_stderr(mut stderr: ChildStderr) -> String {
-    let mut buf = String::new();
-    let _ = stderr.read_to_string(&mut buf);
-    buf
+fn capture_stderr(stderr: ChildStderr) -> String {
+    drain_tail_lossy(stderr, MAX_STDERR_BYTES)
 }
 
 // ---------------------------------------------------------------------------
@@ -624,6 +678,74 @@ mod tests {
             "shutdown left the turn running",
         );
         assert!(registry.0.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn capped_line_reads_lines_and_strips_crlf() {
+        let mut reader: &[u8] = b"first\r\nsecond\nlast";
+        let mut buf = Vec::new();
+        assert_eq!(
+            read_capped_line(&mut reader, &mut buf, 64).unwrap(),
+            CappedLine::Line
+        );
+        assert_eq!(buf, b"first");
+        assert_eq!(
+            read_capped_line(&mut reader, &mut buf, 64).unwrap(),
+            CappedLine::Line
+        );
+        assert_eq!(buf, b"second");
+        assert_eq!(
+            read_capped_line(&mut reader, &mut buf, 64).unwrap(),
+            CappedLine::Line
+        );
+        assert_eq!(buf, b"last");
+        assert_eq!(
+            read_capped_line(&mut reader, &mut buf, 64).unwrap(),
+            CappedLine::Eof
+        );
+    }
+
+    #[test]
+    fn capped_line_keeps_non_utf8_bytes() {
+        let mut reader: &[u8] = b"a\xffb\n";
+        let mut buf = Vec::new();
+        assert_eq!(
+            read_capped_line(&mut reader, &mut buf, 64).unwrap(),
+            CappedLine::Line
+        );
+        assert_eq!(String::from_utf8_lossy(&buf), "a\u{fffd}b");
+    }
+
+    #[test]
+    fn capped_line_accepts_exactly_the_cap_and_refuses_one_more() {
+        let mut exact: &[u8] = b"abcd\n";
+        let mut buf = Vec::new();
+        assert_eq!(
+            read_capped_line(&mut exact, &mut buf, 4).unwrap(),
+            CappedLine::Line
+        );
+        let mut over: &[u8] = b"abcde\n";
+        assert_eq!(
+            read_capped_line(&mut over, &mut buf, 4).unwrap(),
+            CappedLine::Overflow
+        );
+    }
+
+    #[test]
+    fn capped_line_counts_across_buffer_refills() {
+        let source: &[u8] = b"abcdefgh\n";
+        let mut reader = BufReader::with_capacity(2, source);
+        let mut buf = Vec::new();
+        assert_eq!(
+            read_capped_line(&mut reader, &mut buf, 7).unwrap(),
+            CappedLine::Overflow
+        );
+        let mut reader = BufReader::with_capacity(2, source);
+        assert_eq!(
+            read_capped_line(&mut reader, &mut buf, 8).unwrap(),
+            CappedLine::Line
+        );
+        assert_eq!(buf, b"abcdefgh");
     }
 
     #[test]
@@ -1020,7 +1142,10 @@ mod tests {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
         let cli = build_provider_cli_args("agy", &args);
-        let index = cli.iter().position(|arg| arg == "--model").expect("--model");
+        let index = cli
+            .iter()
+            .position(|arg| arg == "--model")
+            .expect("--model");
         assert_eq!(cli[index + 1], "claude-3");
         assert!(!cli.iter().any(|arg| arg == "-m"));
     }
