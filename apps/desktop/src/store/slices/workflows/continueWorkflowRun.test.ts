@@ -89,8 +89,8 @@ describe('continueWorkflowRun', () => {
   });
 
   it('hands the note to the orchestrator once without pinning it to the hints', async () => {
-    const pinned = { id: 'hint-1', text: 'skip the docs', isPinned: true, createdAt: NOW };
-    const state = baseState({ orchestratorHints: [pinned] });
+    const standing = { id: 'hint-1', text: 'skip the docs', createdAt: NOW };
+    const state = baseState({ orchestratorHints: [standing] });
     const { set, get } = harness(state);
 
     await continueWorkflowRun(set, get)(SESSION_ID, RUN_ID, '  also check the migrations  ');
@@ -100,7 +100,7 @@ describe('continueWorkflowRun', () => {
       extraHints: 'also check the migrations',
     });
     const run = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
-    expect(run.orchestratorHints).toEqual([pinned]);
+    expect(run.orchestratorHints).toEqual([standing]);
   });
 
   it('leaves a static run alone', async () => {

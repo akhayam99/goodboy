@@ -323,7 +323,6 @@ const HINT_AT = '2026-09-23T10:00:00.000Z' as IsoDateTime;
 const hintFixture = (over: Partial<OrchestratorHint>): OrchestratorHint => ({
   id: 'hint',
   text: 'keep it to one PR',
-  isPinned: false,
   createdAt: HINT_AT,
   ...over,
 });
@@ -1721,11 +1720,10 @@ describe('orchestrateNextStep', () => {
     );
   });
 
-  it('hands the pinned and queued hints of the run to the orchestrator, never a read one', async () => {
+  it('hands every hint of the run to the orchestrator, marking the new ones', async () => {
     const state = withHints(baseState(), [
-      hintFixture({ id: 'pinned', text: 'ignore the docs', isPinned: true }),
+      hintFixture({ id: 'read', text: 'ignore the docs', consumedAt: HINT_AT, consumedAtStep: 1 }),
       hintFixture({ id: 'queued', text: 'run a reviewer first' }),
-      hintFixture({ id: 'read', text: 'old advice', consumedAt: HINT_AT, consumedAtStep: 1 }),
     ]);
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
@@ -1737,14 +1735,13 @@ describe('orchestrateNextStep', () => {
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
     const input = decideSpy.mock.calls[0]?.[0] as OrchestratorInput;
-    expect(input.operatorHints).toContain('ignore the docs');
-    expect(input.operatorHints).toContain('run a reviewer first');
-    expect(input.operatorHints).not.toContain('old advice');
+    expect(input.operatorHints).toContain('[since step 1] ignore the docs');
+    expect(input.operatorHints).toContain('[new] run a reviewer first');
   });
 
-  it('marks the queued hints read by the decision, and keeps pinned ones standing', async () => {
+  it('stamps the queued hints with the decision that first read them', async () => {
     const state = withHints(baseState(), [
-      hintFixture({ id: 'pinned', text: 'ignore the docs', isPinned: true }),
+      hintFixture({ id: 'read', text: 'ignore the docs', consumedAt: HINT_AT, consumedAtStep: 1 }),
       hintFixture({ id: 'queued', text: 'run a reviewer first' }),
     ]);
     decideSpy.mockResolvedValueOnce({
@@ -1761,7 +1758,7 @@ describe('orchestrateNextStep', () => {
     const queued = hints?.find((hint) => hint.id === 'queued');
     expect(queued?.consumedAt).toBeDefined();
     expect(queued?.consumedAtStep).toBeGreaterThan(0);
-    expect(hints?.find((hint) => hint.id === 'pinned')?.consumedAt).toBeUndefined();
+    expect(hints?.find((hint) => hint.id === 'read')?.consumedAtStep).toBe(1);
     expect(updateHintsSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, hints);
   });
 

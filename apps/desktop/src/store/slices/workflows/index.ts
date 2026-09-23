@@ -18,7 +18,6 @@ import { continueWorkflowRun } from './continueWorkflowRun';
 import { copyWorkflowFromWorkspace } from './copyWorkflowFromWorkspace';
 import { orchestrateNextStep } from './orchestrateNextStep';
 import { addWorkflowOrchestratorHint } from './addWorkflowOrchestratorHint';
-import { pinWorkflowOrchestratorHint } from './pinWorkflowOrchestratorHint';
 import { removeWorkflowOrchestratorHint } from './removeWorkflowOrchestratorHint';
 import { setWorkflowOrchestratorRouting } from './setWorkflowOrchestratorRouting';
 import { setWorkflowRoleModelOverrides } from './setWorkflowRoleModelOverrides';
@@ -75,7 +74,6 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     continueWorkflowRun: continueWorkflowRun(set, get),
     addWorkflowOrchestratorHint: addWorkflowOrchestratorHint(set, get),
     removeWorkflowOrchestratorHint: removeWorkflowOrchestratorHint(set, get),
-    pinWorkflowOrchestratorHint: pinWorkflowOrchestratorHint(set, get),
     setWorkflowOrchestratorRouting: setWorkflowOrchestratorRouting(set, get),
     setWorkflowRoleModelOverrides: setWorkflowRoleModelOverrides(set, get),
     retryStepSummary: retryStepSummary(set, get),

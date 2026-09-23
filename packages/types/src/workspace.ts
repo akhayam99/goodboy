@@ -110,7 +110,6 @@ export type OrchestratorRouting = Readonly<{
 export type OrchestratorHint = Readonly<{
   id: string;
   text: string;
-  isPinned: boolean;
   createdAt: IsoDateTime;
   consumedAt?: IsoDateTime;
   consumedAtStep?: number;

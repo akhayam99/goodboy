@@ -19,7 +19,6 @@ vi.mock('@goodboy/db', () => ({
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { addWorkflowOrchestratorHint } from './addWorkflowOrchestratorHint';
-import { pinWorkflowOrchestratorHint } from './pinWorkflowOrchestratorHint';
 import { removeWorkflowOrchestratorHint } from './removeWorkflowOrchestratorHint';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -31,7 +30,6 @@ type State = Record<string, unknown>;
 const QUEUED: OrchestratorHint = {
   id: 'hint-queued',
   text: 'run a reviewer before the PR',
-  isPinned: false,
   createdAt: NOW,
 };
 
@@ -87,7 +85,6 @@ describe('orchestrator hint actions', () => {
 
     await addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
       text: '  no PR, commit locally  ',
-      isPinned: false,
     });
 
     const hints = hintsOf(state);
@@ -105,7 +102,6 @@ describe('orchestrator hint actions', () => {
 
     await addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
       text: 'no PR, commit locally',
-      isPinned: false,
     });
 
     expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
@@ -117,11 +113,10 @@ describe('orchestrator hint actions', () => {
 
     await addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
       text: 'no PR, commit locally',
-      isPinned: true,
     });
 
     expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
-    expect(hintsOf(state)[0]?.isPinned).toBe(true);
+    expect(hintsOf(state)[0]?.consumedAt).toBeUndefined();
   });
 
   it('ignores a blank hint', async () => {
@@ -130,18 +125,14 @@ describe('orchestrator hint actions', () => {
 
     await addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
       text: '   ',
-      isPinned: false,
     });
 
     expect(updateHintsSpy).not.toHaveBeenCalled();
   });
 
-  it('pins and removes a hint by id', async () => {
+  it('removes a hint by id', async () => {
     const state = baseState({ hints: [QUEUED] });
     const { set, get } = harness(state);
-
-    await pinWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, QUEUED.id, true);
-    expect(hintsOf(state)[0]?.isPinned).toBe(true);
 
     await removeWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, QUEUED.id);
     expect(hintsOf(state)).toEqual([]);

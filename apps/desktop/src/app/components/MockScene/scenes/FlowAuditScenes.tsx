@@ -485,13 +485,13 @@ const DYNAMIC_RUN: WorkflowRun = {
     {
       id: 'flow-hint-pinned',
       text: 'Open one PR per project and keep the dry run flag off by default.',
-      isPinned: true,
       createdAt: '2026-09-23T09:10:00.000Z' as IsoDateTime,
+      consumedAt: '2026-09-23T09:11:00.000Z' as IsoDateTime,
+      consumedAtStep: 1,
     },
     {
       id: 'flow-hint-read',
       text: 'Map ledger-core before touching the payout reader.',
-      isPinned: false,
       createdAt: '2026-09-23T09:12:00.000Z' as IsoDateTime,
       consumedAt: '2026-09-23T09:13:00.000Z' as IsoDateTime,
       consumedAtStep: 2,
@@ -499,7 +499,6 @@ const DYNAMIC_RUN: WorkflowRun = {
     {
       id: 'flow-hint-queued',
       text: 'Cover the half cent cases before the backfill leaves dry run.',
-      isPinned: false,
       createdAt: '2026-09-23T09:40:00.000Z' as IsoDateTime,
     },
   ],

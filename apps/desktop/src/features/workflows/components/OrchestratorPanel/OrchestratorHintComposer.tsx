@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowUp } from 'lucide-react';
-import { Checkbox, IconButton, Input } from '@goodboy/ui';
+import { IconButton, Input } from '@goodboy/ui';
 import type { OrchestratorHintDraft } from '../../../../store/slices/workflows/addWorkflowOrchestratorHint';
 
 type Props = {
@@ -15,14 +15,14 @@ type TimingParams = {
   readonly isStepRunning: boolean;
 };
 
-const timingCopy = ({ isDeciding, isStepRunning }: TimingParams): string => {
+const timingCopy = ({ isDeciding, isStepRunning }: TimingParams): string | null => {
   if (isDeciding) {
     return 'Sending restarts the decision in flight with your hint';
   }
   if (isStepRunning) {
-    return 'Read when the step in flight finishes';
+    return 'The orchestrator reads it when the step in flight finishes';
   }
-  return 'Read at the next decision';
+  return null;
 };
 
 export const OrchestratorHintComposer = ({
@@ -32,22 +32,21 @@ export const OrchestratorHintComposer = ({
   onSubmit,
 }: Props) => {
   const [text, setText] = useState('');
-  const [isPinned, setIsPinned] = useState(false);
   const canSend = disabled === false && text.trim() !== '';
+  const timing = timingCopy({ isDeciding, isStepRunning });
 
   const send = async () => {
     if (canSend === false) {
       return;
     }
-    await onSubmit({ text, isPinned });
+    await onSubmit({ text });
     setText('');
-    setIsPinned(false);
   };
 
   return (
     <form
       aria-label="Tell the orchestrator"
-      className="flex flex-col gap-1.5"
+      className="flex flex-col gap-1"
       onSubmit={(event) => {
         event.preventDefault();
         void send();
@@ -72,18 +71,11 @@ export const OrchestratorHintComposer = ({
           data-testid="orchestrator-hint-send"
         />
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Checkbox
-          id="orchestrator-hint-pinned"
-          checked={isPinned}
-          disabled={disabled}
-          onChange={setIsPinned}
-          label={<span className="text-2xs text-muted-foreground">Keep for every step</span>}
-        />
+      {timing == null ? null : (
         <span data-testid="orchestrator-hint-timing" className="text-2xs text-muted-foreground">
-          {timingCopy({ isDeciding, isStepRunning })}
+          {timing}
         </span>
-      </div>
+      )}
     </form>
   );
 };

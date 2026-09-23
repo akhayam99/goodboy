@@ -602,12 +602,6 @@ type AppActions = {
     workflowRunId: WorkflowRunId,
     hintId: string,
   ): Promise<void>;
-  pinWorkflowOrchestratorHint(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    hintId: string,
-    isPinned: boolean,
-  ): Promise<void>;
   setWorkflowOrchestratorRouting(
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,

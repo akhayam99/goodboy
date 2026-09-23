@@ -5,7 +5,6 @@ import { serializeOrchestratorHintLog, toOrchestratorHintLog } from './orchestra
 const HINT: OrchestratorHint = {
   id: 'hint-1',
   text: 'run a reviewer before the PR',
-  isPinned: false,
   createdAt: '2026-09-23T10:00:00.000Z' as IsoDateTime,
   consumedAt: '2026-09-23T10:02:00.000Z' as IsoDateTime,
   consumedAtStep: 4,
@@ -24,8 +23,8 @@ describe('orchestrator hint log', () => {
   it('drops malformed entries and keeps the valid ones', () => {
     const value = JSON.stringify([
       HINT,
-      { id: 'hint-2', text: '   ', isPinned: true, createdAt: HINT.createdAt },
-      { id: 'hint-3', text: 'no timestamp', isPinned: true },
+      { id: 'hint-2', text: '   ', createdAt: HINT.createdAt },
+      { id: 'hint-3', text: 'no timestamp' },
       'not an object',
     ]);
     expect(toOrchestratorHintLog({ value })).toEqual([HINT]);
