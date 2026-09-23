@@ -152,6 +152,7 @@ import {
 } from './agentEvidenceInventory';
 import { contextReadBlocksCompletion, serveContextRead } from './serveContextRead';
 import { completeResolvedAgent } from './completeResolvedAgent';
+import { failCapabilityChild } from './completeCapabilityChild';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
 import { resolveSkillPrompt } from './resolveSkillPrompt';
 import { persistAttachments } from './persistAttachments';
@@ -957,6 +958,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     let lastError: unknown = null;
     let turnWasCancelled = false;
     let shouldAutoAdvanceWorkflow = false;
+    let usageSequence = 0;
     const filesTouchedThisTurn = new Set<string>();
 
     const resumeSessionId =
@@ -1180,8 +1182,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }
 
         if (event.kind === 'usage') {
+          usageSequence += 1;
           await recordUsageTelemetry(set, get, {
             event,
+            usageSequence,
             provider,
             model,
             runId,
@@ -1586,6 +1590,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
         }));
         void get().refreshUnreadWorkspaces();
+        await failCapabilityChild({
+          set,
+          get,
+          sessionId,
+          agentId: resolvedAgentId,
+          message,
+        });
       }
       lastError = createTranscriptOwnedTurnError({ message: rawMessage, cause: err });
       if (!cancelledBeforeFailure && assistantText.length > 0) {

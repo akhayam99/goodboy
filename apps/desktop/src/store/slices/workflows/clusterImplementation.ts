@@ -34,11 +34,11 @@ import {
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
 import { composeClusterOutcomeBoundary, composeKickoff, composeUnitBoundary } from '../../kickoff';
-import { bindGeneration, reserveGeneration } from '../agents/reserveGeneration';
+import { reserveGeneration } from '../agents/reserveGeneration';
 import { findWriteScopeEscape } from '../cluster-attempts/findWriteScopeEscape';
 import { resolveClusterSessionTarget } from '../cluster-attempts/resolveClusterSessionTarget';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
-import { releasedSourceIds } from './releasedClusterSources';
+import { clusterSourceProgress, isCompletedAmong } from './clusterSourceProgress';
 import { revalidateChildRouting } from './revalidateChildRouting';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
@@ -106,11 +106,12 @@ type ClusterNodePair = Readonly<{
   node: ClusterGraphNode;
   agent: Agent | null;
   isReleased: boolean;
+  isCompleted: boolean;
 }>;
 
 const EMPTY_GRAPH: ClusterGraph = { executionVersion: 1, nodes: [] };
 
-const NO_RELEASED_SOURCES: ReadonlySet<AgentId> = new Set();
+const NO_SOURCES: ReadonlySet<AgentId> = new Set();
 
 const RELEASED_SLOT: ClusterNodeSlot = { agent: null, isReleased: true };
 
@@ -124,11 +125,15 @@ const orderedNodes = ({
 const unboundSlots = ({
   children,
   releasedCount,
+  completed,
 }: {
   readonly children: ReadonlyArray<Agent>;
   readonly releasedCount: number;
+  readonly completed: ReadonlySet<AgentId>;
 }): ReadonlyArray<ClusterNodeSlot> => {
-  const firstUnsettled = children.findIndex((child) => isSettledChild(child) === false);
+  const firstUnsettled = children.findIndex(
+    (child) => isSettledChild(child) === false && completed.has(child.id) === false,
+  );
   const cut = firstUnsettled === -1 ? children.length : firstUnsettled;
   const toSlot = (agent: Agent): ClusterNodeSlot => ({ agent, isReleased: false });
   return [
@@ -142,10 +147,12 @@ const pairClusterNodes = ({
   execution,
   children,
   released,
+  completed,
 }: {
   readonly execution: ClusterExecution;
   readonly children: ReadonlyArray<Agent>;
   readonly released: ReadonlySet<AgentId>;
+  readonly completed: ReadonlySet<AgentId>;
 }): ReadonlyArray<ClusterNodePair> => {
   const boundAgentId = new Map(
     execution.bindings.map((binding) => [binding.nodeId, binding.agentId]),
@@ -154,22 +161,32 @@ const pairClusterNodes = ({
   const slots = unboundSlots({
     children,
     releasedCount: [...released].filter((agentId) => boundIds.has(agentId) === false).length,
+    completed,
   });
   return orderedNodes({ graph: execution.graph }).map((node, index) => {
     const bound = boundAgentId.get(node.id);
     if (bound === undefined) {
       const slot = slots[index] ?? null;
+      const agent = slot?.agent ?? null;
+      const isReleased = slot?.isReleased === true;
       return {
         node,
-        agent: slot?.agent ?? null,
-        isReleased: slot?.isReleased === true,
+        agent,
+        isReleased,
+        isCompleted: isReleased || (agent !== null && isCompletedAmong({ agent, completed })),
       };
     }
     if (bound === null) {
-      return { node, agent: null, isReleased: false };
+      return { node, agent: null, isReleased: false, isCompleted: false };
     }
     const agent = children.find((child) => child.id === bound) ?? null;
-    return { node, agent, isReleased: agent === null && released.has(bound) };
+    const isReleased = agent === null && released.has(bound);
+    return {
+      node,
+      agent,
+      isReleased,
+      isCompleted: isReleased || (agent !== null && isCompletedAmong({ agent, completed })),
+    };
   });
 };
 
@@ -181,7 +198,7 @@ const clusterProgress = ({
   pairs.map((pair) => ({
     nodeId: pair.node.id,
     isSettled: pair.isReleased || (pair.agent !== null && isSettledChild(pair.agent)),
-    isCompleted: pair.isReleased || pair.agent?.status === 'completed',
+    isCompleted: pair.isCompleted,
     isStartable:
       pair.isReleased === false && (pair.agent === null || pair.agent.status === 'pending'),
   }));
@@ -197,7 +214,14 @@ const nextClusterPair = ({
 }): ClusterNodePair | null => {
   if (execution.graph.nodes.length === 0) {
     const fallback = children.find((child) => child.status === 'pending') ?? null;
-    return fallback === null ? null : { node: UNREADABLE_NODE, agent: fallback, isReleased: false };
+    return fallback === null
+      ? null
+      : {
+          node: UNREADABLE_NODE,
+          agent: fallback,
+          isReleased: false,
+          isCompleted: false,
+        };
   }
   const ready = selectReadyClusterNode({
     graph: execution.graph,
@@ -211,6 +235,7 @@ const nextClusterPair = ({
       node: ready,
       agent: null,
       isReleased: false,
+      isCompleted: false,
     }
   );
 };
@@ -253,7 +278,7 @@ function composeClusterKickoff({
 }): string {
   const total = pairs.length > 0 ? pairs.length : 1;
   const priorTitles = pairs
-    .filter((pair) => pair.node.ordinal < target.ordinal)
+    .filter((pair) => pair.node.ordinal < target.ordinal && pair.isCompleted)
     .map((pair) => `${pair.node.ordinal + 1}. ${pair.node.title}`);
   const priorBlock =
     priorTitles.length > 0
@@ -524,6 +549,7 @@ export const fanOutClusters = async (
         ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
         ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
         ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
+        generationReservationId: reservation.reservations[index]!.reservationId,
       };
     }),
   });
@@ -531,7 +557,6 @@ export const fanOutClusters = async (
     return;
   }
   const childIds: AgentId[] = materialized.agents.map((agent) => agent.id);
-  await bindGeneration({ reservations: reservation.reservations, agentIds: childIds });
 
   const bindings: ReadonlyArray<ClusterExecutionNodeSeed> = nodes.map((node, index) => ({
     nodeId: node.id,
@@ -607,7 +632,12 @@ export const fanOutClusters = async (
     bindings: snapshot.nodes,
   };
   const children = materialized.agents;
-  const pairs = pairClusterNodes({ execution, children, released: NO_RELEASED_SOURCES });
+  const pairs = pairClusterNodes({
+    execution,
+    children,
+    released: NO_SOURCES,
+    completed: NO_SOURCES,
+  });
   const first = nextClusterPair({ execution, pairs, children });
   if (first?.agent != null) {
     startChild({
@@ -820,8 +850,18 @@ export const resumeClusterChildren = async ({
   }
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
   const children = childrenOf(runs, container.id);
+  const sourceProgress = clusterSourceProgress({
+    get,
+    sessionId,
+    containerId: container.id,
+    children,
+    resolvingHoldId: null,
+  });
   const isInFlight = children.some(
-    (child) => isSettledChild(child) === false && child.status !== 'pending',
+    (child) =>
+      isSettledChild(child) === false &&
+      child.status !== 'pending' &&
+      sourceProgress.completed.has(child.id) === false,
   );
   if (isInFlight === true) {
     return false;
@@ -836,13 +876,8 @@ export const resumeClusterChildren = async ({
   const pairs = pairClusterNodes({
     execution,
     children,
-    released: releasedSourceIds({
-      get,
-      sessionId,
-      containerId: container.id,
-      children,
-      resolvingHoldId: null,
-    }),
+    released: sourceProgress.released,
+    completed: sourceProgress.completed,
   });
   const target = nextClusterPair({ execution, pairs, children });
   const next = target?.agent ?? null;
@@ -1172,16 +1207,18 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       workflowRunId: child?.workflowRunId ?? resolvedHold?.workflowRunId ?? undefined,
     });
     const currentChildren = childrenOf(runs, containerId);
+    const currentSourceProgress = clusterSourceProgress({
+      get,
+      sessionId,
+      containerId,
+      children: currentChildren,
+      resolvingHoldId: resolvedHold?.id ?? null,
+    });
     const currentPairs = pairClusterNodes({
       execution,
       children: currentChildren,
-      released: releasedSourceIds({
-        get,
-        sessionId,
-        containerId,
-        children: currentChildren,
-        resolvingHoldId: resolvedHold?.id ?? null,
-      }),
+      released: currentSourceProgress.released,
+      completed: currentSourceProgress.completed,
     });
     const currentNode = currentPairs.find((pair) => pair.agent?.id === childAgentId)?.node ?? null;
 
@@ -1273,11 +1310,13 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
             output: assistantText,
           })
         : 'advanced to next cluster manually';
-    await invokeAgentUpdateStatus(childAgentId, {
-      status: 'completed',
-      outputSummary,
-      completedAt: nowIso(),
-    });
+    if (child?.status !== 'transferred') {
+      await invokeAgentUpdateStatus(childAgentId, {
+        status: 'completed',
+        outputSummary,
+        completedAt: nowIso(),
+      });
+    }
     let refreshed = await invokeAgentList(sessionId);
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
 
@@ -1315,19 +1354,27 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     }
 
     const children = childrenOf(refreshed, containerId);
-    const released = releasedSourceIds({
+    const sourceProgress = clusterSourceProgress({
       get,
       sessionId,
       containerId,
       children,
       resolvingHoldId: resolvedHold?.id ?? null,
     });
-    const pairs = pairClusterNodes({ execution, children, released });
+    const pairs = pairClusterNodes({
+      execution,
+      children,
+      released: sourceProgress.released,
+      completed: sourceProgress.completed,
+    });
     const hasGraph = execution.graph.nodes.length > 0;
     const completedProgress = hasGraph
-      ? pairs.filter((pair) => pair.isReleased || pair.agent?.status === 'completed').length
-      : children.filter((c) => c.status === 'completed').length + released.size;
-    const total = hasGraph ? execution.graph.nodes.length : children.length + released.size;
+      ? pairs.filter((pair) => pair.isCompleted).length
+      : children.filter((agent) => isCompletedAmong({ agent, completed: sourceProgress.completed }))
+          .length + sourceProgress.released.size;
+    const total = hasGraph
+      ? execution.graph.nodes.length
+      : children.length + sourceProgress.released.size;
 
     if (
       completedProgress >= total &&
@@ -1364,7 +1411,8 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     const target = nextClusterPair({ execution, pairs, children });
     if (target === null) {
       const waiting = pairs.filter(
-        (pair) => pair.agent !== null && isSettledChild(pair.agent) === false,
+        (pair) =>
+          pair.agent !== null && isSettledChild(pair.agent) === false && pair.isCompleted === false,
       );
       if (waiting.length === 0) {
         return;

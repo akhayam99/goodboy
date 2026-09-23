@@ -1,4 +1,8 @@
-import { buildEvidenceInventory, type EvidenceInventoryInput } from '@goodboy/core';
+import {
+  buildEvidenceInventory,
+  inventoryRevisionOf,
+  type EvidenceInventoryInput,
+} from '@goodboy/core';
 import type {
   Agent,
   AgentId,
@@ -29,8 +33,6 @@ export type BuildAgentInventoryParams = {
   readonly obligations: ReadonlyArray<CapabilityObligation>;
   readonly graphs: ReadonlyArray<ClusterExecutionGraph>;
 };
-
-const revisionOfText = ({ text }: { readonly text: string }): string => `len${text.length}`;
 
 const obligationDetail = ({
   obligation,
@@ -70,7 +72,7 @@ export const buildAgentInventory = ({
       kind: 'task',
       label: agent.name,
       provenance: 'this assignment',
-      revision: revisionOfText({ text: agent.name }),
+      revision: inventoryRevisionOf({ text: agent.name }),
       availability: 'delivered',
     });
     contents.set(taskId, agent.name);
@@ -90,7 +92,7 @@ export const buildAgentInventory = ({
         kind: 'acceptance',
         label: 'acceptance criteria for this cluster',
         provenance: 'consumed plan graph',
-        revision: revisionOfText({ text: expectedOutput }),
+        revision: inventoryRevisionOf({ text: expectedOutput }),
         availability: 'delivered',
       });
       contents.set(acceptanceId, expectedOutput);
@@ -108,7 +110,7 @@ export const buildAgentInventory = ({
         kind: 'parent-instructions',
         label: `instructions from ${parent.name}`,
         provenance: 'parent agent',
-        revision: revisionOfText({ text: summary }),
+        revision: inventoryRevisionOf({ text: summary }),
         availability: summary.length === 0 ? 'unavailable' : 'retrievable',
       });
       if (summary.length > 0) {
@@ -128,7 +130,7 @@ export const buildAgentInventory = ({
       kind: 'context-slot',
       label: slot.key,
       provenance: 'shared context',
-      revision: revisionOfText({ text: slot.value }),
+      revision: inventoryRevisionOf({ text: slot.value }),
       availability: delivered.has(slot.key) ? 'delivered' : 'retrievable',
     });
     contents.set(slotId, slot.value);
@@ -162,7 +164,7 @@ export const buildAgentInventory = ({
       kind: 'prior-output',
       label: other.name,
       provenance: `agent ${other.id}, ${other.status}`,
-      revision: revisionOfText({ text: summary }),
+      revision: inventoryRevisionOf({ text: summary }),
       availability: 'retrievable',
     });
     contents.set(outputId, summary);

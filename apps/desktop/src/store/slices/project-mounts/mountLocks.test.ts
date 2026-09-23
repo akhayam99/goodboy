@@ -7,7 +7,7 @@ const { acquireSpy, acquireOwnedSpy, releaseSpy } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../features/worktree/writerLease', () => ({
-  acquireWriterLease: acquireSpy,
+  acquireWriterLeaseWaiting: acquireSpy,
   acquireOwnedWriterLease: acquireOwnedSpy,
   releaseWriterLease: releaseSpy,
   repositoryWriterResource: ({ repoRoot }: { readonly repoRoot: string }) => `repo:${repoRoot}`,

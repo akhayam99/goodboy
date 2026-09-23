@@ -19,7 +19,9 @@ use protocol::{
 pub(crate) use cli::dispatch as run_cli;
 
 const APP_DIR: &str = ".goodboy";
+const SOCKET_DIR: &str = "sockets";
 const SWEEP_SUFFIX: &str = ".sweep-";
+const MAX_SOCKET_PATH_BYTES: usize = 103;
 
 static SOCKET_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
 static EXE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
@@ -37,19 +39,30 @@ fn socket_pid(file_name: &str) -> Option<u32> {
         .ok()
 }
 
+fn socket_directory_in(app_dir: &Path) -> PathBuf {
+    app_dir.join(SOCKET_DIR)
+}
+
+fn socket_path_in(home: &Path, pid: u32) -> PathBuf {
+    socket_directory_in(&home.join(APP_DIR)).join(socket_file_name(pid))
+}
+
+fn fits_socket_address(path: &Path) -> bool {
+    path.as_os_str().len() <= MAX_SOCKET_PATH_BYTES
+}
+
 fn socket_path() -> Option<&'static Path> {
     SOCKET_PATH
-        .get_or_init(|| {
-            dirs::home_dir().map(|home| {
-                home.join(APP_DIR)
-                    .join(socket_file_name(std::process::id()))
-            })
-        })
+        .get_or_init(|| dirs::home_dir().map(|home| socket_path_in(&home, std::process::id())))
         .as_deref()
 }
 
 pub(crate) fn socket_directory() -> Option<&'static Path> {
     socket_path()?.parent()
+}
+
+fn previous_socket_directory() -> Option<&'static Path> {
+    socket_directory()?.parent()
 }
 
 fn abandoned_sockets<'a>(
@@ -189,21 +202,71 @@ fn discard_unless_owned(path: &Path, is_owned: &dyn Fn(&Path) -> bool) {
 }
 
 #[cfg(unix)]
-fn sweep_abandoned_sockets(dir: &Path) {
+fn is_socket_file(path: &Path) -> bool {
+    use std::os::unix::fs::FileTypeExt;
+
+    std::fs::symlink_metadata(path).is_ok_and(|metadata| metadata.file_type().is_socket())
+}
+
+#[cfg(unix)]
+fn socket_file_names(dir: &Path) -> Vec<String> {
+    use std::os::unix::fs::FileTypeExt;
+
     let Ok(entries) = std::fs::read_dir(dir) else {
-        return;
+        return Vec::new();
     };
-    let file_names: Vec<String> = entries
+    entries
         .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry
+                .file_type()
+                .is_ok_and(|file_type| file_type.is_socket())
+        })
         .filter_map(|entry| entry.file_name().into_string().ok())
-        .collect();
+        .collect()
+}
+
+#[cfg(unix)]
+fn sweep_abandoned_sockets(dir: &Path) {
+    let file_names = socket_file_names(dir);
     for (name, pid) in abandoned_sockets(file_names.iter().map(String::as_str), &is_pid_alive) {
         discard_unless_owned(&dir.join(name), &|_| is_pid_alive(pid));
     }
     for name in abandoned_staged_files(file_names.iter().map(String::as_str), &is_pid_alive) {
         let _ = std::fs::remove_file(dir.join(name));
     }
-    discard_unless_owned(&dir.join(protocol::LEGACY_SOCKET_FILE), &has_listener);
+    let legacy = dir.join(protocol::LEGACY_SOCKET_FILE);
+    if is_socket_file(&legacy) {
+        discard_unless_owned(&legacy, &has_listener);
+    }
+}
+
+#[cfg(unix)]
+fn prepare_socket_directory(dir: &Path) -> std::io::Result<()> {
+    use std::os::unix::fs::{DirBuilderExt, MetadataExt, PermissionsExt};
+
+    if let Some(parent) = dir.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    match std::fs::DirBuilder::new().mode(0o700).create(dir) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+        Err(error) => return Err(error),
+    }
+    let metadata = std::fs::symlink_metadata(dir)?;
+    if !metadata.file_type().is_dir() {
+        return Err(std::io::Error::other(format!(
+            "{} is not a plain directory",
+            dir.display()
+        )));
+    }
+    if metadata.uid() != unsafe { libc::geteuid() } {
+        return Err(std::io::Error::other(format!(
+            "{} belongs to another user",
+            dir.display()
+        )));
+    }
+    std::fs::set_permissions(dir, std::fs::Permissions::from_mode(0o700))
 }
 
 #[cfg(unix)]
@@ -214,12 +277,23 @@ pub(crate) fn start(app: tauri::AppHandle) {
     let Some(path) = socket_path() else {
         return;
     };
-    if let Some(parent) = path.parent() {
-        if let Err(error) = std::fs::create_dir_all(parent) {
-            log::warn!("query bridge: state directory unavailable: {error}");
-            return;
-        }
-        sweep_abandoned_sockets(parent);
+    let Some(dir) = socket_directory() else {
+        return;
+    };
+    if !fits_socket_address(path) {
+        log::warn!(
+            "query bridge: socket path exceeds {MAX_SOCKET_PATH_BYTES} bytes: {}",
+            path.display()
+        );
+        return;
+    }
+    if let Err(error) = prepare_socket_directory(dir) {
+        log::warn!("query bridge: socket directory unavailable: {error}");
+        return;
+    }
+    sweep_abandoned_sockets(dir);
+    if let Some(previous) = previous_socket_directory() {
+        sweep_abandoned_sockets(previous);
     }
     let _ = std::fs::remove_file(path);
     tauri::async_runtime::spawn(async move {
@@ -264,6 +338,19 @@ pub(crate) fn shutdown() {
 
 #[cfg(unix)]
 async fn serve_connection(stream: tokio::net::UnixStream, app: tauri::AppHandle) {
+    serve_lines(stream, move |line| {
+        let app = app.clone();
+        async move { answer(&app, &line).await }
+    })
+    .await;
+}
+
+#[cfg(unix)]
+async fn serve_lines<Respond, Answer>(stream: tokio::net::UnixStream, respond: Respond)
+where
+    Respond: Fn(String) -> Answer,
+    Answer: std::future::Future<Output = QueryResponse>,
+{
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
     let (reader, mut writer) = stream.into_split();
@@ -272,7 +359,7 @@ async fn serve_connection(stream: tokio::net::UnixStream, app: tauri::AppHandle)
         if line.trim().is_empty() {
             continue;
         }
-        let response = answer(&app, &line).await;
+        let response = respond(line).await;
         let mut payload = match serde_json::to_string(&response) {
             Ok(payload) => payload,
             Err(error) => format!("{{\"ok\":false,\"error\":\"{}\"}}", error),
@@ -300,13 +387,59 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_socket_lives_beside_the_database_in_the_state_directory() {
+    fn the_socket_lives_in_a_directory_of_its_own_under_the_state_directory() {
         let path = socket_path().expect("a home directory");
 
         assert!(path.ends_with(format!(
-            "{}/{}",
+            "{}/{}/{}",
             APP_DIR,
+            SOCKET_DIR,
             socket_file_name(std::process::id())
+        )));
+        assert_eq!(path.parent(), socket_directory());
+        assert_eq!(
+            socket_directory().and_then(Path::parent),
+            previous_socket_directory()
+        );
+    }
+
+    #[test]
+    fn the_granted_directory_holds_no_database_sidecar_or_snapshot() {
+        let granted = socket_directory().expect("a home directory");
+        let state = previous_socket_directory().expect("a home directory");
+
+        assert_ne!(granted, state);
+        assert!(!state.starts_with(granted));
+        for name in [
+            "data.db",
+            "data.db-wal",
+            "data.db-shm",
+            "data.dev.db",
+            "data.dev.db-wal",
+            "data.dev.db-shm",
+            "data.db.pre-m161-from-m160-20260919T143758961Z.bak",
+        ] {
+            assert!(!state.join(name).starts_with(granted), "{name}");
+        }
+        let database = crate::db::resolve_db_path().expect("a database path");
+        assert!(!database.starts_with(granted), "{}", database.display());
+    }
+
+    #[test]
+    fn a_socket_path_the_platform_cannot_address_is_refused_before_binding() {
+        let own = socket_path().expect("a home directory");
+        let long_user = Path::new("/Users/abcdefghijklmnopqrstuvwxyzabcdef");
+        let widest = socket_path_in(long_user, u32::MAX);
+        let too_deep = Path::new("/Users/n").join("a".repeat(MAX_SOCKET_PATH_BYTES));
+
+        assert!(fits_socket_address(own), "{}", own.display());
+        assert!(fits_socket_address(&widest), "{}", widest.display());
+        assert!(!fits_socket_address(&socket_path_in(&too_deep, 1)));
+        assert!(fits_socket_address(Path::new(
+            &"a".repeat(MAX_SOCKET_PATH_BYTES)
+        )));
+        assert!(!fits_socket_address(Path::new(
+            &"a".repeat(MAX_SOCKET_PATH_BYTES + 1)
         )));
     }
 
@@ -386,6 +519,14 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).expect("a scratch directory");
         dir
+    }
+
+    #[cfg(unix)]
+    fn socket_file(path: &Path) {
+        let bound = path.parent().expect("a parent directory").join("b");
+        let _ = std::fs::remove_file(&bound);
+        drop(std::os::unix::net::UnixListener::bind(&bound).expect("a socket file"));
+        std::fs::rename(&bound, path).expect("a socket file in place");
     }
 
     #[cfg(unix)]
@@ -506,7 +647,7 @@ mod tests {
             0x7fff_fffe_u32
         ));
         for path in [&mine, &orphan] {
-            std::fs::write(path, b"").expect("a probe file");
+            socket_file(path);
         }
 
         sweep_abandoned_sockets(&dir);
@@ -525,9 +666,10 @@ mod tests {
         let leftover = dir.join(socket_file_name(0x7fff_fffe));
         let legacy = dir.join(protocol::LEGACY_SOCKET_FILE);
         let unrelated = dir.join("data.db");
-        for path in [&mine, &leftover, &legacy, &unrelated] {
-            std::fs::write(path, b"").expect("a probe file");
+        for path in [&mine, &leftover, &legacy] {
+            socket_file(path);
         }
+        std::fs::write(&unrelated, b"").expect("a probe file");
 
         sweep_abandoned_sockets(&dir);
 
@@ -538,6 +680,192 @@ mod tests {
         assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
 
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    fn state_directory_fixture(name: &str) -> (PathBuf, PathBuf) {
+        let state = scratch_dir(name);
+        let sockets = socket_directory_in(&state);
+        prepare_socket_directory(&sockets).expect("a socket directory");
+        (state, sockets)
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_socket_directory_is_private_and_never_a_link_to_somewhere_else() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let (state, sockets) = state_directory_fixture("private");
+        let mode = std::fs::metadata(&sockets)
+            .expect("a socket directory")
+            .permissions()
+            .mode();
+
+        assert_eq!(mode & 0o777, 0o700);
+        assert!(prepare_socket_directory(&sockets).is_ok());
+
+        std::fs::remove_dir(&sockets).expect("an empty socket directory");
+        std::os::unix::fs::symlink(&state, &sockets).expect("a planted link");
+
+        assert!(prepare_socket_directory(&sockets).is_err());
+
+        let _ = std::fs::remove_dir_all(&state);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn two_live_instances_both_survive_a_sweep() {
+        let (state, sockets) = state_directory_fixture("live");
+        let own = sockets.join(socket_file_name(std::process::id()));
+        let other = sockets.join(socket_file_name(std::os::unix::process::parent_id()));
+        let dead = sockets.join(socket_file_name(0x7fff_fffe));
+        let own_listener = std::os::unix::net::UnixListener::bind(&own).expect("a listener");
+        let other_listener = std::os::unix::net::UnixListener::bind(&other).expect("a listener");
+        socket_file(&dead);
+
+        sweep_abandoned_sockets(&sockets);
+
+        assert!(has_listener(&own));
+        assert!(has_listener(&other));
+        assert!(!dead.exists());
+        assert_eq!(staged_leftovers(&sockets), Vec::<String>::new());
+
+        drop((own_listener, other_listener));
+        let _ = std::fs::remove_dir_all(&state);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_sweep_cannot_touch_the_database_its_sidecars_or_its_snapshots() {
+        let (state, sockets) = state_directory_fixture("guard");
+        let dead = 0x7fff_fffe_u32;
+        let stored = [
+            "data.db",
+            "data.db-wal",
+            "data.db-shm",
+            "data.dev.db",
+            "data.db.pre-m161-from-m160-20260919T143758961Z.bak",
+        ];
+        for name in stored {
+            std::fs::write(state.join(name), name).expect("a state file");
+        }
+        let impostors = [
+            socket_file_name(dead),
+            protocol::LEGACY_SOCKET_FILE.to_string(),
+            format!("{}{}{}", socket_file_name(9), SWEEP_SUFFIX, dead),
+        ];
+        for name in &impostors {
+            std::fs::write(state.join(name), name).expect("an impostor file");
+        }
+        let links = [
+            (socket_file_name(dead), "data.db"),
+            (protocol::LEGACY_SOCKET_FILE.to_string(), "data.db-wal"),
+            (
+                format!("{}{}{}", socket_file_name(9), SWEEP_SUFFIX, dead),
+                "data.db-shm",
+            ),
+        ];
+        for (name, target) in &links {
+            std::os::unix::fs::symlink(state.join(target), sockets.join(name))
+                .expect("a planted link");
+        }
+
+        sweep_abandoned_sockets(&sockets);
+        sweep_abandoned_sockets(&state);
+
+        for name in stored {
+            assert_eq!(
+                std::fs::read_to_string(state.join(name)).expect("a surviving state file"),
+                name
+            );
+        }
+        for name in &impostors {
+            assert_eq!(
+                std::fs::read_to_string(state.join(name)).expect("a surviving impostor"),
+                *name
+            );
+        }
+        for (name, _) in &links {
+            assert!(std::fs::symlink_metadata(sockets.join(name))
+                .expect("a surviving link")
+                .file_type()
+                .is_symlink());
+        }
+        let planted_staged = vec![impostors[2].clone()];
+        assert_eq!(staged_leftovers(&sockets), planted_staged);
+        assert_eq!(staged_leftovers(&state), planted_staged);
+
+        let _ = std::fs::remove_dir_all(&state);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_socket_left_at_the_previous_location_goes_only_once_its_owner_is_gone() {
+        let (state, sockets) = state_directory_fixture("upgrade");
+        let abandoned = state.join(socket_file_name(0x7fff_fffe));
+        let older_build = state.join(socket_file_name(std::process::id()));
+        let legacy = state.join(protocol::LEGACY_SOCKET_FILE);
+        socket_file(&abandoned);
+        socket_file(&older_build);
+        let legacy_listener = std::os::unix::net::UnixListener::bind(&legacy).expect("a listener");
+
+        sweep_abandoned_sockets(&sockets);
+        sweep_abandoned_sockets(&state);
+
+        assert!(!abandoned.exists());
+        assert!(older_build.exists());
+        assert!(has_listener(&legacy));
+        assert_eq!(staged_leftovers(&state), Vec::<String>::new());
+
+        drop(legacy_listener);
+        let _ = std::fs::remove_dir_all(&state);
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn a_turn_reaches_the_bridge_through_the_socket_directory_it_is_granted() {
+        let (state, sockets) = state_directory_fixture("rt");
+        let path = sockets.join(socket_file_name(std::process::id()));
+        assert!(fits_socket_address(&path), "{}", path.display());
+        let listener = tokio::net::UnixListener::bind(&path).expect("a listener");
+        let server = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.expect("a connection");
+            serve_lines(stream, |line| async move {
+                match serde_json::from_str::<QueryRequest>(&line) {
+                    Ok(request) => QueryResponse::ok(serde_json::json!({
+                        "workspace": request.workspace_id,
+                        "verb": request.verb,
+                    })),
+                    Err(error) => QueryResponse::failed(error.to_string()),
+                }
+            })
+            .await;
+        });
+        let request = QueryRequest {
+            workspace_id: "ws-1".to_string(),
+            session_id: "session-1".to_string(),
+            project: String::new(),
+            mount: String::new(),
+            run_id: None,
+            provider: "linear".to_string(),
+            verb: "issue".to_string(),
+            args: std::collections::BTreeMap::new(),
+        };
+        let socket = path.to_str().expect("a utf-8 socket path").to_string();
+
+        let response = tokio::task::spawn_blocking(move || cli::ask_at(&socket, &request))
+            .await
+            .expect("a client thread")
+            .expect("an answer");
+
+        assert!(response.ok);
+        assert_eq!(
+            response.data,
+            Some(serde_json::json!({ "workspace": "ws-1", "verb": "issue" }))
+        );
+        assert_eq!(path.parent(), Some(sockets.as_path()));
+        server.await.expect("a served connection");
+        let _ = std::fs::remove_dir_all(&state);
     }
 
     fn injected_names(workspace_id: Option<&str>) -> Vec<String> {

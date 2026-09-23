@@ -33,6 +33,7 @@ import type { GetFn, SetFn } from './types';
 
 type Params = {
   event: Extract<TurnEvent, { kind: 'usage' }>;
+  usageSequence: number;
   provider: ProviderId;
   model: string;
   runId: ProviderRunId;
@@ -45,7 +46,7 @@ type Params = {
 export const recordUsageTelemetry = async (
   set: SetFn,
   get: GetFn,
-  { event, provider, model, runId, sessionId, now, agentId, workflowRunId }: Params,
+  { event, usageSequence, provider, model, runId, sessionId, now, agentId, workflowRunId }: Params,
 ): Promise<void> => {
   const priceOverride =
     provider === 'codex'
@@ -77,10 +78,13 @@ export const recordUsageTelemetry = async (
     ...(workflowRunId != null && { workflowRunId }),
     ...(agentId != null && { agentId }),
     purpose: 'agent_turn',
-    usageEventId: 'usage',
+    usageEventId: `usage-${usageSequence}`,
     attributionStatus: workflowRunId == null ? 'unattributed' : 'attributed',
   };
-  await insertTelemetry(tauriDatabase, record);
+  const isInserted = await insertTelemetry(tauriDatabase, record);
+  if (isInserted === false) {
+    return;
+  }
   set((state) => ({
     sessionTelemetry: {
       ...state.sessionTelemetry,

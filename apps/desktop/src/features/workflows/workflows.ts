@@ -610,6 +610,7 @@ type RawCapabilityObligationRow = {
   readonly targetRole: string;
   readonly purpose: CapabilityPurpose;
   readonly state: CapabilityObligationState;
+  readonly requesterParentAgentId?: AgentId | null;
   readonly ownerAgentId: AgentId | null;
   readonly decision: CapabilityObligationDecision | null;
   readonly decisionReason: string | null;
@@ -661,6 +662,7 @@ const capabilityObligationFromRow = ({
   workflowRunId: row.workflowRunId,
   identity: row.identity,
   requesterAgentId: row.requesterAgentId,
+  requesterParentAgentId: row.requesterParentAgentId ?? null,
   targetRole: normalizeAgentRole({ role: row.targetRole }),
   purpose: row.purpose,
   state: row.state,
@@ -706,6 +708,7 @@ export type RecordCapabilityNeedParams = {
   readonly continuation: CapabilityContinuation;
   readonly routingProposal: WorkflowRoutingProposal | null;
   readonly inventoryRevision: string;
+  readonly holdContainerAgentId: AgentId | null;
 };
 
 export const invokeCapabilityNeedRecord = async (
@@ -734,6 +737,7 @@ export const invokeCapabilityNeedRecord = async (
         field: 'routing proposal',
       }),
       inventoryRevision: need.inventoryRevision,
+      holdContainerAgentId: need.holdContainerAgentId,
     },
   });
   return capabilityObligationFromRow({ row });
@@ -845,6 +849,18 @@ export const invokeCapabilityObligationDecide = async (
   input: DecideCapabilityObligationParams,
 ): Promise<CapabilityObligation> => {
   const row = await invoke<RawCapabilityObligationRow>('capability_obligation_decide', { input });
+  return capabilityObligationFromRow({ row });
+};
+
+export type ReopenCapabilityObligationParams = {
+  readonly obligationId: string;
+  readonly reason: string;
+};
+
+export const invokeCapabilityObligationReopen = async (
+  input: ReopenCapabilityObligationParams,
+): Promise<CapabilityObligation> => {
+  const row = await invoke<RawCapabilityObligationRow>('capability_obligation_reopen', { input });
   return capabilityObligationFromRow({ row });
 };
 
@@ -979,17 +995,6 @@ export const invokeAgentGenerationReserve = async ({
     reason: outcome.reason ?? 'the generation ledger refused this creation',
     isFirstRefusal: outcome.isFirstRefusal,
   };
-};
-
-export const invokeAgentGenerationBind = async ({
-  bindings,
-}: {
-  readonly bindings: ReadonlyArray<Readonly<{ reservationId: string; agentId: AgentId }>>;
-}): Promise<void> => {
-  if (bindings.length === 0) {
-    return;
-  }
-  await invoke('agent_generation_bind', { bindings });
 };
 
 type RawClusterExecutionNodeRow = {
@@ -1186,6 +1191,7 @@ export type AgentInsertArgs = {
   readonly routingLock?: WorkflowRoutingLock | null;
   readonly routingDecision?: WorkflowRoutingDecision | null;
   readonly taskProfile?: WorkflowTaskProfile | null;
+  readonly generationReservationId?: string;
 };
 
 const toAgentInsertPayload = ({ run }: { readonly run: AgentInsertArgs }) => ({
@@ -1227,6 +1233,7 @@ const toAgentInsertPayload = ({ run }: { readonly run: AgentInsertArgs }) => ({
     isValid: isWorkflowTaskProfile,
     field: 'task profile',
   }),
+  generationReservationId: run.generationReservationId ?? null,
 });
 
 export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> => {

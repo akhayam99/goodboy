@@ -1,6 +1,9 @@
 import { capabilityObligationIdentity, validateCapabilityNeed } from '@goodboy/core';
-import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
-import { invokeCapabilityNeedRecord } from '../../../features/workflows/workflows';
+import type { Agent, AgentId, ProviderRunId, SessionId } from '@goodboy/types';
+import {
+  invokeCapabilityNeedRecord,
+  invokeClusterCompletionHolds,
+} from '../../../features/workflows/workflows';
 import {
   inferAgentKindFromName,
   KIND_TO_ROLE,
@@ -23,6 +26,9 @@ export type CapabilityNeedCapture =
   | Readonly<{ kind: 'none' }>
   | Readonly<{ kind: 'rejected'; reason: string }>
   | Readonly<{ kind: 'captured'; obligationId: string }>;
+
+const clusterContainerOf = ({ agent }: { readonly agent: Agent }): AgentId | null =>
+  agent.executionPurpose === 'cluster' && agent.parentAgentId != null ? agent.parentAgentId : null;
 
 export const needBlocksCompletion = ({
   capture,
@@ -54,6 +60,7 @@ export const captureCapabilityNeed = async ({
     requesterAgentId: agentId,
     requesterRole,
     inventoryRevision: inventory.revision,
+    inventorySourceIds: new Set(inventory.entries.map((entry) => entry.sourceId)),
   });
   if (validation.kind === 'none') {
     return { kind: 'none' };
@@ -92,7 +99,14 @@ export const captureCapabilityNeed = async ({
     continuation: need.continuation,
     routingProposal: need.routingProposal,
     inventoryRevision: need.inventoryRevision,
+    holdContainerAgentId: clusterContainerOf({ agent }),
   });
+  if (obligation.holdIds.length > 0) {
+    const holds = await invokeClusterCompletionHolds({ sessionId });
+    set((state) => ({
+      clusterCompletionHolds: { ...state.clusterCompletionHolds, [sessionId]: holds },
+    }));
+  }
   set((state) => ({
     capabilityObligations: {
       ...state.capabilityObligations,

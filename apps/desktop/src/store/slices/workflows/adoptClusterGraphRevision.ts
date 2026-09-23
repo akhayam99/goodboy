@@ -18,9 +18,13 @@ import {
   invokeClusterGraphRevisionRefuse,
   type AgentInsertArgs,
 } from '../../../features/workflows/workflows';
-import { bindGeneration, reserveGeneration } from '../agents/reserveGeneration';
+import { reserveGeneration } from '../agents/reserveGeneration';
 import { childRoutingBatch } from './childRoutingBatch';
-import { releasedSourceIds } from './releasedClusterSources';
+import {
+  clusterSourceProgress,
+  isCompletedAmong,
+  type ClusterSourceProgress,
+} from './clusterSourceProgress';
 import type { GetFn, SetFn } from './types';
 
 export type GraphRevisionOutcome =
@@ -60,18 +64,21 @@ const childrenOf = ({
 const progressFor = ({
   graph,
   children,
-  released,
+  sourceProgress,
 }: {
   readonly graph: ClusterExecutionGraph;
   readonly children: ReadonlyArray<Agent>;
-  readonly released: ReadonlySet<AgentId>;
+  readonly sourceProgress: ClusterSourceProgress;
 }): ReadonlyArray<ClusterAdoptionProgress> =>
   graph.nodes.map((binding) => {
     const agent = children.find((child) => child.id === binding.agentId) ?? null;
-    const isReleased = agent === null && binding.agentId !== null && released.has(binding.agentId);
+    const isReleased =
+      agent === null && binding.agentId !== null && sourceProgress.released.has(binding.agentId);
     return {
       nodeId: binding.nodeId,
-      isCompleted: isReleased || agent?.status === 'completed',
+      isCompleted:
+        isReleased ||
+        (agent !== null && isCompletedAmong({ agent, completed: sourceProgress.completed })),
       isRunning: agent !== null && agent.status === 'running',
     };
   });
@@ -116,7 +123,7 @@ const refuse = async ({
   reason,
 }: RefuseParams): Promise<GraphRevisionOutcome> => {
   const stored = await invokeClusterGraphRevisionRefuse({
-    id: `cluster-graph-revision:${graph.containerAgentId}:r${graph.revision}`,
+    id: `cluster-graph-revision:${graph.containerAgentId}:r${graph.revision}:refused:${crypto.randomUUID()}`,
     containerAgentId: graph.containerAgentId,
     obligationId,
     fromRevision: graph.revision,
@@ -181,7 +188,7 @@ export const adoptClusterGraphRevision = async ({
     progress: progressFor({
       graph,
       children,
-      released: releasedSourceIds({
+      sourceProgress: clusterSourceProgress({
         get,
         sessionId,
         containerId: containerAgentId,
@@ -256,6 +263,7 @@ export const adoptClusterGraphRevision = async ({
       ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
       ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
       ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
+      generationReservationId: reservation.reservations[index]!.reservationId,
     };
   });
   const nodes: ReadonlyArray<ClusterExecutionNode> = outcome.nodes.map((node) => ({
@@ -286,7 +294,6 @@ export const adoptClusterGraphRevision = async ({
       reason: `the proposal was formed against revision ${graph.revision} and the execution is at revision ${adopted.graph.revision}`,
     });
   }
-  await bindGeneration({ reservations: reservation.reservations, agentIds: materializedIds });
   const refreshed = await invokeAgentList(sessionId);
   rememberGraph({ set, sessionId, graph: adopted.graph });
   set((state) => ({

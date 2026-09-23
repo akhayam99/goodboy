@@ -52,7 +52,6 @@ vi.mock('../../../features/workflows/workflows', () => ({
       causalRootAgentId: null,
     })),
   }),
-  invokeAgentGenerationBind: async () => undefined,
   invokeEvidenceInventoryRecord: async () => undefined,
   invokeEvidenceDeliveryRecord: async () => undefined,
   invokeWorkflowUpsert: invokeWorkflowUpsertSpy,
@@ -632,7 +631,7 @@ describe('addStepToWorkflowRun', () => {
     const workflow = templates.find((candidate) => candidate.id === run.workflowId)!;
     const agents = (state['sessionPhaseRuns'] as Record<string, ReadonlyArray<Agent>>)[SESSION_ID]!;
     expect(workflow.steps).toHaveLength(3);
-    expect(isWorkflowRunComplete({ run, workflow, agents })).toBe(false);
+    expect(isWorkflowRunComplete({ run, workflow, agents, holds: [] })).toBe(false);
   });
 
   it('clears the outcome of a dynamic run that concluded done and does not call orchestrateNextStep', async () => {

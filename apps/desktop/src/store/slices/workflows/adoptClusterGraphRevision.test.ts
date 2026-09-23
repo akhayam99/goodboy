@@ -14,7 +14,6 @@ const h = vi.hoisted(() => ({
   refuseRevision: vi.fn(),
   agentList: vi.fn(),
   reserve: vi.fn(),
-  bind: vi.fn(),
   routing: vi.fn(),
 }));
 
@@ -25,7 +24,6 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 vi.mock('../agents/reserveGeneration', () => ({
   reserveGeneration: h.reserve,
-  bindGeneration: h.bind,
 }));
 vi.mock('./childRoutingBatch', () => ({ childRoutingBatch: h.routing }));
 
@@ -170,7 +168,6 @@ describe('adoptClusterGraphRevision', () => {
         reservationId: `reservation-${index}`,
       })),
     }));
-    h.bind.mockImplementation(async () => undefined);
     h.routing.mockImplementation(({ requests }: { readonly requests: ReadonlyArray<unknown> }) => ({
       kind: 'ready' as const,
       entries: requests.map(() => ({
@@ -226,6 +223,7 @@ describe('adoptClusterGraphRevision', () => {
     expect(call.toRevision).toBe(2);
     expect(call.agents).toHaveLength(1);
     expect(call.agents[0]?.name).toBe('Rewrite in two passes');
+    expect(call.agents[0]?.generationReservationId).toBe('reservation-0');
     const retired = call.nodes.find((node) => node.nodeId === 'impl');
     expect(retired).toMatchObject({ state: 'superseded', supersededBy: 'impl-split' });
     expect(retired?.agentId).toBe('a-impl');
@@ -324,6 +322,69 @@ describe('adoptClusterGraphRevision', () => {
     expect(h.adopt).not.toHaveBeenCalled();
   });
 
+  it('treats a repaired node as completed while its attempt stays transferred', async () => {
+    const repairedHold: ClusterCompletionHold = {
+      id: 'hold-impl',
+      sessionId: SESSION_ID,
+      workflowRunId: null,
+      containerAgentId: CONTAINER_ID,
+      sourceAgentId: 'a-impl' as AgentId,
+      sourceTurnId: 'turn-impl',
+      reason: 'unresolved-outcome',
+      findings: [],
+      state: 'resolved',
+      resolutionEvidence: 'repair verified',
+      resolvedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+    };
+    const { set, get } = makeStore({
+      graph: graphOf(),
+      agents: [
+        agentOf({ id: 'a-discovery', status: 'completed' }),
+        agentOf({ id: 'a-impl', status: 'transferred' }),
+      ],
+      holds: [repairedHold],
+    });
+
+    const outcome = await adoptClusterGraphRevision({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      containerAgentId: CONTAINER_ID,
+      obligationId: 'obligation-1',
+      proposalText: proposal({ baseRevision: 1 }),
+      reason: 'the planner split the rewrite',
+    });
+
+    expect(outcome.kind).toBe('refused');
+    expect(outcome.kind === 'refused' ? outcome.reason : '').toContain('"impl" already completed');
+    expect(h.adopt).not.toHaveBeenCalled();
+  });
+
+  it('lets a revision replace a transferred attempt whose node never completed', async () => {
+    const { set, get } = makeStore({
+      graph: graphOf(),
+      agents: [
+        agentOf({ id: 'a-discovery', status: 'completed' }),
+        agentOf({ id: 'a-impl', status: 'transferred' }),
+      ],
+    });
+
+    const outcome = await adoptClusterGraphRevision({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      containerAgentId: CONTAINER_ID,
+      obligationId: 'obligation-1',
+      proposalText: proposal({ baseRevision: 1 }),
+      reason: 'the planner split the rewrite',
+    });
+
+    expect(outcome.kind).toBe('adopted');
+    expect(h.adopt).toHaveBeenCalledTimes(1);
+  });
+
   it('refuses a planner turn that carries no revision', async () => {
     const { set, get } = makeStore({
       graph: graphOf(),
@@ -345,6 +406,31 @@ describe('adoptClusterGraphRevision', () => {
       reason: 'the planner emitted no plan revision',
     });
     expect(h.adopt).not.toHaveBeenCalled();
+  });
+
+  it('records every refusal under its own id, apart from the adopted revision', async () => {
+    const { set, get } = makeStore({
+      graph: graphOf(),
+      agents: [agentOf({ id: 'a-impl', status: 'pending' })],
+    });
+    const attempt = () =>
+      adoptClusterGraphRevision({
+        set,
+        get,
+        sessionId: SESSION_ID,
+        containerAgentId: CONTAINER_ID,
+        obligationId: 'obligation-1',
+        proposalText: 'no marker here',
+        reason: 'no marker',
+      });
+
+    await attempt();
+    await attempt();
+
+    const ids = h.refuseRevision.mock.calls.map((call) => (call[0] as { id: string }).id);
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
+    expect(ids).not.toContain(`cluster-graph-revision:${CONTAINER_ID}:r1`);
   });
 
   it('leaves the graph frozen when the generation allowance is exhausted', async () => {
@@ -397,7 +483,7 @@ describe('adoptClusterGraphRevision', () => {
     });
 
     expect(outcome.kind).toBe('refused');
-    expect(h.bind).not.toHaveBeenCalled();
+    expect(h.agentList).not.toHaveBeenCalled();
   });
 
   it('reports an execution that consumed no graph instead of inventing one', async () => {

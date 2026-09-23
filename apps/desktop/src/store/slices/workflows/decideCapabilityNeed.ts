@@ -13,6 +13,8 @@ import {
   type ProviderId,
   type SessionId,
 } from '@goodboy/types';
+import { countObligationAttempts } from '@goodboy/db';
+import { tauriDatabase } from '../../../shared/lib/db';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import {
   inferAgentKindFromName,
@@ -22,12 +24,15 @@ import {
 import { issuedAgentInventory } from '../turn/agentEvidenceInventory';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { applyNeedDisposition, type NeedDispositionOutcome } from './applyNeedDisposition';
+import { resolveObligationRequester } from './resolveObligationRequester';
 import {
   buildEvidenceExcerpts,
   buildNeedRequest,
   buildUnresolvedObligations,
 } from './buildNeedPacket';
+import { resolveInvocationLimits } from '../../../shared/lib/invocationAdmission';
 import { spentUsdForRun } from './budgetBlock';
+import { recordOrchestratorUsage } from './recordOrchestratorUsage';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -35,7 +40,7 @@ type Params = {
   readonly obligationId: string;
 };
 
-const allowancesFor = ({
+const allowancesFor = async ({
   get,
   sessionId,
   obligationId,
@@ -43,13 +48,13 @@ const allowancesFor = ({
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly obligationId: string;
-}): OrchestratorAllowances => {
+}): Promise<OrchestratorAllowances> => {
   const generated = (get().sessionPhaseRuns[sessionId] ?? []).filter(
     (agent) => agent.executionPurpose === 'capability' || agent.executionPurpose === 'fan-out',
   ).length;
-  const attempts = (get().capabilityGrants[sessionId] ?? []).filter(
-    (grant) => grant.obligationId === obligationId,
-  ).length;
+  const attempts = await countObligationAttempts({ db: tauriDatabase, obligationId }).catch(
+    () => GENERATION_REPAIR_ATTEMPT_CAP,
+  );
   const replans = (get().capabilityGrants[sessionId] ?? []).filter(
     (grant) => grant.purpose === 'replan',
   ).length;
@@ -79,10 +84,13 @@ export const decideCapabilityNeed = ({
       return { kind: 'unavailable', reason: 'the obligation is no longer open' };
     }
     const agents = get().sessionPhaseRuns[sessionId] ?? [];
-    const requester = agents.find((agent) => agent.id === obligation.requesterAgentId);
+    const requester = await resolveObligationRequester({ get, sessionId, obligation });
     const session = get().sessions.find((candidate) => candidate.id === sessionId);
-    if (requester === undefined || session === undefined) {
-      return { kind: 'unavailable', reason: 'the requesting agent is no longer loaded' };
+    if (requester === null || session === undefined) {
+      return {
+        kind: 'unavailable',
+        reason: 'the requesting agent is not recorded in this session',
+      };
     }
     const kind =
       (requester.kind as AgentKind | undefined) ??
@@ -119,11 +127,41 @@ export const decideCapabilityNeed = ({
     const graph = (get().clusterExecutionGraphs?.[sessionId] ?? []).find(
       (candidate) => candidate.containerAgentId === requester.parentAgentId,
     );
+    const providerIdentity =
+      get().workspaceOverrides[session.workspaceId]?.providerBindings?.[routing.providerId] ??
+      get().authResults?.[routing.providerId]?.identity ??
+      null;
     const client = new OrchestratorClient({
       ...routing,
       invokeFn: invoke,
       ...(worktreePath !== null && { workingDir: worktreePath }),
+      invocation: {
+        invocationId: crypto.randomUUID(),
+        workspaceId: session.workspaceId,
+        sessionId,
+        ...(obligation.workflowRunId !== null && { workflowRunId: obligation.workflowRunId }),
+        agentId: requester.id,
+        ...(providerIdentity != null && { providerIdentity }),
+        purpose: 'orchestrator',
+        isHeavyweight: false,
+        limits: resolveInvocationLimits({
+          providerId: routing.providerId,
+          workspaceOverride: get().workspaceOverrides[session.workspaceId],
+        }),
+      },
+      onUsage: (usage) =>
+        recordOrchestratorUsage({
+          set,
+          get,
+          sessionId,
+          agentId: requester.id,
+          workflowRunId: obligation.workflowRunId,
+          provider: routing.providerId,
+          model: usage.model ?? routing.model,
+          usage,
+        }),
     });
+    const allowances = await allowancesFor({ get, sessionId, obligationId });
     let decision: OrchestratorDecision | null = null;
     try {
       const result = await client.decide({
@@ -146,10 +184,10 @@ export const decideCapabilityNeed = ({
           excludeObligationId: obligation.id,
         }),
         ...(graph !== undefined && {
-          graphRevision: `${graph.containerAgentId}@v${graph.graph.executionVersion}`,
+          graphRevision: `${graph.containerAgentId}@r${graph.revision}`,
         }),
         allowances: {
-          ...allowancesFor({ get, sessionId, obligationId }),
+          ...allowances,
           ...(run?.spendLimitUsd != null && {
             spendRemainingUsd: Math.max(
               0,

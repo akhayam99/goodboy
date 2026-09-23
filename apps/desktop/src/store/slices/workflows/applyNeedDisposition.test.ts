@@ -25,11 +25,17 @@ const h = vi.hoisted(() => ({
   workflowUpsert: vi.fn(),
   freeze: vi.fn(),
   deliveryRecord: vi.fn(),
+  agentById: vi.fn(),
+  holdResolve: vi.fn(),
+  holds: vi.fn(),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-vi.mock('@goodboy/db', () => ({ claimCapabilityObligationOwner: h.claimOwner }));
+vi.mock('@goodboy/db', () => ({
+  claimCapabilityObligationOwner: h.claimOwner,
+  getAgentById: h.agentById,
+}));
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentList: h.agentList,
   invokeAgentUpdateStatus: h.updateStatus,
@@ -40,6 +46,8 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowUpsert: h.workflowUpsert,
   invokeEvidenceInventoryRecord: async () => undefined,
   invokeEvidenceDeliveryRecord: h.deliveryRecord,
+  invokeClusterCompletionHoldResolve: h.holdResolve,
+  invokeClusterCompletionHolds: h.holds,
 }));
 vi.mock('./clusterImplementation', () => ({ freezeClusterExecution: h.freeze }));
 
@@ -66,6 +74,7 @@ const obligationOf = (overrides: Partial<CapabilityObligation> = {}): Capability
   workflowRunId: RUN_ID,
   identity: 'agent-1:implementer:repair',
   requesterAgentId: REQUESTER_ID,
+  requesterParentAgentId: null,
   targetRole: 'implementer',
   purpose: 'repair',
   state: 'open',
@@ -200,6 +209,7 @@ describe('applyNeedDisposition', () => {
     h.claimOwner.mockImplementation(async () => ({ kind: 'owned' }));
     h.freeze.mockImplementation(async () => null);
     h.deliveryRecord.mockImplementation(async () => undefined);
+    h.agentById.mockImplementation(async () => null);
   });
 
   it("grants a reviewer's repair to an implementer and hands the obligation to the run", async () => {
@@ -221,7 +231,11 @@ describe('applyNeedDisposition', () => {
     });
     expect(spawnAgent).toHaveBeenCalledWith(
       SESSION_ID,
-      expect.objectContaining({ kindOverride: 'implementer', executionPurpose: 'capability' }),
+      expect.objectContaining({
+        kindOverride: 'implementer',
+        executionPurpose: 'capability',
+        generationPurpose: 'repair',
+      }),
     );
     expect(h.claim).toHaveBeenCalledWith(
       expect.objectContaining({ parentOutcome: 'handed-off', grantedRole: 'implementer' }),
@@ -342,6 +356,41 @@ describe('applyNeedDisposition', () => {
     expect(h.updateStatus).not.toHaveBeenCalled();
   });
 
+  it('resumes a parent with no provider override on the provider its session belongs to', async () => {
+    const requester = agentOf({
+      kind: 'implementer',
+      name: 'apply the change',
+      status: 'running',
+      providerSessionId: 'sess-1',
+      providerSessionProviderId: 'anthropic',
+    });
+    const { set, get } = createHarness({ requester });
+    const obligation = obligationOf({
+      targetRole: 'investigator',
+      purpose: 'diagnosis',
+      identity: 'agent-1:investigator:diagnosis',
+      requests: [
+        {
+          ...obligationOf().requests[0]!,
+          targetRole: 'investigator',
+          purpose: 'diagnosis',
+          continuation: 'resume',
+        },
+      ],
+    });
+
+    const outcome = await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation,
+      decision: { ...grantDecision({ role: 'investigator' }), obligationId: obligation.id },
+    });
+
+    expect(outcome.kind === 'granted' ? outcome.plan.kind : '').toBe('resume');
+    expect(h.updateStatus).not.toHaveBeenCalled();
+  });
+
   it('transfers explicitly when the launcher discards the session id', async () => {
     const requester = agentOf({
       kind: 'implementer',
@@ -381,6 +430,10 @@ describe('applyNeedDisposition', () => {
         transferredWork: expect.stringContaining('the first two files are done'),
       }),
     );
+    const transferred = JSON.parse(
+      (h.claim.mock.calls[0]![0] as { transferredWork: string }).transferredWork,
+    ) as { evidenceRefs: ReadonlyArray<string> };
+    expect(transferred.evidenceRefs).toEqual(['review:finding-1']);
     expect(h.updateStatus).toHaveBeenCalledWith(
       REQUESTER_ID,
       expect.objectContaining({
@@ -480,6 +533,30 @@ describe('applyNeedDisposition', () => {
     expect(sendTurn.mock.calls[0]?.[0]?.content ?? '').toContain('not supplied');
   });
 
+  it('leaves the obligation open when only some named sources can be retrieved', async () => {
+    const requester = agentOf({});
+    const { set, get, sendTurn } = createHarness({ requester, plans: [planOf()] });
+
+    const outcome = await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation: obligationOf(),
+      decision: reuseDecision(['artifact:report-4', 'artifact:report-missing']),
+    });
+
+    expect(outcome).toEqual(
+      expect.objectContaining({
+        kind: 'unavailable',
+        reason: expect.stringContaining('artifact:report-missing'),
+      }),
+    );
+    expect(h.settle).not.toHaveBeenCalled();
+    const content = sendTurn.mock.calls[0]?.[0]?.content ?? '';
+    expect(content).toContain('the guard was dropped in the routing rewrite');
+    expect(content).toContain('not supplied');
+  });
+
   it('refuses an unauthorized source instead of delivering it', async () => {
     const requester = agentOf({});
     const { set, get, sendTurn } = createHarness({ requester });
@@ -535,7 +612,7 @@ describe('applyNeedDisposition', () => {
 
   it('reaches the requester with a refusal and with a refinement, each carrying its reason', async () => {
     const requester = agentOf({});
-    const { set, get, state } = createHarness({ requester });
+    const { set, get, state, sendTurn } = createHarness({ requester });
     h.decide.mockImplementation(async () =>
       obligationOf({
         state: 'refused',
@@ -565,6 +642,13 @@ describe('applyNeedDisposition', () => {
       'no allowance is left in this run',
       { sessionId: SESSION_ID },
     );
+    expect(sendTurn).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        sessionId: SESSION_ID,
+        agentId: REQUESTER_ID,
+        content: expect.stringContaining('no allowance is left in this run'),
+      }),
+    );
 
     h.decide.mockImplementation(async () =>
       obligationOf({ decision: 'refinement', decisionReason: 'name the failing test' }),
@@ -585,6 +669,180 @@ describe('applyNeedDisposition', () => {
     expect(h.decide).toHaveBeenLastCalledWith(
       expect.objectContaining({ decision: 'refinement', reason: 'name the failing test' }),
     );
+    expect(sendTurn).toHaveBeenCalledTimes(2);
+    expect(sendTurn).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        agentId: REQUESTER_ID,
+        content: expect.stringContaining('Narrow the request'),
+      }),
+    );
+  });
+
+  it('releases the hold on a refused requester so its own completion can advance', async () => {
+    const requester = agentOf({ parentAgentId: 'container-1' as AgentId });
+    const { set, get, state } = createHarness({ requester });
+    const hold = {
+      id: 'hold-1',
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      containerAgentId: 'container-1' as AgentId,
+      sourceAgentId: REQUESTER_ID,
+      sourceTurnId: 'run-1',
+      reason: 'unresolved-outcome',
+      findings: [],
+      state: 'open',
+      resolutionEvidence: null,
+      resolvedAt: null,
+      createdAt: '2026-07-30T00:00:00.000Z',
+      updatedAt: '2026-07-30T00:00:00.000Z',
+    };
+    Object.assign(state, { clusterCompletionHolds: { [SESSION_ID]: [hold] } });
+    h.holdResolve.mockImplementation(async () => undefined);
+    h.holds.mockImplementation(async () => [{ ...hold, state: 'resolved' }]);
+    h.decide.mockImplementation(async () =>
+      obligationOf({
+        state: 'refused',
+        decision: 'refused',
+        decisionReason: 'no allowance is left in this run',
+        holdIds: ['hold-1'],
+      }),
+    );
+
+    await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation: obligationOf({ holdIds: ['hold-1'] }),
+      decision: {
+        action: 'need',
+        reason: 'no allowance is left in this run',
+        obligationId: obligationOf().id,
+        disposition: { kind: 'refuse' },
+      },
+    });
+
+    expect(h.holdResolve).toHaveBeenCalledWith({
+      id: 'hold-1',
+      resolutionEvidence: expect.stringContaining('no allowance is left in this run'),
+    });
+    expect(
+      (
+        state as unknown as {
+          clusterCompletionHolds: Record<string, ReadonlyArray<{ state: string }>>;
+        }
+      ).clusterCompletionHolds[SESSION_ID]?.[0]?.state,
+    ).toBe('resolved');
+  });
+
+  it('refuses the third repair attempt on one obligation at the ledger cap and leaves it open', async () => {
+    const requester = agentOf({});
+    const { set, get, spawnAgent, state } = createHarness({ requester });
+    const attempts = new Map<string, number>();
+    spawnAgent.mockImplementation(async (...args: ReadonlyArray<unknown>) => {
+      const spawnArgs = args[1] as { readonly obligationId?: string };
+      const key = spawnArgs.obligationId ?? 'none';
+      const taken = attempts.get(key) ?? 0;
+      if (spawnArgs.obligationId !== undefined && taken >= 2) {
+        throw new Error(`this obligation already took ${taken} of 2 automatic attempts`);
+      }
+      attempts.set(key, taken + 1);
+      return `child-${taken + 1}` as AgentId;
+    });
+    h.update.mockImplementation(async (input: { readonly state: string }) =>
+      grantOf({ state: input.state === 'failed' ? 'failed' : 'delivered' }),
+    );
+    const attempt = () =>
+      applyNeedDisposition({
+        set,
+        get,
+        sessionId: SESSION_ID,
+        obligation: obligationOf(),
+        decision: grantDecision(),
+      });
+
+    const first = await attempt();
+    const second = await attempt();
+    h.decide.mockClear();
+    const third = await attempt();
+
+    expect(first.kind).toBe('granted');
+    expect(second.kind).toBe('granted');
+    expect(third).toEqual({
+      kind: 'refused',
+      reason: 'this obligation already took 2 of 2 automatic attempts',
+    });
+    expect(h.decide).not.toHaveBeenCalled();
+    expect(h.update).toHaveBeenLastCalledWith(expect.objectContaining({ state: 'failed' }));
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'need not granted: review the change',
+      expect.stringContaining('the obligation stays open'),
+      { sessionId: SESSION_ID },
+    );
+  });
+
+  it('decides the need of a removed requester through its persisted lineage', async () => {
+    const removed = agentOf({
+      parentAgentId: 'container-1' as AgentId,
+      deletedAt: '2026-07-30T01:00:00.000Z' as IsoDateTime,
+      providerSessionId: 'session-still-recorded',
+    });
+    const { set, get, spawnAgent, state } = createHarness({ requester: removed });
+    state.sessionPhaseRuns = { [SESSION_ID]: [] };
+    h.agentById.mockImplementation(async () => removed);
+
+    const outcome = await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation: obligationOf(),
+      decision: grantDecision(),
+    });
+
+    expect(h.agentById).toHaveBeenCalledWith(expect.anything(), REQUESTER_ID);
+    expect(outcome.kind).toBe('granted');
+    expect(spawnAgent).toHaveBeenCalledWith(
+      SESSION_ID,
+      expect.objectContaining({ parentAgentId: REQUESTER_ID, executionPurpose: 'capability' }),
+    );
+  });
+
+  it('never delivers evidence into the transcript of a removed requester', async () => {
+    const removed = agentOf({ deletedAt: '2026-07-30T01:00:00.000Z' as IsoDateTime });
+    const { set, get, sendTurn, state } = createHarness({ requester: removed, plans: [planOf()] });
+    state.sessionPhaseRuns = { [SESSION_ID]: [] };
+    h.agentById.mockImplementation(async () => removed);
+
+    const outcome = await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation: obligationOf(),
+      decision: reuseDecision(['artifact:report-4']),
+    });
+
+    expect(outcome.kind).toBe('unavailable');
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(h.settle).not.toHaveBeenCalled();
+  });
+
+  it('stays unavailable for a requester recorded in another session', async () => {
+    const foreign = agentOf({ sessionId: 'session-2' as SessionId });
+    const { set, get, spawnAgent, state } = createHarness({ requester: foreign });
+    state.sessionPhaseRuns = { [SESSION_ID]: [] };
+    h.agentById.mockImplementation(async () => foreign);
+
+    const outcome = await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation: obligationOf(),
+      decision: grantDecision(),
+    });
+
+    expect(outcome.kind).toBe('unavailable');
+    expect(spawnAgent).not.toHaveBeenCalled();
   });
 });
 
@@ -626,6 +884,7 @@ describe('a structural escalation', () => {
       grant: grantOf({ purpose: 'replan', grantedRole: 'planner' }),
       isFirstDelivery: true,
     }));
+    h.freeze.mockImplementation(async () => ({ containerAgentId: 'container-1' }));
 
     const outcome = await applyNeedDisposition({
       set,
@@ -643,6 +902,29 @@ describe('a structural escalation', () => {
       SESSION_ID,
       expect.objectContaining({ kindOverride: 'planner' }),
     );
+  });
+
+  it('starts no planner when the execution graph cannot be frozen', async () => {
+    const requester = agentOf({ parentAgentId: 'container-1' as AgentId });
+    const { set, get, spawnAgent, state } = createHarness({ requester });
+    const obligation = replanObligation();
+    h.decide.mockImplementation(async () =>
+      replanObligation({ state: 'refused', decision: 'refused' }),
+    );
+
+    const outcome = await applyNeedDisposition({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      obligation,
+      decision: { ...grantDecision({ role: 'planner' }), obligationId: obligation.id },
+    });
+
+    expect(outcome.kind).toBe('refused');
+    expect(outcome.kind === 'refused' ? outcome.reason : '').toContain('could not be frozen');
+    expect(spawnAgent).not.toHaveBeenCalled();
+    expect(h.claim).not.toHaveBeenCalled();
+    expect(state.capabilityObligations[SESSION_ID]?.[0]?.state).toBe('refused');
   });
 
   it('refuses the escalation once the structural replan allowance is spent', async () => {

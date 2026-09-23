@@ -94,9 +94,19 @@ fn repository_of(resource: &str) -> Option<&str> {
     rest.split_once('|').map(|(repository, _)| repository)
 }
 
+fn checkout_of(resource: &str) -> Option<&str> {
+    let rest = resource.strip_prefix(WORKTREE_PREFIX)?;
+    rest.split_once('|').map(|(_, checkout)| checkout)
+}
+
 pub fn resources_conflict(left: &str, right: &str) -> bool {
     if left == right {
         return true;
+    }
+    if let (Some(left_checkout), Some(right_checkout)) = (checkout_of(left), checkout_of(right)) {
+        if left_checkout == right_checkout {
+            return true;
+        }
     }
     let Some(left_repository) = repository_of(left) else {
         return false;
@@ -166,7 +176,33 @@ fn launcher_name(binary: &str) -> &str {
 }
 
 pub fn launcher_proves_read_only(binary: &str) -> bool {
-    matches!(launcher_name(binary), "claude" | "codex")
+    launcher_is_trusted(binary, crate::path_env::resolved_path())
+}
+
+fn launcher_is_trusted(binary: &str, search_path: &str) -> bool {
+    let name = launcher_name(binary);
+    if !matches!(name, "claude" | "codex") {
+        return false;
+    }
+    if binary == name {
+        return true;
+    }
+    let Some(resolved) = resolve_on_path(name, search_path) else {
+        return false;
+    };
+    match (
+        std::fs::canonicalize(binary),
+        std::fs::canonicalize(resolved),
+    ) {
+        (Ok(requested), Ok(trusted)) => requested == trusted,
+        _ => false,
+    }
+}
+
+fn resolve_on_path(name: &str, search_path: &str) -> Option<std::path::PathBuf> {
+    std::env::split_paths(search_path)
+        .map(|directory| directory.join(name))
+        .find(|candidate| candidate.is_file())
 }
 
 pub fn enforces_read_only(binary: &str, permission_mode: &str, is_read_only_role: bool) -> bool {
@@ -717,6 +753,68 @@ pub async fn acquire_waiting(
     outcome
 }
 
+#[derive(Debug, Error)]
+pub enum ExposureLeaseError {
+    #[error("durable writer lease error: {0}")]
+    Lease(#[from] WriterLeaseError),
+    #[error("the invocation was cancelled while it waited for a writer lease")]
+    Cancelled,
+    #[error(
+        "gave up after waiting {waited_ms}ms for a writer lease on {resource}, held by {holder} in state {state}"
+    )]
+    TimedOut {
+        waited_ms: u64,
+        holder: String,
+        state: String,
+        resource: String,
+    },
+}
+
+pub struct HeldWriterLease {
+    db: Db,
+    token: String,
+}
+
+impl HeldWriterLease {
+    pub fn bind_process(&self, process_id: u32) {
+        let _ = bind_process(&self.db, &self.token, process_id);
+    }
+}
+
+impl Drop for HeldWriterLease {
+    fn drop(&mut self) {
+        let _ = release(&self.db, &self.token);
+    }
+}
+
+pub async fn hold_exposure(
+    db: &Db,
+    queue: &WriterLeaseQueue,
+    holder: &str,
+    exposure: &[String],
+) -> Result<Option<HeldWriterLease>, ExposureLeaseError> {
+    if exposure.is_empty() {
+        return Ok(None);
+    }
+    match acquire_waiting(db, queue, holder, exposure, None).await? {
+        WriterLeaseWait::Granted(WriterLeaseGrant {
+            token: Some(token), ..
+        }) => Ok(Some(HeldWriterLease {
+            db: db.clone(),
+            token,
+        })),
+        WriterLeaseWait::Granted(_) | WriterLeaseWait::Cancelled => {
+            Err(ExposureLeaseError::Cancelled)
+        }
+        WriterLeaseWait::Blocked(blocked) => Err(ExposureLeaseError::TimedOut {
+            waited_ms: blocked.waited_ms,
+            holder: blocked.holder,
+            state: blocked.state,
+            resource: blocked.resource,
+        }),
+    }
+}
+
 pub fn bind_process(db: &Db, token: &str, process_id: u32) -> Result<bool, WriterLeaseError> {
     let conn = db.0.lock().map_err(|_| WriterLeaseError::Poisoned)?;
     let changed = conn.execute(
@@ -941,6 +1039,49 @@ pub fn writer_lease_acquire(
     run_id: Option<String>,
 ) -> Result<WriterLeaseGrant, WriterLeaseError> {
     acquire(database.inner(), &holder, &resources, run_id.as_deref())
+}
+
+fn waited_grant(holder: &str, waited: WriterLeaseWait) -> WriterLeaseGrant {
+    match waited {
+        WriterLeaseWait::Granted(grant) => grant,
+        WriterLeaseWait::Cancelled => WriterLeaseGrant {
+            id: None,
+            holder: holder.to_string(),
+            token: None,
+            is_granted: false,
+            blocked_by: None,
+            blocked_state: Some("cancelled".to_string()),
+            blocked_resource: None,
+        },
+        WriterLeaseWait::Blocked(blocked) => WriterLeaseGrant {
+            id: None,
+            holder: holder.to_string(),
+            token: None,
+            is_granted: false,
+            blocked_by: Some(blocked.holder),
+            blocked_state: Some(blocked.state),
+            blocked_resource: Some(blocked.resource),
+        },
+    }
+}
+
+#[tauri::command]
+pub async fn writer_lease_acquire_waiting(
+    database: tauri::State<'_, Db>,
+    queue: tauri::State<'_, WriterLeaseQueue>,
+    holder: String,
+    resources: Vec<String>,
+    run_id: Option<String>,
+) -> Result<WriterLeaseGrant, WriterLeaseError> {
+    let waited = acquire_waiting(
+        database.inner(),
+        queue.inner(),
+        &holder,
+        &resources,
+        run_id.as_deref(),
+    )
+    .await?;
+    Ok(waited_grant(&holder, waited))
 }
 
 #[tauri::command]
@@ -1173,7 +1314,7 @@ mod tests {
 
     #[test]
     fn a_read_only_role_holds_no_lease_on_claude_or_codex() {
-        for binary in ["claude", "/opt/homebrew/bin/codex"] {
+        for binary in ["claude", "codex"] {
             let exposure = exposure_of(
                 binary,
                 "default",
@@ -1684,6 +1825,113 @@ mod tests {
         assert!(release(&db, &token).expect("release"));
         let waited = waiter.await.expect("waiter task").expect("waiter result");
         assert!(matches!(waited, WriterLeaseWait::Granted(_)));
+    }
+
+    fn launcher_directory(label: &str) -> std::path::PathBuf {
+        let directory = std::env::temp_dir().join(format!(
+            "goodboy-launcher-{label}-{}-{}",
+            std::process::id(),
+            crate::util::now_ms()
+        ));
+        std::fs::create_dir_all(&directory).expect("launcher directory");
+        std::fs::write(directory.join("claude"), "").expect("launcher file");
+        directory
+    }
+
+    #[test]
+    fn only_the_launcher_the_app_path_resolves_can_prove_a_read_only_invocation() {
+        let trusted = launcher_directory("trusted");
+        let impostor = launcher_directory("impostor");
+        let search_path = trusted.to_string_lossy().to_string();
+        let trusted_binary = trusted.join("claude").to_string_lossy().to_string();
+        let impostor_binary = impostor.join("claude").to_string_lossy().to_string();
+
+        assert!(launcher_is_trusted("claude", &search_path));
+        assert!(launcher_is_trusted(&trusted_binary, &search_path));
+        assert!(!launcher_is_trusted(&impostor_binary, &search_path));
+        assert!(!launcher_is_trusted("/nowhere/codex", &search_path));
+        assert!(!launcher_is_trusted("cursor-agent", &search_path));
+
+        let _ = std::fs::remove_dir_all(trusted);
+        let _ = std::fs::remove_dir_all(impostor);
+    }
+
+    #[test]
+    fn two_names_for_one_checkout_conflict() {
+        assert!(resources_conflict(
+            &worktree_resource("/repos/app/.worktrees/one", "/repos/app/.worktrees/one"),
+            &worktree_resource("/repos/app", "/repos/app/.worktrees/one"),
+        ));
+    }
+
+    #[test]
+    fn a_waited_denial_reports_the_blocking_holder_instead_of_a_grant() {
+        let grant = waited_grant(
+            "mount:one",
+            WriterLeaseWait::Blocked(BlockedWait {
+                waited_ms: 1_800_000,
+                holder: "run-1".to_string(),
+                state: "active".to_string(),
+                resource: repository_resource("/repos/app"),
+            }),
+        );
+        assert!(!grant.is_granted);
+        assert_eq!(grant.blocked_by.as_deref(), Some("run-1"));
+        assert_eq!(grant.blocked_state.as_deref(), Some("active"));
+    }
+
+    #[tokio::test]
+    async fn a_mount_operation_waits_for_a_turn_instead_of_failing() {
+        let db = test_db();
+        let queue = WriterLeaseQueue::new();
+        let turn = vec![worktree_resource("/repos/app", "/repos/app/.worktrees/one")];
+        let token = acquire(&db, "run-1", &turn, Some("run-1"))
+            .expect("turn")
+            .token
+            .expect("token");
+
+        let mount = tokio::spawn({
+            let db = db.clone();
+            let queue = queue.clone();
+            async move {
+                acquire_waiting(
+                    &db,
+                    &queue,
+                    "mount:one",
+                    &[repository_resource("/repos/app")],
+                    None,
+                )
+                .await
+            }
+        });
+        assert!(settle_until(|| queue.is_waiting("mount:one")).await);
+        assert!(release(&db, &token).expect("release"));
+
+        let waited = mount.await.expect("mount task").expect("mount result");
+        assert!(waited_grant("mount:one", waited).is_granted);
+    }
+
+    #[tokio::test]
+    async fn an_unproven_auxiliary_launcher_holds_its_checkout_until_it_drops() {
+        let db = test_db();
+        let queue = WriterLeaseQueue::new();
+        let exposure = invocation_exposure(&InvocationExposure {
+            binary: "cursor-agent",
+            permission_mode: "default",
+            is_read_only_role: true,
+            working_dir: "/repos/app/.worktrees/one",
+            writable_roots: &[],
+            checkouts: &[],
+        });
+
+        let held = hold_exposure(&db, &queue, "summarizer-1", &exposure)
+            .await
+            .expect("hold")
+            .expect("lease");
+        let turn = vec![worktree_resource("/repos/app", "/repos/app/.worktrees/one")];
+        assert!(!acquire(&db, "run-1", &turn, None).expect("turn").is_granted);
+        drop(held);
+        assert!(acquire(&db, "run-1", &turn, None).expect("turn").is_granted);
     }
 
     #[test]

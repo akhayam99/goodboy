@@ -5,6 +5,7 @@ import { migrate } from '../migrations/runner';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import {
   bindAgentGeneration,
+  countObligationAttempts,
   listGenerationRefusals,
   reserveAgentGeneration,
 } from './agent-generation';
@@ -230,6 +231,30 @@ describe('agent generation ledger', () => {
     expect(foreign.kind === 'refused' ? foreign.reason : '').toContain('another session');
   });
 
+  it('counts the attempts one obligation took from the same ledger that caps them', async () => {
+    const db = await seed();
+    const attempt = async (reservationId: string) =>
+      reserveAgentGeneration({
+        db,
+        reservationId,
+        sessionId,
+        workflowRunId,
+        parentAgentId: 'root' as AgentId,
+        creationPath: 'capability',
+        count: 1,
+        obligationId: 'obligation-1',
+        purpose: 'repair',
+      });
+
+    expect(await countObligationAttempts({ db, obligationId: 'obligation-1' })).toBe(0);
+    await attempt('reservation:a');
+    await attempt('reservation:b');
+    await attempt('reservation:c');
+
+    expect(await countObligationAttempts({ db, obligationId: 'obligation-1' })).toBe(2);
+    expect(await countObligationAttempts({ db, obligationId: 'obligation-2' })).toBe(0);
+  });
+
   it('caps automatic attempts on one obligation and structural replans on one run', async () => {
     const db = await seed();
     const attempt = async (reservationId: string) =>
@@ -296,5 +321,71 @@ describe('agent generation ledger', () => {
       "SELECT COUNT(*) AS total FROM agent_generation_ledger WHERE causal_root_agent_id = 'root' AND depth > 0",
     );
     expect(rows[0]?.total).toBe(7);
+  });
+
+  it('gives a retried creation its own reservation and never rebinds a spent one', async () => {
+    const db = await seed();
+    const first = await generate({ db, parentAgentId: 'root' as AgentId, childId: 'child' });
+    const retry = await reserveUnder({
+      db,
+      parentAgentId: 'root' as AgentId,
+      reservationId: 'reservation:child',
+    });
+
+    const firstId = first.kind === 'granted' ? first.reservations[0]!.reservationId : '';
+    const retryId = retry.kind === 'granted' ? retry.reservations[0]!.reservationId : '';
+    expect(retryId).not.toBe('');
+    expect(retryId).not.toBe(firstId);
+    await expect(
+      bindAgentGeneration({
+        db,
+        bindings: [{ reservationId: firstId, agentId: 'replacement' as AgentId }],
+      }),
+    ).rejects.toThrow('already bound');
+    const rows = await db.select<{ readonly total: number }>(
+      "SELECT COUNT(*) AS total FROM agent_generation_ledger WHERE causal_root_agent_id = 'root' AND depth > 0",
+    );
+    expect(rows[0]?.total).toBe(2);
+  });
+
+  it('counts depth from the lineage when the parent predates the ledger', async () => {
+    const db = await seed();
+    await insertAgent({ db, id: 'legacy-1', parentAgentId: 'root' });
+    await insertAgent({ db, id: 'legacy-2', parentAgentId: 'legacy-1' });
+    await insertAgent({ db, id: 'legacy-3', parentAgentId: 'legacy-2' });
+
+    const deep = await reserveUnder({
+      db,
+      parentAgentId: 'legacy-3' as AgentId,
+      reservationId: 'reservation:deep',
+    });
+
+    expect(deep.kind === 'refused' ? deep.limit : null).toBe('depth');
+  });
+
+  it('notifies a rootless refusal once per session instead of once globally', async () => {
+    const db = await seed();
+    const rootless = (session: SessionId) =>
+      reserveAgentGeneration({
+        db,
+        reservationId: 'reservation:rootless',
+        sessionId: session,
+        workflowRunId: null,
+        parentAgentId: null,
+        creationPath: 'workflow-step',
+        count: 1,
+        obligationId: 'obligation-rootless',
+      });
+    for (let index = 0; index < 2; index++) {
+      expect((await rootless(sessionId)).kind).toBe('granted');
+    }
+
+    const first = await rootless(sessionId);
+    const again = await rootless(sessionId);
+    const other = await rootless(otherSessionId);
+
+    expect(first.kind === 'refused' ? first.isFirstRefusal : null).toBe(true);
+    expect(again.kind === 'refused' ? again.isFirstRefusal : null).toBe(false);
+    expect(other.kind === 'refused' ? other.isFirstRefusal : null).toBe(true);
   });
 });

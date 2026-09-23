@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { AgentId, CapabilityObligationState, SessionId, WorkflowRunId } from '@goodboy/types';
 import { migrate } from '../migrations/runner';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import {
@@ -74,6 +74,17 @@ describe('capability obligation queries', () => {
       'restore the dropped null guard in sendTurn',
     );
     expect(obligations[0]?.state).toBe('open');
+  });
+
+  it('keeps the container of a requester that was tombstoned after it raised a need', async () => {
+    const db = await seed();
+
+    const recorded = await recordCapabilityNeed({ db, need });
+    await db.execute("UPDATE agents SET deleted_at = 1 WHERE id = 'source'");
+
+    const obligations = await listCapabilityObligations({ db, sessionId });
+    expect(recorded.requesterParentAgentId).toBe(containerAgentId);
+    expect(obligations[0]?.requesterParentAgentId).toBe(containerAgentId);
   });
 
   it('converges an unresolved completion hold and a matching need on one obligation', async () => {
@@ -153,5 +164,37 @@ describe('capability obligation ownership', () => {
     expect(obligations[0]?.ownerAgentId).toBe(
       owned[0]?.kind === 'owned' ? owned[0].ownerAgentId : null,
     );
+  });
+
+  it('never reopens a refused, satisfied or attached obligation through a claim', async () => {
+    const db = await seed();
+    await db.execute(
+      "INSERT INTO agents (id, session_id, ordinal, name, status) VALUES ('owner-a', 'session', 2, 'Owner A', 'pending')",
+    );
+    await recordCapabilityNeed({ db, need });
+
+    const closed: ReadonlyArray<readonly [CapabilityObligationState, string]> = [
+      ['refused', 'refused'],
+      ['satisfied', 'granted'],
+      ['open', 'attached'],
+    ];
+    for (const [state, decision] of closed) {
+      await db.execute(
+        'UPDATE capability_obligations SET state = ?, decision = ?, owner_agent_id = NULL WHERE identity = ?',
+        [state, decision, need.identity],
+      );
+
+      const claim = await claimCapabilityObligationOwner({
+        db,
+        identity: need.identity,
+        ownerAgentId: 'owner-a' as AgentId,
+        childAgentId: null,
+      });
+
+      expect(claim).toEqual({ kind: 'not-claimable', obligationId: need.obligationId, state });
+      const obligations = await listCapabilityObligations({ db, sessionId });
+      expect(obligations[0]?.state).toBe(state);
+      expect(obligations[0]?.ownerAgentId).toBeNull();
+    }
   });
 });

@@ -15,13 +15,14 @@ type Params = {
 export type ContextReadService =
   | Readonly<{ kind: 'none' }>
   | Readonly<{ kind: 'refused'; reason: string }>
+  | Readonly<{ kind: 'held'; reason: string }>
   | Readonly<{ kind: 'served'; delivered: number; refused: number }>;
 
 export const contextReadBlocksCompletion = ({
   service,
 }: {
   readonly service: ContextReadService;
-}): boolean => service.kind === 'served';
+}): boolean => service.kind === 'served' || service.kind === 'held';
 
 export const serveContextRead = async ({
   set,
@@ -69,6 +70,16 @@ export const serveContextRead = async ({
       { sessionId },
     );
     return { kind: 'refused', reason: delivery.reason };
+  }
+  if (delivery.kind === 'held') {
+    void get().emitNotification(
+      'error',
+      'warning',
+      `context read held: ${agent.name}`,
+      delivery.reason,
+      { sessionId },
+    );
+    return { kind: 'held', reason: delivery.reason };
   }
   return { kind: 'served', delivered: delivery.deliveredCount, refused: delivery.refusedCount };
 };

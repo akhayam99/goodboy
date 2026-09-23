@@ -1,6 +1,6 @@
 import {
   acquireOwnedWriterLease,
-  acquireWriterLease,
+  acquireWriterLeaseWaiting,
   releaseWriterLease,
   repositoryWriterResource,
   type OwnedReservation,
@@ -51,7 +51,7 @@ const acquireRepositoryLease = async ({
   const holder = `mount:${mountKey}`;
   const resources = [repositoryWriterResource({ repoRoot })];
   if (ownedReservations.length === 0) {
-    return acquireWriterLease({ holder, resources });
+    return acquireWriterLeaseWaiting({ holder, resources });
   }
   const owned = await acquireOwnedWriterLease({ holder, resources, owners: ownedReservations });
   switch (owned.outcome) {
