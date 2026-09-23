@@ -256,6 +256,8 @@ const harness = (): Harness => {
     transcripts: {},
     agentTurnState: {},
     agentKindOverride: {},
+    stepSummaryDegraded: {},
+    degradedStepOutputs: {},
     agentModelOverride: {},
     agentProviderOverride: {},
     agentEffortOverride: {},

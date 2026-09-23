@@ -323,8 +323,6 @@ vi.mock('../features/plans/plans', () => ({
   listConsumptionsForPlan: vi.fn(async () => []),
 }));
 
-import { stepSummaryDegraded } from './summarizeAgentOutput';
-
 const SESSION_ID = 'session-rt-1' as SessionId;
 const AGENT_A = 'agent-a' as AgentId;
 const AGENT_B = 'agent-b' as AgentId;
@@ -1064,7 +1062,7 @@ describe('sendTurn, workflow carry-forward', () => {
       agent.id === implementAgentId ? { ...agent, outputSummary: shortDegradedSummary } : agent,
     );
 
-    stepSummaryDegraded.clear();
+    useAppStore.setState({ stepSummaryDegraded: {} });
     await useAppStore
       .getState()
       .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'short summary retry' });
@@ -1076,7 +1074,7 @@ describe('sendTurn, workflow carry-forward', () => {
     );
     expect(lastStepTransition()?.degraded).toBeUndefined();
 
-    stepSummaryDegraded.set(implementAgentId, true);
+    useAppStore.setState({ stepSummaryDegraded: { [implementAgentId]: true } });
     await useAppStore
       .getState()
       .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'ground truth retry' });
@@ -1188,7 +1186,7 @@ describe('sendTurn, workflow carry-forward', () => {
         },
       ],
     });
-    stepSummaryDegraded.clear();
+    useAppStore.setState({ stepSummaryDegraded: {} });
 
     await useAppStore
       .getState()

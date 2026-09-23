@@ -34,7 +34,6 @@ const FAN_OUT_DEPTH_CAP = 1;
 export const FAN_OUT_MAX_CHILDREN = 4;
 
 const synthesisStarted = new Set<string>();
-const selfExploreTasked = new Set<string>();
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
@@ -612,8 +611,10 @@ export const advanceScoutTree = (set: SetFn, get: GetFn) => {
         await fanOutAgents({ set, get, sessionId, container: agent, areas: split, role });
         return;
       }
-      if (agent.parentAgentId == null && !selfExploreTasked.has(agentId)) {
-        selfExploreTasked.add(agentId);
+      if (agent.parentAgentId == null && get().scoutSelfExploreTasked[agentId] !== true) {
+        set((state) => ({
+          scoutSelfExploreTasked: { ...state.scoutSelfExploreTasked, [agentId]: true },
+        }));
         const reason =
           !fanOutEnabled(get, sessionId) && conditionMet
             ? 'parallel agents is off for this workspace'

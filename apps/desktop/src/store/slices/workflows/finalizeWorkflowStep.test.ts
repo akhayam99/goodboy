@@ -39,7 +39,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import { finalizeWorkflowStep } from './finalizeWorkflowStep';
-import { SUMMARY_TIMEOUT_MS, stepSummaryDegraded } from '../../summarizeAgentOutput';
+import { SUMMARY_TIMEOUT_MS } from '../../summarizeAgentOutput';
 import { clearMountContinuations, queueMountContinuation } from '../turn/mountContinuations';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -124,6 +124,8 @@ const buildHarness = ({ sessions = [session], agents = [agent] }: Params = {}) =
     sendTurn: vi.fn(),
     agentTurnState: {},
     workflowContinueAttempts: {},
+    stepSummaryDegraded: {},
+    degradedStepOutputs: {},
   };
   const set = vi.fn((update: unknown) => {
     const patch = typeof update === 'function' ? update(state) : update;
@@ -141,7 +143,6 @@ describe('finalizeWorkflowStep output summary', () => {
   beforeEach(() => {
     invokeAgentListSpy.mockResolvedValue([{ ...agent, status: 'completed' }]);
     invokeAgentUpdateStatusSpy.mockResolvedValue({ ...agent, status: 'completed' });
-    stepSummaryDegraded.clear();
     clearMountContinuations();
   });
 
@@ -219,6 +220,8 @@ describe('finalizeWorkflowStep output summary', () => {
     summarizeStepOutputSpy.mockRejectedValue(new Error('provider unavailable'));
     const state = {
       workflowContinueAttempts: {},
+      stepSummaryDegraded: {},
+      degradedStepOutputs: {},
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       sessions: [session],
       workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
@@ -268,6 +271,8 @@ describe('finalizeWorkflowStep output summary', () => {
     summarizeStepOutputSpy.mockRejectedValue(new Error('timeout'));
     const state = {
       workflowContinueAttempts: {},
+      stepSummaryDegraded: {},
+      degradedStepOutputs: {},
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       sessions: [session],
       workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
@@ -477,6 +482,8 @@ describe('finalizeWorkflowStep output summary', () => {
     };
     const state = {
       workflowContinueAttempts: {},
+      stepSummaryDegraded: {},
+      degradedStepOutputs: {},
       clusterStartAttempts: {},
       sessionPhaseRuns: { [SESSION_ID]: [agent, child] },
       sessions: [session],
@@ -530,6 +537,8 @@ describe('finalizeWorkflowStep output summary', () => {
     };
     const state = {
       workflowContinueAttempts: {},
+      stepSummaryDegraded: {},
+      degradedStepOutputs: {},
       sessionPhaseRuns: { [SESSION_ID]: [agent, child] },
       sessions: [session],
       sessionPlans: {},
@@ -575,6 +584,8 @@ describe('finalizeWorkflowStep output summary', () => {
   it('does not notify the inbox for the session-missing guard fallback (excluded from I6)', async () => {
     const state = {
       workflowContinueAttempts: {},
+      stepSummaryDegraded: {},
+      degradedStepOutputs: {},
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       sessions: [],
       workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],

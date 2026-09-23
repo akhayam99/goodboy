@@ -102,7 +102,6 @@ import { buildIntegrationsGuard } from '../../integrationsGuard';
 import { buildProfileGuard } from '../../profileGuard';
 import { buildScopeGuard } from '../../scopeGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
-import { stepSummaryDegraded } from '../../summarizeAgentOutput';
 import { clearMaterializationBatch } from '../../materializationGate';
 import { decisionsDelta } from '../session-events';
 import { flushTurnEvents } from '../transcripts/buffer';
@@ -395,7 +394,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               })),
             });
             const predecessorSummary = immediatePredecessor.outputSummary ?? '';
-            const recordedDegraded = stepSummaryDegraded.get(immediatePredecessor.id);
+            const recordedDegraded = get().stepSummaryDegraded[immediatePredecessor.id];
             const isDegraded =
               recordedDegraded ??
               (predecessorSummary.trim().length === 0 ||

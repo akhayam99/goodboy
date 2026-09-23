@@ -386,11 +386,34 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workingDir: null,
     });
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizerConstructorCalls).toContainEqual(
       expect.objectContaining({ providerId: 'cursor', model: 'sonnet-4.6' }),
     );
     useAppStore.setState({ workspaceOverrides: {} });
+  });
+
+  it('drops the session queue once it drains', async () => {
+    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    queues.clear();
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionSlots: { [SESSION_ID]: [] },
+      summarizerStatus: {},
+    });
+
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'turn input',
+      turnOutput: 'turn output',
+      workingDir: null,
+    });
+    expect(queues.get(SESSION_ID)?.inFlight).toBe(true);
+
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
+    expect(queues.size).toBe(0);
   });
 
   it('summarizes in the worktree the turn wrote to, not the first of the session', async () => {
@@ -412,7 +435,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workingDir: '/repos/app/second',
     });
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizerConstructorCalls).toContainEqual(
       expect.objectContaining({ workingDir: '/repos/app/second' }),
     );
@@ -455,7 +478,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workingDir: null,
     });
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizerConstructorCalls).toContainEqual(
       expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6-luna' }),
     );
@@ -497,7 +520,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workingDir: null,
     });
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizerConstructorCalls).toContainEqual(
       expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6-terra', effort: 'high' }),
     );
@@ -606,7 +629,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     useAppStore.setState({ sessionTelemetry: { [SESSION_ID]: [staleRecord, currentRecord] } });
     resolveTelemetryList?.([staleRecord]);
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(useAppStore.getState().sessionTelemetry[SESSION_ID]).toEqual([
       staleRecord,
       currentRecord,
@@ -754,7 +777,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     resolveFirst();
 
     await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(2));
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(upsertContextSlotSpy).toHaveBeenCalledTimes(1);
     expect(upsertContextSlotSpy.mock.calls[0]?.[2]).toMatchObject({
       key: 'decisions',
@@ -812,7 +835,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       turnOutput: 'turn output',
       workingDir: null,
     });
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
 
     const decisionEvents = insertSessionEventSpy.mock.calls
       .map(([params]) => params.event)
@@ -887,7 +910,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     summarizerUpserts = [];
     resolveFirst();
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizeSpy).toHaveBeenCalledTimes(2);
     expect(upsertContextSlotSpy).not.toHaveBeenCalled();
   });
@@ -937,7 +960,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workingDir: null,
     });
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizeSpy).toHaveBeenCalledTimes(2);
     expect(upsertContextSlotSpy).toHaveBeenCalledTimes(2);
   });
@@ -986,7 +1009,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workingDir: null,
     });
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizeSpy).toHaveBeenCalledTimes(1);
     expect(upsertContextSlotSpy).toHaveBeenCalledTimes(1);
   });

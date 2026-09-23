@@ -327,6 +327,9 @@ export type AppState = AppSliceState & {
   readonly clusterStartAttempts: Readonly<Record<AgentId, number>>;
   readonly clusterStepStartAttempts: Readonly<Record<AgentId, number>>;
   readonly workflowContinueAttempts: Readonly<Record<AgentId, number>>;
+  readonly stepSummaryDegraded: Readonly<Record<AgentId, boolean>>;
+  readonly degradedStepOutputs: Readonly<Record<AgentId, string>>;
+  readonly scoutSelfExploreTasked: Readonly<Record<AgentId, true>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
   readonly detectedEditors: ReadonlyArray<DetectedEditor>;
   readonly workspaceOverrides: Readonly<Record<WorkspaceId, OverrideSettings>>;

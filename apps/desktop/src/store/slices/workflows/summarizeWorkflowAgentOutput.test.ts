@@ -23,7 +23,6 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
-import { stepSummaryDegraded, summarizedStepOutputs } from '../../summarizeAgentOutput';
 
 const SESSION_ID = 'session-step-summary' as SessionId;
 const AGENT_ID = 'agent-step-summary' as AgentId;
@@ -89,6 +88,8 @@ const buildHarness = ({ connected, cooldowns, defaultProviderId, taskModels }: H
           },
     phaseTemplates: {},
     sessionWorkflows: {},
+    stepSummaryDegraded: {},
+    degradedStepOutputs: {},
     emitNotification,
   };
   const set = vi.fn((updater: unknown) => {
@@ -113,8 +114,6 @@ describe('summarizeWorkflowAgentOutput', () => {
   beforeEach(() => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     summarizeStepOutputSpy.mockReset();
-    summarizedStepOutputs.clear();
-    stepSummaryDegraded.clear();
   });
 
   afterEach(() => {
@@ -209,13 +208,13 @@ describe('summarizeWorkflowAgentOutput', () => {
     expect(state.providerCooldowns).toEqual({});
   });
 
-  it('does not write to the store for a non-cooldown failure kind', async () => {
+  it('records no cooldown for a non-cooldown failure kind', async () => {
     summarizeStepOutputSpy.mockRejectedValue(new Error('the model produced nonsense'));
-    const { call, set } = buildHarness({ connected: ['anthropic', 'codex'] });
+    const { call, state } = buildHarness({ connected: ['anthropic', 'codex'] });
 
     await call();
 
-    expect(set).not.toHaveBeenCalled();
+    expect(state.providerCooldowns).toEqual({});
   });
 
   it('notifies when every provider is cooling down before the first call', async () => {

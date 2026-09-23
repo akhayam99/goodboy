@@ -134,6 +134,7 @@ export const summarizeWorkflowAgentOutput = async ({
     })?.expectedOutput ?? '';
   const runOnce = (model: TaskModelPreference): Promise<SummarizeAgentOutputResult> =>
     summarizeAgentOutput({
+      set,
       agentId: agent.id,
       output,
       taskModel: model,

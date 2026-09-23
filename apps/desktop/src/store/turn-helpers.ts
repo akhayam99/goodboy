@@ -180,13 +180,13 @@ const mergeTelemetry = ({
   return [...recordsById.values()];
 };
 
-function scheduleIdle(fn: () => void): void {
+const scheduleIdle = ({ run }: { readonly run: () => void }): void => {
   if (typeof requestIdleCallback === 'function') {
-    requestIdleCallback(() => fn());
-  } else {
-    queueMicrotask(fn);
+    requestIdleCallback(() => run());
+    return;
   }
-}
+  queueMicrotask(run);
+};
 
 const runQueuedSummarizer = ({ set, get, sessionId, entry }: Params): void => {
   void runSummarizer({ set, get, sessionId, entry }).finally(() => {
@@ -196,14 +196,12 @@ const runQueuedSummarizer = ({ set, get, sessionId, entry }: Params): void => {
     }
     const next = queue.queued;
     if (next == null) {
-      queue.inFlight = false;
+      summarizerQueues.delete(sessionId);
       void get().maybeAutoAdvanceWorkflow(sessionId);
       return;
     }
     queue.queued = null;
-    scheduleIdle(() => {
-      runQueuedSummarizer({ set, get, sessionId, entry: next });
-    });
+    scheduleIdle({ run: () => runQueuedSummarizer({ set, get, sessionId, entry: next }) });
   });
 };
 
@@ -229,9 +227,7 @@ const enqueueSummarizerEntry = ({ set, get, sessionId, entry }: Params): void =>
 
   queue.inFlight = true;
   queue.queued = null;
-  scheduleIdle(() => {
-    runQueuedSummarizer({ set, get, sessionId, entry });
-  });
+  scheduleIdle({ run: () => runQueuedSummarizer({ set, get, sessionId, entry }) });
 };
 
 type EnqueueParams = {
