@@ -5,7 +5,7 @@ import type { Session, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core';
 import { useAppStore, useSessionCost } from '../../../../store';
 import { RoutingIndicator } from '../RoutingIndicator';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast, useToastLift } from '../../../../app/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions';
 import { ProviderUsagePill } from '../ProviderUsagePill';
 import { CostBadge } from '../../../providers/components/CostBadge';
@@ -118,6 +118,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     providerDisconnected,
     showToast,
   });
+  useToastLift({ ref: composerRef });
 
   const {
     onValueChange,
