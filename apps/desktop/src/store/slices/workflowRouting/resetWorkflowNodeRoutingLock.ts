@@ -20,7 +20,6 @@ export const resetWorkflowNodeRoutingLock = (set: SetFn, get: GetFn) => {
     const resolution = resolveWorkflowRouting({
       agentLock: null,
       stepLock: null,
-      runRoleLock: context.runRoleLock,
       proposal: context.proposal,
       roleDefault: context.roleDefault,
       sessionDefault: context.sessionDefault,

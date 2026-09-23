@@ -71,7 +71,6 @@ export const OrchestratorPanel = ({
   const removeWorkflowOrchestratorHint = useAppStore(
     (state) => state.removeWorkflowOrchestratorHint,
   );
-  const setWorkflowRoleModelOverrides = useAppStore((state) => state.setWorkflowRoleModelOverrides);
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
   const setWorkflowRunAutoRun = useAppStore((state) => state.setWorkflowRunAutoRun);
   const stopWorkflowRunNow = useAppStore((state) => state.stopWorkflowRunNow);
@@ -86,7 +85,6 @@ export const OrchestratorPanel = ({
   const [busy, setBusy] = useState(false);
   const hints = run.orchestratorHints ?? EMPTY_HINTS;
   const queuedHintCount = hints.filter((hint) => hint.consumedAt == null).length;
-  const overriddenRoleCount = Object.keys(run.roleModelOverrides ?? {}).length;
 
   const state = resolveOrchestratorState({
     run,
@@ -307,24 +305,6 @@ export const OrchestratorPanel = ({
             <Markdown text={state.detail} className="text-2xs leading-relaxed" />
           </div>
         ) : null}
-        {overriddenRoleCount === 0 ? null : (
-          <p
-            data-testid="orchestrator-role-models-count"
-            className="flex flex-wrap items-center gap-1 text-2xs text-muted-foreground"
-          >
-            {overriddenRoleCount} {overriddenRoleCount === 1 ? 'role runs' : 'roles run'} on a model
-            chosen for this run.
-            <button
-              type="button"
-              data-testid="orchestrator-role-models-clear"
-              disabled={busy}
-              onClick={() => void guard(() => setWorkflowRoleModelOverrides(sessionId, run.id, {}))}
-              className="rounded-sm font-medium text-foreground underline-offset-2 hover:underline"
-            >
-              Let the orchestrator pick
-            </button>
-          </p>
-        )}
       </div>
 
       <div data-testid="orchestrator-actions" className="flex flex-wrap items-center gap-1.5">

@@ -51,7 +51,6 @@ import {
   updateWorkflowRunOrchestratorSummary,
 } from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
-import { mergeRoleModels } from '../../../features/workflows/mergeRoleModels';
 import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
@@ -383,7 +382,6 @@ type AppendParams = {
   readonly workflowRunId: WorkflowRunId;
   readonly workflow: Workflow;
   readonly roleModels: RoleModelPreferences | null;
-  readonly runRoleModels: RoleModelPreferences | null;
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
   readonly step: Omit<Step, 'id' | 'workflowId' | 'ordinal' | 'name'> & {
     readonly name: string;
@@ -421,7 +419,6 @@ const appendStep = async ({
   workflowRunId,
   workflow: snapshot,
   roleModels,
-  runRoleModels,
   availability,
   step,
 }: AppendParams): Promise<Agent> => {
@@ -468,7 +465,6 @@ const appendStep = async ({
     defaultProvider: (session.providerOverride ??
       session.providerPreference.defaultProvider) as ProviderId,
     roleModels,
-    runRoleModels,
     sessionEffort: session.effort ?? null,
     availability,
   });
@@ -620,10 +616,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         session.providerPreference.defaultProvider) as ProviderId;
       const workspaceRoleModels =
         selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null;
-      const roleModels = mergeRoleModels({
-        workspace: workspaceRoleModels,
-        run: run.roleModelOverrides,
-      });
       const taskModel = resolveTaskModel({
         task: 'workflow_orchestrator',
         preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
@@ -804,10 +796,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         const resolution = resolveWorkflowRouting({
           agentLock: null,
           stepLock: null,
-          runRoleLock: configuredRolePick({
-            role: proposed.role,
-            roleModels: run.roleModelOverrides,
-          }),
           proposal: routingProposal,
           roleDefault: configuredRolePick({
             role: proposed.role,
@@ -872,8 +860,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           sessionId,
           workflowRunId,
           workflow,
-          roleModels,
-          runRoleModels: run.roleModelOverrides ?? null,
+          roleModels: workspaceRoleModels,
           availability,
           step: {
             name: proposed.name,

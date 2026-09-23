@@ -32,7 +32,6 @@ export const revalidateChildRouting = async ({
   const outcome = resolveOneChildRouting({
     state: get(),
     sessionId,
-    workflowRunId: child.workflowRunId ?? null,
     role,
     request: {
       proposal: decision?.proposal ?? null,

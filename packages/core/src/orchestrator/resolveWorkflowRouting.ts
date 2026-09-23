@@ -33,7 +33,6 @@ export type WorkflowRoutingResolution =
 type Params = {
   readonly agentLock: WorkflowRoutingLock | null;
   readonly stepLock: WorkflowRoutingLock | null;
-  readonly runRoleLock: WorkflowModelPick | null;
   readonly proposal: WorkflowRoutingProposalParseOutcome;
   readonly roleDefault: WorkflowModelPick | null;
   readonly sessionDefault: WorkflowModelPick | null;
@@ -140,7 +139,7 @@ const readyDecision = ({
 
 type LockParams = {
   readonly pick: WorkflowModelPick;
-  readonly source: 'step_lock' | 'run_role_lock';
+  readonly source: 'step_lock';
   readonly label: string;
   readonly proposal: WorkflowRoutingProposal | null;
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
@@ -315,7 +314,6 @@ const resolveFallback = ({
 export const resolveWorkflowRouting = ({
   agentLock,
   stepLock,
-  runRoleLock,
   proposal,
   roleDefault,
   sessionDefault,
@@ -332,15 +330,6 @@ export const resolveWorkflowRouting = ({
       pick: lock.pick,
       source: 'step_lock',
       label: 'This node lock',
-      proposal: emitted,
-      availability,
-    });
-  }
-  if (runRoleLock !== null) {
-    return resolveLock({
-      pick: runRoleLock,
-      source: 'run_role_lock',
-      label: 'The run role lock',
       proposal: emitted,
       availability,
     });

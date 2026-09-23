@@ -20,7 +20,6 @@ import { orchestrateNextStep } from './orchestrateNextStep';
 import { addWorkflowOrchestratorHint } from './addWorkflowOrchestratorHint';
 import { removeWorkflowOrchestratorHint } from './removeWorkflowOrchestratorHint';
 import { setWorkflowOrchestratorRouting } from './setWorkflowOrchestratorRouting';
-import { setWorkflowRoleModelOverrides } from './setWorkflowRoleModelOverrides';
 import { renameWorkflow } from './renameWorkflow';
 import { reorderSessionWorkflows } from './reorderSessionWorkflows';
 import { restoreWorkflow } from './restoreWorkflow';
@@ -75,7 +74,6 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     addWorkflowOrchestratorHint: addWorkflowOrchestratorHint(set, get),
     removeWorkflowOrchestratorHint: removeWorkflowOrchestratorHint(set, get),
     setWorkflowOrchestratorRouting: setWorkflowOrchestratorRouting(set, get),
-    setWorkflowRoleModelOverrides: setWorkflowRoleModelOverrides(set, get),
     retryStepSummary: retryStepSummary(set, get),
     recoverStuckStep: recoverStuckStep(get),
   };

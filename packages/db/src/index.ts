@@ -104,7 +104,6 @@ export {
   updateWorkflowRunOrchestratorHints,
   updateWorkflowRunOrchestratorRouting,
   updateWorkflowRunOrchestratorSummary,
-  updateWorkflowRunRoleModelOverrides,
   updateWorkflowRunSpendLimit,
 } from './queries/session-workflow';
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';

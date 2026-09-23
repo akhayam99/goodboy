@@ -57,7 +57,6 @@ type WorkflowNodeRoutingContext = Readonly<{
   decision: WorkflowRoutingDecision | null;
   taskProfile: WorkflowTaskProfile | null;
   proposal: WorkflowRoutingProposalParseOutcome;
-  runRoleLock: WorkflowModelPick | null;
   roleDefault: WorkflowModelPick | null;
   sessionDefault: WorkflowModelPick | null;
   kindDefault: WorkflowModelPick | null;
@@ -128,10 +127,6 @@ export const workflowNodeRoutingContext = ({
       ? 'generic'
       : classifyAgent({ agent, override: state.agentKindOverride[agent.id] ?? null });
   const role = step?.role ?? (agent === null ? null : KIND_TO_ROLE[kind]);
-  const run =
-    agent?.workflowRunId == null
-      ? null
-      : (session.workflowRuns.find((candidate) => candidate.id === agent.workflowRunId) ?? null);
   const workspaceRoleModels = selectResolvedSettings({ state, sessionId })?.roleModels ?? null;
   const compiled = role === null ? null : defaultsForRole(role);
   const defaultProvider = (session.providerOverride ??
@@ -148,7 +143,6 @@ export const workflowNodeRoutingContext = ({
     decision,
     taskProfile,
     proposal: proposalOutcome({ decision, taskProfile }),
-    runRoleLock: configuredRolePick({ role, roleModels: run?.roleModelOverrides ?? null }),
     roleDefault: configuredRolePick({ role, roleModels: workspaceRoleModels }),
     sessionDefault:
       session.modelOverride == null

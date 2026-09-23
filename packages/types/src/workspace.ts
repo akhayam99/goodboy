@@ -14,7 +14,7 @@ import type {
 import type { SessionProviderPreference } from './provider-preference';
 import type { EffortLevel, ProviderId } from './provider-registry';
 import type { ClaudePermissionMode } from './permission';
-import type { OverrideSettings, RoleModelPreferences } from './settings';
+import type { OverrideSettings } from './settings';
 import type { GitDistance, GitOperation, GitWorkingTree } from './worktree';
 
 export type WorkspaceGitState = 'missing' | 'absent' | 'unborn' | 'ready';
@@ -129,7 +129,6 @@ export type WorkflowRun = Readonly<{
   orchestratorHints?: ReadonlyArray<OrchestratorHint>;
   orchestratorSummary?: string;
   orchestratorRouting?: OrchestratorRouting;
-  roleModelOverrides?: RoleModelPreferences;
   spendLimitUsd?: number;
   spendLimitMode?: WorkflowSpendLimitMode;
   chainAfterId?: WorkflowRunId;

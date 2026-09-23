@@ -132,7 +132,6 @@ beforeEach(() => {
     addWorkflowOrchestratorHint: vi.fn(async () => undefined),
     removeWorkflowOrchestratorHint: vi.fn(async () => undefined),
     setWorkflowOrchestratorRouting: vi.fn(async () => undefined),
-    setWorkflowRoleModelOverrides: vi.fn(async () => undefined),
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
     setWorkflowRunAutoRun: vi.fn(async () => undefined),
     stopWorkflowRunNow: vi.fn(async () => undefined),
@@ -440,28 +439,6 @@ describe('OrchestratorPanel state ladder', () => {
 });
 
 describe('OrchestratorPanel card', () => {
-  it('offers no role model editor, and lets a run that carries one go back to the orchestrator', () => {
-    renderPanel({
-      runOverride: run({
-        roleModelOverrides: {
-          implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
-        },
-      }),
-    });
-
-    expect(screen.queryByTestId('orchestrator-role-models-toggle')).toBeNull();
-    expect(screen.getByTestId('orchestrator-role-models-count').textContent).toContain(
-      '1 role runs on a model chosen for this run',
-    );
-    fireEvent.click(screen.getByTestId('orchestrator-role-models-clear'));
-
-    expect(storeState['setWorkflowRoleModelOverrides']).toHaveBeenCalledWith(
-      SESSION_ID,
-      RUN_ID,
-      {},
-    );
-  });
-
   it('keeps the model, autorun and stop in the header, and the call to action below', () => {
     renderPanel({ agents: [agent(0, 'running')], runOverride: run({ autoRun: true }) });
 

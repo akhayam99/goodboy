@@ -1,6 +1,5 @@
 import type {
   Agent,
-  AgentRole,
   EffortLevel,
   ProviderId,
   RoleModelPreferences,
@@ -8,14 +7,9 @@ import type {
   Step,
   StepId,
   VerbosityLevel,
-  WorkflowModelPick,
   WorkflowRunId,
 } from '@goodboy/types';
-import {
-  resolveModelIdForProvider,
-  resolveRoleRouting,
-  type WorkflowRoutingAvailabilitySnapshot,
-} from '@goodboy/core';
+import { resolveModelIdForProvider, type WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core';
 import { classifyStep } from '../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../../features/workflows/resolveStepRouting';
 import { revalidateStepRouting } from '../../../features/workflows/revalidateStepRouting';
@@ -28,7 +22,6 @@ type Params = {
   readonly baseOrdinal: number;
   readonly defaultProvider: ProviderId;
   readonly roleModels: RoleModelPreferences | null;
-  readonly runRoleModels?: RoleModelPreferences | null;
   readonly sessionModel?: string | null;
   readonly sessionEffort?: EffortLevel | null;
   readonly defaultVerbosity?: VerbosityLevel;
@@ -50,25 +43,6 @@ type PreSpawnWorkflowAgentsResult = {
   readonly blocked: ReadonlyArray<BlockedWorkflowStep>;
 };
 
-type RunRoleLockParams = {
-  readonly role: AgentRole | undefined;
-  readonly runRoleModels: RoleModelPreferences | null;
-};
-
-const runRoleLockFor = ({ role, runRoleModels }: RunRoleLockParams): WorkflowModelPick | null => {
-  if (role == null) {
-    return null;
-  }
-  if (runRoleModels === null) {
-    return null;
-  }
-  const routing = resolveRoleRouting({ role, prefs: runRoleModels });
-  if (routing.isOverride === false) {
-    return null;
-  }
-  return { provider: routing.provider, model: routing.model, effort: routing.effort };
-};
-
 export const preSpawnWorkflowAgents = async ({
   sessionId,
   workflowRunId,
@@ -76,7 +50,6 @@ export const preSpawnWorkflowAgents = async ({
   baseOrdinal,
   defaultProvider,
   roleModels,
-  runRoleModels,
   sessionModel,
   sessionEffort,
   defaultVerbosity,
@@ -98,10 +71,6 @@ export const preSpawnWorkflowAgents = async ({
         : revalidateStepRouting({
             step,
             availability,
-            runRoleLock: runRoleLockFor({
-              role: step.role,
-              runRoleModels: runRoleModels ?? null,
-            }),
           });
     if (revalidated.kind === 'blocked') {
       blocked.push({ stepId: step.id, stepName: step.name, reason: revalidated.reason });

@@ -271,25 +271,6 @@ const spendState = ({ limitUsd, spentUsd, mode = 'pause' }: SpendParams): State 
   return state;
 };
 
-const stateWithRunRoleLock = (): State => {
-  const state = baseState();
-  const current = session();
-  state['sessions'] = [
-    {
-      ...current,
-      workflowRuns: [
-        {
-          ...current.workflowRuns[0]!,
-          roleModelOverrides: {
-            implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
-          },
-        },
-      ],
-    },
-  ];
-  return state;
-};
-
 const savedStep = (): Record<string, unknown> =>
   invokeWorkflowUpsertSpy.mock.calls[0]![0].steps[1] as Record<string, unknown>;
 
@@ -724,53 +705,6 @@ describe('orchestrateNextStep', () => {
     );
   });
 
-  it('applies the run role override after the orchestrator chooses a role', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'Implement with the pinned route.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          model: 'opus-5',
-          effort: 'max',
-        },
-      },
-    });
-    const state = baseState();
-    const currentSession = session();
-    state['sessions'] = [
-      {
-        ...currentSession,
-        workflowRuns: [
-          {
-            ...currentSession.workflowRuns[0]!,
-            roleModelOverrides: {
-              implementer: {
-                providerId: 'codex',
-                model: 'gpt-5.6-sol',
-                effort: 'high',
-              },
-            },
-          },
-        ],
-      },
-    ];
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
-
-    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        providerOverride: 'codex',
-        modelOverride: 'gpt-5.6-sol',
-        effort: 'high',
-      }),
-    );
-  });
-
   it('offers every connected provider catalog, not only what the roles reach', async () => {
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,
@@ -1110,84 +1044,6 @@ describe('orchestrateNextStep', () => {
     expect(state['emitNotification']).not.toHaveBeenCalled();
   });
 
-  it('reports only the selected run lock when the automatic pick is unavailable', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          provider: 'gemini',
-          model: 'gemini-3.1-pro',
-          effort: 'high',
-        },
-      },
-    });
-    const { set, get } = harness(stateWithRunRoleLock());
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
-
-    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        providerOverride: 'codex',
-        modelOverride: 'gpt-5.6-sol',
-        effort: 'high',
-      }),
-    );
-    const decision = savedStep().routingDecision as {
-      source: string;
-      adjustment: string;
-      reason: string;
-      selected: { provider: string; model: string };
-    };
-
-    expect(decision.source).toBe('run_role_lock');
-    expect(decision.adjustment).toBe('none');
-    expect(decision.selected).toEqual({
-      provider: 'codex',
-      model: 'gpt-5.6-sol',
-      effort: 'high',
-    });
-    expect(decision.reason).toContain('codex/gpt-5.6-sol');
-    expect(decision.reason).not.toContain('gemini');
-  });
-
-  it('records the run lock without calling an available pick unavailable', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          model: 'fable-5',
-        },
-      },
-    });
-    const { set, get } = harness(stateWithRunRoleLock());
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
-
-    const decision = savedStep().routingDecision as {
-      source: string;
-      adjustment: string;
-      proposal: { pick: { provider: string; model: string } } | null;
-    };
-
-    expect(decision.source).toBe('run_role_lock');
-    expect(decision.adjustment).toBe('none');
-    expect(decision.proposal?.pick).toEqual({
-      provider: 'anthropic',
-      model: 'fable-5',
-      effort: null,
-    });
-  });
-
   it('normalizes an unsupported effort against the model that actually runs', async () => {
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,
@@ -1218,34 +1074,6 @@ describe('orchestrateNextStep', () => {
     expect(decision.selected.provider).toBe('codex');
     expect(decision.selected.effort).not.toBe('minimal');
     expect(insert.effort).toBe(decision.selected.effort);
-  });
-
-  it('stops the run when the only lock it has cannot run', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          model: 'fable-5',
-        },
-      },
-    });
-    const state = stateWithRunRoleLock();
-    state['providerCooldowns'] = { codex: Date.now() + 60_000 };
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
-
-    expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
-    expect(updateStopSpy).toHaveBeenCalledWith(
-      {},
-      WORKFLOW_RUN_ID,
-      expect.objectContaining({ kind: 'failure', message: expect.stringContaining('cooldown') }),
-    );
   });
 
   it('stays quiet when the picked model is inside the pool', async () => {

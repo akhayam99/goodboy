@@ -4,6 +4,8 @@ import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
 import { migrations } from './index';
 
+const through165 = migrations.filter((migration) => migration.version <= 165);
+
 const workspaceId = 'ws-1';
 const sessionId = 's-1';
 const workflowId = 'wf-1';
@@ -46,7 +48,7 @@ describe('m113 workflow run role models', () => {
     const db = await seedThrough111();
     await insertRun({ db });
 
-    await migrate(db, migrations);
+    await migrate(db, through165);
 
     const rows = await db.select<{ role_model_overrides: string | null }>(
       'SELECT role_model_overrides FROM session_workflows',
@@ -56,7 +58,7 @@ describe('m113 workflow run role models', () => {
 
   it('stores role overrides on a new run', async () => {
     const db = await seedThrough111();
-    await migrate(db, migrations);
+    await migrate(db, through165);
     await insertRun({ db });
     const overrides = JSON.stringify({
       implementer: {

@@ -1,4 +1,4 @@
-import type { MountId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import { resolveArtifactMounts, type ArtifactMountOption } from '../artifacts/artifactMountChoice';
 import {
@@ -35,14 +35,12 @@ export type WireframeScoutGate =
 type GateParams = Readonly<{
   state: AppStore;
   sessionId: SessionId;
-  workflowRunId: WorkflowRunId | null;
   mountIds: ReadonlyArray<MountId>;
 }>;
 
 export const wireframeScoutGate = ({
   state,
   sessionId,
-  workflowRunId,
   mountIds,
 }: GateParams): WireframeScoutGate => {
   const mounts = resolveArtifactMounts({ state, sessionId, mountIds });
@@ -71,7 +69,6 @@ export const wireframeScoutGate = ({
   const routing = childRoutingBatch({
     state,
     sessionId,
-    workflowRunId,
     role: 'scout',
     requests: WIREFRAME_SCOUTS.map((scout) => ({
       proposal: null,
@@ -98,7 +95,6 @@ export const wireframeScoutGate = ({
 type PlanParams = Readonly<{
   state: AppStore;
   sessionId: SessionId;
-  workflowRunId: WorkflowRunId | null;
   mountIds: ReadonlyArray<MountId>;
   goal: string;
   brief: string | null;
@@ -139,12 +135,11 @@ const pinnedRootOf = async ({
 export const collectWireframeScoutPlan = async ({
   state,
   sessionId,
-  workflowRunId,
   mountIds,
   goal,
   brief,
 }: PlanParams): Promise<WireframeScoutPlanResult> => {
-  const gate = wireframeScoutGate({ state, sessionId, workflowRunId, mountIds });
+  const gate = wireframeScoutGate({ state, sessionId, mountIds });
   if (gate.kind === 'skipped') {
     return { plan: { kind: 'skipped', reason: gate.reason }, gate };
   }

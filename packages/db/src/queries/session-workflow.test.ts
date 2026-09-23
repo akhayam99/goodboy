@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,
-  RoleModelPreferences,
   SessionId,
   StepId,
   WorkflowId,
@@ -21,7 +20,6 @@ import {
   updateWorkflowRunOrchestrationOutcome,
   updateWorkflowRunOrchestrationStop,
   updateWorkflowRunOrchestratorRouting,
-  updateWorkflowRunRoleModelOverrides,
   updateWorkflowRunSpendLimit,
 } from './session-workflow';
 import { getSessionById, listSessionsForWorkspace } from './session';
@@ -232,126 +230,6 @@ describe('session_workflows trigger-mode queries', () => {
       const runs = await readRunsNewestFirst({ db });
 
       expect(runs[0]!.orchestratorRouting).toBeUndefined();
-    });
-
-    it('round-trips the per-run role model overrides', async () => {
-      const roleModelOverrides = {
-        implementer: {
-          providerId: 'codex',
-          model: 'gpt-5.6-sol',
-          effort: 'high',
-        },
-      } satisfies RoleModelPreferences;
-      await attachWorkflowToSession({
-        db,
-        sessionId,
-        workflowRunId: 'run-1' as WorkflowRunId,
-        workflowId,
-        autoRun: false,
-        updatedAt: NOW,
-        executionMode: 'dynamic',
-      });
-      await updateWorkflowRunRoleModelOverrides(db, 'run-1' as WorkflowRunId, roleModelOverrides);
-
-      const runs = await readRunsNewestFirst({ db });
-
-      expect(runs[0]!.roleModelOverrides).toEqual(roleModelOverrides);
-
-      await attachWorkflowToSession({
-        db,
-        sessionId,
-        workflowRunId: 'run-2' as WorkflowRunId,
-        workflowId: workflowId2,
-        autoRun: false,
-        updatedAt: NOW,
-      });
-      await updateWorkflowOrder(
-        db,
-        sessionId,
-        ['run-2' as WorkflowRunId, 'run-1' as WorkflowRunId],
-        NOW,
-      );
-
-      const reordered = await readRunsNewestFirst({ db });
-      expect(
-        reordered.find((run) => run.id === ('run-1' as WorkflowRunId))!.roleModelOverrides,
-      ).toEqual(roleModelOverrides);
-    });
-
-    it('clears the per-run role model overrides when every role is reset', async () => {
-      await attachWorkflowToSession({
-        db,
-        sessionId,
-        workflowRunId: 'run-1' as WorkflowRunId,
-        workflowId,
-        autoRun: false,
-        updatedAt: NOW,
-        executionMode: 'dynamic',
-      });
-      await updateWorkflowRunRoleModelOverrides(db, 'run-1' as WorkflowRunId, {
-        implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
-      });
-      await updateWorkflowRunRoleModelOverrides(db, 'run-1' as WorkflowRunId, {});
-
-      const runs = await readRunsNewestFirst({ db });
-
-      expect(runs[0]!.roleModelOverrides).toBeUndefined();
-    });
-
-    it('drops malformed persisted role model overrides', async () => {
-      await attachWorkflowToSession({
-        db,
-        sessionId,
-        workflowRunId: 'run-1' as WorkflowRunId,
-        workflowId,
-        autoRun: false,
-        updatedAt: NOW,
-        executionMode: 'dynamic',
-      });
-      await db.execute(
-        'UPDATE session_workflows SET role_model_overrides = ? WHERE workflow_run_id = ?',
-        [
-          JSON.stringify({
-            implementer: {
-              providerId: 'codex',
-              model: 'gpt-5.6-sol',
-              effort: 'high',
-              fallback: { providerId: 'unknown', model: 'broken' },
-            },
-            planner: {
-              providerId: 'unknown',
-              model: 'model',
-              effort: 'high',
-            },
-            reviewer: {
-              providerId: 'anthropic',
-              model: '',
-              effort: 'medium',
-            },
-            tester: {
-              providerId: 'gemini',
-              model: 'gemini-3.1-pro',
-              effort: 'turbo',
-            },
-            unsupported: {
-              providerId: 'anthropic',
-              model: 'claude-sonnet-4-6',
-              effort: 'high',
-            },
-          }),
-          'run-1',
-        ],
-      );
-
-      const runs = await readRunsNewestFirst({ db });
-
-      expect(runs[0]!.roleModelOverrides).toEqual({
-        implementer: {
-          providerId: 'codex',
-          model: 'gpt-5.6-sol',
-          effort: 'high',
-        },
-      });
     });
 
     it('persists after_run mode with chain_after_run_id round-trip', async () => {

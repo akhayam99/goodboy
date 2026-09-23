@@ -344,7 +344,6 @@ export const startFanOutChildren = async ({
   const batch = childRoutingBatch({
     state: get(),
     sessionId,
-    workflowRunId: container.workflowRunId ?? null,
     role,
     requests: specs.map((spec) => ({
       proposal: spec.routingProposal,

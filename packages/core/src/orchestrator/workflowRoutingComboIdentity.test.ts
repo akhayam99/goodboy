@@ -25,7 +25,6 @@ const resolveFromDecision = (raw: string) => {
   const resolution = resolveWorkflowRouting({
     agentLock: null,
     stepLock: null,
-    runRoleLock: null,
     proposal: parseWorkflowRoutingProposal({
       fields: decision.step,
       emittingProvider: 'cursor',

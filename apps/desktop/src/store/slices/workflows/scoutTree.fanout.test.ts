@@ -760,42 +760,6 @@ describe('scout child routing lifecycle', () => {
     }
   });
 
-  it('availability changes before activation: a locked role blocks', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
-    const root = scoutAgent({
-      id: 'locked-root' as AgentId,
-      workflowRunId: 'wf-lock' as WorkflowRunId,
-    });
-    const { state, get, set, sendTurn, emitNotification } = makeRoutedStore([root]);
-    state.sessions = [
-      {
-        ...ROUTED_SESSION,
-        workflowRuns: [
-          {
-            id: 'wf-lock',
-            roleModelOverrides: {
-              scout: { providerId: 'gemini', model: 'gemini-3.1-pro', effort: 'medium' },
-            },
-          },
-        ],
-      },
-    ];
-    const executions = captureExecutions({ state, sendTurn });
-
-    await advanceScoutTree(set, get)(SID, root.id, mixedSplitText);
-
-    expect(hoisted.insertArgs).toHaveLength(0);
-    expect(hoisted.invokeAgentInsertBatch).not.toHaveBeenCalled();
-    expect(executions).toHaveLength(0);
-    expect(emitNotification).toHaveBeenCalledWith(
-      'agent-auto-spawn',
-      'warning',
-      `agent fan-out held: ${root.name}`,
-      expect.stringContaining('gemini/gemini-3.1-pro'),
-      { sessionId: SID },
-    );
-  });
-
   it('availability changes before activation: a hard budget spawns nothing', async () => {
     vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
     const root = scoutAgent({ id: 'budget-root' as AgentId });

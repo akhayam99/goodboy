@@ -14,7 +14,6 @@ import type {
 } from '@goodboy/types';
 import { repointWorkflowRunTemplate, type WorkflowRunStepRepoint } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { mergeRoleModels } from '../../../features/workflows/mergeRoleModels';
 import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import {
@@ -247,11 +246,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
       baseOrdinal,
       defaultProvider: (session.providerOverride ??
         session.providerPreference.defaultProvider) as ProviderId,
-      roleModels: mergeRoleModels({
-        workspace: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
-        run: run.roleModelOverrides,
-      }),
-      runRoleModels: run.roleModelOverrides ?? null,
+      roleModels: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
       sessionModel: session.modelOverride ?? null,
       sessionEffort: session.effort ?? null,
       availability: workflowAvailabilitySnapshot({

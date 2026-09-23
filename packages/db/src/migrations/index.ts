@@ -24,6 +24,7 @@ import { m162OpenQuestionBlockingAndProvenance } from './m162-open-question-bloc
 import { m163OpenQuestionAnswerDelivery } from './m163-open-question-answer-delivery';
 import { m164OrchestratorHintLog } from './m164-orchestrator-hint-log';
 import { m165ProviderRunsStatusIndex } from './m165-provider-runs-status-index';
+import { m166DropWorkflowRunRoleModels } from './m166-drop-workflow-run-role-models';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -335,4 +336,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 163, sql: m163OpenQuestionAnswerDelivery },
   { version: 164, sql: m164OrchestratorHintLog },
   { version: 165, sql: m165ProviderRunsStatusIndex },
+  { version: 166, sql: m166DropWorkflowRunRoleModels },
 ];

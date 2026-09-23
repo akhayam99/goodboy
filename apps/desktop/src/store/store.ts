@@ -76,7 +76,6 @@ import type {
   TaskModelPreference,
   ReviewablePr,
   PrReviewDraft,
-  RoleModelPreferences,
 } from '@goodboy/types';
 import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList, type ProviderStatus } from '../features/providers/providers';
@@ -588,11 +587,6 @@ type AppActions = {
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
     routing: OrchestratorRouting | null,
-  ): Promise<void>;
-  setWorkflowRoleModelOverrides(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    overrides: RoleModelPreferences,
   ): Promise<void>;
   setWorkflowRunSpendLimit(
     sessionId: SessionId,

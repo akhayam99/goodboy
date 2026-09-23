@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
+import { migrations } from './index';
+
+const through165 = migrations.filter((migration) => migration.version <= 165);
 
 const seed = async (): Promise<Database> => {
   const db = await makeMigratedTestDatabase({ throughVersion: 154 });
@@ -45,7 +48,7 @@ const decision = JSON.stringify({
 describe('m155 workflow routing decisions', () => {
   it('upgrades populated m153 storage without changing legacy routing', async () => {
     const db = await seed();
-    await migrate(db);
+    await migrate(db, through165);
     expect(
       await db.select(
         'SELECT provider_override, model_override, effort, routing_lock, routing_decision, task_profile FROM steps',
@@ -70,7 +73,7 @@ describe('m155 workflow routing decisions', () => {
 
   it('round-trips nullable routing fields on steps and agents', async () => {
     const db = await seed();
-    await migrate(db);
+    await migrate(db, through165);
     for (const table of ['steps', 'agents']) {
       await db.execute(
         `UPDATE ${table} SET routing_lock = ?, routing_decision = ?, task_profile = ?`,
@@ -84,7 +87,7 @@ describe('m155 workflow routing decisions', () => {
 
   it('rejects invalid JSON in every new column', async () => {
     const db = await seed();
-    await migrate(db);
+    await migrate(db, through165);
     for (const table of ['steps', 'agents']) {
       for (const column of ['routing_lock', 'routing_decision', 'task_profile']) {
         await expect(db.execute(`UPDATE ${table} SET ${column} = ?`, ['{'])).rejects.toThrow();
@@ -97,8 +100,8 @@ describe('m155 workflow routing decisions', () => {
     await db.exec(
       'ALTER TABLE steps ADD COLUMN routing_lock TEXT DEFAULT NULL CHECK (routing_lock IS NULL OR json_valid(routing_lock))',
     );
-    const first = await migrate(db);
-    const second = await migrate(db);
+    const first = await migrate(db, through165);
+    const second = await migrate(db, through165);
     expect(first.applied).toContain(155);
     expect(second.applied).toEqual([]);
     expect(

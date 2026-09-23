@@ -6,7 +6,6 @@ import type { ProviderId, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy
 import { useAppStore } from '../../../../store';
 import { WorkflowStepCard } from '../../../session/components/WorkflowStepCard';
 import { kindForRole } from '../../../session/agent-kind';
-import { mergeRoleModels } from '../../mergeRoleModels';
 import { addStep, stepDraftWithModel, type StepDraft } from '../../engine';
 
 type Props = {
@@ -22,13 +21,6 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
   const addStepToWorkflowRun = useAppStore((state) => state.addStepToWorkflowRun);
   const workspaceRoleModels = useAppStore(
     (state) => state.workspaceOverrides?.[workspaceId]?.roleModels ?? null,
-  );
-  const runRoleModels = useAppStore(
-    (state) =>
-      state.sessions
-        .find((candidate) => candidate.id === sessionId)
-        ?.workflowRuns.find((candidate) => candidate.id === workflowRunId)?.roleModelOverrides ??
-      null,
   );
   const sessionProvider = useAppStore((state) => {
     const session = state.sessions.find((candidate) => candidate.id === sessionId);
@@ -48,7 +40,6 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
   const connectedProviders = (providers ?? [])
     .filter((provider) => provider.connection === 'connected')
     .map((provider) => provider.id);
-  const roleModels = mergeRoleModels({ workspace: workspaceRoleModels, run: runRoleModels });
 
   if (draft === null) {
     return (
@@ -69,7 +60,7 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
     );
   }
 
-  const roleRouting = resolveRoleRouting({ role: draft.role, prefs: roleModels });
+  const roleRouting = resolveRoleRouting({ role: draft.role, prefs: workspaceRoleModels });
   const defaultProvider: ProviderId = roleRouting.isOverride
     ? roleRouting.provider
     : (sessionProvider ?? connectedProviders[0] ?? 'anthropic');
@@ -77,7 +68,7 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
   const recommendedModel = recommendedModelForRole({
     role: draft.role,
     provider: resolvedProvider,
-    prefs: roleModels,
+    prefs: workspaceRoleModels,
   });
   const patch = (next: Partial<StepDraft>) =>
     setDraft((current) => (current === null ? current : { ...current, ...next }));
