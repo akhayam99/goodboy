@@ -7,6 +7,16 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.4.1
+
+Autorun can no longer send an agent the same instructions over and over.
+
+### [#1860] Autorun caps the turns it sends an agent on its own
+
+A cluster that came after a skipped cluster was handed its instructions again after every reply, even once it had finished, and each round was a full paid turn. It now moves on to the next cluster, or closes the step when it was the last one.
+
+Autorun also sends an agent at most four turns an hour without you. Past that it stops the agent and tells you, and anything you write to that agent resets the count.
+
 ## Goodboy v0.4.0
 
 Goodboy is now source-available under the Functional Source License: still free, still yours to read and change, and every version turns MIT two years after it ships.
