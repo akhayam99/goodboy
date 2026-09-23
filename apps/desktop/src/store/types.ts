@@ -268,6 +268,7 @@ export type AppState = AppSliceState & {
   readonly providerCooldowns: ProviderCooldowns;
   readonly hydrated: boolean;
   readonly bootPhase: BootPhase;
+  readonly bootFailedPhase: BootPhase | null;
   readonly error: string | null;
   readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   readonly messages: Readonly<Record<string, ReadonlyArray<Message>>>;

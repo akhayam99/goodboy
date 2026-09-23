@@ -1048,6 +1048,7 @@ export const initialState: AppState = {
   providerCooldowns: {},
   hydrated: false,
   bootPhase: 'pending',
+  bootFailedPhase: null,
   error: null,
   transcripts: {},
   messages: {},

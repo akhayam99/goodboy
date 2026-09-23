@@ -21,12 +21,19 @@ const BOOT_PHASE_LABEL: Record<BootPhase, string> = {
 
 type BootSplashProps = {
   phase: BootPhase;
+  failedPhase?: BootPhase | null;
   error: string | null;
   onRetry?: () => void;
   onFinished?: () => void;
 };
 
-export const BootSplash = ({ phase, error, onRetry, onFinished }: BootSplashProps) => {
+export const BootSplash = ({
+  phase,
+  failedPhase = null,
+  error,
+  onRetry,
+  onFinished,
+}: BootSplashProps) => {
   const hasError = error != null;
   const finishedRef = useRef(false);
   const elapsedMs = useElapsedSincePhase({ phase });
@@ -53,7 +60,7 @@ export const BootSplash = ({ phase, error, onRetry, onFinished }: BootSplashProp
         <BootBrand />
         <BootErrorRecovery
           error={error}
-          category={bootErrorCategory({ phase, isDatabaseFailure })}
+          category={bootErrorCategory({ phase: failedPhase ?? phase, isDatabaseFailure })}
           onRetry={isDatabaseFailure ? undefined : onRetry}
         />
       </div>

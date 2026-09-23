@@ -47,7 +47,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
       try {
         recordBootBreadcrumb({ phase: 'pending', detail: 'start' });
         const migratingAt = Date.now();
-        set({ bootPhase: 'migrating', error: null });
+        set({ bootPhase: 'migrating', bootFailedPhase: null, error: null });
         await runDbMigrations();
         await migrateLsToDb();
         await hydrateOnboardingFromDb();
@@ -227,6 +227,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         recordBootBreadcrumb({ phase: 'error', detail: 'error' });
         set({
           bootPhase: 'error',
+          bootFailedPhase: get().bootPhase,
           error: formatError(err),
           hydrated: true,
         });

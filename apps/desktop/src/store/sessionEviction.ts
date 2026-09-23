@@ -155,6 +155,7 @@ export const NON_SESSION_STATE_KEYS = [
   'providerCooldowns',
   'hydrated',
   'bootPhase',
+  'bootFailedPhase',
   'error',
   'orphanWorktrees',
   'workspaceSummary',

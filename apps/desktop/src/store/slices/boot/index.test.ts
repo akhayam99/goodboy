@@ -339,10 +339,12 @@ describe('store contract', () => {
 
       await store.getState().hydrate();
       expect(store.getState().bootPhase).toBe('error');
+      expect(store.getState().bootFailedPhase).toBe('loading-workspaces');
 
       await store.getState().retryHydrate();
 
       expect(store.getState().bootPhase).toBe('ready');
+      expect(store.getState().bootFailedPhase).toBeNull();
       expect(storySpies.runDbMigrations).toHaveBeenCalledTimes(2);
     });
 

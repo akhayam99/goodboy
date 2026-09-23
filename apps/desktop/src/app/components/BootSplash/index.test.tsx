@@ -136,6 +136,19 @@ describe('BootSplash issue report', () => {
   });
 });
 
+describe('BootSplash failed phase', () => {
+  afterEach(cleanup);
+
+  it('names the phase that failed, not the error phase itself', () => {
+    render(
+      <BootSplash phase="error" failedPhase="loading-workspaces" error="boom" onRetry={vi.fn()} />,
+    );
+
+    expect(screen.getByText('Workspace load failed')).toBeDefined();
+    expect(screen.queryByText('Init failed')).toBeNull();
+  });
+});
+
 describe('bootErrorCategory', () => {
   it('names the database ahead of whichever phase was running', () => {
     expect(bootErrorCategory({ phase: 'migrating', isDatabaseFailure: true })).toBe('database');

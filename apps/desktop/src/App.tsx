@@ -57,6 +57,7 @@ export const App = () => {
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
   const bootPhase = useAppStore((s) => s.bootPhase);
+  const bootFailedPhase = useAppStore((s) => s.bootFailedPhase);
   const error = useAppStore((s) => s.error);
   const [splashFinished, setSplashFinished] = useState(false);
   const workspaces = useWorkspaces();
@@ -290,6 +291,7 @@ export const App = () => {
     return (
       <BootSplash
         phase={bootPhase}
+        failedPhase={bootFailedPhase}
         error={error}
         onRetry={retryHydrate}
         onFinished={() => setSplashFinished(true)}
@@ -378,9 +380,7 @@ export const App = () => {
         }
         main={
           <div className="relative h-full w-full">
-            {error ? (
-              <p className="p-6 text-sm text-danger">init error: {error}</p>
-            ) : currentSession ? (
+            {currentSession ? (
               <div className="relative h-full w-full">
                 {deferredRenderedIds.map((id) => (
                   <KeepAliveWorkSurface
