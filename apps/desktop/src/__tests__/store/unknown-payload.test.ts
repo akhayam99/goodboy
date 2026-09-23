@@ -7,13 +7,6 @@ import {
 } from '../../store/storyHarness';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
 
-vi.mock('../../turn', () => ({
-  runTurn: vi.fn(),
-  cancelTurn: vi.fn(),
-  encodeAuthRequiredMessage: () => '',
-  isAuthErrorMessage: () => false,
-}));
-
 vi.mock('../../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
   invokePermissionAuditInsert: vi.fn(async () => undefined),
@@ -65,22 +58,6 @@ vi.mock('@goodboy/db', () => ({
   attachWorkflowToSession: vi.fn(),
   detachWorkflowFromSession: vi.fn(),
   updateWorkflowOrder: vi.fn(),
-}));
-
-vi.mock('../../providers', () => ({
-  buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
-  checkProviderAuth: vi.fn(),
-  getCursorStatus: vi.fn(),
-  getCodexStatus: vi.fn(),
-  getProviderStatus: vi.fn(),
-}));
-
-vi.mock('../../routing', () => ({
-  resolveProviderForTurn: vi.fn(async () => ({
-    selectedProvider: 'anthropic',
-    selectedModel: 'claude-opus-4-7',
-    reason: 'preference',
-  })),
 }));
 
 vi.mock('../../features/budget/budget', () => ({

@@ -209,7 +209,6 @@ vi.mock('../SessionCrumbBar', () => ({
   SessionCrumbBar: () => <div data-testid="session-crumb-bar" />,
 }));
 vi.mock('./parts/SessionStudioLayer', () => ({ SessionStudioLayer: () => null }));
-vi.mock('./parts/SessionTopBar', () => ({ SessionTopBar: () => null }));
 vi.mock('./parts/QuestionsPane', () => ({ QuestionsPane: () => null }));
 vi.mock('./parts/ContextPane', () => ({
   ContextPane: ({ initialRegion }: { initialRegion?: string }) => (

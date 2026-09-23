@@ -186,10 +186,6 @@ vi.mock('../../../../store', () => ({
   },
 }));
 
-vi.mock('../../../../permissions', () => ({
-  useEffectivePermissionRules: () => [],
-}));
-
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));

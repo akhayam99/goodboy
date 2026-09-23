@@ -9,7 +9,8 @@ This file says what to test and how. Where test files go: [file-system.md](file-
 
 - 1 to 5 assertions per test, focused on behavior.
 - Cover: it renders without crashing, key text / aria, 1-3 main user interactions, and edge states (loading / empty / error) if the component has them.
-- Use `@testing-library/react` queries (`getByRole`, `getByText`).
+- Use `@testing-library/react` queries (`getByRole`, `getByText`). To check that a node is there, call `getBy*` on its own: it throws when the node is missing. To check that it is gone, write `expect(queryBy*(...)).toBeNull()`. `expect(getBy*(...)).toBeTruthy()` checks nothing the query did not already check. Write the bare call when you touch such a test, without a bulk rewrite.
+- A relative `vi.mock('./x')` must point at a file that exists. A mock of a moved or deleted module mocks nothing, and the real module runs. `__tests__/regressions/relative-mocks-resolve.test.ts` fails on it.
 - Do **not** test implementation details (internal state, css classes that are only for looks, prop drilling).
 - For store slices: test the contract (given state X + action Y, expect state Y'), not the internals.
 - For hooks: `renderHook` from `@testing-library/react`.
@@ -22,6 +23,7 @@ Every desktop test that loads the real store goes through `apps/desktop/src/stor
 - Module mocks come from the harness factories, one per mocked module: `vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock())`. A test that needs a different default overrides it on the spy for that test. It never keeps a private copy of the whole mock.
 - Spies live in `storySpies`, named after the function they stand in for (`storySpies.invokeBudgetRuleList`). `resetStorySpies()` restores every default.
 - The store loads once: `useAppStore = await importStore()` in `beforeAll` with `STORE_IMPORT_TIMEOUT_MS`. Then `await resetStoryStore()` runs in `beforeEach` (spies reset, `initialState` applied, local storage cleared) before the test seeds its own state.
+- `__tests__/regressions/store-import-pattern.test.ts` fails on any test that `import()`s the store module itself. A test that needs another export of the store module (`summarizerQueues`) takes it from `importStoreModule()`.
 
 ## Database tests start from a migrated template
 
