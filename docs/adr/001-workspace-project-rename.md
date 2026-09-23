@@ -9,59 +9,60 @@ Status: accepted, shipped in 0.2.0 (migrations m117 through m131).
 
 ## Context
 
-Through 0.1.x the unit you connected was called a workspace, and it was a
-leaf: one repo, one folder, or a composite stitching other workspaces
-together. That gave the product three container semantics for one word, five
-UI surfaces each naming the kinds differently, and a composite feature bolted
-beside the normal path instead of under it. The 0.2.0 model wants one
-container (workspace) owning profile, integration bindings, projects and
-sessions, with sessions born lazily on the container.
+Through 0.1.x, the thing you connected was called a workspace, and it was a
+leaf. It was one repo, one folder, or a composite that stitched other
+workspaces together. So one word had three meanings as a container. Five UI
+surfaces each named the kinds differently. The composite feature was bolted on
+beside the normal path instead of built into it. The 0.2.0 model wants one
+container, the workspace. It owns the profile, the integration bindings, the
+projects and the sessions. Sessions are born lazily on the container.
 
 ## Decision
 
-Rename rather than alias. `m117` renames the `workspaces` table to
-`projects`; `m118` creates the new `workspaces` container table and rewires
-workflows, step library, skills, sessions and settings onto it; `m119`
-retypes projects to kind `repo` or `folder` (`simple` becomes `folder`);
-later migrations add profiles (m120), per-project session mounts (m121),
-lazy-project session events (m130) and integration bindings (m131).
+Rename instead of adding an alias. The migrations do this:
 
-The rename is irreversible by design. Carrying both names, or a view layer
-translating one into the other, would have kept the old vocabulary alive in
+- `m117` renames the `workspaces` table to `projects`.
+- `m118` creates the new `workspaces` container table and moves workflows,
+  the step library, skills, sessions and settings onto it.
+- `m119` changes each project's kind to `repo` or `folder` (`simple` becomes
+  `folder`).
+- Later migrations add profiles (m120), per-project session mounts (m121),
+  lazy-project session events (m130) and integration bindings (m131).
+
+The rename cannot be undone, by design. Keeping both names, or a view layer
+that translated one into the other, would have kept the old words alive in
 every query and every new feature.
 
 ## Backfill rules (m118)
 
-- An **active composite** became a workspace; its members became that
+- An **active composite** became a workspace. Its members became that
   workspace's projects.
-- A **disconnected composite** dissolved: its row was deleted, and its
+- A **disconnected composite** was dissolved. Its row was deleted, and its
   sessions moved to the workspace of its first member.
-- Every other leaf was a **dual identity** and was absorbed: the one old row
-  became a workspace container and its single project, the container
-  inheriting the leaf's name, root path (as the sessions root) and settings.
-- Workspace **slugs** were derived from names (lowercased, non-alphanumerics
-  collapsed to dashes) and deduplicated with numeric suffixes, composites
-  winning the bare slug over their members.
-- Live workflow names that collided inside a merged workspace were renamed
-  with numeric suffixes; colliding skill names kept only the most recently
-  updated row, since skills are re-discovered from disk. Step library rows
-  with no workspace stayed global seeds.
+- Every other leaf was a **dual identity** and was absorbed. The one old row
+  became both a workspace container and its single project. The container
+  took the leaf's name, root path (as the sessions root) and settings.
+- Workspace **slugs** were made from names (lowercased, with non-alphanumerics
+  collapsed to dashes). Duplicates got numeric suffixes. Composites won the
+  bare slug over their members.
+- Live workflow names that clashed inside a merged workspace were renamed
+  with numeric suffixes. For clashing skill names, only the most recently
+  updated row was kept, since skills are found again from disk. Step library
+  rows with no workspace stayed global seeds.
 
 ## Consequences
 
-- From m117 the database is unreadable by any 0.1.x build: the table that
-  0.1.x calls `workspaces` holds projects. There is no in-place downgrade.
-- The rollback path is the pre-migration snapshot: at boot, pending
+- From m117 on, no 0.1.x build can read the database. The table that 0.1.x
+  calls `workspaces` holds projects. There is no in-place downgrade.
+- The way back is the snapshot taken before migrating. At boot, pending
   migrations trigger a `VACUUM INTO` snapshot next to the database
   (`data.db.pre-m<next>-from-m<current>-<timestamp>.bak`, two kept) before
-  anything runs,
-  and a failed snapshot aborts the migrations
+  anything runs. If the snapshot fails, the migrations stop
   ([architecture.md](../architecture.md) → Database migrations). Going back
   to 0.1.x means restoring that file.
-- Composite workspaces are gone as a feature and absorbed as the model:
-  every workspace is a container, a single repo is a container with one
-  project.
-- Code and docs use one vocabulary: workspace is the container, project is
-  the repo-or-folder leaf. `session_worktrees` rows now point at a
+- Composite workspaces are gone as a feature and live on as the model. Every
+  workspace is a container. A single repo is a container with one project.
+- Code and docs use one vocabulary. Workspace is the container. Project is
+  the leaf, a repo or a folder. `session_worktrees` rows now point at a
   `project_id`, and per-repo state (integration overrides, scripts) hangs
   off projects.
