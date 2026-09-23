@@ -1,5 +1,5 @@
 export { cn } from './cn';
-export { escapeLayerCount, registerEscapeLayer } from './escape';
+export { registerEscapeLayer } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';
 export { useCopyLink } from './useCopyLink';
 export { useDropdown } from './useDropdown';
@@ -130,7 +130,7 @@ export { SegmentedTabs } from './components/SegmentedTabs';
 export type { Props as SegmentedTabsProps, SegmentedTabOption } from './components/SegmentedTabs';
 export { SectionHeader } from './components/SectionHeader';
 export type { SectionHeaderProps } from './components/SectionHeader';
-export { SECTION_SURFACE_CLASS, SectionSurface } from './components/SectionSurface';
+export { SectionSurface } from './components/SectionSurface';
 export type { SectionSurfaceProps } from './components/SectionSurface';
 export { SelectableRow } from './components/SelectableRow';
 export type { SelectableRowProps } from './components/SelectableRow';
