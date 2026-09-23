@@ -1,7 +1,8 @@
 # Repo architecture
 
 > **Read this when** you are changing how the app runs things: the environment
-> agents start with, how providers are picked, or database migrations. **Not for**
+> agents start with, how providers are picked, the boot path, git status reads,
+> or database migrations. **Not for**
 > deciding where new code goes inside `apps/desktop/src/` (see
 > [file-system.md](file-system.md)).
 
@@ -54,6 +55,26 @@ on macOS and Linux.
 - The list of models is built into the app, not saved in the database. Each model's id, family, cost tier, effort levels, context window, routing weight and price are written in the provider catalogs under `packages/core/src/providers/`. Every model the app can run ships with the app. When the list changes, there is no row to edit and no migration to write.
 - SQLite only stores your choices on top of that list, per workspace, project or session. A saved value points at a model. It never defines one.
 - The app checks each saved choice against the built-in list when it reads it. If a provider or model id is no longer in the list, the app uses the built-in default instead of trying to start it. So removing a model from a catalog never breaks a workspace that picked it.
+
+### Boot path
+
+- **No command on the boot path blocks the UI thread.** Every Tauri command
+  the boot sequence reaches that touches the database, the file system, a lock
+  or a subprocess is async where it is declared
+  ([ADR 002](adr/002-boot-path-leaves-the-ui-thread.md)).
+- **The boot path starts no provider process, and `ready` says nothing about
+  providers.** Providers start as `unknown` and are detected after boot,
+  through one refresh entry point
+  ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
+
+### Git status reads
+
+- **A git read fails closed.** Distances and the working tree are `known` or
+  `unknown` with a named reason. A zero never stands in for a failed read. An
+  unknown never shows as a claim about the repository and never enables a
+  change. A command that changes git passes its own safety config where it is
+  called, and `git()` stays unaware of config
+  ([ADR 004](adr/004-git-reads-fail-closed.md)).
 
 ### Database migrations
 

@@ -113,7 +113,7 @@ only when your task reaches the case it covers.
 
 - [architecture.md](architecture.md): when you change the systems that run
   behind the app, like the environment agents run in, how a provider gets
-  picked, or DB migrations.
+  picked, the boot path, git status reads, or DB migrations.
 - [model-picker.md](model-picker.md): when you change how a user picks a
   model or effort.
 - [event-bus.md](event-bus.md): when you send or listen for a `goodboy:`
@@ -133,6 +133,13 @@ only when your task reaches the case it covers.
 - [adr/001-workspace-project-rename.md](adr/001-workspace-project-rename.md):
   when you need to know why the schema calls the old workspaces table
   `projects`, or what the 0.2.0 migrations did to existing data.
+- [adr/002-boot-path-leaves-the-ui-thread.md](adr/002-boot-path-leaves-the-ui-thread.md):
+  when you add or change a Tauri command that the boot sequence reaches, or
+  the boot breadcrumb log.
+- [adr/003-provider-detection-leaves-the-boot-path.md](adr/003-provider-detection-leaves-the-boot-path.md):
+  when you add work to boot or read a provider's connection state.
+- [adr/004-git-reads-fail-closed.md](adr/004-git-reads-fail-closed.md): when
+  you show or gate on git status, or add a command that changes git.
 - [release.md](release.md): when you need the technical detail of a
   release, like signing, notarization, the updater or Homebrew.
 - [release-command.md](release-command.md): when an agent is running a
