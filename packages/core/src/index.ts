@@ -188,7 +188,7 @@ export {
 export { PROVIDER_ID_TO_NAME, resolveProvider, type ResolveProviderInput } from './budget/router';
 
 export { computeCostUsd, priceFor } from './providers/claude/cost';
-export { getModelPrice, getProviderModelPrice } from './providers/model-price';
+export { getProviderModelPrice } from './providers/model-price';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
 export {

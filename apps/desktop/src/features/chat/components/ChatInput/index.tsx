@@ -158,6 +158,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     isFirstTurnForAgent,
     value,
     attachments,
+    effectiveProvider: routing.effectiveProvider,
     effectiveModel: routing.effectiveModelId,
     modelCandidates: routing.modelCandidates,
     allowOverride: routing.allowOverride,

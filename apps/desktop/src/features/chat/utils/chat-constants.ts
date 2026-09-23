@@ -1,5 +1,5 @@
 import type { ModelCostTier, ModelEffort, ModelFamily, ProviderId } from '@goodboy/types';
-import { getModelDescriptor, getModelPrice } from '@goodboy/core';
+import { getModelDescriptor, getProviderModelPrice } from '@goodboy/core';
 
 export const PROVIDER_LABEL: Record<ProviderId, string> = {
   anthropic: 'Claude',
@@ -257,10 +257,16 @@ export type ModelSuggestion = {
   readonly costMultiplier: number | null;
 };
 
-const costRatio = (numerator: string, denominator: string): number | null => {
-  const a = getModelPrice(numerator);
-  const b = getModelPrice(denominator);
-  if (!a || !b) {
+type CostRatioParams = {
+  readonly provider: ProviderId;
+  readonly numerator: string;
+  readonly denominator: string;
+};
+
+const costRatio = ({ provider, numerator, denominator }: CostRatioParams): number | null => {
+  const a = getProviderModelPrice({ provider, model: numerator });
+  const b = getProviderModelPrice({ provider, model: denominator });
+  if (a === null || b === null) {
     return null;
   }
   const avg = (a.inputPerMtok / b.inputPerMtok + a.outputPerMtok / b.outputPerMtok) / 2;
@@ -268,10 +274,17 @@ const costRatio = (numerator: string, denominator: string): number | null => {
   return rounded === 1 ? null : rounded;
 };
 
-export const suggestLighterModel = (
-  current: string,
-  candidates: ReadonlyArray<string>,
-): ModelSuggestion | null => {
+type SuggestionParams = {
+  readonly provider: ProviderId;
+  readonly current: string;
+  readonly candidates: ReadonlyArray<string>;
+};
+
+export const suggestLighterModel = ({
+  provider,
+  current,
+  candidates,
+}: SuggestionParams): ModelSuggestion | null => {
   const currentRank = TIER_RANK[modelTier(current)];
   let best: { id: string; weight: number } | null = null;
   for (const id of candidates) {
@@ -283,20 +296,25 @@ export const suggestLighterModel = (
       continue;
     }
     const weight = modelWeight(id);
-    if (!best || weight > best.weight) {
+    if (best === null || weight > best.weight) {
       best = { id, weight };
     }
   }
-  if (!best) {
+  if (best === null) {
     return null;
   }
-  return { id: best.id, kind: 'strong', costMultiplier: costRatio(current, best.id) };
+  return {
+    id: best.id,
+    kind: 'strong',
+    costMultiplier: costRatio({ provider, numerator: current, denominator: best.id }),
+  };
 };
 
-export const suggestHeavierModel = (
-  current: string,
-  candidates: ReadonlyArray<string>,
-): ModelSuggestion | null => {
+export const suggestHeavierModel = ({
+  provider,
+  current,
+  candidates,
+}: SuggestionParams): ModelSuggestion | null => {
   const currentRank = TIER_RANK[modelTier(current)];
   const currentWeight = modelWeight(current);
   let best: { id: string; rank: number; weight: number } | null = null;
@@ -309,13 +327,17 @@ export const suggestHeavierModel = (
     if (rank < currentRank || weight <= currentWeight) {
       continue;
     }
-    if (!best || rank > best.rank || (rank === best.rank && weight > best.weight)) {
+    if (best === null || rank > best.rank || (rank === best.rank && weight > best.weight)) {
       best = { id, rank, weight };
     }
   }
-  if (!best) {
+  if (best === null) {
     return null;
   }
   const kind = modelTier(current) === 'expensive' ? 'optional' : 'strong';
-  return { id: best.id, kind, costMultiplier: costRatio(best.id, current) };
+  return {
+    id: best.id,
+    kind,
+    costMultiplier: costRatio({ provider, numerator: best.id, denominator: current }),
+  };
 };
