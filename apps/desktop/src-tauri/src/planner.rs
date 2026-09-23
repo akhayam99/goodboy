@@ -83,6 +83,7 @@ fn run_planner(
 
     let mut command = crate::path_env::command(&args.binary);
     crate::aux_spawn::scrub_nested_session_env(&mut command);
+    crate::process_group::isolate(&mut command);
     if let Some(dir) = args.working_dir.as_deref() {
         if !dir.is_empty() {
             command.current_dir(dir);

@@ -25,7 +25,21 @@ impl LiveChild {
     }
 
     pub fn kill(&self) {
-        signal_kill(self.pid);
+        let pid = self.pid;
+        std::thread::spawn(move || crate::process_group::terminate(pid));
+        self.kill_leader_fallback();
+    }
+
+    fn terminate_now(&self) {
+        crate::process_group::terminate(self.pid);
+        self.kill_leader_fallback();
+    }
+
+    #[cfg(unix)]
+    fn kill_leader_fallback(&self) {}
+
+    #[cfg(not(unix))]
+    fn kill_leader_fallback(&self) {
         if let Ok(mut guard) = self.slot.try_lock() {
             if let Some(child) = guard.as_mut() {
                 let _ = child.kill();
@@ -33,14 +47,6 @@ impl LiveChild {
         }
     }
 }
-
-#[cfg(unix)]
-fn signal_kill(pid: u32) {
-    unsafe { libc::kill(pid as libc::pid_t, libc::SIGKILL) };
-}
-
-#[cfg(not(unix))]
-fn signal_kill(_pid: u32) {}
 
 pub fn anonymous_key(prefix: &str) -> String {
     let next = ANONYMOUS_KEYS.fetch_add(1, Ordering::Relaxed);
@@ -70,9 +76,11 @@ pub fn shutdown(registry: &LiveChildRegistry) {
         Ok(mut map) => map.drain().map(|(_, live)| live).collect(),
         Err(_) => return,
     };
-    for live in drained {
-        live.kill();
-    }
+    std::thread::scope(|scope| {
+        for live in &drained {
+            scope.spawn(move || live.terminate_now());
+        }
+    });
 }
 
 pub fn wait_and_remove(live: &LiveChild, registry: &LiveChildRegistry, key: &str) -> Option<i32> {

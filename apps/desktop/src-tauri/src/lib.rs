@@ -23,6 +23,7 @@ mod local_image;
 mod path_env;
 mod permissions;
 mod planner;
+mod process_group;
 mod profile_file;
 mod project_scripts;
 mod provider_credentials;

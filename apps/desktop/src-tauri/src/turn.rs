@@ -375,6 +375,7 @@ fn spawn_one(
     let mut command = crate::path_env::command(args.binary);
     command.current_dir(args.working_dir);
     crate::aux_spawn::scrub_nested_session_env(&mut command);
+    crate::process_group::isolate(&mut command);
 
     if let Some(directory) = max_mode_config_dir_for(args.binary, args.cursor_max_mode) {
         command.env("CURSOR_CONFIG_DIR", directory);
