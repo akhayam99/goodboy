@@ -10,6 +10,7 @@ import {
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import {
+  mountDisplayName,
   writeDestinationDetail,
   writeDestinationLabel,
   type WriteDestinationCandidate,
@@ -96,7 +97,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
   const trigger = (
     <Chip
       as="button"
-      tone={isAutomatic || diverges ? 'warning' : 'neutral'}
+      tone={diverges ? 'warning' : 'neutral'}
       size="xs"
       bordered={false}
       icon={<Icon size={ICON_SIZE.row} aria-hidden />}
@@ -146,7 +147,10 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
                   className="flex-col items-start gap-0 px-2 py-1.5"
                 >
                   <span className="truncate text-xs">
-                    {candidate.projectName} / {candidate.mountName}
+                    {mountDisplayName({
+                      projectName: candidate.projectName,
+                      mountName: candidate.mountName,
+                    })}
                   </span>
                   <span className="truncate text-3xs text-muted-foreground">
                     {candidate.hasGit ? candidate.branch : 'no git'} · {candidate.worktreePath}

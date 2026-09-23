@@ -109,13 +109,6 @@ export const MountBranchDecision = ({
       cancelLabel="Not now"
       isBusy={isBusy}
       isConfirmDisabled={decision.confirm.isDisabled}
-      note={
-        <ul className="flex flex-col gap-1 text-muted-foreground">
-          {decision.notes.map((note) => (
-            <li key={note}>{note}</li>
-          ))}
-        </ul>
-      }
       {...(alt === null
         ? {}
         : {
