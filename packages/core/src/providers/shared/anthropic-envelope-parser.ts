@@ -1,5 +1,6 @@
 import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
+import { parseJsonAllowingControlChars } from './parseJsonAllowingControlChars';
 import { createPermissionRequestEvent } from '../../permissions/events';
 import { blockBoundaryPrefix, resetTextBoundary } from './text-boundary';
 
@@ -167,12 +168,12 @@ export const parseAnthropicEnvelopeLine = (
     return [];
   }
 
-  let payload: { type?: string } & Record<string, unknown>;
-  try {
-    payload = JSON.parse(trimmed);
-  } catch {
+  const parsed = parseJsonAllowingControlChars({ text: trimmed });
+  if (!parsed.ok) {
+    devWarn(`[${opts.logTag}] dropped a stream-json line that is not json`);
     return [];
   }
+  const payload = parsed.value as { type?: string } & Record<string, unknown>;
 
   const at = ctx.now();
 
