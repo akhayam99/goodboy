@@ -135,7 +135,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
         return;
       }
       throw new Error(
-        `no git repository at ${picked}. pick a folder with a .git directory, use New project to initialize one, or link it without git below`,
+        `No git repository at ${picked}. Pick a folder with a .git directory, use New project to initialize one, or link it without git below.`,
       );
     });
 

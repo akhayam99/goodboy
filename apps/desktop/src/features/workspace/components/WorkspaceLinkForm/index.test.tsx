@@ -179,7 +179,7 @@ describe('WorkspaceLinkForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
 
     await waitFor(() => screen.getByRole('alert'));
-    expect(screen.getByRole('alert').textContent).toContain('no git repository at /empty');
+    expect(screen.getByRole('alert').textContent).toContain('No git repository at /empty');
     expect(state.addWorkspace).not.toHaveBeenCalled();
   });
 

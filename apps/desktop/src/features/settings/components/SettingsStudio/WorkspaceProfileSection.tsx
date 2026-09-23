@@ -41,8 +41,8 @@ export const WorkspaceProfileSection = ({ workspaceId }: Props) => {
       <SectionHeader label="Profile" hint="Agents read this before they talk to you." />
       <Textarea
         value={bioDraft}
-        aria-label="Tell agents who you are and what you do here"
-        placeholder="Tell agents who you are and what you do here"
+        aria-label="What agents should know about this workspace and you"
+        placeholder="What agents should know about this workspace and you"
         disabled={busy}
         rows={4}
         onChange={(event) => setBioDraft(event.target.value)}

@@ -5,9 +5,10 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
 import type { OnboardingWizardState } from './useOnboardingWizard';
 
-const { hookState, finishWizard, storeActions, repoLib } = vi.hoisted(() => ({
+const { hookState, finishWizard, requestNewSession, storeActions, repoLib } = vi.hoisted(() => ({
   hookState: {} as OnboardingWizardState,
   finishWizard: vi.fn(),
+  requestNewSession: vi.fn(),
   storeActions: {
     createWorkspace: vi.fn(),
     renameWorkspace: vi.fn(),
@@ -36,6 +37,10 @@ vi.mock('./useOnboardingWizard', () => ({
 
 vi.mock('../onboarding-store', () => ({
   finishWizard,
+}));
+
+vi.mock('../../session/requestNewSession', () => ({
+  requestNewSession,
 }));
 
 vi.mock('./Stepper', () => ({
@@ -166,6 +171,7 @@ const setHook = (partial: Partial<OnboardingWizardState>) =>
 
 beforeEach(() => {
   finishWizard.mockClear();
+  requestNewSession.mockClear();
   Object.assign(hookState, baseState);
   storeActions.createWorkspace.mockReset().mockResolvedValue(WORKSPACE);
   storeActions.renameWorkspace.mockReset().mockResolvedValue(WORKSPACE);
@@ -349,7 +355,9 @@ describe('OnboardingWizard', () => {
       fireEvent.click(screen.getByRole('button', { name: /pick single folder/i }));
 
       await waitFor(() => expect(screen.getByRole('alert')).toBeDefined());
-      expect(screen.getByRole('alert').textContent).toMatch(/no git repository/i);
+      expect(screen.getByRole('alert').textContent).toMatch(
+        /^No git repository at .*initialize one\.$/,
+      );
       expect(storeActions.createWorkspace).not.toHaveBeenCalled();
       expect(screen.getByTestId('ShapeStep')).toBeDefined();
     });
@@ -519,6 +527,7 @@ describe('OnboardingWizard', () => {
       render(<OnboardingWizard />);
       fireEvent.click(screen.getByRole('button', { name: /skip setup/i }));
       await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce());
+      expect(requestNewSession).not.toHaveBeenCalled();
     });
 
     it('finishes the wizard on Escape wherever Skip setup is offered', async () => {
@@ -538,7 +547,7 @@ describe('OnboardingWizard', () => {
       expect(finishWizard).not.toHaveBeenCalled();
     });
 
-    it('finishes the wizard from the ready step', async () => {
+    it('finishes the wizard and opens a new session from the ready step', async () => {
       setHook(connectedWorkspaceState);
       render(<OnboardingWizard />);
       await reachProfileStep();
@@ -549,6 +558,7 @@ describe('OnboardingWizard', () => {
       expect(finishWizard).not.toHaveBeenCalled();
       fireEvent.click(screen.getByRole('button', { name: /start building/i }));
       await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce());
+      expect(requestNewSession).toHaveBeenCalledOnce();
     });
   });
 });

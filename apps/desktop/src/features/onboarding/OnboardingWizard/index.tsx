@@ -6,6 +6,7 @@ import { initRepo, scanChildRepos, validateGitRepo } from '../../../shared/lib/r
 import type { DetectedChildRepos } from '../../../shared/hooks/useChildRepoDetection';
 import { useProjectAdoption } from '../../../shared/hooks/useProjectAdoption';
 import { finishWizard } from '../onboarding-store';
+import { requestNewSession } from '../../session/requestNewSession';
 import { useOnboardingWizard } from './useOnboardingWizard';
 import { Stepper } from './Stepper';
 import type { WorkspaceShape } from './steps/ShapeStep';
@@ -89,6 +90,13 @@ export const OnboardingWizard = () => {
   const dismiss = () => {
     setClosing(true);
     window.setTimeout(finishWizard, EXIT_MS);
+  };
+  const finishAndStartSession = () => {
+    setClosing(true);
+    window.setTimeout(() => {
+      finishWizard();
+      requestNewSession();
+    }, EXIT_MS);
   };
 
   const runStepAction = (action: () => Promise<void | 'stay'>) => {
@@ -178,7 +186,7 @@ export const OnboardingWizard = () => {
       const repos = await scanChildRepos({ path: parentPath });
       if (repos.length === 0) {
         throw new Error(
-          `no git repository at ${path}. pick a folder with a .git directory, or use New project to initialize one`,
+          `No git repository at ${path}. Pick a folder with a .git directory, or use New project to initialize one.`,
         );
       }
       setSingleDetection({ parentPath, repos });
@@ -251,7 +259,7 @@ export const OnboardingWizard = () => {
     next: goNext,
     'commit-name': commitWorkspaceName,
     'commit-profile': commitProfile,
-    finish: dismiss,
+    finish: finishAndStartSession,
   };
 
   return (

@@ -253,7 +253,7 @@ describe('workspace and project slices', () => {
         rootPath: '/repos/plain',
         requireRepo: true,
       }),
-    ).rejects.toThrow(/no git repository/);
+    ).rejects.toThrow(/No git repository/);
 
     expect(h.insertProject).not.toHaveBeenCalled();
     expect(store.state.projects).toEqual([]);
@@ -300,7 +300,7 @@ describe('workspace and project slices', () => {
         workspaceId: WORKSPACE_ID,
         rootPaths: ['/repos/plain'],
       }),
-    ).rejects.toThrow(/no git repository/);
+    ).rejects.toThrow(/No git repository/);
 
     expect(h.insertProject).not.toHaveBeenCalled();
   });

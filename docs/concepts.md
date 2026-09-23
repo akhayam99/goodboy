@@ -330,7 +330,7 @@ specific rule that fits wins.
 ## Workspace profile
 
 Each workspace can have one profile. It is a short bio you write in your own
-words, under the prompt "Tell agents who you are and what you do here".
+words, under the prompt "What agents should know about this workspace and you".
 
 - The bio goes word for word into every agent's prompt, as what you say about
   yourself
