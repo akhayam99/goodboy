@@ -2,8 +2,7 @@
 
 > **Read this when** you need a real-app screenshot with fake, advanced,
 > non-empty state (for a social post, a README image, a deck). **Not for**
-> testing (see `docs/testing.md`) or the rule that a post needs a screenshot
-> at all (`goodboy-atlas/docs/autonomy/announcement.md`).
+> testing (see `docs/testing.md`).
 
 Every published screenshot follows one rule: real components, fake data, never
 an empty state, never real client or project names. Getting there the slow way

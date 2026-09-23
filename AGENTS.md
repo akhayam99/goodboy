@@ -120,8 +120,9 @@ it.
   network call that sends user data anywhere except the provider the user
   chose, in the app or its packages. The website's cookieless visit counter is
   the one exception, written down in SECURITY.md.
-- Absolute home paths, personal configuration, or any mention of the state
-  directory `~/.goodboy-autonomous/` in code, commits, PR bodies, or replies.
+- Absolute home paths, personal configuration, or any mention of a state
+  directory outside the repository checkout in code, commits, PR bodies, or
+  replies.
 - Making up a product fact: a vendor nobody can identify, a logo guessed from
   a name, an API shape imagined instead of read. Unknowns are parked and
   escalated, never guessed.

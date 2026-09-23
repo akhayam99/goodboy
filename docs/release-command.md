@@ -5,9 +5,8 @@
 > notarization or updater detail (`docs/release.md`).
 
 This is the agent's playbook for making a release. When the user says
-**"release the next version"**, **"rilascia la prossima minor/patch"**,
-**"ship the next release"**, or something similar, follow this file from start
-to end. You need no other instructions.
+**"release the next version"**, **"ship the next release"**, or something
+similar, follow this file from start to end. You need no other instructions.
 
 [release.md](release.md) is the technical runbook (signing, notarization,
 updater, homebrew). This file has the steps in order, plus the gotchas that
@@ -21,9 +20,7 @@ caught earlier runs.
    (`0.1.11 -> 0.1.12`). "next minor" resets the patch (`0.1.11 -> 0.2.0`).
    "next major" gives `1.0.0`. If the request is ambiguous, pick patch and say
    so.
-3. Before bumping, confirm the target version with the user in one line. An
-   autonomous run has no user to ask, and it starts with the version already
-   decided. So it skips this step instead of stalling on it.
+3. Before bumping, confirm the target version with the user in one line.
 
 Below, `X` is the new version and `X-1` is the current latest.
 
@@ -41,11 +38,9 @@ Below, `X` is the new version and `X-1` is the current latest.
    [CONVENTIONS.md](../CONVENTIONS.md). Commit
    `chore(repo): bump version to X`, push, open PR.
 3. Wait until ALL CI checks are green (`gh pr checks`). Then merge on the
-   server (`gh pr merge --squash`). DO NOT advance/checkout/pull local `main`:
-   that restarts the app. Use `git fetch origin main` to get the merge SHA, then
-   tag that SHA directly. NOTE: background poll commands can get killed when a
-   turn ends. So poll CI and builds with a foreground until-loop, not
-   `run_in_background`.
+   server (`gh pr merge --squash`). Never advance, check out or pull local
+   `main` ([AGENTS.md](../AGENTS.md) → Forbidden patterns). Use
+   `git fetch origin main` to get the merge SHA, then tag that SHA directly.
 4. rc dry-run (a practice release):
    `git tag vX-rc.1 <merge-sha> && git push origin vX-rc.1`.
    Wait for `release.yml` to finish green. VERIFY notarization: download the
