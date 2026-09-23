@@ -221,6 +221,27 @@ each run.
 
 [Workflows](workflows.md) explains how a run moves from step to step.
 
+## Open questions
+
+An open question is something an agent cannot decide for you. It has the
+question, suggested answers, an optional recommended answer, and whether one
+or several answers apply.
+
+- **Blocking or not.** A blocking question stops the work that asked it. It
+  holds its workflow run (see [workflows.md](workflows.md)) and can only be
+  answered, never dismissed. A non-blocking question can be dismissed. One
+  asked while an agent drafts an artifact is saved in the artifact's history
+  as an assumption, with the recommended answer.
+- **Delegated.** You can hand a question to an agent that answers for you,
+  with optional hints and a model. Its answer counts as yours, and the asking
+  agent is told an agent gave it. A delegate that answers nothing is nudged
+  once, then fails. Answering it yourself, or taking it back, stops the
+  delegate. A question a delegate asked is never delegated again.
+- **Saved, then delivered.** An answer is saved the moment you give it, but it
+  reaches the asking agent only once that agent has no open question left.
+  Then all its answers travel in one turn and are marked delivered. Answered
+  and delivered are two different facts.
+
 ## Artifacts
 
 When an agent writes a **plan**, a **report** or a **wireframe**, Goodboy saves
@@ -234,7 +255,7 @@ An artifact has a status:
 - **superseded**: a newer version replaced it
 - **discarded**: taken out of the session
 
-### Plans
+### Open questions
 
 Planner agents write plans. Other agents use them, and Goodboy remembers who
 used which plan. The plans studio shows each plan as a tree.
@@ -387,6 +408,15 @@ integrated when you can do all three:
 - **Slack**: read threads, reply, and turn them into sessions with the goal
   filled in. Replies post as the connected user. Each workspace has its own
   Slack connection.
+
+## Inbox
+
+The inbox is the workspace's queue of incoming work from every connected
+source: issues, pull and merge requests, Slack threads and Sentry errors, one
+record each. Records are grouped by age (today, yesterday, this week, older),
+with alerts first in each group, and you can filter them by kind. A record
+opens in full with the source's own actions. From it you start a session, or
+open the session already linked to it.
 
 ## Providers and routing
 
