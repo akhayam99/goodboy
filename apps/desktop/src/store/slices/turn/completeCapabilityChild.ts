@@ -30,6 +30,7 @@ export type CapabilityCompletionOutcome =
   | Readonly<{ kind: 'replacement-started'; replacementAgentId: AgentId }>
   | Readonly<{ kind: 'parent-resumed' }>
   | Readonly<{ kind: 'settled'; verifiedRevision: string }>
+  | Readonly<{ kind: 'unverified'; reason: string }>
   | Readonly<{ kind: 'revision-adopted'; revision: number }>
   | Readonly<{ kind: 'revision-refused'; reason: string }>;
 
@@ -96,14 +97,17 @@ const verifiedRevision = async ({
 }: {
   readonly get: GetFn;
   readonly sessionId: SessionId;
-}): Promise<string> => {
+}): Promise<string | null> => {
   const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
   if (worktreePath === null) {
-    return 'unknown-revision';
+    return null;
   }
   const status = await worktreeStatus({ worktreePath }).catch(() => null);
-  return status?.head ?? 'unknown-revision';
+  return status?.head ?? null;
 };
+
+const UNREAD_REVISION =
+  'the revision that was checked could not be read, so the obligation stays open and nothing was released';
 
 const rememberGrant = ({
   set,
@@ -163,8 +167,18 @@ const settleAndRelease = async ({
   sessionId,
   binding,
   receipt,
-}: SettleParams): Promise<string> => {
+}: SettleParams): Promise<string | null> => {
   const revision = await verifiedRevision({ get, sessionId });
+  if (revision === null) {
+    void get().emitNotification(
+      'error',
+      'warning',
+      `${binding.obligation.purpose} not closed`,
+      `${UNREAD_REVISION}. ${receipt}`,
+      { sessionId },
+    );
+    return null;
+  }
   const settled = await invokeCapabilityObligationSettle({
     obligationId: binding.obligation.id,
     verifiedRevision: revision,
@@ -294,6 +308,51 @@ const adoptProposal = async ({
   return { kind: 'revision-adopted', revision: outcome.revision };
 };
 
+type FailParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly message: string;
+};
+
+export const failCapabilityChild = async ({
+  set,
+  get,
+  sessionId,
+  agentId,
+  message,
+}: FailParams): Promise<boolean> => {
+  const binding = capabilityBindingFor({ get, sessionId, agentId });
+  if (binding === null || binding.obligation.state !== 'granted') {
+    return false;
+  }
+  const { obligation } = binding;
+  const failed = await invokeCapabilityGrantUpdate({
+    obligationId: obligation.id,
+    state: 'failed',
+    childAgentId: null,
+    replacementAgentId: null,
+    verificationAgentId: null,
+  });
+  rememberGrant({ set, sessionId, grant: failed });
+  const reason = `the agent granted for this ${obligation.purpose} failed before it reported back: ${message}`;
+  const refused = await invokeCapabilityObligationDecide({
+    obligationId: obligation.id,
+    decision: 'refused',
+    reason,
+  });
+  rememberObligation({ set, sessionId, obligation: refused });
+  void get().emitNotification(
+    'error',
+    'warning',
+    `${obligation.purpose} failed`,
+    `${reason}. the obligation is closed as refused and nothing was released.`,
+    { sessionId },
+  );
+  return true;
+};
+
 type Params = {
   readonly set: SetFn;
   readonly get: GetFn;
@@ -341,7 +400,9 @@ export const completeCapabilityChild = async ({
       binding,
       receipt: `${obligation.purpose} verified by ${child.name}: ${outputSummary}`,
     });
-    return { kind: 'settled', verifiedRevision: revision };
+    return revision === null
+      ? { kind: 'unverified', reason: UNREAD_REVISION }
+      : { kind: 'settled', verifiedRevision: revision };
   }
 
   if (obligation.purpose === 'replan') {
@@ -439,5 +500,7 @@ export const completeCapabilityChild = async ({
     binding,
     receipt: `${obligation.purpose} answered by ${child.name}`,
   });
-  return { kind: 'settled', verifiedRevision: revision };
+  return revision === null
+    ? { kind: 'unverified', reason: UNREAD_REVISION }
+    : { kind: 'settled', verifiedRevision: revision };
 };

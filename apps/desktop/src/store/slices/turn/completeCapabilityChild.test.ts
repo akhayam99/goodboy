@@ -53,7 +53,7 @@ vi.mock('../workflows/clusterImplementation', () => ({
   resumeClusterChildren: h.resumeClusters,
 }));
 
-import { completeCapabilityChild } from './completeCapabilityChild';
+import { completeCapabilityChild, failCapabilityChild } from './completeCapabilityChild';
 import { loadPhaseRunsForSession } from '../workflows/loadPhaseRunsForSession';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -281,6 +281,70 @@ describe('completeCapabilityChild', () => {
       expect.objectContaining({ sessionId: SESSION_ID, holdId: 'hold-1' }),
     );
     expect(state.capabilityObligations[SESSION_ID]?.[0]?.state).toBe('satisfied');
+  });
+
+  it('leaves the obligation open and the successor held when the revision cannot be read', async () => {
+    h.worktreeStatus.mockImplementation(async () => {
+      throw new Error('git is unavailable');
+    });
+    const verifier: Agent = {
+      ...child,
+      id: 'verifier-1' as AgentId,
+      name: 'verify repair',
+      kind: 'reviewer',
+    };
+    const { set, get, resolveClusterCompletionHold } = createHarness({
+      obligation: obligationOf(),
+      grant: grantOf({ verificationAgentId: 'verifier-1' as AgentId }),
+      agent: verifier,
+    });
+
+    const outcome = await completeCapabilityChild({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      child: verifier,
+      assistantText: 'the repair holds.',
+      now,
+    });
+
+    expect(outcome.kind).toBe('unverified');
+    expect(h.settle).not.toHaveBeenCalled();
+    expect(resolveClusterCompletionHold).not.toHaveBeenCalled();
+  });
+
+  it('closes the grant and the obligation when the granted child fails', async () => {
+    h.grantUpdate.mockImplementation(async () => grantOf({ state: 'failed' }));
+    h.decide.mockImplementation(async () =>
+      obligationOf({ state: 'refused', decision: 'refused' }),
+    );
+    const { set, get, state, resolveClusterCompletionHold } = createHarness({
+      obligation: obligationOf(),
+      grant: grantOf(),
+    });
+
+    const reconciled = await failCapabilityChild({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      agentId: CHILD_ID,
+      message: 'the provider exited',
+    });
+
+    expect(reconciled).toBe(true);
+    expect(h.grantUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ obligationId: OBLIGATION_ID, state: 'failed' }),
+    );
+    expect(h.decide).toHaveBeenCalledWith(
+      expect.objectContaining({
+        obligationId: OBLIGATION_ID,
+        decision: 'refused',
+        reason: expect.stringContaining('the provider exited'),
+      }),
+    );
+    expect(state.capabilityGrants[SESSION_ID]?.[0]?.state).toBe('failed');
+    expect(state.capabilityObligations[SESSION_ID]?.[0]?.state).toBe('refused');
+    expect(resolveClusterCompletionHold).not.toHaveBeenCalled();
   });
 
   it('adopts the revision a replan delivered and releases the held successor', async () => {

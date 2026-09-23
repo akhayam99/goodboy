@@ -717,6 +717,7 @@ type AppActions = {
       focus?: SpawnFocus;
       parentAgentId?: AgentId;
       executionPurpose?: AgentExecutionPurpose;
+      generationPurpose?: string;
     },
   ): Promise<AgentId>;
   forceCloseResolver(sessionId: SessionId, agentId: AgentId): Promise<void>;

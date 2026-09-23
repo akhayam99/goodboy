@@ -116,7 +116,7 @@ const refuse = async ({
   reason,
 }: RefuseParams): Promise<GraphRevisionOutcome> => {
   const stored = await invokeClusterGraphRevisionRefuse({
-    id: `cluster-graph-revision:${graph.containerAgentId}:r${graph.revision}`,
+    id: `cluster-graph-revision:${graph.containerAgentId}:r${graph.revision}:refused:${crypto.randomUUID()}`,
     containerAgentId: graph.containerAgentId,
     obligationId,
     fromRevision: graph.revision,

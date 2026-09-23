@@ -347,6 +347,31 @@ describe('adoptClusterGraphRevision', () => {
     expect(h.adopt).not.toHaveBeenCalled();
   });
 
+  it('records every refusal under its own id, apart from the adopted revision', async () => {
+    const { set, get } = makeStore({
+      graph: graphOf(),
+      agents: [agentOf({ id: 'a-impl', status: 'pending' })],
+    });
+    const attempt = () =>
+      adoptClusterGraphRevision({
+        set,
+        get,
+        sessionId: SESSION_ID,
+        containerAgentId: CONTAINER_ID,
+        obligationId: 'obligation-1',
+        proposalText: 'no marker here',
+        reason: 'no marker',
+      });
+
+    await attempt();
+    await attempt();
+
+    const ids = h.refuseRevision.mock.calls.map((call) => (call[0] as { id: string }).id);
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
+    expect(ids).not.toContain(`cluster-graph-revision:${CONTAINER_ID}:r1`);
+  });
+
   it('leaves the graph frozen when the generation allowance is exhausted', async () => {
     const { set, get } = makeStore({
       graph: graphOf(),

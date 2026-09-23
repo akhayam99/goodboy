@@ -24,7 +24,7 @@ type Params = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly agentId: AgentId | null;
-  readonly workflowRunId: WorkflowRunId;
+  readonly workflowRunId: WorkflowRunId | null;
   readonly provider: ProviderId;
   readonly model: string;
   readonly usage: OrchestratorUsage;
@@ -78,7 +78,9 @@ export const recordOrchestratorUsage = async ({
   if (isRecorded) {
     return;
   }
-  const attributedAgentId = agentId ?? latestRunAgentId({ get, sessionId, workflowRunId });
+  const attributedAgentId =
+    agentId ??
+    (workflowRunId === null ? null : latestRunAgentId({ get, sessionId, workflowRunId }));
   const runId = invocationId as ProviderRunId;
   const startedAt = new Date().toISOString() as IsoDateTime;
   await insertProviderRun(tauriDatabase, {
@@ -105,7 +107,7 @@ export const recordOrchestratorUsage = async ({
     estimatedCostUsd: usage.estimatedCostUsd,
     recordedAt: finishedAt,
     invocationId,
-    workflowRunId,
+    ...(workflowRunId !== null && { workflowRunId }),
     ...(attributedAgentId != null && { agentId: attributedAgentId }),
     purpose: 'orchestrator',
     usageEventId: 'usage',
