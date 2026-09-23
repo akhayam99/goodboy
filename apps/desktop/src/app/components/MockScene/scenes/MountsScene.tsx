@@ -20,6 +20,7 @@ import type {
 } from '@goodboy/types';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';
+import { useHoveredMountRow, useShowCompletedMounts } from './sceneReveal';
 
 const WORKSPACE_ID = 'mock-workspace-harborline' as WorkspaceId;
 const SESSION_ID = 'mock-session-mount-rows' as SessionId;
@@ -484,7 +485,28 @@ export const MountsScene = () => {
       sessionWorkflows: { [SESSION_ID]: [] },
       phaseTemplates: { [WORKSPACE_ID]: [] },
       sessionTelemetry: { [SESSION_ID]: [] },
-      sessionExternalTasks: { [SESSION_ID]: [] },
+      sessionExternalTasks: {
+        [SESSION_ID]: [
+          {
+            sessionId: SESSION_ID,
+            provider: 'linear',
+            externalId: 'mock-mounts-hrb-2481',
+            identifier: 'HRB-2481',
+            url: 'https://example.invalid/linear/HRB-2481',
+            title: 'Ledger reconciliation rewrite',
+            createdAt: NOW,
+          },
+          {
+            sessionId: SESSION_ID,
+            provider: 'jira',
+            externalId: 'mock-mounts-ops-77',
+            identifier: 'OPS-77',
+            url: 'https://example.invalid/jira/OPS-77',
+            title: 'Notify relay floods the webhook provider',
+            createdAt: NOW,
+          },
+        ],
+      },
       sessionGithub: { [SESSION_ID]: { ...EMPTY_GITHUB, pr: POSTINGS_PR } },
       sessionProjectPrs: {
         [SESSION_ID]: {
@@ -507,22 +529,8 @@ export const MountsScene = () => {
     setIsReady(true);
   }, []);
 
-  useEffect(() => {
-    if (!isReady) {
-      return;
-    }
-    const interval = window.setInterval(() => {
-      const toggle = [...document.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
-        button.textContent?.startsWith('Completed'),
-      );
-      if (toggle === undefined) {
-        return;
-      }
-      toggle.click();
-      window.clearInterval(interval);
-    }, 150);
-    return () => window.clearInterval(interval);
-  }, [isReady]);
+  useShowCompletedMounts({ isReady });
+  useHoveredMountRow({ isReady, rowLabel: 'fix/notify-relay' });
 
   if (!isReady) {
     return null;

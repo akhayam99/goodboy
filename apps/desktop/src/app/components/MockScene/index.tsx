@@ -3,6 +3,7 @@ import { ToastProvider } from '../Toast';
 import { WorkspaceScene } from './scenes/WorkspaceScene';
 import { WorkflowScene } from './scenes/WorkflowScene';
 import { ShellScene } from './scenes/ShellScene';
+import { ChatShellScene } from './scenes/ChatShellScene';
 import { MountsScene } from './scenes/MountsScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
@@ -51,6 +52,7 @@ const SCENES = {
   workspace: WorkspaceScene,
   workflow: WorkflowScene,
   shell: ShellScene,
+  'chat-shell': ChatShellScene,
   mounts: MountsScene,
   'mount-mismatch': MountMismatchScene,
   resolve: ResolveScene,

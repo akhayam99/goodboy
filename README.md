@@ -26,14 +26,40 @@ needs briefing again, and it all runs on the plan you already pay for.
 
 <br>
 
-## A board, not a chat window
+## Providers and integrations
+
+<div align="center">
+  <img src=".github/providers.png" alt="Claude, Codex, Cursor, Gemini, OpenCode, OpenRouter and Moonshot" width="860">
+</div>
+
+Claude, Cursor and Codex sign in with the CLI you already use, and the rest
+take a key. Connect a second one and it inherits the session it joins.
+[The provider guide](./docs/providers.md) covers installation and what each
+provider does differently.
+
+<div align="center">
+  <img src=".github/integrations.png" alt="GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack" width="860">
+</div>
+
+Connect the tools you already work in and agents read from them through the
+[query bridge](./docs/query-bridge.md).
+
+<br>
+
+## Not only a chat window
 
 Four terminals open and no idea which one is waiting on you.
 
-Goodboy's home is a board of sessions. A session is one task, with its plan,
-its questions and its diff. Nobody has to ask you where things stand.
+The chat is still there, inside a session: one task with its plan, its
+questions and its diff. The plan lands as a page of its own, and a question
+you would rather not answer goes to another agent.
 
-![The Goodboy board for a workspace: cards under building, running, needs you and in review, with the done and archived columns folded at the end](./docs/images/board-shell.png)
+![A session chat: the agent's plan as its own artifact, three files edited, a question answered by another agent and a second one an agent is answering right now, with the other sessions in the sidebar](./docs/images/chat-shell.png)
+
+Every session sits on one board, with the issues it came from on the card.
+Nobody has to ask you where things stand.
+
+![The Goodboy board for a workspace: cards under building, running, needs you and in review, some linked to a Linear, Sentry, Jira or GitHub issue, with the done and archived columns folded at the end](./docs/images/board-shell.png)
 
 <br>
 
@@ -46,7 +72,7 @@ touches. Under it, Activity replays what happened: every step, the agents a
 step fanned out into, the plans, the branches, the pull requests. Start a
 second workflow before the first one ends and the feed keeps the two apart.
 
-![The Overview of a session: the goal with its decisions and summary, two repositories on their branches, and an Activity feed where a finished workflow and a running one overlap, one step split into three agents and one of those handed its question to a fourth, with the wireframe, the plan, the report and a merged pull request in between](./docs/images/activity-run.png)
+![The Overview of a session: the goal with its decisions and summary, a GitHub, a Linear and a Sentry issue linked, two repositories with one branch merged and one in review, and an Activity feed where a finished workflow and a running one overlap, one step split into three agents and one of those handed its question to a fourth, with the wireframe, the plan, the report and a merged pull request in between](./docs/images/activity-run.png)
 
 <br>
 
@@ -95,7 +121,7 @@ Every repository a session touches gets its own worktree and branch, so
 several sessions run at once without stepping on each other. One session can
 hold more than one repository, each with its own branch and pull request.
 
-![The Projects section of a session: two repositories mounted, each with its branch and worktree, and a series of pull requests split out of one rewrite](./docs/images/mounts.png)
+![The Projects section of a session: two repositories mounted, one with three branches of a pull request series and a merged one shown, each with its worktree, and the terminal, scripts and editor actions of a row](./docs/images/mounts.png)
 
 <br>
 
@@ -161,26 +187,6 @@ the same page.
 
 <br>
 
-## Providers and integrations
-
-<div align="center">
-  <img src=".github/providers.png" alt="Claude, Codex, Cursor, Gemini, OpenCode, OpenRouter and Moonshot" width="860">
-</div>
-
-Claude, Cursor and Codex sign in with the CLI you already use, and the rest
-take a key. Connect a second one and it inherits the session it joins.
-[The provider guide](./docs/providers.md) covers installation and what each
-provider does differently.
-
-<div align="center">
-  <img src=".github/integrations.png" alt="GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack" width="860">
-</div>
-
-Connect the tools you already work in and agents read from them through the
-[query bridge](./docs/query-bridge.md).
-
-<br>
-
 ## Where your work lives
 
 The task context, the settings and the usage records sit in SQLite on your
@@ -223,8 +229,6 @@ and [architecture](./docs/architecture.md).
 &nbsp;
 [<img src=".github/contributor-teckperry.png" width="56" height="56" alt="Luca Laudiero">](https://github.com/teckperry)
 
-[Amin Khayam](https://github.com/akhayam99) &nbsp;·&nbsp; [Luca Laudiero](https://github.com/teckperry)
-
 Your face fits here too. Pick an
 [issue](https://github.com/akhayam99/goodboy/issues), open a pull request, and
 read [AGENTS.md](./AGENTS.md) and [CONVENTIONS.md](./CONVENTIONS.md) before you
@@ -234,13 +238,18 @@ start.
 
 ## Support Goodboy
 
-The best support is using it. Run it on real work,
-[open an issue](https://github.com/akhayam99/goodboy/issues/new) when something
-feels off, send a pull request, and leave a star if it earns one.
+The best support is using it.
+
+- Run it on your real work
+- Open an issue when something feels off
+- Send a pull request
+- Leave a star if it earns one
+
+[![Star Goodboy on GitHub](https://img.shields.io/github/stars/akhayam99/goodboy?style=for-the-badge&logo=github&logoColor=white&label=%E2%AD%90%20Star%20Goodboy&labelColor=15181b&color=0e9aa4)](https://github.com/akhayam99/goodboy/stargazers)
 
 <br>
 
 ## License
 
-Source-available under [FSL-1.1-MIT](./LICENSE.md) © Amin Khayam. Free to use,
-at work too, not to be sold as a competing product.
+Source-available under [FSL-1.1-MIT](./LICENSE.md) © Amin Khayam. Use Goodboy
+freely, for your own projects or at work.

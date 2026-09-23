@@ -64,9 +64,9 @@ const BoardShellSceneContent = () => {
           <AppFooter
             activeStudio={null}
             githubEnabled
-            linearEnabled={false}
-            jiraEnabled={false}
-            sentryEnabled={false}
+            linearEnabled
+            jiraEnabled
+            sentryEnabled
             gitlabEnabled={false}
             bitbucketEnabled={false}
             slackEnabled={false}
