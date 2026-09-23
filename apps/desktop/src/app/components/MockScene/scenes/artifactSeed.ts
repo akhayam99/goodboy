@@ -946,6 +946,24 @@ const ARTIFACTS: ReadonlyArray<SessionArtifact> = [
   WIREFRAME_HIGH_ARTIFACT,
 ];
 
+const ACTIVE_PLAN_BODY = `## Approach
+
+Replay every batch settled in the last quarter through the new allocation path,
+behind a dry run flag, and compare each payout with the one already sent.
+
+## Steps
+
+1. Add a \`--dry-run\` flag to the backfill job in \`ledger-core\`.
+2. Replay the settled batches in weekly chunks, oldest first.
+3. Write every payout that moves by a cent or more to a review table.
+4. Post the totals to the finance channel before anything is written back.
+
+## Done when
+
+- Two nightly runs match the ledger snapshot
+- Finance has signed off on the review table
+`;
+
 const PLANS: ReadonlyArray<PlanWithCount> = [
   {
     id: PLAN_ID,
@@ -959,14 +977,25 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
     consumptionCount: 1,
   },
   {
+    id: 'mock-artifact-plan-half-cent' as PlanId,
+    sessionId: SESSION_ID,
+    agentId: PLANNER_AGENT_ID,
+    title: 'Cover the half cent cases',
+    bodyMd: 'Add a test for every split where the residual lands on a half cent.',
+    status: 'consumed',
+    createdAt: '2026-09-14T15:40:00.000Z' as IsoDateTime,
+    updatedAt: '2026-09-14T15:40:00.000Z' as IsoDateTime,
+    consumptionCount: 1,
+  },
+  {
     id: OLD_PLAN_ID,
     sessionId: SESSION_ID,
     agentId: PLANNER_AGENT_ID,
     title: 'Backfill the settled batches',
-    bodyMd: 'Replay the settled batches from the last quarter behind a dry run flag.',
+    bodyMd: ACTIVE_PLAN_BODY,
     status: 'active',
-    createdAt: '2026-09-14T15:34:00.000Z' as IsoDateTime,
-    updatedAt: '2026-09-14T15:34:00.000Z' as IsoDateTime,
+    createdAt: '2026-09-14T17:34:00.000Z' as IsoDateTime,
+    updatedAt: '2026-09-14T17:34:00.000Z' as IsoDateTime,
     consumptionCount: 0,
   },
 ];

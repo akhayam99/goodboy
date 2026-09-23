@@ -80,7 +80,7 @@ Agents work in their own copy of the code, not in yours.
 - One session can work on more repositories, and on more branches of the same one, each with its own pull request
 - From each row you open a terminal, run a project script or open the code in your editor
 
-![The Overview of a session with the sessions sidebar: two repositories mounted, one with three branches of a pull request series and a merged one shown under Hide completed, and the terminal, scripts and editor actions of a row](./docs/images/mounts.png)
+![The Overview of a session: its decisions and summary, two repositories mounted, one with three branches of a pull request series and a merged one shown under Hide completed, the terminal, scripts and editor actions of a row, and pull requests opened and merged in Activity](./docs/images/mounts.png)
 
 <br>
 
@@ -89,10 +89,10 @@ Agents work in their own copy of the code, not in yours.
 When an agent writes a **plan**, a **report** or a **wireframe**, Goodboy saves it as an artifact with its own page.
 
 - The next agent reads it instead of scrolling a chat
-- A newer version replaces it, and the revision number tells you which one you are reading
+- An **active** plan waits for the next agent, a **consumed** one moves to **Finished**
 - You can reopen or print it whenever you want
 
-![The Artifacts lens of a session: plans, reports and wireframes in the rail, a report open with its outline, a table of what changed and the code it touched](./docs/images/artifacts-lens-shell.png)
+![The Plans tab of a session: one active plan ready for the next agent, and two consumed plans under Finished](./docs/images/artifacts-lens-shell.png)
 
 <br>
 
@@ -104,7 +104,7 @@ When an agent needs a decision, it asks you, and the session moves to **needs yo
 - Choose **let an agent answer** to hand it to another agent, with a hint if you want
 - The agent's answer counts as yours
 
-![The Questions lens of a session waiting on you: two open questions from two agents, each with suggested answers, a free-text option and a let an agent answer option](./docs/images/open-questions.png)
+![The Questions lens of a session: one open question with two answers already picked, and four answered questions below, one of them answered by an agent](./docs/images/open-questions.png)
 
 <br>
 
