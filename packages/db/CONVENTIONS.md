@@ -2,7 +2,7 @@
 
 > **Read this when** you're writing code inside `@goodboy/db` and need the storage and schema rules. **Not for** process rules for the whole repo (`CONVENTIONS.md`) or TypeScript style (`docs/typescript/`).
 
-The SQLite schema, migrations, and queries. They run locally on the user's machine through `tauri-plugin-sql`. Business logic goes to `@goodboy/core`, Tauri bindings to `apps/desktop`.
+The SQLite schema, migrations, and queries. At run time every statement goes through the desktop's `rusqlite` connection, behind the `db_exec`, `db_execute`, `db_select` and `db_transaction` Tauri commands (`apps/desktop/src-tauri/src/db.rs`, reached through `tauriDatabase`). Tests run the same `Database` contract on `better-sqlite3` through `@goodboy/db/test-helpers`. Business logic goes to `@goodboy/core`, Tauri bindings to `apps/desktop`.
 
 ## Storage rules
 
@@ -17,7 +17,7 @@ Data is stored **only locally**. No data leaves the user's machine.
 
 - Snake_case for table and column names.
 - Every table has `id TEXT PRIMARY KEY` (UUIDs as strings), `created_at INTEGER NOT NULL` (unix ms) and `updated_at INTEGER NOT NULL`.
-- Foreign keys: named `<entity>_id`, with an explicit `ON DELETE` behavior (CASCADE or RESTRICT, never the default).
+- Foreign keys: named `<entity>_id`, with an explicit `ON DELETE` behavior (CASCADE or RESTRICT, never the default). `SET NULL` is allowed for a history link that must outlive the row it points at.
 - No `BOOLEAN`. Use `INTEGER` (0/1) with `is_`/`has_` naming.
 - Indexes on every foreign key and on columns used in `WHERE`/`ORDER BY`.
 - `CHECK` constraints for enums: `status TEXT NOT NULL CHECK (status IN (...))`.
@@ -26,8 +26,8 @@ Data is stored **only locally**. No data leaves the user's machine.
 
 [docs/architecture.md](../../docs/architecture.md) → Database migrations owns the renumbering trap and how the runner works.
 
-- SQL is exported as a template-literal string. That way the same source ships through `tauri-plugin-sql` at runtime and through `better-sqlite3` in tests.
-- Each migration is idempotent, so running it twice is safe (`CREATE TABLE IF NOT EXISTS`, conditional column adds).
+- SQL is exported as a template-literal string. That way the same source runs through the `rusqlite` bridge at run time and through `better-sqlite3` in tests.
+- Migrations are not replayed. The runner applies each version once and resumes an interrupted one from its segment checkpoint, see [docs/architecture.md](../../docs/architecture.md) → Database migrations.
 - Never edit a migration after it has shipped. Add a new one.
 
 ## Query patterns
@@ -40,5 +40,5 @@ Data is stored **only locally**. No data leaves the user's machine.
 
 ## Error handling
 
-- Map SQLite errors to typed domain errors (`UniqueViolation`, `ForeignKeyViolation`, `NotFound`).
+- Map SQLite errors and guard aborts to the typed errors in `src/shared/errors.ts` (`UniqueViolationError`, `NotFoundError`), or to the `false` that a guarded write already returns. There is no foreign key error class. A violated foreign key shows up as the SQLite error.
 - Never show raw SQLite error strings in the UI.
