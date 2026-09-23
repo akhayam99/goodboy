@@ -53,6 +53,16 @@ const RULES = [
     allow: NO_ALLOW,
     why: 'colour comes from theme tokens, never the raw Tailwind palette',
   },
+  {
+    pattern: /\b(?:LoaderCircle|Loader2|animate-spin)\b/,
+    allow: NO_ALLOW,
+    why: 'spinners are forbidden: loading is a skeleton, running is a moving border',
+  },
+  {
+    pattern: /\banimate-(?:pulse|ping)\b/,
+    allow: ['packages/ui/src/components/Skeleton.tsx'],
+    why: 'standing motion is the registered soft pulse; only the skeleton pulses to load',
+  },
 ] satisfies ReadonlyArray<Rule>;
 
 const listSourceFiles = ({ dir, files = [] }: { dir: string; files?: string[] }): string[] => {

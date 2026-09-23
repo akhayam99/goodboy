@@ -94,7 +94,7 @@ export const WorkflowStarter = ({
             role="status"
             aria-live="polite"
           >
-            <span className="h-2 w-2 rounded-full bg-info motion-safe:animate-pulse" />
+            <span className="h-2 w-2 rounded-full bg-info motion-safe:animate-soft-pulse" />
             Working on your workflow
           </div>
         ) : null}

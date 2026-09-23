@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { ArrowRight, LoaderCircle } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { AgentId, AgentStatus, PlanId, SessionId, TurnState } from '@goodboy/types';
 import { extractHandoff } from '@goodboy/core';
@@ -138,12 +138,10 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
               'disabled:cursor-not-allowed disabled:opacity-60',
             )}
           >
-            {isPending ? (
-              <LoaderCircle size={10} className="animate-spin" aria-hidden />
-            ) : (
-              <ArrowRight size={10} aria-hidden />
-            )}
-            <span>{isPending ? `Spawning ${handoff.kind}` : `Spawn ${handoff.kind}`}</span>
+            <ArrowRight size={10} aria-hidden />
+            <span className={cn(isPending && 'text-shimmer')}>
+              {isPending ? `Spawning ${handoff.kind}` : `Spawn ${handoff.kind}`}
+            </span>
           </button>
         ) : (
           <>

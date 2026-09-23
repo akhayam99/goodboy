@@ -71,7 +71,7 @@ export const BootSplash = ({ phase, error, onRetry, onFinished }: BootSplashProp
     >
       <BootBrand />
       <div className="flex flex-col items-center gap-3">
-        <span className="text-2xs tracking-tight text-faint-foreground motion-safe:animate-pulse">
+        <span className="text-2xs tracking-tight text-faint-foreground motion-safe:animate-soft-pulse">
           {BOOT_PHASE_LABEL[phase]}
         </span>
         {isSlow ? <BootSlowNotice elapsedMs={elapsedMs} onRetry={onRetry} /> : null}

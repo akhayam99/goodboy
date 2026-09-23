@@ -139,7 +139,7 @@ describe('OperationsCluster', () => {
     render(<OperationsCluster items={[tool('a'), tool('b', false)]} />);
     const icon = screen.getByTestId('operations-state-icon');
     expect(icon.getAttribute('class')).toContain('text-info');
-    expect(icon.getAttribute('class')).toContain('animate-pulse');
+    expect(icon.getAttribute('class')).toContain('animate-soft-pulse');
   });
 
   it('turns the state icon red when a child errored', () => {

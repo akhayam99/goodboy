@@ -31,7 +31,7 @@ export const ToolCallCard = ({ item }: Props) => {
   const stateIcon = item.isError
     ? dangerTint.icon
     : running
-      ? cn(runningTint.icon, 'motion-safe:animate-pulse')
+      ? cn(runningTint.icon, 'motion-safe:animate-soft-pulse')
       : successTint.icon;
 
   return (

@@ -10,7 +10,7 @@ export const SCRIPT_RUN_PRESENTATION = {
   pending: {
     borderClass: cn(tintClasses('info').border),
     textClass: 'text-info',
-    pulseClass: 'motion-safe:animate-pulse',
+    pulseClass: 'motion-safe:animate-soft-pulse',
   },
   ok: {
     borderClass: cn(tintClasses('success').border),

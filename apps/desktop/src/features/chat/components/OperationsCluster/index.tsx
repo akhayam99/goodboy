@@ -56,7 +56,7 @@ export const OperationsCluster = ({
   const showError = running == null && errorCount > 0;
   const stateIcon =
     running != null
-      ? cn(runningTint.icon, 'motion-safe:animate-pulse')
+      ? cn(runningTint.icon, 'motion-safe:animate-soft-pulse')
       : showError
         ? dangerTint.icon
         : successTint.icon;

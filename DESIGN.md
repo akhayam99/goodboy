@@ -293,8 +293,8 @@ An action row must not scroll away with the content. Generic object actions do n
 - **One animation, one meaning.** The list of animations is closed. Adding one
   is a design-system change, not a feature decision.
 - **Loading is a skeleton. Running is a moving border. Spinners are forbidden.**
-  No `Loader2`, no hand-built dot loaders in `packages/ui`.
-  `no-loader2-in-ui-package.test.ts` enforces that boundary in CI. The skeleton
+  No `Loader2`, `LoaderCircle` or `animate-spin` anywhere in the app or in
+  `packages/ui`. `no-token-bypass.test.ts` enforces that in CI. The skeleton
   copies the real layout and is part of the component. If you change the
   layout, update the skeleton in the same change.
 

@@ -992,7 +992,7 @@ describe('ScriptsPanel', () => {
   });
 
   it.each([
-    ['pending', 'border-info/40', 'motion-safe:animate-pulse'],
+    ['pending', 'border-info/40', 'motion-safe:animate-soft-pulse'],
     ['ok', 'border-success/40', null],
     ['error', 'border-danger/40', null],
     ['cancelled', 'border-border', null],

@@ -377,7 +377,9 @@ What "empty" means, and the copy rule for it, are product rules and live in
 
 ## Motion registry
 
-Four animations, one meaning each.
+Seven animations, one meaning each. Transition keyframes (`fade-in`,
+`nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`) move content between
+states and sit outside the registry.
 
 - `spin-border`: working.
 - `border-pulse`: a warning-stage card needs you.
@@ -385,11 +387,19 @@ Four animations, one meaning each.
   cycles, then rest) on an element that now needs the user, never one that
   is working.
 - `soft-pulse`: the only animation in the app for a lasting state. It breathes
-  a state that holds and is alive. It breathes the Providers launcher while no
-  provider is connected. It also breathes the centre dot of the running marker
-  on the activity rail. There it sits inside the `spin-border` ring, so the
-  pair reads as one running state, not two claims. The bar for a second
-  lasting-state animation is high.
+  a state that holds and is alive: the Providers launcher while no provider is
+  connected, the centre dot of the running marker on the activity rail, a
+  running tool or script icon, and the boot splash status. On the rail it sits
+  inside the `spin-border` ring, so the pair reads as one running state, not
+  two claims. The bar for another lasting-state animation is high.
+- `cost-chip-pulse`: the spend meter just ticked. One 1100ms halo, paired with
+  the digit roll.
+- `text-shimmer`: a label whose action is in flight, such as a handoff while
+  its agent starts. It replaces a spinner next to the label.
+- Skeleton pulse (`animate-pulse` inside `Skeleton` only): loading.
+
+`no-token-bypass.test.ts` rejects spinners, and any `animate-pulse` or
+`animate-ping` outside `Skeleton`.
 
 Motion-safe gating, "motion confirms, never decorates", "motion names who is
 working, and for how long", and "Spinners are forbidden" are product rules and
