@@ -215,11 +215,26 @@ about its effect is a worse defect than one that reads badly.
   spinner placed beside it.
 - **One signal hierarchy.** Toasts and inline nudges are _previews_. The
   notification inbox is the _log_. Nothing lives only in a toast.
-- **Errors are toasts, never pinned banners.** No inline banner stays on
-  screen after its cause is gone. There is one exception, and it is also the
-  exception to the budget-alert rule: the composer's pre-send routing line. It
-  is live state on an unsent turn, not an alert, and it clears the moment
-  routing changes.
+- **A toast says what already happened.** `success` means finished. `info`
+  means started, or neutral. `warning` means done with a caveat, or input the
+  user sees refused right now (attachment limit, refused drop). Toast copy is
+  written as a sentence. Nothing capitalizes it for you.
+- **An error lands in the log first.** When something the user asked for did
+  not happen, it becomes a notification row (`reportError`) with a title that
+  names the action ("Couldn't prune archived transcripts"). The toast is only
+  its preview. `showToast` has no error kind.
+- **Form errors stay inline, action errors go to the log.** A form the user is
+  still looking at (link project, create merge request, confirm notes) keeps
+  its error next to its footer. A one-click action reports to the log. No
+  inline banner stays on screen after its cause is gone. There is one
+  exception, and it is also the exception to the budget-alert rule: the
+  composer's pre-send routing line. It is live state on an unsent turn, not an
+  alert, and it clears the moment routing changes.
+- **Unknown is never zero.** A failed load draws a dash with a muted "not
+  loaded" hint, or an error state with Retry. Never 0, and never "nothing".
+- **No echo toasts.** A control that already shows its new value (switch,
+  select, a field saved on blur) saves silently, like VS Code and Linear
+  settings.
 - **Chips carry a word.** Use icon-only chips only where there is truly no
   space, and then keep the label as a tooltip.
 - **Empty means no active item.** A lens with nothing running keeps its empty

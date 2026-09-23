@@ -178,7 +178,9 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
       });
       return;
     }
-    showToast('success', `This branch is rebased on ${baseBranch}.`, {
+    showToast({
+      kind: 'success',
+      message: `This branch is rebased on ${baseBranch}.`,
       title: 'Rebase done',
       action: {
         label: 'Open the rebase agent',
@@ -247,20 +249,18 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
           agentId,
         },
       });
-      showToast(
-        'info',
-        `An agent is rebasing this branch on ${target.baseBranch}. You can keep working.`,
-        {
-          title: 'Rebase started',
-          action: {
-            label: 'Open the rebase agent',
-            onClick: () => {
-              setActiveLens(sessionId, 'agents');
-              void selectAgent(sessionId, agentId);
-            },
+      showToast({
+        kind: 'info',
+        message: `An agent is rebasing this branch on ${target.baseBranch}. You can keep working.`,
+        title: 'Rebase started',
+        action: {
+          label: 'Open the rebase agent',
+          onClick: () => {
+            setActiveLens(sessionId, 'agents');
+            void selectAgent(sessionId, agentId);
           },
         },
-      );
+      });
     } catch (failure) {
       endSessionCreation(sessionId, creationId);
       const message = formatError(failure);

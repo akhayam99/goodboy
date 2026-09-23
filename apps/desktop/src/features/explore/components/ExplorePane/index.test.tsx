@@ -35,7 +35,8 @@ const h = vi.hoisted(() => ({
   selectAgent: vi.fn(async () => undefined),
   setCurrentSession: vi.fn(async () => undefined),
   setActiveLens: vi.fn(),
-  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
+  showToast:
+    vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
   providers: [{ id: 'anthropic' as ProviderId, connection: 'connected' }],
   sessions: [
     {
@@ -297,8 +298,8 @@ describe('ExplorePane', () => {
     ).toBe(true);
     expect(h.selectAgent).not.toHaveBeenCalled();
 
-    expect(h.showToast.mock.calls[0]![0]).toBe('info');
-    const action = h.showToast.mock.calls[0]![2]?.action;
+    expect(h.showToast.mock.calls[0]![0]?.kind).toBe('info');
+    const action = h.showToast.mock.calls[0]![0]?.action;
     expect(action?.label).toBe('Open the agent');
     action?.onClick();
 

@@ -77,7 +77,10 @@ describe('PermissionScopePicker', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Deny' }));
     });
-    expect(toastMock).toHaveBeenCalledWith('info', 'bash denied for the rest of this session');
+    expect(toastMock).toHaveBeenCalledWith({
+      kind: 'info',
+      message: 'bash denied for the rest of this session',
+    });
   });
 
   it('reports a failed answer to the log and keeps the picker', async () => {

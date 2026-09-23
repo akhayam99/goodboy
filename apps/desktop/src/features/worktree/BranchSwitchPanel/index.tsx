@@ -118,7 +118,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
         branch: target,
         createNew: branchMode === 'new',
       });
-      showToast('success', `Switched to ${target}.`);
+      showToast({ kind: 'success', message: `Switched to ${target}.` });
       onDone();
     } catch (caught) {
       setError(formatError(caught));

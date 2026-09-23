@@ -265,14 +265,14 @@ export const MountActionsMenu = ({
         assess();
         return;
       }
-      showToast(
-        'info',
-        detachOutcomeMessage({
+      showToast({
+        kind: 'info',
+        message: detachOutcomeMessage({
           kind: summary,
           projectName,
           worktreePath: summarized?.worktreePath ?? worktreePath,
         }),
-      );
+      });
       dropdown.close();
       setConfirming(null);
     } catch (error) {
@@ -292,12 +292,13 @@ export const MountActionsMenu = ({
       const result = await forgetMount({ sessionId, mountId });
       dropdown.close();
       setConfirming(null);
-      showToast(
-        'info',
-        result.keptPath === null
-          ? `Removed ${branch === '' ? 'the mount' : branch} from this session.`
-          : `Removed ${branch === '' ? 'the mount' : branch} from this session. Files remain at ${result.keptPath}.`,
-      );
+      showToast({
+        kind: 'info',
+        message:
+          result.keptPath === null
+            ? `Removed ${branch === '' ? 'the mount' : branch} from this session.`
+            : `Removed ${branch === '' ? 'the mount' : branch} from this session. Files remain at ${result.keptPath}.`,
+      });
     } catch (error) {
       fail({ title: "Couldn't remove the mount", error });
     } finally {
@@ -315,7 +316,7 @@ export const MountActionsMenu = ({
       dropdown.close();
       setConfirming(null);
       if (result.kept) {
-        showToast('info', `Worktree kept at ${worktreePath}`);
+        showToast({ kind: 'info', message: `Worktree kept at ${worktreePath}` });
       }
     } catch (error) {
       fail({ title: "Couldn't unmount the branch", error });

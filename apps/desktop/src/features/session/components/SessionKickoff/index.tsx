@@ -52,7 +52,7 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdopti
       if (onProposeAdoption != null && !hasNothingToAdopt({ adoption: proposed })) {
         onProposeAdoption(proposed);
       }
-      showToast('success', `Linked ${candidate.identifier} to this session.`);
+      showToast({ kind: 'success', message: `Linked ${candidate.identifier} to this session.` });
     } catch (cause) {
       void reportError({
         title: `Couldn't link ${candidate.identifier}`,

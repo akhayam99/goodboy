@@ -298,9 +298,11 @@ describe('ReportIssueStudio', () => {
     expect(body).toContain('![board.png](https://github.com/user-attachments/assets/aaa)');
     expect(body).not.toContain('Screenshots to drag into this issue');
     expect(mocks.showToast).toHaveBeenCalledWith(
-      'success',
-      'Filed on GitHub with your images, under your account.',
-      expect.objectContaining({ title: 'Issue sent' }),
+      expect.objectContaining({
+        kind: 'success',
+        message: 'Filed on GitHub with your images, under your account.',
+        title: 'Issue sent',
+      }),
     );
     expect(mocks.invoke).toHaveBeenCalledWith('bug_report_discard_images', {
       dir: '/tmp/goodboy-report-1',
@@ -335,9 +337,11 @@ describe('ReportIssueStudio', () => {
       'Screenshots to drag into this issue: board.png',
     );
     expect(mocks.showToast).toHaveBeenCalledWith(
-      'success',
-      "Your images aren't on it yet. GitHub only takes them by drag and drop.",
-      expect.objectContaining({ persist: true }),
+      expect.objectContaining({
+        kind: 'success',
+        message: "Your images aren't on it yet. GitHub only takes them by drag and drop.",
+        persist: true,
+      }),
     );
     expect(mocks.invoke).not.toHaveBeenCalledWith('bug_report_discard_images', expect.anything());
   });
@@ -385,9 +389,9 @@ describe('ReportIssueStudio', () => {
     });
 
     expect(mocks.showToast).toHaveBeenCalledWith(
-      'success',
-      "Your images aren't on it yet. GitHub only takes them by drag and drop.",
       expect.objectContaining({
+        kind: 'success',
+        message: "Your images aren't on it yet. GitHub only takes them by drag and drop.",
         title: 'Issue sent',
         persist: true,
         action: expect.objectContaining({ label: 'Open issue and images' }),
@@ -475,9 +479,11 @@ describe('ReportIssueStudio', () => {
     );
     expect(mocks.openUrl).not.toHaveBeenCalled();
     expect(mocks.showToast).toHaveBeenCalledWith(
-      'success',
-      'Filed on GitHub, under your account.',
-      expect.objectContaining({ title: 'Issue sent' }),
+      expect.objectContaining({
+        kind: 'success',
+        message: 'Filed on GitHub, under your account.',
+        title: 'Issue sent',
+      }),
     );
   });
 

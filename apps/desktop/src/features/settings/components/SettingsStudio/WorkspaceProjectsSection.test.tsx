@@ -98,7 +98,10 @@ describe('WorkspaceProjectsSection', () => {
     await waitFor(() =>
       expect(screen.queryByText('already in storefront-web with 4 sessions')).toBeNull(),
     );
-    expect(showToast).toHaveBeenCalledWith('success', 'Moved storefront-web here');
+    expect(showToast).toHaveBeenCalledWith({
+      kind: 'success',
+      message: 'Moved storefront-web here',
+    });
   });
 
   it('dismisses the conflict row through Keep there without adopting', async () => {
@@ -118,7 +121,9 @@ describe('WorkspaceProjectsSection', () => {
 
     await addPath('/repos/api');
 
-    await waitFor(() => expect(showToast).toHaveBeenCalledWith('success', 'Linked api'));
+    await waitFor(() =>
+      expect(showToast).toHaveBeenCalledWith({ kind: 'success', message: 'Linked api' }),
+    );
   });
 
   it('unlinks a project only after its anchored confirm', async () => {

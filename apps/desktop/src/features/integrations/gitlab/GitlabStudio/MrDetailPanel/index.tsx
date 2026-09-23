@@ -162,7 +162,7 @@ export const MrDetailPanel = ({
         await gitlabMergeMr(workspaceId, host, projectPath, mr.iid);
         onRefresh?.();
       }
-      showToast('success', 'Merge request merged');
+      showToast({ kind: 'success', message: 'Merge request merged' });
       onClose();
     } catch (err) {
       void reportError({
@@ -197,7 +197,7 @@ export const MrDetailPanel = ({
         void refreshSessionMr(sessionId, { force: true });
       }
       onRefresh?.();
-      showToast('success', toast);
+      showToast({ kind: 'success', message: toast });
     } catch (err) {
       void reportError({
         title: `Couldn't update !${mr.iid}`,

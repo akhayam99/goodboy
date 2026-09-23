@@ -34,7 +34,7 @@ export const useEditorMenuItems = ({ worktreePath }: Params): ReadonlyArray<Over
     if (failedKey === null) {
       return;
     }
-    showToast('warning', "Couldn't copy the path.");
+    showToast({ kind: 'warning', message: "Couldn't copy the path." });
   }, [failedKey, showToast]);
 
   return useMemo<ReadonlyArray<OverflowMenuItem>>(() => {

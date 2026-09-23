@@ -611,7 +611,10 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         return;
       }
       if (!polished) {
-        showToast('warning', 'Kept your wording. The step could not be polished.');
+        showToast({
+          kind: 'warning',
+          message: 'Kept your wording. The step could not be polished.',
+        });
         return;
       }
     } catch (err) {
@@ -664,7 +667,10 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       if (polished && polished !== goalText) {
         replaceGoal(polished);
       } else if (!polished) {
-        showToast('warning', 'Kept your wording. The goal could not be polished.');
+        showToast({
+          kind: 'warning',
+          message: 'Kept your wording. The goal could not be polished.',
+        });
       }
     } catch (err) {
       setError(formatError(err));
@@ -690,7 +696,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         setSteps([]);
         setExpandedKey(null);
       }
-      showToast('success', `Deleted the ${t.name} preset.`);
+      showToast({ kind: 'success', message: `Deleted the ${t.name} preset.` });
     } catch (err) {
       setError(formatError(err));
     }
@@ -801,7 +807,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     try {
       if (usePresetAsIs) {
         await attachWorkflowToSession(session.id, selectedPreset!.id, attachOptions());
-        showToast('success', `Started ${selectedPreset!.name}.`);
+        showToast({ kind: 'success', message: `Started ${selectedPreset!.name}.` });
         handleClose();
         return;
       }
@@ -862,7 +868,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         );
       }
       await attachWorkflowToSession(session.id, workflowId, attachOptions());
-      showToast('success', `Started ${saved?.name ?? name}.`);
+      showToast({ kind: 'success', message: `Started ${saved?.name ?? name}.` });
       handleClose();
     } catch (err) {
       setError(formatError(err));

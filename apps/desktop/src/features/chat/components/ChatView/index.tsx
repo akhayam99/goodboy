@@ -269,7 +269,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
           attachments: source.attachments,
         });
         if (missing.length > 0) {
-          showToast('warning', missingAttachmentsMessage({ missing }));
+          showToast({ kind: 'warning', message: missingAttachmentsMessage({ missing }) });
         }
         const override = buildRetryOverride({ provider: source.provider, model: source.model });
         await sendTurn({

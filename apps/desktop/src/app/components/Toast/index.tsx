@@ -14,12 +14,19 @@ import type { ToastAction, ToastItem, ToastKind } from './types';
 
 export type { ToastAction, ToastItem, ToastKind } from './types';
 
-export type ShowToastOptions = {
+type ShowToastKind = Exclude<ToastKind, 'error'>;
+
+type ShowToastParams = {
+  readonly kind: ShowToastKind;
+  readonly message: string;
   readonly title?: string;
   readonly context?: string;
   readonly persist?: boolean;
   readonly action?: ToastAction;
+  readonly onDismiss?: () => void;
 };
+
+export type ShowToast = (params: ShowToastParams) => void;
 
 export type PreviewNotificationParams = {
   readonly severity: ToastKind;
@@ -32,7 +39,7 @@ export type PreviewNotificationParams = {
 };
 
 type ToastContextValue = {
-  showToast: (kind: ToastKind, message: string, opts?: ShowToastOptions) => void;
+  showToast: ShowToast;
   previewNotification: (params: PreviewNotificationParams) => void;
 };
 
@@ -75,15 +82,8 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
   }, []);
 
   const showToast = useCallback(
-    (kind: ToastKind, message: string, opts?: ShowToastOptions) => {
-      pushToast({
-        kind,
-        message: message.length > 0 ? message.charAt(0).toUpperCase() + message.slice(1) : message,
-        title: opts?.title,
-        context: opts?.context,
-        persist: opts?.persist === true,
-        action: opts?.action,
-      });
+    ({ kind, message, title, context, persist, action, onDismiss }: ShowToastParams) => {
+      pushToast({ kind, message, title, context, persist: persist === true, action, onDismiss });
     },
     [pushToast],
   );

@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState, type RefObject } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, Skill, Workflow, ProjectScript } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
-import type { ToastKind } from '../../../../../../app/components/Toast';
+import type { ShowToast } from '../../../../../../app/components/Toast';
 import {
   buildAgentActions,
   buildScriptActions,
@@ -24,7 +24,7 @@ type Params = {
   readonly session: Session;
   readonly value: string;
   readonly setValue: (next: string) => void;
-  readonly showToast: (kind: Exclude<ToastKind, 'error'>, message: string) => void;
+  readonly showToast: ShowToast;
   readonly wrapperRef: RefObject<HTMLDivElement | null>;
 };
 
@@ -82,7 +82,7 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
       setShowPopover(false);
       try {
         await attachWorkflowToSession(session.id, workflow.id, { navigate: true });
-        showToast('success', `Started ${workflow.name}.`);
+        showToast({ kind: 'success', message: `Started ${workflow.name}.` });
       } catch (error) {
         void reportError({
           title: `Couldn't start ${workflow.name}`,
@@ -108,7 +108,7 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
     setShowPopover(false);
     try {
       await spawnAgent(session.id, { focus: 'agent' });
-      showToast('success', 'Started a new agent.');
+      showToast({ kind: 'success', message: 'Started a new agent.' });
     } catch (error) {
       void reportError({ title: "Couldn't start a new agent", error, sessionId: session.id });
     }

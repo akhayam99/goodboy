@@ -383,7 +383,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
       }),
     );
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
-    expect(toastMock).toHaveBeenCalledWith('success', 'Started Test Workflow.');
+    expect(toastMock).toHaveBeenCalledWith({ kind: 'success', message: 'Started Test Workflow.' });
     expect(mockGenerateWorkflowTitle).not.toHaveBeenCalled();
   });
 
@@ -964,7 +964,7 @@ describe('WorkflowBuilderView (preset mode)', () => {
     );
     expect(mockSavePhaseTemplate).not.toHaveBeenCalled();
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
-    expect(toastMock).toHaveBeenCalledWith('success', 'Started Ship It.');
+    expect(toastMock).toHaveBeenCalledWith({ kind: 'success', message: 'Started Ship It.' });
   });
 
   it('leaves the landing to attachWorkflowToSession after starting a preset as-is', async () => {
@@ -1135,10 +1135,10 @@ describe('WorkflowBuilderView (goal affordances)', () => {
     fireEvent.change(goalField(), { target: { value: 'rough goal' } });
     fireEvent.click(screen.getByRole('button', { name: /polish goal/i }));
     await waitFor(() =>
-      expect(toastMock).toHaveBeenCalledWith(
-        'warning',
-        'Kept your wording. The goal could not be polished.',
-      ),
+      expect(toastMock).toHaveBeenCalledWith({
+        kind: 'warning',
+        message: 'Kept your wording. The goal could not be polished.',
+      }),
     );
     expect(goalField().value).toBe('rough goal');
     expect(screen.queryByRole('button', { name: /undo goal change/i })).toBeNull();
@@ -1359,10 +1359,10 @@ describe('WorkflowBuilderView (per-step polish)', () => {
 
     fireEvent.click(screen.getAllByRole('button', { name: /polish step instruction/i })[0]!);
     await waitFor(() =>
-      expect(toastMock).toHaveBeenCalledWith(
-        'warning',
-        'Kept your wording. The step could not be polished.',
-      ),
+      expect(toastMock).toHaveBeenCalledWith({
+        kind: 'warning',
+        message: 'Kept your wording. The step could not be polished.',
+      }),
     );
 
     fireEvent.click(startBtn());
@@ -1518,7 +1518,10 @@ describe('WorkflowBuilderView (workflow name)', () => {
 
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
     expect(mockSavePhaseTemplate.mock.calls[0]![0].name).toBe('Rounding drift repair');
-    expect(toastMock).toHaveBeenCalledWith('success', 'Started Rounding drift repair.');
+    expect(toastMock).toHaveBeenCalledWith({
+      kind: 'success',
+      message: 'Started Rounding drift repair.',
+    });
   });
 
   it('names a hand-authored workflow without ever calling the planner', async () => {

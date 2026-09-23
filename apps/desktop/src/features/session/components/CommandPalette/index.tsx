@@ -218,7 +218,7 @@ export const CommandPalette = ({
         group: 'script',
         onSelect: () => {
           if (currentSession == null) {
-            showToast('warning', `Open a session to run ${sc.name}.`);
+            showToast({ kind: 'warning', message: `Open a session to run ${sc.name}.` });
             return;
           }
           const sessionId = currentSession.id;
@@ -233,7 +233,7 @@ export const CommandPalette = ({
                 });
                 return;
               }
-              showToast('success', `${sc.name} finished.`);
+              showToast({ kind: 'success', message: `${sc.name} finished.` });
             })
             .catch((error: unknown) => reportError({ title: failureTitle, error, sessionId }));
         },

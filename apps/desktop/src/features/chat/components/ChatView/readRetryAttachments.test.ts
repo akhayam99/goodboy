@@ -57,10 +57,10 @@ describe('readRetryAttachments', () => {
 
   it('names the missing files in the warning', () => {
     expect(missingAttachmentsMessage({ missing: ['gone.md'] })).toBe(
-      'retried without gone.md: the file is no longer readable',
+      'Retried without gone.md. The file is no longer readable.',
     );
     expect(missingAttachmentsMessage({ missing: ['a.md', 'b.png'] })).toBe(
-      'retried without a.md, b.png: the files are no longer readable',
+      'Retried without a.md, b.png. The files are no longer readable.',
     );
   });
 });

@@ -161,7 +161,10 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
           return;
         }
         if (result.kind === 'busy') {
-          showToast('warning', 'Another push is already running for this pull request');
+          showToast({
+            kind: 'warning',
+            message: 'Another push is already running for this pull request',
+          });
           return;
         }
         if (result.kind !== 'done') {
@@ -175,7 +178,7 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
           });
           return;
         }
-        showToast('success', PUBLICATION_COMPLETE);
+        showToast({ kind: 'success', message: PUBLICATION_COMPLETE });
       },
     });
   }, [preview, publishConversations, reportError, run, sessionId, showToast]);

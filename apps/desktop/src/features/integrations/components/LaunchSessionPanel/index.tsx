@@ -65,7 +65,10 @@ export const LaunchSessionPanel = ({
         goal,
         externalTasks: [externalTask],
       });
-      showToast('success', `Session created: ${inlineMarkdownText({ text: session.goal })}`);
+      showToast({
+        kind: 'success',
+        message: `Session created: ${inlineMarkdownText({ text: session.goal })}`,
+      });
       onClose();
     } catch (launchError) {
       setError(formatError(launchError));

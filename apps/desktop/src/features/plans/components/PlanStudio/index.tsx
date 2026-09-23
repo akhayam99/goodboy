@@ -128,7 +128,7 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
 
   const handleAgentClick = (agentId: Agent['id'], name: string, deleted: boolean) => {
     if (deleted) {
-      showToast('info', `${name} was deleted and can no longer be opened.`);
+      showToast({ kind: 'info', message: `${name} was deleted and can no longer be opened.` });
       return;
     }
     openAgent(agentId);

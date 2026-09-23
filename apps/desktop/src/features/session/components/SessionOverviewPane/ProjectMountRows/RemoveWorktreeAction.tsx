@@ -89,10 +89,10 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
       const result = await removeMountWorktree({ sessionId, mountId: row.mountId, mode });
       switch (result.kind) {
         case 'removed':
-          showToast('info', `Removed the worktree for ${label}.`);
+          showToast({ kind: 'info', message: `Removed the worktree for ${label}.` });
           break;
         case 'missing':
-          showToast('info', `The worktree for ${label} was already gone.`);
+          showToast({ kind: 'info', message: `The worktree for ${label} was already gone.` });
           break;
         case 'kept':
         case 'failed':

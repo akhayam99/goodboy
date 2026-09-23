@@ -78,7 +78,7 @@ export const WriteReview = ({ session, listWidth }: Props) => {
       phaseRuns.find((agent) => classifyAgent({ agent, override: null }) === 'pr-reviewer') ??
       phaseRuns[0];
     if (reviewer == null) {
-      showToast('warning', 'No agent in this session to ask. Start one first.');
+      showToast({ kind: 'warning', message: 'No agent in this session to ask. Start one first.' });
       return;
     }
     const prompt = `About \`${lineTarget.path}:${lineTarget.line}\`:\n> ${lineTarget.text}\n`;

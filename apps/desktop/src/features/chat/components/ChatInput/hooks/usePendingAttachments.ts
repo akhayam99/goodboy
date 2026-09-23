@@ -6,7 +6,7 @@ import {
   type ClipboardEvent as ReactClipboardEvent,
 } from 'react';
 import { isAllowedAttachment, resolveAttachmentMime } from '../../../attachment-kinds';
-import type { ToastKind } from '../../../../../app/components/Toast';
+import type { ShowToast } from '../../../../../app/components/Toast';
 import { useFileDropTarget } from '../../../../../shared/hooks/useFileDropTarget';
 import { readDroppedAttachment } from '../../../../../shared/lib/readDroppedAttachment';
 import {
@@ -30,7 +30,7 @@ export type AttachmentDropNotices = Readonly<{
 }>;
 
 type Params = {
-  readonly showToast: (kind: Exclude<ToastKind, 'error'>, message: string) => void;
+  readonly showToast: ShowToast;
   readonly enabled?: boolean;
   readonly notices?: AttachmentDropNotices;
   readonly persistToDisk?: (att: PersistArgs) => Promise<string | null>;
@@ -41,9 +41,9 @@ type DroppedPaths = {
 };
 
 const COMPOSER_DROP_NOTICES: AttachmentDropNotices = {
-  ambiguous: 'drop the file on a message box to attach it',
-  disabled: 'connect the provider before attaching files',
-  unavailable: 'file drop is unavailable, use Attach files instead',
+  ambiguous: 'Drop the file on a message box to attach it.',
+  disabled: 'Connect the provider before attaching files.',
+  unavailable: 'File drop is unavailable. Use Attach files instead.',
 };
 
 const droppedFileName = ({ path }: { readonly path: string }): string =>
@@ -74,10 +74,10 @@ export const usePendingAttachments = ({
       const allowed = files.filter(isAllowedAttachment);
       const skipped = files.length - allowed.length;
       if (skipped > 0) {
-        showToast(
-          'warning',
-          `Skipped ${skipped} file${skipped === 1 ? '' : 's'} of an unsupported type.`,
-        );
+        showToast({
+          kind: 'warning',
+          message: `Skipped ${skipped} file${skipped === 1 ? '' : 's'} of an unsupported type.`,
+        });
       }
       if (allowed.length === 0) {
         return;
@@ -85,7 +85,7 @@ export const usePendingAttachments = ({
       const accepted: PendingAttachment[] = [];
       for (const file of allowed) {
         if (file.size > MAX_ATTACHMENT_BYTES) {
-          showToast('warning', `${file.name || 'This file'} is over 15MB.`);
+          showToast({ kind: 'warning', message: `${file.name || 'This file'} is over 15MB.` });
           continue;
         }
         try {
@@ -96,7 +96,7 @@ export const usePendingAttachments = ({
           const relPath = await persist({ id, fileName, dataUrl });
           accepted.push({ id, fileName, mimeType, dataUrl, relPath });
         } catch {
-          showToast('warning', `Couldn't read ${file.name || 'the file'}.`);
+          showToast({ kind: 'warning', message: `Couldn't read ${file.name || 'the file'}.` });
         }
       }
       if (accepted.length === 0) {
@@ -105,11 +105,11 @@ export const usePendingAttachments = ({
       setAttachments((prev) => {
         const room = ATTACHMENT_LIMIT - prev.length;
         if (room <= 0) {
-          showToast('warning', `The limit is ${ATTACHMENT_LIMIT} attachments.`);
+          showToast({ kind: 'warning', message: `The limit is ${ATTACHMENT_LIMIT} attachments.` });
           return prev;
         }
         if (accepted.length > room) {
-          showToast('warning', `The limit is ${ATTACHMENT_LIMIT} attachments.`);
+          showToast({ kind: 'warning', message: `The limit is ${ATTACHMENT_LIMIT} attachments.` });
         }
         return [...prev, ...accepted.slice(0, room)];
       });
@@ -146,10 +146,10 @@ export const usePendingAttachments = ({
     );
     const unsupported = paths.length - supported.length;
     if (unsupported > 0) {
-      showToast(
-        'warning',
-        `Skipped ${unsupported} file${unsupported === 1 ? '' : 's'} of an unsupported type.`,
-      );
+      showToast({
+        kind: 'warning',
+        message: `Skipped ${unsupported} file${unsupported === 1 ? '' : 's'} of an unsupported type.`,
+      });
     }
     const dropped: PendingAttachment[] = [];
     const rejected: string[] = [];
@@ -180,7 +180,7 @@ export const usePendingAttachments = ({
         rejected.length === 1
           ? `Couldn't attach ${rejected[0]}. It may be over 15MB.`
           : `Couldn't read ${rejected.length} files.`;
-      showToast('warning', label);
+      showToast({ kind: 'warning', message: label });
     }
     if (dropped.length === 0) {
       return;
@@ -188,11 +188,11 @@ export const usePendingAttachments = ({
     setAttachments((previous) => {
       const room = ATTACHMENT_LIMIT - previous.length;
       if (room <= 0) {
-        showToast('warning', `The limit is ${ATTACHMENT_LIMIT} attachments.`);
+        showToast({ kind: 'warning', message: `The limit is ${ATTACHMENT_LIMIT} attachments.` });
         return previous;
       }
       if (dropped.length > room) {
-        showToast('warning', `The limit is ${ATTACHMENT_LIMIT} attachments.`);
+        showToast({ kind: 'warning', message: `The limit is ${ATTACHMENT_LIMIT} attachments.` });
       }
       return [...previous, ...dropped.slice(0, room)];
     });
@@ -202,9 +202,9 @@ export const usePendingAttachments = ({
     targetRef: composerRef,
     isEnabled: enabled,
     onDropPaths: ({ paths }) => void ingestDroppedPaths({ paths }),
-    onAmbiguousDrop: () => showToast('warning', notices.ambiguous),
-    onDisabledDrop: () => showToast('warning', notices.disabled),
-    onUnavailable: () => showToast('warning', notices.unavailable),
+    onAmbiguousDrop: () => showToast({ kind: 'warning', message: notices.ambiguous }),
+    onDisabledDrop: () => showToast({ kind: 'warning', message: notices.disabled }),
+    onUnavailable: () => showToast({ kind: 'warning', message: notices.unavailable }),
   });
 
   return {

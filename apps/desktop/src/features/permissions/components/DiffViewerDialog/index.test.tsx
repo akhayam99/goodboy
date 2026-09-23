@@ -15,7 +15,8 @@ type ToastAction = { readonly label: string; readonly onClick: () => void };
 type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
 
 const { showToast, state, fixtures } = vi.hoisted(() => ({
-  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
+  showToast:
+    vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
   state: {
     settings: {} as Record<string, string>,
     sessionGithub: {} as Record<string, { pr: unknown } | undefined>,
@@ -375,7 +376,7 @@ describe('DiffViewerPane', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Rebase' }));
 
     await waitFor(() => expect(showToast).toHaveBeenCalledOnce());
-    expect(showToast.mock.calls[0]?.[2]?.title).toBe('Rebase started');
+    expect(showToast.mock.calls[0]?.[0]?.title).toBe('Rebase started');
     expect(state.selectAgent).not.toHaveBeenCalled();
     expect(await screen.findByRole('button', { name: 'Rebase' })).toBeDefined();
     expect(state.recordSessionEvent).toHaveBeenCalledWith(

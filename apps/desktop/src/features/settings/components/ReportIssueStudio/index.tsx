@@ -200,19 +200,18 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
           void discardBugReportImages({ dir: stagedImagesDir });
         }
         if (stagedImagesDir == null || uploaded != null) {
-          showToast(
-            'success',
-            uploaded == null
-              ? 'Filed on GitHub, under your account.'
-              : 'Filed on GitHub with your images, under your account.',
-            {
-              title: 'Issue sent',
-              action:
-                issueUrl == null
-                  ? undefined
-                  : { label: 'View issue', onClick: () => void openUrl(issueUrl) },
-            },
-          );
+          showToast({
+            kind: 'success',
+            message:
+              uploaded == null
+                ? 'Filed on GitHub, under your account.'
+                : 'Filed on GitHub with your images, under your account.',
+            title: 'Issue sent',
+            action:
+              issueUrl == null
+                ? undefined
+                : { label: 'View issue', onClick: () => void openUrl(issueUrl) },
+          });
           return;
         }
         const action =
@@ -228,11 +227,13 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                   void revealBugReportImages({ dir: stagedImagesDir });
                 },
               };
-        showToast(
-          'success',
-          "Your images aren't on it yet. GitHub only takes them by drag and drop.",
-          { title: 'Issue sent', persist: true, action },
-        );
+        showToast({
+          kind: 'success',
+          message: "Your images aren't on it yet. GitHub only takes them by drag and drop.",
+          title: 'Issue sent',
+          persist: true,
+          action,
+        });
       } catch (err) {
         setSendState('error');
         setErrorMessage(formatError(err));

@@ -3,25 +3,35 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useRef } from 'react';
-import {
-  ToastProvider,
-  useToast,
-  useToastLift,
-  type ShowToastOptions,
-  type ToastKind,
-} from './index';
+import { ToastProvider, useToast, useToastLift, type ToastAction, type ToastKind } from './index';
 
 type Shot = {
   readonly kind: ToastKind;
   readonly message: string;
-  readonly opts?: ShowToastOptions;
+  readonly opts?: {
+    readonly title?: string;
+    readonly persist?: boolean;
+    readonly action?: ToastAction;
+  };
 };
 
 let fire: (shot: Shot) => void = () => undefined;
 
 const Harness = () => {
-  const { showToast } = useToast();
-  fire = ({ kind, message, opts }) => showToast(kind, message, opts);
+  const { showToast, previewNotification } = useToast();
+  fire = ({ kind, message, opts }) => {
+    if (kind === 'error') {
+      previewNotification({
+        severity: kind,
+        title: opts?.title ?? '',
+        message,
+        persist: opts?.persist === true,
+        action: opts?.action,
+      });
+      return;
+    }
+    showToast({ kind, message, ...opts });
+  };
   return null;
 };
 
@@ -106,14 +116,14 @@ describe('ToastProvider', () => {
 
   it('lists toasts in the order they arrived, each with its own live role', () => {
     mount();
-    show({ kind: 'error', message: 'first', opts: { title: 'Push failed', persist: true } });
-    show({ kind: 'success', message: 'second' });
+    show({ kind: 'error', message: 'First', opts: { title: 'Push failed', persist: true } });
+    show({ kind: 'success', message: 'Second' });
     show({ kind: 'warning', message: 'third' });
     const cards = [...document.body.querySelectorAll('[role="alert"], [role="status"]')];
     expect(cards.map((card) => card.textContent)).toEqual([
       expect.stringContaining('First'),
       expect.stringContaining('Second'),
-      expect.stringContaining('Third'),
+      expect.stringContaining('third'),
     ]);
     expect(screen.getAllByRole('alert')).toHaveLength(2);
     expect(screen.getAllByRole('status')).toHaveLength(1);

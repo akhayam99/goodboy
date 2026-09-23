@@ -32,7 +32,9 @@ export const useAgentStartedToast = (): ((params: AnnounceParams) => void) => {
       if (agentId == null) {
         return;
       }
-      showToast('info', message, {
+      showToast({
+        kind: 'info',
+        message,
         title,
         action: {
           label: actionLabel,

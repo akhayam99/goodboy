@@ -53,7 +53,8 @@ type ToastAction = { readonly label: string; readonly onClick: () => void };
 type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
 
 const h = vi.hoisted(() => ({
-  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
+  showToast:
+    vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
   config: {
     provider: 'codex',
     model: 'gpt-5.6-luna',
@@ -274,7 +275,7 @@ describe('CreatePrPanel', () => {
     expect(h.store.setCurrentSession).toHaveBeenCalledWith(SESSION_ID);
     expect(h.store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, null);
     expect(h.store.selectAgent).not.toHaveBeenCalled();
-    const action = h.showToast.mock.calls[0]![2]?.action;
+    const action = h.showToast.mock.calls[0]![0]?.action;
     expect(action?.label).toBe('Open the agent');
 
     action?.onClick();

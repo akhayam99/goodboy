@@ -56,7 +56,8 @@ const h = vi.hoisted(() => ({
   gitlabListMrDiscussions: vi.fn(async () => [] as ReadonlyArray<unknown>),
   gitlabMrApprovalState: vi.fn(async () => null),
   gitlabUpdateMrState: vi.fn<(params: Readonly<Record<string, unknown>>) => Promise<unknown>>(),
-  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
+  showToast:
+    vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
   store: {
     sessions: [
       {
@@ -262,7 +263,7 @@ describe('MrDetailPanel', () => {
 
     await waitFor(() => expect(h.showToast).toHaveBeenCalledOnce());
     expect(h.store.selectAgent).not.toHaveBeenCalled();
-    const action = h.showToast.mock.calls[0]![2]?.action;
+    const action = h.showToast.mock.calls[0]![0]?.action;
     expect(action?.label).toBe('Open the agent');
 
     action?.onClick();

@@ -46,5 +46,5 @@ export const missingAttachmentsMessage = ({
   readonly missing: ReadonlyArray<string>;
 }): string =>
   missing.length === 1
-    ? `retried without ${missing[0]}: the file is no longer readable`
-    : `retried without ${missing.join(', ')}: the files are no longer readable`;
+    ? `Retried without ${missing[0]}. The file is no longer readable.`
+    : `Retried without ${missing.join(', ')}. The files are no longer readable.`;

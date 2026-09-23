@@ -84,7 +84,7 @@ export const PermissionScopePicker = ({
     try {
       await resolvePermissionRequest({ sessionId, agentId, toolUseId, toolName, runId, scope });
       if (scope === 'deny') {
-        showToast('info', `${toolName} denied for the rest of this session`);
+        showToast({ kind: 'info', message: `${toolName} denied for the rest of this session` });
       }
       close();
       onResolved();

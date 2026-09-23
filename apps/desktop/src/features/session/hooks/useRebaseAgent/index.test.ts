@@ -9,7 +9,8 @@ type ToastAction = { readonly label: string; readonly onClick: () => void };
 type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
 
 const { showToast, state } = vi.hoisted(() => ({
-  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
+  showToast:
+    vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
   state: {
     sessions: [
       {
@@ -178,7 +179,7 @@ describe('useRebaseAgent', () => {
       kind: 'branch',
       label: 'Rebasing on main',
     });
-    expect(showToast.mock.calls[0]?.[2]?.title).toBe('Rebase started');
+    expect(showToast.mock.calls[0]?.[0]?.title).toBe('Rebase started');
   });
 
   it('offers a spawn toast action that selects the spawned agent', async () => {
@@ -186,7 +187,7 @@ describe('useRebaseAgent', () => {
     const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
 
     await act(() => result.current.run({ mountId }));
-    const action = showToast.mock.calls[0]?.[2]?.action;
+    const action = showToast.mock.calls[0]?.[0]?.action;
     expect(action?.label).toBe('Open the rebase agent');
 
     action?.onClick();
@@ -207,7 +208,7 @@ describe('useRebaseAgent', () => {
 
     await waitFor(() => expect(showToast).toHaveBeenCalledTimes(2));
     expect(state.endSessionCreation).toHaveBeenCalledWith(sessionId, 'creation-1');
-    const action = showToast.mock.calls[1]?.[2]?.action;
+    const action = showToast.mock.calls[1]?.[0]?.action;
     expect(action?.label).toBe('Open the rebase agent');
     expect(state.selectAgent).not.toHaveBeenCalled();
 

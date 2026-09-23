@@ -84,7 +84,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
         return;
       }
       setExportState('done');
-      showToast('success', path, { title: 'Config exported' });
+      showToast({ kind: 'success', message: path, title: 'Config exported' });
     } catch (err) {
       setExportState('error');
       void reportError({ title: "Couldn't export the config", error: err });

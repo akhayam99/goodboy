@@ -224,7 +224,10 @@ describe('MountActionsMenu', () => {
         disposition: 'remove-clean',
       }),
     );
-    expect(showToast).toHaveBeenCalledWith('info', 'Detached api and removed its worktree.');
+    expect(showToast).toHaveBeenCalledWith({
+      kind: 'info',
+      message: 'Detached api and removed its worktree.',
+    });
   });
 
   it('names the counts and keeps the branch promise on the risky path', async () => {
@@ -516,10 +519,10 @@ describe('MountActionsMenu', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Detach and remove' }));
 
     await waitFor(() =>
-      expect(showToast).toHaveBeenCalledWith(
-        'info',
-        'Detached api. Its directory was already absent.',
-      ),
+      expect(showToast).toHaveBeenCalledWith({
+        kind: 'info',
+        message: 'Detached api. Its directory was already absent.',
+      }),
     );
   });
 
@@ -636,10 +639,10 @@ describe('MountActionsMenu', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
 
     await waitFor(() =>
-      expect(showToast).toHaveBeenCalledWith(
-        'info',
-        'Removed ak/feat from this session. Files remain at /worktrees/api.',
-      ),
+      expect(showToast).toHaveBeenCalledWith({
+        kind: 'info',
+        message: 'Removed ak/feat from this session. Files remain at /worktrees/api.',
+      }),
     );
   });
 

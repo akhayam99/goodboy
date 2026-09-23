@@ -8,7 +8,8 @@ type ToastAction = { readonly label: string; readonly onClick: () => void };
 type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
 
 const { state, showToast } = vi.hoisted(() => ({
-  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
+  showToast:
+    vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
   state: {
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     planConsumptions: {} as Record<string, ReadonlyArray<unknown>>,
@@ -148,7 +149,7 @@ describe('PlanStudio', () => {
     await waitFor(() => expect(state.runPlan).toHaveBeenCalledWith('sess-1', 'plan-1'));
     await waitFor(() => expect(showToast).toHaveBeenCalledOnce());
     expect(state.selectAgent).not.toHaveBeenCalled();
-    const opts = showToast.mock.calls[0]![2];
+    const opts = showToast.mock.calls[0]![0];
     expect(opts?.title).toBe('Implementer started');
     expect(opts?.action?.label).toBe('Open the agent');
 

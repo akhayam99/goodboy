@@ -52,10 +52,10 @@ export const StorageSection = () => {
     try {
       const deleted = await pruneArchivedTranscripts();
       setConfirmTarget(null);
-      showToast(
-        'success',
-        `Pruned ${formatInteger(deleted)} transcript event${deleted === 1 ? '' : 's'}`,
-      );
+      showToast({
+        kind: 'success',
+        message: `Pruned ${formatInteger(deleted)} transcript event${deleted === 1 ? '' : 's'}`,
+      });
     } catch (err) {
       void reportError({ title: "Couldn't prune archived transcripts", error: err });
     } finally {
@@ -76,10 +76,10 @@ export const StorageSection = () => {
         });
         return;
       }
-      showToast(
-        'success',
-        `Removed ${formatInteger(result.removed)} worktree${result.removed === 1 ? '' : 's'}`,
-      );
+      showToast({
+        kind: 'success',
+        message: `Removed ${formatInteger(result.removed)} worktree${result.removed === 1 ? '' : 's'}`,
+      });
     } catch (err) {
       void reportError({ title: "Couldn't remove archived worktrees", error: err });
     } finally {

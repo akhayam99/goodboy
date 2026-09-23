@@ -60,7 +60,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
         adoption.noteConflicts([result.conflict]);
         return;
       }
-      showToast('success', `Linked ${result.project.name}`);
+      showToast({ kind: 'success', message: `Linked ${result.project.name}` });
     } catch (linkError) {
       setError(formatError(linkError));
     } finally {
@@ -86,7 +86,10 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
       setPath('');
       const total = result.linked.length + knownConflicts.length;
       if (total > 0) {
-        showToast('success', total === 1 ? 'Linked 1 project' : `Linked ${total} projects`);
+        showToast({
+          kind: 'success',
+          message: total === 1 ? 'Linked 1 project' : `Linked ${total} projects`,
+        });
       }
     } catch (linkError) {
       setError(formatError(linkError));
@@ -100,7 +103,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
     setError(null);
     try {
       await adoption.adoptConflict(conflict);
-      showToast('success', `Moved ${conflict.project.name} here`);
+      showToast({ kind: 'success', message: `Moved ${conflict.project.name} here` });
     } catch (moveError) {
       setError(formatError(moveError));
     } finally {
@@ -143,10 +146,10 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
     setBusy(true);
     try {
       await removeProject({ projectId });
-      showToast(
-        'success',
-        `Disconnected ${name}. The folder stays on disk, link it again any time.`,
-      );
+      showToast({
+        kind: 'success',
+        message: `Disconnected ${name}. The folder stays on disk, link it again any time.`,
+      });
     } catch (unlinkError) {
       void reportError({
         title: `Couldn't disconnect ${name}`,

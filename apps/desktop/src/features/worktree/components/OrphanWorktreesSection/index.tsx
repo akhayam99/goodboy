@@ -30,7 +30,7 @@ export const OrphanWorktreesSection = ({ workspaceId }: Props) => {
   const onConfirm = async () => {
     try {
       await removeOrphanWorktrees({ workspaceId, paths: orphans.map((o) => o.path) });
-      showToast('success', `Removed ${folderLabel}.`);
+      showToast({ kind: 'success', message: `Removed ${folderLabel}.` });
     } catch (error) {
       void reportError({ title: `Couldn't remove ${folderLabel}`, error, workspaceId });
     } finally {

@@ -63,7 +63,7 @@ export const usePrActions = ({ sessionId, repo, pullRequestId, onWritten }: Para
     try {
       await act(target);
       onWritten();
-      showToast('success', toast);
+      showToast({ kind: 'success', message: toast });
     } catch (error: unknown) {
       void reportError({
         title: `Couldn't update pull request #${target.pullRequestId}`,

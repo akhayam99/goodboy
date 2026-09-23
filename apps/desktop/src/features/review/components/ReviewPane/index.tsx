@@ -157,7 +157,10 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
         return;
       }
       if (worktreePath === null) {
-        showToast('warning', 'Materialize the project first. The fix needs its worktree.');
+        showToast({
+          kind: 'warning',
+          message: 'Materialize the project first. The fix needs its worktree.',
+        });
         return;
       }
       const routing = kindRouting({ kind: 'resolver', roleModels });
@@ -204,7 +207,7 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
           });
           return;
         }
-        showToast('success', 'Review submitted');
+        showToast({ kind: 'success', message: 'Review submitted' });
       } catch (error) {
         void reportError({ title: "Couldn't submit the review", error, sessionId });
       } finally {

@@ -94,7 +94,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
         draft,
       });
       setFailure(null);
-      showToast('success', 'Merge request created');
+      showToast({ kind: 'success', message: 'Merge request created' });
     } catch (err) {
       setFailure(formatError(err));
     } finally {
