@@ -7,6 +7,7 @@ import { useSessionById } from '../../../store';
 import { AppOverlayRouter } from '../../components/AppOverlayRouter';
 import { clearCurrentSessionStudio } from './clearCurrentSessionStudio';
 import { footerTarget, type ConnectedIntegrations, type Overlay } from './overlayState';
+import { useCloseOverlayOnNavigation } from './useCloseOverlayOnNavigation';
 import { useCommitDiff } from './useCommitDiff';
 import { useSessionSurfaceEvents } from './useSessionSurfaceEvents';
 import { useStudioEvents } from './useStudioEvents';
@@ -61,6 +62,7 @@ export const useAppOverlays = ({
   }, []);
 
   useStudioEvents({ open, close, openPalette });
+  useCloseOverlayOnNavigation({ close });
   useSessionSurfaceEvents({
     close,
     currentSession,
@@ -68,10 +70,6 @@ export const useAppOverlays = ({
     isSessionSidebarCollapsed,
     pinSessionSidebar,
   });
-
-  useEffect(() => {
-    setOverlay((current) => (current?.kind === 'settings' ? null : current));
-  }, [currentWorkspace?.id]);
 
   useEffect(() => {
     if (!deleteOpen) {

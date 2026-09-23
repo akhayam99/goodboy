@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
-import type { Workspace, WorkspaceId } from '@goodboy/types';
+import type { AgentId, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
 
 vi.mock('../../../store', async () => {
   const { create } = await import('zustand');
@@ -110,6 +110,10 @@ type Overlays = ReturnType<typeof useAppOverlays>;
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 
+const SESSION_ID = 'session-1' as SessionId;
+
+const AGENT_ID = 'agent-1' as AgentId;
+
 const WORKSPACE = { id: WORKSPACE_ID, name: 'Northwind' } as unknown as Workspace;
 
 const handle: { current: Overlays | null } = { current: null };
@@ -159,12 +163,59 @@ const fire = ({ name, detail }: { readonly name: string; readonly detail?: unkno
   });
 
 beforeEach(() => {
-  useAppStore.setState({ currentWorkspaceId: WORKSPACE_ID, currentSessionId: null });
+  useAppStore.setState({
+    currentWorkspaceId: WORKSPACE_ID,
+    currentSessionId: null,
+    activeLens: {},
+    selectedAgentId: {},
+  });
 });
 
 afterEach(() => {
   cleanup();
   handle.current = null;
+});
+
+describe('app overlay hook, navigation', () => {
+  it('closes the open studio when the current session changes', async () => {
+    renderHarness();
+    act(() => overlays().openInbox());
+    expect(await openStudios()).toEqual(['inbox']);
+
+    await act(async () => useAppStore.getState().setCurrentSession(SESSION_ID));
+
+    expect(await openStudios()).toEqual([]);
+  });
+
+  it('closes the open studio when the current session changes lens', async () => {
+    useAppStore.setState({ currentSessionId: SESSION_ID });
+    renderHarness();
+    act(() => overlays().openWorkflows());
+
+    act(() => useAppStore.getState().setActiveLens(SESSION_ID, 'files'));
+
+    expect(await openStudios()).toEqual([]);
+  });
+
+  it('keeps the studio open when an agent is selected behind it', async () => {
+    useAppStore.setState({ currentSessionId: SESSION_ID });
+    renderHarness();
+    act(() => overlays().openWorkflows());
+
+    await act(async () => useAppStore.getState().selectAgent(SESSION_ID, AGENT_ID));
+
+    expect(await openStudios()).toEqual(['workflow']);
+  });
+
+  it('lands the inbox event on another workspace open', async () => {
+    renderHarness();
+    act(() => overlays().openSettings());
+
+    fire({ name: 'goodboy:open-inbox', detail: { workspaceId: 'ws-2', provider: 'linear' } });
+
+    expect(await openStudios()).toEqual(['inbox']);
+    expect(useAppStore.getState().currentWorkspaceId).toBe('ws-2');
+  });
 });
 
 describe('app overlay hook', () => {

@@ -228,6 +228,12 @@ Utility studios are fullscreen overlays drawn between the top bar and the
 footer, so both bars stay visible and usable. They are not part of the
 breadcrumb IA. They exit on close or Esc, and only one is open at a time.
 
+- **Navigating closes the studio.** Moving to another workspace, session, or
+  lens of the current session closes whatever studio is open, whether the move
+  came from the palette, a needs-you row, a shortcut or a link inside the
+  studio, so the destination always lands in front. Selecting an agent does
+  not count: workflow steps select agents on their own.
+
 - **Not every studio earns a footer entry.** Notifications opens from the bell
   popover (its header's Open all) and from the palette's Open notifications,
   never from the footer, since the bell already shows the unread count. The
