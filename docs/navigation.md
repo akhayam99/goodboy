@@ -302,11 +302,12 @@ one is open at a time.
 
 ## Lens surfaces
 
-- **One level at a time, never a rail plus a detail at once.** Selecting a card
-  swaps the list for the detail, and the list is the only way back. Completed
-  and discarded groups sit behind header toggles that hide themselves at zero.
-  So a session whose runs are all done shows an empty state, instead of opening
-  the last completed run.
+- **A lens shows one level. A studio is a rail plus a detail.** Inside a lens,
+  selecting a card swaps the list for the detail, and the trail or Back is the
+  way back. No lens keeps a rail beside its detail. A studio pairs a rail with
+  a detail and has no back link. Completed and discarded groups sit behind
+  header toggles that hide themselves at zero. So a session whose runs are all
+  done shows an empty state, instead of opening the last completed run.
 - **A step chat is one explicit click**, never an automatic redirect.
 - **A lens-wide toggle is its own row**, never inside an empty state's action
   slot.
@@ -316,14 +317,20 @@ one is open at a time.
 - **Review is the pull request destination for GitHub, and it has no second
   copy.** One lens holds the review conversations, the PR details, the PR
   activity, the checks, the create-a-PR form and the reviewer's own draft
-  review. They are detail modes of that one surface, switched from its dock.
-  The conversation list never leaves the screen while a mode is open. There
+  review. They are detail modes of that one surface, switched from its dock,
+  and each mode swaps in for the conversation list like any other detail. There
   is no GitHub studio layered over a session: a saved `pr` lens on a GitHub
   session lands on Review. The code-host lens still serves GitLab and
   Bitbucket, which open their own studios. Everything the lens shows comes from
   one durable conversation model. Everything it sends goes out through one
   publisher. So a restart finds the same rows in the same states, and no second
   path pushes a reply or closes a thread.
+- **The switcher and the palette list only destinations the session can
+  use.** One function feeds both. Context is one entry (its goal, decisions and
+  summary parts open through their shortcuts). Explore is always listed and
+  browses the active working directory. Diff and the other branch lenses need a
+  branch. The code-host lens hides on GitHub. A tool lens appears once that
+  tool is connected.
 - **A lens surface is reached from the overview or from the trail's
   destination switcher, never from a rail.** Rows and chips inside the
   overview route to it, by expanding in place or opening a side panel. Counts

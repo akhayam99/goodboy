@@ -27,6 +27,21 @@ const h = vi.hoisted(() => ({
   setFocusedWorkflowRun: vi.fn(),
 }));
 
+vi.mock('../../hooks/useLensDestinations', async () => {
+  const { lensDestinations } = await import('../../lens-destinations');
+  return {
+    useLensDestinations: () =>
+      lensDestinations({
+        isBranchless:
+          (h.state.sessionBranches as Readonly<Record<string, string>> | undefined)?.[
+            'session-1'
+          ] === '',
+        isGithubCodeHost: false,
+        connectedTools: { linear: true, gitlab: true, jira: true, slack: true },
+      }),
+  };
+});
+
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: Object.assign(<T,>(selector: (state: typeof h.state) => T) => selector(h.state), {
@@ -386,7 +401,7 @@ describe('SessionCrumbBar', () => {
       .filter((row) => row.getAttribute('aria-current') === 'page');
 
     expect(current).toHaveLength(1);
-    expect(current[0]?.textContent).toContain('Decisions');
+    expect(current[0]?.textContent).toContain('Context');
   });
 
   it('falls back to overview when the stored lens has no home on this session', () => {

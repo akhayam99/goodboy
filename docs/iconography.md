@@ -8,8 +8,9 @@ One meaning, one glyph. The registry in
 [`apps/desktop/src/shared/components/conceptIcons.ts`](../apps/desktop/src/shared/components/conceptIcons.ts)
 is the contract. `CONCEPT_ICONS` maps a concept to its glyph. `CONCEPT_TONE`
 maps the same concept to its tone. `ICON_SIZE` gives the only three sizes the
-app draws icons at. This document is the readable version of that file. When
-they disagree, the file is wrong and gets fixed, not the document.
+app draws icons at. This document is the readable version of that file. The
+code is right when they disagree: a change to the registry, `LENS_LABEL` or
+`LENS_ICON` updates this document in the same pull request.
 
 Rules that hold everywhere:
 
@@ -49,34 +50,36 @@ a reason in its allowlist entry, never a waiver for a whole directory.
 ## Navigation lenses
 
 `LENS_ICON` in `features/session/lens-labels.ts` reads straight from the
-registry, so a lens never picks its own glyph. Size is `control` in the lens
-switcher and rail tabs.
+registry, so a lens never picks its own glyph, and `LENS_LABEL` in the same
+file names it. Size is `control` in the lens switcher. `lensDestinations` in
+`features/session/lens-destinations.ts` decides which lenses a session lists.
 
-| Lens                  | Concept          | Glyph                   | Tone    |
-| --------------------- | ---------------- | ----------------------- | ------- |
-| Questions             | `questions`      | `CircleHelp`            | warning |
-| Agents                | `agents`         | `Bot`                   | primary |
-| Workflows             | `workflows`      | `Waypoints`             | accent  |
-| Review                | `review`         | `MessageSquareDiff`     | primary |
-| Plans                 | `plans`          | `ClipboardList`         | draft   |
-| Scripts               | `scripts`        | `ListVideo`             | info    |
-| Terminal              | `terminal`       | `SquareTerminal`        | neutral |
-| Context               | `context`        | `Brain`                 | info    |
-| Goal                  | `goal`           | `Target`                | primary |
-| Decisions             | `decisions`      | `CheckCheck`            | success |
-| Session summary       | `sessionSummary` | `NotebookText`          | info    |
-| GitHub                | `pr`             | `GitPullRequest`        | primary |
-| Diff                  | `diff`           | `FileDiff`              | info    |
-| Explore               | `explore`        | `FolderSearch`          | info    |
-| GitHub issue          | `issues`         | `CircleDot`             | info    |
-| Linear, Sentry, Jira, | brand concepts   | `@goodboy/ui` brand set | primary |
+| Lens (`LENS_LABEL`)         | Concept        | Glyph                   | Tone    | Listed                                     |
+| --------------------------- | -------------- | ----------------------- | ------- | ------------------------------------------ |
+| Context                     | `context`      | `Brain`                 | info    | always                                     |
+| Workflows                   | `workflows`    | `Waypoints`             | primary | always                                     |
+| Agents                      | `agents`       | `Bot`                   | primary | always                                     |
+| Questions                   | `questions`    | `CircleHelp`            | warning | always                                     |
+| Artifacts                   | `plans`        | `ClipboardList`         | draft   | always                                     |
+| Review                      | `review`       | `MessageSquareDiff`     | primary | with a branch                              |
+| Diff                        | `diff`         | `FileDiff`              | info    | with a branch                              |
+| Explore                     | `explore`      | `FolderSearch`          | info    | always                                     |
+| Scripts                     | `scripts`      | `ListVideo`             | info    | with a branch                              |
+| Terminal                    | `terminal`     | `SquareTerminal`        | neutral | with a branch                              |
+| Code host                   | `pr`           | `GitPullRequest`        | primary | with a branch, when the host is not GitHub |
+| Linear, GitLab, Jira, Slack | brand concepts | `@goodboy/ui` brand set | primary | with a branch, when that tool is connected |
+
+Goal (`goal`, `Target`), Decisions (`decisions`, `CheckCheck`) and Session
+summary (`sessionSummary`, `NotebookText`) are parts of the Context region:
+their shortcuts open it, and they have no menu entry of their own. GitHub issue
+(`issues`, `CircleDot`) opens from an issue link, never from the switcher.
 
 ## Session stages
 
-On the board, a stage is drawn as a `StatusDot`. The dot shows the stage. The
-glyph is only for surfaces that explain the stage in prose. `SESSION_STAGE_ICON`
-in `features/session/session-stage.ts` owns that mapping. The stage board
-section of the guide uses it.
+On the board, a stage is the column heading's tone and the card's shell tint.
+The glyph is only for surfaces that explain the stage in prose.
+`SESSION_STAGE_ICON` in `features/session/session-stage.ts` owns that mapping.
+The stage board section of the guide uses it.
 
 | Stage       | Glyph         | Tone    |
 | ----------- | ------------- | ------- |
@@ -144,18 +147,18 @@ color when the integration is connected, muted when it is not. `providers`
 
 ## Actions
 
-| Concept        | Glyph                   | Tone    | Affordance                       |
-| -------------- | ----------------------- | ------- | -------------------------------- |
-| `rename`       | `SquarePen`             | neutral | Rename an agent, workflow, title |
-| `archive`      | `Archive`               | neutral | Archive a session                |
-| `restore`      | `ArchiveRestore`        | neutral | Unarchive a session              |
-| `delete`       | `Trash2`                | danger  | Destructive delete               |
-| `folderOpen`   | `FolderOpen`            | neutral | Reveal a path in the OS          |
-| `openExternal` | `SquareArrowOutUpRight` | neutral | Open on the code host            |
-| `terminal`     | `SquareTerminal`        | neutral | Open a terminal                  |
-| `scripts`      | `ListVideo`             | info    | Open scripts                     |
-| `more`         | `Ellipsis`              | neutral | Overflow menu trigger            |
-| `search`       | `SearchX`               | info    | Empty search result              |
+| Concept        | Glyph                   | Tone    | Affordance                                 |
+| -------------- | ----------------------- | ------- | ------------------------------------------ |
+| `rename`       | `SquarePen`             | neutral | Rename an agent, workflow, title           |
+| `archive`      | `Archive`               | neutral | Archive a session                          |
+| `restore`      | `ArchiveRestore`        | neutral | Unarchive a session, on the board card too |
+| `delete`       | `Trash2`                | danger  | Destructive delete                         |
+| `folderOpen`   | `FolderOpen`            | neutral | Reveal a path in the OS                    |
+| `openExternal` | `SquareArrowOutUpRight` | neutral | Open on the code host                      |
+| `terminal`     | `SquareTerminal`        | neutral | Open a terminal                            |
+| `scripts`      | `ListVideo`             | info    | Open scripts                               |
+| `more`         | `Ellipsis`              | neutral | Overflow menu trigger                      |
+| `search`       | `SearchX`               | info    | Empty search result                        |
 
 `Ellipsis` replaced the deprecated `MoreHorizontal` alias on every overflow
 trigger in the migrated areas.

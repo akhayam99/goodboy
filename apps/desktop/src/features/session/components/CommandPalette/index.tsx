@@ -12,9 +12,8 @@ import {
 import { AGENT_KIND_META, agentKindPalette, classifyAgent, type AgentKind } from '../../agent-kind';
 import { parseQuery } from '../../../quick-actions';
 import { PALETTE_PREFIXES, palettePlaceholder, type PaletteGroup } from './palettePrefixes';
-import { lensDestinations } from '../../lens-destinations';
+import { useLensDestinations } from '../../hooks/useLensDestinations';
 import { openLens } from '../../openLens';
-import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEvent';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../../notifications/studioEvent';
@@ -144,11 +143,9 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
     currentSession ? (s.sessionPhaseRuns[currentSession.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<Agent>;
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
-  const isBranchless = useAppStore((s) =>
-    s.currentSessionId == null
-      ? false
-      : isBranchlessSession({ branch: s.sessionBranches[s.currentSessionId] }),
-  );
+  const destinations = useLensDestinations({
+    sessionId: currentSession === null ? null : (currentSession.id as SessionId),
+  });
   const runScript = useAppStore((s) => s.runScript);
   const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
@@ -200,7 +197,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
         });
       }
       const sessionId = currentSession.id as SessionId;
-      for (const destination of lensDestinations({ isBranchless })) {
+      for (const destination of destinations) {
         out.push({
           id: `action:lens:${destination.lens ?? 'overview'}`,
           label: `Open ${SHORTCUTS[destination.shortcut].label}`,
@@ -367,7 +364,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
     reportError,
     showToast,
     agentKindOverride,
-    isBranchless,
+    destinations,
     openWorkspace,
     setCurrentSession,
     selectAgent,

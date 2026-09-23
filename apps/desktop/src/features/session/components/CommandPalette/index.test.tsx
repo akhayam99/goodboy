@@ -27,6 +27,18 @@ const { state, hooks, toastMock } = vi.hoisted(() => ({
   toastMock: vi.fn(),
 }));
 
+vi.mock('../../hooks/useLensDestinations', async () => {
+  const { lensDestinations } = await import('../../lens-destinations');
+  return {
+    useLensDestinations: () =>
+      lensDestinations({
+        isBranchless: false,
+        isGithubCodeHost: false,
+        connectedTools: { linear: true, gitlab: true, jira: true, slack: true },
+      }),
+  };
+});
+
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
@@ -124,9 +136,6 @@ describe('CommandPalette', () => {
 
   it.each([
     ['Open Context', 'context'],
-    ['Open Context: Goal', 'goal'],
-    ['Open Context: Decisions', 'decisions'],
-    ['Open Context: Session summary', 'last_output_summary'],
     ['Open Agents', 'agents'],
     ['Open Questions', 'questions'],
     ['Open Terminal', 'terminal'],
@@ -137,6 +146,15 @@ describe('CommandPalette', () => {
     fireEvent.mouseDown(screen.getByText(label));
 
     expect(state.setActiveLens).toHaveBeenCalledWith('session-1', lens);
+  });
+
+  it('offers Context as one destination, without its parts', () => {
+    hooks.currentSession = { id: 'session-1' };
+    render(<CommandPalette onClose={vi.fn()} initialQuery="Open Context" />);
+
+    expect(screen.getByText('Open Context')).toBeDefined();
+    expect(screen.queryByText('Open Context: Goal')).toBeNull();
+    expect(screen.queryByText('Open Context: Decisions')).toBeNull();
   });
 
   it('keeps the session pages in the empty palette behind a wall of sessions', () => {
