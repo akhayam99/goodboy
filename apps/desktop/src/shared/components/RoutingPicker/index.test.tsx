@@ -218,6 +218,23 @@ describe('RoutingPicker', () => {
     expect(onProvider).toHaveBeenCalledWith('');
   });
 
+  it('names the recommendation row with the label the caller gives it', () => {
+    const onProvider = vi.fn();
+    render(
+      <RoutingPicker
+        {...baseProps}
+        provider="anthropic"
+        model="claude-sonnet-4-6"
+        overridden
+        onProvider={onProvider}
+        recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6', label: 'Auto' }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Auto Claude · Sonnet 4.6' }));
+    expect(onProvider).toHaveBeenCalledWith('');
+  });
+
   it('marks the recommended provider tab as secondary, never as selected', () => {
     render(
       <RoutingPicker

@@ -1,13 +1,20 @@
 import { cn } from '@goodboy/ui';
 
 type Props = {
+  readonly label?: string;
   readonly summary: string;
   readonly active: boolean;
   readonly reason?: string;
   readonly onSelect: () => void;
 };
 
-export const RecommendationRow = ({ summary, active, reason, onSelect }: Props) => (
+export const RecommendationRow = ({
+  label = 'Recommended',
+  summary,
+  active,
+  reason,
+  onSelect,
+}: Props) => (
   <div className="flex flex-col gap-1">
     <button
       type="button"
@@ -20,7 +27,7 @@ export const RecommendationRow = ({ summary, active, reason, onSelect }: Props) 
           : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
       )}
     >
-      <span>Recommended</span>
+      <span>{label}</span>
       <span className="truncate text-2xs text-muted-foreground/70">{summary}</span>
     </button>
     {reason != null && reason !== '' ? (

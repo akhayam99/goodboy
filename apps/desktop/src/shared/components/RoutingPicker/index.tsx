@@ -122,6 +122,7 @@ export const RoutingPicker = ({
   const recommendedModel = recommendation?.model;
   const recommendedEffort = recommendation?.effort;
   const recommendedReason = recommendation?.reason;
+  const recommendedLabel = recommendation?.label;
   const resetCopy = resetLabel ?? 'reset to default';
   const resetAriaLabel = resetLabel ?? 'Reset routing override';
   const routing = resolveRouting({
@@ -362,6 +363,7 @@ export const RoutingPicker = ({
             })}
             active={isViewingAuto}
             {...(recommendedReason != null && { reason: recommendedReason })}
+            {...(recommendedLabel != null && { label: recommendedLabel })}
             onSelect={() => onPickProvider({ next: '', viewedProvider: routing.provider })}
           />
           <Divider />

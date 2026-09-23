@@ -73,6 +73,9 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
       >
         {model === '' ? (recommendation?.model ?? '') : model}
       </button>
+      <button type="button" aria-label={`${ariaLabel} auto`} onClick={() => onProvider('')}>
+        auto
+      </button>
       <button
         type="button"
         aria-label={`${ariaLabel} cheap model`}
@@ -142,7 +145,6 @@ afterEach(cleanup);
 
 const TASK_LABELS = [
   'Step summaries',
-  'Branch naming',
   'Plan drafting',
   'Prose polish',
   'Agent naming',
@@ -201,7 +203,7 @@ describe('DefaultsPanel', () => {
     }
   });
 
-  it('shows the resolved model for automatic task preferences, never the word auto', () => {
+  it('shows the resolved model with an auto status for automatic task preferences', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     for (const label of TASK_LABELS) {
@@ -209,19 +211,16 @@ describe('DefaultsPanel', () => {
         label === 'Rebase' || label === 'Workflow orchestrator' ? 'sonnet-5' : 'haiku-4.5',
       );
     }
-    expect(screen.queryByText(/auto/)).toBeNull();
-    expect(screen.getByLabelText('Step summaries routing status: default').textContent).toBe(
-      'default',
-    );
+    expect(screen.getByLabelText('Step summaries routing status: auto').textContent).toBe('auto');
 
     openRolesTab();
     expect(screen.getByLabelText('Planner routing status: default').textContent).toBe('default');
   });
 
-  it('marks a task override as custom and resets it to default', async () => {
+  it('marks a task override as custom and resets it to auto', async () => {
     const { rerender } = render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByLabelText('Step summaries routing status: default')).toBeDefined();
+    expect(screen.getByLabelText('Step summaries routing status: auto')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing model' }));
 
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
@@ -237,7 +236,7 @@ describe('DefaultsPanel', () => {
     expect(screen.getByLabelText('Step summaries routing status: custom').textContent).toBe(
       'custom',
     );
-    const reset = screen.getByRole('button', { name: 'Reset to default' });
+    const reset = screen.getByRole('button', { name: 'Back to auto' });
     await waitFor(() => expect(reset.hasAttribute('disabled')).toBe(false));
     fireEvent.click(reset);
 
@@ -247,7 +246,7 @@ describe('DefaultsPanel', () => {
     );
 
     rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    expect(screen.getByLabelText('Step summaries routing status: default')).toBeDefined();
+    expect(screen.getByLabelText('Step summaries routing status: auto')).toBeDefined();
   });
 
   it('persists an effort for a task model', () => {
@@ -636,6 +635,41 @@ describe('DefaultsPanel', () => {
     expect(screen.getByRole('button', { name: 'anthropic' }).parentElement?.className).toContain(
       'max-w-64',
     );
+  });
+
+  it('clears a task override when auto is picked in the model picker', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        taskModels: {
+          summarizer: { providerId: 'anthropic', model: 'claude-sonnet-4-6' },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing auto' }));
+
+    expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
+      'ws-1',
+      expect.objectContaining({ taskModels: null }),
+    );
+  });
+
+  it('counts only the task overrides the panel can show', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        taskModels: {
+          branch_naming: { providerId: 'anthropic', model: 'claude-sonnet-5' },
+          summarizer: { providerId: 'anthropic', model: 'claude-sonnet-4-6' },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    expect(screen.getByRole('tab', { name: 'Task models (1)' })).toBeDefined();
+    expect(screen.queryByText('Branch naming')).toBeNull();
   });
 
   it('shows the override count for each group in its tab label', () => {
