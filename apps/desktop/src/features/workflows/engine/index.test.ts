@@ -5,12 +5,14 @@ import {
   draftFromPlannerSteps,
   draftFromStepDef,
   draftFromWorkflow,
+  duplicateStep,
   removeStep,
   reorderSteps,
   stepDraftWithModel,
   updateStep,
   upsertArgsFromDraft,
   validateDraft,
+  type StepDraft,
 } from './index';
 
 vi.stubGlobal('crypto', { randomUUID: vi.fn(() => `key-${Math.random()}`) });
@@ -172,5 +174,23 @@ describe('workflow authoring engine', () => {
     expect(updated).not.toBe(source);
     expect(reordered.map((step) => step.key)).toEqual([second.key, first.key]);
     expect(removed).toEqual([second]);
+  });
+
+  it('duplicates a step right after itself as a new unsaved step', () => {
+    const [first, second] = addStep({ steps: addStep({ steps: [] }) });
+    if (first === undefined || second === undefined) {
+      throw new Error('expected two steps');
+    }
+    const named = updateStep({
+      steps: [first, second],
+      key: first.key,
+      patch: { name: 'Scout', sourceStepId: 'step-1' as StepDraft['sourceStepId'] },
+    });
+    const duplicated = duplicateStep({ steps: named, key: first.key });
+
+    expect(duplicated.map((step) => step.name)).toEqual(['Scout', 'Scout', '']);
+    expect(duplicated[1]?.key).not.toBe(first.key);
+    expect(duplicated[1]?.sourceStepId).toBeNull();
+    expect(duplicateStep({ steps: named, key: 'missing' })).toBe(named);
   });
 });

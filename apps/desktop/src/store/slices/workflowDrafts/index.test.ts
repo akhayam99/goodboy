@@ -33,10 +33,7 @@ const buildDraft = (overrides: Partial<WorkflowBuilderDraft> = {}): WorkflowBuil
   },
   saveAsPreset: false,
   autoRun: false,
-  customName: '',
-  customNameEdited: false,
-  dynamicName: 'Orchestrated workflow',
-  dynamicNameEdited: false,
+  title: '',
   orchestratorModel: { providerOverride: '', modelOverride: '', effortOverride: null },
   ...overrides,
 });

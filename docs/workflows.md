@@ -25,21 +25,46 @@ that agent is done, it hands a summary to the next one.
 
 ## Picking or building one
 
-Open the workflow builder in a session and choose one of three modes.
+Open the workflow builder in a session. The builder is a preview of the run:
+the plan draws with the same tree, nodes and meta as the workflow detail, so
+what you see before the start is what you see after it. From the top:
 
-1. **Orchestrated**: give a goal and let the orchestrator choose each step as the work goes. **Guidance (optional)** holds what the orchestrator should respect or avoid, and when to stop. The goal alone is enough to start.
-2. **Custom**: write the steps yourself, or describe what you want and Goodboy drafts the steps for you to edit.
-3. **Preset**: pick a ready workflow. Goodboy comes with **Refactor (example)**, a scout, plan, implement and test sequence you can copy and adjust.
+- **Name**: a large inline field. It stays empty and shows a name as its
+  placeholder. Once you leave the goal, Goodboy asks the naming model for a
+  title from the goal and shows it there; **Tab** keeps it. The suggestion is
+  never typed into the field for you. An empty field starts with the
+  suggestion, or else the planner title, the preset name, "Custom workflow" or
+  "Orchestrated workflow", so the name never blocks the start. If you rename a
+  preset, you get a new workflow of your own and the shared preset keeps its
+  name.
+- **Goal**: what the run should do. **Add files**, **Use session goal**,
+  **Undo** and **Polish** sit inside the field.
+- **Mode**, with one line under it that says what the mode does, and the
+  mode's own control on the right of the same row.
+- **Plan**: the steps as a tree that grows upward, step 1 at the bottom.
+- **Launch bar**: when it starts, **Autorun**, the spend cap or **Save as
+  preset**, and **Start workflow**. The reason Start is off shows under it.
+
+The three modes:
+
+1. **Orchestrated**: give a goal and let the orchestrator choose each step as the work goes. The plan shows the orchestrator with its model. **Guidance (optional)** under it holds what the orchestrator should respect or avoid, and when to stop. The goal alone is enough to start.
+2. **Custom**: write the steps yourself, or open **Draft with planner**, describe what you want and Goodboy drafts the steps for you to edit.
+3. **Preset**: pick a ready workflow from the **Preset** picker. Goodboy comes with **Refactor (example)**, a scout, plan, implement and test sequence you can copy and adjust. A preset is a source: editing a step marks it, the name shows "Edited from" the preset, and switching to **Custom** keeps the steps.
+
+Click a step to edit it in place: title, role, instruction, expected output,
+and provider, model, variant and effort on the right. Its footer moves,
+duplicates or removes the step. Remove asks first. Escape or **Done** closes
+it. The grip on the row drags a step, and the arrow keys on the grip move it:
+up runs it later, down runs it earlier.
+
+The page draws the plan bottom up, but the page order stays the run order:
+a screen reader and Tab read step 1 first. So keyboard focus moves upward on
+the screen. That is a known cost of matching the run's tree.
 
 The builder opens on the mode of the last workflow you started in that
 workspace, and on **Orchestrated** the first time. Only starting a workflow
 changes it, so looking at another tab does not. A remembered **Preset** falls
 back to **Orchestrated** once the workspace has no presets left.
-
-Every workflow has a name in the **Workflow name** field. It shows a default
-name until you type your own, and an emptied field starts with the default, so
-the name never blocks the start. If you rename a preset inside the builder, you
-get a new workflow of your own, and the shared preset keeps its name.
 
 A workflow you are still building stays there when you switch sessions. It
 goes away once you create it or discard it. **Workflow Studio** is where you
@@ -48,9 +73,14 @@ another workspace.
 
 ### When a run starts
 
-- **Immediately** when you add it. This is the default
+The **Starts** chip in the launch bar picks one:
+
+- **Now**, as soon as you start it. This is the default
 - **Manually**, when you press start
-- **After another run** finishes, and then it carries on by itself
+- **After** another run that is still going, and then it carries on by itself
+
+**Autorun** is off by default: the run pauses after each step so you can
+review it. Turn it on and each next step starts on its own.
 
 ## What a step carries
 
@@ -216,6 +246,8 @@ Everything below is the code behind the sections above.
 - `apps/desktop/src/store/slices/workflows/preSpawnWorkflowAgents.ts`: creates the run's agents when a workflow is added
 - `apps/desktop/src/store/slices/workflows/notifyWorkflowGateBlock.ts`: sends the blocked notification
 - `apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts`: asks the orchestrator for one decision
+- `apps/desktop/src/features/session/components/WorkflowBuilderView/`: the builder. `parts/PlanTree/` draws the plan with `WorkNode` and `WorkMeta`, and the step editor mounts `RoutingPicker` with `presentation="inline"`
+- `apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.ts`: the name suggestion from the goal. It only returns text; `generateWorkflowTitle` renames a saved orchestrated run that started on the fallback name
 - `apps/desktop/src/store/slices/workflows/summarizeWorkflowAgentOutput.ts`: the summarizer that runs after each step
 - `packages/core/src/summarizer/step-output.ts`: the rules every handoff follows
 - `packages/core/src/orchestrator/prompt.ts`: `ORCHESTRATOR_SYSTEM_PROMPT`

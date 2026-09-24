@@ -23,9 +23,6 @@ export type WorkflowBuilderDraft = {
   readonly workflow: WorkflowDraft;
   readonly saveAsPreset: boolean;
   readonly autoRun: boolean;
-  readonly customName: string;
-  readonly customNameEdited: boolean;
-  readonly dynamicName: string;
-  readonly dynamicNameEdited: boolean;
+  readonly title: string;
   readonly orchestratorModel: OrchestratorModelDraft;
 };

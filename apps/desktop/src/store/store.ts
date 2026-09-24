@@ -655,6 +655,7 @@ type AppActions = {
     goal: string,
     process: string,
   ): Promise<void>;
+  suggestWorkflowTitle(sessionId: SessionId, goal: string): Promise<string | null>;
   loadStepLibrary(workspaceId: WorkspaceId): Promise<void>;
   saveStepDef(args: StepDefUpsertArgs, listWorkspaceId: WorkspaceId): Promise<void>;
   deleteStepDef(id: StepDefId, listWorkspaceId: WorkspaceId): Promise<void>;

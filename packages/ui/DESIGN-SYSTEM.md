@@ -385,6 +385,22 @@ Brief all end their rows with this meta, so a step and its sub-agents read the
 same wherever they appear. The inline form in headers and chips stays
 `RoutingBadge`'s compact variant.
 
+### The plan in the workflow builder
+
+The builder draws the plan with the same grammar, because the form is a
+preview of the run. Every row is future, so every node is `queued` with its
+number and the lane is dashed in the run's identity colour. There is no
+ordinal column: nothing in the form can turn into a check. Each row draws
+its own lane segment over its own height, so an expanded row lengthens its
+segment and needs no second lane engine. Step 1 sits at the bottom, just
+above the launch bar, and **Add step** is the top node, because the future is
+up. The list keeps run order in the DOM and reverses it with
+`flex-col-reverse`. The meta columns are `WorkMeta` with no `@container`
+above them: the form column is narrower than 720px and still shows the
+effort, since choosing it is the point of the form. A row opens in place as
+one group (the rule in `docs/styling.md`), and its model axes are the
+`RoutingPicker` body mounted inline, not a copy of it.
+
 ## z-index tokens
 
 Named tokens in `apps/desktop/src/styles.css` under `@theme`, with keys

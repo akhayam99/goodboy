@@ -210,3 +210,21 @@ type UpdateStepParams = {
 
 export const updateStep = ({ steps, key, patch }: UpdateStepParams): ReadonlyArray<StepDraft> =>
   steps.map((step) => (step.key === key ? { ...step, ...patch } : step));
+
+type DuplicateStepParams = {
+  readonly steps: ReadonlyArray<StepDraft>;
+  readonly key: string;
+};
+
+export const duplicateStep = ({ steps, key }: DuplicateStepParams): ReadonlyArray<StepDraft> => {
+  const index = steps.findIndex((step) => step.key === key);
+  const source = steps[index];
+  if (source === undefined) {
+    return steps;
+  }
+  return addStep({
+    steps,
+    step: { ...source, key: nextKey(), sourceStepId: null },
+    atIndex: index + 1,
+  });
+};
