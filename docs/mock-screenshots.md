@@ -151,9 +151,9 @@ the scene key renders the light theme.
 
 Fake workspace names, session goals and usernames must be generic but
 believable. They must never be a real client, project or person. Seeds use one
-fixed vocabulary: workspaces Harborline, Northwind, Acme and Cascadia; repos
-ledger-core, notify-relay, payments-api, billing-api, web-console and
-storefront-web; people named by role (platform lead, finance lead, reviewer),
+fixed vocabulary: workspaces Harborline, Northwind, Acme, Cascade and
+Cascadia; repos ledger-core, notify-relay, payments-api, billing-api,
+web-console, storefront-web, core-api and reporting-analytics; people named by role (platform lead, finance lead, reviewer),
 never by a personal name. Include at least one "hard" task among the fake ones
 (a rate-limiting bug, a rounding bug), not only trivial ones. If every task
 looks easy, the product looks like it's only for easy tasks.
