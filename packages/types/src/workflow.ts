@@ -34,6 +34,34 @@ export type AgentRole =
 
 export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
+export type ClusterCompletionFindingTarget = 'implementer' | 'planner' | 'investigator' | 'tester';
+
+export type ClusterCompletionFinding = Readonly<{
+  reason: string;
+  target: ClusterCompletionFindingTarget;
+}>;
+
+export type ClusterCompletionHoldReason =
+  'missing-outcome' | 'malformed-outcome' | 'foreign-outcome' | 'unresolved-outcome';
+
+export type ClusterCompletionHoldState = 'open' | 'resolved';
+
+export type ClusterCompletionHold = Readonly<{
+  id: string;
+  sessionId: SessionId;
+  workflowRunId: WorkflowRunId | null;
+  containerAgentId: AgentId;
+  sourceAgentId: AgentId;
+  sourceTurnId: string;
+  reason: ClusterCompletionHoldReason;
+  findings: ReadonlyArray<ClusterCompletionFinding>;
+  state: ClusterCompletionHoldState;
+  resolutionEvidence: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}>;
+
 export type AgentSourceKind = 'review_comment' | 'issue_comment' | 'diff_comment' | 'open_question';
 
 export type StepDef = Readonly<{

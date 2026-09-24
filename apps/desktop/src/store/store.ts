@@ -543,8 +543,13 @@ type AppActions = {
     sessionId: SessionId,
     childAgentId: AgentId,
     assistantText: string,
-    opts?: { readonly force?: boolean },
+    opts?: { readonly force?: boolean; readonly resolvedHoldId?: string },
   ): Promise<void>;
+  resolveClusterCompletionHold(params: {
+    readonly sessionId: SessionId;
+    readonly holdId: string;
+    readonly resolutionEvidence: string;
+  }): Promise<void>;
   finalizeWorkflowStep(
     sessionId: SessionId,
     agentId: AgentId,
@@ -1082,6 +1087,7 @@ export const initialState: AppState = {
   stepLibrary: {},
   sessionWorkflows: {},
   sessionPhaseRuns: {},
+  clusterCompletionHolds: {},
   orchestratingWorkflowRuns: {},
   decisionRestartMarks: {},
   pendingOrchestrations: {},

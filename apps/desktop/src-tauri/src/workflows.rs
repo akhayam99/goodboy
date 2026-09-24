@@ -276,6 +276,58 @@ pub struct AgentBatchInsertOutcome {
     pub agents: Vec<SessionRow>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ClusterCompletionHoldRow {
+    pub id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "workflowRunId")]
+    pub workflow_run_id: Option<String>,
+    #[serde(rename = "containerAgentId")]
+    pub container_agent_id: String,
+    #[serde(rename = "sourceAgentId")]
+    pub source_agent_id: String,
+    #[serde(rename = "sourceTurnId")]
+    pub source_turn_id: String,
+    pub reason: String,
+    #[serde(rename = "findingsJson")]
+    pub findings_json: String,
+    pub state: String,
+    #[serde(rename = "resolutionEvidence")]
+    pub resolution_evidence: Option<String>,
+    #[serde(rename = "resolvedAt")]
+    pub resolved_at: Option<String>,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClusterCompletionHoldInput {
+    pub id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "workflowRunId")]
+    pub workflow_run_id: Option<String>,
+    #[serde(rename = "containerAgentId")]
+    pub container_agent_id: String,
+    #[serde(rename = "sourceAgentId")]
+    pub source_agent_id: String,
+    #[serde(rename = "sourceTurnId")]
+    pub source_turn_id: String,
+    pub reason: String,
+    #[serde(rename = "findingsJson")]
+    pub findings_json: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClusterCompletionHoldResolutionInput {
+    pub id: String,
+    #[serde(rename = "resolutionEvidence")]
+    pub resolution_evidence: String,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct WorkflowNodeRoutingUpdateInput {
     #[serde(rename = "nodeKind")]
@@ -326,6 +378,8 @@ pub enum PhaseError {
     InvalidRouting,
     #[error("workflow node cannot be changed: {0}")]
     NodeNotMutable(String),
+    #[error("cluster completion hold resolution requires evidence")]
+    InvalidHoldResolution,
 }
 
 crate::util::impl_error_serialize!(PhaseError);
@@ -339,6 +393,7 @@ impl PhaseError {
             PhaseError::RunNotFound(_) => "run_not_found",
             PhaseError::InvalidRouting => "invalid_routing",
             PhaseError::NodeNotMutable(_) => "node_not_mutable",
+            PhaseError::InvalidHoldResolution => "invalid_hold_resolution",
         }
     }
 }
@@ -1201,6 +1256,122 @@ pub async fn agent_list_for_session(
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
 }
 
+fn cluster_completion_hold_from_row(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<ClusterCompletionHoldRow> {
+    Ok(ClusterCompletionHoldRow {
+        id: row.get(0)?,
+        session_id: row.get(1)?,
+        workflow_run_id: row.get(2)?,
+        container_agent_id: row.get(3)?,
+        source_agent_id: row.get(4)?,
+        source_turn_id: row.get(5)?,
+        reason: row.get(6)?,
+        findings_json: row.get(7)?,
+        state: row.get(8)?,
+        resolution_evidence: row.get(9)?,
+        resolved_at: crate::util::optional_ms_to_iso(row.get(10)?),
+        created_at: crate::util::ms_to_iso(row.get(11)?),
+        updated_at: crate::util::ms_to_iso(row.get(12)?),
+    })
+}
+
+const CLUSTER_COMPLETION_HOLD_COLUMNS: &str =
+    "id, session_id, workflow_run_id, container_agent_id, source_agent_id, source_turn_id, reason, findings_json, state, resolution_evidence, resolved_at, created_at, updated_at";
+
+fn list_cluster_completion_holds(
+    conn: &rusqlite::Connection,
+    session_id: &str,
+) -> Result<Vec<ClusterCompletionHoldRow>, PhaseError> {
+    let sql = format!(
+        "SELECT {CLUSTER_COMPLETION_HOLD_COLUMNS} FROM cluster_completion_holds WHERE session_id = ?1 ORDER BY created_at ASC"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(
+        rusqlite::params![session_id],
+        cluster_completion_hold_from_row,
+    )?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
+}
+
+#[tauri::command]
+pub async fn cluster_completion_holds_for_session(
+    state: State<'_, Db>,
+    session_id: String,
+) -> Result<Vec<ClusterCompletionHoldRow>, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    list_cluster_completion_holds(&conn, &session_id)
+}
+
+fn record_cluster_completion_hold(
+    conn: &rusqlite::Connection,
+    input: ClusterCompletionHoldInput,
+) -> Result<ClusterCompletionHoldRow, PhaseError> {
+    let now = crate::util::now_ms();
+    conn.execute(
+        "INSERT OR IGNORE INTO cluster_completion_holds
+           (id, session_id, workflow_run_id, container_agent_id, source_agent_id, source_turn_id,
+            reason, findings_json, state, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'open', ?9, ?9)",
+        rusqlite::params![
+            input.id,
+            input.session_id,
+            input.workflow_run_id,
+            input.container_agent_id,
+            input.source_agent_id,
+            input.source_turn_id,
+            input.reason,
+            input.findings_json,
+            now,
+        ],
+    )?;
+    let sql = format!(
+        "SELECT {CLUSTER_COMPLETION_HOLD_COLUMNS} FROM cluster_completion_holds WHERE source_agent_id = ?1 AND source_turn_id = ?2"
+    );
+    conn.query_row(
+        &sql,
+        rusqlite::params![input.source_agent_id, input.source_turn_id],
+        cluster_completion_hold_from_row,
+    )
+    .map_err(PhaseError::Db)
+}
+
+#[tauri::command]
+pub async fn cluster_completion_hold_record(
+    state: State<'_, Db>,
+    input: ClusterCompletionHoldInput,
+) -> Result<ClusterCompletionHoldRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    record_cluster_completion_hold(&conn, input)
+}
+
+fn resolve_cluster_completion_hold(
+    conn: &rusqlite::Connection,
+    input: ClusterCompletionHoldResolutionInput,
+) -> Result<(), PhaseError> {
+    let evidence = input.resolution_evidence.trim();
+    if evidence.is_empty() {
+        return Err(PhaseError::InvalidHoldResolution);
+    }
+    let now = crate::util::now_ms();
+    conn.execute(
+        "UPDATE cluster_completion_holds
+            SET state = 'resolved', resolution_evidence = ?2, resolved_at = ?3, updated_at = ?3
+          WHERE id = ?1 AND state = 'open'",
+        rusqlite::params![input.id, evidence, now],
+    )?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn cluster_completion_hold_resolve(
+    state: State<'_, Db>,
+    input: ClusterCompletionHoldResolutionInput,
+) -> Result<(), PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    resolve_cluster_completion_hold(&conn, input)
+}
+
 const AGENT_INSERT_SQL: &str = "INSERT INTO agents
    (id, session_id, step_id, ordinal, name, status,
     provider_run_id, output_summary, started_at, last_finished_at, kind, verbosity,
@@ -1639,6 +1810,77 @@ mod tests {
         conn
     }
 
+    fn completion_holds_conn() -> rusqlite::Connection {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE cluster_completion_holds (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                workflow_run_id TEXT,
+                container_agent_id TEXT NOT NULL,
+                source_agent_id TEXT NOT NULL,
+                source_turn_id TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                findings_json TEXT NOT NULL,
+                state TEXT NOT NULL,
+                resolution_evidence TEXT,
+                resolved_at INTEGER,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                UNIQUE (source_agent_id, source_turn_id)
+            );",
+        )
+        .unwrap();
+        conn
+    }
+
+    fn completion_hold_input(id: &str) -> ClusterCompletionHoldInput {
+        ClusterCompletionHoldInput {
+            id: id.to_string(),
+            session_id: "session".to_string(),
+            workflow_run_id: Some("run".to_string()),
+            container_agent_id: "container".to_string(),
+            source_agent_id: "source".to_string(),
+            source_turn_id: "turn".to_string(),
+            reason: "missing-outcome".to_string(),
+            findings_json: "[]".to_string(),
+        }
+    }
+
+    #[test]
+    fn cluster_completion_hold_record_is_idempotent() {
+        let conn = completion_holds_conn();
+        let first = record_cluster_completion_hold(&conn, completion_hold_input("hold-1")).unwrap();
+        let duplicate =
+            record_cluster_completion_hold(&conn, completion_hold_input("hold-2")).unwrap();
+        let rows = list_cluster_completion_holds(&conn, "session").unwrap();
+
+        assert_eq!(first.id, "hold-1");
+        assert_eq!(duplicate.id, "hold-1");
+        assert_eq!(rows.len(), 1);
+    }
+
+    #[test]
+    fn cluster_completion_hold_resolution_records_evidence() {
+        let conn = completion_holds_conn();
+        record_cluster_completion_hold(&conn, completion_hold_input("hold-1")).unwrap();
+        resolve_cluster_completion_hold(
+            &conn,
+            ClusterCompletionHoldResolutionInput {
+                id: "hold-1".to_string(),
+                resolution_evidence: "verified repair".to_string(),
+            },
+        )
+        .unwrap();
+        let rows = list_cluster_completion_holds(&conn, "session").unwrap();
+
+        assert_eq!(rows[0].state, "resolved");
+        assert_eq!(
+            rows[0].resolution_evidence.as_deref(),
+            Some("verified repair")
+        );
+    }
+
     fn insert_workflow(
         conn: &rusqlite::Connection,
         id: &str,
@@ -1820,7 +2062,8 @@ mod tests {
     fn validates_bounded_routing_objects() {
         let lock = r#"{"version":1,"pick":{"provider":"codex","model":"gpt-5.6","effort":"high"},"origin":"user"}"#.to_string();
         let decision = r#"{"version":1,"proposal":null,"selected":{"provider":"codex","model":"gpt-5.6","effort":"high"},"source":"step_lock","reason":"Chosen","adjustment":"none","executed":null}"#.to_string();
-        let profile = r#"{"taskType":"implementation","difficulty":"heavy","basis":"agent"}"#.to_string();
+        let profile =
+            r#"{"taskType":"implementation","difficulty":"heavy","basis":"agent"}"#.to_string();
         assert!(validate_routing_values(Some(&lock), Some(&decision), Some(&profile)).is_ok());
 
         let oversized = format!(

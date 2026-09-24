@@ -555,6 +555,7 @@ export const workflowsModuleMock = () => ({
   invokeStepDefUpsert: vi.fn(),
   invokeStepDefDelete: vi.fn(),
   invokeAgentList: storySpies.invokeAgentList,
+  invokeClusterCompletionHolds: vi.fn(async () => []),
   invokeAgentInsert: storySpies.invokeAgentInsert,
   invokeAgentUpdateStatus: storySpies.invokeAgentUpdateStatus,
   invokeAgentSetKind: storySpies.invokeAgentSetKind,

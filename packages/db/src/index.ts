@@ -180,6 +180,11 @@ export {
   type AgentConfigUpdate,
 } from './queries/agent';
 export {
+  listClusterCompletionHolds,
+  recordClusterCompletionHold,
+  resolveClusterCompletionHold,
+} from './queries/cluster-completion-hold';
+export {
   insertSessionWorktree,
   insertSessionMount,
   getSessionMount,

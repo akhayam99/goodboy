@@ -94,7 +94,7 @@ const nextAgent: Agent = {
   status: 'pending',
 };
 
-const buildHarness = (turnKind: 'idle' | 'running' | 'unseeded') => {
+const buildHarness = (turnKind: 'idle' | 'running' | 'unseeded', hasOpenCompletionHold = false) => {
   const activateWorkflowAgent = vi.fn();
   const orchestrateNextStep = vi.fn();
   const emitNotification = vi.fn(async () => undefined);
@@ -102,6 +102,27 @@ const buildHarness = (turnKind: 'idle' | 'running' | 'unseeded') => {
     sessions: [session],
     phaseTemplates: { [WORKSPACE_ID]: [workflow] },
     sessionPhaseRuns: { [SESSION_ID]: [stuckAgent, nextAgent] },
+    clusterCompletionHolds: hasOpenCompletionHold
+      ? {
+          [SESSION_ID]: [
+            {
+              id: 'hold-1',
+              sessionId: SESSION_ID,
+              workflowRunId: RUN_ID,
+              containerAgentId: STUCK,
+              sourceAgentId: STUCK,
+              sourceTurnId: 'turn-1',
+              reason: 'missing-outcome' as const,
+              findings: [],
+              state: 'open' as const,
+              resolutionEvidence: null,
+              resolvedAt: null,
+              createdAt: NOW,
+              updatedAt: NOW,
+            },
+          ],
+        }
+      : {},
     agentTurnState:
       turnKind === 'unseeded' ? {} : { [STUCK]: { kind: turnKind, lastActivityAt: NOW } },
     activateWorkflowAgent,
@@ -195,6 +216,15 @@ describe('skipStuckStepAndAdvance', () => {
 
   it('does not skip a step with a live turn', async () => {
     const { run, activateWorkflowAgent } = buildHarness('running');
+
+    await run(SESSION_ID, RUN_ID);
+
+    expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
+    expect(activateWorkflowAgent).not.toHaveBeenCalled();
+  });
+
+  it('does not let a forced skip erase an open completion hold', async () => {
+    const { run, activateWorkflowAgent } = buildHarness('idle', true);
 
     await run(SESSION_ID, RUN_ID);
 

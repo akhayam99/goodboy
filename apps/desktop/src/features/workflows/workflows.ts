@@ -30,6 +30,11 @@ import type {
   Agent,
   AgentId,
   AgentStatus,
+  ClusterCompletionFinding,
+  ClusterCompletionFindingTarget,
+  ClusterCompletionHold,
+  ClusterCompletionHoldReason,
+  ClusterCompletionHoldState,
   VerbosityLevel,
   Workflow,
   WorkflowId,
@@ -63,6 +68,72 @@ type RawWorkflowStepRow = {
   readonly routingDecision: string | null;
   readonly taskProfile: string | null;
 };
+
+type RawClusterCompletionHoldRow = {
+  readonly id: string;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly containerAgentId: AgentId;
+  readonly sourceAgentId: AgentId;
+  readonly sourceTurnId: string;
+  readonly reason: ClusterCompletionHoldReason;
+  readonly findingsJson: string;
+  readonly state: ClusterCompletionHoldState;
+  readonly resolutionEvidence: string | null;
+  readonly resolvedAt: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isFindingTarget = (value: unknown): value is ClusterCompletionFindingTarget =>
+  value === 'implementer' || value === 'planner' || value === 'investigator' || value === 'tester';
+
+const parseCompletionFindings = ({
+  value,
+}: {
+  readonly value: string;
+}): ReadonlyArray<ClusterCompletionFinding> => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) {
+    return [];
+  }
+  const findings: ClusterCompletionFinding[] = [];
+  for (const entry of parsed) {
+    if (!isRecord(entry) || typeof entry.reason !== 'string' || !isFindingTarget(entry.target)) {
+      continue;
+    }
+    findings.push({ reason: entry.reason, target: entry.target });
+  }
+  return findings;
+};
+
+const completionHoldFromRow = ({
+  row,
+}: {
+  readonly row: RawClusterCompletionHoldRow;
+}): ClusterCompletionHold => ({
+  id: row.id,
+  sessionId: row.sessionId,
+  workflowRunId: row.workflowRunId,
+  containerAgentId: row.containerAgentId,
+  sourceAgentId: row.sourceAgentId,
+  sourceTurnId: row.sourceTurnId,
+  reason: row.reason,
+  findings: parseCompletionFindings({ value: row.findingsJson }),
+  state: row.state,
+  resolutionEvidence: row.resolutionEvidence,
+  resolvedAt: row.resolvedAt,
+  createdAt: row.createdAt,
+  updatedAt: row.updatedAt,
+});
 
 type RawStepDefRow = {
   readonly id: string;
@@ -436,6 +507,65 @@ export const invokeAgentList = async (sessionId: SessionId): Promise<Agent[]> =>
       agentListRequestTails.delete(sessionId);
     }
   }
+};
+
+export const invokeClusterCompletionHolds = async ({
+  sessionId,
+}: {
+  readonly sessionId: SessionId;
+}): Promise<ReadonlyArray<ClusterCompletionHold>> => {
+  const rows = await invoke<RawClusterCompletionHoldRow[]>('cluster_completion_holds_for_session', {
+    sessionId,
+  });
+  return rows.map((row) => completionHoldFromRow({ row }));
+};
+
+type RecordClusterCompletionHoldParams = {
+  readonly id: string;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly containerAgentId: AgentId;
+  readonly sourceAgentId: AgentId;
+  readonly sourceTurnId: string;
+  readonly reason: ClusterCompletionHoldReason;
+  readonly findings: ReadonlyArray<ClusterCompletionFinding>;
+};
+
+export const invokeClusterCompletionHoldRecord = async ({
+  id,
+  sessionId,
+  workflowRunId,
+  containerAgentId,
+  sourceAgentId,
+  sourceTurnId,
+  reason,
+  findings,
+}: RecordClusterCompletionHoldParams): Promise<ClusterCompletionHold> => {
+  const row = await invoke<RawClusterCompletionHoldRow>('cluster_completion_hold_record', {
+    input: {
+      id,
+      sessionId,
+      workflowRunId,
+      containerAgentId,
+      sourceAgentId,
+      sourceTurnId,
+      reason,
+      findingsJson: JSON.stringify(findings),
+    },
+  });
+  return completionHoldFromRow({ row });
+};
+
+export const invokeClusterCompletionHoldResolve = async ({
+  id,
+  resolutionEvidence,
+}: {
+  readonly id: string;
+  readonly resolutionEvidence: string;
+}): Promise<void> => {
+  await invoke<void>('cluster_completion_hold_resolve', {
+    input: { id, resolutionEvidence },
+  });
 };
 
 export type AgentInsertArgs = {

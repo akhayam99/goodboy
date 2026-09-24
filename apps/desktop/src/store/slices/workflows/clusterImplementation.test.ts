@@ -43,6 +43,15 @@ const hoisted = vi.hoisted(() => {
     ),
     invokeAgentList: vi.fn(async () => [] as Agent[]),
     invokeAgentUpdateStatus: vi.fn(async () => undefined),
+    invokeClusterCompletionHoldRecord: vi.fn(async (input: Record<string, unknown>) => ({
+      ...input,
+      findings: input.findings ?? [],
+      state: 'open',
+      resolutionEvidence: null,
+      resolvedAt: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    })),
     invokeWorkflowNodeRoutingUpdate: vi.fn(async () => undefined),
     invokeListConsumptionsForPlan: vi.fn(async () => [] as ReadonlyArray<PlanConsumption>),
     summarizeAgentOutput: vi.fn(async () => ({ summary: 'model summary', degraded: false })),
@@ -53,6 +62,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsertBatch: hoisted.invokeAgentInsertBatch,
   invokeAgentList: hoisted.invokeAgentList,
   invokeAgentUpdateStatus: hoisted.invokeAgentUpdateStatus,
+  invokeClusterCompletionHoldRecord: hoisted.invokeClusterCompletionHoldRecord,
   invokeWorkflowNodeRoutingUpdate: hoisted.invokeWorkflowNodeRoutingUpdate,
 }));
 
@@ -206,6 +216,8 @@ describe('composeClusterBoundary', () => {
     const text = composeClusterBoundary('child-7' as AgentId);
     expect(text).toContain('**Scope** this cluster only');
     expect(text).toContain('<<cluster-done id="child-7">>');
+    expect(text).toContain('<<cluster-outcome>>{"v":1,"id":"child-7","status":"clear"}');
+    expect(text).toContain('"status":"unresolved"');
     expect(text.split('\n')).toHaveLength(1);
   });
 });
@@ -440,6 +452,7 @@ function makeStore(initial: Record<string, unknown>) {
   const loadSessionPlans = vi.fn(async () => undefined);
   const state: Record<string, unknown> = {
     sessionPhaseRuns: {},
+    clusterCompletionHolds: {},
     sessionPlans: {},
     planConsumptions: {},
     sessions: [sessionRow(true)],
@@ -999,7 +1012,8 @@ describe('cluster child routing lifecycle', () => {
 });
 
 describe('advanceClusterImplementation', () => {
-  const done = (id: string) => `<<cluster-done id="${id}">>`;
+  const done = (id: string) =>
+    `<<cluster-outcome>>{"v":1,"id":"${id}","status":"clear"}<</cluster-outcome>>\n<<cluster-done id="${id}">>`;
 
   it('no-ops when the agent is not found in the session runs', async () => {
     const { get, set, sendTurn } = makeStore({ sessionPhaseRuns: { [SID]: [] } });
@@ -1083,6 +1097,119 @@ describe('advanceClusterImplementation', () => {
         sessionId: SID,
       }),
     );
+  });
+
+  it('holds an implementation-typed review cluster with an unresolved finding', async () => {
+    const child = childAgent({ id: 'review-child', ordinal: 0, status: 'running' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    const assistantText =
+      'review found a defect\n<<cluster-outcome>>{"v":1,"id":"review-child","status":"unresolved","findings":[{"reason":"network proof is missing","target":"tester"}]}<</cluster-outcome>>\n<<cluster-done id="review-child">>';
+
+    await advanceClusterImplementation(store.set, store.get)(SID, child.id, assistantText);
+
+    expect(hoisted.invokeClusterCompletionHoldRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceAgentId: child.id,
+        reason: 'unresolved-outcome',
+        findings: [{ reason: 'network proof is missing', target: 'tester' }],
+      }),
+    );
+    expect(store.sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('holds legacy prose with a done marker and no outcome', async () => {
+    const child = childAgent({ id: 'legacy-child', ordinal: 0, status: 'running' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+
+    await advanceClusterImplementation(store.set, store.get)(
+      SID,
+      child.id,
+      'finished the review\n<<cluster-done id="legacy-child">>',
+    );
+
+    expect(hoisted.invokeClusterCompletionHoldRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'missing-outcome' }),
+    );
+    expect(store.sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('holds a clear outcome carrying a foreign child id', async () => {
+    const child = childAgent({ id: 'local-child', ordinal: 0, status: 'running' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    const assistantText =
+      '<<cluster-outcome>>{"v":1,"id":"foreign-child","status":"clear"}<</cluster-outcome>>\n<<cluster-done id="local-child">>';
+
+    await advanceClusterImplementation(store.set, store.get)(SID, child.id, assistantText);
+
+    expect(hoisted.invokeClusterCompletionHoldRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'foreign-outcome' }),
+    );
+    expect(store.sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('holds a malformed outcome instead of throwing', async () => {
+    const child = childAgent({ id: 'malformed-child', ordinal: 0, status: 'running' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    const assistantText =
+      '<<cluster-outcome>>{"v":1,"status":<</cluster-outcome>>\n<<cluster-done id="malformed-child">>';
+
+    await expect(
+      advanceClusterImplementation(store.set, store.get)(SID, child.id, assistantText),
+    ).resolves.toBeUndefined();
+    expect(hoisted.invokeClusterCompletionHoldRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'malformed-outcome' }),
+    );
+  });
+
+  it('does not record duplicate completion delivery twice', async () => {
+    const child = childAgent({ id: 'duplicate-child', ordinal: 0, status: 'running' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    const assistantText = 'legacy\n<<cluster-done id="duplicate-child">>';
+    const advance = advanceClusterImplementation(store.set, store.get);
+
+    await advance(SID, child.id, assistantText);
+    await advance(SID, child.id, assistantText);
+
+    expect(hoisted.invokeClusterCompletionHoldRecord).toHaveBeenCalledTimes(1);
+    expect(store.emitNotification).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets a clear outcome advance even when ordinary planner handoff text is present', async () => {
+    const c0 = childAgent({ id: 'handoff-child', ordinal: 0, status: 'running' });
+    const c1 = childAgent({ id: 'handoff-next', ordinal: 1 });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'handoff-child', ordinal: 0, status: 'completed' }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(
+      SID,
+      c0.id,
+      `<<handoff kind=implementer reason="begin execution">>\n${done(c0.id)}`,
+    );
+
+    expect(hoisted.invokeClusterCompletionHoldRecord).not.toHaveBeenCalled();
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
   });
 
   it('marks the child completed and starts the next child on a done marker', async () => {
@@ -1203,7 +1330,7 @@ describe('advanceClusterImplementation', () => {
     );
   });
 
-  it('force-advances past a missing marker: completes the child and starts the next', async () => {
+  it('does not let force silently clear a completion hold', async () => {
     const c0 = childAgent({ id: 'f0', ordinal: 0, status: 'running' });
     const c1 = childAgent({ id: 'f1', ordinal: 1 });
     const p = plan({});
@@ -1221,14 +1348,14 @@ describe('advanceClusterImplementation', () => {
       force: true,
     });
 
+    expect(hoisted.invokeClusterCompletionHoldRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ sourceAgentId: 'f0', reason: 'missing-outcome' }),
+    );
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
       'f0',
-      expect.objectContaining({ status: 'completed' }),
+      expect.objectContaining({ status: 'failed' }),
     );
-    expect(sendTurn).toHaveBeenCalledTimes(1);
-    const call = (sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId; content: string };
-    expect(call.agentId).toBe('f1');
-    expect(call.content).toContain('2/2');
+    expect(sendTurn).not.toHaveBeenCalled();
     expect(state.selectedAgentId).toBe(PARENT);
   });
 
@@ -1291,7 +1418,12 @@ describe('advanceClusterImplementation', () => {
       childAgent({ id: 'degraded-child', ordinal: 0, status: 'completed' }),
     ]);
 
-    await advanceClusterImplementation(set, get)(SID, child.id, 'raw output', { force: true });
+    await advanceClusterImplementation(set, get)(
+      SID,
+      child.id,
+      'raw output <<cluster-outcome>>{"v":1,"id":"degraded-child","status":"clear"}<</cluster-outcome>>',
+      { force: true },
+    );
 
     expect(emitNotification).toHaveBeenCalledTimes(1);
     expect(emitNotification).toHaveBeenCalledWith(
@@ -1311,18 +1443,40 @@ describe('advanceClusterImplementation', () => {
     );
   });
 
-  it('does not notify degraded when the child advances with no output to summarize', async () => {
+  it('does not notify degraded when a resolved hold advances the child with no output', async () => {
     const child = childAgent({ id: 'manual-advance', ordinal: 0, status: 'running' });
     const { get, set, emitNotification } = makeStore({
       sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
       sessionPlans: { [SID]: [plan({})] },
+      clusterCompletionHolds: {
+        [SID]: [
+          {
+            id: 'hold-manual',
+            sessionId: SID,
+            workflowRunId: null,
+            containerAgentId: PARENT,
+            sourceAgentId: 'manual-advance' as AgentId,
+            sourceTurnId: 'turn-1',
+            reason: 'missing-outcome',
+            findings: [],
+            state: 'resolved',
+            resolutionEvidence: 'inspected the output by hand',
+            resolvedAt: '2026-01-01T00:00:00.000Z',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      },
     });
     hoisted.invokeAgentList.mockResolvedValue([
       container({ status: 'running' }),
       childAgent({ id: 'manual-advance', ordinal: 0, status: 'completed' }),
     ]);
 
-    await advanceClusterImplementation(set, get)(SID, child.id, '', { force: true });
+    await advanceClusterImplementation(set, get)(SID, child.id, '', {
+      force: true,
+      resolvedHoldId: 'hold-manual',
+    });
 
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
       child.id,
@@ -1335,6 +1489,44 @@ describe('advanceClusterImplementation', () => {
         title: expect.anything(),
         body: expect.anything(),
       }),
+    );
+  });
+
+  it('advances from a held child that was tombstoned', async () => {
+    const next = childAgent({ id: 'orphan-next', ordinal: 1, status: 'pending' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), next] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterCompletionHolds: {
+        [SID]: [
+          {
+            id: 'hold-orphaned',
+            sessionId: SID,
+            workflowRunId: null,
+            containerAgentId: PARENT,
+            sourceAgentId: 'deleted-child' as AgentId,
+            sourceTurnId: 'turn-deleted',
+            reason: 'missing-outcome',
+            findings: [],
+            state: 'open',
+            resolutionEvidence: null,
+            resolvedAt: null,
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([container({ status: 'running' }), next]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, 'deleted-child' as AgentId, '', {
+      force: true,
+      resolvedHoldId: 'hold-orphaned',
+    });
+
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
+    expect(store.sendTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: next.id, content: expect.stringContaining('do 1') }),
     );
   });
 

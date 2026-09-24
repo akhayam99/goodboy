@@ -11,6 +11,14 @@ vi.mock('@goodboy/ui', () => ({
     border: `border-${tone}/40`,
   }),
   StatusDot: () => null,
+  Button: () => null,
+  BitbucketIcon: () => null,
+  GithubIcon: () => null,
+  GitlabIcon: () => null,
+  JiraIcon: () => null,
+  LinearIcon: () => null,
+  SentryIcon: () => null,
+  SlackIcon: () => null,
 }));
 
 vi.mock('../../../../store', () => ({

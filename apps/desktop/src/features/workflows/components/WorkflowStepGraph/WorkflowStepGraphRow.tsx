@@ -18,6 +18,7 @@ type Props = {
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
+  readonly visibleAgentIds: ReadonlySet<string>;
   readonly selectedAgentId: AgentId | null;
   readonly onSelect: (id: AgentId) => void;
 };
@@ -32,6 +33,7 @@ export const WorkflowStepGraphRow = ({
   roleModels,
   sessionProvider,
   sessionEffort,
+  visibleAgentIds,
   selectedAgentId,
   onSelect,
 }: Props) => {
@@ -77,6 +79,7 @@ export const WorkflowStepGraphRow = ({
         childCount={row.childCount}
         doneChildCount={row.doneChildCount}
         answersForStepName={row.answersForStepName}
+        visibleAgentIds={visibleAgentIds}
         isSelected={selectedAgentId === run.id}
         onSelect={() => onSelect(run.id)}
       />

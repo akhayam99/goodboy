@@ -1,6 +1,9 @@
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import type { ProviderId, SessionId } from '@goodboy/types';
-import { invokeAgentList } from '../../../features/workflows/workflows';
+import {
+  invokeAgentList,
+  invokeClusterCompletionHolds,
+} from '../../../features/workflows/workflows';
 import type { SetFn } from './types';
 
 const PROVIDER_IDS: ReadonlyArray<ProviderId> = Object.keys(PROVIDER_CAPABILITIES).filter(
@@ -9,7 +12,10 @@ const PROVIDER_IDS: ReadonlyArray<ProviderId> = Object.keys(PROVIDER_CAPABILITIE
 
 export const loadPhaseRunsForSession = (set: SetFn) => {
   return async (sessionId: SessionId) => {
-    const runs = await invokeAgentList(sessionId);
+    const [runs, holds] = await Promise.all([
+      invokeAgentList(sessionId),
+      invokeClusterCompletionHolds({ sessionId }),
+    ]);
     set((state) => {
       const modelOverrides = { ...state.agentModelOverride };
       const providerOverrides = { ...state.agentProviderOverride };
@@ -28,6 +34,7 @@ export const loadPhaseRunsForSession = (set: SetFn) => {
       }
       return {
         sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: runs },
+        clusterCompletionHolds: { ...state.clusterCompletionHolds, [sessionId]: holds },
         agentModelOverride: modelOverrides,
         agentProviderOverride: providerOverrides,
         agentEffortOverride: effortOverrides,

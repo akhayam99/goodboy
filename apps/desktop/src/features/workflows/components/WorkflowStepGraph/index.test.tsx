@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
+  ClusterCompletionHold,
   IsoDateTime,
   ProviderRunId,
   SessionId,
@@ -119,7 +120,11 @@ const railColumnOf = (id: string): string | null =>
 afterEach(cleanup);
 
 beforeEach(() => {
-  useAppStore.setState({ sessionTelemetry: {}, agentRunHistory: {} });
+  useAppStore.setState({
+    sessionTelemetry: {},
+    agentRunHistory: {},
+    clusterCompletionHolds: {},
+  });
 });
 
 describe('WorkflowStepGraph', () => {
@@ -276,5 +281,88 @@ describe('WorkflowStepGraph', () => {
     renderGraph(new Map([[scout.id, [subScout(0, 'running')]]]));
 
     expect(screen.queryByTestId('answers-for-child-0')).toBeNull();
+  });
+
+  it('requires written evidence before resolving an open cluster hold', () => {
+    const child = subScout(1, 'failed');
+    const resolveClusterCompletionHold = vi.fn(async () => undefined);
+    const hold: ClusterCompletionHold = {
+      id: 'hold-1',
+      sessionId: SESSION_ID,
+      workflowRunId: null,
+      containerAgentId: scout.id,
+      sourceAgentId: child.id,
+      sourceTurnId: 'turn-1',
+      reason: 'unresolved-outcome',
+      findings: [{ reason: 'network proof is missing', target: 'tester' }],
+      state: 'open',
+      resolutionEvidence: null,
+      resolvedAt: null,
+      createdAt: NOW,
+      updatedAt: NOW,
+    };
+    useAppStore.setState({
+      clusterCompletionHolds: { [SESSION_ID]: [hold] },
+      resolveClusterCompletionHold,
+    });
+
+    renderGraph(new Map([[scout.id, [child]]]));
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve hold' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
+
+    expect(resolveClusterCompletionHold).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Resolution evidence' }), {
+      target: { value: 'Verified the network proof against the saved run.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
+
+    expect(screen.getByText(/Held: network proof is missing/)).toBeDefined();
+    expect(resolveClusterCompletionHold).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      holdId: 'hold-1',
+      resolutionEvidence: 'Verified the network proof against the saved run.',
+    });
+  });
+
+  it('shows an orphaned child hold on its surviving container', () => {
+    const resolveClusterCompletionHold = vi.fn(async () => undefined);
+    const hold: ClusterCompletionHold = {
+      id: 'hold-orphaned',
+      sessionId: SESSION_ID,
+      workflowRunId: null,
+      containerAgentId: scout.id,
+      sourceAgentId: 'deleted-child' as AgentId,
+      sourceTurnId: 'turn-deleted',
+      reason: 'missing-outcome',
+      findings: [],
+      state: 'open',
+      resolutionEvidence: null,
+      resolvedAt: null,
+      createdAt: NOW,
+      updatedAt: NOW,
+    };
+    useAppStore.setState({
+      clusterCompletionHolds: { [SESSION_ID]: [hold] },
+      resolveClusterCompletionHold,
+    });
+
+    renderGraph(new Map());
+
+    const containerButton = screen.getByRole('button', { name: /^1 Scout/u });
+    expect(containerButton.parentElement?.textContent).toContain(
+      'Held: completion outcome missing',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve hold' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Resolution evidence' }), {
+      target: { value: 'Reviewed the tombstoned child transcript.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
+
+    expect(resolveClusterCompletionHold).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      holdId: 'hold-orphaned',
+      resolutionEvidence: 'Reviewed the tombstoned child transcript.',
+    });
   });
 });

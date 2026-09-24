@@ -11,6 +11,7 @@ import type { Notification, NotificationCounts } from '@goodboy/db';
 import type {
   Agent,
   AgentId,
+  ClusterCompletionHold,
   ArtifactId,
   BudgetAlert,
   BudgetRule,
@@ -313,6 +314,9 @@ export type AppState = AppSliceState & {
   readonly stepLibrary: Readonly<Record<WorkspaceId, ReadonlyArray<StepDef>>>;
   readonly sessionWorkflows: Readonly<Record<SessionId, ReadonlyArray<Workflow>>>;
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>;
+  readonly clusterCompletionHolds: Readonly<
+    Record<SessionId, ReadonlyArray<ClusterCompletionHold>>
+  >;
   readonly orchestratingWorkflowRuns: Readonly<Record<WorkflowRunId, boolean>>;
   readonly decisionRestartMarks: Readonly<Record<WorkflowRunId, number>>;
   readonly pendingOrchestrations: Readonly<Record<WorkflowRunId, PendingOrchestration>>;

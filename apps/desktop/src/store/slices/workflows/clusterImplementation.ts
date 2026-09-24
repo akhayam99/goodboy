@@ -1,21 +1,24 @@
 import type {
   Agent,
   AgentId,
+  ClusterCompletionFinding,
+  ClusterCompletionHoldReason,
   ImplementationCluster,
   IsoDateTime,
   PlanWithCount,
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
-import { extractClusterDone } from '@goodboy/core';
+import { extractClusterDone, extractClusterOutcome } from '@goodboy/core';
 import {
   invokeAgentInsertBatch,
   invokeAgentList,
   invokeAgentUpdateStatus,
+  invokeClusterCompletionHoldRecord,
   type AgentInsertArgs,
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
-import { composeKickoff, composeUnitBoundary } from '../../kickoff';
+import { composeClusterOutcomeBoundary, composeKickoff, composeUnitBoundary } from '../../kickoff';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { revalidateChildRouting } from './revalidateChildRouting';
 import { continueOrPause, resetContinueAttempts } from './autoContinue';
@@ -56,7 +59,10 @@ export const clusterBoundaryMarker = (childId: AgentId): string =>
   `<<cluster-done id="${childId}">>`;
 
 export const composeClusterBoundary = (childId: AgentId): string =>
-  composeUnitBoundary({ unit: 'cluster', marker: clusterBoundaryMarker(childId) });
+  [
+    composeUnitBoundary({ unit: 'cluster', marker: clusterBoundaryMarker(childId) }),
+    composeClusterOutcomeBoundary({ agentId: childId }),
+  ].join(' ');
 
 function composeClusterKickoff(
   childId: AgentId,
@@ -498,6 +504,13 @@ export const resumeClusterChildren = async ({
   sessionId,
   container,
 }: ResumeClusterChildrenParams): Promise<boolean> => {
+  if (
+    (get().clusterCompletionHolds?.[sessionId] ?? []).some(
+      (hold) => hold.containerAgentId === container.id && hold.state === 'open',
+    )
+  ) {
+    return false;
+  }
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
   const children = childrenOf(runs, container.id);
   const next = children.find((child) => !isSettledChild(child));
@@ -573,25 +586,169 @@ export const selectFanOutPlan = (
   return findClustersPlan(get, sessionId, opts.workflowRunId);
 };
 
+type OpenCompletionHoldForContainerParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly containerId: AgentId;
+  readonly ignoredHoldId: string | null;
+};
+
+const openCompletionHoldForContainer = ({
+  get,
+  sessionId,
+  containerId,
+  ignoredHoldId,
+}: OpenCompletionHoldForContainerParams) =>
+  (get().clusterCompletionHolds?.[sessionId] ?? []).find(
+    (hold) =>
+      hold.containerAgentId === containerId && hold.state === 'open' && hold.id !== ignoredHoldId,
+  ) ?? null;
+
+const sourceTurnIdForChild = ({
+  get,
+  child,
+}: {
+  readonly get: GetFn;
+  readonly child: Agent;
+}): string => {
+  if (child.runId != null) {
+    return child.runId;
+  }
+  const events = get().transcripts[child.id] ?? [];
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (event?.kind === 'assistant_text') {
+      return event.runId;
+    }
+  }
+  return `unidentified-turn:${child.id}`;
+};
+
+type PersistCompletionHoldParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly child: Agent;
+  readonly containerId: AgentId;
+  readonly assistantText: string;
+  readonly reason: ClusterCompletionHoldReason;
+  readonly findings: ReadonlyArray<ClusterCompletionFinding>;
+};
+
+const completionHoldMessage = ({
+  reason,
+  findings,
+}: {
+  readonly reason: ClusterCompletionHoldReason;
+  readonly findings: ReadonlyArray<ClusterCompletionFinding>;
+}): string => {
+  if (reason === 'unresolved-outcome') {
+    return findings.map((finding) => `${finding.reason} (${finding.target})`).join('; ');
+  }
+  if (reason === 'missing-outcome') {
+    return 'the agent emitted the cluster boundary without a completion outcome. inspect its output, then resolve the hold explicitly.';
+  }
+  if (reason === 'malformed-outcome') {
+    return 'the agent emitted a malformed completion outcome. inspect its output, then resolve the hold explicitly.';
+  }
+  return 'the completion outcome belongs to another agent. inspect its output, then resolve the hold explicitly.';
+};
+
+const persistCompletionHold = async ({
+  set,
+  get,
+  sessionId,
+  child,
+  containerId,
+  assistantText,
+  reason,
+  findings,
+}: PersistCompletionHoldParams): Promise<void> => {
+  const sourceTurnId = sourceTurnIdForChild({ get, child });
+  const existing = (get().clusterCompletionHolds?.[sessionId] ?? []).find(
+    (hold) => hold.sourceAgentId === child.id && hold.sourceTurnId === sourceTurnId,
+  );
+  if (existing !== undefined) {
+    return;
+  }
+  const outputSummary =
+    assistantText.length > 0
+      ? await summarizeWorkflowAgentOutput({
+          set,
+          get,
+          sessionId,
+          agent: child,
+          output: assistantText,
+        })
+      : 'cluster held for explicit resolution';
+  const hold = await invokeClusterCompletionHoldRecord({
+    id: `cluster-completion:${child.id}:${sourceTurnId}`,
+    sessionId,
+    workflowRunId: child.workflowRunId ?? null,
+    containerAgentId: containerId,
+    sourceAgentId: child.id,
+    sourceTurnId,
+    reason,
+    findings,
+  });
+  await invokeAgentUpdateStatus(child.id, {
+    status: 'failed',
+    outputSummary,
+    completedAt: nowIso(),
+  });
+  const refreshed = await invokeAgentList(sessionId);
+  set((state) => ({
+    sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshed },
+    clusterCompletionHolds: {
+      ...(state.clusterCompletionHolds ?? {}),
+      [sessionId]: [...(state.clusterCompletionHolds?.[sessionId] ?? []), hold],
+    },
+  }));
+  void get().refreshUnreadWorkspaces();
+  void get().emitNotification({
+    kind: 'error',
+    severity: 'warning',
+    title: `Cluster ${child.name} is on hold`,
+    body: completionHoldMessage({ reason, findings }),
+    sessionId,
+  });
+};
+
 export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
   return async (
     sessionId: SessionId,
     childAgentId: AgentId,
     assistantText: string,
-    opts?: { readonly force?: boolean },
+    opts?: { readonly force?: boolean; readonly resolvedHoldId?: string },
   ) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
-    const child = runs.find((r) => r.id === childAgentId);
-    if (!child || !child.parentAgentId) {
+    const resolvedHold =
+      opts?.resolvedHoldId === undefined
+        ? null
+        : ((get().clusterCompletionHolds?.[sessionId] ?? []).find(
+            (hold) =>
+              hold.id === opts.resolvedHoldId &&
+              hold.sourceAgentId === childAgentId &&
+              (hold.state === 'open' || hold.state === 'resolved'),
+          ) ?? null);
+    const isExplicitResolution = opts?.force === true && resolvedHold !== null;
+    const child = runs.find((run) => run.id === childAgentId);
+    if (child === undefined && !isExplicitResolution) {
       return;
     }
-    const containerId = child.parentAgentId;
+    if (child !== undefined && child.parentAgentId === undefined) {
+      return;
+    }
+    const containerId = child?.parentAgentId ?? resolvedHold?.containerAgentId;
+    if (containerId === undefined) {
+      return;
+    }
     const plan = await resolveClustersPlan({
       set,
       get,
       sessionId,
       containerId,
-      workflowRunId: child.workflowRunId,
+      workflowRunId: child?.workflowRunId ?? resolvedHold?.workflowRunId ?? undefined,
     });
     const clusters = plan?.clusters ?? [];
     const goalTitle = plan?.title ?? 'the plan';
@@ -600,7 +757,8 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       childrenOf(runs, containerId).findIndex((c) => c.id === childAgentId),
     );
 
-    if (!opts?.force && !extractClusterDone(assistantText)) {
+    const doneMarker = extractClusterDone(assistantText);
+    if (child !== undefined && opts?.force !== true && doneMarker?.id !== childAgentId) {
       await continueOrPause({
         set,
         get,
@@ -621,9 +779,53 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
 
+    if (!isExplicitResolution) {
+      if (child === undefined) {
+        return;
+      }
+      const extraction = extractClusterOutcome({ assistantText });
+      const reason: ClusterCompletionHoldReason | null =
+        extraction.kind === 'missing'
+          ? 'missing-outcome'
+          : extraction.kind === 'malformed'
+            ? 'malformed-outcome'
+            : extraction.outcome.id !== childAgentId
+              ? 'foreign-outcome'
+              : extraction.outcome.status === 'unresolved'
+                ? 'unresolved-outcome'
+                : null;
+      if (reason !== null) {
+        const findings =
+          extraction.kind === 'valid' && extraction.outcome.status === 'unresolved'
+            ? extraction.outcome.findings
+            : [];
+        await persistCompletionHold({
+          set,
+          get,
+          sessionId,
+          child,
+          containerId,
+          assistantText,
+          reason,
+          findings,
+        });
+        return;
+      }
+      if (
+        openCompletionHoldForContainer({
+          get,
+          sessionId,
+          containerId,
+          ignoredHoldId: null,
+        }) !== null
+      ) {
+        return;
+      }
+    }
+
     resetContinueAttempts({ set, get, agentId: childAgentId });
     const outputSummary =
-      assistantText.length > 0
+      child !== undefined && assistantText.length > 0
         ? await summarizeWorkflowAgentOutput({
             set,
             get,
@@ -643,14 +845,30 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     const children = childrenOf(refreshed, containerId);
     const isDone = (c: Agent): boolean => c.id === childAgentId || isSettledChild(c);
     const settledCount = children.filter(isDone).length;
-    const total = clusters.length > 0 ? clusters.length : children.length;
+    const childIds = new Set(children.map((candidate) => candidate.id));
+    const virtualCompletedCount = (get().clusterCompletionHolds?.[sessionId] ?? []).filter(
+      (hold) =>
+        hold.containerAgentId === containerId &&
+        !childIds.has(hold.sourceAgentId) &&
+        (hold.state === 'resolved' || hold.id === resolvedHold?.id),
+    ).length;
+    const settledProgress = settledCount + virtualCompletedCount;
+    const total = clusters.length > 0 ? clusters.length : children.length + virtualCompletedCount;
 
-    if (settledCount >= total) {
+    if (
+      settledProgress >= total &&
+      openCompletionHoldForContainer({
+        get,
+        sessionId,
+        containerId,
+        ignoredHoldId: isExplicitResolution ? resolvedHold.id : null,
+      }) === null
+    ) {
       const container = refreshed.find((r) => r.id === containerId);
       if (container != null && !isSettledChild(container)) {
         await invokeAgentUpdateStatus(containerId, {
           status: 'completed',
-          outputSummary: `completed ${settledCount} clusters`,
+          outputSummary: `completed ${settledProgress} clusters`,
           completedAt: nowIso(),
         });
         refreshed = await invokeAgentList(sessionId);
@@ -661,9 +879,21 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
 
+    if (
+      openCompletionHoldForContainer({
+        get,
+        sessionId,
+        containerId,
+        ignoredHoldId: isExplicitResolution ? resolvedHold.id : null,
+      }) !== null
+    ) {
+      return;
+    }
+
     const nextIndex = children.findIndex((c) => !isDone(c));
     const next = nextIndex >= 0 ? children[nextIndex] : undefined;
-    if (!next) {
+    const nextClusterIndex = nextIndex + virtualCompletedCount;
+    if (next === undefined) {
       await invokeAgentUpdateStatus(containerId, { status: 'failed', completedAt: nowIso() });
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
@@ -677,7 +907,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       });
       return;
     }
-    if (!hasInstructions(clusters[nextIndex])) {
+    if (!hasInstructions(clusters[nextClusterIndex])) {
       await invokeAgentUpdateStatus(next.id, { status: 'failed', completedAt: nowIso() });
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
@@ -697,7 +927,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       sessionId,
       child: next,
       role: 'implementer',
-      promptText: `${next.name}\n${clusters[nextIndex]?.instructions ?? ''}`,
+      promptText: `${next.name}\n${clusters[nextClusterIndex]?.instructions ?? ''}`,
     });
     if (revalidated.kind === 'blocked') {
       const held = await invokeAgentList(sessionId);
@@ -718,7 +948,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       sessionId,
       containerId,
       childId: next.id,
-      content: composeClusterKickoff(next.id, goalTitle, clusters, nextIndex),
+      content: composeClusterKickoff(next.id, goalTitle, clusters, nextClusterIndex),
     });
   };
 };
