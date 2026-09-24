@@ -1,17 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Database } from '../client';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { migrations } from './index';
 import { migrate } from './runner';
 
 const NOW = Date.parse('2026-08-22T10:00:00.000Z');
 
 const seedThrough129 = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(
-    db,
-    migrations.filter((migration) => migration.version <= 129),
-  );
+  const db = await makeMigratedTestDatabase({ throughVersion: 129 });
   await db.execute(
     `INSERT INTO workspaces (id, name, slug, created_at, updated_at)
      VALUES ('workspace-1', 'Workspace', 'workspace', ?, ?)`,

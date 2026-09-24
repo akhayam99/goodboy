@@ -2,11 +2,14 @@ import { Fragment, useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 import { useDestinationCounts } from '../../hooks/useDestinationCounts';
+import { useLensDestinations } from '../../hooks/useLensDestinations';
 import { lensLabelFor } from '../../lens-labels';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { SIBLING_GROUP_LABEL_CLASS } from './crumbClasses';
 import { DestinationRow } from './DestinationRow';
 import { lensSwitcherGroups } from './lensSwitcherGroups';
+
+const CONTEXT_PARTS = new Set<LensKind>(['goal', 'decisions', 'last_output_summary']);
 
 type LensDestinationListProps = {
   readonly sessionId: SessionId;
@@ -21,7 +24,8 @@ export const LensDestinationList = ({
   isBranchless,
   onSelect,
 }: LensDestinationListProps) => {
-  const groups = useMemo(() => lensSwitcherGroups({ isBranchless }), [isBranchless]);
+  const destinations = useLensDestinations({ sessionId });
+  const groups = useMemo(() => lensSwitcherGroups({ destinations }), [destinations]);
   const counts = useDestinationCounts({ sessionId });
 
   return (
@@ -43,7 +47,10 @@ export const LensDestinationList = ({
               label={lensLabelFor({ lens: entry.lens, isBranchless })}
               icon={entry.icon}
               shortcut={entry.shortcut}
-              isCurrent={activeLens === entry.lens}
+              isCurrent={
+                activeLens === entry.lens ||
+                (entry.lens === 'context' && activeLens !== null && CONTEXT_PARTS.has(activeLens))
+              }
               count={counts[entry.lens] ?? null}
               onSelect={() => onSelect(entry.lens)}
             />

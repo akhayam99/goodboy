@@ -4,29 +4,40 @@ import {
   IntegrationGlyph,
   integrationLabel,
 } from '../../../integrations/components/IntegrationGlyph';
-import { kindFilterCounts } from '../../kindFilter';
-import { INBOX_PROVIDERS, type InboxRecord } from '../../types';
+import { INBOX_KIND_PROVIDERS, kindFilterCounts, visibleKindFilters } from '../../kindFilter';
+import type { InboxKindFilter } from '../../kindFilter';
+import { INBOX_PROVIDERS, type InboxProvider, type InboxRecord } from '../../types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NOT_LOADED_HINT, UNKNOWN_VALUE } from '../../../../shared/utils/unknownValue';
 
 type Props = {
   readonly records: ReadonlyArray<InboxRecord>;
   readonly hasVisibleRecords: boolean;
   readonly hasFiltersActive: boolean;
+  readonly errors: Readonly<Record<InboxProvider, string | null>>;
+  readonly connected: ReadonlyArray<InboxProvider>;
+  readonly onRetry: () => void;
   readonly onClearFilters: () => void;
   readonly onOpenIntegrations: () => void;
 };
 
-type Reason = 'nothing-connected' | 'no-matches' | 'no-selection';
+type Reason = 'failed' | 'nothing-connected' | 'all-clear' | 'no-matches' | 'no-selection';
+
+type TileKind = Exclude<InboxKindFilter, 'all'>;
 
 type ReasonCopy = {
   readonly title: string;
   readonly description: string;
 };
 
-const REASON_COPY: Record<Reason, ReasonCopy> = {
+const REASON_COPY: Record<Exclude<Reason, 'failed'>, ReasonCopy> = {
   'nothing-connected': {
     title: 'Inbox is empty',
     description: 'Connect a tool to collect issues, reviews, threads and errors here.',
+  },
+  'all-clear': {
+    title: 'Nothing assigned to you',
+    description: 'Connected tools have no open issues, reviews, threads or errors for you.',
   },
   'no-matches': {
     title: 'No matching items',
@@ -42,17 +53,42 @@ export const InboxEmptySummary = ({
   records,
   hasVisibleRecords,
   hasFiltersActive,
+  errors,
+  connected,
+  onRetry,
   onClearFilters,
   onOpenIntegrations,
 }: Props) => {
+  const failedProviders = INBOX_PROVIDERS.filter((provider) => errors[provider] !== null);
   const reason: Reason = ((): Reason => {
     if (hasVisibleRecords) {
       return 'no-selection';
     }
-    return records.length === 0 && !hasFiltersActive ? 'nothing-connected' : 'no-matches';
+    if (records.length > 0 || hasFiltersActive) {
+      return 'no-matches';
+    }
+    if (failedProviders.length > 0) {
+      return 'failed';
+    }
+    return connected.length === 0 ? 'nothing-connected' : 'all-clear';
   })();
-  const copy = REASON_COPY[reason];
+  const copy: ReasonCopy =
+    reason === 'failed'
+      ? {
+          title: 'Some tools did not load',
+          description: `${failedProviders.map((provider) => integrationLabel({ provider })).join(', ')} did not answer, so this is not everything assigned to you.`,
+        }
+      : REASON_COPY[reason];
   const counts = kindFilterCounts({ records });
+  const tile = ({ kind }: { readonly kind: TileKind }) => {
+    const isUnknown =
+      counts[kind] === 0 &&
+      INBOX_KIND_PROVIDERS[kind].some((provider) => errors[provider] !== null);
+    return isUnknown
+      ? { value: UNKNOWN_VALUE, hint: NOT_LOADED_HINT }
+      : { value: String(counts[kind]), hint: undefined };
+  };
+  const hasPullRequestFeed = visibleKindFilters({ connected }).includes('pr-mr');
   const providerCounts = INBOX_PROVIDERS.map((provider) => ({
     provider,
     count: records.filter((record) => record.provider === provider).length,
@@ -71,28 +107,30 @@ export const InboxEmptySummary = ({
           <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
             <StatCard
               label="Issues"
-              value={String(counts.issue)}
+              {...tile({ kind: 'issue' })}
               icon={<CircleDot size={ICON_SIZE.hero} aria-hidden />}
               tone="info"
               valueSize="lg"
             />
-            <StatCard
-              label="PRs & MRs"
-              value={String(counts['pr-mr'])}
-              icon={<GitPullRequest size={ICON_SIZE.hero} aria-hidden />}
-              tone="merged"
-              valueSize="lg"
-            />
+            {hasPullRequestFeed ? (
+              <StatCard
+                label="PRs & MRs"
+                {...tile({ kind: 'pr-mr' })}
+                icon={<GitPullRequest size={ICON_SIZE.hero} aria-hidden />}
+                tone="merged"
+                valueSize="lg"
+              />
+            ) : null}
             <StatCard
               label="Threads"
-              value={String(counts.thread)}
+              {...tile({ kind: 'thread' })}
               icon={<MessagesSquare size={ICON_SIZE.hero} aria-hidden />}
-              tone="accent"
+              tone="primary"
               valueSize="lg"
             />
             <StatCard
               label="Errors"
-              value={String(counts.error)}
+              {...tile({ kind: 'error' })}
               icon={<Bug size={ICON_SIZE.hero} aria-hidden />}
               tone="danger"
               valueSize="lg"
@@ -116,17 +154,23 @@ export const InboxEmptySummary = ({
             </div>
           ) : null}
 
-          {reason === 'no-selection' ? null : (
+          {reason === 'no-selection' || reason === 'all-clear' ? null : (
             <div className="flex items-center gap-2">
               {reason === 'no-matches' ? (
                 <Button variant="secondary" size="sm" onClick={onClearFilters}>
                   Clear filters
                 </Button>
-              ) : (
+              ) : null}
+              {reason === 'failed' ? (
+                <Button variant="secondary" size="sm" onClick={onRetry}>
+                  Retry
+                </Button>
+              ) : null}
+              {reason === 'nothing-connected' ? (
                 <Button variant="secondary" size="sm" onClick={onOpenIntegrations}>
                   Connect tools
                 </Button>
-              )}
+              ) : null}
             </div>
           )}
         </div>

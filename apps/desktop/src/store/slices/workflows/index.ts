@@ -17,9 +17,9 @@ import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 import { continueWorkflowRun } from './continueWorkflowRun';
 import { copyWorkflowFromWorkspace } from './copyWorkflowFromWorkspace';
 import { orchestrateNextStep } from './orchestrateNextStep';
-import { setWorkflowOrchestratorHints } from './setWorkflowOrchestratorHints';
+import { addWorkflowOrchestratorHint } from './addWorkflowOrchestratorHint';
+import { removeWorkflowOrchestratorHint } from './removeWorkflowOrchestratorHint';
 import { setWorkflowOrchestratorRouting } from './setWorkflowOrchestratorRouting';
-import { setWorkflowRoleModelOverrides } from './setWorkflowRoleModelOverrides';
 import { renameWorkflow } from './renameWorkflow';
 import { reorderSessionWorkflows } from './reorderSessionWorkflows';
 import { restoreWorkflow } from './restoreWorkflow';
@@ -73,9 +73,9 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     orchestrateNextStep: orchestrateNextStep(set, get),
     retryWorkflowOrchestration: retryWorkflowOrchestration(set, get),
     continueWorkflowRun: continueWorkflowRun(set, get),
-    setWorkflowOrchestratorHints: setWorkflowOrchestratorHints(set, get),
+    addWorkflowOrchestratorHint: addWorkflowOrchestratorHint(set, get),
+    removeWorkflowOrchestratorHint: removeWorkflowOrchestratorHint(set, get),
     setWorkflowOrchestratorRouting: setWorkflowOrchestratorRouting(set, get),
-    setWorkflowRoleModelOverrides: setWorkflowRoleModelOverrides(set, get),
     retryStepSummary: retryStepSummary(set, get),
     recoverStuckStep: recoverStuckStep(get),
   };

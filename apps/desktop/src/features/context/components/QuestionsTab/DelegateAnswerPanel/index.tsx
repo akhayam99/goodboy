@@ -1,9 +1,8 @@
 import { Bot } from 'lucide-react';
-import { Textarea, cn } from '@goodboy/ui';
+import { Textarea, cn, tintClasses, Eyebrow } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
-import { getDefaultTurnModel } from '@goodboy/core';
+import { getDefaultTurnModel, clampEffortForModel } from '@goodboy/core';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { clampEffort } from '../../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { QUESTION_DELEGATE_COPY } from '../../../questionDelegate';
 import type { DelegateRouting } from '../useOpenQuestions';
@@ -40,7 +39,11 @@ export const DelegateAnswerPanel = ({
       return;
     }
     const model = getDefaultTurnModel({ id: provider });
-    onRouting({ provider, model, effort: clampEffort(model, routing.effort) });
+    onRouting({
+      provider,
+      model,
+      effort: clampEffortForModel({ model, effort: routing.effort }) ?? routing.effort,
+    });
   };
 
   return (
@@ -53,9 +56,9 @@ export const DelegateAnswerPanel = ({
           type="button"
           onClick={onCancel}
           className={cn(
-            'shrink-0 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
+            'shrink-0 rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
             'transition-colors duration-150 hover:text-foreground',
-            'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
           )}
         >
           {QUESTION_DELEGATE_COPY.back}
@@ -65,7 +68,11 @@ export const DelegateAnswerPanel = ({
         data-testid="delegate-answer-panel"
         className={cn(
           'flex w-full min-w-0 flex-col gap-3 rounded-md border px-2 py-2',
-          'border-primary/40 bg-primary/10 motion-safe:animate-fade-in',
+          cn(
+            tintClasses('primary').border,
+            tintClasses('primary').bg,
+            'motion-safe:animate-fade-in',
+          ),
         )}
       >
         <div className="flex min-w-0 items-center gap-2">
@@ -77,10 +84,8 @@ export const DelegateAnswerPanel = ({
         <p className="text-2xs text-muted-foreground">{QUESTION_DELEGATE_COPY.panelHint}</p>
         <div className="flex flex-col gap-1">
           <span className="flex items-baseline gap-1.5">
-            <span className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/80">
-              {QUESTION_DELEGATE_COPY.hintsLabel}
-            </span>
-            <span className="text-2xs lowercase tracking-normal text-muted-foreground/60">
+            <Eyebrow label={QUESTION_DELEGATE_COPY.hintsLabel} />
+            <span className="text-2xs lowercase tracking-normal text-faint-foreground">
               optional
             </span>
           </span>
@@ -109,7 +114,11 @@ export const DelegateAnswerPanel = ({
           disabled={false}
           onProvider={onProvider}
           onModel={(model) =>
-            onRouting({ ...routing, model, effort: clampEffort(model, routing.effort) })
+            onRouting({
+              ...routing,
+              model,
+              effort: clampEffortForModel({ model, effort: routing.effort }) ?? routing.effort,
+            })
           }
         />
       </div>

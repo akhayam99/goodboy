@@ -82,6 +82,23 @@ describe('parseLegacyId', () => {
     }
   });
 
+  it('degrades the openrouter ids the api no longer lists onto their live replacements', () => {
+    const cases = [
+      { id: 'openrouter/google/gemini-3.1-pro', key: 'gemini-3.1-pro' },
+      { id: 'openrouter/deepseek/deepseek-v4', key: 'deepseek-v4-pro' },
+      { id: 'deepseek-v4', key: 'deepseek-v4-pro' },
+      { id: 'openrouter/x-ai/grok-4', key: 'grok-4.7' },
+      { id: 'grok-4', key: 'grok-4.7' },
+    ];
+    for (const { id, key } of cases) {
+      expect(parseLegacyId({ provider: 'openrouter', id })).toEqual({ key });
+      expect(resolveStoredModelSelection({ provider: 'openrouter', id })).toEqual({
+        selection: { key },
+        report: { kind: 'legacy', id },
+      });
+    }
+  });
+
   it('returns null for an id that no old registry shipped', () => {
     expect(parseLegacyId({ provider: 'codex', id: 'gpt-99' })).toBeNull();
   });

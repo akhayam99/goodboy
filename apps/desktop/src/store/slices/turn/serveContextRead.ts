@@ -67,13 +67,13 @@ export const serveContextRead = async ({
     return { kind: 'none' };
   }
   if (extraction.kind === 'malformed') {
-    void get().emitNotification(
-      'error',
-      'warning',
-      `context read refused: ${agent.name}`,
-      extraction.reason,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Context read refused for ${agent.name}`,
+      body: extraction.reason,
+      sessionId,
+    });
     return { kind: 'refused', reason: extraction.reason };
   }
   const { inventory, contents } = issuedAgentInventory({ get, sessionId, agentId });
@@ -83,13 +83,13 @@ export const serveContextRead = async ({
     authorizedSourceIds: new Set(contents.keys()),
   });
   if (plan.kind === 'stale-revision' || plan.kind === 'empty') {
-    void get().emitNotification(
-      'error',
-      'warning',
-      `context read refused: ${agent.name}`,
-      plan.reason,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Context read refused for ${agent.name}`,
+      body: plan.reason,
+      sessionId,
+    });
     return { kind: 'refused', reason: plan.reason };
   }
   if (plan.kind === 'none') {
@@ -135,7 +135,11 @@ export const serveContextRead = async ({
   } catch {
     const reason =
       'the delivery receipt could not be recorded, so nothing was handed over and the agent is held until it asks again';
-    void get().emitNotification('error', 'warning', `context read held: ${agent.name}`, reason, {
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Context read held for ${agent.name}`,
+      body: reason,
       sessionId,
     });
     return { kind: 'held', reason };

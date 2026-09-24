@@ -14,7 +14,7 @@ const buildAgent = (overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent =>
     ...overrides,
   }) as Agent;
 
-const kindOf = (agent: Agent) => classifyAgent(agent, null);
+const kindOf = (agent: Agent) => classifyAgent({ agent, override: null });
 const ids = (agents: ReadonlyArray<Agent>) => agents.map((agent) => agent.id);
 
 const scout = buildAgent({ id: 'scout' as AgentId, name: 'scout one', ordinal: 0 });

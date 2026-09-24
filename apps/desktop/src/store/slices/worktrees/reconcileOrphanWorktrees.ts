@@ -50,13 +50,14 @@ const runReconcile = async (set: SetFn, get: GetFn): Promise<void> => {
     if (orphans.length === 0 || previous.get(workspaceId) === signature(orphans)) {
       continue;
     }
-    await get().emitNotification(
-      'orphan-worktrees',
-      'info',
-      `${orphans.length} session folders left on disk`,
-      'They belong to no session any more. Review them in workspace settings and remove them when you want the space back.',
-      { workspaceId, action: { kind: 'open-orphan-worktrees', workspaceId } },
-    );
+    await get().emitNotification({
+      kind: 'orphan-worktrees',
+      severity: 'info',
+      title: `${orphans.length} session folders left on disk`,
+      body: 'They belong to no session any more. Review them in workspace settings and remove them when you want the space back.',
+      workspaceId,
+      action: { kind: 'open-orphan-worktrees', workspaceId },
+    });
   }
 };
 

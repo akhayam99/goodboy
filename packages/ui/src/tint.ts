@@ -1,14 +1,5 @@
 export type Tone =
-  | 'success'
-  | 'info'
-  | 'warning'
-  | 'danger'
-  | 'primary'
-  | 'accent'
-  | 'merged'
-  | 'draft'
-  | 'operations'
-  | 'neutral';
+  'success' | 'info' | 'warning' | 'danger' | 'primary' | 'merged' | 'draft' | 'neutral';
 
 export type TintClasses = {
   readonly bg: string;
@@ -42,7 +33,7 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-success',
     icon: 'text-success',
     dot: 'bg-success',
-    solid: 'bg-success text-success-foreground',
+    solid: 'bg-success text-on-tone',
   },
   info: {
     bg: 'bg-info/10',
@@ -58,7 +49,7 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-info',
     icon: 'text-info',
     dot: 'bg-info',
-    solid: 'bg-info text-info-foreground',
+    solid: 'bg-info text-on-tone',
   },
   warning: {
     bg: 'bg-warning/10',
@@ -74,7 +65,7 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-warning',
     icon: 'text-warning',
     dot: 'bg-warning',
-    solid: 'bg-warning text-warning-foreground',
+    solid: 'bg-warning text-on-tone',
   },
   danger: {
     bg: 'bg-danger/10',
@@ -90,7 +81,7 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-danger',
     icon: 'text-danger',
     dot: 'bg-danger',
-    solid: 'bg-danger text-danger-foreground',
+    solid: 'bg-danger text-on-tone',
   },
   primary: {
     bg: 'bg-primary/10',
@@ -106,23 +97,7 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-primary',
     icon: 'text-primary',
     dot: 'bg-primary',
-    solid: 'bg-primary text-primary-foreground',
-  },
-  accent: {
-    bg: 'bg-accent/10',
-    bgSoft: 'bg-accent/5',
-    ring: 'ring-accent/20',
-    ringStrong: 'ring-accent/60',
-    border: 'border-accent/40',
-    borderSoft: 'border-accent/20',
-    hoverBorder: 'hover:border-accent/40',
-    hoverBg: 'hover:bg-accent/20',
-    hoverBgSoft: 'hover:bg-accent/5',
-    hoverText: 'hover:text-accent',
-    text: 'text-accent',
-    icon: 'text-accent',
-    dot: 'bg-accent',
-    solid: 'bg-accent text-accent-foreground',
+    solid: 'bg-primary text-on-tone',
   },
   merged: {
     bg: 'bg-merged/10',
@@ -138,7 +113,7 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-merged',
     icon: 'text-merged',
     dot: 'bg-merged',
-    solid: 'bg-merged text-merged-foreground',
+    solid: 'bg-merged text-on-tone',
   },
   draft: {
     bg: 'bg-draft/10',
@@ -154,23 +129,7 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-draft',
     icon: 'text-draft',
     dot: 'bg-draft',
-    solid: 'bg-draft text-draft-foreground',
-  },
-  operations: {
-    bg: 'bg-muted/30',
-    bgSoft: 'bg-muted/30',
-    ring: 'ring-primary/20',
-    ringStrong: 'ring-primary/60',
-    border: 'border-primary/20',
-    borderSoft: 'border-primary/20',
-    hoverBorder: 'hover:border-primary/40',
-    hoverBg: 'hover:bg-muted/50',
-    hoverBgSoft: 'hover:bg-muted/30',
-    hoverText: 'hover:text-foreground',
-    text: 'text-foreground/80',
-    icon: 'text-primary/60',
-    dot: 'bg-primary/60',
-    solid: 'bg-muted text-foreground',
+    solid: 'bg-draft text-on-tone',
   },
   neutral: {
     bg: 'bg-muted',
@@ -180,8 +139,8 @@ const TINT: Record<Tone, TintClasses> = {
     border: 'border-border-soft',
     borderSoft: 'border-border-soft',
     hoverBorder: 'hover:border-border-soft',
-    hoverBg: 'hover:bg-muted',
-    hoverBgSoft: 'hover:bg-muted/50',
+    hoverBg: 'hover:bg-hover',
+    hoverBgSoft: 'hover:bg-hover',
     hoverText: 'hover:text-foreground',
     text: 'text-muted-foreground',
     icon: 'text-muted-foreground',

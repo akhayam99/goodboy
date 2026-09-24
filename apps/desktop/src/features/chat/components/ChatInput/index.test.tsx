@@ -186,12 +186,9 @@ vi.mock('../../../../store', () => ({
   },
 }));
 
-vi.mock('../../../../permissions', () => ({
-  useEffectivePermissionRules: () => [],
-}));
-
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
+  useToastLift: () => undefined,
 }));
 
 vi.mock('../../turn', () => ({
@@ -264,13 +261,6 @@ describe('ChatInput, input wiring', () => {
     render(<ChatInput session={makeSession()} />);
     const textarea = screen.getByRole('textbox');
     expect((textarea as HTMLTextAreaElement).disabled).toBe(false);
-  });
-
-  it('focuses the textarea when requested by a transcript CTA', () => {
-    render(<ChatInput session={makeSession()} />);
-    const textarea = screen.getByRole('textbox');
-    window.dispatchEvent(new CustomEvent('goodboy:focus-composer'));
-    expect(document.activeElement).toBe(textarea);
   });
 
   it('shows the session cost badge in the footer once spend accrues', () => {
@@ -868,6 +858,33 @@ describe('ChatInput, all providers over budget', () => {
       expect(screen.queryByTestId('scope-mismatch-nudge')).toBeNull();
     });
     expect(sendTurnMock).toHaveBeenCalledOnce();
+  });
+});
+
+describe('ChatInput, scope nudge', () => {
+  it('reads the persisted agent kind when no override is set', async () => {
+    mockStore.setState({
+      sessionPhaseRuns: {
+        'session-1': [
+          {
+            id: 'agent-1',
+            sessionId: 'session-1',
+            ordinal: 0,
+            name: 'agent 1',
+            status: 'pending',
+            kind: 'planner',
+          },
+        ],
+      },
+    });
+    const user = userEvent.setup();
+    render(<ChatInput session={makeSession()} />);
+
+    await user.type(screen.getByRole('textbox'), 'implement the retry');
+    await user.keyboard('{Enter}');
+
+    expect(await screen.findByTestId('scope-mismatch-nudge')).toBeTruthy();
+    expect(sendTurnMock).not.toHaveBeenCalled();
   });
 });
 

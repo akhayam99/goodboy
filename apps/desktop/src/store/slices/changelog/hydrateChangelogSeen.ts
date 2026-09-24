@@ -7,9 +7,12 @@ export const hydrateChangelogSeen = (set: SetFn, _get: GetFn) => {
   return async (): Promise<void> => {
     try {
       const stored = await getSetting(tauriDatabase, SETTING_CHANGELOG_SEEN);
-      set({ changelogSeenVersion: stored != null && stored !== '' ? stored : null });
+      set({
+        changelogSeenVersion: stored != null && stored !== '' ? stored : null,
+        changelogSeenHydrated: true,
+      });
     } catch {
-      set({ changelogSeenVersion: null });
+      set({ changelogSeenVersion: null, changelogSeenHydrated: true });
     }
   };
 };

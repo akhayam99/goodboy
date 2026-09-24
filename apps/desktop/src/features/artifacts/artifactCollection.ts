@@ -49,14 +49,14 @@ export type ArtifactGeneration = Readonly<{
 }>;
 
 const GENERATING: StatePresentation = {
-  label: 'generating',
+  label: 'Generating',
   reason: 'the agent is still working on it',
   tone: 'info',
   icon: CONCEPT_ICONS.runPending,
 };
 
 const WAITING: StatePresentation = {
-  label: 'needs you',
+  label: 'Needs you',
   reason: 'the agent stopped on a question it cannot answer for you',
   tone: 'warning',
   icon: CONCEPT_ICONS.questions,
@@ -70,7 +70,7 @@ export const ARTIFACT_GENERATION_PRESENTATION: Record<
     generating: GENERATING,
     waiting: WAITING,
     unproduced: {
-      label: 'no report produced',
+      label: 'No report',
       reason: 'the turn ended without a report to read',
       tone: 'warning',
       icon: CONCEPT_ICONS.runFailed,
@@ -80,7 +80,7 @@ export const ARTIFACT_GENERATION_PRESENTATION: Record<
     generating: GENERATING,
     waiting: WAITING,
     unproduced: {
-      label: 'wireframe could not be read',
+      label: "Couldn't read wireframe",
       reason: 'the turn ended without a wireframe to read',
       tone: 'warning',
       icon: CONCEPT_ICONS.runFailed,

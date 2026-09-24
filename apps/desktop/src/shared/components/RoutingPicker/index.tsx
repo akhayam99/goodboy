@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
+import { withShortcutHint, type ShortcutId } from '../../keyboard/registry';
 import { ChevronDown, RotateCcw } from 'lucide-react';
 import {
   MODEL_CATALOGS,
   modelAxes,
   modelIdForSelection,
   remapModelSelection,
-  resolveModelArgs,
   resolveStoredModelSelection,
 } from '@goodboy/core';
 import {
@@ -16,19 +16,17 @@ import {
   ScrollFade,
   Tooltip,
   useDropdown,
+  tintClasses,
 } from '@goodboy/ui';
-import type { CatalogModel, ModelSelection, ProviderId } from '@goodboy/types';
-import {
-  EFFORT_LABEL,
-  PROVIDER_LABEL,
-  modelLabel,
-  type EffortLevel,
-} from '../../../features/chat/utils/chat-constants';
-import {
-  VERBOSITY_LABEL,
-  VERBOSITY_LEVELS,
-  type VerbosityLevel,
-} from '../../../features/settings/verbosity';
+import type {
+  CatalogModel,
+  EffortLevel,
+  ModelSelection,
+  ProviderId,
+  VerbosityLevel,
+} from '@goodboy/types';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
+import { VERBOSITY_LABEL, VERBOSITY_LEVELS } from '../../../features/settings/verbosity';
 import { AxesSection } from './AxesSection';
 import { verbosityTone } from './chipTone';
 import { PickerChip } from './PickerChip';
@@ -38,6 +36,7 @@ import { RecommendationRow } from './RecommendationRow';
 import { TriggerLabel } from './TriggerLabel';
 import { ROUTING_PICKER_CONSTANTS } from './constants';
 import { recommendationSummary } from './recommendationSummary';
+import { routingSummary, routingTriggerLabel } from './routingSummary';
 import { resolvePickerSelection } from './resolvePickerSelection';
 import { resolveRouting, type Recommendation } from './resolveRouting';
 import { selectionForModel } from './selectionForModel';
@@ -85,6 +84,7 @@ export type Props = {
   readonly disabledTitle?: string;
   readonly ariaLabel?: string;
   readonly openEvent?: string;
+  readonly shortcut?: ShortcutId;
   readonly availability?: 'run' | 'setup';
 };
 
@@ -108,6 +108,7 @@ export const RoutingPicker = ({
   disabledTitle,
   ariaLabel,
   openEvent,
+  shortcut,
   availability = 'run',
 }: Props) => {
   const [isProviderConnectionInFlight, setIsProviderConnectionInFlight] = useState(false);
@@ -127,6 +128,7 @@ export const RoutingPicker = ({
   const recommendedModel = recommendation?.model;
   const recommendedEffort = recommendation?.effort;
   const recommendedReason = recommendation?.reason;
+  const recommendedLabel = recommendation?.label;
   const resetCopy = resetLabel ?? 'reset to default';
   const resetAriaLabel = resetLabel ?? 'Reset routing override';
   const routing = resolveRouting({
@@ -167,26 +169,21 @@ export const RoutingPicker = ({
   const routingModel = MODEL_CATALOGS[routing.provider].find(
     (candidate) => candidate.key === routing.model,
   );
-  const routingVariant =
-    routingModel?.provider === 'codex' && routingModel.variants.length > 1
-      ? routingModel.variants.find((candidate) => candidate.id === routing.selection.variant)
-      : null;
-  const summaryModel = `${modelLabel(routing.model)}${
-    routingVariant != null ? ` ${routingVariant.label}` : ''
-  }`;
-  const summary = `${PROVIDER_LABEL[routing.provider]} · ${summaryModel}${
-    showEffort ? ` · ${EFFORT_LABEL[routing.effort]}` : ''
-  }${verbosity != null ? ` · ${VERBOSITY_LABEL[verbosity]}` : ''}`;
+  const triggerLabel = routingTriggerLabel({
+    model: routingModel ?? null,
+    modelId: routing.model,
+    selection: routing.selection,
+    effort: routing.effort,
+    showEffort,
+    ...(verbosity != null && { verbosity }),
+  });
+  const summary = routingSummary({ provider: routing.provider, label: triggerLabel });
   const viewedModel =
     viewedRouting.catalog.find((candidate) => candidate.key === viewedRouting.model) ??
     viewedRouting.catalog[0];
   if (viewedModel == null) {
     throw new Error(`provider catalog is empty: ${viewProvider}`);
   }
-  const viewedResolved = resolveModelArgs({
-    provider: viewProvider,
-    selection: viewedRouting.selection,
-  });
   const axes = modelAxes({ model: viewedModel, selection: viewedRouting.selection });
   const cursorModels = MODEL_CATALOGS.cursor.map((entry) => entry.key);
   const maxModeModels = useCursorMaxModeModels({ models: cursorModels });
@@ -293,14 +290,20 @@ export const RoutingPicker = ({
                 type="button"
                 onClick={onReset}
                 aria-label={resetAriaLabel}
-                className="shrink-0 rounded-full p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+                className="shrink-0 rounded-full p-1 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <RotateCcw size={10} aria-hidden />
               </button>
             </Tooltip>
           )}
           <Tooltip
-            content={disabled ? (disabledTitle ?? summary) : `${summary}. Click to change.`}
+            content={
+              disabled
+                ? (disabledTitle ?? summary)
+                : shortcut !== undefined
+                  ? withShortcutHint({ label: summary, shortcut })
+                  : `${summary}. Click to change.`
+            }
             anchorClassName={variant === 'field' ? 'w-full' : undefined}
           >
             <button
@@ -317,24 +320,22 @@ export const RoutingPicker = ({
                   : 'flex w-full rounded-md border px-2 py-1.5 text-left',
                 variant === 'field' &&
                   (open
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50'),
+                    ? cn('border-primary', tintClasses('primary').bgSoft)
+                    : 'border-border-soft bg-subtle hover:border-border hover:bg-hover'),
                 variant === 'pill' &&
                   (isOverridden
-                    ? 'bg-warning/10 ring-1 ring-warning/30 hover:bg-warning/15'
-                    : 'bg-subtle hover:bg-muted'),
+                    ? cn(
+                        tintClasses('warning').bg,
+                        'ring-1',
+                        tintClasses('warning').ring,
+                        tintClasses('warning').hoverBg,
+                      )
+                    : 'bg-subtle hover:bg-hover'),
                 disabled && 'cursor-not-allowed opacity-60',
               )}
             >
               <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                <TriggerLabel
-                  provider={routing.provider}
-                  model={routing.model}
-                  modelDetail={routingVariant?.label}
-                  effort={routing.effort}
-                  showEffort={showEffort}
-                  verbosity={verbosity}
-                />
+                <TriggerLabel provider={routing.provider} label={triggerLabel} />
               </span>
               <ChevronDown
                 size={11}
@@ -379,6 +380,7 @@ export const RoutingPicker = ({
             })}
             active={isViewingAuto}
             {...(recommendedReason != null && { reason: recommendedReason })}
+            {...(recommendedLabel != null && { label: recommendedLabel })}
             onSelect={() => onPickProvider({ next: '', viewedProvider: routing.provider })}
           />
           <Divider />
@@ -503,10 +505,6 @@ export const RoutingPicker = ({
             </PickerSection>
           </>
         )}
-      <Divider />
-      <footer className="px-3 py-2 font-mono text-2xs text-muted-foreground">
-        {viewedResolved.args.join(' ')}
-      </footer>
     </AnchoredPopover>
   );
 };

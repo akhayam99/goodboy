@@ -9,7 +9,8 @@ type ToastAction = { readonly label: string; readonly onClick: () => void };
 type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
 
 const { showToast, state } = vi.hoisted(() => ({
-  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
+  showToast:
+    vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
   state: {
     sessions: [
       {
@@ -42,6 +43,7 @@ const { showToast, state } = vi.hoisted(() => ({
     spawnAgent: vi.fn(async () => 'agent-1'),
     selectAgent: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
+    reportError: vi.fn(async () => undefined),
     beginSessionCreation: vi.fn(() => 'creation-1'),
     endSessionCreation: vi.fn(),
     recordSessionEvent: vi.fn(async () => undefined),
@@ -92,6 +94,7 @@ beforeEach(() => {
   state.selectAgent.mockReset();
   state.selectAgent.mockResolvedValue(undefined);
   state.setActiveLens.mockReset();
+  state.reportError.mockClear();
   state.beginSessionCreation.mockReset();
   state.beginSessionCreation.mockReturnValue('creation-1');
   state.endSessionCreation.mockReset();
@@ -176,7 +179,7 @@ describe('useRebaseAgent', () => {
       kind: 'branch',
       label: 'Rebasing on main',
     });
-    expect(showToast.mock.calls[0]?.[2]?.title).toBe('Rebase started');
+    expect(showToast.mock.calls[0]?.[0]?.title).toBe('Rebase started');
   });
 
   it('offers a spawn toast action that selects the spawned agent', async () => {
@@ -184,7 +187,7 @@ describe('useRebaseAgent', () => {
     const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
 
     await act(() => result.current.run({ mountId }));
-    const action = showToast.mock.calls[0]?.[2]?.action;
+    const action = showToast.mock.calls[0]?.[0]?.action;
     expect(action?.label).toBe('Open the rebase agent');
 
     action?.onClick();
@@ -199,13 +202,13 @@ describe('useRebaseAgent', () => {
 
     await act(() => result.current.run({ mountId }));
     state.sessionPhaseRuns = {
-      [sessionId]: [{ id: 'agent-1', name: 'Rebase on main', status: 'failed' }],
+      [sessionId]: [{ id: 'agent-1', name: 'Rebase on main', status: 'completed' }],
     };
     rerender();
 
     await waitFor(() => expect(showToast).toHaveBeenCalledTimes(2));
     expect(state.endSessionCreation).toHaveBeenCalledWith(sessionId, 'creation-1');
-    const action = showToast.mock.calls[1]?.[2]?.action;
+    const action = showToast.mock.calls[1]?.[0]?.action;
     expect(action?.label).toBe('Open the rebase agent');
     expect(state.selectAgent).not.toHaveBeenCalled();
 
@@ -213,6 +216,26 @@ describe('useRebaseAgent', () => {
 
     expect(state.selectAgent).toHaveBeenCalledWith(sessionId, 'agent-1');
     expect(state.setActiveLens).toHaveBeenCalledWith(sessionId, 'agents');
+  });
+
+  it('reports a stopped rebase agent to the log with a way to open it', async () => {
+    const { result, rerender } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
+
+    await act(() => result.current.run({ mountId }));
+    state.sessionPhaseRuns = {
+      [sessionId]: [{ id: 'agent-1', name: 'Rebase on main', status: 'failed' }],
+    };
+    rerender();
+
+    await waitFor(() =>
+      expect(state.reportError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Couldn't rebase the branch",
+          action: { kind: 'open-agent', sessionId, agentId: 'agent-1' },
+        }),
+      ),
+    );
+    expect(showToast).toHaveBeenCalledTimes(1);
   });
 
   it('records the request for the mount it was handed so the suggestion is consumed', async () => {

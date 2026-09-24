@@ -538,6 +538,33 @@ export const detachOutcomeMessage = ({
   }
 };
 
+type DetachFailureOutcome = {
+  readonly kind: DetachOutcomeKind;
+  readonly worktreePath: string;
+  readonly reason?: string | null;
+};
+
+type DetachFailureMessageParams = {
+  readonly outcomes: ReadonlyArray<DetachFailureOutcome>;
+};
+
+export const detachFailureMessage = ({ outcomes }: DetachFailureMessageParams): string => {
+  const failed = outcomes.filter((outcome) => outcome.kind === 'failed');
+  const first = failed[0];
+  if (first === undefined) {
+    return detachOutcomeMessage({ kind: 'failed', projectName: '', worktreePath: '' });
+  }
+  const settledCount = outcomes.length - failed.length;
+  const reason = first.reason != null && first.reason !== '' ? `: ${first.reason}` : '';
+  const lead = settledCount > 0 ? `Detached ${settledCount} of ${outcomes.length} worktrees. ` : '';
+  const target =
+    failed.length === 1
+      ? `Could not remove ${first.worktreePath}${reason}.`
+      : `Could not remove ${failed.length} worktrees, starting with ${first.worktreePath}${reason}.`;
+  const retained = failed.length === 1 ? 'Its mount stays' : 'Their mounts stay';
+  return `${lead}${target} ${retained}; check again before retrying.`;
+};
+
 const OUTCOME_RANK: Record<DetachOutcomeKind, number> = {
   failed: 3,
   kept: 2,

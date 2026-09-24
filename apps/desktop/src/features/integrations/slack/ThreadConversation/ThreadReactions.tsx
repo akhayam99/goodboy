@@ -25,7 +25,7 @@ const blockReason = ({ canReact, isWriting }: ReasonParams): string | null => {
 };
 
 const PILL =
-  'inline-flex items-center gap-1 rounded-full border border-border-soft px-1.5 py-0.5 text-2xs text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
+  'inline-flex items-center gap-1 rounded-full border border-border-soft px-1.5 py-0.5 text-2xs text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-hover hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
 const QUICK_ROW =
   'flex items-center gap-1 opacity-0 motion-safe:transition-opacity focus-within:opacity-100 group-hover:opacity-100';

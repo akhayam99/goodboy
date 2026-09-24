@@ -39,7 +39,7 @@ describe('AgentSpawnConfig', () => {
     expect(providerValue.provider).toBe('codex');
 
     view.rerender(<AgentSpawnConfig value={providerValue} onChange={onChange} disabled={false} />);
-    fireEvent.click(screen.getByRole('button', { name: '5.6 Luna' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Luna' }));
     expect(onChange.mock.calls[1]![0].model).toBe('gpt-5.6-luna');
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {

@@ -310,6 +310,11 @@ const BRANCH_IN_USE = {
   message: 'branch ak/taken is already checked out at /repos/api/.goodboy/worktrees/holder',
 };
 
+const BRANCH_NOT_FOUND = {
+  kind: 'branch_not_found',
+  message: 'branch ak/second-half exists neither in this repository nor on origin',
+};
+
 describe('project mount lifecycle', () => {
   it('forks the same project twice into two mounts with distinct paths and branches', async () => {
     const { slice, state } = makeSlice();
@@ -407,6 +412,28 @@ describe('project mount lifecycle', () => {
       slice.forkMount({ sessionId: SESSION_ID, projectId: PROJECT_ID, branch: 'ak/taken' }),
     ).rejects.toMatchObject({ code: 'branch-taken' });
     expect(h.createWorktree).not.toHaveBeenCalled();
+  });
+
+  it('cuts the branch when the one it was asked to adopt exists nowhere', async () => {
+    const { slice } = makeSlice();
+    h.branchNames = ['ak/base'];
+    h.createWorktree.mockImplementationOnce(async () => {
+      throw BRANCH_NOT_FOUND;
+    });
+
+    const mount = await slice.forkMount({
+      sessionId: SESSION_ID,
+      projectId: PROJECT_ID,
+      branch: 'ak/second-half',
+      adoptExistingBranch: true,
+    });
+
+    expect(mount.branch).toBe('ak/second-half');
+    expect(h.createWorktree).toHaveBeenCalledTimes(2);
+    expect(h.createWorktree.mock.calls[0]?.[0]).toMatchObject({
+      existingBranch: 'ak/second-half',
+    });
+    expect(h.createWorktree.mock.calls[1]?.[0]).not.toHaveProperty('existingBranch');
   });
 
   it('names the worktree that holds a branch when adoption collides with it', async () => {

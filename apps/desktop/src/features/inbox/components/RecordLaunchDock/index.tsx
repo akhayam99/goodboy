@@ -54,7 +54,7 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose, focusRequest }:
             <LaunchSessionPanel
               workspaceId={workspaceId}
               linkedSessionId={payload.sessionId}
-              goalSeed={goalFromGitlabIssue(payload.issue)}
+              goalSeed={goalFromGitlabIssue({ issue: payload.issue })}
               externalTask={{
                 provider: 'gitlab',
                 externalId: String(payload.issue.id),
@@ -93,7 +93,7 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose, focusRequest }:
         <LaunchSessionPanel
           workspaceId={workspaceId}
           linkedSessionId={payload.sessionId}
-          goalSeed={goalFromLinearIssue(payload.issue)}
+          goalSeed={goalFromLinearIssue({ issue: payload.issue })}
           externalTask={{
             provider: 'linear',
             externalId: payload.issue.id,
@@ -129,7 +129,7 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose, focusRequest }:
           <LaunchSessionPanel
             workspaceId={workspaceId}
             linkedSessionId={linkedSessionId}
-            goalSeed={goalFromSentry(payload.issue)}
+            goalSeed={goalFromSentry({ issue: payload.issue })}
             externalTask={{
               provider: 'sentry',
               externalId: payload.issue.id,

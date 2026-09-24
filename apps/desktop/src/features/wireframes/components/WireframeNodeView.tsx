@@ -10,7 +10,6 @@ import { SPACING_PX, type WireframePalette } from '../wireframePalette';
 
 export type WireframeNodeHandlers = Readonly<{
   palette: WireframePalette;
-  isLowFidelity: boolean;
   selectedNodeId: string | null;
   hotspots: ReadonlySet<string>;
   onSelect: (nodeId: string) => void;
@@ -62,7 +61,7 @@ const Annotation = ({ note, color }: { readonly note: string; readonly color: st
 );
 
 const nodeElement = ({ node, handlers }: NodeElementParams): ReactElement => {
-  const { palette, isLowFidelity, selectedNodeId, hotspots, onSelect, onAction } = handlers;
+  const { palette, selectedNodeId, hotspots, onSelect, onAction } = handlers;
   const isSelected = selectedNodeId === node.id;
   const outline: CSSProperties = isSelected
     ? { outline: `2px solid ${palette.accent}`, outlineOffset: 2 }
@@ -370,7 +369,7 @@ const nodeElement = ({ node, handlers }: NodeElementParams): ReactElement => {
           justifyContent: 'center',
           borderRadius: node.ratio === 'avatar' ? 999 : palette.radius,
           border: `1px dashed ${palette.border}`,
-          background: isLowFidelity ? '#e4e4e7' : palette.background,
+          background: palette.placeholder,
           color: palette.muted,
           fontSize: 10,
           overflow: 'hidden',

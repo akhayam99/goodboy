@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   DiffLayoutToggle,
   ErrorStrip,
@@ -9,7 +9,6 @@ import {
   Skeleton,
   cn,
 } from '@goodboy/ui';
-import { formatError } from '@goodboy/ui';
 import type { PrReviewDraft, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../app/components/Toast';
@@ -39,6 +38,7 @@ export const WriteReview = ({ session, listWidth }: Props) => {
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const { files, loading, error, refresh } = useReviewDiff({ session });
   const [layoutMode, setLayoutMode] = useDiffLayoutMode();
+  const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -69,15 +69,16 @@ export const WriteReview = ({ session, listWidth }: Props) => {
         body,
       });
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't save the review comment", error: err, sessionId });
     }
   };
 
   const askAgent = (lineTarget: ReviewLineTarget) => {
     const reviewer =
-      phaseRuns.find((agent) => classifyAgent(agent, null) === 'pr-reviewer') ?? phaseRuns[0];
+      phaseRuns.find((agent) => classifyAgent({ agent, override: null }) === 'pr-reviewer') ??
+      phaseRuns[0];
     if (reviewer == null) {
-      showToast('error', 'No agent in this session to ask.');
+      showToast({ kind: 'warning', message: 'No agent in this session to ask. Start one first.' });
       return;
     }
     const prompt = `About \`${lineTarget.path}:${lineTarget.line}\`:\n> ${lineTarget.text}\n`;
@@ -112,9 +113,9 @@ export const WriteReview = ({ session, listWidth }: Props) => {
                 key={cardIndex}
                 className="flex flex-col gap-1.5 rounded-md border border-border-soft p-3"
               >
-                <Skeleton className="h-3 w-40 rounded" />
-                <Skeleton className="h-3 w-3/4 rounded" />
-                <Skeleton className="h-3 w-1/2 rounded" />
+                <Skeleton className="h-3 w-40 rounded-sm" />
+                <Skeleton className="h-3 w-3/4 rounded-sm" />
+                <Skeleton className="h-3 w-1/2 rounded-sm" />
               </div>
             ))}
           </div>

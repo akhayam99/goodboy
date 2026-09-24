@@ -1,7 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 
-import { sweepGithub } from './sweepGithub';
+import { REVIEW_REFRESH_CONCURRENCY, sweepGithub } from './sweepGithub';
+
+const flushMicrotasks = async (): Promise<void> => {
+  for (let tick = 0; tick < 10; tick += 1) {
+    await Promise.resolve();
+  }
+};
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const WS_ID_2 = 'ws-2' as WorkspaceId;
@@ -129,8 +135,7 @@ describe('sweepGithub', () => {
       expect(set).not.toHaveBeenCalled();
 
       resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await flushMicrotasks();
 
       expect(set).toHaveBeenCalledWith({ boardReady: true });
     });
@@ -159,13 +164,11 @@ describe('sweepGithub', () => {
       expect(set).not.toHaveBeenCalled();
 
       r1();
-      await Promise.resolve();
-      await Promise.resolve();
+      await flushMicrotasks();
       expect(set).not.toHaveBeenCalled();
 
       r2();
-      await Promise.resolve();
-      await Promise.resolve();
+      await flushMicrotasks();
       expect(set).toHaveBeenCalledWith({ boardReady: true });
     });
 
@@ -207,8 +210,7 @@ describe('sweepGithub', () => {
       state.currentWorkspaceId = WS_ID_2;
 
       resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await flushMicrotasks();
 
       expect(set).not.toHaveBeenCalled();
     });
@@ -228,8 +230,7 @@ describe('sweepGithub', () => {
       sweepGithub(set as never, get as never)();
 
       resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await flushMicrotasks();
 
       expect(set).toHaveBeenCalledWith({ boardReady: true });
     });
@@ -331,6 +332,44 @@ describe('sweepGithub', () => {
         S1,
         expect.objectContaining({ mountId: M1 }),
       );
+    });
+  });
+
+  describe('concurrency cap', () => {
+    it('starts at most the cap of refreshes before any settles', async () => {
+      const mounts = Array.from({ length: REVIEW_REFRESH_CONCURRENCY + 2 }, (_, index) =>
+        mountView({
+          id: `mount-cap-${index}` as MountId,
+          sessionId: S1,
+          branch: `feat/cap-${index}`,
+        }),
+      );
+      state = makeState({ sessions: [{ id: S1 }], sessionMounts: { [S1]: mounts } });
+      const gates: Array<() => void> = [];
+      (state.refreshSessionPr as ReturnType<typeof vi.fn>).mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            gates.push(resolve);
+          }),
+      );
+
+      sweepGithub(set as never, get as never)();
+      expect(state.refreshSessionPr).toHaveBeenCalledTimes(REVIEW_REFRESH_CONCURRENCY);
+
+      gates[0]?.();
+      await flushMicrotasks();
+      expect(state.refreshSessionPr).toHaveBeenCalledTimes(REVIEW_REFRESH_CONCURRENCY + 1);
+
+      while (gates.length < REVIEW_REFRESH_CONCURRENCY + 2) {
+        gates[gates.length - 1]?.();
+        await flushMicrotasks();
+      }
+      for (const release of gates) {
+        release();
+      }
+      await flushMicrotasks();
+      expect(state.refreshSessionPr).toHaveBeenCalledTimes(REVIEW_REFRESH_CONCURRENCY + 2);
+      expect(set).toHaveBeenCalledWith({ boardReady: true });
     });
   });
 });

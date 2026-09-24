@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
-import { PANE_RHYTHM, cn } from '@goodboy/ui';
+import { PANE_RHYTHM, cn, Eyebrow } from '@goodboy/ui';
 import type { AgentId, IsoDateTime, OpenQuestion, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../../features/chat/utils/transcript-items';
 import { AnsweredCard } from '../../../../features/chat/components/ChatView/AnsweredCard';
@@ -97,7 +97,7 @@ type RowProps = {
 
 const Row = ({ label, children }: RowProps) => (
   <section className="flex flex-col gap-2">
-    <span className="text-2xs uppercase tracking-wide text-muted-foreground">{label}</span>
+    <Eyebrow label={label} />
     {children}
   </section>
 );
@@ -149,7 +149,7 @@ export const CardRailsScene = () => {
         <Row label="provider signed out">
           <AuthRequiredCallout
             providerId="anthropic"
-            identity="amin@example.dev"
+            identity="dana@example.invalid"
             onRefresh={noop}
           />
         </Row>

@@ -10,7 +10,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { ArtifactStudio } from '../../../../features/artifacts/components/ArtifactStudio';
-import type { ProviderInfo } from '../../../../features/providers/providers';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import type { GeneratedArtifactKind } from '../../../../features/artifacts/artifactCollection';
 import type { ArtifactCreationDraft } from '../../../../store/slices/artifactDrafts/types';
 import { useAppStore } from '../../../../store';
@@ -20,7 +20,7 @@ const RUN_ID = 'mock-artifact-run-settlement' as WorkflowRunId;
 const WORKFLOW_ID = 'mock-artifact-workflow-settlement' as WorkflowId;
 const AT = '2026-09-14T16:40:00.000Z' as IsoDateTime;
 
-const ANTHROPIC: ProviderInfo = {
+const ANTHROPIC: ProviderDisplayInfo = {
   id: 'anthropic' as ProviderId,
   binary: 'claude',
   capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },

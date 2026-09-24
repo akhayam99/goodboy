@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type {
+  SessionExternalTask,
   Agent,
   AgentId,
   IsoDateTime,
@@ -58,7 +59,6 @@ const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
   name: 'Cascade',
   slug: 'cascade',
-  sessionsRoot: '/mock/cascade/sessions',
   overrides: OVERRIDES,
   createdAt: isoAgo(30 * DAY),
   updatedAt: isoAgo(MINUTE),
@@ -466,6 +466,78 @@ const OPEN_QUESTION: OpenQuestion = {
   createdAt: isoAgo(5 * HOUR + 10 * MINUTE),
 };
 
+type TaskParams = {
+  readonly sessionId: SessionId;
+  readonly provider: SessionExternalTask['provider'];
+  readonly identifier: string;
+  readonly title: string;
+};
+
+const externalTask = ({ sessionId, provider, identifier, title }: TaskParams) => ({
+  sessionId,
+  provider,
+  externalId: `mock-board-${identifier}`,
+  identifier,
+  url: `https://example.invalid/${provider}/${identifier}`,
+  title,
+  createdAt: isoAgo(2 * DAY),
+});
+
+const EXTERNAL_TASKS: Readonly<Record<SessionId, ReadonlyArray<SessionExternalTask>>> = {
+  [BUILDING_RATE_LIMIT]: [
+    externalTask({
+      sessionId: BUILDING_RATE_LIMIT,
+      provider: 'linear',
+      identifier: 'CAS-212',
+      title: 'Per-tenant limits on the public API',
+    }),
+  ],
+  [RUNNING_CHECKOUT_RETRY]: [
+    externalTask({
+      sessionId: RUNNING_CHECKOUT_RETRY,
+      provider: 'sentry',
+      identifier: 'CORE-API-7K1',
+      title: 'DuplicateChargeError in retryCheckout',
+    }),
+    externalTask({
+      sessionId: RUNNING_CHECKOUT_RETRY,
+      provider: 'linear',
+      identifier: 'CAS-198',
+      title: 'Checkout retries charge twice',
+    }),
+  ],
+  [ATTENTION_ERROR]: [
+    externalTask({
+      sessionId: ATTENTION_ERROR,
+      provider: 'jira',
+      identifier: 'FIN-88',
+      title: 'Settlement export off by a few cents',
+    }),
+  ],
+  [REVIEW_RECONCILIATION]: [
+    externalTask({
+      sessionId: REVIEW_RECONCILIATION,
+      provider: 'jira',
+      identifier: 'FIN-91',
+      title: 'Nightly reconciliation before the Monday close',
+    }),
+    externalTask({
+      sessionId: REVIEW_RECONCILIATION,
+      provider: 'sentry',
+      identifier: 'WAREHOUSE-2C4',
+      title: 'LedgerSnapshotMismatch',
+    }),
+  ],
+  [REVIEW_PAGINATION]: [
+    externalTask({
+      sessionId: REVIEW_PAGINATION,
+      provider: 'github',
+      identifier: '#187',
+      title: 'The admin sessions table loads every row at once',
+    }),
+  ],
+};
+
 export const seedBoardScene = (): void => {
   useAppStore.setState({
     workspaces: [WORKSPACE],
@@ -639,7 +711,7 @@ export const seedBoardScene = (): void => {
     },
     sessionWorkflows: { [RUNNING_CHECKOUT_RETRY]: [] },
     phaseTemplates: { [WORKSPACE_ID]: [] },
-    sessionExternalTasks: {},
+    sessionExternalTasks: EXTERNAL_TASKS,
     activeLens: {},
     workspaceIntegrations: { [WORKSPACE_ID]: [] },
     sessionAttachments: {},

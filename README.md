@@ -1,162 +1,277 @@
-Goodboy
-=======
+<div align="center">
 
-**Stop re-explaining yourself.**
+<img src=".github/readme-hero.png" alt="Goodboy, stop re-explaining yourself" width="880">
 
-[CI](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml) · [Latest release](https://github.com/akhayam99/goodboy/releases/latest)
+[![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=ci&labelColor=15181b)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/akhayam99/goodboy?style=for-the-badge&logo=github&logoColor=white&label=release&labelColor=15181b&color=0e9aa4)](https://github.com/akhayam99/goodboy/releases/latest)
+[![stars](https://img.shields.io/github/stars/akhayam99/goodboy?style=for-the-badge&logo=github&logoColor=white&label=%E2%AD%90%20stars&labelColor=15181b&color=3d444d)](https://github.com/akhayam99/goodboy/stargazers)
+[![license](https://img.shields.io/badge/license-FSL--1.1--MIT-3d444d?style=for-the-badge&labelColor=15181b)](./LICENSE.md)
 
-Goodboy is an open-source desktop workspace for coding agents on macOS and
-Linux. It keeps the goal, decisions and running summary of a task on your disk,
-outside any provider's chat. Stop Claude halfway, hand the task to Codex, come
-back tomorrow: nobody re-explains anything.
+[![Install](https://img.shields.io/badge/Install-0e9aa4?style=for-the-badge&logo=homebrew&logoColor=white)](#install)
+[![Providers](https://img.shields.io/badge/Providers-15181b?style=for-the-badge)](#providers-and-quota)
+[![Concepts](https://img.shields.io/badge/Concepts-15181b?style=for-the-badge)](./docs/concepts.md)
+[![Documentation](https://img.shields.io/badge/Documentation-15181b?style=for-the-badge)](./docs/README.md)
+[![goodboy-ai.dev](https://img.shields.io/badge/goodboy--ai.dev-15181b?style=for-the-badge)](https://goodboy-ai.dev)
 
-No account, no server.
+![Tauri 2](https://img.shields.io/badge/Tauri%202-15181b?style=for-the-badge&logo=tauri&logoColor=24C8DB)
+![React 19](https://img.shields.io/badge/React%2019-15181b?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-15181b?style=for-the-badge&logo=typescript&logoColor=3178C6)
+![SQLite](https://img.shields.io/badge/SQLite-15181b?style=for-the-badge&logo=sqlite&logoColor=0F80CC)
 
-[Get a release](https://github.com/akhayam99/goodboy/releases/latest) · [goodboy-ai.dev](https://goodboy-ai.dev) · [Read the documentation](./docs/README.md)
+</div>
 
-What you can do
----------------
+<br>
 
-- Your task's goal, decisions and running summary live in one SQLite file on
-  your disk. The next agent is briefed from it, not by you.
-- Every turn is rebuilt from the stored task, not resumed from a provider's
-  session file. That is what lets a task move from Claude to Codex. Agents keep
-  separate conversations.
-- Home is a board, not a chat window. Six columns: building, running, needs
-  you, in review, done, archived. Open a card to get the plans, questions and
-  diff for that task.
-- Workflows are reusable step sequences with one provider, model and effort
-  per step, so a scouting step can run on a cheaper model than planning. Steps
-  run in sequence.
-- Usage is metered locally and you can set a budget per provider.
+Goodboy is a free, source-available desktop app for **macOS** and **Linux** that
+runs coding agents on your work.
 
-Goodboy calls the container for a task a session. Each project gets its own git
-worktree when the session needs it, with the reason recorded. Agents work in a
-worktree, not in your checkout, and several sessions run at once without
-fighting over the same files. A session can bring several projects together as
-the work reaches them.
+You describe a task once. The goal, the decisions and the running summary
+belong to the task, not to a provider's chat.
 
-Plans are artifacts with their own lifecycle, rather than messages buried in a
-conversation. You can also hand the work to VS Code or Cursor. A resolver can
-address one review comment with a local commit, but it does not push it.
+Stop Claude halfway, hand the rest to Codex and come back tomorrow. Nobody
+needs briefing again, and it all runs on the plan you already pay for.
 
-Install
--------
+<br>
 
-On macOS, install the signed and notarized universal build with Homebrew:
+## The board
+
+Every task you start is a **session**, and every session sits on one board.
+
+- Columns follow where each task is: **building**, **running**, **needs you**, **in review**, **done**
+- Each card shows the project, the pull request, the cost so far and the issues the task came from
+- The **needs you** column is where a task waits for your answer
+
+![The Goodboy board for a workspace: cards under building, running, needs you and in review, some linked to a Linear, Sentry, Jira or GitHub issue, with the done and archived columns folded at the end](./docs/images/board-shell.png)
+
+<br>
+
+## Session overview
+
+Open a session and the **Overview** holds everything about that task.
+
+- The goal, the decisions taken and a running summary
+- The issues it is linked to, from GitHub, Linear, Sentry and the other tools
+- Every repository it works on, with its branch and pull request
+
+Below it, **Activity** lists what happened, in order: every workflow step, the agents it started, the plans, the questions, the pull requests opened and merged. Come back after a day and you know where things stand.
+
+![The Overview of a session: the goal with its decisions and summary, a GitHub, a Linear and a Sentry issue linked, two repositories with one branch merged and one in review, and an Activity feed where a finished workflow and a running one overlap, one step split into three agents and one of those handed its question to a fourth, with the wireframe, the plan, the report and a merged pull request in between](./docs/images/activity-run.png)
+
+<br>
+
+## Workflows
+
+A **workflow** splits a task into steps, for example explore, plan, implement, test.
+
+- Each step runs as a new agent with a short brief
+- Each step has its own provider, model and effort: explore on a cheap model, plan on a strong one
+- Pick a ready workflow, build your own, or let the **orchestrator** choose the next step as the work goes
+
+![A workflow run in progress: four scouts on three different cheap models, a planner that asked for one provider and ran on another, an implementer done, a second implementer still running, and a tester queued](./docs/images/workflow-run.png)
+
+<br>
+
+## Branches and worktrees
+
+Agents work in their own copy of the code, not in yours.
+
+- Every repository a session uses gets its own git worktree and branch
+- Several sessions run at the same time without conflicts
+- One session can work on more repositories, and on more branches of the same one, each with its own pull request
+- From each row you open a terminal, run a project script or open the code in your editor
+
+![The Overview of a session: its decisions and summary, two repositories mounted, one with three branches of a pull request series and a merged one shown under Hide completed, the terminal, scripts and editor actions of a row, and pull requests opened and merged in Activity](./docs/images/mounts.png)
+
+<br>
+
+## Plans, reports and wireframes
+
+When an agent writes a **plan**, a **report** or a **wireframe**, Goodboy saves it as an artifact with its own page.
+
+- The next agent reads it instead of scrolling a chat
+- An **active** plan waits for the next agent, a **consumed** one moves to **Finished**
+- You can reopen or print it whenever you want
+
+![The Plans tab of a session: one active plan ready for the next agent, and two consumed plans under Finished](./docs/images/artifacts-lens-shell.png)
+
+<br>
+
+## Questions from the agents
+
+When an agent needs a decision, it asks you, and the session moves to **needs you**.
+
+- Every question comes with suggested answers you can pick or rewrite
+- Choose **let an agent answer** to hand it to another agent, with a hint if you want
+- The agent's answer counts as yours
+
+![The Questions lens of a session: one open question with two answers already picked, and four answered questions below, one of them answered by an agent](./docs/images/open-questions.png)
+
+<br>
+
+## Pull request review
+
+The **Review** lens shows a pull request with its checks and every comment thread.
+
+- Send a comment to an agent: it fixes the code in a local commit and drafts the reply
+- Each thread is marked: a question for you, a reply ready, a comment that changed
+- Nothing is pushed or posted until you approve it
+
+![The Review lens of a session: comment threads on a pull request marked as a question for you, a changed comment and two replies ready, with the push and resolve action at the bottom](./docs/images/resolve-queue-shell.png)
+
+<br>
+
+## Providers and quota
+
+<div align="center">
+  <img src=".github/providers.png" alt="Claude, Codex, Cursor, Gemini, OpenCode, OpenRouter and Moonshot" width="860">
+</div>
+
+Each provider signs in the way its own tool does.
+
+- **Claude**, **Cursor** and **Codex**: the CLI login you already have
+- **Gemini**: the Antigravity app
+- **OpenCode**: its own login
+- **OpenRouter** and **Moonshot**: an API key
+
+In **Settings** you pick the default provider, the pool Goodboy can switch between and the model for each kind of task. Each provider can have a monthly cap: when one runs out, hits a rate limit or goes down, the next turn moves to another provider in the pool, and the chat tells you which one and why.
+
+[The provider guide](./docs/providers.md) covers installation and what each provider does differently.
+
+![Settings, Providers and models: the seven providers with their connection state, the default provider, the routing pool and the model picked for each task](./docs/images/providers.png)
+
+<br>
+
+## Costs
+
+The **Impact** studio tracks what the agents spend.
+
+- Split by provider, by model and by session
+- Next to the monthly cap and the alert threshold
+- So you see which models are worth what they cost
+
+![The Impact studio: spend per provider and per session in the rail, one provider against its monthly cap and alert threshold, and its cost broken down by model](./docs/images/impact.png)
+
+<br>
+
+## Inbox
+
+<div align="center">
+  <img src=".github/integrations.png" alt="GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack" width="860">
+</div>
+
+Connect your tools and the **Inbox** lists their issues, pull requests, threads and errors in one place.
+
+- Filter by tool or by kind
+- Open an item and read it without leaving Goodboy
+- Press **Launch session** and the goal is already filled in from the issue
+
+Agents read from the same tools while they work, through the [query bridge](./docs/query-bridge.md).
+
+![The Inbox: issues, errors and threads from GitHub, Linear, Jira, Sentry and Slack in one list, a Linear issue open with its fields and description, and a launch box that starts a session from it](./docs/images/inbox.png)
+
+<br>
+
+## Chat
+
+Every agent in a session has its own chat, for when you want to steer it yourself.
+
+- Plans show up as cards that open the full artifact
+- File edits are grouped under one row
+- Open questions appear inline, including the ones another agent is answering for you
+
+![A session chat: the agent's plan as its own artifact, three files edited, a question answered by another agent and a second one an agent is answering right now, with the other sessions in the sidebar](./docs/images/chat-shell.png)
+
+<br>
+
+## Also in the box
+
+- **Terminal**, **Explore** and **Diff** lenses on every session, one shortcut each
+- A **command palette** for sessions, lenses and studios
+- Open the worktree in **VS Code** or **Cursor** when you want to type yourself
+- Pair a **phone** to follow a session away from the desk
+
+<br>
+
+## Install
+
+On **macOS**, with Homebrew:
 
 ```bash
 brew install --cask akhayam99/tap/goodboy
 ```
 
-You can instead download the `.dmg` from the
-[latest release](https://github.com/akhayam99/goodboy/releases/latest) and move
-Goodboy to Applications. Homebrew upgrades the cask with:
+Or pick a package from the [latest release](https://github.com/akhayam99/goodboy/releases/latest):
 
-```bash
-brew upgrade --cask goodboy
-```
+- **macOS**: the `.dmg`, then drop Goodboy in Applications
+- **Linux**: `AppImage`, `.deb` or `.rpm`
 
-Linux releases are x86_64 AppImage, `.deb` and `.rpm` packages:
+<br>
 
-```bash
-sudo apt install ./Goodboy_<version>_amd64.deb
-sudo rpm -i Goodboy-<version>-1.x86_64.rpm
-chmod +x Goodboy_<version>_amd64.AppImage
-```
+## Where your work lives
 
-Linux needs `libc6 >= 2.39`. Credentials use the freedesktop Secret Service, so
-GNOME Keyring, KWallet or another compatible daemon must be running before you
-save a personal API key. Windows has no installer and currently requires a
-source build.
+Everything Goodboy knows about your work stays on your machine.
 
-Providers and integrations
---------------------------
+- Task context, settings and usage records live in SQLite, in `~/.goodboy`
+- The routing that picks the next provider runs locally too
+- Prompts go to the provider you chose, and nothing else follows them
 
-Goodboy connects to Claude, Cursor, Codex, Gemini through Antigravity,
-OpenCode, OpenRouter and Moonshot. Claude, Cursor and Codex log in with the CLI
-you already use. OpenCode ships models that need no key. OpenRouter and
-Moonshot take an API key, and one `opencode` binary serves all three. Installation,
-authentication and provider-specific behavior are in
-[the provider guide](./docs/providers.md).
+If Goodboy disappeared tomorrow your data would be untouched, because it was
+never ours. [SECURITY.md](./SECURITY.md) has the detail.
 
-GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack can connect to the
-workspace. Each integration covers part of its service, not its whole API.
-Keys are stored in the operating system credential store. Agents reach these
-services through the documented [query bridge](./docs/query-bridge.md).
+<br>
 
-Current limits
---------------
+## Run from source
 
-- Workflow steps run sequentially. Scout fan-out does not make workflow steps
-  run in parallel.
-- Linear can write descriptions and comments, but it cannot assign issues or
-  change their status. Sentry is read-only. Slack has contract tests, but has
-  not been exercised against a live workspace.
-- Windows requires a source build and has no signed installer.
-- Linux packages require `libc6 >= 2.39` and a running Secret Service for
-  credentials.
-
-Local data and network use
---------------------------
-
-No account, no server. The task context, settings and local usage records live
-in SQLite on your machine. Provider routing and usage metering also run there.
-The app carries no telemetry.
-
-Provider calls and connected services still leave the machine. Prompts and
-responses go to the provider you choose, and requests to GitHub, Linear or
-another connected service go to that service. A release build checks GitHub
-for updates. If the app stops rendering, it can open an opt-in crash-report
-prefill link in your browser. Nothing is filed unless you submit the issue.
-
-[SECURITY.md](./SECURITY.md) documents credentials, diagnostics, update checks,
-crash-report contents and the distinction between the desktop app and website.
-
-If Goodboy disappeared tomorrow, your data would be untouched, because it was
-never ours.
-
-Run from source
----------------
-
-You need Node 20 or newer, pnpm 10.33.4 and a working Rust toolchain. Install
-the workspace and start the Tauri development app:
+You need **Node 22** or newer, **pnpm 10.33.4** and a **Rust** toolchain.
 
 ```bash
 pnpm install
 pnpm tauri:dev
 ```
 
-A production build uses `pnpm tauri:build`. CI currently builds with Node 22.
-Read the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for
-platform packages and [desktop development notes](./apps/desktop/README.md) for
-the local loop.
+- `pnpm tauri:build` produces a production build
+- The [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) list the platform packages
+- The [desktop notes](./apps/desktop/README.md) cover the local loop
 
-The app uses Tauri 2, React 19, TypeScript, Zustand and SQLite in a pnpm and
-Turborepo monorepo.
+<br>
 
-Documentation and contributing
-------------------------------
+## Documentation
 
-Start with the [documentation index](./docs/README.md). The deeper references
-cover [concepts](./docs/concepts.md), [workflows](./docs/workflows.md),
-[providers](./docs/providers.md), the [query bridge](./docs/query-bridge.md) and
-[architecture](./docs/architecture.md).
+Start at the [documentation index](./docs/README.md). From there:
 
-If something breaks, feels off or is missing, [open an issue](https://github.com/akhayam99/goodboy/issues/new).
-Half-formed thoughts welcome, and "this feels wrong" is a valid bug report.
-Before changing code, read [AGENTS.md](./AGENTS.md) and
-[CONVENTIONS.md](./CONVENTIONS.md).
+- [Concepts](./docs/concepts.md): sessions, workspaces, projects and how they fit
+- [Workflows](./docs/workflows.md): steps, the orchestrator and hands-free runs
+- [Providers](./docs/providers.md): installation and sign-in for each one
+- [Query bridge](./docs/query-bridge.md): how agents read from your tools
+- [Architecture](./docs/architecture.md): how the app is built
 
-Read this page when you want the product, setup and present boundaries. It is
-not the working-conventions reference.
+<br>
 
-Contributors
-------------
+## Contributors
 
-[Amin Khayam](https://github.com/akhayam99) · [Luca Laudiero](https://github.com/teckperry)
+[<img src=".github/contributor-akhayam99.png" width="56" height="56" alt="Amin Khayam">](https://github.com/akhayam99)
+&nbsp;
+[<img src=".github/contributor-teckperry.png" width="56" height="56" alt="Luca Laudiero">](https://github.com/teckperry)
+&nbsp;
+[<img src=".github/contributor-lucapav01.png" width="56" height="56" alt="LucaPav01">](https://github.com/LucaPav01)
 
-License
--------
+<br>
 
-[MIT](./LICENSE) © Amin Khayam
+## Support Goodboy
+
+The best support is using it.
+
+- Run it on your real work
+- Open an [issue](https://github.com/akhayam99/goodboy/issues) when something feels off
+- Send a pull request
+- Leave a star if it earns one
+
+[![Star Goodboy on GitHub](https://img.shields.io/github/stars/akhayam99/goodboy?style=for-the-badge&logo=github&logoColor=white&label=%E2%AD%90%20Star%20Goodboy&labelColor=15181b&color=0e9aa4)](https://github.com/akhayam99/goodboy/stargazers)
+
+<br>
+
+## License
+
+Source-available under [FSL-1.1-MIT](./LICENSE.md) © Amin Khayam. Use it for
+your own projects or at work, just don't offer it, or something built on it,
+as a competing product or service.

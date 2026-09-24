@@ -2,12 +2,30 @@ export type PrLifecycleAction = 'ready' | 'undraft' | 'merge' | 'close' | 'reope
 
 export type PrLifecycleBusy = PrLifecycleAction | null;
 
-export const PR_LIFECYCLE_FAILURE_LABEL: Record<PrLifecycleAction, string> = {
-  ready: 'Mark ready failed',
-  undraft: 'Convert to draft failed',
-  merge: 'Merge failed',
-  close: 'Close failed',
-  reopen: 'Reopen failed',
+export const prLifecycleFailureTitle = ({
+  action,
+  prNumber,
+}: {
+  readonly action: PrLifecycleAction;
+  readonly prNumber: number | null;
+}): string => {
+  const target = prNumber === null ? 'the pull request' : `#${prNumber}`;
+  switch (action) {
+    case 'ready':
+      return `Couldn't mark ${target} ready`;
+    case 'undraft':
+      return `Couldn't convert ${target} to a draft`;
+    case 'merge':
+      return `Couldn't merge ${target}`;
+    case 'close':
+      return `Couldn't close ${target}`;
+    case 'reopen':
+      return `Couldn't reopen ${target}`;
+    default: {
+      const _exhaustive: never = action;
+      return `Couldn't update ${target}`;
+    }
+  }
 };
 
 const PR_LIFECYCLE_GERUND: Record<PrLifecycleAction, string> = {

@@ -8,6 +8,7 @@ import type {
   VerbosityLevel,
   WorkflowId,
 } from '@goodboy/types';
+import { isJsonArray, isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
 
 export type OverrideRow = {
   readonly default_provider_id: string | null;
@@ -27,22 +28,23 @@ type ParseJsonParams = {
   readonly raw: string | null;
 };
 
-const parseJson = <Value>({ raw }: ParseJsonParams): Value | null => {
-  if (raw === null) {
-    return null;
-  }
-  try {
-    return JSON.parse(raw) as Value;
-  } catch {
-    return null;
-  }
-};
+const isProviderBindings = (value: unknown): value is ProviderBindings => isJsonRecord(value);
+
+const isTaskModelPreferences = (value: unknown): value is TaskModelPreferences =>
+  isJsonRecord(value);
+
+const isRoleModelPreferences = (value: unknown): value is RoleModelPreferences =>
+  isJsonRecord(value);
 
 const PROVIDER_ID_SET: ReadonlySet<string> = new Set(PROVIDER_IDS);
 
 const parseProviderPool = ({ raw }: ParseJsonParams): ReadonlyArray<ProviderId> | null => {
-  const parsed = parseJson<unknown>({ raw });
-  if (Array.isArray(parsed) === false) {
+  const parsed = parseJsonColumn<ReadonlyArray<unknown> | null>({
+    value: raw,
+    isValid: isJsonArray,
+    fallback: null,
+  });
+  if (parsed === null) {
     return null;
   }
   const providerPool: ProviderId[] = [];
@@ -65,9 +67,21 @@ export const overridesFromRow = ({ row }: Params): OverrideSettings => ({
   defaultBranchPrefix: row.default_branch_prefix,
   parallelEnabled: row.parallel_enabled === null ? null : row.parallel_enabled !== 0,
   defaultVerbosity: row.default_verbosity as VerbosityLevel | null,
-  providerBindings: parseJson<ProviderBindings>({ raw: row.provider_bindings }),
-  taskModels: parseJson<TaskModelPreferences>({ raw: row.task_models }),
-  roleModels: parseJson<RoleModelPreferences>({ raw: row.role_models }),
+  providerBindings: parseJsonColumn<ProviderBindings | null>({
+    value: row.provider_bindings,
+    isValid: isProviderBindings,
+    fallback: null,
+  }),
+  taskModels: parseJsonColumn<TaskModelPreferences | null>({
+    value: row.task_models,
+    isValid: isTaskModelPreferences,
+    fallback: null,
+  }),
+  roleModels: parseJsonColumn<RoleModelPreferences | null>({
+    value: row.role_models,
+    isValid: isRoleModelPreferences,
+    fallback: null,
+  }),
   parallelAgents: row.parallel_agents === null ? null : row.parallel_agents !== 0,
   providerPool: parseProviderPool({ raw: row.provider_pool }),
   attributionFooter: row.attribution_footer == null ? null : row.attribution_footer !== 0,

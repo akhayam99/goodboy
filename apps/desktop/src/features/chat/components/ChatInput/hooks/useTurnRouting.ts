@@ -1,6 +1,12 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { ProviderId, Session, TurnProviderOverride } from '@goodboy/types';
+import type {
+  EffortLevel,
+  ProviderId,
+  Session,
+  TurnProviderOverride,
+  VerbosityLevel,
+} from '@goodboy/types';
 import {
   PROVIDER_CAPABILITIES,
   canonicalModelId,
@@ -8,14 +14,14 @@ import {
   resolveModelForProvider,
   resolveStoredModelSelection,
   resolvedStoredModelId,
+  clampEffortForModel,
 } from '@goodboy/core';
 import { useAppStore } from '../../../../../store';
 import { agentPinApplies } from '../../../../../store/slices/turn/agentPinApplies';
 import { agentReferenceRouting } from '../../../../../store/slices/turn/agentReferenceRouting';
 import { stepConfigForAgent } from '../../../../../store/slices/turn/stepConfigForAgent';
-import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
-import { type EffortLevel, clampEffort } from '../../../utils/chat-constants';
 import { asEffortLevel, asProvider } from '../lib';
+import { resolveSessionSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 
 type Params = {
   readonly session: Session;
@@ -27,7 +33,7 @@ export const useTurnRouting = ({ session }: Params) => {
   const storeSetAgentEffortOverride = useAppStore((s) => s.setAgentEffortOverride);
   const storeSetAgentVerbosity = useAppStore((s) => s.setAgentVerbosity);
   const workspaceDefaultVerbosity = useAppStore(
-    (s) => s.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? null,
+    (s) => resolveSessionSettings({ state: s, session }).defaultVerbosityOverride ?? null,
   );
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
   const agentModelOverride = useAppStore((s) =>
@@ -45,7 +51,7 @@ export const useTurnRouting = ({ session }: Params) => {
     selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
   );
   const roleModels = useAppStore(
-    (s) => s.workspaceOverrides[session.workspaceId]?.roleModels ?? null,
+    (s) => resolveSessionSettings({ state: s, session }).roleModels ?? null,
   );
   const workspaceWorkflows = useAppStore((s) => s.phaseTemplates[session.workspaceId] ?? null);
   const connectedProviders = useAppStore(
@@ -147,7 +153,7 @@ export const useTurnRouting = ({ session }: Params) => {
     provider: effectiveProvider,
     modelId: effectiveStoredId,
   });
-  const effectiveEffort = clampEffort(effectiveModel, effort);
+  const effectiveEffort = clampEffortForModel({ model: effectiveModel, effort }) ?? effort;
   const effectiveSelection = useMemo(() => {
     const stored = resolveStoredModelSelection({
       provider: effectiveProvider,
@@ -261,7 +267,7 @@ export const useTurnRouting = ({ session }: Params) => {
 
   const realignEffort = useCallback(
     (model: string) => {
-      const clamped = clampEffort(model, effort);
+      const clamped = clampEffortForModel({ model, effort }) ?? effort;
       if (clamped === effort) {
         return;
       }
@@ -323,7 +329,8 @@ export const useTurnRouting = ({ session }: Params) => {
     setIsPicked(false);
     setSelectedProviderState(referenceProvider);
     setSelectedModelState(referenceModel);
-    const alignedEffort = clampEffort(referenceModel, referenceEffort);
+    const alignedEffort =
+      clampEffortForModel({ model: referenceModel, effort: referenceEffort }) ?? referenceEffort;
     setEffortState(alignedEffort);
     void storeSetAgentConfig(session.id, selectedAgentId, {
       providerOverride: referenceProvider,

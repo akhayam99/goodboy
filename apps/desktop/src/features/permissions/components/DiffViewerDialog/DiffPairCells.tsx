@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { DiffCommentAnchor, DiffHunkLine } from '@goodboy/types';
 import type { DiffLinePair } from '../../../../shared/utils/diffLinePairs';
 import { DiffLineText } from './DiffLineText';
@@ -19,9 +19,9 @@ type Props = {
 };
 
 const GUTTER_CLASS = 'w-9 select-none px-1.5 text-right text-3xs tabular-nums';
-const CONTENT_CLASS = 'whitespace-pre-wrap wrap-anywhere px-2.5 align-top text-foreground/80';
+const CONTENT_CLASS = 'whitespace-pre-wrap wrap-anywhere px-2.5 align-top text-foreground';
 const COMMENTABLE_CLASS =
-  'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60';
+  'cursor-pointer transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring';
 
 type ToneParams = {
   line: DiffHunkLine | null;
@@ -29,13 +29,13 @@ type ToneParams = {
 
 const sideTone = ({ line }: ToneParams): string => {
   if (line === null) {
-    return 'bg-muted/20 text-transparent';
+    return 'bg-subtle text-transparent';
   }
   if (line.kind === 'add') {
-    return 'bg-success/[0.07]';
+    return cn(tintClasses('success').bgSoft);
   }
   if (line.kind === 'del') {
-    return 'bg-danger/[0.07]';
+    return cn(tintClasses('danger').bgSoft);
   }
   return '';
 };
@@ -84,20 +84,20 @@ export const DiffPairCells = ({
         aria-label={oldCommentable ? `comment on old line ${oldAnchor.lineNumber}` : undefined}
         className={cn(
           GUTTER_CLASS,
-          'border-l-2 text-muted-foreground/50',
+          'border-l-2 text-faint-foreground',
           oldTone,
           oldRangeCommented
-            ? 'border-warning/60'
+            ? cn(tintClasses('warning').border)
             : pair.old?.kind === 'del'
-              ? 'border-danger/50'
+              ? cn(tintClasses('danger').border)
               : 'border-transparent',
           oldCommentable && COMMENTABLE_CLASS,
-          selectingOld && 'bg-primary/15',
+          selectingOld && cn(tintClasses('primary').bg),
         )}
       >
         {pair.old?.oldLine ?? ''}
       </td>
-      <td className={cn(CONTENT_CLASS, oldTone, selectingOld && 'bg-primary/15')}>
+      <td className={cn(CONTENT_CLASS, oldTone, selectingOld && cn(tintClasses('primary').bg))}>
         {pair.old === null ? '' : <DiffLineText line={pair.old} lang={lang} />}
       </td>
       <td
@@ -125,20 +125,20 @@ export const DiffPairCells = ({
         aria-label={newCommentable ? `comment on new line ${newAnchor.lineNumber}` : undefined}
         className={cn(
           GUTTER_CLASS,
-          'border-l-2 text-muted-foreground/50',
+          'border-l-2 text-faint-foreground',
           newTone,
           newRangeCommented
-            ? 'border-warning/60'
+            ? cn(tintClasses('warning').border)
             : pair.new?.kind === 'add'
-              ? 'border-success/50'
-              : 'border-border-soft/40',
+              ? cn(tintClasses('success').border)
+              : 'border-border-soft',
           newCommentable && COMMENTABLE_CLASS,
-          selectingNew && 'bg-primary/15',
+          selectingNew && cn(tintClasses('primary').bg),
         )}
       >
         {pair.new?.newLine ?? ''}
       </td>
-      <td className={cn(CONTENT_CLASS, newTone, selectingNew && 'bg-primary/15')}>
+      <td className={cn(CONTENT_CLASS, newTone, selectingNew && cn(tintClasses('primary').bg))}>
         {pair.new === null ? '' : <DiffLineText line={pair.new} lang={lang} />}
       </td>
     </>

@@ -122,7 +122,6 @@ const workspace = {
   id: wsId,
   name: 'fresh-idea',
   slug: 'fresh-idea',
-  sessionsRoot: '/tmp/fresh-idea',
 } as Workspace;
 
 const boxOf = (left: number, top: number, width: number, height: number) =>
@@ -181,7 +180,7 @@ describe('StageBoard loading gate', () => {
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.queryByLabelText('Loading board')).toBeNull();
     expect(screen.getByText('Start your first session')).toBeDefined();
-    expect(screen.getByText('Stage board')).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(2);
   });
 
@@ -189,7 +188,7 @@ describe('StageBoard loading gate', () => {
     render(<StageBoard workspaceId={wsId} sessions={[session]} />);
     expect(screen.queryByLabelText('Loading board')).toBeNull();
     expect(screen.getAllByTestId('stage-column').length).toBeGreaterThan(0);
-    expect(screen.getByText('Stage board')).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
     expect(screen.getByTestId('project-filter')).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
   });
@@ -199,7 +198,7 @@ describe('StageBoard loading gate', () => {
     state.archivedSessions = { [wsId]: [shelved] };
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.queryByText('Start your first session')).toBeNull();
-    expect(screen.getByText('Stage board')).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
     const columns = screen.getAllByTestId('stage-column');
     expect(columns.some((column) => column.textContent?.includes('archived'))).toBe(true);
     expect(screen.getByRole('button', { name: 'card s-9' })).toBeDefined();
@@ -327,6 +326,36 @@ describe('StageBoard git gate', () => {
         .closest('[data-tooltip]')
         ?.getAttribute('data-tooltip'),
     ).toBe('The project folder is unreachable');
+  });
+
+  it('explains an empty board whose only project is not usable yet', () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-settings', listener);
+    gitStatuses.current = { 'proj-1': statusOf('absent') };
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'This project needs a git repository with one commit first',
+      }),
+    ).toBeDefined();
+    expect(screen.queryByText('Start your first session')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open workspace settings' }));
+
+    expect(listener).toHaveBeenCalledOnce();
+    const [event] = listener.mock.calls[0] ?? [];
+    expect(event instanceof CustomEvent ? event.detail : null).toEqual({ scope: 'workspace' });
+    window.removeEventListener('goodboy:open-settings', listener);
+  });
+
+  it('names the unreachable folder on an empty board', () => {
+    gitStatuses.current = { 'proj-1': statusOf('missing') };
+    render(<StageBoard workspaceId={wsId} sessions={[]} />);
+
+    expect(
+      screen.getByRole('heading', { name: 'The project folder is unreachable' }),
+    ).toBeDefined();
+    expect(screen.getByText(/Relink it in workspace settings/)).toBeDefined();
   });
 });
 

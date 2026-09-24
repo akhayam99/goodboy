@@ -285,27 +285,27 @@ describe('ArtifactStudio', () => {
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     expect(screen.getByRole('heading', { level: 2, name: 'Reports' })).toBeDefined();
     expect(screen.getByText('Session summary')).toBeDefined();
-    expect(screen.getByText('generating')).toBeDefined();
+    expect(screen.getByText('Generating')).toBeDefined();
   });
 
   it('counts a live turn as generating even while the agent row still reads pending', () => {
     state.sessionPhaseRuns = { 'sess-1': [{ ...reportAgent, status: 'pending' }] };
     state.agentTurnState = { 'agent-report-2': { kind: 'running' } };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByText('generating')).toBeDefined();
+    expect(screen.getByText('Generating')).toBeDefined();
   });
 
   it('says no report was produced when the turn finished without one', () => {
     state.sessionPhaseRuns = { 'sess-1': [reportAgent] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByText('no report produced')).toBeDefined();
+    expect(screen.getByText('No report')).toBeDefined();
   });
 
   it('says a wireframe could not be read when the turn finished without one', () => {
     state.sessionPhaseRuns = { 'sess-1': [wireframeAgent] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     expect(screen.getByRole('heading', { level: 2, name: 'Wireframes' })).toBeDefined();
-    expect(screen.getByText('wireframe could not be read')).toBeDefined();
+    expect(screen.getByText("Couldn't read wireframe")).toBeDefined();
   });
 
   it('drops the generation row once that agent produced its artifact', () => {
@@ -394,7 +394,7 @@ describe('ArtifactStudio', () => {
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('Session report'));
     const detail = screen.getByTestId('artifact-detail');
-    expect(screen.getByRole('heading', { level: 1, name: 'Artifacts' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'Session report' })).toBeDefined();
     expect(within(detail).queryByText('reporter')).toBeNull();
     expect(within(detail).queryByText('rev 2')).toBeNull();
     fireEvent.click(screen.getByTestId('artifact-details-toggle'));
@@ -405,25 +405,14 @@ describe('ArtifactStudio', () => {
     expect(screen.getByText('shipped it')).toBeDefined();
   });
 
-  it('keeps the whole list in the rail beside the artifact it opened', () => {
+  it('swaps the list for the artifact it opened and returns on Back or Escape', () => {
     state.sessionArtifacts = { 'sess-1': [report, wireframe] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('Session report'));
-    const rail = screen.getByTestId('artifact-rail');
-    expect(within(rail).getByText('Session report')).toBeDefined();
-    expect(within(rail).getByText('Onboarding flow')).toBeDefined();
-    fireEvent.click(within(rail).getByText('Onboarding flow'));
-    expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', 'artifact-wireframe');
-  });
-
-  it('holds the rail behind a container query the suite cannot evaluate', () => {
-    state.sessionArtifacts = { 'sess-1': [report] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('Session report'));
-    const rail = screen.getByRole('complementary', { name: 'Artifacts' });
-    expect(rail.className).toContain('@min-[1025px]:flex');
-    expect(rail.className).toContain('hidden');
-    expect(screen.getByTestId('artifact-back').className).toContain('@min-[1025px]:hidden');
+    expect(screen.queryByText('Onboarding flow')).toBeNull();
+    expect(screen.queryByRole('complementary', { name: 'Artifacts' })).toBeNull();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', null);
   });
 
   it('keeps the plan lifecycle vocabulary off reports and wireframes', () => {
@@ -436,7 +425,7 @@ describe('ArtifactStudio', () => {
   it('still surfaces superseded on a report because a newer revision replaced it', () => {
     state.sessionArtifacts = { 'sess-1': [{ ...report, status: 'superseded' }] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByText('superseded')).toBeDefined();
+    expect(screen.getByText('Superseded')).toBeDefined();
   });
 
   it('offers markdown export on a report and json export on a wireframe, both printable', () => {
@@ -525,7 +514,7 @@ describe('ArtifactStudio', () => {
     state.focusedPlanId = { 'sess-1': 'plan-1' };
     state.sessionArtifacts = { 'sess-1': [report] };
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByRole('heading', { level: 1, name: 'Plans' })).toBeDefined();
+    expect(screen.getByText('Plans')).toBeDefined();
     expect(screen.getByRole('button', { name: /start/i })).toBeDefined();
     expect(screen.getByLabelText('Delete plan')).toBeDefined();
     expect(screen.getByRole('tab', { name: /edit/i })).toBeDefined();
@@ -604,11 +593,11 @@ describe('ArtifactStudio generating run', () => {
     expect(state.selectAgent).not.toHaveBeenCalled();
   });
 
-  it('keeps the run beside the rail instead of taking a view of its own', () => {
+  it('opens the run as a view of its own, like every lens detail', () => {
     render(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByText('High fidelity'));
-    expect(screen.getByTestId('artifact-rail')).toBeDefined();
-    expect(screen.getByRole('complementary', { name: 'Artifacts' })).toBeDefined();
+    expect(screen.getByTestId('artifact-run-detail')).toBeDefined();
+    expect(screen.queryByRole('complementary', { name: 'Artifacts' })).toBeNull();
   });
 
   it('stops the run from the band and hands the agent over when asked', () => {

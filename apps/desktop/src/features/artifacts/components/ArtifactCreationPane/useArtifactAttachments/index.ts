@@ -30,9 +30,9 @@ export type ArtifactAttachmentsHandle = Readonly<{
 const UNSTORED_NOTE = 'could not store that file, nothing was attached';
 
 const DROP_NOTICES: AttachmentDropNotices = {
-  ambiguous: 'drop the file on the attachments box to attach it',
-  disabled: 'this session has no worktree yet, so nothing can be attached',
-  unavailable: 'file drop is unavailable, use Add files instead',
+  ambiguous: 'Drop the file on the attachments box to attach it.',
+  disabled: 'This session has no worktree yet, so nothing can be attached.',
+  unavailable: 'File drop is unavailable. Use Add files instead.',
 };
 
 export const useArtifactAttachments = ({
@@ -70,7 +70,7 @@ export const useArtifactAttachments = ({
 
   const { attachments, setAttachments, isDragging, composerRef, fileInputRef, onFileInputChange } =
     usePendingAttachments({
-      showToast: (_kind, message) => setNote(message),
+      showToast: ({ message }) => setNote(message),
       enabled: worktree !== null,
       notices: DROP_NOTICES,
       persistToDisk,

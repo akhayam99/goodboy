@@ -8,6 +8,7 @@ import type {
   IntegrationBindingId,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import { isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type IntegrationBindingRow = {
   id: string;
@@ -20,17 +21,27 @@ type IntegrationBindingRow = {
   updated_at: number;
 };
 
-const toDomain = (row: IntegrationBindingRow): IntegrationBinding =>
-  ({
+const toDomain = (row: IntegrationBindingRow): ReadonlyArray<IntegrationBinding> => {
+  const config = parseJsonColumn<Readonly<Record<string, unknown>> | null>({
+    value: row.config,
+    isValid: isJsonRecord,
+    fallback: null,
+  });
+  if (config === null) {
+    return [];
+  }
+  const binding = {
     id: row.id as IntegrationBindingId,
     workspaceId: row.workspace_id as WorkspaceId,
     projectId: (row.project_id as ProjectId | null) ?? null,
     provider: row.provider as IntegrationBindingProvider,
-    config: JSON.parse(row.config),
+    config,
     credentialId: row.credential_id as IntegrationCredentialId,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
-  }) as IntegrationBinding;
+  } as IntegrationBinding;
+  return [binding];
+};
 
 type UpsertParams = {
   readonly db: Database;
@@ -73,7 +84,7 @@ export const listIntegrationBindingsForWorkspace = async ({
      ORDER BY provider ASC, project_id IS NOT NULL, created_at ASC`,
     [workspaceId],
   );
-  return rows.map(toDomain);
+  return rows.flatMap(toDomain);
 };
 
 type GetParams = {
@@ -96,7 +107,7 @@ export const getIntegrationBinding = async ({
     [workspaceId, provider, projectId],
   );
   const row = rows[0];
-  return row === undefined ? null : toDomain(row);
+  return row === undefined ? null : (toDomain(row)[0] ?? null);
 };
 
 type DeleteScopeParams = {

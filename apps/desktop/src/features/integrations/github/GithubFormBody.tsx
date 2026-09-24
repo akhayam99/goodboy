@@ -1,46 +1,23 @@
-import { useCallback, useEffect, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
-import type { GhTokenStatus, WorkspaceId } from '@goodboy/types';
-import { ghClearToken, ghSetToken, ghStatus } from '../../github/github';
+import type { WorkspaceId } from '@goodboy/types';
+import { useAppStore } from '../../../store';
 import { ConnectForm } from '../components/ConnectForm';
 import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
-import { notifyGithubConnectionChanged, type GithubConnection } from './useGithubConnection';
+import { useGithubConnection } from './useGithubConnection';
 
 type Props = {
-  workspaceId: WorkspaceId;
-  connection?: GithubConnection;
-  onConnected?: () => void;
-  shouldAutoFocus?: boolean;
+  readonly workspaceId: WorkspaceId | null;
+  readonly onConnected?: () => void;
+  readonly shouldAutoFocus?: boolean;
 };
 
 const TOKEN_CREATE_URL = 'https://github.com/settings/tokens/new?scopes=repo&description=Goodboy';
 const TOKEN_LIST_URL = 'https://github.com/settings/tokens';
 
-export const GithubFormBody = ({
-  workspaceId,
-  onConnected,
-  shouldAutoFocus = false,
-  connection,
-}: Props) => {
-  const [localStatus, setStatus] = useState<GhTokenStatus | null>(null);
-
-  const status = connection === undefined ? localStatus : connection.status;
-  const refreshConnection = connection?.refresh;
-
-  const refresh = useCallback(async () => {
-    if (refreshConnection !== undefined) {
-      return;
-    }
-    try {
-      setStatus(await ghStatus(workspaceId));
-    } catch {
-      setStatus(null);
-    }
-  }, [workspaceId, refreshConnection]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
+  const { status } = useGithubConnection({ workspaceId });
+  const setGithubToken = useAppStore((s) => s.setGithubToken);
+  const clearGithubToken = useAppStore((s) => s.clearGithubToken);
 
   if (status?.scoped === true) {
     return (
@@ -50,9 +27,7 @@ export const GithubFormBody = ({
         badge="workspace key"
         disconnectDescription="Deletes this workspace's GitHub personal API key from your keychain. This does not sign you out of the system gh CLI."
         onDisconnect={async () => {
-          await ghClearToken(workspaceId);
-          await refresh();
-          notifyGithubConnectionChanged();
+          await clearGithubToken({ workspaceId });
         }}
       />
     );
@@ -60,14 +35,14 @@ export const GithubFormBody = ({
 
   return (
     <ConnectForm
-      tokenId="github-pat"
+      tokenId={workspaceId === null ? 'github-pat' : 'github-workspace-pat'}
       tokenLabel="Personal API key"
       tokenPlaceholder="ghp_…"
       tokenLink={{ label: 'Get a personal access token from GitHub', href: TOKEN_CREATE_URL }}
       guide={
         status?.user != null ? (
           <p className="text-2xs leading-relaxed text-muted-foreground">
-            Already covered by your system gh CLI, connected as {status.user}. A key pasted here
+            Already covered by the all-workspaces connection as {status.user}. A key pasted here
             overrides it for this workspace only.
           </p>
         ) : null
@@ -92,9 +67,7 @@ export const GithubFormBody = ({
       }}
       shouldAutoFocus={shouldAutoFocus}
       onSubmit={async ({ token }) => {
-        await ghSetToken(token, workspaceId);
-        await refresh();
-        notifyGithubConnectionChanged();
+        await setGithubToken({ token, workspaceId });
         onConnected?.();
       }}
     />

@@ -58,13 +58,18 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('MountBranchDecision', () => {
-  it('names the mount, the recorded branch and the one found', () => {
+  it('names the mount, the recorded branch and the one found', async () => {
     renderDecision();
 
     expect(screen.getByText('ledger-core is not on the branch it was left on')).toBeDefined();
-    expect(
-      screen.getByText('Expected ak/part-one, found ak/part-two. Nothing was changed.'),
-    ).toBeDefined();
+    expect(screen.getByText('Expected ak/part-one, found ak/part-two.')).toBeDefined();
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          'Expected ak/part-one, found ak/part-two. Keep both branches records ak/part-two here and mounts ak/part-one again in a row of its own.',
+        ),
+      ).toBeDefined(),
+    );
   });
 
   it('adopts the observed branch on this mount', async () => {
@@ -101,27 +106,25 @@ describe('MountBranchDecision', () => {
     );
   });
 
-  it('turns off adopting a branch another mount already holds', () => {
+  it('drops adopting a branch another mount already holds and leads with check again', () => {
     renderDecision({ holder: { mountId: 'mount-2' as MountId, label: 'PR #418' } });
 
     expect(screen.getByText('ledger-core is not on the branch it was left on')).toBeDefined();
     expect(
       screen.getByText(
-        'Expected ak/part-one, found ak/part-two. That branch is already mounted as PR #418 in this session. Git keeps one branch in one worktree, so using it here would fail.',
+        'Expected ak/part-one, found ak/part-two. ak/part-two is already mounted as PR #418 in this session, and git keeps one branch in one worktree.',
       ),
     ).toBeDefined();
-    expect(
-      screen.getByRole('button', { name: 'Use this branch here' }).hasAttribute('disabled'),
-    ).toBe(true);
-    expect(
-      screen.getByRole('button', { name: 'Check this mount again' }).hasAttribute('disabled'),
-    ).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Use this branch here' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Check again' }).hasAttribute('disabled')).toBe(
+      false,
+    );
   });
 
   it('reads the mount again when the branch is claimed elsewhere', async () => {
     renderDecision({ holder: { mountId: 'mount-2' as MountId, label: null } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Check this mount again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
 
     await waitFor(() =>
       expect(h.store.resolveMountBranchMismatch).toHaveBeenCalledWith({
@@ -136,9 +139,7 @@ describe('MountBranchDecision', () => {
     renderDecision({ next: { state: 'detached', observedBranch: null } });
 
     expect(screen.getByText('ledger-core is not on a branch')).toBeDefined();
-    expect(
-      screen.getByText('Expected ak/part-one, found a commit with no branch. Nothing was changed.'),
-    ).toBeDefined();
+    expect(screen.getByText('Expected ak/part-one, found a commit with no branch.')).toBeDefined();
     await waitFor(() =>
       expect(
         screen.getByRole('button', { name: 'Put it back on ak/part-one' }).hasAttribute('disabled'),
@@ -160,13 +161,11 @@ describe('MountBranchDecision', () => {
 
     expect(screen.getByText("ledger-core's branch could not be read")).toBeDefined();
     expect(
-      screen.getByText(
-        'Expected ak/part-one, but the directory could not be read. Nothing was changed.',
-      ),
+      screen.getByText('Expected ak/part-one, but its directory could not be read.'),
     ).toBeDefined();
-    expect(
-      screen.getByRole('button', { name: 'Check this mount again' }).hasAttribute('disabled'),
-    ).toBe(false);
+    expect(screen.getByRole('button', { name: 'Check again' }).hasAttribute('disabled')).toBe(
+      false,
+    );
   });
 
   it('dismisses itself without resolving anything', () => {
@@ -178,22 +177,20 @@ describe('MountBranchDecision', () => {
     expect(h.store.resolveMountBranchMismatch).not.toHaveBeenCalled();
   });
 
-  it('turns off adoption when another repository worktree holds the branch', async () => {
+  it('drops adoption when another repository worktree holds the branch', async () => {
     h.invoke.mockResolvedValue('/worktrees/outside-this-session');
     renderDecision();
 
     await waitFor(() =>
       expect(
         screen.getByText(
-          'Expected ak/part-one, found ak/part-two. That branch is already mounted in another worktree of this project. Git keeps one branch in one worktree, so using it here would fail.',
+          'Expected ak/part-one, found ak/part-two. ak/part-two is already mounted in another worktree of this project, and git keeps one branch in one worktree.',
         ),
       ).toBeDefined(),
     );
-    expect(
-      screen.getByRole('button', { name: 'Use this branch here' }).hasAttribute('disabled'),
-    ).toBe(true);
-    expect(
-      screen.getByRole('button', { name: 'Check this mount again' }).hasAttribute('disabled'),
-    ).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Use this branch here' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Check again' }).hasAttribute('disabled')).toBe(
+      false,
+    );
   });
 });

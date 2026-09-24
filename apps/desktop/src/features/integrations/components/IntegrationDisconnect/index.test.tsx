@@ -1,19 +1,28 @@
 // @vitest-environment happy-dom
 
-import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { ToastProvider } from '../../../../app/components/Toast';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+
+const { reportErrorMock } = vi.hoisted(() => ({
+  reportErrorMock: vi.fn(async () => undefined),
+}));
+
+vi.mock('../../../../store', () => ({
+  useAppStore: <T,>(selector: (s: { reportError: typeof reportErrorMock }) => T) =>
+    selector({ reportError: reportErrorMock }),
+}));
+
 import { IntegrationDisconnect } from '.';
 
-const renderWithToast = (children: ReactNode) => render(<ToastProvider>{children}</ToastProvider>);
-
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  reportErrorMock.mockClear();
+});
 
 describe('IntegrationDisconnect', () => {
   it('asks for confirmation before disconnecting', async () => {
     const onDisconnect = vi.fn(async () => undefined);
-    renderWithToast(
+    render(
       <IntegrationDisconnect
         label="Linear"
         description="Removes Linear from this workspace."
@@ -25,13 +34,13 @@ describe('IntegrationDisconnect', () => {
     expect(screen.getByText('Disconnect Linear?')).toBeDefined();
     expect(onDisconnect).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect Linear' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Disconnect' }));
     await waitFor(() => expect(onDisconnect).toHaveBeenCalledOnce());
   });
 
-  it('cancels back to the icon without disconnecting', () => {
+  it('cancels back to the trigger without disconnecting', () => {
     const onDisconnect = vi.fn(async () => undefined);
-    renderWithToast(
+    render(
       <IntegrationDisconnect
         label="Slack"
         description="Removes Slack from this workspace."
@@ -46,11 +55,11 @@ describe('IntegrationDisconnect', () => {
     expect(onDisconnect).not.toHaveBeenCalled();
   });
 
-  it('shows an error toast and stays armed when the disconnect call fails', async () => {
+  it('reports the failure to the log and stays armed when the disconnect call fails', async () => {
     const onDisconnect = vi.fn(async () => {
       throw new Error('keychain is locked');
     });
-    renderWithToast(
+    render(
       <IntegrationDisconnect
         label="GitHub"
         description="Removes the GitHub token."
@@ -59,9 +68,13 @@ describe('IntegrationDisconnect', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitHub' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitHub' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Disconnect' }));
 
-    expect(await screen.findByText('Keychain is locked')).toBeDefined();
+    await waitFor(() =>
+      expect(reportErrorMock).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't disconnect GitHub" }),
+      ),
+    );
     expect(screen.getByText('Disconnect GitHub?')).toBeDefined();
   });
 });

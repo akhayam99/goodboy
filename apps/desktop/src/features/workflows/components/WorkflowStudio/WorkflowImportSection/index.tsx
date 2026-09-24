@@ -52,8 +52,8 @@ export const WorkflowImportSection = ({
         <LensEmptyState
           icon={CONCEPT_ICONS.workspace}
           tone={CONCEPT_TONE.workspace}
-          title="No other workspaces"
-          description="Add a project in another workspace to import its workflows."
+          title="No projects in other workspaces"
+          description="Link a project to another workspace to import its workflows here."
         />
       </div>
     );

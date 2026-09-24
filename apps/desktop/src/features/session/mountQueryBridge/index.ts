@@ -389,21 +389,76 @@ const requestReferenceMode = ({
   return raw === 'none' ? 'none' : 'part-of';
 };
 
-const createRequest = async ({ request }: InspectParams): Promise<MountBridgeOutcome> => {
+type RequestFields = {
+  readonly title: string;
+  readonly body: string;
+  readonly draft: boolean;
+  readonly referenceMode: 'closing' | 'part-of' | 'none';
+  readonly base: string;
+};
+
+type RequestHost = {
+  readonly refresh: () => Promise<void>;
+  readonly create: (fields: RequestFields) => Promise<void>;
+};
+
+const requestHost = ({ request }: InspectParams): RequestHost | null => {
   const get = useAppStore.getState;
+  const { sessionId, mountId } = request;
+  switch (request.provider) {
+    case 'github':
+      return {
+        refresh: () => get().refreshSessionPr(sessionId, { force: true, mountId }),
+        create: async ({ title, body, draft, referenceMode, base }) => {
+          await get().createPrForSession({
+            sessionId,
+            mountId,
+            title,
+            body,
+            draft,
+            referenceMode,
+            ...(base === '' ? {} : { base }),
+          });
+        },
+      };
+    case 'gitlab':
+      return {
+        refresh: () => get().refreshSessionMr(sessionId, { force: true, mountId }),
+        create: async ({ title, body, draft, referenceMode, base }) => {
+          await get().createMrForSession({
+            sessionId,
+            mountId,
+            title,
+            description: body,
+            draft,
+            referenceMode,
+            ...(base === '' ? {} : { targetBranch: base }),
+          });
+        },
+      };
+    case 'mount':
+      return null;
+    default: {
+      const exhaustive: never = request.provider;
+      throw new Error(`unknown review request provider: ${String(exhaustive)}`);
+    }
+  }
+};
+
+const createRequest = async ({ request }: InspectParams): Promise<MountBridgeOutcome> => {
   const mount = await loadedMount(request);
   if (mount === undefined) {
     return { ok: false, error: 'that mount is not loaded', code: 'mount_unavailable' };
   }
-  if (request.provider === 'gitlab') {
-    await get()
-      .refreshSessionMr(request.sessionId, { force: true, mountId: request.mountId })
-      .catch(() => undefined);
-  } else {
-    await get()
-      .refreshSessionPr(request.sessionId, { force: true, mountId: request.mountId })
-      .catch(() => undefined);
+  const host = requestHost({ request });
+  if (host === null) {
+    return {
+      ok: false,
+      error: 'creating a review request needs a github or gitlab mount',
+      code: 'mount_unavailable',
+    };
   }
+  await host.refresh().catch(() => undefined);
   const existing = await linkForBranch({
     sessionId: request.sessionId,
     mountId: request.mountId,
@@ -417,27 +472,7 @@ const createRequest = async ({ request }: InspectParams): Promise<MountBridgeOut
   const title = text({ args: request.args, key: 'title' });
   const body = text({ args: request.args, key: 'body' });
   const referenceMode = requestReferenceMode({ args: request.args });
-  if (request.provider === 'gitlab') {
-    await get().createMrForSession({
-      sessionId: request.sessionId,
-      mountId: request.mountId,
-      title,
-      description: body,
-      draft,
-      referenceMode,
-      ...(base === '' ? {} : { targetBranch: base }),
-    });
-  } else {
-    await get().createPrForSession({
-      sessionId: request.sessionId,
-      mountId: request.mountId,
-      title,
-      body,
-      draft,
-      referenceMode,
-      ...(base === '' ? {} : { base }),
-    });
-  }
+  await host.create({ title, body, draft, referenceMode, base });
   const link = await linkForBranch({
     sessionId: request.sessionId,
     mountId: request.mountId,

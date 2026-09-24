@@ -1,5 +1,5 @@
 import type { PrCheckRun } from '@goodboy/types';
-import { PrChecks } from '../../../../github/components/GitHubStudio/PrChecks';
+import { PrChecks } from '../../../../github/components/PullRequest/PrChecks';
 import { ModeShell } from './ModeShell';
 
 type Props = {

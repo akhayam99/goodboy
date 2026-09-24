@@ -6,9 +6,9 @@ import { ConnectForm } from '../components/ConnectForm';
 import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
 
 type Props = {
-  workspaceId: WorkspaceId;
-  onConnected?: () => void;
-  shouldAutoFocus?: boolean;
+  readonly workspaceId: WorkspaceId;
+  readonly onConnected?: () => void;
+  readonly shouldAutoFocus?: boolean;
 };
 
 export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {

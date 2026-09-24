@@ -138,20 +138,6 @@ export const gitlabFetchAssignedMrs = async (
   });
 };
 
-export const gitlabFetchProjectMrs = async (
-  workspaceId: WorkspaceId,
-  host: string,
-  projectPath: string,
-  projectId?: ProjectId,
-): Promise<GitlabMergeRequest[]> => {
-  return invoke<GitlabMergeRequest[]>('gitlab_fetch_project_mrs', {
-    workspaceId,
-    ...(projectId != null ? { projectId } : {}),
-    host,
-    projectPath,
-  });
-};
-
 export type GitlabMergeStatusTone = 'success' | 'danger' | 'muted';
 
 export const humanizeMergeStatus = (

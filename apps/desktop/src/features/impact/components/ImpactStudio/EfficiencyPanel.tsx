@@ -9,7 +9,7 @@ import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { turnStats } from '../../utils/turnStats';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { TurnHistogram } from './TurnHistogram';
 import { StudioWidget } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -44,7 +44,11 @@ export const EfficiencyPanel = ({
   const accepted = nudgeData?.find((entry) => entry.outcome === 'accepted')?.count ?? 0;
   const nudgeTotal = nudgeData?.reduce((sum, entry) => sum + entry.count, 0) ?? 0;
   return (
-    <StudioPanel title="Efficiency" subtitle="Token reuse, context growth, and right-sized runs">
+    <PaneShell
+      scroll="body"
+      title="Efficiency"
+      description="Token reuse, context growth, and right-sized runs"
+    >
       <ErrorStrip label="cache efficiency" error={cacheEfficiency.error} onRetry={onRetry} />
       <ErrorStrip label="context growth" error={contextGrowth.error} onRetry={onRetry} />
       <ErrorStrip label="turn distribution" error={turns.error} onRetry={onRetry} />
@@ -120,6 +124,6 @@ export const EfficiencyPanel = ({
           </div>
         </StudioWidget>
       </div>
-    </StudioPanel>
+    </PaneShell>
   );
 };

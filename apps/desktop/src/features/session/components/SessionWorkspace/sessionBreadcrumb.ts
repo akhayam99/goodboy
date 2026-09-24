@@ -1,4 +1,4 @@
-import type { BreadcrumbCrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
+import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { LensKind, SessionStudio } from '../../../../store';
 import type { AgentHomeLens } from '../../agent-kind';

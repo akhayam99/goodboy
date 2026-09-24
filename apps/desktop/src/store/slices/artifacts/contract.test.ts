@@ -8,14 +8,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  createArtifactsSlice,
-  artifactsInitialState,
-  selectArtifact,
-  selectArtifactsByKind,
-  selectPlanArtifacts,
-  selectSessionArtifacts,
-} from './index';
+import { createArtifactsSlice, artifactsInitialState } from './index';
 import type { ArtifactsState } from './state';
 import type { GetFn, SetFn } from './types';
 
@@ -127,32 +120,5 @@ describe('artifacts slice', () => {
     expect(discardSpy).toHaveBeenCalledWith(PLAN_ID);
     await slice().restoreArtifact({ sessionId: SESSION_ID, artifactId: PLAN_ID });
     expect(restoreSpy).toHaveBeenCalledWith(PLAN_ID);
-  });
-
-  it('selectors narrow by session, kind and id', () => {
-    const populated: ArtifactsState = {
-      sessionArtifacts: { [SESSION_ID]: [planArtifact, reportArtifact] },
-      wireframeScoutVerification: {},
-    };
-    expect(selectSessionArtifacts({ state: populated, sessionId: SESSION_ID })).toHaveLength(2);
-    expect(
-      selectArtifactsByKind({ state: populated, sessionId: SESSION_ID, kind: 'report' }),
-    ).toEqual([reportArtifact]);
-    expect(selectPlanArtifacts({ state: populated, sessionId: SESSION_ID })).toEqual([
-      planArtifact,
-    ]);
-    expect(
-      selectArtifact({ state: populated, sessionId: SESSION_ID, artifactId: REPORT_ID }),
-    ).toEqual(reportArtifact);
-    expect(
-      selectArtifact({ state: populated, sessionId: SESSION_ID, artifactId: 'nope' as ArtifactId }),
-    ).toBeNull();
-  });
-
-  it('returns a stable empty list for an unknown session', () => {
-    const empty = { sessionArtifacts: {} };
-    expect(selectSessionArtifacts({ state: empty, sessionId: SESSION_ID })).toBe(
-      selectSessionArtifacts({ state: empty, sessionId: 'other' as SessionId }),
-    );
   });
 });

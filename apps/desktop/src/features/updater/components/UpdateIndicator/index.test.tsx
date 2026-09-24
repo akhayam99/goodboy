@@ -6,13 +6,23 @@ import { UpdateIndicator } from './index';
 
 const installUpdate = vi.fn(async () => undefined);
 
-const setStatus = (status: 'idle' | 'available' | 'downloading') => {
+type Seed = {
+  readonly status: 'idle' | 'available' | 'downloading';
+  readonly failure?: { phase: 'check' | 'install'; message: string } | null;
+  readonly progress?: { downloaded: number; total: number | null } | null;
+};
+
+const seed = ({ status, failure = null, progress = null }: Seed) => {
   useAppStore.setState({
     updaterStatus: status,
     updateVersion: '0.1.58',
+    updateFailure: failure,
+    updateProgress: progress,
     installUpdate,
   } as never);
 };
+
+const setStatus = (status: Seed['status']) => seed({ status });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -32,27 +42,55 @@ describe('UpdateIndicator', () => {
     render(<UpdateIndicator variant="pip" />);
     const chip = screen.getByTestId('update-indicator') as HTMLButtonElement;
     expect(chip.textContent).toContain('Update to 0.1.58');
-    expect(chip.className).toContain('attention-ring');
-    expect(chip.className).not.toContain('spin-border');
     expect(chip.disabled).toBe(false);
   });
 
-  it('switches to a running border while the update downloads', () => {
-    setStatus('downloading');
+  it('shows the download percentage while the update downloads', () => {
+    seed({ status: 'downloading', progress: { downloaded: 42, total: 100 } });
     render(<UpdateIndicator variant="pip" />);
     const chip = screen.getByTestId('update-indicator') as HTMLButtonElement;
-    expect(chip.textContent).toContain('Updating to 0.1.58');
-    expect(chip.className).toContain('spin-border');
-    expect(chip.className).not.toContain('attention-ring');
+    expect(chip.textContent).toContain('Downloading 42%');
     expect(chip.disabled).toBe(true);
   });
 
-  it('installs only after the confirmation is accepted', async () => {
+  it('says downloading without a number when the size is unknown', () => {
+    seed({ status: 'downloading', progress: { downloaded: 42, total: null } });
+    render(<UpdateIndicator variant="pip" />);
+    expect(screen.getByTestId('update-indicator').textContent).toContain('Downloading');
+    expect(screen.getByTestId('update-indicator').textContent).not.toContain('%');
+  });
+
+  it('turns into a failure chip when the install failed', () => {
+    seed({ status: 'available', failure: { phase: 'install', message: 'connection reset' } });
+    render(<UpdateIndicator variant="pip" />);
+    const chip = screen.getByTestId('update-indicator');
+    expect(chip.textContent).toContain('Update failed');
+    expect(chip.getAttribute('title')).toBe('connection reset');
+  });
+
+  it('keeps offering the update when only a background check failed', () => {
+    seed({ status: 'available', failure: { phase: 'check', message: 'offline' } });
+    render(<UpdateIndicator variant="pip" />);
+    expect(screen.getByTestId('update-indicator').textContent).toContain('Update to 0.1.58');
+  });
+
+  it('installs only after the inline confirmation is accepted', async () => {
     setStatus('available');
     render(<UpdateIndicator variant="pip" />);
     await userEvent.click(screen.getByTestId('update-indicator'));
     expect(installUpdate).not.toHaveBeenCalled();
-    await userEvent.click(screen.getByRole('button', { name: 'Update and restart' }));
+    expect(screen.getByRole('dialog', { name: 'Goodboy 0.1.58 is available' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Download and restart' }));
+    expect(installUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers a retry in the same popover after an install failure', async () => {
+    seed({ status: 'available', failure: { phase: 'install', message: 'connection reset' } });
+    render(<UpdateIndicator variant="pip" />);
+    await userEvent.click(screen.getByTestId('update-indicator'));
+    expect(screen.getByText("Couldn't install 0.1.58")).toBeTruthy();
+    expect(screen.getByText('connection reset')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(installUpdate).toHaveBeenCalledTimes(1);
   });
 });

@@ -78,7 +78,7 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
         {text.trim() !== '' ? (
           <Markdown text={text} className="text-sm leading-relaxed" />
         ) : (
-          <p className="text-sm italic text-muted-foreground/60">No description.</p>
+          <p className="text-sm italic text-faint-foreground">No description.</p>
         )}
       </div>
     </StudioWidget>

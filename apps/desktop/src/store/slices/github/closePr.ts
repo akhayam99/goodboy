@@ -33,7 +33,11 @@ export const closePr = (_set: SetFn, get: GetFn) => {
         });
         if (res.exitCode !== 0) {
           const errMsg = res.stderr.trim() || `gh pr close exited with ${res.exitCode}`;
-          void get().emitNotification('error', 'error', `Close of #${num} failed`, errMsg, {
+          void get().emitNotification({
+            kind: 'error',
+            severity: 'error',
+            title: `Couldn't close #${num}`,
+            body: errMsg,
             sessionId,
             workspaceId: workspace.id,
           });

@@ -3,7 +3,7 @@ import type {
   AgentId,
   AgentStatus,
   IsoDateTime,
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   ProviderRunId,
   SessionId,
@@ -15,14 +15,8 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { Database } from '../client';
-import {
-  isWorkflowRoutingDecision,
-  isWorkflowRoutingLock,
-  isWorkflowTaskProfile,
-  legacyAgentRoutingDecision,
-  parseWorkflowRouting,
-  stringifyRoutingJson,
-} from './workflowRoutingCodec';
+import { legacyAgentRoutingDecision, parseWorkflowRouting } from './workflowRoutingCodec';
+import { isJsonArray, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type AgentRow = {
   id: string;
@@ -68,18 +62,8 @@ type UpdateAgentDomainsParams = {
 };
 
 const parseDomains = ({ value }: ParseDomainsParams): ReadonlyArray<string> => {
-  if (value === null) {
-    return [];
-  }
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed.filter((domain): domain is string => typeof domain === 'string');
-  } catch {
-    return [];
-  }
+  const parsed = parseJsonColumn({ value, isValid: isJsonArray, fallback: [] });
+  return parsed.filter((domain): domain is string => typeof domain === 'string');
 };
 
 const toAgent = ({ row }: ToAgentParams): Agent => {
@@ -131,7 +115,7 @@ const toAgent = ({ row }: ToAgentParams): Agent => {
     }),
     ...(row.verbosity && { verbosity: row.verbosity as 'brief' | 'normal' | 'verbose' }),
     ...(row.effort && {
-      effort: row.effort as ModelEffort,
+      effort: row.effort as EffortLevel,
     }),
     ...(row.model_override && { modelOverride: row.model_override }),
     ...(row.provider_override && { providerOverride: row.provider_override as ProviderId }),
@@ -141,17 +125,6 @@ const toAgent = ({ row }: ToAgentParams): Agent => {
     routingDecision,
     taskProfile: routing.taskProfile,
   };
-};
-
-export const listAgentsForSession = async (
-  db: Database,
-  sessionId: SessionId,
-): Promise<ReadonlyArray<Agent>> => {
-  const rows = await db.select<AgentRow>(
-    'SELECT * FROM live_agents WHERE session_id = ? ORDER BY ordinal ASC',
-    [sessionId],
-  );
-  return rows.map((row) => toAgent({ row }));
 };
 
 export const listAgentsForSessions = async (
@@ -236,13 +209,7 @@ export const updateAgentStatus = async (
   await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values);
 };
 
-export const softDeleteAgent = async (db: Database, id: AgentId): Promise<void> => {
-  await db.execute('UPDATE agents SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
-};
-
-export const restoreAgent = async (db: Database, id: AgentId): Promise<void> => {
-  await db.execute('UPDATE agents SET deleted_at = NULL WHERE id = ?', [id]);
-};
+const OPEN_QUESTION_TEXTS_INDEX = 2;
 
 export const purgeAgentForDelete = async ({
   db,
@@ -251,33 +218,34 @@ export const purgeAgentForDelete = async ({
   readonly db: Database;
   readonly id: AgentId;
 }): Promise<ReadonlyArray<string>> => {
-  await db.exec('BEGIN');
-  try {
-    await db.execute('DELETE FROM messages WHERE agent_id = ?', [id]);
-    await db.execute('DELETE FROM turn_events WHERE agent_id = ?', [id]);
-    const openQuestions = await db.select<{ text: string }>(
-      "SELECT text FROM open_questions WHERE created_by_agent_id = ? AND status = 'open'",
-      [id],
-    );
-    await db.execute(
-      "DELETE FROM open_questions WHERE created_by_agent_id = ? AND status = 'open'",
-      [id],
-    );
-    await db.execute('UPDATE agents SET deleted_at = ?, output_summary = NULL WHERE id = ?', [
-      Date.now(),
-      id,
-    ]);
-    await db.exec('COMMIT');
-    return openQuestions.map((row) => row.text);
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
+  const outcome = await db.transaction({
+    statements: [
+      { sql: 'DELETE FROM messages WHERE agent_id = ?', params: [id] },
+      { sql: 'DELETE FROM turn_events WHERE agent_id = ?', params: [id] },
+      {
+        sql: "SELECT text FROM open_questions WHERE created_by_agent_id = ? AND status = 'open'",
+        params: [id],
+      },
+      {
+        sql: "DELETE FROM open_questions WHERE created_by_agent_id = ? AND status = 'open'",
+        params: [id],
+      },
+      {
+        sql: 'UPDATE agents SET deleted_at = ?, output_summary = NULL WHERE id = ?',
+        params: [Date.now(), id],
+      },
+    ],
+  });
+  if (outcome.status === 'aborted') {
+    return [];
   }
+  const rows = outcome.results[OPEN_QUESTION_TEXTS_INDEX]?.rows ?? [];
+  return rows.flatMap((row) => (typeof row.text === 'string' ? [row.text] : []));
 };
 
 export type AgentConfigUpdate = {
   verbosity?: VerbosityLevel | null;
-  effort?: ModelEffort | null;
+  effort?: EffortLevel | null;
   modelOverride?: string | null;
   providerOverride?: ProviderId | null;
   kind?: string | null;
@@ -323,43 +291,5 @@ export type AgentRoutingUpdate = Readonly<{
   taskProfile: WorkflowTaskProfile | null;
   providerOverride: ProviderId | null;
   modelOverride: string | null;
-  effort: ModelEffort | null;
+  effort: EffortLevel | null;
 }>;
-
-export const updateAgentRouting = async ({
-  db,
-  id,
-  update,
-}: {
-  readonly db: Database;
-  readonly id: AgentId;
-  readonly update: AgentRoutingUpdate;
-}): Promise<boolean> => {
-  const result = await db.execute(
-    `UPDATE agents SET routing_lock = ?, routing_decision = ?, task_profile = ?,
-       provider_override = ?, model_override = ?, effort = ?
-     WHERE id = ? AND status NOT IN ('starting', 'running', 'completed')`,
-    [
-      stringifyRoutingJson({
-        value: update.routingLock,
-        isValid: isWorkflowRoutingLock,
-        field: 'routing lock',
-      }),
-      stringifyRoutingJson({
-        value: update.routingDecision,
-        isValid: isWorkflowRoutingDecision,
-        field: 'routing decision',
-      }),
-      stringifyRoutingJson({
-        value: update.taskProfile,
-        isValid: isWorkflowTaskProfile,
-        field: 'task profile',
-      }),
-      update.providerOverride,
-      update.modelOverride,
-      update.effort,
-      id,
-    ],
-  );
-  return result.rowsAffected === 1;
-};

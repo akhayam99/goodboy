@@ -32,7 +32,7 @@ export const WorkspaceRollupStrip = ({ onOpenSpend }: Props) => {
         type="button"
         onClick={onOpenSpend}
         title="Today's spend across providers, open the impact studio"
-        className="flex items-center gap-3 rounded px-1.5 py-1 transition-colors hover:bg-muted/50"
+        className="flex items-center gap-3 rounded-sm px-1.5 py-1 transition-colors hover:bg-hover"
       >
         {rollup.runningCount > 0 ? (
           <span className="flex items-center gap-1">

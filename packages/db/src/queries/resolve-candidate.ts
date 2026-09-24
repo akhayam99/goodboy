@@ -4,7 +4,7 @@ import type {
   ResolveCandidateState,
   SessionId,
 } from '@goodboy/types';
-import type { Database } from '../client';
+import type { Database, GuardedStatement } from '../client';
 import { fromMountTarget, toMountTarget } from './resolve-mount-target';
 
 type CandidateParams = { readonly db: Database; readonly candidate: ResolveCandidate };
@@ -168,6 +168,9 @@ export const markResolveCandidateIntegrated = async ({
   return result.rowsAffected === 1;
 };
 
+const STALE_ITEM = 'STALE_ITEM';
+const CANDIDATE_NOT_READY = 'CANDIDATE_NOT_READY';
+
 export const finalizeResolveCandidateIntegration = async ({
   db,
   candidateId,
@@ -175,14 +178,13 @@ export const finalizeResolveCandidateIntegration = async ({
   approvals,
 }: FinalizeParams): Promise<void> => {
   const now = Date.now();
-  await db.exec('BEGIN');
-  try {
-    for (const approval of approvals) {
-      const result = await db.execute(
-        `UPDATE resolve_queue_items SET approval_state = 'accepted', approved_revision = ?, approved_reply_hash = ?, integrated_sha = ?, deferred_at = NULL, updated_at = ?
+  const outcome = await db.transaction({
+    statements: [
+      ...approvals.map((approval): GuardedStatement => ({
+        sql: `UPDATE resolve_queue_items SET approval_state = 'accepted', approved_revision = ?, approved_reply_hash = ?, integrated_sha = ?, deferred_at = NULL, updated_at = ?
          WHERE id = ? AND superseded_at IS NULL AND candidate_revision = ?
            AND EXISTS (SELECT 1 FROM resolve_threads r WHERE r.session_id = resolve_queue_items.session_id AND r.thread_id = resolve_queue_items.thread_id AND r.revision = ?)`,
-        [
+        params: [
           approval.revision,
           approval.replyHash,
           integratedSha,
@@ -191,18 +193,21 @@ export const finalizeResolveCandidateIntegration = async ({
           approval.revision,
           approval.revision,
         ],
-      );
-      if (result.rowsAffected !== 1) {
-        throw new Error('Candidate covers an item whose revision is stale');
-      }
-    }
-    const marked = await markResolveCandidateIntegrated({ db, candidateId, integratedSha });
-    if (!marked) {
-      throw new Error('Candidate is no longer ready');
-    }
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
+        abortWhen: 'noChanges',
+        abortCode: STALE_ITEM,
+      })),
+      {
+        sql: "UPDATE resolve_candidates SET state = 'integrated', integrated_sha = ?, updated_at = ? WHERE id = ? AND state = 'ready'",
+        params: [integratedSha, now, candidateId],
+        abortWhen: 'noChanges',
+        abortCode: CANDIDATE_NOT_READY,
+      },
+    ],
+  });
+  if (outcome.status === 'aborted' && outcome.abortCode === STALE_ITEM) {
+    throw new Error('Candidate covers an item whose revision is stale');
+  }
+  if (outcome.status === 'aborted') {
+    throw new Error('Candidate is no longer ready');
   }
 };

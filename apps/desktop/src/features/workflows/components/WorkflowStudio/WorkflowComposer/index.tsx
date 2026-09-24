@@ -6,7 +6,7 @@ import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types
 import type { StepDefUpsertArgs } from '../../../workflows';
 import type { StepDraft, WorkflowDraft } from '../../../engine';
 import { stepDraftWithModel } from '../../../engine';
-import { ROLE_TO_KIND } from '../../../../session/agent-kind';
+import { kindForRole } from '../../../../session/agent-kind';
 import { WorkflowStepCard } from '../../../../session/components/WorkflowStepCard';
 import { StepFlowConnector } from '../StepFlowConnector';
 import { StepLibraryPalette } from '../StepLibraryPalette';
@@ -118,7 +118,7 @@ export const WorkflowComposer = ({
               aria-label="Workflow description"
               className="border-transparent bg-transparent px-0 text-xs text-muted-foreground shadow-none hover:border-border-soft focus:border-border"
             />
-            <span className="text-2xs text-muted-foreground/60">Changes save automatically</span>
+            <span className="text-2xs text-faint-foreground">Changes save automatically</span>
             {error !== null ? (
               <span className="text-2xs font-medium text-danger" role="alert">
                 {error}
@@ -169,7 +169,7 @@ export const WorkflowComposer = ({
                     type="button"
                     aria-expanded={isLibraryOpen}
                     onClick={() => setIsLibraryOpen((current) => !current)}
-                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/40 hover:text-foreground"
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:bg-hover hover:text-foreground"
                   >
                     {isLibraryOpen ? (
                       <X size={11} aria-hidden />
@@ -180,7 +180,7 @@ export const WorkflowComposer = ({
                   </button>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
+                    className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors hover:border-border hover:bg-hover hover:text-foreground"
                     onClick={onAddBlank}
                   >
                     <Plus size={11} aria-hidden /> Add blank step
@@ -208,7 +208,7 @@ export const WorkflowComposer = ({
                   />
                   <WorkflowStepCard
                     ordinal={idx}
-                    kind={ROLE_TO_KIND[def.role] ?? 'generic'}
+                    kind={kindForRole({ role: def.role })}
                     role={def.role}
                     provider={resolvedProvider(def)}
                     providerValue={def.provider}

@@ -52,7 +52,7 @@ export const ClampedProse = ({ text, lines = 3, className }: ClampedProseProps) 
         type="button"
         aria-expanded={expanded}
         onClick={() => setExpanded((v) => !v)}
-        className="w-fit rounded text-2xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+        className="w-fit rounded-sm text-2xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
         {expanded ? 'Show less' : 'Show more'}
       </button>

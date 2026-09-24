@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentId, MountId, SessionId, WorkflowRunId } from '@goodboy/types';
 import type { Database } from '../client';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   getArtifactProvenance,
   putArtifactProvenance,
@@ -16,8 +15,7 @@ const executingRunId = 'run-executing' as WorkflowRunId;
 const mountId = 'mount' as MountId;
 
 const seed = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Northwind', 'northwind', 1, 1)",
   );

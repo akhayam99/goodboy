@@ -124,6 +124,18 @@ describe('OrchestratorRoutingRow', () => {
     expect(screen.getByRole('button', { name: /^Orchestrator routing: Cursor/ })).toBeTruthy();
   });
 
+  it('shows automatic routing when the stored model is unknown', () => {
+    renderRow(run({ providerId: 'anthropic', model: 'retired-model' }));
+
+    const trigger = screen.getByRole('button', { name: /^Orchestrator routing:/ });
+    expect(trigger.getAttribute('aria-label')).not.toContain('retired-model');
+    openPicker();
+    screen.getByRole('button', { name: /^Auto / });
+    screen.getByText(
+      'Follows the workspace default provider. Goodboy picks the model this task needs.',
+    );
+  });
+
   it('commits the provider just picked, not the one pinned before', () => {
     renderRow(run({ providerId: 'anthropic', model: 'claude-sonnet-4-6' }));
 
@@ -137,5 +149,27 @@ describe('OrchestratorRoutingRow', () => {
     );
     const last = setWorkflowOrchestratorRouting.mock.calls.at(-1)?.[2];
     expect(getModelProvider(last?.model ?? '')).toBe('cursor');
+  });
+
+  it('keeps the picked provider when the workspace pins the orchestrator task elsewhere', () => {
+    Object.assign(storeState, {
+      workspaceOverrides: {
+        'workspace-1': {
+          taskModels: {
+            workflow_orchestrator: { providerId: 'anthropic', model: 'claude-sonnet-5' },
+          },
+        },
+      },
+    });
+    renderRow(run({ providerId: 'anthropic', model: 'claude-sonnet-5' }));
+
+    openPicker();
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+
+    expect(setWorkflowOrchestratorRouting.mock.calls.length).toBeGreaterThan(0);
+    for (const [, , routing] of setWorkflowOrchestratorRouting.mock.calls) {
+      expect(routing?.providerId).toBe('cursor');
+      expect(getModelProvider(routing?.model ?? '')).toBe('cursor');
+    }
   });
 });

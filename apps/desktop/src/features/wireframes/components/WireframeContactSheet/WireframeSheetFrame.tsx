@@ -11,7 +11,6 @@ type Props = {
   readonly screen: WireframeScreen;
   readonly palette: WireframePalette;
   readonly plates: ContactSheetPlates;
-  readonly isLowFidelity: boolean;
   readonly isCurrent: boolean;
   readonly surface: WireframeSheetSurface;
   readonly interaction: WireframeSheetInteraction | null;
@@ -42,7 +41,6 @@ export const WireframeSheetFrame = ({
   screen,
   palette,
   plates,
-  isLowFidelity,
   isCurrent,
   surface,
   interaction,
@@ -95,7 +93,6 @@ export const WireframeSheetFrame = ({
             <WireframeNodeView
               node={screen.root}
               palette={palette}
-              isLowFidelity={isLowFidelity}
               selectedNodeId={interaction?.selectedNodeId ?? null}
               hotspots={interaction?.hotspots ?? NO_HOTSPOTS}
               onSelect={interaction?.onSelect ?? inert}

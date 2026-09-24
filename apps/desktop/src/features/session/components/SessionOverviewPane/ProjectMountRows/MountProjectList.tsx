@@ -47,7 +47,11 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
       onDone();
     } catch (error) {
       setFailure(mountFailure({ error, project, preflight }));
-      void emitNotification('error', 'warning', 'could not add the project', formatError(error), {
+      void emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: "Couldn't add the project",
+        body: formatError(error),
         sessionId,
         workspaceId: project.workspaceId,
       });
@@ -82,7 +86,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
           placeholder="Search projects…"
           autoComplete="off"
           onChange={(event) => setQuery(event.target.value)}
-          className="border-b border-border-soft bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
+          className="border-b border-border-soft bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-faint-foreground"
         />
       ) : null}
       {filtered.length === 0 ? (
@@ -102,7 +106,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
                       setSelectedProjectId(project.id);
                     }}
                     className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm text-foreground motion-safe:transition-colors hover:bg-muted/40',
+                      'flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm text-foreground motion-safe:transition-colors hover:bg-hover',
                     )}
                   >
                     <GlyphIcon

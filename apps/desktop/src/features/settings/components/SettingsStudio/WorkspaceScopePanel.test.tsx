@@ -1,17 +1,26 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import type { OverrideSettings } from '@goodboy/types';
+import {
+  mergeWorkspaceOverrides,
+  type WorkspaceOverridesPatch,
+} from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 
 const { state, toastMock } = vi.hoisted(() => ({
   state: {
     loadSetting: vi.fn(async () => null),
     saveSetting: vi.fn(async () => undefined),
-    deleteWorkspace: vi.fn(async () => undefined),
+    disconnectWorkspace: vi.fn(async () => undefined),
     workspaces: [] as ReadonlyArray<{ id: string; name: string; rootPath: string }>,
     renameWorkspace: vi.fn(async () => undefined),
-    workspaceOverrides: {} as Record<string, unknown>,
-    setWorkspaceOverrides: vi.fn(async () => undefined),
+    workspaceOverrides: {} as Record<string, OverrideSettings>,
+    setWorkspaceOverrides: vi.fn(async (_workspaceId: string, _overrides: unknown) => undefined),
+    patchWorkspaceOverrides: async (_params: {
+      workspaceId: string;
+      patch: WorkspaceOverridesPatch;
+    }): Promise<void> => undefined,
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     providers: [] as ReadonlyArray<{ id: string; connection: string }>,
     orphanWorktrees: {} as Record<
@@ -19,6 +28,8 @@ const { state, toastMock } = vi.hoisted(() => ({
       ReadonlyArray<{ path: string; name: string; sizeBytes: number }>
     >,
     removeOrphanWorktrees: vi.fn(async () => undefined),
+    currentWorkspaceId: null as string | null,
+    sessions: [] as ReadonlyArray<{ id: string; state: { kind: string } }>,
   },
   toastMock: vi.fn(),
 }));
@@ -53,18 +64,44 @@ vi.mock('../../../../features/providers/components/provider-brand', () => ({
   brandColor: () => '#000000',
 }));
 
+const EMPTY: OverrideSettings = {
+  defaultProviderId: null,
+  defaultWorkflowId: null,
+  defaultBranchPrefix: null,
+  parallelEnabled: null,
+  defaultVerbosity: null,
+  providerBindings: null,
+  taskModels: null,
+  roleModels: null,
+  parallelAgents: null,
+  providerPool: null,
+  attributionFooter: null,
+};
+
 beforeEach(() => {
   state.loadSetting = vi.fn(async () => null);
   state.saveSetting = vi.fn(async () => undefined);
-  state.deleteWorkspace = vi.fn(async () => undefined);
+  state.disconnectWorkspace = vi.fn(async () => undefined);
   state.workspaces = [{ id: 'ws-1', name: 'billing', rootPath: '/repos/billing-api' }];
   state.renameWorkspace = vi.fn(async () => undefined);
   state.workspaceOverrides = {};
-  state.setWorkspaceOverrides = vi.fn(async () => undefined);
+  state.setWorkspaceOverrides = vi.fn(
+    async (_workspaceId: string, _overrides: unknown) => undefined,
+  );
+  state.patchWorkspaceOverrides = ({ workspaceId, patch }) =>
+    state.setWorkspaceOverrides(
+      workspaceId,
+      mergeWorkspaceOverrides({
+        base: state.workspaceOverrides[workspaceId] ?? EMPTY,
+        patch,
+      }),
+    );
   state.workspaceIntegrations = {};
   state.providers = [];
   state.orphanWorktrees = {};
   state.removeOrphanWorktrees = vi.fn(async () => undefined);
+  state.currentWorkspaceId = null;
+  state.sessions = [];
   toastMock.mockReset();
 });
 afterEach(cleanup);
@@ -154,12 +191,29 @@ describe('WorkspaceScopePanel', () => {
     );
   });
 
+  it('writes only the parallel agents key, never a resolved verbosity', () => {
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
+    const row = screen.getByText('Parallel agents').parentElement?.parentElement;
+    if (row == null) {
+      throw new Error('parallel agents row not rendered');
+    }
+
+    fireEvent.click(within(row).getByRole('switch'));
+
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith('ws-1', {
+      ...EMPTY,
+      parallelAgents: true,
+    });
+  });
+
   it('renames the workspace on blur while keeping the folder name as the hint', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
 
     const input = screen.getByLabelText(/display name/i);
     expect((input as HTMLInputElement).value).toBe('billing');
-    expect(screen.getByText(/the folder on disk stays the workspace folder/i)).toBeDefined();
+    expect(
+      screen.getByText('Only the label changes. Project folders stay where they are.'),
+    ).toBeDefined();
 
     fireEvent.change(input, { target: { value: 'Billing platform' } });
     fireEvent.blur(input);
@@ -181,11 +235,51 @@ describe('WorkspaceScopePanel', () => {
     expect((input as HTMLInputElement).value).toBe('billing');
   });
 
-  it('shows the disconnect action with inline confirm', () => {
+  it('disconnects only after the row confirm and closes settings', async () => {
+    const requestClose = vi.fn();
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={requestClose} />);
+    fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
+    expect(state.disconnectWorkspace).not.toHaveBeenCalled();
+
+    const confirm = screen.getByRole('group', { name: 'Disconnect billing?' });
+    expect(within(confirm).getByText(/Choose Add workspace with the same folder/)).toBeDefined();
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Disconnect' }));
+
+    await waitFor(() => expect(state.disconnectWorkspace).toHaveBeenCalledWith('ws-1'));
+    await waitFor(() => expect(requestClose).toHaveBeenCalledOnce());
+  });
+
+  it('cancels the disconnect back to its trigger', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
-    expect(screen.getByRole('button', { name: /confirm/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /cancel/i })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(state.disconnectWorkspace).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /disconnect/i })).toBeDefined();
+  });
+
+  it('counts the running sessions it stops when the workspace is current', () => {
+    state.currentWorkspaceId = 'ws-1';
+    state.sessions = [
+      { id: 's-1', state: { kind: 'running' } },
+      { id: 's-2', state: { kind: 'running' } },
+      { id: 's-3', state: { kind: 'idle' } },
+    ];
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
+
+    expect(
+      screen.getByRole('group', { name: 'Disconnect billing and stop 2 running sessions?' }),
+    ).toBeDefined();
+  });
+
+  it('claims no stopped sessions for a workspace that is not current', () => {
+    state.currentWorkspaceId = 'ws-2';
+    state.sessions = [{ id: 's-1', state: { kind: 'running' } }];
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
+
+    expect(screen.getByRole('group', { name: 'Disconnect billing?' })).toBeDefined();
   });
 
   it('hides the leftover folders section when there is nothing to clean', () => {
@@ -200,7 +294,7 @@ describe('WorkspaceScopePanel', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
 
     expect(screen.getByText('gb-ghost')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /delete 1 folder \(2 kb\)/i }));
+    fireEvent.click(screen.getByRole('button', { name: /delete 1 folder \(2\.0 kb\)/i }));
 
     expect(state.removeOrphanWorktrees).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: /^delete$/i }));

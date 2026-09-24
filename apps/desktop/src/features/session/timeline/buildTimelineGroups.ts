@@ -154,6 +154,32 @@ type WorktreeParams = {
   readonly worktree: SessionWorktree;
 };
 
+type RunOwned = {
+  readonly workflowRunId?: string | null;
+};
+
+type GroupByRunParams<T extends RunOwned> = {
+  readonly items: ReadonlyArray<T>;
+};
+
+const groupByRunId = <T extends RunOwned>({
+  items,
+}: GroupByRunParams<T>): ReadonlyMap<string, ReadonlyArray<T>> => {
+  const grouped = new Map<string, T[]>();
+  for (const item of items) {
+    if (item.workflowRunId == null) {
+      continue;
+    }
+    const group = grouped.get(item.workflowRunId);
+    if (group === undefined) {
+      grouped.set(item.workflowRunId, [item]);
+      continue;
+    }
+    group.push(item);
+  }
+  return grouped;
+};
+
 type SortableEntry = {
   readonly at: string | null;
   readonly ordinal: number;
@@ -275,14 +301,11 @@ export const buildTimelineGroups = ({
     return runIdentity({ laneIndex, seed });
   };
 
-  const stepsByRunId = new Map<string, ReadonlyArray<Agent>>();
-  for (const agent of byOrdinal) {
-    if (agent.parentAgentId != null || agent.workflowRunId == null || agent.stepId == null) {
-      continue;
-    }
-    const steps = stepsByRunId.get(agent.workflowRunId) ?? [];
-    stepsByRunId.set(agent.workflowRunId, [...steps, agent]);
-  }
+  const stepsByRunId = groupByRunId({
+    items: byOrdinal.filter((agent) => agent.parentAgentId == null && agent.stepId != null),
+  });
+  const plansByRunId = groupByRunId({ items: plans });
+  const artifactsByRunId = groupByRunId({ items: readableArtifacts });
 
   const creationOf = ({ agent }: { readonly agent: Agent }): AgentCreation =>
     creations.get(agent.id) ?? { at: null, ordinal: agent.ordinal, isRecorded: false };
@@ -315,7 +338,7 @@ export const buildTimelineGroups = ({
       at: creation.at,
       ordinal: agent.ordinal,
       agent,
-      agentKind: classifyAgent(agent, agentKindOverride[agent.id] ?? null),
+      agentKind: classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null }),
       stepLabel,
       openQuestions: attachedQuestions.filter((question) => question.status === 'open'),
       terminalQuestions: attachedQuestions.filter((question) => question.status !== 'open'),
@@ -334,17 +357,21 @@ export const buildTimelineGroups = ({
     const stepEntries = steps.map((agent, index) =>
       buildAgentEntry({ agent, stepLabel: `${index + 1}`, chain: null }),
     );
-    const runPlans: ReadonlyArray<TimelinePlanEntry> = plans
-      .filter((plan) => plan.workflowRunId === run.id)
-      .map((plan) => ({ kind: 'plan', id: `plan:${plan.id}`, at: plan.createdAt, plan }));
-    const runArtifacts: ReadonlyArray<TimelineArtifactEntry> = readableArtifacts
-      .filter((artifact) => artifact.workflowRunId === run.id)
-      .map((artifact) => ({
-        kind: 'artifact',
-        id: `artifact:${artifact.id}`,
-        at: artifact.createdAt,
-        artifact,
-      }));
+    const plansOfRun = plansByRunId.get(run.id) ?? [];
+    const runPlans: ReadonlyArray<TimelinePlanEntry> = plansOfRun.map((plan) => ({
+      kind: 'plan',
+      id: `plan:${plan.id}`,
+      at: plan.createdAt,
+      plan,
+    }));
+    const runArtifacts: ReadonlyArray<TimelineArtifactEntry> = (
+      artifactsByRunId.get(run.id) ?? []
+    ).map((artifact) => ({
+      kind: 'artifact',
+      id: `artifact:${artifact.id}`,
+      at: artifact.createdAt,
+      artifact,
+    }));
     const children: ReadonlyArray<TimelineRunChild> = [
       ...stepEntries,
       ...runPlans,
@@ -356,9 +383,8 @@ export const buildTimelineGroups = ({
       ),
     );
     const producedPlan =
-      [...plans]
-        .filter((plan) => plan.workflowRunId === run.id)
-        .sort((first, second) => second.createdAt.localeCompare(first.createdAt))[0] ?? null;
+      [...plansOfRun].sort((first, second) => second.createdAt.localeCompare(first.createdAt))[0] ??
+      null;
     return [
       {
         kind: 'run',

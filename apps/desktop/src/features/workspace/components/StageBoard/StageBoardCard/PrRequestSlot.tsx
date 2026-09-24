@@ -32,7 +32,7 @@ export const PrRequestSlot = ({ linkedRequest, isGitlab, prFetchState, onOpen }:
           type="button"
           aria-label={tooltip}
           onClick={onOpen}
-          className={cn(SLOT_CLASS, 'rounded-md transition-colors hover:bg-muted')}
+          className={cn(SLOT_CLASS, 'rounded-md transition-colors hover:bg-hover')}
         >
           <PullRequestChip
             state={linkedRequest.state}
@@ -59,7 +59,7 @@ export const PrRequestSlot = ({ linkedRequest, isGitlab, prFetchState, onOpen }:
   if (prFetchState === 'unreachable') {
     return (
       <Tooltip content={UNREACHABLE_LABEL} side="top">
-        <span aria-label={UNREACHABLE_LABEL} className={cn(SLOT_CLASS, 'text-muted-foreground/50')}>
+        <span aria-label={UNREACHABLE_LABEL} className={cn(SLOT_CLASS, 'text-faint-foreground')}>
           <CloudOff size={ICON_SIZE.control} aria-hidden />
         </span>
       </Tooltip>

@@ -58,6 +58,35 @@ describe('Tooltip', () => {
     vi.useRealTimers();
   });
 
+  it('drops the pending show when it unmounts before the delay', () => {
+    vi.useFakeTimers();
+    const { unmount } = render(
+      <Tooltip content="test tip">
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    fireEvent.mouseEnter(screen.getByRole('button'));
+    expect(vi.getTimerCount()).toBe(1);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+    vi.useRealTimers();
+  });
+
+  it('keeps one pending show when hover and focus both arrive', () => {
+    vi.useFakeTimers();
+    render(
+      <Tooltip content="test tip">
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    fireEvent.mouseEnter(screen.getByRole('button'));
+    fireEvent.focus(screen.getByRole('button'));
+    expect(vi.getTimerCount()).toBe(1);
+    fireEvent.mouseLeave(screen.getByRole('button'));
+    expect(vi.getTimerCount()).toBe(0);
+    vi.useRealTimers();
+  });
+
   it('shows tooltip on focus (keyboard navigation)', async () => {
     vi.useFakeTimers();
     render(

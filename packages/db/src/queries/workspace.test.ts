@@ -1,13 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, OverrideSettings, Workspace, WorkspaceId } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   deleteWorkspace,
   disconnectWorkspace,
   getWorkspaceById,
   insertWorkspace,
-  listDisconnectedWorkspaces,
   listWorkspaces,
   reconnectWorkspace,
   renameWorkspace,
@@ -41,7 +39,6 @@ const makeWorkspace = ({ id = 'workspace-1', overrides = {} }: MakeWorkspacePara
   id: id as WorkspaceId,
   name: 'Demo Team',
   slug: id,
-  sessionsRoot: '/tmp/demo-team-sessions',
   overrides: EMPTY_OVERRIDES,
   createdAt: at({ value: '2026-08-22T10:00:00Z' }),
   updatedAt: at({ value: '2026-08-22T10:05:00Z' }),
@@ -49,8 +46,7 @@ const makeWorkspace = ({ id = 'workspace-1', overrides = {} }: MakeWorkspacePara
 });
 
 const makeDb = async () => {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   return db;
 };
 
@@ -80,7 +76,7 @@ describe('workspace queries', () => {
     });
   });
 
-  it('keeps active and disconnected containers in separate lists', async () => {
+  it('lists only the active containers', async () => {
     const db = await makeDb();
     const active = makeWorkspace({ id: 'active' });
     const disconnected = makeWorkspace({
@@ -91,9 +87,6 @@ describe('workspace queries', () => {
     await insertWorkspace({ db, workspace: disconnected });
 
     expect((await listWorkspaces({ db })).map((workspace) => workspace.id)).toEqual([active.id]);
-    expect((await listDisconnectedWorkspaces({ db })).map((workspace) => workspace.id)).toEqual([
-      disconnected.id,
-    ]);
   });
 
   it('updates container identity and presence timestamps', async () => {

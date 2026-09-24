@@ -51,9 +51,9 @@ export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber, eye
     >
       {isLoading ? (
         <div role="status" aria-label="Loading GitHub issue" className="flex flex-col gap-3">
-          <Skeleton className="h-4 w-2/3 rounded" />
-          <Skeleton className="h-3 w-full rounded" />
-          <Skeleton className="h-3 w-3/4 rounded" />
+          <Skeleton className="h-4 w-2/3 rounded-sm" />
+          <Skeleton className="h-3 w-full rounded-sm" />
+          <Skeleton className="h-3 w-3/4 rounded-sm" />
         </div>
       ) : null}
       {error != null ? (

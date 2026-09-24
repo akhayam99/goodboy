@@ -157,7 +157,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const githubIssueNumber =
     focusedGithubIssueNumber ?? (githubTask != null ? Number(githubTask.externalId) : null);
   const standaloneAgents = useMemo(
-    () => phaseRuns.filter((agent) => isStandaloneAgent(agent) && !resolverAgentIds.has(agent.id)),
+    () =>
+      phaseRuns.filter((agent) => isStandaloneAgent({ agent }) && !resolverAgentIds.has(agent.id)),
     [phaseRuns, resolverAgentIds],
   );
   const agentCounts = useMemo(

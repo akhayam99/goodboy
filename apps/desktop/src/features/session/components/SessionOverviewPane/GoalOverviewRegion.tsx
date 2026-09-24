@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
-import { History, Plus } from 'lucide-react';
+import { History } from 'lucide-react';
 import { Button, ClampedProse, SectionHeader, Skeleton, Textarea, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { goalPresence } from './goalPresence';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { VITAL_CHIP } from './vitalChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -15,6 +15,8 @@ type Props = {
   readonly historyCount: number;
   readonly isLoading: boolean;
   readonly isSummarizing: boolean;
+  readonly isEditing: boolean;
+  readonly onEditingChange: (isEditing: boolean) => void;
   readonly onOpenHistory: () => void;
 };
 
@@ -37,10 +39,11 @@ export const GoalOverviewRegion = ({
   historyCount,
   isLoading,
   isSummarizing,
+  isEditing,
+  onEditingChange,
   onOpenHistory,
 }: Props) => {
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
-  const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value);
 
   useEffect(() => {
@@ -51,7 +54,7 @@ export const GoalOverviewRegion = ({
   }, [isEditing, value]);
 
   const commit = () => {
-    setIsEditing(false);
+    onEditingChange(false);
     if (draft === value) {
       return;
     }
@@ -62,7 +65,7 @@ export const GoalOverviewRegion = ({
     if (isSummarizing) {
       return;
     }
-    setIsEditing(true);
+    onEditingChange(true);
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
@@ -76,10 +79,7 @@ export const GoalOverviewRegion = ({
     startEditing();
   };
 
-  const hasValue = value !== '';
-  const isSameAsTitle = hasValue && value.trim() === sessionTitle.trim();
-  const hasOwnText = hasValue && !isSameAsTitle;
-  const isQuiet = !isLoading && !isEditing && !hasOwnText;
+  const isQuiet = !isLoading && !isEditing && goalPresence({ value, sessionTitle }) !== 'own';
   const historyAction =
     historyCount === 0 ? null : (
       <Tooltip content={`${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'}`}>
@@ -97,26 +97,10 @@ export const GoalOverviewRegion = ({
 
   if (isQuiet) {
     return (
-      <section aria-label="Goal" className="flex min-w-0 flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Tooltip content={isSameAsTitle ? 'The title is the whole goal so far' : 'No goal yet'}>
-            <button
-              type="button"
-              disabled={isSummarizing}
-              onClick={startEditing}
-              aria-label={isSameAsTitle ? 'Detail the goal' : 'Add a goal'}
-              className={cn(
-                VITAL_CHIP,
-                'border-dashed border-border bg-transparent px-2',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-              )}
-            >
-              <Plus size={11} aria-hidden />
-              {isSameAsTitle ? 'Detail the goal' : 'Add a goal'}
-            </button>
-          </Tooltip>
-          {historyAction}
-        </div>
+      <section aria-label="Goal" className="flex min-w-0 flex-col gap-2 empty:hidden">
+        {historyAction === null ? null : (
+          <div className="flex flex-wrap items-center gap-2">{historyAction}</div>
+        )}
         <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />
       </section>
     );
@@ -139,7 +123,7 @@ export const GoalOverviewRegion = ({
             if (event.key === 'Escape') {
               event.preventDefault();
               setDraft(value);
-              setIsEditing(false);
+              onEditingChange(false);
               return;
             }
             if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
@@ -165,8 +149,8 @@ export const GoalOverviewRegion = ({
           onKeyDown={onKeyDown}
           aria-label="Edit goal"
           className={cn(
-            'min-w-0 max-w-full rounded-md text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]',
-            isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-foreground/[0.03]',
+            'min-w-0 max-w-full rounded-md text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-hover',
           )}
         >
           <ClampedProse text={value} lines={4} className="text-sm text-foreground" />

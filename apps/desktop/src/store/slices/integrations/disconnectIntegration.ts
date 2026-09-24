@@ -4,6 +4,7 @@ import {
 } from '@goodboy/db';
 import type { WorkspaceId, WorkspaceIntegrationProvider } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { pruneSlackWorkspace } from '../slack-threads/state';
 import type { SetFn } from './types';
 
 type Params = {
@@ -16,6 +17,7 @@ export const disconnectIntegration = (set: SetFn) => {
     await deleteIntegrationBindingsForProvider({ db: tauriDatabase, workspaceId, provider });
     const integrationCredentialUsage = await countWorkspacesPerIntegrationCredential(tauriDatabase);
     set((state) => ({
+      ...(provider === 'slack' && pruneSlackWorkspace({ state, workspaceId })),
       workspaceIntegrations: {
         ...state.workspaceIntegrations,
         [workspaceId]: (state.workspaceIntegrations[workspaceId] ?? []).filter(

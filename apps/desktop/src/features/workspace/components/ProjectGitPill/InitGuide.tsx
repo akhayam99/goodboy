@@ -30,7 +30,7 @@ export const InitGuide = ({ rootPath, state }: Props) => {
         <Eyebrow label="Git setup" muted />
         <h3 className="text-xs font-semibold text-foreground">{HEADLINE[state]}</h3>
         <p className="text-xs leading-relaxed text-muted-foreground">{LEDE[state]}</p>
-        <p className="text-2xs text-muted-foreground/70">
+        <p className="text-2xs text-faint-foreground">
           Sessions stay unavailable until the first commit exists.
         </p>
       </div>
@@ -39,7 +39,7 @@ export const InitGuide = ({ rootPath, state }: Props) => {
           <li key={step.command} className="flex gap-2">
             <span
               aria-hidden
-              className="w-3 shrink-0 text-2xs font-semibold leading-5 tabular-nums text-muted-foreground/60"
+              className="w-3 shrink-0 text-2xs font-semibold leading-5 tabular-nums text-faint-foreground"
             >
               {index + 1}
             </span>

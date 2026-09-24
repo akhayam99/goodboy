@@ -183,13 +183,14 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
     forgetMaterializationSeed({ sessionId });
     await detachSessionMounts({ db: tauriDatabase, sessionId, detached, retained });
     if (cleanupFailures.length > 0) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        `failed to remove ${cleanupFailures.length} session paths`,
-        cleanupFailures.map((error) => formatError(error)).join('\n'),
-        { sessionId, workspaceId: session.workspaceId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `Couldn't remove ${cleanupFailures.length} session paths`,
+        body: cleanupFailures.map((error) => formatError(error)).join('\n'),
+        sessionId,
+        workspaceId: session.workspaceId,
+      });
     }
     if (isBranchless) {
       await purgeSessionFileVersions({ sessionId });

@@ -50,7 +50,7 @@ export const TimelineStreamRow = ({
     'flex min-w-0 flex-1 items-center gap-2 rounded-md pl-2 pr-1.5 text-left',
     openTarget == null
       ? null
-      : 'motion-safe:transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]',
+      : 'motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
     needsUser && tintClasses('warning').bgSoft,
     !needsUser && item.hasUnread && tintClasses('primary').bgSoft,
   );
@@ -74,7 +74,7 @@ export const TimelineStreamRow = ({
     >
       <span className={cn('flex shrink-0 flex-col justify-end', TIMELINE_GUTTER)}>
         <span
-          className="flex items-center justify-end pr-2 text-3xs tabular-nums text-muted-foreground/70"
+          className="flex items-center justify-end pr-2 text-3xs tabular-nums text-faint-foreground"
           style={{ height: boxHeight }}
         >
           {item.at == null ? null : formatCardTime(item.at)}

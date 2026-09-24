@@ -9,7 +9,14 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { buildStorySession, resetStorySpies, storySpies } from './storyHarness';
+import {
+  buildStorySession,
+  resetStorySpies,
+  storySpies,
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  type StoryStore,
+} from './storyHarness';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>
@@ -64,12 +71,11 @@ const buildRunningSession = (id: SessionId, wsId: WorkspaceId, runId: ProviderRu
     state: { kind: 'running', runId, startedAt: NOW },
   });
 
-type StoreModule = typeof import('./store');
-let useAppStore: StoreModule['useAppStore'];
+let useAppStore: StoryStore;
 
 beforeAll(async () => {
-  ({ useAppStore } = await import('./store'));
-}, 60_000);
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 describe('setCurrentWorkspace, session-scoped state cleanup', () => {
   beforeEach(() => {

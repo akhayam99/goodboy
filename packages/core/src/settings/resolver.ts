@@ -29,6 +29,15 @@ export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings =
   })();
 
   return {
+    roleModels: sess?.roleModels ?? project?.roleModels ?? ws?.roleModels ?? null,
+    taskModels: sess?.taskModels ?? project?.taskModels ?? ws?.taskModels ?? null,
+    providerPool: sess?.providerPool ?? project?.providerPool ?? ws?.providerPool ?? null,
+    parallelAgents: sess?.parallelAgents ?? project?.parallelAgents ?? ws?.parallelAgents ?? false,
+    providerBindings: {
+      ...ws?.providerBindings,
+      ...project?.providerBindings,
+      ...sess?.providerBindings,
+    },
     defaultProviderId:
       sess?.defaultProviderId ??
       project?.defaultProviderId ??

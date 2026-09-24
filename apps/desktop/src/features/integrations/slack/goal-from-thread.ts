@@ -1,3 +1,4 @@
+import { capText } from '../../../shared/utils/capText';
 import type { SlackMessage } from './client';
 import { slackMrkdwnToMarkdown } from './slackMrkdwnToMarkdown';
 
@@ -33,6 +34,5 @@ export const goalFromThread = ({ channelName, messages, userNames }: Params): st
   if (body === '') {
     return heading;
   }
-  const capped = body.length > GOAL_CHAR_CAP ? `${body.slice(0, GOAL_CHAR_CAP).trimEnd()}…` : body;
-  return `${heading}\n\n${capped}`;
+  return `${heading}\n\n${capText({ text: body, capChars: GOAL_CHAR_CAP })}`;
 };

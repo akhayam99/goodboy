@@ -23,6 +23,7 @@ import { AnswerSubmitButton } from '../../../../context/components/QuestionsTab/
 import { DismissedQuestionUndo } from '../../../../context/components/QuestionsTab/DismissedQuestionUndo';
 import { QuestionClusterHeader } from '../../../../context/components/QuestionsTab/QuestionClusterHeader';
 import { QuestionsPaneCard } from './QuestionsPaneCard';
+import { ContextLoadFailure } from './ContextPane/ContextLoadFailure';
 import {
   buildQuestionClusters,
   type QuestionCluster,
@@ -275,12 +276,12 @@ const AnsweredClusterHeader = ({
           className="flex min-w-0 items-center gap-1.5 text-2xs font-medium hover:opacity-70 motion-safe:transition-opacity"
         >
           <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
-          <span className="truncate text-foreground/80">{agentName}</span>
+          <span className="truncate text-foreground">{agentName}</span>
         </button>
       ) : (
         <div className="flex min-w-0 items-center gap-1.5 text-2xs font-medium">
           <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
-          <span className="truncate text-foreground/80">unknown agent</span>
+          <span className="truncate text-foreground">unknown agent</span>
         </div>
       )}
       <span className="shrink-0 text-2xs text-muted-foreground">
@@ -329,6 +330,7 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
   const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions);
   const openLoaded = useAppStore((s) => s.sessionOpenQuestions[sessionId] !== undefined);
   const answeredLoaded = useAppStore((s) => s.sessionAnsweredQuestions[sessionId] !== undefined);
+  const loadError = useAppStore((s) => s.sessionQuestionsLoadError[sessionId]);
   const drafts = useOpenQuestions((s) => s.drafts);
   const justAnswered = useOpenQuestions((s) => s.justAnswered);
   const toggleSuggestion = useOpenQuestions((s) => s.toggleSuggestion);
@@ -345,10 +347,14 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
   const restoreDismissedOpenQuestion = useAppStore((s) => s.restoreDismissedOpenQuestion);
 
-  useEffect(() => {
+  const loadQuestions = useCallback(() => {
     void loadSessionOpenQuestions(sessionId);
     void loadSessionAnsweredQuestions(sessionId);
   }, [sessionId, loadSessionOpenQuestions, loadSessionAnsweredQuestions]);
+
+  useEffect(() => {
+    loadQuestions();
+  }, [loadQuestions]);
 
   const pendingUndoQuestion =
     pendingUndo?.question.sessionId === sessionId ? pendingUndo.question : null;
@@ -423,6 +429,18 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
     [clearUndo, restoreDismissedOpenQuestion, sessionId],
   );
 
+  if ((!openLoaded || !answeredLoaded) && loadError !== undefined) {
+    return (
+      <PaneShell
+        title="Questions"
+        description="Decisions agents need from you to keep going."
+        eyebrow={eyebrow}
+      >
+        <ContextLoadFailure title="Questions" onRetry={loadQuestions} />
+      </PaneShell>
+    );
+  }
+
   if (!openLoaded || !answeredLoaded) {
     return (
       <PaneShell
@@ -433,9 +451,9 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
         <div className="flex flex-col gap-2" role="status" aria-label="Loading questions">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex flex-col gap-1.5 rounded-md border border-border-soft p-3">
-              <Skeleton className="h-3 w-40 rounded" />
-              <Skeleton className="h-3 w-3/4 rounded" />
-              <Skeleton className="h-3 w-1/2 rounded" />
+              <Skeleton className="h-3 w-40 rounded-sm" />
+              <Skeleton className="h-3 w-3/4 rounded-sm" />
+              <Skeleton className="h-3 w-1/2 rounded-sm" />
             </div>
           ))}
         </div>

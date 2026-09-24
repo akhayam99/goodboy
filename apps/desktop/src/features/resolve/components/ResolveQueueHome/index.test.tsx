@@ -402,7 +402,10 @@ describe('walking the queue from the keyboard', () => {
     };
     render(<ResolveQueueHome session={SESSION} />);
 
-    const inner = within(rowFor('PRRT_2')).getAllByRole('button', { hidden: true })[0];
+    const overlay = rowFor('PRRT_2');
+    const inner = within(overlay.parentElement ?? overlay)
+      .getAllByRole('button', { hidden: true })
+      .find((button) => button !== overlay);
     const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
     inner?.dispatchEvent(event);
 
@@ -585,7 +588,7 @@ describe('the shape of the queue surface', () => {
 
     expect(region.className).toContain('min-h-0');
     expect(region.className).toContain('flex-1');
-    expect(region.contains(screen.getByRole('heading', { name: 'Resolve' }))).toBe(false);
+    expect(region.contains(screen.getByRole('heading', { name: 'Conversations' }))).toBe(false);
     expect(
       screen.getByRole('button', { name: 'Start resolve run' }).closest('.overflow-y-auto'),
     ).toBeNull();
@@ -642,17 +645,17 @@ describe('the shape of the queue surface', () => {
     };
     render(<ResolveQueueHome session={SESSION} />);
 
-    expect(screen.getByRole('button', { name: 'Needs review 2' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Active 2' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Retryable 1' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Needs review\s*2$/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Active\s*2$/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Retryable\s*1$/ })).toBeDefined();
   });
 
   it('drops the count from every tab that has nothing, the third one included', () => {
     twoRows();
     render(<ResolveQueueHome session={SESSION} />);
 
-    expect(screen.getByRole('button', { name: 'Needs review 2' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Active 2' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Retryable' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Needs review\s*2$/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Active\s*2$/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Retryable' })).toBeDefined();
   });
 });

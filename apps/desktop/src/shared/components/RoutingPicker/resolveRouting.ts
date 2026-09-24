@@ -1,14 +1,9 @@
-import type {
-  CatalogModel,
-  EffortLevel,
-  ModelEffort,
-  ModelSelection,
-  ProviderId,
-} from '@goodboy/types';
+import type { CatalogModel, EffortLevel, ModelSelection, ProviderId } from '@goodboy/types';
 import {
   MODEL_CATALOGS,
   getDefaultTurnModel,
   getModelProvider,
+  modelHasEffortAxis,
   resolveModelArgs,
   resolveStoredModelSelection,
 } from '@goodboy/core';
@@ -16,8 +11,9 @@ import {
 export type Recommendation = {
   readonly provider?: ProviderId;
   readonly model?: string;
-  readonly effort?: ModelEffort | null;
+  readonly effort?: EffortLevel | null;
   readonly reason?: string;
+  readonly label?: string;
 };
 
 type Params = {
@@ -107,7 +103,9 @@ export const resolveRouting = ({
     selection: stored.selection,
   });
   const appliedEffort = resolved.clamped?.applied ?? stored.selection.effort ?? effort;
-  const selection = { ...stored.selection, effort: appliedEffort };
+  const selection = modelHasEffortAxis({ model: selectedModel })
+    ? { ...stored.selection, effort: appliedEffort }
+    : stored.selection;
   const effortLevels = effortsFor({
     model: selectedModel,
     selection,

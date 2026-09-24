@@ -2,7 +2,7 @@ import type { Agent, Workflow, WorkflowOrigin, WorkflowRun } from '@goodboy/type
 import { ClampedProse, MetaRow, formatUsdPrecise } from '@goodboy/ui';
 import { classifyWorkflowChain } from '@goodboy/core';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
-import { WorkflowRunStatus } from '../../../../workspace/components/WorkspacesSidebar/parts/WorkflowRunStatus';
+import { WorkflowRunStatus } from '../../AgentTree/WorkflowRunStatus';
 import {
   formatAdaptiveAge,
   formatRelativeDuration,
@@ -131,7 +131,7 @@ export const WorkflowRailCard = ({
           type="button"
           onClick={onRestore}
           title="Restore workflow"
-          className="absolute right-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+          className="absolute right-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           Restore
         </button>

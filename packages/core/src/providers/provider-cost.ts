@@ -1,6 +1,6 @@
-import type { ProviderId, ProviderUsage } from '@goodboy/types';
+import type { ModelPrice, ProviderId, ProviderUsage } from '@goodboy/types';
 import { computeCostUsd } from './claude/cost';
-import { computeCodexCostUsd, type CodexModelPriceOverride } from './codex/cost';
+import { computeCodexCostUsd } from './codex/cost';
 import { computeCursorCostUsd } from './cursor/cost';
 import { computeGeminiCostUsd } from './gemini/cost';
 import { computeOpenCodeCostUsd } from './opencode/cost';
@@ -9,7 +9,7 @@ type Params = {
   readonly providerId: ProviderId;
   readonly usage: ProviderUsage;
   readonly model: string;
-  readonly priceOverride?: CodexModelPriceOverride | null;
+  readonly priceOverride?: ModelPrice | null;
 };
 
 export const computeProviderCostUsd = ({

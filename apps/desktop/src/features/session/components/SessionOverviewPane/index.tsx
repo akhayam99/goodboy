@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { formatError } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   useAppStore,
@@ -12,8 +11,10 @@ import {
 import type { LensKind } from '../../../../store';
 import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { PaneShell } from '../../../../shared/components/PaneShell';
-import { useToast } from '../../../../app/components/Toast';
 import { HeaderBand } from './HeaderBand';
+import { GoalDetailAction } from './GoalDetailAction';
+import { ArchivedGate } from './ArchivedGate';
+import { goalPresence } from './goalPresence';
 import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
 import { SessionKickoff } from '../SessionKickoff';
 import { IssueAdoptionProposal } from '../SessionKickoff/IssueAdoptionProposal';
@@ -39,8 +40,9 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
   const renameTask = useAppStore((s) => s.renameTask);
-  const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
   const [isGoalHistoryOpen, setIsGoalHistoryOpen] = useState(false);
+  const [isGoalEditing, setIsGoalEditing] = useState(false);
   const [adoption, setAdoption] = useState<IssueAdoption | null>(null);
   const goalSlot = slots.find((slot) => slot.key === 'goal');
   const sessionList = useMemo(() => [session], [session]);
@@ -52,9 +54,9 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     }
     const title = adoption.title;
     setAdoption({ ...adoption, title: null });
-    renameTask(sessionId, title).catch((cause: unknown) => {
-      showToast('error', formatError(cause));
-    });
+    renameTask(sessionId, title).catch((error: unknown) =>
+      reportError({ title: "Couldn't rename the session", error, sessionId }),
+    );
   };
 
   const applyAdoptedGoal = () => {
@@ -65,6 +67,10 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     setAdoption({ ...adoption, goal: null });
     void upsertSessionSlot(sessionId, 'goal', goal);
   };
+
+  const isGoalLoading = goalSlot == null && slotLoading.slots;
+  const isArchived = session.archivedAt != null;
+  const presence = goalPresence({ value: goalSlot?.value ?? '', sessionTitle: session.goal });
 
   const openWorkflowBuilder = () => {
     window.dispatchEvent(
@@ -95,14 +101,25 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
           <HeaderBand
             session={session}
             onSelectLens={onSelectLens}
+            titleAction={
+              presence === 'own' || isGoalEditing || isGoalLoading ? null : (
+                <GoalDetailAction
+                  presence={presence}
+                  disabled={summarizer.status === 'running'}
+                  onClick={() => setIsGoalEditing(true)}
+                />
+              )
+            }
             goal={
               <GoalOverviewRegion
                 sessionId={sessionId}
                 sessionTitle={session.goal}
                 value={goalSlot?.value ?? ''}
                 historyCount={goalHistoryCount}
-                isLoading={goalSlot == null && slotLoading.slots}
+                isLoading={isGoalLoading}
                 isSummarizing={summarizer.status === 'running'}
+                isEditing={isGoalEditing}
+                onEditingChange={setIsGoalEditing}
                 onOpenHistory={() => {
                   void loadSlotHistory(sessionId, 'goal');
                   setIsGoalHistoryOpen(true);
@@ -126,14 +143,18 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
           session={session}
           runs={runs}
           actions={
-            <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />
+            <ArchivedGate isArchived={isArchived}>
+              <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />
+            </ArchivedGate>
           }
           kickoff={
-            <SessionKickoff
-              session={session}
-              onOpenWorkflowBuilder={openWorkflowBuilder}
-              onProposeAdoption={setAdoption}
-            />
+            <ArchivedGate isArchived={isArchived}>
+              <SessionKickoff
+                session={session}
+                onOpenWorkflowBuilder={openWorkflowBuilder}
+                onProposeAdoption={setAdoption}
+              />
+            </ArchivedGate>
           }
         />
       </PaneShell>

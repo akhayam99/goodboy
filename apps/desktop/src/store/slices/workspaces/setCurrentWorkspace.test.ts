@@ -8,6 +8,7 @@ import type {
   MountId,
   Project,
   ProjectId,
+  ProviderRunId,
   Session,
   SessionId,
   WorkflowId,
@@ -81,10 +82,15 @@ vi.mock('../sessions/reconcileSessionRuns', () => ({
   reconcileLoadedSessions: vi.fn(async ({ sessions }: ReconcileParams) => sessions),
 }));
 vi.mock('../project-mounts/verifyAvailableWorktrees', () => ({
-  verifyAvailableWorktrees: vi.fn(async ({ candidates }: VerifyParams) => candidates),
+  verifyAvailableWorktrees: vi.fn(async ({ candidates }: VerifyParams) => ({
+    available: candidates,
+    missing: [],
+  })),
 }));
 vi.mock('../transcripts/buffer', () => ({ clearPendingTurnEvents: vi.fn() }));
 
+import { listLiveRunIds } from '../../../features/chat/turn';
+import { reconcileLoadedSessions } from '../sessions/reconcileSessionRuns';
 import { setCurrentWorkspace } from './setCurrentWorkspace';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -372,5 +378,30 @@ describe('setCurrentWorkspace mount hydration', () => {
 
     expect(store.selectedSessionObligations).toEqual([[openObligation]]);
     expect(store.state.capabilityObligations[UNSELECTED_SESSION_ID]).toEqual([openObligation]);
+  });
+});
+
+describe('setCurrentWorkspace run recovery', () => {
+  it('stores the reconciled sessions instead of the database-running rows', async () => {
+    const RUN_ID = 'run-stale' as ProviderRunId;
+    const liveRunIds = new Set<string>();
+    h.sessions = [
+      {
+        ...session({ id: RESTORED_SESSION_ID }),
+        state: { kind: 'running', runId: RUN_ID, startedAt: NOW },
+      } satisfies Session,
+    ];
+    vi.mocked(listLiveRunIds).mockResolvedValueOnce(liveRunIds);
+    vi.mocked(reconcileLoadedSessions).mockImplementationOnce(async ({ sessions }) =>
+      sessions.map((loaded) => ({ ...loaded, state: { kind: 'idle', lastActivityAt: NOW } })),
+    );
+    const store = harness();
+
+    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+
+    expect(reconcileLoadedSessions).toHaveBeenCalledWith(
+      expect.objectContaining({ sessions: h.sessions, liveRunIds }),
+    );
+    expect(store.state.sessions.map((stored) => stored.state.kind)).toEqual(['idle']);
   });
 });

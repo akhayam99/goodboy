@@ -28,7 +28,7 @@ export const TimelineRunChip = ({ kind, identity, muted = false }: Props) => {
   return (
     <span
       className={cn(
-        'inline-flex min-w-24 shrink-0 items-center justify-center gap-1 rounded-md px-1.5 py-0.5 text-3xs font-medium uppercase tracking-wide ring-1',
+        'inline-flex min-w-24 shrink-0 items-center justify-center gap-1 rounded-md px-1.5 py-0.5 text-3xs font-medium ring-1',
         muted ? identity.mutedChip : identity.chip,
       )}
       title={label}

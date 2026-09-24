@@ -130,10 +130,6 @@ vi.mock('../../shared/lib/editor', () => ({
   openUrl: vi.fn(),
 }));
 
-vi.mock('../../routing', () => ({
-  resolveProviderForTurn: vi.fn().mockResolvedValue('anthropic'),
-}));
-
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
 import type { AppStore } from '../../store/store';

@@ -51,8 +51,8 @@ export const DecisionRowItem = ({ text, position, isLocked, onCommit, onDelete }
     <div className="flex flex-col gap-2">
       <div
         className={cn(
-          'group/decision-row flex items-center gap-2 rounded-lg bg-muted/30 px-3 py-2 motion-safe:transition-colors',
-          isLocked ? '' : 'hover:bg-muted/50',
+          'group/decision-row flex items-center gap-2 rounded-lg bg-subtle px-3 py-2 motion-safe:transition-colors',
+          isLocked ? '' : 'hover:bg-hover',
         )}
       >
         <button
@@ -64,7 +64,7 @@ export const DecisionRowItem = ({ text, position, isLocked, onCommit, onDelete }
             setIsEditing(true);
           }}
           className={cn(
-            'min-w-0 flex-1 rounded-md text-left [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] [&_pre]:whitespace-pre-wrap',
+            'min-w-0 flex-1 rounded-md text-left [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring [&_pre]:whitespace-pre-wrap',
             isLocked ? 'cursor-default' : 'cursor-text',
           )}
         >

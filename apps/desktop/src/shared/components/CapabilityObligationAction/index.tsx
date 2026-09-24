@@ -26,7 +26,7 @@ export const CapabilityObligationAction = ({ obligation }: Props) => {
       </span>
       {request === undefined ? null : (
         <span
-          className="shrink-0 text-muted-foreground/70"
+          className="shrink-0 text-faint-foreground"
           title={`gap: ${request.gap}. expected: ${request.expectedOutput}`}
         >
           {request.continuation}

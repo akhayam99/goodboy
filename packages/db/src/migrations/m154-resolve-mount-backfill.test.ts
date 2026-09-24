@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Database } from '../client';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrations } from './index';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
-
-const before = migrations.filter((migration) => migration.version < 154);
 
 type Mount = {
   readonly id: string;
@@ -18,8 +15,7 @@ type Mount = {
 };
 
 const seed = async ({ mounts }: { readonly mounts: ReadonlyArray<Mount> }): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(db, before);
+  const db = await makeMigratedTestDatabase({ throughVersion: 153 });
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Workspace', 'workspace', 1, 1)",
   );

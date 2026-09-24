@@ -18,7 +18,7 @@ export const selectFollowUpChildren = ({
 }: Params): ReadonlyArray<FollowUpChild> => {
   const matched: Array<FollowUpChild> = [];
   for (const child of spawned) {
-    const classified = classifyAgent(child.agent, null);
+    const classified = classifyAgent({ agent: child.agent, override: null });
     const kind = kinds.find((candidate) => candidate === classified);
     if (kind === undefined) {
       continue;

@@ -8,16 +8,7 @@ const BODY_FLOOR = 4.5;
 const LARGE_FLOOR = 3;
 
 const SURFACES = ['background', 'subtle', 'muted', 'elevated'] as const;
-const TONES = [
-  'primary',
-  'accent',
-  'info',
-  'success',
-  'warning',
-  'danger',
-  'merged',
-  'draft',
-] as const;
+const TONES = ['primary', 'info', 'success', 'warning', 'danger', 'merged', 'draft'] as const;
 // The diff viewer paints code on the canvas and on hunk rows, never on a card.
 const CODE_SURFACES = ['background', 'subtle', 'muted'] as const;
 
@@ -72,27 +63,104 @@ const readPalette = (block: string): Palette => {
   for (const match of block.matchAll(pattern)) {
     palette[String(match[1])] = oklchToSrgb(Number(match[2]), Number(match[3]), Number(match[4]));
   }
+  const hexPattern = /--color-([a-z0-9-]+):\s*#([0-9a-f]{6})\s*;/gi;
+  for (const match of block.matchAll(hexPattern)) {
+    const value = String(match[2]);
+    palette[String(match[1])] = [
+      Number.parseInt(value.slice(0, 2), 16) / 255,
+      Number.parseInt(value.slice(2, 4), 16) / 255,
+      Number.parseInt(value.slice(4, 6), 16) / 255,
+    ];
+  }
+  const aliasPattern = /--color-([a-z0-9-]+):\s*var\(--color-([a-z0-9-]+)\)\s*;/gi;
+  for (const match of block.matchAll(aliasPattern)) {
+    palette[String(match[1])] = swatch(palette, String(match[2]));
+  }
   return palette;
 };
 
-const readThemes = (): Readonly<Record<'dark' | 'light', Palette>> => {
+const composite = ({
+  foreground,
+  background,
+  alpha,
+}: {
+  foreground: Rgb;
+  background: Rgb;
+  alpha: number;
+}): Rgb => [
+  foreground[0] * alpha + background[0] * (1 - alpha),
+  foreground[1] * alpha + background[1] * (1 - alpha),
+  foreground[2] * alpha + background[2] * (1 - alpha),
+];
+
+type Lab = readonly [number, number, number];
+
+const readLabs = (block: string): Readonly<Record<string, Lab>> => {
+  const labs: Record<string, Lab> = {};
+  const pattern = /--color-([a-z0-9-]+):\s*oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)\s*;/g;
+  for (const match of block.matchAll(pattern)) {
+    const chroma = Number(match[3]);
+    const radians = (Number(match[4]) * Math.PI) / 180;
+    labs[String(match[1])] = [
+      Number(match[2]),
+      chroma * Math.cos(radians),
+      chroma * Math.sin(radians),
+    ];
+  }
+  return labs;
+};
+
+const themeBlocks = (): Readonly<{ dark: string; light: string }> => {
   const css = readFileSync(STYLES, 'utf8');
   const themeStart = css.indexOf('@theme {');
   const lightStart = css.indexOf("html[data-theme='light'] {");
-  const dark = readPalette(css.slice(themeStart, lightStart));
-  const light = { ...dark, ...readPalette(css.slice(lightStart, css.indexOf('\n}', lightStart))) };
-  return { dark, light };
+  return {
+    dark: css.slice(themeStart, lightStart),
+    light: css.slice(lightStart, css.indexOf('\n}', lightStart)),
+  };
+};
+
+const readLabThemes = (): Readonly<Record<'dark' | 'light', Readonly<Record<string, Lab>>>> => {
+  const blocks = themeBlocks();
+  const dark = readLabs(blocks.dark);
+  return { dark, light: { ...dark, ...readLabs(blocks.light) } };
+};
+
+const deltaE = ({ first, second }: { first: Lab; second: Lab }): number =>
+  100 * Math.hypot(first[0] - second[0], first[1] - second[1], first[2] - second[2]);
+
+const lab = ({ labs, token }: { labs: Readonly<Record<string, Lab>>; token: string }): Lab => {
+  const value = labs[token];
+  if (value === undefined) {
+    throw new Error(`styles.css has no oklch --color-${token}`);
+  }
+  return value;
+};
+
+const TONE_SEPARATION = 6;
+const IDENTITY_SEPARATION = 4.5;
+
+const readThemes = (): Readonly<Record<'dark' | 'light', Palette>> => {
+  const blocks = themeBlocks();
+  const dark = readPalette(blocks.dark);
+  return { dark, light: { ...dark, ...readPalette(blocks.light) } };
 };
 
 describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
   it.each(SURFACES)('carries body and tone text at 4.5:1 on %s', (surface) => {
-    const failures = ['foreground', 'muted-foreground', ...TONES]
+    const failures = ['foreground', 'muted-foreground', 'faint-foreground', ...TONES]
       .map((token) => ({
         token,
         ratio: contrast(swatch(palette, token), swatch(palette, surface)),
       }))
       .filter(({ ratio }) => ratio < BODY_FLOOR);
     expect(failures).toEqual([]);
+  });
+
+  it.each(SURFACES)('keeps disabled text distinguishable on %s', (surface) => {
+    expect(
+      contrast(swatch(palette, 'disabled-foreground'), swatch(palette, surface)),
+    ).toBeGreaterThanOrEqual(LARGE_FLOOR);
   });
 
   it.each(CODE_SURFACES)('keeps every syntax colour readable on %s', (surface) => {
@@ -112,6 +180,78 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     );
   });
 
+  it.each(SURFACES)('keeps tone text readable on its tint over %s', (surface) => {
+    const failures = TONES.map((tone) => ({
+      tone,
+      ratio: contrast(
+        swatch(palette, tone),
+        composite({
+          foreground: swatch(palette, tone),
+          background: swatch(palette, surface),
+          alpha: 0.1,
+        }),
+      ),
+    })).filter(({ ratio }) => ratio < BODY_FLOOR);
+    expect(failures).toEqual([]);
+  });
+
+  it.each(SURFACES)('keeps agent labels readable on %s', (surface) => {
+    const failures = Object.keys(palette)
+      .filter((token) => token.startsWith('agent-'))
+      .map((token) => ({
+        token,
+        ratio: contrast(swatch(palette, token), swatch(palette, surface)),
+      }))
+      .filter(({ ratio }) => ratio < BODY_FLOOR);
+    expect(failures).toEqual([]);
+  });
+
+  it.each(SURFACES)('keeps agent labels readable on their own tint over %s', (surface) => {
+    const failures = Object.keys(palette)
+      .filter((token) => token.startsWith('agent-'))
+      .map((token) => ({
+        token,
+        ratio: contrast(
+          swatch(palette, token),
+          composite({
+            foreground: swatch(palette, token),
+            background: swatch(palette, surface),
+            alpha: 0.12,
+          }),
+        ),
+      }))
+      .filter(({ ratio }) => ratio < BODY_FLOOR);
+    expect(failures).toEqual([]);
+  });
+
+  it.each(SURFACES)('keeps identity labels readable on %s', (surface) => {
+    const failures = Object.keys(palette)
+      .filter((token) => token.startsWith('identity-'))
+      .map((token) => ({
+        token,
+        ratio: contrast(swatch(palette, token), swatch(palette, surface)),
+      }))
+      .filter(({ ratio }) => ratio < BODY_FLOOR);
+    expect(failures).toEqual([]);
+  });
+
+  it.each(SURFACES)('keeps provider glyphs visible on %s', (surface) => {
+    const failures = Object.keys(palette)
+      .filter((token) => token.startsWith('provider-'))
+      .map((token) => ({
+        token,
+        ratio: contrast(swatch(palette, token), swatch(palette, surface)),
+      }))
+      .filter(({ ratio }) => ratio < LARGE_FLOOR);
+    expect(failures).toEqual([]);
+  });
+
+  it('separates the soft border from the elevated surface', () => {
+    expect(
+      contrast(swatch(palette, 'border-soft'), swatch(palette, 'elevated')),
+    ).toBeGreaterThanOrEqual(1.2);
+  });
+
   it.each(SURFACES)('keeps the focus ring visible at 3:1 on %s', (surface) => {
     expect(
       contrast(swatch(palette, 'focus-ring'), swatch(palette, surface)),
@@ -119,21 +259,50 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
   });
 
   it.each(TONES)('keeps %s solid fills readable', (tone) => {
-    expect(
-      contrast(swatch(palette, `${tone}-foreground`), swatch(palette, tone)),
-    ).toBeGreaterThanOrEqual(BODY_FLOOR);
+    expect(contrast(swatch(palette, 'on-tone'), swatch(palette, tone))).toBeGreaterThanOrEqual(
+      BODY_FLOOR,
+    );
   });
 
-  it('keeps primary inside the 200-275 hue band and accent off its clone', () => {
+  it('keeps primary inside the 200-275 hue band', () => {
     const css = readFileSync(STYLES, 'utf8');
-    const hues = [
-      ...css.matchAll(/--color-(primary|accent):\s*oklch\([\d.]+\s+[\d.]+\s+([\d.]+)/g),
-    ];
-    expect(hues).toHaveLength(4);
-    for (const [, , hue] of hues) {
+    const hues = [...css.matchAll(/--color-primary:\s*oklch\([\d.]+\s+[\d.]+\s+([\d.]+)/g)];
+    expect(hues).toHaveLength(2);
+    for (const [, hue] of hues) {
       expect(Number(hue)).toBeGreaterThanOrEqual(200);
       expect(Number(hue)).toBeLessThanOrEqual(275);
     }
-    expect(swatch(palette, 'primary')).not.toEqual(swatch(palette, 'accent'));
+  });
+});
+
+describe.each(Object.entries(readLabThemes()))('%s oklab separation', (_theme, labs) => {
+  it('keeps every tone pair apart in oklab', () => {
+    const failures = TONES.flatMap((first, index) =>
+      TONES.slice(index + 1).map((second) => ({
+        pair: `${first}-${second}`,
+        distance: deltaE({
+          first: lab({ labs, token: first }),
+          second: lab({ labs, token: second }),
+        }),
+      })),
+    ).filter(({ distance }) => distance < TONE_SEPARATION);
+    expect(failures).toEqual([]);
+  });
+
+  it('keeps every identity colour apart from every tone', () => {
+    const identities = Object.keys(labs).filter((token) => token.startsWith('identity-'));
+    expect(identities).toHaveLength(8);
+    const failures = identities
+      .flatMap((identity) =>
+        TONES.map((tone) => ({
+          pair: `${identity}-${tone}`,
+          distance: deltaE({
+            first: lab({ labs, token: identity }),
+            second: lab({ labs, token: tone }),
+          }),
+        })),
+      )
+      .filter(({ distance }) => distance < IDENTITY_SEPARATION);
+    expect(failures).toEqual([]);
   });
 });

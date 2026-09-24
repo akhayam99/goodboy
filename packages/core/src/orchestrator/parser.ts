@@ -1,5 +1,5 @@
 import type {
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   WorkflowTaskDifficulty,
   WorkflowTaskType,
@@ -11,6 +11,7 @@ import { normalizeSelectableAgentRole } from '../roles';
 import { MODEL_EFFORTS } from './parseWorkflowRoutingProposal';
 import { structuredRunSummary } from './runSummary';
 import type { OrchestratorDecision, OrchestratorStep, RunSummary } from './types';
+import { escapeControlCharsInStrings } from '../providers/shared/escapeControlCharsInStrings';
 
 const START_MARKER = '<<orchestrator>>';
 const END_MARKER = '<</orchestrator>>';
@@ -75,34 +76,13 @@ const stripCodeFences = (value: string): string =>
     .replace(/```\s*$/, '')
     .trim();
 
-const escapeControlCharsInStrings = (value: string): string => {
-  let result = '';
-  let inString = false;
-  let escaped = false;
-  for (const char of value) {
-    if (inString && !escaped && (char === '\n' || char === '\r' || char === '\t')) {
-      result += char === '\n' ? '\\n' : char === '\r' ? '\\r' : '\\t';
-      continue;
-    }
-    if (escaped) {
-      escaped = false;
-    } else if (char === '\\') {
-      escaped = true;
-    } else if (char === '"') {
-      inString = !inString;
-    }
-    result += char;
-  }
-  return result;
-};
-
 const parseJson = (value: string): unknown | null => {
   const candidate = stripCodeFences(value);
   try {
     return JSON.parse(candidate);
   } catch {
     try {
-      return JSON.parse(escapeControlCharsInStrings(candidate));
+      return JSON.parse(escapeControlCharsInStrings({ value: candidate }));
     } catch {
       return null;
     }
@@ -165,7 +145,7 @@ const requestedModel = ({ provider, id }: ModelParams): string | null => {
   return resolvedStoredModelId({ provider, selection: stored.selection });
 };
 
-const requestedEffort = (level: string | null): ModelEffort | null => {
+const requestedEffort = (level: string | null): EffortLevel | null => {
   if (level === null) {
     return null;
   }

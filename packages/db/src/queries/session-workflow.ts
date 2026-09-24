@@ -1,12 +1,9 @@
 import type {
-  AgentRole,
   IsoDateTime,
-  ModelEffort,
+  EffortLevel,
+  OrchestratorHint,
   OrchestratorRouting,
   ProviderId,
-  RoleModelFallback,
-  RoleModelPreference,
-  RoleModelPreferences,
   SessionId,
   StepId,
   WorkflowId,
@@ -19,8 +16,8 @@ import type {
   WorkflowSpendLimitMode,
   WorkflowTriggerMode,
 } from '@goodboy/types';
-import { PROVIDER_IDS } from '@goodboy/types';
-import type { Database } from '../client';
+import type { Database, PlainStatement } from '../client';
+import { serializeOrchestratorHintLog, toOrchestratorHintLog } from './orchestrator-hint-log';
 
 export type SessionWorkflowRow = {
   workflow_run_id: string;
@@ -34,12 +31,11 @@ export type SessionWorkflowRow = {
   orchestration_reason: string | null;
   orchestration_error: string | null;
   orchestration_stop_kind: string;
-  orchestrator_hints: string | null;
+  orchestrator_hint_log: string | null;
   orchestrator_summary: string | null;
   orchestrator_provider: string | null;
   orchestrator_model: string | null;
   orchestrator_effort: string | null;
-  role_model_overrides: string | null;
   spend_limit_usd: number | null;
   spend_limit_mode: string;
   chain_after_run_id: string | null;
@@ -49,7 +45,7 @@ export type SessionWorkflowRow = {
 };
 
 export const SESSION_WORKFLOW_COLS =
-  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hints, orchestrator_summary, orchestrator_provider, orchestrator_model, orchestrator_effort, role_model_overrides, spend_limit_usd, spend_limit_mode, chain_after_run_id, goal, discarded_at, created_at';
+  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hint_log, orchestrator_summary, orchestrator_provider, orchestrator_model, orchestrator_effort, spend_limit_usd, spend_limit_mode, chain_after_run_id, goal, discarded_at, created_at';
 
 type RoutingColumns = {
   readonly provider: string | null;
@@ -64,7 +60,7 @@ const toRouting = ({ provider, model, effort }: RoutingColumns): OrchestratorRou
   return {
     providerId: provider as ProviderId,
     model,
-    ...(effort != null && { effort: effort as ModelEffort }),
+    ...(effort != null && { effort: effort as EffortLevel }),
   };
 };
 
@@ -78,120 +74,6 @@ const toStop = ({ message, kind }: StopColumns): WorkflowOrchestrationStop | nul
     return null;
   }
   return { kind: kind as WorkflowOrchestrationStopKind, message };
-};
-
-type RoleModelsColumn = {
-  readonly value: string | null;
-};
-
-const ROLE_MODEL_ROLES = [
-  'scout',
-  'planner',
-  'implementer',
-  'reviewer',
-  'investigator',
-  'tester',
-  'resolver',
-  'custom',
-] satisfies ReadonlyArray<AgentRole>;
-
-const MODEL_EFFORTS = [
-  'minimal',
-  'low',
-  'medium',
-  'high',
-  'xhigh',
-  'max',
-] satisfies ReadonlyArray<ModelEffort>;
-
-type UnknownRecord = Record<string, unknown>;
-
-const isUnknownRecord = (value: unknown): value is UnknownRecord =>
-  typeof value === 'object' && value != null && Array.isArray(value) === false;
-
-type ProviderValueParams = {
-  readonly value: unknown;
-};
-
-const providerFor = ({ value }: ProviderValueParams): ProviderId | null =>
-  PROVIDER_IDS.find((provider) => provider === value) ?? null;
-
-type EffortValueParams = {
-  readonly value: unknown;
-};
-
-const effortFor = ({ value }: EffortValueParams): ModelEffort | null =>
-  MODEL_EFFORTS.find((effort) => effort === value) ?? null;
-
-type FallbackValueParams = {
-  readonly value: unknown;
-};
-
-const fallbackFor = ({ value }: FallbackValueParams): RoleModelFallback | null => {
-  if (isUnknownRecord(value) === false) {
-    return null;
-  }
-  const providerId = providerFor({ value: value.providerId });
-  const model = value.model;
-  const effort = value.effort == null ? null : effortFor({ value: value.effort });
-  if (
-    providerId == null ||
-    typeof model !== 'string' ||
-    model.trim() === '' ||
-    (value.effort != null && effort == null)
-  ) {
-    return null;
-  }
-  return {
-    providerId,
-    model,
-    ...(effort != null && { effort }),
-  };
-};
-
-type PreferenceValueParams = {
-  readonly value: unknown;
-};
-
-const preferenceFor = ({ value }: PreferenceValueParams): RoleModelPreference | null => {
-  if (isUnknownRecord(value) === false) {
-    return null;
-  }
-  const providerId = providerFor({ value: value.providerId });
-  const model = value.model;
-  const effort = effortFor({ value: value.effort });
-  if (providerId == null || typeof model !== 'string' || model.trim() === '' || effort == null) {
-    return null;
-  }
-  const fallback = fallbackFor({ value: value.fallback });
-  return {
-    providerId,
-    model,
-    effort,
-    ...(fallback != null && { fallback }),
-  };
-};
-
-const toRoleModelOverrides = ({ value }: RoleModelsColumn): RoleModelPreferences | null => {
-  if (value == null || value === '') {
-    return null;
-  }
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (isUnknownRecord(parsed) === false) {
-      return null;
-    }
-    const preferences: Partial<Record<AgentRole, RoleModelPreference>> = {};
-    for (const role of ROLE_MODEL_ROLES) {
-      const preference = preferenceFor({ value: parsed[role] });
-      if (preference != null) {
-        preferences[role] = preference;
-      }
-    }
-    return Object.keys(preferences).length > 0 ? preferences : null;
-  } catch {
-    return null;
-  }
 };
 
 export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
@@ -214,7 +96,7 @@ export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
     const timestamp = Date.parse(`${row.created_at.replace(' ', 'T')}Z`);
     return Number.isNaN(timestamp) ? undefined : (new Date(timestamp).toISOString() as IsoDateTime);
   })();
-  const roleModelOverrides = toRoleModelOverrides({ value: row.role_model_overrides });
+  const orchestratorHints = toOrchestratorHintLog({ value: row.orchestrator_hint_log });
   return {
     id: row.workflow_run_id as WorkflowRunId,
     workflowId: row.workflow_id as WorkflowId,
@@ -229,12 +111,10 @@ export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
     ...(row.orchestration_reason != null &&
       row.orchestration_reason !== '' && { orchestrationReason: row.orchestration_reason }),
     ...(orchestrationStop != null && { orchestrationStop }),
-    ...(row.orchestrator_hints != null &&
-      row.orchestrator_hints !== '' && { orchestratorHints: row.orchestrator_hints }),
+    ...(orchestratorHints.length > 0 && { orchestratorHints }),
     ...(row.orchestrator_summary != null &&
       row.orchestrator_summary !== '' && { orchestratorSummary: row.orchestrator_summary }),
     ...(orchestratorRouting != null && { orchestratorRouting }),
-    ...(roleModelOverrides != null && { roleModelOverrides }),
     ...(row.spend_limit_usd != null && { spendLimitUsd: row.spend_limit_usd }),
     spendLimitMode: (row.spend_limit_mode ?? 'pause') as WorkflowSpendLimitMode,
     ...(row.chain_after_run_id != null && {
@@ -248,16 +128,15 @@ export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
   };
 };
 
-export const listWorkflowsForSession = async (
-  db: Database,
-  sessionId: SessionId,
-): Promise<ReadonlyArray<WorkflowRun>> => {
-  const rows = await db.select<SessionWorkflowRow>(
-    `SELECT ${SESSION_WORKFLOW_COLS} FROM session_workflows WHERE session_id = ? ORDER BY ordinal DESC`,
-    [sessionId],
-  );
-  return rows.map(toWorkflowRun);
+type SessionTouchParams = {
+  readonly sessionId: SessionId;
+  readonly updatedAt: IsoDateTime;
 };
+
+const sessionTouchStatement = ({ sessionId, updatedAt }: SessionTouchParams): PlainStatement => ({
+  sql: 'UPDATE sessions SET updated_at = ? WHERE id = ?',
+  params: [Date.parse(updatedAt), sessionId],
+});
 
 async function bumpSessionUpdatedAt(
   db: Database,
@@ -347,43 +226,25 @@ export const updateWorkflowOrder = async (
   workflowRunIds: ReadonlyArray<WorkflowRunId>,
   updatedAt: IsoDateTime,
 ): Promise<void> => {
-  const existing = await db.select<SessionWorkflowRow>(
-    `SELECT ${SESSION_WORKFLOW_COLS} FROM session_workflows WHERE session_id = ?`,
-    [sessionId],
-  );
-  const existingRunIds = new Set(existing.map((run) => run.workflow_run_id));
-
-  await db.exec('BEGIN');
-  try {
-    if (workflowRunIds.length === 0) {
-      await db.execute('DELETE FROM session_workflows WHERE session_id = ?', [sessionId]);
-    }
-    if (workflowRunIds.length > 0) {
-      const placeholders = workflowRunIds.map(() => '?').join(', ');
-      await db.execute(
-        `DELETE FROM session_workflows
-         WHERE session_id = ? AND workflow_run_id NOT IN (${placeholders})`,
-        [sessionId, ...workflowRunIds],
-      );
-    }
-    for (const [ordinal, runId] of workflowRunIds.entries()) {
-      if (existingRunIds.has(runId) === false) {
-        continue;
-      }
-      await db.execute(
-        'UPDATE session_workflows SET ordinal = ? WHERE workflow_run_id = ? AND session_id = ?',
-        [ordinal, runId, sessionId],
-      );
-    }
-    await db.execute('UPDATE sessions SET updated_at = ? WHERE id = ?', [
-      Date.parse(updatedAt),
-      sessionId,
-    ]);
-    await db.exec('COMMIT');
-  } catch (err) {
-    await db.exec('ROLLBACK');
-    throw err;
-  }
+  const placeholders = workflowRunIds.map(() => '?').join(', ');
+  const prune: PlainStatement =
+    workflowRunIds.length === 0
+      ? { sql: 'DELETE FROM session_workflows WHERE session_id = ?', params: [sessionId] }
+      : {
+          sql: `DELETE FROM session_workflows
+           WHERE session_id = ? AND workflow_run_id NOT IN (${placeholders})`,
+          params: [sessionId, ...workflowRunIds],
+        };
+  await db.transaction({
+    statements: [
+      prune,
+      ...workflowRunIds.map((runId, ordinal) => ({
+        sql: 'UPDATE session_workflows SET ordinal = ? WHERE workflow_run_id = ? AND session_id = ?',
+        params: [ordinal, runId, sessionId],
+      })),
+      sessionTouchStatement({ sessionId, updatedAt }),
+    ],
+  });
 };
 
 export const discardWorkflowInSession = async (
@@ -393,24 +254,21 @@ export const discardWorkflowInSession = async (
   discardedAt: IsoDateTime,
 ): Promise<void> => {
   const updatedAt = Date.parse(discardedAt);
-  await db.exec('BEGIN');
-  try {
-    await db.execute('UPDATE session_workflows SET discarded_at = ? WHERE workflow_run_id = ?', [
-      updatedAt,
-      workflowRunId,
-    ]);
-    await db.execute(
-      `UPDATE session_artifacts
-       SET status = 'superseded', updated_at = ?
-       WHERE kind = 'plan' AND workflow_run_id = ? AND status = 'active'`,
-      [updatedAt, workflowRunId],
-    );
-    await bumpSessionUpdatedAt(db, sessionId, discardedAt);
-    await db.exec('COMMIT');
-  } catch (err) {
-    await db.exec('ROLLBACK');
-    throw err;
-  }
+  await db.transaction({
+    statements: [
+      {
+        sql: 'UPDATE session_workflows SET discarded_at = ? WHERE workflow_run_id = ?',
+        params: [updatedAt, workflowRunId],
+      },
+      {
+        sql: `UPDATE session_artifacts
+         SET status = 'superseded', updated_at = ?
+         WHERE kind = 'plan' AND workflow_run_id = ? AND status = 'active'`,
+        params: [updatedAt, workflowRunId],
+      },
+      sessionTouchStatement({ sessionId, updatedAt: discardedAt }),
+    ],
+  });
 };
 
 export const restoreWorkflowInSession = async (
@@ -419,23 +277,21 @@ export const restoreWorkflowInSession = async (
   workflowRunId: WorkflowRunId,
   restoredAt: IsoDateTime,
 ): Promise<void> => {
-  await db.exec('BEGIN');
-  try {
-    await db.execute('UPDATE session_workflows SET discarded_at = NULL WHERE workflow_run_id = ?', [
-      workflowRunId,
-    ]);
-    await db.execute(
-      `UPDATE session_artifacts
-       SET status = 'active', updated_at = ?
-       WHERE kind = 'plan' AND workflow_run_id = ? AND status = 'superseded'`,
-      [Date.parse(restoredAt), workflowRunId],
-    );
-    await bumpSessionUpdatedAt(db, sessionId, restoredAt);
-    await db.exec('COMMIT');
-  } catch (err) {
-    await db.exec('ROLLBACK');
-    throw err;
-  }
+  await db.transaction({
+    statements: [
+      {
+        sql: 'UPDATE session_workflows SET discarded_at = NULL WHERE workflow_run_id = ?',
+        params: [workflowRunId],
+      },
+      {
+        sql: `UPDATE session_artifacts
+         SET status = 'active', updated_at = ?
+         WHERE kind = 'plan' AND workflow_run_id = ? AND status = 'superseded'`,
+        params: [Date.parse(restoredAt), workflowRunId],
+      },
+      sessionTouchStatement({ sessionId, updatedAt: restoredAt }),
+    ],
+  });
 };
 
 export const updateSessionWorkflowStep = async (
@@ -489,19 +345,6 @@ export const updateWorkflowRunOrchestratorRouting = async (
   );
 };
 
-export const updateWorkflowRunRoleModelOverrides = async (
-  db: Database,
-  workflowRunId: WorkflowRunId,
-  overrides: RoleModelPreferences | null,
-): Promise<void> => {
-  const serialized =
-    overrides != null && Object.keys(overrides).length > 0 ? JSON.stringify(overrides) : null;
-  await db.execute(
-    'UPDATE session_workflows SET role_model_overrides = ? WHERE workflow_run_id = ?',
-    [serialized, workflowRunId],
-  );
-};
-
 export const updateWorkflowRunOrchestrationStop = async (
   db: Database,
   workflowRunId: WorkflowRunId,
@@ -516,11 +359,11 @@ export const updateWorkflowRunOrchestrationStop = async (
 export const updateWorkflowRunOrchestratorHints = async (
   db: Database,
   workflowRunId: WorkflowRunId,
-  hints: string | null,
+  hints: ReadonlyArray<OrchestratorHint>,
 ): Promise<void> => {
   await db.execute(
-    'UPDATE session_workflows SET orchestrator_hints = ? WHERE workflow_run_id = ?',
-    [hints, workflowRunId],
+    'UPDATE session_workflows SET orchestrator_hint_log = ? WHERE workflow_run_id = ?',
+    [serializeOrchestratorHintLog({ hints }), workflowRunId],
   );
 };
 
@@ -565,24 +408,18 @@ export const repointWorkflowRunTemplate = async ({
   workflowId,
   stepRepoints,
 }: RepointWorkflowRunParams): Promise<void> => {
-  await db.exec('BEGIN');
-  try {
-    await db.execute('UPDATE session_workflows SET workflow_id = ? WHERE workflow_run_id = ?', [
-      workflowId,
-      workflowRunId,
-    ]);
-    for (const repoint of stepRepoints) {
-      await db.execute('UPDATE agents SET step_id = ? WHERE workflow_run_id = ? AND step_id = ?', [
-        repoint.toStepId,
-        workflowRunId,
-        repoint.fromStepId,
-      ]);
-    }
-    await db.exec('COMMIT');
-  } catch (err) {
-    await db.exec('ROLLBACK');
-    throw err;
-  }
+  await db.transaction({
+    statements: [
+      {
+        sql: 'UPDATE session_workflows SET workflow_id = ? WHERE workflow_run_id = ?',
+        params: [workflowId, workflowRunId],
+      },
+      ...stepRepoints.map((repoint) => ({
+        sql: 'UPDATE agents SET step_id = ? WHERE workflow_run_id = ? AND step_id = ?',
+        params: [repoint.toStepId, workflowRunId, repoint.fromStepId],
+      })),
+    ],
+  });
 };
 
 export const updateSessionWorkflowTriggerMode = async (

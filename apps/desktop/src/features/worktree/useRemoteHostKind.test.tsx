@@ -97,7 +97,6 @@ beforeEach(() => {
         id: MULTI_PROJECT_WORKSPACE_ID,
         name: 'Composite',
         slug: 'multi-project',
-        sessionsRoot: '/remote-host/multi-project',
         overrides: {
           defaultProviderId: null,
           defaultWorkflowId: null,

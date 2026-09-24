@@ -9,12 +9,14 @@ type Params = {
   readonly agentRunId: ProviderRunId | null;
   readonly runHistory: ReadonlyArray<ProviderRunId>;
   readonly records: ReadonlyArray<TelemetryRecord>;
+  readonly liveRouting: Readonly<Record<ProviderRunId, ExecutedAgentRouting>>;
 };
 
 export const executedAgentRouting = ({
   agentRunId,
   runHistory,
   records,
+  liveRouting,
 }: Params): ExecutedAgentRouting | null => {
   const runIds = runHistory.length > 0 ? runHistory : agentRunId != null ? [agentRunId] : [];
   if (runIds.length === 0) {
@@ -31,9 +33,14 @@ export const executedAgentRouting = ({
     }
   }
   for (let index = runIds.length - 1; index >= 0; index -= 1) {
-    const record = latestByRunId.get(runIds[index]!);
+    const runId = runIds[index]!;
+    const record = latestByRunId.get(runId);
     if (record != null) {
       return { provider: record.provider, model: record.model };
+    }
+    const live = liveRouting[runId];
+    if (live != null) {
+      return live;
     }
   }
   return null;

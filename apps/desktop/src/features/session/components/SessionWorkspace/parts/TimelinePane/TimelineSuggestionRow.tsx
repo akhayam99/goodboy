@@ -56,7 +56,7 @@ export const TimelineSuggestionRow = ({ suggestion, railWidth, actions }: Props)
                 type="button"
                 onClick={actions.onDismiss}
                 aria-label="Dismiss this suggestion"
-                className="rounded-md p-1 text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
+                className="rounded-md p-1 text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 <X size={ICON_SIZE.row} aria-hidden />
               </button>

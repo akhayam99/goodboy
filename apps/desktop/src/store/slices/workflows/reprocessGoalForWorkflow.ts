@@ -6,6 +6,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 
 export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<void> => {
@@ -41,9 +42,9 @@ export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
       const taskModel = routeTaskModel({
         taskModel: resolveTaskModel({
           task: 'prose_polish',
-          preferences: state.workspaceOverrides?.[session.workspaceId]?.taskModels,
-          workspaceDefaultProviderId:
-            state.workspaceOverrides?.[session.workspaceId]?.defaultProviderId,
+          preferences: selectResolvedSettings({ state, sessionId })?.taskModels,
+          workspaceDefaultProviderId: selectResolvedSettings({ state, sessionId })
+            ?.defaultProviderOverride,
           sessionDefaultProviderId: session.providerPreference.defaultProvider,
         }),
         connectedProviders: state.providers

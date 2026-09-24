@@ -5,7 +5,6 @@ export type StatusDotProps = {
   readonly tone: Tone;
   readonly size?: 'sm' | 'md';
   readonly pulsing?: boolean;
-  readonly ping?: boolean;
   readonly role?: 'status' | 'presentation';
   readonly title?: string;
   readonly ariaLabel?: string;
@@ -21,7 +20,6 @@ export const StatusDot = ({
   tone,
   size = 'md',
   pulsing,
-  ping,
   role = 'presentation',
   title,
   ariaLabel,
@@ -35,25 +33,6 @@ export const StatusDot = ({
       : role === 'presentation'
         ? { role, 'aria-hidden': true }
         : { role };
-
-  if (ping) {
-    return (
-      <span
-        title={title}
-        className={cn('relative inline-flex shrink-0', dim, className)}
-        {...ariaProps}
-      >
-        <span
-          aria-hidden
-          className={cn(
-            'absolute inline-flex size-full rounded-full opacity-75 motion-safe:animate-ping',
-            dot,
-          )}
-        />
-        <span className={cn('relative inline-flex rounded-full', dim, dot)} />
-      </span>
-    );
-  }
 
   return (
     <span

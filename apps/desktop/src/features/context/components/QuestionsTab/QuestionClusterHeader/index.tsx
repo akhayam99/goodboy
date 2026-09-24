@@ -40,21 +40,18 @@ export const QuestionClusterHeader = ({
   const inner = (
     <>
       <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
-      <span className="truncate text-foreground/80">{label}</span>
-      {ownerAgent != null && (
+      <span className="truncate text-foreground">{label}</span>
+      {ownerAgent != null && ownerAgent.modelOverride != null && (
         <RoutingBadge
           provider={ownerAgent.providerOverride ?? null}
-          model={ownerAgent.modelOverride ?? null}
+          model={ownerAgent.modelOverride}
           effort={ownerAgent.effort ?? null}
-          missingLabel=""
         />
       )}
       {creatorAgentName !== null && (
         <span className="truncate text-muted-foreground">via {creatorAgentName}</span>
       )}
-      {canOpen && (
-        <ChevronRight size={11} aria-hidden className="shrink-0 text-muted-foreground/60" />
-      )}
+      {canOpen && <ChevronRight size={11} aria-hidden className="shrink-0 text-faint-foreground" />}
     </>
   );
 
@@ -66,7 +63,7 @@ export const QuestionClusterHeader = ({
         className={cn(
           'flex min-w-0 items-center gap-1.5 rounded-md px-0.5 text-2xs font-medium',
           'hover:opacity-70 motion-safe:transition-opacity',
-          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         )}
         title={`Open ${label}`}
       >

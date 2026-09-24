@@ -15,6 +15,7 @@ import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { InspectorHeader } from '../../../session/components/SessionWorkspace/parts/InspectorSplit/InspectorHeader';
+import { formatBytes } from '../../../../shared/utils/formatBytes';
 
 type PreviewState =
   | {
@@ -84,21 +85,6 @@ const previewKindOf = ({
   return 'unsupported';
 };
 
-const formatByteSize = ({ bytes }: { readonly bytes: number }): string => {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  const units = ['KB', 'MB', 'GB', 'TB'];
-  let size = bytes / 1024;
-  let index = 0;
-  while (size >= 1024 && index < units.length - 1) {
-    size /= 1024;
-    index += 1;
-  }
-  const precision = size >= 10 ? 0 : 1;
-  return `${size.toFixed(precision)} ${units[index]}`;
-};
-
 export const ExplorePreviewPanel = ({
   entry,
   previewState,
@@ -110,7 +96,7 @@ export const ExplorePreviewPanel = ({
   const previewKind = useMemo(() => previewKindOf({ entry, previewState }), [entry, previewState]);
   const modifiedLabel =
     entry.modifiedAt == null ? 'unknown age' : formatRelativeAge({ fromIso: entry.modifiedAt });
-  const sizeLabel = formatByteSize({ bytes: entry.sizeBytes });
+  const sizeLabel = formatBytes({ bytes: entry.sizeBytes });
   const previewText =
     previewState.status === 'ready' && previewState.content.type === 'text'
       ? previewState.content.text

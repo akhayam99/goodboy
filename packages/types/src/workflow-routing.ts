@@ -1,4 +1,4 @@
-import type { ModelEffort, ProviderId } from './provider-registry';
+import type { EffortLevel, ProviderId } from './provider-registry';
 
 export type WorkflowTaskType =
   | 'exploration'
@@ -21,7 +21,7 @@ export type WorkflowTaskProfile = Readonly<{
 export type WorkflowModelPick = Readonly<{
   provider: ProviderId;
   model: string;
-  effort: ModelEffort | null;
+  effort: EffortLevel | null;
 }>;
 
 export type WorkflowRoutingLock = Readonly<{

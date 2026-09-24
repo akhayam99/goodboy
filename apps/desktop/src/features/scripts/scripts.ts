@@ -16,6 +16,7 @@ export type ScriptRunRecord = {
   readonly runId: string;
   readonly startedAt: number;
   readonly name?: string;
+  readonly output?: string;
 };
 
 export type ScriptSource = 'package-json' | 'composer';

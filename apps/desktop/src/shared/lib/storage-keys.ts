@@ -9,7 +9,6 @@ export const STORAGE_KEYS = {
   inspectorPanelWidth: `${PREFIX}inspector-panel-width`,
   reviewBoardListWidth: `${PREFIX}review-board-list-width`,
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v2`,
-  rightSidebarWidth: `${PREFIX}right-sidebar-width`,
   changelogCache: `${PREFIX}changelog-cache:v1`,
 } as const;
 

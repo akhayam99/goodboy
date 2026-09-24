@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
+const A11Y_TESTS = 'src/__tests__/a11y/**';
+
 export default defineConfig({
   plugins: [react()],
   test: {
@@ -8,6 +10,22 @@ export default defineConfig({
     passWithNoTests: true,
     testTimeout: 15000,
     hookTimeout: 15000,
-    exclude: ['**/node_modules/**', '**/a11y/**'],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'unit',
+          exclude: ['**/node_modules/**', A11Y_TESTS],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'a11y',
+          include: [`${A11Y_TESTS}/*.test.{ts,tsx}`],
+          exclude: ['**/node_modules/**'],
+        },
+      },
+    ],
   },
 });

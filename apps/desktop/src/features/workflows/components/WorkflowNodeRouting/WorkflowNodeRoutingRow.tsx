@@ -1,7 +1,8 @@
+import { Eyebrow } from '@goodboy/ui';
 import { useEffect, useRef } from 'react';
 import type {
   Agent,
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   SessionId,
   Step,
@@ -12,14 +13,13 @@ import { selectWorkflowNodeRouting } from '../../../../store/slices/workflowRout
 import { workflowNodeRoutingKey } from '../../../../store/slices/workflowRouting/workflowNodeRoutingKey';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import type { EffortLevel } from '../../../chat/utils/chat-constants';
 import { WORKFLOW_ROUTING_COPY } from '../../workflowRoutingCopy';
 import { lockableEffort } from './lockableEffort';
 
 type LockParams = {
   readonly provider: ProviderId;
   readonly model: string;
-  readonly effort: ModelEffort;
+  readonly effort: EffortLevel;
 };
 
 type Props = {
@@ -67,7 +67,7 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
   };
 
   return (
-    <li className="flex min-w-0 flex-col gap-1.5 rounded-md border border-border-soft bg-background/40 px-2 py-1.5">
+    <li className="flex min-w-0 flex-col gap-1.5 rounded-md border border-border-soft bg-background px-2 py-1.5">
       <div className="flex min-w-0 items-center gap-2">
         <button
           type="button"
@@ -76,9 +76,7 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
         >
           {agent.name}
         </button>
-        <span className="shrink-0 text-3xs font-medium uppercase tracking-wide text-muted-foreground/70">
-          {view.sourceLabel}
-        </span>
+        <Eyebrow label={view.sourceLabel} muted className="shrink-0" />
       </div>
       {view.isMutable ? (
         <RoutingPicker
@@ -133,7 +131,6 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
             provider={shown?.provider ?? null}
             model={shown?.model ?? null}
             effort={shown?.effort ?? null}
-            missingLabel={WORKFLOW_ROUTING_COPY.noSelection}
           />
           <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground">
             {WORKFLOW_ROUTING_COPY.immutableNote}

@@ -9,7 +9,7 @@ import type {
 export const QUESTION_DELEGATE_SOURCE_KIND: AgentSourceKind = 'open_question';
 
 export const QUESTION_DELEGATE_COPY = {
-  offer: 'let an agent answer',
+  offer: 'Let an agent answer',
   running: 'an agent is answering this',
   retry: 'the agent could not answer. hand it over again',
   blocked: "a delegated agent can't delegate again. this one is yours to answer",
@@ -157,6 +157,3 @@ export const composeDelegateKickoff = ({ questionText, hints }: KickoffParams): 
 
 export const DELEGATE_NUDGE =
   'That reply carried no answer. Emit exactly one `<<oq-answer>>` block with the answer, or one `<<ctx-question>>` block if only the user can decide. Nothing else.';
-
-export const delegateAnswerNote = ({ agentName }: { readonly agentName: string }): string =>
-  `answered by ${agentName} on your behalf`;

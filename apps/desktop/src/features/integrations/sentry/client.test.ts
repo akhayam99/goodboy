@@ -4,7 +4,6 @@ import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 import {
   sentryConnect,
   sentryValidateConnection,
-  sentryFetchIssue,
   sentryFetchIssueDetail,
   sentryFetchIssues,
 } from './client';
@@ -71,17 +70,6 @@ describe('sentryFetchIssues', () => {
       workspaceId: WS,
       query: 'is:unresolved',
       cursor: 'cur-1',
-    });
-  });
-});
-
-describe('sentryFetchIssue', () => {
-  it('invokes sentry_fetch_issue with issue id', async () => {
-    mockInvoke.mockResolvedValue({ id: 'issue-9', title: 'Boom' });
-    await sentryFetchIssue({ workspaceId: WS, issueId: 'issue-9' });
-    expect(mockInvoke).toHaveBeenCalledWith('sentry_fetch_issue', {
-      workspaceId: WS,
-      issueId: 'issue-9',
     });
   });
 });

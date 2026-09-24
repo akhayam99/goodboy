@@ -1,9 +1,14 @@
-import type { AgentSourceKind, PrComment, ProviderId, PullRequestState } from '@goodboy/types';
+import type {
+  AgentSourceKind,
+  PrComment,
+  ProviderId,
+  PullRequestState,
+  EffortLevel,
+} from '@goodboy/types';
 import type { AgentKind } from '../session/agent-kind';
 import type { CommentThread } from '../github/comment-threads';
 import { prCommentLocation } from '../session/pr-comment-location';
 import { RESOLVER_KICKOFF_LABELS } from './utils/resolverKickoffLabels';
-import type { EffortLevel } from './utils/chat-constants';
 
 const TITLE_MAX = 60;
 
@@ -276,15 +281,6 @@ export const buildResolverAgentArgs = ({
     sourceCommentUrl: first.head.url,
     sourceKind: 'review_comment',
   };
-};
-
-export const buildCombinedCommentAgentArgs = (
-  threads: ReadonlyArray<CommentThread>,
-  pr: PullRequestState,
-  choice: ResolveModelChoice = {},
-): CommentAgentArgs => {
-  const args = buildResolverAgentArgs({ threads, pr, hint: choice.hint ?? '' });
-  return { ...args, name: `resolve: ${threads.length} review threads` };
 };
 
 export type ResolveModelChoice = {

@@ -33,18 +33,18 @@ const NOTE = (reason: string): ArtifactCreationGate => ({
 });
 
 const NO_EVIDENCE_REPORT_RUN =
-  'this run has no finished work yet, so there is nothing to report on. base it on the session, or wait for the run';
+  'This run has no finished work yet, so there is nothing to report on. Base it on the session, or wait for the run';
 
 const NO_EVIDENCE_REPORT_SESSION =
-  'nothing has run yet, so there is nothing to report on. run an agent or a workflow first';
+  'Nothing has run yet, so there is nothing to report on. Run an agent or a workflow first';
 
 const NO_EVIDENCE_WIREFRAME_BRIEF =
-  'nothing has run yet, so this wireframe comes from your brief alone';
+  'Nothing has run yet, so this wireframe comes from your brief alone';
 
 const NO_EVIDENCE_WIREFRAME_EMPTY =
-  'describe the screen or flow. nothing has run yet to draw it from';
+  'Describe the screen or flow. Nothing has run yet to draw it from';
 
-const COLLECTING = 'context is still being collected, Generate collects again anyway';
+const COLLECTING = 'Context is still being collected, Generate collects again anyway';
 
 const noEvidenceGate = ({
   kind,
@@ -70,7 +70,7 @@ export const artifactCreationGate = ({
   isCollecting,
 }: ArtifactCreationGateParams): ArtifactCreationGate => {
   if (isStarting) {
-    return BLOCKED('this generation is already starting');
+    return BLOCKED('This generation is already starting');
   }
   if (ctaState.kind === 'blocked' && ctaState.reason === 'run-active') {
     return BLOCKED(ARTIFACT_CTA_BLOCK_COPY['run-active']);
@@ -80,11 +80,11 @@ export const artifactCreationGate = ({
   }
   if (isBriefOverLimit) {
     return BLOCKED(
-      `shorten the brief to ${formatBriefCount({ value: ARTIFACT_BRIEF_LIMITS.chars })} characters`,
+      `Shorten the brief to ${formatBriefCount({ value: ARTIFACT_BRIEF_LIMITS.chars })} characters`,
     );
   }
   if (!hasUsableProvider) {
-    return BLOCKED('connect a provider to generate');
+    return BLOCKED('Connect a provider to generate');
   }
   if (ctaState.kind === 'blocked' && ctaState.reason === 'no-evidence') {
     return noEvidenceGate({ kind, basedOn, hasBrief });

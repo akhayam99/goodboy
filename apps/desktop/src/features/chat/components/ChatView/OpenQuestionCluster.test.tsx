@@ -200,7 +200,7 @@ describe('OpenQuestionCluster', () => {
     render(<OpenQuestionCluster questions={[dbQuestion]} sessionId={'sess-1' as never} />);
 
     fireEvent.click(screen.getByText('Postgres'));
-    fireEvent.click(screen.getByText('other'));
+    fireEvent.click(screen.getByText('Other'));
     fireEvent.change(screen.getByPlaceholderText('write your own answer…'), {
       target: { value: '  use Neon  ' },
     });
@@ -325,7 +325,7 @@ describe('OpenQuestionCluster', () => {
 
     render(<OpenQuestionCluster questions={[multi]} sessionId={'sess-1' as never} />);
 
-    fireEvent.click(screen.getByText('other'));
+    fireEvent.click(screen.getByText('Other'));
     fireEvent.change(screen.getByPlaceholderText('write your own answer…'), {
       target: { value: 'both, plus dynamo' },
     });
@@ -424,7 +424,7 @@ describe('OpenQuestionCluster', () => {
 });
 
 describe('OpenQuestionCluster delegation', () => {
-  const chooseDelegate = () => fireEvent.click(screen.getByText('let an agent answer'));
+  const chooseDelegate = () => fireEvent.click(screen.getByText('Let an agent answer'));
 
   it('spawns nothing while the choice is only staged', () => {
     render(<OpenQuestionCluster questions={[dbQuestion]} sessionId={'sess-1' as never} />);

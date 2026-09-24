@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { countUserTextEvents, insertTurnEvent, listTurnEventsForAgent } from './turn-event';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
@@ -16,8 +15,7 @@ describe('turn event queries', () => {
   let db: Database;
 
   beforeEach(async () => {
-    db = makeTestDatabase();
-    await migrate(db);
+    db = await makeMigratedTestDatabase();
     const now = Date.now();
     await db.execute(
       'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
