@@ -48,3 +48,32 @@ export const resolveGitCommonDirs = async ({
   }
   return resolved;
 };
+
+export type ManagedCheckoutBinding = {
+  readonly repoRoot: string;
+  readonly worktreePath: string;
+  readonly gitDir: string;
+};
+
+export const buildManagedCheckouts = ({
+  mounts,
+  gitDirs,
+}: {
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+  readonly gitDirs: ReadonlyMap<string, string>;
+}): ReadonlyArray<ManagedCheckoutBinding> => {
+  const seen = new Set<string>();
+  const bindings: ManagedCheckoutBinding[] = [];
+  for (const mount of mounts.filter(isWritable)) {
+    if (seen.has(mount.worktreePath)) {
+      continue;
+    }
+    seen.add(mount.worktreePath);
+    bindings.push({
+      repoRoot: mount.repoRoot,
+      worktreePath: mount.worktreePath,
+      gitDir: gitDirs.get(mount.repoRoot) ?? `${mount.repoRoot}/.git`,
+    });
+  }
+  return bindings;
+};

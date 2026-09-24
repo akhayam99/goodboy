@@ -8,6 +8,7 @@ import {
   isDelegationContinuationSupported,
   isDelegationGranted,
   isAgentRole,
+  isReadOnlyRole,
   normalizeAgentRole,
   normalizeSelectableAgentRole,
   presentationKeyForRole,
@@ -291,5 +292,27 @@ describe('delegationCapabilityForRole', () => {
     expect(
       isDelegationContinuationSupported({ requester: 'reviewer', continuation: 'resume' }),
     ).toBe(false);
+  });
+});
+
+describe('isReadOnlyRole', () => {
+  it('names the roles a launcher can confine to reading', () => {
+    expect(isReadOnlyRole({ role: 'scout' })).toBe(true);
+    expect(isReadOnlyRole({ role: 'report' })).toBe(true);
+  });
+
+  it('keeps a reviewer a writer so its turn keeps the tools a diff review needs', () => {
+    expect(isReadOnlyRole({ role: 'reviewer' })).toBe(false);
+  });
+
+  it('keeps every role that edits the repository a writer', () => {
+    for (const role of ['implementer', 'investigator', 'tester', 'resolver', 'docs', 'custom']) {
+      expect(isReadOnlyRole({ role })).toBe(false);
+    }
+  });
+
+  it('resolves aliases and unknown roles the way the registry does', () => {
+    expect(isReadOnlyRole({ role: 'debugger' })).toBe(false);
+    expect(isReadOnlyRole({ role: 'nonsense' })).toBe(false);
   });
 });

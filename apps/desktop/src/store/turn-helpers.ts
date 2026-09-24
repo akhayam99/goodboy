@@ -12,6 +12,7 @@ import {
   SLOT_BUDGETS,
   Summarizer,
   SummarizerParseError,
+  type SummarizerUsage,
   type ArtifactCaptureError,
   type ExtractedHandoff,
   type ParsedArtifact,
@@ -84,6 +85,7 @@ import {
 import { buildProviderSpendBreakdown } from './slices/budget';
 import type { SessionNudge } from './types';
 import type { SetFn, GetFn } from './slice-types';
+import { resolveInvocationLimits } from '../shared/lib/invocationAdmission';
 import { decisionsDelta } from './slices/session-events';
 import {
   deferredMaterializeNote,
@@ -146,6 +148,8 @@ type SummarizerQueueEntry = {
   readonly parseRetried?: boolean;
   readonly providerAttempt?: number;
   readonly taskModelOverride?: TaskModelPreference;
+  readonly agentId?: AgentId;
+  readonly workflowRunId?: WorkflowRunId;
 };
 
 type SummarizerTaskQueue = {
@@ -239,6 +243,8 @@ type EnqueueParams = {
   readonly turnOutput: string;
   readonly workingDir: string | null;
   readonly taskModelOverride?: TaskModelPreference;
+  readonly agentId?: AgentId;
+  readonly workflowRunId?: WorkflowRunId;
 };
 
 export const enqueueSummarizer = ({
@@ -249,6 +255,8 @@ export const enqueueSummarizer = ({
   turnOutput,
   workingDir,
   taskModelOverride,
+  agentId,
+  workflowRunId,
 }: EnqueueParams): void => {
   enqueueSummarizerEntry({
     set,
@@ -260,6 +268,8 @@ export const enqueueSummarizer = ({
       workingDir,
       oversizeRetried: false,
       ...(taskModelOverride && { taskModelOverride }),
+      ...(agentId != null && { agentId }),
+      ...(workflowRunId != null && { workflowRunId }),
     },
   });
 };
@@ -338,12 +348,77 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
   });
 
   try {
+    const summarizerRunId = crypto.randomUUID() as ProviderRunId;
+    const providerIdentity =
+      get().workspaceOverrides[session.workspaceId]?.providerBindings?.[taskModel.providerId] ??
+      get().authResults?.[taskModel.providerId]?.identity ??
+      null;
+    const recordSummarizerUsage = async (usage: SummarizerUsage): Promise<void> => {
+      const recordedAt = now();
+      await insertProviderRun(tauriDatabase, {
+        id: summarizerRunId,
+        sessionId,
+        provider: taskModel.providerId,
+        model: usage.model,
+        status: { kind: 'streaming', startedAt: recordedAt },
+        createdAt: recordedAt,
+      });
+      await updateProviderRunStatus(tauriDatabase, summarizerRunId, {
+        kind: 'succeeded',
+        finishedAt: recordedAt,
+      });
+      const record: TelemetryRecord = {
+        id: crypto.randomUUID() as TelemetryRecordId,
+        runId: summarizerRunId,
+        sessionId,
+        kind: 'summarizer',
+        provider: taskModel.providerId,
+        model: usage.model,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        cachedInputTokens: usage.cachedInputTokens,
+        cacheCreationInputTokens: usage.cacheCreationInputTokens,
+        estimatedCostUsd: usage.estimatedCostUsd,
+        recordedAt,
+        invocationId: usage.invocationId ?? summarizerRunId,
+        ...(entry.workflowRunId != null && { workflowRunId: entry.workflowRunId }),
+        ...(entry.agentId != null && { agentId: entry.agentId }),
+        purpose: 'summarizer',
+        usageEventId: 'usage',
+        attributionStatus: entry.workflowRunId == null ? 'unattributed' : 'attributed',
+      };
+      await insertTelemetry(tauriDatabase, record);
+      set((state) => ({
+        sessionTelemetry: {
+          ...state.sessionTelemetry,
+          [sessionId]: mergeTelemetry({
+            refreshed: [record],
+            current: state.sessionTelemetry[sessionId] ?? [],
+          }),
+        },
+      }));
+    };
     const summarizer = new Summarizer({
       providerId: taskModel.providerId,
       model: taskModel.model,
       ...(taskModel.effort != null && { effort: taskModel.effort }),
       invokeFn: invoke,
       ...(workingDir !== null && { workingDir }),
+      invocation: {
+        invocationId: summarizerRunId,
+        workspaceId: session.workspaceId,
+        sessionId,
+        ...(entry.workflowRunId != null && { workflowRunId: entry.workflowRunId }),
+        ...(entry.agentId != null && { agentId: entry.agentId }),
+        ...(providerIdentity != null && { providerIdentity }),
+        purpose: 'summarizer',
+        isHeavyweight: false,
+        limits: resolveInvocationLimits({
+          providerId: taskModel.providerId,
+          workspaceOverride: get().workspaceOverrides[session.workspaceId],
+        }),
+      },
+      onUsage: recordSummarizerUsage,
     });
     const prevSlots = get().sessionSlots[sessionId] ?? [];
     const slotValueSnapshot = new Map(prevSlots.map((slot) => [slot.key, slot.value]));
@@ -428,9 +503,6 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
         .then(() => void get().refreshSessionPrDetail(sessionId, { force: true }));
     }
 
-    const summarizerRunId = crypto.randomUUID() as ProviderRunId;
-    const startedAt = now();
-
     const [
       refreshed,
       ,
@@ -443,37 +515,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       openHistory,
     ] = await Promise.all([
       listContextSlotsForSession(tauriDatabase, sessionId),
-      insertProviderRun(tauriDatabase, {
-        id: summarizerRunId,
-        sessionId,
-        provider: taskModel.providerId,
-        model: result.model,
-        status: { kind: 'streaming', startedAt },
-        createdAt: startedAt,
-      })
-        .then(() =>
-          updateProviderRunStatus(tauriDatabase, summarizerRunId, {
-            kind: 'succeeded',
-            finishedAt: now(),
-          }),
-        )
-        .then(() => {
-          const record: TelemetryRecord = {
-            id: crypto.randomUUID() as TelemetryRecordId,
-            runId: summarizerRunId,
-            sessionId,
-            kind: 'summarizer',
-            provider: taskModel.providerId,
-            model: result.model,
-            inputTokens: result.usage.inputTokens,
-            outputTokens: result.usage.outputTokens,
-            cachedInputTokens: result.usage.cachedInputTokens,
-            cacheCreationInputTokens: result.usage.cacheCreationInputTokens,
-            estimatedCostUsd: result.usage.estimatedCostUsd,
-            recordedAt: now(),
-          };
-          return insertTelemetry(tauriDatabase, record);
-        }),
+      Promise.resolve(),
       summarizeSessionTelemetry(tauriDatabase, sessionId),
       summarizeWorkspaceTelemetry(tauriDatabase, session.workspaceId),
       listTelemetryForSession(tauriDatabase, sessionId),

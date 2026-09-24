@@ -115,10 +115,13 @@ describe('m101 telemetry orchestrator kind', () => {
     await migrate(db, migrations);
 
     expect(await indexNames({ db })).toEqual([
+      'idx_telemetry_invocation_id',
+      'idx_telemetry_invocation_usage_event',
       'idx_telemetry_provider',
       'idx_telemetry_recorded_at',
       'idx_telemetry_run_id',
       'idx_telemetry_session_kind',
+      'idx_telemetry_workflow_run_id',
     ]);
     const violations = await db.select<{ rowid: number }>('PRAGMA foreign_key_check');
     expect(violations).toEqual([]);

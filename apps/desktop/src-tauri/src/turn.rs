@@ -21,8 +21,23 @@ pub enum TurnError {
     Poisoned,
     #[error("worktree writer lease is not owned by this turn")]
     WriterLeaseNotOwned,
+    #[error("the turn was cancelled while it waited for a writer lease")]
+    WriterLeaseWaitCancelled,
+    #[error(
+        "gave up after waiting {waited_ms}ms for a writer lease on {resource}, held by {holder} in state {state}"
+    )]
+    WriterLeaseWaitTimedOut {
+        waited_ms: u64,
+        holder: String,
+        state: String,
+        resource: String,
+    },
+    #[error("durable writer lease error: {0}")]
+    WriterLease(#[from] crate::writer_lease::WriterLeaseError),
     #[error("turn not found: {0}")]
     NotFound(String),
+    #[error("invocation admission error: {0}")]
+    Admission(#[from] crate::invocation_admission::AdmissionError),
 }
 
 crate::util::impl_error_serialize!(TurnError);
@@ -33,7 +48,11 @@ impl TurnError {
             TurnError::Io(_) => "io",
             TurnError::Poisoned => "poisoned",
             TurnError::WriterLeaseNotOwned => "writer_lease_not_owned",
+            TurnError::WriterLeaseWaitCancelled => "writer_lease_wait_cancelled",
+            TurnError::WriterLeaseWaitTimedOut { .. } => "writer_lease_wait_timed_out",
+            TurnError::WriterLease(_) => "writer_lease",
             TurnError::NotFound(_) => "not_found",
+            TurnError::Admission(_) => "admission",
         }
     }
 }
@@ -58,6 +77,8 @@ pub fn shutdown(registry: &TurnRegistry) {
 pub struct SpawnArgs {
     pub run_id: String,
     pub model: String,
+    #[serde(alias = "provider")]
+    pub provider_id: String,
     pub working_dir: String,
     #[serde(default)]
     pub writable_roots: Vec<String>,
@@ -94,6 +115,12 @@ pub struct SpawnArgs {
     pub cursor_max_mode: bool,
     #[serde(default)]
     pub writer_lease: Option<WriterLeaseBinding>,
+    #[serde(default)]
+    pub managed_checkouts: Vec<crate::writer_lease::ManagedCheckout>,
+    #[serde(default)]
+    pub is_read_only_role: bool,
+    #[serde(default)]
+    pub invocation: Option<crate::invocation_admission::InvocationContext>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -202,20 +229,30 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 "--cd".to_string(),
                 args.working_dir.to_string(),
             ];
-            if args.permission_mode == "bypassPermissions" {
-                v.push("--dangerously-bypass-approvals-and-sandbox".to_string());
-            } else {
-                v.push("-s".to_string());
-                v.push("workspace-write".to_string());
-                v.push("-c".to_string());
-                v.push("sandbox_workspace_write.network_access=true".to_string());
-                for root in args.writable_roots {
-                    v.push("--add-dir".to_string());
-                    v.push(root.to_string());
+            match (
+                args.is_read_only,
+                args.permission_mode == "bypassPermissions",
+            ) {
+                (true, _) => {
+                    v.push("-s".to_string());
+                    v.push("read-only".to_string());
                 }
-                if let Some(socket_directory) = args.query_socket_directory {
-                    v.push("--add-dir".to_string());
-                    v.push(socket_directory.to_string());
+                (false, true) => {
+                    v.push("--dangerously-bypass-approvals-and-sandbox".to_string());
+                }
+                (false, false) => {
+                    v.push("-s".to_string());
+                    v.push("workspace-write".to_string());
+                    v.push("-c".to_string());
+                    v.push("sandbox_workspace_write.network_access=true".to_string());
+                    for root in args.writable_roots {
+                        v.push("--add-dir".to_string());
+                        v.push(root.to_string());
+                    }
+                    if let Some(socket_directory) = args.query_socket_directory {
+                        v.push("--add-dir".to_string());
+                        v.push(socket_directory.to_string());
+                    }
                 }
             }
             if let Some(eff) = args.effort {
@@ -274,15 +311,23 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 "--permission-mode".to_string(),
                 args.permission_mode.to_string(),
                 "--setting-sources".to_string(),
-                crate::aux_spawn::CLAUDE_SETTING_SOURCES.to_string(),
+                crate::aux_spawn::claude_setting_sources(args.is_read_only).to_string(),
             ]);
-            for root in args.writable_roots {
-                v.push("--add-dir".to_string());
-                v.push(root.to_string());
-            }
-            if let Some(socket_directory) = args.query_socket_directory {
-                v.push("--add-dir".to_string());
-                v.push(socket_directory.to_string());
+            match args.is_read_only {
+                true => {
+                    v.push("--tools".to_string());
+                    v.push(crate::aux_spawn::CLAUDE_READ_ONLY_TOOLS.to_string());
+                }
+                false => {
+                    for root in args.writable_roots {
+                        v.push("--add-dir".to_string());
+                        v.push(root.to_string());
+                    }
+                    if let Some(socket_directory) = args.query_socket_directory {
+                        v.push("--add-dir".to_string());
+                        v.push(socket_directory.to_string());
+                    }
+                }
             }
             if let Some(sp) = args.system_prompt {
                 v.push("--append-system-prompt".to_string());
@@ -330,7 +375,34 @@ struct SpawnOneArgs<'a> {
     pub session_id: Option<&'a str>,
     pub mount_id: Option<&'a str>,
     pub cursor_max_mode: bool,
+    pub is_read_only: bool,
     pub writer_lease: Option<&'a WriterLeaseBinding>,
+}
+
+pub struct DurableWriterLease {
+    db: crate::db::Db,
+    token: String,
+    is_released: bool,
+}
+
+impl DurableWriterLease {
+    fn bind_process(&self, process_id: u32) {
+        let _ = crate::writer_lease::bind_process(&self.db, &self.token, process_id);
+    }
+
+    fn release(&mut self) {
+        if self.is_released {
+            return;
+        }
+        self.is_released = true;
+        let _ = crate::writer_lease::release(&self.db, &self.token);
+    }
+}
+
+impl Drop for DurableWriterLease {
+    fn drop(&mut self) {
+        self.release();
+    }
 }
 
 fn max_mode_config_dir_for(binary: &str, cursor_max_mode: bool) -> Option<std::path::PathBuf> {
@@ -375,6 +447,8 @@ fn spawn_one(
     registry: &ChildRegistry,
     leases: &crate::worktree_writer::WriterLeaseRegistry,
     args: SpawnOneArgs<'_>,
+    mut invocation_permit: crate::invocation_admission::InvocationPermit,
+    mut durable_lease: Option<DurableWriterLease>,
 ) -> Result<String, TurnError> {
     let mut command = crate::path_env::command(args.binary);
     command.current_dir(args.working_dir);
@@ -413,7 +487,7 @@ fn spawn_one(
 
     let event_app = app.clone();
     let event_binding = args.writer_lease.cloned();
-    let (mut child, lease_guard) = spawn_leased_child(
+    let (child, lease_guard) = spawn_leased_child(
         &mut command,
         leases,
         args.writer_lease,
@@ -431,21 +505,27 @@ fn spawn_one(
             }
         },
     )?;
+    let process_id = child.id();
+    let mut armed = crate::aux_spawn::KillOnDrop::new(child);
+    invocation_permit.bind_process(process_id)?;
+    if let Some(lease) = durable_lease.as_ref() {
+        lease.bind_process(process_id);
+    }
 
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| TurnError::Io(std::io::Error::other("no stdout")))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| TurnError::Io(std::io::Error::other("no stderr")))?;
+    let (stdout, stderr) = armed
+        .child()
+        .map(|child| (child.stdout.take(), child.stderr.take()))
+        .unwrap_or((None, None));
+    let stdout = stdout.ok_or_else(|| TurnError::Io(std::io::Error::other("no stdout")))?;
+    let stderr = stderr.ok_or_else(|| TurnError::Io(std::io::Error::other("no stderr")))?;
 
+    let mut map = registry.lock().map_err(|_| TurnError::Poisoned)?;
+    let child = armed
+        .disarm()
+        .ok_or_else(|| TurnError::Io(std::io::Error::other("turn child missing")))?;
     let live = LiveChild::new(child);
-    registry
-        .lock()
-        .map_err(|_| TurnError::Poisoned)?
-        .insert(args.run_id.to_string(), live.clone());
+    map.insert(args.run_id.to_string(), live.clone());
+    drop(map);
 
     let app_clone = app.clone();
     let registry_clone = Arc::clone(registry);
@@ -461,6 +541,15 @@ fn spawn_one(
         forward_lines(&app_clone, &run_id_owned, &live, stdout);
         let stderr_buf = stderr_handle.join().unwrap_or_default();
         let exit_code = wait_and_remove(&live, &registry_clone, &run_id_owned);
+        let reason = if exit_code == Some(0) {
+            "completed"
+        } else {
+            "non_zero_exit"
+        };
+        let _ = invocation_permit.release(reason, exit_code);
+        if let Some(lease) = durable_lease.as_mut() {
+            lease.release();
+        }
         let _ = app_clone.emit(
             EVENT_NAME,
             TurnEventEnvelope {
@@ -482,14 +571,96 @@ pub async fn turn_spawn(
     app: AppHandle,
     state: State<'_, TurnRegistry>,
     leases: State<'_, crate::worktree_writer::WriterLeases>,
+    admission: State<'_, crate::invocation_admission::InvocationAdmission>,
+    queue: State<'_, crate::writer_lease::WriterLeaseQueue>,
+    database: State<'_, crate::db::Db>,
     args: SpawnArgs,
 ) -> Result<String, TurnError> {
     let binary = args.binary.as_deref().unwrap_or("claude");
-    let permission_mode = args
-        .permission_mode
-        .as_deref()
-        .unwrap_or("default")
-        .to_string();
+    let is_read_only =
+        args.is_read_only_role && crate::writer_lease::launcher_proves_read_only(binary);
+    let permission_mode = match is_read_only {
+        true => "default".to_string(),
+        false => args
+            .permission_mode
+            .as_deref()
+            .unwrap_or("default")
+            .to_string(),
+    };
+    let invocation =
+        args.invocation
+            .clone()
+            .unwrap_or_else(|| crate::invocation_admission::InvocationContext {
+                invocation_id: args.run_id.clone(),
+                workspace_id: args.workspace_id.clone(),
+                session_id: args.session_id.clone(),
+                workflow_run_id: None,
+                agent_id: None,
+                provider_identity: args.credential_id.clone(),
+                purpose: "agent_turn".to_string(),
+                is_heavyweight: matches!(
+                    args.effort.as_deref(),
+                    Some("high" | "xhigh" | "max" | "ultra")
+                ),
+                limits: crate::invocation_admission::InvocationLimits::default(),
+                spend_reservation: None,
+            });
+    let exposure =
+        crate::writer_lease::invocation_exposure(&crate::writer_lease::InvocationExposure {
+            binary,
+            permission_mode: &permission_mode,
+            is_read_only_role: args.is_read_only_role,
+            working_dir: &args.working_dir,
+            writable_roots: &args.writable_roots,
+            checkouts: &args.managed_checkouts,
+        });
+    let durable_lease = match exposure.is_empty() {
+        true => None,
+        false => {
+            let waited = crate::writer_lease::acquire_waiting(
+                database.inner(),
+                queue.inner(),
+                &args.run_id,
+                &exposure,
+                Some(&args.run_id),
+            )
+            .await?;
+            let granted = match waited {
+                crate::writer_lease::WriterLeaseWait::Granted(grant) => grant,
+                crate::writer_lease::WriterLeaseWait::Cancelled => {
+                    return Err(TurnError::WriterLeaseWaitCancelled)
+                }
+                crate::writer_lease::WriterLeaseWait::Blocked(blocked) => {
+                    return Err(TurnError::WriterLeaseWaitTimedOut {
+                        waited_ms: blocked.waited_ms,
+                        holder: blocked.holder,
+                        state: blocked.state,
+                        resource: blocked.resource,
+                    })
+                }
+            };
+            let Some(token) = granted.token else {
+                return Err(TurnError::WriterLeaseNotOwned);
+            };
+            Some(DurableWriterLease {
+                db: database.inner().clone(),
+                token,
+                is_released: false,
+            })
+        }
+    };
+
+    let invocation_permit = {
+        let admission = admission.inner().clone();
+        let database = database.inner().clone();
+        let request = invocation.request(&args.provider_id);
+        let cancel_key = args.run_id.clone();
+        tauri::async_runtime::spawn_blocking(move || {
+            admission.admit(database, request, &cancel_key)
+        })
+        .await
+        .map_err(|error| TurnError::Io(std::io::Error::other(error.to_string())))??
+    };
 
     spawn_one(
         &app,
@@ -519,8 +690,11 @@ pub async fn turn_spawn(
             session_id: args.session_id.as_deref(),
             mount_id: args.mount_id.as_deref(),
             cursor_max_mode: args.cursor_max_mode,
+            is_read_only,
             writer_lease: args.writer_lease.as_ref(),
         },
+        invocation_permit,
+        durable_lease,
     )
 }
 
@@ -531,14 +705,23 @@ pub async fn turn_list_live(state: State<'_, TurnRegistry>) -> Result<Vec<String
 }
 
 #[tauri::command]
-pub async fn turn_cancel(state: State<'_, TurnRegistry>, run_id: String) -> Result<(), TurnError> {
+pub async fn turn_cancel(
+    state: State<'_, TurnRegistry>,
+    queue: State<'_, crate::writer_lease::WriterLeaseQueue>,
+    admission: State<'_, crate::invocation_admission::InvocationAdmission>,
+    run_id: String,
+) -> Result<(), TurnError> {
+    let was_waiting = queue.cancel(&run_id) || admission.cancel(&run_id);
     let map = state.0.lock().map_err(|_| TurnError::Poisoned)?;
-    let live = map
-        .get(&run_id)
-        .cloned()
-        .ok_or_else(|| TurnError::NotFound(run_id.clone()))?;
+    let live = map.get(&run_id).cloned();
     drop(map);
 
+    let Some(live) = live else {
+        match was_waiting {
+            true => return Ok(()),
+            false => return Err(TurnError::NotFound(run_id)),
+        }
+    };
     live.kill();
     Ok(())
 }
@@ -779,6 +962,7 @@ mod tests {
             session_id: None,
             mount_id: None,
             cursor_max_mode: false,
+            is_read_only: false,
             writer_lease: None,
         };
         assert_eq!(args.run_id, "run-1");
@@ -811,6 +995,7 @@ mod tests {
             session_id: None,
             mount_id: None,
             cursor_max_mode: false,
+            is_read_only: false,
             writer_lease: None,
         }
     }
@@ -953,6 +1138,74 @@ mod tests {
             added_directories,
             vec!["/repo/one/.git", "/repo/two/.git", "/tmp/goodboy-query"]
         );
+    }
+
+    #[test]
+    fn claude_read_only_args_allowlist_the_tools_and_grant_no_directory() {
+        let empty: Vec<String> = vec![];
+        let roots = vec![
+            "/repo/one/.goodboy/worktrees/second".to_string(),
+            "/repo/one/.git".to_string(),
+        ];
+        let mut args = make_args(None, None, &empty);
+        args.writable_roots = &roots;
+        args.is_read_only = true;
+        let cli = build_provider_cli_args("claude", &args);
+        let tools = cli
+            .iter()
+            .position(|arg| arg == "--tools")
+            .expect("--tools");
+        assert_eq!(cli[tools + 1], "Read,Glob,Grep");
+        assert!(!cli.iter().any(|arg| arg == "--add-dir"));
+        let sources = cli
+            .iter()
+            .position(|arg| arg == "--setting-sources")
+            .expect("--setting-sources");
+        assert_eq!(cli[sources + 1], "local");
+    }
+
+    #[test]
+    fn claude_writer_args_keep_the_full_tool_set_and_project_settings() {
+        let empty: Vec<String> = vec![];
+        let args = make_args(None, None, &empty);
+        let cli = build_provider_cli_args("claude", &args);
+        assert!(!cli.iter().any(|arg| arg == "--tools"));
+        let sources = cli
+            .iter()
+            .position(|arg| arg == "--setting-sources")
+            .expect("--setting-sources");
+        assert_eq!(cli[sources + 1], "project,local");
+    }
+
+    #[test]
+    fn codex_read_only_args_select_the_read_only_sandbox_and_grant_no_directory() {
+        let empty: Vec<String> = vec![];
+        let roots = vec!["/repo/one/.git".to_string()];
+        let mut args = make_args(None, None, &empty);
+        args.writable_roots = &roots;
+        args.is_read_only = true;
+        let cli = build_provider_cli_args("codex", &args);
+        let sandbox = cli.iter().position(|arg| arg == "-s").expect("-s");
+        assert_eq!(cli[sandbox + 1], "read-only");
+        assert!(!cli.iter().any(|arg| arg == "--add-dir"));
+        assert!(!cli
+            .iter()
+            .any(|arg| arg == "--dangerously-bypass-approvals-and-sandbox"));
+        assert!(!cli.windows(2).any(|pair| {
+            pair[0] == "-c" && pair[1] == "sandbox_workspace_write.network_access=true"
+        }));
+    }
+
+    #[test]
+    fn only_claude_and_codex_can_prove_a_read_only_invocation() {
+        assert!(crate::writer_lease::launcher_proves_read_only("claude"));
+        assert!(crate::writer_lease::launcher_proves_read_only("codex"));
+        for binary in ["cursor-agent", "opencode", "openrouter", "moonshot", "agy"] {
+            assert!(
+                !crate::writer_lease::launcher_proves_read_only(binary),
+                "{binary} must not claim a read-only tier"
+            );
+        }
     }
 
     #[test]
@@ -1199,6 +1452,7 @@ mod tests {
             session_id: None,
             mount_id: None,
             cursor_max_mode: false,
+            is_read_only: false,
             writer_lease: None,
         };
         let cli = build_provider_cli_args("codex", &args);

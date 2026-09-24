@@ -4,10 +4,12 @@ import {
   buildChainCarryForward,
   autoPopulateContext,
   buildStepPrompt,
+  estimateSpendReservation,
   extractSpawnModel,
   fallbackWantsThinker,
   findReusableAgent,
   isFallbackStepOutputSummary,
+  isReadOnlyRole,
   planTurnFallback,
   PROVIDER_ARG_FLAGS,
   resolveModelArgs,
@@ -88,6 +90,10 @@ import {
 } from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
+import {
+  isHeavyweightInvocation,
+  resolveInvocationLimits,
+} from '../../../shared/lib/invocationAdmission';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
@@ -138,6 +144,7 @@ import {
   takeMountContinuation,
 } from './mountContinuations';
 import {
+  buildManagedCheckouts,
   buildTurnWritableRoots,
   repoRootsForTurn,
   resolveGitCommonDirs,
@@ -968,6 +975,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     let lastError: unknown = null;
     let turnWasCancelled = false;
     let shouldAutoAdvanceWorkflow = false;
+    let usageSequence = 0;
     const filesTouchedThisTurn = new Set<string>();
 
     const resumeSessionId =
@@ -1059,6 +1067,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       workingDir,
       gitDirs,
     });
+    const managedCheckouts = buildManagedCheckouts({ mounts: scopeMounts, gitDirs });
+    const turnRole = phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind];
 
     if (provider !== 'anthropic') {
       resolvedPrompt = `${guards}\n\n${
@@ -1077,6 +1087,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         model: spawnModel,
         workingDir,
         writableRoots,
+        managedCheckouts,
+        isReadOnlyRole: isReadOnlyRole({ role: turnRole }),
         prompt: resolvedPrompt,
         binary: providerInfo?.binary,
         workspaceId: session.workspaceId,
@@ -1088,6 +1100,32 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ...(resolvedModel.maxMode === true && { cursorMaxMode: true }),
         ...(writerLease !== undefined && { writerLease }),
         ...(apiKeyBinding ?? {}),
+        invocation: {
+          invocationId: runId,
+          workspaceId: session.workspaceId,
+          sessionId,
+          ...(agentRowEarly?.workflowRunId != null && {
+            workflowRunId: agentRowEarly.workflowRunId,
+          }),
+          agentId: activeAgentId,
+          ...(apiKeyBinding?.credentialId != null
+            ? { providerIdentity: apiKeyBinding.credentialId }
+            : authState?.identity != null
+              ? { providerIdentity: authState.identity }
+              : {}),
+          purpose: 'agent_turn',
+          isHeavyweight: isHeavyweightInvocation({ effort: effortFlag }),
+          limits: resolveInvocationLimits({
+            providerId: provider,
+            workspaceOverride: get().workspaceOverrides[session.workspaceId],
+          }),
+          spendReservation: estimateSpendReservation({
+            providerId: provider,
+            model: spawnModel,
+            prompt: `${fullSystemPrompt}\n\n${resolvedPrompt}`,
+            allowOverBudget: force === true,
+          }),
+        },
         ...claudeFlags,
       })) {
         const maxModeFailure =
@@ -1165,13 +1203,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }
 
         if (event.kind === 'usage') {
+          usageSequence += 1;
           await recordUsageTelemetry(set, get, {
             event: await codexMeasuredUsage({ event, provider, threadId: providerThreadId }),
+            usageSequence,
             provider,
             model,
             runId,
             sessionId,
             now,
+            agentId: activeAgentId,
+            workflowRunId: agentRowEarly?.workflowRunId ?? null,
           });
         }
 
@@ -1627,6 +1669,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         turnInput: resolvedPrompt,
         turnOutput: assistantText,
         workingDir,
+        agentId: activeAgentId,
+        ...(agentRowEarly?.workflowRunId != null && {
+          workflowRunId: agentRowEarly.workflowRunId,
+        }),
       });
       const captured = await captureArtifactsFromTurn({
         set,

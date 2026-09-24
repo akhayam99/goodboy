@@ -163,14 +163,22 @@ describe('finalizeWorkflowStep output summary', () => {
       force: true,
     });
 
-    expect(summarizeStepOutputSpy).toHaveBeenCalledWith({
-      providerId: 'anthropic',
-      model: 'haiku-4.5',
-      invokeFn: expect.any(Function),
-      output: 'raw assistant output',
-      workingDir: '/tmp/worktree',
-      runId: expect.any(String),
-    });
+    expect(summarizeStepOutputSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerId: 'anthropic',
+        model: 'haiku-4.5',
+        invokeFn: expect.any(Function),
+        output: 'raw assistant output',
+        workingDir: '/tmp/worktree',
+        runId: expect.any(String),
+        invocation: expect.objectContaining({
+          workflowRunId: 'workflow-run-1',
+          agentId: AGENT_ID,
+          purpose: 'summarizer',
+        }),
+        onUsage: expect.any(Function),
+      }),
+    );
     expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
       AGENT_ID,
       expect.objectContaining({

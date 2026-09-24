@@ -1,6 +1,43 @@
-use std::process::Command;
+use std::process::{Child, Command};
+
+pub struct KillOnDrop(Option<Child>);
+
+impl KillOnDrop {
+    pub fn new(child: Child) -> Self {
+        Self(Some(child))
+    }
+
+    pub fn child(&mut self) -> Option<&mut Child> {
+        self.0.as_mut()
+    }
+
+    pub fn disarm(mut self) -> Option<Child> {
+        self.0.take()
+    }
+}
+
+impl Drop for KillOnDrop {
+    fn drop(&mut self) {
+        let Some(mut child) = self.0.take() else {
+            return;
+        };
+        let _ = child.kill();
+        let _ = child.wait();
+    }
+}
 
 pub const CLAUDE_SETTING_SOURCES: &str = "project,local";
+
+pub const CLAUDE_READ_ONLY_SETTING_SOURCES: &str = "local";
+
+pub const CLAUDE_READ_ONLY_TOOLS: &str = "Read,Glob,Grep";
+
+pub fn claude_setting_sources(is_read_only: bool) -> &'static str {
+    match is_read_only {
+        true => CLAUDE_READ_ONLY_SETTING_SOURCES,
+        false => CLAUDE_SETTING_SOURCES,
+    }
+}
 
 pub fn push_claude_mcp_deny(args: &mut Vec<String>) {
     args.push("--disallowedTools".to_string());
@@ -97,6 +134,29 @@ mod tests {
         let mut none = Vec::new();
         push_effort_args("anthropic", None, &mut none);
         assert!(none.is_empty());
+    }
+
+    #[test]
+    fn an_armed_child_is_killed_and_reaped_when_setup_fails() {
+        let child = Command::new("sleep").arg("30").spawn().expect("spawn sleep");
+        let process_id = child.id();
+        let guard = KillOnDrop::new(child);
+
+        drop(guard);
+
+        assert!(!crate::invocation_admission::process_is_alive(process_id));
+    }
+
+    #[test]
+    fn a_disarmed_child_keeps_running() {
+        let child = Command::new("sleep").arg("30").spawn().expect("spawn sleep");
+        let process_id = child.id();
+
+        let mut released = KillOnDrop::new(child).disarm().expect("child");
+
+        assert!(crate::invocation_admission::process_is_alive(process_id));
+        released.kill().expect("kill sleep");
+        released.wait().expect("reap sleep");
     }
 
     #[test]

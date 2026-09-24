@@ -275,7 +275,13 @@ const spendState = ({ limitUsd, spentUsd, mode = 'pause' }: SpendParams): State 
   };
   state['sessionTelemetry'] = {
     [SESSION_ID]: [
-      { runId: 'pr-1', kind: 'turn', estimatedCostUsd: spentUsd } as unknown as TelemetryRecord,
+      {
+        runId: 'pr-1',
+        kind: 'turn',
+        estimatedCostUsd: spentUsd,
+        workflowRunId: WORKFLOW_RUN_ID,
+        attributionStatus: 'attributed',
+      } as unknown as TelemetryRecord,
     ],
   };
   return state;

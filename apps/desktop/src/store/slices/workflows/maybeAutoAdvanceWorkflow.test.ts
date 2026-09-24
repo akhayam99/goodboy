@@ -536,7 +536,13 @@ describe('maybeAutoAdvanceWorkflow', () => {
     ];
     state['sessionTelemetry'] = {
       [SESSION_ID]: [
-        { runId: 'pr-1', kind: 'turn', estimatedCostUsd: 4 } as unknown as TelemetryRecord,
+        {
+          runId: 'pr-1',
+          kind: 'turn',
+          estimatedCostUsd: 4,
+          workflowRunId: RUN_ID,
+          attributionStatus: 'attributed',
+        } as unknown as TelemetryRecord,
       ],
     };
     const { set, get } = harness(state);

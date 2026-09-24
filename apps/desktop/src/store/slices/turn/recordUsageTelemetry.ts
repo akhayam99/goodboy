@@ -7,6 +7,7 @@ import {
 } from '@goodboy/db';
 import type {
   BudgetAlert,
+  AgentId,
   IsoDateTime,
   ProviderId,
   ProviderRunId,
@@ -14,6 +15,7 @@ import type {
   TelemetryRecord,
   TelemetryRecordId,
   TurnEvent,
+  WorkflowRunId,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import {
@@ -31,17 +33,20 @@ import type { GetFn, SetFn } from './types';
 
 type Params = {
   event: Extract<TurnEvent, { kind: 'usage' }>;
+  usageSequence: number;
   provider: ProviderId;
   model: string;
   runId: ProviderRunId;
   sessionId: SessionId;
   now: () => IsoDateTime;
+  agentId?: AgentId;
+  workflowRunId?: WorkflowRunId | null;
 };
 
 export const recordUsageTelemetry = async (
   set: SetFn,
   get: GetFn,
-  { event, provider, model, runId, sessionId, now }: Params,
+  { event, usageSequence, provider, model, runId, sessionId, now, agentId, workflowRunId }: Params,
 ): Promise<void> => {
   const priceOverride =
     provider === 'codex'
@@ -69,8 +74,17 @@ export const recordUsageTelemetry = async (
     ...(event.usage.contextTokens != null && { contextTokens: event.usage.contextTokens }),
     estimatedCostUsd: cost,
     recordedAt: now(),
+    invocationId: runId,
+    ...(workflowRunId != null && { workflowRunId }),
+    ...(agentId != null && { agentId }),
+    purpose: 'agent_turn',
+    usageEventId: `usage-${usageSequence}`,
+    attributionStatus: workflowRunId == null ? 'unattributed' : 'attributed',
   };
-  await insertTelemetry(tauriDatabase, record);
+  const isInserted = await insertTelemetry(tauriDatabase, record);
+  if (isInserted === false) {
+    return;
+  }
   set((state) => ({
     sessionTelemetry: {
       ...state.sessionTelemetry,

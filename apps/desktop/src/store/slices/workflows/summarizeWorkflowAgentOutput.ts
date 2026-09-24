@@ -1,5 +1,13 @@
 import { fallbackStepOutputSummary, planTaskModelFallback, resolveTaskModel } from '@goodboy/core';
 import type { Agent, AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  ProviderRunId,
+  TelemetryRecord,
+  TelemetryRecordId,
+} from '@goodboy/types';
+import type { StepOutputUsage } from '@goodboy/core';
+import { insertProviderRun, insertTelemetry, updateProviderRunStatus } from '@goodboy/db';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';
 import {
   providersCoolingDown,
@@ -8,6 +16,8 @@ import {
 } from '../../../features/providers/taskModelRouting';
 import { shortModel } from '../../../features/session/agent-row-format';
 import { stepForAgent } from '../../../features/workflows/stepForAgent';
+import { tauriDatabase } from '../../../shared/lib/db';
+import { resolveInvocationLimits } from '../../../shared/lib/invocationAdmission';
 import { summarizeAgentOutput, type SummarizeAgentOutputResult } from '../../summarizeAgentOutput';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
@@ -130,15 +140,79 @@ export const summarizeWorkflowAgentOutput = async ({
         ...(get().sessionWorkflows?.[sessionId] ?? []),
       ],
     })?.expectedOutput ?? '';
-  const runOnce = (model: TaskModelPreference): Promise<SummarizeAgentOutputResult> =>
-    summarizeAgentOutput({
+  const runOnce = (model: TaskModelPreference): Promise<SummarizeAgentOutputResult> => {
+    const invocationId = crypto.randomUUID();
+    const providerRunId = invocationId as ProviderRunId;
+    const providerIdentity =
+      get().workspaceOverrides?.[session.workspaceId]?.providerBindings?.[model.providerId] ??
+      get().authResults?.[model.providerId]?.identity ??
+      null;
+    const onUsage = async (usage: StepOutputUsage): Promise<void> => {
+      const recordedAt = new Date().toISOString() as IsoDateTime;
+      await insertProviderRun(tauriDatabase, {
+        id: providerRunId,
+        sessionId,
+        provider: model.providerId,
+        model: usage.model,
+        status: { kind: 'streaming', startedAt: recordedAt },
+        createdAt: recordedAt,
+      });
+      await updateProviderRunStatus(tauriDatabase, providerRunId, {
+        kind: 'succeeded',
+        finishedAt: recordedAt,
+      });
+      const record: TelemetryRecord = {
+        id: crypto.randomUUID() as TelemetryRecordId,
+        runId: providerRunId,
+        sessionId,
+        kind: 'summarizer',
+        provider: model.providerId,
+        model: usage.model,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        cachedInputTokens: usage.cachedInputTokens,
+        cacheCreationInputTokens: usage.cacheCreationInputTokens,
+        estimatedCostUsd: usage.estimatedCostUsd,
+        recordedAt,
+        invocationId: usage.invocationId ?? invocationId,
+        ...(agent.workflowRunId != null && { workflowRunId: agent.workflowRunId }),
+        agentId: agent.id,
+        purpose: 'summarizer',
+        usageEventId: 'usage',
+        attributionStatus: agent.workflowRunId == null ? 'unattributed' : 'attributed',
+      };
+      await insertTelemetry(tauriDatabase, record);
+      set((state) => ({
+        sessionTelemetry: {
+          ...state.sessionTelemetry,
+          [sessionId]: [...(state.sessionTelemetry[sessionId] ?? []), record],
+        },
+      }));
+    };
+    return summarizeAgentOutput({
       set,
       agentId: agent.id,
       output,
       taskModel: model,
       ...(worktreePath != null && { workingDir: worktreePath }),
       ...(expectedOutput !== '' && { expectedOutput }),
+      invocation: {
+        invocationId,
+        workspaceId: session.workspaceId,
+        sessionId,
+        ...(agent.workflowRunId != null && { workflowRunId: agent.workflowRunId }),
+        agentId: agent.id,
+        ...(providerIdentity != null && { providerIdentity }),
+        purpose: 'summarizer',
+        isHeavyweight: false,
+        limits: resolveInvocationLimits({
+          providerId: model.providerId,
+          workspaceOverride: get().workspaceOverrides?.[session.workspaceId],
+        }),
+      },
+      onUsage,
     });
+  };
   const recordCooldown = (model: TaskModelPreference, message: string): void => {
     const failure = classifyProviderError({ message });
     const isCooldownEligible =

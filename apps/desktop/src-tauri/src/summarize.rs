@@ -16,6 +16,10 @@ pub enum SummarizeError {
     Io(#[from] std::io::Error),
     #[error("unknown provider: {0}")]
     UnknownProvider(String),
+    #[error("invocation admission error: {0}")]
+    Admission(#[from] crate::invocation_admission::AdmissionError),
+    #[error("{0}")]
+    WriterLease(#[from] crate::writer_lease::ExposureLeaseError),
 }
 
 crate::util::impl_error_serialize!(SummarizeError);
@@ -25,6 +29,8 @@ impl SummarizeError {
         match self {
             SummarizeError::Io(_) => "io",
             SummarizeError::UnknownProvider(_) => "unknown_provider",
+            SummarizeError::Admission(_) => "admission",
+            SummarizeError::WriterLease(_) => "writer_lease",
         }
     }
 }
@@ -58,6 +64,10 @@ pub struct SummarizeArgs {
     pub effort: Option<String>,
     #[serde(default)]
     pub run_id: Option<String>,
+    #[serde(default)]
+    pub invocation: Option<crate::invocation_admission::InvocationContext>,
+    #[serde(default)]
+    pub managed_checkouts: Vec<crate::writer_lease::ManagedCheckout>,
 }
 
 #[derive(Debug, Serialize)]
@@ -68,28 +78,89 @@ pub struct SummarizeResult {
     pub exit_code: Option<i32>,
 }
 
+fn exposure(args: &SummarizeArgs) -> Vec<String> {
+    let Some(working_dir) = args.working_dir.as_deref().filter(|dir| !dir.is_empty()) else {
+        return Vec::new();
+    };
+    crate::writer_lease::invocation_exposure(&crate::writer_lease::InvocationExposure {
+        binary: &args.binary,
+        permission_mode: "default",
+        is_read_only_role: matches!(args.provider_id.as_str(), "anthropic" | "codex"),
+        working_dir,
+        writable_roots: &[],
+        checkouts: &args.managed_checkouts,
+    })
+}
+
 #[tauri::command]
 pub async fn summarize_session(
     state: State<'_, SummarizeRegistry>,
+    admission: State<'_, crate::invocation_admission::InvocationAdmission>,
+    queue: State<'_, crate::writer_lease::WriterLeaseQueue>,
+    database: State<'_, crate::db::Db>,
     args: SummarizeArgs,
 ) -> Result<SummarizeResult, SummarizeError> {
     let registry = Arc::clone(&state.0);
-    tauri::async_runtime::spawn_blocking(move || run_summarize(&registry, args))
-        .await
-        .map_err(|e| SummarizeError::Io(std::io::Error::other(e.to_string())))?
+    let admission = admission.inner().clone();
+    let database = database.inner().clone();
+    let invocation =
+        args.invocation
+            .clone()
+            .unwrap_or_else(|| crate::invocation_admission::InvocationContext {
+                invocation_id: args.run_id.clone().unwrap_or_else(|| {
+                    format!(
+                        "summarizer-{}-{}",
+                        std::process::id(),
+                        crate::util::now_ms()
+                    )
+                }),
+                workspace_id: None,
+                session_id: None,
+                workflow_run_id: None,
+                agent_id: None,
+                provider_identity: None,
+                purpose: "summarizer".to_string(),
+                is_heavyweight: false,
+                limits: crate::invocation_admission::InvocationLimits::default(),
+                spend_reservation: None,
+            });
+    let cancel_key = args
+        .run_id
+        .clone()
+        .unwrap_or_else(|| invocation.invocation_id.clone());
+    let lease = crate::writer_lease::hold_exposure(
+        &database,
+        queue.inner(),
+        &cancel_key,
+        &exposure(&args),
+    )
+    .await?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let request = invocation.request(&args.provider_id);
+        let permit = admission.admit(database, request, &cancel_key)?;
+        run_summarize(&registry, permit, lease, args)
+    })
+    .await
+    .map_err(|e| SummarizeError::Io(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]
 pub fn summarize_cancel(
     state: State<'_, SummarizeRegistry>,
+    admission: State<'_, crate::invocation_admission::InvocationAdmission>,
+    queue: State<'_, crate::writer_lease::WriterLeaseQueue>,
     run_id: String,
 ) -> Result<(), SummarizeError> {
+    queue.cancel(&run_id);
+    admission.cancel(&run_id);
     kill_run(&state.0, &run_id);
     Ok(())
 }
 
 fn run_summarize(
     registry: &ChildRegistry,
+    mut permit: crate::invocation_admission::InvocationPermit,
+    lease: Option<crate::writer_lease::HeldWriterLease>,
     args: SummarizeArgs,
 ) -> Result<SummarizeResult, SummarizeError> {
     let cli_args = build_cli_args(&args)?;
@@ -103,20 +174,27 @@ fn run_summarize(
         }
     }
 
-    let mut child = command
+    let child = command
         .args(&cli_args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| SummarizeError::Io(std::io::Error::other("no stdout")))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| SummarizeError::Io(std::io::Error::other("no stderr")))?;
+    let process_id = child.id();
+    let mut armed = crate::aux_spawn::KillOnDrop::new(child);
+    permit.bind_process(process_id)?;
+    if let Some(lease) = lease.as_ref() {
+        lease.bind_process(process_id);
+    }
+    let (stdout, stderr) = armed
+        .child()
+        .map(|child| (child.stdout.take(), child.stderr.take()))
+        .unwrap_or((None, None));
+    let stdout = stdout.ok_or_else(|| SummarizeError::Io(std::io::Error::other("no stdout")))?;
+    let stderr = stderr.ok_or_else(|| SummarizeError::Io(std::io::Error::other("no stderr")))?;
 
+    let child = armed
+        .disarm()
+        .ok_or_else(|| SummarizeError::Io(std::io::Error::other("summarize child missing")))?;
     let key = args
         .run_id
         .clone()
@@ -129,6 +207,12 @@ fn run_summarize(
     let stdout_buf = stdout_handle.join().unwrap_or_default();
     let stderr_buf = stderr_handle.join().unwrap_or_default();
     let exit_code = wait_and_remove(&live, registry, &key);
+    let reason = if exit_code == Some(0) {
+        "completed"
+    } else {
+        "non_zero_exit"
+    };
+    permit.release(reason, exit_code)?;
 
     Ok(SummarizeResult {
         stdout: stdout_buf,
@@ -236,7 +320,32 @@ mod tests {
             working_dir: None,
             effort: None,
             run_id: None,
+            invocation: None,
+            managed_checkouts: Vec::new(),
         }
+    }
+
+    #[test]
+    fn only_an_unproven_summarizer_launcher_leases_its_checkout() {
+        let mut claude = make_args("anthropic");
+        claude.working_dir = Some("/repos/app/.worktrees/one".to_string());
+        assert!(exposure(&claude).is_empty());
+
+        let mut codex = make_args("codex");
+        codex.binary = "codex".to_string();
+        codex.working_dir = Some("/repos/app/.worktrees/one".to_string());
+        assert!(exposure(&codex).is_empty());
+
+        for (provider_id, binary) in [("cursor", "cursor-agent"), ("opencode", "opencode")] {
+            let mut unproven = make_args(provider_id);
+            unproven.binary = binary.to_string();
+            unproven.working_dir = Some("/repos/app/.worktrees/one".to_string());
+            assert_eq!(exposure(&unproven).len(), 1, "{binary} must hold a lease");
+        }
+
+        let mut detached = make_args("cursor");
+        detached.binary = "cursor-agent".to_string();
+        assert!(exposure(&detached).is_empty());
     }
 
     #[test]

@@ -41,6 +41,7 @@ export type RoleRegistryEntry = RoleDefaults & {
   readonly presentationKey: RolePresentationKey;
   readonly defaultRoutingTaskType: WorkflowTaskType;
   readonly outputKind: RoleOutputKind;
+  readonly isReadOnly: boolean;
   readonly workflowEligible: boolean;
   readonly classifierEligible: boolean;
   readonly selectionEligible: boolean;
@@ -80,6 +81,7 @@ export const ROLE_REGISTRY = {
     presentationKey: 'scout',
     defaultRoutingTaskType: 'exploration',
     outputKind: 'none',
+    isReadOnly: true,
     workflowEligible: true,
     classifierEligible: true,
     selectionEligible: true,
@@ -101,6 +103,7 @@ export const ROLE_REGISTRY = {
     presentationKey: 'debugger',
     defaultRoutingTaskType: 'debugging',
     outputKind: 'none',
+    isReadOnly: false,
     workflowEligible: true,
     classifierEligible: true,
     selectionEligible: true,
@@ -128,6 +131,7 @@ export const ROLE_REGISTRY = {
     presentationKey: 'planner',
     defaultRoutingTaskType: 'planning',
     outputKind: 'plan',
+    isReadOnly: false,
     workflowEligible: true,
     classifierEligible: true,
     selectionEligible: true,
@@ -152,6 +156,7 @@ export const ROLE_REGISTRY = {
     presentationKey: 'implementer',
     defaultRoutingTaskType: 'implementation',
     outputKind: 'none',
+    isReadOnly: false,
     workflowEligible: true,
     classifierEligible: true,
     selectionEligible: true,
@@ -180,6 +185,7 @@ export const ROLE_REGISTRY = {
     presentationKey: 'reviewer',
     defaultRoutingTaskType: 'review',
     outputKind: 'none',
+    isReadOnly: false,
     workflowEligible: true,
     classifierEligible: true,
     selectionEligible: true,
@@ -209,6 +215,7 @@ export const ROLE_REGISTRY = {
     presentationKey: 'tester',
     defaultRoutingTaskType: 'testing',
     outputKind: 'none',
+    isReadOnly: false,
     workflowEligible: true,
     classifierEligible: true,
     selectionEligible: true,
@@ -238,6 +245,7 @@ export const ROLE_REGISTRY = {
     presentationKey: 'resolver',
     defaultRoutingTaskType: 'implementation',
     outputKind: 'none',
+    isReadOnly: false,
     workflowEligible: true,
     classifierEligible: false,
     selectionEligible: true,
@@ -259,6 +267,7 @@ export const ROLE_REGISTRY = {
     presentationKey: 'docs',
     defaultRoutingTaskType: 'writing',
     outputKind: 'none',
+    isReadOnly: false,
     workflowEligible: true,
     classifierEligible: true,
     selectionEligible: true,
@@ -282,6 +291,7 @@ export const ROLE_REGISTRY = {
     presentationKey: 'report',
     defaultRoutingTaskType: 'writing',
     outputKind: 'report',
+    isReadOnly: true,
     workflowEligible: true,
     classifierEligible: false,
     selectionEligible: true,
@@ -303,6 +313,7 @@ export const ROLE_REGISTRY = {
     presentationKey: 'wireframe',
     defaultRoutingTaskType: 'planning',
     outputKind: 'wireframe',
+    isReadOnly: false,
     workflowEligible: true,
     classifierEligible: false,
     selectionEligible: true,
@@ -324,6 +335,7 @@ export const ROLE_REGISTRY = {
     presentationKey: 'generic',
     defaultRoutingTaskType: 'general',
     outputKind: 'none',
+    isReadOnly: false,
     workflowEligible: true,
     classifierEligible: false,
     selectionEligible: true,
@@ -390,6 +402,9 @@ export const normalizeSelectableAgentRole = ({ role }: NormalizeAgentRoleParams)
 
 export const presentationKeyForRole = ({ role }: NormalizeAgentRoleParams): RolePresentationKey =>
   ROLE_REGISTRY[normalizeAgentRole({ role })].presentationKey;
+
+export const isReadOnlyRole = ({ role }: NormalizeAgentRoleParams): boolean =>
+  ROLE_REGISTRY[normalizeAgentRole({ role })].isReadOnly;
 
 export const defaultsForRole = (role: string): RoleDefaults => {
   return ROLE_REGISTRY[normalizeAgentRole({ role })];

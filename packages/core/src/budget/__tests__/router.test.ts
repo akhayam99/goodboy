@@ -4,15 +4,37 @@ import type { ResolveProviderInput } from '../router';
 import type { BudgetCheckResult } from '@goodboy/types';
 
 function notExceeded(overrides: Partial<BudgetCheckResult> = {}): BudgetCheckResult {
-  return { remainingUsd: 100, pct: 50, exceeded: false, overThreshold: false, ...overrides };
+  return {
+    remainingUsd: 100,
+    pct: 50,
+    exceeded: false,
+    overThreshold: false,
+    measuredUsd: 50,
+    committedUsd: 0,
+    ...overrides,
+  };
 }
 
 function exceeded(): BudgetCheckResult {
-  return { remainingUsd: -1, pct: 101, exceeded: true, overThreshold: false };
+  return {
+    remainingUsd: -1,
+    pct: 101,
+    exceeded: true,
+    overThreshold: false,
+    measuredUsd: 101,
+    committedUsd: 0,
+  };
 }
 
 function overThreshold(): BudgetCheckResult {
-  return { remainingUsd: 15, pct: 85, exceeded: false, overThreshold: true };
+  return {
+    remainingUsd: 15,
+    pct: 85,
+    exceeded: false,
+    overThreshold: true,
+    measuredUsd: 85,
+    committedUsd: 0,
+  };
 }
 
 function makeInput(overrides: Partial<ResolveProviderInput> = {}): ResolveProviderInput {

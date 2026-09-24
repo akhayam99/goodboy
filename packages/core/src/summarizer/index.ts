@@ -23,4 +23,5 @@ export {
   isFallbackStepOutputSummary,
   previewStepOutputSummary,
   summarizeStepOutput,
+  type StepOutputUsage,
 } from './step-output';

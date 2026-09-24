@@ -23,6 +23,9 @@ export type ConfigBundleWorkspace = Readonly<{
     defaultWorkflowId: string | null;
     defaultBranchPrefix: string | null;
     parallelEnabled: boolean | null;
+    invocationGlobalLimit?: number | null;
+    invocationProviderLimit?: number | null;
+    invocationHeavyweightLimit?: number | null;
   };
 }>;
 

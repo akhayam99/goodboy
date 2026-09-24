@@ -24,6 +24,8 @@ export type BudgetCheckResult = Readonly<{
   pct: number;
   exceeded: boolean;
   overThreshold: boolean;
+  measuredUsd: number;
+  committedUsd: number;
 }>;
 
 export type RoutingReason =

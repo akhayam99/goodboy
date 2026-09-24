@@ -32,6 +32,7 @@ export {
   emitBudgetAlerts,
   getCurrentPeriodKey,
   getPeriodWindow,
+  estimateSpendReservation,
   type AlertEmitterDeps,
 } from './budget';
 
@@ -133,6 +134,7 @@ export {
   isDelegationContinuationSupported,
   isDelegationGranted,
   isAgentRole,
+  isReadOnlyRole,
   normalizeAgentRole,
   normalizeSelectableAgentRole,
   presentationKeyForRole,
@@ -380,6 +382,7 @@ export {
   type SummarizerDeps,
   type SummarizerResult,
   type SummarizerUsage,
+  type StepOutputUsage,
 } from './summarizer';
 
 export {

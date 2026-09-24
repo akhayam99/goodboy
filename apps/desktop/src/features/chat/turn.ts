@@ -9,7 +9,13 @@ import {
   parseOpenCodeJsonLine,
   type ParseContext,
 } from '@goodboy/core';
-import type { IsoDateTime, ProviderId, ProviderRunId, TurnEvent } from '@goodboy/types';
+import type {
+  InvocationContext,
+  IsoDateTime,
+  ProviderId,
+  ProviderRunId,
+  TurnEvent,
+} from '@goodboy/types';
 import { classifyProviderError } from './classifyProviderError';
 
 function parseForProvider(
@@ -77,6 +83,12 @@ const isJsonProviderFrame = ({ line }: Params): boolean => {
   }
 };
 
+export type ManagedCheckout = {
+  readonly repoRoot: string;
+  readonly worktreePath: string;
+  readonly gitDir?: string;
+};
+
 type ClaudePermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions' | 'dontAsk' | 'plan';
 
 type SpawnArgs = {
@@ -104,6 +116,9 @@ type SpawnArgs = {
     readonly holder: string;
     readonly token: string;
   };
+  readonly invocation?: InvocationContext;
+  readonly managedCheckouts?: ReadonlyArray<ManagedCheckout>;
+  readonly isReadOnlyRole?: boolean;
 };
 
 type RawTurnEnvelope =
@@ -252,7 +267,7 @@ export async function* runTurn(
     }
   });
 
-  await invoke<string>('turn_spawn', { args });
+  await invoke<string>('turn_spawn', { args: { ...args, providerId: args.provider } });
 
   try {
     while (true) {

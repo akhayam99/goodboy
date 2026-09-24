@@ -1,7 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
 import { formatError } from '@goodboy/ui';
-import { fallbackStepOutputSummary, summarizeStepOutput } from '@goodboy/core';
-import type { AgentId, TaskModelPreference } from '@goodboy/types';
+import {
+  fallbackStepOutputSummary,
+  summarizeStepOutput,
+  type StepOutputUsage,
+} from '@goodboy/core';
+import type { AgentId, InvocationContext, TaskModelPreference } from '@goodboy/types';
 import type { SetFn } from './slice-types';
 
 export const SUMMARY_TIMEOUT_MS = 90_000;
@@ -13,6 +17,8 @@ type Params = {
   readonly taskModel: TaskModelPreference;
   readonly workingDir?: string;
   readonly expectedOutput?: string;
+  readonly invocation?: InvocationContext;
+  readonly onUsage?: (usage: StepOutputUsage) => Promise<void>;
 };
 
 type RunParams = Omit<Params, 'agentId' | 'set'>;
@@ -30,6 +36,8 @@ const runSummarization = async ({
   taskModel,
   workingDir,
   expectedOutput,
+  invocation,
+  onUsage,
 }: RunParams): Promise<SummarizeAgentOutputResult> => {
   const runId = crypto.randomUUID();
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -49,6 +57,8 @@ const runSummarization = async ({
         runId,
         ...(workingDir != null && { workingDir }),
         ...(expectedOutput != null && expectedOutput !== '' && { expectedOutput }),
+        ...(invocation != null && { invocation }),
+        ...(onUsage != null && { onUsage }),
       }),
       timeout,
     ]);
@@ -88,6 +98,8 @@ export const summarizeAgentOutput = ({
   taskModel,
   workingDir,
   expectedOutput,
+  invocation,
+  onUsage,
 }: Params): Promise<SummarizeAgentOutputResult> => {
   const alreadyRunning = inFlightSummaries.get(agentId);
   if (alreadyRunning != null) {
@@ -99,6 +111,8 @@ export const summarizeAgentOutput = ({
     taskModel,
     ...(workingDir != null && { workingDir }),
     ...(expectedOutput != null && { expectedOutput }),
+    ...(invocation != null && { invocation }),
+    ...(onUsage != null && { onUsage }),
   })
     .then((result) => {
       recordSummaryOutcome({ set, agentId, output, isDegraded: result.degraded });

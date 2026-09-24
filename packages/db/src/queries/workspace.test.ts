@@ -25,6 +25,9 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   parallelAgents: null,
   providerPool: null,
   attributionFooter: null,
+  invocationGlobalLimit: null,
+  invocationProviderLimit: null,
+  invocationHeavyweightLimit: null,
 };
 
 const at = ({ value }: { readonly value: string }): IsoDateTime =>

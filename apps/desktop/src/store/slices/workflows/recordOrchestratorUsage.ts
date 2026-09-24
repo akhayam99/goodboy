@@ -24,10 +24,11 @@ type Params = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly agentId: AgentId | null;
-  readonly workflowRunId: WorkflowRunId;
+  readonly workflowRunId: WorkflowRunId | null;
   readonly provider: ProviderId;
   readonly model: string;
   readonly usage: OrchestratorUsage;
+  readonly purpose?: 'orchestrator' | 'planner';
 };
 
 type FallbackParams = {
@@ -67,12 +68,21 @@ export const recordOrchestratorUsage = async ({
   provider,
   model,
   usage,
+  purpose = 'orchestrator',
 }: Params): Promise<void> => {
   if (usage.inputTokens + usage.outputTokens === 0) {
     return;
   }
-  const attributedAgentId = agentId ?? latestRunAgentId({ get, sessionId, workflowRunId });
-  const runId = crypto.randomUUID() as ProviderRunId;
+  const invocationId = usage.invocationId ?? crypto.randomUUID();
+  const isRecorded = (get().sessionTelemetry[sessionId] ?? []).some(
+    (record) => record.invocationId === invocationId && record.usageEventId === 'usage',
+  );
+  if (isRecorded) {
+    return;
+  }
+  const attributedAgentId =
+    agentId ?? (workflowRunId != null ? latestRunAgentId({ get, sessionId, workflowRunId }) : null);
+  const runId = invocationId as ProviderRunId;
   const startedAt = new Date().toISOString() as IsoDateTime;
   await insertProviderRun(tauriDatabase, {
     id: runId,
@@ -97,6 +107,12 @@ export const recordOrchestratorUsage = async ({
     cacheCreationInputTokens: usage.cacheCreationInputTokens,
     estimatedCostUsd: usage.estimatedCostUsd,
     recordedAt: finishedAt,
+    invocationId,
+    ...(workflowRunId != null && { workflowRunId }),
+    ...(attributedAgentId != null && { agentId: attributedAgentId }),
+    purpose,
+    usageEventId: 'usage',
+    attributionStatus: workflowRunId != null ? 'attributed' : 'unattributed',
   };
   await insertTelemetry(tauriDatabase, record);
   set((state) => ({

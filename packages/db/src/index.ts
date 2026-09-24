@@ -168,6 +168,8 @@ export {
   summarizeSessionTelemetry,
   summarizeWorkspaceTelemetry,
   summarizeWorkspaceProviderTelemetry,
+  summarizeWorkflowRunTelemetry,
+  summarizeUnattributedTelemetry,
   type ProviderTelemetrySummary,
 } from './queries/telemetry';
 export { getSetting, setSetting } from './queries/settings';

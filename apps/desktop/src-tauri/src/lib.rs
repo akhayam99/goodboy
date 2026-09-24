@@ -16,6 +16,7 @@ mod file_versions;
 mod github;
 mod gitlab;
 mod integration_credentials;
+mod invocation_admission;
 mod jira;
 mod linear;
 mod live_child;
@@ -49,6 +50,7 @@ mod util;
 mod workflows;
 mod worktree;
 mod worktree_writer;
+mod writer_lease;
 
 #[cfg(target_os = "macos")]
 fn suppress_webkit_media_remote() {
@@ -102,6 +104,8 @@ pub fn run() {
     let script_registry = scripts::ScriptRegistry::new();
     let terminal_registry = terminal::TerminalRegistry::new();
     let writer_leases = worktree_writer::WriterLeases::new();
+    let invocation_admission = invocation_admission::InvocationAdmission::new();
+    let writer_lease_queue = writer_lease::WriterLeaseQueue::new();
     let provider_lifecycle_registry = provider_lifecycle::ProviderLifecycleRegistry::new();
     let linear_token_cache = linear::LinearTokenCache::new();
     let sentry_token_cache = sentry::SentryTokenCache::new();
@@ -138,6 +142,8 @@ pub fn run() {
         .manage(bridge_state)
         .manage(turn_registry)
         .manage(writer_leases)
+        .manage(invocation_admission)
+        .manage(writer_lease_queue)
         .manage(summarize_registry)
         .manage(planner_registry)
         .manage(script_registry)
@@ -260,6 +266,10 @@ pub fn run() {
             worktree_writer::worktree_writer_cancel,
             worktree_writer::worktree_writer_abandon,
             worktree_writer::worktree_writer_status,
+            writer_lease::writer_lease_acquire,
+            writer_lease::writer_lease_acquire_waiting,
+            writer_lease::writer_lease_release,
+            writer_lease::writer_lease_unknown,
             query_bridge::query_bridge_serving,
             query_bridge::project::project_materialize_result,
             query_bridge::mount::mount_command_result,

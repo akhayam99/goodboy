@@ -52,6 +52,12 @@ pub struct WorkspaceOverridesBundle {
     pub default_branch_prefix: Option<String>,
     #[serde(rename = "parallelEnabled")]
     pub parallel_enabled: Option<bool>,
+    #[serde(rename = "invocationGlobalLimit")]
+    pub invocation_global_limit: Option<u32>,
+    #[serde(rename = "invocationProviderLimit")]
+    pub invocation_provider_limit: Option<u32>,
+    #[serde(rename = "invocationHeavyweightLimit")]
+    pub invocation_heavyweight_limit: Option<u32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -216,7 +222,8 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
     let workspaces = {
         let mut stmt = conn.prepare(
             "SELECT id, name, created_at, updated_at,
-                    default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled
+                    default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled,
+                    invocation_global_limit, invocation_provider_limit, invocation_heavyweight_limit
              FROM workspaces
              WHERE deleted_at IS NULL
              ORDER BY created_at ASC",
@@ -235,6 +242,9 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
                     default_workflow_id: row.get(5)?,
                     default_branch_prefix: row.get(6)?,
                     parallel_enabled: parallel_raw.map(|v| v != 0),
+                    invocation_global_limit: row.get(8)?,
+                    invocation_provider_limit: row.get(9)?,
+                    invocation_heavyweight_limit: row.get(10)?,
                 },
             })
         })?;
@@ -533,14 +543,18 @@ pub fn import_config(
             conn.execute(
                 "INSERT INTO workspaces
                    (id, name, slug, created_at, updated_at,
-                    default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+                    default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled,
+                    invocation_global_limit, invocation_provider_limit, invocation_heavyweight_limit)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
                  ON CONFLICT(id) DO UPDATE SET
                    name                      = excluded.name,
                    default_provider_id       = excluded.default_provider_id,
                    default_workflow_id = excluded.default_workflow_id,
                    default_branch_prefix     = excluded.default_branch_prefix,
                    parallel_enabled          = excluded.parallel_enabled,
+                   invocation_global_limit   = excluded.invocation_global_limit,
+                   invocation_provider_limit = excluded.invocation_provider_limit,
+                   invocation_heavyweight_limit = excluded.invocation_heavyweight_limit,
                    updated_at                = excluded.updated_at",
                 rusqlite::params![
                     w.id, w.name, workspace_slug(&w.name, &w.id),
@@ -549,6 +563,9 @@ pub fn import_config(
                     w.overrides.default_workflow_id,
                     w.overrides.default_branch_prefix,
                     parallel_val,
+                    w.overrides.invocation_global_limit,
+                    w.overrides.invocation_provider_limit,
+                    w.overrides.invocation_heavyweight_limit,
                 ],
             )?;
             for p in workspace_projects(w) {
@@ -881,6 +898,9 @@ mod tests {
                 default_workflow_id: None,
                 default_branch_prefix: None,
                 parallel_enabled: None,
+                invocation_global_limit: None,
+                invocation_provider_limit: None,
+                invocation_heavyweight_limit: None,
             },
         };
         let projects = workspace_projects(&workspace);
@@ -911,6 +931,9 @@ mod tests {
                 default_workflow_id: None,
                 default_branch_prefix: None,
                 parallel_enabled: None,
+                invocation_global_limit: None,
+                invocation_provider_limit: None,
+                invocation_heavyweight_limit: None,
             },
         };
         let projects = workspace_projects(&workspace);

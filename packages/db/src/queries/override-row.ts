@@ -22,6 +22,9 @@ export type OverrideRow = {
   readonly parallel_agents: number | null;
   readonly provider_pool: string | null;
   readonly attribution_footer: number | null;
+  readonly invocation_global_limit?: number | null;
+  readonly invocation_provider_limit?: number | null;
+  readonly invocation_heavyweight_limit?: number | null;
 };
 
 type ParseJsonParams = {
@@ -85,4 +88,7 @@ export const overridesFromRow = ({ row }: Params): OverrideSettings => ({
   parallelAgents: row.parallel_agents === null ? null : row.parallel_agents !== 0,
   providerPool: parseProviderPool({ raw: row.provider_pool }),
   attributionFooter: row.attribution_footer == null ? null : row.attribution_footer !== 0,
+  invocationGlobalLimit: row.invocation_global_limit ?? null,
+  invocationProviderLimit: row.invocation_provider_limit ?? null,
+  invocationHeavyweightLimit: row.invocation_heavyweight_limit ?? null,
 });

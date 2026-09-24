@@ -24,7 +24,12 @@ type SessionBudgetRow = {
   soft_cap_usd: number;
 };
 
-type CostSumRow = {
+type ProviderCostRow = {
+  measured: number | null;
+  committed: number | null;
+};
+
+type SessionCostRow = {
   total: number | null;
 };
 
@@ -42,6 +47,8 @@ const UNSET_RESULT: BudgetCheckResult = {
   pct: 0,
   exceeded: false,
   overThreshold: false,
+  measuredUsd: 0,
+  committedUsd: 0,
 };
 
 export const checkProviderBudget = async (
@@ -76,16 +83,34 @@ export const checkProviderBudget = async (
   const startMs = Date.parse(start);
   const endMs = Date.parse(end);
 
-  const costRows = await db.select<CostSumRow>(
-    `SELECT COALESCE(SUM(estimated_cost_usd), 0) AS total
-       FROM telemetry_records
-      WHERE provider = ?
-        AND recorded_at >= ?
-        AND recorded_at <= ?`,
-    [provider, startMs, endMs],
+  const costRows = await db.select<ProviderCostRow>(
+    `SELECT
+       COALESCE((
+         SELECT SUM(estimated_cost_usd)
+           FROM telemetry_records
+          WHERE provider = ? AND recorded_at >= ? AND recorded_at <= ?
+       ), 0) AS measured,
+       COALESCE((
+         SELECT SUM(
+           CASE
+             WHEN ticket.reservation_status = 'reserved' THEN MAX(ticket.estimated_spend_usd - COALESCE((
+               SELECT SUM(usage.estimated_cost_usd) FROM telemetry_records usage WHERE usage.invocation_id = ticket.id
+             ), 0), 0)
+             WHEN ticket.reservation_status = 'settled' AND ticket.measurement_status = 'unknown' THEN ticket.estimated_spend_usd
+             ELSE 0
+           END
+         )
+           FROM invocation_tickets ticket
+          WHERE ticket.budget_identity = ?
+            AND ticket.budget_period_start = ?
+            AND ticket.budget_period_end = ?
+       ), 0) AS committed`,
+    [provider, startMs, endMs, provider, startMs, endMs],
   );
 
-  const spent = costRows[0]?.total ?? 0;
+  const measured = costRows[0]?.measured ?? 0;
+  const committed = costRows[0]?.committed ?? 0;
+  const spent = measured + committed;
   const remaining = rule.capUsd - spent;
   const pct = rule.capUsd > 0 ? (spent / rule.capUsd) * 100 : 0;
   const exceeded = spent > rule.capUsd;
@@ -95,6 +120,8 @@ export const checkProviderBudget = async (
     pct,
     exceeded,
     overThreshold: !exceeded && pct >= rule.alertThresholdPct,
+    measuredUsd: measured,
+    committedUsd: committed,
   };
 };
 
@@ -120,7 +147,7 @@ export const checkSessionBudget = async (
     softCapUsd: budgetRow.soft_cap_usd,
   };
 
-  const costRows = await db.select<CostSumRow>(
+  const costRows = await db.select<SessionCostRow>(
     `SELECT COALESCE(SUM(estimated_cost_usd), 0) AS total
        FROM telemetry_records
       WHERE session_id = ?`,
@@ -136,5 +163,7 @@ export const checkSessionBudget = async (
     pct,
     exceeded: spent > budget.softCapUsd,
     overThreshold: false,
+    measuredUsd: spent,
+    committedUsd: 0,
   };
 };

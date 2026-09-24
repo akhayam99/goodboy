@@ -46,7 +46,13 @@ const stateWith = (spentUsd: number) => {
   const state: State = {
     sessionTelemetry: {
       [SESSION_ID]: [
-        { runId: 'pr-1', kind: 'turn', estimatedCostUsd: spentUsd } as unknown as TelemetryRecord,
+        {
+          runId: 'pr-1',
+          kind: 'turn',
+          estimatedCostUsd: spentUsd,
+          workflowRunId: RUN_ID,
+          attributionStatus: 'attributed',
+        } as unknown as TelemetryRecord,
       ],
     },
     sessionPhaseRuns: { [SESSION_ID]: [agent()] },

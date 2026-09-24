@@ -66,6 +66,7 @@ import type {
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace, useSessionSlots } from '../../../../store';
 import { buildProfileGuard } from '../../../../store/profileGuard';
+import { resolveInvocationLimits } from '../../../../shared/lib/invocationAdmission';
 import { workflowStartGate } from './workflowStartGate';
 import type { Mode, WorkflowBuilderDraft } from '../../../../store/slices/workflowDrafts/types';
 import type { StepDraft, WorkflowDraft } from '../../../workflows/engine';
@@ -742,10 +743,36 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         model: effectiveModel,
         effort: plannerEffort,
       };
+      const store = useAppStore.getState();
+      const providerIdentity =
+        store.workspaceOverrides[session.workspaceId]?.providerBindings?.[
+          plannerEffectiveProviderId
+        ] ??
+        store.authResults?.[plannerEffectiveProviderId]?.identity ??
+        null;
       const client = createWorkflowPlanner({
         deps: {
           ...taskModel,
           ...(sessionWorktree != null && { workingDir: sessionWorktree }),
+          invocation: {
+            invocationId: crypto.randomUUID(),
+            workspaceId: session.workspaceId,
+            sessionId: session.id,
+            ...(providerIdentity != null && { providerIdentity }),
+            purpose: 'planner',
+            isHeavyweight: false,
+            limits: resolveInvocationLimits({
+              providerId: plannerEffectiveProviderId,
+              workspaceOverride: store.workspaceOverrides[session.workspaceId],
+            }),
+          },
+          onUsage: (usage) =>
+            useAppStore.getState().recordPlannerUsage({
+              sessionId: session.id,
+              provider: plannerEffectiveProviderId,
+              model: effectiveModel,
+              usage,
+            }),
         },
       });
       const profileBlock = buildProfileGuard({

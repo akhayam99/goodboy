@@ -1,3 +1,9 @@
+import {
+  acquireWriterLeaseWaiting,
+  releaseWriterLease,
+  repositoryWriterResource,
+} from '../../../features/worktree/writerLease';
+
 type LockParams<T> = {
   readonly key: string;
   readonly run: () => Promise<T>;
@@ -27,6 +33,38 @@ type RepoLockParams<T> = {
   readonly run: () => Promise<T>;
 };
 
+const withRepositoryWriterLease = async <T>({
+  repoRoot,
+  mountKey,
+  run,
+}: RepoLockParams<T>): Promise<T> => {
+  const lease = await acquireWriterLeaseWaiting({
+    holder: `mount:${mountKey}`,
+    resources: [repositoryWriterResource({ repoRoot })],
+  });
+  switch (lease.outcome) {
+    case 'denied': {
+      throw new Error(
+        `a managed writer already holds ${lease.blockedResource} (${lease.blockedState}): ${lease.blockedBy}`,
+      );
+    }
+    case 'unavailable': {
+      return run();
+    }
+    case 'granted': {
+      try {
+        return await run();
+      } finally {
+        await releaseWriterLease({ token: lease.token });
+      }
+    }
+    default: {
+      const exhaustive: never = lease;
+      return exhaustive;
+    }
+  }
+};
+
 export const withRepositoryAndMountLock = async <T>({
   repoRoot,
   mountKey,
@@ -34,5 +72,9 @@ export const withRepositoryAndMountLock = async <T>({
 }: RepoLockParams<T>): Promise<T> =>
   withMountLock({
     key: `repo:${repoRoot}`,
-    run: () => withMountLock({ key: `mount:${mountKey}`, run }),
+    run: () =>
+      withMountLock({
+        key: `mount:${mountKey}`,
+        run: () => withRepositoryWriterLease({ repoRoot, mountKey, run }),
+      }),
   });

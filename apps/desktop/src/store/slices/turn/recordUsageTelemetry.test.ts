@@ -20,7 +20,7 @@ const {
   summarizeWorkspaceProviderTelemetry,
   summarizeWorkspaceTelemetry,
 } = vi.hoisted(() => ({
-  insertTelemetry: vi.fn(async () => undefined),
+  insertTelemetry: vi.fn(async (_db: unknown, _record: TelemetryRecord) => true),
   invokeBudgetAlertsList: vi.fn(async () => [] as ReadonlyArray<BudgetAlert>),
   invokeBudgetEmitAlerts: vi.fn(async () => [] as ReadonlyArray<BudgetAlert>),
   invokeBudgetRuleList: vi.fn(async () => []),
@@ -120,6 +120,7 @@ describe('recordUsageTelemetry', () => {
         TurnEvent,
         { kind: 'usage' }
       >,
+      usageSequence: 1,
       provider: 'anthropic',
       model: 'claude-sonnet-4-5',
       runId: FIRST_RUN_ID,
@@ -144,6 +145,7 @@ describe('recordUsageTelemetry', () => {
         TurnEvent,
         { kind: 'usage' }
       >,
+      usageSequence: 1,
       provider: 'anthropic',
       model: 'claude-sonnet-4-5',
       runId: SECOND_RUN_ID,
@@ -152,5 +154,43 @@ describe('recordUsageTelemetry', () => {
     });
 
     expect(emitNotification).toHaveBeenCalledOnce();
+  });
+
+  it('keeps every usage frame of a multi-step invocation and drops only a real duplicate', async () => {
+    const store = createStore<TestState>(() => ({
+      sessions: [],
+      sessionTelemetry: {},
+      sessionSummary: null,
+      workspaceSummary: null,
+      providerSpendBreakdown: [],
+      budgetAlerts: [],
+      emitNotification: vi.fn(async () => undefined),
+    }));
+    const usage = { inputTokens: 10, outputTokens: 5, cachedInputTokens: 0, estimatedCostUsd: 0 };
+    const frame = (usageSequence: number) =>
+      recordUsageTelemetry(store.setState as never, store.getState as never, {
+        event: { kind: 'usage', runId: FIRST_RUN_ID, usage, at: NOW } satisfies Extract<
+          TurnEvent,
+          { kind: 'usage' }
+        >,
+        usageSequence,
+        provider: 'opencode',
+        model: 'opencode/grok',
+        runId: FIRST_RUN_ID,
+        sessionId: SESSION_ID,
+        now: () => NOW,
+      });
+
+    await frame(1);
+    await frame(2);
+    insertTelemetry.mockResolvedValueOnce(false);
+    await frame(2);
+
+    const eventIds = insertTelemetry.mock.calls.map(([, record]) => record.usageEventId);
+    expect(eventIds).toEqual(['usage-1', 'usage-2', 'usage-2']);
+    expect(store.getState().sessionTelemetry[SESSION_ID]?.map((r) => r.usageEventId)).toEqual([
+      'usage-1',
+      'usage-2',
+    ]);
   });
 });

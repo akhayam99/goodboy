@@ -1,4 +1,5 @@
-import type { EffortLevel, ProviderId } from '@goodboy/types';
+import type { EffortLevel, InvocationContext, ProviderId } from '@goodboy/types';
+import { estimateSpendReservation } from '../budget/reservation';
 import { extractAuxOutput } from '../providers/aux-output';
 import { computeProviderCostUsd } from '../providers/provider-cost';
 import { cliModelId } from '../providers/cliModelId';
@@ -13,6 +14,8 @@ export type PlannerUsage = {
   readonly cachedInputTokens: number;
   readonly cacheCreationInputTokens: number;
   readonly estimatedCostUsd: number;
+  readonly invocationId?: string;
+  readonly model?: string;
 };
 
 export type PlannerClientResult = {
@@ -30,6 +33,8 @@ export type PlannerClientDeps = {
   readonly binary?: string;
   readonly workingDir?: string;
   readonly invokeFn: InvokeFn;
+  readonly invocation?: InvocationContext;
+  readonly onUsage?: (usage: PlannerUsage) => Promise<void>;
 };
 
 export class PlannerClientSpawnError extends Error {
@@ -55,6 +60,8 @@ export class PlannerClient {
   private readonly effort: EffortLevel | undefined;
   private readonly workingDir: string | undefined;
   private readonly invokeFn: InvokeFn;
+  private readonly invocation: InvocationContext | undefined;
+  private readonly onUsage: ((usage: PlannerUsage) => Promise<void>) | undefined;
 
   constructor(deps: PlannerClientDeps) {
     this.providerId = deps.providerId;
@@ -63,6 +70,8 @@ export class PlannerClient {
     this.effort = deps.effort;
     this.workingDir = deps.workingDir;
     this.invokeFn = deps.invokeFn;
+    this.invocation = deps.invocation;
+    this.onUsage = deps.onUsage;
   }
 
   async plan(input: PlannerInput): Promise<PlannerClientResult> {
@@ -76,6 +85,17 @@ export class PlannerClient {
         systemPrompt: PLANNER_SYSTEM_PROMPT,
         ...(this.effort != null && { effort: this.effort }),
         ...(this.workingDir != null && { workingDir: this.workingDir }),
+        ...(this.invocation != null && {
+          invocation: {
+            ...this.invocation,
+            spendReservation: estimateSpendReservation({
+              providerId: this.providerId,
+              model: this.model,
+              prompt: `${PLANNER_SYSTEM_PROMPT}\n\n${userMessage}`,
+              allowOverBudget: this.invocation.spendReservation?.allowOverBudget === true,
+            }),
+          },
+        }),
       },
     });
 
@@ -86,6 +106,8 @@ export class PlannerClient {
     const extracted = extractAuxOutput({ providerId: this.providerId, stdout: result.stdout });
     const usage: PlannerUsage = {
       ...extracted.usage,
+      ...(this.invocation != null && { invocationId: this.invocation.invocationId }),
+      model: this.model,
       estimatedCostUsd: computeProviderCostUsd({
         providerId: this.providerId,
         usage: {
@@ -95,6 +117,9 @@ export class PlannerClient {
         model: this.model,
       }),
     };
+    if (this.onUsage != null) {
+      await this.onUsage(usage);
+    }
     const output = parsePlannerOutput(extracted.text);
     return { output, usage, model: this.model };
   }

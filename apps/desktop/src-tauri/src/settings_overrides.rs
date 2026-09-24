@@ -27,6 +27,12 @@ pub struct SettingsOverrides {
     pub provider_pool: Option<Vec<String>>,
     #[serde(rename = "attributionFooter")]
     pub attribution_footer: Option<bool>,
+    #[serde(rename = "invocationGlobalLimit")]
+    pub invocation_global_limit: Option<u32>,
+    #[serde(rename = "invocationProviderLimit")]
+    pub invocation_provider_limit: Option<u32>,
+    #[serde(rename = "invocationHeavyweightLimit")]
+    pub invocation_heavyweight_limit: Option<u32>,
 }
 
 fn json_to_text(value: &Option<serde_json::Value>) -> Option<String> {
@@ -57,7 +63,7 @@ pub async fn get_workspace_overrides(
 ) -> Result<Option<SettingsOverrides>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer
+        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer, invocation_global_limit, invocation_provider_limit, invocation_heavyweight_limit
          FROM workspaces WHERE id = ?1",
     )?;
     let mut rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
@@ -76,6 +82,9 @@ pub async fn get_workspace_overrides(
             parallel_agents: parallel_agents_raw.map(|v| v != 0),
             provider_pool: string_array_from_text(row.get(9)?),
             attribution_footer: attribution_footer_raw.map(|v| v != 0),
+            invocation_global_limit: row.get(11)?,
+            invocation_provider_limit: row.get(12)?,
+            invocation_heavyweight_limit: row.get(13)?,
         })
     })?;
     match rows.next() {
@@ -109,8 +118,11 @@ pub async fn set_workspace_overrides(
              parallel_agents = ?9,
              provider_pool = ?10,
              attribution_footer = ?11,
-             updated_at = ?12
-         WHERE id = ?13",
+             invocation_global_limit = ?12,
+             invocation_provider_limit = ?13,
+             invocation_heavyweight_limit = ?14,
+             updated_at = ?15
+         WHERE id = ?16",
         rusqlite::params![
             overrides.default_provider_id,
             overrides.default_workflow_id,
@@ -123,6 +135,9 @@ pub async fn set_workspace_overrides(
             parallel_agents_val,
             string_array_to_text(&overrides.provider_pool),
             attribution_footer_val,
+            overrides.invocation_global_limit,
+            overrides.invocation_provider_limit,
+            overrides.invocation_heavyweight_limit,
             now,
             workspace_id,
         ],
@@ -154,6 +169,9 @@ pub async fn get_session_overrides(
             parallel_agents: None,
             provider_pool: None,
             attribution_footer: None,
+            invocation_global_limit: None,
+            invocation_provider_limit: None,
+            invocation_heavyweight_limit: None,
         })
     })?;
     match rows.next() {

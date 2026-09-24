@@ -33,7 +33,7 @@ export const getWorkspaceOverrides = async (
   workspaceId: WorkspaceId,
 ): Promise<OverrideSettings | null> => {
   const rows = await db.select<OverrideRow>(
-    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer
+    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer, invocation_global_limit, invocation_provider_limit, invocation_heavyweight_limit
      FROM workspaces WHERE id = ?`,
     [workspaceId],
   );
@@ -59,6 +59,9 @@ export const setWorkspaceOverrides = async (
          parallel_agents = ?,
          provider_pool = ?,
          attribution_footer = ?,
+         invocation_global_limit = ?,
+         invocation_provider_limit = ?,
+         invocation_heavyweight_limit = ?,
          updated_at = ?
      WHERE id = ?`,
     [
@@ -73,6 +76,9 @@ export const setWorkspaceOverrides = async (
       overrides.parallelAgents === null ? null : overrides.parallelAgents ? 1 : 0,
       serializeProviderPool({ providerPool: overrides.providerPool }),
       overrides.attributionFooter === null ? null : overrides.attributionFooter ? 1 : 0,
+      overrides.invocationGlobalLimit ?? null,
+      overrides.invocationProviderLimit ?? null,
+      overrides.invocationHeavyweightLimit ?? null,
       Date.now(),
       workspaceId,
     ],

@@ -42,6 +42,8 @@ function makeResult(pct: number): BudgetCheckResult {
     pct,
     exceeded,
     overThreshold: !exceeded && pct >= RULE.alertThresholdPct,
+    measuredUsd: spent,
+    committedUsd: 0,
   };
 }
 
@@ -71,6 +73,8 @@ describe('emitBudgetAlerts', () => {
       pct: 0,
       exceeded: false,
       overThreshold: false,
+      measuredUsd: 0,
+      committedUsd: 0,
     });
 
     const alerts = await emitBudgetAlerts(deps, { provider: 'anthropic', sessionId: SESSION_ID });
@@ -86,6 +90,8 @@ describe('emitBudgetAlerts', () => {
       pct: 0,
       exceeded: false,
       overThreshold: false,
+      measuredUsd: 0,
+      committedUsd: 0,
     });
 
     const alerts = await emitBudgetAlerts(deps, { provider: 'anthropic', sessionId: SESSION_ID });
@@ -100,6 +106,8 @@ describe('emitBudgetAlerts', () => {
       pct: 0,
       exceeded: false,
       overThreshold: false,
+      measuredUsd: 0,
+      committedUsd: 0,
     });
 
     const alerts = await emitBudgetAlerts(deps, { provider: 'anthropic', sessionId: SESSION_ID });
@@ -117,6 +125,8 @@ describe('emitBudgetAlerts', () => {
       pct: 120,
       exceeded: true,
       overThreshold: false,
+      measuredUsd: 0,
+      committedUsd: 0,
     });
 
     const alerts = await emitBudgetAlerts(deps, { provider: 'anthropic', sessionId: SESSION_ID });
@@ -141,6 +151,8 @@ describe('emitBudgetAlerts', () => {
       pct: 0,
       exceeded: false,
       overThreshold: false,
+      measuredUsd: 0,
+      committedUsd: 0,
     });
 
     const alerts = await emitBudgetAlerts(deps, { provider: 'anthropic', sessionId: SESSION_ID });
@@ -166,6 +178,8 @@ describe('emitBudgetAlerts', () => {
       pct: 0,
       exceeded: false,
       overThreshold: false,
+      measuredUsd: 0,
+      committedUsd: 0,
     });
 
     const alerts = await emitBudgetAlerts(deps, { provider: 'anthropic', sessionId: SESSION_ID });
