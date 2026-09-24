@@ -28,7 +28,7 @@ const FAQS: readonly FaqItem[] = [
   },
   {
     q: 'What if I do not like what the agents did?',
-    a: 'You read the diff before anything lands. Agents open the pull request, merging waits for you.',
+    a: 'Agents open pull requests as drafts, and you read the diff before you merge.',
   },
   {
     q: 'Which platforms does it run on?',
