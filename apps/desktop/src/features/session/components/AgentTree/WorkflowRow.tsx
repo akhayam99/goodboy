@@ -15,6 +15,7 @@ import { ChevronDown, ChevronRight, ChevronUp, Undo2 } from 'lucide-react';
 import type {
   Agent,
   AgentId,
+  EffortLevel,
   ProviderId,
   Session,
   TelemetryRecord,
@@ -84,6 +85,9 @@ type Props = {
   readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
   readonly agentModelOverride: Readonly<Record<string, string>>;
   readonly agentProviderOverride: Readonly<Record<string, ProviderId>>;
+  readonly agentEffortOverride: Readonly<Record<string, EffortLevel>>;
+  readonly openQuestionAgentIds: ReadonlySet<AgentId>;
+  readonly onAnswerQuestions: () => void;
   readonly childrenByParentId: ReadonlyMap<string, Agent[]>;
   readonly clusterExpand: ReadonlyMap<string, boolean>;
   readonly selectedAgentId: AgentId | null;
@@ -141,6 +145,9 @@ export const WorkflowRow = ({
   agentKindOverride,
   agentModelOverride,
   agentProviderOverride,
+  agentEffortOverride,
+  openQuestionAgentIds,
+  onAnswerQuestions,
   childrenByParentId,
   clusterExpand,
   selectedAgentId,
@@ -213,14 +220,11 @@ export const WorkflowRow = ({
   const ctaAgent =
     wfAgents.find((agent) => agent.stepId === actionableStepId && agent.status === 'pending') ??
     null;
-  const ctaEffortOverride = useAppStore((s) =>
-    ctaAgent != null ? (s.agentEffortOverride[ctaAgent.id] ?? null) : null,
-  );
   const ctaRouting = agentRoutingOverrides({
     agent: ctaAgent,
     modelOverride: ctaAgent != null ? (agentModelOverride[ctaAgent.id] ?? null) : null,
     providerOverride: ctaAgent != null ? (agentProviderOverride[ctaAgent.id] ?? null) : null,
-    effortOverride: ctaEffortOverride,
+    effortOverride: ctaAgent != null ? (agentEffortOverride[ctaAgent.id] ?? null) : null,
   });
   return (
     <div
@@ -515,6 +519,9 @@ export const WorkflowRow = ({
                   agentKindOverride={agentKindOverride}
                   agentModelOverride={agentModelOverride}
                   agentProviderOverride={agentProviderOverride}
+                  agentEffortOverride={agentEffortOverride}
+                  openQuestionAgentIds={openQuestionAgentIds}
+                  onAnswerQuestions={onAnswerQuestions}
                   roleModels={roleModels}
                   sessionProvider={sessionProvider}
                   sessionEffort={sessionEffort}
@@ -537,6 +544,7 @@ export const WorkflowRow = ({
                       roleModels,
                       agentModel: agentModelOverride[run.id] ?? run.modelOverride,
                       agentProvider: agentProviderOverride[run.id] ?? run.providerOverride,
+                      agentEffort: agentEffortOverride[run.id] ?? run.effort,
                       sessionProvider,
                       sessionEffort,
                     });
@@ -551,6 +559,7 @@ export const WorkflowRow = ({
                           index={index}
                           resolvedModel={resolvedRouting.model}
                           resolvedProvider={resolvedRouting.provider}
+                          resolvedEffort={resolvedRouting.effort}
                           isActionable={isActionable}
                           blockReason={isActionable ? wfBlockReason : null}
                           isSelected={run.id === selectedAgentId}

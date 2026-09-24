@@ -8,6 +8,7 @@ import type {
   Workflow,
 } from '@goodboy/types';
 import type { AgentKind } from '../../../session/agent-kind';
+import { isQuestionDelegate } from '../../../context/questionDelegate';
 import { layoutBranchRail } from '../../../session/timeline/railGeometry';
 import { STEP_ROW_HEIGHT, STEP_ROW_MARKER_Y, buildStepGraphRows } from './stepGraphRows';
 import { WorkflowStepGraphRow } from './WorkflowStepGraphRow';
@@ -19,6 +20,9 @@ type Props = {
   readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
   readonly agentModelOverride: Readonly<Record<string, string>>;
   readonly agentProviderOverride: Readonly<Record<string, ProviderId>>;
+  readonly agentEffortOverride: Readonly<Record<string, EffortLevel>>;
+  readonly openQuestionAgentIds: ReadonlySet<AgentId>;
+  readonly onAnswerQuestions: () => void;
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
@@ -33,6 +37,9 @@ export const WorkflowStepGraph = ({
   agentKindOverride,
   agentModelOverride,
   agentProviderOverride,
+  agentEffortOverride,
+  openQuestionAgentIds,
+  onAnswerQuestions,
   roleModels,
   sessionProvider,
   sessionEffort,
@@ -71,6 +78,11 @@ export const WorkflowStepGraph = ({
             agentKindOverride={agentKindOverride}
             agentModelOverride={agentModelOverride}
             agentProviderOverride={agentProviderOverride}
+            agentEffortOverride={agentEffortOverride}
+            hasOpenQuestion={
+              openQuestionAgentIds.has(row.run.id) && !isQuestionDelegate({ agent: row.run })
+            }
+            onAnswerQuestions={onAnswerQuestions}
             roleModels={roleModels}
             sessionProvider={sessionProvider}
             sessionEffort={sessionEffort}

@@ -81,6 +81,7 @@ const renderRow = ({
       index={0}
       resolvedModel="claude-opus-4-5"
       resolvedProvider="anthropic"
+      resolvedEffort="high"
       isActionable={false}
       blockReason={null}
       isSelected={false}

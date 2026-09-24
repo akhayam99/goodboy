@@ -114,6 +114,12 @@ A run waits when:
 When a run waits for more than one reason, Goodboy shows the one you need to
 deal with first. An open question comes before a failed step.
 
+The run's steps show which agent is waiting on you. The agent that asked,
+even a sub-agent under a step, gets the question mark on the rail and an
+**Answer** action on its row. An agent that answers a question for a step
+never shows it, because the question belongs to that step. Every step row
+also shows the model and the effort the step runs with.
+
 ### Skipping a failed step
 
 Getting past a blocked run always takes more than one click. A failed step

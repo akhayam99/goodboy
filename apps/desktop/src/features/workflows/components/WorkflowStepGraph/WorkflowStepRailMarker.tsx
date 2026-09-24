@@ -9,10 +9,11 @@ import { STEP_ROW_GRADE } from './stepGraphRows';
 
 type Props = {
   readonly status: AgentStatus;
+  readonly hasOpenQuestion: boolean;
 };
 
-export const WorkflowStepRailMarker = ({ status }: Props) => {
-  if (status === 'pending') {
+export const WorkflowStepRailMarker = ({ status, hasOpenQuestion }: Props) => {
+  if (status === 'pending' && !hasOpenQuestion) {
     return (
       <TimelineDashedMarker tone="neutral" grade={STEP_ROW_GRADE}>
         <Clock
@@ -25,7 +26,7 @@ export const WorkflowStepRailMarker = ({ status }: Props) => {
   }
   return (
     <TimelineMarker
-      state={resolveMarkerState({ status, hasOpenQuestion: false, needsUser: false })}
+      state={resolveMarkerState({ status, hasOpenQuestion, needsUser: false })}
       grade={STEP_ROW_GRADE}
     />
   );

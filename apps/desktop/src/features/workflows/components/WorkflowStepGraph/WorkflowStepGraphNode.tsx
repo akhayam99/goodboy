@@ -1,5 +1,5 @@
-import { Tooltip, cn, tintClasses } from '@goodboy/ui';
-import type { Agent, ProviderId, ProviderName } from '@goodboy/types';
+import { Button, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import type { Agent, EffortLevel, ProviderId, ProviderName } from '@goodboy/types';
 import type { AgentKind } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../session/components/AgentKindChip';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
@@ -14,12 +14,14 @@ type Props = {
   readonly model: string;
   readonly plannedProvider: ProviderId;
   readonly plannedModel: string;
+  readonly effort: EffortLevel | null;
   readonly marker: string;
   readonly childCount: number;
   readonly doneChildCount: number;
   readonly answersForStepName: string | null;
   readonly isSelected: boolean;
   readonly onSelect: () => void;
+  readonly onAnswer: (() => void) | null;
 };
 
 export const WorkflowStepGraphNode = ({
@@ -29,12 +31,14 @@ export const WorkflowStepGraphNode = ({
   model,
   plannedProvider,
   plannedModel,
+  effort,
   marker,
   childCount,
   doneChildCount,
   answersForStepName,
   isSelected,
   onSelect,
+  onAnswer,
 }: Props) => (
   <div className="flex min-w-0 flex-1 items-center gap-1.5">
     <button
@@ -65,6 +69,7 @@ export const WorkflowStepGraphNode = ({
         <RoutingBadge
           provider={provider}
           model={model}
+          effort={effort}
           glyphPlacement="trailing"
           className="max-w-40 shrink-0"
         />
@@ -77,12 +82,26 @@ export const WorkflowStepGraphNode = ({
             aria-label={`planned model ${modelLabel(plannedModel)}`}
             className="inline-flex min-w-0"
           >
-            <RoutingBadge provider={provider} model={model} glyphPlacement="trailing" />
+            <RoutingBadge
+              provider={provider}
+              model={model}
+              effort={effort}
+              glyphPlacement="trailing"
+            />
           </span>
         </Tooltip>
       )}
-      <WorkflowStepStatus status={run.status} label={run.name} />
+      {onAnswer !== null ? (
+        <span className={cn('shrink-0 text-2xs', tintClasses('warning').text)}>Needs you</span>
+      ) : (
+        <WorkflowStepStatus status={run.status} label={run.name} />
+      )}
     </button>
+    {onAnswer !== null && (
+      <Button variant="ghost" size="sm" className="h-6 shrink-0" onClick={onAnswer}>
+        Answer
+      </Button>
+    )}
     {childCount > 0 ? (
       <span
         title={`${doneChildCount} of ${childCount} agents under ${run.name} are done`}

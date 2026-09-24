@@ -17,6 +17,7 @@ import type {
   ContextSlot,
   ContextSlotHistoryEntry,
   DiffComment,
+  EffortLevel,
   FileVersion,
   GhTokenStatus,
   GoalAttachment,
@@ -359,7 +360,7 @@ export type AppState = AppSliceState & {
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<AgentId, string>>;
   readonly agentProviderOverride: Readonly<Record<AgentId, ProviderId>>;
-  readonly agentEffortOverride: Readonly<Record<AgentId, string>>;
+  readonly agentEffortOverride: Readonly<Record<AgentId, EffortLevel>>;
   readonly agentKindOverride: Readonly<Record<AgentId, AgentKind>>;
   readonly agentDraft: Readonly<Record<AgentId, string>>;
   readonly workflowDrafts: Readonly<Record<SessionId, WorkflowBuilderDraft | undefined>>;

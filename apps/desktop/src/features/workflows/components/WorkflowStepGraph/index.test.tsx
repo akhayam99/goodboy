@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
+  EffortLevel,
   IsoDateTime,
   ProviderRunId,
   SessionId,
@@ -79,10 +80,21 @@ const subScout = (index: number, status: Agent['status']): Agent =>
     status,
   });
 
+type GraphOptions = {
+  readonly agentEffortOverride?: Record<string, EffortLevel>;
+  readonly openQuestionAgentIds?: ReadonlySet<AgentId>;
+  readonly onAnswerQuestions?: () => void;
+};
+
 const renderGraph = (
   children: ReadonlyMap<string, ReadonlyArray<Agent>>,
   onSelect = vi.fn(),
   agentProviderOverride: Record<string, 'cursor'> = {},
+  {
+    agentEffortOverride = {},
+    openQuestionAgentIds = new Set(),
+    onAnswerQuestions = vi.fn(),
+  }: GraphOptions = {},
 ) => {
   render(
     <WorkflowStepGraph
@@ -92,6 +104,9 @@ const renderGraph = (
       agentKindOverride={{}}
       agentModelOverride={{}}
       agentProviderOverride={agentProviderOverride}
+      agentEffortOverride={agentEffortOverride}
+      openQuestionAgentIds={openQuestionAgentIds}
+      onAnswerQuestions={onAnswerQuestions}
       roleModels={null}
       sessionProvider={null}
       sessionEffort={null}
@@ -276,5 +291,78 @@ describe('WorkflowStepGraph', () => {
     renderGraph(new Map([[scout.id, [subScout(0, 'running')]]]));
 
     expect(screen.queryByTestId('answers-for-child-0')).toBeNull();
+  });
+
+  it('marks the step that asked a question and offers Answer on that row only', () => {
+    const onAnswerQuestions = vi.fn();
+    renderGraph(
+      new Map(),
+      vi.fn(),
+      {},
+      {
+        openQuestionAgentIds: new Set([implement.id]),
+        onAnswerQuestions,
+      },
+    );
+
+    expect(screen.getByLabelText('Waiting on your answer')).toBeDefined();
+    expect(screen.queryByLabelText('Running')).toBeNull();
+    expect(screen.getByText('Needs you')).toBeDefined();
+    const answers = screen.getAllByRole('button', { name: 'Answer' });
+    expect(answers).toHaveLength(1);
+
+    fireEvent.click(answers[0]!);
+
+    expect(onAnswerQuestions).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the question on a nested cluster row, not only on the step', () => {
+    renderGraph(
+      new Map([[implement.id, [subScout(1, 'running')]]]),
+      vi.fn(),
+      {},
+      {
+        openQuestionAgentIds: new Set(['child-1' as AgentId]),
+      },
+    );
+
+    expect(
+      screen
+        .getByTestId('workflow-step-rail-child-1')
+        .querySelector('[aria-label="Waiting on your answer"]'),
+    ).not.toBeNull();
+    expect(screen.getByLabelText('Running')).toBeDefined();
+  });
+
+  it('keeps a question delegate out of the waiting state, since the question belongs to its step', () => {
+    const delegate = agent({
+      id: 'delegate-1' as AgentId,
+      parentAgentId: scout.id,
+      ordinal: 0,
+      name: 'answer: pick a database',
+      status: 'running',
+      sourceKind: 'open_question',
+      sourceThreadId: 'oq-1',
+    });
+
+    renderGraph(
+      new Map([[scout.id, [delegate]]]),
+      vi.fn(),
+      {},
+      {
+        openQuestionAgentIds: new Set([delegate.id]),
+      },
+    );
+
+    expect(screen.queryByLabelText('Waiting on your answer')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Answer' })).toBeNull();
+  });
+
+  it('shows the planned effort next to the model of each step', () => {
+    renderGraph(new Map(), vi.fn(), {}, { agentEffortOverride: { [implement.id]: 'low' } });
+
+    const efforts = screen.getAllByTitle('Effort').map((node) => node.textContent);
+
+    expect(efforts).toContain('Low');
   });
 });

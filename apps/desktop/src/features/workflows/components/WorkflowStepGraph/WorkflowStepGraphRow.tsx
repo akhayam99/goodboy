@@ -15,6 +15,9 @@ type Props = {
   readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
   readonly agentModelOverride: Readonly<Record<string, string>>;
   readonly agentProviderOverride: Readonly<Record<string, ProviderId>>;
+  readonly agentEffortOverride: Readonly<Record<string, EffortLevel>>;
+  readonly hasOpenQuestion: boolean;
+  readonly onAnswerQuestions: () => void;
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
@@ -29,6 +32,9 @@ export const WorkflowStepGraphRow = ({
   agentKindOverride,
   agentModelOverride,
   agentProviderOverride,
+  agentEffortOverride,
+  hasOpenQuestion,
+  onAnswerQuestions,
   roleModels,
   sessionProvider,
   sessionEffort,
@@ -43,6 +49,7 @@ export const WorkflowStepGraphRow = ({
     roleModels,
     agentModel: agentModelOverride[run.id] ?? run.modelOverride,
     agentProvider: agentProviderOverride[run.id] ?? run.providerOverride,
+    agentEffort: agentEffortOverride[run.id] ?? run.effort,
     sessionProvider,
     sessionEffort,
   });
@@ -62,7 +69,7 @@ export const WorkflowStepGraphRow = ({
             style={{ left: railColumnX({ column: rail.markerColumn }), top: rail.markerY }}
             data-rail-column={rail.markerColumn}
           >
-            <WorkflowStepRailMarker status={run.status} />
+            <WorkflowStepRailMarker status={run.status} hasOpenQuestion={hasOpenQuestion} />
           </span>
         )}
       </span>
@@ -73,12 +80,14 @@ export const WorkflowStepGraphRow = ({
         model={executed?.model ?? routing.model}
         plannedProvider={routing.provider}
         plannedModel={routing.model}
+        effort={routing.effort}
         marker={row.marker}
         childCount={row.childCount}
         doneChildCount={row.doneChildCount}
         answersForStepName={row.answersForStepName}
         isSelected={selectedAgentId === run.id}
         onSelect={() => onSelect(run.id)}
+        onAnswer={hasOpenQuestion ? onAnswerQuestions : null}
       />
     </div>
   );

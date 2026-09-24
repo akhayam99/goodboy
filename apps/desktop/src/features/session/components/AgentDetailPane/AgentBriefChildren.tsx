@@ -1,9 +1,10 @@
-import { SectionSurface, StatusDot, formatUsd } from '@goodboy/ui';
+import { SectionSurface } from '@goodboy/ui';
 import type { AgentId, Session } from '@goodboy/types';
 import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import type { AgentKind } from '../../agent-kind';
 import { useAppStore } from '../../../../store';
+import { AgentBriefChildRow } from './AgentBriefChildRow';
 
 type Props = {
   readonly session: Session;
@@ -32,51 +33,14 @@ export const AgentBriefChildren = ({ session, kind, children }: Props) => {
       }
     >
       <div className="flex flex-col gap-2">
-        {children.map((child) => {
-          const cost = metrics.aggregatesByAgentId.get(child.agent.id)?.estimatedCostUsd ?? 0;
-          return (
-            <button
-              key={child.agent.id}
-              type="button"
-              className="flex items-center gap-2 rounded-md px-2 py-2 text-left hover:bg-elevated"
-              onClick={() => onSelect(child.agent.id)}
-            >
-              <StatusDot
-                tone={
-                  child.status === 'failed'
-                    ? 'danger'
-                    : child.status === 'running'
-                      ? 'info'
-                      : child.status === 'completed'
-                        ? 'success'
-                        : 'neutral'
-                }
-                size="sm"
-                pulsing={child.status === 'running'}
-              />
-              <span className="w-5 shrink-0 text-3xs tabular-nums text-muted-foreground">
-                {child.index + 1}
-              </span>
-              <span className="min-w-0 flex-1 truncate text-xs leading-4 text-foreground">
-                {child.agent.name}
-              </span>
-              {cost > 0 ? (
-                <span className="shrink-0 text-3xs tabular-nums text-muted-foreground">
-                  {formatUsd(cost)}
-                </span>
-              ) : null}
-              <span
-                className={
-                  child.status === 'failed'
-                    ? 'shrink-0 text-2xs text-danger'
-                    : 'shrink-0 text-2xs text-muted-foreground'
-                }
-              >
-                {child.status === 'pending' ? 'queued' : child.status}
-              </span>
-            </button>
-          );
-        })}
+        {children.map((child) => (
+          <AgentBriefChildRow
+            key={child.agent.id}
+            child={child}
+            costUsd={metrics.aggregatesByAgentId.get(child.agent.id)?.estimatedCostUsd ?? 0}
+            onSelect={onSelect}
+          />
+        ))}
       </div>
     </SectionSurface>
   );

@@ -5,9 +5,16 @@ import { cleanup, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';
 
+const storeState = {
+  selectAgent: () => undefined,
+  agentProviderOverride: {},
+  agentModelOverride: { 'child-1': 'claude-opus-4-5' },
+  agentEffortOverride: { 'child-1': 'high' },
+};
+
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (value: { selectAgent: () => void }) => T) =>
-    selector({ selectAgent: () => undefined }),
+  useAppStore: <T,>(selector: (value: typeof storeState) => T) => selector(storeState),
+  useExecutedAgentRouting: () => null,
 }));
 
 vi.mock('../../hooks/useAgentMetrics', () => ({
@@ -67,6 +74,13 @@ describe('AgentBriefChildren type scale', () => {
     render(<AgentBriefChildren session={session} kind="implementer" children={[child()]} />);
 
     expect(screen.getByText('completed').className).toContain('text-2xs');
+  });
+
+  it('shows the model and the planned effort each child runs with', () => {
+    render(<AgentBriefChildren session={session} kind="implementer" children={[child()]} />);
+
+    expect(screen.getByTitle('Model: claude-opus-4-5')).toBeDefined();
+    expect(screen.getByTitle('Effort').textContent).toBe('High');
   });
 
   it('labels the section on the eyebrow grade rather than a page heading', () => {

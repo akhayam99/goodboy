@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type {
   Agent,
   AgentId,
+  EffortLevel,
   ProviderId,
   Session,
   SessionId,
@@ -91,6 +92,22 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
       return out;
     }),
   );
+  const agentEffortOverride = useAppStore(
+    useShallow((s) => {
+      const out: Record<string, EffortLevel> = {};
+      const runs = s.sessionPhaseRuns[task.id];
+      if (!runs) {
+        return out;
+      }
+      for (const run of runs) {
+        const effort = s.agentEffortOverride[run.id];
+        if (effort !== undefined) {
+          out[run.id] = effort;
+        }
+      }
+      return out;
+    }),
+  );
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[task.id] ?? null);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const requestOpenQuestionScroll = useAppStore((s) => s.requestOpenQuestionScroll);
@@ -114,6 +131,15 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     return map;
   }, [attachedRuns]);
   const openQuestions = useSessionOpenQuestions(task.id);
+  const openQuestionAgentIds = useMemo(() => {
+    const ids = new Set<AgentId>();
+    for (const question of openQuestions) {
+      if (question.status === 'open' && question.createdByAgentId != null) {
+        ids.add(question.createdByAgentId);
+      }
+    }
+    return ids;
+  }, [openQuestions]);
   const loading = useSessionLoading(task.id);
   const summarizerBusy = useAppStore((s) => s.summarizerStatus[task.id]?.status === 'running');
   const [spawnError, setSpawnError] = useState<string | null>(null);
@@ -240,6 +266,10 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
   };
 
+  const onAnswerQuestions = () => {
+    setActiveLens(task.id, 'questions');
+  };
+
   const onStartStepAgent = async ({ agent, model, isConfirmed = false }: StartStepAgentParams) => {
     setSpawnError(null);
     const blockReason =
@@ -294,6 +324,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     agentKindOverride,
     agentModelOverride,
     agentProviderOverride,
+    agentEffortOverride,
     agentsByRunId: tree.agentsByRunId,
     agentsExpanded,
     attachedRuns,
@@ -307,6 +338,8 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     recoverStuckStep,
     hasAnyWorkflow: attachedRuns.length > 0,
     isTaskActive,
+    openQuestionAgentIds,
+    onAnswerQuestions,
     isTranscriptLoading: loading.transcript,
     metrics,
     onDiscardWorkflow,

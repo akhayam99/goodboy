@@ -9,6 +9,9 @@ const state = vi.hoisted(() => ({
   sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
   agentTurnState: {} as Record<string, unknown>,
   agentKindOverride: {} as Record<string, unknown>,
+  agentProviderOverride: {} as Record<string, unknown>,
+  agentModelOverride: {} as Record<string, unknown>,
+  agentEffortOverride: {} as Record<string, unknown>,
   sessionPlans: {} as Record<string, ReadonlyArray<unknown>>,
   openQuestions: [] as ReadonlyArray<OpenQuestion>,
   answeredQuestions: [] as ReadonlyArray<OpenQuestion>,
@@ -27,6 +30,7 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
   useSessionOpenQuestions: () => state.openQuestions,
   useSessionAnsweredQuestions: () => state.answeredQuestions,
+  useExecutedAgentRouting: () => null,
 }));
 
 vi.mock('../../../../store/transcript', () => ({
