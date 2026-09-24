@@ -237,6 +237,7 @@ const baseState = (): State => {
     agentEffortOverride: {},
     announcedRunBudget: {},
     decisionRestartMarks: {},
+    orchestratorReadingHints: {},
     loadSessionTelemetry: vi.fn(async () => undefined),
     appendTurnEvent: vi.fn(),
     activateWorkflowAgent: vi.fn(async () => undefined),
@@ -1609,6 +1610,71 @@ describe('orchestrateNextStep', () => {
     expect(queued?.consumedAtStep).toBeGreaterThan(0);
     expect(hints?.find((hint) => hint.id === 'read')?.consumedAtStep).toBe(1);
     expect(updateHintsSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, hints);
+  });
+
+  it('says which hints the decision in flight is reading, and forgets them once it lands', async () => {
+    const state = withHints(baseState(), [
+      hintFixture({ id: 'read', text: 'ignore the docs', consumedAt: HINT_AT, consumedAtStep: 1 }),
+      hintFixture({ id: 'queued', text: 'run a reviewer first' }),
+    ]);
+    let readingDuringDecision: unknown;
+    decideSpy.mockImplementationOnce(async () => {
+      readingDuringDecision = state['orchestratorReadingHints'];
+      return {
+        decision: { action: 'done', reason: 'all set' },
+        usage: NO_USAGE,
+        model: 'claude-haiku-4-5',
+      };
+    });
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(readingDuringDecision).toEqual({ [WORKFLOW_RUN_ID]: ['queued'] });
+    expect(state['orchestratorReadingHints']).toEqual({});
+  });
+
+  it('keeps a hint reading while a restarted decision is still to come', async () => {
+    const state = withHints(baseState(), [hintFixture({ id: 'queued', text: 'no PR' })]);
+    state['pendingOrchestrations'] = {};
+    const { set, get } = harness(state);
+    const readingHistory: Array<unknown> = [];
+    const recordingSet = ((updater: unknown) => {
+      (set as (value: unknown) => void)(updater);
+      readingHistory.push(state['orchestratorReadingHints']);
+    }) as never;
+    decideSpy.mockImplementationOnce(async () => {
+      state['pendingOrchestrations'] = {
+        [WORKFLOW_RUN_ID]: { sessionId: SESSION_ID, bypassGate: false },
+      };
+      requestDecisionRestart({ set, workflowRunId: WORKFLOW_RUN_ID });
+      return {
+        decision: { action: 'done', reason: 'all set' },
+        usage: NO_USAGE,
+        model: 'claude-haiku-4-5',
+      };
+    });
+    let historyAtRestart: ReadonlyArray<unknown> = [];
+    decideSpy.mockImplementationOnce(async () => {
+      historyAtRestart = [...readingHistory];
+      return {
+        decision: { action: 'done', reason: 'all set' },
+        usage: NO_USAGE,
+        model: 'claude-haiku-4-5',
+      };
+    });
+
+    await orchestrateNextStep(recordingSet, get)(SESSION_ID, WORKFLOW_RUN_ID);
+    await vi.waitFor(() => expect(decideSpy).toHaveBeenCalledTimes(2));
+
+    const firstMark = historyAtRestart.findIndex(
+      (entry) => entry !== undefined && Object.keys(entry as object).length > 0,
+    );
+    expect(firstMark).toBeGreaterThanOrEqual(0);
+    expect(historyAtRestart.slice(firstMark)).toEqual(
+      historyAtRestart.slice(firstMark).map(() => ({ [WORKFLOW_RUN_ID]: ['queued'] })),
+    );
+    await vi.waitFor(() => expect(state['orchestratorReadingHints']).toEqual({}));
   });
 
   it('throws away a decision when a hint asks to be read now while it is in flight', async () => {

@@ -85,7 +85,9 @@ with the step where the orchestrator first read it.
 
 - **Queue** waits until the next decision
 - **Read now** restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
-- You can remove a queued hint before it is read
+- The field stays open while the orchestrator decides, and it empties as soon as you send. If the hint can't be saved, your text comes back
+- Each hint says where it stands: **Waits for the next decision**, **Reading now** while a decision has it, or **Read at step N**. Read hints sit behind a count
+- You can remove a hint, except while a decision is reading it
 
 Asking for a certain provider or model on a step is a hint too.
 
@@ -285,10 +287,14 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   reads the hint. Running steps are cancelled and marked skipped before a new
   decision is asked for. When a decision lands, the hints it read are marked
   used, with the step they informed. A hint added while it was deciding stays
-  pending for the next one.
+  pending for the next one. `orchestratorReadingHints` holds, per run, the
+  unread hints a decision in flight took in, plus a hint sent with **Read now**
+  until the decision it asked for starts. A decision that ends with no restart
+  queued behind it clears the entry, so a hint nothing picked up goes back to
+  queued.
 
-The restart marks, the set of runs that are deciding and the queued requests
-live in memory, keyed by run and removed with it. Everything a restart needs
+The restart marks, the hints being read, the set of runs that are deciding and
+the queued requests live in memory, keyed by run and removed with it. Everything a restart needs
 (outcome, stop, summary, hints) is on the run's row.
 
 Expected output belongs to a workflow's own steps. Step library entries do not

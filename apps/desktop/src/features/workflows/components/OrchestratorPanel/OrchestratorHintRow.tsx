@@ -1,53 +1,75 @@
 import { X } from 'lucide-react';
 import type { OrchestratorHint } from '@goodboy/types';
-import { IconButton, cn, tintClasses } from '@goodboy/ui';
+import { IconButton, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import type { OrchestratorHintStatus } from './orchestratorHintStatus';
 
 type Props = {
   readonly hint: OrchestratorHint;
-  readonly disabled: boolean;
+  readonly status: OrchestratorHintStatus;
   readonly onRemove: () => void;
 };
 
-type StatusParams = {
+type ReadLabelParams = {
   readonly hint: OrchestratorHint;
 };
 
-const statusFor = ({ hint }: StatusParams): string => {
-  if (hint.consumedAt == null) {
-    return 'Queued';
-  }
-  return hint.consumedAtStep == null ? 'Read' : `Read at step ${hint.consumedAtStep}`;
+const readLabel = ({ hint }: ReadLabelParams): string =>
+  hint.consumedAtStep == null ? 'Read' : `Read at step ${hint.consumedAtStep}`;
+
+const ROW_CLASSES: Record<OrchestratorHintStatus, string> = {
+  queued: cn('border-dashed', tintClasses('warning').border),
+  reading: tintClasses('info').border,
+  read: 'border-border-soft',
 };
 
-export const OrchestratorHintRow = ({ hint, disabled, onRemove }: Props) => {
-  const isQueued = hint.consumedAt == null;
+const STATUS_TEXT_CLASSES: Record<OrchestratorHintStatus, string> = {
+  queued: 'text-warning',
+  reading: 'text-info',
+  read: 'text-muted-foreground',
+};
+
+export const OrchestratorHintRow = ({ hint, status, onRemove }: Props) => {
+  const isReading = status === 'reading';
   return (
     <li
       data-testid="orchestrator-hint-row"
-      data-status={isQueued ? 'queued' : 'read'}
+      data-status={status}
       className={cn(
-        'flex items-start gap-2 rounded-md border px-2 py-1 text-2xs',
-        isQueued
-          ? cn('border-dashed', tintClasses('warning').border)
-          : 'border-border-soft bg-background',
+        'flex items-center gap-2 rounded-md border bg-background px-2 py-1 text-2xs',
+        ROW_CLASSES[status],
       )}
     >
-      <span className="min-w-0 flex-1 leading-relaxed text-foreground">{hint.text}</span>
       <span
         className={cn(
-          'shrink-0 tabular-nums leading-relaxed',
-          isQueued ? 'text-warning' : 'text-muted-foreground',
+          'min-w-0 flex-1 leading-relaxed',
+          status === 'read' ? 'text-muted-foreground' : 'text-foreground',
         )}
       >
-        {statusFor({ hint })}
+        {hint.text}
+      </span>
+      <span
+        data-testid="orchestrator-hint-status"
+        className={cn(
+          'flex shrink-0 items-center gap-1.5 tabular-nums leading-relaxed',
+          STATUS_TEXT_CLASSES[status],
+        )}
+      >
+        {isReading && <StatusDot tone="info" size="sm" pulsing />}
+        {status === 'queued' && 'Waits for the next decision'}
+        {isReading && 'Reading now'}
+        {status === 'read' && readLabel({ hint })}
       </span>
       <IconButton
         icon={X}
         label="Remove hint"
-        tooltip="Remove it from what the orchestrator reads"
+        tooltip={
+          isReading
+            ? 'The orchestrator is reading it now'
+            : 'Remove it from what the orchestrator reads'
+        }
         variant="ghost"
         iconSize={11}
-        disabled={disabled}
+        disabled={isReading}
         onClick={onRemove}
       />
     </li>

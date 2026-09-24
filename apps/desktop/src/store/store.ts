@@ -1084,6 +1084,7 @@ export const initialState: AppState = {
   sessionPhaseRuns: {},
   orchestratingWorkflowRuns: {},
   decisionRestartMarks: {},
+  orchestratorReadingHints: {},
   pendingOrchestrations: {},
   pendingAdvanceSessions: new Set<SessionId>(),
   announcedWorkflowBlocks: {},

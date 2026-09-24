@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button, Input } from '@goodboy/ui';
 import type {
   OrchestratorHintDelivery,
@@ -8,7 +8,6 @@ import type {
 type Props = {
   readonly isDeciding: boolean;
   readonly isStepRunning: boolean;
-  readonly disabled: boolean;
   readonly onSubmit: (draft: OrchestratorHintDraft) => Promise<boolean>;
 };
 
@@ -23,7 +22,7 @@ type ReadNowParams = {
 
 const readNowCopy = ({ isDeciding, isStepRunning }: ReadNowParams): string => {
   if (isDeciding) {
-    return 'Read now restarts the decision in flight with your hint.';
+    return 'Read now restarts this one with your hint.';
   }
   if (isStepRunning) {
     return 'Read now stops the step in flight, keeps what it wrote, and decides again.';
@@ -31,23 +30,23 @@ const readNowCopy = ({ isDeciding, isStepRunning }: ReadNowParams): string => {
   return 'Read now asks for a decision right away.';
 };
 
-export const OrchestratorHintComposer = ({
-  isDeciding,
-  isStepRunning,
-  disabled,
-  onSubmit,
-}: Props) => {
+export const OrchestratorHintComposer = ({ isDeciding, isStepRunning, onSubmit }: Props) => {
   const [text, setText] = useState('');
-  const canSend = disabled === false && text.trim() !== '';
+  const inputRef = useRef<HTMLInputElement>(null);
+  const canSend = text.trim() !== '';
 
   const send = async ({ delivery }: SendParams) => {
-    if (canSend === false) {
+    const draft = text;
+    if (draft.trim() === '') {
       return;
     }
-    const isSaved = await onSubmit({ text, delivery });
+    setText('');
+    inputRef.current?.focus();
+    const isSaved = await onSubmit({ text: draft, delivery });
     if (isSaved) {
-      setText('');
+      return;
     }
+    setText((current) => (current === '' ? draft : current));
   };
 
   return (
@@ -60,13 +59,13 @@ export const OrchestratorHintComposer = ({
       }}
     >
       <Input
+        ref={inputRef}
         id="orchestrator-hint-field"
         value={text}
         onChange={(event) => setText(event.target.value)}
         placeholder="Tell the orchestrator something"
         aria-label="Hint for the orchestrator"
         data-testid="orchestrator-hint-input"
-        disabled={disabled}
         className="h-7 text-2xs"
       />
       <div className="flex flex-wrap items-center justify-between gap-2">

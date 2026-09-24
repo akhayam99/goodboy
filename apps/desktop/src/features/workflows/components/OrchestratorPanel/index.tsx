@@ -40,6 +40,7 @@ import { OrchestratorDrawer } from './OrchestratorDrawer';
 import { OrchestratorHintComposer } from './OrchestratorHintComposer';
 import { OrchestratorHintLog } from './OrchestratorHintLog';
 import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
+import { orchestratorHintStatus } from './orchestratorHintStatus';
 import { resolveOrchestratorState } from './orchestratorState';
 import { useElapsedLabel } from './useElapsedLabel';
 
@@ -55,6 +56,7 @@ type Props = {
 const EMPTY_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
 const EMPTY_ALERTS: ReadonlyArray<BudgetAlert> = [];
 const EMPTY_HINTS: ReadonlyArray<OrchestratorHint> = [];
+const EMPTY_READING: ReadonlyArray<string> = [];
 
 export const OrchestratorPanel = ({
   sessionId,
@@ -82,10 +84,15 @@ export const OrchestratorPanel = ({
   const sessionBudgetBlocked = useAppStore((state) =>
     isBudgetBlocked({ alerts: state.budgetAlerts ?? EMPTY_ALERTS, sessionId }),
   );
+  const readingHintIds = useAppStore(
+    (state) => state.orchestratorReadingHints[run.id] ?? EMPTY_READING,
+  );
   const [isHintsOpen, setIsHintsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const hints = run.orchestratorHints ?? EMPTY_HINTS;
-  const queuedHintCount = hints.filter((hint) => hint.consumedAt == null).length;
+  const queuedHintCount = hints.filter(
+    (hint) => orchestratorHintStatus({ hint, readingHintIds }) === 'queued',
+  ).length;
 
   const state = resolveOrchestratorState({
     run,
@@ -330,7 +337,6 @@ export const OrchestratorPanel = ({
           <OrchestratorHintComposer
             isDeciding={isOrchestrating}
             isStepRunning={agents.some((agent) => agent.status === 'running')}
-            disabled={busy || isOrchestrating}
             onSubmit={async (draft) => {
               try {
                 await addWorkflowOrchestratorHint(sessionId, run.id, draft);
@@ -343,7 +349,7 @@ export const OrchestratorPanel = ({
           />
           <OrchestratorHintLog
             hints={hints}
-            disabled={busy}
+            readingHintIds={readingHintIds}
             onRemove={(hintId) =>
               void removeWorkflowOrchestratorHint(sessionId, run.id, hintId).catch(
                 (error: unknown) =>

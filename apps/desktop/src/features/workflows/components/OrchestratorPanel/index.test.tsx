@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -138,6 +138,7 @@ beforeEach(() => {
     setWorkflowRunSpendLimit: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
     sessionOpenQuestions: {},
+    orchestratorReadingHints: {},
     budgetAlerts: [],
     sessionTelemetry: {},
     sessionPhaseRuns: {},
@@ -518,25 +519,66 @@ describe('OrchestratorPanel strip', () => {
     renderPanel({ isOrchestrating: true });
     openHints();
     expect(screen.getByTestId('orchestrator-hint-timing').textContent).toContain(
-      'restarts the decision in flight',
+      'Read now restarts this one with your hint.',
     );
   });
 
-  it('disables hint delivery while the orchestrator is deciding', () => {
+  it('keeps hint delivery open while the orchestrator is deciding', () => {
     renderPanel({ isOrchestrating: true });
 
     openHints();
-    expect(screen.getByTestId('orchestrator-hint-input').hasAttribute('disabled')).toBe(true);
-    expect(screen.getByTestId('orchestrator-hint-queue').hasAttribute('disabled')).toBe(true);
-    expect(screen.getByTestId('orchestrator-hint-now').hasAttribute('disabled')).toBe(true);
+    const input = screen.getByTestId('orchestrator-hint-input');
+    expect(input.hasAttribute('disabled')).toBe(false);
+    fireEvent.change(input, { target: { value: 'skip the visual suite' } });
+    expect(screen.getByTestId('orchestrator-hint-queue').hasAttribute('disabled')).toBe(false);
+    fireEvent.click(screen.getByTestId('orchestrator-hint-now'));
+
+    expect(storeState['addWorkflowOrchestratorHint']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
+      text: 'skip the visual suite',
+      delivery: 'now',
+    });
   });
 
-  it('lists every hint newest first with the step that first read it', () => {
+  it('clears the field as soon as a hint is sent, keeping the focus there', () => {
+    storeState['addWorkflowOrchestratorHint'] = vi.fn(() => new Promise(() => undefined));
+    renderPanel();
+
+    openHints();
+    const input = screen.getByTestId('orchestrator-hint-input') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'ignore the website' } });
+    fireEvent.click(screen.getByTestId('orchestrator-hint-queue'));
+
+    expect(input.value).toBe('');
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('puts the text back when the hint could not be saved', async () => {
+    storeState['addWorkflowOrchestratorHint'] = vi.fn(async () => {
+      throw new Error('disk full');
+    });
+    storeState['reportError'] = vi.fn(async () => undefined);
+    renderPanel();
+
+    openHints();
+    const input = screen.getByTestId('orchestrator-hint-input') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'ignore the website' } });
+    fireEvent.click(screen.getByTestId('orchestrator-hint-now'));
+
+    expect(input.value).toBe('');
+    await waitFor(() => expect(input.value).toBe('ignore the website'));
+    expect(storeState['reportError']).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't save the hint" }),
+    );
+  });
+
+  it('tells a queued hint from one the decision is reading now', () => {
+    storeState['orchestratorReadingHints'] = { [RUN_ID]: ['reading'] };
     renderPanel({
+      isOrchestrating: true,
       runOverride: run({
         orchestratorHints: [
-          hint({ id: 'read', text: 'keep it to one PR', consumedAt: HINT_AT, consumedAtStep: 2 }),
-          hint({ id: 'queued', text: 'run a reviewer first' }),
+          hint({ id: 'reading', text: 'skip the visual suite' }),
+          hint({ id: 'queued', text: 'prefer Sonnet 5 for the review' }),
         ],
       }),
     });
@@ -544,8 +586,40 @@ describe('OrchestratorPanel strip', () => {
     openHints();
 
     const rows = screen.getAllByTestId('orchestrator-hint-row');
-    expect(rows.map((row) => row.getAttribute('data-status'))).toEqual(['queued', 'read']);
-    expect(rows[1]?.textContent).toContain('Read at step 2');
+    expect(rows.map((row) => row.getAttribute('data-status'))).toEqual(['queued', 'reading']);
+    expect(rows[0]?.textContent).toContain('Waits for the next decision');
+    expect(rows[1]?.textContent).toContain('Reading now');
+    const [queuedRemove, readingRemove] = screen.getAllByRole('button', { name: 'Remove hint' });
+    expect(queuedRemove?.hasAttribute('disabled')).toBe(false);
+    expect(readingRemove?.hasAttribute('disabled')).toBe(true);
+    expect(sentence()).toContain('1 hint queued');
+  });
+
+  it('keeps read hints behind a count with the steps that read them', () => {
+    renderPanel({
+      runOverride: run({
+        orchestratorHints: [
+          hint({ id: 'read-1', text: 'keep it to one PR', consumedAt: HINT_AT, consumedAtStep: 2 }),
+          hint({ id: 'read-2', text: 'map ledger first', consumedAt: HINT_AT, consumedAtStep: 3 }),
+          hint({ id: 'queued', text: 'run a reviewer first' }),
+        ],
+      }),
+    });
+
+    openHints();
+
+    expect(
+      screen.getAllByTestId('orchestrator-hint-row').map((row) => row.getAttribute('data-status')),
+    ).toEqual(['queued']);
+    expect(screen.getByTestId('orchestrator-hint-read-steps').textContent).toBe(
+      'Read at step 2, 3',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show read (2)' }));
+
+    const rows = screen.getAllByTestId('orchestrator-hint-row');
+    expect(rows.map((row) => row.getAttribute('data-status'))).toEqual(['queued', 'read', 'read']);
+    expect(rows[1]?.textContent).toContain('Read at step 3');
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Remove hint' })[0]!);
     expect(storeState['removeWorkflowOrchestratorHint']).toHaveBeenCalledWith(

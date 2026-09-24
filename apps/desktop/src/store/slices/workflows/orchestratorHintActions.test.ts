@@ -70,6 +70,8 @@ const baseState = ({
   ],
   orchestratingWorkflowRuns: { [RUN_ID]: isDeciding },
   decisionRestartMarks: {},
+  orchestratorReadingHints: {},
+  pendingOrchestrations: {},
   sessionPhaseRuns: {
     [SESSION_ID]: isStepRunning
       ? [{ id: 'agent-1', workflowRunId: RUN_ID, status: 'running', ordinal: 0 }]
@@ -129,6 +131,50 @@ describe('orchestrator hint actions', () => {
     expect(decisionRestartMark({ get, workflowRunId: RUN_ID })).toBe(before + 1);
     expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
     expect(cancelRunningStepsSpy).not.toHaveBeenCalled();
+  });
+
+  it('shows a hint read now as reading while the restarted decision is still to come', async () => {
+    const state = baseState({ isDeciding: true });
+    const { set, get } = harness(state);
+
+    await addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
+      text: 'no PR, commit locally',
+      delivery: 'now',
+    });
+    await Promise.resolve();
+
+    const [hint] = hintsOf(state);
+    expect(state['orchestratorReadingHints']).toEqual({ [RUN_ID]: [hint!.id] });
+  });
+
+  it('puts a hint read now back in the queue when no decision picks it up', async () => {
+    const state = baseState({});
+    const { set, get } = harness(state);
+    let readingDuringDelivery: unknown;
+    state['continueWorkflowRun'] = vi.fn(async () => {
+      readingDuringDelivery = state['orchestratorReadingHints'];
+    });
+
+    await addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
+      text: 'look at the payout domain first',
+      delivery: 'now',
+    });
+
+    const [hint] = hintsOf(state);
+    expect(readingDuringDelivery).toEqual({ [RUN_ID]: [hint!.id] });
+    await vi.waitFor(() => expect(state['orchestratorReadingHints']).toEqual({}));
+  });
+
+  it('marks nothing as reading when the hint is only queued', async () => {
+    const state = baseState({ isDeciding: true });
+    const { set, get } = harness(state);
+
+    await addWorkflowOrchestratorHint(set, get)(SESSION_ID, RUN_ID, {
+      text: 'no PR, commit locally',
+      delivery: 'queue',
+    });
+
+    expect(state['orchestratorReadingHints']).toEqual({});
   });
 
   it('resolves after persisting before the restarted decision settles', async () => {

@@ -69,6 +69,7 @@ import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';
 import { decisionRestartMark } from './decisionRestart';
+import { clearHintsReading, markHintsReading } from './orchestratorReadingHints';
 import { updateOrchestratorHints } from './updateOrchestratorHints';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import { recordOrchestratorUsage } from './recordOrchestratorUsage';
@@ -632,6 +633,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       });
       const readHints = run.orchestratorHints ?? [];
       const readHintIds = new Set(readHints.map((hint) => hint.id));
+      markHintsReading({
+        set,
+        workflowRunId,
+        hintIds: readHints.filter((hint) => hint.consumedAt == null).map((hint) => hint.id),
+      });
       const restartMark = decisionRestartMark({ get, workflowRunId });
       const isDecisionDiscarded = (): boolean =>
         hasOperatorStop({ get, sessionId, workflowRunId }) ||
@@ -951,6 +957,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       orchestrationInFlight.delete(workflowRunId);
       setDeciding({ set, workflowRunId, isDeciding: false });
       const pending = get().pendingOrchestrations?.[workflowRunId];
+      if (pending == null) {
+        clearHintsReading({ set, workflowRunId });
+      }
       if (pending != null) {
         set((state) => ({
           pendingOrchestrations: Object.fromEntries(

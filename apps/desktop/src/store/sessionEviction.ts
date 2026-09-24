@@ -122,6 +122,7 @@ export const SESSION_EVICTION = [
   { key: 'workflowRunAttachments', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'orchestratingWorkflowRuns', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'decisionRestartMarks', keyedBy: 'workflowRun', evictOn: 'delete' },
+  { key: 'orchestratorReadingHints', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'announcedWorkflowBlocks', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'announcedRunBudget', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'pendingOrchestrations', keyedBy: 'workflowRun', evictOn: 'delete' },
