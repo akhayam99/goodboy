@@ -136,16 +136,21 @@ fn named_flag(argv: &[String], name: &str) -> bool {
 
 #[cfg(unix)]
 fn ask(request: &QueryRequest) -> Result<QueryResponse, String> {
-    use std::io::{BufRead, BufReader, Write};
-    use std::os::unix::net::UnixStream;
-
     let socket = std::env::var(SOCKET_ENV).map_err(|_| {
         format!(
             "{} is unset: run this inside a Goodboy agent, or start the Goodboy app",
             SOCKET_ENV
         )
     })?;
-    let mut stream = UnixStream::connect(&socket)
+    ask_at(&socket, request)
+}
+
+#[cfg(unix)]
+pub(super) fn ask_at(socket: &str, request: &QueryRequest) -> Result<QueryResponse, String> {
+    use std::io::{BufRead, BufReader, Write};
+    use std::os::unix::net::UnixStream;
+
+    let mut stream = UnixStream::connect(socket)
         .map_err(|error| format!("cannot reach Goodboy at {}: {}", socket, error))?;
     let mut payload = serde_json::to_string(request).map_err(|error| error.to_string())?;
     payload.push('\n');

@@ -127,7 +127,7 @@ Everything the app saves for itself lives in `~/.goodboy`.
 - `scratch/<session-id>/`: where a session's turns write before any project is mounted.
 - `workspaces/<slug>/PROFILE.md`: a copy of a workspace's profile, written out for reading. The database row is the real one, and the app never reads this file back.
 - `file-versions/`: saved versions of files.
-- `query-<pid>.sock`: the socket a running app uses for the query bridge (see [query-bridge.md](query-bridge.md)).
+- `sockets/query-<pid>.sock`: the socket a running app uses for the query bridge (see [query-bridge.md](query-bridge.md)). `sockets/` holds only bridge sockets, because it is the only part of `~/.goodboy` a bridge-enabled agent is granted. The database, its sidecars and its snapshots stay outside that grant.
 - `boot-breadcrumbs.log`: how long each startup step took.
 
 When a session works on a repository, it gets its own git worktree in the

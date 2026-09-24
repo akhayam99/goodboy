@@ -1254,6 +1254,60 @@ mod tests {
     }
 
     #[test]
+    fn bridge_writers_are_granted_the_socket_directory_and_never_the_application_directory() {
+        let empty: Vec<String> = vec![];
+        let roots = vec!["/repo/one/.git".to_string()];
+        let socket_directory = crate::query_bridge::socket_directory()
+            .and_then(|path| path.to_str())
+            .expect("a socket directory");
+        let application_directory = std::path::Path::new(socket_directory)
+            .parent()
+            .expect("an application directory");
+        let database = crate::db::resolve_db_path().expect("a database path");
+        let stored = [
+            database.clone(),
+            std::path::PathBuf::from(format!("{}-wal", database.display())),
+            std::path::PathBuf::from(format!("{}-shm", database.display())),
+            std::path::PathBuf::from(format!("{}.pre-m1-from-m0-0.bak", database.display())),
+        ];
+        let mut args = make_args(None, None, &empty);
+        args.writable_roots = &roots;
+        args.query_socket_directory = Some(socket_directory);
+        assert_eq!(
+            application_directory.file_name(),
+            Some(std::ffi::OsStr::new(".goodboy"))
+        );
+        for binary in ["claude", "codex"] {
+            let cli = build_provider_cli_args(binary, &args);
+            let added_directories: Vec<&str> = cli
+                .windows(2)
+                .filter(|pair| pair[0] == "--add-dir")
+                .map(|pair| pair[1].as_str())
+                .collect();
+
+            assert_eq!(
+                added_directories,
+                vec!["/repo/one/.git", socket_directory],
+                "{binary}"
+            );
+            for directory in added_directories {
+                let granted = std::path::Path::new(directory);
+                assert!(
+                    !application_directory.starts_with(granted),
+                    "{binary} grants {directory}"
+                );
+                for path in &stored {
+                    assert!(
+                        !path.starts_with(granted),
+                        "{binary} grants {} through {directory}",
+                        path.display()
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
     fn codex_args_add_sibling_worktrees_without_their_parent_directory() {
         let empty: Vec<String> = vec![];
         let roots = vec![
