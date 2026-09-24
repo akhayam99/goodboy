@@ -87,6 +87,11 @@ fails silently at runtime.
   `node_modules` and `better_sqlite3.node` exist and carry on. Do not repoint
   `core.hooksPath`. The hooks find their tools through the common git
   directory on purpose.
+- The pre-commit hook in `lefthook.yml` finds `prettier` and `commitlint` in
+  the main checkout's `node_modules` (through the common git directory),
+  because a worktree does not always have its own install. It still runs the
+  binary from the current directory, so prettier finds files that exist only
+  in the worktree, such as ones added in this commit.
 - A worktree installed with `--ignore-scripts` has no `better-sqlite3`
   binding, and both `@goodboy/db` and `@goodboy/core` need it. The root test
   script runs `turbo run test --continue`, so every other package still runs.

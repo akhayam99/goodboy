@@ -42,7 +42,7 @@ coverage/
 # misc
 .tmp-*.html
 *.tsbuildinfo
-.claude/launch.json
+**/.claude/launch.json
 .claude/scheduled_tasks.lock
 .goodboy/
 
