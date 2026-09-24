@@ -86,6 +86,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       clusterCompletionHolds: {},
       selectedAgentId: {},
       agentRunHistory: {},
+      runRouting: {},
       agentTurnState: {},
       sessionBudgets: {},
       summarizerStatus: {},
@@ -149,7 +150,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         clusterCompletionHolds[entry.sessionId] = entry.holds;
       }
       for (const s of sessions) {
-        const rows = await verifyAvailableWorktrees({
+        const { available: rows } = await verifyAvailableWorktrees({
           sessionId: s.id,
           candidates: worktreesBySession.get(s.id) ?? [],
           projects,

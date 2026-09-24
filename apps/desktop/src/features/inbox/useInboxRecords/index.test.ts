@@ -1,9 +1,9 @@
 import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
-import type { GithubIssueGroup } from '../../github/components/GitHubStudio/useGithubIssues';
-import type { GitlabIssueGroup } from '../../integrations/gitlab/GitlabStudio/useGitlabIssues';
-import type { GitlabMrGroup } from '../../integrations/gitlab/GitlabStudio/useGitlabMrs';
+import type { GithubIssueGroup } from '../../github/components/PullRequest/useGithubIssues';
+import type { GitlabIssueGroup } from '../../integrations/gitlab/MergeRequest/useGitlabIssues';
+import type { GitlabMrGroup } from '../../integrations/gitlab/MergeRequest/useGitlabMrs';
 import type { JiraIssueGroup } from '../../integrations/jira/JiraStudio/useJiraIssues';
 import type { LinearIssueGroup } from '../../integrations/linear/LinearStudio/useLinearIssues';
 import type { SentryIssueRow } from '../../integrations/sentry/SentryStudio/useSentryIssues';
@@ -13,7 +13,12 @@ import type { BitbucketRepo } from '../../integrations/bitbucket/client';
 
 const h = vi.hoisted(() => ({
   integrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
-  github: { groups: [] as GithubIssueGroup[], loading: false, error: null as string | null },
+  github: {
+    groups: [] as GithubIssueGroup[],
+    loading: false,
+    error: null as string | null,
+    hasRemote: null as boolean | null,
+  },
   gitlabIssues: { groups: [] as GitlabIssueGroup[], loading: false, error: null as string | null },
   gitlabMrs: {
     groups: [] as GitlabMrGroup[],
@@ -46,21 +51,21 @@ vi.mock('../../../store', () => ({
     selector({ workspaceIntegrations: h.integrations }),
 }));
 
-vi.mock('../../github/components/GitHubStudio/useGithubIssues', () => ({
+vi.mock('../../github/components/PullRequest/useGithubIssues', () => ({
   useGithubIssues: (params: { isEnabled: boolean }) => {
     h.enabled.github = params.isEnabled;
     return { ...h.github, refetch: h.refetch.github };
   },
 }));
 
-vi.mock('../../integrations/gitlab/GitlabStudio/useGitlabIssues', () => ({
+vi.mock('../../integrations/gitlab/MergeRequest/useGitlabIssues', () => ({
   useGitlabIssues: (params: { isEnabled: boolean }) => {
     h.enabled.gitlab = params.isEnabled;
     return { ...h.gitlabIssues, refetch: h.refetch.gitlabIssues };
   },
 }));
 
-vi.mock('../../integrations/gitlab/GitlabStudio/useGitlabMrs', () => ({
+vi.mock('../../integrations/gitlab/MergeRequest/useGitlabMrs', () => ({
   useGitlabMrs: (params: { isEnabled: boolean }) => {
     h.enabled.gitlabMrs = params.isEnabled;
     return { ...h.gitlabMrs, refetch: h.refetch.gitlabMrs };
@@ -161,7 +166,7 @@ const jiraGroups = (updatedAt: string): JiraIssueGroup[] => [
 
 beforeEach(() => {
   h.integrations = {};
-  h.github = { groups: [], loading: false, error: null };
+  h.github = { groups: [], loading: false, error: null, hasRemote: null };
   h.gitlabIssues = { groups: [], loading: false, error: null };
   h.gitlabMrs = { groups: [], host: null, loading: false, error: null };
   h.linear = { groups: [], loading: false, error: null };
@@ -182,7 +187,12 @@ afterEach(() => {
 
 describe('useInboxRecords', () => {
   it('aggregates and sorts records newest first across providers', () => {
-    h.github = { groups: githubGroups('2026-08-01T10:00:00Z'), loading: false, error: null };
+    h.github = {
+      groups: githubGroups('2026-08-01T10:00:00Z'),
+      loading: false,
+      error: null,
+      hasRemote: true,
+    };
     h.jira = { groups: jiraGroups('2026-08-03T10:00:00Z'), isLoading: false, error: null };
 
     const { result } = renderHook(() => useInboxRecords({ workspaceId, rootPath: '/repo' }));
@@ -205,8 +215,27 @@ describe('useInboxRecords', () => {
     expect(h.enabled.bitbucket).toBe(false);
   });
 
+  it('counts github as connected only once a remote is found', () => {
+    h.integrations = { 'workspace-1': [{ provider: 'linear' }] };
+    h.github = { groups: [], loading: false, error: null, hasRemote: false };
+
+    const { result, rerender } = renderHook(() =>
+      useInboxRecords({ workspaceId, rootPath: '/repo' }),
+    );
+    expect(result.current.connected).toEqual(['linear']);
+
+    h.github = { groups: [], loading: false, error: null, hasRemote: true };
+    rerender();
+    expect(result.current.connected).toEqual(['github', 'linear']);
+  });
+
   it('isolates a failing provider so the rest of the inbox still renders', () => {
-    h.github = { groups: githubGroups('2026-08-01T10:00:00Z'), loading: false, error: null };
+    h.github = {
+      groups: githubGroups('2026-08-01T10:00:00Z'),
+      loading: false,
+      error: null,
+      hasRemote: true,
+    };
     h.jira = { groups: [], isLoading: false, error: 'Jira request failed' };
 
     const { result } = renderHook(() => useInboxRecords({ workspaceId, rootPath: '/repo' }));

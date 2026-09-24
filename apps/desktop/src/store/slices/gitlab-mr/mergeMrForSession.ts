@@ -28,7 +28,11 @@ export const mergeMrForSession = (_set: SetFn, get: GetFn) => {
       await gitlabMergeMr(context.workspaceId, context.host, context.projectPath, mr.iid);
     } catch (err) {
       const errMsg = formatError(err);
-      void get().emitNotification('error', 'error', `Merge of !${mr.iid} failed`, errMsg, {
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'error',
+        title: `Couldn't merge !${mr.iid}`,
+        body: errMsg,
         sessionId,
         workspaceId: context.workspaceId,
       });

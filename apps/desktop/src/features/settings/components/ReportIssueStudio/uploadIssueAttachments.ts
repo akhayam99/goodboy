@@ -1,5 +1,5 @@
 import type { GhRunner } from '@goodboy/core';
-import type { StagedBugReportImage } from './stageImages';
+import type { StagedBugReportImage } from '../../settings';
 
 const UPLOAD_ENDPOINT = 'https://uploads.github.com/user-attachments/assets';
 

@@ -131,6 +131,52 @@ describe('parseCursorStreamLine', () => {
     });
   });
 
+  it('reads the context of a single request turn from the result usage', () => {
+    const turnContext: ParseContext = {
+      runId: 'run_cursor_single' as ProviderRunId,
+      now: () => at,
+    };
+    parseCursorStreamLine(
+      JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'ok' }] } }),
+      turnContext,
+    );
+    const events = parseCursorStreamLine(
+      JSON.stringify({
+        type: 'result',
+        subtype: 'success',
+        usage: { inputTokens: 9889, outputTokens: 26, cacheReadTokens: 3840, cacheWriteTokens: 12 },
+      }),
+      turnContext,
+    );
+
+    expect(events[0]).toMatchObject({
+      kind: 'usage',
+      usage: { cachedInputTokens: 3840, cacheCreationInputTokens: 12, contextTokens: 13767 },
+    });
+  });
+
+  it('reports no context when the turn summed several requests', () => {
+    const turnContext: ParseContext = { runId: 'run_cursor_multi' as ProviderRunId, now: () => at };
+    parseCursorStreamLine(JSON.stringify({ type: 'tool_call', subtype: 'started' }), turnContext);
+    parseCursorStreamLine(JSON.stringify({ type: 'tool_call', subtype: 'completed' }), turnContext);
+    const events = parseCursorStreamLine(
+      JSON.stringify({
+        type: 'result',
+        subtype: 'success',
+        usage: {
+          inputTokens: 21134,
+          outputTokens: 211,
+          cacheReadTokens: 20480,
+          cacheWriteTokens: 0,
+        },
+      }),
+      turnContext,
+    );
+
+    expect(events[0]).toMatchObject({ kind: 'usage', usage: { inputTokens: 21134 } });
+    expect(events[0]?.kind === 'usage' && events[0].usage.contextTokens).toBeFalsy();
+  });
+
   it('emits unknown_payload for unrecognised payload types', () => {
     const raw = { type: 'cursor_internal', seq: 7 };
     const events = parse(JSON.stringify(raw));

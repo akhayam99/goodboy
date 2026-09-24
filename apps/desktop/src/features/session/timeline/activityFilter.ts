@@ -2,14 +2,14 @@ import type { SessionEventKind } from '@goodboy/types';
 import type { TimelineTopLevelEntry } from './buildTimelineGroups';
 
 export const ACTIVITY_CATEGORIES = [
+  'agents',
+  'workflows',
+  'questions',
+  'artifacts',
+  'pullRequests',
   'suggestions',
   'worktree',
   'issues',
-  'pullRequests',
-  'workflows',
-  'artifacts',
-  'agents',
-  'questions',
   'resolver',
   'decisions',
   'session',

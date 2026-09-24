@@ -6,4 +6,4 @@ type Params = {
 };
 
 export const isPrReviewSession = ({ agents }: Params): boolean =>
-  agents.some((agent) => classifyAgent(agent, null) === 'pr-reviewer');
+  agents.some((agent) => classifyAgent({ agent, override: null }) === 'pr-reviewer');

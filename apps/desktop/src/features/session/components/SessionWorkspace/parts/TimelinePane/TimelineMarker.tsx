@@ -74,7 +74,7 @@ const glyphClasses = ({ fill, tone }: FillParams): string => {
     return 'text-current';
   }
   if (fill === 'hollow') {
-    return 'text-muted-foreground/70';
+    return 'text-faint-foreground';
   }
   return tintClasses(tone).icon;
 };

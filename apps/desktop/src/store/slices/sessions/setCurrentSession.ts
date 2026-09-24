@@ -225,13 +225,13 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
           void get()
             .loadResolveSession({ sessionId: id })
             .catch((error: unknown) => {
-              void get().emitNotification(
-                'error',
-                'error',
-                'could not load resolver outcomes',
-                formatError(error),
-                { sessionId: id },
-              );
+              void get().emitNotification({
+                kind: 'error',
+                severity: 'error',
+                title: "Couldn't load resolver outcomes",
+                body: formatError(error),
+                sessionId: id,
+              });
             });
 
           if (!get().selectedAgentId[id]) {

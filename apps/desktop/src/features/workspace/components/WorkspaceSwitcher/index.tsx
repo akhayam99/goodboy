@@ -12,7 +12,7 @@ type Props = {
 };
 
 const actionClass =
-  'flex w-full items-center gap-2 px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground';
+  'flex w-full items-center gap-2 px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-hover hover:text-foreground';
 
 export const WorkspaceSwitcher = ({ onClose }: Props) => {
   const workspaces = useWorkspaces();
@@ -107,7 +107,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
         className={actionClass}
       >
         <Plus size={ICON_SIZE.row} aria-hidden />
-        New workspace
+        Add workspace
       </button>
       <button
         type="button"

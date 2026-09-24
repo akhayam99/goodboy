@@ -53,10 +53,9 @@ const renderAddStep = () =>
 
 type SessionParams = {
   readonly providerOverride?: ProviderId;
-  readonly runRoleModels?: RoleModelPreferences;
 };
 
-const seedSession = ({ providerOverride, runRoleModels }: SessionParams = {}): void => {
+const seedSession = ({ providerOverride }: SessionParams = {}): void => {
   storeState.sessions = [
     {
       id: SESSION_ID,
@@ -66,7 +65,6 @@ const seedSession = ({ providerOverride, runRoleModels }: SessionParams = {}): v
       workflowRuns: [
         {
           id: RUN_ID,
-          ...(runRoleModels != null && { roleModelOverrides: runRoleModels }),
         },
       ],
     },
@@ -121,10 +119,13 @@ describe('WorkflowAddStep', () => {
     expect(routing.getAttribute('aria-label')).toMatch(/codex/i);
   });
 
-  it('previews the run role override ahead of the session provider', async () => {
-    seedSession({
-      runRoleModels: { custom: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' } },
-    });
+  it('previews the workspace role model ahead of the session provider', async () => {
+    storeState.workspaceOverrides = {
+      [WORKSPACE_ID]: {
+        roleModels: { custom: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' } },
+      },
+    };
+    seedSession();
     renderAddStep();
 
     fireEvent.click(screen.getByRole('button', { name: /add step/i }));

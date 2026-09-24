@@ -39,7 +39,7 @@ export const DetectedRepoList = ({ repos, busy, known = {}, onConfirm, onDismiss
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border-soft/60 bg-subtle/20 p-3 text-left">
+    <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle p-3 text-left">
       <p className="text-xs text-muted-foreground">
         {repos.length === 1
           ? '1 repository found in this folder'
@@ -67,7 +67,7 @@ export const DetectedRepoList = ({ repos, busy, known = {}, onConfirm, onDismiss
                       <span className="truncate text-sm font-medium text-foreground">
                         {repo.name}
                       </span>
-                      <span className="truncate font-mono text-xs text-muted-foreground/70">
+                      <span className="truncate font-mono text-xs text-faint-foreground">
                         {repo.path}
                       </span>
                     </span>

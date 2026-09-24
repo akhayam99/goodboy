@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn, Divider, Popover, ScrollFade, SectionHeader, Tooltip } from '@goodboy/ui';
+import {
+  cn,
+  Divider,
+  Popover,
+  ScrollFade,
+  SectionHeader,
+  StatusDot,
+  Tooltip,
+  tintClasses,
+} from '@goodboy/ui';
 import type {
   MountId,
   SessionId,
@@ -13,6 +22,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { ScriptRunRecord, ScriptRunResult, ScriptRunStatus } from '../../scripts';
 import { MountPicker } from './MountPicker';
+import { SCRIPT_RUN_PRESENTATION } from '../ScriptsPanel/scriptRunPresentation';
 
 type ScriptsSectionProps = {
   readonly sessionId: SessionId;
@@ -110,7 +120,7 @@ export const ScriptsSection = ({
                 onClick={() => setPanelSectionExpanded(sessionId, 'scripts', !storedExpanded)}
                 aria-expanded={expanded}
                 aria-label={`${expanded ? 'collapse' : 'expand'} scripts`}
-                className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+                className="flex size-5 shrink-0 items-center justify-center rounded-sm text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 {expanded ? (
                   <ChevronDown size={ICON_SIZE.row} aria-hidden />
@@ -153,14 +163,14 @@ export const ScriptsSection = ({
           <button
             type="button"
             onClick={openScripts}
-            className="flex w-full items-center gap-2 rounded border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+            className="flex w-full items-center gap-2 rounded-sm border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-hover hover:text-foreground"
           >
             <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             <span className="min-w-0 truncate">Create script</span>
           </button>
         </div>
       ) : (
-        <p className="pb-1 pl-2 text-2xs text-muted-foreground/60">
+        <p className="pb-1 pl-2 text-2xs text-faint-foreground">
           {list.length === 0
             ? 'No scripts yet'
             : `${list.length} script${list.length === 1 ? '' : 's'}`}
@@ -224,12 +234,19 @@ function ScriptRow({
   return (
     <div
       className={cn(
-        'group flex items-center gap-2 rounded border border-transparent px-2 py-1.5 transition-colors',
-        !isPending && 'hover:bg-muted/60',
-        isPending && 'border-info/50',
+        'group flex items-center gap-2 rounded-sm border border-transparent px-2 py-1.5 transition-colors',
+        !isPending && 'hover:bg-hover',
+        isPending && cn(tintClasses('info').border),
       )}
     >
-      <StatusDot status={status} />
+      <StatusDot
+        tone={SCRIPT_RUN_PRESENTATION[status].dotTone}
+        pulsing={status === 'pending'}
+        {...(SCRIPT_RUN_PRESENTATION[status].dotLabel === null
+          ? {}
+          : { ariaLabel: SCRIPT_RUN_PRESENTATION[status].dotLabel })}
+        className="shrink-0"
+      />
       <span className="flex min-w-0 flex-1 items-baseline gap-1 text-xs">
         <span className="min-w-0 truncate font-medium text-foreground">{script.name}</span>
         {showProjectName ? (
@@ -249,10 +266,15 @@ function ScriptRow({
           aria-expanded={logOpen}
           title={logOpen ? 'Hide log' : 'Show log'}
           className={cn(
-            'flex size-6 shrink-0 items-center justify-center rounded transition-colors',
+            'flex size-6 shrink-0 items-center justify-center rounded-sm transition-colors',
             logOpen
-              ? 'bg-primary/15 text-primary ring-1 ring-primary/30 ring-inset'
-              : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground',
+              ? cn(
+                  tintClasses('primary').bg,
+                  'text-primary ring-1',
+                  tintClasses('primary').ring,
+                  'ring-inset',
+                )
+              : 'text-faint-foreground hover:bg-hover hover:text-foreground',
           )}
         >
           <CONCEPT_ICONS.terminal size={ICON_SIZE.row} aria-hidden />
@@ -264,7 +286,7 @@ function ScriptRow({
             type="button"
             onClick={onCancel}
             aria-label="Stop script"
-            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            className="flex size-6 shrink-0 items-center justify-center rounded-sm text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
           >
             <Square size={11} aria-hidden />
           </button>
@@ -282,7 +304,7 @@ function ScriptRow({
             }}
             disabled={disabledReason != null}
             aria-label="Run script"
-            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-primary group-hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex size-6 shrink-0 items-center justify-center rounded-sm text-faint-foreground transition-colors hover:bg-hover hover:text-primary group-hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Play size={ICON_SIZE.row} aria-hidden />
           </button>
@@ -367,7 +389,7 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
             type="button"
             onClick={onClose}
             aria-label="Close log"
-            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            className="flex size-6 shrink-0 items-center justify-center rounded-sm text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
           >
             <X size={ICON_SIZE.row} aria-hidden />
           </button>
@@ -375,7 +397,7 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
       </div>
       <Divider className="shrink-0" />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-2">
-        <pre className="m-0 whitespace-pre-wrap break-all font-mono text-2xs leading-relaxed text-foreground/80">
+        <pre className="m-0 whitespace-pre-wrap break-all font-mono text-2xs leading-relaxed text-foreground">
           {result.stdout}
           {result.stderr ? (
             <span className="text-danger">
@@ -389,35 +411,4 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
     </Popover>,
     document.body,
   );
-}
-
-function StatusDot({ status }: { readonly status: ScriptRunStatus }) {
-  if (status === 'ok') {
-    return (
-      <span
-        className="size-2 shrink-0 rounded-full bg-success"
-        aria-label="Last run ok"
-        role="img"
-      />
-    );
-  }
-  if (status === 'error') {
-    return (
-      <span
-        className="size-2 shrink-0 rounded-full bg-danger"
-        aria-label="Last run failed"
-        role="img"
-      />
-    );
-  }
-  if (status === 'cancelled') {
-    return (
-      <span
-        className="size-2 shrink-0 rounded-full bg-muted-foreground/50"
-        aria-label="Last run cancelled"
-        role="img"
-      />
-    );
-  }
-  return <span className="size-2 shrink-0 rounded-full bg-border" aria-hidden />;
 }

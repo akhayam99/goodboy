@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { AgentKindChip } from '.';
 import { AGENT_KIND_ORDER, type AgentKind } from '../../agent-kind';
 
@@ -39,10 +40,10 @@ describe('AgentKindChip', () => {
     expect(container.querySelector('[class*="bg-"]')).not.toBeNull();
   });
 
-  it('writes the generalist role out in full, uppercased by the chip styling', () => {
+  it('writes the generalist role out in full, in sentence case', () => {
     render(<AgentKindChip kind="generic" />);
     const chip = screen.getByText('Generalist');
-    expect(chip.className).toContain('uppercase');
+    expect(chip.className).not.toContain('uppercase');
   });
 
   it('holds one width for every role so a column of chips stays aligned', () => {
@@ -68,8 +69,27 @@ describe('AgentKindChip', () => {
     expect(container.querySelector('[title="scout agent"]')).not.toBeNull();
   });
 
-  it('marks the chip as aria-hidden so screen readers skip it', () => {
+  it('exposes the role label to assistive tech', () => {
     const { container } = render(<AgentKindChip kind="tester" />);
-    expect(container.querySelector('[aria-hidden]')).not.toBeNull();
+    expect(container.querySelector('[aria-hidden]')).toBeNull();
+    expect(screen.getByText('Test')).toBeDefined();
+  });
+
+  it('renders the label density by default with the kind label, or the label it is given', () => {
+    render(<AgentKindChip kind="debugger" label="Debugger" />);
+    expect(screen.getByText('Debugger').className).toContain('w-24');
+  });
+
+  it('renders the glyph density as the kind avatar named by its tooltip', () => {
+    render(<AgentKindChip kind="planner" density="glyph" />);
+
+    const glyph = screen.getByRole('img', { name: 'Plan' });
+    expect(screen.queryByText('Plan')).toBeNull();
+    expect(tooltipTextOf({ element: glyph })).toBe('Plan');
+  });
+
+  it('lets a glyph name the step it stands for', () => {
+    render(<AgentKindChip kind="tester" density="glyph" title="Cover the retry path" />);
+    expect(screen.getByRole('img', { name: 'Cover the retry path' })).toBeDefined();
   });
 });

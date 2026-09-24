@@ -162,37 +162,6 @@ pub async fn get_session_overrides(
     }
 }
 
-#[tauri::command]
-pub async fn set_session_overrides(
-    state: State<'_, Db>,
-    session_id: String,
-    overrides: SettingsOverrides,
-) -> Result<(), DbError> {
-    let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
-    let parallel_val: Option<i64> = overrides.parallel_enabled.map(|v| if v { 1 } else { 0 });
-    let now = crate::util::now_ms();
-    conn.execute(
-        "UPDATE sessions
-         SET default_provider_id = ?1,
-             default_workflow_id = ?2,
-             default_branch_prefix = ?3,
-             parallel_enabled = ?4,
-             provider_bindings = ?5,
-             updated_at = ?6
-         WHERE id = ?7",
-        rusqlite::params![
-            overrides.default_provider_id,
-            overrides.default_workflow_id,
-            overrides.default_branch_prefix,
-            parallel_val,
-            json_to_text(&overrides.provider_bindings),
-            now,
-            session_id,
-        ],
-    )?;
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

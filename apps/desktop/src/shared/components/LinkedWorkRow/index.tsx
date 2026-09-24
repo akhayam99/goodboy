@@ -65,7 +65,7 @@ export const LinkedWorkRow = ({
       className={cn(
         'group flex w-full items-center gap-2 rounded-lg border bg-elevated px-3.5 py-2.5 shadow-sm transition-colors',
         isSelected
-          ? 'border-primary/40 ring-1 ring-primary/25'
+          ? cn(tintClasses('primary').border, 'ring-1', tintClasses('primary').ring)
           : 'border-border-soft hover:border-border',
       )}
     >
@@ -77,7 +77,7 @@ export const LinkedWorkRow = ({
         }}
         title={tooltip}
         aria-label={ariaLabel}
-        className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+        className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
         {glyph}
         <span className="shrink-0 font-mono text-xs font-semibold text-foreground">
@@ -91,13 +91,13 @@ export const LinkedWorkRow = ({
           <ArrowRight
             size={14}
             aria-hidden
-            className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+            className="shrink-0 text-faint-foreground motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
           />
         ) : (
           <ArrowUpRight
             size={14}
             aria-hidden
-            className="shrink-0 text-muted-foreground/30 group-hover:text-muted-foreground"
+            className="shrink-0 text-faint-foreground group-hover:text-muted-foreground"
           />
         )}
       </button>

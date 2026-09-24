@@ -281,9 +281,9 @@ describe('ArtifactDetail header', () => {
     expect(band.className).toContain('items-center');
   });
 
-  it('hides back above the container width the rail needs, a class happy-dom cannot evaluate', () => {
+  it('offers Back to the list at every width', () => {
     renderDetail({ artifact: report, agents: [reporter, otherReporter] });
-    expect(screen.getByTestId('artifact-back').className).toContain('@min-[1025px]:hidden');
+    expect(screen.getByTestId('artifact-back').className).not.toContain('hidden');
   });
 
   it('leaves one label treatment per control in the conversation dock', () => {

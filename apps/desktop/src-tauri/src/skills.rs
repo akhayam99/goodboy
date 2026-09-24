@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
 
 use crate::db::{Db, DbError};
 
@@ -124,6 +124,8 @@ pub enum SkillError {
     Io(String),
     #[error("script error (exit {exit_code}): {stderr}")]
     Script { exit_code: i32, stderr: String },
+    #[error("Scripts run only from {root}/.kay/skills; skills discovered under .claude/skills are prompt-only")]
+    PromptOnlySkill { root: String },
 }
 
 crate::util::impl_error_serialize!(SkillError);
@@ -138,6 +140,7 @@ impl SkillError {
             SkillError::PathTraversal(_) => "path_traversal",
             SkillError::Io(_) => "io",
             SkillError::Script { .. } => "script",
+            SkillError::PromptOnlySkill { .. } => "prompt_only_skill",
         }
     }
 }
@@ -218,10 +221,13 @@ pub async fn skill_get(
 }
 
 #[tauri::command]
-pub async fn skill_upsert(
-    state: State<'_, Db>,
-    input: SkillUpsertInput,
-) -> Result<SkillRow, SkillError> {
+pub async fn skill_upsert(app: AppHandle, input: SkillUpsertInput) -> Result<SkillRow, SkillError> {
+    tauri::async_runtime::spawn_blocking(move || skill_upsert_blocking(&app.state::<Db>(), input))
+        .await
+        .map_err(|e| SkillError::Io(e.to_string()))?
+}
+
+fn skill_upsert_blocking(state: &Db, input: SkillUpsertInput) -> Result<SkillRow, SkillError> {
     let roots = {
         let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
         workspace_roots(&conn, &input.workspace_id)?
@@ -317,7 +323,15 @@ pub async fn skill_upsert(
 }
 
 #[tauri::command]
-pub async fn skill_delete(state: State<'_, Db>, skill_id: String) -> Result<(), SkillError> {
+pub async fn skill_delete(app: AppHandle, skill_id: String) -> Result<(), SkillError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        skill_delete_blocking(&app.state::<Db>(), skill_id)
+    })
+    .await
+    .map_err(|e| SkillError::Io(e.to_string()))?
+}
+
+fn skill_delete_blocking(state: &Db, skill_id: String) -> Result<(), SkillError> {
     let (file_path, roots) = {
         let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
         let row: Option<(String, String)> = {
@@ -379,9 +393,17 @@ pub async fn skill_delete(state: State<'_, Db>, skill_id: String) -> Result<(), 
 
 #[tauri::command]
 pub async fn skill_rescan(
-    state: State<'_, Db>,
+    app: AppHandle,
     workspace_id: String,
 ) -> Result<Vec<SkillRow>, SkillError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        skill_rescan_blocking(&app.state::<Db>(), workspace_id)
+    })
+    .await
+    .map_err(|e| SkillError::Io(e.to_string()))?
+}
+
+fn skill_rescan_blocking(state: &Db, workspace_id: String) -> Result<Vec<SkillRow>, SkillError> {
     let roots = {
         let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
         workspace_roots(&conn, &workspace_id)?
@@ -555,19 +577,23 @@ pub async fn skill_run_script(
 fn skill_run_script_blocking(
     input: SkillRunScriptInput,
 ) -> Result<SkillRunScriptResult, SkillError> {
-    let allowed_prefix = PathBuf::from(&input.project_root)
-        .join(".kay")
-        .join("skills");
+    let project_root = PathBuf::from(&input.project_root);
+    let script_path = PathBuf::from(&input.script_path);
+    if script_path.starts_with(project_root.join(".claude").join("skills")) {
+        return Err(SkillError::PromptOnlySkill {
+            root: input.project_root.clone(),
+        });
+    }
+
+    let allowed_prefix = project_root.join(".kay").join("skills");
 
     if !allowed_prefix.exists() {
         return Err(SkillError::PathTraversal(input.script_path.clone()));
     }
 
-    let script_path = PathBuf::from(&input.script_path);
     let canonical = guard_path(&script_path, &allowed_prefix)?;
 
-    let output = crate::path_env::command("bash")
-        .arg(&canonical)
+    let output = skill_script_command(&canonical)
         .args(&input.args)
         .current_dir(&input.working_dir)
         .output()
@@ -581,6 +607,12 @@ fn skill_run_script_blocking(
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     Ok(SkillRunScriptResult { stdout })
+}
+
+fn skill_script_command(script: &Path) -> std::process::Command {
+    let mut command = crate::path_env::command_with_login_env("bash");
+    command.arg(script);
+    command
 }
 
 // ---------------------------------------------------------------------------
@@ -690,4 +722,40 @@ fn parse_yaml_list(raw: &str) -> Vec<String> {
         .map(|s| unquote_str(s.trim()))
         .filter(|s| !s.is_empty())
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn skill_script_command_replays_the_login_env() {
+        let command = skill_script_command(Path::new("/repo/.kay/skills/run.sh"));
+        let keys: Vec<String> = command
+            .get_envs()
+            .map(|(key, _)| key.to_string_lossy().into_owned())
+            .collect();
+        assert!(keys.iter().any(|key| key == "PATH"));
+        for (key, _) in crate::path_env::resolved_env() {
+            assert!(keys.contains(key), "missing login env key {key}");
+        }
+        assert_eq!(command.get_program(), "bash");
+    }
+
+    #[test]
+    fn claude_skill_scripts_are_refused_with_the_rule() {
+        let result = skill_run_script_blocking(SkillRunScriptInput {
+            script_path: "/repo/.claude/skills/deploy/run.sh".to_string(),
+            args: Vec::new(),
+            working_dir: "/repo".to_string(),
+            project_root: "/repo".to_string(),
+        });
+        let Err(error) = result else {
+            panic!("a .claude/skills script must be refused");
+        };
+        assert_eq!(
+            error.to_string(),
+            "Scripts run only from /repo/.kay/skills; skills discovered under .claude/skills are prompt-only"
+        );
+    }
 }

@@ -16,6 +16,9 @@ import {
   emptyTurnStream,
   resetStorySpies,
   storySpies,
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  type StoryStore,
 } from './storyHarness';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
@@ -75,12 +78,11 @@ const connectedCursorState = () => ({
   authResults: { cursor: { state: 'connected', identity: 'test' } } as never,
 });
 
-type StoreModule = typeof import('./store');
-let useAppStore: StoreModule['useAppStore'];
+let useAppStore: StoryStore;
 
 beforeAll(async () => {
-  ({ useAppStore } = await import('./store'));
-}, 60_000);
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 const mockRouting = async (fallbackUsed: boolean) => {
   const routingMod = await import('../features/providers/routing');
@@ -150,9 +152,7 @@ describe('sendTurn keeps the executed combo across a retry', () => {
       agentModelOverride: {},
       providerCooldowns: {},
       notifications: [],
-      workspaces: [
-        buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws', sessionsRoot: '/tmp' }),
-      ],
+      workspaces: [buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws' })],
       ...connectedCursorState(),
     });
   };
@@ -272,9 +272,7 @@ describe('sendTurn checks the model it ran against the model that was picked', (
       agentModelOverride: {},
       providerCooldowns: {},
       notifications: [],
-      workspaces: [
-        buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws', sessionsRoot: '/tmp' }),
-      ],
+      workspaces: [buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws' })],
       ...connectedCursorState(),
     });
   };
@@ -282,9 +280,7 @@ describe('sendTurn checks the model it ran against the model that was picked', (
   const mismatchWarning = () =>
     useAppStore
       .getState()
-      .notifications.find(
-        (entry) => entry.title === 'the turn did not run on the model you picked',
-      );
+      .notifications.find((entry) => entry.title === "The turn didn't run on the model you picked");
 
   it('stays quiet when the pick names the combo by its slug', async () => {
     setup();

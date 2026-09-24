@@ -7,8 +7,7 @@ import type {
   TelemetryRecordId,
   WorkspaceId,
 } from '@goodboy/types';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { insertTelemetry, listTelemetryForSession } from './telemetry';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
@@ -19,8 +18,7 @@ const recordedAt = '2026-07-30T12:00:00.000Z' as IsoDateTime;
 type Params = Record<string, never>;
 
 const databaseWithRun = async ({}: Params) => {
-  const database = makeTestDatabase();
-  await migrate(database);
+  const database = await makeMigratedTestDatabase();
   const now = Date.parse(recordedAt);
   await database.execute(
     'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',

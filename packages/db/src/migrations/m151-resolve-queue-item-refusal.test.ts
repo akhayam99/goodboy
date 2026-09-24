@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { migrations } from './index';
 import { migrate } from './runner';
 
@@ -16,8 +16,7 @@ type Item = {
 const before = migrations.filter((migration) => migration.version < 151);
 
 const seed = async () => {
-  const db = makeTestDatabase();
-  await migrate(db, before);
+  const db = await makeMigratedTestDatabase({ throughVersion: 150 });
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Workspace', 'workspace', 1, 1)",
   );

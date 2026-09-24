@@ -8,8 +8,9 @@ export const GEMINI_CATALOG = [
     contextWindow: 1_000_000,
     presentation: {
       family: 'gemini',
-      group: 'Pro',
+      group: 'Gemini',
       version: '3.1',
+      checkpoint: 'Pro',
       order: 20,
       costTier: 'mid',
     },
@@ -25,8 +26,9 @@ export const GEMINI_CATALOG = [
     contextWindow: 1_000_000,
     presentation: {
       family: 'gemini',
-      group: 'Flash',
+      group: 'Gemini',
       version: '3.8',
+      checkpoint: 'Flash',
       order: 13,
       costTier: 'cheap',
     },
@@ -42,8 +44,9 @@ export const GEMINI_CATALOG = [
     contextWindow: 1_000_000,
     presentation: {
       family: 'gemini',
-      group: 'Flash',
+      group: 'Gemini',
       version: '3.7',
+      checkpoint: 'Flash',
       order: 12,
       costTier: 'cheap',
     },
@@ -59,8 +62,9 @@ export const GEMINI_CATALOG = [
     contextWindow: 1_000_000,
     presentation: {
       family: 'gemini',
-      group: 'Flash',
+      group: 'Gemini',
       version: '3.6',
+      checkpoint: 'Flash',
       order: 11,
       costTier: 'cheap',
     },

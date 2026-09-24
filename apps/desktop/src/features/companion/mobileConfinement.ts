@@ -11,59 +11,37 @@ import type {
   IntegrationBinding,
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
-
-const mobileSharedSessions = new Set<SessionId>();
-
-export const markSessionMobileShared = (sessionId: SessionId): void => {
-  mobileSharedSessions.add(sessionId);
-};
-
-export const isSessionMobileShared = (sessionId: SessionId): boolean =>
-  mobileSharedSessions.has(sessionId);
-
-export const clearMobileSharedSessions = (): void => {
-  mobileSharedSessions.clear();
-};
+import { evaluatePrMergeReadiness } from '../review/prMergeReadiness';
 
 const MERGE_METHODS: ReadonlySet<string> = new Set<PrMergeMethod>(['squash', 'merge', 'rebase']);
 
 export const isMergeMethod = (v: unknown): v is PrMergeMethod =>
   typeof v === 'string' && MERGE_METHODS.has(v);
 
-export type MergeGate = { readonly ok: true } | { readonly ok: false; readonly reason: string };
+export type MergeGate =
+  | { readonly ok: true; readonly pr: PullRequestState; readonly method: PrMergeMethod }
+  | { readonly ok: false; readonly reason: string };
 
-export const evaluateMobileMerge = (
-  pr: PullRequestState | null | undefined,
-  method: string,
-): MergeGate => {
+type MobileMergeParams = {
+  readonly pr: PullRequestState | null | undefined;
+  readonly method: string;
+};
+
+export const evaluateMobileMerge = ({ pr, method }: MobileMergeParams): MergeGate => {
   if (!isMergeMethod(method)) {
     return { ok: false, reason: `unsupported merge method: ${String(method)}` };
   }
-  if (!pr) {
+  if (pr === null || pr === undefined) {
     return { ok: false, reason: 'no PR is associated with this session' };
   }
-  if (pr.isDraft) {
-    return { ok: false, reason: 'PR is a draft: mark it ready before merging' };
+  const readiness = evaluatePrMergeReadiness({ pr });
+  if (readiness.status !== 'ready') {
+    return { ok: false, reason: readiness.reason };
   }
-  if (pr.state === 'merged' || pr.state === 'closed') {
-    return { ok: false, reason: `PR is already ${pr.state}` };
+  if (readiness.caveats.length > 0) {
+    return { ok: false, reason: readiness.caveats.join('; ') };
   }
-  if (pr.state === 'queued') {
-    return { ok: false, reason: 'PR is already in the merge queue' };
-  }
-  if (pr.reviewDecision !== 'approved') {
-    return { ok: false, reason: 'PR is not approved' };
-  }
-  if (pr.checks !== 'success') {
-    return {
-      ok: false,
-      reason: pr.checks === 'failure' ? 'CI checks are failing' : 'CI checks are not green yet',
-    };
-  }
-  if (pr.mergeable === false) {
-    return { ok: false, reason: 'PR has conflicts: resolve them first' };
-  }
-  return { ok: true };
+  return { ok: true, pr, method };
 };
 
 const CREATE_SESSION_PROVIDERS: ReadonlySet<string> = new Set<WorkspaceIntegrationProvider>([

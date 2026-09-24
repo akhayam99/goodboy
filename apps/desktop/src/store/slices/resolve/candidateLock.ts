@@ -1,4 +1,5 @@
 import { acquireWorktreeWriter, releaseWorktreeWriter } from '../../../features/worktree/worktree';
+import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 
 type RunParams<T> = {
   readonly worktreePath: string;
@@ -6,7 +7,7 @@ type RunParams<T> = {
   readonly run: () => Promise<T>;
 };
 
-const inFlight = new Map<string, Promise<void>>();
+const queue = createKeyedQueue();
 
 export const CANDIDATE_WRITER_BUSY = 'Another writer holds this worktree';
 
@@ -22,24 +23,5 @@ const runExclusively = async <T>({ worktreePath, holder, run }: RunParams<T>): P
   }
 };
 
-export const withCandidateLock = async <T>({
-  worktreePath,
-  holder,
-  run,
-}: RunParams<T>): Promise<T> => {
-  const previous = inFlight.get(worktreePath) ?? Promise.resolve();
-  const exclusive = () => runExclusively({ worktreePath, holder, run });
-  const started = previous.then(exclusive, exclusive);
-  const settled = started.then(
-    () => undefined,
-    () => undefined,
-  );
-  inFlight.set(worktreePath, settled);
-  try {
-    return await started;
-  } finally {
-    if (inFlight.get(worktreePath) === settled) {
-      inFlight.delete(worktreePath);
-    }
-  }
-};
+export const withCandidateLock = <T>({ worktreePath, holder, run }: RunParams<T>): Promise<T> =>
+  queue.run({ key: worktreePath, task: () => runExclusively({ worktreePath, holder, run }) });

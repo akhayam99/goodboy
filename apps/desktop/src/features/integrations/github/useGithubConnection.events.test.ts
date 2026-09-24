@@ -8,11 +8,13 @@ const h = vi.hoisted(() => ({ ghStatus: vi.fn() }));
 
 vi.mock('../../github/github', () => ({ ghStatus: h.ghStatus }));
 
+import { useAppStore } from '../../../store';
 import { useGithubConnection } from './useGithubConnection';
 
 beforeEach(() => {
   h.ghStatus.mockReset();
   h.ghStatus.mockResolvedValue({ available: true, mode: 'absent' });
+  useAppStore.setState({ githubWorkspaceStatus: {} });
 });
 
 afterEach(cleanup);
@@ -27,7 +29,7 @@ describe('useGithubConnection', () => {
     expect(first.result.current.isAuthenticated).toBe(false);
     expect(second.result.current.isAuthenticated).toBe(false);
 
-    h.ghStatus.mockResolvedValue({ available: true, mode: 'connected', user: 'nbro' });
+    h.ghStatus.mockResolvedValue({ available: true, mode: 'pat', user: 'harborline-bot' });
     await act(async () => {
       first.result.current.refresh();
     });
@@ -36,16 +38,26 @@ describe('useGithubConnection', () => {
     expect(first.result.current.isAuthenticated).toBe(true);
   });
 
-  it('stops listening once an instance unmounts', async () => {
+  it('reads the status once for instances mounted on the same workspace', async () => {
+    const first = renderHook(() => useGithubConnection({ workspaceId: WORKSPACE_ID }));
+    await waitFor(() => expect(first.result.current.isResolved).toBe(true));
+    renderHook(() => useGithubConnection({ workspaceId: WORKSPACE_ID }));
+
+    expect(h.ghStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('follows a store write without a refresh', async () => {
     const view = renderHook(() => useGithubConnection({ workspaceId: WORKSPACE_ID }));
     await waitFor(() => expect(view.result.current.isResolved).toBe(true));
 
-    view.unmount();
-    h.ghStatus.mockClear();
-    await act(async () => {
-      window.dispatchEvent(new CustomEvent('goodboy:github-connection-changed'));
+    act(() => {
+      useAppStore.setState({
+        githubWorkspaceStatus: {
+          [WORKSPACE_ID]: { available: true, mode: 'pat', scopes: ['repo'], scoped: true },
+        },
+      });
     });
 
-    expect(h.ghStatus).not.toHaveBeenCalled();
+    expect(view.result.current.isScoped).toBe(true);
   });
 });

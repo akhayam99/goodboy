@@ -30,7 +30,7 @@ export const importLegacyResolve = async ({ get, sessionId }: Params): Promise<v
     (agent) =>
       agent.parentAgentId === undefined &&
       agent.stepId === undefined &&
-      classifyAgent(agent, get().agentKindOverride[agent.id] ?? null) === 'resolver',
+      classifyAgent({ agent, override: get().agentKindOverride[agent.id] ?? null }) === 'resolver',
   );
   for (const agent of agents) {
     const owned = agentThreadIds(agent);

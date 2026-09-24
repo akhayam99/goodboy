@@ -51,6 +51,14 @@ export const resolveWriteDestination = ({
   return { kind: 'scratch', path: scratchPath };
 };
 
+type DisplayNameParams = {
+  readonly projectName: string;
+  readonly mountName: string;
+};
+
+export const mountDisplayName = ({ projectName, mountName }: DisplayNameParams): string =>
+  mountName === projectName ? projectName : `${projectName} / ${mountName}`;
+
 export const writeDestinationLabel = (destination: WriteDestination): string => {
   if (destination.kind === 'scratch') {
     return 'session scratch folder';
@@ -58,7 +66,7 @@ export const writeDestinationLabel = (destination: WriteDestination): string => 
   if (!destination.hasGit) {
     return `${destination.projectName} / working folder / no git`;
   }
-  return `${destination.projectName} / ${destination.mountName} / ${destination.branch}`;
+  return `${mountDisplayName({ projectName: destination.projectName, mountName: destination.mountName })} / ${destination.branch}`;
 };
 
 export const writeDestinationDetail = (destination: WriteDestination): string => {

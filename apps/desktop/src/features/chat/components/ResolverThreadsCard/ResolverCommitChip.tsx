@@ -7,7 +7,7 @@ type Props = {
 };
 
 const CHIP_CLASS =
-  'inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft px-1.5 py-0.5 font-mono text-2xs tabular-nums text-muted-foreground/80';
+  'inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft px-1.5 py-0.5 font-mono text-2xs tabular-nums text-muted-foreground';
 
 export const ResolverCommitChip = ({ sha, onOpen }: Props) => {
   const shortSha = sha.slice(0, 7);

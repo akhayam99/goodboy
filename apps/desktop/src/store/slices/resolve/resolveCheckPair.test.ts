@@ -49,6 +49,7 @@ const h = vi.hoisted(() => ({
   execute: vi.fn(),
   select: vi.fn(),
   exec: vi.fn(),
+  transaction: vi.fn(),
   leases: new Map<string, string>(),
   scratchRoots: [] as Array<string>,
   integrate: vi.fn(),
@@ -278,6 +279,7 @@ beforeEach(async () => {
   h.exec.mockReset().mockImplementation(db.exec);
   h.execute.mockReset().mockImplementation(db.execute);
   h.select.mockReset().mockImplementation(db.select);
+  h.transaction.mockReset().mockImplementation(db.transaction);
   h.integrate.mockReset();
   h.leases.clear();
   h.scratchRoots = [];

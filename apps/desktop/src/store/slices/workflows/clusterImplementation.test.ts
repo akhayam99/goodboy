@@ -2,7 +2,7 @@ import type {
   Agent,
   AgentId,
   ImplementationCluster,
-  ModelEffort,
+  EffortLevel,
   PlanConsumption,
   PlanWithCount,
   ProviderId,
@@ -285,7 +285,7 @@ type ExecutionRecord = Readonly<{
   agentId: AgentId;
   provider: ProviderId | null;
   model: string | null;
-  effort: ModelEffort | null;
+  effort: EffortLevel | null;
   args: ReadonlyArray<string>;
 }>;
 
@@ -301,7 +301,7 @@ const captureExecutions = ({ state, sendTurn }: CaptureParams): ReadonlyArray<Ex
     const agent = runs.find((candidate) => candidate.id === agentId) ?? null;
     const provider = (agent?.providerOverride ?? null) as ProviderId | null;
     const model = agent?.modelOverride ?? null;
-    const effort = (agent?.effort ?? null) as ModelEffort | null;
+    const effort = (agent?.effort ?? null) as EffortLevel | null;
     if (provider === null || model === null) {
       records.push({ agentId, provider, model, effort, args: [] });
       return undefined;
@@ -344,7 +344,7 @@ type RoutingUpdate = Readonly<{
   taskProfile: WorkflowTaskProfile | null;
   providerOverride: ProviderId;
   modelOverride: string;
-  effort: ModelEffort | null;
+  effort: EffortLevel | null;
 }>;
 
 const routingUpdates = (): ReadonlyArray<RoutingUpdate> =>
@@ -407,7 +407,7 @@ const reloadedChild = ({
       providerOverride: args.providerOverride as ProviderId,
     }),
     ...(args.modelOverride !== undefined && { modelOverride: args.modelOverride as string }),
-    ...(args.effort !== undefined && { effort: args.effort as ModelEffort }),
+    ...(args.effort !== undefined && { effort: args.effort as EffortLevel }),
     ...(decision !== null && { routingDecision: decision }),
     ...(profile !== null && { taskProfile: profile }),
   });
@@ -477,6 +477,9 @@ function makeStore(initial: Record<string, unknown>) {
     refreshUnreadWorkspaces,
     maybeAutoAdvanceWorkflow,
     loadSessionPlans,
+    clusterStartAttempts: {},
+    clusterStepStartAttempts: {},
+    workflowContinueAttempts: {},
     ...initial,
   };
   const get = (() => state) as unknown as GetFn;
@@ -961,11 +964,13 @@ describe('cluster child routing lifecycle', () => {
     expect(executions).toHaveLength(0);
     expect(routingUpdates()).toHaveLength(0);
     expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'cluster blocked: heavy rewrite',
-      expect.stringContaining('codex/gpt-5.6-sol'),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Cluster heavy rewrite is blocked',
+        body: expect.stringContaining('codex/gpt-5.6-sol'),
+        sessionId: SID,
+      }),
     );
   });
 
@@ -995,11 +1000,13 @@ describe('cluster child routing lifecycle', () => {
     expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
     expect(executions).toHaveLength(0);
     expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'cluster blocked: container',
-      expect.any(String),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Cluster container is blocked',
+        body: expect.any(String),
+        sessionId: SID,
+      }),
     );
   });
 });
@@ -1082,11 +1089,13 @@ describe('advanceClusterImplementation', () => {
       completedAt: expect.any(String),
     });
     expect(store.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      expect.stringContaining('cluster paused'),
-      expect.stringContaining('autorun is off'),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: expect.stringContaining('Cluster paused'),
+        body: expect.stringContaining('Autorun is off'),
+        sessionId: SID,
+      }),
     );
   });
 
@@ -1379,11 +1388,12 @@ describe('advanceClusterImplementation', () => {
       expect.objectContaining({ agentId: child.id, output: assistantText }),
     );
     expect(emitNotification).not.toHaveBeenCalledWith(
-      'summarizer-degraded',
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
+      expect.objectContaining({
+        kind: 'summarizer-degraded',
+        severity: expect.anything(),
+        title: expect.anything(),
+        body: expect.anything(),
+      }),
     );
   });
 
@@ -1417,15 +1427,15 @@ describe('advanceClusterImplementation', () => {
 
     expect(emitNotification).toHaveBeenCalledTimes(1);
     expect(emitNotification).toHaveBeenCalledWith(
-      'summarizer-degraded',
-      'warning',
-      expect.stringContaining('child-0'),
-      expect.stringContaining('provider failed'),
-      {
+      expect.objectContaining({
+        kind: 'summarizer-degraded',
+        severity: 'warning',
+        title: expect.stringContaining('child-0'),
+        body: expect.stringContaining('provider failed'),
         sessionId: SID,
         action: { kind: 'retry-step-summary', sessionId: SID, agentId: child.id },
         coalesceKey: 'step-summary-degraded:wf-1:step-1',
-      },
+      }),
     );
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
       child.id,
@@ -1473,11 +1483,12 @@ describe('advanceClusterImplementation', () => {
       expect.objectContaining({ outputSummary: 'advanced to next cluster manually' }),
     );
     expect(emitNotification).not.toHaveBeenCalledWith(
-      'summarizer-degraded',
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
+      expect.objectContaining({
+        kind: 'summarizer-degraded',
+        severity: expect.anything(),
+        title: expect.anything(),
+        body: expect.anything(),
+      }),
     );
   });
 
@@ -1633,11 +1644,13 @@ describe('advanceClusterImplementation', () => {
       completedAt: expect.any(String),
     });
     expect(store.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      expect.stringContaining('cluster blocked'),
-      expect.stringContaining('no instructions'),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: expect.stringContaining('is blocked'),
+        body: expect.stringContaining('no instructions'),
+        sessionId: SID,
+      }),
     );
   });
 
@@ -1672,11 +1685,13 @@ describe('advanceClusterImplementation', () => {
       completedAt: expect.any(String),
     });
     expect(store.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'cluster blocked: missing implementer',
-      expect.stringContaining('more clusters'),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'This cluster has no implementer',
+        body: expect.stringContaining('more clusters'),
+        sessionId: SID,
+      }),
     );
     expect(store.maybeAutoAdvanceWorkflow).not.toHaveBeenCalled();
   });
@@ -1703,6 +1718,122 @@ describe('advanceClusterImplementation', () => {
     );
     expect(sendTurn).not.toHaveBeenCalled();
     expect(refreshUnreadWorkspaces).toHaveBeenCalledTimes(1);
+    expect(maybeAutoAdvanceWorkflow).toHaveBeenCalledWith(SID);
+  });
+
+  const threeClusters = (): PlanWithCount =>
+    plan({
+      clusters: [
+        { title: 'c0', instructions: 'do 0' },
+        { title: 'c1', instructions: 'do 1' },
+        { title: 'c2', instructions: 'do 2' },
+      ],
+    });
+
+  it('never re-kicks the last child when a skipped sibling sits before it', async () => {
+    const c0 = childAgent({ id: 'sk0', ordinal: 0, status: 'completed' });
+    const c1 = childAgent({ id: 'sk1', ordinal: 1, status: 'skipped' });
+    const c2 = childAgent({ id: 'sk2', ordinal: 2, status: 'running' });
+    const { get, set, sendTurn, maybeAutoAdvanceWorkflow } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1, c2] },
+      sessionPlans: { [SID]: [threeClusters()] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      c0,
+      c1,
+      childAgent({ id: 'sk2', ordinal: 2, status: 'completed' }),
+    ]);
+
+    await advanceClusterImplementation(set, get)(SID, 'sk2' as AgentId, done('sk2'));
+
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      PARENT,
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(maybeAutoAdvanceWorkflow).toHaveBeenCalledWith(SID);
+  });
+
+  it('keeps a skipped container skipped when its last cluster finishes', async () => {
+    const c0 = childAgent({ id: 'ks0', ordinal: 0, status: 'completed' });
+    const c1 = childAgent({ id: 'ks1', ordinal: 1 });
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'skipped' }), c0, c1] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'skipped' }),
+      c0,
+      childAgent({ id: 'ks1', ordinal: 1, status: 'completed' }),
+    ]);
+
+    await advanceClusterImplementation(set, get)(SID, 'ks1' as AgentId, done('ks1'));
+
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(PARENT, expect.anything());
+  });
+
+  it('starts the next unsettled cluster past a skipped sibling', async () => {
+    const c0 = childAgent({ id: 'nx0', ordinal: 0, status: 'running' });
+    const c1 = childAgent({ id: 'nx1', ordinal: 1, status: 'skipped' });
+    const c2 = childAgent({ id: 'nx2', ordinal: 2 });
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1, c2] },
+      sessionPlans: { [SID]: [threeClusters()] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'nx0', ordinal: 0, status: 'completed' }),
+      c1,
+      c2,
+    ]);
+
+    await advanceClusterImplementation(set, get)(SID, 'nx0' as AgentId, done('nx0'));
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    const call = (sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId; content: string };
+    expect(call.agentId).toBe('nx2');
+    expect(call.content).toContain('3/3');
+    expect(call.content).toContain('do 2');
+  });
+
+  it('never re-kicks the child it just completed even when the list is stale', async () => {
+    const c0 = childAgent({ id: 'st0', ordinal: 0, status: 'running' });
+    const c1 = childAgent({ id: 'st1', ordinal: 1 });
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([container({ status: 'running' }), c0, c1]);
+
+    await advanceClusterImplementation(set, get)(SID, 'st0' as AgentId, done('st0'));
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    const call = (sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId };
+    expect(call.agentId).toBe('st1');
+  });
+
+  it('completes the container when a stale list still shows the last child running', async () => {
+    const c0 = childAgent({ id: 'sl0', ordinal: 0, status: 'completed' });
+    const c1 = childAgent({ id: 'sl1', ordinal: 1, status: 'running' });
+    const { get, set, sendTurn, maybeAutoAdvanceWorkflow } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([container({ status: 'running' }), c0, c1]);
+
+    await advanceClusterImplementation(set, get)(SID, 'sl1' as AgentId, done('sl1'));
+
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      PARENT,
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      PARENT,
+      expect.objectContaining({ status: 'failed' }),
+    );
     expect(maybeAutoAdvanceWorkflow).toHaveBeenCalledWith(SID);
   });
 });
@@ -1808,11 +1939,13 @@ describe('resumeClusterChildren', () => {
       expect.objectContaining({ status: 'failed' }),
     );
     expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'cluster blocked: child-1',
-      expect.any(String),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Cluster child-1 is blocked',
+        body: expect.any(String),
+        sessionId: SID,
+      }),
     );
   });
 });
@@ -1828,6 +1961,7 @@ describe('cluster child start retry', () => {
             ...args,
           } as unknown as Agent;
         });
+        hoisted.invokeAgentList.mockResolvedValue(agents);
         return { inserted: true, agents };
       },
     );
@@ -1842,7 +1976,7 @@ describe('cluster child start retry', () => {
     vi.useFakeTimers();
     withUniqueChildIds('retry-a');
     const c = container({ id: 'container-a' as AgentId });
-    const { get, set, sendTurn, emitNotification } = makeStore({
+    const { get, set, sendTurn, emitNotification, state } = makeStore({
       sessionPhaseRuns: { [SID]: [c] },
       clusterStartAttempts: {},
     });
@@ -1865,12 +1999,44 @@ describe('cluster child start retry', () => {
       expect.objectContaining({ status: 'failed' }),
     );
     expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      expect.stringContaining('cluster could not start'),
-      expect.any(String),
-      { sessionId: SID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: expect.stringContaining("couldn't start"),
+        body: expect.any(String),
+        sessionId: SID,
+      }),
     );
+    expect(state.clusterStepStartAttempts).toEqual({ 'container-a': 3 });
+    expect(state.clusterStartAttempts).toEqual({ 'retry-a-1': 3 });
+  });
+
+  it('stops retrying a child once its workflow run is discarded', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
+    vi.useFakeTimers();
+    withUniqueChildIds('retry-discard');
+    const c = container({
+      id: 'container-discard' as AgentId,
+      workflowRunId: 'wf-1' as WorkflowRunId,
+    });
+    const { get, set, sendTurn, state } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      clusterStartAttempts: {},
+    });
+    sendTurn.mockRejectedValue(new Error('spawn ETIMEDOUT'));
+
+    await fanOutClusters(set, get, SID, c, clusters, 'goal');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+
+    state.sessions = [
+      {
+        ...sessionRow(true),
+        workflowRuns: [{ id: 'wf-1', workflowId: 'flow-1', discardedAt: '2026-01-01T00:00:00Z' }],
+      },
+    ];
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(sendTurn).toHaveBeenCalledTimes(1);
   });
 
   it('does not retry a deterministic start failure', async () => {

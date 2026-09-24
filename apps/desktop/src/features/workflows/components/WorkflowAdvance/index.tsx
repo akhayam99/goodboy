@@ -30,7 +30,7 @@ export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
     (state) => state.summarizerStatus?.[sessionId]?.status === 'running',
   );
   const openQuestions = useSessionOpenQuestions(sessionId);
-  const hasOpenQuestions = workflowRunHasOpenQuestions(openQuestions, workflowRunId);
+  const hasOpenQuestions = workflowRunHasOpenQuestions({ questions: openQuestions, run });
   const isAutoRun = run.autoRun === true;
   const roleModels = useSessionRoleModels({ sessionId });
   const sessionProvider = useAppStore(

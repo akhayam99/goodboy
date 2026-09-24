@@ -1,12 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../store/storyHarness';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
-
-vi.mock('../../turn', () => ({
-  runTurn: vi.fn(),
-  cancelTurn: vi.fn(),
-  encodeAuthRequiredMessage: () => '',
-  isAuthErrorMessage: () => false,
-}));
 
 vi.mock('../../features/permissions/permissions', () => ({
   invokePermissionRuleList: vi.fn(async () => []),
@@ -61,22 +60,6 @@ vi.mock('@goodboy/db', () => ({
   updateWorkflowOrder: vi.fn(),
 }));
 
-vi.mock('../../providers', () => ({
-  buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
-  checkProviderAuth: vi.fn(),
-  getCursorStatus: vi.fn(),
-  getCodexStatus: vi.fn(),
-  getProviderStatus: vi.fn(),
-}));
-
-vi.mock('../../routing', () => ({
-  resolveProviderForTurn: vi.fn(async () => ({
-    selectedProvider: 'anthropic',
-    selectedModel: 'claude-opus-4-7',
-    reason: 'preference',
-  })),
-}));
-
 vi.mock('../../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
   invokeBudgetRuleUpsert: vi.fn(),
@@ -118,11 +101,14 @@ const RUN_ID = 'run-1' as ProviderRunId;
 const AT: IsoDateTime = '2026-05-07T00:00:00.000Z' as IsoDateTime;
 
 describe('store unknownPayloadCounts', () => {
-  let useAppStore: (typeof import('../../store/store'))['useAppStore'];
+  let useAppStore: StoryStore;
+
+  beforeAll(async () => {
+    useAppStore = await importStore();
+  }, STORE_IMPORT_TIMEOUT_MS);
 
   beforeEach(async () => {
-    vi.resetModules();
-    ({ useAppStore } = await import('../../store/store'));
+    await resetStoryStore();
   });
 
   afterEach(() => {

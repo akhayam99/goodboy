@@ -2,10 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const RESET_MS = 1200;
 
+type CopyParams = {
+  readonly text: string;
+  readonly key?: string;
+};
+
 type UseCopyLinkResult = {
-  readonly copied: boolean;
-  readonly failed: boolean;
-  readonly copy: (value: string) => Promise<void>;
+  readonly copiedKey: string | null;
+  readonly failedKey: string | null;
+  readonly copy: (params: CopyParams) => Promise<void>;
 };
 
 const fallbackCopy = ({ value }: { readonly value: string }) => {
@@ -21,8 +26,8 @@ const fallbackCopy = ({ value }: { readonly value: string }) => {
 };
 
 export const useCopyLink = (): UseCopyLinkResult => {
-  const [copied, setCopied] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [failedKey, setFailedKey] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
@@ -39,25 +44,25 @@ export const useCopyLink = (): UseCopyLinkResult => {
       clearTimeout(timer.current);
     }
     timer.current = setTimeout(() => {
-      setCopied(false);
-      setFailed(false);
+      setCopiedKey(null);
+      setFailedKey(null);
     }, RESET_MS);
   }, []);
 
   const copy = useCallback(
-    async (value: string) => {
+    async ({ text, key = text }: CopyParams) => {
       try {
-        await navigator.clipboard.writeText(value);
-        setCopied(true);
-        setFailed(false);
+        await navigator.clipboard.writeText(text);
+        setCopiedKey(key);
+        setFailedKey(null);
       } catch {
         try {
-          fallbackCopy({ value });
-          setCopied(true);
-          setFailed(false);
+          fallbackCopy({ value: text });
+          setCopiedKey(key);
+          setFailedKey(null);
         } catch {
-          setCopied(false);
-          setFailed(true);
+          setCopiedKey(null);
+          setFailedKey(key);
         }
       }
       schedule();
@@ -65,5 +70,5 @@ export const useCopyLink = (): UseCopyLinkResult => {
     [schedule],
   );
 
-  return { copied, failed, copy };
+  return { copiedKey, failedKey, copy };
 };

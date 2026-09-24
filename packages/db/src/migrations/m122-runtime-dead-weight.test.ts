@@ -1,20 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import type { WorkflowRunId } from '@goodboy/types';
 import type { Database } from '../client';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { updateWorkflowOrder } from '../queries/session-workflow';
 import { migrations } from './index';
 import { migrate } from './runner';
+
+const through165 = migrations.filter((migration) => migration.version <= 165);
 
 const NOW = 1_775_000_000_123;
 const ACTIVITY_AT = '2026-04-01T10:20:30.456Z';
 
 const seedThrough121 = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(
-    db,
-    migrations.filter((migration) => migration.version <= 121),
-  );
+  const db = await makeMigratedTestDatabase({ throughVersion: 121 });
   await db.execute(
     `INSERT INTO workspaces (id, name, slug, created_at, updated_at)
      VALUES ('workspace-1', 'Workspace', 'workspace', ?, ?)`,
@@ -126,7 +124,7 @@ const columnsFor = async ({ db, table }: DbParams & { readonly table: string }) 
 describe('m122 runtime dead weight', () => {
   it('replaces the session payload and stores providers as JSON', async () => {
     const db = await seedThrough121();
-    await migrate(db, migrations);
+    await migrate(db, through165);
 
     const rows = await db.select<{
       readonly last_activity_at: number;
@@ -148,7 +146,7 @@ describe('m122 runtime dead weight', () => {
 
   it('consolidates agent completion and removes unused scheduling columns', async () => {
     const db = await seedThrough121();
-    await migrate(db, migrations);
+    await migrate(db, through165);
 
     const rows = await db.select<{ readonly last_finished_at: number }>(
       "SELECT last_finished_at FROM agents WHERE id = 'agent-1'",
@@ -163,7 +161,7 @@ describe('m122 runtime dead weight', () => {
 
   it('drops parallel-group storage and retired workflow and message fields', async () => {
     const db = await seedThrough121();
-    await migrate(db, migrations);
+    await migrate(db, through165);
 
     const tables = await db.select<{ readonly name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'parallel_groups'",
@@ -178,7 +176,7 @@ describe('m122 runtime dead weight', () => {
 
   it('preserves every surviving workflow-run field through reordering', async () => {
     const db = await seedThrough121();
-    await migrate(db, migrations);
+    await migrate(db, through165);
 
     await updateWorkflowOrder(
       db,

@@ -53,7 +53,7 @@ type Props = {
 
 export const TrackerStudioLinks = ({ links, connected }: Props) => {
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex flex-wrap items-center gap-1">
       {links.map((link) => {
         const label = connected[link.provider]
           ? `Open ${link.label} in the inbox`
@@ -63,7 +63,7 @@ export const TrackerStudioLinks = ({ links, connected }: Props) => {
             <button
               type="button"
               aria-label={label}
-              className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60"
+              className="inline-flex h-6 items-center gap-1.5 rounded-md px-1.5 text-2xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
               onClick={() => {
                 if (!connected[link.provider]) {
                   openToolSettings({ tool: link.provider });
@@ -76,6 +76,7 @@ export const TrackerStudioLinks = ({ links, connected }: Props) => {
               }}
             >
               <IntegrationGlyph provider={link.provider} size="xs" />
+              <span aria-hidden>{link.label}</span>
             </button>
           </Tooltip>
         );

@@ -16,12 +16,18 @@ type Params<Candidate extends WorktreeCandidate> = {
   readonly projects: ReadonlyArray<Project>;
 };
 
+export type VerifiedWorktrees<Candidate> = {
+  readonly available: ReadonlyArray<Candidate>;
+  readonly missing: ReadonlyArray<string>;
+};
+
 export const verifyAvailableWorktrees = async <Candidate extends WorktreeCandidate>({
   sessionId,
   candidates,
   projects,
-}: Params<Candidate>): Promise<ReadonlyArray<Candidate>> => {
+}: Params<Candidate>): Promise<VerifiedWorktrees<Candidate>> => {
   const available: Array<Candidate> = [];
+  const missing: Array<string> = [];
   for (const candidate of candidates) {
     if (candidate.worktreePath === null) {
       continue;
@@ -42,6 +48,7 @@ export const verifyAvailableWorktrees = async <Candidate extends WorktreeCandida
     if (inspection?.kind !== 'missing') {
       continue;
     }
+    missing.push(candidate.id);
     const storedRevision =
       candidate.revision ??
       (
@@ -63,5 +70,5 @@ export const verifyAvailableWorktrees = async <Candidate extends WorktreeCandida
       updatedAt: new Date().toISOString() as IsoDateTime,
     }).catch(() => undefined);
   }
-  return available;
+  return { available, missing };
 };

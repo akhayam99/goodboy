@@ -1,12 +1,17 @@
-use std::collections::HashMap;
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader};
 use std::process::{Child, ChildStderr, ChildStdout, Command, Stdio};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::thread;
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
 use thiserror::Error;
+
+use crate::live_child::{
+    drain_tail_lossy, wait_and_remove, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
+};
+
+const MAX_TURN_LINE_BYTES: usize = 64 * 1024 * 1024;
 
 #[derive(Debug, Error)]
 pub enum TurnError {
@@ -33,8 +38,7 @@ impl TurnError {
     }
 }
 
-type ChildSlot = Arc<Mutex<Option<Child>>>;
-type ChildRegistry = Arc<Mutex<HashMap<String, ChildSlot>>>;
+type ChildRegistry = LiveChildRegistry;
 
 #[derive(Default)]
 pub struct TurnRegistry(pub ChildRegistry);
@@ -43,6 +47,10 @@ impl TurnRegistry {
     pub fn new() -> Self {
         Self::default()
     }
+}
+
+pub fn shutdown(registry: &TurnRegistry) {
+    crate::live_child::shutdown(&registry.0);
 }
 
 #[derive(Debug, Deserialize)]
@@ -371,6 +379,7 @@ fn spawn_one(
     let mut command = crate::path_env::command(args.binary);
     command.current_dir(args.working_dir);
     crate::aux_spawn::scrub_nested_session_env(&mut command);
+    crate::process_group::isolate(&mut command);
 
     if let Some(directory) = max_mode_config_dir_for(args.binary, args.cursor_max_mode) {
         command.env("CURSOR_CONFIG_DIR", directory);
@@ -432,11 +441,11 @@ fn spawn_one(
         .take()
         .ok_or_else(|| TurnError::Io(std::io::Error::other("no stderr")))?;
 
-    let slot = Arc::new(Mutex::new(Some(child)));
+    let live = LiveChild::new(child);
     registry
         .lock()
         .map_err(|_| TurnError::Poisoned)?
-        .insert(args.run_id.to_string(), Arc::clone(&slot));
+        .insert(args.run_id.to_string(), live.clone());
 
     let app_clone = app.clone();
     let registry_clone = Arc::clone(registry);
@@ -449,9 +458,9 @@ fn spawn_one(
     let stderr_handle = thread::spawn(move || capture_stderr(stderr));
 
     thread::spawn(move || {
-        forward_lines(&app_clone, &run_id_owned, stdout);
+        forward_lines(&app_clone, &run_id_owned, &live, stdout);
         let stderr_buf = stderr_handle.join().unwrap_or_default();
-        let exit_code = wait_and_remove(&slot, &registry_clone, &run_id_owned);
+        let exit_code = wait_and_remove(&live, &registry_clone, &run_id_owned);
         let _ = app_clone.emit(
             EVENT_NAME,
             TurnEventEnvelope {
@@ -524,52 +533,100 @@ pub async fn turn_list_live(state: State<'_, TurnRegistry>) -> Result<Vec<String
 #[tauri::command]
 pub async fn turn_cancel(state: State<'_, TurnRegistry>, run_id: String) -> Result<(), TurnError> {
     let map = state.0.lock().map_err(|_| TurnError::Poisoned)?;
-    let slot = map
+    let live = map
         .get(&run_id)
         .cloned()
         .ok_or_else(|| TurnError::NotFound(run_id.clone()))?;
     drop(map);
 
-    if let Ok(mut guard) = slot.lock() {
-        if let Some(child) = guard.as_mut() {
-            let _ = child.kill();
-        }
-    }
+    live.kill();
     Ok(())
 }
 
-fn forward_lines(app: &AppHandle, run_id: &str, stdout: ChildStdout) {
+#[derive(Debug, PartialEq, Eq)]
+enum CappedLine {
+    Line,
+    Eof,
+    Overflow,
+}
+
+fn read_capped_line<R: BufRead>(
+    reader: &mut R,
+    buf: &mut Vec<u8>,
+    cap: usize,
+) -> std::io::Result<CappedLine> {
+    buf.clear();
+    loop {
+        let available = match reader.fill_buf() {
+            Ok(available) => available,
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(err) => return Err(err),
+        };
+        if available.is_empty() {
+            if buf.is_empty() {
+                return Ok(CappedLine::Eof);
+            }
+            strip_line_ending(buf);
+            return Ok(CappedLine::Line);
+        }
+        let newline = available.iter().position(|byte| *byte == b'\n');
+        let content = newline.unwrap_or(available.len());
+        if buf.len() + content > cap {
+            return Ok(CappedLine::Overflow);
+        }
+        let consumed = newline.map_or(available.len(), |index| index + 1);
+        buf.extend_from_slice(&available[..consumed]);
+        reader.consume(consumed);
+        if newline.is_some() {
+            strip_line_ending(buf);
+            return Ok(CappedLine::Line);
+        }
+    }
+}
+
+fn strip_line_ending(buf: &mut Vec<u8>) {
+    while matches!(buf.last(), Some(b'\n') | Some(b'\r')) {
+        buf.pop();
+    }
+}
+
+fn emit_turn_event(app: &AppHandle, run_id: &str, event: TurnEventPayload) {
+    let _ = app.emit(
+        EVENT_NAME,
+        TurnEventEnvelope {
+            run_id: run_id.to_string(),
+            event,
+        },
+    );
+}
+
+fn forward_lines(app: &AppHandle, run_id: &str, live: &LiveChild, stdout: ChildStdout) {
     let mut reader = BufReader::new(stdout);
     let mut buf: Vec<u8> = Vec::new();
     loop {
-        buf.clear();
-        // read_until + from_utf8_lossy instead of BufRead::lines(): lines()
-        // yields Err on the first non-UTF8 byte, and the old code `break`ed on
-        // that, abandoning the rest of the turn. A stray byte in passthrough
-        // tool output must not truncate the stream.
-        match reader.read_until(b'\n', &mut buf) {
-            Ok(0) => break,
-            Ok(_) => {
-                while matches!(buf.last(), Some(b'\n') | Some(b'\r')) {
-                    buf.pop();
-                }
+        match read_capped_line(&mut reader, &mut buf, MAX_TURN_LINE_BYTES) {
+            Ok(CappedLine::Eof) => break,
+            Ok(CappedLine::Line) => {
                 let line = String::from_utf8_lossy(&buf).into_owned();
-                let _ = app.emit(
-                    EVENT_NAME,
-                    TurnEventEnvelope {
-                        run_id: run_id.to_string(),
-                        event: TurnEventPayload::Line { line },
+                emit_turn_event(app, run_id, TurnEventPayload::Line { line });
+            }
+            Ok(CappedLine::Overflow) => {
+                emit_turn_event(
+                    app,
+                    run_id,
+                    TurnEventPayload::Error {
+                        message: "agent output line exceeded 64 MiB".to_string(),
                     },
                 );
+                crate::process_group::terminate(live.pid);
+                break;
             }
             Err(err) => {
-                let _ = app.emit(
-                    EVENT_NAME,
-                    TurnEventEnvelope {
-                        run_id: run_id.to_string(),
-                        event: TurnEventPayload::Error {
-                            message: err.to_string(),
-                        },
+                emit_turn_event(
+                    app,
+                    run_id,
+                    TurnEventPayload::Error {
+                        message: err.to_string(),
                     },
                 );
                 break;
@@ -578,22 +635,8 @@ fn forward_lines(app: &AppHandle, run_id: &str, stdout: ChildStdout) {
     }
 }
 
-fn capture_stderr(mut stderr: ChildStderr) -> String {
-    let mut buf = String::new();
-    let _ = stderr.read_to_string(&mut buf);
-    buf
-}
-
-fn wait_and_remove(slot: &ChildSlot, registry: &ChildRegistry, run_id: &str) -> Option<i32> {
-    let exit = {
-        let mut guard = slot.lock().ok()?;
-        let child = guard.as_mut()?;
-        child.wait().ok().and_then(|status| status.code())
-    };
-    if let Ok(mut map) = registry.lock() {
-        map.remove(run_id);
-    }
-    exit
+fn capture_stderr(stderr: ChildStderr) -> String {
+    drain_tail_lossy(stderr, MAX_STDERR_BYTES)
 }
 
 // ---------------------------------------------------------------------------
@@ -615,6 +658,94 @@ mod tests {
         let mut command = Command::new("/bin/echo");
         let result = spawn_leased_child(&mut command, &leases.0, Some(&binding), "run-1", || {});
         assert!(matches!(result, Err(TurnError::WriterLeaseNotOwned)));
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn shutdown_kills_live_turns() {
+        use crate::live_child::test_support::{
+            assert_waiter_returns, register_sleeping, spawn_waiter,
+        };
+        let registry = TurnRegistry::new();
+        let live = register_sleeping(&registry.0, "run-1");
+        let waiter = spawn_waiter(&registry.0, "run-1", &live);
+
+        shutdown(&registry);
+
+        assert_waiter_returns(
+            waiter,
+            std::time::Duration::from_secs(2),
+            "shutdown left the turn running",
+        );
+        assert!(registry.0.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn capped_line_reads_lines_and_strips_crlf() {
+        let mut reader: &[u8] = b"first\r\nsecond\nlast";
+        let mut buf = Vec::new();
+        assert_eq!(
+            read_capped_line(&mut reader, &mut buf, 64).unwrap(),
+            CappedLine::Line
+        );
+        assert_eq!(buf, b"first");
+        assert_eq!(
+            read_capped_line(&mut reader, &mut buf, 64).unwrap(),
+            CappedLine::Line
+        );
+        assert_eq!(buf, b"second");
+        assert_eq!(
+            read_capped_line(&mut reader, &mut buf, 64).unwrap(),
+            CappedLine::Line
+        );
+        assert_eq!(buf, b"last");
+        assert_eq!(
+            read_capped_line(&mut reader, &mut buf, 64).unwrap(),
+            CappedLine::Eof
+        );
+    }
+
+    #[test]
+    fn capped_line_keeps_non_utf8_bytes() {
+        let mut reader: &[u8] = b"a\xffb\n";
+        let mut buf = Vec::new();
+        assert_eq!(
+            read_capped_line(&mut reader, &mut buf, 64).unwrap(),
+            CappedLine::Line
+        );
+        assert_eq!(String::from_utf8_lossy(&buf), "a\u{fffd}b");
+    }
+
+    #[test]
+    fn capped_line_accepts_exactly_the_cap_and_refuses_one_more() {
+        let mut exact: &[u8] = b"abcd\n";
+        let mut buf = Vec::new();
+        assert_eq!(
+            read_capped_line(&mut exact, &mut buf, 4).unwrap(),
+            CappedLine::Line
+        );
+        let mut over: &[u8] = b"abcde\n";
+        assert_eq!(
+            read_capped_line(&mut over, &mut buf, 4).unwrap(),
+            CappedLine::Overflow
+        );
+    }
+
+    #[test]
+    fn capped_line_counts_across_buffer_refills() {
+        let source: &[u8] = b"abcdefgh\n";
+        let mut reader = BufReader::with_capacity(2, source);
+        let mut buf = Vec::new();
+        assert_eq!(
+            read_capped_line(&mut reader, &mut buf, 7).unwrap(),
+            CappedLine::Overflow
+        );
+        let mut reader = BufReader::with_capacity(2, source);
+        assert_eq!(
+            read_capped_line(&mut reader, &mut buf, 8).unwrap(),
+            CappedLine::Line
+        );
+        assert_eq!(buf, b"abcdefgh");
     }
 
     #[test]

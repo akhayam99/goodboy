@@ -1,12 +1,19 @@
 import { useId, useMemo, useState, type FormEvent } from 'react';
-import { createPortal } from 'react-dom';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { Button, Chip, cn, Divider, formatError, Input, SectionHeader, Tooltip } from '@goodboy/ui';
+import {
+  Button,
+  Chip,
+  cn,
+  Divider,
+  formatError,
+  Input,
+  SectionHeader,
+  Tooltip,
+  tintClasses,
+} from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { AlertTriangle, Folder, FolderGit2, FolderPlus, Layers, Plus, X } from 'lucide-react';
 import { useAppStore } from '../../../../store';
-import { AppBreadcrumb } from '../../../../app/components/AppBreadcrumb';
-import { buildBreadcrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
 import { initRepo, validateGitRepo } from '../../../../shared/lib/repo';
 import { useChildRepoDetection } from '../../../../shared/hooks/useChildRepoDetection';
 import { useProjectAdoption } from '../../../../shared/hooks/useProjectAdoption';
@@ -23,9 +30,6 @@ type Props = {
     readonly mode: WorkspaceLinkMode;
     readonly workspace: Workspace;
   }) => void;
-  readonly onCancel: () => void;
-  readonly showBreadcrumb: boolean;
-  readonly footerContainer?: HTMLElement | null;
 };
 
 const CHOICE_OPTIONS = [
@@ -43,12 +47,7 @@ const CHOICE_OPTIONS = [
   },
 ] as const;
 
-export const WorkspaceLinkForm = ({
-  onComplete,
-  onCancel,
-  showBreadcrumb,
-  footerContainer,
-}: Props) => {
+export const WorkspaceLinkForm = ({ onComplete }: Props) => {
   const formId = useId();
   const addWorkspace = useAppStore((state) => state.addWorkspace);
   const createWorkspace = useAppStore((state) => state.createWorkspace);
@@ -136,7 +135,7 @@ export const WorkspaceLinkForm = ({
         return;
       }
       throw new Error(
-        `no git repository at ${picked}. pick a folder with a .git directory, use New project to initialize one, or link it without git below`,
+        `No git repository at ${picked}. Pick a folder with a .git directory, use New project to initialize one, or link it without git below.`,
       );
     });
 
@@ -270,20 +269,6 @@ export const WorkspaceLinkForm = ({
     }
   };
 
-  const breadcrumbCrumbs = buildBreadcrumb({
-    workspace: null,
-    session: null,
-    chrome: { kind: 'workspace-create' },
-    handlers: {
-      toOverview: onCancel,
-      toWorkspaceLauncher: () => {
-        onCancel();
-        window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'));
-      },
-      toWorkspaceBoard: onCancel,
-    },
-  });
-
   const primary =
     created !== null
       ? { label: 'Done', disabled: busy || linked.length === 0 }
@@ -304,11 +289,6 @@ export const WorkspaceLinkForm = ({
       ) : (
         <span className="min-w-0 flex-1" aria-hidden />
       )}
-      {created === null ? (
-        <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
-          Cancel
-        </Button>
-      ) : null}
       {primary !== null ? (
         <Button type="submit" form={formId} disabled={primary.disabled} aria-busy={busy}>
           {primary.label}
@@ -319,8 +299,6 @@ export const WorkspaceLinkForm = ({
 
   return (
     <form id={formId} onSubmit={onSubmit} className="flex w-full flex-col gap-6">
-      {showBreadcrumb ? <AppBreadcrumb crumbs={breadcrumbCrumbs} /> : null}
-
       {created === null ? (
         <section className="flex flex-col gap-4">
           <SectionHeader
@@ -344,8 +322,12 @@ export const WorkspaceLinkForm = ({
                 className={cn(
                   'flex items-start gap-3 rounded-lg border px-3 py-3 text-left motion-safe:transition-colors',
                   choice === option.value
-                    ? 'border-primary/60 bg-primary/5'
-                    : 'border-border hover:border-primary/50 hover:bg-primary/5',
+                    ? cn(tintClasses('primary').border, tintClasses('primary').bgSoft)
+                    : cn(
+                        'border-border',
+                        tintClasses('primary').hoverBorder,
+                        tintClasses('primary').hoverBgSoft,
+                      ),
                 )}
               >
                 <span className="mt-0.5 shrink-0 text-primary">
@@ -434,7 +416,7 @@ export const WorkspaceLinkForm = ({
               {linked.map((project) => (
                 <li
                   key={project.id}
-                  className="flex items-center gap-3 rounded-lg border border-border-soft/60 bg-subtle/20 px-3 py-2"
+                  className="flex items-center gap-3 rounded-lg border border-border-soft bg-subtle px-3 py-2"
                 >
                   <span className="shrink-0 text-muted-foreground">
                     {project.kind === 'repo' ? (
@@ -456,7 +438,7 @@ export const WorkspaceLinkForm = ({
                         className="shrink-0"
                       />
                     </span>
-                    <span className="block truncate font-mono text-xs text-muted-foreground/80">
+                    <span className="block truncate font-mono text-xs text-muted-foreground">
                       {project.rootPath}
                     </span>
                   </span>
@@ -466,7 +448,7 @@ export const WorkspaceLinkForm = ({
                       aria-label={`Unlink ${project.name}`}
                       disabled={busy}
                       onClick={() => void removeProject({ projectId: project.id })}
-                      className="rounded-md p-1 text-muted-foreground/70 hover:bg-foreground/5 hover:text-foreground"
+                      className="rounded-md p-1 text-faint-foreground hover:bg-hover hover:text-foreground"
                     >
                       <X size={ICON_SIZE.control} aria-hidden />
                     </button>
@@ -537,14 +519,12 @@ export const WorkspaceLinkForm = ({
         </section>
       )}
 
-      {footerContainer == null ? (
+      {primary !== null || error != null ? (
         <>
           <Divider />
           <footer className="flex items-center justify-end gap-2">{actions}</footer>
         </>
-      ) : (
-        createPortal(actions, footerContainer)
-      )}
+      ) : null}
     </form>
   );
 };

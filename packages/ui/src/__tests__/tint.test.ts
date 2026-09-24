@@ -7,7 +7,6 @@ const SEMANTIC_TONES: ReadonlyArray<Tone> = [
   'warning',
   'danger',
   'primary',
-  'accent',
   'merged',
   'draft',
 ];
@@ -22,15 +21,7 @@ describe('tintClasses', () => {
     expect(tint.hoverBorder).toMatch(/^hover:border-\S+\/40$/);
     expect(tint.hoverBg).toMatch(/^hover:bg-\S+\/20$/);
     expect(tint.hoverBgSoft).toMatch(/^hover:bg-\S+\/5$/);
-    expect(tint.solid).toMatch(/^bg-\S+ text-\S+-foreground$/);
-  });
-
-  it('exposes a muted operations tone for machinery chrome', () => {
-    expect(tintClasses('operations')).toMatchObject({
-      border: 'border-primary/20',
-      bg: 'bg-muted/30',
-      icon: 'text-primary/60',
-    });
+    expect(tint.solid).toMatch(/^bg-\S+ text-on-tone$/);
   });
 
   it('reads the draft tone from the TINT record, not a hardcoded coverage list', () => {
@@ -51,7 +42,7 @@ describe('tintClasses', () => {
       text: 'text-draft',
       icon: 'text-draft',
       dot: 'bg-draft',
-      solid: 'bg-draft text-draft-foreground',
+      solid: 'bg-draft text-on-tone',
     });
   });
 });

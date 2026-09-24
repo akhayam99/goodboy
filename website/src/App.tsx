@@ -1,5 +1,4 @@
 import { Analytics } from '@vercel/analytics/react';
-import { SpeedInsights } from '@vercel/speed-insights/react';
 import { useRevealAll } from './components/Reveal';
 import { Nav } from './sections/Nav';
 import { Hero } from './sections/Hero';
@@ -42,7 +41,6 @@ export const App = () => {
       </main>
       <Footer />
       <Analytics />
-      <SpeedInsights />
     </>
   );
 };

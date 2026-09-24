@@ -1,10 +1,15 @@
-import { useEffect } from 'react';
-import { Check, GitBranch, Pencil } from 'lucide-react';
-import { AnchoredPopover, Tooltip, cn, useCopyLink, useDropdown } from '@goodboy/ui';
+import { Check, GitBranch } from 'lucide-react';
+import {
+  AnchoredPopover,
+  Chip,
+  FOCUS_RING,
+  Tooltip,
+  cn,
+  useCopyLink,
+  useDropdown,
+} from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
-import { useToast } from '../../../../../app/components/Toast';
 import { BranchSwitchPanel } from '../../../../worktree/BranchSwitchPanel';
-import { VITAL_CHIP_FOCUS, VITAL_CHIP_FRAME, VITAL_CHIP_HOVER } from '../vitalChip';
 import { splitBranchLabel } from './branchLabel';
 
 type Props = {
@@ -14,80 +19,103 @@ type Props = {
   readonly canSwitch: boolean;
 };
 
+const CHIP_CLASS = 'min-w-0 shrink gap-0 px-0';
+const FACE_CLASS = cn(
+  'inline-flex h-full min-w-0 items-center gap-1.5 rounded-md px-2',
+  FOCUS_RING,
+);
+
+type NameParams = {
+  readonly branch: string;
+};
+
+const BranchName = ({ branch }: NameParams) => {
+  const { head, tail } = splitBranchLabel({ branch });
+  return (
+    <span title={branch} className="flex min-w-0 items-center font-mono">
+      <span className="truncate">{head}</span>
+      {tail === '' ? null : <span className="shrink-0">{tail}</span>}
+    </span>
+  );
+};
+
+type CopyChipParams = {
+  readonly branch: string;
+};
+
+const CopyBranchChip = ({ branch }: CopyChipParams) => {
+  const { copiedKey, failedKey, copy } = useCopyLink();
+  const copied = copiedKey !== null;
+  const failed = failedKey !== null;
+  const tooltip = copied ? 'Copied' : failed ? 'Copy failed' : 'Copy branch name';
+
+  return (
+    <Chip
+      as="span"
+      tone={copied ? 'success' : failed ? 'danger' : 'neutral'}
+      shape="badge"
+      size="control"
+      className={cn(CHIP_CLASS, copied || failed ? '' : 'hover:bg-hover hover:text-foreground')}
+      label={
+        <Tooltip content={tooltip}>
+          <button
+            type="button"
+            onClick={() => void copy({ text: branch })}
+            aria-label={`Copy branch ${branch}`}
+            className={FACE_CLASS}
+          >
+            {copied ? <Check size={11} aria-hidden /> : <GitBranch size={11} aria-hidden />}
+            <BranchName branch={branch} />
+          </button>
+        </Tooltip>
+      }
+    />
+  );
+};
+
 export const ProjectBranchChip = ({ sessionId, mountId, branch, canSwitch }: Props) => {
-  const { showToast } = useToast();
-  const { copied, failed, copy } = useCopyLink();
-  const dropdown = useDropdown({ width: 'w-96', expectedHeight: 360 });
-
-  useEffect(() => {
-    if (copied) {
-      showToast('success', 'branch copied');
-    }
-  }, [copied, showToast]);
-
-  useEffect(() => {
-    if (failed) {
-      showToast('error', 'copy failed');
-    }
-  }, [failed, showToast]);
+  const dropdown = useDropdown({ width: 'w-96', expectedHeight: 400 });
 
   if (branch === '') {
     return null;
   }
 
-  const { head, tail } = splitBranchLabel({ branch });
+  if (!canSwitch) {
+    return <CopyBranchChip branch={branch} />;
+  }
 
   return (
-    <span
-      className={cn(
-        VITAL_CHIP_FRAME,
-        'min-w-0 shrink',
-        copied ? 'border-success/30 bg-success/10 text-success' : VITAL_CHIP_HOVER,
-      )}
-    >
-      <Tooltip content={copied ? 'Copied' : 'Copy the branch name'}>
-        <button
-          type="button"
-          onClick={() => void copy(branch)}
-          aria-label={`Copy branch ${branch}`}
-          className={cn(
-            'inline-flex h-full min-w-0 items-center gap-1.5 rounded-md px-2',
-            VITAL_CHIP_FOCUS,
-          )}
-        >
-          {copied ? <Check size={11} aria-hidden /> : <GitBranch size={11} aria-hidden />}
-          <span title={branch} className="flex min-w-0 items-center font-mono">
-            <span className="truncate">{head}</span>
-            {tail === '' ? null : <span className="shrink-0">{tail}</span>}
-          </span>
-        </button>
-      </Tooltip>
-      {canSwitch ? (
-        <AnchoredPopover
-          dropdown={dropdown}
-          role="dialog"
-          ariaLabel="Switch branch"
-          trigger={
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="dialog"
+      ariaLabel="Switch branch"
+      anchorClassName="flex min-w-0 shrink"
+      trigger={
+        <Chip
+          as="span"
+          tone="neutral"
+          shape="badge"
+          size="control"
+          className={cn(CHIP_CLASS, 'hover:bg-hover hover:text-foreground')}
+          label={
             <Tooltip content="Switch the branch of this mount">
               <button
                 type="button"
-                aria-label="Switch branch"
+                aria-label={`Switch branch ${branch}`}
                 aria-haspopup="dialog"
                 aria-expanded={dropdown.open}
                 onClick={dropdown.toggle}
-                className={cn(
-                  'inline-flex h-full items-center rounded-md px-1.5 text-muted-foreground hover:text-foreground',
-                  VITAL_CHIP_FOCUS,
-                )}
+                className={FACE_CLASS}
               >
-                <Pencil size={10} aria-hidden />
+                <GitBranch size={11} aria-hidden />
+                <BranchName branch={branch} />
               </button>
             </Tooltip>
           }
-        >
-          <BranchSwitchPanel sessionId={sessionId} mountId={mountId} onDone={dropdown.close} />
-        </AnchoredPopover>
-      ) : null}
-    </span>
+        />
+      }
+    >
+      <BranchSwitchPanel sessionId={sessionId} mountId={mountId} onDone={dropdown.close} />
+    </AnchoredPopover>
   );
 };

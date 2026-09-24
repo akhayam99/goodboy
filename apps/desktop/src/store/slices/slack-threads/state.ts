@@ -52,3 +52,52 @@ type ThreadKeyParams = ChannelKeyParams & {
 
 export const slackThreadKey = ({ workspaceId, channelId, threadTs }: ThreadKeyParams): string =>
   `${workspaceId}:${channelId}:${threadTs}`;
+
+export const SLACK_THREAD_CACHE_LIMIT = 50;
+
+type ThreadsParams = {
+  readonly threads: SlackThreadsSliceState['slackThreads'];
+};
+
+export const capSlackThreads = ({
+  threads,
+}: ThreadsParams): SlackThreadsSliceState['slackThreads'] => {
+  const keys = Object.keys(threads);
+  const excess = keys.length - SLACK_THREAD_CACHE_LIMIT;
+  if (excess <= 0) {
+    return threads;
+  }
+  const oldestFirst = keys
+    .filter((key) => threads[key]?.loading !== true)
+    .sort((a, b) => (threads[a]?.fetchedAt ?? '').localeCompare(threads[b]?.fetchedAt ?? ''));
+  const evicted = new Set(oldestFirst.slice(0, excess));
+  return Object.fromEntries(Object.entries(threads).filter(([key]) => !evicted.has(key)));
+};
+
+type PruneParams = {
+  readonly state: SlackThreadsSliceState;
+  readonly workspaceId: WorkspaceId;
+};
+
+const withoutWorkspace = <T>({
+  record,
+  workspaceId,
+}: {
+  readonly record: Readonly<Record<string, T>>;
+  readonly workspaceId: WorkspaceId;
+}): Readonly<Record<string, T>> =>
+  Object.fromEntries(
+    Object.entries(record).filter(
+      ([key]) => key !== workspaceId && !key.startsWith(`${workspaceId}:`),
+    ),
+  );
+
+export const pruneSlackWorkspace = ({
+  state,
+  workspaceId,
+}: PruneParams): SlackThreadsSliceState => ({
+  slackChannels: withoutWorkspace({ record: state.slackChannels, workspaceId }),
+  slackUsers: withoutWorkspace({ record: state.slackUsers, workspaceId }),
+  slackThreadHeads: withoutWorkspace({ record: state.slackThreadHeads, workspaceId }),
+  slackThreads: withoutWorkspace({ record: state.slackThreads, workspaceId }),
+});

@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SessionId } from '@goodboy/types';
 import type { BridgeCommand } from './commandExecutor';
 
 // Hermetic mocks: the executor pulls the whole app store, core, the window
@@ -43,7 +42,6 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
 import { executeBridgeCommand } from './commandExecutor';
-import { clearMobileSharedSessions, isSessionMobileShared } from './mobileConfinement';
 
 function makeStore(over: Record<string, unknown> = {}) {
   return {
@@ -63,7 +61,6 @@ function cmd(kind: string, data: unknown, origin: 'desktop' | 'mobile' = 'mobile
 
 beforeEach(() => {
   vi.clearAllMocks();
-  clearMobileSharedSessions();
   h.state.value = makeStore();
 });
 
@@ -106,13 +103,12 @@ describe('send', () => {
     expect(h.sendTurn).not.toHaveBeenCalled();
   });
 
-  it('dispatches a valid turn and confines the session', async () => {
+  it('dispatches a valid turn', async () => {
     const res = await executeBridgeCommand(cmd('send', { sessionId: 's1', content: 'ship it' }));
     expect(res.ok).toBe(true);
     expect(h.sendTurn).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: 's1', content: 'ship it' }),
     );
-    expect(isSessionMobileShared('s1' as SessionId)).toBe(true);
   });
 
   it('forwards an agentId when answering a specific agent', async () => {

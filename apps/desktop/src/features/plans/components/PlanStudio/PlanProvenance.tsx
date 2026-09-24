@@ -73,7 +73,7 @@ export const PlanProvenance = ({
                 {creatorName}
               </button>
               {creatorDeleted ? (
-                <span className="shrink-0 rounded-sm bg-muted px-1 text-2xs uppercase tracking-wide text-muted-foreground">
+                <span className="shrink-0 rounded-sm bg-muted px-1 text-2xs uppercase tracking-eyebrow text-muted-foreground">
                   Deleted
                 </span>
               ) : null}
@@ -143,7 +143,7 @@ export const PlanProvenance = ({
                 {displayName}
               </button>
               {isDeleted ? (
-                <span className="shrink-0 rounded-sm bg-muted px-1 text-2xs uppercase tracking-wide text-muted-foreground">
+                <span className="shrink-0 rounded-sm bg-muted px-1 text-2xs uppercase tracking-eyebrow text-muted-foreground">
                   Deleted
                 </span>
               ) : null}

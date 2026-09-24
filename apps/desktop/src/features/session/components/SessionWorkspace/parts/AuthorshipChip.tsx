@@ -6,10 +6,9 @@ type Props = {
 
 export const AuthorshipChip = ({ byUser }: Props) => (
   <Chip
-    tone={byUser ? 'accent' : 'info'}
+    tone={byUser ? 'primary' : 'info'}
     size="sm"
-    uppercase
     bordered={false}
-    label={byUser ? 'you' : 'agent'}
+    label={byUser ? 'You' : 'Agent'}
   />
 );

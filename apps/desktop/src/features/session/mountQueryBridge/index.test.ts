@@ -360,6 +360,44 @@ describe('executeMountRequest', () => {
     expect(outcome.ok).toBe(false);
     expect(outcome.code).toBe('operation_pending');
   });
+
+  it('routes a gitlab create through the merge request actions', async () => {
+    await executeMountRequest(
+      request({
+        provider: 'gitlab',
+        verb: 'create-request',
+        args: { title: 'part one', body: 'the first slice', base: 'main' },
+      }),
+    );
+
+    expect(state.refreshSessionMr).toHaveBeenCalledWith('session-1', {
+      force: true,
+      mountId: 'mount-1',
+    });
+    expect(state.createMrForSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mountId: 'mount-1',
+        description: 'the first slice',
+        targetBranch: 'main',
+      }),
+    );
+    expect(state.createPrForSession).not.toHaveBeenCalled();
+  });
+
+  it('refuses a create that names no review host', async () => {
+    const outcome = await executeMountRequest(
+      request({
+        provider: 'mount',
+        verb: 'create-request',
+        args: { title: 'part one', body: 'the first slice' },
+      }),
+    );
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.code).toBe('mount_unavailable');
+    expect(state.createPrForSession).not.toHaveBeenCalled();
+    expect(state.createMrForSession).not.toHaveBeenCalled();
+  });
 });
 
 describe('mountResult', () => {

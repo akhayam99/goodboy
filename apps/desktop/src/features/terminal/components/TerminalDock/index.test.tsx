@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
 import type { TerminalTab, TerminalTabId } from '../../../../shared/types/terminal';
 
-const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwin' | 'linux' } }));
+const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwin' | 'win32' } }));
 
 vi.mock('../../../../shared/platform', () => ({ currentPlatform: () => platform.current }));
 
@@ -111,7 +111,7 @@ describe('TerminalDock new tab shortcut', () => {
   });
 
   it('spawns a tab on control shift off darwin', () => {
-    platform.current = 'linux';
+    platform.current = 'win32';
     const target = mountDock();
 
     fireEvent.keyDown(target, { code: 'KeyT', ctrlKey: true, shiftKey: true });
@@ -121,7 +121,7 @@ describe('TerminalDock new tab shortcut', () => {
   });
 
   it('leaves plain control to the pty off darwin', () => {
-    platform.current = 'linux';
+    platform.current = 'win32';
     const target = mountDock();
 
     fireEvent.keyDown(target, { code: 'KeyT', ctrlKey: true });

@@ -53,6 +53,7 @@ describe('OverviewActions', () => {
     }
     compact.unmount();
 
+    state.sessionPhaseRuns = { [SESSION_ID]: [{ status: 'completed' }] };
     render(
       <OverviewActions sessionId={SESSION_ID} variant="tile" onOpenWorkflowBuilder={vi.fn()} />,
     );
@@ -61,15 +62,12 @@ describe('OverviewActions', () => {
     }
   });
 
-  it('keeps the report tile visible and explains why it cannot be taken yet', () => {
+  it('holds the report tile back until the session has something to report', () => {
     render(
       <OverviewActions sessionId={SESSION_ID} variant="tile" onOpenWorkflowBuilder={vi.fn()} />,
     );
 
-    expect(screen.getByTestId('create-report-cta').hasAttribute('disabled')).toBe(true);
-    expect(
-      screen.getByText('nothing has run yet, so there is nothing to work from.'),
-    ).toBeDefined();
+    expect(screen.queryByTestId('create-report-cta')).toBeNull();
     expect(screen.getByTestId('create-wireframe-cta').hasAttribute('disabled')).toBe(false);
   });
 
@@ -98,7 +96,7 @@ describe('OverviewActions', () => {
     const descriptions = [...container.querySelectorAll('.line-clamp-2')].map(
       (node) => node.textContent ?? '',
     );
-    expect(descriptions.length).toBe(3);
+    expect(descriptions.length).toBe(2);
     for (const description of descriptions) {
       expect(description.endsWith('.')).toBe(true);
     }

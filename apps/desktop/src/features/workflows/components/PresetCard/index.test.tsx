@@ -45,21 +45,21 @@ describe('PresetCard', () => {
   it('names the origin of the workflow', () => {
     renderCard(workflow({ origin: 'library' }));
 
-    expect(screen.getByText('preset')).toBeDefined();
+    expect(screen.getByRole('img', { name: 'Preset, shipped with Goodboy' })).toBeDefined();
   });
 
   it('calls an orchestrated workflow by its name, not custom', () => {
     renderCard(workflow({ origin: 'orchestrated' }));
 
-    expect(screen.getByText('orchestrated')).toBeDefined();
-    expect(screen.queryByText('custom')).toBeNull();
+    expect(
+      screen.getByRole('img', { name: 'Orchestrated, steps decided at runtime' }),
+    ).toBeDefined();
+    expect(screen.queryByRole('img', { name: /^Custom/ })).toBeNull();
   });
 
   it('says nothing about the origin of a row written before it was tracked', () => {
     renderCard(workflow());
 
-    for (const label of ['preset', 'custom', 'orchestrated']) {
-      expect(screen.queryByText(label)).toBeNull();
-    }
+    expect(screen.queryByRole('img', { name: /^(Preset|Custom|Orchestrated)/ })).toBeNull();
   });
 });

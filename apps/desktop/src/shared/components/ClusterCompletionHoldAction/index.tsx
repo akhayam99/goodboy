@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { Button, Input } from '@goodboy/ui';
+import { Button, Input, cn, tintClasses } from '@goodboy/ui';
 import type { ClusterCompletionHold } from '@goodboy/types';
 import { ICON_SIZE } from '../conceptIcons';
 import { useAppStore } from '../../../store';
@@ -30,7 +30,12 @@ export const ClusterCompletionHoldAction = ({ hold }: Props) => {
   const trimmedEvidence = resolutionEvidence.trim();
 
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-md bg-warning/10 px-2 py-1 text-2xs text-warning">
+    <div
+      className={cn(
+        'flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-2xs text-warning',
+        tintClasses('warning').bg,
+      )}
+    >
       <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       <span className="min-w-0 flex-1 truncate" title={reasonLabel({ hold })}>
         Held: {reasonLabel({ hold })}

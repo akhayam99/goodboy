@@ -35,7 +35,7 @@ export const ArtifactCaptureNoticeCard = ({ item, sessionId = null, agentId = nu
     <TranscriptDisclosure
       tone="warning"
       open={open}
-      bodyClassName="gap-2 text-xs text-foreground/80"
+      bodyClassName="gap-2 text-xs text-foreground"
       header={
         <TranscriptRowHeader
           tone="warning"

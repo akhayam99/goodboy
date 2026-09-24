@@ -1,17 +1,18 @@
+import { PROVIDER_API_KEY_ENV } from '@goodboy/core';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Button,
   EmptyState,
-  formatError,
   InlineConfirm,
   Input,
   SectionHeader,
   Tooltip,
+  cn,
+  tintClasses,
 } from '@goodboy/ui';
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
-import { PROVIDER_API_KEY_ENV, type CredentialId, type ProviderId } from '@goodboy/types';
+import { type CredentialId, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -24,7 +25,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
   const deleteCredential = useAppStore((s) => s.deleteCredential);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
   const apiKeyEnv = PROVIDER_API_KEY_ENV[providerId];
-  const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
 
   const mine = useMemo(
     () => credentials.filter((c) => c.providerId === providerId),
@@ -53,11 +54,11 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
       await refreshProviders();
       reset();
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't save the API key", error: err });
     } finally {
       setBusy(false);
     }
-  }, [apiKey, label, providerId, createCredential, refreshProviders, reset, showToast]);
+  }, [apiKey, label, providerId, createCredential, refreshProviders, reset, reportError]);
 
   const onDelete = useCallback(
     async (credentialId: CredentialId) => {
@@ -65,12 +66,12 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
         await deleteCredential(credentialId);
         await refreshProviders();
       } catch (err) {
-        showToast('error', formatError(err));
+        void reportError({ title: "Couldn't remove the API key", error: err });
       } finally {
         setArmedId(null);
       }
     },
-    [deleteCredential, refreshProviders, showToast],
+    [deleteCredential, refreshProviders, reportError],
   );
 
   if (apiKeyEnv === undefined) {
@@ -87,7 +88,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
             >
               <Plus size={ICON_SIZE.row} aria-hidden /> Add key
             </button>
@@ -102,7 +103,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
           tone={CONCEPT_TONE.providers}
           title="No API keys yet"
           size="inline"
-          className="bg-muted/10 py-8"
+          className="bg-subtle py-8"
         />
       ) : null}
 
@@ -125,7 +126,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
             ) : (
               <li
                 key={c.id}
-                className="group flex items-center gap-3 rounded-lg border border-border-soft bg-muted/20 p-3 transition-colors hover:bg-muted/30"
+                className="group flex items-center gap-3 rounded-lg border border-border-soft bg-subtle p-3 transition-colors hover:bg-hover"
               >
                 <span
                   className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
@@ -135,7 +136,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
                 </span>
                 <div className="flex min-w-0 flex-col">
                   <span className="truncate text-sm font-medium text-foreground">{c.label}</span>
-                  <span className="font-mono text-2xs text-muted-foreground/70">{c.hint}</span>
+                  <span className="font-mono text-2xs text-faint-foreground">{c.hint}</span>
                 </div>
                 <div className="flex-1" />
                 <Tooltip content={`Remove ${c.label}`}>
@@ -143,7 +144,11 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
                     type="button"
                     aria-label={`Remove ${c.label}`}
                     onClick={() => setArmedId(c.id)}
-                    className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-danger/10 hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] group-hover:opacity-100"
+                    className={cn(
+                      'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity',
+                      tintClasses('danger').hoverBg,
+                      'hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring group-hover:opacity-100',
+                    )}
                   >
                     <Trash2 size={ICON_SIZE.row} aria-hidden />
                   </button>

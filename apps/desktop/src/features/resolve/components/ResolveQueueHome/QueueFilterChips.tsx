@@ -1,10 +1,6 @@
-import { Button } from '@goodboy/ui';
+import { SegmentedTabs } from '@goodboy/ui';
 import type { ResolveQueueFilter } from '../../../../store/slices/session-view';
-import {
-  activeFilterLabel,
-  needsReviewFilterLabel,
-  retryableFilterLabel,
-} from '../../resolveQueueCopy';
+import { RESOLVE_QUEUE_FILTER_LABEL } from '../../resolveQueueCopy';
 
 type Props = {
   readonly filter: ResolveQueueFilter;
@@ -14,6 +10,17 @@ type Props = {
   readonly onChange: (filter: ResolveQueueFilter) => void;
 };
 
+type FilterOptionParams = {
+  readonly value: ResolveQueueFilter;
+  readonly count: number;
+};
+
+const filterOption = ({ value, count }: FilterOptionParams) => ({
+  value,
+  label: RESOLVE_QUEUE_FILTER_LABEL[value],
+  ...(count > 0 && { badge: count }),
+});
+
 export const QueueFilterChips = ({
   filter,
   needsReviewCount,
@@ -21,30 +28,16 @@ export const QueueFilterChips = ({
   retryableCount,
   onChange,
 }: Props) => (
-  <div className="flex flex-wrap items-center gap-4">
-    <Button
-      size="sm"
-      variant={filter === 'needs_review' ? 'secondary' : 'ghost'}
-      aria-pressed={filter === 'needs_review'}
-      onClick={() => onChange('needs_review')}
-    >
-      {needsReviewFilterLabel({ count: needsReviewCount })}
-    </Button>
-    <Button
-      size="sm"
-      variant={filter === 'everything' ? 'secondary' : 'ghost'}
-      aria-pressed={filter === 'everything'}
-      onClick={() => onChange('everything')}
-    >
-      {activeFilterLabel({ count: activeCount })}
-    </Button>
-    <Button
-      size="sm"
-      variant={filter === 'retryable' ? 'secondary' : 'ghost'}
-      aria-pressed={filter === 'retryable'}
-      onClick={() => onChange('retryable')}
-    >
-      {retryableFilterLabel({ count: retryableCount })}
-    </Button>
-  </div>
+  <SegmentedTabs
+    ariaLabel="Comment filter"
+    size="sm"
+    className="w-max shrink-0"
+    value={filter}
+    onChange={onChange}
+    options={[
+      filterOption({ value: 'needs_review', count: needsReviewCount }),
+      filterOption({ value: 'everything', count: activeCount }),
+      filterOption({ value: 'retryable', count: retryableCount }),
+    ]}
+  />
 );

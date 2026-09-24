@@ -1,5 +1,5 @@
 import type { Agent, AgentId, Skill, Workflow, ProjectScript } from '@goodboy/types';
-import { AGENT_KIND_META, inferAgentKindFromName, type AgentKind } from '../session/agent-kind';
+import { AGENT_KIND_META, classifyAgent, type AgentKind } from '../session/agent-kind';
 import type { QuickActionItem } from './types';
 
 function firstLine(body: string): string | undefined {
@@ -57,7 +57,7 @@ export const buildAgentActions = (
   const switches = agents
     .filter((agent) => agent.deletedAt === undefined)
     .map<QuickActionItem>((agent) => {
-      const kind = kindOverride[agent.id] ?? inferAgentKindFromName(agent.name);
+      const kind = classifyAgent({ agent, override: kindOverride[agent.id] ?? null });
       return {
         id: `agent:${agent.id}`,
         label: agent.name,

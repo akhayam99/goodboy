@@ -9,7 +9,7 @@ import type {
   TelemetryRecord,
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
+import type { ProviderContextUsage } from '../../components/AgentTree/ContextWindowBar';
 import type { AgentAggregate } from '../../components/AgentMetrics';
 import { computeLatestTelemetryByAgentId } from '../../agent-row-format';
 

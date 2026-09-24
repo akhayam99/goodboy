@@ -179,6 +179,23 @@ describe('deriveSessionStage lazy session', () => {
     expect(info.stage).toBe('building');
     expect(info.reason).toBe('ready for work');
   });
+
+  it('says not started while no agent has run yet', () => {
+    const draftSession: Session = { ...session, state: { kind: 'draft' } };
+
+    expect(
+      deriveSessionStage({
+        session: draftSession,
+        pr: null,
+        ...signals,
+        isBranchless: true,
+        hasRun: false,
+      }).reason,
+    ).toBe('not started');
+    expect(deriveSessionStage({ session, pr: null, ...signals, hasRun: false }).reason).toBe(
+      'not started',
+    );
+  });
 });
 
 describe('deriveSessionStage sibling branch mounts', () => {

@@ -85,7 +85,7 @@ export const useDynamicActions = (
         state: resolveWorkflowAdvance({
           workflow,
           agents: runAgents,
-          hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
+          hasOpenQuestions: workflowRunHasOpenQuestions({ questions: openQuestions, run }),
           isSummarizerRunning,
           isTurnRunning: false,
         }),
@@ -164,7 +164,11 @@ export const useDynamicActions = (
             projectId: proposal.projectId,
             reason: proposal.reason,
           }).catch((error: unknown) => {
-            void emitNotification('error', 'error', 'Mount failed', formatError(error), {
+            void emitNotification({
+              kind: 'error',
+              severity: 'error',
+              title: "Couldn't mount the project",
+              body: formatError(error),
               sessionId: id,
             });
           });

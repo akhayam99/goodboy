@@ -6,7 +6,7 @@ import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import {
   AGENT_KIND_META,
-  inferAgentKindFromName,
+  classifyAgent,
   type AgentKind as AgentKindLabel,
 } from '../../../session/agent-kind';
 import { useAppStore } from '../../../../store';
@@ -42,7 +42,10 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
     if (!selectedAgent) {
       return null;
     }
-    return agentKindOverride[selectedAgent.id] ?? inferAgentKindFromName(selectedAgent.name);
+    return classifyAgent({
+      agent: selectedAgent,
+      override: agentKindOverride[selectedAgent.id] ?? null,
+    });
   }, [selectedAgent, agentKindOverride]);
 
   const scenario = useMemo<EmptyScenario>(() => {
@@ -173,11 +176,11 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
         )}
       </div>
       <div className="flex flex-col gap-1.5">
-        <Eyebrow label={copy.eyebrow} className="tracking-[0.12em] text-muted-foreground/70" />
+        <Eyebrow label={copy.eyebrow} muted />
         <h2 className="text-base font-semibold text-foreground">{copy.title}</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">{copy.body}</p>
       </div>
-      <ul className="flex flex-wrap items-center justify-center gap-1.5 text-2xs text-muted-foreground/70">
+      <ul className="flex flex-wrap items-center justify-center gap-1.5 text-2xs text-faint-foreground">
         {copy.hints.map((hint, i) => (
           <li
             key={i}

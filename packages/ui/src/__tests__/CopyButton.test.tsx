@@ -24,13 +24,13 @@ async function flushMicrotasks() {
 describe('CopyButton', () => {
   it('renders with default copy label', () => {
     render(<CopyButton value="hello" />);
-    expect(screen.getByRole('button', { name: 'copy text' })).toBeDefined();
-    expect(screen.getByRole('button').textContent).toBe('copy');
+    expect(screen.getByRole('button', { name: 'Copy text' })).toBeDefined();
+    expect(screen.getByRole('button').textContent).toBe('Copy');
   });
 
   it('renders with custom label', () => {
     render(<CopyButton value="hello" label="branch" />);
-    expect(screen.getByRole('button', { name: 'copy branch' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Copy branch' })).toBeDefined();
   });
 
   it('shows copied state then resets', async () => {
@@ -41,12 +41,12 @@ describe('CopyButton', () => {
     fireEvent.click(screen.getByRole('button'));
 
     await flushMicrotasks();
-    expect(screen.getByRole('button').textContent).toBe('copied: branch');
+    expect(screen.getByRole('button').textContent).toBe('Copied');
 
     await act(async () => {
       vi.advanceTimersByTime(1200);
     });
-    expect(screen.getByRole('button').textContent).toBe('copy');
+    expect(screen.getByRole('button').textContent).toBe('Copy');
     vi.useRealTimers();
   });
 
@@ -67,7 +67,7 @@ describe('CopyButton', () => {
     await flushMicrotasks();
 
     expect(execCommand).toHaveBeenCalledWith('copy');
-    expect(screen.getByRole('button').textContent).toBe('copied: path');
+    expect(screen.getByRole('button').textContent).toBe('Copied');
     vi.useRealTimers();
   });
 
@@ -87,7 +87,7 @@ describe('CopyButton', () => {
     fireEvent.click(screen.getByRole('button'));
 
     await flushMicrotasks();
-    expect(screen.getByRole('button').textContent).toBe('copy failed');
+    expect(screen.getByRole('button').textContent).toBe('Copy failed');
     vi.useRealTimers();
   });
 

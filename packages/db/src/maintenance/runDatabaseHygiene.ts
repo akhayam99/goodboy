@@ -5,6 +5,7 @@ import { updateProviderRunStatusIfInFlight } from '../queries/provider-run';
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PERMISSION_AUDIT_MAX_ROWS = 5000;
 const TURN_EVENT_MAX_ROWS = 200_000;
+const PROVIDER_RUN_RETENTION_DAYS = 90;
 
 type Params = {
   readonly db: Database;
@@ -16,6 +17,7 @@ export type DatabaseHygieneResult = {
   readonly turnEventRowsDeleted: number;
   readonly githubPrCacheRowsDeleted: number;
   readonly providerRunsCancelled: number;
+  readonly providerRunsDeleted: number;
 };
 
 type ProviderRunRow = {
@@ -33,8 +35,9 @@ export const runDatabaseHygiene = async ({ db, now }: Params): Promise<DatabaseH
      WHERE rowid IN (
        SELECT rowid FROM permission_audit_log
        ORDER BY requested_at DESC, rowid DESC
-       LIMIT -1 OFFSET ${PERMISSION_AUDIT_MAX_ROWS}
+       LIMIT -1 OFFSET ?
      )`,
+    [PERMISSION_AUDIT_MAX_ROWS],
   );
 
   const turnEventCutoff = now - 90 * DAY_MS;
@@ -46,8 +49,9 @@ export const runDatabaseHygiene = async ({ db, now }: Params): Promise<DatabaseH
      WHERE rowid IN (
        SELECT rowid FROM turn_events
        ORDER BY created_at DESC, rowid DESC
-       LIMIT -1 OFFSET ${TURN_EVENT_MAX_ROWS}
+       LIMIT -1 OFFSET ?
      )`,
+    [TURN_EVENT_MAX_ROWS],
   );
 
   const githubPrCacheRows = await db.execute(
@@ -61,6 +65,16 @@ export const runDatabaseHygiene = async ({ db, now }: Params): Promise<DatabaseH
          AND s.deleted_at IS NULL
          AND s.archived_at IS NULL
      )`,
+  );
+
+  const orphanProviderRuns = await db.execute(
+    `DELETE FROM provider_runs
+     WHERE status_kind IN ('succeeded', 'failed', 'cancelled')
+       AND created_at < ?
+       AND NOT EXISTS (SELECT 1 FROM telemetry_records t WHERE t.run_id = provider_runs.id)
+       AND NOT EXISTS (SELECT 1 FROM agents a WHERE a.provider_run_id = provider_runs.id)
+       AND NOT EXISTS (SELECT 1 FROM file_versions f WHERE f.provider_run_id = provider_runs.id)`,
+    [now - PROVIDER_RUN_RETENTION_DAYS * DAY_MS],
   );
 
   const providerRunCutoff = now - DAY_MS;
@@ -84,5 +98,6 @@ export const runDatabaseHygiene = async ({ db, now }: Params): Promise<DatabaseH
     turnEventRowsDeleted: oldTurnEvents.rowsAffected + excessTurnEvents.rowsAffected,
     githubPrCacheRowsDeleted: githubPrCacheRows.rowsAffected,
     providerRunsCancelled,
+    providerRunsDeleted: orphanProviderRuns.rowsAffected,
   };
 };

@@ -15,7 +15,8 @@ import {
   LazyGenericTerminalPanel,
   type TerminalDriver,
 } from '../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalPanel';
-import { currentPlatform } from '../../../../shared/platform';
+import { eventMatches } from '../../../../shared/keyboard/dispatcher';
+import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
 import {
   invokeTerminalOpen,
@@ -120,14 +121,10 @@ export const TerminalDock = ({ sessionId, isActive, cwd, eyebrow }: Props) => {
 
   const handleKeyDown = useCallback(
     (event: ReactKeyboardEvent<HTMLDivElement>) => {
-      if (!isActive || event.code !== 'KeyT' || event.altKey) {
-        return;
-      }
-      const onMac = currentPlatform() === 'darwin';
-      const matches = onMac
-        ? event.metaKey && !event.ctrlKey && !event.shiftKey
-        : event.ctrlKey && event.shiftKey && !event.metaKey;
-      if (!matches) {
+      if (
+        !isActive ||
+        !eventMatches({ event: event.nativeEvent, entry: SHORTCUTS['terminal.newTab'] })
+      ) {
         return;
       }
       event.preventDefault();

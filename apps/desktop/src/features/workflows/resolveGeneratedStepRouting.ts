@@ -54,7 +54,6 @@ export const resolveGeneratedStepRouting = ({
     const resolution = resolveWorkflowRouting({
       agentLock: null,
       stepLock: null,
-      runRoleLock: null,
       proposal: outcome,
       roleDefault: null,
       sessionDefault: null,

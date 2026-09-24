@@ -1,8 +1,8 @@
 # Readability: speaking names, no comments
 
-> **Read this when** naming a variable, parameter or callback, or you are
-> tempted to add a code comment. **Not for** type or parameter naming rules
-> (see `docs/typescript/components.md` and `docs/typescript/data.md`).
+> **Read this when** you're naming a variable, parameter or callback, or when
+> you're tempted to add a code comment. **Not for** type or parameter naming
+> rules (see `docs/typescript/components.md` and `docs/typescript/data.md`).
 
 ## Speaking names, never cryptic abbreviations
 
@@ -18,14 +18,14 @@ const s = data.sessions?.[0];
 agents.map((a) => a.id);
 ```
 
-Exceptions kept short on purpose: the conventional event handler arg `e` and the state selector arg in store hooks.
+Two exceptions are kept short on purpose: the conventional event handler argument `e`, and the state selector argument in store hooks.
 
 ## Why comments are prohibited
 
 The working prohibition and its tooling exception live in
-[AGENTS.md](../../AGENTS.md) → Forbidden patterns. The reason is that a
-comment that restates what code does becomes noise, while code that needs a
-comment to be understood needs names that speak for themselves.
+[AGENTS.md](../../AGENTS.md) → Forbidden patterns. Here's why: a comment that
+restates what the code does becomes noise. Code that needs a comment to be
+understood needs better names instead, names that speak for themselves.
 
 ```ts
 // good: the guard reads for itself

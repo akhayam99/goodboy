@@ -14,10 +14,10 @@ import {
   linearIssueFields,
   resolveDetailFields,
   sentryIssueFields,
-  type DetailEntry,
   type ResolvedDetailFields,
-  type SentryIssueProperties,
 } from '.';
+import type { SentryIssueProperties } from './sentryIssueFields';
+import type { DetailEntry } from './types';
 
 type NodeChildren = {
   readonly children?: ReactNode;

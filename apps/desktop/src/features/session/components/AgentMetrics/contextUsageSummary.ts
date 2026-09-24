@@ -1,5 +1,5 @@
 import { contextTokensForUsage } from '@goodboy/core';
-import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
+import type { ProviderContextUsage } from '../AgentTree/ContextWindowBar';
 import { contextWindowFor } from '../../contextWindowFor';
 
 export type ContextUsageSummary = {

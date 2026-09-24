@@ -4,7 +4,7 @@ import type { JiraIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { ConnectForm } from '../components/ConnectForm';
 import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
-import { normalizeSiteUrl } from './normalizeSiteUrl';
+import { normalizeHostUrl } from '../shared/normalizeHostUrl';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -29,7 +29,7 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
   const [email, setEmail] = useState('');
   const [projectKey, setProjectKey] = useState('');
 
-  const normalizedSiteUrl = normalizeSiteUrl({ input: siteUrl });
+  const normalizedSiteUrl = normalizeHostUrl({ input: siteUrl, fallback: '' });
   const trimmedEmail = email.trim();
   const trimmedProjectKey = projectKey.trim().toUpperCase();
 

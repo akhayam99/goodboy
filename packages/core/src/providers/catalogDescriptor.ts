@@ -8,6 +8,7 @@ type Params = {
 const THINKER_ONLY_KEYS: ReadonlySet<string> = new Set(['fable-5', 'fable-5.1']);
 
 const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
+  'opus-5.5': 88,
   'opus-5': 85,
   'fable-5.1': 95,
   'fable-5': 90,
@@ -31,7 +32,11 @@ const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   'gemini-3.8-flash': 5,
   'gemini-3.7-flash': 5,
   'gemini-3.6-flash': 5,
+  'gemini-3.5-flash': 5,
+  'gemini-3-flash': 5,
   'kimi-k3': 12,
+  'kimi-k2.7-code': 11,
+  'grok-4.7': 14,
   'grok-4.6': 13,
   'glm-5.2': 11,
 };
@@ -56,6 +61,11 @@ const effortFor = ({ model }: Params) => {
   }
 };
 
+const variantLabelFor = ({ model }: Params): string => {
+  const { version, checkpoint } = model.presentation;
+  return checkpoint == null ? version : `${version} ${checkpoint}`;
+};
+
 export const catalogDescriptor = ({ model }: Params): ModelDescriptor => {
   const family = model.presentation.family;
   return {
@@ -65,7 +75,7 @@ export const catalogDescriptor = ({ model }: Params): ModelDescriptor => {
     family,
     subfamily: model.presentation.group,
     label: model.label,
-    variantLabel: model.presentation.version,
+    variantLabel: variantLabelFor({ model }),
     costTier: model.presentation.costTier,
     weight: WEIGHT_BY_KEY[model.key] ?? 10,
     effort: effortFor({ model }),

@@ -3,12 +3,7 @@ import {
   workflowRoutingAvailability,
   type WorkflowRoutingAvailabilitySnapshot,
 } from '@goodboy/core';
-import type {
-  Step,
-  WorkflowModelPick,
-  WorkflowRoutingDecision,
-  WorkflowTaskProfile,
-} from '@goodboy/types';
+import type { Step, WorkflowRoutingDecision, WorkflowTaskProfile } from '@goodboy/types';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {
   taskType: 'general',
@@ -19,7 +14,6 @@ const UNKNOWN_PROFILE: WorkflowTaskProfile = {
 type Params = {
   readonly step: Step;
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
-  readonly runRoleLock?: WorkflowModelPick | null;
 };
 
 export type StepRoutingRevalidation =
@@ -29,11 +23,7 @@ export type StepRoutingRevalidation =
 
 const KEEP: StepRoutingRevalidation = { kind: 'keep' };
 
-export const revalidateStepRouting = ({
-  step,
-  availability,
-  runRoleLock = null,
-}: Params): StepRoutingRevalidation => {
+export const revalidateStepRouting = ({ step, availability }: Params): StepRoutingRevalidation => {
   const lock = step.routingLock ?? null;
   const decision = step.routingDecision ?? null;
   if (lock === null && decision === null) {
@@ -63,7 +53,6 @@ export const revalidateStepRouting = ({
   const resolution = resolveWorkflowRouting({
     agentLock: null,
     stepLock: lock,
-    runRoleLock,
     proposal: outcome,
     roleDefault: null,
     sessionDefault: null,

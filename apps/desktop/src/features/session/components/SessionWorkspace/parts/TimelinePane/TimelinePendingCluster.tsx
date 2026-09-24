@@ -29,7 +29,7 @@ export const TimelinePendingCluster = ({ item, rail, railWidth }: Props) => {
               <Clock
                 size={glyphSize}
                 aria-label={`${item.steps.length} steps not started`}
-                className="text-muted-foreground/60"
+                className="text-faint-foreground"
               />
             </TimelineGlyphMarker>
           </span>
@@ -39,7 +39,7 @@ export const TimelinePendingCluster = ({ item, rail, railWidth }: Props) => {
         {item.steps.map((step) => (
           <span
             key={step.id}
-            className="flex min-w-0 items-center gap-2 pl-2 text-3xs text-muted-foreground/60"
+            className="flex min-w-0 items-center gap-2 pl-2 text-3xs text-faint-foreground"
             style={{ height }}
           >
             {step.stepLabel == null ? null : (

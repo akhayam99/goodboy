@@ -9,7 +9,7 @@ type Props = {
   readonly tone?: Tone;
   readonly glyph?: ReactNode;
   readonly title: string;
-  readonly workspaceName: string;
+  readonly subtitle?: string;
   readonly closeLabel: string;
   readonly headerAccessory?: ReactNode;
   readonly onClose: () => void;
@@ -22,14 +22,14 @@ export const StudioShell = ({
   tone,
   glyph,
   title,
-  workspaceName,
+  subtitle,
   closeLabel,
   headerAccessory,
   onClose,
   variant = 'fullscreen',
   children,
 }: Props) => {
-  const { closing, requestClose } = useStudioOverlay(onClose);
+  const { closing, requestClose } = useStudioOverlay({ onClose });
 
   return (
     <div
@@ -38,18 +38,18 @@ export const StudioShell = ({
         variant === 'slot'
           ? 'relative h-full w-full flex flex-col bg-background'
           : variant === 'viewport'
-            ? 'fixed inset-0 z-50 flex flex-col bg-background'
-            : 'fixed inset-x-0 bottom-9 top-9 z-50 flex flex-col bg-background',
+            ? 'fixed inset-0 z-studio flex flex-col bg-background'
+            : 'relative flex h-full w-full min-h-0 flex-col bg-background',
         closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
       )}
     >
       <OverlayHeader
-        heightClassName="h-[var(--chat-header-h)]"
+        {...(variant === 'slot' && { heightClassName: 'h-[var(--chat-header-h)]' })}
         icon={Icon}
         {...(tone != null && { tone })}
         glyph={glyph}
         title={title}
-        subtitle={workspaceName}
+        {...(subtitle !== undefined && { subtitle })}
         onClose={requestClose}
         closeLabel={closeLabel}
         variant={variant === 'slot' ? 'compact' : 'fullscreen'}

@@ -5,6 +5,7 @@ import type { LensKind } from '../../../../../store';
 import { useAppStore, useMountDiffStats } from '../../../../../store';
 import { MountCleanupProposals } from '../MountCleanupProposals';
 import { MountProjectAction } from './MountProjectAction';
+import { ArchivedGate } from '../ArchivedGate';
 import { ProjectMountGroup } from './ProjectMountGroup';
 import { useMountRows } from './useMountRows';
 import { useWorktreeStatusPending, useWorktreeStatuses } from '../../../hooks/useWorktreeStatuses';
@@ -43,16 +44,13 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
       <SectionHeader
         label="Projects"
         action={
-          <MountProjectAction
-            sessionId={session.id}
-            workspaceId={session.workspaceId}
-            presentation="button"
-          />
-        }
-        hint={
-          groups.length === 0
-            ? 'Mount a workspace project to make it available in this session.'
-            : undefined
+          <ArchivedGate isArchived={session.archivedAt != null}>
+            <MountProjectAction
+              sessionId={session.id}
+              workspaceId={session.workspaceId}
+              presentation="button"
+            />
+          </ArchivedGate>
         }
       />
       {groups.length === 0 ? null : (

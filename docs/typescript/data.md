@@ -3,29 +3,33 @@
 > **Read this when** declaring a type or data shape. **Not for** naming or
 > where the type lives (`AGENTS.md` → Naming, `docs/file-system.md`).
 
-How data shapes are declared. Type naming and placement: [AGENTS.md](../../AGENTS.md) → Naming, [file-system.md](../file-system.md) → Shared types.
+This page covers how we declare data shapes. For type naming and placement, see [AGENTS.md](../../AGENTS.md) → Naming and [file-system.md](../file-system.md) → Shared types.
 
 ## `type`, never `interface`
 
-Every object shape is a `type`. `interface` is forbidden, no exceptions (no declaration merging). `type` already covers unions, intersections, primitives, and object shapes uniformly. Extension via intersection, never `extends`: `type RunningSession = Session & { startedAt: number }`.
+Every object shape is a `type`. `interface` is forbidden, no exceptions, because it allows declaration merging, and we don't want that. `type` already covers unions, intersections, primitives, and object shapes, all in one uniform way. Extend types with an intersection, never with `extends`: `type RunningSession = Session & { startedAt: number }`.
 
 ## `satisfies` over `as` for const validation
 
-`as` silences the checker and lets a wrong shape through; `satisfies` checks the value while keeping the narrow literal type: `const config = { retries: 3, timeout: 5000 } satisfies RequestConfig`.
+`as` silences the checker, so a wrong shape can slip through. `satisfies` checks the value but keeps its narrow literal type. For example: `const config = { retries: 3, timeout: 5000 } satisfies RequestConfig`.
 
 ## Exhaustiveness with `never` in switch defaults
 
-A `switch` over a union ends with a `default` that assigns the scrutinee to `never`, so a new variant flags every unhandled switch.
+A `switch` over a union should end with a `default` case that assigns the switched value to `never`. That way, adding a new variant flags every switch that doesn't handle it yet.
 
 ```ts
-const label = (s: SessionStage): string => {
-  switch (s) {
+type Params = {
+  readonly stage: SessionStage;
+};
+
+const stageLabel = ({ stage }: Params): string => {
+  switch (stage) {
     case 'running':
       return 'Running';
     case 'done':
       return 'Done';
     default: {
-      const _exhaustive: never = s;
+      const _exhaustive: never = stage;
       return _exhaustive;
     }
   }
@@ -34,7 +38,7 @@ const label = (s: SessionStage): string => {
 
 ## Discriminated unions for state machines
 
-Model any value with mutually exclusive states as a discriminated union on a literal tag, never a bag of optional fields.
+Model any value that has mutually exclusive states as a discriminated union on a literal tag. Never model it as a bag of optional fields.
 
 ```ts
 type Fetch =
@@ -46,4 +50,4 @@ type Fetch =
 
 ## Branded IDs
 
-String IDs are branded so a `WorkspaceId` is not assignable to a `SessionId`. The brand definitions and helpers are owned by `packages/types`; import them, do not redeclare a brand locally.
+String IDs are branded, so a `WorkspaceId` is not assignable to a `SessionId`. The brand definitions and helpers live in `packages/types`. Import them. Do not redeclare a brand locally.

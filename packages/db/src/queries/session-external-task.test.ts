@@ -6,13 +6,13 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import type { Database } from '../client';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { migrations } from '../migrations';
 import { migrate } from '../migrations/runner';
 import {
   deleteSessionExternalTask,
   listExternalTasksForWorkspace,
-  listSessionExternalTasks,
   upsertSessionExternalTask,
 } from './session-external-task';
 
@@ -26,11 +26,7 @@ type SeedParams = {
 const LATEST_VERSION = migrations[migrations.length - 1]?.version ?? 0;
 
 const seed = async ({ throughVersion = LATEST_VERSION }: SeedParams) => {
-  const db = makeTestDatabase();
-  await migrate(
-    db,
-    migrations.filter((migration) => migration.version <= throughVersion),
-  );
+  const db = await makeMigratedTestDatabase({ throughVersion });
   const now = Date.now();
   if (throughVersion < 118) {
     await db.execute(
@@ -48,6 +44,24 @@ const seed = async ({ throughVersion = LATEST_VERSION }: SeedParams) => {
     [sessionId, workspaceId, 'goal', 'idle', now, now],
   );
   return db;
+};
+
+type ListSessionTasksParams = {
+  readonly db: Database;
+};
+
+const listSessionTasks = async ({
+  db,
+}: ListSessionTasksParams): Promise<ReadonlyArray<SessionExternalTask>> => {
+  const rows = await db.select<{ readonly workspace_id: string }>(
+    'SELECT workspace_id FROM sessions WHERE id = ?',
+    [sessionId],
+  );
+  const owner = rows[0];
+  if (owner === undefined) {
+    return [];
+  }
+  return listExternalTasksForWorkspace({ db, workspaceId: owner.workspace_id as WorkspaceId });
 };
 
 type MakeTaskParams = {
@@ -81,8 +95,8 @@ describe('session_external_tasks queries', () => {
     await upsertSessionExternalTask({ db, task: linear });
     await upsertSessionExternalTask({ db, task: sentry });
 
-    const forSession = await listSessionExternalTasks({ db, sessionId });
-    const forWorkspace = await listExternalTasksForWorkspace({ db, workspaceId });
+    const forSession = await listSessionTasks({ db });
+    const forWorkspace = await listSessionTasks({ db });
     expect(forSession.map((task) => task.provider)).toEqual(['linear', 'sentry']);
     expect(forWorkspace).toEqual(forSession);
   });
@@ -105,7 +119,7 @@ describe('session_external_tasks queries', () => {
       task: makeTask({ overrides: { identifier: 'SER-999', title: 'Renamed' } }),
     });
 
-    const tasks = await listSessionExternalTasks({ db, sessionId });
+    const tasks = await listSessionTasks({ db });
     expect(
       tasks.map(({ provider, identifier, title }) => ({ provider, identifier, title })),
     ).toEqual([
@@ -132,7 +146,7 @@ describe('session_external_tasks queries', () => {
     await upsertSessionExternalTask({ db, task: web });
     await upsertSessionExternalTask({ db, task: api });
 
-    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([api, web]);
+    expect(await listSessionTasks({ db })).toEqual([api, web]);
 
     await deleteSessionExternalTask({
       db,
@@ -142,7 +156,7 @@ describe('session_external_tasks queries', () => {
       projectId: webId,
     });
 
-    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([api]);
+    expect(await listSessionTasks({ db })).toEqual([api]);
   });
 
   it('rejects an unknown provider', async () => {
@@ -172,7 +186,7 @@ describe('session_external_tasks queries', () => {
       externalId: 'lin-uuid-1',
     });
 
-    const tasks = await listSessionExternalTasks({ db, sessionId });
+    const tasks = await listSessionTasks({ db });
     expect(tasks.map((task) => task.identifier)).toEqual(['GOODBOY-42']);
   });
 
@@ -181,7 +195,7 @@ describe('session_external_tasks queries', () => {
     await upsertSessionExternalTask({ db, task: makeTask({}) });
     await db.execute('DELETE FROM sessions WHERE id = ?', [sessionId]);
 
-    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([]);
+    expect(await listSessionTasks({ db })).toEqual([]);
   });
 
   it('preserves an existing row while removing the one-link constraint', async () => {
@@ -203,7 +217,7 @@ describe('session_external_tasks queries', () => {
     );
     await migrate(db, migrations);
 
-    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([original]);
+    expect(await listSessionTasks({ db })).toEqual([original]);
   });
 
   it('preserves existing rows while allowing GitHub links', async () => {
@@ -243,7 +257,7 @@ describe('session_external_tasks queries', () => {
     });
     await upsertSessionExternalTask({ db, task: github });
 
-    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([github, gitlab]);
+    expect(await listSessionTasks({ db })).toEqual([github, gitlab]);
   });
 
   it('preserves existing links with null mount attribution', async () => {
@@ -265,7 +279,7 @@ describe('session_external_tasks queries', () => {
     );
     await migrate(db, migrations);
 
-    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([original]);
+    expect(await listSessionTasks({ db })).toEqual([original]);
   });
 
   it('keeps the branch an issue was linked on', async () => {
@@ -273,7 +287,7 @@ describe('session_external_tasks queries', () => {
     const stamped = makeTask({ overrides: { branch: 'ak/fix-auth' } });
     await upsertSessionExternalTask({ db, task: stamped });
 
-    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([stamped]);
+    expect(await listSessionTasks({ db })).toEqual([stamped]);
   });
 
   it('keeps the original branch when the same link is upserted without one', async () => {
@@ -284,7 +298,7 @@ describe('session_external_tasks queries', () => {
     });
     await upsertSessionExternalTask({ db, task: makeTask({ overrides: { title: 'Renamed' } }) });
 
-    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([
+    expect(await listSessionTasks({ db })).toEqual([
       makeTask({ overrides: { branch: 'ak/fix-auth', title: 'Renamed' } }),
     ]);
   });

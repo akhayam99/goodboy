@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react';
-import { ScrollFade, StudioRailLayout } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { FOOTER_INTEGRATIONS } from '../../../../app/components/AppFooter/categories';
 import type { IntegrationGlyphProvider } from '../IntegrationGlyph';
 import { useToolConnections } from '../../useToolConnections';
+import type { ScopeFrame } from '../../../settings/components/SettingsStudio/types';
 import { ToolsRail } from './ToolsRail';
 import { ToolDetailPanel } from './ToolDetailPanel';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly initialFocus?: IntegrationGlyphProvider;
+  readonly frame: ScopeFrame;
 };
 
-export const ToolSettingsScope = ({ workspaceId, initialFocus }: Props) => {
-  const { integrations, connected, github } = useToolConnections({ workspaceId });
+export const ToolSettingsScope = ({ workspaceId, initialFocus, frame }: Props) => {
+  const { integrations, connected, github, githubIdentity } = useToolConnections({ workspaceId });
   const [focused, setFocused] = useState<IntegrationGlyphProvider | null>(initialFocus ?? null);
   useEffect(() => setFocused(initialFocus ?? null), [initialFocus]);
   const defaultSelection =
@@ -30,33 +31,27 @@ export const ToolSettingsScope = ({ workspaceId, initialFocus }: Props) => {
     }
   }, [focused, selected]);
 
-  return (
-    <StudioRailLayout
-      railLabel="Tools"
-      railWidth="standard"
-      rail={
-        <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
-          <ToolsRail
-            focusedId={selected}
-            onSelect={setFocused}
-            integrations={integrations}
-            connected={connected}
-            githubIdentity={github.user}
-          />
-        </ScrollFade>
-      }
-      detail={
-        selected === null ? null : (
-          <ToolDetailPanel
-            key={selected}
-            workspaceId={workspaceId}
-            provider={selected}
-            isConnected={connected[selected]}
-            github={github}
-            binding={integrations.find((binding) => binding.provider === selected)}
-          />
-        )
-      }
-    />
-  );
+  return frame({
+    nested: (
+      <ToolsRail
+        focusedId={selected}
+        onSelect={setFocused}
+        integrations={integrations}
+        connected={connected}
+        githubIdentity={githubIdentity}
+      />
+    ),
+    detail:
+      selected === null ? null : (
+        <ToolDetailPanel
+          key={selected}
+          workspaceId={workspaceId}
+          provider={selected}
+          isConnected={connected[selected]}
+          github={github}
+          githubIdentity={githubIdentity}
+          binding={integrations.find((binding) => binding.provider === selected)}
+        />
+      ),
+  });
 };

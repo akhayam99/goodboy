@@ -9,7 +9,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from './ids';
-import type { ModelEffort, ProviderId } from './provider-registry';
+import type { EffortLevel, ProviderId } from './provider-registry';
 import type { VerbosityLevel } from './settings';
 import type {
   WorkflowRoutingDecision,
@@ -17,7 +17,7 @@ import type {
   WorkflowTaskProfile,
 } from './workflow-routing';
 
-export type AgentEffort = ModelEffort;
+export type AgentEffort = EffortLevel;
 
 export type AgentRole =
   | 'scout'
@@ -99,13 +99,12 @@ export type Step = Readonly<{
   deletedAt?: IsoDateTime;
 }>;
 
-export type WorkflowOrigin = 'library' | 'custom' | 'orchestrated';
+export const WORKFLOW_ORIGINS = ['library', 'custom', 'orchestrated'] as const;
 
-export const WORKFLOW_ORIGINS: ReadonlyArray<WorkflowOrigin> = [
-  'library',
-  'custom',
-  'orchestrated',
-];
+export type WorkflowOrigin = (typeof WORKFLOW_ORIGINS)[number];
+
+export const isWorkflowOrigin = (value: unknown): value is WorkflowOrigin =>
+  typeof value === 'string' && WORKFLOW_ORIGINS.some((origin) => origin === value);
 
 export type Workflow = Readonly<{
   id: WorkflowId;
@@ -142,7 +141,7 @@ export type Agent = Readonly<{
   doneAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
   verbosity?: VerbosityLevel;
-  effort?: ModelEffort;
+  effort?: EffortLevel;
   modelOverride?: string;
   providerOverride?: ProviderId;
   kind?: string;

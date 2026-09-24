@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react';
 import type {
+  AgentId,
+  ContextSlot,
   IsoDateTime,
+  PlanId,
+  PlanWithCount,
+  ProviderRunId,
+  SessionEvent,
+  SessionEventId,
+  TelemetryRecord,
+  TelemetryRecordId,
   MountId,
   MountPullRequestLink,
   MountPullRequestState,
@@ -20,6 +29,8 @@ import type {
 } from '@goodboy/types';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';
+import { useHoveredMountRow, useShowCompletedMounts } from './sceneReveal';
+import { ShellFrame, seedShellChrome } from './shellChrome';
 
 const WORKSPACE_ID = 'mock-workspace-harborline' as WorkspaceId;
 const SESSION_ID = 'mock-session-mount-rows' as SessionId;
@@ -59,7 +70,6 @@ const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
   name: 'Harborline',
   slug: 'harborline',
-  sessionsRoot: '/mock/harborline/sessions',
   overrides: OVERRIDES,
   createdAt: NOW,
   updatedAt: NOW,
@@ -197,6 +207,127 @@ const SESSION: Session = {
   createdAt: NOW,
   updatedAt: NOW,
 };
+
+const later = (minutes: number): IsoDateTime =>
+  new Date(Date.parse(NOW) + minutes * 60_000).toISOString() as IsoDateTime;
+
+const CONTEXT_SLOTS: ReadonlyArray<ContextSlot> = [
+  { key: 'goal', value: SESSION.goal, enabled: true },
+  {
+    key: 'decisions',
+    value: [
+      '- Split the rewrite into six pull requests, one behavior each, because a single 2,000 line diff never gets a real review',
+      '- Land the rounding fix first, because every later part assumes postings already sum to the batch total',
+      '- Keep the statement backfill behind a flag until two nightly runs match the ledger snapshot',
+      '- Give notify-relay its own branch, because its backoff ships on a different schedule than the ledger work',
+    ].join('\n'),
+    enabled: true,
+  },
+  {
+    key: 'last_output_summary',
+    value: [
+      '#### State',
+      'Parts 1 and 2 are merged. Part 3, idempotent postings, is in review. Part 5, the statement backfill, has its worktree kept while part 4 lands.',
+      '',
+      '#### Next',
+      'Answer the review on #418, then cut part 4 from main. The notify-relay backoff waits on one approval.',
+    ].join('\n'),
+    enabled: true,
+  },
+];
+
+const PLANS: ReadonlyArray<PlanWithCount> = [
+  {
+    id: 'mock-mounts-plan-split' as PlanId,
+    sessionId: SESSION_ID,
+    agentId: 'mock-mounts-agent-planner' as AgentId,
+    title: 'Split the reconciliation rewrite into six parts',
+    bodyMd: '# Split the reconciliation rewrite into six parts',
+    status: 'active',
+    createdAt: later(-240),
+    updatedAt: later(-240),
+    consumptionCount: 3,
+  },
+];
+
+const telemetryOf = (index: number, model: string, cost: number): TelemetryRecord => ({
+  id: `mock-mounts-telemetry-${index}` as TelemetryRecordId,
+  runId: `mock-mounts-run-${index}` as ProviderRunId,
+  sessionId: SESSION_ID,
+  kind: 'turn',
+  provider: 'anthropic',
+  model,
+  recordedAt: later(-200 + index * 30),
+  inputTokens: 18_000,
+  outputTokens: 4_200,
+  estimatedCostUsd: cost,
+});
+
+const TELEMETRY: ReadonlyArray<TelemetryRecord> = [
+  telemetryOf(0, 'claude-opus-5-5', 1.42),
+  telemetryOf(1, 'claude-sonnet-5', 0.61),
+  telemetryOf(2, 'claude-sonnet-5', 0.74),
+  telemetryOf(3, 'claude-haiku-4-5', 0.09),
+];
+
+type PrEventParams = {
+  readonly kind: 'pr_created' | 'pr_merged';
+  readonly number: number;
+  readonly title: string;
+  readonly repo: string;
+  readonly minutes: number;
+};
+
+const prEvent = ({ kind, number, title, repo, minutes }: PrEventParams) => ({
+  id: `mock-mounts-event-${kind}-${number}` as SessionEventId,
+  sessionId: SESSION_ID,
+  kind,
+  payload: { number, title, url: `https://example.invalid/harborline/${repo}/pull/${number}` },
+  createdAt: later(minutes),
+});
+
+const SESSION_EVENTS = [
+  prEvent({
+    kind: 'pr_created',
+    number: 412,
+    title: 'Correct the rounding drift on multi currency ledger postings',
+    repo: 'ledger-core',
+    minutes: 60,
+  }),
+  prEvent({
+    kind: 'pr_merged',
+    number: 412,
+    title: 'Correct the rounding drift on multi currency ledger postings',
+    repo: 'ledger-core',
+    minutes: 180,
+  }),
+  prEvent({
+    kind: 'pr_created',
+    number: 418,
+    title: 'Make ledger postings idempotent across retried settlement batches',
+    repo: 'ledger-core',
+    minutes: 210,
+  }),
+  prEvent({
+    kind: 'pr_created',
+    number: 96,
+    title: 'Back off webhook delivery when the relay is rate limited',
+    repo: 'notify-relay',
+    minutes: 240,
+  }),
+] as unknown as ReadonlyArray<SessionEvent>;
+
+const sibling = (id: string, goal: string): Session => ({
+  ...SESSION,
+  id: id as SessionId,
+  goal,
+});
+
+const SIBLINGS: ReadonlyArray<Session> = [
+  sibling('mock-mounts-sibling-statements', 'Stop corrected statements from posting twice'),
+  sibling('mock-mounts-sibling-dunning', 'Retry failed card payments on a dunning schedule'),
+  sibling('mock-mounts-sibling-audit', 'Add an audit trail to manual ledger adjustments'),
+];
 
 type PrParams = {
   readonly number: number;
@@ -458,7 +589,7 @@ export const MountsScene = () => {
           createdAt: Date.parse(NOW),
         })),
       },
-      sessionSlots: { [SESSION_ID]: [{ key: 'goal', value: SESSION.goal, enabled: true }] },
+      sessionSlots: { [SESSION_ID]: CONTEXT_SLOTS },
       sessionSlotsLoad: { [SESSION_ID]: 'loaded' },
       sessionLoading: {
         [SESSION_ID]: {
@@ -480,11 +611,34 @@ export const MountsScene = () => {
         },
       },
       sessionPhaseRuns: { [SESSION_ID]: [] },
-      sessionPlans: { [SESSION_ID]: [] },
+      sessionPlans: { [SESSION_ID]: PLANS },
       sessionWorkflows: { [SESSION_ID]: [] },
       phaseTemplates: { [WORKSPACE_ID]: [] },
-      sessionTelemetry: { [SESSION_ID]: [] },
-      sessionExternalTasks: { [SESSION_ID]: [] },
+      sessionTelemetry: { [SESSION_ID]: TELEMETRY },
+      sessionEvents: { [SESSION_ID]: SESSION_EVENTS },
+      loadSessionEvents: async () => undefined,
+      sessionExternalTasks: {
+        [SESSION_ID]: [
+          {
+            sessionId: SESSION_ID,
+            provider: 'linear',
+            externalId: 'mock-mounts-hrb-2481',
+            identifier: 'HRB-2481',
+            url: 'https://example.invalid/linear/HRB-2481',
+            title: 'Ledger reconciliation rewrite',
+            createdAt: NOW,
+          },
+          {
+            sessionId: SESSION_ID,
+            provider: 'jira',
+            externalId: 'mock-mounts-ops-77',
+            identifier: 'OPS-77',
+            url: 'https://example.invalid/jira/OPS-77',
+            title: 'Notify relay floods the webhook provider',
+            createdAt: NOW,
+          },
+        ],
+      },
       sessionGithub: { [SESSION_ID]: { ...EMPTY_GITHUB, pr: POSTINGS_PR } },
       sessionProjectPrs: {
         [SESSION_ID]: {
@@ -504,33 +658,27 @@ export const MountsScene = () => {
       loadPrSeries: async () => [SERIES],
       loadMountCleanupProposals: async () => [],
     });
+    seedShellChrome({
+      session: SESSION,
+      siblings: SIBLINGS,
+      branches: { [SESSION_ID]: POSTINGS_BRANCH },
+      telemetryAt: NOW,
+      lens: null,
+    });
     setIsReady(true);
   }, []);
 
-  useEffect(() => {
-    if (!isReady) {
-      return;
-    }
-    const interval = window.setInterval(() => {
-      const toggle = [...document.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
-        button.textContent?.startsWith('Completed'),
-      );
-      if (toggle === undefined) {
-        return;
-      }
-      toggle.click();
-      window.clearInterval(interval);
-    }, 150);
-    return () => window.clearInterval(interval);
-  }, [isReady]);
+  useShowCompletedMounts({ isReady });
+  useHoveredMountRow({ isReady, rowLabel: 'fix/notify-relay' });
 
   if (!isReady) {
     return null;
   }
 
   return (
-    <main className="h-screen overflow-hidden bg-background text-foreground">
-      <SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />
-    </main>
+    <ShellFrame
+      session={SESSION}
+      main={<SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />}
+    />
   );
 };

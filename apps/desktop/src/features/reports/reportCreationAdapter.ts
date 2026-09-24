@@ -16,7 +16,7 @@ export const reportCreationAdapter: ArtifactCreationAdapter = {
   crumbLabel: 'Create report',
   generateLabel: 'Generate report',
   ctaTitle: 'Write a report from what this session did',
-  brief: { label: 'Brief', placeholder: 'what should this report explain?' },
+  brief: { label: 'Brief', placeholder: 'What should this report explain?' },
   choice: {
     label: 'Report type',
     ariaLabel: 'Report type',
@@ -27,17 +27,17 @@ export const reportCreationAdapter: ArtifactCreationAdapter = {
     })),
   },
   scopeCopy: {
-    session: 'everything below comes from the whole session.',
-    run: 'agents and artifacts come from this run. session events, checks and the local change are session wide either way.',
+    session: 'Everything below comes from the whole session.',
+    run: 'Agents and artifacts come from this run. Session events, checks and the local change are session wide either way.',
   },
   defaultRequest: ({ choice }) =>
     REPORT_DEFAULT_REQUEST({ reportType: asReportType({ value: choice }) ?? 'session-summary' }),
   repoLine: ({ repo }) => {
     if (repo === null) {
-      return 'no mounted project, so no local change evidence.';
+      return 'No mounted project, so no local change evidence.';
     }
     const branch = repo.branch === null ? 'a detached head' : repo.branch;
-    return `local change evidence from ${repo.mountName} on ${branch}, against ${repo.baseBranch}.`;
+    return `Local change evidence from ${repo.mountName} on ${branch}, against ${repo.baseBranch}.`;
   },
   choiceOf,
   withChoice: ({ draft, choice }) => {

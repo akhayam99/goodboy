@@ -9,6 +9,7 @@ import {
   PANE_RHYTHM,
   cn,
   ScrollArea,
+  tintClasses,
 } from '@goodboy/ui';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { useSessionViewPrefs, useSortedGroupedSessions } from '../../../../store';
@@ -195,13 +196,13 @@ export const SessionActivityBar = ({
                         ? undefined
                         : stateDescription({ presentation: groupPresentation })
                     }
-                    className="group flex w-full items-center gap-2 rounded px-0.5 text-left"
+                    className="group flex w-full items-center gap-2 rounded-sm px-0.5 text-left"
                   >
                     <ChevronRight
                       size={ICON_SIZE.row}
                       aria-hidden
                       className={cn(
-                        'shrink-0 text-muted-foreground/40 motion-safe:transition-transform group-hover:text-muted-foreground',
+                        'shrink-0 text-faint-foreground motion-safe:transition-transform group-hover:text-muted-foreground',
                         !isGroupCollapsed && 'rotate-90',
                       )}
                     />
@@ -210,7 +211,7 @@ export const SessionActivityBar = ({
                       tone={groupPresentation?.tone ?? 'neutral'}
                     />
                     {group.sessions.length > 0 ? (
-                      <span aria-hidden className="text-2xs tabular-nums text-muted-foreground/60">
+                      <span aria-hidden className="text-2xs tabular-nums text-faint-foreground">
                         {group.sessions.length}
                       </span>
                     ) : null}
@@ -244,7 +245,11 @@ export const SessionActivityBar = ({
                 width: lasso.rect.width,
                 height: lasso.rect.height,
               }}
-              className="pointer-events-none absolute z-10 rounded-sm border border-primary/60 bg-primary/10"
+              className={cn(
+                'pointer-events-none absolute z-10 rounded-sm border',
+                tintClasses('primary').border,
+                tintClasses('primary').bg,
+              )}
             />
           ) : null}
 

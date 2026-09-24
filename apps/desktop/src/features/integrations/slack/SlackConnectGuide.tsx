@@ -99,7 +99,7 @@ export const SlackConnectGuide = ({ manifestUrl }: Props) => {
   const isLast = stepIndex >= steps.length - 1;
 
   return (
-    <div className="flex min-w-0 flex-col gap-2.5 rounded-lg border border-border-soft bg-subtle/40 p-3">
+    <div className="flex min-w-0 flex-col gap-2.5 rounded-lg border border-border-soft bg-subtle p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-2xs font-medium tabular-nums text-muted-foreground">
           Step {Math.min(stepIndex, steps.length - 1) + 1} of {steps.length}

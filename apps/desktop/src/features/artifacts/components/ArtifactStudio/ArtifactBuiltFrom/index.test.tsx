@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
   AgentId,
   ArtifactId,
@@ -74,7 +74,9 @@ const provenance: ArtifactProvenance = {
 const renderWith = async (value: ArtifactProvenance | null, artifact: SessionArtifact = report) => {
   loadArtifactProvenance.mockResolvedValueOnce(value);
   render(<ArtifactBuiltFrom artifact={artifact} />);
-  await screen.findByLabelText('built from');
+  await waitFor(() =>
+    expect(screen.queryByRole('status', { name: 'Loading built from' })).toBeNull(),
+  );
 };
 
 describe('ArtifactBuiltFrom', () => {
@@ -84,6 +86,26 @@ describe('ArtifactBuiltFrom', () => {
 
   afterEach(() => {
     cleanup();
+  });
+
+  it('holds the section with a skeleton while provenance loads', () => {
+    loadArtifactProvenance.mockReturnValueOnce(new Promise(() => undefined));
+    render(<ArtifactBuiltFrom artifact={report} />);
+
+    expect(screen.getByLabelText('Built from')).toBeDefined();
+    expect(screen.getByRole('status', { name: 'Loading built from' })).toBeDefined();
+  });
+
+  it('tells a failed load apart from a missing record and retries it', async () => {
+    loadArtifactProvenance.mockRejectedValueOnce(new Error('database is locked'));
+    render(<ArtifactBuiltFrom artifact={report} />);
+
+    expect(await screen.findByTestId('built-from-failed')).toBeDefined();
+    expect(screen.queryByTestId('built-from-missing')).toBeNull();
+
+    loadArtifactProvenance.mockResolvedValueOnce(provenance);
+    fireEvent.click(screen.getByRole('button', { name: /retry/i }));
+    expect(await screen.findByTestId('built-from')).toBeDefined();
   });
 
   it('says plainly that an older artifact recorded nothing', async () => {
@@ -97,8 +119,8 @@ describe('ArtifactBuiltFrom', () => {
   it('shows the brief, the scope and what was left out', async () => {
     await renderWith(provenance);
     expect(screen.getByText('explain what ledger-core changed')).toBeTruthy();
-    expect(screen.getByText('the whole session')).toBeTruthy();
-    expect(screen.getByText('no workflow step, this agent ran on its own')).toBeTruthy();
+    expect(screen.getByText('The whole session')).toBeTruthy();
+    expect(screen.getByText('No workflow step, this agent ran on its own')).toBeTruthy();
     expect(screen.getByText('agents: kept the last 12 of 30')).toBeTruthy();
     expect(screen.getAllByTestId('built-from-evidence')).toHaveLength(2);
   });
@@ -109,8 +131,8 @@ describe('ArtifactBuiltFrom', () => {
       sourceWorkflowRunId: RUN_ID,
       executingWorkflowRunId: null,
     });
-    expect(screen.getByText(/^workflow run run-1\. agents and artifacts were scoped/)).toBeTruthy();
-    expect(screen.getByText('no workflow step, this agent ran on its own')).toBeTruthy();
+    expect(screen.getByText(/^Workflow run run-1\. Agents and artifacts were scoped/)).toBeTruthy();
+    expect(screen.getByText('No workflow step, this agent ran on its own')).toBeTruthy();
   });
 
   it('does not claim a wireframe run limited the session plans', async () => {
@@ -126,10 +148,10 @@ describe('ArtifactBuiltFrom', () => {
     );
     expect(
       screen.getByText(
-        'workflow run run-1. agents were scoped to that run, session plans were not',
+        'Workflow run run-1. Agents were scoped to that run, session plans were not',
       ),
     ).toBeTruthy();
-    expect(screen.getByText('workflow run run-1')).toBeTruthy();
+    expect(screen.getByText('Workflow run run-1')).toBeTruthy();
     expect(screen.queryByTestId('built-from-design-profile')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'design profile' }));
     expect(screen.getByTestId('built-from-design-profile').textContent).toBe(
@@ -139,8 +161,8 @@ describe('ArtifactBuiltFrom', () => {
 
   it('says nothing was dropped when the pack carried everything', async () => {
     await renderWith({ ...provenance, brief: null, omissions: [] });
-    expect(screen.getByText('no brief was given')).toBeTruthy();
-    expect(screen.getByText('nothing was dropped from the pack')).toBeTruthy();
+    expect(screen.getByText('No brief was given')).toBeTruthy();
+    expect(screen.getByText('Nothing was dropped from the pack')).toBeTruthy();
   });
 
   it('collapses a long evidence list until it is asked to show all', async () => {

@@ -2,11 +2,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-
-import type { ToastKind } from '../../../../../app/components/Toast';
+import type { ShowToast } from '../../../../../app/components/Toast';
 
 type DragHandler = (event: { payload: unknown }) => void;
-type ShowToast = (kind: ToastKind, message: string) => void;
 
 const { hooks } = vi.hoisted(() => ({
   hooks: {
@@ -109,7 +107,10 @@ describe('usePendingAttachments drop target', () => {
     const { result } = await mountWithComposer(showToast);
     await drop(200, 450, ['/tmp/archive.zip']);
     expect(result.current.attachments).toHaveLength(0);
-    expect(showToast).toHaveBeenCalledWith('warning', expect.stringContaining('unsupported type'));
+    expect(showToast).toHaveBeenCalledWith({
+      kind: 'warning',
+      message: expect.stringContaining('unsupported type'),
+    });
   });
 
   it('explains why a drop is refused while the provider is disconnected', async () => {
@@ -117,10 +118,10 @@ describe('usePendingAttachments drop target', () => {
     const { result } = await mountWithComposer(showToast, false);
     await drop(200, 450, ['/tmp/a.png']);
     expect(result.current.attachments).toHaveLength(0);
-    expect(showToast).toHaveBeenCalledWith(
-      'warning',
-      expect.stringContaining('connect the provider'),
-    );
+    expect(showToast).toHaveBeenCalledWith({
+      kind: 'warning',
+      message: expect.stringContaining('Connect the provider'),
+    });
   });
 
   it('highlights the sole visible composer no matter where the pointer sits', async () => {
@@ -174,9 +175,9 @@ describe('usePendingAttachments drop target', () => {
     await mountComposer(showToastA, COMPOSER_RECT);
     await mountComposer(showToastB, decoyRect);
     await drop(0, 0, ['/tmp/a.png']);
-    expect(showToastA).toHaveBeenCalledWith(
-      'warning',
-      expect.stringContaining('drop the file on a message box'),
-    );
+    expect(showToastA).toHaveBeenCalledWith({
+      kind: 'warning',
+      message: expect.stringContaining('Drop the file on a message box'),
+    });
   });
 });

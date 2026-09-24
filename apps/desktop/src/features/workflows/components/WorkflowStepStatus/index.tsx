@@ -51,11 +51,6 @@ export const WorkflowStepStatus = ({ status, label, variant = 'glyph' }: Props) 
     );
   }
   return (
-    <Clock
-      size={11}
-      className="shrink-0 text-muted-foreground/60"
-      role="img"
-      aria-label={ariaLabel}
-    />
+    <Clock size={11} className="shrink-0 text-faint-foreground" role="img" aria-label={ariaLabel} />
   );
 };

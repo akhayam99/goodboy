@@ -7,7 +7,6 @@ import {
   recordClusterCompletionHold,
   resolveClusterCompletionHold,
 } from './cluster-completion-hold';
-import { softDeleteAgent } from './agent';
 
 const sessionId = 'session' as SessionId;
 const workflowRunId = 'run' as WorkflowRunId;
@@ -82,7 +81,10 @@ describe('cluster completion hold queries', () => {
       },
     });
 
-    await softDeleteAgent(db, sourceAgentId);
+    await db.execute('UPDATE agents SET deleted_at = ?, output_summary = NULL WHERE id = ?', [
+      Date.now(),
+      sourceAgentId,
+    ]);
     const [openHold] = await listClusterCompletionHolds({ db, sessionId });
     expect(openHold?.state).toBe('open');
     expect(openHold?.containerAgentId).toBe(containerAgentId);

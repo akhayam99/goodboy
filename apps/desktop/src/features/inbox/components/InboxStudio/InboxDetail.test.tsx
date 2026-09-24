@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import type { InboxRecord } from '../../types';
+import type { InboxProvider, InboxRecord } from '../../types';
 
 vi.mock('../../../github/GithubIssueDetail', () => ({
   GithubIssueDetail: ({
@@ -31,7 +31,7 @@ vi.mock('../../../integrations/gitlab/GitlabIssueDetail', () => ({
   ),
 }));
 
-vi.mock('../../../integrations/gitlab/GitlabStudio/MrDetailPanel', () => ({
+vi.mock('../../../integrations/gitlab/MergeRequest/MrDetailPanel', () => ({
   MrDetailPanel: ({ mr, dock }: { mr: { title: string } | null; dock: ReactNode }) => (
     <div data-testid="panel">
       gitlab-mr:{mr?.title}
@@ -120,14 +120,23 @@ const baseErrors = {
 };
 
 const onDeselect = vi.fn();
+const onRefresh = vi.fn();
 
 type RenderPaneParams = {
   readonly record: InboxRecord | null;
   readonly records?: ReadonlyArray<InboxRecord>;
   readonly hasVisibleRecords?: boolean;
+  readonly errors?: Readonly<Record<InboxProvider, string | null>>;
+  readonly connected?: ReadonlyArray<InboxProvider>;
 };
 
-const renderPane = ({ record, records, hasVisibleRecords = false }: RenderPaneParams) =>
+const renderPane = ({
+  record,
+  records,
+  hasVisibleRecords = false,
+  errors = baseErrors,
+  connected = [],
+}: RenderPaneParams) =>
   render(
     <InboxDetail
       record={record}
@@ -137,8 +146,9 @@ const renderPane = ({ record, records, hasVisibleRecords = false }: RenderPanePa
       workspaceId={workspaceId}
       rootPath="/repo"
       isLoading={false}
-      errors={baseErrors}
-      onRefresh={vi.fn()}
+      errors={errors}
+      connected={connected}
+      onRefresh={onRefresh}
       onClose={vi.fn()}
       onDeselect={onDeselect}
       launchFocusRequest={0}
@@ -178,6 +188,7 @@ const githubRecord: InboxRecord = {
 afterEach(() => {
   cleanup();
   onDeselect.mockReset();
+  onRefresh.mockReset();
 });
 
 describe('InboxDetail', () => {
@@ -187,6 +198,27 @@ describe('InboxDetail', () => {
     expect(screen.getByText('Inbox is empty')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect tools' })).toBeDefined();
     expect(screen.queryByTestId('panel')).toBeNull();
+  });
+
+  it('says a connected inbox is clear instead of asking to connect', () => {
+    renderPane({ record: null, connected: ['github'] });
+
+    expect(screen.getByText('Nothing assigned to you')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Connect tools' })).toBeNull();
+  });
+
+  it('names failed tools ahead of an empty inbox and draws their tiles as unknown', () => {
+    renderPane({
+      record: null,
+      connected: ['github', 'sentry'],
+      errors: { ...baseErrors, sentry: 'Sentry answered 401' },
+    });
+
+    expect(screen.getByText('Some tools did not load')).toBeDefined();
+    expect(screen.getByText(/Sentry did not answer/)).toBeDefined();
+    expect(screen.getByText('not loaded')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(onRefresh).toHaveBeenCalledOnce();
   });
 
   it('invites a pick when items are listed and none is selected', () => {

@@ -21,7 +21,7 @@ export const DetachDetails = ({ projectName, details, isBusy, onKeepFiles }: Pro
         aria-label={`Detach details for ${projectName}`}
         aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-fit items-center gap-1 rounded-md px-1 py-0.5 text-2xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+        className="flex w-fit items-center gap-1 rounded-md px-1 py-0.5 text-2xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
       >
         <Chevron size={10} aria-hidden />
         Details

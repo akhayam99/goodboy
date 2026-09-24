@@ -2,9 +2,8 @@ export {
   DEFAULT_GH_TIMEOUT_MS,
   GhCliError,
   GhJsonParseError,
-  detect,
+  GhJsonShapeError,
   runJson,
-  type GhDetectResult,
   type GhResult,
   type GhRunOptions,
   type GhRunner,
@@ -17,8 +16,6 @@ export {
   parseLinkedIssuesFromBody,
   resolvePrForBranch,
 } from './resolver';
-
-export { listOpenPrsForRepo, type RepoPullRequest } from './repo-prs';
 
 export {
   createGithubRepo,

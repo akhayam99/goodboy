@@ -1,5 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   Check,
@@ -16,10 +15,10 @@ import {
   Target,
   Trash2,
   Undo2,
-  X,
 } from 'lucide-react';
 import {
   Button,
+  ConfirmPopover,
   cn,
   Divider,
   EmptyState,
@@ -31,26 +30,30 @@ import {
   SegmentedTabs,
   Skeleton,
   Textarea,
-  Tooltip,
   type SegmentedTabOption,
+  tintClasses,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import {
   PROVIDER_CAPABILITIES,
-  PlannerClient,
   type PlannerOutput,
+  clampEffortForModel,
   defaultsForRole,
-  polishStepInstruction,
-  polishWorkflowGoal,
   recommendedModelForRole,
   resolveRoleRouting,
   resolveTaskModel,
   runsForWorkflowRun,
 } from '@goodboy/core';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
+import {
+  createWorkflowPlanner,
+  polishWorkflowGoalText,
+  polishWorkflowStep,
+} from '../../../workflows/workflows';
 import type {
   AgentRole,
+  EffortLevel,
   ProviderId,
   RoleModelPreferences,
   Session,
@@ -77,12 +80,11 @@ import {
   upsertArgsFromDraft,
 } from '../../../workflows/engine';
 import { useWorkflowDraft } from '../../../workflows/engine/useWorkflowDraft';
-import { ROLE_LABEL, ROLE_TO_KIND, inferAgentKindFromName, type AgentKind } from '../../agent-kind';
+import { ROLE_LABEL, classifyStep, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { WorkflowStepCard } from '../WorkflowStepCard';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import { type EffortLevel, clampEffort } from '../../../chat/utils/chat-constants';
-import { isRunSettled } from '../../../workflows/isRunSettled';
+import { isWorkflowRunComplete } from '../../../workflows/isWorkflowRunComplete';
 import { useWorkflowDrag } from '../../../workflows/hooks/useWorkflowDrag';
 import { StepFlowConnector } from '../../../workflows/components/WorkflowStudio/StepFlowConnector';
 import { parseSpendLimit } from '../../../workflows/components/RunSpendLimitPopover/SpendLimitFields';
@@ -113,9 +115,11 @@ type Props = {
 
 type ProviderEntry = { readonly id: ProviderId; readonly connection: string };
 
-const editableKind = (step: StepDraft): AgentKind =>
-  (step.role !== 'custom' ? ROLE_TO_KIND[step.role] : undefined) ??
-  inferAgentKindFromName(step.name);
+type EditableKindParams = {
+  readonly step: StepDraft;
+};
+
+const editableKind = ({ step }: EditableKindParams): AgentKind => classifyStep({ step });
 
 const sortedSteps = (template: Workflow): Workflow['steps'] =>
   [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
@@ -190,7 +194,7 @@ export const uniqueWorkflowName = (
 };
 
 const SECTION_LABEL_CLS =
-  'inline-flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground/70';
+  'inline-flex items-center gap-1.5 text-2xs font-medium uppercase tracking-eyebrow text-faint-foreground';
 
 export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
@@ -385,12 +389,13 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   const orchestratorEffectiveModel =
     orchestratorModelOverride !== '' ? orchestratorModelOverride : recommendedOrchestratorModel;
-  const orchestratorEffort = clampEffort(
-    orchestratorEffectiveModel,
-    orchestratorEffortOverride ??
-      (resolvedOrchestratorTaskModel.effort as EffortLevel | undefined) ??
-      ORCHESTRATOR_EFFORT,
-  );
+  const requestedOrchestratorEffort =
+    orchestratorEffortOverride ?? resolvedOrchestratorTaskModel.effort ?? ORCHESTRATOR_EFFORT;
+  const orchestratorEffort =
+    clampEffortForModel({
+      model: orchestratorEffectiveModel,
+      effort: requestedOrchestratorEffort,
+    }) ?? requestedOrchestratorEffort;
   const isOrchestratorOverridden =
     orchestratorProviderOverride !== '' ||
     orchestratorModelOverride !== '' ||
@@ -412,7 +417,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       .map((r) => {
         const template = phaseTemplates.find((t) => t.id === r.workflowId) ?? null;
         const agents = runsForWorkflowRun(sessionPhaseRuns, r.id);
-        const complete = isRunSettled({ run: r, workflow: template, agents });
+        const complete = isWorkflowRunComplete({ run: r, workflow: template, agents });
         const failed = agents.some((a) => a.status === 'failed');
         return { run: r, template, complete, failed };
       })
@@ -589,25 +594,27 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setError(null);
     setPolishingKey(key);
     try {
-      const polished = await polishStepInstruction(
-        {
+      const polished = await polishWorkflowStep({
+        deps: {
           ...resolvedProsePolishTaskModel,
-          invokeFn: invoke,
           ...(sessionWorktree != null && { workingDir: sessionWorktree }),
         },
-        {
+        input: {
           role: step.role,
           name: step.name,
           instruction: step.prompt,
           ...(goalText.trim().length > 0 && { goal: goalText }),
         },
-      );
+      });
       if (polished !== null && polished !== step.prompt) {
         patchStep(key, { prompt: polished });
         return;
       }
       if (!polished) {
-        showToast('error', 'could not polish the step, kept your wording');
+        showToast({
+          kind: 'warning',
+          message: 'Kept your wording. The step could not be polished.',
+        });
         return;
       }
     } catch (err) {
@@ -619,7 +626,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   const sessionGoal = (sessionSlots.find((s) => s.key === 'goal')?.value ?? '').trim();
   const selectedPreset = presets.find((t) => t.id === selectedPresetId) ?? null;
-  const workspaceName = useCurrentWorkspace()?.name ?? '';
 
   const replaceGoal = (next: string) => {
     setGoalHistory((h) => [...h, goalText]);
@@ -649,18 +655,20 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setError(null);
     setPolishing(true);
     try {
-      const polished = await polishWorkflowGoal(
-        {
+      const polished = await polishWorkflowGoalText({
+        deps: {
           ...resolvedProsePolishTaskModel,
-          invokeFn: invoke,
           ...(sessionWorktree != null && { workingDir: sessionWorktree }),
         },
-        goalText,
-      );
+        goal: goalText,
+      });
       if (polished && polished !== goalText) {
         replaceGoal(polished);
       } else if (!polished) {
-        showToast('error', 'could not polish the goal, kept your wording');
+        showToast({
+          kind: 'warning',
+          message: 'Kept your wording. The goal could not be polished.',
+        });
       }
     } catch (err) {
       setError(formatError(err));
@@ -686,7 +694,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         setSteps([]);
         setExpandedKey(null);
       }
-      showToast('success', `preset deleted: ${t.name}`);
+      showToast({ kind: 'success', message: `Deleted the ${t.name} preset.` });
     } catch (err) {
       setError(formatError(err));
     }
@@ -734,10 +742,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         model: effectiveModel,
         effort: plannerEffort,
       };
-      const client = new PlannerClient({
-        ...taskModel,
-        invokeFn: invoke,
-        ...(sessionWorktree != null && { workingDir: sessionWorktree }),
+      const client = createWorkflowPlanner({
+        deps: {
+          ...taskModel,
+          ...(sessionWorktree != null && { workingDir: sessionWorktree }),
+        },
       });
       const profileBlock = buildProfileGuard({
         profile: useAppStore
@@ -797,7 +806,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     try {
       if (usePresetAsIs) {
         await attachWorkflowToSession(session.id, selectedPreset!.id, attachOptions());
-        showToast('success', `workflow started: ${selectedPreset!.name}`);
+        showToast({ kind: 'success', message: `Started ${selectedPreset!.name}.` });
         handleClose();
         return;
       }
@@ -858,7 +867,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         );
       }
       await attachWorkflowToSession(session.id, workflowId, attachOptions());
-      showToast('success', `workflow started: ${saved?.name ?? name}`);
+      showToast({ kind: 'success', message: `Started ${saved?.name ?? name}.` });
       handleClose();
     } catch (err) {
       setError(formatError(err));
@@ -928,7 +937,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     <StudioShell
       icon={CONCEPT_ICONS.workflows}
       title="Start a workflow"
-      workspaceName={workspaceName}
       closeLabel="cancel workflow builder"
       onClose={handleClose}
       variant="slot"
@@ -951,7 +959,14 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           type="button"
                           onClick={onUseSessionGoal}
                           disabled={blocked || polishing || goalText === sessionGoal}
-                          className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5 text-2xs text-primary transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          className={cn(
+                            'inline-flex items-center gap-1 rounded-md border',
+                            tintClasses('primary').borderSoft,
+                            tintClasses('primary').bgSoft,
+                            'px-2 py-0.5 text-2xs text-primary transition-colors hover:border-primary',
+                            tintClasses('primary').hoverBg,
+                            'disabled:cursor-not-allowed disabled:opacity-50',
+                          )}
                         >
                           <Target size={10} aria-hidden /> Use session goal
                         </button>
@@ -962,7 +977,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           onClick={onUndoGoal}
                           disabled={blocked || polishing}
                           aria-label="Undo goal change"
-                          className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <Undo2 size={10} aria-hidden /> Undo
                         </button>
@@ -973,7 +988,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         disabled={blocked || polishing || goalText.trim().length === 0}
                         aria-label="Polish goal"
                         className={cn(
-                          'inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
+                          'inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
                           polishing && 'animate-border-pulse',
                         )}
                       >
@@ -992,14 +1007,16 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                   minRows={2}
                   maxRows={4}
                   disabled={busy || polishing}
-                  className="resize-none rounded-lg bg-subtle/80 px-4 py-3 text-sm ring-1 ring-border-soft focus-visible:ring-foreground/15"
+                  className="resize-none rounded-lg bg-subtle px-4 py-3 text-sm ring-1 ring-border-soft focus-visible:ring-foreground/15"
                 />
                 <div
                   ref={composerRef}
                   data-drop-composer
                   className={cn(
                     'flex flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-colors',
-                    isDragging ? 'border-dashed border-primary bg-primary/5' : 'border-border-soft',
+                    isDragging
+                      ? cn('border-dashed border-primary', tintClasses('primary').bgSoft)
+                      : 'border-border-soft',
                   )}
                 >
                   <input
@@ -1018,7 +1035,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       'inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2 py-0.5 text-2xs transition-colors',
                       blocked
                         ? 'cursor-not-allowed text-muted-foreground'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                        : 'text-muted-foreground hover:bg-hover hover:text-foreground',
                     )}
                   >
                     <Paperclip size={11} aria-hidden /> Add files
@@ -1032,7 +1049,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       />
                     ))
                   ) : (
-                    <span className="text-2xs text-muted-foreground/60">
+                    <span className="text-2xs text-faint-foreground">
                       Drop or add files. Routed to the agents that need them.
                     </span>
                   )}
@@ -1090,7 +1107,13 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           <button
                             type="button"
                             onClick={() => setMode('custom')}
-                            className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs text-primary transition-colors hover:border-primary hover:bg-primary/10"
+                            className={cn(
+                              'inline-flex items-center gap-1.5 rounded-md border',
+                              tintClasses('primary').borderSoft,
+                              tintClasses('primary').bgSoft,
+                              'px-2.5 py-1 text-xs text-primary transition-colors hover:border-primary',
+                              tintClasses('primary').hoverBg,
+                            )}
                           >
                             <PenLine size={ICON_SIZE.row} aria-hidden /> Describe your own
                           </button>
@@ -1100,9 +1123,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       <div className="flex flex-col gap-1.5" role="radiogroup" aria-label="Presets">
                         {presets.map((t) => {
                           const tSteps = sortedSteps(t);
-                          const kinds = tSteps.map((s) =>
-                            s.role ? ROLE_TO_KIND[s.role] : inferAgentKindFromName(s.name),
-                          );
+                          const kinds = tSteps.map((s) => classifyStep({ step: s }));
                           const shown = kinds.slice(0, 5);
                           const selected = t.id === selectedPresetId;
                           const desc = t.description || t.goal;
@@ -1113,7 +1134,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 'flex items-center gap-1 rounded-lg border border-l-2 pr-1.5 transition-colors',
                                 selected
                                   ? 'border-l-primary border-border-soft bg-subtle'
-                                  : 'border-l-transparent border-border-soft hover:border-border hover:bg-muted/40',
+                                  : 'border-l-transparent border-border-soft hover:border-border hover:bg-hover',
                               )}
                             >
                               <button
@@ -1137,7 +1158,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                     </span>
                                   </span>
                                   {desc ? (
-                                    <span className="truncate text-3xs leading-snug text-muted-foreground/70">
+                                    <span className="truncate text-3xs leading-snug text-faint-foreground">
                                       {desc}
                                     </span>
                                   ) : null}
@@ -1160,48 +1181,32 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                   />
                                 ) : null}
                               </button>
-                              {confirmDeleteId === t.id ? (
-                                <span className="flex shrink-0 items-center gap-0.5">
-                                  <span className="px-1 text-2xs text-muted-foreground">
-                                    Delete?
-                                  </span>
-                                  <Tooltip content={`Confirm delete ${t.name}`}>
-                                    <button
-                                      type="button"
-                                      onClick={() => void onDeletePreset(t)}
-                                      aria-label={`Confirm delete ${t.name}`}
-                                      className="rounded-md p-1 text-danger transition-colors hover:bg-danger/10"
-                                    >
-                                      <Check size={ICON_SIZE.row} aria-hidden />
-                                    </button>
-                                  </Tooltip>
-                                  <Tooltip content="Cancel delete">
-                                    <button
-                                      type="button"
-                                      onClick={() => setConfirmDeleteId(null)}
-                                      aria-label="Cancel delete"
-                                      className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-                                    >
-                                      <X size={ICON_SIZE.row} aria-hidden />
-                                    </button>
-                                  </Tooltip>
-                                </span>
-                              ) : (
-                                <OverflowMenu
-                                  label={`Preset actions: ${t.name}`}
-                                  disabled={busy}
-                                  items={[
-                                    {
-                                      kind: 'item',
-                                      key: 'delete',
-                                      label: 'Delete preset',
-                                      icon: Trash2,
-                                      destructive: true,
-                                      onClick: () => setConfirmDeleteId(t.id),
-                                    },
-                                  ]}
-                                />
-                              )}
+                              <ConfirmPopover
+                                role="danger"
+                                icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+                                title={`Delete ${t.name}?`}
+                                description="Removes this preset from the workspace."
+                                confirmLabel="Delete preset"
+                                isOpen={confirmDeleteId === t.id}
+                                onConfirm={() => onDeletePreset(t)}
+                                onCancel={() => setConfirmDeleteId(null)}
+                                trigger={() => (
+                                  <OverflowMenu
+                                    label={`Preset actions: ${t.name}`}
+                                    disabled={busy}
+                                    items={[
+                                      {
+                                        kind: 'item',
+                                        key: 'delete',
+                                        label: 'Delete preset',
+                                        icon: Trash2,
+                                        destructive: true,
+                                        onClick: () => setConfirmDeleteId(t.id),
+                                      },
+                                    ]}
+                                  />
+                                )}
+                              />
                             </div>
                           );
                         })}
@@ -1235,7 +1240,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                   />
                 ) : (
                   <div className="flex flex-col gap-2">
-                    <div className="rounded-lg bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
+                    <div className="rounded-lg bg-subtle ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
                       <div className="relative">
                         <Textarea
                           value={processText}
@@ -1305,7 +1310,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                               setCustomNameEdited(true);
                             }}
                             disabled={blocked}
-                            className="h-8 bg-background/70 text-sm font-medium"
+                            className="h-8 bg-background text-sm font-medium"
                           />
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
@@ -1314,21 +1319,39 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                               type="button"
                               onClick={onRedesign}
                               disabled={blocked}
-                              className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <CONCEPT_ICONS.enhance size={10} aria-hidden /> Re-design
                             </button>
                           ) : null}
                           {mode === 'custom' ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-2xs font-medium text-success">
+                            <span
+                              className={cn(
+                                'inline-flex items-center gap-1 rounded-full',
+                                tintClasses('success').bg,
+                                'px-1.5 py-0.5 text-2xs font-medium text-success',
+                              )}
+                            >
                               <Check size={10} aria-hidden /> Ready
                             </span>
                           ) : presetDirty || isCustomNameDirty ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-1.5 py-0.5 text-2xs font-medium text-warning">
+                            <span
+                              className={cn(
+                                'inline-flex items-center gap-1 rounded-full',
+                                tintClasses('warning').bg,
+                                'px-1.5 py-0.5 text-2xs font-medium text-warning',
+                              )}
+                            >
                               <Pencil size={9} aria-hidden /> Customized
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-2xs font-medium text-success">
+                            <span
+                              className={cn(
+                                'inline-flex items-center gap-1 rounded-full',
+                                tintClasses('success').bg,
+                                'px-1.5 py-0.5 text-2xs font-medium text-success',
+                              )}
+                            >
                               <Check size={10} aria-hidden /> Selected
                             </span>
                           )}
@@ -1343,7 +1366,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           <span className={SECTION_LABEL_CLS}>
                             <ListChecks size={11} aria-hidden /> Steps
                           </span>
-                          <span className="text-2xs tabular-nums text-muted-foreground/60">
+                          <span className="text-2xs tabular-nums text-faint-foreground">
                             {stepCount} step{stepCount === 1 ? '' : 's'}
                           </span>
                         </div>
@@ -1364,7 +1387,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                               />
                               <WorkflowStepCard
                                 ordinal={i}
-                                kind={editableKind(st)}
+                                kind={editableKind({ step: st })}
                                 role={st.role}
                                 provider={resolvedProvider(st)}
                                 providerValue={st.provider}
@@ -1429,11 +1452,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           type="button"
                           onClick={addStep}
                           disabled={blocked}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-md border border-dashed border-border-soft px-2.5 py-1.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-md border border-dashed border-border-soft px-2.5 py-1.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <Plus size={11} aria-hidden /> Add step
                         </button>
-                        <p className="px-1 text-2xs leading-relaxed text-muted-foreground/50">
+                        <p className="px-1 text-2xs leading-relaxed text-faint-foreground">
                           Each step is one agent; its output feeds the next. Drag to reorder.
                         </p>
                         <DragGhost ghost={ghost} />
@@ -1446,20 +1469,20 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         aria-label="Drafting plan"
                         className="flex flex-col gap-1.5"
                       >
-                        <Skeleton className="h-3 w-28 rounded" />
-                        <ol className="flex flex-col divide-y divide-border-soft/50">
+                        <Skeleton className="h-3 w-28 rounded-sm" />
+                        <ol className="flex flex-col divide-y divide-border-soft">
                           {Array.from({ length: 3 }).map((_, i) => (
                             <li key={i} className="flex flex-col gap-1.5 px-1 py-3 first:pt-1">
                               <div className="flex items-center gap-2">
-                                <span className="w-3 shrink-0 text-right font-mono text-2xs tabular-nums text-muted-foreground/40">
+                                <span className="w-3 shrink-0 text-right font-mono text-2xs tabular-nums text-faint-foreground">
                                   {i + 1}
                                 </span>
                                 <Skeleton className="size-4 shrink-0 rounded-full" />
-                                <Skeleton className="h-3 flex-1 rounded" />
+                                <Skeleton className="h-3 flex-1 rounded-sm" />
                               </div>
                               <div className="flex flex-col gap-1 pl-5">
-                                <Skeleton className="h-2 w-full rounded" />
-                                <Skeleton className="h-2 w-4/5 rounded" />
+                                <Skeleton className="h-2 w-full rounded-sm" />
+                                <Skeleton className="h-2 w-4/5 rounded-sm" />
                               </div>
                             </li>
                           ))}
@@ -1475,7 +1498,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                   <Divider />
                   <section className="flex flex-col gap-3">
                     <SectionHeader icon={<Rocket size={11} aria-hidden />} label="Launch options" />
-                    <div className="flex flex-col divide-y divide-border-soft/70 overflow-hidden rounded-lg border border-border-soft bg-subtle/40">
+                    <div className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-lg border border-border-soft bg-subtle">
                       <div className="flex flex-col gap-2 px-3 py-2.5">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-2xs font-medium text-foreground">
@@ -1504,7 +1527,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             ) : null}
                           </div>
                         </div>
-                        <p className="text-2xs leading-relaxed text-muted-foreground/60">
+                        <p className="text-2xs leading-relaxed text-faint-foreground">
                           {triggerMode === 'immediate'
                             ? 'Runs as soon as you start it.'
                             : triggerMode === 'manual'
@@ -1518,7 +1541,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       <div className="flex items-center justify-between gap-4 px-3 py-2.5">
                         <div className="flex min-w-0 flex-col gap-1">
                           <span className="text-2xs font-medium text-foreground">Step handoff</span>
-                          <span className="text-2xs leading-relaxed text-muted-foreground/60">
+                          <span className="text-2xs leading-relaxed text-faint-foreground">
                             {autoRun
                               ? 'Continue automatically after each completed step.'
                               : 'Pause after each step so you can review the result.'}
