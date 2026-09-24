@@ -37,6 +37,9 @@ import { PrRequestSlot } from './PrRequestSlot';
 import { ProjectMountChips } from './ProjectMountChips';
 import { useDynamicActions, type DynamicAction } from './useDynamicActions';
 
+const SESSION_CARD_REVEAL =
+  'opacity-0 group-hover/session-card:opacity-100 group-focus-within/session-card:opacity-100 aria-expanded:opacity-100';
+
 const isUrgent = ({ tone }: { readonly tone: DynamicAction['tone'] }): boolean =>
   tone === 'warning' || tone === 'danger';
 
@@ -191,7 +194,7 @@ export const StageBoardCard = memo(function StageBoardCard({
         nav.selectCard(session);
       }}
       className={cn(
-        'group/session-card grid min-h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 text-left',
+        'group/session-card grid h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 text-left',
         sessionCardShell({ stage, selected }),
       )}
     >
@@ -223,7 +226,7 @@ export const StageBoardCard = memo(function StageBoardCard({
           >
             <InlineMarkdown
               text={session.goal}
-              className="line-clamp-3 min-h-10 text-sm font-medium leading-5"
+              className="line-clamp-2 min-h-10 text-sm font-medium leading-5"
             />
           </button>
         </span>
@@ -251,6 +254,12 @@ export const StageBoardCard = memo(function StageBoardCard({
               onClick={() => onRestore?.(session)}
             />
           )}
+          <OverflowMenu
+            items={lifecycleItems}
+            label="Session actions"
+            trigger={<CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />}
+            triggerClassName={SESSION_CARD_REVEAL}
+          />
         </CardActionSlot>
         <ChevronRight
           size={ICON_SIZE.row}
@@ -259,7 +268,7 @@ export const StageBoardCard = memo(function StageBoardCard({
         />
       </span>
 
-      <span className="col-start-1 row-start-2 flex h-5 min-w-0 items-center gap-2">
+      <span className="col-span-2 col-start-1 row-start-2 flex h-5 min-w-0 items-center gap-2">
         <span className="flex min-w-0 items-center gap-2 overflow-hidden">
           {agentCount > 0 && (
             <Tooltip content={agentCountLabel} side="top">
@@ -323,17 +332,6 @@ export const StageBoardCard = memo(function StageBoardCard({
           )}
         </span>
       </span>
-
-      <CardActionSlot
-        label="Session lifecycle actions"
-        className="col-start-2 row-start-2 h-5 self-center justify-self-end"
-      >
-        <OverflowMenu
-          items={lifecycleItems}
-          label="Session actions"
-          trigger={<CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />}
-        />
-      </CardActionSlot>
     </article>
   );
 });

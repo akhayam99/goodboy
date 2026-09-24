@@ -174,7 +174,14 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   );
 
   return (
-    <div className={cn('flex h-full w-full', PANE_RHYTHM.stack, PANE_RHYTHM.board.pad)}>
+    <div
+      className={cn(
+        'mx-auto flex h-full w-full',
+        PANE_RHYTHM.board.maxWidth,
+        PANE_RHYTHM.stack,
+        PANE_RHYTHM.board.pad,
+      )}
+    >
       {pending || !empty || hasProjects ? (
         <>
           <div className="flex shrink-0 items-center justify-between gap-4">

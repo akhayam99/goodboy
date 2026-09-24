@@ -154,16 +154,17 @@ export const useAppOverlays = ({
     setDeleteSessionId(null);
   }, []);
 
-  const studio: ReactNode = isWorkspaceLauncherBranch
-    ? null
-    : createElement(AppStudio, {
-        overlay,
-        close,
-        onSettingsScopeChange: changeSettingsScope,
-        currentWorkspace,
-        workspaceProjectRoot,
-        offerWorkspaceRepo,
-      });
+  const studio: ReactNode =
+    isWorkspaceLauncherBranch || overlay === null
+      ? null
+      : createElement(AppStudio, {
+          overlay,
+          close,
+          onSettingsScopeChange: changeSettingsScope,
+          currentWorkspace,
+          workspaceProjectRoot,
+          offerWorkspaceRepo,
+        });
 
   const layers: ReactNode = createElement(AppOverlayRouter, {
     overlay,

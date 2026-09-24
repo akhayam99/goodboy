@@ -55,6 +55,15 @@ describe('AppShell', () => {
     expect(screen.queryByText('peek')).toBeNull();
   });
 
+  it('hides the studio slot when the studio renders nothing', () => {
+    const Empty = () => null;
+    const { container } = render(<AppShell main={<div>main</div>} studio={<Empty />} />);
+
+    const slot = container.querySelector('.z-studio');
+    expect(slot?.className).toContain('empty:hidden');
+    expect(slot?.childElementCount).toBe(0);
+  });
+
   it('spans the studio across every column of the work row, above the peek', () => {
     render(
       <AppShell

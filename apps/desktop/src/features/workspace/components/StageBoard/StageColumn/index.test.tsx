@@ -66,10 +66,10 @@ const renderColumn = (
 afterEach(cleanup);
 
 describe('StageColumn', () => {
-  it('renders the label and a quiet placeholder for an empty column', () => {
+  it('renders only the label for an empty column', () => {
     const { container } = renderColumn([]);
     expect(screen.getByText('building')).toBeDefined();
-    expect(screen.getByText('Nothing here')).toBeDefined();
+    expect(screen.queryByText('Nothing here')).toBeNull();
     expect(container.querySelector('.tabular-nums')).toBeNull();
   });
 

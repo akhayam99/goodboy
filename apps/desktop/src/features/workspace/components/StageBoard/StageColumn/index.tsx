@@ -97,7 +97,7 @@ export const StageColumn = ({
     <div
       className={cn(
         'flex min-h-0 flex-col',
-        collapsed ? 'w-9 shrink-0 items-center' : PANE_RHYTHM.board.colWidth,
+        collapsed ? 'w-auto' : PANE_RHYTHM.board.colWidth,
         PANE_RHYTHM.board.colStack,
       )}
     >
@@ -106,10 +106,7 @@ export const StageColumn = ({
           type="button"
           onClick={() => setCollapsed((v) => !v)}
           aria-expanded={!collapsed}
-          className={cn(
-            'flex shrink-0 items-center gap-2 text-left',
-            collapsed && 'flex-col [writing-mode:vertical-rl]',
-          )}
+          className="flex shrink-0 items-center gap-2 text-left"
         >
           <ChevronDown
             size={ICON_SIZE.row}
@@ -123,12 +120,6 @@ export const StageColumn = ({
         </button>
       ) : (
         <div className="shrink-0">{header}</div>
-      )}
-
-      {!collapsed && empty && (
-        <div className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-2xs text-faint-foreground">
-          Nothing here
-        </div>
       )}
 
       {!collapsed && !empty && (
