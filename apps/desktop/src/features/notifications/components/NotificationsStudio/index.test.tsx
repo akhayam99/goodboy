@@ -184,6 +184,30 @@ describe('NotificationsStudio', () => {
     expect(state.dismissNotification).toHaveBeenCalledWith('second');
   });
 
+  it('keeps the primary action visible and reserves the hover slot for row actions', () => {
+    seedNotifications({
+      notifications: [
+        buildNotification({
+          action: deserialize({
+            value: JSON.stringify({
+              kind: 'retry-step-summary',
+              sessionId: 'session-1',
+              agentId: 'agent-1',
+            }),
+          }),
+        }),
+      ],
+    });
+    renderStudio();
+
+    const slot = screen
+      .getByRole('button', { name: /dismiss "summarizer failed" group/i })
+      .closest('span');
+    expect(slot?.className).toContain('group-hover:opacity-100');
+    expect(slot?.className).not.toMatch(/(^|\s)hidden(\s|$)/);
+    expect(slot?.contains(screen.getByRole('button', { name: 'Retry' }))).toBe(false);
+  });
+
   it('keeps bulk mark-read and armed delete-all actions', async () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();

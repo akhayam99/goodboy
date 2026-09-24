@@ -316,19 +316,19 @@ const NotificationGroup = ({
         <span className="text-3xs text-muted-foreground tabular-nums">
           {formatRelativeAge({ fromIso: n.ts })}
         </span>
-        <span className="hidden items-center gap-0.5 group-hover:flex">
-          {action != null ? (
-            <Tooltip content="Retry">
-              <button
-                type="button"
-                className="rounded-sm p-1 hover:bg-hover"
-                onClick={action.onClick}
-                aria-label="Retry"
-              >
-                <RotateCcw size={11} />
-              </button>
-            </Tooltip>
-          ) : null}
+        {action != null && (
+          <Tooltip content="Retry">
+            <button
+              type="button"
+              className="rounded-sm p-1 hover:bg-hover"
+              onClick={action.onClick}
+              aria-label="Retry"
+            >
+              <RotateCcw size={11} />
+            </button>
+          </Tooltip>
+        )}
+        <span className="flex items-center gap-0.5 opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <Tooltip content="Dismiss the group">
             <button
               type="button"

@@ -99,16 +99,16 @@ export const NotificationGroupRow = ({
           >
             {formatRelativeAge({ fromIso: latest.ts })}
           </time>
-          <span className="hidden items-center gap-1 group-hover:flex group-focus-within:flex">
-            {actionLabel != null ? (
-              <button
-                type="button"
-                onClick={onAction}
-                className="rounded-sm px-1.5 py-1 text-2xs hover:bg-hover"
-              >
-                {actionLabel}
-              </button>
-            ) : null}
+          {actionLabel != null && (
+            <button
+              type="button"
+              onClick={onAction}
+              className="rounded-sm px-1.5 py-1 text-2xs hover:bg-hover"
+            >
+              {actionLabel}
+            </button>
+          )}
+          <span className="flex items-center gap-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
             {isUnread ? (
               <Tooltip content="Mark the group read">
                 <button

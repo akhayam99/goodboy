@@ -89,7 +89,7 @@ export const PaneShell = (props: Props) => {
 
   if (scroll === 'body') {
     return (
-      <div className="flex h-full min-h-0 flex-col">
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
         <div className={cn('flex shrink-0 flex-col', PANE_RHYTHM.header)}>
           <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure[measure])}>{header}</div>
         </div>
@@ -113,7 +113,11 @@ export const PaneShell = (props: Props) => {
   }
 
   return (
-    <ScrollFade className="h-full" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
+    <ScrollFade
+      className="h-full min-w-0 flex-1"
+      viewportClassName={PANE_RHYTHM.body}
+      fadeSize={24}
+    >
       <div
         className={cn(
           animationClassName,

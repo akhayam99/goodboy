@@ -26,6 +26,19 @@ const closestWith = ({
 };
 
 describe('PaneShell', () => {
+  it.each(['pane', 'body'] as const)('fills a flex row parent with scroll %s', (scroll) => {
+    const { container } = render(
+      <div className="flex">
+        <PaneShell title="Notifications" scroll={scroll}>
+          <p>Body copy</p>
+        </PaneShell>
+      </div>,
+    );
+
+    const root = container.firstElementChild?.firstElementChild;
+    expect(root?.className.split(' ')).toEqual(expect.arrayContaining(['min-w-0', 'flex-1']));
+  });
+
   it('renders the title, meta, description, actions, and children', () => {
     render(
       <PaneShell

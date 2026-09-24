@@ -291,7 +291,9 @@ The package ships the pane primitives `PANE_RHYTHM`, `ScrollFade`, and
 It is a scroll region whose body is a centred column. It has one `h1` per
 surface. `meta` holds counts and totals in `tabular-nums`, never a control. The
 header row wraps, so actions drop under the title instead of squeezing it. The
-pane owns the gap below the header, and children add no top margins.
+pane owns the gap below the header, and children add no top margins. The root
+is `min-w-0 flex-1` in both scroll modes, so inside a flex row such as
+`StudioShell` it fills the pane and the column centres in the full width.
 
 **One title grade.** Every lens pane and studio detail gets its title from
 `PaneShell`: an `h1` at `text-xl`, then an optional description, meta and
@@ -355,7 +357,10 @@ Artifacts exempted by `DESIGN.md`, including the text of an open question, never
 **One card action grammar.** Two fixed slots. Navigation sits top right and is
 always visible. Lifecycle and destructive actions sit bottom right. Hover may
 show lifecycle actions without moving either slot, and keyboard focus shows the
-same. Icon actions use the shared `Tooltip`, never the native `title`.
+same. Icon actions use the shared `Tooltip`, never the native `title`. A
+hover slot keeps its width at rest: it fades with `opacity-0
+group-hover:opacity-100 group-focus-within:opacity-100`, never `hidden
+group-hover:flex`, and the row's primary action stays outside it, visible.
 
 **A control whose only content is an icon carries a tooltip, everywhere.** The
 `aria-label` names it for assistive tech but gives the mouse user nothing. So

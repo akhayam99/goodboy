@@ -2,7 +2,7 @@
 
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Notification } from '@goodboy/db';
-import type { IsoDateTime } from '@goodboy/types';
+import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { state } = vi.hoisted(() => ({
@@ -218,6 +218,26 @@ describe('NotificationCenter', () => {
     expect(state.markNotificationRead).toHaveBeenCalledTimes(2);
     expect(state.dismissNotification).toHaveBeenCalledWith('n2');
     expect(state.dismissNotification).toHaveBeenCalledWith('n1');
+  });
+
+  it('keeps retry visible and reserves the hover slot for dismiss', async () => {
+    state.notifications = [
+      {
+        ...buildNotification({ id: 'n1', title: 'step summary failed', coalesceKey: 'retry' }),
+        action: {
+          kind: 'retry-step-summary',
+          sessionId: 'session-1' as SessionId,
+          agentId: 'agent-1' as AgentId,
+        },
+      },
+    ];
+    render(<NotificationCenter />);
+    await openCenter();
+
+    const slot = screen.getByRole('button', { name: 'Dismiss group' }).closest('span');
+    expect(slot?.className).toContain('group-hover:opacity-100');
+    expect(slot?.className).not.toMatch(/(^|\s)hidden(\s|$)/);
+    expect(slot?.contains(screen.getByRole('button', { name: 'Retry' }))).toBe(false);
   });
 
   it('counts unread groups in the trigger and header', async () => {
