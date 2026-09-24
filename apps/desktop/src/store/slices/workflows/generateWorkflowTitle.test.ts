@@ -20,10 +20,6 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import { generateWorkflowTitle } from './generateWorkflowTitle';
-import {
-  markWorkflowTitleUserEdited,
-  unmarkWorkflowTitleUserEdited,
-} from './workflowTitleUserEdited';
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -84,7 +80,6 @@ const okStdout = (result: string) => JSON.stringify({ result });
 
 describe('generateWorkflowTitle', () => {
   afterEach(() => {
-    unmarkWorkflowTitleUserEdited(WORKFLOW_ID);
     vi.clearAllMocks();
   });
 
@@ -123,63 +118,6 @@ describe('generateWorkflowTitle', () => {
     expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
     expect(state.phaseTemplates[WORKSPACE_ID]?.[0]?.name).toBe(FALLBACK_NAME);
     expect(state.emitNotification).not.toHaveBeenCalled();
-  });
-
-  it('never overwrites a title the user already renamed', async () => {
-    invokeMock.mockResolvedValue({
-      stdout: okStdout('Ship the auth rework'),
-      stderr: '',
-      exitCode: 0,
-    });
-    markWorkflowTitleUserEdited(WORKFLOW_ID);
-    const { generate, state } = buildHarness();
-
-    await generate(
-      WORKSPACE_ID,
-      WORKFLOW_ID,
-      SESSION_ID,
-      FALLBACK_NAME,
-      'ship the thing',
-      'read the code, then ship it',
-    );
-
-    expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
-    expect(state.phaseTemplates[WORKSPACE_ID]?.[0]?.name).toBe(FALLBACK_NAME);
-  });
-
-  it('restores a user rename that lands while the generated title is saving', async () => {
-    invokeMock.mockResolvedValue({
-      stdout: okStdout('Ship the auth rework'),
-      stderr: '',
-      exitCode: 0,
-    });
-    const finishGeneratedSave = vi.fn<(workflow: Workflow) => void>();
-    const generatedSave = new Promise<Workflow>((resolve) => {
-      finishGeneratedSave.mockImplementation(resolve);
-    });
-    invokeWorkflowUpsertSpy
-      .mockImplementationOnce(() => generatedSave)
-      .mockResolvedValueOnce({ ...workflow, name: 'My chosen workflow' });
-    const { generate, state } = buildHarness();
-
-    const generation = generate(
-      WORKSPACE_ID,
-      WORKFLOW_ID,
-      SESSION_ID,
-      FALLBACK_NAME,
-      'ship the thing',
-      'read the code, then ship it',
-    );
-    await vi.waitFor(() => expect(invokeWorkflowUpsertSpy).toHaveBeenCalledOnce());
-    markWorkflowTitleUserEdited(WORKFLOW_ID);
-    state.phaseTemplates[WORKSPACE_ID] = [{ ...workflow, name: 'My chosen workflow' }];
-    finishGeneratedSave({ ...workflow, name: 'Ship the auth rework' });
-    await generation;
-
-    expect(invokeWorkflowUpsertSpy).toHaveBeenLastCalledWith(
-      expect.objectContaining({ id: WORKFLOW_ID, name: 'My chosen workflow' }),
-    );
-    expect(state.phaseTemplates[WORKSPACE_ID]?.[0]?.name).toBe('My chosen workflow');
   });
 
   it('skips the write when the name no longer matches the fallback it was assigned', async () => {

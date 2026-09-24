@@ -91,7 +91,9 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
 
   const focusedWorkflowName = useMemo(() => {
     const focusedRun = attachedWorkflowRuns.find(({ run }) => run.id === focusedWorkflowRunId);
-    return focusedRun == null ? null : workflowKindName(focusedRun.workflow);
+    return focusedRun == null
+      ? null
+      : (focusedRun.run.title ?? workflowKindName(focusedRun.workflow));
   }, [focusedWorkflowRunId, attachedWorkflowRuns]);
 
   const focusedPlanTitle = useMemo(
@@ -105,7 +107,9 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       : ARTIFACT_CREATION_ADAPTERS[artifactCreationKind].crumbLabel;
 
   const selectedChildWorkflowName =
-    selectedWorkflowRun == null ? null : workflowKindName(selectedWorkflowRun.workflow);
+    selectedWorkflowRun == null
+      ? null
+      : (selectedWorkflowRun.run.title ?? workflowKindName(selectedWorkflowRun.workflow));
   const selectedWorkflowRunId = selectedWorkflowRun?.run.id ?? null;
 
   return useMemo(

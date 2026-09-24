@@ -200,9 +200,9 @@ Three limits keep identity small:
   `packages/ui`.
 
 A run row carries the chip, one title and at most one short status line.
-`TimelineRunLabel` prints the workflow name as that title with a single
-`truncate`, and never the run goal: a goal is a document and lives in the
-workflow detail. A preset or custom workflow names itself in the chip tooltip.
+`TimelineRunLabel` prints the run title (`run.title`, falling back to the
+workflow name) with a single `truncate`, and never the run goal: a goal is a
+document and lives in the workflow detail. A preset or custom workflow names itself in the chip tooltip.
 When any step of the run, at any depth, waits on an open question,
 `runOpenQuestion` picks the oldest one. The run row then takes the question
 node, says "Needs your answer in step 4.2" in the warning tone, and shows a

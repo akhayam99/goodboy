@@ -21,6 +21,7 @@ import { workflowAvailabilitySnapshot } from '../../../features/workflows/workfl
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { persistOrchestrationStop } from './orchestrateNextStep';
 import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
+import { generateWorkflowRunTitle } from './generateWorkflowRunTitle';
 import type { GetFn, SetFn } from './types';
 
 type Options = {
@@ -199,6 +200,10 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     }
 
     void get().reprocessGoalForWorkflow(sessionId);
+
+    if (goal != null && template.origin !== 'orchestrated') {
+      void generateWorkflowRunTitle({ set, get, sessionId, workflowRunId });
+    }
 
     if (triggerMode === 'after_run') {
       void get().maybeAutoAdvanceWorkflow(sessionId);

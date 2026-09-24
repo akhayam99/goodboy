@@ -116,7 +116,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
   const workflowNameByRunId = useMemo(() => {
     const map = new Map<string, string>();
     for (const { run, workflow } of attachedRuns) {
-      map.set(run.id, workflowKindName(workflow));
+      map.set(run.id, run.title ?? workflowKindName(workflow));
     }
     return map;
   }, [attachedRuns]);

@@ -39,7 +39,7 @@ import { WorkflowAddStep } from '../../../workflows/components/WorkflowAddStep';
 import { CreateReportCta } from '../../../reports/components/CreateReportCta';
 import { CreateWireframeCta } from '../../../wireframes/components/CreateWireframeCta';
 import { WorkflowAutorunToggle } from '../../../workflows/components/WorkflowAutorunToggle';
-import { useWorkflowTitleRename } from '../../../workflows/hooks/useWorkflowTitleRename';
+import { useWorkflowRunTitleRename } from '../../../workflows/hooks/useWorkflowRunTitleRename';
 import { RunTree } from '../../../workflows/components/RunTree';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { WriteDestinationControl } from '../../../chat/components/WriteDestinationControl';
@@ -133,11 +133,11 @@ export const WorkflowRow = ({
   const wfAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
   const actionableStepId = actionableStepIdByRunId.get(run.id) ?? null;
   const wfBlockReason = blockReasonByRunId.get(run.id) ?? null;
-  const name = workflowKindName(workflow);
-  const rename = useWorkflowTitleRename({
-    workspaceId: workflow.workspaceId,
-    workflowId: workflow.id,
-    currentTitle: workflow.name,
+  const name = run.title ?? workflowKindName(workflow);
+  const rename = useWorkflowRunTitleRename({
+    sessionId: task.id,
+    workflowRunId: run.id,
+    currentTitle: run.title ?? workflow.name,
   });
   const total = workflow.steps.length;
   const done = wfAgents.filter((a) => isAgentStatusSettled({ status: a.status })).length;
@@ -242,11 +242,6 @@ export const WorkflowRow = ({
                     blockReason={wfBlockReason}
                   />
                 </div>
-                {rename.editing && workflow.isPreset !== false && (
-                  <p className="text-2xs leading-relaxed text-faint-foreground">
-                    This preset is shared: the new name shows on every run and every future attach.
-                  </p>
-                )}
                 <MetaRow
                   items={[
                     total > 0 ? (

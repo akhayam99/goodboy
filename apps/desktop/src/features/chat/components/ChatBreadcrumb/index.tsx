@@ -16,7 +16,7 @@ type Props = {
 };
 
 type WorkflowProgress = {
-  readonly workflow: Workflow;
+  readonly title: string;
   readonly currentOrdinal: number;
   readonly total: number;
 };
@@ -72,7 +72,7 @@ export const ChatBreadcrumb = ({ session }: Props) => {
     if (currentOrdinal === 0) {
       currentOrdinal = 1;
     }
-    return { workflow, currentOrdinal, total };
+    return { title: activeRun.title ?? workflow.name, currentOrdinal, total };
   }, [session.workflowRuns, sessionWorkflows, phaseRuns, selectedAgentId]);
 
   const selectedAgent: Agent | null = useMemo(() => {
@@ -141,10 +141,10 @@ export const ChatBreadcrumb = ({ session }: Props) => {
               <Separator />
               <span
                 className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium ${workflowAccent.bg} ${workflowAccent.text}`}
-                title={`Workflow: ${workflowProgress.workflow.name} · step ${workflowProgress.currentOrdinal} of ${workflowProgress.total}`}
+                title={`Workflow: ${workflowProgress.title} · step ${workflowProgress.currentOrdinal} of ${workflowProgress.total}`}
               >
                 <GitBranch size={9} aria-hidden />
-                <span className="max-w-[10rem] truncate">{workflowProgress.workflow.name}</span>
+                <span className="max-w-[10rem] truncate">{workflowProgress.title}</span>
                 <span aria-hidden className="opacity-60">
                   ·
                 </span>

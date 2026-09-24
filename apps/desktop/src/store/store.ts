@@ -510,6 +510,11 @@ type AppActions = {
     args: { sha: string; message: string },
   ): Promise<RewrittenHead>;
   setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
+  renameWorkflowRun(
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    name: string,
+  ): Promise<void>;
   setWorkflowRunAutoRun(
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
@@ -645,7 +650,6 @@ type AppActions = {
   copyWorkflowFromWorkspace(params: CopyWorkflowFromWorkspaceParams): Promise<Workflow>;
   savePhaseTemplate(template: WorkflowUpsertArgs): Promise<Workflow>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
-  renameWorkflow(workspaceId: WorkspaceId, workflowId: WorkflowId, name: string): Promise<void>;
   makeWorkflowPreset(workspaceId: WorkspaceId, workflowId: WorkflowId): Promise<void>;
   generateWorkflowTitle(
     workspaceId: WorkspaceId,

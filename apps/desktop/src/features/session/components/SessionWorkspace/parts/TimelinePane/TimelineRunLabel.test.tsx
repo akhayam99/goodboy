@@ -53,6 +53,7 @@ type EntryParams = {
   readonly name?: string;
   readonly goal?: string;
   readonly runId?: string;
+  readonly title?: string;
   readonly discardedAt?: string | null;
   readonly children?: ReadonlyArray<unknown>;
 };
@@ -62,6 +63,7 @@ const entryOf = ({
   name = 'Refactor (example)',
   goal = 'Restructure the legacy module',
   runId = 'run-7',
+  title,
   discardedAt = null,
   children = [],
 }: EntryParams = {}) =>
@@ -69,7 +71,7 @@ const entryOf = ({
     kind: 'run',
     id: `run:${runId}`,
     at: '2026-08-18T09:00:00Z',
-    run: { id: runId, goal, discardedAt },
+    run: { id: runId, goal, discardedAt, ...(title !== undefined && { title }) },
     workflow: { name, origin: ORIGIN_OF[kind] },
     identity: runIdentity({ laneIndex: 0, seed: 0 }),
     children,
@@ -143,6 +145,14 @@ describe('TimelineRunLabel', () => {
 
     expect(container.textContent).not.toContain('Ecco il prompt');
     expect(screen.getByText('Checkout').className).toContain('truncate');
+  });
+
+  it('prints the generated run title and keeps the preset name in the chip tooltip', () => {
+    render(<Label entry={entryOf({ name: 'Feature', title: 'Fix Safari OAuth login loop' })} />);
+
+    expect(screen.getByText('Fix Safari OAuth login loop').className).toContain('truncate');
+    expect(screen.queryByText('Feature')).toBeNull();
+    expect(screen.getByTitle('Feature preset workflow')).toBeDefined();
   });
 
   it('names a preset in the chip tooltip and leaves the row to the title', () => {

@@ -23,7 +23,7 @@ type WriteDestinationProps = {
 };
 
 const storeMocks = vi.hoisted(() => ({
-  renameWorkflow: vi.fn(async () => undefined),
+  renameWorkflowRun: vi.fn(async () => undefined),
   orchestratingWorkflowRuns: {} as Record<string, boolean>,
   runSpendUsd: 0,
   sessions: [] as ReadonlyArray<Record<string, unknown>>,
@@ -36,7 +36,7 @@ vi.mock('../../../../store', () => ({
   useExecutedAgentRouting: () => null,
   useAppStore: <T,>(selector: (state: unknown) => T) =>
     selector({
-      renameWorkflow: storeMocks.renameWorkflow,
+      renameWorkflowRun: storeMocks.renameWorkflowRun,
       orchestratingWorkflowRuns: storeMocks.orchestratingWorkflowRuns,
       agentEffortOverride: {},
       sessionMounts: {},
@@ -208,7 +208,7 @@ const renderDetail = ({
   );
 
 beforeEach(() => {
-  storeMocks.renameWorkflow.mockClear();
+  storeMocks.renameWorkflowRun.mockClear();
   storeMocks.sessionProjectMounts = {};
 });
 
@@ -266,45 +266,29 @@ describe('WorkflowRow detail dashboard', () => {
     fireEvent.change(field, { target: { value: 'Language id remap' } });
     fireEvent.blur(field);
 
-    expect(storeMocks.renameWorkflow).toHaveBeenCalledWith(
-      'workspace-1',
-      WORKFLOW_ID,
+    expect(storeMocks.renameWorkflowRun).toHaveBeenCalledWith(
+      SESSION_ID,
+      RUN_ID,
       'Language id remap',
     );
   });
 
-  it('warns that renaming a preset reaches every run before the field is touched', () => {
+  it('heads the detail with the run title instead of the workflow name', () => {
+    renderDetail({ runOverride: { ...run, title: 'Remap language ids' } });
+
+    expect(screen.getByRole('heading', { name: 'Remap language ids' })).toBeDefined();
+  });
+
+  it('renames only this run on a shared preset, without touching the preset', () => {
     renderDetail({ workflowOverride: { ...workflow, isPreset: true } });
 
-    expect(screen.queryByText(/This preset is shared/i)).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Edit workflow name' }));
-
-    expect(
-      screen.getByText(
-        'This preset is shared: the new name shows on every run and every future attach.',
-      ),
-    ).toBeDefined();
-  });
-
-  it('warns on a legacy preset that carries no isPreset flag', () => {
-    renderDetail();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Edit workflow name' }));
-
-    expect(
-      screen.getByText(
-        'This preset is shared: the new name shows on every run and every future attach.',
-      ),
-    ).toBeDefined();
-  });
-
-  it('keeps the shared-preset warning off a workflow this session authored', () => {
-    renderDetail({ workflowOverride: { ...workflow, isPreset: false } });
-
     fireEvent.click(screen.getByRole('button', { name: 'Edit workflow name' }));
 
     expect(screen.queryByText(/This preset is shared/i)).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Workflow name' })).toHaveProperty(
+      'value',
+      workflow.name,
+    );
   });
 
   it('puts the lifecycle actions in the header, ahead of the run body', () => {

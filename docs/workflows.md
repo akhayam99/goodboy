@@ -66,6 +66,15 @@ workspace, and on **Orchestrated** the first time. Only starting a workflow
 changes it, so looking at another tab does not. A remembered **Preset** falls
 back to **Orchestrated** once the workspace has no presets left.
 
+Each run also gets a title of its own, at most six words, written from the run
+goal by the `agent_naming` task model when the run starts. The activity feed,
+the workflow detail, the breadcrumb and the **Starts** picker show that title, so
+two runs of the same preset read apart. Until the title arrives, or when the
+run has no goal, they show the workflow name. An orchestrated run keeps the
+name generated for its workflow and gets no second title. You rename a run
+only from the header of its workflow detail. That name stays with the run, a
+later generated title never replaces it, and the preset keeps its own name.
+
 A workflow you are still building stays there when you switch sessions. It
 goes away once you create it or discard it. **Workflow Studio** is where you
 keep presets and the step library. It can also import a custom workflow from

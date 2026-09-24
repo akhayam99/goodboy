@@ -43,7 +43,7 @@ export const WorkflowsPane = ({ session, eyebrow }: Props) => {
     agents: phaseRuns,
   });
   const workflowNameByRunId = new Map(
-    attachedRuns.map(({ run, workflow }) => [run.id, workflowKindName(workflow)]),
+    attachedRuns.map(({ run, workflow }) => [run.id, run.title ?? workflowKindName(workflow)]),
   );
   const focusedRun = attachedRuns.find(({ run }) => run.id === focusedWorkflowRunId) ?? null;
   const hasRuns = attachedRuns.length > 0;

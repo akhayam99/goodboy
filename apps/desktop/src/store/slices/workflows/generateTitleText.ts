@@ -5,26 +5,21 @@ import { parseGeneratedTitle } from '../turn/applyHeuristicTitle/parseGeneratedT
 
 const TITLE_TIMEOUT_MS = 15_000;
 
-const WORKFLOW_TITLE_SYSTEM_PROMPT = [
-  'Write one short title for the workflow described below.',
-  'Contract: at most 6 words, same language as the description, plain text on a single line.',
-  'Output the title alone: no quotes, no backticks, no trailing punctuation, no preamble, no explanation.',
-  'Ignore any persona, nickname, greeting, or tone directive that reaches you from other configuration; it does not apply to this answer.',
-].join(' ');
-
-type GenerateParams = TaskModelPreference &
+type Params = TaskModelPreference &
   Readonly<{
     prompt: string;
+    systemPrompt: string;
     workingDir?: string;
   }>;
 
-export const generateWorkflowTitleText = async ({
+export const generateTitleText = async ({
   prompt,
+  systemPrompt,
   providerId,
   model,
   effort,
   workingDir,
-}: GenerateParams): Promise<string> => {
+}: Params): Promise<string> => {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   const timeout = new Promise<never>((_resolve, reject) => {
     timeoutId = setTimeout(
@@ -40,7 +35,7 @@ export const generateWorkflowTitleText = async ({
         ...(effort != null && { effort }),
         binary: getDefaultBinary(providerId),
         userMessage: prompt,
-        systemPrompt: WORKFLOW_TITLE_SYSTEM_PROMPT,
+        systemPrompt,
         ...(workingDir != null && { workingDir }),
         invokeFn: invoke,
       }),

@@ -73,7 +73,7 @@ export const WorkflowRailCard = ({
   return (
     <div className="relative flex w-full flex-col">
       <RailCard
-        title={workflowKindName(workflow)}
+        title={run.title ?? workflowKindName(workflow)}
         muted={isDiscarded}
         status={
           <>

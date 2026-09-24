@@ -311,7 +311,7 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
       if (target === null) {
         return null;
       }
-      return { laneId, title: entry.workflow.name, open: target.open };
+      return { laneId, title: entry.run.title ?? entry.workflow.name, open: target.open };
     },
     [laneRuns, openTargetFor],
   );

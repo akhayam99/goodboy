@@ -947,7 +947,7 @@ export const buildTimelineStream = ({
   for (const entry of entries) {
     if (entry.kind === 'run') {
       chainedRunById.set(entry.run.id, {
-        title: entry.workflow.name,
+        title: entry.run.title ?? entry.workflow.name,
         isFinished: isRunFinished({ entry }),
       });
     }

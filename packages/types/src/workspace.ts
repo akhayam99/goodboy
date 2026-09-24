@@ -132,6 +132,8 @@ export type WorkflowRun = Readonly<{
   spendLimitMode?: WorkflowSpendLimitMode;
   chainAfterId?: WorkflowRunId;
   goal?: string;
+  title?: string;
+  titleUserEdited?: boolean;
   discardedAt?: IsoDateTime;
   createdAt?: IsoDateTime;
 }>;

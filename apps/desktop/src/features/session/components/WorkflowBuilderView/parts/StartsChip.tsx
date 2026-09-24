@@ -5,7 +5,7 @@ import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { ControlChip } from './ControlChip';
 
 export type ChainRun = {
-  readonly run: { readonly id: WorkflowRunId };
+  readonly run: { readonly id: WorkflowRunId; readonly title?: string };
   readonly template: Workflow;
 };
 
@@ -48,12 +48,15 @@ export const StartsChip = ({ choice, runs, disabled, onChange }: Props) => {
       hint: 'Stays queued until you start it from the sidebar.',
       choice: { triggerMode: 'manual', chainAfterId: null },
     },
-    ...runs.map(({ run, template }) => ({
-      key: `after-${run.id}`,
-      label: `After ${template.name}`,
-      hint: `Starts once ${template.name} completes.`,
-      choice: { triggerMode: 'after_run' as const, chainAfterId: run.id },
-    })),
+    ...runs.map(({ run, template }) => {
+      const name = run.title ?? template.name;
+      return {
+        key: `after-${run.id}`,
+        label: `After ${name}`,
+        hint: `Starts once ${name} completes.`,
+        choice: { triggerMode: 'after_run' as const, chainAfterId: run.id },
+      };
+    }),
   ];
   const current = options.find((option) => isSameChoice({ a: option.choice, b: choice }));
 

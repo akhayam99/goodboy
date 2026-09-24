@@ -13,6 +13,7 @@ type Props = {
 
 export const TimelineRunLabel = ({ entry, rowState, isLaneLit = false }: Props) => {
   const isDiscarded = entry.run.discardedAt != null;
+  const title = entry.run.title ?? entry.workflow.name;
   return (
     <>
       <TimelineRunChip
@@ -23,13 +24,13 @@ export const TimelineRunLabel = ({ entry, rowState, isLaneLit = false }: Props) 
         lit={isLaneLit}
       />
       <span
-        title={entry.workflow.name}
+        title={title}
         className={cn(
           'min-w-24 truncate text-sm leading-5',
           isDiscarded ? 'text-muted-foreground' : 'text-foreground',
         )}
       >
-        {entry.workflow.name}
+        {title}
       </span>
       <TimelineRowStateLine state={rowState} />
     </>

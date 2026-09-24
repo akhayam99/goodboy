@@ -21,7 +21,7 @@ import { orchestrateNextStep } from './orchestrateNextStep';
 import { addWorkflowOrchestratorHint } from './addWorkflowOrchestratorHint';
 import { removeWorkflowOrchestratorHint } from './removeWorkflowOrchestratorHint';
 import { setWorkflowOrchestratorRouting } from './setWorkflowOrchestratorRouting';
-import { renameWorkflow } from './renameWorkflow';
+import { renameWorkflowRun } from './renameWorkflowRun';
 import { reorderSessionWorkflows } from './reorderSessionWorkflows';
 import { restoreWorkflow } from './restoreWorkflow';
 import { retryWorkflowOrchestration } from './retryWorkflowOrchestration';
@@ -44,7 +44,6 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     copyWorkflowFromWorkspace: copyWorkflowFromWorkspace({ set }),
     savePhaseTemplate: savePhaseTemplate(set),
     deleteWorkflow: deleteWorkflow(set, get),
-    renameWorkflow: renameWorkflow(set, get),
     makeWorkflowPreset: makeWorkflowPreset(set, get),
     generateWorkflowTitle: generateWorkflowTitle(set, get),
     suggestWorkflowTitle: suggestWorkflowTitle(set, get),
@@ -58,6 +57,7 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     discardWorkflow: discardWorkflow(set, get),
     restoreWorkflow: restoreWorkflow(set, get),
     reorderSessionWorkflows: reorderSessionWorkflows(set, get),
+    renameWorkflowRun: renameWorkflowRun(set, get),
     setWorkflowRunAutoRun: setWorkflowRunAutoRun(set, get),
     setWorkflowRunSpendLimit: setWorkflowRunSpendLimit(set, get),
     startWorkflowRun: startWorkflowRun(set, get),

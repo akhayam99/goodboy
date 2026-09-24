@@ -27,6 +27,7 @@ import { m165ProviderRunsStatusIndex } from './m165-provider-runs-status-index';
 import { m166DropWorkflowRunRoleModels } from './m166-drop-workflow-run-role-models';
 import { m167DropDeadWorkspaceAndHintColumns } from './m167-drop-dead-workspace-and-hint-columns';
 import { m168AgentTurnSpans } from './m168-agent-turn-spans';
+import { m169WorkflowRunTitle } from './m169-workflow-run-title';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -341,4 +342,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 166, sql: m166DropWorkflowRunRoleModels },
   { version: 167, sql: m167DropDeadWorkspaceAndHintColumns },
   { version: 168, sql: m168AgentTurnSpans },
+  { version: 169, sql: m169WorkflowRunTitle },
 ];

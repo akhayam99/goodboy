@@ -21,6 +21,8 @@ import {
   updateWorkflowRunOrchestrationStop,
   updateWorkflowRunOrchestratorRouting,
   updateWorkflowRunSpendLimit,
+  updateGeneratedWorkflowRunTitle,
+  updateUserWorkflowRunTitle,
 } from './session-workflow';
 import { getSessionById, listSessionsForWorkspace } from './session';
 
@@ -586,6 +588,57 @@ describe('session_workflows trigger-mode queries', () => {
         ['run-1', 'first goal'],
         ['run-2', 'second goal'],
       ]);
+    });
+  });
+
+  describe('run title', () => {
+    const attachRun = () =>
+      attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        workflowId,
+        autoRun: false,
+        updatedAt: NOW,
+        goal: 'fix the login redirect loop',
+      });
+
+    it('starts without a title', async () => {
+      await attachRun();
+      const runs = await readRunsNewestFirst({ db });
+      expect(runs[0]!.title).toBeUndefined();
+      expect(runs[0]!.titleUserEdited).toBeUndefined();
+    });
+
+    it('stores a generated title while the user has not named the run', async () => {
+      await attachRun();
+      const isWritten = await updateGeneratedWorkflowRunTitle({
+        db,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        title: 'Fix login redirect loop',
+      });
+      const runs = await readRunsNewestFirst({ db });
+      expect(isWritten).toBe(true);
+      expect(runs[0]!.title).toBe('Fix login redirect loop');
+      expect(runs[0]!.titleUserEdited).toBeUndefined();
+    });
+
+    it('keeps the name the user chose over a later generated title', async () => {
+      await attachRun();
+      await updateUserWorkflowRunTitle({
+        db,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        title: 'Login loop',
+      });
+      const isWritten = await updateGeneratedWorkflowRunTitle({
+        db,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        title: 'Fix login redirect loop',
+      });
+      const runs = await readRunsNewestFirst({ db });
+      expect(isWritten).toBe(false);
+      expect(runs[0]!.title).toBe('Login loop');
+      expect(runs[0]!.titleUserEdited).toBe(true);
     });
   });
 

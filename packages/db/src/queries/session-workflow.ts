@@ -40,12 +40,14 @@ export type SessionWorkflowRow = {
   spend_limit_mode: string;
   chain_after_run_id: string | null;
   goal: string | null;
+  title: string | null;
+  title_user_edited: number;
   discarded_at: number | null;
   created_at: number | string;
 };
 
 export const SESSION_WORKFLOW_COLS =
-  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hint_log, orchestrator_summary, orchestrator_provider, orchestrator_model, orchestrator_effort, spend_limit_usd, spend_limit_mode, chain_after_run_id, goal, discarded_at, created_at';
+  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hint_log, orchestrator_summary, orchestrator_provider, orchestrator_model, orchestrator_effort, spend_limit_usd, spend_limit_mode, chain_after_run_id, goal, title, title_user_edited, discarded_at, created_at';
 
 type RoutingColumns = {
   readonly provider: string | null;
@@ -121,6 +123,8 @@ export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
       chainAfterId: row.chain_after_run_id as WorkflowRunId,
     }),
     ...(row.goal != null && row.goal !== '' && { goal: row.goal }),
+    ...(row.title != null && row.title !== '' && { title: row.title }),
+    ...(row.title_user_edited !== 0 && { titleUserEdited: true }),
     ...(row.discarded_at != null && {
       discardedAt: new Date(row.discarded_at).toISOString() as IsoDateTime,
     }),
@@ -387,6 +391,35 @@ export const updateWorkflowRunSpendLimit = async (
   await db.execute(
     'UPDATE session_workflows SET spend_limit_usd = ?, spend_limit_mode = ? WHERE workflow_run_id = ?',
     [spendLimitUsd, mode, workflowRunId],
+  );
+};
+
+type WorkflowRunTitleParams = {
+  readonly db: Database;
+  readonly workflowRunId: WorkflowRunId;
+  readonly title: string;
+};
+
+export const updateGeneratedWorkflowRunTitle = async ({
+  db,
+  workflowRunId,
+  title,
+}: WorkflowRunTitleParams): Promise<boolean> => {
+  const { rowsAffected } = await db.execute(
+    'UPDATE session_workflows SET title = ? WHERE workflow_run_id = ? AND title_user_edited = 0',
+    [title, workflowRunId],
+  );
+  return rowsAffected > 0;
+};
+
+export const updateUserWorkflowRunTitle = async ({
+  db,
+  workflowRunId,
+  title,
+}: WorkflowRunTitleParams): Promise<void> => {
+  await db.execute(
+    'UPDATE session_workflows SET title = ?, title_user_edited = 1 WHERE workflow_run_id = ?',
+    [title, workflowRunId],
   );
 };
 
