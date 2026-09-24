@@ -1,5 +1,6 @@
 import type {
   Agent,
+  CapabilityGrant,
   CapabilityObligation,
   ClusterCompletionHold,
   ClusterExecutionGraph,
@@ -31,6 +32,7 @@ import { isMainWindow } from '../../../features/workspace/window';
 import { invokeBudgetAlertsList, invokeBudgetRuleList } from '../../../features/budget/budget';
 import { invokeSkillList } from '../../../features/skills/skills';
 import {
+  invokeCapabilityGrants,
   invokeCapabilityObligations,
   invokeClusterCompletionHolds,
   invokeClusterExecutionGraphs,
@@ -90,6 +92,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       clusterCompletionHolds: {},
       clusterExecutionGraphs: {},
       capabilityObligations: {},
+      capabilityGrants: {},
       selectedAgentId: {},
       agentRunHistory: {},
       runRouting: {},
@@ -135,12 +138,13 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
           Promise.all(
             sessionIds.map(async (sessionId) => {
-              const [holds, graphs, obligations] = await Promise.all([
+              const [holds, graphs, obligations, grants] = await Promise.all([
                 invokeClusterCompletionHolds({ sessionId }),
                 invokeClusterExecutionGraphs({ sessionId }),
                 invokeCapabilityObligations({ sessionId }),
+                invokeCapabilityGrants({ sessionId }),
               ]);
-              return { sessionId, holds, graphs, obligations };
+              return { sessionId, holds, graphs, obligations, grants };
             }),
           ),
         ]);
@@ -155,6 +159,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       const clusterCompletionHolds: Record<string, ReadonlyArray<ClusterCompletionHold>> = {};
       const clusterExecutionGraphs: Record<string, ReadonlyArray<ClusterExecutionGraph>> = {};
       const capabilityObligations: Record<string, ReadonlyArray<CapabilityObligation>> = {};
+      const capabilityGrants: Record<string, ReadonlyArray<CapabilityGrant>> = {};
       const kindOverridesFromDb: Record<string, AgentKind> = {};
       const invalidActiveMountSessionIds = new Set<string>();
       const repairedWriteDestinations = new Map<string, RepairedDestination>();
@@ -162,6 +167,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         clusterCompletionHolds[entry.sessionId] = entry.holds;
         clusterExecutionGraphs[entry.sessionId] = entry.graphs;
         capabilityObligations[entry.sessionId] = entry.obligations;
+        capabilityGrants[entry.sessionId] = entry.grants;
       }
       for (const s of sessions) {
         const { available: rows } = await verifyAvailableWorktrees({
@@ -259,6 +265,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         clusterCompletionHolds,
         clusterExecutionGraphs,
         capabilityObligations,
+        capabilityGrants,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
         sessionExternalTasks: { ...state.sessionExternalTasks, ...externalTasksMap },
       }));

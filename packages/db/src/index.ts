@@ -205,8 +205,14 @@ export {
 } from './queries/agent';
 export {
   associateCapabilityObligationHold,
+  claimCapabilityGrant,
+  decideCapabilityObligation,
+  listCapabilityGrants,
   listCapabilityObligations,
   recordCapabilityNeed,
+  settleCapabilityObligation,
+  updateCapabilityGrant,
+  type CapabilityGrantClaim,
   type CapabilityNeedRecord,
 } from './queries/capability-obligation';
 export {
@@ -215,9 +221,18 @@ export {
   resolveClusterCompletionHold,
 } from './queries/cluster-completion-hold';
 export {
+  adoptClusterGraphRevision,
+  freezeClusterExecutionGraph,
   getClusterExecutionGraph,
   listClusterExecutionGraphs,
+  listClusterGraphRevisions,
   recordClusterExecutionGraph,
+  refuseClusterGraphRevision,
+  type AdoptClusterGraphRevisionParams,
+  type ClusterGraphRevisionOutcome,
+  type ClusterGraphRevisionRecord,
+  type FreezeClusterExecutionGraphParams,
+  type RefuseClusterGraphRevisionParams,
 } from './queries/cluster-execution-graph';
 export {
   insertSessionWorktree,

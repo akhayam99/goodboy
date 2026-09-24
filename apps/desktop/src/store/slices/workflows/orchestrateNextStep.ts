@@ -943,6 +943,26 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         await discardWithUsage();
         return;
       }
+      if (decision.action === 'need') {
+        await recordOrchestratorUsage({
+          set,
+          get,
+          sessionId,
+          agentId: null,
+          workflowRunId,
+          provider: routing.providerId,
+          model: result.model,
+          usage: result.usage,
+        });
+        void get().emitNotification({
+          kind: 'error',
+          severity: 'warning',
+          title: 'Orchestrator answered a need that was not asked',
+          body: 'the run asked for the next step and got a capability disposition instead, so nothing advanced. use next step to retry.',
+          sessionId,
+        });
+        return;
+      }
       await persistOrchestrationOutcome({
         set,
         sessionId,

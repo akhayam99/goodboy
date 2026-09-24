@@ -52,6 +52,25 @@ The other valid forms are:
 <<orchestrator>>{"action":"done","reason":"..."}<</orchestrator>>
 <<orchestrator>>{"action":"blocked","reason":"..."}<</orchestrator>>
 
+When the request carries a pending capability need, that need is the decision. Answer it with action need, naming the obligation id exactly as given, and pick one disposition:
+- grant: the gap is real and nothing already answers it. Emit the step as the requested role and purpose. A grant creates at most one task, so ask for the single agent that closes the need.
+- reuse: the evidence listed already answers the question. Name the source ids you are answering with in evidenceRefs, and the requester receives them instead of an agent.
+- attach: work already running carries the same obligation, so the requester waits for that owner rather than a second one.
+- refine: the question is too broad, or the gap it claims is not established by the evidence. Say in reason what a usable request would have to narrow.
+- refuse: the need is not warranted. reason reaches the requester, so write it for them.
+
+<<orchestrator>>{"action":"need","reason":"...","obligationId":"...","disposition":{"kind":"grant","step":{"name":"...","role":"implementer","promptPrefix":"...","expectedOutput":"..."}}}<</orchestrator>>
+<<orchestrator>>{"action":"need","reason":"...","obligationId":"...","disposition":{"kind":"reuse","evidenceRefs":["..."]}}<</orchestrator>>
+<<orchestrator>>{"action":"need","reason":"...","obligationId":"...","disposition":{"kind":"attach"}}<</orchestrator>>
+<<orchestrator>>{"action":"need","reason":"...","obligationId":"...","disposition":{"kind":"refine"}}<</orchestrator>>
+<<orchestrator>>{"action":"need","reason":"...","obligationId":"...","disposition":{"kind":"refuse"}}<</orchestrator>>
+
+Judge only what needs judgement. The runtime already checks the request identity, what each role is allowed to ask for, whether the evidence references resolve, whether the inventory revision is current, that one obligation has one owner, and the remaining allowances. Never restate those checks as your reason and never grant to get around one. What is yours: whether existing evidence answers the question, whether two differently worded requests concern the same work, whether the residual gap justifies discovery, and whether a defect needs a local repair or a replan.
+
+A repair goes to an implementer and a production test failure goes to an implementer too. A reviewer that found the defect never fixes it, and a tester never fixes production code. Do not make an implementer delegate what it can already fix inside its own scope: a delegation costs a dispatch and a fresh context, so grant one only when the requester genuinely cannot do the work itself.
+
+A replan grant freezes the plan in flight: nothing queued starts and nothing publishes. The planner emits one revision that says what happens to every node, and the runtime adopts it as a whole or refuses it as a whole and leaves the old graph frozen. Grant one only for a defect that changes the shape of the work, and say in reason what the revision has to settle.
+
 After the decision, on its own line, emit the running recap of the whole run as one JSON object on a single line:
 <<run-summary>>{"done":["one entry per thing the run has actually landed"],"left":["one entry per thing still open"]}<</run-summary>>
 
@@ -70,6 +89,11 @@ export const buildOrchestratorUserPrompt = ({
   isModelMetadataEnabled,
   spendLimitUsd,
   spentUsd,
+  pendingRequest,
+  evidenceExcerpts,
+  unresolvedObligations,
+  graphRevision,
+  allowances,
 }: OrchestratorInput): string => {
   const lines = [
     'Goal (the session language is the language this is written in):',
@@ -133,6 +157,54 @@ export const buildOrchestratorUserPrompt = ({
       );
     });
   }
+  if (graphRevision != null && graphRevision.length > 0) {
+    lines.push('', `Active graph revision: ${graphRevision}`);
+  }
+  if (allowances != null) {
+    lines.push(
+      '',
+      'Remaining allowances (a grant that does not fit them is refused by the runtime, not by you):',
+      `generated agents left: ${allowances.generationRemaining}`,
+      `repair attempts left on this obligation: ${allowances.repairAttemptsRemaining}`,
+      `structural replans left in this run: ${allowances.structuralReplansRemaining}`,
+      allowances.spendRemainingUsd == null
+        ? 'spend left: unlimited'
+        : `spend left: $${allowances.spendRemainingUsd.toFixed(2)}`,
+    );
+  }
+  if (unresolvedObligations != null && unresolvedObligations.length > 0) {
+    lines.push('', 'Unresolved obligations and their current owners:');
+    unresolvedObligations.forEach((obligation) => {
+      lines.push(
+        `${obligation.obligationId} - ${obligation.targetRole} for ${obligation.purpose} - state ${obligation.state} - owner ${obligation.ownerName ?? 'none'} - identity ${obligation.identity}`,
+      );
+    });
+  }
+  if (pendingRequest != null) {
+    lines.push(
+      '',
+      'Pending capability need, exactly as the runtime validated it. Decide on this one:',
+      `obligationId: ${pendingRequest.obligationId}`,
+      `requester: ${pendingRequest.requesterName} (${pendingRequest.requesterRole})`,
+      `requested: ${pendingRequest.targetRole} for ${pendingRequest.purpose}`,
+      `question: ${pendingRequest.question}`,
+      `gap: ${pendingRequest.gap.length > 0 ? pendingRequest.gap : '(none stated)'}`,
+      `scope: ${pendingRequest.scope.length > 0 ? pendingRequest.scope.join(', ') : '(none stated)'}`,
+      `expected result: ${pendingRequest.expectedOutput.length > 0 ? pendingRequest.expectedOutput : '(none stated)'}`,
+      `requested continuation: ${pendingRequest.continuation}`,
+      `evidence referenced: ${pendingRequest.evidenceRefs.length > 0 ? pendingRequest.evidenceRefs.join(', ') : '(none)'}`,
+      `inventory revision: ${pendingRequest.inventoryRevision}`,
+    );
+  }
+  if (evidenceExcerpts != null && evidenceExcerpts.length > 0) {
+    lines.push('', 'Evidence behind that request, in full and never previewed:');
+    evidenceExcerpts.forEach((entry) => {
+      lines.push(
+        `${entry.sourceId} [${entry.kind}, ${entry.availability}, revision ${entry.revision}] ${entry.label}`,
+        entry.detail == null || entry.detail.length === 0 ? '(no content)' : entry.detail,
+      );
+    });
+  }
   const hints = operatorHints?.trim() ?? '';
   if (hints.length > 0) {
     lines.push(
@@ -141,6 +213,11 @@ export const buildOrchestratorUserPrompt = ({
       hints,
     );
   }
-  lines.push('', 'Return the marked decision now.');
+  lines.push(
+    '',
+    pendingRequest == null
+      ? 'Return the marked decision now.'
+      : 'Return the marked need decision now.',
+  );
   return lines.join('\n');
 };

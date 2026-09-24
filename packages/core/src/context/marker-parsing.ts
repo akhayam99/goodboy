@@ -14,6 +14,9 @@ import {
   normalizeClusterGraph,
   resolvePlanClusterRole,
   unsupportedClusterRoleReason,
+  type ClusterGraphRevisionProposal,
+  type ClusterRevisionEntry,
+  type ClusterRevisionNode,
 } from '../clusters';
 import { parseWorkflowRoutingProposal } from '../orchestrator/parseWorkflowRoutingProposal';
 
@@ -61,6 +64,8 @@ const CLUSTER_OUTCOME_OPEN = '<<cluster-outcome>>';
 const CLUSTER_OUTCOME_CLOSE = '<</cluster-outcome>>';
 const NEED_OPEN = '<<need>>';
 const NEED_CLOSE = '<</need>>';
+const PLAN_REVISION_OPEN = '<<plan-revision>>';
+const PLAN_REVISION_CLOSE = '<</plan-revision>>';
 const CONTEXT_READ_OPEN = '<<context-read>>';
 const CONTEXT_READ_CLOSE = '<</context-read>>';
 const SCOUT_DOMAINS_OPEN = '<<scout-domains';
@@ -977,6 +982,91 @@ export const extractCapabilityNeed = ({
   };
 };
 
+export type ClusterGraphRevisionExtraction =
+  | Readonly<{ kind: 'none' }>
+  | Readonly<{ kind: 'malformed'; reason: string }>
+  | Readonly<{ kind: 'valid'; proposal: ClusterGraphRevisionProposal }>;
+
+const revisionNode = ({ value }: { readonly value: unknown }): ClusterRevisionNode | null => {
+  if (!isUnknownRecord(value)) {
+    return null;
+  }
+  const id = trimmedString({ value: value.id });
+  if (id.length === 0) {
+    return null;
+  }
+  return {
+    id,
+    title: trimmedString({ value: value.title }),
+    instructions: trimmedString({ value: value.instructions }),
+    ...(typeof value.role === 'string' && { role: value.role.trim() }),
+    dependsOn: stringList({ value: value.dependsOn }),
+    ...(trimmedString({ value: value.expectedOutput }).length > 0 && {
+      expectedOutput: trimmedString({ value: value.expectedOutput }),
+    }),
+  };
+};
+
+const revisionEntry = ({ value }: { readonly value: unknown }): ClusterRevisionEntry | null => {
+  if (!isUnknownRecord(value)) {
+    return null;
+  }
+  const disposition = trimmedString({ value: value.disposition });
+  if (disposition === 'retain') {
+    const id = trimmedString({ value: value.id });
+    return id.length === 0 ? null : { disposition: 'retain', id };
+  }
+  if (disposition === 'replace') {
+    const id = trimmedString({ value: value.id });
+    const node = revisionNode({ value: value.node });
+    return id.length === 0 || node === null ? null : { disposition: 'replace', id, node };
+  }
+  if (disposition === 'append') {
+    const node = revisionNode({ value: value.node });
+    return node === null ? null : { disposition: 'append', node };
+  }
+  return null;
+};
+
+export const extractClusterGraphRevision = ({
+  assistantText,
+}: {
+  readonly assistantText: string;
+}): ClusterGraphRevisionExtraction => {
+  const blocks = extractBlockContents(assistantText, PLAN_REVISION_OPEN, PLAN_REVISION_CLOSE);
+  if (blocks.length === 0) {
+    return { kind: 'none' };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stripJsonFences(blocks[blocks.length - 1]!));
+  } catch {
+    return { kind: 'malformed', reason: 'the plan revision body is not valid json' };
+  }
+  if (!isUnknownRecord(parsed)) {
+    return { kind: 'malformed', reason: 'the plan revision body is not a json object' };
+  }
+  const baseRevision = parsed.baseRevision;
+  if (typeof baseRevision !== 'number' || !Number.isInteger(baseRevision) || baseRevision < 1) {
+    return { kind: 'malformed', reason: 'the plan revision body names no base revision' };
+  }
+  if (!Array.isArray(parsed.nodes)) {
+    return { kind: 'malformed', reason: 'the plan revision body carries no nodes' };
+  }
+  const entries: ClusterRevisionEntry[] = [];
+  for (const value of parsed.nodes) {
+    const entry = revisionEntry({ value });
+    if (entry === null) {
+      return {
+        kind: 'malformed',
+        reason: 'the plan revision body carries a node that is not a retain, replace or append',
+      };
+    }
+    entries.push(entry);
+  }
+  return { kind: 'valid', proposal: { baseRevision, entries } };
+};
+
 export type ExtractedContextReadSource = Readonly<{
   id: string;
   range: string | null;
@@ -1276,7 +1366,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 };
 
 const BLOCK_MARKER_ALT =
-  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer|cluster-outcome|need|context-read';
+  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer|cluster-outcome|need|context-read|plan-revision';
 const SELF_MARKER_ALT =
   'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done|scout-domains|materialize:';
 

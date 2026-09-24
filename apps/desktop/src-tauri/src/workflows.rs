@@ -377,6 +377,10 @@ pub struct CapabilityObligationRow {
     #[serde(rename = "ownerAgentId")]
     pub owner_agent_id: Option<String>,
     pub decision: Option<String>,
+    #[serde(rename = "decisionReason")]
+    pub decision_reason: Option<String>,
+    #[serde(rename = "satisfiedRevision")]
+    pub satisfied_revision: Option<String>,
     #[serde(rename = "childAgentId")]
     pub child_agent_id: Option<String>,
     #[serde(rename = "deliveredAt")]
@@ -390,6 +394,93 @@ pub struct CapabilityObligationRow {
     pub created_at: String,
     #[serde(rename = "updatedAt")]
     pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CapabilityGrantRow {
+    pub id: String,
+    #[serde(rename = "obligationId")]
+    pub obligation_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "workflowRunId")]
+    pub workflow_run_id: Option<String>,
+    #[serde(rename = "grantedRole")]
+    pub granted_role: String,
+    pub purpose: String,
+    pub continuation: String,
+    #[serde(rename = "parentOutcome")]
+    pub parent_outcome: String,
+    #[serde(rename = "childAgentId")]
+    pub child_agent_id: Option<String>,
+    #[serde(rename = "replacementAgentId")]
+    pub replacement_agent_id: Option<String>,
+    #[serde(rename = "verificationAgentId")]
+    pub verification_agent_id: Option<String>,
+    #[serde(rename = "transferredWork")]
+    pub transferred_work: Option<String>,
+    pub state: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CapabilityGrantClaim {
+    pub grant: CapabilityGrantRow,
+    #[serde(rename = "isFirstDelivery")]
+    pub is_first_delivery: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CapabilityGrantInput {
+    pub id: String,
+    #[serde(rename = "obligationId")]
+    pub obligation_id: String,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+    #[serde(rename = "workflowRunId")]
+    pub workflow_run_id: Option<String>,
+    #[serde(rename = "grantedRole")]
+    pub granted_role: String,
+    pub purpose: String,
+    pub continuation: String,
+    #[serde(rename = "parentOutcome")]
+    pub parent_outcome: String,
+    #[serde(rename = "transferredWork")]
+    pub transferred_work: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CapabilityGrantUpdateInput {
+    #[serde(rename = "obligationId")]
+    pub obligation_id: String,
+    pub state: String,
+    #[serde(rename = "childAgentId")]
+    pub child_agent_id: Option<String>,
+    #[serde(rename = "replacementAgentId")]
+    pub replacement_agent_id: Option<String>,
+    #[serde(rename = "verificationAgentId")]
+    pub verification_agent_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CapabilityDecisionInput {
+    #[serde(rename = "obligationId")]
+    pub obligation_id: String,
+    pub decision: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CapabilitySettlementInput {
+    #[serde(rename = "obligationId")]
+    pub obligation_id: String,
+    #[serde(rename = "verifiedRevision")]
+    pub verified_revision: String,
+    #[serde(rename = "deliveryReceipt")]
+    pub delivery_receipt: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -558,6 +649,26 @@ pub struct ClusterExecutionNodeRow {
     pub agent_id: Option<String>,
     pub ordinal: i64,
     pub role: String,
+    #[serde(default = "default_node_state")]
+    pub state: String,
+    #[serde(rename = "supersededBy", default)]
+    pub superseded_by: Option<String>,
+    #[serde(default = "default_node_revision")]
+    pub revision: i64,
+    #[serde(rename = "resultState", default = "default_node_result_state")]
+    pub result_state: String,
+}
+
+fn default_node_state() -> String {
+    "active".to_string()
+}
+
+fn default_node_revision() -> i64 {
+    1
+}
+
+fn default_node_result_state() -> String {
+    "pending".to_string()
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -576,9 +687,63 @@ pub struct ClusterExecutionGraphRow {
     pub execution_version: i64,
     #[serde(rename = "graphJson")]
     pub graph_json: String,
+    pub revision: i64,
+    #[serde(rename = "frozenReason")]
+    pub frozen_reason: Option<String>,
+    #[serde(rename = "frozenObligationId")]
+    pub frozen_obligation_id: Option<String>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
     pub nodes: Vec<ClusterExecutionNodeRow>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClusterGraphFreezeInput {
+    #[serde(rename = "containerAgentId")]
+    pub container_agent_id: String,
+    pub reason: String,
+    #[serde(rename = "obligationId")]
+    pub obligation_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClusterGraphRevisionInput {
+    pub id: String,
+    #[serde(rename = "containerAgentId")]
+    pub container_agent_id: String,
+    #[serde(rename = "obligationId")]
+    pub obligation_id: Option<String>,
+    #[serde(rename = "fromRevision")]
+    pub from_revision: i64,
+    #[serde(rename = "toRevision")]
+    pub to_revision: i64,
+    #[serde(rename = "executionVersion")]
+    pub execution_version: i64,
+    #[serde(rename = "graphJson")]
+    pub graph_json: String,
+    pub reason: String,
+    pub nodes: Vec<ClusterExecutionNodeRow>,
+    #[serde(default)]
+    pub agents: Vec<PhaseRunInsertInput>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClusterGraphRefusalInput {
+    pub id: String,
+    #[serde(rename = "containerAgentId")]
+    pub container_agent_id: String,
+    #[serde(rename = "obligationId")]
+    pub obligation_id: Option<String>,
+    #[serde(rename = "fromRevision")]
+    pub from_revision: i64,
+    pub reason: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ClusterGraphRevisionOutcome {
+    pub adopted: bool,
+    pub graph: ClusterExecutionGraphRow,
+    pub agents: Vec<SessionRow>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1628,7 +1793,10 @@ const CAPABILITY_REQUEST_COLUMNS: &str =
     "id, session_id, workflow_run_id, obligation_id, requester_agent_id, source_turn_id, target_role, purpose, question, scope_json, evidence_json, gap, expected_output, continuation, routing_proposal, inventory_revision, created_at";
 
 const CAPABILITY_OBLIGATION_COLUMNS: &str =
-    "id, session_id, workflow_run_id, identity, requester_agent_id, target_role, purpose, state, owner_agent_id, decision, child_agent_id, delivered_at, delivery_receipt, created_at, updated_at";
+    "id, session_id, workflow_run_id, identity, requester_agent_id, target_role, purpose, state, owner_agent_id, decision, decision_reason, satisfied_revision, child_agent_id, delivered_at, delivery_receipt, created_at, updated_at";
+
+const CAPABILITY_GRANT_COLUMNS: &str =
+    "id, obligation_id, session_id, workflow_run_id, granted_role, purpose, continuation, parent_outcome, child_agent_id, replacement_agent_id, verification_agent_id, transferred_work, state, created_at, updated_at";
 
 fn capability_request_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<CapabilityRequestRow> {
     Ok(CapabilityRequestRow {
@@ -1666,13 +1834,15 @@ fn capability_obligation_from_row(
         state: row.get(7)?,
         owner_agent_id: row.get(8)?,
         decision: row.get(9)?,
-        child_agent_id: row.get(10)?,
-        delivered_at: crate::util::optional_ms_to_iso(row.get(11)?),
-        delivery_receipt: row.get(12)?,
+        decision_reason: row.get(10)?,
+        satisfied_revision: row.get(11)?,
+        child_agent_id: row.get(12)?,
+        delivered_at: crate::util::optional_ms_to_iso(row.get(13)?),
+        delivery_receipt: row.get(14)?,
         requests: Vec::new(),
         hold_ids: Vec::new(),
-        created_at: crate::util::ms_to_iso(row.get(13)?),
-        updated_at: crate::util::ms_to_iso(row.get(14)?),
+        created_at: crate::util::ms_to_iso(row.get(15)?),
+        updated_at: crate::util::ms_to_iso(row.get(16)?),
     })
 }
 
@@ -1831,6 +2001,220 @@ pub async fn capability_need_record(
 ) -> Result<CapabilityObligationRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     record_capability_need(&conn, input)
+}
+
+fn capability_grant_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<CapabilityGrantRow> {
+    Ok(CapabilityGrantRow {
+        id: row.get(0)?,
+        obligation_id: row.get(1)?,
+        session_id: row.get(2)?,
+        workflow_run_id: row.get(3)?,
+        granted_role: row.get(4)?,
+        purpose: row.get(5)?,
+        continuation: row.get(6)?,
+        parent_outcome: row.get(7)?,
+        child_agent_id: row.get(8)?,
+        replacement_agent_id: row.get(9)?,
+        verification_agent_id: row.get(10)?,
+        transferred_work: row.get(11)?,
+        state: row.get(12)?,
+        created_at: crate::util::ms_to_iso(row.get(13)?),
+        updated_at: crate::util::ms_to_iso(row.get(14)?),
+    })
+}
+
+fn capability_grant_for_obligation(
+    conn: &rusqlite::Connection,
+    obligation_id: &str,
+) -> Result<CapabilityGrantRow, PhaseError> {
+    let sql =
+        format!("SELECT {CAPABILITY_GRANT_COLUMNS} FROM capability_grants WHERE obligation_id = ?1");
+    conn.query_row(
+        &sql,
+        rusqlite::params![obligation_id],
+        capability_grant_from_row,
+    )
+    .map_err(PhaseError::Db)
+}
+
+fn list_capability_grants(
+    conn: &rusqlite::Connection,
+    session_id: &str,
+) -> Result<Vec<CapabilityGrantRow>, PhaseError> {
+    let sql = format!(
+        "SELECT {CAPABILITY_GRANT_COLUMNS} FROM capability_grants WHERE session_id = ?1 ORDER BY created_at ASC"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(rusqlite::params![session_id], capability_grant_from_row)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
+}
+
+#[tauri::command]
+pub async fn capability_grants_for_session(
+    state: State<'_, Db>,
+    session_id: String,
+) -> Result<Vec<CapabilityGrantRow>, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    list_capability_grants(&conn, &session_id)
+}
+
+fn claim_capability_grant(
+    conn: &rusqlite::Connection,
+    input: CapabilityGrantInput,
+) -> Result<CapabilityGrantClaim, PhaseError> {
+    let now = crate::util::now_ms();
+    let inserted = conn.execute(
+        "INSERT OR IGNORE INTO capability_grants
+           (id, obligation_id, session_id, workflow_run_id, granted_role, purpose, continuation,
+            parent_outcome, transferred_work, state, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10, ?10)",
+        rusqlite::params![
+            input.id,
+            input.obligation_id,
+            input.session_id,
+            input.workflow_run_id,
+            input.granted_role,
+            input.purpose,
+            input.continuation,
+            input.parent_outcome,
+            input.transferred_work,
+            now,
+        ],
+    )?;
+    let grant = capability_grant_for_obligation(conn, &input.obligation_id)?;
+    Ok(CapabilityGrantClaim {
+        grant,
+        is_first_delivery: inserted > 0,
+    })
+}
+
+#[tauri::command]
+pub async fn capability_grant_claim(
+    state: State<'_, Db>,
+    input: CapabilityGrantInput,
+) -> Result<CapabilityGrantClaim, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    claim_capability_grant(&conn, input)
+}
+
+fn update_capability_grant(
+    conn: &rusqlite::Connection,
+    input: CapabilityGrantUpdateInput,
+) -> Result<CapabilityGrantRow, PhaseError> {
+    conn.execute(
+        "UPDATE capability_grants
+            SET state = ?1,
+                child_agent_id = COALESCE(?2, child_agent_id),
+                replacement_agent_id = COALESCE(?3, replacement_agent_id),
+                verification_agent_id = COALESCE(?4, verification_agent_id),
+                updated_at = ?5
+          WHERE obligation_id = ?6",
+        rusqlite::params![
+            input.state,
+            input.child_agent_id,
+            input.replacement_agent_id,
+            input.verification_agent_id,
+            crate::util::now_ms(),
+            input.obligation_id,
+        ],
+    )?;
+    capability_grant_for_obligation(conn, &input.obligation_id)
+}
+
+#[tauri::command]
+pub async fn capability_grant_update(
+    state: State<'_, Db>,
+    input: CapabilityGrantUpdateInput,
+) -> Result<CapabilityGrantRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    update_capability_grant(&conn, input)
+}
+
+fn obligation_state_for_decision(decision: &str) -> &'static str {
+    match decision {
+        "granted" => "granted",
+        "attached" => "granted",
+        "refused" => "refused",
+        _ => "open",
+    }
+}
+
+fn obligation_by_id(
+    conn: &rusqlite::Connection,
+    obligation_id: &str,
+) -> Result<CapabilityObligationRow, PhaseError> {
+    let sql =
+        format!("SELECT {CAPABILITY_OBLIGATION_COLUMNS} FROM capability_obligations WHERE id = ?1");
+    let mut obligation = conn
+        .query_row(
+            &sql,
+            rusqlite::params![obligation_id],
+            capability_obligation_from_row,
+        )
+        .map_err(PhaseError::Db)?;
+    hydrate_capability_obligation(conn, &mut obligation)?;
+    Ok(obligation)
+}
+
+fn decide_capability_obligation(
+    conn: &rusqlite::Connection,
+    input: CapabilityDecisionInput,
+) -> Result<CapabilityObligationRow, PhaseError> {
+    conn.execute(
+        "UPDATE capability_obligations
+            SET decision = ?1, decision_reason = ?2, state = ?3, updated_at = ?4
+          WHERE id = ?5",
+        rusqlite::params![
+            input.decision,
+            input.reason,
+            obligation_state_for_decision(&input.decision),
+            crate::util::now_ms(),
+            input.obligation_id,
+        ],
+    )?;
+    obligation_by_id(conn, &input.obligation_id)
+}
+
+#[tauri::command]
+pub async fn capability_obligation_decide(
+    state: State<'_, Db>,
+    input: CapabilityDecisionInput,
+) -> Result<CapabilityObligationRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    decide_capability_obligation(&conn, input)
+}
+
+fn settle_capability_obligation(
+    conn: &rusqlite::Connection,
+    input: CapabilitySettlementInput,
+) -> Result<CapabilityObligationRow, PhaseError> {
+    let now = crate::util::now_ms();
+    conn.execute(
+        "UPDATE capability_obligations
+            SET state = 'satisfied', satisfied_revision = ?1, delivery_receipt = ?2,
+                delivered_at = COALESCE(delivered_at, ?3), updated_at = ?3
+          WHERE id = ?4 AND state <> 'satisfied'",
+        rusqlite::params![
+            input.verified_revision,
+            input.delivery_receipt,
+            now,
+            input.obligation_id,
+        ],
+    )?;
+    conn.execute(
+        "UPDATE capability_grants SET state = 'settled', updated_at = ?1 WHERE obligation_id = ?2",
+        rusqlite::params![now, input.obligation_id],
+    )?;
+    obligation_by_id(conn, &input.obligation_id)
+}
+
+#[tauri::command]
+pub async fn capability_obligation_settle(
+    state: State<'_, Db>,
+    input: CapabilitySettlementInput,
+) -> Result<CapabilityObligationRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    settle_capability_obligation(&conn, input)
 }
 
 const GENERATION_DEPTH_CAP: i64 = 3;
@@ -2369,7 +2753,7 @@ pub async fn cluster_completion_hold_resolve(
 }
 
 const CLUSTER_EXECUTION_GRAPH_COLUMNS: &str =
-    "container_agent_id, session_id, workflow_run_id, plan_id, goal_title, execution_version, graph_json, created_at";
+    "container_agent_id, session_id, workflow_run_id, plan_id, goal_title, execution_version, graph_json, revision, frozen_reason, frozen_obligation_id, created_at";
 
 fn cluster_execution_graph_from_row(
     row: &rusqlite::Row<'_>,
@@ -2382,7 +2766,10 @@ fn cluster_execution_graph_from_row(
         goal_title: row.get(4)?,
         execution_version: row.get(5)?,
         graph_json: row.get(6)?,
-        created_at: crate::util::ms_to_iso(row.get(7)?),
+        revision: row.get(7)?,
+        frozen_reason: row.get(8)?,
+        frozen_obligation_id: row.get(9)?,
+        created_at: crate::util::ms_to_iso(row.get(10)?),
         nodes: Vec::new(),
     })
 }
@@ -2392,7 +2779,7 @@ fn cluster_execution_nodes(
     container_agent_id: &str,
 ) -> Result<Vec<ClusterExecutionNodeRow>, PhaseError> {
     let mut stmt = conn.prepare(
-        "SELECT node_id, agent_id, ordinal, role FROM cluster_execution_nodes WHERE container_agent_id = ?1 ORDER BY ordinal ASC",
+        "SELECT node_id, agent_id, ordinal, role, state, superseded_by, revision, result_state FROM cluster_execution_nodes WHERE container_agent_id = ?1 ORDER BY ordinal ASC",
     )?;
     let rows = stmt.query_map(rusqlite::params![container_agent_id], |row| {
         Ok(ClusterExecutionNodeRow {
@@ -2400,6 +2787,10 @@ fn cluster_execution_nodes(
             agent_id: row.get(1)?,
             ordinal: row.get(2)?,
             role: row.get(3)?,
+            state: row.get(4)?,
+            superseded_by: row.get(5)?,
+            revision: row.get(6)?,
+            result_state: row.get(7)?,
         })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
@@ -2465,8 +2856,9 @@ fn record_cluster_execution_graph(
     for node in nodes_to_record {
         transaction.execute(
             "INSERT OR IGNORE INTO cluster_execution_nodes
-               (container_agent_id, node_id, agent_id, ordinal, role)
-             VALUES (?1, ?2, ?3, ?4, ?5)",
+               (container_agent_id, node_id, agent_id, ordinal, role, state, superseded_by,
+                revision, result_state)
+             VALUES (?1, ?2, ?3, ?4, ?5, 'active', NULL, 1, 'pending')",
             rusqlite::params![
                 input.container_agent_id,
                 node.node_id,
@@ -2491,6 +2883,7 @@ fn record_cluster_execution_graph(
     Ok(graph)
 }
 
+
 #[tauri::command]
 pub async fn cluster_execution_graph_record(
     state: State<'_, Db>,
@@ -2498,6 +2891,173 @@ pub async fn cluster_execution_graph_record(
 ) -> Result<ClusterExecutionGraphRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     record_cluster_execution_graph(&conn, input)
+}
+
+fn read_cluster_execution_graph(
+    conn: &rusqlite::Connection,
+    container_agent_id: &str,
+) -> Result<ClusterExecutionGraphRow, PhaseError> {
+    let sql = format!(
+        "SELECT {CLUSTER_EXECUTION_GRAPH_COLUMNS} FROM cluster_execution_graphs WHERE container_agent_id = ?1"
+    );
+    let mut graph = conn
+        .query_row(
+            &sql,
+            rusqlite::params![container_agent_id],
+            cluster_execution_graph_from_row,
+        )
+        .map_err(PhaseError::Db)?;
+    graph.nodes = cluster_execution_nodes(conn, &graph.container_agent_id)?;
+    Ok(graph)
+}
+
+fn freeze_cluster_graph(
+    conn: &rusqlite::Connection,
+    input: ClusterGraphFreezeInput,
+) -> Result<ClusterExecutionGraphRow, PhaseError> {
+    conn.execute(
+        "UPDATE cluster_execution_graphs
+            SET frozen_reason = ?2, frozen_obligation_id = COALESCE(?3, frozen_obligation_id)
+          WHERE container_agent_id = ?1 AND frozen_reason IS NULL",
+        rusqlite::params![input.container_agent_id, input.reason, input.obligation_id],
+    )?;
+    read_cluster_execution_graph(conn, &input.container_agent_id)
+}
+
+#[tauri::command]
+pub async fn cluster_graph_freeze(
+    state: State<'_, Db>,
+    input: ClusterGraphFreezeInput,
+) -> Result<ClusterExecutionGraphRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    freeze_cluster_graph(&conn, input)
+}
+
+fn adopt_cluster_graph_revision(
+    conn: &mut rusqlite::Connection,
+    input: ClusterGraphRevisionInput,
+) -> Result<ClusterGraphRevisionOutcome, PhaseError> {
+    for agent in input.agents.iter() {
+        validate_routing_values(
+            agent.routing_lock.as_ref(),
+            agent.routing_decision.as_ref(),
+            agent.task_profile.as_ref(),
+        )?;
+    }
+    let now = crate::util::now_ms();
+    let transaction = conn.transaction()?;
+    let claimed = transaction.execute(
+        "UPDATE cluster_execution_graphs
+            SET graph_json = ?2, execution_version = ?3, revision = ?4, frozen_reason = NULL,
+                frozen_obligation_id = NULL
+          WHERE container_agent_id = ?1 AND revision = ?5",
+        rusqlite::params![
+            input.container_agent_id,
+            input.graph_json,
+            input.execution_version,
+            input.to_revision,
+            input.from_revision,
+        ],
+    )?;
+    if claimed == 0 {
+        drop(transaction);
+        return Ok(ClusterGraphRevisionOutcome {
+            adopted: false,
+            graph: read_cluster_execution_graph(conn, &input.container_agent_id)?,
+            agents: Vec::new(),
+        });
+    }
+    let mut agents = Vec::with_capacity(input.agents.len());
+    for agent in input.agents {
+        agents.push(insert_agent_row(&transaction, agent)?);
+    }
+    for node in input.nodes.iter() {
+        transaction.execute(
+            "INSERT INTO cluster_execution_nodes
+               (container_agent_id, node_id, agent_id, ordinal, role, state, superseded_by,
+                revision, result_state)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+             ON CONFLICT (container_agent_id, node_id) DO UPDATE SET
+               agent_id = excluded.agent_id,
+               ordinal = excluded.ordinal,
+               role = excluded.role,
+               state = excluded.state,
+               superseded_by = excluded.superseded_by,
+               revision = excluded.revision,
+               result_state = excluded.result_state",
+            rusqlite::params![
+                input.container_agent_id,
+                node.node_id,
+                node.agent_id,
+                node.ordinal,
+                node.role,
+                node.state,
+                node.superseded_by,
+                node.revision,
+                node.result_state,
+            ],
+        )?;
+    }
+    transaction.execute(
+        "INSERT OR IGNORE INTO cluster_graph_revisions
+           (id, container_agent_id, obligation_id, from_revision, to_revision, state, reason,
+            created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, 'adopted', ?6, ?7)",
+        rusqlite::params![
+            input.id,
+            input.container_agent_id,
+            input.obligation_id,
+            input.from_revision,
+            input.to_revision,
+            input.reason,
+            now,
+        ],
+    )?;
+    transaction.commit()?;
+    Ok(ClusterGraphRevisionOutcome {
+        adopted: true,
+        graph: read_cluster_execution_graph(conn, &input.container_agent_id)?,
+        agents,
+    })
+}
+
+#[tauri::command]
+pub async fn cluster_graph_revision_adopt(
+    state: State<'_, Db>,
+    input: ClusterGraphRevisionInput,
+) -> Result<ClusterGraphRevisionOutcome, PhaseError> {
+    let mut conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    adopt_cluster_graph_revision(&mut conn, input)
+}
+
+fn refuse_cluster_graph_revision(
+    conn: &rusqlite::Connection,
+    input: ClusterGraphRefusalInput,
+) -> Result<ClusterExecutionGraphRow, PhaseError> {
+    conn.execute(
+        "INSERT OR IGNORE INTO cluster_graph_revisions
+           (id, container_agent_id, obligation_id, from_revision, to_revision, state, reason,
+            created_at)
+         VALUES (?1, ?2, ?3, ?4, ?4, 'refused', ?5, ?6)",
+        rusqlite::params![
+            input.id,
+            input.container_agent_id,
+            input.obligation_id,
+            input.from_revision,
+            input.reason,
+            crate::util::now_ms(),
+        ],
+    )?;
+    read_cluster_execution_graph(conn, &input.container_agent_id)
+}
+
+#[tauri::command]
+pub async fn cluster_graph_revision_refuse(
+    state: State<'_, Db>,
+    input: ClusterGraphRefusalInput,
+) -> Result<ClusterExecutionGraphRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    refuse_cluster_graph_revision(&conn, input)
 }
 
 const AGENT_INSERT_SQL: &str = "INSERT INTO agents
@@ -2983,9 +3543,28 @@ mod tests {
                 state TEXT NOT NULL,
                 owner_agent_id TEXT,
                 decision TEXT,
+                decision_reason TEXT,
+                satisfied_revision TEXT,
                 child_agent_id TEXT,
                 delivered_at INTEGER,
                 delivery_receipt TEXT,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
+            CREATE TABLE capability_grants (
+                id TEXT PRIMARY KEY,
+                obligation_id TEXT NOT NULL UNIQUE,
+                session_id TEXT NOT NULL,
+                workflow_run_id TEXT,
+                granted_role TEXT NOT NULL,
+                purpose TEXT NOT NULL,
+                continuation TEXT NOT NULL,
+                parent_outcome TEXT NOT NULL,
+                child_agent_id TEXT,
+                replacement_agent_id TEXT,
+                verification_agent_id TEXT,
+                transferred_work TEXT,
+                state TEXT NOT NULL,
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL
             );
@@ -3040,6 +3619,169 @@ mod tests {
             routing_proposal: None,
             inventory_revision: "rabc123".to_string(),
         }
+    }
+
+    fn capability_grant_input() -> CapabilityGrantInput {
+        CapabilityGrantInput {
+            id: "capability-grant:capability-obligation:source:implementer:repair".to_string(),
+            obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+            session_id: "session".to_string(),
+            workflow_run_id: Some("run".to_string()),
+            granted_role: "implementer".to_string(),
+            purpose: "repair".to_string(),
+            continuation: "handoff".to_string(),
+            parent_outcome: "handed-off".to_string(),
+            transferred_work: None,
+        }
+    }
+
+    #[test]
+    fn capability_grant_claim_delivers_once_per_obligation() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+
+        let first = claim_capability_grant(&conn, capability_grant_input()).unwrap();
+        let mut second_input = capability_grant_input();
+        second_input.id = "capability-grant:duplicate".to_string();
+        let second = claim_capability_grant(&conn, second_input).unwrap();
+
+        assert!(first.is_first_delivery);
+        assert!(!second.is_first_delivery);
+        assert_eq!(second.grant.id, first.grant.id);
+    }
+
+    #[test]
+    fn capability_grants_are_listed_for_the_session_after_a_reload() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+        claim_capability_grant(&conn, capability_grant_input()).unwrap();
+        update_capability_grant(
+            &conn,
+            CapabilityGrantUpdateInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                state: "delivered".to_string(),
+                child_agent_id: Some("child".to_string()),
+                replacement_agent_id: None,
+                verification_agent_id: None,
+            },
+        )
+        .unwrap();
+
+        let grants = list_capability_grants(&conn, "session").unwrap();
+
+        assert_eq!(grants.len(), 1);
+        assert_eq!(
+            grants[0].obligation_id,
+            "capability-obligation:source:implementer:repair"
+        );
+        assert_eq!(grants[0].child_agent_id, Some("child".to_string()));
+        assert_eq!(grants[0].state, "delivered");
+        assert!(list_capability_grants(&conn, "other-session")
+            .unwrap()
+            .is_empty());
+    }
+
+    #[test]
+    fn capability_grant_update_binds_the_child_and_its_verifier() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+        claim_capability_grant(&conn, capability_grant_input()).unwrap();
+
+        update_capability_grant(
+            &conn,
+            CapabilityGrantUpdateInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                state: "delivered".to_string(),
+                child_agent_id: Some("child".to_string()),
+                replacement_agent_id: None,
+                verification_agent_id: None,
+            },
+        )
+        .unwrap();
+        let grant = update_capability_grant(
+            &conn,
+            CapabilityGrantUpdateInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                state: "delivered".to_string(),
+                child_agent_id: None,
+                replacement_agent_id: None,
+                verification_agent_id: Some("verifier".to_string()),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(grant.child_agent_id, Some("child".to_string()));
+        assert_eq!(grant.verification_agent_id, Some("verifier".to_string()));
+    }
+
+    #[test]
+    fn a_refused_obligation_keeps_its_reason_and_stays_unowned() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+
+        let obligation = decide_capability_obligation(
+            &conn,
+            CapabilityDecisionInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                decision: "refused".to_string(),
+                reason: "no generation allowance is left".to_string(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(obligation.state, "refused");
+        assert_eq!(obligation.owner_agent_id, None);
+        assert_eq!(
+            obligation.decision_reason,
+            Some("no generation allowance is left".to_string())
+        );
+    }
+
+    #[test]
+    fn a_refinement_leaves_the_obligation_open() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+
+        let obligation = decide_capability_obligation(
+            &conn,
+            CapabilityDecisionInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                decision: "refinement".to_string(),
+                reason: "name the failing test first".to_string(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(obligation.state, "open");
+        assert_eq!(obligation.decision, Some("refinement".to_string()));
+    }
+
+    #[test]
+    fn settlement_closes_the_obligation_against_the_verified_revision() {
+        let conn = completion_holds_conn();
+        record_capability_need(&conn, capability_need_input("request-1")).unwrap();
+        claim_capability_grant(&conn, capability_grant_input()).unwrap();
+
+        let obligation = settle_capability_obligation(
+            &conn,
+            CapabilitySettlementInput {
+                obligation_id: "capability-obligation:source:implementer:repair".to_string(),
+                verified_revision: "sha-verified".to_string(),
+                delivery_receipt: "verified by a focused review".to_string(),
+            },
+        )
+        .unwrap();
+        let grant =
+            capability_grant_for_obligation(&conn, "capability-obligation:source:implementer:repair")
+                .unwrap();
+
+        assert_eq!(obligation.state, "satisfied");
+        assert_eq!(
+            obligation.satisfied_revision,
+            Some("sha-verified".to_string())
+        );
+        assert!(obligation.delivered_at.is_some());
+        assert_eq!(grant.state, "settled");
     }
 
     fn completion_hold_input(id: &str) -> ClusterCompletionHoldInput {
@@ -3109,6 +3851,9 @@ mod tests {
                 goal_title TEXT NOT NULL,
                 execution_version INTEGER NOT NULL,
                 graph_json TEXT NOT NULL,
+                revision INTEGER NOT NULL DEFAULT 1,
+                frozen_reason TEXT,
+                frozen_obligation_id TEXT,
                 created_at INTEGER NOT NULL
             );
             CREATE TABLE cluster_execution_nodes (
@@ -3117,11 +3862,38 @@ mod tests {
                 agent_id TEXT,
                 ordinal INTEGER NOT NULL,
                 role TEXT NOT NULL,
+                state TEXT NOT NULL DEFAULT 'active',
+                superseded_by TEXT,
+                revision INTEGER NOT NULL DEFAULT 1,
+                result_state TEXT NOT NULL DEFAULT 'pending',
                 PRIMARY KEY (container_agent_id, node_id)
+            );
+            CREATE TABLE cluster_graph_revisions (
+                id TEXT PRIMARY KEY,
+                container_agent_id TEXT NOT NULL,
+                obligation_id TEXT,
+                from_revision INTEGER NOT NULL,
+                to_revision INTEGER NOT NULL,
+                state TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                created_at INTEGER NOT NULL
             );",
         )
         .unwrap();
         conn
+    }
+
+    fn execution_node(node_id: &str, state: &str, result_state: &str) -> ClusterExecutionNodeRow {
+        ClusterExecutionNodeRow {
+            node_id: node_id.to_string(),
+            agent_id: Some("agent-1".to_string()),
+            ordinal: 0,
+            role: "scout".to_string(),
+            state: state.to_string(),
+            superseded_by: None,
+            revision: 1,
+            result_state: result_state.to_string(),
+        }
     }
 
     fn execution_graph_input(graph_json: &str) -> ClusterExecutionGraphInput {
@@ -3133,12 +3905,27 @@ mod tests {
             goal_title: "goal".to_string(),
             execution_version: 2,
             graph_json: graph_json.to_string(),
-            nodes: vec![ClusterExecutionNodeRow {
-                node_id: "discovery".to_string(),
-                agent_id: Some("agent-1".to_string()),
-                ordinal: 0,
-                role: "scout".to_string(),
-            }],
+            nodes: vec![execution_node("discovery", "active", "pending")],
+        }
+    }
+
+    fn revision_input(
+        id: &str,
+        from_revision: i64,
+        nodes: Vec<ClusterExecutionNodeRow>,
+        agents: Vec<PhaseRunInsertInput>,
+    ) -> ClusterGraphRevisionInput {
+        ClusterGraphRevisionInput {
+            id: id.to_string(),
+            container_agent_id: "container".to_string(),
+            obligation_id: Some("obligation-1".to_string()),
+            from_revision,
+            to_revision: from_revision + 1,
+            execution_version: 2,
+            graph_json: "[{\"id\":\"discovery-2\"}]".to_string(),
+            reason: "the planner split the discovery".to_string(),
+            nodes,
+            agents,
         }
     }
 
@@ -3159,16 +3946,209 @@ mod tests {
     }
 
     #[test]
+    fn cluster_graph_freeze_keeps_the_first_reason() {
+        let conn = execution_graphs_conn();
+        record_cluster_execution_graph(&conn, execution_graph_input("[]")).unwrap();
+        freeze_cluster_graph(
+            &conn,
+            ClusterGraphFreezeInput {
+                container_agent_id: "container".to_string(),
+                reason: "a structural defect".to_string(),
+                obligation_id: Some("obligation-1".to_string()),
+            },
+        )
+        .unwrap();
+        let graph = freeze_cluster_graph(
+            &conn,
+            ClusterGraphFreezeInput {
+                container_agent_id: "container".to_string(),
+                reason: "a second escalation".to_string(),
+                obligation_id: Some("obligation-2".to_string()),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(graph.frozen_reason.as_deref(), Some("a structural defect"));
+        assert_eq!(graph.frozen_obligation_id.as_deref(), Some("obligation-1"));
+        assert_eq!(graph.revision, 1);
+    }
+
+    #[test]
+    fn cluster_graph_revision_supersedes_and_unfreezes() {
+        let mut conn = execution_graphs_conn();
+        record_cluster_execution_graph(&conn, execution_graph_input("[]")).unwrap();
+        freeze_cluster_graph(
+            &conn,
+            ClusterGraphFreezeInput {
+                container_agent_id: "container".to_string(),
+                reason: "a structural defect".to_string(),
+                obligation_id: Some("obligation-1".to_string()),
+            },
+        )
+        .unwrap();
+        let mut superseded = execution_node("discovery", "superseded", "quarantined");
+        superseded.superseded_by = Some("discovery-2".to_string());
+        superseded.revision = 2;
+        let mut replacement = execution_node("discovery-2", "active", "pending");
+        replacement.agent_id = None;
+        replacement.revision = 2;
+        let outcome = adopt_cluster_graph_revision(
+            &mut conn,
+            revision_input("revision-1", 1, vec![superseded, replacement], Vec::new()),
+        )
+        .unwrap();
+
+        assert!(outcome.adopted);
+        assert_eq!(outcome.graph.revision, 2);
+        assert!(outcome.graph.frozen_reason.is_none());
+        let retired = outcome
+            .graph
+            .nodes
+            .iter()
+            .find(|node| node.node_id == "discovery")
+            .unwrap();
+        assert_eq!(retired.state, "superseded");
+        assert_eq!(retired.result_state, "quarantined");
+        assert_eq!(retired.agent_id.as_deref(), Some("agent-1"));
+        assert_eq!(retired.superseded_by.as_deref(), Some("discovery-2"));
+    }
+
+    #[test]
+    fn cluster_graph_revision_formed_against_an_older_revision_is_refused() {
+        let mut conn = execution_graphs_conn();
+        record_cluster_execution_graph(&conn, execution_graph_input("[]")).unwrap();
+        adopt_cluster_graph_revision(
+            &mut conn,
+            revision_input(
+                "revision-1",
+                1,
+                vec![execution_node("discovery", "active", "pending")],
+                Vec::new(),
+            ),
+        )
+        .unwrap();
+        let stale = adopt_cluster_graph_revision(
+            &mut conn,
+            revision_input(
+                "revision-2",
+                1,
+                vec![execution_node("discovery", "superseded", "quarantined")],
+                Vec::new(),
+            ),
+        )
+        .unwrap();
+
+        assert!(!stale.adopted);
+        assert_eq!(stale.graph.revision, 2);
+        let node = stale
+            .graph
+            .nodes
+            .iter()
+            .find(|node| node.node_id == "discovery")
+            .unwrap();
+        assert_eq!(node.state, "active");
+    }
+
+    #[test]
+    fn a_revision_that_fails_part_way_applies_nothing() {
+        let mut conn = execution_graphs_conn();
+        record_cluster_execution_graph(&conn, execution_graph_input("[]")).unwrap();
+        let mut replacement = execution_node("discovery-2", "active", "pending");
+        replacement.agent_id = None;
+        let broken = adopt_cluster_graph_revision(
+            &mut conn,
+            revision_input(
+                "revision-1",
+                1,
+                vec![replacement],
+                vec![PhaseRunInsertInput {
+                    id: Some("agent-2".to_string()),
+                    session_id: "session".to_string(),
+                    step_id: None,
+                    ordinal: 1,
+                    name: "replacement".to_string(),
+                    status: "pending".to_string(),
+                    provider_run_id: None,
+                    output_summary: None,
+                    started_at: None,
+                    completed_at: None,
+                    kind: None,
+                    execution_purpose: Some("cluster".to_string()),
+                    verbosity: None,
+                    effort: None,
+                    model_override: None,
+                    provider_override: None,
+                    parent_agent_id: Some("container".to_string()),
+                    workflow_run_id: None,
+                    source_thread_id: None,
+                    source_thread_ids: None,
+                    source_comment_url: None,
+                    source_kind: None,
+                    domains_json: None,
+                    routing_lock: None,
+                    routing_decision: None,
+                    task_profile: None,
+                    generation_reservation_id: None,
+                }],
+            ),
+        );
+
+        assert!(broken.is_err());
+        let graph = read_cluster_execution_graph(&conn, "container").unwrap();
+        assert_eq!(graph.revision, 1);
+        assert_eq!(graph.graph_json, "[]");
+        assert_eq!(graph.nodes.len(), 1);
+        assert_eq!(graph.nodes[0].node_id, "discovery");
+    }
+
+    #[test]
+    fn a_refused_revision_leaves_the_graph_frozen_with_its_reason() {
+        let conn = execution_graphs_conn();
+        record_cluster_execution_graph(&conn, execution_graph_input("[]")).unwrap();
+        freeze_cluster_graph(
+            &conn,
+            ClusterGraphFreezeInput {
+                container_agent_id: "container".to_string(),
+                reason: "a structural defect".to_string(),
+                obligation_id: Some("obligation-1".to_string()),
+            },
+        )
+        .unwrap();
+        let graph = refuse_cluster_graph_revision(
+            &conn,
+            ClusterGraphRefusalInput {
+                id: "revision-1".to_string(),
+                container_agent_id: "container".to_string(),
+                obligation_id: Some("obligation-1".to_string()),
+                from_revision: 1,
+                reason: "the proposal replaces a cluster that already completed".to_string(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(graph.revision, 1);
+        assert_eq!(graph.frozen_reason.as_deref(), Some("a structural defect"));
+        let reason: String = conn
+            .query_row(
+                "SELECT reason FROM cluster_graph_revisions WHERE id = ?1 AND state = 'refused'",
+                rusqlite::params!["revision-1"],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(reason, "the proposal replaces a cluster that already completed");
+    }
+
+    #[test]
     fn cluster_execution_graph_rerecord_adds_no_node_binding() {
         let conn = execution_graphs_conn();
         record_cluster_execution_graph(&conn, execution_graph_input("[{\"id\":\"discovery\"}]"))
             .unwrap();
         let mut repeat = execution_graph_input("[{\"id\":\"discovery\"}]");
         repeat.nodes.push(ClusterExecutionNodeRow {
-            node_id: "extra".to_string(),
             agent_id: Some("agent-2".to_string()),
             ordinal: 1,
             role: "tester".to_string(),
+            ..execution_node("extra", "active", "pending")
         });
         let second = record_cluster_execution_graph(&conn, repeat).unwrap();
 
@@ -3186,10 +4166,10 @@ mod tests {
         .unwrap();
         let mut failing = execution_graph_input("[{\"id\":\"discovery\"}]");
         failing.nodes.push(ClusterExecutionNodeRow {
-            node_id: "extra".to_string(),
             agent_id: None,
             ordinal: 1,
             role: "tester".to_string(),
+            ..execution_node("extra", "active", "pending")
         });
 
         assert!(record_cluster_execution_graph(&conn, failing).is_err());

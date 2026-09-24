@@ -158,6 +158,7 @@ import {
 } from './agentEvidenceInventory';
 import { contextReadBlocksCompletion, serveContextRead } from './serveContextRead';
 import { completeResolvedAgent } from './completeResolvedAgent';
+import { failCapabilityChild } from './completeCapabilityChild';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
 import { resolveSkillPrompt } from './resolveSkillPrompt';
 import { persistAttachments } from './persistAttachments';
@@ -1610,6 +1611,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
         }));
         void get().refreshUnreadWorkspaces();
+        await failCapabilityChild({
+          set,
+          get,
+          sessionId,
+          agentId: resolvedAgentId,
+          message,
+        });
       }
       lastError = createTranscriptOwnedTurnError({ message: rawMessage, cause: err });
       if (!cancelledBeforeFailure && assistantText.length > 0) {

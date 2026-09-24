@@ -10,7 +10,12 @@ import { resolveStoredModelSelection } from '../providers/resolveStoredModelSele
 import { normalizeSelectableAgentRole } from '../roles';
 import { MODEL_EFFORTS } from './parseWorkflowRoutingProposal';
 import { structuredRunSummary } from './runSummary';
-import type { OrchestratorDecision, OrchestratorStep, RunSummary } from './types';
+import type {
+  OrchestratorDecision,
+  OrchestratorNeedDisposition,
+  OrchestratorStep,
+  RunSummary,
+} from './types';
 import { escapeControlCharsInStrings } from '../providers/shared/escapeControlCharsInStrings';
 
 const START_MARKER = '<<orchestrator>>';
@@ -197,6 +202,45 @@ const parseStep = ({ value, provider }: StepParams): OrchestratorStep | null => 
   };
 };
 
+type DispositionParams = {
+  readonly value: unknown;
+  readonly provider: ProviderId;
+};
+
+const parseDisposition = ({
+  value,
+  provider,
+}: DispositionParams): OrchestratorNeedDisposition | null => {
+  const record = asRecord(value);
+  if (record === null) {
+    return null;
+  }
+  const kind = nonEmptyString(record['kind']);
+  if (kind === 'grant') {
+    const step = parseStep({ value: record['step'], provider });
+    if (step === null) {
+      return null;
+    }
+    return { kind, step };
+  }
+  if (kind === 'reuse') {
+    const refs = Array.isArray(record['evidenceRefs'])
+      ? record['evidenceRefs'].flatMap((entry) => {
+          const text = nonEmptyString(entry);
+          return text === null ? [] : [text];
+        })
+      : [];
+    if (refs.length === 0) {
+      return null;
+    }
+    return { kind, evidenceRefs: refs };
+  }
+  if (kind === 'attach' || kind === 'refine' || kind === 'refuse') {
+    return { kind };
+  }
+  return null;
+};
+
 type Params = {
   readonly raw: string;
   readonly provider: ProviderId;
@@ -220,6 +264,14 @@ export const parseOrchestratorDecision = ({
   const runSummary = summary === null ? {} : { runSummary: summary };
   if (action === 'done' || action === 'blocked') {
     return { action, reason, ...runSummary };
+  }
+  if (action === 'need') {
+    const obligationId = nonEmptyString(decision['obligationId']);
+    const disposition = parseDisposition({ value: decision['disposition'], provider });
+    if (obligationId === null || disposition === null) {
+      return null;
+    }
+    return { action, reason, ...runSummary, obligationId, disposition };
   }
   if (action !== 'next') {
     return null;

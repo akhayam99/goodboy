@@ -558,6 +558,7 @@ export const workflowsModuleMock = () => ({
   invokeClusterCompletionHolds: vi.fn(async () => []),
   invokeClusterExecutionGraphs: vi.fn(async () => []),
   invokeCapabilityObligations: vi.fn(async () => []),
+  invokeCapabilityGrants: vi.fn(async () => []),
   invokeAgentInsert: storySpies.invokeAgentInsert,
   invokeAgentUpdateStatus: storySpies.invokeAgentUpdateStatus,
   invokeAgentSetKind: storySpies.invokeAgentSetKind,

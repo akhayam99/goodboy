@@ -33,9 +33,12 @@ import type {
   AgentId,
   AgentStatus,
   CapabilityContinuation,
+  CapabilityGrant,
+  CapabilityGrantState,
   CapabilityObligation,
   CapabilityObligationDecision,
   CapabilityObligationState,
+  CapabilityParentOutcome,
   CapabilityPurpose,
   CapabilityRequest,
   ClusterCompletionFinding,
@@ -46,6 +49,8 @@ import type {
   ClusterExecutionGraph,
   ClusterExecutionNode,
   ClusterGraphNode,
+  ClusterNodeResultState,
+  ClusterNodeState,
   ContextReadOutcome,
   EvidenceInventory,
   GenerationCreationPath,
@@ -65,7 +70,13 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
-import { AGENT_EXECUTION_PURPOSES, PLAN_CLUSTER_ROLES, isWorkflowOrigin } from '@goodboy/types';
+import {
+  AGENT_EXECUTION_PURPOSES,
+  CLUSTER_NODE_RESULT_STATES,
+  CLUSTER_NODE_STATES,
+  PLAN_CLUSTER_ROLES,
+  isWorkflowOrigin,
+} from '@goodboy/types';
 
 type RawWorkflowStepRow = {
   readonly id: string;
@@ -607,6 +618,8 @@ type RawCapabilityObligationRow = {
   readonly state: CapabilityObligationState;
   readonly ownerAgentId: AgentId | null;
   readonly decision: CapabilityObligationDecision | null;
+  readonly decisionReason: string | null;
+  readonly satisfiedRevision: string | null;
   readonly childAgentId: AgentId | null;
   readonly deliveredAt: string | null;
   readonly deliveryReceipt: string | null;
@@ -659,6 +672,8 @@ const capabilityObligationFromRow = ({
   state: row.state,
   ownerAgentId: row.ownerAgentId,
   decision: row.decision,
+  decisionReason: row.decisionReason,
+  satisfiedRevision: row.satisfiedRevision,
   childAgentId: row.childAgentId,
   deliveredAt: row.deliveredAt,
   deliveryReceipt: row.deliveryReceipt,
@@ -727,6 +742,128 @@ export const invokeCapabilityNeedRecord = async (
       inventoryRevision: need.inventoryRevision,
     },
   });
+  return capabilityObligationFromRow({ row });
+};
+
+type RawCapabilityGrantRow = {
+  readonly id: string;
+  readonly obligationId: string;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly grantedRole: string;
+  readonly purpose: CapabilityPurpose;
+  readonly continuation: CapabilityContinuation;
+  readonly parentOutcome: CapabilityParentOutcome;
+  readonly childAgentId: AgentId | null;
+  readonly replacementAgentId: AgentId | null;
+  readonly verificationAgentId: AgentId | null;
+  readonly transferredWork: string | null;
+  readonly state: CapabilityGrantState;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+};
+
+const capabilityGrantFromRow = ({
+  row,
+}: {
+  readonly row: RawCapabilityGrantRow;
+}): CapabilityGrant => ({
+  id: row.id,
+  obligationId: row.obligationId,
+  sessionId: row.sessionId,
+  workflowRunId: row.workflowRunId,
+  grantedRole: normalizeAgentRole({ role: row.grantedRole }),
+  purpose: row.purpose,
+  continuation: row.continuation,
+  parentOutcome: row.parentOutcome,
+  childAgentId: row.childAgentId,
+  replacementAgentId: row.replacementAgentId,
+  verificationAgentId: row.verificationAgentId,
+  transferredWork: row.transferredWork,
+  state: row.state,
+  createdAt: row.createdAt,
+  updatedAt: row.updatedAt,
+});
+
+export const invokeCapabilityGrants = async ({
+  sessionId,
+}: {
+  readonly sessionId: SessionId;
+}): Promise<ReadonlyArray<CapabilityGrant>> => {
+  const rows = await invoke<RawCapabilityGrantRow[]>('capability_grants_for_session', {
+    sessionId,
+  });
+  return rows.map((row) => capabilityGrantFromRow({ row }));
+};
+
+export type ClaimCapabilityGrantParams = {
+  readonly id: string;
+  readonly obligationId: string;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly grantedRole: AgentRole;
+  readonly purpose: CapabilityPurpose;
+  readonly continuation: CapabilityContinuation;
+  readonly parentOutcome: CapabilityParentOutcome;
+  readonly transferredWork: string | null;
+};
+
+export type CapabilityGrantClaim = Readonly<{
+  grant: CapabilityGrant;
+  isFirstDelivery: boolean;
+}>;
+
+export const invokeCapabilityGrantClaim = async (
+  input: ClaimCapabilityGrantParams,
+): Promise<CapabilityGrantClaim> => {
+  const claim = await invoke<{
+    readonly grant: RawCapabilityGrantRow;
+    readonly isFirstDelivery: boolean;
+  }>('capability_grant_claim', { input });
+  return {
+    grant: capabilityGrantFromRow({ row: claim.grant }),
+    isFirstDelivery: claim.isFirstDelivery,
+  };
+};
+
+export type UpdateCapabilityGrantParams = {
+  readonly obligationId: string;
+  readonly state: CapabilityGrantState;
+  readonly childAgentId: AgentId | null;
+  readonly replacementAgentId: AgentId | null;
+  readonly verificationAgentId: AgentId | null;
+};
+
+export const invokeCapabilityGrantUpdate = async (
+  input: UpdateCapabilityGrantParams,
+): Promise<CapabilityGrant> => {
+  const row = await invoke<RawCapabilityGrantRow>('capability_grant_update', { input });
+  return capabilityGrantFromRow({ row });
+};
+
+export type DecideCapabilityObligationParams = {
+  readonly obligationId: string;
+  readonly decision: CapabilityObligationDecision;
+  readonly reason: string;
+};
+
+export const invokeCapabilityObligationDecide = async (
+  input: DecideCapabilityObligationParams,
+): Promise<CapabilityObligation> => {
+  const row = await invoke<RawCapabilityObligationRow>('capability_obligation_decide', { input });
+  return capabilityObligationFromRow({ row });
+};
+
+export type SettleCapabilityObligationParams = {
+  readonly obligationId: string;
+  readonly verifiedRevision: string;
+  readonly deliveryReceipt: string;
+};
+
+export const invokeCapabilityObligationSettle = async (
+  input: SettleCapabilityObligationParams,
+): Promise<CapabilityObligation> => {
+  const row = await invoke<RawCapabilityObligationRow>('capability_obligation_settle', { input });
   return capabilityObligationFromRow({ row });
 };
 
@@ -855,6 +992,10 @@ type RawClusterExecutionNodeRow = {
   readonly agentId: AgentId | null;
   readonly ordinal: number;
   readonly role: string;
+  readonly state: string;
+  readonly supersededBy: string | null;
+  readonly revision: number;
+  readonly resultState: string;
 };
 
 type RawClusterExecutionGraphRow = {
@@ -865,12 +1006,21 @@ type RawClusterExecutionGraphRow = {
   readonly goalTitle: string;
   readonly executionVersion: number;
   readonly graphJson: string;
+  readonly revision: number;
+  readonly frozenReason: string | null;
+  readonly frozenObligationId: string | null;
   readonly createdAt: string;
   readonly nodes: ReadonlyArray<RawClusterExecutionNodeRow>;
 };
 
 const toPlanClusterRole = ({ value }: { readonly value: string }): PlanClusterRole =>
   PLAN_CLUSTER_ROLES.find((role) => role === value) ?? 'implementer';
+
+const toClusterNodeState = ({ value }: { readonly value: string }): ClusterNodeState =>
+  CLUSTER_NODE_STATES.find((state) => state === value) ?? 'active';
+
+const toClusterNodeResultState = ({ value }: { readonly value: string }): ClusterNodeResultState =>
+  CLUSTER_NODE_RESULT_STATES.find((state) => state === value) ?? 'pending';
 
 const parseGraphNodes = ({
   value,
@@ -925,7 +1075,14 @@ const executionGraphFromRow = ({
     agentId: node.agentId,
     ordinal: node.ordinal,
     role: toPlanClusterRole({ value: node.role }),
+    state: toClusterNodeState({ value: node.state }),
+    supersededBy: node.supersededBy,
+    revision: node.revision,
+    resultState: toClusterNodeResultState({ value: node.resultState }),
   })),
+  revision: row.revision,
+  frozenReason: row.frozenReason,
+  frozenObligationId: row.frozenObligationId,
   createdAt: row.createdAt as IsoDateTime,
 });
 
@@ -940,6 +1097,13 @@ export const invokeClusterExecutionGraphs = async ({
   return rows.map((row) => executionGraphFromRow({ row }));
 };
 
+export type ClusterExecutionNodeSeed = Readonly<{
+  nodeId: string;
+  agentId: AgentId | null;
+  ordinal: number;
+  role: PlanClusterRole;
+}>;
+
 type RecordClusterExecutionGraphParams = {
   readonly containerAgentId: AgentId;
   readonly sessionId: SessionId;
@@ -948,7 +1112,7 @@ type RecordClusterExecutionGraphParams = {
   readonly goalTitle: string;
   readonly executionVersion: number;
   readonly graphNodes: ReadonlyArray<ClusterGraphNode>;
-  readonly nodes: ReadonlyArray<ClusterExecutionNode>;
+  readonly nodes: ReadonlyArray<ClusterExecutionNodeSeed>;
 };
 
 export const invokeClusterExecutionGraphRecord = async ({
@@ -1211,6 +1375,100 @@ export const invokeAgentSetDone = async (
 export const invokeWorkspacesWithUnread = async (): Promise<ReadonlyArray<WorkspaceId>> => {
   const ids = await invoke<string[]>('workspaces_with_unread');
   return ids as ReadonlyArray<string> as ReadonlyArray<WorkspaceId>;
+};
+
+export type FreezeClusterGraphParams = {
+  readonly containerAgentId: AgentId;
+  readonly reason: string;
+  readonly obligationId: string | null;
+};
+
+export const invokeClusterGraphFreeze = async ({
+  containerAgentId,
+  reason,
+  obligationId,
+}: FreezeClusterGraphParams): Promise<ClusterExecutionGraph> => {
+  const row = await invoke<RawClusterExecutionGraphRow>('cluster_graph_freeze', {
+    input: { containerAgentId, reason, obligationId },
+  });
+  return executionGraphFromRow({ row });
+};
+
+export type AdoptClusterGraphRevisionParams = {
+  readonly id: string;
+  readonly containerAgentId: AgentId;
+  readonly obligationId: string | null;
+  readonly fromRevision: number;
+  readonly toRevision: number;
+  readonly executionVersion: number;
+  readonly graphNodes: ReadonlyArray<ClusterGraphNode>;
+  readonly reason: string;
+  readonly nodes: ReadonlyArray<ClusterExecutionNode>;
+  readonly agents: ReadonlyArray<AgentInsertArgs>;
+};
+
+export type ClusterGraphRevisionOutcome = Readonly<{
+  adopted: boolean;
+  graph: ClusterExecutionGraph;
+  agents: ReadonlyArray<Agent>;
+}>;
+
+export const invokeClusterGraphRevisionAdopt = async ({
+  id,
+  containerAgentId,
+  obligationId,
+  fromRevision,
+  toRevision,
+  executionVersion,
+  graphNodes,
+  reason,
+  nodes,
+  agents,
+}: AdoptClusterGraphRevisionParams): Promise<ClusterGraphRevisionOutcome> => {
+  const outcome = await invoke<{
+    readonly adopted: boolean;
+    readonly graph: RawClusterExecutionGraphRow;
+    readonly agents: ReadonlyArray<RawAgentRow>;
+  }>('cluster_graph_revision_adopt', {
+    input: {
+      id,
+      containerAgentId,
+      obligationId,
+      fromRevision,
+      toRevision,
+      executionVersion,
+      graphJson: JSON.stringify(graphNodes),
+      reason,
+      nodes,
+      agents,
+    },
+  });
+  return {
+    adopted: outcome.adopted,
+    graph: executionGraphFromRow({ row: outcome.graph }),
+    agents: outcome.agents.map((row) => rowToAgent(row)),
+  };
+};
+
+export type RefuseClusterGraphRevisionParams = {
+  readonly id: string;
+  readonly containerAgentId: AgentId;
+  readonly obligationId: string | null;
+  readonly fromRevision: number;
+  readonly reason: string;
+};
+
+export const invokeClusterGraphRevisionRefuse = async ({
+  id,
+  containerAgentId,
+  obligationId,
+  fromRevision,
+  reason,
+}: RefuseClusterGraphRevisionParams): Promise<ClusterExecutionGraph> => {
+  const row = await invoke<RawClusterExecutionGraphRow>('cluster_graph_revision_refuse', {
+    input: { id, containerAgentId, obligationId, fromRevision, reason },
+  });
+  return executionGraphFromRow({ row });
 };
 
 type PolishStepParams = {

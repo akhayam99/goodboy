@@ -65,6 +65,29 @@ const hoisted = vi.hoisted(() => {
       nodes: input.nodes,
       createdAt: '2026-01-01T00:00:00.000Z',
     })),
+    invokeClusterGraphFreeze: vi.fn(
+      async ({
+        containerAgentId,
+        reason,
+        obligationId,
+      }: {
+        containerAgentId: string;
+        reason: string;
+        obligationId: string | null;
+      }) => ({
+        containerAgentId,
+        sessionId: 's1',
+        workflowRunId: null,
+        planId: null,
+        goalTitle: 'goal',
+        graph: { executionVersion: 2, nodes: [] },
+        nodes: [],
+        revision: 1,
+        frozenReason: reason,
+        frozenObligationId: obligationId,
+        createdAt: '2026-01-01T00:00:00.000Z',
+      }),
+    ),
     invokeWorkflowNodeRoutingUpdate: vi.fn(async () => undefined),
     invokeListConsumptionsForPlan: vi.fn(async () => [] as ReadonlyArray<PlanConsumption>),
     summarizeAgentOutput: vi.fn(async () => ({ summary: 'model summary', degraded: false })),
@@ -87,6 +110,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentUpdateStatus: hoisted.invokeAgentUpdateStatus,
   invokeClusterCompletionHoldRecord: hoisted.invokeClusterCompletionHoldRecord,
   invokeClusterExecutionGraphRecord: hoisted.invokeClusterExecutionGraphRecord,
+  invokeClusterGraphFreeze: hoisted.invokeClusterGraphFreeze,
   invokeWorkflowNodeRoutingUpdate: hoisted.invokeWorkflowNodeRoutingUpdate,
 }));
 
@@ -2190,7 +2214,14 @@ describe('cluster roles and dependencies', () => {
       agentId: binding.agentId as AgentId,
       ordinal: index,
       role: nodes.find((node) => node.id === binding.nodeId)?.role ?? 'implementer',
+      state: 'active' as const,
+      supersededBy: null,
+      revision: 1,
+      resultState: 'pending' as const,
     })),
+    revision: 1,
+    frozenReason: null,
+    frozenObligationId: null,
     createdAt: '2026-01-01T00:00:00.000Z',
   });
 
@@ -2605,5 +2636,334 @@ describe('cluster roles and dependencies', () => {
       content: string;
     };
     expect(call.agentId).toBe('kept-review');
+  });
+});
+
+const revisedGraph = ({
+  frozenReason,
+  supersededAgentId,
+}: {
+  readonly frozenReason: string | null;
+  readonly supersededAgentId: string | null;
+}) => ({
+  containerAgentId: PARENT,
+  sessionId: SID,
+  workflowRunId: null,
+  planId: null,
+  goalTitle: 'goal',
+  graph: {
+    executionVersion: 2,
+    nodes: [
+      {
+        id: 'c0',
+        ordinal: 0,
+        title: 'c0',
+        instructions: 'do 0',
+        role: 'implementer' as const,
+        dependsOn: [],
+        expectedOutput: null,
+      },
+      {
+        id: 'c1',
+        ordinal: 1,
+        title: 'c1',
+        instructions: 'do 1',
+        role: 'implementer' as const,
+        dependsOn: ['c0'],
+        expectedOutput: null,
+      },
+    ],
+  },
+  nodes: [
+    {
+      nodeId: 'c0',
+      agentId: 'child-1' as AgentId,
+      ordinal: 0,
+      role: 'implementer' as const,
+      state: 'active' as const,
+      supersededBy: null,
+      revision: 1,
+      resultState: 'pending' as const,
+    },
+    {
+      nodeId: 'c1',
+      agentId: 'child-2' as AgentId,
+      ordinal: 1,
+      role: 'implementer' as const,
+      state: 'active' as const,
+      supersededBy: null,
+      revision: 1,
+      resultState: 'pending' as const,
+    },
+    ...(supersededAgentId === null
+      ? []
+      : [
+          {
+            nodeId: 'dropped',
+            agentId: supersededAgentId as AgentId,
+            ordinal: 2,
+            role: 'implementer' as const,
+            state: 'superseded' as const,
+            supersededBy: 'c0',
+            revision: 2,
+            resultState: 'quarantined' as const,
+          },
+        ]),
+  ],
+  revision: 1,
+  frozenReason,
+  frozenObligationId: null,
+  createdAt: '2026-01-01T00:00:00.000Z',
+});
+
+describe('a frozen cluster execution', () => {
+  const done = (id: string) =>
+    `<<cluster-outcome>>{"v":1,"id":"${id}","status":"clear"}<</cluster-outcome>>\n<<cluster-done id="${id}">>`;
+
+  it('freezes the execution when a finding sends the defect to the planner', async () => {
+    const child = childAgent({ id: 'review-child', ordinal: 0, status: 'running' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: {
+        [SID]: [revisedGraph({ frozenReason: null, supersededAgentId: null })],
+      },
+    });
+    const assistantText =
+      'the design does not hold\n<<cluster-outcome>>{"v":1,"id":"review-child","status":"unresolved","findings":[{"reason":"the plan assumed one writer","target":"planner"}]}<</cluster-outcome>>\n<<cluster-done id="review-child">>';
+
+    await advanceClusterImplementation(store.set, store.get)(SID, child.id, assistantText);
+
+    expect(hoisted.invokeClusterGraphFreeze).toHaveBeenCalledWith(
+      expect.objectContaining({ containerAgentId: PARENT }),
+    );
+    expect(store.sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('leaves a local repair to append without freezing the execution', async () => {
+    const child = childAgent({ id: 'review-local', ordinal: 0, status: 'running' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: {
+        [SID]: [revisedGraph({ frozenReason: null, supersededAgentId: null })],
+      },
+    });
+    const assistantText =
+      'one guard is missing\n<<cluster-outcome>>{"v":1,"id":"review-local","status":"unresolved","findings":[{"reason":"the guard is gone","target":"implementer"}]}<</cluster-outcome>>\n<<cluster-done id="review-local">>';
+
+    await advanceClusterImplementation(store.set, store.get)(SID, child.id, assistantText);
+
+    expect(hoisted.invokeClusterGraphFreeze).not.toHaveBeenCalled();
+    expect(hoisted.invokeClusterCompletionHoldRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'unresolved-outcome' }),
+    );
+  });
+
+  it('keeps a result that lands while frozen and starts nothing', async () => {
+    const first = childAgent({ id: 'child-1', ordinal: 0, status: 'running' });
+    const second = childAgent({ id: 'child-2', ordinal: 1, status: 'pending' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), first, second] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: {
+        [SID]: [revisedGraph({ frozenReason: 'a structural defect', supersededAgentId: null })],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      { ...first, status: 'completed' },
+      second,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, first.id, done('child-1'));
+
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      'child-1',
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(store.sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      PARENT,
+      expect.objectContaining({ status: 'completed' }),
+    );
+  });
+
+  it('refuses to start anything under a frozen graph when resuming', async () => {
+    const c = container({ status: 'running' });
+    const child = childAgent({ id: 'child-1', ordinal: 0, status: 'pending' });
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [c, child] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: {
+        [SID]: [revisedGraph({ frozenReason: 'a structural defect', supersededAgentId: null })],
+      },
+    });
+
+    const resumed = await resumeClusterChildren({ set, get, sessionId: SID, container: c });
+
+    expect(resumed).toBe(false);
+    expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('quarantines the late result of an attempt a revision superseded', async () => {
+    const stale = childAgent({ id: 'child-stale', ordinal: 2, status: 'running' });
+    const first = childAgent({ id: 'child-1', ordinal: 0, status: 'pending' });
+    const second = childAgent({ id: 'child-2', ordinal: 1, status: 'pending' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), first, second, stale] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: {
+        [SID]: [revisedGraph({ frozenReason: null, supersededAgentId: 'child-stale' })],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      first,
+      second,
+      { ...stale, status: 'completed' },
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, stale.id, done('child-stale'));
+
+    expect(store.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: expect.stringContaining('is quarantined'),
+        body: expect.stringContaining('quarantined'),
+        sessionId: SID,
+      }),
+    );
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      PARENT,
+      expect.objectContaining({ status: 'completed' }),
+    );
+  });
+
+  const resolvedHoldOn = ({
+    id,
+    sourceAgentId,
+    state,
+  }: {
+    readonly id: string;
+    readonly sourceAgentId: string;
+    readonly state: 'open' | 'resolved';
+  }) => ({
+    id,
+    sessionId: SID,
+    workflowRunId: null,
+    containerAgentId: PARENT,
+    sourceAgentId: sourceAgentId as AgentId,
+    sourceTurnId: `turn-${sourceAgentId}`,
+    reason: 'missing-outcome' as const,
+    findings: [],
+    state,
+    resolutionEvidence: state === 'resolved' ? 'checked by hand' : null,
+    resolvedAt: state === 'resolved' ? '2026-01-01T00:00:00.000Z' : null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  });
+
+  it('never counts a released source bound to a superseded node as progress', async () => {
+    const first = childAgent({ id: 'child-1', ordinal: 0, status: 'running' });
+    const second = childAgent({ id: 'child-2', ordinal: 1, status: 'pending' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), first, second] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: {
+        [SID]: [revisedGraph({ frozenReason: null, supersededAgentId: 'gone-stale' })],
+      },
+      clusterCompletionHolds: {
+        [SID]: [
+          resolvedHoldOn({ id: 'hold-stale', sourceAgentId: 'gone-stale', state: 'resolved' }),
+        ],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      { ...first, status: 'completed' },
+      second,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, first.id, done('child-1'));
+
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      PARENT,
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId };
+    expect(call.agentId).toBe('child-2');
+  });
+
+  it('keeps a released node retained by a revision settled and never starts it', async () => {
+    const released = revisedGraph({ frozenReason: null, supersededAgentId: null });
+    const graph = {
+      ...released,
+      revision: 2,
+      nodes: released.nodes.map((node) =>
+        node.nodeId === 'c0' ? { ...node, agentId: 'gone-impl' as AgentId, revision: 2 } : node,
+      ),
+    };
+    const c = container({ status: 'running' });
+    const second = childAgent({ id: 'child-2', ordinal: 1, status: 'pending' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [c, second] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: { [SID]: [graph] },
+      clusterCompletionHolds: {
+        [SID]: [resolvedHoldOn({ id: 'hold-gone', sourceAgentId: 'gone-impl', state: 'resolved' })],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([c, second]);
+
+    const resumed = await resumeClusterChildren({
+      set: store.set,
+      get: store.get,
+      sessionId: SID,
+      container: c,
+    });
+
+    expect(resumed).toBe(true);
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId };
+    expect(call.agentId).toBe('child-2');
+  });
+
+  it('keeps an explicitly resolved tombstoned child out of a frozen plan', async () => {
+    const second = childAgent({ id: 'child-2', ordinal: 1, status: 'pending' });
+    const released = revisedGraph({ frozenReason: 'a structural defect', supersededAgentId: null });
+    const graph = {
+      ...released,
+      nodes: released.nodes.map((node) =>
+        node.nodeId === 'c0' ? { ...node, agentId: 'gone-impl' as AgentId } : node,
+      ),
+    };
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), second] },
+      sessionPlans: { [SID]: [plan({})] },
+      clusterExecutionGraphs: { [SID]: [graph] },
+      clusterCompletionHolds: {
+        [SID]: [resolvedHoldOn({ id: 'hold-gone', sourceAgentId: 'gone-impl', state: 'open' })],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([container({ status: 'running' }), second]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, 'gone-impl' as AgentId, '', {
+      force: true,
+      resolvedHoldId: 'hold-gone',
+    });
+
+    expect(store.sendTurn).not.toHaveBeenCalled();
+    expect(store.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'info',
+        title: 'Cluster gone-impl is kept out of a frozen plan',
+        body: expect.stringContaining('a structural defect'),
+        sessionId: SID,
+      }),
+    );
   });
 });

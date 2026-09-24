@@ -48,6 +48,8 @@ const obligation = {
   state: 'granted',
   ownerAgentId: 'agent-7' as AgentId,
   decision: 'granted',
+  decisionReason: null,
+  satisfiedRevision: null,
   childAgentId: 'agent-7' as AgentId,
   deliveredAt: null,
   deliveryReceipt: null,

@@ -2,6 +2,7 @@ import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import {
   invokeAgentList,
+  invokeCapabilityGrants,
   invokeCapabilityObligations,
   invokeClusterCompletionHolds,
   invokeClusterExecutionGraphs,
@@ -14,11 +15,12 @@ const PROVIDER_IDS: ReadonlyArray<ProviderId> = Object.keys(PROVIDER_CAPABILITIE
 
 export const loadPhaseRunsForSession = (set: SetFn) => {
   return async (sessionId: SessionId) => {
-    const [runs, holds, graphs, obligations] = await Promise.all([
+    const [runs, holds, graphs, obligations, grants] = await Promise.all([
       invokeAgentList(sessionId),
       invokeClusterCompletionHolds({ sessionId }),
       invokeClusterExecutionGraphs({ sessionId }),
       invokeCapabilityObligations({ sessionId }),
+      invokeCapabilityGrants({ sessionId }),
     ]);
     set((state) => {
       const modelOverrides = { ...state.agentModelOverride };
@@ -40,6 +42,7 @@ export const loadPhaseRunsForSession = (set: SetFn) => {
         sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: runs },
         clusterCompletionHolds: { ...state.clusterCompletionHolds, [sessionId]: holds },
         capabilityObligations: { ...state.capabilityObligations, [sessionId]: obligations },
+        capabilityGrants: { ...state.capabilityGrants, [sessionId]: grants },
         clusterExecutionGraphs: { ...state.clusterExecutionGraphs, [sessionId]: graphs },
         agentModelOverride: modelOverrides,
         agentProviderOverride: providerOverrides,

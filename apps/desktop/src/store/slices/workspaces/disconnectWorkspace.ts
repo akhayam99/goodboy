@@ -76,6 +76,7 @@ export const disconnectWorkspace = (set: SetFn, get: GetFn) => {
               clusterCompletionHolds: {},
               clusterExecutionGraphs: {},
               capabilityObligations: {},
+              capabilityGrants: {},
               selectedAgentId: {},
               agentRunHistory: {},
               runRouting: {},

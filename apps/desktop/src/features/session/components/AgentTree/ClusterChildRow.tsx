@@ -96,6 +96,37 @@ export const ClusterChildRow = ({
             {clusterNode.role}
           </span>
         ) : null}
+        {clusterNode?.state === 'superseded' ? (
+          <span
+            className="shrink-0 rounded-sm bg-muted px-1 py-0.5 text-2xs font-normal text-muted-foreground"
+            title={
+              clusterNode.supersededBy === null
+                ? 'a revised plan superseded this cluster. its history stays.'
+                : `a revised plan superseded this cluster with ${clusterNode.supersededBy}. its history stays.`
+            }
+          >
+            superseded
+          </span>
+        ) : null}
+        {clusterNode?.resultState === 'quarantined' ? (
+          <span
+            className={cn(
+              'shrink-0 rounded-sm px-1 py-0.5 text-2xs font-normal text-warning',
+              tintClasses('warning').bg,
+            )}
+            title="this attempt was still running when the plan was revised, so its result is quarantined rather than counted"
+          >
+            quarantined
+          </span>
+        ) : null}
+        {clusterNode?.isFrozen === true && clusterNode.state === 'active' ? (
+          <span
+            className="shrink-0 rounded-sm bg-muted px-1 py-0.5 text-2xs font-normal text-muted-foreground"
+            title="the execution is frozen while a revised plan is decided: nothing queued starts"
+          >
+            frozen
+          </span>
+        ) : null}
         {isWaiting ? (
           <span
             className="shrink-0 rounded-sm bg-muted px-1 py-0.5 text-2xs font-normal text-muted-foreground"

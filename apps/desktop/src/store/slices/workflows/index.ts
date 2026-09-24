@@ -28,6 +28,7 @@ import { retryWorkflowOrchestration } from './retryWorkflowOrchestration';
 import { reprocessGoalForWorkflow } from './reprocessGoalForWorkflow';
 import { resetWorkflows } from './resetWorkflows';
 import { resolveClusterCompletionHold } from './resolveClusterCompletionHold';
+import { decideCapabilityNeed } from './decideCapabilityNeed';
 import { makeWorkflowPreset } from './makeWorkflowPreset';
 import { savePhaseTemplate } from './savePhaseTemplate';
 import { saveStepDef } from './saveStepDef';
@@ -67,6 +68,7 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     addStepToWorkflowRun: addStepToWorkflowRun(set, get),
     advanceClusterImplementation: advanceClusterImplementation(set, get),
     resolveClusterCompletionHold: resolveClusterCompletionHold({ set, get }),
+    decideCapabilityNeed: decideCapabilityNeed({ set, get }),
     finalizeWorkflowStep: finalizeWorkflowStep(set, get),
     skipStuckStepAndAdvance: skipStuckStepAndAdvance(set, get),
     advanceScoutTree: advanceScoutTree(set, get),

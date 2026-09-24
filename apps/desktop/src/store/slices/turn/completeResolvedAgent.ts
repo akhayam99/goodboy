@@ -9,6 +9,7 @@ import {
 import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
+import { completeCapabilityChild } from './completeCapabilityChild';
 import { summarizeWorkflowAgentOutput } from '../workflows/summarizeWorkflowAgentOutput';
 import { classifyAgent, KIND_TO_ROLE } from '../../../features/session/agent-kind';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
@@ -109,6 +110,18 @@ export const completeResolvedAgent = async ({
 
   if (executionPurpose === 'fan-out' || isUnclaimedFanOutRoot) {
     await get().advanceScoutTree(sessionId, resolvedAgentId, assistantText);
+    return null;
+  }
+
+  if (executionPurpose === 'capability' && ranAgent !== undefined) {
+    await completeCapabilityChild({
+      set,
+      get,
+      sessionId,
+      child: ranAgent,
+      assistantText,
+      now,
+    });
     return null;
   }
 

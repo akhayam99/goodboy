@@ -3,9 +3,13 @@ import type { AgentId, ClusterGraph, SessionId, WorkflowRunId } from '@goodboy/t
 import { migrate } from '../migrations/runner';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import {
+  adoptClusterGraphRevision,
+  freezeClusterExecutionGraph,
   getClusterExecutionGraph,
   listClusterExecutionGraphs,
+  listClusterGraphRevisions,
   recordClusterExecutionGraph,
+  refuseClusterGraphRevision,
 } from './cluster-execution-graph';
 
 const sessionId = 'session' as SessionId;
@@ -126,5 +130,196 @@ describe('cluster execution graph queries', () => {
 
     expect(second.graph).toEqual(graph);
     expect(second.nodes.map((node) => node.nodeId)).toEqual(['impl', 'review']);
+  });
+});
+
+describe('cluster graph revisions', () => {
+  it('freezes the execution once and keeps the first reason', async () => {
+    const db = await seed();
+    await recordClusterExecutionGraph({ db, snapshot });
+    await freezeClusterExecutionGraph({
+      db,
+      containerAgentId,
+      reason: 'the review found a structural defect',
+      obligationId: 'obl-1',
+    });
+    const frozen = await freezeClusterExecutionGraph({
+      db,
+      containerAgentId,
+      reason: 'a second escalation',
+      obligationId: 'obl-2',
+    });
+    expect(frozen?.frozenReason).toBe('the review found a structural defect');
+    expect(frozen?.frozenObligationId).toBe('obl-1');
+  });
+
+  it('adopts a revision, supersedes the replaced node and unfreezes', async () => {
+    const db = await seed();
+    await recordClusterExecutionGraph({ db, snapshot });
+    await freezeClusterExecutionGraph({
+      db,
+      containerAgentId,
+      reason: 'structural defect',
+      obligationId: 'obl-1',
+    });
+    const outcome = await adoptClusterGraphRevision({
+      db,
+      revision: {
+        id: 'rev-1',
+        containerAgentId,
+        obligationId: 'obl-1',
+        fromRevision: 1,
+        toRevision: 2,
+        reason: 'the planner split the rewrite',
+        graph: {
+          executionVersion: 2,
+          nodes: [
+            {
+              id: 'impl-2',
+              ordinal: 0,
+              title: 'Rewrite in two passes',
+              instructions: 'do it differently',
+              role: 'implementer',
+              dependsOn: [],
+              expectedOutput: null,
+            },
+          ],
+        },
+        nodes: [
+          {
+            nodeId: 'impl-2',
+            agentId: null,
+            ordinal: 0,
+            role: 'implementer',
+            state: 'active',
+            supersededBy: null,
+            revision: 2,
+            resultState: 'pending',
+          },
+          {
+            nodeId: 'impl',
+            agentId: 'impl' as AgentId,
+            ordinal: 0,
+            role: 'implementer',
+            state: 'superseded',
+            supersededBy: 'impl-2',
+            revision: 2,
+            resultState: 'quarantined',
+          },
+        ],
+      },
+    });
+    expect(outcome.kind).toBe('adopted');
+    const stored = await getClusterExecutionGraph({ db, containerAgentId });
+    expect(stored?.revision).toBe(2);
+    expect(stored?.frozenReason).toBeNull();
+    const superseded = stored?.nodes.find((node) => node.nodeId === 'impl');
+    expect(superseded).toEqual({
+      nodeId: 'impl',
+      agentId: 'impl',
+      ordinal: 0,
+      role: 'implementer',
+      state: 'superseded',
+      supersededBy: 'impl-2',
+      revision: 2,
+      resultState: 'quarantined',
+    });
+    const journal = await listClusterGraphRevisions({ db, containerAgentId });
+    expect(journal).toHaveLength(1);
+    expect(journal[0]?.state).toBe('adopted');
+  });
+
+  it('keeps the graph at its revision when a node write fails during adoption', async () => {
+    const db = await seed();
+    await recordClusterExecutionGraph({ db, snapshot });
+    await expect(
+      adoptClusterGraphRevision({
+        db,
+        revision: {
+          id: 'rev-1',
+          containerAgentId,
+          obligationId: null,
+          fromRevision: 1,
+          toRevision: 2,
+          reason: 'broken',
+          graph,
+          nodes: [
+            {
+              nodeId: 'impl-2',
+              agentId: null,
+              ordinal: 0,
+              role: 'not-a-role' as 'implementer',
+              state: 'active',
+              supersededBy: null,
+              revision: 2,
+              resultState: 'pending',
+            },
+          ],
+        },
+      }),
+    ).rejects.toThrow();
+    const stored = await getClusterExecutionGraph({ db, containerAgentId });
+    expect(stored?.revision).toBe(1);
+    expect(await listClusterGraphRevisions({ db, containerAgentId })).toHaveLength(0);
+  });
+
+  it('refuses a revision formed against an older graph and leaves the graph alone', async () => {
+    const db = await seed();
+    await recordClusterExecutionGraph({ db, snapshot });
+    await adoptClusterGraphRevision({
+      db,
+      revision: {
+        id: 'rev-1',
+        containerAgentId,
+        obligationId: null,
+        fromRevision: 1,
+        toRevision: 2,
+        reason: 'first',
+        graph,
+        nodes: [],
+      },
+    });
+    const stale = await adoptClusterGraphRevision({
+      db,
+      revision: {
+        id: 'rev-2',
+        containerAgentId,
+        obligationId: null,
+        fromRevision: 1,
+        toRevision: 2,
+        reason: 'stale',
+        graph: { executionVersion: 2, nodes: [] },
+        nodes: [],
+      },
+    });
+    expect(stale.kind).toBe('stale');
+    const stored = await getClusterExecutionGraph({ db, containerAgentId });
+    expect(stored?.revision).toBe(2);
+    expect(stored?.graph.nodes).toHaveLength(2);
+  });
+
+  it('journals a refusal without touching the graph', async () => {
+    const db = await seed();
+    await recordClusterExecutionGraph({ db, snapshot });
+    await freezeClusterExecutionGraph({
+      db,
+      containerAgentId,
+      reason: 'structural defect',
+      obligationId: 'obl-1',
+    });
+    await refuseClusterGraphRevision({
+      db,
+      id: 'rev-refused',
+      containerAgentId,
+      obligationId: 'obl-1',
+      fromRevision: 1,
+      reason: 'the proposal replaces a cluster that already completed',
+    });
+    const stored = await getClusterExecutionGraph({ db, containerAgentId });
+    expect(stored?.revision).toBe(1);
+    expect(stored?.frozenReason).toBe('structural defect');
+    const journal = await listClusterGraphRevisions({ db, containerAgentId });
+    expect(journal[0]?.state).toBe('refused');
+    expect(journal[0]?.reason).toBe('the proposal replaces a cluster that already completed');
   });
 });

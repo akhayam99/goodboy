@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AgentId,
+  CapabilityGrant,
   CapabilityObligation,
   ClusterCompletionHold,
   ClusterExecutionGraph,
@@ -34,6 +35,7 @@ const h = vi.hoisted(() => ({
   holds: new Map<SessionId, ReadonlyArray<ClusterCompletionHold>>(),
   graphs: new Map<SessionId, ReadonlyArray<ClusterExecutionGraph>>(),
   obligations: new Map<SessionId, ReadonlyArray<CapabilityObligation>>(),
+  grants: new Map<SessionId, ReadonlyArray<CapabilityGrant>>(),
   updateSessionWriteDestination: vi.fn(async () => undefined),
 }));
 
@@ -72,6 +74,9 @@ vi.mock('../../../features/workflows/workflows', () => ({
   ),
   invokeCapabilityObligations: vi.fn(
     async ({ sessionId }: { readonly sessionId: SessionId }) => h.obligations.get(sessionId) ?? [],
+  ),
+  invokeCapabilityGrants: vi.fn(
+    async ({ sessionId }: { readonly sessionId: SessionId }) => h.grants.get(sessionId) ?? [],
   ),
   invokeStepDefList: vi.fn(async () => []),
   invokeWorkflowList: vi.fn(async () => []),
@@ -126,6 +131,9 @@ const executionGraph: ClusterExecutionGraph = {
   goalTitle: 'goal',
   graph: { executionVersion: 1, nodes: [] },
   nodes: [],
+  revision: 1,
+  frozenReason: null,
+  frozenObligationId: null,
   createdAt: NOW,
 };
 
@@ -140,11 +148,31 @@ const openObligation: CapabilityObligation = {
   state: 'open',
   ownerAgentId: null,
   decision: null,
+  decisionReason: null,
+  satisfiedRevision: null,
   childAgentId: null,
   deliveredAt: null,
   deliveryReceipt: null,
   requests: [],
   holdIds: [],
+  createdAt: NOW,
+  updatedAt: NOW,
+};
+
+const deliveredGrant: CapabilityGrant = {
+  id: 'grant-1',
+  obligationId: openObligation.id,
+  sessionId: UNSELECTED_SESSION_ID,
+  workflowRunId: null,
+  grantedRole: 'implementer',
+  purpose: 'repair',
+  continuation: 'resume',
+  parentOutcome: 'resumed',
+  childAgentId: 'repair-1' as AgentId,
+  replacementAgentId: null,
+  verificationAgentId: null,
+  transferredWork: null,
+  state: 'delivered',
   createdAt: NOW,
   updatedAt: NOW,
 };
@@ -225,6 +253,7 @@ type Harness = {
   readonly advanceSnapshots: ReadonlyArray<ReadonlyArray<ClusterCompletionHold>>;
   readonly selectedSessionGraphs: ReadonlyArray<ReadonlyArray<ClusterExecutionGraph>>;
   readonly selectedSessionObligations: ReadonlyArray<ReadonlyArray<CapabilityObligation>>;
+  readonly selectedSessionGrants: ReadonlyArray<ReadonlyArray<CapabilityGrant>>;
 };
 
 const harness = (): Harness => {
@@ -235,6 +264,7 @@ const harness = (): Harness => {
   const advanceSnapshots: Array<ReadonlyArray<ClusterCompletionHold>> = [];
   const selectedSessionGraphs: Array<ReadonlyArray<ClusterExecutionGraph>> = [];
   const selectedSessionObligations: Array<ReadonlyArray<CapabilityObligation>> = [];
+  const selectedSessionGrants: Array<ReadonlyArray<CapabilityGrant>> = [];
   let state = {
     workspaces: [{ id: WORKSPACE_ID, lastAccessedAt: NOW }],
     sessions: [],
@@ -260,6 +290,7 @@ const harness = (): Harness => {
       });
       selectedSessionGraphs.push(state.clusterExecutionGraphs[sessionId] ?? []);
       selectedSessionObligations.push(state.capabilityObligations[sessionId] ?? []);
+      selectedSessionGrants.push(state.capabilityGrants[sessionId] ?? []);
     }),
   };
   const set: SetFn = (update) => {
@@ -276,6 +307,7 @@ const harness = (): Harness => {
     advanceSnapshots,
     selectedSessionGraphs,
     selectedSessionObligations,
+    selectedSessionGrants,
   };
 };
 
@@ -285,6 +317,7 @@ beforeEach(() => {
   h.holds = new Map();
   h.graphs = new Map();
   h.obligations = new Map();
+  h.grants = new Map();
   h.sessions = [
     session({ id: UNSELECTED_SESSION_ID }),
     session({ id: RESTORED_SESSION_ID, activeMountId: RESTORED_MOUNT_ID }),
@@ -378,6 +411,18 @@ describe('setCurrentWorkspace mount hydration', () => {
 
     expect(store.selectedSessionObligations).toEqual([[openObligation]]);
     expect(store.state.capabilityObligations[UNSELECTED_SESSION_ID]).toEqual([openObligation]);
+  });
+
+  it('hydrates capability grants before selecting a session with cached agents', async () => {
+    h.sessions = [session({ id: UNSELECTED_SESSION_ID })];
+    h.worktrees = new Map();
+    h.grants = new Map([[UNSELECTED_SESSION_ID, [deliveredGrant]]]);
+    const store = harness();
+
+    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+
+    expect(store.selectedSessionGrants).toEqual([[deliveredGrant]]);
+    expect(store.state.capabilityGrants[UNSELECTED_SESSION_ID]).toEqual([deliveredGrant]);
   });
 });
 

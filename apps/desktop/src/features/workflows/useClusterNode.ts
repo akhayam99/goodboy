@@ -1,6 +1,13 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { AgentId, ClusterGraphNode, PlanClusterRole, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  ClusterGraphNode,
+  ClusterNodeResultState,
+  ClusterNodeState,
+  PlanClusterRole,
+  SessionId,
+} from '@goodboy/types';
 import { useAppStore } from '../../store';
 
 export type ClusterNodeView = Readonly<{
@@ -8,6 +15,10 @@ export type ClusterNodeView = Readonly<{
   dependsOnTitles: ReadonlyArray<string>;
   pendingDependencyTitles: ReadonlyArray<string>;
   expectedOutput: string | null;
+  state: ClusterNodeState;
+  resultState: ClusterNodeResultState;
+  supersededBy: string | null;
+  isFrozen: boolean;
 }>;
 
 type Params = {
@@ -44,9 +55,19 @@ export const useClusterNode = ({ sessionId, agentId }: Params): ClusterNodeView 
       if (binding === undefined) {
         continue;
       }
+      const isFrozen = graph.frozenReason !== null;
       const node = graph.graph.nodes.find((entry) => entry.id === binding.nodeId);
       if (node === undefined) {
-        continue;
+        return {
+          role: binding.role,
+          dependsOnTitles: [],
+          pendingDependencyTitles: [],
+          expectedOutput: null,
+          state: binding.state,
+          resultState: binding.resultState,
+          supersededBy: binding.supersededBy,
+          isFrozen,
+        };
       }
       const pending = node.dependsOn.filter((dependency) => {
         const dependencyAgentId = graph.nodes.find((entry) => entry.nodeId === dependency)?.agentId;
@@ -57,6 +78,10 @@ export const useClusterNode = ({ sessionId, agentId }: Params): ClusterNodeView 
         dependsOnTitles: titlesFor({ ids: node.dependsOn, nodes: graph.graph.nodes }),
         pendingDependencyTitles: titlesFor({ ids: pending, nodes: graph.graph.nodes }),
         expectedOutput: node.expectedOutput,
+        state: binding.state,
+        resultState: binding.resultState,
+        supersededBy: binding.supersededBy,
+        isFrozen,
       };
     }
     return null;

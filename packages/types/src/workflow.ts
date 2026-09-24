@@ -127,11 +127,35 @@ export type CapabilityObligation = Readonly<{
   state: CapabilityObligationState;
   ownerAgentId: AgentId | null;
   decision: CapabilityObligationDecision | null;
+  decisionReason: string | null;
+  satisfiedRevision: string | null;
   childAgentId: AgentId | null;
   deliveredAt: string | null;
   deliveryReceipt: string | null;
   requests: ReadonlyArray<CapabilityRequest>;
   holdIds: ReadonlyArray<string>;
+  createdAt: string;
+  updatedAt: string;
+}>;
+
+export type CapabilityParentOutcome = 'resumed' | 'transferred' | 'handed-off';
+
+export type CapabilityGrantState = 'pending' | 'delivered' | 'settled' | 'cancelled' | 'failed';
+
+export type CapabilityGrant = Readonly<{
+  id: string;
+  obligationId: string;
+  sessionId: SessionId;
+  workflowRunId: WorkflowRunId | null;
+  grantedRole: AgentRole;
+  purpose: CapabilityPurpose;
+  continuation: CapabilityContinuation;
+  parentOutcome: CapabilityParentOutcome;
+  childAgentId: AgentId | null;
+  replacementAgentId: AgentId | null;
+  verificationAgentId: AgentId | null;
+  transferredWork: string | null;
+  state: CapabilityGrantState;
   createdAt: string;
   updatedAt: string;
 }>;
