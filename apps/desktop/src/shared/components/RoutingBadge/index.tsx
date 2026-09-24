@@ -1,4 +1,4 @@
-import { Tooltip, cn } from '@goodboy/ui';
+import { Tooltip, WORK_META_COLUMN, cn } from '@goodboy/ui';
 import type { ProviderId, EffortLevel } from '@goodboy/types';
 import { getModelProvider, modelCatalogKey, clampEffortForModel } from '@goodboy/core';
 import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
@@ -15,7 +15,7 @@ type Props = {
   readonly model?: string | null;
   readonly effort?: string | null;
   readonly planned?: PlannedRouting | null;
-  readonly variant?: 'compact' | 'full';
+  readonly variant?: 'compact' | 'full' | 'bare';
   readonly glyphPlacement?: 'leading' | 'trailing';
   readonly muted?: boolean;
   readonly className?: string;
@@ -93,7 +93,7 @@ export const RoutingBadge = ({
     model != null && level != null
       ? (clampEffortForModel({ model, effort: level }) ?? level)
       : level;
-  const glyphSize = variant === 'full' ? 12 : 11;
+  const glyphSize = variant === 'compact' ? 11 : 12;
   const plannedModel = planned?.model ?? null;
   const plannedProvider = planned?.provider ?? null;
   const ranModelKey = comparableModel({ provider, model });
@@ -128,6 +128,58 @@ export const RoutingBadge = ({
       </Tooltip>
     ) : null;
 
+  const glyph =
+    Glyph != null && resolvedProvider != null ? (
+      <Glyph
+        size={glyphSize}
+        className="shrink-0"
+        style={{ color: brandColor(resolvedProvider) }}
+        aria-hidden
+      />
+    ) : null;
+
+  if (variant === 'bare') {
+    if (model == null) {
+      return (
+        <>
+          <span aria-hidden className={cn(WORK_META_COLUMN.model, className)} />
+          <span aria-hidden className={WORK_META_COLUMN.effort} />
+        </>
+      );
+    }
+    const effortLabel = resolvedEffort != null ? EFFORT_LABEL[resolvedEffort] : null;
+    const routingText = [
+      modelLabel(model),
+      effortLabel,
+      providerLabel != null ? `on ${providerLabel}` : null,
+    ]
+      .filter((part) => part != null)
+      .join(' ');
+    return (
+      <>
+        <Tooltip
+          content={divergenceTooltip != null ? `${routingText}. ${divergenceTooltip}` : routingText}
+        >
+          <span data-meta-column="model" className={cn(WORK_META_COLUMN.model, className)}>
+            {glyph}
+            <span
+              data-testid={isDiverged ? 'routing-divergence' : undefined}
+              className={cn(
+                WORK_META_COLUMN.modelLabel,
+                isDiverged && 'underline decoration-dotted underline-offset-2',
+              )}
+            >
+              {modelLabel(model)}
+            </span>
+          </span>
+        </Tooltip>
+        <span data-meta-column="effort" className={WORK_META_COLUMN.effort}>
+          {effortLabel}
+        </span>
+      </>
+    );
+  }
+
   if (variant === 'full') {
     return (
       <span className={cn('flex flex-wrap items-center gap-1.5', muted && 'opacity-60', className)}>
@@ -154,16 +206,6 @@ export const RoutingBadge = ({
       </span>
     );
   }
-
-  const glyph =
-    Glyph != null && resolvedProvider != null ? (
-      <Glyph
-        size={glyphSize}
-        className="shrink-0"
-        style={{ color: brandColor(resolvedProvider) }}
-        aria-hidden
-      />
-    ) : null;
 
   return (
     <span

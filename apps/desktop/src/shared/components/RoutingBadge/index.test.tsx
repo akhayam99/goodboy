@@ -209,4 +209,51 @@ describe('RoutingBadge', () => {
 
     expect(screen.queryByTestId('routing-divergence')).toBeNull();
   });
+
+  describe('bare variant', () => {
+    it('lays the model and the effort out as meta columns with no chip fill', () => {
+      const { container } = render(
+        <RoutingBadge variant="bare" provider="anthropic" model="claude-opus-4-5" effort="high" />,
+      );
+
+      const model = container.querySelector('[data-meta-column="model"]');
+      const effort = container.querySelector('[data-meta-column="effort"]');
+      expect(model?.textContent).toBe('Opus 4.5');
+      expect(effort?.textContent).toBe('High');
+      expect(container.innerHTML).not.toContain('bg-muted');
+    });
+
+    it('keeps the whole route in the tooltip so a narrow pane loses nothing', () => {
+      render(
+        <RoutingBadge variant="bare" provider="anthropic" model="claude-opus-4-5" effort="high" />,
+      );
+
+      const model = screen.getByText('Opus 4.5').parentElement!;
+      expect(tooltipTextOf({ element: model })).toBe('Opus 4.5 High on Claude');
+    });
+
+    it('names a divergence in the tooltip instead of striking the plan through', () => {
+      render(
+        <RoutingBadge
+          variant="bare"
+          provider="anthropic"
+          model="claude-opus-4-5"
+          planned={{ provider: 'anthropic', model: 'claude-sonnet-4-5' }}
+        />,
+      );
+
+      const label = screen.getByTestId('routing-divergence');
+      expect(label.className).toContain('decoration-dotted');
+      expect(tooltipTextOf({ element: label.parentElement! })).toBe(
+        'Opus 4.5 on Claude. Planned Sonnet 4.5, routing picked Opus 4.5 instead',
+      );
+    });
+
+    it('holds both columns empty when nothing is routed yet', () => {
+      const { container } = render(<RoutingBadge variant="bare" />);
+
+      expect(container.textContent).toBe('');
+      expect(container.children).toHaveLength(2);
+    });
+  });
 });

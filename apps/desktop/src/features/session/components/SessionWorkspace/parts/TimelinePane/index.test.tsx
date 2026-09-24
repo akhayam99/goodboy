@@ -55,6 +55,12 @@ const { storeState, diffStats, unread, questions, suggestionState, agentsLoaded,
       projects: [] as ReadonlyArray<unknown>,
       sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
       agentKindOverride: {},
+      agentProviderOverride: {} as Record<string, string>,
+      agentModelOverride: {} as Record<string, string>,
+      agentEffortOverride: {} as Record<string, string>,
+      agentRunHistory: {},
+      sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
+      executed: new Map<string, { provider: string; model: string }>(),
       loadSessionEvents: vi.fn(async () => undefined),
       loadSessionArtifacts: vi.fn(async () => undefined),
       loadSessionAnsweredQuestions: vi.fn(async () => undefined),
@@ -79,8 +85,13 @@ vi.mock('../../../../../../store', () => {
     useSessionAnsweredQuestions: () => questions.answered,
     useSessionDismissedQuestions: () => questions.dismissed,
     useIsSessionCollectionLoaded: () => agentsLoaded.current,
+    useExecutedAgentRouting: ({ agent }: { readonly agent: { readonly id: string } }) =>
+      storeState.executed.get(agent.id) ?? null,
   };
 });
+vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
+  useSessionRoleModels: () => null,
+}));
 vi.mock('../../../CreateAgentPopover', () => ({
   CreateAgentPopover: () => <button type="button">Create agent</button>,
 }));
@@ -141,6 +152,8 @@ beforeEach(() => {
   storeState.sessionWorktreeRecords = {};
   storeState.sessionArtifacts = {};
   storeState.sessionPhaseRuns = {};
+  storeState.sessionTelemetry = {};
+  storeState.executed = new Map();
   storeState.sessionEvents = {};
   storeState.selectedAgentId = {};
   storeState.transcripts = {};
@@ -809,5 +822,141 @@ describe('TimelinePane artifacts inside a workflow run', () => {
 
     expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
     expect(screen.getByText('Round once per batch')).toBeDefined();
+  });
+});
+
+describe('TimelinePane row meta', () => {
+  const WORKFLOW = {
+    id: 'workflow-meta',
+    workspaceId: 'ws-1',
+    name: 'Ship the checkout fix',
+    description: '',
+    origin: 'library',
+    steps: [
+      {
+        id: 'step-plan',
+        workflowId: 'workflow-meta',
+        ordinal: 0,
+        name: 'Plan',
+        promptPrefix: '',
+        role: 'planner',
+        providerOverride: 'anthropic',
+        modelOverride: 'claude-opus-4-5',
+        effort: 'high',
+      },
+      {
+        id: 'step-build',
+        workflowId: 'workflow-meta',
+        ordinal: 1,
+        name: 'Build',
+        promptPrefix: '',
+        role: 'implementer',
+        providerOverride: 'anthropic',
+        modelOverride: 'claude-sonnet-4-5',
+        effort: 'medium',
+      },
+    ],
+    createdAt: '2026-08-20T10:30:00.000Z',
+    updatedAt: '2026-08-20T10:30:00.000Z',
+  };
+  const RUN = {
+    run: {
+      id: 'run-meta',
+      workflowId: 'workflow-meta',
+      ordinal: 0,
+      currentStep: 0,
+      autoRun: false,
+      triggerMode: 'manual',
+      executionMode: 'static',
+      createdAt: '2026-08-20T10:30:00.000Z',
+    },
+    workflow: WORKFLOW,
+  };
+  const PLANNER = {
+    id: 'agent-plan',
+    sessionId: 'session-1',
+    stepId: 'step-plan',
+    workflowRunId: 'run-meta',
+    runId: 'provider-run-plan',
+    ordinal: 1,
+    name: 'Plan the fix',
+    status: 'completed',
+    startedAt: '2026-08-20T10:31:00.000Z',
+    completedAt: '2026-08-20T10:38:00.000Z',
+  };
+  const BUILDER = {
+    id: 'agent-build',
+    sessionId: 'session-1',
+    stepId: 'step-build',
+    workflowRunId: 'run-meta',
+    ordinal: 2,
+    name: 'Build the fix',
+    status: 'pending',
+  };
+  const TURN = {
+    kind: 'turn',
+    runId: 'provider-run-plan',
+    provider: 'anthropic',
+    model: 'claude-opus-4-5',
+    estimatedCostUsd: 0.62,
+    recordedAt: '2026-08-20T10:38:00.000Z',
+  };
+
+  const rowOf = (text: string): HTMLElement => {
+    const row = screen.getByText(text).closest('.group');
+    if (!(row instanceof HTMLElement)) {
+      throw new Error(`row ${text} missing`);
+    }
+    return row;
+  };
+
+  beforeEach(() => {
+    attachedRuns.list = [RUN];
+    storeState.sessionPhaseRuns = { 'session-1': [PLANNER, BUILDER] };
+    storeState.sessionTelemetry = { 'session-1': [TURN] };
+    storeState.executed = new Map([
+      ['agent-plan', { provider: 'anthropic', model: 'claude-opus-4-5' }],
+    ]);
+  });
+
+  it('shows the model that ran, its effort and its cost on a finished step', () => {
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const meta = within(rowOf('Plan the fix')).getByTestId('work-meta');
+
+    expect(within(meta).getByText('Opus 4.5')).toBeDefined();
+    expect(within(meta).getByText('High')).toBeDefined();
+    expect(within(meta).getByText('$0.62')).toBeDefined();
+    expect(meta.className).toContain('text-muted-foreground');
+  });
+
+  it('shows the planned routing in faint on a queued step, with no cost', () => {
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const meta = within(rowOf('Build the fix')).getByTestId('work-meta');
+
+    expect(within(meta).getByText('Sonnet 4.5')).toBeDefined();
+    expect(within(meta).getByText('Medium')).toBeDefined();
+    expect(meta.className).toContain('text-faint-foreground');
+    expect(meta.querySelector('[data-meta-column="cost"]')?.textContent).toBe('');
+  });
+
+  it('gives the run row the step it is on and the total spend', () => {
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const meta = within(rowOf('Ship the checkout fix')).getByTestId('work-meta');
+
+    expect(within(meta).getByText('Step 1 of 2')).toBeDefined();
+    expect(within(meta).getByText('$0.62')).toBeDefined();
+  });
+
+  it('keeps the cost of the run when the pane narrows, and lets a step cost go', () => {
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const runCost = within(rowOf('Ship the checkout fix'))
+      .getByTestId('work-meta')
+      .querySelector('[data-meta-column="cost"]');
+    const stepCost = within(rowOf('Plan the fix'))
+      .getByTestId('work-meta')
+      .querySelector('[data-meta-column="cost"]');
+
+    expect(runCost?.className).not.toContain('@max-[520px]:hidden');
+    expect(stepCost?.className).toContain('@max-[520px]:hidden');
   });
 });

@@ -129,6 +129,14 @@ even a sub-agent under a step, gets the question mark on the rail and an
 never shows it, because the question belongs to that step. Every step row
 also shows the model and the effort the step runs with.
 
+In the activity feed, every agent and step row ends with the same meta: the
+provider glyph, the model, the effort and what the row has spent. Before a
+step starts, the meta shows the routing it is planned to run on, in faint.
+Once it runs, the meta shows what actually ran, and a dotted model name means
+routing picked something other than the plan (the tooltip names both). The
+run row shows which step it has reached ("Step 4 of 7", or "Step 4" for an
+orchestrated run, which has no total) and what the whole run has spent.
+
 ### Next action
 
 When a run needs you, one **Next action** strip says what to do. It sits in

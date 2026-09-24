@@ -313,6 +313,32 @@ working: they read as running, never as "Needs you". A run you stopped reads
 as `stopped`, an agent you closed as `closed`: finished is not the same as
 succeeded.
 
+### Work meta
+
+The right end of a work row is `WorkMeta` in
+`packages/ui/src/components/WorkTree/`. Its columns have fixed widths from
+`WORK_META_COLUMN`, so every row reads down the same columns and a cost of
+`$12.40` never pushes the model of the row above out of line.
+
+| column | width | holds                                                  | in a narrow pane                 |
+| ------ | ----- | ------------------------------------------------------ | -------------------------------- |
+| model  | 96px  | provider glyph, then the model label                   | under 600px only the glyph stays |
+| effort | 52px  | the effort label, always faint                         | under 720px it leaves the row    |
+| time   | 112px | only when the row has one, like "Step 4 of 7" on a run | never drops                      |
+| cost   | 56px  | what the row has spent, empty before anything is spent | under 520px a step row drops it  |
+| action | 76px  | the one visible action, reserved even when empty       | never drops                      |
+
+The narrow rules are container queries on the panel (`@container`), never
+window breakpoints, because the same feed sits in a wide overview and in a
+split pane. What leaves the row stays in the model tooltip, which always
+reads the whole route ("Opus 5.5 High on Claude"). The model and effort
+columns come from `RoutingBadge variant="bare"`, the dense form of the one
+routing badge, with no fill and no chip. Planned routing (a step that has not
+started) is faint; routing that ran is muted. When the run picked something
+other than the plan, the model is underlined dotted and the tooltip names the
+plan. The inline form in headers and chips stays `RoutingBadge`'s compact
+variant.
+
 ## z-index tokens
 
 Named tokens in `apps/desktop/src/styles.css` under `@theme`, with keys

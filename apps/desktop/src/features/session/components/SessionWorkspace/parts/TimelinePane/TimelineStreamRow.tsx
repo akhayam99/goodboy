@@ -1,4 +1,5 @@
-import { Button, cn, tintClasses } from '@goodboy/ui';
+import type { ReactNode } from 'react';
+import { Button, WORK_META_COLUMN, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
 import { formatCardTime } from '../../../../../chat/utils/format-card-time';
@@ -26,6 +27,7 @@ type Props = {
   readonly openTarget: TimelineOpenTarget | null;
   readonly action: TimelineRowAction | null;
   readonly diffStat?: MountDiffStat | null;
+  readonly meta?: ReactNode;
 };
 
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
@@ -39,6 +41,7 @@ export const TimelineStreamRow = ({
   openTarget,
   action,
   diffStat = null,
+  meta = null,
 }: Props) => {
   const hover = useHoverMarkViewed({
     sessionId,
@@ -57,12 +60,15 @@ export const TimelineStreamRow = ({
   );
   const content = (
     <>
-      <TimelineRowLabel item={item} diffStat={diffStat} />
+      <span className="flex min-w-0 flex-1 items-center gap-2">
+        <TimelineRowLabel item={item} diffStat={diffStat} />
+      </span>
       {openTarget == null ? null : (
         <span className="shrink-0 text-3xs text-muted-foreground opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           {`${openTarget.label} ↵`}
         </span>
       )}
+      {meta}
     </>
   );
 
@@ -110,12 +116,12 @@ export const TimelineStreamRow = ({
             {content}
           </button>
         )}
-        {action == null ? null : (
-          <span
-            data-testid="timeline-row-action"
-            className="flex shrink-0 items-center"
-            style={{ height: boxHeight }}
-          >
+        <span
+          data-testid={action == null ? undefined : 'timeline-row-action'}
+          className={WORK_META_COLUMN.action}
+          style={{ height: boxHeight }}
+        >
+          {action == null ? null : (
             <Button
               variant={action.asksUser === true ? 'warning' : 'ghost'}
               emphasis={action.asksUser === true ? 'outline' : 'solid'}
@@ -125,8 +131,8 @@ export const TimelineStreamRow = ({
             >
               {action.label}
             </Button>
-          </span>
-        )}
+          )}
+        </span>
       </div>
     </div>
   );

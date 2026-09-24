@@ -1,8 +1,17 @@
 import { useEffect, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
 import { Button, SectionHeader, useCopyLink } from '@goodboy/ui';
-import type { OpenQuestion, Session, SessionId } from '@goodboy/types';
+import type {
+  Agent,
+  OpenQuestion,
+  ProviderRunId,
+  Session,
+  SessionId,
+  Step,
+  TelemetryRecord,
+} from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   agentHasUnread,
@@ -14,10 +23,13 @@ import {
   useSessionOpenQuestions,
   type MountDiffStat,
 } from '../../../../../../store';
+import { runSpendUsd } from '../../../../../../store/slices/workflows/runSpendUsd';
+import { useSessionRoleModels } from '../../../../../../shared/hooks/useSessionRoleModels';
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
 import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
 import { useWorkflowAdvanceStates } from '../../../../../workflows/useWorkflowAdvanceStates';
 import { filterTimelineEntries, isActivityChildShown } from '../../../../timeline/activityFilter';
+import { agentSpendById } from '../../../../timeline/agentSpendById';
 import { buildTimelineGroups } from '../../../../timeline/buildTimelineGroups';
 import {
   buildTimelineStream,
@@ -38,6 +50,8 @@ import { TimelineDayRule } from './TimelineDayRule';
 import { TimelineNowRule } from './TimelineNowRule';
 import { TimelineSkeleton } from './TimelineSkeleton';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
+import { TimelineAgentMeta } from './TimelineAgentMeta';
+import { TimelineRunMeta } from './TimelineRunMeta';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -85,6 +99,24 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
     onSelectQuestions: () => setActiveLens(sessionId, 'questions'),
   });
   const diffStats = useMountDiffStats(sessionId);
+  const roleModels = useSessionRoleModels({ sessionId });
+  const telemetry = useAppStore(
+    (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
+  );
+  const agentRunHistory = useAppStore(
+    useShallow((s) => {
+      const history: Record<string, ReadonlyArray<ProviderRunId>> = {};
+      for (const agent of s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>)) {
+        const runIds = s.agentRunHistory[agent.id];
+        if (runIds != null) {
+          history[agent.id] = runIds;
+        }
+      }
+      return history;
+    }),
+  );
+  const sessionProvider = session.providerPreference?.defaultProvider ?? null;
+  const sessionEffort = session.effort ?? null;
   const { copiedKey, failedKey, copy } = useCopyLink();
 
   useEffect(() => {
@@ -137,6 +169,32 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
     () => filterTimelineEntries({ entries: model.entries, filter: activity.filter }),
     [activity.filter, model.entries],
   );
+
+  const stepById = useMemo(() => {
+    const steps = new Map<string, Step>();
+    for (const { workflow } of workflows) {
+      for (const step of workflow.steps) {
+        steps.set(step.id, step);
+      }
+    }
+    return steps;
+  }, [workflows]);
+
+  const spendByAgentId = useMemo(
+    () => agentSpendById({ records: telemetry, agents, agentRunHistory }),
+    [agentRunHistory, agents, telemetry],
+  );
+
+  const spendByRunId = useMemo(() => {
+    const spend = new Map<string, number>();
+    for (const { run } of workflows) {
+      spend.set(
+        run.id,
+        runSpendUsd({ records: telemetry, agents, agentRunHistory, workflowRunId: run.id }),
+      );
+    }
+    return spend;
+  }, [agentRunHistory, agents, telemetry, workflows]);
 
   const advanceByRunId = useWorkflowAdvanceStates({ sessionId, workflows, agents });
 
@@ -283,6 +341,29 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
     }
   };
 
+  const metaFor = ({ item }: { readonly item: TimelineRowItem }): ReactNode => {
+    const { entry } = item;
+    if (entry.kind === 'run') {
+      return <TimelineRunMeta entry={entry} costUsd={spendByRunId.get(entry.run.id) ?? 0} />;
+    }
+    if (entry.kind !== 'agent') {
+      return null;
+    }
+    const { agent } = entry;
+    return (
+      <TimelineAgentMeta
+        agent={agent}
+        kind={entry.agentKind}
+        step={agent.stepId == null ? null : (stepById.get(agent.stepId) ?? null)}
+        roleModels={roleModels}
+        sessionProvider={sessionProvider}
+        sessionEffort={sessionEffort}
+        costUsd={spendByAgentId.get(agent.id) ?? 0}
+        shouldKeepCost={item.grade === 'entry'}
+      />
+    );
+  };
+
   const hasUnreadAgents = unreadAgentIds.size > 0;
   const visibleSuggestions = activity.filter.suggestions
     ? suggestions.filter(
@@ -333,7 +414,7 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
           Everything is hidden by the activity filter. Show a category to bring it back.
         </p>
       ) : (
-        <div className="flex flex-col">
+        <div className="@container flex flex-col">
           {visibleSuggestions.map((suggestion) => (
             <TimelineSuggestionRow
               key={suggestion.id}
@@ -368,6 +449,7 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
                 openTarget={target}
                 action={actionFor({ item })}
                 diffStat={diffStatFor({ item })}
+                meta={metaFor({ item })}
               />
             );
           })}
