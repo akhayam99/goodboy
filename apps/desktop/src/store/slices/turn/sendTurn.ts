@@ -1693,13 +1693,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshed } }));
     }
     void get().refreshUnreadWorkspaces();
-    void get().emitNotification(
-      'error',
-      'warning',
-      `autorun halted: ${name}`,
-      `the workflow sent this agent ${MAX_UNATTENDED_TURNS_PER_AGENT} turns in the last hour without you stepping in, so goodboy stopped it to protect your usage. open the agent and continue manually.`,
-      { sessionId, action: { kind: 'open-agent' as const, sessionId, agentId } },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Autorun halted: ${name}`,
+      body: `the workflow sent this agent ${MAX_UNATTENDED_TURNS_PER_AGENT} turns in the last hour without you stepping in, so goodboy stopped it to protect your usage. open the agent and continue manually.`,
+      sessionId,
+      action: { kind: 'open-agent', sessionId, agentId },
+    });
     return NOT_BLOCKED;
   };
   const run = async (input: Input): Promise<SendTurnResult> => {

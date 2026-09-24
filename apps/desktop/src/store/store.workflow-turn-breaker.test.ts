@@ -17,6 +17,9 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  type StoryStore,
   buildStoryAgent,
   buildStorySession,
   buildStoryWorkspace,
@@ -111,12 +114,11 @@ const clusterAgent: Agent = buildStoryAgent({
   name: 'mechanical swaps onto existing primitives',
 });
 
-type StoreModule = typeof import('./store');
-let useAppStore: StoreModule['useAppStore'];
+let useAppStore: StoryStore;
 
 beforeAll(async () => {
-  ({ useAppStore } = await import('./store'));
-}, 60_000);
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 describe('sendTurn workflow turn breaker', () => {
   const emitNotification = vi.fn(async () => undefined);
@@ -127,6 +129,7 @@ describe('sendTurn workflow turn breaker', () => {
     emitNotification.mockClear();
     storySpies.runTurn.mockImplementation(() => emptyTurnStream());
     storySpies.invokeAgentList.mockResolvedValue([stepAgent, clusterAgent] as never);
+    storySpies.invokeAgentUpdateStatus.mockResolvedValue(undefined as never);
     useAppStore.setState({
       sessions: [buildSession()],
       projects: [],
@@ -154,9 +157,7 @@ describe('sendTurn workflow turn breaker', () => {
       selectedAgentId: { [SESSION_ID]: CLUSTER_AGENT_ID },
       phaseTemplates: { [WORKSPACE_ID]: [buildWorkflow()] },
       sessionLanguageAnchor: {},
-      workspaces: [
-        buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws', sessionsRoot: '/tmp' }),
-      ],
+      workspaces: [buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws' })],
       emitNotification,
       ...connectedAnthropicState(),
     });
@@ -181,11 +182,12 @@ describe('sendTurn workflow turn breaker', () => {
 
     expect(storySpies.runTurn).toHaveBeenCalledTimes(MAX_UNATTENDED_TURNS_PER_AGENT);
     expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      expect.stringContaining('autorun halted'),
-      expect.any(String),
-      expect.objectContaining({ sessionId: SESSION_ID }),
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: expect.stringContaining('Autorun halted'),
+        sessionId: SESSION_ID,
+      }),
     );
   });
 
@@ -200,11 +202,7 @@ describe('sendTurn workflow turn breaker', () => {
 
     expect(storySpies.runTurn).toHaveBeenCalledTimes(1);
     expect(emitNotification).not.toHaveBeenCalledWith(
-      'error',
-      'warning',
-      expect.stringContaining('autorun halted'),
-      expect.any(String),
-      expect.anything(),
+      expect.objectContaining({ title: expect.stringContaining('Autorun halted') }),
     );
   });
 
