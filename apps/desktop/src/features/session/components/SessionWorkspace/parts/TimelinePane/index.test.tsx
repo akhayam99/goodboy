@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { OpenQuestion, Session } from '@goodboy/types';
 
 type Worktree = {
@@ -117,6 +117,7 @@ vi.mock('../../../../../suggestions/useSuggestionActions', () => ({
 }));
 
 import { TimelinePane } from './index';
+import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
 import { OverviewActions } from '../../../SessionOverviewPane/OverviewActions';
 
 const SESSION = {
@@ -165,6 +166,7 @@ beforeEach(() => {
   suggestionState.onDismiss.mockReset();
   agentsLoaded.current = true;
   attachedRuns.list = [];
+  useOpenQuestions.setState({ focusedQuestionId: null });
   localStorage.clear();
 });
 
@@ -558,6 +560,95 @@ describe('TimelinePane questions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
 
     expect(storeState.setActiveLens).toHaveBeenCalledWith('session-1', 'questions');
+    expect(useOpenQuestions.getState().focusedQuestionId).toBe('question-open');
+  });
+});
+
+describe('TimelinePane run waiting on an answer', () => {
+  const RUN = {
+    run: {
+      id: 'run-1',
+      workflowId: 'workflow-1',
+      ordinal: 0,
+      currentStep: 0,
+      autoRun: false,
+      triggerMode: 'manual',
+      executionMode: 'static',
+      goal: 'Ecco il prompt di goal rivisto: valuta se il checkout regge',
+      createdAt: '2026-08-20T10:30:00.000Z',
+    },
+    workflow: {
+      id: 'workflow-1',
+      workspaceId: 'ws-1',
+      name: 'Retry failed checkout payments',
+      description: '',
+      origin: 'orchestrated',
+      steps: [],
+      createdAt: '2026-08-20T10:30:00.000Z',
+      updatedAt: '2026-08-20T10:30:00.000Z',
+    },
+  };
+  const STEP = {
+    id: 'agent-step',
+    sessionId: 'session-1',
+    stepId: 'step-1',
+    workflowRunId: 'run-1',
+    ordinal: 1,
+    name: 'Implement retries',
+    status: 'running',
+    startedAt: '2026-08-20T10:31:00.000Z',
+  };
+  const STEP_QUESTION = {
+    id: 'question-step',
+    sessionId: 'session-1',
+    createdByAgentId: 'agent-step',
+    text: 'Retry on 5xx only?',
+    suggestedAnswers: [],
+    userAnswer: null,
+    status: 'open',
+    createdAt: '2026-08-20T10:40:00.000Z',
+  } as unknown as OpenQuestion;
+
+  const runRow = () => screen.getByText('Retry failed checkout payments').closest('.group');
+
+  it('keeps the raw goal off the run row', () => {
+    attachedRuns.list = [RUN];
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+
+    expect(screen.queryByText(/Ecco il prompt/)).toBeNull();
+  });
+
+  it('names the waiting step on the run row and offers a visible Answer there', () => {
+    attachedRuns.list = [RUN];
+    storeState.sessionPhaseRuns = { 'session-1': [STEP] };
+    questions.open = [STEP_QUESTION];
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    const row = runRow();
+    if (!(row instanceof HTMLElement)) {
+      throw new Error('run row missing');
+    }
+    const answer = within(row).getByRole('button', { name: 'Answer' });
+
+    expect(within(row).getByText('Needs your answer in step 1')).toBeDefined();
+    expect(answer.className).toContain('text-warning');
+  });
+
+  it('opens the exact question the run waits on', () => {
+    attachedRuns.list = [RUN];
+    storeState.sessionPhaseRuns = { 'session-1': [STEP] };
+    questions.open = [STEP_QUESTION];
+
+    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    const row = runRow();
+    if (!(row instanceof HTMLElement)) {
+      throw new Error('run row missing');
+    }
+    fireEvent.click(within(row).getByRole('button', { name: 'Answer' }));
+
+    expect(storeState.setActiveLens).toHaveBeenCalledWith('session-1', 'questions');
+    expect(useOpenQuestions.getState().focusedQuestionId).toBe('question-step');
   });
 });
 

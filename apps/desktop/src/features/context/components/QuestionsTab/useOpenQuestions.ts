@@ -40,6 +40,7 @@ type OpenQuestionsUiState = {
   drafts: Record<string, QuestionDraft>;
   justAnswered: ReadonlyArray<OpenQuestionId>;
   pendingUndo: PendingUndo | null;
+  focusedQuestionId: OpenQuestionId | null;
   toggleSuggestion: (
     questionId: OpenQuestionId,
     suggestion: string,
@@ -53,6 +54,8 @@ type OpenQuestionsUiState = {
   clearJustAnswered: (id: OpenQuestionId) => void;
   beginUndo: (question: OpenQuestion) => void;
   clearUndo: () => void;
+  focusQuestion: (questionId: OpenQuestionId) => void;
+  clearFocusedQuestion: () => void;
 };
 
 function emptyDraft(): QuestionDraft {
@@ -77,6 +80,7 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
   drafts: {},
   justAnswered: [],
   pendingUndo: null,
+  focusedQuestionId: null,
 
   toggleSuggestion: (questionId, suggestion, mode = 'one') => {
     const drafts = { ...get().drafts };
@@ -150,5 +154,13 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
       clearTimeout(existing.timer);
     }
     set({ pendingUndo: null });
+  },
+
+  focusQuestion: (questionId) => {
+    set({ focusedQuestionId: questionId });
+  },
+
+  clearFocusedQuestion: () => {
+    set({ focusedQuestionId: null });
   },
 }));

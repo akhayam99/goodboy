@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
 import { Button, SectionHeader, useCopyLink } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
+import type { OpenQuestion, Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   agentHasUnread,
@@ -25,6 +25,8 @@ import {
 } from '../../../../timeline/buildTimelineStream';
 import { dayLabel } from '../../../../timeline/dayLabel';
 import { layoutTimelineRail } from '../../../../timeline/railGeometry';
+import { oldestAgentOpenQuestion, runOpenQuestion } from '../../../../timeline/runOpenQuestion';
+import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
 import { useActivityFilter } from '../../../../hooks/useActivityFilter';
 import { useTimelineOpen } from '../../../../hooks/useTimelineOpen';
 import { useSessionSuggestions } from '../../../../../suggestions';
@@ -65,6 +67,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const openMountDiff = useAppStore((s) => s.openMountDiff);
+  const focusQuestion = useOpenQuestions((s) => s.focusQuestion);
   const openQuestions = useSessionOpenQuestions(sessionId);
   const answeredQuestions = useSessionAnsweredQuestions(sessionId);
   const dismissedQuestions = useSessionDismissedQuestions(sessionId);
@@ -244,6 +247,21 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
     return diffStats.get(worktreePath) ?? null;
   };
 
+  const answerAction = ({
+    question,
+  }: {
+    readonly question: OpenQuestion | null;
+  }): TimelineRowAction => ({
+    label: 'Answer',
+    asksUser: true,
+    onAct: () => {
+      if (question != null) {
+        focusQuestion(question.id);
+      }
+      setActiveLens(sessionId, 'questions');
+    },
+  });
+
   const actionFor = ({ item }: { readonly item: TimelineRowItem }): TimelineRowAction | null => {
     const { entry } = item;
     const mountPath = mountPathFor({ item });
@@ -266,13 +284,13 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
       };
     }
     if (entry.kind === 'agent' && entry.openQuestions.length > 0) {
-      return { label: 'Answer', onAct: () => setActiveLens(sessionId, 'questions') };
+      return answerAction({ question: oldestAgentOpenQuestion({ entry }) });
     }
     if (
       entry.kind === 'question' &&
       entry.questions.every((question) => question.status === 'open')
     ) {
-      return { label: 'Answer', onAct: () => setActiveLens(sessionId, 'questions') };
+      return answerAction({ question: entry.questions[0] ?? null });
     }
     if (entry.kind !== 'run') {
       return null;
@@ -287,9 +305,13 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         onAct: target.open,
       };
     }
+    const waiting = runOpenQuestion({ entry });
+    if (waiting != null) {
+      return answerAction({ question: waiting.question });
+    }
     const advance = advanceByRunId.get(entry.run.id) ?? { kind: 'complete' as const };
     if (advance.kind === 'blocked' && advance.reason === 'questions') {
-      return { label: 'Answer', onAct: () => setActiveLens(sessionId, 'questions') };
+      return answerAction({ question: null });
     }
     if (advance.kind !== 'ready') {
       return null;

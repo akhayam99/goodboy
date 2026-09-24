@@ -15,6 +15,7 @@ import { TimelineRowMarker } from './TimelineRowMarker';
 export type TimelineRowAction = {
   readonly label: string;
   readonly onAct: () => void;
+  readonly asksUser?: boolean;
 };
 
 type Props = {
@@ -115,7 +116,13 @@ export const TimelineStreamRow = ({
             className="flex shrink-0 items-center"
             style={{ height: boxHeight }}
           >
-            <Button variant="ghost" size="sm" className="h-6" onClick={action.onAct}>
+            <Button
+              variant={action.asksUser === true ? 'warning' : 'ghost'}
+              emphasis={action.asksUser === true ? 'outline' : 'solid'}
+              size="sm"
+              className="h-6"
+              onClick={action.onAct}
+            >
               {action.label}
             </Button>
           </span>

@@ -198,6 +198,17 @@ Three limits keep identity small:
   timeline feature owns its own surface, and the palette never enters
   `packages/ui`.
 
+A run row carries the chip, one title and at most one short status line.
+`TimelineRunLabel` prints the workflow name as that title with a single
+`truncate`, and never the run goal: a goal is a document and lives in the
+workflow detail. A preset or custom workflow names itself in the chip tooltip.
+When any step of the run, at any depth, waits on an open question,
+`runOpenQuestion` picks the oldest one. The run row then takes the question
+marker, says "Needs your answer in step 4.2" in the warning tone, and shows a
+visible Answer in the warning outline. Answer calls `focusQuestion` and opens
+the questions lens on that exact question. Every Answer on the feed (agent,
+question and run rows) is the same action.
+
 Agent kinds (`--color-agent-*`) and provider glyphs (`--color-provider-*`) are
 identity palettes of their own. Each has a single accessor and is held to the
 same floor test. Anything else that reaches for an identity colour is a bug.

@@ -6,6 +6,7 @@ let _answeredQuestions: Array<{ status: string; [k: string]: unknown }> = [];
 let _oqDrafts: Record<string, unknown> = {};
 let _oqJustAnswered: string[] = [];
 let _oqPendingUndo: { question: { id: string; sessionId: string }; timer: number } | null = null;
+let _oqFocusedQuestionId: string | null = null;
 
 const mockAnswerOpenQuestions = vi.fn().mockResolvedValue(undefined);
 const mockDismissOpenQuestion = vi.fn().mockResolvedValue(undefined);
@@ -23,6 +24,9 @@ const mockClearJustAnswered = vi.fn();
 const mockBeginUndo = vi.fn();
 const mockClearUndo = vi.fn();
 const mockClearDraft = vi.fn();
+const mockClearFocusedQuestion = vi.fn(() => {
+  _oqFocusedQuestionId = null;
+});
 const mockSpawnQuestionDelegates = vi.fn().mockResolvedValue([]);
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -54,6 +58,8 @@ vi.mock('../../../../context/components/QuestionsTab/useOpenQuestions', () => ({
       pendingUndo: _oqPendingUndo,
       beginUndo: mockBeginUndo,
       clearUndo: mockClearUndo,
+      focusedQuestionId: _oqFocusedQuestionId,
+      clearFocusedQuestion: mockClearFocusedQuestion,
     }),
   ),
   PERSON_ANSWERS: { kind: 'person' },
@@ -243,6 +249,7 @@ afterEach(() => {
   _oqDrafts = {};
   _oqJustAnswered = [];
   _oqPendingUndo = null;
+  _oqFocusedQuestionId = null;
 });
 
 describe('QuestionsPane', () => {
@@ -503,6 +510,38 @@ describe('QuestionsPane', () => {
         ],
         scout.id,
       );
+    });
+
+    it('opens the cluster on the question the overview asked to focus', () => {
+      const scout = mkAgent('agent_scout', undefined, 'scout');
+      setupStore({
+        agents: [scout],
+        openQuestions: [
+          mkQuestion('q1', { createdByAgentId: scout.id }),
+          mkQuestion('q2', { createdByAgentId: scout.id }),
+        ],
+      });
+      _oqFocusedQuestionId = 'q2';
+
+      render(<QuestionsPane session={BASE_SESSION} />);
+
+      expect(screen.getByTestId('question-card-q2')).toBeDefined();
+      expect(screen.queryByTestId('question-card-q1')).toBeNull();
+      expect(mockClearFocusedQuestion).toHaveBeenCalled();
+    });
+
+    it('drops a focus that points at no open question', () => {
+      const scout = mkAgent('agent_scout', undefined, 'scout');
+      setupStore({
+        agents: [scout],
+        openQuestions: [mkQuestion('q1', { createdByAgentId: scout.id })],
+      });
+      _oqFocusedQuestionId = 'q-gone';
+
+      render(<QuestionsPane session={BASE_SESSION} />);
+
+      expect(screen.getByTestId('question-card-q1')).toBeDefined();
+      expect(mockClearFocusedQuestion).toHaveBeenCalled();
     });
 
     it('keeps each asking agent cluster on its own step', () => {

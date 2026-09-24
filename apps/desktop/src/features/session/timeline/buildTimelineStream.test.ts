@@ -2076,6 +2076,108 @@ describe('buildTimelineStream, question artifact rows', () => {
 
     expect(questionRows).toHaveLength(2);
   });
+  it('puts the run row on the question marker while one of its steps waits on an answer', () => {
+    const { items } = stream({
+      workflows: [
+        attachedWorkflow({
+          createdAt: localIso({ day: 18, hour: 8 }),
+          stepIds: ['one', 'two'],
+          executionMode: 'dynamic',
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({
+          id: 'two',
+          ordinal: 2,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 10 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+      questions: [
+        openQuestionFor({
+          id: 'step-question',
+          createdByAgentId: 'two',
+          createdAt: localIso({ day: 18, hour: 10, minute: 5 }),
+        }),
+      ],
+      decidingRunIds: new Set([RUN_ID]),
+    });
+    const runRow = items.find((item) => item.id === 'run:run-1');
+
+    expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('question');
+  });
+
+  it('lifts a question asked by a nested subagent up to the run row', () => {
+    const { items } = stream({
+      workflows: [
+        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['one'] }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({
+          id: 'child',
+          ordinal: 2,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+          workflowRunId: RUN_ID,
+          parentAgentId: 'one',
+        }),
+      ],
+      questions: [
+        openQuestionFor({
+          id: 'nested-question',
+          createdByAgentId: 'child',
+          createdAt: localIso({ day: 18, hour: 9, minute: 20 }),
+        }),
+      ],
+      showWorkflowSubagents: false,
+    });
+    const runRow = items.find((item) => item.id === 'run:run-1');
+
+    expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('question');
+  });
+
+  it('leaves the run row off the question marker once the question is answered', () => {
+    const { items } = stream({
+      workflows: [
+        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['one'] }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+      questions: [
+        answeredQuestionFor({
+          id: 'answered-step-question',
+          createdByAgentId: 'one',
+          createdAt: localIso({ day: 18, hour: 9, minute: 5 }),
+          answeredAt: localIso({ day: 18, hour: 9, minute: 10 }),
+        }),
+      ],
+    });
+    const runRow = items.find((item) => item.id === 'run:run-1');
+
+    expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('running');
+  });
 });
 
 describe('buildTimelineStream, project mount runs', () => {

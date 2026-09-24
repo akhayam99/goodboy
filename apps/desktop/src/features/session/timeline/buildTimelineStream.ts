@@ -14,6 +14,7 @@ import type {
 import { resolveMarkerState, type TimelineMarkerState } from './markerState';
 import type { RailGroupInput, RailGroupShape } from './railGeometry';
 import type { RunIdentity } from './runIdentity';
+import { runOpenQuestion } from './runOpenQuestion';
 import {
   TIMELINE_RHYTHM,
   markerCenterY,
@@ -587,7 +588,9 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
   }
   const steps = stepAgentsOf({ entry });
   const hasRunningStep = steps.some((agent) => agent.status === 'running');
-  const isDeciding = !isFinished && !hasRunningStep && context.decidingRunIds.has(entry.run.id);
+  const hasOpenQuestion = runOpenQuestion({ entry }) != null;
+  const isDeciding =
+    !isFinished && !hasRunningStep && !hasOpenQuestion && context.decidingRunIds.has(entry.run.id);
   const settledState: TimelineMarkerState = resolveMarkerState({
     status: hasRunningStep
       ? 'running'
@@ -596,7 +599,7 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
         : isFinished
           ? 'completed'
           : 'pending',
-    hasOpenQuestion: false,
+    hasOpenQuestion,
     needsUser,
   });
   const origin: DraftRow = {

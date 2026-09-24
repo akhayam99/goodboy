@@ -30,6 +30,7 @@ type EntryParams = {
   readonly goal?: string;
   readonly runId?: string;
   readonly discardedAt?: string | null;
+  readonly children?: ReadonlyArray<unknown>;
 };
 
 const entryOf = ({
@@ -38,6 +39,7 @@ const entryOf = ({
   goal = 'Restructure the legacy module',
   runId = 'run-7',
   discardedAt = null,
+  children = [],
 }: EntryParams = {}) =>
   ({
     kind: 'run',
@@ -46,12 +48,25 @@ const entryOf = ({
     run: { id: runId, goal, discardedAt },
     workflow: { name, origin: ORIGIN_OF[kind] },
     identity: runIdentity({ laneIndex: 0, seed: 0 }),
-    children: [],
+    children,
     producedPlan: null,
   }) as unknown as TimelineRunEntry;
 
+type StepParams = {
+  readonly stepLabel: string;
+  readonly questionAt?: string | null;
+  readonly children?: ReadonlyArray<unknown>;
+};
+
+const stepOf = ({ stepLabel, questionAt = null, children = [] }: StepParams) => ({
+  kind: 'agent',
+  stepLabel,
+  openQuestions: questionAt == null ? [] : [{ id: `question-${stepLabel}`, createdAt: questionAt }],
+  children,
+});
+
 const chipOf = () => {
-  const chip = screen.getByTitle(LABEL_OF.preset);
+  const chip = screen.getByTitle(`Refactor (example) ${LABEL_OF.preset.toLowerCase()}`);
   return chip;
 };
 
@@ -91,17 +106,70 @@ describe('TimelineRunLabel', () => {
     expect(new Set(drawn.values()).size).toBe(3);
   });
 
-  it('prints the run name as plain text and the goal after it', () => {
+  it('prints the run name as plain text and never the raw goal', () => {
     render(<TimelineRunLabel entry={entryOf({ name: 'Orchestrated workflow 13' })} />);
 
     expect(screen.getByText('Orchestrated workflow 13').tagName).toBe('SPAN');
-    expect(screen.getByText('Restructure the legacy module')).toBeDefined();
+    expect(screen.queryByText('Restructure the legacy module')).toBeNull();
   });
 
-  it('drops the title when the goal only repeats the name', () => {
-    render(<TimelineRunLabel entry={entryOf({ name: 'Ship it', goal: 'Ship it' })} />);
+  it('keeps a long goal full of pasted output out of the row', () => {
+    const goal = `Ecco il prompt di goal rivisto: \`\`\`${'Valuta se '.repeat(400)}\`\`\``;
+    const { container } = render(<TimelineRunLabel entry={entryOf({ name: 'Checkout', goal })} />);
 
-    expect(screen.getAllByText('Ship it')).toHaveLength(1);
+    expect(container.textContent).not.toContain('Ecco il prompt');
+    expect(screen.getByText('Checkout').className).toContain('truncate');
+  });
+
+  it('names a preset in the chip tooltip and leaves the row to the title', () => {
+    render(<TimelineRunLabel entry={entryOf({ name: 'Feature' })} />);
+
+    expect(screen.getByTitle('Feature preset workflow')).toBeDefined();
+  });
+
+  it('keeps the plain kind in the tooltip of an orchestrated run', () => {
+    render(<TimelineRunLabel entry={entryOf({ kind: 'orchestrator', name: 'Fix login' })} />);
+
+    expect(screen.getByTitle(LABEL_OF.orchestrator)).toBeDefined();
+  });
+
+  it('says which step needs an answer when one of its steps asks', () => {
+    render(
+      <TimelineRunLabel
+        entry={entryOf({
+          children: [
+            stepOf({ stepLabel: '3' }),
+            stepOf({ stepLabel: '2', questionAt: '2026-08-18T09:30:00Z' }),
+          ],
+        })}
+      />,
+    );
+
+    expect(screen.getByText('Needs your answer in step 2').className).toContain('text-warning');
+  });
+
+  it('names the step of the oldest open question, nested steps included', () => {
+    render(
+      <TimelineRunLabel
+        entry={entryOf({
+          children: [
+            stepOf({ stepLabel: '5', questionAt: '2026-08-18T11:00:00Z' }),
+            stepOf({
+              stepLabel: '4',
+              children: [stepOf({ stepLabel: '4.2', questionAt: '2026-08-18T10:00:00Z' })],
+            }),
+          ],
+        })}
+      />,
+    );
+
+    expect(screen.getByText('Needs your answer in step 4.2')).toBeDefined();
+  });
+
+  it('stays quiet about answers when no step asks anything', () => {
+    render(<TimelineRunLabel entry={entryOf({ children: [stepOf({ stepLabel: '1' })] })} />);
+
+    expect(screen.queryByText(/Needs your answer/)).toBeNull();
   });
 
   it('keeps a live run at full-strength label ink and a filled chip', () => {
@@ -165,10 +233,9 @@ describe('TimelineRunLabel', () => {
     expect(screen.queryByText(ORCHESTRATOR_DECIDING_SENTENCE)).toBeNull();
   });
 
-  it('drops the title when the run carries no goal at all', () => {
+  it('shows the run name when the run carries no goal at all', () => {
     render(<TimelineRunLabel entry={entryOf({ goal: '   ' })} />);
 
-    expect(screen.queryByText('Restructure the legacy module')).toBeNull();
     expect(screen.getByText('Refactor (example)')).toBeDefined();
   });
 });
