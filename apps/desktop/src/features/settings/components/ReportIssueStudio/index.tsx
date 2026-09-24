@@ -36,7 +36,7 @@ import {
   revealBugReportImages,
   stageBugReportImages,
   type StagedBugReport,
-} from './stageImages';
+} from '../../settings';
 import { truncationNotice } from './truncationNotice';
 import { uploadIssueAttachments } from './uploadIssueAttachments';
 

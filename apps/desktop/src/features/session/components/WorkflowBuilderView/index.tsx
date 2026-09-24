@@ -1,5 +1,4 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import {
   AlertTriangle,
   Check,
@@ -38,18 +37,20 @@ import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/compo
 import { PANE_RHYTHM } from '@goodboy/ui';
 import {
   PROVIDER_CAPABILITIES,
-  PlannerClient,
   type PlannerOutput,
   clampEffortForModel,
   defaultsForRole,
-  polishStepInstruction,
-  polishWorkflowGoal,
   recommendedModelForRole,
   resolveRoleRouting,
   resolveTaskModel,
   runsForWorkflowRun,
 } from '@goodboy/core';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
+import {
+  createWorkflowPlanner,
+  polishWorkflowGoalText,
+  polishWorkflowStep,
+} from '../../../workflows/workflows';
 import type {
   AgentRole,
   EffortLevel,
@@ -593,19 +594,18 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setError(null);
     setPolishingKey(key);
     try {
-      const polished = await polishStepInstruction(
-        {
+      const polished = await polishWorkflowStep({
+        deps: {
           ...resolvedProsePolishTaskModel,
-          invokeFn: invoke,
           ...(sessionWorktree != null && { workingDir: sessionWorktree }),
         },
-        {
+        input: {
           role: step.role,
           name: step.name,
           instruction: step.prompt,
           ...(goalText.trim().length > 0 && { goal: goalText }),
         },
-      );
+      });
       if (polished !== null && polished !== step.prompt) {
         patchStep(key, { prompt: polished });
         return;
@@ -655,14 +655,13 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setError(null);
     setPolishing(true);
     try {
-      const polished = await polishWorkflowGoal(
-        {
+      const polished = await polishWorkflowGoalText({
+        deps: {
           ...resolvedProsePolishTaskModel,
-          invokeFn: invoke,
           ...(sessionWorktree != null && { workingDir: sessionWorktree }),
         },
-        goalText,
-      );
+        goal: goalText,
+      });
       if (polished && polished !== goalText) {
         replaceGoal(polished);
       } else if (!polished) {
@@ -743,10 +742,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         model: effectiveModel,
         effort: plannerEffort,
       };
-      const client = new PlannerClient({
-        ...taskModel,
-        invokeFn: invoke,
-        ...(sessionWorktree != null && { workingDir: sessionWorktree }),
+      const client = createWorkflowPlanner({
+        deps: {
+          ...taskModel,
+          ...(sessionWorktree != null && { workingDir: sessionWorktree }),
+        },
       });
       const profileBlock = buildProfileGuard({
         profile: useAppStore

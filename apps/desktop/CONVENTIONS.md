@@ -14,7 +14,7 @@ This app is the **only** layer that calls Tauri commands (`invoke`) and imports 
 
 ## Tauri command patterns
 
-- Each command gets one thin wrapper, in the feature's `features/<domain>/<domain>.ts` (or `shared/lib/` when no feature owns it). Components never call `invoke` directly.
+- Each command gets one thin wrapper, in the feature's `features/<domain>/<domain>.ts` (or `shared/lib/` when no feature owns it). Store actions and feature wrapper modules may call `invoke`. Components and hooks never import it. They pass a wrapper instead, including where a `@goodboy/core` helper takes an `invokeFn`.
 - A command returns a Rust `Result<T, E>`. Tauri resolves with `T` on `Ok(T)` and **rejects** on `Err(E)`, with `E` serialized as the rejection value. No tagged `{ ok, value }` envelope travels over the wire. So the wrapper catches the rejection, maps it to a typed domain error, and throws that again.
 - Errors are domain types from `@goodboy/types`. Never show raw Tauri error strings in the UI.
 - Validate what a command returns at the boundary if the Rust side is not the single source of truth.

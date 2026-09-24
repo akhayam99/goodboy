@@ -1,5 +1,14 @@
 import { invoke } from '@tauri-apps/api/core';
-import { normalizeAgentRole } from '@goodboy/core';
+import {
+  normalizeAgentRole,
+  PlannerClient,
+  polishStepInstruction,
+  polishWorkflowGoal,
+  type GoalPolishDeps,
+  type PlannerClientDeps,
+  type StepPolishDeps,
+  type StepPolishInput,
+} from '@goodboy/core';
 import {
   isWorkflowRoutingDecision,
   isWorkflowRoutingLock,
@@ -649,3 +658,26 @@ export const invokeWorkspacesWithUnread = async (): Promise<ReadonlyArray<Worksp
   const ids = await invoke<string[]>('workspaces_with_unread');
   return ids as ReadonlyArray<string> as ReadonlyArray<WorkspaceId>;
 };
+
+type PolishStepParams = {
+  readonly deps: Omit<StepPolishDeps, 'invokeFn'>;
+  readonly input: StepPolishInput;
+};
+
+export const polishWorkflowStep = ({ deps, input }: PolishStepParams): Promise<string | null> =>
+  polishStepInstruction({ ...deps, invokeFn: invoke }, input);
+
+type PolishGoalParams = {
+  readonly deps: Omit<GoalPolishDeps, 'invokeFn'>;
+  readonly goal: string;
+};
+
+export const polishWorkflowGoalText = ({ deps, goal }: PolishGoalParams): Promise<string | null> =>
+  polishWorkflowGoal({ ...deps, invokeFn: invoke }, goal);
+
+type PlannerParams = {
+  readonly deps: Omit<PlannerClientDeps, 'invokeFn'>;
+};
+
+export const createWorkflowPlanner = ({ deps }: PlannerParams): PlannerClient =>
+  new PlannerClient({ ...deps, invokeFn: invoke });
