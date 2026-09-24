@@ -89,6 +89,18 @@ const TOMBSTONE_READ_ALLOWLIST: ReadonlyArray<TombstoneAllowance> = [
       'point lookup by id: reads back the row the same call just wrote, which must round-trip whatever state it is in',
   },
   {
+    file: 'workflows.rs',
+    contains: ['SELECT id, session_id, parent_agent_id FROM agents WHERE id = ?1'],
+    reason:
+      'ancestry walk by id: deleting an agent never refunds generation allowance, so the lineage has to resolve through a tombstone',
+  },
+  {
+    file: 'agent-generation.ts',
+    contains: ['SELECT id, session_id, parent_agent_id FROM agents WHERE id = ?'],
+    reason:
+      'ancestry walk by id: deleting an agent never refunds generation allowance, so the lineage has to resolve through a tombstone',
+  },
+  {
     file: 'snapshot.rs',
     contains: ['FROM agents WHERE deleted_at IS NULL'],
     reason: 'carries its own tombstone filter and projects deleted_at into the snapshot',

@@ -52,6 +52,16 @@ const hoisted = vi.hoisted(() => {
 });
 
 vi.mock('../../../features/workflows/workflows', () => ({
+  invokeAgentGenerationReserve: async ({ count }: { readonly count: number }) => ({
+    kind: 'granted' as const,
+    reservations: Array.from({ length: count }, (_, index) => ({
+      reservationId: `reservation:${index}`,
+      depth: 1,
+      causalRootAgentId: null,
+    })),
+  }),
+  invokeEvidenceInventoryRecord: async () => undefined,
+  invokeEvidenceDeliveryRecord: async () => undefined,
   invokeAgentInsertBatch: hoisted.invokeAgentInsertBatch,
   invokeAgentList: hoisted.invokeAgentList,
   invokeAgentUpdateStatus: hoisted.invokeAgentUpdateStatus,
@@ -179,6 +189,11 @@ describe('scout fan-out workflowRunId propagation', () => {
     const call = hoisted.invokeAgentInsertBatch.mock.calls[0]![0];
     expect(call.parentAgentId).toBe('container');
     expect(call.children).toHaveLength(3);
+    expect(
+      call.children.map(
+        (child: { generationReservationId?: string }) => child.generationReservationId,
+      ),
+    ).toEqual(['reservation:0', 'reservation:1', 'reservation:2']);
   });
 
   it('leaves no children and starts nothing when the batch fails', async () => {

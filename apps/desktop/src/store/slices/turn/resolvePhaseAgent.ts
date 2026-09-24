@@ -6,7 +6,11 @@ import type {
   Step,
   WorkflowRunId,
 } from '@goodboy/types';
-import { invokeAgentInsert, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import {
+  invokeAgentGenerationReserve,
+  invokeAgentInsert,
+  invokeAgentUpdateStatus,
+} from '../../../features/workflows/workflows';
 import { classifyStep } from '../../../features/session/agent-kind';
 
 type Params = {
@@ -34,6 +38,18 @@ export const resolvePhaseAgent = async ({
     });
   }
 
+  const reservation = await invokeAgentGenerationReserve({
+    reservationId: `generation:workflow-step:${workflowRunId ?? sessionId}:${definition.id}`,
+    sessionId,
+    workflowRunId,
+    parentAgentId: null,
+    creationPath: 'workflow-step',
+    count: 1,
+  });
+  if (reservation.kind === 'refused') {
+    throw new Error(reservation.reason);
+  }
+
   return invokeAgentInsert({
     sessionId,
     stepId: definition.id,
@@ -41,8 +57,10 @@ export const resolvePhaseAgent = async ({
     ordinal: definition.ordinal,
     name: definition.name,
     status: 'running',
+    executionPurpose: 'standalone',
     providerRunId,
     startedAt: now(),
     kind: classifyStep({ step: definition }),
+    generationReservationId: reservation.reservations[0]!.reservationId,
   });
 };

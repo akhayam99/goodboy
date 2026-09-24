@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AgentId,
+  CapabilityObligation,
   ClusterCompletionHold,
   ClusterExecutionGraph,
   IsoDateTime,
@@ -32,6 +33,7 @@ const h = vi.hoisted(() => ({
   projects: [] as ReadonlyArray<Project>,
   holds: new Map<SessionId, ReadonlyArray<ClusterCompletionHold>>(),
   graphs: new Map<SessionId, ReadonlyArray<ClusterExecutionGraph>>(),
+  obligations: new Map<SessionId, ReadonlyArray<CapabilityObligation>>(),
   updateSessionWriteDestination: vi.fn(async () => undefined),
 }));
 
@@ -67,6 +69,9 @@ vi.mock('../../../features/workflows/workflows', () => ({
   ),
   invokeClusterExecutionGraphs: vi.fn(
     async ({ sessionId }: { readonly sessionId: SessionId }) => h.graphs.get(sessionId) ?? [],
+  ),
+  invokeCapabilityObligations: vi.fn(
+    async ({ sessionId }: { readonly sessionId: SessionId }) => h.obligations.get(sessionId) ?? [],
   ),
   invokeStepDefList: vi.fn(async () => []),
   invokeWorkflowList: vi.fn(async () => []),
@@ -122,6 +127,26 @@ const executionGraph: ClusterExecutionGraph = {
   graph: { executionVersion: 1, nodes: [] },
   nodes: [],
   createdAt: NOW,
+};
+
+const openObligation: CapabilityObligation = {
+  id: 'obligation-1',
+  sessionId: UNSELECTED_SESSION_ID,
+  workflowRunId: null,
+  identity: 'source-1:implementer:repair',
+  requesterAgentId: 'source-1' as AgentId,
+  targetRole: 'implementer',
+  purpose: 'repair',
+  state: 'open',
+  ownerAgentId: null,
+  decision: null,
+  childAgentId: null,
+  deliveredAt: null,
+  deliveryReceipt: null,
+  requests: [],
+  holdIds: [],
+  createdAt: NOW,
+  updatedAt: NOW,
 };
 
 const overrides = {
@@ -199,6 +224,7 @@ type Harness = {
   }>;
   readonly advanceSnapshots: ReadonlyArray<ReadonlyArray<ClusterCompletionHold>>;
   readonly selectedSessionGraphs: ReadonlyArray<ReadonlyArray<ClusterExecutionGraph>>;
+  readonly selectedSessionObligations: ReadonlyArray<ReadonlyArray<CapabilityObligation>>;
 };
 
 const harness = (): Harness => {
@@ -208,6 +234,7 @@ const harness = (): Harness => {
   }> = [];
   const advanceSnapshots: Array<ReadonlyArray<ClusterCompletionHold>> = [];
   const selectedSessionGraphs: Array<ReadonlyArray<ClusterExecutionGraph>> = [];
+  const selectedSessionObligations: Array<ReadonlyArray<CapabilityObligation>> = [];
   let state = {
     workspaces: [{ id: WORKSPACE_ID, lastAccessedAt: NOW }],
     sessions: [],
@@ -232,6 +259,7 @@ const harness = (): Harness => {
         holds: state.clusterCompletionHolds[sessionId] ?? [],
       });
       selectedSessionGraphs.push(state.clusterExecutionGraphs[sessionId] ?? []);
+      selectedSessionObligations.push(state.capabilityObligations[sessionId] ?? []);
     }),
   };
   const set: SetFn = (update) => {
@@ -247,6 +275,7 @@ const harness = (): Harness => {
     selectedSessionSnapshots,
     advanceSnapshots,
     selectedSessionGraphs,
+    selectedSessionObligations,
   };
 };
 
@@ -255,6 +284,7 @@ beforeEach(() => {
   h.projects = [project];
   h.holds = new Map();
   h.graphs = new Map();
+  h.obligations = new Map();
   h.sessions = [
     session({ id: UNSELECTED_SESSION_ID }),
     session({ id: RESTORED_SESSION_ID, activeMountId: RESTORED_MOUNT_ID }),
@@ -336,6 +366,18 @@ describe('setCurrentWorkspace mount hydration', () => {
 
     expect(store.selectedSessionGraphs).toEqual([[executionGraph]]);
     expect(store.state.clusterExecutionGraphs[UNSELECTED_SESSION_ID]).toEqual([executionGraph]);
+  });
+
+  it('hydrates capability obligations before selecting a session with cached agents', async () => {
+    h.sessions = [session({ id: UNSELECTED_SESSION_ID })];
+    h.worktrees = new Map();
+    h.obligations = new Map([[UNSELECTED_SESSION_ID, [openObligation]]]);
+    const store = harness();
+
+    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+
+    expect(store.selectedSessionObligations).toEqual([[openObligation]]);
+    expect(store.state.capabilityObligations[UNSELECTED_SESSION_ID]).toEqual([openObligation]);
   });
 });
 

@@ -201,9 +201,16 @@ export type { TelemetrySummary, TelemetryPeriodSummary } from './telemetry-perio
 export type {
   Agent,
   AgentEffort,
+  AgentExecutionPurpose,
   AgentRole,
   AgentSourceKind,
   AgentStatus,
+  CapabilityContinuation,
+  CapabilityObligation,
+  CapabilityObligationDecision,
+  CapabilityObligationState,
+  CapabilityPurpose,
+  CapabilityRequest,
   ClusterCompletionFinding,
   ClusterCompletionFindingTarget,
   ClusterCompletionHold,
@@ -214,7 +221,31 @@ export type {
   Workflow,
   WorkflowOrigin,
 } from './workflow';
-export { WORKFLOW_ORIGINS, isWorkflowOrigin } from './workflow';
+export {
+  AGENT_EXECUTION_PURPOSES,
+  CAPABILITY_CONTINUATIONS,
+  CAPABILITY_PURPOSES,
+  WORKFLOW_ORIGINS,
+  isWorkflowOrigin,
+} from './workflow';
+export type {
+  ContextReadOutcome,
+  EvidenceAvailability,
+  EvidenceEntry,
+  EvidenceInventory,
+  EvidenceSourceKind,
+  GenerationCreationPath,
+  GenerationLimitName,
+} from './evidence';
+export {
+  EVIDENCE_SOURCE_KINDS,
+  GENERATION_CREATION_PATHS,
+  GENERATION_DEPTH_CAP,
+  GENERATION_REPAIR_ATTEMPT_CAP,
+  GENERATION_ROOT_DESCENDANT_CAP,
+  GENERATION_RUN_CAP,
+  GENERATION_STRUCTURAL_REPLAN_CAP,
+} from './evidence';
 export type {
   AuxTaskId,
   GlobalSettings,

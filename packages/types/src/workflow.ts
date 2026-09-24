@@ -14,6 +14,7 @@ import type { VerbosityLevel } from './settings';
 import type {
   WorkflowRoutingDecision,
   WorkflowRoutingLock,
+  WorkflowRoutingProposal,
   WorkflowTaskProfile,
 } from './workflow-routing';
 
@@ -58,6 +59,79 @@ export type ClusterCompletionHold = Readonly<{
   state: ClusterCompletionHoldState;
   resolutionEvidence: string | null;
   resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}>;
+
+export type CapabilityPurpose = 'discovery' | 'diagnosis' | 'repair' | 'test' | 'replan';
+
+export const CAPABILITY_PURPOSES: ReadonlyArray<CapabilityPurpose> = [
+  'discovery',
+  'diagnosis',
+  'repair',
+  'test',
+  'replan',
+];
+
+export type CapabilityContinuation = 'resume' | 'transfer' | 'handoff';
+
+export const CAPABILITY_CONTINUATIONS: ReadonlyArray<CapabilityContinuation> = [
+  'resume',
+  'transfer',
+  'handoff',
+];
+
+export type AgentExecutionPurpose =
+  'cluster' | 'fan-out' | 'capability' | 'question-delegate' | 'standalone';
+
+export const AGENT_EXECUTION_PURPOSES: ReadonlyArray<AgentExecutionPurpose> = [
+  'cluster',
+  'fan-out',
+  'capability',
+  'question-delegate',
+  'standalone',
+];
+
+export type CapabilityObligationState = 'open' | 'granted' | 'satisfied' | 'refused';
+
+export type CapabilityObligationDecision = 'granted' | 'refused' | 'attached' | 'refinement';
+
+export type CapabilityRequest = Readonly<{
+  id: string;
+  sessionId: SessionId;
+  workflowRunId: WorkflowRunId | null;
+  obligationId: string;
+  requesterAgentId: AgentId;
+  sourceTurnId: string;
+  targetRole: AgentRole;
+  purpose: CapabilityPurpose;
+  question: string;
+  scope: ReadonlyArray<string>;
+  evidenceRefs: ReadonlyArray<string>;
+  gap: string;
+  expectedOutput: string;
+  continuation: CapabilityContinuation;
+  routingProposal: WorkflowRoutingProposal | null;
+  inventoryRevision: string;
+  createdAt: string;
+}>;
+
+export type CapabilityObligation = Readonly<{
+  id: string;
+  sessionId: SessionId;
+  workflowRunId: WorkflowRunId | null;
+  identity: string;
+  requesterAgentId: AgentId;
+  targetRole: AgentRole;
+  purpose: CapabilityPurpose;
+  state: CapabilityObligationState;
+  ownerAgentId: AgentId | null;
+  decision: CapabilityObligationDecision | null;
+  childAgentId: AgentId | null;
+  deliveredAt: string | null;
+  deliveryReceipt: string | null;
+  requests: ReadonlyArray<CapabilityRequest>;
+  holdIds: ReadonlyArray<string>;
   createdAt: string;
   updatedAt: string;
 }>;
@@ -145,6 +219,7 @@ export type Agent = Readonly<{
   modelOverride?: string;
   providerOverride?: ProviderId;
   kind?: string;
+  executionPurpose?: AgentExecutionPurpose | null;
   sourceThreadId?: string;
   sourceThreadIds?: ReadonlyArray<string>;
   sourceCommentUrl?: string;

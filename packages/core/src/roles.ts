@@ -1,4 +1,11 @@
-import type { AgentEffort, AgentRole, ProviderId, WorkflowTaskType } from '@goodboy/types';
+import type {
+  AgentEffort,
+  AgentRole,
+  CapabilityContinuation,
+  CapabilityPurpose,
+  ProviderId,
+  WorkflowTaskType,
+} from '@goodboy/types';
 import { devWarn } from './dev-log';
 
 export type { AgentEffort, AgentRole } from '@goodboy/types';
@@ -9,6 +16,7 @@ export type RoleDefaults = {
   readonly effort: AgentEffort;
   readonly description: string;
   readonly fanOut: RoleFanOutCapability;
+  readonly delegation: RoleDelegationCapability;
   readonly prompt?: string;
 };
 
@@ -50,6 +58,21 @@ export type RoleFanOutCapability = {
   readonly condition: string | null;
 };
 
+export type RoleDelegationGrant = {
+  readonly target: AgentRole;
+  readonly purpose: CapabilityPurpose;
+};
+
+export type RoleDelegationCapability = {
+  readonly grants: ReadonlyArray<RoleDelegationGrant>;
+  readonly continuations: ReadonlyArray<CapabilityContinuation>;
+};
+
+const NO_DELEGATION: RoleDelegationCapability = {
+  grants: [],
+  continuations: [],
+};
+
 export const ROLE_REGISTRY = {
   scout: {
     id: 'scout',
@@ -70,6 +93,7 @@ export const ROLE_REGISTRY = {
       partitionKey: 'codebase-area',
       condition: null,
     },
+    delegation: NO_DELEGATION,
   },
   investigator: {
     id: 'investigator',
@@ -89,6 +113,13 @@ export const ROLE_REGISTRY = {
       mode: 'conditional',
       partitionKey: 'top-stack-file',
       condition: 'only for independent failures grouped by top stack file with no shared frames',
+    },
+    delegation: {
+      grants: [
+        { target: 'scout', purpose: 'discovery' },
+        { target: 'planner', purpose: 'replan' },
+      ],
+      continuations: ['resume', 'transfer'],
     },
   },
   planner: {
@@ -110,6 +141,10 @@ export const ROLE_REGISTRY = {
       partitionKey: null,
       condition: null,
     },
+    delegation: {
+      grants: [{ target: 'scout', purpose: 'discovery' }],
+      continuations: ['resume', 'transfer'],
+    },
   },
   implementer: {
     id: 'implementer',
@@ -130,6 +165,14 @@ export const ROLE_REGISTRY = {
       partitionKey: null,
       condition: null,
     },
+    delegation: {
+      grants: [
+        { target: 'scout', purpose: 'discovery' },
+        { target: 'investigator', purpose: 'diagnosis' },
+        { target: 'planner', purpose: 'replan' },
+      ],
+      continuations: ['resume', 'transfer', 'handoff'],
+    },
   },
   reviewer: {
     id: 'reviewer',
@@ -149,6 +192,15 @@ export const ROLE_REGISTRY = {
       mode: 'conditional',
       partitionKey: 'diff-aspect',
       condition: 'only when changed files are over 15 or diff lines are over 800',
+    },
+    delegation: {
+      grants: [
+        { target: 'implementer', purpose: 'repair' },
+        { target: 'planner', purpose: 'replan' },
+        { target: 'investigator', purpose: 'diagnosis' },
+        { target: 'tester', purpose: 'test' },
+      ],
+      continuations: ['handoff'],
     },
   },
   tester: {
@@ -171,6 +223,14 @@ export const ROLE_REGISTRY = {
       condition:
         'only when at least two disjoint modules can be tested without shared fixtures or helpers',
     },
+    delegation: {
+      grants: [
+        { target: 'implementer', purpose: 'repair' },
+        { target: 'investigator', purpose: 'diagnosis' },
+        { target: 'planner', purpose: 'replan' },
+      ],
+      continuations: ['handoff', 'transfer'],
+    },
   },
   resolver: {
     id: 'resolver',
@@ -191,6 +251,7 @@ export const ROLE_REGISTRY = {
       partitionKey: null,
       condition: null,
     },
+    delegation: NO_DELEGATION,
   },
   docs: {
     id: 'docs',
@@ -213,6 +274,7 @@ export const ROLE_REGISTRY = {
       partitionKey: null,
       condition: null,
     },
+    delegation: NO_DELEGATION,
   },
   report: {
     id: 'report',
@@ -233,6 +295,7 @@ export const ROLE_REGISTRY = {
       partitionKey: null,
       condition: null,
     },
+    delegation: NO_DELEGATION,
   },
   wireframe: {
     id: 'wireframe',
@@ -253,6 +316,7 @@ export const ROLE_REGISTRY = {
       partitionKey: null,
       condition: null,
     },
+    delegation: NO_DELEGATION,
   },
   custom: {
     id: 'custom',
@@ -273,6 +337,7 @@ export const ROLE_REGISTRY = {
       partitionKey: null,
       condition: null,
     },
+    delegation: NO_DELEGATION,
   },
 } as const satisfies Readonly<Record<AgentRole, RoleRegistryEntry>>;
 
@@ -333,3 +398,35 @@ export const defaultsForRole = (role: string): RoleDefaults => {
 export const fanOutCapabilityForRole = (role: string): RoleFanOutCapability => {
   return defaultsForRole(role).fanOut;
 };
+
+export const delegationCapabilityForRole = (role: string): RoleDelegationCapability => {
+  return defaultsForRole(role).delegation;
+};
+
+type DelegationGrantParams = {
+  readonly requester: string;
+  readonly target: string;
+  readonly purpose: CapabilityPurpose;
+};
+
+export const isDelegationGranted = ({
+  requester,
+  target,
+  purpose,
+}: DelegationGrantParams): boolean => {
+  const targetRole = normalizeAgentRole({ role: target });
+  return delegationCapabilityForRole(requester).grants.some(
+    (grant) => grant.target === targetRole && grant.purpose === purpose,
+  );
+};
+
+type DelegationContinuationParams = {
+  readonly requester: string;
+  readonly continuation: CapabilityContinuation;
+};
+
+export const isDelegationContinuationSupported = ({
+  requester,
+  continuation,
+}: DelegationContinuationParams): boolean =>
+  delegationCapabilityForRole(requester).continuations.includes(continuation);

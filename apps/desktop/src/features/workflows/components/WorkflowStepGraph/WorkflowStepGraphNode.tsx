@@ -7,6 +7,7 @@ import { WorkflowStepStatus } from '../WorkflowStepStatus';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { useAppStore } from '../../../../store';
+import { CapabilityObligationAction } from '../../../../shared/components/CapabilityObligationAction';
 import { ClusterCompletionHoldAction } from '../../../../shared/components/ClusterCompletionHoldAction';
 import { useClusterNode } from '../../useClusterNode';
 
@@ -56,6 +57,12 @@ export const WorkflowStepGraphNode = ({
       ) ?? null
     );
   });
+  const obligation = useAppStore(
+    (state) =>
+      state.capabilityObligations?.[run.sessionId]?.find(
+        (candidate) => candidate.requesterAgentId === run.id && candidate.state === 'open',
+      ) ?? null,
+  );
   return (
     <div className="flex min-w-0 flex-1 items-center gap-1.5">
       <button
@@ -122,6 +129,7 @@ export const WorkflowStepGraphNode = ({
         </span>
       ) : null}
       {completionHold === null ? null : <ClusterCompletionHoldAction hold={completionHold} />}
+      {obligation === null ? null : <CapabilityObligationAction obligation={obligation} />}
     </div>
   );
 };

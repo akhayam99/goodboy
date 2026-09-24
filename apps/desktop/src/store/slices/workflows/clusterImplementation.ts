@@ -30,6 +30,7 @@ import {
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
 import { composeClusterOutcomeBoundary, composeKickoff, composeUnitBoundary } from '../../kickoff';
+import { reserveGeneration } from '../agents/reserveGeneration';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { revalidateChildRouting } from './revalidateChildRouting';
 import { continueOrPause, resetContinueAttempts } from './autoContinue';
@@ -490,6 +491,27 @@ export const fanOutClusters = async (
     return;
   }
 
+  const reservation = await reserveGeneration({
+    get,
+    sessionId,
+    workflowRunId: container.workflowRunId ?? null,
+    parentAgentId: container.id,
+    creationPath: 'cluster',
+    reservationKey: `${container.id}:${nodes.length}`,
+    count: nodes.length,
+    label: container.name,
+  });
+  if (reservation.kind === 'refused') {
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Cluster ${container.name} is blocked`,
+      body: reservation.reason,
+      sessionId,
+    });
+    return;
+  }
+
   const baseOrdinal =
     (get().sessionPhaseRuns[sessionId] ?? []).reduce((m, r) => Math.max(m, r.ordinal), -1) + 1;
   const materialized = await invokeAgentInsertBatch({
@@ -503,6 +525,7 @@ export const fanOutClusters = async (
         ordinal: baseOrdinal + index,
         name: node.title,
         status: 'pending',
+        executionPurpose: 'cluster',
         kind: presentationKeyForRole({ role: node.role }),
         ...(fields.providerOverride !== null && { providerOverride: fields.providerOverride }),
         ...(fields.modelOverride !== null && { modelOverride: fields.modelOverride }),
@@ -510,6 +533,7 @@ export const fanOutClusters = async (
         ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
         ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
         ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
+        generationReservationId: reservation.reservations[index]!.reservationId,
       };
     }),
   });

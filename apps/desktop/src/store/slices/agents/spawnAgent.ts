@@ -1,6 +1,8 @@
 import type {
+  AgentExecutionPurpose,
   AgentId,
   AgentSourceKind,
+  GenerationCreationPath,
   IsoDateTime,
   MountId,
   PlanId,
@@ -34,6 +36,7 @@ import {
   fanOutClusters,
   selectFanOutPlan,
 } from '../workflows/clusterImplementation';
+import { reserveGeneration } from './reserveGeneration';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
@@ -59,6 +62,7 @@ type SpawnArgs = {
   sourceKind?: AgentSourceKind;
   focus?: SpawnFocus;
   parentAgentId?: AgentId;
+  executionPurpose?: AgentExecutionPurpose;
 };
 
 type Params = {
@@ -122,6 +126,30 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         const roleModels = settings?.roleModels ?? null;
         const routing = kindRouting({ kind: resolvedKind, roleModels });
         const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
+        const generationPath: GenerationCreationPath | null =
+          args.sourceKind === 'open_question'
+            ? 'question-delegate'
+            : args.parentAgentId !== undefined
+              ? 'capability'
+              : args.stepId !== undefined
+                ? 'workflow-step'
+                : null;
+        const reservation =
+          generationPath === null
+            ? null
+            : await reserveGeneration({
+                get,
+                sessionId,
+                workflowRunId: args.workflowRunId ?? null,
+                parentAgentId: args.parentAgentId ?? null,
+                creationPath: generationPath,
+                reservationKey: `${args.parentAgentId ?? 'root'}:${nextOrdinal}:${agentName}`,
+                count: 1,
+                label: agentName,
+              });
+        if (reservation !== null && reservation.kind === 'refused') {
+          throw new Error(reservation.reason);
+        }
         const inserted = await invokeAgentInsert({
           sessionId,
           ...(args.stepId !== undefined && { stepId: args.stepId }),
@@ -129,6 +157,11 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
           ordinal: nextOrdinal,
           name: agentName,
           status: 'pending',
+          executionPurpose:
+            args.sourceKind === 'open_question'
+              ? 'question-delegate'
+              : (args.executionPurpose ??
+                (args.parentAgentId !== undefined ? 'capability' : 'standalone')),
           kind: resolvedKind,
           ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
           ...(sourceThreadId !== undefined && { sourceThreadId }),
@@ -136,6 +169,9 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
           ...(args.sourceCommentUrl !== undefined && { sourceCommentUrl: args.sourceCommentUrl }),
           ...(args.sourceKind !== undefined && { sourceKind: args.sourceKind }),
           ...(args.parentAgentId !== undefined && { parentAgentId: args.parentAgentId }),
+          ...(reservation !== null && {
+            generationReservationId: reservation.reservations[0]!.reservationId,
+          }),
         });
         const resolvedProvider = args.provider ?? routing.provider;
         const resolvedModel = args.model ?? routing.model;

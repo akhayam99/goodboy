@@ -8,6 +8,25 @@ export {
 } from './clusters';
 
 export {
+  capabilityObligationIdentity,
+  capabilityPurposeForFindingTarget,
+  validateCapabilityNeed,
+  type CapabilityNeedRejection,
+  type CapabilityNeedValidation,
+} from './capability';
+
+export {
+  buildEvidenceInventory,
+  evidenceEntryFor,
+  inventoryRevisionOf,
+  planContextRead,
+  renderEvidenceInventory,
+  type ContextReadPlan,
+  type ContextReadResolution,
+  type EvidenceInventoryInput,
+} from './inventory';
+
+export {
   checkProviderBudget,
   checkSessionBudget,
   emitBudgetAlerts,
@@ -67,6 +86,8 @@ export {
   serializeSlots,
   serializeSlotsBudgeted,
   serializeSummaryDocument,
+  extractCapabilityNeed,
+  extractContextRead,
   stripControlMarkers,
   SUMMARY_SECTION_KEYS,
   SUMMARY_SECTION_TITLES,
@@ -78,6 +99,11 @@ export {
   type DecisionsDocument,
   type ExtractedCluster,
   type ClusterMarkerExtraction,
+  type CapabilityNeedExtraction,
+  type ExtractedCapabilityNeed,
+  type ExtractedContextRead,
+  type ExtractedContextReadSource,
+  type ContextReadExtraction,
   type ClusterOutcomeExtraction,
   type ExtractedClusterOutcome,
   type ExtractedFanOutArea,
@@ -102,7 +128,10 @@ export {
   ROLE_REGISTRY,
   SELECTABLE_AGENT_ROLES,
   defaultsForRole,
+  delegationCapabilityForRole,
   fanOutCapabilityForRole,
+  isDelegationContinuationSupported,
+  isDelegationGranted,
   isAgentRole,
   normalizeAgentRole,
   normalizeSelectableAgentRole,

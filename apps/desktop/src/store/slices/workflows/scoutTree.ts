@@ -25,6 +25,7 @@ import { clampWireframeScoutReport } from '../../../features/wireframes/wirefram
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
 import { openTurnStartWindow } from '../turn/turnStartWindow';
+import { reserveGeneration } from '../agents/reserveGeneration';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 import type { GetFn, SetFn } from './types';
@@ -355,6 +356,20 @@ export const startFanOutChildren = async ({
     return { kind: 'blocked', reason: batch.reason };
   }
 
+  const reservation = await reserveGeneration({
+    get,
+    sessionId,
+    workflowRunId: container.workflowRunId ?? null,
+    parentAgentId: container.id,
+    creationPath: 'fan-out',
+    reservationKey: `${container.id}:${specs.length}`,
+    count: specs.length,
+    label: container.name,
+  });
+  if (reservation.kind === 'refused') {
+    return { kind: 'blocked', reason: reservation.reason };
+  }
+
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
   const baseOrdinal = runs.reduce((m, r) => Math.max(m, r.ordinal), -1) + 1;
 
@@ -368,6 +383,7 @@ export const startFanOutChildren = async ({
         ordinal: baseOrdinal + index,
         name: spec.name,
         status: 'pending',
+        executionPurpose: 'fan-out',
         kind: childKind,
         ...(container.workflowRunId != null && { workflowRunId: container.workflowRunId }),
         ...(fields.providerOverride !== null && { providerOverride: fields.providerOverride }),
@@ -376,6 +392,7 @@ export const startFanOutChildren = async ({
         ...(fields.routingLock !== null && { routingLock: fields.routingLock }),
         ...(fields.routingDecision !== null && { routingDecision: fields.routingDecision }),
         ...(fields.taskProfile !== null && { taskProfile: fields.taskProfile }),
+        generationReservationId: reservation.reservations[index]!.reservationId,
       };
     }),
   });

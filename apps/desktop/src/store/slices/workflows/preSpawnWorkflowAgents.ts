@@ -13,7 +13,10 @@ import { resolveModelIdForProvider, type WorkflowRoutingAvailabilitySnapshot } f
 import { classifyStep } from '../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../../features/workflows/resolveStepRouting';
 import { revalidateStepRouting } from '../../../features/workflows/revalidateStepRouting';
-import { invokeAgentInsert } from '../../../features/workflows/workflows';
+import {
+  invokeAgentGenerationReserve,
+  invokeAgentInsert,
+} from '../../../features/workflows/workflows';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -87,6 +90,18 @@ export const preSpawnWorkflowAgents = async ({
     });
     const provider = routing.provider;
     const model = resolveModelIdForProvider({ provider, modelId: routing.model });
+    const reservation = await invokeAgentGenerationReserve({
+      reservationId: `generation:workflow-step:${workflowRunId ?? sessionId}:${step.id}`,
+      sessionId,
+      workflowRunId: workflowRunId ?? null,
+      parentAgentId: null,
+      creationPath: 'workflow-step',
+      count: 1,
+    });
+    if (reservation.kind === 'refused') {
+      blocked.push({ stepId: step.id, stepName: step.name, reason: reservation.reason });
+      continue;
+    }
     const agent = await invokeAgentInsert({
       sessionId,
       stepId: step.id,
@@ -94,6 +109,7 @@ export const preSpawnWorkflowAgents = async ({
       ordinal: baseOrdinal + agents.length,
       name: step.name,
       status: 'pending',
+      executionPurpose: 'standalone',
       kind,
       ...(defaultVerbosity != null && { verbosity: defaultVerbosity }),
       providerOverride: provider,
@@ -102,6 +118,7 @@ export const preSpawnWorkflowAgents = async ({
       routingLock: effectiveStep.routingLock ?? null,
       routingDecision: effectiveStep.routingDecision ?? null,
       taskProfile: effectiveStep.taskProfile ?? null,
+      generationReservationId: reservation.reservations[0]!.reservationId,
     });
     providerOverrides[agent.id] = provider;
     modelOverrides[agent.id] = model;

@@ -28,6 +28,8 @@ import { m166DropWorkflowRunRoleModels } from './m166-drop-workflow-run-role-mod
 import { m167DropDeadWorkspaceAndHintColumns } from './m167-drop-dead-workspace-and-hint-columns';
 import { m168ClusterCompletionHolds } from './m168-cluster-completion-holds';
 import { m169ClusterExecutionGraphs } from './m169-cluster-execution-graphs';
+import { m170CapabilityObligations } from './m170-capability-obligations';
+import { m171EvidenceInventoryGeneration } from './m171-evidence-inventory-generation';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -343,4 +345,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 167, sql: m167DropDeadWorkspaceAndHintColumns },
   { version: 168, sql: m168ClusterCompletionHolds },
   { version: 169, sql: m169ClusterExecutionGraphs },
+  { version: 170, sql: m170CapabilityObligations },
+  { version: 171, sql: m171EvidenceInventoryGeneration },
 ];

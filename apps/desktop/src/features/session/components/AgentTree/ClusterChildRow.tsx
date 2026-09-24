@@ -3,6 +3,7 @@ import { Check, Clock } from 'lucide-react';
 import type { Agent } from '@goodboy/types';
 import { agentHasUnread, useAppStore } from '../../../../store';
 import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
+import { CapabilityObligationAction } from '../../../../shared/components/CapabilityObligationAction';
 import { ClusterCompletionHoldAction } from '../../../../shared/components/ClusterCompletionHoldAction';
 import { useClusterNode } from '../../../workflows/useClusterNode';
 
@@ -36,6 +37,12 @@ export const ClusterChildRow = ({
     (state) =>
       state.clusterCompletionHolds?.[child.sessionId]?.find(
         (hold) => hold.sourceAgentId === child.id && hold.state === 'open',
+      ) ?? null,
+  );
+  const obligation = useAppStore(
+    (state) =>
+      state.capabilityObligations?.[child.sessionId]?.find(
+        (candidate) => candidate.requesterAgentId === child.id && candidate.state === 'open',
       ) ?? null,
   );
   const clusterNode = useClusterNode({ sessionId: child.sessionId, agentId: child.id });
@@ -132,6 +139,7 @@ export const ClusterChildRow = ({
         ) : null}
       </button>
       {completionHold === null ? null : <ClusterCompletionHoldAction hold={completionHold} />}
+      {obligation === null ? null : <CapabilityObligationAction obligation={obligation} />}
     </div>
   );
 };

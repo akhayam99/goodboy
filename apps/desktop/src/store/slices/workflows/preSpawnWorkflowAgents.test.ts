@@ -23,12 +23,14 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-const { invokeAgentInsertSpy } = vi.hoisted(() => ({
+const { invokeAgentInsertSpy, invokeAgentGenerationReserveSpy } = vi.hoisted(() => ({
   invokeAgentInsertSpy: vi.fn(),
+  invokeAgentGenerationReserveSpy: vi.fn(),
 }));
 
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,
+  invokeAgentGenerationReserve: invokeAgentGenerationReserveSpy,
 }));
 
 import { agentReferenceRouting } from '../turn/agentReferenceRouting';
@@ -50,6 +52,10 @@ const step = (patch: Partial<Step> = {}): Step =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  invokeAgentGenerationReserveSpy.mockResolvedValue({
+    kind: 'granted',
+    reservations: [{ reservationId: 'reservation:0', depth: 0, causalRootAgentId: null }],
+  });
   invokeAgentInsertSpy.mockImplementation(async (input: Record<string, unknown>) => ({
     id: 'agent-1' as AgentId,
     sessionId: input['sessionId'] as SessionId,
@@ -111,6 +117,20 @@ describe('preSpawnWorkflowAgents', () => {
     expect(insert['effort']).toBe('high');
     expect(insert['routingDecision']).toMatchObject({ source: 'agent' });
     expect(insert['taskProfile']).toMatchObject({ taskType: 'implementation' });
+  });
+
+  it('binds the granted reservation in the same write that creates the agent', async () => {
+    await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      steps: [step()],
+      baseOrdinal: 0,
+      defaultProvider: 'anthropic',
+      roleModels: {},
+    });
+
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(insert['generationReservationId']).toBe('reservation:0');
   });
 
   it('never spawns on a provider that started cooling down after planning', async () => {
