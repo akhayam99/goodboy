@@ -592,6 +592,88 @@ describe('buildTimelineStream', () => {
     ).toEqual(['dashed']);
   });
 
+  it('queues nested pending steps under the later top-level steps of their run', () => {
+    const settledStep = ({ id, ordinal }: { readonly id: string; readonly ordinal: number }) =>
+      agent({
+        id,
+        ordinal,
+        startedAt: localIso({ day: 18, hour: 8, minute: ordinal * 10 }),
+        completedAt: localIso({ day: 18, hour: 8, minute: ordinal * 10 + 5 }),
+        workflowRunId: RUN_ID,
+      });
+    const { items, groups } = stream({
+      workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
+      agents: [
+        settledStep({ id: 'step-1', ordinal: 1 }),
+        settledStep({ id: 'step-2', ordinal: 2 }),
+        settledStep({ id: 'step-3', ordinal: 3 }),
+        agent({
+          id: 'step-4',
+          ordinal: 4,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({ id: 'step-5', ordinal: 5, status: 'pending', workflowRunId: RUN_ID }),
+        agent({ id: 'step-6', ordinal: 6, status: 'pending', workflowRunId: RUN_ID }),
+        agent({ id: 'step-7', ordinal: 7, status: 'pending', workflowRunId: RUN_ID }),
+        agent({
+          id: 'child-1',
+          ordinal: 8,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+          workflowRunId: RUN_ID,
+          parentAgentId: 'step-4',
+        }),
+        agent({
+          id: 'child-2',
+          ordinal: 9,
+          status: 'pending',
+          workflowRunId: RUN_ID,
+          parentAgentId: 'step-4',
+        }),
+        agent({
+          id: 'child-3',
+          ordinal: 10,
+          status: 'pending',
+          workflowRunId: RUN_ID,
+          parentAgentId: 'step-4',
+        }),
+      ],
+    });
+    const clusters = items.flatMap((item) => (item.kind === 'cluster' ? [item] : []));
+    const layout = layoutTimelineRail({ rows: items, groups });
+    const childClusterIndex = items.findIndex(
+      (item) => item.kind === 'cluster' && item.groupId === 'lane:agent:step-4',
+    );
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'cluster:3',
+      'cluster:2',
+      'step:agent:child-1',
+      'step:agent:step-4',
+      'step:agent:step-3',
+      'step:agent:step-2',
+      'step:agent:step-1',
+      'entry:run:run-1',
+    ]);
+    expect(
+      clusters.map((cluster) => cluster.steps.map((step) => step.stepLabel).join(' ')),
+    ).toEqual(['7 6 5', '4.3 4.2']);
+    expect(groups.find((group) => group.id === 'lane:agent:step-4')?.shape).toBe('rejoining');
+    expect(
+      layout.rows[childClusterIndex]?.joins.map(
+        (join) => `${join.kind}:${join.laneColumn}->${join.spineColumn}:${join.dash}`,
+      ),
+    ).toEqual(['rejoin:2->1:dashed']);
+    expect(
+      layout.rows[0]?.segments
+        .filter((segment) => segment.column > 0)
+        .map((segment) => `${segment.column}:${segment.dash}`),
+    ).toEqual(['1:dashed']);
+  });
+
   it('keeps two concurrent runs on their own pending block and their own lane', () => {
     const { items, groups } = stream({
       workflows: [

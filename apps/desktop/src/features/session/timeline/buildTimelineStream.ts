@@ -483,7 +483,9 @@ const agentRows = ({
         isSettled({ agent: entry.agent }) &&
         entry.children.every((child) => isSettled({ agent: child.agent }))
           ? 'merged'
-          : 'open',
+          : groupId == null
+            ? 'open'
+            : 'rejoining',
     });
     for (const child of entry.children) {
       nested.push(
@@ -618,6 +620,36 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
 const isPendingStep = ({ draft }: { readonly draft: DraftRow }): boolean =>
   draft.grade === 'step' && draft.markerState === 'pending';
 
+type ExecutionPathParams = {
+  readonly draft: DraftRow;
+};
+
+const executionPathOf = ({ draft }: ExecutionPathParams): ReadonlyArray<number> =>
+  draft.entry.kind === 'agent' && draft.entry.stepLabel != null
+    ? draft.entry.stepLabel.split('.').map(Number)
+    : [];
+
+type CompareExecutionPathParams = {
+  readonly first: DraftRow;
+  readonly second: DraftRow;
+};
+
+const compareExecutionPathDescending = ({ first, second }: CompareExecutionPathParams): number => {
+  const firstPath = executionPathOf({ draft: first });
+  const secondPath = executionPathOf({ draft: second });
+  const shared = Math.min(firstPath.length, secondPath.length);
+  for (let index = 0; index < shared; index += 1) {
+    const difference = (secondPath[index] ?? 0) - (firstPath[index] ?? 0);
+    if (difference !== 0) {
+      return difference;
+    }
+  }
+  if (shared === 0) {
+    return 0;
+  }
+  return secondPath.length - firstPath.length;
+};
+
 type HeadParams = {
   readonly drafts: ReadonlyArray<DraftRow>;
 };
@@ -637,7 +669,9 @@ const withPendingAtFamilyHead = ({ drafts }: HeadParams): ReadonlyArray<DraftRow
   for (const pending of pendingByFamilyId.values()) {
     pending.sort(
       (first, second) =>
-        second.sortOrdinal - first.sortOrdinal || first.id.localeCompare(second.id),
+        compareExecutionPathDescending({ first, second }) ||
+        second.sortOrdinal - first.sortOrdinal ||
+        first.id.localeCompare(second.id),
     );
   }
   const result: DraftRow[] = [];

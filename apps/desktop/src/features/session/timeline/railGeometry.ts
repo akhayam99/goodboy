@@ -5,7 +5,7 @@ const RAIL_CURVE_HANDLE = 8.84;
 
 type RailDash = 'solid' | 'dashed';
 
-export type RailGroupShape = 'open' | 'merged';
+export type RailGroupShape = 'open' | 'merged' | 'rejoining';
 
 export type RailGroupInput = {
   readonly id: string;
@@ -35,7 +35,7 @@ export type RailSegment = {
 };
 
 export type RailJoin = {
-  readonly kind: 'merge' | 'branch';
+  readonly kind: 'merge' | 'branch' | 'rejoin';
   readonly spineColumn: number;
   readonly laneColumn: number;
   readonly identityIndex: number | null;
@@ -77,6 +77,7 @@ type GroupSpan = {
   readonly originIndex: number;
   readonly topIndex: number;
   readonly memberIndexes: ReadonlyArray<number>;
+  readonly rejoinGroupId: string | null;
   readonly interval: Interval;
 };
 
@@ -109,6 +110,10 @@ export const futureRailRow = ({ id, height }: FutureRowParams): RailRow => ({
 const anchorOf = ({ row }: { readonly row: RailRowInput }): number =>
   row.markerY ?? (row.topY + row.height) / 2;
 
+type LaneParams = {
+  readonly groupId: string;
+};
+
 type JoinPathParams = {
   readonly join: PlannedJoin;
   readonly height: number;
@@ -117,6 +122,9 @@ type JoinPathParams = {
 const joinPathOf = ({ join, height }: JoinPathParams): string => {
   const spineX = railColumnX({ column: join.spineColumn });
   const laneX = railColumnX({ column: join.laneColumn });
+  if (join.kind === 'rejoin') {
+    return `M ${laneX} ${join.anchorY} C ${laneX} ${join.anchorY - RAIL_CURVE_HANDLE}, ${spineX + RAIL_CURVE_HANDLE} 0, ${spineX} 0`;
+  }
   const edgeY = join.kind === 'branch' ? 0 : height;
   const handleY = join.kind === 'branch' ? RAIL_CURVE_HANDLE : height - RAIL_CURVE_HANDLE;
   return `M ${laneX} ${edgeY} C ${laneX} ${handleY}, ${spineX + RAIL_CURVE_HANDLE} ${join.anchorY}, ${spineX} ${join.anchorY}`;
@@ -288,25 +296,64 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
   };
 
   const lastIndex = Math.max(0, rows.length - 1);
-  const spans: ReadonlyArray<GroupSpan> = groups.flatMap((group) => {
-    const originIndex = indexById.get(group.originRowId) ?? lastIndex;
-    const memberIndexes = (membersByGroupId.get(group.id) ?? []).filter(
-      (index) => index < originIndex,
-    );
-    const topIndex = memberIndexes[0];
-    if (topIndex === undefined) {
-      return [];
+  const drafts: ReadonlyArray<Omit<GroupSpan, 'interval' | 'rejoinGroupId'>> = groups.flatMap(
+    (group) => {
+      const originIndex = indexById.get(group.originRowId) ?? lastIndex;
+      const memberIndexes = (membersByGroupId.get(group.id) ?? []).filter(
+        (index) => index < originIndex,
+      );
+      const topIndex = memberIndexes[0];
+      if (topIndex === undefined) {
+        return [];
+      }
+      return [{ group, originIndex, topIndex, memberIndexes }];
+    },
+  );
+  const draftByGroupId = new Map(drafts.map((draft) => [draft.group.id, draft]));
+  const rejoinByGroupId = new Map<string, string | null>();
+
+  const rejoinTargetOf = ({ groupId }: LaneParams): string | null => {
+    const known = rejoinByGroupId.get(groupId);
+    if (known !== undefined) {
+      return known;
     }
-    return [
-      {
-        group,
-        originIndex,
-        topIndex,
-        memberIndexes,
-        interval: { from: group.shape === 'open' ? 0 : topIndex, to: originIndex },
-      },
-    ];
-  });
+    const draft = draftByGroupId.get(groupId);
+    if (draft === undefined || draft.group.shape !== 'rejoining') {
+      return null;
+    }
+    rejoinByGroupId.set(groupId, null);
+    let ancestor = parentOf({ group: draft.group });
+    let hops = 0;
+    while (ancestor !== null && hops < groups.length) {
+      const candidate = draftByGroupId.get(ancestor.id);
+      const isCovering =
+        candidate !== undefined &&
+        draft.topIndex < candidate.originIndex &&
+        (isOpenLane({ groupId: ancestor.id }) ||
+          candidate.memberIndexes.some((index) => index < draft.topIndex));
+      if (isCovering) {
+        rejoinByGroupId.set(groupId, ancestor.id);
+        return ancestor.id;
+      }
+      ancestor = parentOf({ group: ancestor });
+      hops += 1;
+    }
+    return null;
+  };
+
+  const isOpenLane = ({ groupId }: LaneParams): boolean => {
+    const shape = draftByGroupId.get(groupId)?.group.shape;
+    return shape === 'open' || (shape === 'rejoining' && rejoinTargetOf({ groupId }) === null);
+  };
+
+  const spans: ReadonlyArray<GroupSpan> = drafts.map((draft) => ({
+    ...draft,
+    rejoinGroupId: rejoinTargetOf({ groupId: draft.group.id }),
+    interval: {
+      from: isOpenLane({ groupId: draft.group.id }) ? 0 : draft.topIndex,
+      to: draft.originIndex,
+    },
+  }));
 
   const columnByGroupId = new Map<string, number>();
   const placed: Array<{ readonly column: number; readonly interval: Interval }> = [];
@@ -395,12 +442,24 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       });
     }
 
-    if (group.shape !== 'open') {
-      continue;
-    }
     const topIndex = memberIndexes[0];
     const topRow = topIndex === undefined ? undefined : rows[topIndex];
     if (topIndex === undefined || topRow === undefined) {
+      continue;
+    }
+    if (span.rejoinGroupId !== null) {
+      joinsByIndex[topIndex]?.push({
+        kind: 'rejoin',
+        spineColumn: columnByGroupId.get(span.rejoinGroupId) ?? parentColumn,
+        laneColumn: column,
+        identityIndex: root.identityIndex,
+        isMuted: root.isMuted,
+        dash: 'dashed',
+        anchorY: anchorOf({ row: topRow }),
+      });
+      continue;
+    }
+    if (!isOpenLane({ groupId: group.id })) {
       continue;
     }
     laneSegmentsByIndex[topIndex]?.push({

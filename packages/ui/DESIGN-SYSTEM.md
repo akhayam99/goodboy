@@ -243,6 +243,13 @@ Two rules follow from the direction of time. Newer sits above older at every
 level. So a run's origin row is the bottom of its group and its steps stack
 upward. And a dash always points toward NOW, because dashed means future.
 
+Queued steps follow the same direction. They sort by step path, not by the
+order the agents were created in, so a run's 7, 6 and 5 sit above step 4's
+queued 4.3 and 4.2. One dash per run reaches NOW. A child lane that still has
+work queued ends at its newest row and rejoins its parent lane there with a
+dashed join (the `rejoining` group shape), under the parent's next step. A
+child lane with no ancestor lane continuing above it stays open to NOW instead.
+
 A third rule covers what the feed shows: **everything, always**. Nothing in the
 feed collapses, summarises or hides behind a count. No row or divider has a
 disclosure control. Density is the only protection against a wall of rows, and

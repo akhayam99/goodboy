@@ -218,6 +218,79 @@ describe('layoutTimelineRail', () => {
     expect(lanesOf(layout, 'step-1').map((segment) => segment.dash)).toEqual(['solid', 'dashed']);
   });
 
+  it('rejoins a queued child lane into its parent lane under the next parent step', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        nowRow(),
+        row({ id: 'step-5', groupId: 'lane', isPending: true }),
+        row({ id: 'child-2', groupId: 'child', isPending: true }),
+        row({ id: 'child-1', groupId: 'child' }),
+        row({ id: 'step-4', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [
+        group({ id: 'lane', originRowId: 'origin', shape: 'open' }),
+        group({ id: 'child', originRowId: 'step-4', shape: 'rejoining', parentGroupId: 'lane' }),
+      ],
+    });
+
+    expect(layout.columnByGroupId.get('child')).toBe(2);
+    expect(spanOf(layout, 'now')).toEqual(['1:12-48']);
+    expect(spanOf(layout, 'step-5')).toEqual(['1:18-36', '1:0-18']);
+    expect(spanOf(layout, 'child-2')).toEqual(['1:0-36', '2:18-36']);
+    expect(railRow(layout, 'child-2').joins).toEqual([
+      {
+        kind: 'rejoin',
+        spineColumn: 1,
+        laneColumn: 2,
+        identityIndex: 0,
+        isMuted: false,
+        dash: 'dashed',
+        anchorY: 18,
+        path: 'M 40 18 C 40 9.16, 32.84 0, 24 0',
+      },
+    ]);
+  });
+
+  it('keeps a rejoining lane open to NOW when no ancestor lane continues above it', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        nowRow(),
+        row({ id: 'child-1', groupId: 'child', isPending: true }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [
+        group({ id: 'lane', originRowId: 'origin', shape: 'merged' }),
+        group({ id: 'child', originRowId: 'step-1', shape: 'rejoining', parentGroupId: 'lane' }),
+      ],
+    });
+
+    expect(spanOf(layout, 'now')).toEqual(['2:12-48']);
+    expect(railRow(layout, 'child-1').joins).toEqual([]);
+  });
+
+  it('frees the column above a rejoined lane for a newer lane', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        nowRow(),
+        row({ id: 'other-step', groupId: 'other' }),
+        row({ id: 'other-origin', groupId: 'lane' }),
+        row({ id: 'child-1', groupId: 'child', isPending: true }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [
+        group({ id: 'lane', originRowId: 'origin', shape: 'open' }),
+        group({ id: 'child', originRowId: 'step-1', shape: 'rejoining', parentGroupId: 'lane' }),
+        group({ id: 'other', originRowId: 'other-origin', shape: 'merged', parentGroupId: 'lane' }),
+      ],
+    });
+
+    expect(layout.columnByGroupId.get('child')).toBe(2);
+    expect(layout.columnByGroupId.get('other')).toBe(2);
+  });
+
   it('stops a finished run at the marker of its newest row', () => {
     const layout = layoutTimelineRail({
       rows: [nowRow(), row({ id: 'step-1', groupId: 'lane' }), row({ id: 'origin' })],
