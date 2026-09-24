@@ -252,6 +252,8 @@ Start at the [documentation index](./docs/README.md). From there:
 [<img src=".github/contributor-akhayam99.png" width="56" height="56" alt="Amin Khayam">](https://github.com/akhayam99)
 &nbsp;
 [<img src=".github/contributor-teckperry.png" width="56" height="56" alt="Luca Laudiero">](https://github.com/teckperry)
+&nbsp;
+[<img src=".github/contributor-lucapav01.png" width="56" height="56" alt="LucaPav01">](https://github.com/LucaPav01)
 
 <br>
 
