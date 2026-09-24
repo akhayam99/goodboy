@@ -58,41 +58,39 @@ export const OrchestratorHintComposer = ({ isDeciding, isStepRunning, onSubmit }
         void send({ delivery: 'queue' });
       }}
     >
-      <Input
-        ref={inputRef}
-        id="orchestrator-hint-field"
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        placeholder="Tell the orchestrator something"
-        aria-label="Hint for the orchestrator"
-        data-testid="orchestrator-hint-input"
-        className="h-7 text-2xs"
-      />
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span data-testid="orchestrator-hint-timing" className="text-2xs text-muted-foreground">
-          Queue waits for the next decision. {readNowCopy({ isDeciding, isStepRunning })}
-        </span>
-        <span className="flex shrink-0 items-center gap-1.5">
-          <Button
-            type="submit"
-            size="sm"
-            variant="ghost"
-            disabled={canSend === false}
-            data-testid="orchestrator-hint-queue"
-          >
-            Queue
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            disabled={canSend === false}
-            data-testid="orchestrator-hint-now"
-            onClick={() => void send({ delivery: 'now' })}
-          >
-            Read now
-          </Button>
-        </span>
+      <div className="flex min-w-0 items-center gap-1.5">
+        <Input
+          ref={inputRef}
+          id="orchestrator-hint-field"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          placeholder="Tell the orchestrator something"
+          aria-label="Hint for the orchestrator"
+          data-testid="orchestrator-hint-input"
+          className="h-7 min-w-0 flex-1 text-2xs"
+        />
+        <Button
+          type="submit"
+          size="sm"
+          variant="ghost"
+          disabled={canSend === false}
+          data-testid="orchestrator-hint-queue"
+        >
+          Queue
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          disabled={canSend === false}
+          data-testid="orchestrator-hint-now"
+          onClick={() => void send({ delivery: 'now' })}
+        >
+          Read now
+        </Button>
       </div>
+      <span data-testid="orchestrator-hint-timing" className="text-2xs text-muted-foreground">
+        Queue waits for the next decision. {readNowCopy({ isDeciding, isStepRunning })}
+      </span>
     </form>
   );
 };

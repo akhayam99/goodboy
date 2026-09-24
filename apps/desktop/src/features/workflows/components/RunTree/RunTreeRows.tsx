@@ -15,6 +15,8 @@ type Props = {
   readonly testId: string;
   readonly routing: RunTreeRouting;
   readonly selectedAgentId: AgentId | null;
+  readonly highlightedStepId?: string | null;
+  readonly onHighlight?: (stepId: string | null) => void;
   readonly onSelect: (id: AgentId) => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
 };
@@ -36,6 +38,8 @@ export const RunTreeRows = ({
   testId,
   routing,
   selectedAgentId,
+  highlightedStepId = null,
+  onHighlight,
   onSelect,
   onAnswer,
 }: Props) => {
@@ -98,6 +102,8 @@ export const RunTreeRows = ({
         if (item.kind !== 'row' || !isAgentRow(item)) {
           return null;
         }
+        const isNested = parentOf({ entry: item.entry }) !== null;
+        const stepId = isNested ? null : (item.entry.agent.stepId ?? null);
         return (
           <div key={item.id} ref={item.id === activeRowId ? activeRowRef : undefined}>
             <RunTreeRow
@@ -107,9 +113,15 @@ export const RunTreeRows = ({
               railWidth={rail.width}
               routing={routing}
               costUsd={spendByAgentId.get(item.entry.agent.id) ?? 0}
-              isNested={parentOf({ entry: item.entry }) !== null}
+              isNested={isNested}
               parentStepName={parentNameOf({ entry: item.entry })}
               isSelected={item.entry.agent.id === selectedAgentId}
+              isHighlighted={stepId !== null && stepId === highlightedStepId}
+              onHighlight={
+                onHighlight === undefined || stepId === null
+                  ? undefined
+                  : (isOn) => onHighlight(isOn ? stepId : null)
+              }
               onSelect={() => onSelect(item.entry.agent.id)}
               onAnswer={onAnswer}
             />

@@ -2,7 +2,15 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Agent, AgentId, OpenQuestion, Session, SessionId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  OpenQuestion,
+  Session,
+  SessionId,
+  StepId,
+  WorkflowRunId,
+} from '@goodboy/types';
 
 const state = vi.hoisted(() => ({
   sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
@@ -50,8 +58,12 @@ vi.mock('../../hooks/useAgentMetrics', () => ({
   }),
 }));
 
+const attached = vi.hoisted(() => ({
+  runs: [] as ReadonlyArray<unknown>,
+}));
+
 vi.mock('../../../workflows/useAttachedWorkflowRuns', () => ({
-  useAttachedWorkflowRuns: () => [],
+  useAttachedWorkflowRuns: () => attached.runs,
 }));
 
 vi.mock('./AgentFollowUps', () => ({
@@ -109,6 +121,7 @@ beforeEach(() => {
     answeredQuestions: [],
   });
   transcriptItems.items = [];
+  attached.runs = [];
 });
 
 describe('AgentBrief summary', () => {
@@ -428,5 +441,64 @@ describe('AgentBrief sections', () => {
 
     expect(sections.length).toBeGreaterThan(2);
     expect(sections.every(opensWithItsLabel)).toBe(true);
+  });
+});
+
+describe('AgentBrief why this step', () => {
+  const runId = 'run-1' as WorkflowRunId;
+  const STEP_ID = 'step-3' as StepId;
+  const withReason = (reason: string) => {
+    attached.runs = [
+      {
+        run: { id: runId },
+        workflow: {
+          steps: [{ id: STEP_ID, name: 'Implement validators', orchestratorReason: reason }],
+        },
+      },
+    ];
+  };
+
+  it('says why the orchestrator chose the step, above the outcome', () => {
+    withReason('The plan splits validators, schemas and the banner.');
+
+    render(
+      <AgentBrief
+        session={session}
+        agent={makeAgent({ workflowRunId: runId, stepId: STEP_ID, outputSummary: 'shipped it' })}
+      />,
+    );
+
+    const why = screen.getByRole('region', { name: 'Why this step' });
+    expect(why.textContent).toContain('The plan splits validators, schemas and the banner.');
+    expect(
+      why.compareDocumentPosition(screen.getByText('Outcome')) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('leaves the reason to the step agent, not to its subagents', () => {
+    withReason('The plan splits validators, schemas and the banner.');
+
+    render(
+      <AgentBrief
+        session={session}
+        agent={makeAgent({
+          workflowRunId: runId,
+          stepId: STEP_ID,
+          parentAgentId: 'agent-0' as AgentId,
+        })}
+      />,
+    );
+
+    expect(screen.queryByRole('region', { name: 'Why this step' })).toBeNull();
+  });
+
+  it('says nothing when the step carries no reason', () => {
+    withReason('  ');
+
+    render(
+      <AgentBrief session={session} agent={makeAgent({ workflowRunId: runId, stepId: STEP_ID })} />,
+    );
+
+    expect(screen.queryByRole('region', { name: 'Why this step' })).toBeNull();
   });
 });

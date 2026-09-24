@@ -1,14 +1,7 @@
 import { useState } from 'react';
-import { CircleStop, PenLine, Play, RotateCcw, Wallet } from 'lucide-react';
-import {
-  ConfirmPopover,
-  Eyebrow,
-  GhostActionButton,
-  Markdown,
-  StatusDot,
-  cn,
-  tintClasses,
-} from '@goodboy/ui';
+import { Play, RotateCcw, Wallet } from 'lucide-react';
+import { ClampedProse, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import type { Tone } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type {
   Agent,
@@ -25,14 +18,12 @@ import { openImpactStudio } from '../../../impact/openImpactStudio';
 import { isBudgetBlocked } from '../../../../store/slices/workflows/budgetBlock';
 import { WorkflowAutorunToggle } from '../WorkflowAutorunToggle';
 import { WorkflowNodeRouting } from '../WorkflowNodeRouting';
-import { WorkflowOrchestratorTldr } from '../WorkflowOrchestratorTldr';
 import { RunSpendLimitPopover } from '../RunSpendLimitPopover';
 import { OrchestratorAction } from './OrchestratorAction';
-import { OrchestratorDrawer } from './OrchestratorDrawer';
 import { OrchestratorHintComposer } from './OrchestratorHintComposer';
 import { OrchestratorHintLog } from './OrchestratorHintLog';
+import { OrchestratorMenu } from './OrchestratorMenu';
 import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
-import { orchestratorHintStatus } from './orchestratorHintStatus';
 import { resolveOrchestratorState } from './orchestratorState';
 import { useElapsedLabel } from './useElapsedLabel';
 
@@ -50,7 +41,14 @@ const EMPTY_ALERTS: ReadonlyArray<BudgetAlert> = [];
 const EMPTY_HINTS: ReadonlyArray<OrchestratorHint> = [];
 const EMPTY_READING: ReadonlyArray<string> = [];
 
-export const OrchestratorPanel = ({
+const RAIL: Partial<Record<Tone, string>> = {
+  info: 'border-l-info',
+  warning: 'border-l-warning',
+  danger: 'border-l-danger',
+  success: 'border-l-success',
+};
+
+export const OrchestratorStrip = ({
   sessionId,
   run,
   agents,
@@ -77,12 +75,9 @@ export const OrchestratorPanel = ({
   const readingHintIds = useAppStore(
     (state) => state.orchestratorReadingHints[run.id] ?? EMPTY_READING,
   );
-  const [isHintsOpen, setIsHintsOpen] = useState(false);
+  const [isRoutingOpen, setIsRoutingOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const hints = run.orchestratorHints ?? EMPTY_HINTS;
-  const queuedHintCount = hints.filter(
-    (hint) => orchestratorHintStatus({ hint, readingHintIds }) === 'queued',
-  ).length;
 
   const state = resolveOrchestratorState({
     run,
@@ -92,17 +87,17 @@ export const OrchestratorPanel = ({
     costUsd,
   });
   const elapsed = useElapsedLabel({ since: state.waitingSince });
-  const tint = tintClasses(state.tone);
-  const isDeciding = state.phase === 'deciding';
   const isPulsing =
-    isDeciding ||
+    state.phase === 'deciding' ||
     state.phase === 'automatic' ||
     state.phase === 'stopping' ||
     state.phase === 'stopping-graceful';
   const pulseTone = state.tone === 'neutral' ? 'info' : state.tone;
   const isRunOver = state.phase === 'done';
-  const isStepInFlight = isOrchestrating || agents.some((agent) => agent.status === 'running');
-  const showStopNow = isStepInFlight && run.orchestrationStop?.kind !== 'operator';
+  const isStepRunning = agents.some((agent) => agent.status === 'running');
+  const canStopNow =
+    (isOrchestrating || isStepRunning) && run.orchestrationStop?.kind !== 'operator';
+  const hasRouting = agents.length > 0;
 
   const guard = async (action: () => Promise<void>) => {
     if (busy) {
@@ -120,7 +115,7 @@ export const OrchestratorPanel = ({
     switch (state.phase) {
       case 'ready-first':
       case 'ready-mid':
-        return (
+        return run.autoRun === true ? null : (
           <OrchestratorAction
             icon={CONCEPT_ICONS.orchestrator}
             label="Decide next step"
@@ -182,46 +177,70 @@ export const OrchestratorPanel = ({
             onClick={() => void guard(() => continueWorkflowRun(sessionId, run.id))}
           />
         );
+      case 'deciding':
+      case 'stopping-graceful':
+      case 'stopping':
+      case 'waiting':
+      case 'automatic':
       case 'needs-answer':
       case 'step-failed':
-      default:
         return null;
+      default: {
+        const exhaustive: never = state.phase;
+        return exhaustive;
+      }
     }
   })();
 
   return (
     <section
-      data-testid="orchestrator-panel"
+      data-testid="orchestrator-strip"
       data-phase={state.phase}
       aria-label="Orchestrator"
-      className={cn(
-        'flex flex-col gap-2 rounded-lg border px-3 py-2.5',
-        state.tone === 'neutral'
-          ? 'border-border-soft bg-subtle'
-          : cn(tint.borderSoft, tint.bgSoft),
-        isDeciding && 'spin-border spin-border-info',
-      )}
+      className="flex min-w-0 flex-col gap-2"
     >
-      <div data-testid="orchestrator-header" className="flex min-w-0 flex-wrap items-center gap-2">
-        <span
-          className={cn(
-            'flex size-6 shrink-0 items-center justify-center rounded-md',
-            state.tone === 'neutral' ? 'bg-muted' : tint.bg,
+      <div
+        data-testid="orchestrator-strip-row"
+        className={cn(
+          'flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-lg border border-l-2 border-border-soft bg-background py-1.5 pl-3 pr-1.5',
+          RAIL[state.tone] ?? 'border-l-border',
+        )}
+      >
+        <span className="flex h-4 shrink-0 items-center" aria-hidden={!isPulsing}>
+          {isPulsing ? (
+            <StatusDot tone={pulseTone} size="sm" pulsing ariaLabel={state.sentence} />
+          ) : (
+            <CONCEPT_ICONS.orchestrator
+              size={ICON_SIZE.row}
+              aria-hidden
+              className={
+                state.tone === 'neutral' ? 'text-muted-foreground' : tintClasses(state.tone).icon
+              }
+            />
           )}
-        >
-          <CONCEPT_ICONS.orchestrator
-            size={ICON_SIZE.row}
-            aria-hidden
-            className={state.tone === 'neutral' ? 'text-muted-foreground' : tint.icon}
-          />
         </span>
-        <span className="min-w-0 flex-1">
-          <Eyebrow label="Orchestrator" muted />
-        </span>
+        <p className="flex min-w-0 flex-1 items-baseline gap-2">
+          <span
+            data-testid="orchestrator-state"
+            className="min-w-0 truncate text-xs font-medium text-foreground"
+            title={state.sentence}
+          >
+            {state.sentence}
+          </span>
+          {elapsed == null ? null : (
+            <span
+              data-testid="orchestrator-elapsed"
+              className="shrink-0 text-2xs tabular-nums text-muted-foreground"
+            >
+              {elapsed}
+            </span>
+          )}
+        </p>
         <div
           data-testid="orchestrator-controls"
           className="flex shrink-0 flex-wrap items-center justify-end gap-1.5"
         >
+          {primaryAction}
           <OrchestratorRoutingRow
             sessionId={sessionId}
             run={run}
@@ -229,108 +248,60 @@ export const OrchestratorPanel = ({
           />
           {isRunOver ? null : (
             <WorkflowAutorunToggle
-              variant="detail"
               isOn={run.autoRun === true}
               onToggle={() => void setWorkflowRunAutoRun(sessionId, run.id, run.autoRun !== true)}
             />
           )}
-          {showStopNow ? (
-            <ConfirmPopover
-              role="alert"
-              icon={<CircleStop size={ICON_SIZE.row} aria-hidden />}
-              title="Stop now?"
-              description="The step in flight is cancelled and marked skipped. Everything it already wrote is kept."
-              confirmLabel="Stop now"
-              onConfirm={() => void stopWorkflowRunNow(sessionId, run.id)}
-              trigger={({ arm }) => (
-                <GhostActionButton icon={CircleStop} tone="danger" label="Stop now" onClick={arm} />
-              )}
-            />
-          ) : null}
+          <OrchestratorMenu
+            canStopNow={canStopNow}
+            hasRouting={hasRouting}
+            isRoutingOpen={isRoutingOpen}
+            onToggleRouting={() => setIsRoutingOpen((open) => !open)}
+            onStopNow={() => void stopWorkflowRunNow(sessionId, run.id)}
+          />
         </div>
-      </div>
-
-      <div className="flex min-w-0 flex-col gap-1">
-        <p
-          data-testid="orchestrator-state"
-          className={cn(
-            'flex min-w-0 flex-wrap items-center gap-1.5 text-xs font-medium',
-            state.tone === 'neutral' ? 'text-foreground' : tint.text,
-          )}
-        >
-          {isPulsing ? (
-            <StatusDot tone={pulseTone} size="sm" pulsing ariaLabel={state.sentence} />
-          ) : null}
-          <span className="min-w-0">{state.sentence}</span>
-          {elapsed == null ? null : (
-            <span
-              data-testid="orchestrator-elapsed"
-              className="tabular-nums font-normal text-muted-foreground"
-            >
-              · {elapsed}
-            </span>
-          )}
-          {queuedHintCount === 0 ? null : (
-            <span data-testid="orchestrator-queued-hints" className="font-normal text-warning">
-              · {queuedHintCount} {queuedHintCount === 1 ? 'hint' : 'hints'} queued
-            </span>
-          )}
-        </p>
         {state.detail != null && state.detail !== '' ? (
-          <div data-testid="orchestrator-detail" className="min-w-0">
-            <Markdown text={state.detail} className="text-2xs leading-relaxed" />
+          <div data-testid="orchestrator-detail" className="min-w-0 basis-full">
+            <ClampedProse
+              text={state.detail}
+              lines={2}
+              className="text-2xs leading-relaxed text-muted-foreground"
+            />
           </div>
         ) : null}
       </div>
 
-      <div data-testid="orchestrator-actions" className="flex flex-wrap items-center gap-1.5">
-        {primaryAction}
-        <OrchestratorAction
-          icon={PenLine}
-          label={hints.length === 0 ? 'Hints' : `Hints (${hints.length})`}
-          variant="ghost"
-          testId="orchestrator-hints-toggle"
-          title="Tell the orchestrator something, and see what you already told it"
-          expanded={isHintsOpen}
-          onClick={() => setIsHintsOpen((open) => !open)}
+      <OrchestratorHintComposer
+        isDeciding={isOrchestrating}
+        isStepRunning={isStepRunning}
+        onSubmit={async (draft) => {
+          try {
+            await addWorkflowOrchestratorHint(sessionId, run.id, draft);
+            return true;
+          } catch (error) {
+            void reportError({ title: "Couldn't save the hint", error, sessionId });
+            return false;
+          }
+        }}
+      />
+      <OrchestratorHintLog
+        hints={hints}
+        readingHintIds={readingHintIds}
+        onRemove={(hintId) =>
+          void removeWorkflowOrchestratorHint(sessionId, run.id, hintId).catch((error: unknown) =>
+            reportError({ title: "Couldn't remove the hint", error, sessionId }),
+          )
+        }
+      />
+
+      {isRoutingOpen && hasRouting ? (
+        <WorkflowNodeRouting
+          sessionId={sessionId}
+          workflowRunId={run.id}
+          steps={steps}
+          onClose={() => setIsRoutingOpen(false)}
         />
-      </div>
-
-      {isHintsOpen ? (
-        <OrchestratorDrawer
-          inputId="orchestrator-hint-field"
-          title="Hints"
-          help="The orchestrator rereads every hint at each decision and judges which still apply. Ask it for a provider or a model here too. Remove a hint to take it back."
-        >
-          <OrchestratorHintComposer
-            isDeciding={isOrchestrating}
-            isStepRunning={agents.some((agent) => agent.status === 'running')}
-            onSubmit={async (draft) => {
-              try {
-                await addWorkflowOrchestratorHint(sessionId, run.id, draft);
-                return true;
-              } catch (error) {
-                void reportError({ title: "Couldn't save the hint", error, sessionId });
-                return false;
-              }
-            }}
-          />
-          <OrchestratorHintLog
-            hints={hints}
-            readingHintIds={readingHintIds}
-            onRemove={(hintId) =>
-              void removeWorkflowOrchestratorHint(sessionId, run.id, hintId).catch(
-                (error: unknown) =>
-                  reportError({ title: "Couldn't remove the hint", error, sessionId }),
-              )
-            }
-          />
-        </OrchestratorDrawer>
       ) : null}
-
-      <WorkflowNodeRouting sessionId={sessionId} workflowRunId={run.id} steps={steps} />
-
-      <WorkflowOrchestratorTldr steps={steps} run={run} />
     </section>
   );
 };

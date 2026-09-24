@@ -220,7 +220,8 @@ vi.mock('../../../workflows/components/WorkflowNextStepCta', () => ({
     </>
   ),
 }));
-vi.mock('../../../context/openQuestionsGate', () => ({
+vi.mock('../../../context/openQuestionsGate', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../context/openQuestionsGate')>()),
   workflowRunHasOpenQuestions: () => h.gate.hasOpenQuestions,
 }));
 vi.mock('../../agent-row-format', () => ({

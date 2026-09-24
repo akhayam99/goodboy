@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { isAgentStatusSettled } from '@goodboy/core';
 import {
   cn,
@@ -32,7 +33,7 @@ import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleMod
 import type { AgentAggregate } from '../AgentMetrics';
 import { WorkflowNextStepCta } from '../../../workflows/components/WorkflowNextStepCta';
 import { NextActionStrip } from '../../../workflows/components/NextActionStrip';
-import { OrchestratorPanel } from '../../../workflows/components/OrchestratorPanel';
+import { OrchestratorStrip } from '../../../workflows/components/OrchestratorStrip';
 import { RunSpendLimitPopover } from '../../../workflows/components/RunSpendLimitPopover';
 import { WorkflowRunSummary } from '../../../workflows/components/WorkflowRunSummary';
 import { WorkflowAddStep } from '../../../workflows/components/WorkflowAddStep';
@@ -41,6 +42,8 @@ import { CreateWireframeCta } from '../../../wireframes/components/CreateWirefra
 import { WorkflowAutorunToggle } from '../../../workflows/components/WorkflowAutorunToggle';
 import { useWorkflowRunTitleRename } from '../../../workflows/hooks/useWorkflowRunTitleRename';
 import { RunTree } from '../../../workflows/components/RunTree';
+import { useRunTree } from '../../../workflows/components/RunTree/useRunTree';
+import { WorkflowDecisions } from '../../../workflows/components/WorkflowDecisions';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { WriteDestinationControl } from '../../../chat/components/WriteDestinationControl';
 import { CostBadge } from '../../../providers/components/CostBadge';
@@ -164,6 +167,12 @@ export const WorkflowRow = ({
   const runSpendUsd = useRunSpendUsd(task.id, run.id);
   const costUsd = isDynamic ? runSpendUsd : runCostUsd;
   const stepById = new Map(workflow.steps.map((step) => [step.id, step]));
+  const tree = useRunTree({ session: task, run, workflow, agentKindOverride });
+  const [hoveredStepId, setHoveredStepId] = useState<string | null>(null);
+  const selectedStepId =
+    wfAgents.find((agent) => agent.id === selectedAgentId && agent.parentAgentId == null)?.stepId ??
+    null;
+  const highlightedStepId = hoveredStepId ?? selectedStepId;
   const hasOrchestratorStrip = isDynamic && !isDiscarded && expanded;
   const ctaAgent =
     wfAgents.find((agent) => agent.stepId === actionableStepId && agent.status === 'pending') ??
@@ -286,7 +295,6 @@ export const WorkflowRow = ({
                 ) : null}
                 {!isDiscarded && !isCompleted && !hasOrchestratorStrip && (
                   <WorkflowAutorunToggle
-                    variant="detail"
                     isOn={run.autoRun}
                     onToggle={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
                   />
@@ -354,7 +362,7 @@ export const WorkflowRow = ({
             )}
             {!isDiscarded && isDynamic && (
               <div className="pb-1">
-                <OrchestratorPanel
+                <OrchestratorStrip
                   sessionId={task.id}
                   run={run}
                   agents={wfAgents}
@@ -366,10 +374,9 @@ export const WorkflowRow = ({
             )}
             {wfAgents.length > 0 ? (
               <RunTree
-                session={task}
-                run={run}
-                workflow={workflow}
-                agentKindOverride={agentKindOverride}
+                sessionId={task.id}
+                runId={run.id}
+                tree={tree}
                 routing={{
                   stepById,
                   roleModels,
@@ -377,6 +384,8 @@ export const WorkflowRow = ({
                   sessionEffort,
                 }}
                 selectedAgentId={selectedAgentId}
+                highlightedStepId={highlightedStepId}
+                onHighlight={setHoveredStepId}
                 onSelect={onPickAgent}
                 onAnswer={onAnswerQuestion}
               />
@@ -401,6 +410,15 @@ export const WorkflowRow = ({
                   processText={(workflow.processText ?? '').trim()}
                 />
                 <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
+                {isDynamic && (
+                  <WorkflowDecisions
+                    run={run}
+                    steps={workflow.steps}
+                    tree={tree}
+                    highlightedStepId={highlightedStepId}
+                    onHighlight={setHoveredStepId}
+                  />
+                )}
               </div>
             )}
             {isCompleted && (

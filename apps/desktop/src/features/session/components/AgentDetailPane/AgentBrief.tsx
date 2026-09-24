@@ -21,6 +21,7 @@ import { AgentBriefDelegates } from './AgentBriefDelegates';
 import { AgentBriefChildren } from './AgentBriefChildren';
 import { AgentBriefPlans } from './AgentBriefPlans';
 import { AgentBriefQuestions } from './AgentBriefQuestions';
+import { AgentBriefWhy } from './AgentBriefWhy';
 import { AgentFollowUps } from './AgentFollowUps';
 import { agentFollowUpMoves } from './followUpMoves';
 import { selectFollowUpChildren } from './followUpChildren';
@@ -131,6 +132,7 @@ export const AgentBrief = ({ session, agent }: Props) => {
     <div className="flex flex-col gap-4">
       <AgentAnsweringFor sessionId={session.id} question={answeredQuestion} asker={asker} />
       <AgentBriefQuestions session={session} agent={agent} />
+      <AgentBriefWhy step={agent.parentAgentId == null ? step : null} />
       {summary !== '' && !isSplitIntoSubagents ? (
         <SectionSurface label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
           <div className="text-sm text-foreground">

@@ -64,7 +64,7 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
   questions: {
     phase: 'needs-answer',
     tone: 'warning',
-    sentence: 'Paused · an open question needs your answer',
+    sentence: 'Paused for your answer',
     showsMessage: false,
   },
   operator: {
@@ -142,7 +142,6 @@ export const resolveOrchestratorState = ({
       phase: 'blocked',
       tone: 'warning',
       sentence: 'Stopped · needs a human call',
-      detail: run.orchestrationReason ?? null,
     };
   }
   const stop = run.orchestrationStop;
@@ -174,18 +173,16 @@ export const resolveOrchestratorState = ({
       ...base,
       phase: 'needs-answer',
       tone: 'warning',
-      sentence: 'Paused · an open question needs your answer',
+      sentence: 'Paused for your answer',
     };
   }
   const failedIndex = ordered.findIndex((agent) => agent.status === 'failed');
   if (failedIndex >= 0) {
-    const agent = ordered[failedIndex]!;
     return {
       ...base,
       phase: 'step-failed',
       tone: 'danger',
-      sentence: `Stopped · step ${failedIndex + 1} failed · ${agent.name}`,
-      detail: 'Nothing advances until this step is skipped.',
+      sentence: `Paused on failed step ${failedIndex + 1}`,
     };
   }
   const pendingIndex = ordered.findIndex((agent) => agent.status === 'pending');

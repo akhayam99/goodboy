@@ -132,8 +132,7 @@ describe('AgentsPane', () => {
 
     render(<AgentsPane session={SESSION} meta={undefined} />);
 
-    expect(screen.getByTestId('workflow-autorun-toggle').textContent).toBe('Autorun on');
-    expect(screen.getByRole('button', { name: 'Autorun on' }).getAttribute('aria-pressed')).toBe(
+    expect(screen.getByRole('switch', { name: 'Autorun' }).getAttribute('aria-checked')).toBe(
       'true',
     );
   });
@@ -143,8 +142,10 @@ describe('AgentsPane', () => {
 
     render(<AgentsPane session={SESSION} meta={undefined} />);
 
-    expect(screen.getByTestId('workflow-autorun-toggle').textContent).toBe('Autorun off');
-    fireEvent.click(screen.getByRole('button', { name: 'Autorun off' }));
+    expect(screen.getByRole('switch', { name: 'Autorun' }).getAttribute('aria-checked')).toBe(
+      'false',
+    );
+    fireEvent.click(screen.getByRole('switch', { name: 'Autorun' }));
 
     expect(h.state.setSessionAutoRun).toHaveBeenCalledWith(SESSION_ID, true);
   });
@@ -154,7 +155,7 @@ describe('AgentsPane', () => {
 
     render(<AgentsPane session={SESSION} meta={undefined} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Autorun' }));
 
     expect(h.state.setSessionAutoRun).toHaveBeenCalledWith(SESSION_ID, false);
   });

@@ -70,6 +70,9 @@ vi.mock('../../../workflows/components/RunTree', () => ({
     </div>
   ),
 }));
+vi.mock('../../../workflows/components/RunTree/useRunTree', () => ({
+  useRunTree: () => null,
+}));
 vi.mock('./WorkflowKillButton', () => ({ WorkflowKillButton: () => null }));
 vi.mock('../../../workflows/components/NextActionStrip', () => ({
   NextActionStrip: ({ subjectAgentId }: { readonly subjectAgentId: string | null }) => (
@@ -254,7 +257,7 @@ describe('WorkflowRow detail dashboard', () => {
     expect(
       navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor workflow' })),
     ).toBe(true);
-    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Autorun off' }))).toBe(true);
+    expect(lifecycleSlot.contains(screen.getByRole('switch', { name: 'Autorun' }))).toBe(true);
     expect(
       lifecycleSlot.contains(screen.getByRole('button', { name: 'Refactor workflow actions' })),
     ).toBe(true);
@@ -311,8 +314,7 @@ describe('WorkflowRow detail dashboard', () => {
     const toggle = screen.getByTestId('workflow-autorun-toggle');
     const remove = screen.getByRole('button', { name: 'Refactor workflow actions' });
 
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
-    expect(toggle.className).toContain('rounded-full');
+    expect(within(toggle).getByRole('switch').getAttribute('aria-checked')).toBe('false');
     expect(lifecycleSlot.querySelector('[role="separator"]')).not.toBeNull();
     expect(toggle.compareDocumentPosition(remove)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
@@ -321,7 +323,7 @@ describe('WorkflowRow detail dashboard', () => {
     const setAutoRun = vi.fn(async () => undefined);
     renderDetail({ runOverride: { ...run, autoRun: true }, setWorkflowRunAutoRun: setAutoRun });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Autorun' }));
 
     expect(setAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
     expect(screen.queryByRole('group', { name: 'Stop now?' })).toBeNull();
@@ -338,7 +340,7 @@ describe('WorkflowRow detail dashboard', () => {
       setWorkflowRunAutoRun: setAutoRun,
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Autorun' }));
 
     expect(setAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
     expect(screen.queryByRole('group', { name: 'Stop now?' })).toBeNull();
@@ -355,7 +357,7 @@ describe('WorkflowRow detail dashboard', () => {
     expect(
       navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor workflow' })),
     ).toBe(true);
-    expect(screen.queryByRole('button', { name: 'Autorun off' })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Autorun' })).toBeNull();
     expect(
       lifecycleSlot.contains(screen.getByRole('button', { name: 'Refactor workflow actions' })),
     ).toBe(true);
@@ -477,7 +479,7 @@ describe('WorkflowRow step-in-flight predicate', () => {
       setWorkflowRunAutoRun: setAutoRun,
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Autorun' }));
 
     expect(setAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
   });

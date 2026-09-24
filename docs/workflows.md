@@ -123,6 +123,32 @@ blocked.
 You choose the model the orchestrator runs on in the launch form, and the
 providers it may pick from with **Can use**.
 
+### The orchestrator strip
+
+In the workflow detail, an orchestrated run shows the orchestrator as one row
+(`OrchestratorStrip`): what it is doing ("Choosing the next step", "Waiting on
+step 3 · Implement"), how long the running step has taken, the model it runs
+on, the **Autorun** switch and a menu. The row says its state with the colour
+of its left rail, never with a filled background. It shows at most one action:
+**Decide next step** only while autorun is off, **Resume the run** after you
+stopped it, **Retry** after a failed decision, **Continue the run** once it is
+complete, or the spend limit on a budget pause. A failed step and an open
+question are left to the Next action strip, so the row only says the run is
+paused. **Stop now** and **Model per step** (the model each step runs on, and
+why) sit in the menu. The hint field sits under the row, always open.
+
+### Why each step
+
+Under the goal, **Why each step** gives the orchestrator's reason for each step
+it chose, newest first (`WorkflowDecisions`). Each line opens with the same
+node the run tree draws for that step, with the same number or check. Hovering
+a line lights its row in the tree, and hovering or selecting a step row lights
+its line. When the run has ended, its closing reason sits on top. The five
+newest lines show, and the rest sit behind a count. The tree rows carry no
+reasons of their own. An agent's Brief repeats its own step's reason under
+**Why this step**, below any open question it asks. Sub-agents show none,
+because the reason belongs to the step.
+
 ### Hints
 
 A hint is a note you send the orchestrator while the run is going. Every hint
@@ -140,7 +166,7 @@ Asking for a certain provider or model on a step is a hint too.
 ### Spend limit
 
 Each run can have a spending limit in dollars. You set it on the run, in the
-orchestrator panel or in the creation form. You also choose what happens when
+orchestrator strip or in the creation form. You also choose what happens when
 the run reaches it: Goodboy notifies you, or pauses the run. The limit starts
 at unlimited. The orchestrator decides how many steps to plan based on the goal.
 
@@ -204,7 +230,7 @@ When a run needs you, one **Next action** strip says what to do. It sits in
 the fixed header of the workflow detail and of the agent detail, above the
 tabs, so Brief and Transcript show the same strip and the transcript does not
 repeat it at the bottom. Orchestrated runs get the same strip, and the
-orchestrator card no longer carries its own answer or skip button.
+orchestrator strip carries no answer or skip button of its own.
 
 - A failed step: "Implement stopped before finishing." with the steps that wait on it. **Check completion** asks the same agent to verify its work and finish, **Skip step** skips it. The error the turn ended with sits behind **Show details**
 - An open question: "Implement asks: ..." with **Answer**, which opens the agent that asked at its question. This shows in the workflow detail only, because the agent detail already shows its own questions

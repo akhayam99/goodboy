@@ -35,6 +35,8 @@ type Props = {
   readonly isNested: boolean;
   readonly parentStepName: string | null;
   readonly isSelected: boolean;
+  readonly isHighlighted: boolean;
+  readonly onHighlight?: (isOn: boolean) => void;
   readonly onSelect: () => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
 };
@@ -70,6 +72,8 @@ export const RunTreeRow = ({
   isNested,
   parentStepName,
   isSelected,
+  isHighlighted,
+  onHighlight,
   onSelect,
   onAnswer,
 }: Props) => {
@@ -89,6 +93,9 @@ export const RunTreeRow = ({
       className="flex min-w-0"
       style={{ height: item.height }}
       data-testid={`run-tree-row-${agent.id}`}
+      data-highlighted={isHighlighted}
+      onMouseEnter={onHighlight === undefined ? undefined : () => onHighlight(true)}
+      onMouseLeave={onHighlight === undefined ? undefined : () => onHighlight(false)}
     >
       <span className="relative shrink-0" style={{ width: railWidth }}>
         <TimelineRail rail={rail} width={railWidth} />
@@ -108,7 +115,7 @@ export const RunTreeRow = ({
             label={label}
             isSelected={isSelected}
             onOpen={onSelect}
-            frameClassName="min-w-0 flex-1"
+            frameClassName={cn('min-w-0 flex-1', isHighlighted && 'bg-hover text-foreground')}
             className="flex h-full min-w-0 items-center gap-2 pl-2 pr-1.5"
           >
             <span className="w-6 shrink-0 text-right text-3xs tabular-nums text-faint-foreground">

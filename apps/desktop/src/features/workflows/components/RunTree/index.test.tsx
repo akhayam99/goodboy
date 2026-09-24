@@ -24,6 +24,7 @@ import type {
 import { brandColor } from '../../../providers/components/provider-brand';
 import { useAppStore } from '../../../../store';
 import { RunTree } from './index';
+import { useRunTree } from './useRunTree';
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -145,6 +146,44 @@ type RenderParams = {
   readonly selectedAgentId?: AgentId | null;
   readonly onSelect?: (id: AgentId) => void;
   readonly onAnswer?: (question: OpenQuestion | null) => void;
+  readonly highlightedStepId?: string | null;
+  readonly onHighlight?: (stepId: string | null) => void;
+};
+
+type HarnessProps = {
+  readonly selectedAgentId: AgentId | null;
+  readonly highlightedStepId: string | null;
+  readonly onHighlight: (stepId: string | null) => void;
+  readonly onSelect: (id: AgentId) => void;
+  readonly onAnswer: (question: OpenQuestion | null) => void;
+};
+
+const Harness = ({
+  selectedAgentId,
+  highlightedStepId,
+  onHighlight,
+  onSelect,
+  onAnswer,
+}: HarnessProps) => {
+  const tree = useRunTree({ session, run, workflow, agentKindOverride: {} });
+  return (
+    <RunTree
+      sessionId={SESSION_ID}
+      runId={run.id}
+      tree={tree}
+      routing={{
+        stepById: new Map(workflow.steps.map((step) => [step.id, step])),
+        roleModels: null,
+        sessionProvider: null,
+        sessionEffort: null,
+      }}
+      selectedAgentId={selectedAgentId}
+      highlightedStepId={highlightedStepId}
+      onHighlight={onHighlight}
+      onSelect={onSelect}
+      onAnswer={onAnswer}
+    />
+  );
 };
 
 const renderTree = ({
@@ -155,6 +194,8 @@ const renderTree = ({
   selectedAgentId = null,
   onSelect = vi.fn(),
   onAnswer = vi.fn(),
+  highlightedStepId = null,
+  onHighlight = vi.fn(),
 }: RenderParams = {}) => {
   useAppStore.setState({
     sessionPhaseRuns: { [SESSION_ID]: [...agents] },
@@ -164,18 +205,10 @@ const renderTree = ({
     agentEffortOverride,
   });
   render(
-    <RunTree
-      session={session}
-      run={run}
-      workflow={workflow}
-      agentKindOverride={{}}
-      routing={{
-        stepById: new Map(workflow.steps.map((step) => [step.id, step])),
-        roleModels: null,
-        sessionProvider: null,
-        sessionEffort: null,
-      }}
+    <Harness
       selectedAgentId={selectedAgentId}
+      highlightedStepId={highlightedStepId}
+      onHighlight={onHighlight}
       onSelect={onSelect}
       onAnswer={onAnswer}
     />,
@@ -360,5 +393,27 @@ describe('RunTree', () => {
     renderTree({ agents: [scout, implement, review, child(1)] });
 
     expect(within(rowOf('child-1')).queryByText(/answering for/u)).toBeNull();
+  });
+
+  it('lights the step a decision explains, and reports hover on step rows only', () => {
+    const onHighlight = vi.fn();
+    renderTree({
+      agents: [scout, implement, review, child(1)],
+      highlightedStepId: 'step-2',
+      onHighlight,
+    });
+
+    expect(rowOf('agent-2').dataset.highlighted).toBe('true');
+    expect(rowOf('agent-1').dataset.highlighted).toBe('false');
+    expect(rowOf('child-1').dataset.highlighted).toBe('false');
+
+    fireEvent.mouseEnter(rowOf('agent-3'));
+    expect(onHighlight).toHaveBeenLastCalledWith('step-3');
+    fireEvent.mouseLeave(rowOf('agent-3'));
+    expect(onHighlight).toHaveBeenLastCalledWith(null);
+
+    onHighlight.mockClear();
+    fireEvent.mouseEnter(rowOf('child-1'));
+    expect(onHighlight).not.toHaveBeenCalled();
   });
 });

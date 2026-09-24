@@ -26,7 +26,6 @@ export const AgentsPane = ({ session, meta, eyebrow }: Props) => {
       actions={
         <>
           <WorkflowAutorunToggle
-            variant="detail"
             isOn={autoRun}
             onToggle={() => void setSessionAutoRun(sessionId, !autoRun)}
           />

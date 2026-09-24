@@ -42,6 +42,7 @@ export { NoteHeader } from './components/NoteHeader';
 export { NoteListSkeleton } from './components/NoteListSkeleton';
 export { OverlayHeader } from './components/OverlayHeader';
 export { OverflowMenu } from './components/OverflowMenu';
+export { MenuItems } from './components/MenuItems';
 export type { OverflowMenuItem } from './components/MenuItems';
 export { SplitButton } from './components/SplitButton';
 export type { SplitButtonPrimaryParams } from './components/SplitButton';

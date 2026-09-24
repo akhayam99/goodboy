@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { WorkflowRun } from '@goodboy/types';
-import { resolveOrchestratorState } from '../../../../../workflows/components/OrchestratorPanel/orchestratorState';
+import { resolveOrchestratorState } from '../../../../../workflows/components/OrchestratorStrip/orchestratorState';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import { runIdentity } from '../../../../timeline/runIdentity';
 import type { RunWorkflowKind } from '../../../../timeline/runWorkflowKind';

@@ -132,14 +132,14 @@ describe('resolveOrchestratorState', () => {
     expect(state.sentence).toContain('2 steps');
   });
 
-  it('reports blocked with the orchestration reason as detail', () => {
+  it('reports blocked and leaves its reason to the decisions under the goal', () => {
     const state = resolve({
       run: makeRun({ orchestrationOutcome: 'blocked', orchestrationReason: 'needs a decision' }),
     });
 
     expect(state.phase).toBe('blocked');
     expect(state.tone).toBe('warning');
-    expect(state.detail).toBe('needs a decision');
+    expect(state.detail).toBeNull();
   });
 
   it('maps every stop kind to its presentation', () => {
@@ -197,8 +197,8 @@ describe('resolveOrchestratorState', () => {
     const state = resolve({ agents: [makeAgent(0, 'failed'), makeAgent(1, 'pending')] });
 
     expect(state.phase).toBe('step-failed');
-    expect(state.sentence).toBe('Stopped · step 1 failed · step 0');
-    expect(state.detail).toBe('Nothing advances until this step is skipped.');
+    expect(state.sentence).toBe('Paused on failed step 1');
+    expect(state.detail).toBeNull();
   });
 
   it('waits on a pending step without a start time', () => {

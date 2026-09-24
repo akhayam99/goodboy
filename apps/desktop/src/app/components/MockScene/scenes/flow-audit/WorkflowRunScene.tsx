@@ -3,7 +3,6 @@ import { WorkflowRunDetail } from '../../../../../features/session/components/Se
 import { ShellFrame, seedShellChrome } from '../shellChrome';
 import { DYNAMIC_RUN_ID, FLOW_SESSION, FLOW_SESSION_ID, NOW, SESSIONS } from './fixtures';
 import { seedWorkflowRun } from './seeds';
-import { useAutoExpand } from './useAutoExpand';
 
 export const WorkflowRunScene = () => {
   const [isReady, setIsReady] = useState(false);
@@ -19,8 +18,6 @@ export const WorkflowRunScene = () => {
     });
     setIsReady(true);
   }, []);
-
-  useAutoExpand({ isReady, selector: '[data-testid="workflow-orchestrator-decisions-toggle"]' });
 
   if (!isReady) {
     return null;

@@ -96,8 +96,14 @@ const seedStore = (agents: ReadonlyArray<Agent>) => {
 };
 
 const openSection = () => {
-  render(<WorkflowNodeRouting sessionId={SESSION_ID} workflowRunId={RUN_ID} steps={[step]} />);
-  fireEvent.click(screen.getByRole('button', { name: /model choice/ }));
+  render(
+    <WorkflowNodeRouting
+      sessionId={SESSION_ID}
+      workflowRunId={RUN_ID}
+      steps={[step]}
+      onClose={vi.fn()}
+    />,
+  );
 };
 
 describe('WorkflowNodeRouting', () => {
@@ -146,5 +152,21 @@ describe('WorkflowNodeRouting', () => {
     openSection();
 
     expect(screen.getByRole('alert').textContent).toContain('already started');
+  });
+
+  it('closes from its own header', () => {
+    const onClose = vi.fn();
+    render(
+      <WorkflowNodeRouting
+        sessionId={SESSION_ID}
+        workflowRunId={RUN_ID}
+        steps={[step]}
+        onClose={onClose}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide model per step' }));
+
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

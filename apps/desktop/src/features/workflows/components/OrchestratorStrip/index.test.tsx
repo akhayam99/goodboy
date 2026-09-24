@@ -26,7 +26,7 @@ vi.mock('../../../../store/store', () => ({
   useAppStore: (selector: (state: Record<string, unknown>) => unknown) => selector(storeState),
 }));
 
-import { OrchestratorPanel } from './index';
+import { OrchestratorStrip } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
@@ -91,7 +91,7 @@ type RenderParams = {
   readonly isOrchestrating?: boolean;
 };
 
-const renderPanel = ({
+const renderStrip = ({
   runOverride = run(),
   agents = EMPTY_AGENTS,
   steps = EMPTY_STEPS,
@@ -99,7 +99,7 @@ const renderPanel = ({
   isOrchestrating = false,
 }: RenderParams = {}) =>
   render(
-    <OrchestratorPanel
+    <OrchestratorStrip
       sessionId={SESSION_ID}
       run={runOverride}
       agents={agents}
@@ -120,8 +120,8 @@ const hint = (over: Partial<OrchestratorHint>): OrchestratorHint => ({
 
 const sentence = () => screen.getByTestId('orchestrator-state').textContent ?? '';
 
-const openHints = () => {
-  fireEvent.click(screen.getByTestId('orchestrator-hints-toggle'));
+const openMenu = () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Orchestrator actions' }));
 };
 
 beforeEach(() => {
@@ -153,9 +153,9 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-describe('OrchestratorPanel state ladder', () => {
+describe('OrchestratorStrip state ladder', () => {
   it('asks for the first step on a run that has not started', () => {
-    renderPanel();
+    renderStrip();
 
     expect(sentence()).toContain('Ready to plan the first step');
     expect(screen.getByTestId('workflow-orchestrate-next-cta').textContent).toContain(
@@ -167,7 +167,7 @@ describe('OrchestratorPanel state ladder', () => {
   });
 
   it('says where the run got to before offering the next decision', () => {
-    renderPanel({ agents: [agent(0, 'completed'), agent(1, 'completed')] });
+    renderStrip({ agents: [agent(0, 'completed'), agent(1, 'completed')] });
 
     expect(sentence()).toContain('Paused · autorun is off');
     fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
@@ -176,49 +176,48 @@ describe('OrchestratorPanel state ladder', () => {
   });
 
   it('offers no next step control while autorun drives the run', () => {
-    renderPanel({ runOverride: run({ autoRun: true }), agents: [agent(0, 'completed')] });
+    renderStrip({ runOverride: run({ autoRun: true }), agents: [agent(0, 'completed')] });
 
     expect(sentence()).toContain('Continuing automatically');
     expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
   });
 
   it('says a step failed instead of claiming autorun is still continuing', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({ autoRun: true }),
       agents: [agent(0, 'completed'), agent(1, 'failed', { name: 'implement the remap' })],
     });
 
     expect(sentence()).not.toContain('Continuing automatically');
-    expect(sentence()).toContain('Stopped · step 2 failed · implement the remap');
-    expect(screen.getByTestId('orchestrator-panel').getAttribute('data-phase')).toBe('step-failed');
-    expect(screen.getByTestId('orchestrator-detail').textContent).toContain(
-      'Nothing advances until this step is skipped.',
-    );
-    expect(screen.getByTestId('orchestrator-panel').className).not.toContain('spin-border');
+    expect(sentence()).toBe('Paused on failed step 2');
+    expect(screen.getByTestId('orchestrator-strip').getAttribute('data-phase')).toBe('step-failed');
+    expect(screen.queryByTestId('orchestrator-detail')).toBeNull();
   });
 
   it('leaves the failed step recovery to the next action strip above it', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({ autoRun: true }),
       agents: [agent(0, 'completed'), agent(1, 'failed')],
     });
 
     expect(screen.queryByRole('button', { name: /skip/i })).toBeNull();
-    expect(screen.getByTestId('orchestrator-actions').textContent).toBe('Hints');
+    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
+    expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
   });
 
-  it('moves its own border while it decides, with no manual control', () => {
-    renderPanel({ isOrchestrating: true });
+  it('pulses on its rail while it decides, with no manual control', () => {
+    renderStrip({ isOrchestrating: true });
 
     expect(sentence()).toContain('Choosing the next step');
-    expect(screen.getByTestId('orchestrator-panel').className).toContain('spin-border');
+    expect(screen.getByTestId('orchestrator-strip-row').className).toContain('border-l-info');
+    expect(screen.getByRole('img', { name: sentence() }).className).toContain('bg-info');
     expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
-    expect(screen.getByRole('button', { name: /hints/i })).toBeDefined();
+    expect(screen.getByTestId('orchestrator-hint-input')).toBeDefined();
   });
 
   it('names the step it waits on and how long it has been running', () => {
     const startedAt = new Date(Date.now() - 90_000).toISOString() as IsoDateTime;
-    renderPanel({
+    renderStrip({
       runOverride: run({ autoRun: true }),
       agents: [
         agent(0, 'completed'),
@@ -228,17 +227,18 @@ describe('OrchestratorPanel state ladder', () => {
 
     expect(sentence()).toContain('Waiting on step 2 · implement language-id remap');
     expect(screen.getByTestId('orchestrator-elapsed').textContent).toContain('1m 30s');
-    expect(screen.getByTestId('orchestrator-panel').className).not.toContain('spin-border');
     expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
   });
 
-  it('confirms Stop now and dispatches the hard stop while autorun is on', () => {
-    renderPanel({
+  it('confirms Stop now from the overflow and dispatches the hard stop', () => {
+    renderStrip({
       runOverride: run({ autoRun: true }),
       agents: [agent(0, 'running')],
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Stop now' }));
+    expect(screen.queryByRole('button', { name: 'Stop now' })).toBeNull();
+    openMenu();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Stop now' }));
 
     const confirm = screen.getByRole('group', { name: 'Stop now?' });
     expect(confirm.textContent).toContain(
@@ -250,10 +250,11 @@ describe('OrchestratorPanel state ladder', () => {
   });
 
   it('keeps Stop now available during a graceful pause', () => {
-    renderPanel({ agents: [agent(0, 'running')] });
+    renderStrip({ agents: [agent(0, 'running')] });
 
     expect(sentence()).toContain('Finishing the step in flight · autorun is off');
-    expect(screen.getByRole('button', { name: 'Stop now' })).toBeDefined();
+    openMenu();
+    expect(screen.getByRole('menuitem', { name: 'Stop now' })).toBeDefined();
   });
 
   it('names a gating question and leaves the answer to the next action strip', () => {
@@ -262,14 +263,14 @@ describe('OrchestratorPanel state ladder', () => {
         [SESSION_ID]: [{ id: 'q-1', status: 'open', workflowRunId: RUN_ID }],
       },
     });
-    renderPanel({ agents: [agent(0, 'completed')] });
+    renderStrip({ agents: [agent(0, 'completed')] });
 
-    expect(sentence()).toContain('Paused · an open question needs your answer');
+    expect(sentence()).toBe('Paused for your answer');
     expect(screen.queryByRole('button', { name: /answer/i })).toBeNull();
   });
 
   it('reads a budget pause as a pause, not as a failure', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({
         orchestrationStop: {
           kind: 'budget',
@@ -286,7 +287,7 @@ describe('OrchestratorPanel state ladder', () => {
   });
 
   it('reads a budget pause worded differently as a pause all the same', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'any other wording' } }),
     });
 
@@ -298,7 +299,7 @@ describe('OrchestratorPanel state ladder', () => {
 
   it('reads a question stop as a question to answer, with no retry on offer', () => {
     storeState['sessionOpenQuestions'] = { [SESSION_ID]: [openQuestion()] };
-    renderPanel({
+    renderStrip({
       runOverride: run({
         orchestrationStop: {
           kind: 'questions',
@@ -307,13 +308,13 @@ describe('OrchestratorPanel state ladder', () => {
       }),
     });
 
-    expect(sentence()).toContain('Paused · an open question needs your answer');
+    expect(sentence()).toBe('Paused for your answer');
     expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
     expect(screen.queryByRole('button', { name: /answer/i })).toBeNull();
   });
 
   it('offers the next step again once the question behind the stop is answered', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({
         orchestrationStop: {
           kind: 'questions',
@@ -330,7 +331,7 @@ describe('OrchestratorPanel state ladder', () => {
   });
 
   it('reads an operator stop as a stop, and resumes hands-free from it', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({
         orchestrationStop: {
           kind: 'operator',
@@ -348,7 +349,7 @@ describe('OrchestratorPanel state ladder', () => {
   });
 
   it('says it is stopping instead of still choosing, when stopped mid-decision', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({
         orchestrationStop: {
           kind: 'operator',
@@ -361,8 +362,7 @@ describe('OrchestratorPanel state ladder', () => {
 
     expect(sentence()).not.toContain('Choosing the next step');
     expect(sentence()).toContain('Stopping');
-    expect(screen.getByTestId('orchestrator-panel').getAttribute('data-phase')).toBe('stopping');
-    expect(screen.getByTestId('orchestrator-panel').className).not.toContain('spin-border');
+    expect(screen.getByTestId('orchestrator-strip').getAttribute('data-phase')).toBe('stopping');
     expect(screen.queryByTestId('orchestrator-resume')).toBeNull();
 
     const dot = screen.getByRole('img', { name: sentence() });
@@ -371,7 +371,7 @@ describe('OrchestratorPanel state ladder', () => {
   });
 
   it('falls back to a generic presentation for a stop kind it does not recognize', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({
         orchestrationStop: {
           kind: 'legacy-manual-hold' as WorkflowOrchestrationStop['kind'],
@@ -387,7 +387,7 @@ describe('OrchestratorPanel state ladder', () => {
   });
 
   it('shows the failure with its reason and offers a retry', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({
         orchestrationStop: {
           kind: 'failure',
@@ -405,7 +405,7 @@ describe('OrchestratorPanel state ladder', () => {
   });
 
   it('asks for a human call when the orchestrator stopped the run', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({
         orchestrationOutcome: 'blocked',
         orchestrationReason: 'the migration needs a human call',
@@ -413,12 +413,13 @@ describe('OrchestratorPanel state ladder', () => {
     });
 
     expect(sentence()).toContain('Stopped · needs a human call');
-    expect(screen.getByTestId('orchestrator-detail').textContent).toContain('needs a human call');
+    expect(screen.queryByTestId('orchestrator-detail')).toBeNull();
+    expect(screen.queryByText('the migration needs a human call')).toBeNull();
     expect(screen.getByTestId('orchestrator-retry')).toBeDefined();
   });
 
   it('closes a complete run with its step count and spend, still extendable', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({ orchestrationOutcome: 'done' }),
       agents: [agent(0, 'completed'), agent(1, 'completed'), agent(2, 'completed')],
       costUsd: 1.28,
@@ -433,42 +434,65 @@ describe('OrchestratorPanel state ladder', () => {
   });
 });
 
-describe('OrchestratorPanel card', () => {
-  it('keeps the model, autorun and stop in the header, and the call to action below', () => {
-    renderPanel({ agents: [agent(0, 'running')], runOverride: run({ autoRun: true }) });
+describe('OrchestratorStrip layout', () => {
+  it('reads as one row with the model, autorun and the overflow, and the hint field under it', () => {
+    renderStrip({ agents: [agent(0, 'running')], runOverride: run({ autoRun: true }) });
 
-    const header = screen.getByTestId('orchestrator-header');
-    expect(header.contains(screen.getByTestId('orchestrator-routing'))).toBe(true);
-    expect(header.contains(screen.getByTestId('workflow-autorun-toggle'))).toBe(true);
-    expect(header.contains(screen.getByRole('button', { name: 'Stop now' }))).toBe(true);
-    expect(
-      screen
-        .getByTestId('orchestrator-actions')
-        .contains(screen.getByTestId('orchestrator-hints-toggle')),
-    ).toBe(true);
+    const row = screen.getByTestId('orchestrator-strip-row');
+    expect(row.contains(screen.getByTestId('orchestrator-routing'))).toBe(true);
+    expect(row.contains(screen.getByTestId('workflow-autorun-toggle'))).toBe(true);
+    expect(row.contains(screen.getByRole('button', { name: 'Orchestrator actions' }))).toBe(true);
+    expect(row.contains(screen.getByTestId('orchestrator-hint-input'))).toBe(false);
+    expect(row.className).not.toMatch(/\bbg-(info|warning|danger|success)/u);
   });
 
-  it('counts the hints on their toggle', () => {
-    renderPanel({
-      runOverride: run({ orchestratorHints: [hint({ id: 'a' }), hint({ id: 'b' })] }),
+  it('keeps Stop now and the model per step behind the overflow', () => {
+    const running = agent(0, 'running', { name: 'Scout the parser' });
+    Object.assign(storeState, {
+      sessionPhaseRuns: { [SESSION_ID]: [running] },
+      workflowNodeRoutingPending: {},
+      workflowNodeRoutingErrors: {},
     });
+    renderStrip({ agents: [running], runOverride: run({ autoRun: true }) });
 
-    expect(screen.getByTestId('orchestrator-hints-toggle').textContent).toContain('Hints (2)');
+    expect(screen.queryByRole('region', { name: 'Model per step' })).toBeNull();
+    openMenu();
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Model per step',
+      'Stop now',
+    ]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Model per step' }));
+
+    expect(screen.getByRole('region', { name: 'Model per step' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide model per step' }));
+    expect(screen.queryByRole('region', { name: 'Model per step' })).toBeNull();
+  });
+
+  it('shows no overflow when there is nothing to stop and no step to route', () => {
+    renderStrip();
+
+    expect(screen.queryByRole('button', { name: 'Orchestrator actions' })).toBeNull();
+  });
+
+  it('offers no Decide next step while autorun is on, even before the first step', () => {
+    renderStrip({ runOverride: run({ autoRun: true }) });
+
+    expect(sentence()).toContain('Continuing automatically');
+    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
   });
 });
 
-describe('OrchestratorPanel strip', () => {
+describe('OrchestratorStrip hints and money', () => {
   it('carries the routing pill on the orchestrator title row, unlabelled', () => {
-    renderPanel();
+    renderStrip();
 
     expect(screen.getByTestId('orchestrator-routing').textContent).not.toContain('decided by');
     expect(screen.queryByTestId('step-routing')).toBeNull();
   });
 
-  it('queues a hint from the disclosure', () => {
-    renderPanel();
+  it('queues a hint from the field under the strip', () => {
+    renderStrip();
 
-    openHints();
     fireEvent.change(screen.getByTestId('orchestrator-hint-input'), {
       target: { value: 'ignore the website' },
     });
@@ -481,9 +505,8 @@ describe('OrchestratorPanel strip', () => {
   });
 
   it('sends a hint to be read now', () => {
-    renderPanel();
+    renderStrip();
 
-    openHints();
     fireEvent.change(screen.getByTestId('orchestrator-hint-input'), {
       target: { value: 'look at the payout domain first' },
     });
@@ -496,31 +519,27 @@ describe('OrchestratorPanel strip', () => {
   });
 
   it('says what read now does in the state the run is in', () => {
-    renderPanel();
-    openHints();
+    renderStrip();
     expect(screen.getByTestId('orchestrator-hint-timing').textContent).toContain(
       'asks for a decision right away',
     );
 
     cleanup();
-    renderPanel({ agents: [agent(0, 'running')] });
-    openHints();
+    renderStrip({ agents: [agent(0, 'running')] });
     expect(screen.getByTestId('orchestrator-hint-timing').textContent).toContain(
       'stops the step in flight',
     );
 
     cleanup();
-    renderPanel({ isOrchestrating: true });
-    openHints();
+    renderStrip({ isOrchestrating: true });
     expect(screen.getByTestId('orchestrator-hint-timing').textContent).toContain(
       'Read now restarts this one with your hint.',
     );
   });
 
   it('keeps hint delivery open while the orchestrator is deciding', () => {
-    renderPanel({ isOrchestrating: true });
+    renderStrip({ isOrchestrating: true });
 
-    openHints();
     const input = screen.getByTestId('orchestrator-hint-input');
     expect(input.hasAttribute('disabled')).toBe(false);
     fireEvent.change(input, { target: { value: 'skip the visual suite' } });
@@ -535,9 +554,8 @@ describe('OrchestratorPanel strip', () => {
 
   it('clears the field as soon as a hint is sent, keeping the focus there', () => {
     storeState['addWorkflowOrchestratorHint'] = vi.fn(() => new Promise(() => undefined));
-    renderPanel();
+    renderStrip();
 
-    openHints();
     const input = screen.getByTestId('orchestrator-hint-input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'ignore the website' } });
     fireEvent.click(screen.getByTestId('orchestrator-hint-queue'));
@@ -551,9 +569,8 @@ describe('OrchestratorPanel strip', () => {
       throw new Error('disk full');
     });
     storeState['reportError'] = vi.fn(async () => undefined);
-    renderPanel();
+    renderStrip();
 
-    openHints();
     const input = screen.getByTestId('orchestrator-hint-input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'ignore the website' } });
     fireEvent.click(screen.getByTestId('orchestrator-hint-now'));
@@ -567,7 +584,7 @@ describe('OrchestratorPanel strip', () => {
 
   it('tells a queued hint from one the decision is reading now', () => {
     storeState['orchestratorReadingHints'] = { [RUN_ID]: ['reading'] };
-    renderPanel({
+    renderStrip({
       isOrchestrating: true,
       runOverride: run({
         orchestratorHints: [
@@ -577,8 +594,6 @@ describe('OrchestratorPanel strip', () => {
       }),
     });
 
-    openHints();
-
     const rows = screen.getAllByTestId('orchestrator-hint-row');
     expect(rows.map((row) => row.getAttribute('data-status'))).toEqual(['queued', 'reading']);
     expect(rows[0]?.textContent).toContain('Waits for the next decision');
@@ -586,11 +601,10 @@ describe('OrchestratorPanel strip', () => {
     const [queuedRemove, readingRemove] = screen.getAllByRole('button', { name: 'Remove hint' });
     expect(queuedRemove?.hasAttribute('disabled')).toBe(false);
     expect(readingRemove?.hasAttribute('disabled')).toBe(true);
-    expect(sentence()).toContain('1 hint queued');
   });
 
   it('keeps read hints behind a count with the steps that read them', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({
         orchestratorHints: [
           hint({ id: 'read-1', text: 'keep it to one PR', consumedAt: HINT_AT, consumedAtStep: 2 }),
@@ -599,8 +613,6 @@ describe('OrchestratorPanel strip', () => {
         ],
       }),
     });
-
-    openHints();
 
     expect(
       screen.getAllByTestId('orchestrator-hint-row').map((row) => row.getAttribute('data-status')),
@@ -624,17 +636,17 @@ describe('OrchestratorPanel strip', () => {
   });
 
   it('carries autorun in its own header, so the chat header does not need one', () => {
-    renderPanel({ runOverride: run({ autoRun: true }), agents: [agent(0, 'completed')] });
+    renderStrip({ runOverride: run({ autoRun: true }), agents: [agent(0, 'completed')] });
 
-    const toggle = screen.getByTestId('workflow-autorun-toggle');
-    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    const toggle = screen.getByRole('switch', { name: 'Autorun' });
+    expect(toggle.getAttribute('aria-checked')).toBe('true');
 
     fireEvent.click(toggle);
     expect(storeState['setWorkflowRunAutoRun']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
   });
 
   it('drops the autorun switch once the run is over', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({ orchestrationOutcome: 'done' }),
       agents: [agent(0, 'completed')],
     });
@@ -642,40 +654,24 @@ describe('OrchestratorPanel strip', () => {
     expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
   });
 
-  it('counts queued hints without spending a button on them', () => {
-    renderPanel({
-      runOverride: run({
-        orchestratorHints: [
-          hint({ id: 'read', consumedAt: HINT_AT, consumedAtStep: 1 }),
-          hint({ id: 'queued-1' }),
-          hint({ id: 'queued-2' }),
-        ],
-      }),
+  it('says a queued hint once, in the log, not again in the state sentence', () => {
+    renderStrip({
+      runOverride: run({ orchestratorHints: [hint({ id: 'queued-1' }), hint({ id: 'queued-2' })] }),
     });
 
-    const text = screen.getByTestId('orchestrator-panel').textContent ?? '';
-    expect(text).toContain('2 hints queued');
-  });
-
-  it('puts every control in the open, with no overflow menu left to hunt through', () => {
-    renderPanel({ agents: [agent(0, 'completed')] });
-
-    expect(screen.queryByRole('button', { name: /orchestrator options/i })).toBeNull();
-    expect(screen.queryByRole('menuitem')).toBeNull();
-    expect(screen.getByRole('button', { name: /decide next step/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /^hints$/i })).toBeDefined();
-    expect(screen.getByTestId('workflow-autorun-toggle')).toBeDefined();
+    expect(sentence()).not.toContain('queued');
+    expect(screen.getAllByTestId('orchestrator-hint-row')).toHaveLength(2);
   });
 
   it('keeps money controls off the card while the run is not paused on budget', () => {
-    renderPanel({ agents: [agent(0, 'completed')] });
+    renderStrip({ agents: [agent(0, 'completed')] });
 
     expect(screen.queryByTestId('orchestrator-budget')).toBeNull();
     expect(screen.queryByTestId('run-spend-limit-trigger')).toBeNull();
   });
 
   it('leaves one spend limit control on a budget pause and no budget button', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
     });
 
@@ -685,7 +681,7 @@ describe('OrchestratorPanel strip', () => {
 
   it('renders one budget control when the session budget pauses the run', () => {
     storeState['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
-    renderPanel({
+    renderStrip({
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
     });
 
@@ -694,15 +690,15 @@ describe('OrchestratorPanel strip', () => {
   });
 
   it('keeps the spend limit out of the state sentence', () => {
-    renderPanel({ runOverride: run({ spendLimitUsd: 12, spendLimitMode: 'notify' }) });
+    renderStrip({ runOverride: run({ spendLimitUsd: 12, spendLimitMode: 'notify' }) });
 
     expect(screen.queryByTestId('orchestrator-spend-limit')).toBeNull();
-    expect(screen.getByTestId('orchestrator-panel').textContent).not.toContain('Spend limit');
+    expect(screen.getByTestId('orchestrator-strip').textContent).not.toContain('Spend limit');
   });
 
   it('sends a session budget pause to the session spend scope, not to the run limit', () => {
     storeState['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
-    renderPanel({
+    renderStrip({
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
     });
     const opened = vi.fn();
@@ -716,7 +712,7 @@ describe('OrchestratorPanel strip', () => {
   });
 
   it('saves a spend limit for the run from the budget pause', () => {
-    renderPanel({
+    renderStrip({
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
     });
 
@@ -733,21 +729,9 @@ describe('OrchestratorPanel strip', () => {
     );
   });
 
-  it('folds the decisions into the strip behind a count', () => {
-    renderPanel({ steps: [step(0, 'the codebase is unknown'), step(1, 'the plan is settled')] });
+  it('leaves the reasons for each step to the section under the goal', () => {
+    renderStrip({ steps: [step(0, 'the codebase is unknown'), step(1, 'the plan is settled')] });
 
-    const strip = screen.getByTestId('orchestrator-panel');
-    const decisions = screen.getByTestId('workflow-orchestrator-tldr');
-    expect(strip.contains(decisions)).toBe(true);
-    expect(screen.queryByText('the codebase is unknown')).toBeNull();
-
-    const toggle = screen.getByTestId('workflow-orchestrator-decisions-toggle');
-    expect(toggle.textContent).toContain('2 decisions');
-
-    fireEvent.click(toggle);
-    expect(screen.getByText('the codebase is unknown')).toBeDefined();
-
-    fireEvent.click(toggle);
-    expect(screen.queryByText('the codebase is unknown')).toBeNull();
+    expect(screen.queryByText(/the codebase is unknown/u)).toBeNull();
   });
 });
