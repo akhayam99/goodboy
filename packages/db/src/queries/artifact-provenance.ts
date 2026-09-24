@@ -13,6 +13,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import { isJsonValue, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type ProvenanceRow = {
   readonly agent_id: string;
@@ -112,14 +113,6 @@ const toOmissions = (value: unknown): ReadonlyArray<string> => {
   return value.filter((entry): entry is string => typeof entry === 'string');
 };
 
-const parseJson = (value: string): unknown => {
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
-};
-
 const artifactKind = (value: string): ArtifactKind => {
   if (value === 'plan' || value === 'report' || value === 'wireframe') {
     return value;
@@ -184,13 +177,21 @@ const toDomain = (row: ProvenanceRow): ArtifactProvenance => ({
   sessionId: row.session_id as SessionId,
   kind: artifactKind(row.kind),
   brief: row.brief,
-  evidence: toEvidence(parseJson(row.evidence_json)),
-  omissions: toOmissions(parseJson(row.omissions_json)),
+  evidence: toEvidence(
+    parseJsonColumn({ value: row.evidence_json, isValid: isJsonValue, fallback: null }),
+  ),
+  omissions: toOmissions(
+    parseJsonColumn({ value: row.omissions_json, isValid: isJsonValue, fallback: null }),
+  ),
   designProfileSummary: row.design_profile_summary,
   hasDesignEvidence: row.has_design_evidence === 1,
   phase: runPhase(row.phase),
-  scoutPlan: toScoutPlan(parseJson(row.scout_plan_json)),
-  mountIds: toMountIds(parseJson(row.mount_ids_json)),
+  scoutPlan: toScoutPlan(
+    parseJsonColumn({ value: row.scout_plan_json, isValid: isJsonValue, fallback: null }),
+  ),
+  mountIds: toMountIds(
+    parseJsonColumn({ value: row.mount_ids_json, isValid: isJsonValue, fallback: null }),
+  ),
   target: runTarget(row.target),
   deadlineAt: row.deadline_at,
   sourceWorkflowRunId:

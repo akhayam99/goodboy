@@ -58,10 +58,10 @@ describe('RoutingBadge', () => {
     expect(screen.getByText('High')).toBeDefined();
   });
 
-  it('falls back to the missing label when no model is routed yet', () => {
-    render(<RoutingBadge missingLabel="no model yet" />);
+  it('says the model is not chosen yet when nothing is routed', () => {
+    render(<RoutingBadge />);
 
-    expect(screen.getByText('no model yet')).toBeDefined();
+    expect(screen.getByText('Model not chosen yet')).toBeDefined();
   });
 
   it('infers the provider from the model when it is not given', () => {

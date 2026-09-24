@@ -20,7 +20,7 @@ export const SentryBreadcrumbs = ({ breadcrumbs, isLoading, error }: Props) => {
         return (
           <div
             key={`${breadcrumb.timestamp ?? 'breadcrumb'}-${index}`}
-            className="flex flex-col gap-1 rounded-md bg-muted/30 p-2"
+            className="flex flex-col gap-1 rounded-md bg-subtle p-2"
           >
             <div className="flex items-center gap-2 text-2xs text-muted-foreground">
               <span className="font-medium text-foreground">{breadcrumb.category ?? 'event'}</span>

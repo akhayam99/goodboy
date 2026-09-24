@@ -11,11 +11,12 @@ import {
 } from '../../explore';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '@goodboy/ui';
+import { LensEmptyState, RefreshIconButton } from '@goodboy/ui';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { InspectorSplit } from '../../../session/components/SessionWorkspace/parts/InspectorSplit';
 import { ExplorePreviewPanel } from './ExplorePreviewPanel';
 import { ExploreSpawnPopover } from './ExploreSpawnPopover';
+import { formatBytes } from '../../../../shared/utils/formatBytes';
 
 const ROOT_PATH = '';
 const EMPTY_ENTRIES: ReadonlyArray<ExploreEntry> = Object.freeze([]);
@@ -58,21 +59,6 @@ type PreviewState =
       readonly status: 'ready';
       readonly content: ExploreContent;
     };
-
-const formatByteSize = ({ bytes }: { readonly bytes: number }): string => {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  const units = ['KB', 'MB', 'GB', 'TB'];
-  let size = bytes / 1024;
-  let index = 0;
-  while (size >= 1024 && index < units.length - 1) {
-    size /= 1024;
-    index += 1;
-  }
-  const precision = size >= 10 ? 0 : 1;
-  return `${size.toFixed(precision)} ${units[index]}`;
-};
 
 const resolveAbsolutePath = ({
   sessionDir,
@@ -261,7 +247,7 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
         const age =
           entry.modifiedAt == null ? '' : formatRelativeAge({ fromIso: entry.modifiedAt });
         const ageLabel = age === '' ? 'unknown age' : age;
-        const sizeLabel = formatByteSize({ bytes: entry.sizeBytes });
+        const sizeLabel = formatBytes({ bytes: entry.sizeBytes });
 
         return (
           <div key={entry.relPath} className="flex flex-col gap-0.5">
@@ -269,7 +255,7 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
               title={`${sizeLabel} · ${ageLabel}`}
               className={cn(
                 'group/explore-row flex items-center gap-1.5 rounded-md py-1 pl-1 pr-2 transition-colors',
-                isSelectedFile ? 'bg-muted text-foreground' : 'hover:bg-muted/40',
+                isSelectedFile ? 'bg-muted text-foreground' : 'hover:bg-hover',
               )}
             >
               {entry.isDir ? (
@@ -314,7 +300,7 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
                     type="button"
                     onClick={() => void runOpenAction({ entry, reveal: false })}
                     aria-label={`Open ${entry.name} outside the app`}
-                    className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                    className="rounded-md p-1.5 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
                   >
                     <ExternalLink size={ICON_SIZE.control} aria-hidden />
                   </button>
@@ -324,7 +310,7 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
                     type="button"
                     onClick={() => void runOpenAction({ entry, reveal: true })}
                     aria-label={`Reveal ${entry.name} in file manager`}
-                    className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                    className="rounded-md p-1.5 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
                   >
                     <FolderSearch size={ICON_SIZE.control} aria-hidden />
                   </button>
@@ -398,6 +384,15 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
     return resolveAbsolutePath({ sessionDir, relPath: selectedFile.relPath });
   }, [selectedFile, sessionDir]);
 
+  const refreshTree = () => {
+    void loadDirectory({ relPath: ROOT_PATH });
+    for (const [relPath, isExpanded] of Object.entries(expandedByPath)) {
+      if (isExpanded) {
+        void loadDirectory({ relPath });
+      }
+    }
+  };
+
   return (
     <InspectorSplit
       open={selectedFile != null}
@@ -413,7 +408,18 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
         ) : null
       }
     >
-      <PaneShell title="Explore" description="Browse the files for this session." eyebrow={eyebrow}>
+      <PaneShell
+        title="Explore"
+        description="Browse the files for this session."
+        eyebrow={eyebrow}
+        actions={
+          <RefreshIconButton
+            label="Refresh the files"
+            isLoading={rootLoading}
+            onClick={refreshTree}
+          />
+        }
+      >
         <div className="flex flex-col gap-3">
           {rootLoading ? (
             <>
@@ -442,7 +448,7 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
               tone={CONCEPT_TONE.explore}
               icon={CONCEPT_ICONS.explore}
               title="This session folder is empty"
-              description="Files created while you work on this session appear here. Add one from your editor or terminal and refresh."
+              description="Files created while you work on this session appear here."
             />
           ) : (
             <div className="flex flex-col gap-0.5">{renderEntries({ entries: rootEntries })}</div>

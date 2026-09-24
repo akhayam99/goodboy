@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import type { OrchestratorHint } from '@goodboy/types';
-import { IconButton, cn } from '@goodboy/ui';
+import { IconButton, cn, tintClasses } from '@goodboy/ui';
 
 type Props = {
   readonly hint: OrchestratorHint;
@@ -14,9 +14,9 @@ type StatusParams = {
 
 const statusFor = ({ hint }: StatusParams): string => {
   if (hint.consumedAt == null) {
-    return 'queued';
+    return 'Queued';
   }
-  return hint.consumedAtStep == null ? 'read' : `read at step ${hint.consumedAtStep}`;
+  return hint.consumedAtStep == null ? 'Read' : `Read at step ${hint.consumedAtStep}`;
 };
 
 export const OrchestratorHintRow = ({ hint, disabled, onRemove }: Props) => {
@@ -27,7 +27,9 @@ export const OrchestratorHintRow = ({ hint, disabled, onRemove }: Props) => {
       data-status={isQueued ? 'queued' : 'read'}
       className={cn(
         'flex items-start gap-2 rounded-md border px-2 py-1 text-2xs',
-        isQueued ? 'border-dashed border-warning/50' : 'border-border-soft bg-background/40',
+        isQueued
+          ? cn('border-dashed', tintClasses('warning').border)
+          : 'border-border-soft bg-background',
       )}
     >
       <span className="min-w-0 flex-1 leading-relaxed text-foreground">{hint.text}</span>

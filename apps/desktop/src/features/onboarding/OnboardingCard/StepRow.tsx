@@ -1,6 +1,6 @@
 import { openToolSettings } from '../../integrations/openToolSettings';
 import { Check } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { OnboardingStepId } from '../onboarding-store';
 import { OPEN_COMMAND_PALETTE_EVENT } from '../openCommandPaletteEvent';
 
@@ -28,7 +28,7 @@ export const StepRow = ({ id, title, why, done }: Props) => {
         <span
           className={cn(
             'flex items-center gap-2 px-1.5 py-1 text-2xs',
-            done ? 'text-muted-foreground/60' : 'text-foreground',
+            done ? 'text-faint-foreground' : 'text-foreground',
           )}
         >
           <span
@@ -36,7 +36,7 @@ export const StepRow = ({ id, title, why, done }: Props) => {
             className={cn(
               'inline-flex size-3.5 shrink-0 items-center justify-center rounded-full border',
               done
-                ? 'border-success bg-success/15 text-success'
+                ? cn('border-success', tintClasses('success').bg, 'text-success')
                 : 'border-border-soft bg-transparent',
             )}
           >
@@ -50,7 +50,7 @@ export const StepRow = ({ id, title, why, done }: Props) => {
           onClick={activate}
           title={why}
           aria-label={`Set up ${title}`}
-          className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-2xs text-foreground motion-safe:transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+          className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-2xs text-foreground motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <span
             aria-hidden

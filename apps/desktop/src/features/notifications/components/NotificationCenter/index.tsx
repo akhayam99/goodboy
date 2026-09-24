@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell, ChevronRight, RotateCcw, Trash2, X } from 'lucide-react';
+import { Bell, ChevronRight, RotateCcw, X } from 'lucide-react';
 import {
   AnchoredPopover,
   cn,
@@ -14,12 +14,12 @@ import {
 import { useShallow } from 'zustand/react/shallow';
 import type { Notification, NotificationAction } from '@goodboy/db';
 import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
-import type { ModelEffort, ProviderId, TaskModelPreference } from '@goodboy/types';
+import type { EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { mapNotificationAction } from '../NotificationToastBridge';
+import { mapNotificationAction, notificationContext } from '../NotificationToastBridge';
+import { NOTIFICATION_SEVERITY } from '../../severity';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
+import { CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
 import { sendNotificationToDevelopers } from '../../../settings/sendNotificationToDevelopers';
@@ -31,12 +31,15 @@ const HEADER_HEIGHT = 37;
 const DROPDOWN_MAX_HEIGHT = LIST_MAX_HEIGHT + HEADER_HEIGHT;
 const OPEN_EVENT = 'goodboy:open-notifications';
 
+const openNotificationsStudio = () => {
+  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT));
+};
+
 export const NotificationCenter = () => {
   const notifications = useAppStore((s) => s.notifications);
   const notificationsLoading = useAppStore((s) => s.notificationsLoading);
   const loadNotifications = useAppStore((s) => s.loadNotifications);
   const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
-  const clearNotifications = useAppStore((s) => s.clearNotifications);
   const dismissNotification = useAppStore((s) => s.dismissNotification);
   const markNotificationRead = useAppStore((s) => s.markNotificationRead);
   const dropdown = useDropdown({
@@ -93,10 +96,10 @@ export const NotificationCenter = () => {
               type="button"
               onClick={handleOpen}
               className={cn(
-                'relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors',
+                'relative flex items-center justify-center rounded-sm p-1.5 motion-safe:transition-colors',
                 open
                   ? 'bg-muted text-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                  : 'text-muted-foreground hover:text-foreground hover:bg-hover',
               )}
               aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`}
             >
@@ -104,7 +107,7 @@ export const NotificationCenter = () => {
               {unread > 0 && (
                 <span
                   className={cn(
-                    'absolute -right-1.5 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-warning px-1 font-bold leading-none text-warning-foreground tabular-nums',
+                    'absolute -right-1.5 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-warning px-1 font-bold leading-none text-on-tone tabular-nums',
                     unread > 9 ? 'text-3xs' : 'text-2xs',
                   )}
                 >
@@ -121,18 +124,17 @@ export const NotificationCenter = () => {
               ? `${unread} unread · ${total} total`
               : `${total} ${total === 1 ? 'notification' : 'notifications'}`}
           </span>
-          {notifications.length > 0 && (
-            <button
-              type="button"
-              onClick={() => void clearNotifications()}
-              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
-              aria-label="Clear all notifications"
-              title="Clear all notifications"
-            >
-              <Trash2 size={11} aria-hidden />
-              Clear all
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => {
+              close();
+              openNotificationsStudio();
+            }}
+            className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
+          >
+            Open all
+            <ChevronRight size={11} aria-hidden />
+          </button>
         </header>
         <Divider />
         {notificationsLoading && notifications.length === 0 ? (
@@ -145,8 +147,8 @@ export const NotificationCenter = () => {
               <div key={index} className="flex items-start gap-2">
                 <Skeleton className="mt-0.5 size-3.5 shrink-0 rounded-full" />
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                  <Skeleton className="h-3 w-2/3 rounded" />
-                  <Skeleton className="h-2.5 w-1/3 rounded" />
+                  <Skeleton className="h-3 w-2/3 rounded-sm" />
+                  <Skeleton className="h-2.5 w-1/3 rounded-sm" />
                 </div>
               </div>
             ))}
@@ -163,19 +165,26 @@ export const NotificationCenter = () => {
         ) : (
           <ScrollFade className="max-h-[25rem]" fadeSize={16} fadeFrom="elevated">
             <ul>
-              {groups.map((group) => (
-                <NotificationGroup
-                  key={group[0]?.coalesceKey ?? group[0]?.id}
-                  notifications={group}
-                  onNavigated={close}
-                  onDismiss={() => {
-                    for (const notification of group) {
-                      void markNotificationRead(notification.id);
-                      void dismissNotification(notification.id);
-                    }
-                  }}
-                />
-              ))}
+              {groups.map((group) => {
+                const [latest] = group;
+                if (latest === undefined) {
+                  return null;
+                }
+                return (
+                  <NotificationGroup
+                    key={latest.coalesceKey ?? latest.id}
+                    latest={latest}
+                    notifications={group}
+                    onNavigated={close}
+                    onDismiss={() => {
+                      for (const notification of group) {
+                        void markNotificationRead(notification.id);
+                        void dismissNotification(notification.id);
+                      }
+                    }}
+                  />
+                );
+              })}
             </ul>
           </ScrollFade>
         )}
@@ -185,20 +194,25 @@ export const NotificationCenter = () => {
 };
 
 type NotificationGroupProps = {
+  readonly latest: Notification;
   readonly notifications: ReadonlyArray<Notification>;
   readonly onNavigated: () => void;
   readonly onDismiss: () => void;
 };
 
-const NotificationGroup = ({ notifications, onNavigated, onDismiss }: NotificationGroupProps) => {
-  const n = notifications[0];
-  if (n == null) {
-    return null;
-  }
+const NotificationGroup = ({
+  latest: n,
+  notifications,
+  onNavigated,
+  onDismiss,
+}: NotificationGroupProps) => {
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const reportError = useAppStore((s) => s.reportError);
+  const sessions = useAppStore((s) => s.sessions);
+  const workspaces = useAppStore((s) => s.workspaces);
   const store = useAppStore.getState();
   const action = n.action != null ? mapNotificationAction(n.action, store) : undefined;
   const retryAction =
@@ -212,17 +226,15 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
   const canSendToDevelopers = n.severity === 'warning' || n.severity === 'error';
 
   const isUnread = notifications.some((notification) => !notification.read);
-  const sessionGoal = useAppStore(
-    (s) => s.sessions.find((session) => session.id === n.sessionId)?.goal,
-  );
-  const source = sessionGoal == null ? 'Goodboy' : stripInlineMarkdown({ text: sessionGoal });
+  const context = notificationContext(n, sessions, workspaces);
+  const severity = NOTIFICATION_SEVERITY[n.severity];
   const border =
     n.severity === 'error'
       ? 'border-l-danger/40'
       : n.severity === 'warning'
         ? 'border-l-warning/40'
         : 'border-l-transparent';
-  const ConceptIcon = CONCEPT_ICONS.notifications;
+  const SeverityIcon = severity.icon;
 
   const navigate = () => {
     if (sessionId == null) {
@@ -246,7 +258,9 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
         return;
       }
       await selectAgent(sessionId, agentId);
-    })().catch(() => {});
+    })().catch((error: unknown) => {
+      void reportError({ title: "Couldn't open this notification", error });
+    });
     onNavigated();
   };
 
@@ -268,10 +282,10 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
             </button>
           </Tooltip>
         ) : null}
-        <ConceptIcon
+        <SeverityIcon
           size={ICON_SIZE.control}
-          className={tintClasses(CONCEPT_TONE.notifications).icon}
-          aria-hidden
+          className={cn('shrink-0', tintClasses(severity.tone).icon)}
+          aria-label={severity.label}
         />
         {notifications.length === 1 && sessionId != null ? (
           <button type="button" onClick={navigate} className="min-w-0 flex-1 truncate text-left">
@@ -307,7 +321,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
             <Tooltip content="Retry">
               <button
                 type="button"
-                className="rounded p-1 hover:bg-muted"
+                className="rounded-sm p-1 hover:bg-hover"
                 onClick={action.onClick}
                 aria-label="Retry"
               >
@@ -318,7 +332,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
           <Tooltip content="Dismiss the group">
             <button
               type="button"
-              className="rounded p-1 hover:bg-muted"
+              className="rounded-sm p-1 hover:bg-hover"
               onClick={onDismiss}
               aria-label="Dismiss group"
             >
@@ -327,7 +341,9 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
           </Tooltip>
         </span>
       </div>
-      <span className="truncate pl-5 text-2xs text-muted-foreground">{source}</span>
+      {context !== undefined ? (
+        <span className="truncate pl-5 text-2xs text-muted-foreground">{context}</span>
+      ) : null}
       {expanded ? (
         <div className="flex flex-col gap-2 border-l border-border-soft pl-3">
           {notifications.slice(0, 5).map((entry) => (
@@ -341,7 +357,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
                 mapNotificationAction(entry.action, useAppStore.getState()) != null ? (
                   <button
                     type="button"
-                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-muted"
+                    className="rounded-sm px-1.5 py-0.5 text-2xs hover:bg-hover"
                     onClick={mapNotificationAction(entry.action, useAppStore.getState())?.onClick}
                   >
                     Retry
@@ -351,7 +367,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
                 entry.action?.kind === 'retry-step-summary' ? (
                   <button
                     type="button"
-                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-muted"
+                    className="rounded-sm px-1.5 py-0.5 text-2xs hover:bg-hover"
                     onClick={() => setPickerOpen((value) => !value)}
                   >
                     Retry with…
@@ -360,7 +376,7 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
                 {canSendToDevelopers ? (
                   <button
                     type="button"
-                    className="rounded px-1.5 py-0.5 text-2xs hover:bg-muted"
+                    className="rounded-sm px-1.5 py-0.5 text-2xs hover:bg-hover"
                     onClick={() => sendNotificationToDevelopers({ notification: entry })}
                   >
                     Send to developers
@@ -372,16 +388,6 @@ const NotificationGroup = ({ notifications, onNavigated, onDismiss }: Notificati
           {pickerOpen && retryAction != null ? (
             <RetryWithPicker action={retryAction} onDone={() => setPickerOpen(false)} />
           ) : null}
-          <button
-            type="button"
-            className="text-left text-2xs font-medium text-muted-foreground hover:text-foreground"
-            onClick={() => {
-              onNavigated();
-              window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT));
-            }}
-          >
-            View all in studio
-          </button>
         </div>
       ) : null}
     </li>
@@ -414,7 +420,7 @@ const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
       : availableProviderIds[0];
   const [providerId, setProviderId] = useState<ProviderId | undefined>(initialProvider);
   const [model, setModel] = useState('');
-  const [effort, setEffort] = useState<ModelEffort>('medium');
+  const [effort, setEffort] = useState<EffortLevel>('medium');
   if (providerId == null) {
     return null;
   }
@@ -477,7 +483,7 @@ const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
       </div>
       <button
         type="button"
-        className="rounded px-1.5 py-0.5 text-2xs font-medium text-foreground/80 ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
+        className="rounded-sm px-1.5 py-0.5 text-2xs font-medium text-foreground ring-1 ring-inset ring-foreground/20 hover:bg-hover hover:text-foreground"
         onClick={dispatch}
         aria-label="Confirm retry with selected model"
       >

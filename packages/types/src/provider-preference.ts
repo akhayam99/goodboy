@@ -14,8 +14,3 @@ export type TurnProviderOverride = {
   readonly selection?: ModelSelection;
   readonly explicit?: boolean;
 };
-
-export const DEFAULT_SESSION_PROVIDER_PREFERENCE: SessionProviderPreference = {
-  defaultProvider: 'anthropic',
-  allowTurnOverride: true,
-};

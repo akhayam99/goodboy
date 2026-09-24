@@ -1,3 +1,4 @@
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
 import { describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,
@@ -7,7 +8,6 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { isHandsFree } from './handsFree';
 import type { GetFn } from './types';
 

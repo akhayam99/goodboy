@@ -10,9 +10,10 @@ import {
 } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
-import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { cursorMaxModeAdvisory } from '../../lib/cursorMaxModeAdvisory';
 import { RoutingPicker } from './index';
+import { withShortcutHint } from '../../keyboard/registry';
 
 const baseProps = {
   connectedProviders: [
@@ -65,6 +66,20 @@ describe('RoutingPicker', () => {
     const trigger = screen.getByRole('button', { name: /routing/i });
     expect(trigger.getAttribute('aria-label')).toBe('routing: Claude · Opus · 5 · High · Brief');
     expect(tooltipTextOf({ element: trigger })).toContain('Claude · Opus · 5 · High · Brief');
+  });
+
+  it('teaches the shortcut that opens it in the trigger tooltip', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        verbosity="brief"
+        onVerbosity={vi.fn()}
+        shortcut="session.model"
+      />,
+    );
+    expect(tooltipTextOf({ element: screen.getByRole('button', { name: /routing/i }) })).toBe(
+      withShortcutHint({ label: 'Claude · Opus · 5 · High · Brief', shortcut: 'session.model' }),
+    );
   });
 
   it('still explains a disabled trigger when the caller gives no reason', () => {
@@ -212,7 +227,7 @@ describe('RoutingPicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    const row = screen.getByRole('button', { name: 'Recommended Claude · Sonnet 4.6' });
+    const row = screen.getByRole('button', { name: 'Recommended Claude · Sonnet · 4.6' });
     expect(row.querySelector('svg')).toBeNull();
     fireEvent.click(row);
     expect(onProvider).toHaveBeenCalledWith('');
@@ -231,7 +246,7 @@ describe('RoutingPicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Auto Claude · Sonnet 4.6' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Auto Claude · Sonnet · 4.6' }));
     expect(onProvider).toHaveBeenCalledWith('');
   });
 
@@ -264,7 +279,7 @@ describe('RoutingPicker', () => {
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     expect(
       screen
-        .getByRole('button', { name: 'Recommended Claude · Sonnet 4.6' })
+        .getByRole('button', { name: 'Recommended Claude · Sonnet · 4.6' })
         .getAttribute('aria-pressed'),
     ).toBe('true');
     const tab = screen.getByRole('button', { name: 'Claude' });
@@ -283,7 +298,7 @@ describe('RoutingPicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    const row = screen.getByRole('button', { name: 'Recommended Claude · Sonnet 4.6' });
+    const row = screen.getByRole('button', { name: 'Recommended Claude · Sonnet · 4.6' });
     fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
     fireEvent.click(screen.getByRole('button', { name: '5' }));
     expect(row.getAttribute('aria-pressed')).toBe('false');
@@ -313,7 +328,7 @@ describe('RoutingPicker', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     expect(screen.queryByRole('button', { name: 'Sonnet 4.6, Recommended' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Recommended Claude · Sonnet 4.6' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Recommended Claude · Sonnet · 4.6' })).toBeDefined();
   });
 
   it('renders each provider mark once in the provider row', () => {

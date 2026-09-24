@@ -1,8 +1,7 @@
 import { useShallow } from 'zustand/react/shallow';
-import { getDefaultTurnModel, getModelProvider } from '@goodboy/core';
+import { getDefaultTurnModel, getModelProvider, clampEffortForModel } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
-import { clampEffort } from '../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { useAppStore } from '../../../../store';
 import { AGENT_FORM_GRAMMAR, type AgentFormRole } from '../../agent-form-grammar';
@@ -40,7 +39,9 @@ export const AgentSpawnConfig = ({ value, onChange, disabled, className, role }:
       ...value,
       provider,
       model,
-      effort: clampEffort(model, DEFAULT_AGENT_SPAWN_CONFIG.effort),
+      effort:
+        clampEffortForModel({ model, effort: DEFAULT_AGENT_SPAWN_CONFIG.effort }) ??
+        DEFAULT_AGENT_SPAWN_CONFIG.effort,
     });
   };
 
@@ -64,7 +65,13 @@ export const AgentSpawnConfig = ({ value, onChange, disabled, className, role }:
         }}
         disabled={disabled}
         onProvider={onProvider}
-        onModel={(model) => onChange({ ...value, model, effort: clampEffort(model, value.effort) })}
+        onModel={(model) =>
+          onChange({
+            ...value,
+            model,
+            effort: clampEffortForModel({ model, effort: value.effort }) ?? value.effort,
+          })
+        }
       />
     </div>
   );

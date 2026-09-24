@@ -22,6 +22,8 @@ const valueSizeClasses: Record<'lg' | 'xl', string> = {
   xl: 'text-xl',
 };
 
+const warningTint = tintClasses('warning');
+
 export const StatCard = ({
   value,
   label,
@@ -58,7 +60,7 @@ export const StatCard = ({
         <span className={cn('font-mono tabular-nums text-foreground', valueSizeClasses[valueSize])}>
           {value}
         </span>
-        {hint ? <span className="text-2xs text-muted-foreground/70">{hint}</span> : null}
+        {hint ? <span className="text-2xs text-faint-foreground">{hint}</span> : null}
       </div>
       {onClick ? <ArrowRight size={14} aria-hidden className="text-muted-foreground" /> : null}
     </>
@@ -66,8 +68,8 @@ export const StatCard = ({
 
   const shell = cn(
     icon && tint ? 'flex items-start gap-3' : 'flex flex-col gap-1',
-    'rounded-lg border bg-muted/20 px-4 py-3',
-    alert ? 'border-warning/40' : 'border-border-soft',
+    'rounded-lg border bg-subtle px-4 py-3',
+    alert ? warningTint.border : 'border-border-soft',
     className,
   );
 
@@ -76,7 +78,7 @@ export const StatCard = ({
       <button
         type="button"
         onClick={onClick}
-        className={cn(shell, 'text-left motion-safe:transition-colors hover:bg-muted/40')}
+        className={cn(shell, 'text-left motion-safe:transition-colors hover:bg-hover')}
       >
         {body}
       </button>

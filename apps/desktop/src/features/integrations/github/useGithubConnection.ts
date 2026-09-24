@@ -1,65 +1,37 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { GhTokenStatus, WorkspaceId } from '@goodboy/types';
-import { ghStatus } from '../../github/github';
-
-const GITHUB_CONNECTION_CHANGED_EVENT = 'goodboy:github-connection-changed';
-
-export const notifyGithubConnectionChanged = () => {
-  window.dispatchEvent(new CustomEvent(GITHUB_CONNECTION_CHANGED_EVENT));
-};
+import { useCallback, useEffect } from 'react';
+import type { WorkspaceId } from '@goodboy/types';
+import { useAppStore } from '../../../store';
 
 type Params = {
   readonly workspaceId: WorkspaceId | null;
 };
 
-type ConnectionState = {
-  readonly status: GhTokenStatus | null;
-  readonly isResolved: boolean;
-};
-
 export const useGithubConnection = ({ workspaceId }: Params) => {
-  const [connection, setConnection] = useState<ConnectionState>({
-    status: null,
-    isResolved: false,
-  });
+  const stored = useAppStore((s) =>
+    workspaceId === null ? null : s.githubWorkspaceStatus[workspaceId],
+  );
+  const refreshGithubConnection = useAppStore((s) => s.refreshGithubConnection);
+  const isResolved = stored !== undefined;
 
-  const read = useCallback(async () => {
-    if (workspaceId == null) {
-      setConnection({ status: null, isResolved: true });
+  useEffect(() => {
+    if (workspaceId === null || isResolved) {
       return;
     }
-    try {
-      const status = await ghStatus(workspaceId);
-      setConnection({ status, isResolved: true });
-    } catch {
-      setConnection({ status: null, isResolved: true });
-    }
-  }, [workspaceId]);
-
-  useEffect(() => {
-    setConnection({ status: null, isResolved: false });
-    void read();
-  }, [read]);
-
-  useEffect(() => {
-    const onChanged = () => {
-      void read();
-    };
-    window.addEventListener(GITHUB_CONNECTION_CHANGED_EVENT, onChanged);
-    return () => window.removeEventListener(GITHUB_CONNECTION_CHANGED_EVENT, onChanged);
-  }, [read]);
+    void refreshGithubConnection({ workspaceId });
+  }, [workspaceId, isResolved, refreshGithubConnection]);
 
   const refresh = useCallback(() => {
-    notifyGithubConnectionChanged();
-  }, []);
+    void refreshGithubConnection({ workspaceId });
+  }, [refreshGithubConnection, workspaceId]);
 
+  const status = stored ?? null;
   return {
-    status: connection.status,
-    user: connection.status?.user ?? null,
-    mode: connection.status?.mode ?? 'absent',
-    isAuthenticated: connection.status?.mode !== 'absent' && connection.status != null,
-    isResolved: connection.isResolved,
-    isScoped: connection.status?.scoped === true,
+    status,
+    user: status?.user ?? null,
+    mode: status?.mode ?? 'absent',
+    isAuthenticated: status !== null && status.mode !== 'absent',
+    isResolved,
+    isScoped: status?.scoped === true,
     refresh,
   };
 };

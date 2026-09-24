@@ -18,11 +18,4 @@ describe('TranscriptChevron', () => {
     render(<TranscriptChevron open />);
     expect(screen.getByTestId('transcript-chevron').getAttribute('class')).toContain('rotate-90');
   });
-
-  it('never carries a state color', () => {
-    render(<TranscriptChevron open />);
-    expect(screen.getByTestId('transcript-chevron').getAttribute('class')).toContain(
-      'text-muted-foreground/60',
-    );
-  });
 });

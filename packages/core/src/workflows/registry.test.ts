@@ -1,30 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import Database from 'better-sqlite3';
 import type { IsoDateTime, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { migrate, insertWorkspace, type Database as DbInterface } from '@goodboy/db';
 import { WorkflowRegistry, WorkflowRegistryError } from './registry';
+import { makeTestDatabase } from '@goodboy/db/test-helpers';
 
 const WORKSPACE_ID = 'ws_test' as WorkspaceId;
 const FIXED_NOW = '2024-01-01T00:00:00.000Z' as IsoDateTime;
 
-function makeDb(): DbInterface {
-  const db = new Database(':memory:');
-  db.pragma('foreign_keys = ON');
-  return {
-    async exec(sql: string) {
-      db.exec(sql);
-    },
-    async execute(sql: string, params: ReadonlyArray<unknown> = []) {
-      const stmt = db.prepare(sql);
-      const result = stmt.run(...(params as ReadonlyArray<never>));
-      return { rowsAffected: result.changes };
-    },
-    async select<T>(sql: string, params: ReadonlyArray<unknown> = []) {
-      const stmt = db.prepare(sql);
-      return stmt.all(...(params as ReadonlyArray<never>)) as unknown as ReadonlyArray<T>;
-    },
-  };
-}
+const makeDb = (): DbInterface => makeTestDatabase();
 
 async function makeSeededDb(): Promise<DbInterface> {
   const db = makeDb();
@@ -35,7 +18,6 @@ async function makeSeededDb(): Promise<DbInterface> {
       id: WORKSPACE_ID,
       name: 'test',
       slug: 'test',
-      sessionsRoot: '/fake/root',
       overrides: {
         defaultProviderId: null,
         defaultWorkflowId: null,

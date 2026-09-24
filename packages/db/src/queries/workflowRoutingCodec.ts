@@ -1,5 +1,5 @@
 import type {
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   WorkflowModelPick,
   WorkflowRoutingDecision,

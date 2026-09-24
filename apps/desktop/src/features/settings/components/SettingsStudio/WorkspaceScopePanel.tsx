@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
-import type { VerbosityLevel, WorkspaceId } from '@goodboy/types';
+import type { WorkspaceId } from '@goodboy/types';
 import {
   Button,
   cn,
   Divider,
   FieldRow,
-  formatError,
+  InlineConfirm,
+  Input,
   PANE_RHYTHM,
   ScrollFade,
   SectionHeader,
   Switch,
+  tintClasses,
 } from '@goodboy/ui';
-import { Check, GitBranch, Unplug } from 'lucide-react';
+import { GitBranch, Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { WorkspaceProfileSection } from './WorkspaceProfileSection';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
@@ -20,11 +22,23 @@ import { VerbositySelect } from '../../../../features/session/components/Verbosi
 import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';
-import { primaryProjectRoot } from '../../../../features/workspace/primaryProjectRoot';
-import { useToast } from '../../../../app/components/Toast';
+import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
+import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { useSectionAnchors } from '../../hooks/useSectionAnchors';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
+
+type DisconnectTitleParams = {
+  readonly name: string;
+  readonly runningCount: number;
+};
+
+const disconnectTitle = ({ name, runningCount }: DisconnectTitleParams): string => {
+  if (runningCount === 0) {
+    return `Disconnect ${name}?`;
+  }
+  return `Disconnect ${name} and stop ${runningCount} running ${runningCount === 1 ? 'session' : 'sessions'}?`;
+};
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -33,13 +47,26 @@ type Props = {
 };
 
 export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose }: Props) => {
-  const disconnect = useAppStore((s) => s.deleteWorkspace);
+  const disconnect = useAppStore((s) => s.disconnectWorkspace);
   const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId) ?? null);
-  const projectRoot = useAppStore((s) => primaryProjectRoot({ projects: s.projects, workspaceId }));
   const renameWorkspace = useAppStore((s) => s.renameWorkspace);
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
-  const storeSetWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
-  const { showToast } = useToast();
+  const patchWorkspaceOverrides = useAppStore((s) => s.patchWorkspaceOverrides);
+  const verbosity = useAppStore(
+    (s) => selectWorkspaceResolvedSettings({ state: s, workspaceId }).defaultVerbosity,
+  );
+  const parallelAgents = useAppStore(
+    (s) => selectWorkspaceResolvedSettings({ state: s, workspaceId }).parallelAgents,
+  );
+  const resolvedBranchPrefix = useAppStore(
+    (s) => selectWorkspaceResolvedSettings({ state: s, workspaceId }).defaultBranchPrefix,
+  );
+  const runningCount = useAppStore((s) =>
+    s.currentWorkspaceId === workspaceId
+      ? s.sessions.filter((session) => session.state.kind === 'running').length
+      : 0,
+  );
+  const reportError = useAppStore((s) => s.reportError);
 
   const [displayName, setDisplayName] = useState(workspace?.name ?? '');
   const [renaming, setRenaming] = useState(false);
@@ -51,48 +78,29 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
   const { anchor } = useSectionAnchors({ section: initialSection });
 
-  const verbosity = wsOverrides?.defaultVerbosity ?? 'normal';
-  const parallelAgents = wsOverrides?.parallelAgents ?? false;
   const attributionFooter = isAttributionEnabled({ overrides: wsOverrides });
 
   useEffect(() => {
-    const value = wsOverrides?.defaultBranchPrefix ?? DEFAULT_BRANCH_PREFIX;
-    setBranchPrefix(value);
-    setSavedBranchPrefix(value);
-  }, [workspaceId, wsOverrides?.defaultBranchPrefix]);
+    setBranchPrefix(resolvedBranchPrefix);
+    setSavedBranchPrefix(resolvedBranchPrefix);
+  }, [workspaceId, resolvedBranchPrefix]);
 
   useEffect(() => {
     setDisplayName(workspace?.name ?? '');
   }, [workspace?.name]);
 
-  const persistOverrides = async (
-    partial: Partial<{
-      defaultVerbosity: VerbosityLevel;
-      parallelAgents: boolean;
-      attributionFooter: boolean;
-      defaultBranchPrefix: string;
-    }>,
-    successMessage: string,
-  ) => {
+  const persistOverrides = async ({
+    patch,
+    failureTitle,
+  }: {
+    readonly patch: WorkspaceOverridesPatch;
+    readonly failureTitle: string;
+  }) => {
     setBusy(true);
     try {
-      await storeSetWorkspaceOverrides(workspaceId, {
-        defaultProviderId: wsOverrides?.defaultProviderId ?? null,
-        defaultWorkflowId: wsOverrides?.defaultWorkflowId ?? null,
-        defaultBranchPrefix: wsOverrides?.defaultBranchPrefix ?? null,
-        parallelEnabled: wsOverrides?.parallelEnabled ?? null,
-        defaultVerbosity: verbosity,
-        providerBindings: wsOverrides?.providerBindings ?? null,
-        taskModels: wsOverrides?.taskModels ?? null,
-        roleModels: wsOverrides?.roleModels ?? null,
-        parallelAgents,
-        providerPool: wsOverrides?.providerPool ?? null,
-        attributionFooter: wsOverrides?.attributionFooter ?? null,
-        ...partial,
-      });
-      showToast('success', successMessage);
+      await patchWorkspaceOverrides({ workspaceId, patch });
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: failureTitle, error: err, workspaceId });
     } finally {
       setBusy(false);
     }
@@ -107,9 +115,8 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
     setRenaming(true);
     try {
       await renameWorkspace({ workspaceId, name: next });
-      showToast('success', 'workspace renamed');
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't rename the workspace", error: err, workspaceId });
       setDisplayName(workspace.name);
     } finally {
       setRenaming(false);
@@ -124,24 +131,11 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
     }
     setBusy(true);
     try {
-      await storeSetWorkspaceOverrides(workspaceId, {
-        defaultProviderId: wsOverrides?.defaultProviderId ?? null,
-        defaultWorkflowId: wsOverrides?.defaultWorkflowId ?? null,
-        defaultBranchPrefix: next,
-        parallelEnabled: wsOverrides?.parallelEnabled ?? null,
-        defaultVerbosity: verbosity,
-        providerBindings: wsOverrides?.providerBindings ?? null,
-        taskModels: wsOverrides?.taskModels ?? null,
-        roleModels: wsOverrides?.roleModels ?? null,
-        parallelAgents,
-        providerPool: wsOverrides?.providerPool ?? null,
-        attributionFooter: wsOverrides?.attributionFooter ?? null,
-      });
+      await patchWorkspaceOverrides({ workspaceId, patch: { defaultBranchPrefix: next } });
       setBranchPrefix(next);
       setSavedBranchPrefix(next);
-      showToast('success', 'branch prefix saved');
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't save the branch prefix", error: err, workspaceId });
     } finally {
       setBusy(false);
     }
@@ -153,7 +147,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       await disconnect(workspaceId);
       requestClose();
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't disconnect the workspace", error: err, workspaceId });
       setDisconnecting(false);
     }
   };
@@ -164,8 +158,6 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       .replace(/[^a-z0-9-]+/g, '')
       .replace(/^-+/, '')
       .slice(0, 16);
-
-  const folderName = projectRoot?.split('/').filter(Boolean).at(-1) ?? 'the workspace folder';
 
   return (
     <ScrollFade className="h-full w-full" viewportClassName={PANE_RHYTHM.body}>
@@ -182,8 +174,11 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   label="Workspace"
                   hint="How this workspace is labelled across the app."
                 />
-                <FieldRow label="Display name" help={`The folder on disk stays ${folderName}.`}>
-                  <input
+                <FieldRow
+                  label="Display name"
+                  help="Only the label changes. Project folders stay where they are."
+                >
+                  <Input
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
@@ -196,16 +191,11 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                         setDisplayName(workspace.name);
                       }
                     }}
-                    placeholder={folderName}
+                    placeholder={workspace.slug}
                     disabled={renaming}
                     maxLength={60}
                     aria-label="Display name"
-                    className={cn(
-                      'h-8 w-56 rounded-md border border-border bg-background px-2 text-sm text-foreground motion-safe:transition-colors',
-                      'placeholder:text-muted-foreground/40',
-                      'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
-                      renaming && 'cursor-not-allowed opacity-50',
-                    )}
+                    className="w-56"
                   />
                 </FieldRow>
               </section>
@@ -229,7 +219,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
           <section id="general" ref={anchor({ id: 'general' })} className="flex flex-col gap-4">
             <SectionHeader
               label="Session defaults"
-              hint="Applied to every new agent you spawn in this workspace."
+              hint="Applied to new sessions and agents in this workspace."
             />
             <div className="flex flex-col">
               <FieldRow label="Branch prefix" help="Prefixes every new session branch.">
@@ -239,7 +229,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                     aria-hidden
                     className="shrink-0 text-muted-foreground"
                   />
-                  <input
+                  <Input
                     type="text"
                     value={branchPrefix}
                     onChange={(e) => setBranchPrefix(sanitized(e.target.value))}
@@ -254,12 +244,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                     maxLength={16}
                     size={12}
                     aria-label="Branch prefix"
-                    className={cn(
-                      'h-8 rounded-md border border-border bg-background px-2 font-mono text-sm text-foreground motion-safe:transition-colors',
-                      'placeholder:text-muted-foreground/40',
-                      'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
-                      busy && 'cursor-not-allowed opacity-50',
-                    )}
+                    className="w-auto font-mono"
                   />
                   <span className="font-mono text-sm text-muted-foreground">/&lt;slug&gt;</span>
                 </div>
@@ -270,7 +255,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   <VerbositySelect
                     value={verbosity}
                     onChange={(v) =>
-                      void persistOverrides({ defaultVerbosity: v }, 'verbosity updated')
+                      void persistOverrides({
+                        patch: { defaultVerbosity: v },
+                        failureTitle: "Couldn't save the output verbosity",
+                      })
                     }
                     disabled={busy}
                   />
@@ -286,10 +274,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   checked={parallelAgents}
                   disabled={busy}
                   onChange={(next) =>
-                    void persistOverrides(
-                      { parallelAgents: next },
-                      next ? 'parallel agents on' : 'parallel agents off',
-                    )
+                    void persistOverrides({
+                      patch: { parallelAgents: next },
+                      failureTitle: "Couldn't save the parallel agents setting",
+                    })
                   }
                 />
               </FieldRow>
@@ -303,10 +291,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   checked={attributionFooter}
                   disabled={busy}
                   onChange={(next) =>
-                    void persistOverrides(
-                      { attributionFooter: next },
-                      next ? 'attribution line on' : 'attribution line off',
-                    )
+                    void persistOverrides({
+                      patch: { attributionFooter: next },
+                      failureTitle: "Couldn't save the attribution line setting",
+                    })
                   }
                 />
               </FieldRow>
@@ -332,46 +320,33 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
             <SectionHeader label="Danger zone" hint="Destructive workspace controls." />
             <FieldRow
               label="Disconnect workspace"
-              help="Hides it from the sidebar. Nothing on disk is deleted, re-add the path to bring it back."
+              help="Hides it from the sidebar. Nothing on disk is deleted."
             >
-              {!confirmDisconnect ? (
+              {confirmDisconnect ? (
+                <InlineConfirm
+                  role="danger"
+                  icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
+                  title={disconnectTitle({
+                    name: workspace?.name ?? 'this workspace',
+                    runningCount,
+                  })}
+                  description="Projects, branches and worktrees stay on disk. Choose Add workspace with the same folder to bring it back with its sessions."
+                  confirmLabel="Disconnect"
+                  isBusy={disconnecting}
+                  onConfirm={onDisconnect}
+                  onCancel={() => setConfirmDisconnect(false)}
+                  className="w-80 text-left"
+                />
+              ) : (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setConfirmDisconnect(true)}
-                  disabled={disconnecting}
-                  className="text-danger hover:bg-danger/10 hover:text-danger"
+                  className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
                 >
                   <Unplug size={ICON_SIZE.row} aria-hidden />
                   Disconnect
                 </Button>
-              ) : (
-                <div className="flex items-center gap-2 rounded-r-md border-l-2 border-danger/40 py-1.5 pl-2 pr-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setConfirmDisconnect(false)}
-                    disabled={disconnecting}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => void onDisconnect()}
-                    disabled={disconnecting}
-                    className={disconnecting ? 'animate-border-pulse' : undefined}
-                  >
-                    {disconnecting ? (
-                      'Disconnecting…'
-                    ) : (
-                      <>
-                        <Check size={ICON_SIZE.row} aria-hidden />
-                        Confirm
-                      </>
-                    )}
-                  </Button>
-                </div>
               )}
             </FieldRow>
           </section>

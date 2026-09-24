@@ -7,7 +7,7 @@ import type { StorageStats } from './slices/storage';
 import type { MountCleanupState } from './slices/mount-cleanup/state';
 import type { PrSeriesState } from './slices/pr-series/state';
 import type { PrWritesState } from './slices/pr-writes/state';
-import type { Notification, NotificationCounts, TelemetrySummary } from '@goodboy/db';
+import type { Notification, NotificationCounts } from '@goodboy/db';
 import type {
   Agent,
   AgentId,
@@ -20,11 +20,16 @@ import type {
   FileVersion,
   GhTokenStatus,
   GoalAttachment,
+  IntegrationBinding,
   IntegrationCredential,
   IntegrationCredentialUsage,
   IsoDateTime,
   LinkedIssue,
   Message,
+  MountBranchObservation,
+  MountId,
+  MountPullRequestIdentity,
+  MountPullRequestLink,
   OpenQuestion,
   OpenQuestionId,
   OrchestratorRouting,
@@ -33,28 +38,26 @@ import type {
   PlanId,
   PlanWithCount,
   PrDetail,
-  PrReviewDraft,
   Project,
   ProjectId,
+  ProjectScript,
   ProviderCredential,
   ProviderId,
   ProviderRunId,
+  PrReviewDraft,
   PullRequestState,
   Session,
   SessionBudget,
   SessionEvent,
   SessionExternalTask,
   SessionId,
-  MountBranchObservation,
-  MountId,
-  MountPullRequestIdentity,
-  MountPullRequestLink,
   SessionMountView,
   SessionProjectMount,
   SessionViewPrefs,
   Skill,
   StepDef,
   TelemetryRecord,
+  TelemetrySummary,
   TurnEvent,
   TurnState,
   Workflow,
@@ -62,8 +65,6 @@ import type {
   Workspace,
   WorkspaceGitStatus,
   WorkspaceId,
-  IntegrationBinding,
-  ProjectScript,
 } from '@goodboy/types';
 import type { SessionWorktree } from '@goodboy/db';
 import type { AgentKind } from '../features/session/agent-kind';
@@ -76,7 +77,7 @@ import type { SessionBitbucketPrEntry } from './slices/bitbucket-pr/state';
 import type { SlackThreadsSliceState } from './slices/slack-threads/state';
 import type {
   ProviderAuthResults,
-  ProviderInfo,
+  ProviderDisplayInfo,
   ProviderStatus,
 } from '../features/providers/providers';
 import type { ProviderCooldowns } from '../features/providers/routing';
@@ -90,7 +91,6 @@ import type { ProviderSpendEntry } from './slices/budget';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
 import type { ChangelogState } from './slices/changelog/state';
 import type { ProviderConnectMap, ProviderLifecycleMap } from './slices/providers';
-import type { ReviewPrsState } from './slices/review-prs/types';
 import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
 import type { WriteDestination } from './slices/project-mounts/writeDestination';
@@ -224,7 +224,6 @@ export type SummarizerSessionStatus = {
 export type PendingOrchestration = {
   readonly sessionId: SessionId;
   readonly bypassGate: boolean;
-  readonly extraHints: ReadonlyArray<string>;
   readonly routing?: OrchestratorRouting;
 };
 
@@ -261,13 +260,14 @@ export type AppState = AppSliceState & {
   readonly codexStatus: ProviderStatus | null;
   readonly geminiStatus: ProviderStatus | null;
   readonly authResults: ProviderAuthResults | null;
-  readonly providers: ReadonlyArray<ProviderInfo>;
+  readonly providers: ReadonlyArray<ProviderDisplayInfo>;
   readonly providerLifecycle: ProviderLifecycleMap;
   readonly providerConnect: ProviderConnectMap;
   readonly providerCredentials: ReadonlyArray<ProviderCredential>;
   readonly providerCooldowns: ProviderCooldowns;
   readonly hydrated: boolean;
   readonly bootPhase: BootPhase;
+  readonly bootFailedPhase: BootPhase | null;
   readonly error: string | null;
   readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   readonly messages: Readonly<Record<string, ReadonlyArray<Message>>>;
@@ -314,6 +314,7 @@ export type AppState = AppSliceState & {
   readonly sessionWorkflows: Readonly<Record<SessionId, ReadonlyArray<Workflow>>>;
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>;
   readonly orchestratingWorkflowRuns: Readonly<Record<WorkflowRunId, boolean>>;
+  readonly decisionRestartMarks: Readonly<Record<WorkflowRunId, number>>;
   readonly pendingOrchestrations: Readonly<Record<WorkflowRunId, PendingOrchestration>>;
   readonly pendingAdvanceSessions: ReadonlySet<SessionId>;
   readonly announcedWorkflowBlocks: Readonly<Record<WorkflowRunId, string>>;
@@ -325,6 +326,11 @@ export type AppState = AppSliceState & {
   >;
   readonly agentTurnState: Readonly<Record<AgentId, TurnState>>;
   readonly clusterStartAttempts: Readonly<Record<AgentId, number>>;
+  readonly clusterStepStartAttempts: Readonly<Record<AgentId, number>>;
+  readonly workflowContinueAttempts: Readonly<Record<AgentId, number>>;
+  readonly stepSummaryDegraded: Readonly<Record<AgentId, boolean>>;
+  readonly degradedStepOutputs: Readonly<Record<AgentId, string>>;
+  readonly scoutSelfExploreTasked: Readonly<Record<AgentId, true>>;
   readonly unknownPayloadCounts: Readonly<Record<string, number>>;
   readonly detectedEditors: ReadonlyArray<DetectedEditor>;
   readonly workspaceOverrides: Readonly<Record<WorkspaceId, OverrideSettings>>;
@@ -334,6 +340,7 @@ export type AppState = AppSliceState & {
     Record<SessionId, Partial<Record<PanelSection, boolean>>>
   >;
   readonly githubStatus: GhTokenStatus | null;
+  readonly githubWorkspaceStatus: Readonly<Record<WorkspaceId, GhTokenStatus | null>>;
   readonly mountGithub: Readonly<Record<MountId, MountGithubState>>;
   readonly mountSelectedPr: Readonly<Record<MountId, MountPullRequestIdentity | null>>;
   readonly sessionGithub: Readonly<Record<SessionId, SessionGithubState>>;
@@ -347,7 +354,6 @@ export type AppState = AppSliceState & {
   readonly mountSelectedBitbucketPr: Readonly<Record<MountId, MountPullRequestIdentity | null>>;
   readonly sessionBitbucketPr: Readonly<Record<SessionId, SessionBitbucketPrEntry>>;
   readonly sessionBitbucketRepo: Readonly<Record<SessionId, BitbucketRepo>>;
-  readonly reviewPrs: Readonly<Record<WorkspaceId, ReviewPrsState>>;
   readonly reviewDrafts: Readonly<Record<SessionId, ReadonlyArray<PrReviewDraft>>>;
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<AgentId, string>>;
@@ -378,6 +384,7 @@ export type AppState = AppSliceState & {
   readonly sessionOpenQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;
   readonly sessionAnsweredQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;
   readonly sessionDismissedQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;
+  readonly sessionQuestionsLoadError: Readonly<Record<SessionId, string | undefined>>;
   readonly openQuestionScrollTarget: {
     readonly agentId: AgentId;
     readonly questionId: OpenQuestionId;

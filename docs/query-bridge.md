@@ -2,8 +2,9 @@
 
 > **Read this when** you want to know what an agent can read or do in your
 > connected tools, or you are changing what it can ask and how it asks.
-> **Not for** connecting an integration in the app (`concepts.md`) or how
-> Goodboy starts agent processes in general (`architecture.md`).
+> **Not for** connecting an integration in the app (`concepts.md`), what a
+> mount verb does on disk (`mounts.md`), or how Goodboy starts agent processes
+> in general (`architecture.md`).
 
 The query bridge lets an agent working in a Goodboy session use the tools your workspace is connected to. The agent asks Goodboy, Goodboy makes the call with your connection, and the answer comes back to the agent.
 
@@ -118,6 +119,10 @@ The catalog also has one verb outside the integrations, `project materialize`. I
 
 ### Mounts
 
+What each mount verb does to the worktree, the rows and the operation log is
+described in [mounts.md](mounts.md#driving-mounts-from-an-agent). This section
+shows how an agent calls them.
+
 A session can hold several mounts of the same project. Each one has its own worktree, branch and pull request. `mount list` prints their ids. When a command that acts on a mount gets no `--mount`, the bridge runs it only if exactly one mount fits. Otherwise it refuses with `ambiguous_mount`. It never falls back to the first row.
 
 The GitHub verbs and `gitlab mr-create` act on one mount. Most of them use the mount the turn belongs to by default. Opening a request is the exception: `github pr-create` and `gitlab mr-create` always need an explicit `--mount`.
@@ -210,7 +215,7 @@ Both return the updated `mounts` array. Finish any merge, rebase or cherry-pick 
 
 ### Pull requests and series
 
-Opening a pull request or merge request always happens on one mount. `github pr-create` and `gitlab mr-create` need an explicit `--mount`. They open a draft unless you pass `--ready`, and they refresh from the provider first. Sometimes the remote accepts the request but the answer never comes back. A retry then finds the existing request and attaches it, instead of opening a duplicate.
+Opening a pull request or merge request always happens on one mount. `github pr-create` and `gitlab mr-create` need an explicit `--mount`. They open a draft unless you pass `--ready`, and they refresh from the provider first. Sometimes the remote accepts the request but the answer never comes back. A retry then finds the existing request and attaches it, instead of opening a duplicate. These two are the only verbs that create a request. Bitbucket reads know about mounts, but Bitbucket has no `pr-create`.
 
 ```
 "$GOODBOY_BIN" query github pr-create \

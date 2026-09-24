@@ -1,5 +1,6 @@
 import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
+import { parseJsonAllowingControlChars } from './parseJsonAllowingControlChars';
 import { createPermissionRequestEvent } from '../../permissions/events';
 import { blockBoundaryPrefix, resetTextBoundary } from './text-boundary';
 
@@ -57,6 +58,13 @@ type ContextTokenParams = {
   readonly usage: UsagePayload | undefined;
 };
 
+type CacheCreationParams = {
+  readonly usage: UsagePayload;
+};
+
+const cacheCreationTokens = ({ usage }: CacheCreationParams): number | undefined =>
+  usage.cache_creation_input_tokens ?? usage.cacheCreationInputTokens ?? usage.cacheWriteTokens;
+
 const contextTokensFromUsage = ({ usage }: ContextTokenParams): number | null => {
   if (usage == null) {
     return null;
@@ -64,8 +72,7 @@ const contextTokensFromUsage = ({ usage }: ContextTokenParams): number | null =>
   const input = usage.input_tokens ?? usage.inputTokens;
   const output = usage.output_tokens ?? usage.outputTokens;
   const cached = usage.cache_read_input_tokens ?? usage.cacheReadTokens;
-  const cacheCreation =
-    usage.cache_creation_input_tokens ?? usage.cacheCreationInputTokens ?? usage.cacheWriteTokens;
+  const cacheCreation = cacheCreationTokens({ usage });
   if (
     typeof input !== 'number' &&
     typeof output !== 'number' &&
@@ -157,22 +164,18 @@ function isToolResultBlock(block: unknown): block is ToolResultBlock {
   );
 }
 
-export const parseAnthropicEnvelopeLine = (
-  line: string,
-  ctx: ParseContext,
-  opts: AnthropicEnvelopeParserOptions,
-): ReadonlyArray<TurnEvent> => {
-  const trimmed = line.trim();
-  if (trimmed.length === 0) {
-    return [];
-  }
+type EnvelopeValueParams = {
+  readonly value: unknown;
+  readonly ctx: ParseContext;
+  readonly opts: AnthropicEnvelopeParserOptions;
+};
 
-  let payload: { type?: string } & Record<string, unknown>;
-  try {
-    payload = JSON.parse(trimmed);
-  } catch {
-    return [];
-  }
+export const parseAnthropicEnvelopeValue = ({
+  value,
+  ctx,
+  opts,
+}: EnvelopeValueParams): ReadonlyArray<TurnEvent> => {
+  const payload = value as { type?: string } & Record<string, unknown>;
 
   const at = ctx.now();
 
@@ -194,10 +197,7 @@ export const parseAnthropicEnvelopeLine = (
       const input = usage.input_tokens ?? usage.inputTokens;
       const output = usage.output_tokens ?? usage.outputTokens;
       const cached = usage.cache_read_input_tokens ?? usage.cacheReadTokens;
-      const cacheCreation =
-        usage.cache_creation_input_tokens ??
-        usage.cacheCreationInputTokens ??
-        usage.cacheWriteTokens;
+      const cacheCreation = cacheCreationTokens({ usage });
       const contextTokens = ctx.lastAssistantContextTokens;
       delete ctx.lastAssistantContextTokens;
       const events: TurnEvent[] = [];
@@ -338,3 +338,20 @@ function parseUser(
   }
   return events;
 }
+
+export const parseAnthropicEnvelopeLine = (
+  line: string,
+  ctx: ParseContext,
+  opts: AnthropicEnvelopeParserOptions,
+): ReadonlyArray<TurnEvent> => {
+  const trimmed = line.trim();
+  if (trimmed.length === 0) {
+    return [];
+  }
+  const parsed = parseJsonAllowingControlChars({ text: trimmed });
+  if (!parsed.ok) {
+    devWarn(`[${opts.logTag}] dropped a stream-json line that is not json`);
+    return [];
+  }
+  return parseAnthropicEnvelopeValue({ value: parsed.value, ctx, opts });
+};

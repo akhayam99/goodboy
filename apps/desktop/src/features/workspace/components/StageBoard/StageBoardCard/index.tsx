@@ -1,6 +1,15 @@
 import { memo, useEffect, useMemo } from 'react';
-import { Archive, ChevronRight, Code, MessageSquareDiff, RotateCcw, Trash2 } from 'lucide-react';
-import { Chip, cn, formatUsd, Tooltip } from '@goodboy/ui';
+import { Archive, ChevronRight, Code, MessageSquareDiff, Trash2 } from 'lucide-react';
+import {
+  Chip,
+  cn,
+  formatUsd,
+  Tooltip,
+  InlineMarkdown,
+  inlineMarkdownText,
+  OverflowMenu,
+  type OverflowMenuItem,
+} from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -19,7 +28,6 @@ import {
   CONCEPT_TONE,
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
-import { InlineMarkdown } from '../../../../../shared/components/InlineMarkdown';
 import { sessionCardShell } from '../../../../session/components/sessionCardShell';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { useOpenSession } from '../../../../../shared/hooks/useOpenSession';
@@ -28,12 +36,6 @@ import { getLinkedRequest } from './getLinkedRequest';
 import { PrRequestSlot } from './PrRequestSlot';
 import { ProjectMountChips } from './ProjectMountChips';
 import { useDynamicActions, type DynamicAction } from './useDynamicActions';
-
-const SESSION_CARD_REVEAL =
-  'group-hover/session-card:opacity-100 group-focus-within/session-card:opacity-100';
-
-const SESSION_CARD_META_HIDE =
-  'group-hover/session-card:opacity-0 group-focus-within/session-card:opacity-0';
 
 const isUrgent = ({ tone }: { readonly tone: DynamicAction['tone'] }): boolean =>
   tone === 'warning' || tone === 'danger';
@@ -108,6 +110,50 @@ export const StageBoardCard = memo(function StageBoardCard({
   const [visibleAction, ...revealedActions] = dynamicActions;
   const linkedRequest = getLinkedRequest({ pullRequest, mergeRequest });
   const isGitlab = mergeRequest != null && pullRequest == null;
+  const lifecycleItems: ReadonlyArray<OverflowMenuItem> = [
+    ...(archived === true
+      ? []
+      : [
+          {
+            kind: 'item',
+            key: 'editor',
+            label: 'Open in editor',
+            icon: Code,
+            onClick: () => nav.openIDE(session),
+            disabled: worktreePath == null,
+          } satisfies OverflowMenuItem,
+          {
+            kind: 'item',
+            key: 'terminal',
+            label: 'Open terminal',
+            icon: CONCEPT_ICONS.terminal,
+            onClick: () => nav.openTerminal(session),
+          } satisfies OverflowMenuItem,
+          ...revealedActions.map((action): OverflowMenuItem => ({
+            kind: 'item',
+            key: action.key,
+            label: action.label,
+            icon: action.icon,
+            onClick: action.onClick,
+          })),
+          { kind: 'separator', key: 'lifecycle-separator' } satisfies OverflowMenuItem,
+          {
+            kind: 'item',
+            key: 'archive',
+            label: 'Archive',
+            icon: Archive,
+            onClick: () => onArchive?.(session),
+          } satisfies OverflowMenuItem,
+        ]),
+    {
+      kind: 'item',
+      key: 'delete',
+      label: 'Delete',
+      icon: Trash2,
+      destructive: true,
+      onClick: () => onDelete?.(session),
+    },
+  ];
 
   const handlePrClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -126,37 +172,26 @@ export const StageBoardCard = memo(function StageBoardCard({
     nav.openGithub(session);
   };
 
+  const selectFromEvent = (event: CardSelectionEvent): boolean => {
+    if (onModifierClick && (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey)) {
+      onModifierClick(id, event);
+      return true;
+    }
+    return false;
+  };
+
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <article
       data-archived={archived || undefined}
       data-select-id={id}
-      aria-pressed={selected === true}
-      aria-keyshortcuts="Alt+Enter"
       onClick={(event) => {
-        if (onModifierClick && (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey)) {
-          onModifierClick(id, event);
-          return;
-        }
-        nav.selectCard(session);
-      }}
-      onKeyDown={(event) => {
-        if (event.target !== event.currentTarget) {
-          return;
-        }
-        if (event.key !== 'Enter' && event.key !== ' ') {
-          return;
-        }
-        event.preventDefault();
-        if (onModifierClick && event.altKey) {
-          onModifierClick(id, event);
+        if (selectFromEvent(event)) {
           return;
         }
         nav.selectCard(session);
       }}
       className={cn(
-        'group/session-card grid h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 text-left',
+        'group/session-card grid min-h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 text-left',
         sessionCardShell({ stage, selected }),
       )}
     >
@@ -168,10 +203,29 @@ export const StageBoardCard = memo(function StageBoardCard({
             prFetchState={prFetchState}
             onOpen={handlePrClick}
           />
-          <InlineMarkdown
-            text={session.goal}
-            className="line-clamp-2 min-h-10 min-w-0 flex-1 text-sm font-medium leading-5"
-          />
+          <button
+            type="button"
+            title={inlineMarkdownText({ text: session.goal })}
+            aria-pressed={selected === true}
+            aria-keyshortcuts="Alt+Enter"
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter' && event.key !== ' ') {
+                return;
+              }
+              event.preventDefault();
+              event.stopPropagation();
+              if (event.altKey && selectFromEvent(event)) {
+                return;
+              }
+              nav.selectCard(session);
+            }}
+            className="min-w-0 flex-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            <InlineMarkdown
+              text={session.goal}
+              className="line-clamp-3 min-h-10 text-sm font-medium leading-5"
+            />
+          </button>
         </span>
 
         {reason && <span className="truncate text-2xs text-muted-foreground">{reason}</span>}
@@ -179,38 +233,6 @@ export const StageBoardCard = memo(function StageBoardCard({
 
       <span className="col-start-2 row-start-1 flex items-center gap-1 self-start">
         <CardActionSlot label="Session quick actions">
-          {!archived &&
-            revealedActions.map((action) => (
-              <CardAction
-                key={action.key}
-                icon={action.icon}
-                tone={action.tone}
-                highlighted={isUrgent({ tone: action.tone })}
-                label={action.label}
-                onClick={action.onClick}
-                reveal
-                revealGroup={SESSION_CARD_REVEAL}
-              />
-            ))}
-          {!archived && (
-            <CardAction
-              icon={Code}
-              label="Open in editor"
-              onClick={() => nav.openIDE(session)}
-              disabled={worktreePath == null}
-              reveal
-              revealGroup={SESSION_CARD_REVEAL}
-            />
-          )}
-          {!archived && (
-            <CardAction
-              icon={CONCEPT_ICONS.terminal}
-              label="Open terminal"
-              onClick={() => nav.openTerminal(session)}
-              reveal
-              revealGroup={SESSION_CARD_REVEAL}
-            />
-          )}
           {!archived && visibleAction !== undefined && (
             <CardAction
               key={visibleAction.key}
@@ -223,7 +245,7 @@ export const StageBoardCard = memo(function StageBoardCard({
           )}
           {archived === true && (
             <CardAction
-              icon={RotateCcw}
+              icon={CONCEPT_ICONS.restore}
               tone="primary"
               label="Restore"
               onClick={() => onRestore?.(session)}
@@ -233,17 +255,17 @@ export const StageBoardCard = memo(function StageBoardCard({
         <ChevronRight
           size={ICON_SIZE.row}
           aria-hidden
-          className="shrink-0 text-muted-foreground/40 group-hover/session-card:text-muted-foreground/70"
+          className="shrink-0 text-faint-foreground group-hover/session-card:text-faint-foreground"
         />
       </span>
 
-      <span className="col-span-2 col-start-1 row-start-2 flex h-5 min-w-0 items-center gap-2">
+      <span className="col-start-1 row-start-2 flex h-5 min-w-0 items-center gap-2">
         <span className="flex min-w-0 items-center gap-2 overflow-hidden">
           {agentCount > 0 && (
             <Tooltip content={agentCountLabel} side="top">
               <span
                 aria-label={agentCountLabel}
-                className="inline-flex shrink-0 items-center gap-1 text-3xs tabular-nums text-muted-foreground/70"
+                className="inline-flex shrink-0 items-center gap-1 text-3xs tabular-nums text-faint-foreground"
               >
                 <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />
                 <span>{agentCount}</span>
@@ -288,21 +310,16 @@ export const StageBoardCard = memo(function StageBoardCard({
             />
           ))}
         </span>
-        <span
-          className={cn(
-            'ml-auto flex shrink-0 items-center gap-2 motion-safe:transition-opacity',
-            SESSION_CARD_META_HIDE,
-          )}
-        >
+        <span className="ml-auto flex shrink-0 items-center gap-2">
           {sessionCost > 0 && (
             <CostBadge
               value={sessionCost}
               title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
-              className="shrink-0 text-3xs tabular-nums text-muted-foreground/70"
+              className="shrink-0 text-3xs tabular-nums text-faint-foreground"
             />
           )}
           {age && (
-            <span className="shrink-0 text-3xs tabular-nums text-muted-foreground/70">{age}</span>
+            <span className="shrink-0 text-3xs tabular-nums text-faint-foreground">{age}</span>
           )}
         </span>
       </span>
@@ -311,24 +328,12 @@ export const StageBoardCard = memo(function StageBoardCard({
         label="Session lifecycle actions"
         className="col-start-2 row-start-2 h-5 self-center justify-self-end"
       >
-        {!archived && (
-          <CardAction
-            icon={Archive}
-            label="Archive"
-            onClick={() => onArchive?.(session)}
-            reveal
-            revealGroup={SESSION_CARD_REVEAL}
-          />
-        )}
-        <CardAction
-          icon={Trash2}
-          tone="danger"
-          label="Delete"
-          onClick={() => onDelete?.(session)}
-          reveal
-          revealGroup={SESSION_CARD_REVEAL}
+        <OverflowMenu
+          items={lifecycleItems}
+          label="Session actions"
+          trigger={<CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />}
         />
       </CardActionSlot>
-    </div>
+    </article>
   );
 });

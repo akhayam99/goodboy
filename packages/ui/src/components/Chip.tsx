@@ -1,8 +1,9 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { cn } from '../cn';
+import { FOCUS_RING } from '../focusRing';
 import { tintClasses, type Tone } from '../tint';
 
-export type ChipSize = '3xs' | 'xs' | 'sm' | 'md';
+export type ChipSize = '3xs' | 'xs' | 'sm' | 'md' | 'control';
 export type ChipEmphasis = 'subtle' | 'soft' | 'strong';
 
 export type ChipProps = {
@@ -14,7 +15,6 @@ export type ChipProps = {
   readonly width?: 'auto' | 'sm' | 'md' | 'lg';
   readonly shape?: 'pill' | 'badge';
   readonly bordered?: boolean;
-  readonly uppercase?: boolean;
   readonly emphasis?: ChipEmphasis;
   readonly as?: 'span' | 'button';
   readonly title?: string;
@@ -33,6 +33,7 @@ const sizeClasses: Record<ChipSize, string> = {
   xs: 'px-1.5 py-0.5 text-2xs',
   sm: 'text-2xs px-2 py-0.5',
   md: 'text-xs px-2 py-1',
+  control: 'h-6 shrink-0 gap-1.5 px-2 text-2xs',
 };
 
 const widthClasses: Record<'sm' | 'md' | 'lg', string> = {
@@ -41,17 +42,44 @@ const widthClasses: Record<'sm' | 'md' | 'lg', string> = {
   lg: 'min-w-32 justify-center',
 };
 
-const strongRing: Record<Tone, string> = {
-  success: 'ring-success/40',
-  info: 'ring-info/40',
-  warning: 'ring-warning/40',
-  danger: 'ring-danger/40',
-  primary: 'ring-primary/40',
-  accent: 'ring-accent/40',
-  merged: 'ring-merged/40',
-  draft: 'ring-draft/40',
-  operations: 'ring-primary/40',
-  neutral: 'ring-border-soft',
+export type ChipClassParams = {
+  readonly tone: Tone;
+  readonly size?: ChipSize;
+  readonly width?: 'auto' | 'sm' | 'md' | 'lg';
+  readonly shape?: 'pill' | 'badge';
+  readonly bordered?: boolean;
+  readonly emphasis?: ChipEmphasis;
+  readonly isInteractive?: boolean;
+};
+
+export const chipClasses = ({
+  tone,
+  size = 'xs',
+  width = 'auto',
+  shape = 'pill',
+  bordered = true,
+  emphasis = 'soft',
+  isInteractive = false,
+}: ChipClassParams): string => {
+  const tint = tintClasses(tone);
+  return cn(
+    'inline-flex items-center gap-1 font-medium',
+    shape === 'pill' ? 'rounded-full' : 'rounded-md',
+    emphasis === 'subtle' ? tint.bgSoft : tint.bg,
+    tint.text,
+    sizeClasses[size],
+    width === 'auto' ? '' : widthClasses[width],
+    bordered ? 'ring-1' : '',
+    bordered ? (emphasis === 'strong' ? tint.ringStrong : tint.ring) : '',
+    isInteractive
+      ? cn(
+          'motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+          FOCUS_RING,
+          tint.hoverBg,
+          tint.hoverText,
+        )
+      : '',
+  );
 };
 
 export const Chip = ({
@@ -63,7 +91,6 @@ export const Chip = ({
   width = 'auto',
   shape = 'pill',
   bordered = true,
-  uppercase = false,
   emphasis = 'soft',
   as = 'span',
   title,
@@ -76,17 +103,17 @@ export const Chip = ({
   hasPopup,
   className,
 }: ChipProps) => {
-  const tint = tintClasses(tone);
+  const isButton = as === 'button' || onClick !== undefined;
   const classes = cn(
-    'inline-flex items-center gap-1 font-medium',
-    shape === 'pill' ? 'rounded-full' : 'rounded-md',
-    emphasis === 'subtle' ? tint.bgSoft : tint.bg,
-    tint.text,
-    sizeClasses[size],
-    uppercase ? 'uppercase tracking-wide' : '',
-    width === 'auto' ? '' : widthClasses[width],
-    bordered ? 'ring-1' : '',
-    bordered ? (emphasis === 'strong' ? strongRing[tone] : tint.ring) : '',
+    chipClasses({
+      tone,
+      size,
+      width,
+      shape,
+      bordered,
+      emphasis,
+      isInteractive: isButton,
+    }),
     className,
   );
 
@@ -98,7 +125,7 @@ export const Chip = ({
     </>
   );
 
-  if (as === 'button' || onClick) {
+  if (isButton) {
     return (
       <button
         type="button"
@@ -110,10 +137,7 @@ export const Chip = ({
         aria-haspopup={hasPopup}
         onClick={onClick}
         disabled={disabled}
-        className={cn(
-          'motion-safe:transition-colors hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60',
-          classes,
-        )}
+        className={classes}
       >
         {inner}
       </button>

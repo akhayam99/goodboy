@@ -232,11 +232,13 @@ describe('skipStuckStepAndAdvance', () => {
 
     expect(activateWorkflowAgent).not.toHaveBeenCalled();
     expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'the blocked step was not skipped',
-      'agent row is gone',
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: "Couldn't skip the blocked step",
+        body: 'agent row is gone',
+        sessionId: SESSION_ID,
+      }),
     );
   });
 

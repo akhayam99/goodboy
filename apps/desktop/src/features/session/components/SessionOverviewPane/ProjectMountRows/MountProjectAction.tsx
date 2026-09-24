@@ -19,7 +19,7 @@ const emptyPickerMessage = ({
   readonly hasWorkspaceProjects: boolean;
 }): string =>
   hasWorkspaceProjects
-    ? 'Every workspace project is already mounted.'
+    ? 'Every workspace project is mounted here.'
     : 'Add a project in workspace settings to mount it here.';
 
 export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'icon' }: Props) => {
@@ -84,22 +84,20 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
           <p className="text-xs text-muted-foreground">
             {emptyPickerMessage({ hasWorkspaceProjects })}
           </p>
-          {hasWorkspaceProjects ? null : (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                dropdown.close();
-                window.dispatchEvent(
-                  new CustomEvent('goodboy:open-workspace-settings', {
-                    detail: { section: 'projects' },
-                  }),
-                );
-              }}
-            >
-              Add workspace project
-            </Button>
-          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              dropdown.close();
+              window.dispatchEvent(
+                new CustomEvent('goodboy:open-settings', {
+                  detail: { scope: 'workspace', section: 'projects' },
+                }),
+              );
+            }}
+          >
+            Add workspace project
+          </Button>
         </div>
       ) : (
         <MountProjectList

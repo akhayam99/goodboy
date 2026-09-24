@@ -13,13 +13,13 @@ export const clearAgentDone = (set: SetFn, get: GetFn) => {
       await invokeAgentSetDone(agentId, false, null);
     } catch (error) {
       applyAgentDone({ set, sessionId, agentId, doneAt: previousDoneAt });
-      void get().emitNotification(
-        'error',
-        'error',
-        'could not reopen this agent',
-        formatError(error),
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'error',
+        title: "Couldn't reopen this agent",
+        body: formatError(error),
+        sessionId,
+      });
       return;
     }
     applyAgentDone({ set, sessionId, agentId, doneAt: null });

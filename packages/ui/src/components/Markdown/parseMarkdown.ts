@@ -49,8 +49,14 @@ type KitTag = (typeof KIT_TAGS)[number];
 const KIT_BULLET_RE = /^\s*(?:[-*+]|\d+\.)\s+/;
 const KIT_LABEL_RE = /^\*\*([^*]+?)\*\*:?\s*|^([^:|]{1,60}?):\s+/;
 
-const isKitTag = (tag: string): tag is KitTag =>
-  (KIT_TAGS as ReadonlyArray<string>).includes(tag.toLowerCase());
+type KitTagParams = {
+  readonly tag: string;
+};
+
+const kitTagFor = ({ tag }: KitTagParams): KitTag | null => {
+  const normalized = tag.toLowerCase();
+  return KIT_TAGS.find((kit) => kit === normalized) ?? null;
+};
 
 type KitLineParams = {
   readonly line: string;
@@ -96,7 +102,7 @@ const parseKitBlock = ({ tag, content }: KitBlockParams): Block => {
     .split('\n')
     .map((line) => parseKitLine({ line, tag }))
     .filter((entry): entry is KitEntry => entry !== null);
-  return { kind: tag.toLowerCase() as KitTag, entries };
+  return { kind: tag, entries };
 };
 
 type CalloutParams = {
@@ -105,8 +111,9 @@ type CalloutParams = {
 };
 
 const calloutBlock = ({ tag, content }: CalloutParams): Block => {
-  if (isKitTag(tag)) {
-    return parseKitBlock({ tag, content });
+  const kit = kitTagFor({ tag });
+  if (kit !== null) {
+    return parseKitBlock({ tag: kit, content });
   }
   return { kind: 'callout', tag, content, blocks: parseBlocks(content) };
 };

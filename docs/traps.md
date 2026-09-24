@@ -38,25 +38,21 @@ file holds those explanations. Everything below has been "fixed" at least once a
 - `RoutingPicker.onModel(model)` carries only the model string, not the
   provider picked in the picker. A consumer that rebuilds a provider-model
   pair from values captured by an earlier render can save the old provider
-  with the new model. There are 11 production mounts across 10 files:
-  `ChatInput`, `NotificationCenter`, `DiffViewerContent`, `RoleModelRow`
-  (twice), `TaskModelRow`, `AgentSpawnConfig`, `WorkflowBuilderView`,
-  `WorkflowStepCard`, `LibraryStepForm`, and `OrchestratorRoutingRow`. Keep the
-  provider in current state or a ref when you handle `onModel`. Nobody has ever
-  widened the contract to close this. The same stale-pairing bug was fixed at
-  the call site instead, separately, at least twice
+  with the new model. Every `onModel` consumer keeps the provider in current
+  state or a ref. Nobody has ever widened the contract to close this. The same
+  stale-pairing bug was fixed at the call site instead, separately, at least
+  twice
   (`RoleModelRow`/`TaskModelRow`, then `LibraryStepForm`/
   `OrchestratorRoutingRow` in #1307). Each time the fix tracked the provider in
   a ref instead of adding a provider parameter to `onModel`. This matters for
   more than passing UI state. `LibraryStepForm` saves through
   `step_def_upsert`, whose Tauri command inserts or updates the SQLite
   `step_library` table.
-- `LinkedPrChip` and `NewSessionView` read `[data-studio-overlay]` from the
-  DOM to tell whether a fullscreen studio is open. In the first, that decides
-  navigation inside the session. In the second, it decides how Escape works.
-  They check the DOM because that state is split in two: the `sessionStudio`
-  union in the store, and the shell that renders every studio. Do not tidy it
-  up without first moving fullscreen-studio state into one place.
+- `LinkedPrChip` reads `[data-studio-overlay]` from the DOM to tell whether a
+  fullscreen studio is open. That decides navigation inside the session. It
+  checks the DOM because that state is split in two: the `sessionStudio` union
+  in the store, and the shell that renders every studio. Do not tidy it up
+  without first moving fullscreen-studio state into one place.
 
 ## Hand-maintained lists the compiler does not check
 
@@ -81,10 +77,6 @@ fails silently at runtime.
   replaced by the default, and overwritten.
 - `SIMPLE_LENSES` marks the lenses that still work without a branch. A lens
   left out of it is hidden or cleared for sessions with no branch.
-- `GITHUB_ONLY_KINDS` removes GitHub-only resolver actions on other hosts. A
-  new GitHub-only action kind left out of it is offered where it cannot work.
-- `MARKDOWN_SLOTS` decides which context slots render as markdown. A new
-  prose slot left out renders through the plain (non-markdown) path.
 
 ## Traps in the toolchain
 
@@ -95,6 +87,11 @@ fails silently at runtime.
   `node_modules` and `better_sqlite3.node` exist and carry on. Do not repoint
   `core.hooksPath`. The hooks find their tools through the common git
   directory on purpose.
+- The pre-commit hook in `lefthook.yml` finds `prettier` and `commitlint` in
+  the main checkout's `node_modules` (through the common git directory),
+  because a worktree does not always have its own install. It still runs the
+  binary from the current directory, so prettier finds files that exist only
+  in the worktree, such as ones added in this commit.
 - A worktree installed with `--ignore-scripts` has no `better-sqlite3`
   binding, and both `@goodboy/db` and `@goodboy/core` need it. The root test
   script runs `turbo run test --continue`, so every other package still runs.
@@ -104,6 +101,23 @@ fails silently at runtime.
   and not a real run. When the green has to mean something, run
   `pnpm exec turbo run test --force` and look for a log line reading
   `0 cached`.
+- `pnpm test -- <arg>` never reaches turbo. pnpm passes the `--` through, and
+  turbo hands everything after it to every package's vitest. `--force` dies
+  there with `CACError: Unknown option`, and a file name still runs every
+  package. Force a run with `pnpm exec turbo run test --force`. Run one file
+  with `pnpm --filter @goodboy/<pkg> exec vitest run <path>`.
+- commitlint requires a lower-case subject, so a camelCase identifier in the
+  subject fails the `commit-msg` hook. Name it in the body instead. The whole
+  header is capped at 72 characters.
+- `registry.test.ts` requires migration versions to form a contiguous range
+  from 1. Two open pull requests that each add a migration merge in numeric
+  order. If the higher one merges first, it leaves a gap and turns `main` red.
+  Renumbering is covered in [architecture.md](architecture.md) → Database
+  migrations.
+- `cargo fmt` formats the whole crate, whatever file you give it, and `main`
+  is not fmt-clean (`rust.yml` runs the check as advisory). A local run
+  rewrites files the change never touched. Revert those hunks before you
+  commit.
 - Neither `ci.yml` nor `rust.yml` has a `workflow_dispatch` trigger, so there
   is no "run workflow" button. Pushing another commit to the PR starts them
   again. A finished run can also be re-run from the Actions UI. Closing and

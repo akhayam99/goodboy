@@ -348,11 +348,14 @@ describe('deleteAgent', () => {
       id: DOOMED,
     });
     expect(hoisted.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'Deleted agent is still running',
-      expect.stringContaining('discarded'),
-      { sessionId: SID, workspaceId: WID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Deleted agent is still running',
+        body: expect.stringContaining('discarded'),
+        sessionId: SID,
+        workspaceId: WID,
+      }),
     );
   });
 

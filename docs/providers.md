@@ -149,8 +149,11 @@ uses its providers.
   appear here
 - **Routing pool**: the providers Goodboy can move work between by itself
 - **Task models**: the provider and model for each small side job. Side jobs include
-  summaries, branch names, planning, agent titles and pull request drafts. Each one
-  starts on **Auto**, which means the cheapest model of the default provider
+  summaries, planning, prose polish, agent titles, the workflow orchestrator,
+  delegated answers, pull request drafts and rebases. Each one starts on **Auto**
+  on the default provider: the cheap model for most jobs, the mid model for the
+  workflow orchestrator and delegated answers, and for rebases Sonnet 5 on Claude
+  and the default turn model elsewhere
 - **Agent roles**: the provider, model and effort for each role. If you pin a model
   on an agent or a workflow step, that pin beats the role
 - **Fallback** on a role: the second choice Goodboy switches to when the first one
@@ -206,7 +209,7 @@ The timers live in `apps/desktop/src/store/slices/providers/connectProvider.ts`:
 ### Connect tiers
 
 Each provider's connect options live in one table, not in UI code. The table is
-`PROVIDER_CONNECT_CAPABILITIES` in `packages/types/src/provider-connect.ts`.
+`PROVIDER_CONNECT_CAPABILITIES` in `packages/core/src/providers/provider-connect.ts`.
 
 | Provider                       | Tier        | Why                              |
 | ------------------------------ | ----------- | -------------------------------- |
@@ -225,7 +228,7 @@ Each provider's connect options live in one table, not in UI code. The table is
 ### Commands per provider
 
 The exact commands Goodboy runs live in `PROVIDER_LIFECYCLE_COMMANDS` in
-`@goodboy/types` (`packages/types/src/provider-commands.ts`). If this page and that
+`@goodboy/core` (`packages/core/src/providers/provider-commands.ts`). If this page and that
 constant disagree, the constant is right.
 
 | Provider                       | Connect                        | Disconnect                | Sign-in check         |
@@ -387,12 +390,31 @@ What the catalogs do not tell you:
   Both are built in `apps/desktop/src-tauri/src/turn.rs`
 - There is no `ultracode` level. `claude --help` lists exactly
   `low, medium, high, xhigh, max`. Run that check before you add a level to the union
+- Prices are looked up only within the provider that runs the model.
+  `getProviderModelPrice({ provider, model })` reads that provider's `cost.ts`
+  and returns `null` when it has no rate. The same key on two providers
+  (`sonnet-4.6` on cursor and anthropic) never borrows the other's price.
+  opencode, OpenRouter and Moonshot return `null` on purpose.
+  `model-price.test.ts` checks that every anthropic, cursor, codex and gemini
+  catalog model has a price
+
+When a provider ships or retires a model, update three files under
+`packages/core/src/providers/<cli>/` together:
+
+1. `catalog.ts`: the entry, keeping the array order (the default model is the
+   first entry).
+2. `agent-model-ids.ts`: the ids the CLI accepts, copied from its model
+   listing (for cursor, `cursor-agent models`). Keep it hand-written. It is the
+   independent check the catalog tests compare against.
+3. `cost.ts`: the per-Mtok rate for every new id.
 
 ### Defaults internals
 
 - **Task models** are saved in `workspaces.task_models` and read through
-  `resolveTaskModel` in `@goodboy/core`. A pinned task model has no effort. Task
-  models never affect chat turns
+  `resolveTaskModel` in `@goodboy/core`. A pin may carry an effort. An Auto row,
+  or a pin without one, runs at `medium`, clamped to the model's ladder. Models
+  without an effort axis get none. PR drafts and rebases preselect the agent's
+  model and carry no automatic effort. Task models never affect chat turns
 - **Agent roles** are the union `AgentRole` in `@goodboy/types`. They are saved in
   `workspaces.role_models` and read through `resolveRoleRouting`
 - Role checks are forgiving. If an override names an unknown provider or an
@@ -411,13 +433,14 @@ What the catalogs do not tell you:
 
 ### Source map
 
-- `packages/types/src/provider-connect.ts`: connect tiers and `loginEnv`
-- `packages/types/src/provider-commands.ts`: install, login and logout commands
-- `packages/types/src/provider-catalog.ts`: `PROVIDER_KIND`, `OPENCODE_ROUTING`
-- `packages/types/src/provider-registry.ts`: provider ids, `PROVIDER_API_KEY_ENV`
+- `packages/core/src/providers/provider-connect.ts`: connect tiers and `loginEnv`
+- `packages/core/src/providers/provider-commands.ts`: install, login and logout commands
+- `packages/core/src/providers/provider-catalog.ts`: `PROVIDER_KIND`, `OPENCODE_ROUTING`
+- `packages/types/src/provider-registry.ts`: provider ids
+- `packages/core/src/providers/provider-api-key-env.ts`: `PROVIDER_API_KEY_ENV`
 - `apps/desktop/src/store/slices/providers/connectProvider.ts`: the steps and timers behind **Connect**
 - `apps/desktop/src/features/providers/components/ProviderStudio/`: the provider cards and **Defaults**
-- `apps/desktop/src/features/providers/components/ProviderConnectModal/guides.ts`: the guide text shown in the app
+- `apps/desktop/src/features/providers/components/ProviderConnect/guides.ts`: the guide text shown in the app
 - `apps/desktop/src-tauri/src/providers.rs`: finding CLIs and checking sign-in
 - `apps/desktop/src-tauri/src/provider_credentials.rs`: API key checks
 - `apps/desktop/src-tauri/src/turn.rs`: the args and env for starting a turn

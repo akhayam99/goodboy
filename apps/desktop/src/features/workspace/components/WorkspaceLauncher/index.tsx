@@ -5,6 +5,7 @@ import {
   Checkbox,
   EmptyState,
   Eyebrow,
+  IconButton,
   InlineConfirm,
   ScrollFade,
   Tooltip,
@@ -15,6 +16,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/compo
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { UpdateIndicator } from '../../../updater/components/UpdateIndicator';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { WorkspaceRow } from '../WorkspaceRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 
@@ -23,7 +25,7 @@ export const WorkspaceLauncher = () => {
   const projects = useAppStore((s) => s.projects);
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const saveSetting = useAppStore((s) => s.saveSetting);
-  const deleteWorkspace = useAppStore((s) => s.deleteWorkspace);
+  const disconnectWorkspace = useAppStore((s) => s.disconnectWorkspace);
   const reopenLast = useAppStore((s) => s.settings[SETTING_REOPEN_LAST] === '1');
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
@@ -53,7 +55,7 @@ export const WorkspaceLauncher = () => {
     if (!disconnectTarget) {
       return;
     }
-    await deleteWorkspace(disconnectTarget.id);
+    await disconnectWorkspace(disconnectTarget.id);
     setDisconnectTarget(null);
   };
 
@@ -78,8 +80,22 @@ export const WorkspaceLauncher = () => {
       className="h-full w-full"
       viewportClassName="relative flex items-center justify-center bg-background px-6 py-10"
     >
-      <div data-tauri-drag-region="false" className="absolute right-4 top-3">
+      <div
+        data-tauri-drag-region="false"
+        className="absolute right-4 top-3 flex items-center gap-2"
+      >
         <UpdateIndicator variant="bar" />
+        <IconButton
+          icon={CONCEPT_ICONS.settings}
+          label="Open settings"
+          tooltip={`Open settings (${shortcutGlyphs('settings.open')})`}
+          variant="ghost"
+          onClick={() =>
+            window.dispatchEvent(
+              new CustomEvent('goodboy:open-settings', { detail: { scope: 'app' } }),
+            )
+          }
+        />
       </div>
       <div className="flex w-full max-w-xl flex-col gap-6 motion-safe:animate-fade-in">
         <div className="flex flex-col items-center gap-3 pb-2 text-center">
@@ -91,7 +107,7 @@ export const WorkspaceLauncher = () => {
           <Search
             size={ICON_SIZE.control}
             aria-hidden
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint-foreground"
           />
           <input
             ref={inputRef}
@@ -99,7 +115,7 @@ export const WorkspaceLauncher = () => {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search workspaces or paths…"
-            className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+            className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           />
         </div>
 
@@ -158,7 +174,7 @@ export const WorkspaceLauncher = () => {
 
         <Button variant="secondary" onClick={addWorkspace} className="w-fit">
           <Plus size={ICON_SIZE.control} aria-hidden />
-          New workspace
+          Add workspace
         </Button>
 
         <Checkbox

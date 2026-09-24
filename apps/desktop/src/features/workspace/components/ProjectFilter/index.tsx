@@ -1,11 +1,20 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { ListFilter, X } from 'lucide-react';
-import { AnchoredPopover, cn, Divider, Eyebrow, IconButton, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  cn,
+  Divider,
+  Eyebrow,
+  IconButton,
+  useDropdown,
+  tintClasses,
+} from '@goodboy/ui';
 import type { Session, WorkspaceId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   NO_PROJECT_FILTER_ID,
   useAppStore,
+  useProjectMountsForSessions,
   useSelectedProjectIds,
 } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -36,7 +45,7 @@ export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
   const selectedProjectIds = useSelectedProjectIds({ workspaceId });
   const setSelectedProjectIds = useAppStore((state) => state.setSelectedProjectIds);
   const projects = useAppStore((state) => state.projects);
-  const sessionProjectMounts = useAppStore((state) => state.sessionProjectMounts);
+  const sessionProjectMounts = useProjectMountsForSessions({ sessions });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdown = useDropdown({
     align: 'end',
@@ -125,7 +134,12 @@ export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
           className={cn(
             'size-7 shrink-0',
             (activeCount > 0 || open) &&
-              'bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary',
+              cn(
+                tintClasses('primary').bg,
+                'text-primary',
+                tintClasses('primary').hoverBg,
+                'hover:text-primary',
+              ),
           )}
         />
       }
@@ -136,7 +150,7 @@ export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
           <button
             type="button"
             onClick={() => setSelectedProjectIds({ workspaceId, selectedProjectIds: [] })}
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
+            className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground hover:bg-hover hover:text-foreground"
           >
             <X size={10} aria-hidden />
             Clear

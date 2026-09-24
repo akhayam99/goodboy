@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { withShortcutHint, type ShortcutId } from '../../keyboard/registry';
 import { ChevronDown, RotateCcw } from 'lucide-react';
 import {
   MODEL_CATALOGS,
@@ -15,14 +16,17 @@ import {
   ScrollFade,
   Tooltip,
   useDropdown,
+  tintClasses,
 } from '@goodboy/ui';
-import type { CatalogModel, ModelSelection, ProviderId } from '@goodboy/types';
-import { PROVIDER_LABEL, type EffortLevel } from '../../../features/chat/utils/chat-constants';
-import {
-  VERBOSITY_LABEL,
-  VERBOSITY_LEVELS,
-  type VerbosityLevel,
-} from '../../../features/settings/verbosity';
+import type {
+  CatalogModel,
+  EffortLevel,
+  ModelSelection,
+  ProviderId,
+  VerbosityLevel,
+} from '@goodboy/types';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
+import { VERBOSITY_LABEL, VERBOSITY_LEVELS } from '../../../features/settings/verbosity';
 import { AxesSection } from './AxesSection';
 import { verbosityTone } from './chipTone';
 import { PickerChip } from './PickerChip';
@@ -80,6 +84,7 @@ export type Props = {
   readonly disabledTitle?: string;
   readonly ariaLabel?: string;
   readonly openEvent?: string;
+  readonly shortcut?: ShortcutId;
   readonly availability?: 'run' | 'setup';
 };
 
@@ -103,6 +108,7 @@ export const RoutingPicker = ({
   disabledTitle,
   ariaLabel,
   openEvent,
+  shortcut,
   availability = 'run',
 }: Props) => {
   const [isProviderConnectionInFlight, setIsProviderConnectionInFlight] = useState(false);
@@ -284,14 +290,20 @@ export const RoutingPicker = ({
                 type="button"
                 onClick={onReset}
                 aria-label={resetAriaLabel}
-                className="shrink-0 rounded-full p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+                className="shrink-0 rounded-full p-1 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <RotateCcw size={10} aria-hidden />
               </button>
             </Tooltip>
           )}
           <Tooltip
-            content={disabled ? (disabledTitle ?? summary) : `${summary}. Click to change.`}
+            content={
+              disabled
+                ? (disabledTitle ?? summary)
+                : shortcut !== undefined
+                  ? withShortcutHint({ label: summary, shortcut })
+                  : `${summary}. Click to change.`
+            }
             anchorClassName={variant === 'field' ? 'w-full' : undefined}
           >
             <button
@@ -308,12 +320,17 @@ export const RoutingPicker = ({
                   : 'flex w-full rounded-md border px-2 py-1.5 text-left',
                 variant === 'field' &&
                   (open
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50'),
+                    ? cn('border-primary', tintClasses('primary').bgSoft)
+                    : 'border-border-soft bg-subtle hover:border-border hover:bg-hover'),
                 variant === 'pill' &&
                   (isOverridden
-                    ? 'bg-warning/10 ring-1 ring-warning/30 hover:bg-warning/15'
-                    : 'bg-subtle hover:bg-muted'),
+                    ? cn(
+                        tintClasses('warning').bg,
+                        'ring-1',
+                        tintClasses('warning').ring,
+                        tintClasses('warning').hoverBg,
+                      )
+                    : 'bg-subtle hover:bg-hover'),
                 disabled && 'cursor-not-allowed opacity-60',
               )}
             >

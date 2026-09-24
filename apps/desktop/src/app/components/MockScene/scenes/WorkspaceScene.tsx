@@ -39,7 +39,6 @@ const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
   name: 'Northwind',
   slug: 'northwind',
-  sessionsRoot: '/mock/northwind/sessions',
   overrides: OVERRIDES,
   createdAt: NOW,
   updatedAt: NOW,

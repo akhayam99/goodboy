@@ -9,5 +9,3 @@ export {
   type CreateWorktreeOptions,
   type WorktreeInfo,
 } from './worktree';
-
-export { ClaudeAdapter, type ClaudeAdapterDeps } from './providers/claude';

@@ -148,7 +148,7 @@ describe('AgentMetrics', () => {
         density="compact"
       />,
     );
-    expect(screen.getByText('no model yet')).toBeTruthy();
+    expect(screen.getByText('Model not chosen yet')).toBeTruthy();
     expect(screen.queryByText(/ctx /)).toBeNull();
     expect(screen.getByText('0t')).toBeTruthy();
   });
@@ -184,7 +184,7 @@ describe('AgentMetrics', () => {
       />,
     );
     expect(screen.getByText('Opus 4.5')).toBeDefined();
-    expect(screen.queryByText('no model yet')).toBeNull();
+    expect(screen.queryByText('Model not chosen yet')).toBeNull();
     expect(screen.getByTestId('agent-metrics-inline').className).toContain('opacity-60');
   });
 

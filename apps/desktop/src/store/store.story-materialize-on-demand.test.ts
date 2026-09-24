@@ -14,6 +14,9 @@ import {
   resetStorySpies,
   storySpies,
   STORY_NOW,
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  type StoryStore,
 } from './storyHarness';
 import {
   clearMountContinuations,
@@ -84,8 +87,7 @@ const docsProject = buildStoryProject({
 const session = buildStorySession({ id: SESSION_ID, workspaceId: WORKSPACE_ID });
 const agent = buildStoryAgent({ id: AGENT_ID, sessionId: SESSION_ID });
 
-type StoreModule = typeof import('./store');
-let useAppStore: StoreModule['useAppStore'];
+let useAppStore: StoryStore;
 
 const appMount = {
   mountId: APP_MOUNT_ID,
@@ -192,8 +194,8 @@ const spawnedArgs = (): Record<string, unknown> =>
   (storySpies.runTurn.mock.calls[0]?.[0] ?? {}) as Record<string, unknown>;
 
 beforeAll(async () => {
-  ({ useAppStore } = await import('./store'));
-}, 60_000);
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(() => {
   resetStorySpies();

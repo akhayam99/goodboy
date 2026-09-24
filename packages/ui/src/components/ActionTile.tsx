@@ -50,7 +50,7 @@ export const ActionTile = ({
       <ArrowRight
         size={14}
         aria-hidden
-        className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+        className="shrink-0 text-faint-foreground motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
       />
     )}
   </button>

@@ -74,7 +74,7 @@ export const SpendSection = ({
             {providers.map((entry) => (
               <SpendBar
                 key={entry.provider}
-                label={providerLabel(entry.provider)}
+                label={providerLabel({ provider: entry.provider })}
                 valueLabel={formatUsd(entry.spentUsd)}
                 metaLabel={capLabel({ entry })}
                 pct={totalSpend > 0 ? entry.spentUsd / totalSpend : 0}

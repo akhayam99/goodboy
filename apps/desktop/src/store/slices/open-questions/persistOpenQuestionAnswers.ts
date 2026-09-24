@@ -10,7 +10,7 @@ export type OpenQuestionAnswerPair = {
   readonly answer: string;
 };
 
-export type PersistOpenQuestionAnswersParams = {
+type PersistOpenQuestionAnswersParams = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly pairs: ReadonlyArray<OpenQuestionAnswerPair>;

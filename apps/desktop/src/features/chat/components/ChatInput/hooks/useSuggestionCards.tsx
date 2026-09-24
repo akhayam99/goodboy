@@ -77,8 +77,8 @@ export const useSuggestionCards = ({
           testId="scope-mismatch-nudge"
           title={
             <>
-              you're on <strong>{AGENT_KIND_META[activeAgentKind].label.toLowerCase()}</strong>.
-              this request fits{' '}
+              You're on <strong>{AGENT_KIND_META[activeAgentKind].label.toLowerCase()}</strong>.
+              This request fits{' '}
               <strong>
                 {AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}
               </strong>{' '}
@@ -87,18 +87,18 @@ export const useSuggestionCards = ({
           }
           body={
             <>
-              spawn a{' '}
+              Spawn a{' '}
               {AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()} agent,
-              or send anyway.
+              or keep this agent.
             </>
           }
           primary={{
-            label: `spawn ${AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}`,
+            label: `Spawn ${AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}`,
             onClick: () => void onScopeSpawn(),
             testId: 'scope-mismatch-spawn',
           }}
           secondary={{
-            label: 'send anyway',
+            label: 'Keep this agent',
             onClick: () => void onScopeSendAnyway(),
             testId: 'scope-mismatch-override',
           }}

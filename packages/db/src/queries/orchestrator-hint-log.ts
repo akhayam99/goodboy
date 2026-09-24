@@ -1,4 +1,5 @@
 import type { IsoDateTime, OrchestratorHint } from '@goodboy/types';
+import { isJsonArray, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type HintLogColumn = {
   readonly value: string | null;
@@ -47,21 +48,11 @@ const toHint = ({ entry }: HintEntryParams): OrchestratorHint | null => {
 export const toOrchestratorHintLog = ({
   value,
 }: HintLogColumn): ReadonlyArray<OrchestratorHint> => {
-  if (value == null || value === '') {
-    return [];
-  }
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (Array.isArray(parsed) === false) {
-      return [];
-    }
-    return parsed.flatMap((entry: unknown) => {
-      const hint = toHint({ entry });
-      return hint == null ? [] : [hint];
-    });
-  } catch {
-    return [];
-  }
+  const parsed = parseJsonColumn({ value, isValid: isJsonArray, fallback: [] });
+  return parsed.flatMap((entry) => {
+    const hint = toHint({ entry });
+    return hint == null ? [] : [hint];
+  });
 };
 
 export const serializeOrchestratorHintLog = ({ hints }: SerializeParams): string | null =>

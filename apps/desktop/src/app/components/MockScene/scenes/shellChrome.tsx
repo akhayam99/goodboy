@@ -16,12 +16,12 @@ import { SessionNavSidebar } from '../../../../features/session/components/Sessi
 import { CollapsedRail } from '../../../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SessionCrumbBar } from '../../../../features/session/components/SessionCrumbBar';
 import { useAppStore, type LensKind } from '../../../../store';
-import type { ProviderInfo } from '../../../../features/providers/providers';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { shellArrangement } from '../../../shellArrangement';
 
 const noop = () => undefined;
 
-const CLAUDE_PROVIDER: ProviderInfo = {
+const CLAUDE_PROVIDER: ProviderDisplayInfo = {
   id: 'anthropic',
   binary: 'claude',
   capabilities: {
@@ -119,31 +119,26 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
           )
         }
         footer={
-          arrangement.hasFooter ? (
-            <AppFooter
-              activeStudio={null}
-              githubEnabled
-              linearEnabled
-              jiraEnabled
-              sentryEnabled
-              gitlabEnabled={false}
-              bitbucketEnabled={false}
-              slackEnabled
-              onOpenWorkflows={noop}
-              onOpenProviders={noop}
-              onOpenSettings={noop}
-              onOpenImpact={noop}
-              onOpenChangelog={noop}
-              onOpenGithub={noop}
-              onOpenLinear={noop}
-              onOpenJira={noop}
-              onOpenSentry={noop}
-              onOpenGitlab={noop}
-              onOpenBitbucket={noop}
-              onOpenInbox={noop}
-              onOpenSlack={noop}
-            />
-          ) : undefined
+          <AppFooter
+            scope={arrangement.footer}
+            target={null}
+            connected={{
+              github: true,
+              linear: true,
+              jira: true,
+              sentry: true,
+              gitlab: false,
+              bitbucket: false,
+              slack: true,
+            }}
+            onOpenIntegration={noop}
+            onOpenInbox={noop}
+            onOpenWorkflows={noop}
+            onOpenProviders={noop}
+            onOpenSettings={noop}
+            onOpenImpact={noop}
+            onOpenChangelog={noop}
+          />
         }
         main={
           <div className="flex h-full w-full min-w-0 flex-col">
@@ -153,7 +148,6 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
             <div className="min-h-0 flex-1">{main}</div>
           </div>
         }
-        rightSidebar={null}
       />
     </ToastProvider>
   );
@@ -171,57 +165,6 @@ export const seedStudioChrome = (): void => {
   });
 };
 
-type StudioFrameProps = {
-  readonly activeStudio: string | null;
-  readonly main: ReactNode;
-};
-
-export const StudioFrame = ({ activeStudio, main }: StudioFrameProps) => {
-  const arrangement = shellArrangement({
-    hasWorkspace: true,
-    hasActiveSession: false,
-    isSidebarCollapsed: false,
-  });
-
-  return (
-    <ToastProvider>
-      <AppShell
-        topBar={<AppTopBar onOpenSpend={noop} />}
-        leftHidden={arrangement.leftHidden}
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={undefined}
-        footer={
-          <AppFooter
-            activeStudio={activeStudio}
-            githubEnabled
-            linearEnabled
-            jiraEnabled
-            sentryEnabled
-            gitlabEnabled={false}
-            bitbucketEnabled={false}
-            slackEnabled
-            onOpenWorkflows={noop}
-            onOpenProviders={noop}
-            onOpenSettings={noop}
-            onOpenImpact={noop}
-            onOpenChangelog={noop}
-            onOpenGithub={noop}
-            onOpenLinear={noop}
-            onOpenJira={noop}
-            onOpenSentry={noop}
-            onOpenGitlab={noop}
-            onOpenBitbucket={noop}
-            onOpenInbox={noop}
-            onOpenSlack={noop}
-          />
-        }
-        main={main}
-        rightSidebar={null}
-      />
-    </ToastProvider>
-  );
-};
-
 type MockWorkspaceParams = Readonly<{
   id: WorkspaceId;
   name: string;
@@ -231,7 +174,6 @@ export const mockWorkspace = ({ id, name }: MockWorkspaceParams): Workspace => (
   id,
   name,
   slug: name.toLowerCase(),
-  sessionsRoot: `/mock/${name.toLowerCase()}/sessions`,
   overrides: {
     defaultProviderId: null,
     defaultWorkflowId: null,

@@ -13,7 +13,8 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { ImpactStudio } from '../../../../features/impact/components/ImpactStudio';
-import { StudioFrame, mockWorkspace, seedStudioChrome } from './shellChrome';
+import { StudioFrame } from './StudioFrame';
+import { mockWorkspace, seedStudioChrome } from './shellChrome';
 import { useAppStore, type ProviderSpendEntry } from '../../../../store';
 
 const WORKSPACE_ID = 'mock-impact-workspace-northwind' as WorkspaceId;
@@ -342,11 +343,10 @@ export const ImpactScene = () => {
 
   return (
     <StudioFrame
-      activeStudio="impact"
+      target="impact"
       main={
         <ImpactStudio
           workspaceId={WORKSPACE_ID}
-          workspaceName={WORKSPACE_NAME}
           initialScope={{ kind: 'provider', provider: 'anthropic' }}
           onClose={() => undefined}
         />

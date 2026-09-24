@@ -24,14 +24,14 @@ export const RecommendationRow = ({
         'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-xs transition-colors',
         active
           ? 'bg-background font-medium text-foreground'
-          : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
+          : 'text-muted-foreground hover:bg-background hover:text-foreground',
       )}
     >
       <span>{label}</span>
-      <span className="truncate text-2xs text-muted-foreground/70">{summary}</span>
+      <span className="truncate text-2xs text-faint-foreground">{summary}</span>
     </button>
     {reason != null && reason !== '' ? (
-      <p className="px-2.5 pb-1.5 text-2xs leading-relaxed text-muted-foreground/80">{reason}</p>
+      <p className="px-2.5 pb-1.5 text-2xs leading-relaxed text-muted-foreground">{reason}</p>
     ) : null}
   </div>
 );

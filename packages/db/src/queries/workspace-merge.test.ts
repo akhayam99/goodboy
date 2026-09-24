@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { mergeWorkspaces } from './workspace-merge';
 
 const target = 'ws-target' as WorkspaceId;
@@ -11,8 +10,7 @@ const sourceB = 'ws-source-b' as WorkspaceId;
 const NOW = 1755900000000;
 
 const seed = async () => {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   const ordered = [target, source, sourceB];
   for (const [index, id] of ordered.entries()) {
     await db.execute(
@@ -341,5 +339,48 @@ describe('mergeWorkspaces', () => {
 
     const workspaces = await db.select<{ id: string }>('SELECT id FROM workspaces');
     expect(workspaces).toHaveLength(3);
+  });
+
+  it('aborts the whole merge when a binding is edited between the read and the write', async () => {
+    const db = await seed();
+    await addProject({ db, id: 'proj-s', workspaceId: source });
+    await addSession({ db, id: 'sess-s', workspaceId: source });
+    await addBinding({ db, id: 'bind-t', workspaceId: target, projectId: null, config: '{"a":1}' });
+    await addBinding({ db, id: 'bind-s', workspaceId: source, projectId: null, config: '{"a":2}' });
+    const racing: Db = {
+      ...db,
+      transaction: async (params) => {
+        await db.execute(
+          `UPDATE integration_bindings SET config = '{"a":3}', updated_at = ? WHERE id = 'bind-s'`,
+          [NOW + 1000],
+        );
+        return db.transaction(params);
+      },
+    };
+
+    await expect(
+      mergeWorkspaces({ db: racing, sourceWorkspaceIds: [source], targetWorkspaceId: target }),
+    ).rejects.toThrow('nothing was merged');
+
+    expect(await db.select<{ id: string }>('SELECT id FROM workspaces ORDER BY id')).toHaveLength(
+      3,
+    );
+    expect(
+      await db.select(
+        'SELECT id, workspace_id FROM projects UNION ALL SELECT id, workspace_id FROM sessions',
+      ),
+    ).toEqual([
+      { id: 'proj-s', workspace_id: source },
+      { id: 'sess-s', workspace_id: source },
+    ]);
+    expect(await bindingsOf({ db, workspaceId: source })).toEqual([
+      {
+        id: 'bind-s',
+        workspace_id: source,
+        project_id: null,
+        provider: 'linear',
+        config: '{"a":3}',
+      },
+    ]);
   });
 });

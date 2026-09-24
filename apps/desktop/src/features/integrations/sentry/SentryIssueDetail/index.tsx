@@ -30,9 +30,9 @@ type Props = {
   readonly detail: Detail | null;
   readonly isLoading: boolean;
   readonly error: string | null;
-  readonly summaryIsLoading: boolean;
-  readonly summaryError: string | null;
-  readonly onRetrySummary: () => void;
+  readonly summaryIsLoading?: boolean;
+  readonly summaryError?: string | null;
+  readonly onRetrySummary?: () => void;
   readonly headerActions?: ReactNode;
   readonly dock?: ReactNode;
   readonly fit?: Fit;
@@ -52,8 +52,8 @@ export const SentryIssueDetail = ({
   detail,
   isLoading,
   error,
-  summaryIsLoading,
-  summaryError,
+  summaryIsLoading = false,
+  summaryError = null,
   onRetrySummary,
   headerActions,
   dock,
@@ -144,11 +144,11 @@ export const SentryIssueDetail = ({
           aria-label="Loading Sentry issue details"
           className="flex flex-col gap-2"
         >
-          <Skeleton className="h-3 w-1/2 rounded" />
-          <Skeleton className="h-3 w-1/3 rounded" />
+          <Skeleton className="h-3 w-1/2 rounded-sm" />
+          <Skeleton className="h-3 w-1/3 rounded-sm" />
         </div>
       ) : null}
-      {summaryError != null ? (
+      {summaryError != null && onRetrySummary !== undefined ? (
         <ErrorStrip
           label="the Sentry issue details"
           error={new Error(summaryError)}

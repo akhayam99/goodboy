@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { IsoDateTime, OverrideSettings, WorkspaceId } from '@goodboy/types';
 import { SettingsStudio } from '../../../../features/settings/components/SettingsStudio';
-import type { ProviderInfo } from '../../../../features/providers/providers';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
-import { StudioFrame, mockWorkspace, seedStudioChrome } from './shellChrome';
+import { StudioFrame } from './StudioFrame';
+import { mockWorkspace, seedStudioChrome } from './shellChrome';
 
 const WORKSPACE_ID = 'mock-providers-workspace-cascadia' as WorkspaceId;
 
@@ -14,7 +15,7 @@ const CAPABILITIES = {
   supportsCheapModel: true,
 };
 
-const PROVIDERS: ReadonlyArray<ProviderInfo> = [
+const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
   {
     id: 'anthropic',
     binary: 'claude',
@@ -102,7 +103,7 @@ const WORKSPACE_OVERRIDES: OverrideSettings = {
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: {
-    branch_naming: { providerId: 'codex', model: 'gpt-6-astra' },
+    agent_naming: { providerId: 'codex', model: 'gpt-6-astra' },
     plan_generation: { providerId: 'cursor', model: 'composer-2.5-fast' },
     pr_draft: { providerId: 'anthropic', model: 'claude-sonnet-5' },
   },
@@ -140,11 +141,12 @@ export const ProvidersScene = () => {
 
   return (
     <StudioFrame
-      activeStudio="settings"
+      target="settings"
       main={
         <SettingsStudio
           currentWorkspace={WORKSPACE}
-          initialFocus={{ scope: 'providers' }}
+          focus={{ scope: 'providers' }}
+          onScopeChange={() => undefined}
           onClose={() => undefined}
         />
       }

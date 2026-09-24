@@ -43,7 +43,9 @@ A few rules are always true:
 - A single repository is a workspace with one project
 - A session belongs to the workspace, never to a project
 - Every session starts with one agent, and always has at least one
-- Goodboy never runs git init, never commits and never adds a remote for you
+- Git state is created or rewritten only when you ask: initializing a repo,
+  amend, squash, a resolve attempt. Never by a mount or a turn, and nothing is
+  pushed without a publish
 
 The app follows the life of a task. First the task itself. Then the tools it
 comes from and goes back to. Then the code it produces. The chat comes last.
@@ -74,7 +76,7 @@ in it.
 
 ## Sessions
 
-A **session** holds one goal. It has its own folder, its own budget and notes
+A **session** holds one goal. It has its own budget and notes
 that every agent in it can read. "Refactor authentication domain" is a session.
 
 You never set a session's stage by hand. Goodboy works it out from what is in
@@ -88,17 +90,18 @@ the session. The stages are the columns of the board:
 
 ## Lazy sessions
 
-A new session starts with only its own folder, called the **container**. It
-has no worktree and no branch yet. By default the container lives at
-`~/.goodboy/sessions/<workspace-slug>/<session-slug>-<id>`. A workspace can
-pick a different sessions folder.
+A new session starts with no folder, no worktree and no branch. A turn that
+runs before anything is mounted writes to a scratch folder,
+`~/.goodboy/scratch/<session-id>`.
 
 A project joins the session when Goodboy **materializes** it. That means it
 gets its own working copy inside the session, called a **mount**:
 
-- A repo project gets a git worktree inside the container, named after the
-  project
+- A repo project gets a git worktree under the repository's own
+  `.goodboy/worktrees/`
 - A folder project gets a plain folder under `<project-root>/sessions/`
+
+[mounts.md](mounts.md) owns the layout and the mount lifecycle.
 
 This only happens when the work needs it. There are four ways:
 
@@ -118,7 +121,7 @@ project the session touches. The repository name on each mount tells them
 apart.
 
 Before a project is materialized, agents can read its root folder. Every write
-has to go into the container or into a mounted project.
+has to go into the scratch folder or into a mounted project.
 
 ### Mounts
 
@@ -185,6 +188,19 @@ pick it when you start the agent.
 - **PR reviewer** opens a session that reviews someone else's pull request
 - **Resolve** starts from the **Review** lens and fixes review comments
 
+A kind is worked out in the same order on every screen:
+
+- A started agent (`classifyAgent`): the kind override, then the saved kind
+  (old role names such as `investigator` map to their kind), then the agent
+  name
+- A workflow step (`classifyStep`): the step role, then the step name
+- An agent not saved yet (`resolveAgentKind`): the override, then the name,
+  then the first user message
+
+Only those three functions guess from a name, so no screen can pick a kind its
+own way. `AGENT_KIND_META` in `apps/desktop/src/features/session/agent-kind.ts`
+lists every kind, and `visibleAgentKinds` decides which ones the menu offers.
+
 The code name behind each label is in [Under the hood](#under-the-hood).
 
 ## Workflows
@@ -205,6 +221,27 @@ each run.
 
 [Workflows](workflows.md) explains how a run moves from step to step.
 
+## Open questions
+
+An open question is something an agent cannot decide for you. It has the
+question, suggested answers, an optional recommended answer, and whether one
+or several answers apply.
+
+- **Blocking or not.** A blocking question stops the work that asked it. It
+  holds its workflow run (see [workflows.md](workflows.md)) and can only be
+  answered, never dismissed. A non-blocking question can be dismissed. One
+  asked while an agent drafts an artifact is saved in the artifact's history
+  as an assumption, with the recommended answer.
+- **Delegated.** You can hand a question to an agent that answers for you,
+  with optional hints and a model. Its answer counts as yours, and the asking
+  agent is told an agent gave it. A delegate that answers nothing is nudged
+  once, then fails. Answering it yourself, or taking it back, stops the
+  delegate. A question a delegate asked is never delegated again.
+- **Saved, then delivered.** An answer is saved the moment you give it, but it
+  reaches the asking agent only once that agent has no open question left.
+  Then all its answers travel in one turn and are marked delivered. Answered
+  and delivered are two different facts.
+
 ## Artifacts
 
 When an agent writes a **plan**, a **report** or a **wireframe**, Goodboy saves
@@ -218,7 +255,7 @@ An artifact has a status:
 - **superseded**: a newer version replaced it
 - **discarded**: taken out of the session
 
-### Plans
+### Open questions
 
 Planner agents write plans. Other agents use them, and Goodboy remembers who
 used which plan. The plans studio shows each plan as a tree.
@@ -284,10 +321,16 @@ Settings can be set at four levels. The level closest to the work wins:
 
 - **Permission rules** can be set at all four levels. When more than one
   matches a tool call, the most specific one decides.
-- **Settings overrides** (default provider, branch prefix, verbosity, pinned
-  models, provider pool) can be set on a workspace or a session, on top of the
-  global defaults. Anything you leave empty comes from the level above. A
-  project override sets the branch prefix for that project's mounts.
+- **Settings overrides** (default provider, branch prefix, verbosity, role
+  and task models, provider pool, parallel agents, provider bindings) can be
+  set on a workspace, a project or a session, on top of the global defaults.
+  Anything you leave empty comes from the level above. The session engine
+  reads them only through `selectResolvedSettings`: session, then the
+  session's active project, then workspace, then global (`resolveSettings` in
+  core). Provider bindings merge per provider instead, and the closest level
+  wins. A project override sets the branch prefix for that project's mounts.
+  The settings screens edit the workspace row and read that row back, since
+  it is what they change.
 - **Workflows, the step library and skills** belong to the workspace. A step
   library entry with no workspace is a built-in starter step for everyone.
 - **Project scripts** belong to the project, because only the project knows
@@ -308,7 +351,7 @@ specific rule that fits wins.
 ## Workspace profile
 
 Each workspace can have one profile. It is a short bio you write in your own
-words, under the prompt "Tell agents who you are and what you do here".
+words, under the prompt "What agents should know about this workspace and you".
 
 - The bio goes word for word into every agent's prompt, as what you say about
   yourself
@@ -326,8 +369,10 @@ A connection to a tool lives on the **workspace**. Goodboy calls it a
 
 - A project that needs a different account or setup gets its own override.
   Goodboy uses it before the workspace binding.
-- GitHub works the same way. A workspace with no GitHub login of its own uses
-  your `gh` CLI login.
+- GitHub works the same way. A workspace with no GitHub key of its own uses
+  the key for all workspaces, then your `gh` CLI login. Both are set in one
+  place, **Settings > Tools > GitHub**, in an **All workspaces** row and a
+  **This workspace** row. App settings have no GitHub section.
 - Secrets stay inside Goodboy. Agents reach your tools only through the
   [query bridge](query-bridge.md).
 
@@ -363,6 +408,15 @@ integrated when you can do all three:
 - **Slack**: read threads, reply, and turn them into sessions with the goal
   filled in. Replies post as the connected user. Each workspace has its own
   Slack connection.
+
+## Inbox
+
+The inbox is the workspace's queue of incoming work from every connected
+source: issues, pull and merge requests, Slack threads and Sentry errors, one
+record each. Records are grouped by age (today, yesterday, this week, older),
+with alerts first in each group, and you can filter them by kind. A record
+opens in full with the source's own actions. From it you start a session, or
+open the session already linked to it.
 
 ## Providers and routing
 
@@ -412,6 +466,10 @@ Goodboy finds them in every project of the workspace, in either place:
 Each workspace has its own list of skills. There is no global list. Call one
 from the chat with `/skill-name`. A skill runs on any connected provider, not
 only the one whose folder it came from.
+
+Scripts that come with a skill run only from `<project-root>/.kay/skills`.
+Skills found under `.claude/skills` are prompts only, so a cloned repository
+cannot make its scripts run when you use a skill.
 
 ## Editor
 

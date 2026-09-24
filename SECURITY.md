@@ -13,7 +13,7 @@ Your report stays private until a fix ships.
 
 ### No backend
 
-Goodboy runs only on your machine. There is no server in the middle. No build sends telemetry of any kind.
+Goodboy runs only on your machine. There is no server in the middle. No build sends telemetry of any kind. The website at goodboy-ai.dev counts page views with Vercel's cookieless analytics, which keeps no cookie and no identifier. The app is not involved.
 
 ### Your keys
 
@@ -33,6 +33,10 @@ Apart from signing in to a provider, Goodboy goes online in two cases:
 
 - A release build checks for its own updates against a published list of versions (the manifest). This is the only request Goodboy makes without you asking, and only when no provider is connected. Goodboy verifies an update before it installs it
 - Some actions send one request each, and only because you clicked them. These are opening the **Changelog**, pressing **Load image** on an image inside rendered Markdown, and the buttons that report a crash or a startup error
+
+### Pairing a phone
+
+Pairing a phone opens a listener on your local network, and only when you open the pairing studio. It listens on every network interface, on a random port. If you close the studio with no phone paired, the listener stops. Once a phone is paired, it stays up until you quit or press **Disconnect**. A phone joins by scanning a one-time code that expires after 60 seconds, then completing an encrypted Noise XK handshake. Paired phones are kept in an allow list on this machine. A paired phone can send messages, start agents and workflows, resolve review comments and merge pull requests, so pairing a phone lets it run agents on this machine. **Disconnect** forgets every paired phone at once. Details are in [docs/companion.md](./docs/companion.md).
 
 ## Releases
 

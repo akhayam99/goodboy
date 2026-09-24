@@ -124,6 +124,18 @@ describe('OrchestratorRoutingRow', () => {
     expect(screen.getByRole('button', { name: /^Orchestrator routing: Cursor/ })).toBeTruthy();
   });
 
+  it('shows automatic routing when the stored model is unknown', () => {
+    renderRow(run({ providerId: 'anthropic', model: 'retired-model' }));
+
+    const trigger = screen.getByRole('button', { name: /^Orchestrator routing:/ });
+    expect(trigger.getAttribute('aria-label')).not.toContain('retired-model');
+    openPicker();
+    screen.getByRole('button', { name: /^Auto / });
+    screen.getByText(
+      'Follows the workspace default provider. Goodboy picks the model this task needs.',
+    );
+  });
+
   it('commits the provider just picked, not the one pinned before', () => {
     renderRow(run({ providerId: 'anthropic', model: 'claude-sonnet-4-6' }));
 

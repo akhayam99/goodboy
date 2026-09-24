@@ -2,8 +2,7 @@
 
 > **Read this when** you need a real-app screenshot with fake, advanced,
 > non-empty state (for a social post, a README image, a deck). **Not for**
-> testing (see `docs/testing.md`) or the rule that a post needs a screenshot
-> at all (`goodboy-atlas/docs/autonomy/announcement.md`).
+> testing (see `docs/testing.md`).
 
 Every published screenshot follows one rule: real components, fake data, never
 an empty state, never real client or project names. Getting there the slow way
@@ -44,7 +43,7 @@ import.meta.env.VITE_GOODBOY_MOCK === '1' && import.meta.env.MODE !== 'test'`.
 - `MockScene` (`apps/desktop/src/app/components/MockScene/`) reads a
   `?scene=` query param and renders one of several scene components, one per
   screenshot. To add a scene, add a file under `scenes/` and a line in the
-  `SCENES` map.
+  `MOCK_SCENES` map.
 
 ## Reuse the real components, never rebuild the UI
 
@@ -54,10 +53,10 @@ real app as soon as either one changes, and it shows.
 
 There are two cases, and each needs a different approach:
 
-**The component is pure props.** `WorkflowStepGraph`, `ResolveBoard` and
-`RoleModelRow` work this way. Read the component's prop type and build fake
-data that matches it. Use real branded id casts (e.g. `'x' as Agent['id']`)
-and real enum values. Pass it straight in. No store involved.
+**The component is pure props.** `WorkflowStepGraph` and `RoleModelRow` work
+this way. Read the component's prop type and build fake data that matches it.
+Use real branded id casts (e.g. `'x' as Agent['id']`) and real enum values.
+Pass it straight in. No store involved.
 
 **The component reads the zustand store.** `SessionOverviewPane`,
 `DefaultsPanel`, `SessionNavSidebar` and `AppFooter`'s enabling flags work
@@ -84,15 +83,12 @@ the component instead of a gap in the mock.
 
 ## Gotchas hit while building the scenes
 
-- **The same "role" badge is computed two different ways depending on
-  which component you're in.** `useWorkspaceRuns`'s `kindOf` reads
-  `agent.kind` directly. `WorkflowStepGraphBranch`'s badge reads the
-  `agentKindOverride` **prop** instead (keyed by agent id). If that is empty
-  it falls back to `inferAgentKindFromName(agent.name)`, and it ignores
-  `agent.kind` entirely. Setting `kind: 'implementer'` on the agent object did
-  nothing there. The fix was to fill `agentKindOverride={{ [id]: 'implementer', ... }}`
-  on `WorkflowStepGraph` itself. Check where a field is really read before
-  you assume its name works the same in another component.
+- **Every "role" badge goes through `classifyAgent`.** The
+  `agentKindOverride` entry for the agent id wins, then `agent.kind`, then the
+  agent name. Setting `kind: 'implementer'` on the agent is enough.
+  Components that take `agentKindOverride` as a prop (`WorkflowStepGraph`)
+  read the prop instead of the store, so an override set only in the store
+  does not reach them.
 - **`useWorkspaceRuns`'s Activity lane builds its workflow lookup from
   `state.phaseTemplates[workspaceId]`, not `state.sessionWorkflows`.**
   `SessionOverviewPane`'s own `workflowById` union does read
@@ -109,11 +105,10 @@ the component instead of a gap in the mock.
   `childrenByParentId: ReadonlyMap<string, ReadonlyArray<Agent>>` prop, keyed
   by the parent agent's id. The node shows a `doneChildCount/childCount`
   badge on its own. You don't compute or render that yourself.
-- **Mounting `SessionNavSidebar` (or anything under it, like
-  `SessionNavFooter`) on its own throws `useToast must be used inside
-ToastProvider`.** In the real app tree, `ToastProvider` wraps everything, but
-  with the current `MOCK_ENABLED` gate `MockScene` mounts before that wrapper.
-  So `MockScene`'s own root has to wrap itself in `ToastProvider` too.
+- **Mounting anything that calls `useToast` on its own throws `useToast must
+be used inside ToastProvider`.** `App` returns `MockScene` under the
+  `MOCK_ENABLED` gate before it mounts `ToastProvider`. So a scene that renders
+  such a component wraps itself in `ToastProvider`.
 - **`AppShell` already has `leftSidebar` and `footer` slots.** You need no
   layout code to add the real session sidebar or the real app footer to a
   scene. Pass the components into those two props.
@@ -147,33 +142,53 @@ shell against the same localhost URL:
 gives the mock scene's `useEffect` time to fill the store, and React time to
 render, before the snapshot is taken.
 
+A layout change is also captured at `--window-size=1100,800`, close to the
+window's minimum width, where a second rail or a fixed-width control is the
+first thing to clip. Capture both themes at both widths: `&theme=light` after
+the scene key renders the light theme.
+
 ## Data hygiene
 
 Fake workspace names, session goals and usernames must be generic but
-believable. They must never be a real client, project or person. Include at
-least one "hard" task among the fake ones (a rate-limiting bug, a rounding
-bug), not only trivial ones. If every task looks easy, the product looks like
-it's only for easy tasks.
+believable. They must never be a real client, project or person. Seeds use one
+fixed vocabulary: workspaces Harborline, Northwind, Acme, Cascade and
+Cascadia; repos ledger-core, notify-relay, payments-api, billing-api,
+web-console, storefront-web, core-api and reporting-analytics; people named by role (platform lead, finance lead, reviewer),
+never by a personal name. Include at least one "hard" task among the fake ones
+(a rate-limiting bug, a rounding bug), not only trivial ones. If every task
+looks easy, the product looks like it's only for easy tasks.
 
 ## What already exists
 
 `apps/desktop/src/app/components/MockScene/` holds one scene component per
-screenshot. Each one is registered by key in the `SCENES` map and filled from
-`apps/desktop/src/store/mock-data.ts` plus its own seed module. Read the map
-before you build anything. The surface you need is often already there, and
-the keys are the `?scene=` values. The scenes cost nothing at runtime when
+screenshot. Each one is registered by key in the `MOCK_SCENES` map and filled
+from `apps/desktop/src/store/mock-data.ts` plus its own seed module. Read the
+map before you build anything. The surface you need is often already there,
+and the keys are the `?scene=` values. The scenes cost nothing at runtime when
 `VITE_GOODBOY_MOCK` is unset.
 
-README images always show the app around the feature. `scenes/shellChrome.tsx`
-holds the two frames:
+README images always show the app around the feature. Two frames wrap them:
 
-- `ShellFrame` (top bar, sessions sidebar, crumb bar, footer) is for anything
-  inside a session. Fill it with `seedShellChrome`.
-- `StudioFrame` (top bar and footer) is for studios such as Settings, Impact
-  and the Inbox. Fill it with `seedStudioChrome`.
+- `ShellFrame` in `scenes/shellChrome.tsx` (top bar, sessions sidebar, crumb
+  bar, footer) is for anything inside a session. Fill it with `seedShellChrome`.
+- `StudioFrame` in `scenes/StudioFrame.tsx` (top bar and footer) is for studios
+  such as Settings, Impact and the Inbox. Fill it with `seedStudioChrome`.
 
 `scenes/sceneReveal.ts` opens the completed mounts and keeps a mount row in
 its hover state, so the row actions show up in a still image.
+
+Scenes that set a state through query params (`&mode=`, `&v=`, `&open=`,
+`&view=`) live in `scenes/audit/`, one file per scene, and share the frame,
+settings and workspace seeds there. They are registered in `MOCK_SCENES` like
+every other scene. A scene opens a studio through the same entrance the app
+uses (a store opener or a click on the real control), never by mounting the
+studio itself.
+
+Scenes that share one seed live in a folder, with one file per scene, a
+`fixtures.ts` for the data and a `seeds.ts` that writes it into the store.
+`scenes/flow-audit/` covers the workflow builder, a workflow run, the open
+questions cluster, the transcript and the command palette over one Harborline
+session.
 
 The README's feature guide is captured from these scenes. The images live in
 `docs/images/`, named after the scene that made them, so a re-capture is one

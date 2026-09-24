@@ -22,7 +22,13 @@ const GEMINI = ['gemini-3.8-flash', 'gemini-3.1-pro'];
 
 describe('suggestLighterModel', () => {
   it('Opus 4.8 → Sonnet 4.6, strong, about 1.7x cheaper', () => {
-    expect(suggestLighterModel('claude-opus-4-8', ANTHROPIC)).toEqual({
+    expect(
+      suggestLighterModel({
+        provider: 'anthropic',
+        current: 'claude-opus-4-8',
+        candidates: ANTHROPIC,
+      }),
+    ).toEqual({
       id: 'claude-sonnet-4-6',
       kind: 'strong',
       costMultiplier: 1.7,
@@ -30,7 +36,13 @@ describe('suggestLighterModel', () => {
   });
 
   it('Opus 5 → Sonnet 4.6, strong, about 1.7x cheaper', () => {
-    expect(suggestLighterModel('claude-opus-5', ANTHROPIC)).toEqual({
+    expect(
+      suggestLighterModel({
+        provider: 'anthropic',
+        current: 'claude-opus-5',
+        candidates: ANTHROPIC,
+      }),
+    ).toEqual({
       id: 'claude-sonnet-4-6',
       kind: 'strong',
       costMultiplier: 1.7,
@@ -38,29 +50,55 @@ describe('suggestLighterModel', () => {
   });
 
   it('Fable 5 → Sonnet 4.6 (top tier drops to mid, never to cheap)', () => {
-    expect(suggestLighterModel('claude-fable-5', ANTHROPIC)?.id).toBe('claude-sonnet-4-6');
+    expect(
+      suggestLighterModel({
+        provider: 'anthropic',
+        current: 'claude-fable-5',
+        candidates: ANTHROPIC,
+      })?.id,
+    ).toBe('claude-sonnet-4-6');
   });
 
   it('never suggests below the cheap-tier floor', () => {
-    expect(suggestLighterModel('claude-opus-4-8', ANTHROPIC)?.id).not.toMatch(/haiku/);
+    expect(
+      suggestLighterModel({
+        provider: 'anthropic',
+        current: 'claude-opus-4-8',
+        candidates: ANTHROPIC,
+      })?.id,
+    ).not.toMatch(/haiku/);
   });
 
   it('no nag when already mid-tier (cheap tier is floored out)', () => {
-    expect(suggestLighterModel('claude-sonnet-4-6', ANTHROPIC)).toBeNull();
+    expect(
+      suggestLighterModel({
+        provider: 'anthropic',
+        current: 'claude-sonnet-4-6',
+        candidates: ANTHROPIC,
+      }),
+    ).toBeNull();
   });
 
   it('no suggestion when the only lighter options are floored out', () => {
     expect(
-      suggestLighterModel('claude-sonnet-4-6', ['claude-sonnet-4-6', 'claude-haiku-4-5']),
+      suggestLighterModel({
+        provider: 'anthropic',
+        current: 'claude-sonnet-4-6',
+        candidates: ['claude-sonnet-4-6', 'claude-haiku-4-5'],
+      }),
     ).toBeNull();
   });
 
   it('codex: GPT-5.5 → GPT-5.4 (small weight gaps no longer block tier drops)', () => {
-    expect(suggestLighterModel('gpt-5.5', CODEX)?.id).toBe('gpt-5.6-terra');
+    expect(
+      suggestLighterModel({ provider: 'codex', current: 'gpt-5.5', candidates: CODEX })?.id,
+    ).toBe('gpt-5.6-terra');
   });
 
   it('codex: GPT-5.5 costs about 2x GPT-5.4', () => {
-    expect(suggestLighterModel('gpt-5.5', CODEX)).toEqual({
+    expect(
+      suggestLighterModel({ provider: 'codex', current: 'gpt-5.5', candidates: CODEX }),
+    ).toEqual({
       id: 'gpt-5.6-terra',
       kind: 'strong',
       costMultiplier: 2,
@@ -68,13 +106,21 @@ describe('suggestLighterModel', () => {
   });
 
   it('gemini: Pro has no mid tier, so no suggestion instead of falling to Flash', () => {
-    expect(suggestLighterModel('gemini-3.1-pro', GEMINI)).toBeNull();
+    expect(
+      suggestLighterModel({ provider: 'gemini', current: 'gemini-3.1-pro', candidates: GEMINI }),
+    ).toBeNull();
   });
 });
 
 describe('suggestHeavierModel', () => {
   it('Opus 4.8 → Fable 5, optional within the expensive tier, about 2x cost', () => {
-    expect(suggestHeavierModel('claude-opus-4-8', ANTHROPIC)).toEqual({
+    expect(
+      suggestHeavierModel({
+        provider: 'anthropic',
+        current: 'claude-opus-4-8',
+        candidates: ANTHROPIC,
+      }),
+    ).toEqual({
       id: 'claude-fable-5',
       kind: 'optional',
       costMultiplier: 2,
@@ -83,7 +129,11 @@ describe('suggestHeavierModel', () => {
 
   it('Haiku 4.5 → Sonnet 4.6, strong escalation out of the cheap tier', () => {
     expect(
-      suggestHeavierModel('claude-haiku-4-5', ['claude-haiku-4-5', 'claude-sonnet-4-6']),
+      suggestHeavierModel({
+        provider: 'anthropic',
+        current: 'claude-haiku-4-5',
+        candidates: ['claude-haiku-4-5', 'claude-sonnet-4-6'],
+      }),
     ).toEqual({
       id: 'claude-sonnet-4-6',
       kind: 'strong',
@@ -92,19 +142,35 @@ describe('suggestHeavierModel', () => {
   });
 
   it('Sonnet 4.6 → Fable 5 (heavy task escalates straight to the top)', () => {
-    expect(suggestHeavierModel('claude-sonnet-4-6', ANTHROPIC)?.id).toBe('claude-fable-5');
+    expect(
+      suggestHeavierModel({
+        provider: 'anthropic',
+        current: 'claude-sonnet-4-6',
+        candidates: ANTHROPIC,
+      })?.id,
+    ).toBe('claude-fable-5');
   });
 
   it('no suggestion when already on the top model', () => {
-    expect(suggestHeavierModel('claude-fable-5', ANTHROPIC)).toBeNull();
+    expect(
+      suggestHeavierModel({
+        provider: 'anthropic',
+        current: 'claude-fable-5',
+        candidates: ANTHROPIC,
+      }),
+    ).toBeNull();
   });
 
   it('codex: GPT-5.4 → GPT-5.5', () => {
-    expect(suggestHeavierModel('gpt-5.6-terra', CODEX)?.id).toBe('gpt-5.5');
+    expect(
+      suggestHeavierModel({ provider: 'codex', current: 'gpt-5.6-terra', candidates: CODEX })?.id,
+    ).toBe('gpt-5.5');
   });
 
   it('codex: GPT-5.5 costs about 2x GPT-5.4', () => {
-    expect(suggestHeavierModel('gpt-5.6-terra', CODEX)).toEqual({
+    expect(
+      suggestHeavierModel({ provider: 'codex', current: 'gpt-5.6-terra', candidates: CODEX }),
+    ).toEqual({
       id: 'gpt-5.5',
       kind: 'strong',
       costMultiplier: 2,
@@ -112,7 +178,13 @@ describe('suggestHeavierModel', () => {
   });
 
   it('Sonnet 4.6 → Fable 5, strong, about 3.3x cost', () => {
-    expect(suggestHeavierModel('claude-sonnet-4-6', ANTHROPIC)).toEqual({
+    expect(
+      suggestHeavierModel({
+        provider: 'anthropic',
+        current: 'claude-sonnet-4-6',
+        candidates: ANTHROPIC,
+      }),
+    ).toEqual({
       id: 'claude-fable-5',
       kind: 'strong',
       costMultiplier: 3.3,
@@ -121,7 +193,11 @@ describe('suggestHeavierModel', () => {
 
   it('same-price models within a tier: costMultiplier is null (ratio rounds to 1.0)', () => {
     expect(
-      suggestHeavierModel('claude-sonnet-4-5', ['claude-sonnet-4-5', 'claude-sonnet-4-6']),
+      suggestHeavierModel({
+        provider: 'anthropic',
+        current: 'claude-sonnet-4-5',
+        candidates: ['claude-sonnet-4-5', 'claude-sonnet-4-6'],
+      }),
     ).toEqual({
       id: 'claude-sonnet-4-6',
       kind: 'strong',
@@ -130,11 +206,16 @@ describe('suggestHeavierModel', () => {
   });
 
   it('gemini: Flash → Pro', () => {
-    expect(suggestHeavierModel('gemini-3.8-flash', GEMINI)?.id).toBe('gemini-3.1-pro');
+    expect(
+      suggestHeavierModel({ provider: 'gemini', current: 'gemini-3.8-flash', candidates: GEMINI })
+        ?.id,
+    ).toBe('gemini-3.1-pro');
   });
 
   it('never downgrades the cost tier to gain weight', () => {
-    expect(suggestHeavierModel('gemini-3.1-pro', GEMINI)).toBeNull();
+    expect(
+      suggestHeavierModel({ provider: 'gemini', current: 'gemini-3.1-pro', candidates: GEMINI }),
+    ).toBeNull();
   });
 });
 

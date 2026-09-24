@@ -15,8 +15,8 @@ import type {
 import { attachWorkflowToSession as attachWorkflowToSessionInDb } from '@goodboy/db';
 import { runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { isRunSettled } from '../../../features/workflows/isRunSettled';
-import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { persistOrchestrationStop } from './orchestrateNextStep';
@@ -71,7 +71,9 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
           get().sessionPhaseRuns[sessionId] ?? [],
           chainAfterId,
         );
-        if (isRunSettled({ run: predecessor, workflow: predTemplate, agents: predAgents })) {
+        if (
+          isWorkflowRunComplete({ run: predecessor, workflow: predTemplate, agents: predAgents })
+        ) {
           triggerMode = 'immediate';
         }
       }
@@ -98,7 +100,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     const baseOrdinal = existingRuns.reduce((max, r) => Math.max(max, r.ordinal), -1);
     const sessionDefaultProvider = (session.providerOverride ??
       session.providerPreference.defaultProvider) as ProviderId;
-    const roleModels = roleModelsForSession({ state: get(), sessionId });
+    const roleModels = selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null;
     const spawned =
       executionMode === 'dynamic'
         ? {

@@ -113,6 +113,8 @@ const createHarness = ({}: HarnessParams): Harness => {
     sessionGithub: {},
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
     agentKindOverride: {},
+    stepSummaryDegraded: {},
+    degradedStepOutputs: {},
     sessions: [session],
     projects: [],
     providers: [

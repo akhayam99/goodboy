@@ -222,7 +222,7 @@ never ours. [SECURITY.md](./SECURITY.md) has the detail.
 
 ## Run from source
 
-You need **Node 20** or newer, **pnpm 10.33.4** and a **Rust** toolchain.
+You need **Node 22** or newer, **pnpm 10.33.4** and a **Rust** toolchain.
 
 ```bash
 pnpm install

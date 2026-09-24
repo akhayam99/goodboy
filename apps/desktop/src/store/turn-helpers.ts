@@ -94,6 +94,7 @@ import {
 import { sessionAwaitsPullRequest } from './slices/github/sessionAwaitsPullRequest';
 import { selectMountById } from './slices/project-mounts/selectors';
 import { mountContinuationRefusal, queueMountContinuation } from './slices/turn/mountContinuations';
+import { selectResolvedSettings } from './slices/overrides/selectResolvedSettings';
 
 type AttachmentsBlockParams = {
   readonly scope: string;
@@ -180,13 +181,13 @@ const mergeTelemetry = ({
   return [...recordsById.values()];
 };
 
-function scheduleIdle(fn: () => void): void {
+const scheduleIdle = ({ run }: { readonly run: () => void }): void => {
   if (typeof requestIdleCallback === 'function') {
-    requestIdleCallback(() => fn());
-  } else {
-    queueMicrotask(fn);
+    requestIdleCallback(() => run());
+    return;
   }
-}
+  queueMicrotask(run);
+};
 
 const runQueuedSummarizer = ({ set, get, sessionId, entry }: Params): void => {
   void runSummarizer({ set, get, sessionId, entry }).finally(() => {
@@ -196,14 +197,12 @@ const runQueuedSummarizer = ({ set, get, sessionId, entry }: Params): void => {
     }
     const next = queue.queued;
     if (next == null) {
-      queue.inFlight = false;
+      summarizerQueues.delete(sessionId);
       void get().maybeAutoAdvanceWorkflow(sessionId);
       return;
     }
     queue.queued = null;
-    scheduleIdle(() => {
-      runQueuedSummarizer({ set, get, sessionId, entry: next });
-    });
+    scheduleIdle({ run: () => runQueuedSummarizer({ set, get, sessionId, entry: next }) });
   });
 };
 
@@ -229,9 +228,7 @@ const enqueueSummarizerEntry = ({ set, get, sessionId, entry }: Params): void =>
 
   queue.inFlight = true;
   queue.queued = null;
-  scheduleIdle(() => {
-    runQueuedSummarizer({ set, get, sessionId, entry });
-  });
+  scheduleIdle({ run: () => runQueuedSummarizer({ set, get, sessionId, entry }) });
 };
 
 type EnqueueParams = {
@@ -284,9 +281,9 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
     routeTaskModel({
       taskModel: resolveTaskModel({
         task: 'summarizer',
-        preferences: get().workspaceOverrides?.[session.workspaceId]?.taskModels,
-        workspaceDefaultProviderId:
-          get().workspaceOverrides?.[session.workspaceId]?.defaultProviderId,
+        preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
+        workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
+          ?.defaultProviderOverride,
         sessionDefaultProviderId: session.providerPreference.defaultProvider,
       }),
       connectedProviders,
@@ -312,17 +309,15 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
         },
       };
     });
-    void get().emitNotification(
-      'error',
-      'error',
-      'summarizer paused',
-      'every summarizer provider is cooling down',
-      {
-        sessionId,
-        action: { kind: 'retry-summarizer', sessionId },
-        coalesceKey: `summarizer-cooling:${sessionId}:${windowEnd ?? 'unknown'}`,
-      },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'error',
+      title: 'Summarizer paused',
+      body: 'every summarizer provider is cooling down',
+      sessionId,
+      action: { kind: 'retry-summarizer', sessionId },
+      coalesceKey: `summarizer-cooling:${sessionId}:${windowEnd ?? 'unknown'}`,
+    });
     return;
   }
 
@@ -600,17 +595,15 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       });
       return;
     }
-    void get().emitNotification(
-      'error',
-      'error',
-      'summarizer failed',
-      `${taskModel.providerId}: ${message}`,
-      {
-        sessionId,
-        action: { kind: 'retry-summarizer', sessionId },
-        coalesceKey: `summarizer-failed:${sessionId}`,
-      },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'error',
+      title: 'Summarizer failed',
+      body: `${taskModel.providerId}: ${message}`,
+      sessionId,
+      action: { kind: 'retry-summarizer', sessionId },
+      coalesceKey: `summarizer-failed:${sessionId}`,
+    });
   }
 };
 

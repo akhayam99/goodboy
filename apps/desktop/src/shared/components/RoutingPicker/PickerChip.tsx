@@ -28,7 +28,7 @@ export const PickerChip = ({
       'inline-flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors',
       active
         ? cn('font-medium shadow-sm', CHIP_TONE_ACTIVE[tone])
-        : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
+        : 'text-muted-foreground hover:bg-background hover:text-foreground',
       disabled && 'cursor-not-allowed opacity-60',
     )}
   >

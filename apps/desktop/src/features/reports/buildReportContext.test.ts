@@ -25,11 +25,10 @@ import {
   artifactQuestionContract,
 } from '../artifacts/artifactQuestionContract';
 import { REDACTED } from '../../shared/utils/redactSecrets';
+import { ARTIFACT_SECTION_CUT_NOTE, ARTIFACT_SECTION_REMOVED_NOTE } from './allocateReportContext';
 import {
   buildReportContext,
   REPORT_CONTEXT_LIMITS,
-  REPORT_SECTION_CUT_NOTE,
-  REPORT_SECTION_REMOVED_NOTE,
   REPORT_SESSION_TITLE_CLIP_NOTE,
 } from './buildReportContext';
 
@@ -845,7 +844,7 @@ describe('buildReportContext budget honesty', () => {
     );
     const row = context.inventory.find((entry) => entry.id === 'artifacts');
     expect(row?.state).toBe('missing');
-    expect(row?.detail).toContain(REPORT_SECTION_REMOVED_NOTE);
+    expect(row?.detail).toContain(ARTIFACT_SECTION_REMOVED_NOTE);
   });
 
   it('keeps only the artifact ids that survived an artifacts block the evidence budget cut', () => {
@@ -874,7 +873,7 @@ describe('buildReportContext budget honesty', () => {
     expect(context.sourceIds).not.toContain('artifact-3');
     const row = context.inventory.find((entry) => entry.id === 'artifacts');
     expect(row?.state).toBe('partial');
-    expect(row?.detail).toContain(REPORT_SECTION_CUT_NOTE);
+    expect(row?.detail).toContain(ARTIFACT_SECTION_CUT_NOTE);
   });
 
   it('holds the cap when the session title and the attachment list are far past the framing reservation', () => {

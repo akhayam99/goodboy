@@ -30,52 +30,79 @@ function q(id: string, opts: Partial<OpenQuestion> = {}): OpenQuestion {
   };
 }
 
+const RUN_A_REF = { id: RUN_A, workflowId: WF_A };
+const RUN_B_REF = { id: RUN_B, workflowId: WF_B };
+
 describe('workflowHasOpenQuestions', () => {
   it('returns true when the workflow has an open question of its own', () => {
-    expect(workflowHasOpenQuestions([q('q1', { workflowId: WF_A })], WF_A)).toBe(true);
+    expect(
+      workflowHasOpenQuestions({ questions: [q('q1', { workflowId: WF_A })], workflowId: WF_A }),
+    ).toBe(true);
   });
 
   it('returns false when only OTHER workflows have open questions', () => {
-    expect(workflowHasOpenQuestions([q('q1', { workflowId: WF_B })], WF_A)).toBe(false);
+    expect(
+      workflowHasOpenQuestions({ questions: [q('q1', { workflowId: WF_B })], workflowId: WF_A }),
+    ).toBe(false);
   });
 
-  it('orphan questions (no workflowId) block every workflow (safe legacy default)', () => {
-    expect(workflowHasOpenQuestions([q('q1')], WF_A)).toBe(true);
-    expect(workflowHasOpenQuestions([q('q1')], WF_B)).toBe(true);
+  it('lets an unscoped question through, the same as the run gate', () => {
+    expect(workflowHasOpenQuestions({ questions: [q('q1')], workflowId: WF_A })).toBe(false);
   });
 
   it('ignores answered and dismissed questions', () => {
-    const qs = [
+    const questions = [
       q('q1', { workflowId: WF_A, status: 'answered' }),
       q('q2', { workflowId: WF_A, status: 'dismissed' }),
     ];
-    expect(workflowHasOpenQuestions(qs, WF_A)).toBe(false);
+    expect(workflowHasOpenQuestions({ questions, workflowId: WF_A })).toBe(false);
   });
 
   it('returns false on an empty list', () => {
-    expect(workflowHasOpenQuestions([], WF_A)).toBe(false);
+    expect(workflowHasOpenQuestions({ questions: [], workflowId: WF_A })).toBe(false);
   });
 });
 
 describe('workflowRunHasOpenQuestions', () => {
   it('returns true when the run has an open question of its own', () => {
-    expect(workflowRunHasOpenQuestions([q('q1', { workflowRunId: RUN_A })], RUN_A)).toBe(true);
+    expect(
+      workflowRunHasOpenQuestions({
+        questions: [q('q1', { workflowRunId: RUN_A })],
+        run: RUN_A_REF,
+      }),
+    ).toBe(true);
   });
 
   it('returns false when only ANOTHER run has open questions', () => {
-    expect(workflowRunHasOpenQuestions([q('q1', { workflowRunId: RUN_B })], RUN_A)).toBe(false);
+    expect(
+      workflowRunHasOpenQuestions({
+        questions: [q('q1', { workflowRunId: RUN_B })],
+        run: RUN_A_REF,
+      }),
+    ).toBe(false);
   });
 
   it('lets an orphan question from a free agent through instead of halting every run', () => {
-    expect(workflowRunHasOpenQuestions([q('q1')], RUN_A)).toBe(false);
-    expect(workflowRunHasOpenQuestions([q('q1')], RUN_B)).toBe(false);
+    expect(workflowRunHasOpenQuestions({ questions: [q('q1')], run: RUN_A_REF })).toBe(false);
+    expect(workflowRunHasOpenQuestions({ questions: [q('q1')], run: RUN_B_REF })).toBe(false);
+  });
+
+  it('blocks the run on a legacy question scoped to its workflow but not to a run', () => {
+    const questions = [q('q1', { workflowId: WF_A })];
+    expect(workflowRunHasOpenQuestions({ questions, run: RUN_A_REF })).toBe(true);
+    expect(workflowRunHasOpenQuestions({ questions, run: RUN_B_REF })).toBe(false);
+  });
+
+  it('lets a question scoped to another run of the same workflow through', () => {
+    const questions = [q('q1', { workflowId: WF_A, workflowRunId: RUN_B })];
+    expect(workflowRunHasOpenQuestions({ questions, run: RUN_A_REF })).toBe(false);
   });
 
   it('ignores answered and dismissed questions of its own run', () => {
-    const qs = [
+    const questions = [
       q('q1', { workflowRunId: RUN_A, status: 'answered' }),
       q('q2', { workflowRunId: RUN_A, status: 'dismissed' }),
     ];
-    expect(workflowRunHasOpenQuestions(qs, RUN_A)).toBe(false);
+    expect(workflowRunHasOpenQuestions({ questions, run: RUN_A_REF })).toBe(false);
   });
 });

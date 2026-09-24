@@ -1,7 +1,11 @@
 import { useState } from 'react';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE, TASKS } from '@goodboy/types';
 import type { AgentRole, OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
-import { ROLE_REGISTRY, SELECTABLE_AGENT_ROLES } from '@goodboy/core';
+import {
+  ROLE_REGISTRY,
+  SELECTABLE_AGENT_ROLES,
+  DEFAULT_SESSION_PROVIDER_PREFERENCE,
+  TASKS,
+} from '@goodboy/core';
 import { Divider, EmptyState, FieldRow, SectionHeader, SegmentedTabs } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ProviderChip } from '../../ProviderChip';
@@ -12,7 +16,7 @@ import { TaskModelRow } from './TaskModelRow';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { ProviderPicker } from '../../../../../shared/components/RoutingPicker/ProviderPicker';
-import { StudioPanel } from '../../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -58,25 +62,22 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
   providerPoolIds.add(defaultProviderId);
 
   const { busy, error, persistOverrides, persistTaskModel, persistRoleModel } =
-    useDefaultsPersistence({
-      workspaceId,
-      overrides,
-    });
+    useDefaultsPersistence({ workspaceId });
 
   const [group, setGroup] = useState<DefaultsGroup>('task');
   const taskOverrideCount = TASKS.filter((task) => overrides.taskModels?.[task.id] != null).length;
   const roleOverrideCount = Object.keys(overrides.roleModels ?? {}).length;
   const groupOptions = [
-    { value: 'task' as const, label: `Task models (${taskOverrideCount})` },
-    { value: 'role' as const, label: `Agent roles (${roleOverrideCount})` },
+    { value: 'task' as const, label: `Task models, ${taskOverrideCount} custom` },
+    { value: 'role' as const, label: `Agent roles, ${roleOverrideCount} custom` },
   ];
 
   const onDefaultProvider = ({ providerId }: ProviderParams) => {
     const providerPool =
       overrides.providerPool == null
-        ? undefined
+        ? null
         : Array.from(new Set([...overrides.providerPool, providerId]));
-    void persistOverrides({ partial: { defaultProviderId: providerId, providerPool } });
+    void persistOverrides({ patch: { defaultProviderId: providerId, providerPool } });
   };
 
   const onToggleRoutingProvider = ({ providerId }: ProviderParams) => {
@@ -84,25 +85,27 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
       return;
     }
     const nextProviderIds = new Set(providerPoolIds);
-    if (nextProviderIds.has(providerId)) {
+    const isInPool = nextProviderIds.has(providerId);
+    if (isInPool) {
       nextProviderIds.delete(providerId);
-    } else {
+    }
+    if (!isInPool) {
       nextProviderIds.add(providerId);
     }
     nextProviderIds.add(defaultProviderId);
     const selectedProviderIds = connectedProviderIds.filter((id) => nextProviderIds.has(id));
     const isEveryProviderEnabled = selectedProviderIds.length === connectedProviderIds.length;
     void persistOverrides({
-      partial: {
-        providerPool: isEveryProviderEnabled ? undefined : selectedProviderIds,
-      },
+      patch: { providerPool: isEveryProviderEnabled ? null : selectedProviderIds },
     });
   };
 
   return (
-    <StudioPanel
+    <PaneShell
+      scroll="body"
+      measure="reading"
       title="Defaults"
-      subtitle="Choose provider defaults for this workspace, its agent roles, and its auxiliary tasks."
+      description="Choose provider defaults for this workspace, its agent roles, and its auxiliary tasks."
     >
       <section className="flex flex-col gap-1">
         <SectionHeader
@@ -134,7 +137,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
               size="inline"
             />
           ) : (
-            <div className="flex max-w-64 flex-wrap justify-end gap-1">
+            <div className="flex max-w-64 flex-wrap justify-start gap-1">
               {connectedProviderIds.map((providerId) => {
                 const isDefaultProvider = providerId === defaultProviderId;
                 return (
@@ -166,7 +169,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
         {group === 'task' ? (
           <div className="flex flex-col">
             {TASKS.map((task, index) => (
-              <div key={task.id} className="flex flex-col">
+              <div key={task.id} className="@container flex flex-col">
                 {index > 0 ? <Divider /> : null}
                 <TaskModelRow
                   task={task.id}
@@ -183,7 +186,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <p className="text-2xs text-muted-foreground/70">
+            <p className="text-2xs text-faint-foreground">
               Applies to every agent spawned in this role unless pinned per agent or per step.
             </p>
             <div className="flex flex-col">
@@ -208,6 +211,6 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
       </section>
 
       {error != null ? <p className="text-xs text-danger">{error}</p> : null}
-    </StudioPanel>
+    </PaneShell>
   );
 };

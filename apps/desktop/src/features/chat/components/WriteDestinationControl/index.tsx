@@ -1,21 +1,14 @@
 import { useState } from 'react';
-import {
-  AnchoredPopover,
-  Button,
-  Chip,
-  SelectableRow,
-  formatError,
-  useDropdown,
-} from '@goodboy/ui';
+import { AnchoredPopover, Button, Chip, SelectableRow, useDropdown } from '@goodboy/ui';
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import {
+  mountDisplayName,
   writeDestinationDetail,
   writeDestinationLabel,
   type WriteDestinationCandidate,
 } from '../../../../store/slices/project-mounts/writeDestination';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { useToast } from '../../../../app/components/Toast';
 import { useWriteDestination } from './useWriteDestination';
 
 type Props = {
@@ -36,7 +29,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
     fallback,
   });
   const setSessionActiveMount = useAppStore((state) => state.setSessionActiveMount);
-  const { showToast } = useToast();
+  const reportError = useAppStore((state) => state.reportError);
   const dropdown = useDropdown({ width: 'w-96', expectedHeight: 320 });
   const [pendingMountId, setPendingMountId] = useState<MountId | null>(null);
   const [isApplying, setIsApplying] = useState(false);
@@ -84,7 +77,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
       await setSessionActiveMount({ sessionId, mountId: pendingMountId });
       dropdown.close();
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({ title: "Couldn't change where the next turns write", error, sessionId });
     } finally {
       setIsApplying(false);
     }
@@ -96,7 +89,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
   const trigger = (
     <Chip
       as="button"
-      tone={isAutomatic || diverges ? 'warning' : 'neutral'}
+      tone={diverges ? 'warning' : 'neutral'}
       size="xs"
       bordered={false}
       icon={<Icon size={ICON_SIZE.row} aria-hidden />}
@@ -129,7 +122,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
           </div>
 
           {running !== null && diverges ? (
-            <div className="flex flex-col gap-0.5 rounded-md bg-muted/40 px-2 py-1.5 text-2xs">
+            <div className="flex flex-col gap-0.5 rounded-md bg-subtle px-2 py-1.5 text-2xs">
               <span className="text-muted-foreground">In progress: {runningLabel}</span>
               <span className="text-muted-foreground">Next turns: {nextLabel}</span>
             </div>
@@ -146,7 +139,10 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
                   className="flex-col items-start gap-0 px-2 py-1.5"
                 >
                   <span className="truncate text-xs">
-                    {candidate.projectName} / {candidate.mountName}
+                    {mountDisplayName({
+                      projectName: candidate.projectName,
+                      mountName: candidate.mountName,
+                    })}
                   </span>
                   <span className="truncate text-3xs text-muted-foreground">
                     {candidate.hasGit ? candidate.branch : 'no git'} · {candidate.worktreePath}
@@ -169,7 +165,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
       </AnchoredPopover>
       {running !== null && diverges ? (
         <Chip
-          tone="accent"
+          tone="primary"
           size="3xs"
           bordered={false}
           label={<span className="max-w-[10rem] truncate">{`Next: ${shorten(nextLabel)}`}</span>}

@@ -22,7 +22,7 @@ type DeliverParams = {
 
 const deliverNow = async ({ set, get, sessionId, workflowRunId }: DeliverParams): Promise<void> => {
   if (get().orchestratingWorkflowRuns[workflowRunId] === true) {
-    requestDecisionRestart({ workflowRunId });
+    requestDecisionRestart({ set, workflowRunId });
     await get().orchestrateNextStep(sessionId, workflowRunId);
     return;
   }
@@ -62,6 +62,6 @@ export const addWorkflowOrchestratorHint = (set: SetFn, get: GetFn) => {
     if (draft.delivery === 'queue' || run.executionMode !== 'dynamic' || run.discardedAt != null) {
       return;
     }
-    await deliverNow({ set, get, sessionId, workflowRunId });
+    void deliverNow({ set, get, sessionId, workflowRunId });
   };
 };

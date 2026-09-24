@@ -21,6 +21,11 @@ type WriteRunParams = {
   readonly record: ScriptRunRecord;
 };
 
+const STDOUT_CAP = 64 * 1024;
+const OUTPUT_FLUSH_MS = 100;
+const TRUNCATED_PREFIX = '…(truncated)\n';
+const ANSI_PATTERN = /\x1B\[[0-?]*[ -/]*[@-~]/g;
+
 export type RegisteredScriptRun = {
   readonly result: Promise<ScriptRunResult>;
   readonly dispose: () => void;
@@ -49,22 +54,33 @@ export const registerScriptRunListeners = async ({
   const result = new Promise<ScriptRunResult>((resolve) => {
     resolveResult = resolve;
   });
-  const stdoutCap = 64 * 1024;
-  const ansiPattern = /\x1B\[[0-?]*[ -/]*[@-~]/g;
   let stdoutBuffer = '';
   let isTruncated = false;
+  let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const flush = (): void => {
+    flushTimer = null;
+    const current = get().scriptRuns[sessionId]?.[scriptId];
+    if (current == null || current.runId !== runId || current.status !== 'pending') {
+      return;
+    }
+    writeRun({ record: { ...current, output: stdoutBuffer.replace(ANSI_PATTERN, '') } });
+  };
 
   unlistenOutput = await listenScriptOutput((payload) => {
-    if (payload.runId !== runId || isTruncated) {
+    if (payload.runId !== runId) {
       return;
     }
-    const chunk = atob(payload.data);
-    if (stdoutBuffer.length + chunk.length > stdoutCap) {
-      stdoutBuffer = '…(truncated)\n' + (stdoutBuffer + chunk).slice(-(stdoutCap - 14));
-      isTruncated = true;
-      return;
+    const body = isTruncated ? stdoutBuffer.slice(TRUNCATED_PREFIX.length) : stdoutBuffer;
+    const next = body + atob(payload.data);
+    const isOverCap = next.length > STDOUT_CAP;
+    stdoutBuffer = isOverCap
+      ? TRUNCATED_PREFIX + next.slice(-(STDOUT_CAP - TRUNCATED_PREFIX.length))
+      : next;
+    isTruncated = isTruncated || isOverCap;
+    if (flushTimer === null) {
+      flushTimer = setTimeout(flush, OUTPUT_FLUSH_MS);
     }
-    stdoutBuffer += chunk;
   });
 
   unlistenExit = await listenScriptExit((payload) => {
@@ -73,11 +89,15 @@ export const registerScriptRunListeners = async ({
     }
     unlistenExit();
     unlistenOutput();
+    if (flushTimer !== null) {
+      clearTimeout(flushTimer);
+      flushTimer = null;
+    }
     const current = get().scriptRuns[sessionId]?.[scriptId];
     if (current == null || current.runId !== runId) {
       return;
     }
-    const stdout = stdoutBuffer.replace(ansiPattern, '');
+    const stdout = stdoutBuffer.replace(ANSI_PATTERN, '');
     const completed: ScriptRunResult = { stdout, stderr: '', exitCode: payload.exitCode };
     writeRun({
       record: {
@@ -95,6 +115,9 @@ export const registerScriptRunListeners = async ({
   return {
     result,
     dispose: () => {
+      if (flushTimer !== null) {
+        clearTimeout(flushTimer);
+      }
       unlistenExit();
       unlistenOutput();
     },

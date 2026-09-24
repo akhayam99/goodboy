@@ -7,6 +7,7 @@ import type {
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
+import type { ArtifactAttachment } from '../../../features/artifacts/artifactAttachments';
 import { GENERATED_ARTIFACT_KINDS } from '../../../features/artifacts/artifactCollection';
 import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import { asReportType } from '../../../features/reports/reportTypes';
@@ -73,13 +74,34 @@ const readMountIds = (value: unknown): ReadonlyArray<MountId> => {
   return value.filter((entry): entry is MountId => typeof entry === 'string' && entry.length > 0);
 };
 
+const ATTACHMENT_FIELDS = ['id', 'fileName', 'mimeType', 'relPath'] as const;
+
+const isAttachmentRef = (value: unknown): value is ArtifactAttachment =>
+  isRecord(value) &&
+  ATTACHMENT_FIELDS.every((field) => {
+    const entry = value[field];
+    return typeof entry === 'string' && entry.length > 0;
+  });
+
+const readAttachments = (value: unknown): ReadonlyArray<ArtifactAttachment> => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter(isAttachmentRef).map(({ id, fileName, mimeType, relPath }) => ({
+    id,
+    fileName,
+    mimeType,
+    relPath,
+  }));
+};
+
 const readDraft = (value: unknown): ArtifactCreationDraft | null => {
   if (!isRecord(value)) {
     return null;
   }
   const base = {
     brief: typeof value['brief'] === 'string' ? value['brief'] : '',
-    attachments: [],
+    attachments: readAttachments(value['attachments']),
     mountIds: readMountIds(value['mountIds']),
     basedOn: readBasedOn(value['basedOn']),
     routing: readRouting(value['routing']),
@@ -122,7 +144,7 @@ export const writeToStorage = ({ sessionId, drafts }: WriteParams): void => {
     const kept = GENERATED_ARTIFACT_KINDS.reduce<Record<string, ArtifactCreationDraft>>(
       (acc, kind) => {
         const draft = drafts[kind];
-        return draft === undefined ? acc : { ...acc, [kind]: { ...draft, attachments: [] } };
+        return draft === undefined ? acc : { ...acc, [kind]: draft };
       },
       {},
     );

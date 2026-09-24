@@ -175,7 +175,7 @@ The schema is in `packages/db/src/migrations/`. A few things it does not tell yo
 
 - A run is keyed by `workflow_run_id`, not by workflow. That is how one workflow can be added to a session many times
 - Every per-run flag lives on `session_workflows`. The agents of a run carry the same id
-- A run's plan and open questions belong to the run, not the session. Two runs on one session never read each other's state
+- A run's plan and open questions belong to the run, not the session. Two runs on one session never read each other's state. A question blocks a run when it carries that run's id, or, for old rows with no run id, that run's workflow id (`workflowRunHasOpenQuestions`). A question with neither blocks only the agent that asked it, never a run
 - `is_preset = 0` marks a one-off run. It does not show up in the preset picker
 - A `step_library` row with a `NULL` `workspace_id` is a built-in step for every workspace
 
@@ -227,6 +227,13 @@ autorun stops on both. `maybeAutoAdvanceWorkflow` skips a run with open
 questions. It only starts the next agent when every agent is `completed` or
 `skipped`, and a `failed` agent is never either.
 
+One check decides when a run is finished: `isWorkflowRunComplete`. The chain
+trigger, attach and the builder all use it. A run is not finished while any
+agent with a parent is still neither `completed` nor `skipped`. This is checked
+first, so a dynamic run marked `done` still waits for a running child. After
+that, a dynamic run finishes on its `done` outcome. A static run needs its
+template, at least one step, and every step agent settled.
+
 A hands-free run (`auto_run`, set on the run or taken from the session) waits
 for a busy summarizer. It checks every 100ms for up to 60 seconds, then moves
 on whether the summarizer finished or not. It still stops on any budget alert
@@ -245,6 +252,48 @@ the run is on autorun. Outside the lens the resolver cannot see the budget
 stop or a run waiting on another run. It would call a run automatic even
 though that run will never take another step, and the manual button would
 disappear.
+
+### Orchestrated runs
+
+A run whose `execution_mode` is `dynamic` has no list of steps to walk.
+Between steps, `orchestrateNextStep` asks the orchestrator model for one
+decision: the next step (name, role, prompt, expected output and a proposed
+model), `done`, or `blocked`. A `next` decision adds the step and starts its
+agent. `done` and `blocked` are saved as the run's outcome with the reason,
+and `blocked` sends a notification. Every decision lands in the transcript as
+an `orchestrator_decision` event, and its spend is recorded against the run.
+
+- **One decision at a time.** A request that comes in while the run is
+  deciding waits in a queue and runs once the current decision settles.
+- **Stops are saved, with a kind.** Before the call, the orchestrator checks
+  for a budget-blocked session, the run's spend limit in pause mode, and open
+  questions that block the run. Each one saves a `budget` or `questions` stop.
+  A failed or unreadable call saves `failure`. **Stop now** saves `operator`,
+  turns autorun off and skips the running steps, keeping what they wrote.
+  Nothing decides again until you continue. Continuing or retrying clears the
+  outcome and the stop, and a retry after an operator stop turns autorun back
+  on.
+- **Its model.** The orchestrator runs on the run's own routing when one is
+  set and the catalog still has it. Otherwise it runs on the workflow
+  orchestrator task model. A saved model the catalog dropped is ignored, never
+  started. Steps take their role models from the resolved settings. A run has
+  no per-role model overrides of its own.
+- **Hints.** Hints are saved in the run's hint log (`orchestrator_hint_log` on
+  `session_workflows`) and survive a restart. **Read now** on a live
+  orchestrated run marks a decision in flight for restart: its answer is
+  thrown away when it returns (its spend still counts) and a fresh decision
+  reads the hint. Running steps are cancelled and marked skipped before a new
+  decision is asked for. When a decision lands, the hints it read are marked
+  used, with the step they informed. A hint added while it was deciding stays
+  pending for the next one.
+
+The restart marks, the set of runs that are deciding and the queued requests
+live in memory, keyed by run and removed with it. Everything a restart needs
+(outcome, stop, summary, hints) is on the run's row.
+
+Expected output belongs to a workflow's own steps. Step library entries do not
+carry it. Rows written before the field existed have none, except the seeded
+example steps that the backfill filled in.
 
 ### The post-step summarizer
 

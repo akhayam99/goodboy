@@ -2,6 +2,7 @@ import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GhTokenStatus, WorkspaceId } from '@goodboy/types';
 import { ghStatus } from '../../github/github';
+import { useAppStore } from '../../../store';
 import { useGithubConnection } from './useGithubConnection';
 
 vi.mock('../../github/github', () => ({
@@ -13,6 +14,7 @@ const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 
 beforeEach(() => {
   fetchStatus.mockReset();
+  useAppStore.setState({ githubWorkspaceStatus: {} });
 });
 
 afterEach(cleanup);

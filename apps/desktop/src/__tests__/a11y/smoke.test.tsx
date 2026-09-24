@@ -8,65 +8,85 @@ vi.mock('@tauri-apps/plugin-sql', () => ({
   default: { load: vi.fn().mockResolvedValue({}) },
 }));
 
-vi.mock('../../store', () => ({
-  useAppStore: vi.fn((selector: (s: unknown) => unknown) => {
-    const state = {
-      budgetAlerts: [],
-      notifications: [],
-      providers: [],
-      skills: {},
-      settings: {},
-      phaseTemplates: {},
-      sessionBudgets: {},
-      sessionWorktrees: {},
-      sessionTelemetry: {},
-      sessionSummary: null,
-      sessions: [],
-      detectedEditors: [],
-      sessionPhaseRuns: {},
-      sessionPlans: {},
-      workspaceSummary: null,
-      providerSpendBreakdown: [],
-      loadBudgetAlerts: vi.fn(),
-      dismissBudgetAlert: vi.fn(),
-      loadNotifications: vi.fn(),
-      markNotificationsRead: vi.fn(),
-      clearNotifications: vi.fn(),
-      refreshProviders: vi.fn(),
-      loadSkills: vi.fn(),
-      saveSkill: vi.fn(),
-      deleteSkill: vi.fn(),
-      rescanSkills: vi.fn(),
-      createSession: vi.fn(),
-      loadSetting: vi.fn().mockResolvedValue(null),
-      saveSetting: vi.fn(),
-      setSessionBudget: vi.fn(),
-      loadSessionBudget: vi.fn(),
-      setCurrentWorkspace: vi.fn(),
-      setCurrentSession: vi.fn(),
-      addWorkspace: vi.fn(),
-      deleteTask: vi.fn(),
-      archiveTask: vi.fn(),
-      sendTurn: vi.fn(),
-      cancelCurrentTurn: vi.fn(),
-      hydrate: vi.fn(),
-      hydrated: true,
-      bootPhase: 'ready' as const,
-      error: null,
-      budgetRules: [],
-      loadBudgetRules: vi.fn(),
-      saveBudgetRule: vi.fn(),
-      deleteBudgetRule: vi.fn(),
-    };
-    return selector(state);
-  }),
-  useCurrentSession: vi.fn().mockReturnValue(null),
-  useCurrentWorkspace: vi.fn().mockReturnValue(null),
-  useWorkspaces: vi.fn().mockReturnValue([]),
-  useSessions: vi.fn().mockReturnValue([]),
-  useSessionSlots: vi.fn().mockReturnValue([]),
-  EMPTY_ARRAY: [] as never[],
-}));
+const storeSeed = vi.hoisted(() => ({ current: {} as Record<string, unknown> }));
+
+vi.mock('../../store', () => {
+  const buildState = () => ({
+    notifications: [],
+    skills: {},
+    budgetAlerts: [],
+    providers: [],
+    settings: {},
+    phaseTemplates: {},
+    sessionBudgets: {},
+    sessionWorktrees: {},
+    sessionTelemetry: {},
+    sessionSummary: null,
+    sessions: [],
+    detectedEditors: [],
+    sessionPhaseRuns: {},
+    sessionPlans: {},
+    workspaceSummary: null,
+    providerSpendBreakdown: [],
+    updaterStatus: 'idle',
+    updateVersion: null,
+    updateFailure: null,
+    updateProgress: null,
+    updateCheckedAt: null,
+    checkForUpdates: vi.fn(),
+    loadBudgetAlerts: vi.fn(),
+    dismissBudgetAlert: vi.fn(),
+    loadNotifications: vi.fn(),
+    markNotificationsRead: vi.fn(),
+    clearNotifications: vi.fn(),
+    refreshProviders: vi.fn(),
+    loadSkills: vi.fn(),
+    saveSkill: vi.fn(),
+    deleteSkill: vi.fn(),
+    rescanSkills: vi.fn(),
+    createSession: vi.fn(),
+    loadSetting: vi.fn().mockResolvedValue(null),
+    saveSetting: vi.fn(),
+    setSessionBudget: vi.fn(),
+    loadSessionBudget: vi.fn(),
+    setCurrentWorkspace: vi.fn(),
+    setCurrentSession: vi.fn(),
+    addWorkspace: vi.fn(),
+    deleteTask: vi.fn(),
+    archiveTask: vi.fn(),
+    sendTurn: vi.fn(),
+    cancelCurrentTurn: vi.fn(),
+    hydrate: vi.fn(),
+    hydrated: true,
+    bootPhase: 'ready' as const,
+    error: null,
+    budgetRules: [],
+    loadBudgetRules: vi.fn(),
+    saveBudgetRule: vi.fn(),
+    deleteBudgetRule: vi.fn(),
+    githubStatus: null,
+    refreshGithubStatus: vi.fn(),
+    setGithubToken: vi.fn(),
+    refreshGithubConnection: vi.fn(),
+    githubWorkspaceStatus: {},
+    clearGithubToken: vi.fn(),
+    reconcileOrphanWorktrees: vi.fn(async () => undefined),
+    loadDetectedEditors: vi.fn(async () => undefined),
+    ...storeSeed.current,
+  });
+  return {
+    useAppStore: Object.assign(
+      vi.fn((selector: (s: unknown) => unknown) => selector(buildState())),
+      { getState: buildState },
+    ),
+    useCurrentSession: vi.fn().mockReturnValue(null),
+    useCurrentWorkspace: vi.fn().mockReturnValue(null),
+    useWorkspaces: vi.fn().mockReturnValue([]),
+    useSessions: vi.fn().mockReturnValue([]),
+    useSessionSlots: vi.fn().mockReturnValue([]),
+    EMPTY_ARRAY: [] as never[],
+  };
+});
 
 vi.mock('../../features/permissions/permissions', () => ({
   useEffectivePermissionRules: vi.fn().mockReturnValue([]),
@@ -80,65 +100,127 @@ vi.mock('../../shared/lib/editor', () => ({
   openUrl: vi.fn(),
 }));
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import type { WorkspaceId } from '@goodboy/types';
-import { runA11yCheck } from './utils';
+import type { Notification } from '@goodboy/db';
+import type { IsoDateTime, Skill, SkillId, WorkspaceId } from '@goodboy/types';
+import { expectBaseline } from './baseline';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
 import { AppScopePanel } from '../../features/settings/components/SettingsStudio/AppScopePanel';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
-import { QuickActionsPopover } from '../../features/quick-actions';
+import { QuickActionsPopover, type QuickActionItem } from '../../features/quick-actions';
 import { ToastProvider } from '../../app/components/Toast';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  storeSeed.current = {};
+});
 
 const WS_ID = 'ws-test' as WorkspaceId;
+const AT = '2026-09-01T09:00:00.000Z' as IsoDateTime;
+
+const NOTIFICATIONS: ReadonlyArray<Notification> = [
+  {
+    id: 'notification-1',
+    ts: AT,
+    kind: 'session-created',
+    title: 'Session created in Harborline',
+    body: 'ledger-core is mounted and ready.',
+    severity: 'info',
+    sessionId: null,
+    workspaceId: WS_ID,
+    read: false,
+    action: null,
+    coalesceKey: null,
+  },
+  {
+    id: 'notification-2',
+    ts: AT,
+    kind: 'pr-created',
+    title: 'Pull request opened on payments-api',
+    body: null,
+    severity: 'success',
+    sessionId: null,
+    workspaceId: WS_ID,
+    read: true,
+    action: null,
+    coalesceKey: null,
+  },
+];
+
+const buildSkill = ({ id, name }: { id: string; name: string }): Skill => ({
+  id: id as SkillId,
+  workspaceId: WS_ID,
+  name,
+  description: `${name} for the Northwind services`,
+  filePath: `.claude/skills/${name}/SKILL.md`,
+  body: 'Steps.',
+  frontmatter: { name, description: `${name} for the Northwind services` },
+  createdAt: AT,
+  updatedAt: AT,
+});
+
+const SKILLS: ReadonlyArray<Skill> = [
+  buildSkill({ id: 'skill-1', name: 'release-notes' }),
+  buildSkill({ id: 'skill-2', name: 'migration-review' }),
+];
+
+const QUICK_ACTIONS: ReadonlyArray<QuickActionItem> = [
+  { id: 'qa-1', label: 'test', sublabel: 'pnpm test', group: 'script', perform: vi.fn() },
+  { id: 'qa-2', label: 'lint', sublabel: 'pnpm lint', group: 'script', perform: vi.fn() },
+  { id: 'qa-3', label: 'build', sublabel: 'pnpm build', group: 'script', perform: vi.fn() },
+];
+
+const renderInToasts = (node: React.ReactNode) => render(<ToastProvider>{node}</ToastProvider>);
 
 describe('a11y smoke, NotificationCenter', () => {
-  it('no violations (empty state)', async () => {
+  it('empty state', async () => {
     const { container } = render(<NotificationCenter />);
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
+    await expectBaseline({ name: 'NotificationCenter empty', container });
+  });
+
+  it('two notifications, one unread', async () => {
+    storeSeed.current = { notifications: NOTIFICATIONS };
+    const { container } = render(<NotificationCenter />);
+    await expectBaseline({ name: 'NotificationCenter populated', container });
   });
 });
 
 describe('a11y smoke, Toast / ToastProvider', () => {
-  it('no violations (empty toast stack)', async () => {
-    const { container } = render(
-      <ToastProvider>
-        <div />
-      </ToastProvider>,
-    );
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
+  it('empty toast stack', async () => {
+    const { container } = renderInToasts(<div />);
+    await expectBaseline({ name: 'ToastProvider empty', container });
   });
 });
 
 describe('a11y smoke, BootSplash', () => {
-  it('no violations (loading phase)', async () => {
+  it('loading phase', async () => {
     const { container } = render(<BootSplash phase="loading-settings" error={null} />);
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
+    await expectBaseline({ name: 'BootSplash loading', container });
   });
 
-  it('no violations (boot error)', async () => {
+  it('boot error', async () => {
     const { container } = render(<BootSplash phase="error" error="failed to connect" />);
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
+    await expectBaseline({ name: 'BootSplash error', container });
   });
 });
 
 describe('a11y smoke, SkillsPanel', () => {
-  it('no violations (no skills)', async () => {
-    const { container } = render(<SkillsPanel workspaceId={WS_ID} />);
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
+  it('no skills', async () => {
+    const { container } = renderInToasts(<SkillsPanel workspaceId={WS_ID} />);
+    await expectBaseline({ name: 'SkillsPanel empty', container });
+  });
+
+  it('two skills', async () => {
+    storeSeed.current = { skills: { [WS_ID]: SKILLS } };
+    const { container } = renderInToasts(<SkillsPanel workspaceId={WS_ID} />);
+    await expectBaseline({ name: 'SkillsPanel populated', container });
   });
 });
 
 describe('a11y smoke, QuickActionsPopover', () => {
-  it('no violations (empty items)', async () => {
+  it('empty items', async () => {
     const { container } = render(
       <QuickActionsPopover
         items={[]}
@@ -147,18 +229,27 @@ describe('a11y smoke, QuickActionsPopover', () => {
         onDismiss={vi.fn()}
       />,
     );
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
+    await expectBaseline({ name: 'QuickActionsPopover empty', container });
+  });
+
+  it('three items', async () => {
+    const { container } = render(
+      <QuickActionsPopover
+        items={QUICK_ACTIONS}
+        emptyHint="no scripts"
+        onSelect={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
+    );
+    await expectBaseline({ name: 'QuickActionsPopover populated', container });
   });
 });
 
 describe('a11y smoke, SettingsStudio app scope', () => {
-  const KNOWN_VIOLATIONS = ['label'];
-
-  it('no new violations beyond whitelisted (panel open)', async () => {
-    const { container } = render(<AppScopePanel requestClose={vi.fn()} />);
-    const { violations } = await runA11yCheck(container);
-    const unexpected = violations.filter((v) => !KNOWN_VIOLATIONS.includes(v.id));
-    expect(unexpected).toHaveLength(0);
+  it('panel open', async () => {
+    const { container } = renderInToasts(
+      <AppScopePanel section="general" requestClose={vi.fn()} />,
+    );
+    await expectBaseline({ name: 'AppScopePanel open', container });
   });
 });

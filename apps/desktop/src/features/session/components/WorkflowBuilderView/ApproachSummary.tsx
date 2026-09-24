@@ -9,7 +9,7 @@ type Props = {
 export const ApproachSummary = ({ mode }: Props) => {
   if (mode === 'preset') {
     return (
-      <div className="flex items-start gap-2 rounded-lg border border-border-soft bg-subtle/40 p-3">
+      <div className="flex items-start gap-2 rounded-lg border border-border-soft bg-subtle p-3">
         <ListChecks size={ICON_SIZE.row} className="shrink-0 text-muted-foreground" aria-hidden />
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-foreground">Start from a preset</span>
@@ -22,7 +22,7 @@ export const ApproachSummary = ({ mode }: Props) => {
   }
   if (mode === 'custom') {
     return (
-      <div className="flex items-start gap-2 rounded-lg border border-border-soft bg-subtle/40 p-3">
+      <div className="flex items-start gap-2 rounded-lg border border-border-soft bg-subtle p-3">
         <PenLine size={ICON_SIZE.row} className="shrink-0 text-muted-foreground" aria-hidden />
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-foreground">Design fixed steps</span>
@@ -35,10 +35,10 @@ export const ApproachSummary = ({ mode }: Props) => {
     );
   }
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-border-soft bg-subtle/40 p-3">
+    <div className="flex items-start gap-2 rounded-lg border border-border-soft bg-subtle p-3">
       <CONCEPT_ICONS.orchestrator
         size={ICON_SIZE.row}
-        className="shrink-0 text-accent"
+        className="shrink-0 text-primary"
         aria-hidden
       />
       <div className="flex flex-col gap-1">

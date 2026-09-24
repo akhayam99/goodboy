@@ -8,12 +8,10 @@ const { state, repoMocks, dialogMock } = vi.hoisted(() => ({
     addWorkspace: vi.fn(async () => ({
       id: 'ws-direct',
       name: 'alpha',
-      sessionsRoot: '/repos/alpha',
     })),
     createWorkspace: vi.fn(async ({ name }: { name: string }) => ({
       id: 'ws-created',
       name,
-      sessionsRoot: null,
     })),
     addProject: vi.fn(async (): Promise<Record<string, unknown>> => ({
       kind: 'linked',
@@ -91,9 +89,7 @@ afterEach(cleanup);
 type FormProps = Parameters<typeof WorkspaceLinkForm>[0];
 
 const renderForm = (props: Partial<FormProps> = {}) =>
-  render(
-    <WorkspaceLinkForm onComplete={vi.fn()} onCancel={vi.fn()} showBreadcrumb={false} {...props} />,
-  );
+  render(<WorkspaceLinkForm onComplete={vi.fn()} {...props} />);
 
 describe('WorkspaceLinkForm', () => {
   it('renders the two setup choices without dialog chrome', () => {
@@ -105,11 +101,24 @@ describe('WorkspaceLinkForm', () => {
     expect(screen.queryByText(/mount names/i)).toBeNull();
   });
 
-  it('renders a Cancel button that calls the form cancellation handler', () => {
-    const onCancel = vi.fn();
-    renderForm({ onCancel });
-    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
-    expect(onCancel).toHaveBeenCalledOnce();
+  it('leaves the exit to the studio header: no breadcrumb and no Cancel', () => {
+    renderForm();
+    expect(screen.queryByRole('button', { name: /cancel/i })).toBeNull();
+    expect(screen.queryByRole('navigation', { name: /breadcrumb/i })).toBeNull();
+  });
+
+  it('draws no action row before a setup shape is picked', () => {
+    const { container } = renderForm();
+    expect(container.querySelector('footer')).toBeNull();
+  });
+
+  it('keeps its actions inline at the end of the form', () => {
+    renderForm();
+    fireEvent.click(screen.getByRole('radio', { name: /a workspace with several projects/i }));
+
+    const submit = screen.getByRole('button', { name: 'Create workspace' });
+    expect(submit.closest('form')).not.toBeNull();
+    expect(submit.closest('footer')?.parentElement?.tagName).toBe('FORM');
   });
 
   it('links a picked git repository directly as a project-shaped workspace', async () => {
@@ -168,7 +177,7 @@ describe('WorkspaceLinkForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
 
     await waitFor(() => screen.getByRole('alert'));
-    expect(screen.getByRole('alert').textContent).toContain('no git repository at /empty');
+    expect(screen.getByRole('alert').textContent).toContain('No git repository at /empty');
     expect(state.addWorkspace).not.toHaveBeenCalled();
   });
 
@@ -244,7 +253,9 @@ describe('WorkspaceLinkForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create workspace' }));
     await waitFor(() => expect(state.createWorkspace).toHaveBeenCalled());
 
-    fireEvent.change(screen.getByLabelText('Project path'), { target: { value: '/repos/api' } });
+    fireEvent.change(await screen.findByLabelText('Project path'), {
+      target: { value: '/repos/api' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /add/i }));
 
     await waitFor(() => screen.getByText('already in Legacy with 5 sessions'));
@@ -274,7 +285,9 @@ describe('WorkspaceLinkForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create workspace' }));
     await waitFor(() => expect(state.createWorkspace).toHaveBeenCalled());
 
-    fireEvent.change(screen.getByLabelText('Project path'), { target: { value: '/repos/api' } });
+    fireEvent.change(await screen.findByLabelText('Project path'), {
+      target: { value: '/repos/api' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /add/i }));
     await waitFor(() => screen.getByText('already in Legacy with 5 sessions'));
 

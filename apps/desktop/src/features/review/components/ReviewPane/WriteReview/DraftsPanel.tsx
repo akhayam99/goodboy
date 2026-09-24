@@ -31,7 +31,7 @@ export const DraftsPanel = ({ drafts, onEdit, onDiscard }: Props) => {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center gap-1.5 px-3 pb-1 pt-3">
         <Eyebrow label="Draft comments" />
-        <span className="text-2xs tabular-nums text-muted-foreground/50">{drafts.length}</span>
+        <span className="text-2xs tabular-nums text-faint-foreground">{drafts.length}</span>
       </div>
       {drafts.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
@@ -48,7 +48,7 @@ export const DraftsPanel = ({ drafts, onEdit, onDiscard }: Props) => {
           <div className="flex flex-col gap-3 px-3 pb-3 pt-1">
             {groups.map((group) => (
               <div key={group.path} className="flex flex-col gap-1.5">
-                <span className="truncate px-0.5 font-mono text-3xs text-muted-foreground/70">
+                <span className="truncate px-0.5 font-mono text-3xs text-faint-foreground">
                   {group.path}
                 </span>
                 {group.items.map((draft) => (

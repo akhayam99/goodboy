@@ -47,7 +47,7 @@ export const OverviewSection = ({ onJump }: Props) => (
           icon={<GitBranch size={ICON_SIZE.control} aria-hidden />}
           tone="success"
           label="Session"
-          body="One goal, on its own git worktree and branch. Open it to land in chat, then navigate to diff, terminal, IDE, or a studio."
+          body="One goal, on its own git worktree and branch. It opens on its overview, then the lens switcher reaches diff, terminal, IDE, or a studio."
           onClick={() => onJump('session')}
         />
         <ConceptCard

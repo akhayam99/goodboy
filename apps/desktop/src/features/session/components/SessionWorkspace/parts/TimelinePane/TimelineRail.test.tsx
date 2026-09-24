@@ -53,7 +53,7 @@ describe('TimelineRail', () => {
     );
     const line = container.querySelector('line');
 
-    expect(line?.getAttribute('stroke')).toBe('var(--color-run-1)');
+    expect(line?.getAttribute('stroke')).toBe('var(--color-identity-1)');
     expect(line?.getAttribute('class') ?? '').not.toContain('opacity');
   });
 
@@ -101,9 +101,9 @@ describe('TimelineRail', () => {
     const line = container.querySelector('line');
     const join = container.querySelector('path');
 
-    expect(line?.getAttribute('stroke')).toBe('var(--color-run-1)');
+    expect(line?.getAttribute('stroke')).toBe('var(--color-identity-1)');
     expect(line?.getAttribute('class')).toContain(TERMINAL_DIM);
-    expect(join?.getAttribute('stroke')).toBe('var(--color-run-1)');
+    expect(join?.getAttribute('stroke')).toBe('var(--color-identity-1)');
     expect(join?.getAttribute('class')).toContain(TERMINAL_DIM);
   });
 });

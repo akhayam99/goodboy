@@ -10,7 +10,7 @@ export const ComposerActionRow = ({ saveLabel, disabled, onCancel, onSave }: Pro
     <button
       type="button"
       onClick={onCancel}
-      className="rounded-sm px-2 py-0.5 text-3xs text-muted-foreground hover:bg-muted hover:text-foreground"
+      className="rounded-sm px-2 py-0.5 text-3xs text-muted-foreground hover:bg-hover hover:text-foreground"
     >
       Cancel
     </button>

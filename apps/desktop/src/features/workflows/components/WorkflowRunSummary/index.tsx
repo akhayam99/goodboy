@@ -1,5 +1,5 @@
 import { Check, Circle } from 'lucide-react';
-import { Markdown, SectionHeader } from '@goodboy/ui';
+import { Markdown, SectionHeader, Eyebrow } from '@goodboy/ui';
 import { parseRunSummaryText } from '@goodboy/core';
 
 type Props = {
@@ -14,12 +14,12 @@ type GroupProps = {
 
 const RecapGroup = ({ label, entries, tone }: GroupProps) => (
   <div className="flex min-w-0 flex-col gap-1">
-    <p className="text-3xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+    <Eyebrow label={label} />
     <ul className="flex min-w-0 flex-col gap-1">
       {entries.map((entry) => (
         <li key={entry} className="flex min-w-0 items-start gap-1.5 text-2xs leading-relaxed">
           {tone === 'done' ? (
-            <Check className="mt-0.5 size-3 shrink-0 text-emerald-400" aria-hidden />
+            <Check className="mt-0.5 size-3 shrink-0 text-success" aria-hidden />
           ) : (
             <Circle
               className="mt-1 size-1.5 shrink-0 fill-current text-muted-foreground"

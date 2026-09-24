@@ -36,7 +36,7 @@ describe('MountSuggestionCard', () => {
 
     expect(
       screen.getByText(
-        'Mount storefront-web so Scout can use it in this session; this expands the session beyond its two-project allowance for unauthorized projects.',
+        'Mount storefront-web so Scout can use it in this session. It adds a third project to this session.',
       ),
     ).toBeTruthy();
     expect(screen.getByTestId('mount-suggestion-mount').textContent).toBe('Mount project');
@@ -48,7 +48,7 @@ describe('MountSuggestionCard', () => {
 
     expect(
       screen.getByText(
-        'Mount storefront-web so Scout can use it in this session; this request has already mounted two projects.',
+        'Mount storefront-web so Scout can use it in this session. This request has already mounted two projects.',
       ),
     ).toBeTruthy();
   });

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Chip, cn, Textarea, Tooltip } from '@goodboy/ui';
+import { Chip, cn, Textarea, Tooltip, tintClasses } from '@goodboy/ui';
 import type { PrReviewDraft } from '@goodboy/types';
 import { ComposerActionRow } from './ComposerActionRow';
 
@@ -31,8 +31,10 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
   return (
     <div
       className={cn(
-        'flex flex-col gap-1.5 rounded-md border-l-2 bg-muted/20 px-3 py-2',
-        draft.stale ? 'border-warning/70 opacity-70' : 'border-draft/50',
+        'flex flex-col gap-1.5 rounded-md border-l-2 bg-subtle px-3 py-2',
+        draft.stale
+          ? cn(tintClasses('warning').border, 'opacity-70')
+          : cn(tintClasses('draft').border),
       )}
     >
       <div className="flex items-center gap-1.5">
@@ -62,7 +64,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
             type="button"
             onClick={onDiscard}
             aria-label={`Discard draft on ${draft.path}:${draft.line}`}
-            className="flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-danger"
+            className="flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-hover hover:text-danger"
           >
             <Trash2 size={11} aria-hidden />
           </button>
@@ -101,7 +103,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
           type="button"
           onClick={startEditing}
           title="Edit draft"
-          className="whitespace-pre-wrap rounded-sm text-left text-xs leading-relaxed text-foreground/85 transition-colors hover:bg-muted/40"
+          className="whitespace-pre-wrap rounded-sm text-left text-xs leading-relaxed text-foreground transition-colors hover:bg-hover"
         >
           {draft.body}
         </button>

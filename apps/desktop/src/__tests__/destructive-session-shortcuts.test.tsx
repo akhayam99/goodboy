@@ -8,6 +8,8 @@ const { state } = vi.hoisted(() => {
   const session = { id: 'session-1', workspaceId: 'workspace-1' };
   return {
     state: {
+      githubWorkspaceStatus: { 'workspace-1': null },
+      refreshGithubConnection: vi.fn(async () => undefined),
       hydrate: vi.fn(async () => undefined),
       checkForUpdates: vi.fn(async () => undefined),
       hydrated: true,
@@ -109,7 +111,9 @@ vi.mock('../features/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));
 vi.mock('../features/onboarding/OnboardingCard', () => ({ OnboardingCard: () => null }));
 vi.mock('../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
-vi.mock('../features/companion/CompanionStudio', () => ({ CompanionStudio: () => null }));
+vi.mock('../features/companion/components/CompanionStudio', () => ({
+  CompanionStudio: () => null,
+}));
 vi.mock('../features/companion/commandExecutor', () => ({
   listenBridgeCommands: vi.fn(async () => () => undefined),
 }));
@@ -129,7 +133,7 @@ vi.mock('../shared/hooks/useCommitLinkInterceptor', () => ({
 vi.mock('../store', () => {
   const useAppStore = Object.assign(
     vi.fn((selector: (store: typeof state) => unknown) => selector(state)),
-    { getState: () => state },
+    { getState: () => state, subscribe: () => () => undefined },
   );
   return {
     EMPTY_ARRAY: [],

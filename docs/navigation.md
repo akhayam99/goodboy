@@ -11,17 +11,31 @@
   (needs you / running / in review / building / done). You reach chat, diff,
   terminal and open-in-IDE from the cards. You never land on them. Every
   capability stays one step away.
+- **The board frame.** The header has the pane title grade (`Board` plus a
+  session count), with its actions on the right, on the same left edge as the
+  columns. Active stage columns share the width equally, down to a minimum.
+  Empty ones show a dashed "Nothing here". Done and Archived fold into narrow
+  vertical rails that stay on screen at the minimum window width. A card's goal
+  is its one button (up to three lines, with the full goal in the tooltip). Its
+  quick and lifecycle actions sit next to it, never nested inside it. Restoring
+  an archived card uses the `restore` glyph.
+- **An archived session is read-only until Restore.** Its overview shows an
+  Archived chip with an inline Restore. The composer, new agents, workflows and
+  project mounts stay disabled with "Restore this session to continue". Nothing
+  restores on its own, so a shelved session never spends by itself.
 - **Four surfaces, four jobs, no competition.** The top bar is chrome ("where am I
   and what is it costing"). The footer is access ("where do I go"). The sidebar is
   presence ("what else is going on"). The ⌘K palette is transit ("where do I
   want to be").
 - **The top bar carries state and identity, never destinations.** It never
   edits a record in place. Anything that opens a destination belongs in the
-  footer.
+  footer. The spend chip is the one exception: it is state that opens the
+  studio that owns that number, the impact overview.
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
-  is always pinned at the left of the top bar. The sidebar shows no workspace
-  name, on the board or inside a session.
+  is always pinned at the left of the top bar. Neither the sidebar nor a studio
+  header shows the workspace name again. A studio subtitle is a one-line
+  purpose or the installed version, never the workspace.
 - **Pin the structure, flex the density.** A control keeps a fixed position so
   people can learn it. No control appears or disappears when a count crosses a
   threshold. The counts themselves may: a chip that reads zero is noise, not
@@ -30,25 +44,34 @@
   their exact position. The update control comes and goes with a pending update,
   because an update is an event, not a count.
 - **Hidden is not gone.** Anything the user can put away must come back without
-  a hunt. A hidden sessions column peeks back from a deliberate anchor, or when
-  the pointer rests at the window edge. Peek floats the one sidebar over the
-  page instead of laying it out.
+  a hunt. A hidden sessions column peeks back when the pointer rests at the
+  window edge. Peek floats the one sidebar over the page instead of laying it
+  out.
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
-  never an inversion. The app has no inverted navigation control. One
-  exception: "Back to board" is tinted `primary`, because it is the only
-  sidebar action that leaves the session.
+  never an inversion. The app has no inverted navigation control. New session
+  is the only emphasised sidebar control. Navigation rows, Board included, are
+  neutral at rest, and the footer's beta pill takes its tint only on hover and
+  focus.
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
   Save/Cancel footer, and no settings surface stacked on another.
-- **One overlay slot.** Workspace-scoped editors share a single overlay over
-  main, so the sessions column stays visible. Only one is open at a time,
-  picked by strict precedence, never stacked. Scope decides the pattern.
-  Session-scoped editors layer over the session pane. App-level studios are
-  full-page. Anything that became a lens stays a lens.
+- **One studio slot.** Workspace and app studios share the shell's single
+  studio slot, one at a time. Opening one replaces the other, never stacks.
+  Scope decides the pattern. Session-scoped editors layer over the session
+  pane. Studios take the slot. Anything that became a lens stays a lens.
 
 A second entry point reuses the existing mount and never builds a parallel one.
 The palette dispatches an event that the owning component listens for. The
 keyboard path calls the same hook method as the button.
+
+The palette renders one ordered list: the current session's agents, sessions,
+workspaces, a **Go to** group, scripts, actions and help. Workspaces are rows
+of its own that open the chosen workspace. Go to reaches studios by name: Back
+to board inside a session, then Inbox, Workflows, Impact, Changelog,
+Notifications and Workspace settings inside a workspace, and Add workspace
+everywhere. It never lists archive or delete, which are lifecycle, not
+navigation. The first row is highlighted on open, and the highlighted row is
+the one Enter runs.
 
 ## Surfaces
 
@@ -78,10 +101,11 @@ grid, so no column resize, hide animation or overlay can move it.
   a second copy of the same list, so it is not added. The shell primitive can
   lay out more reduced states than the product uses. Which one a column gets is
   decided here, not by what the primitive offers.
-- **The overlay slots sit inside the grid, not above it.** A floating overlay
-  spans the full row, so a peek can hover over main without taking layout
-  space. A full-surface overlay spans the work area and stops before the
-  sessions column, so an editor never hides where the user is.
+- **The overlay slots sit inside the grid, not above it.** The peek spans the
+  work row, so it can hover over main without taking layout space. The studio
+  slot spans the same row, sidebar included, and sits above the peek. A studio
+  covers the columns between the bars, never the bars, and reaches the bottom
+  edge when the footer is hidden.
 
 **The pane** is the work. It is the only surface that scrolls its own body,
 mounts editors and takes a title.
@@ -104,8 +128,8 @@ sidebar. Board → session is the full depth of navigation.
 **Peek is a way of showing the sidebar, not a second sidebar.** The overlay
 renders the same sidebar component, and the codebase has one sessions list.
 Peek is wider than the pinned column. The extra width applies at read time, so
-widening the peek never moves the column. Peek opens faster from the strip
-toggle than from the screen edge, because a deliberate anchor is not a graze.
+widening the peek never moves the column. It opens after a short rest at the
+screen edge, so a graze does not open it.
 
 **The session overview is the reference page.** It shows the whole surface
 grammar on one screen, so read it before designing a new surface. Here is its
@@ -156,9 +180,10 @@ surface itself shows urgency, never a badge parked beside it.
   Deeper crumbs never carry the switcher. No second persistent strip, tab bar
   or rail carries it either.
 - **The workflow case extends the same control**:
-  `Overview > {WorkflowKind} > {Step}`. Implementer clusters add a fourth crumb
-  (the child's name, or `{done}/{total} clusters` when the root is selected).
-  There is no separate step strip and no "Part of {Workflow}" line.
+  `Overview > Workflows > {Run} > {Step}`. A delegated child names its root and
+  parent agents between the run and itself, and an open question it answers
+  adds one last crumb. There is no separate step strip and no "Part of
+  {Workflow}" line.
 
 ## Top bar
 
@@ -172,12 +197,13 @@ The wordmark drops below `brand-word` and the mascot below `brand-mark`. No
 control ever moves into an overflow menu.
 
 - Workspace identity opens an anchored popover that switches and creates
-  workspaces. ⌘O and the palette open that same popover, never a second one.
-  Workspace settings has its own control next to identity. Buried inside the
-  switcher, a common per-workspace preference was easy to never find.
+  workspaces. ⌘O opens that same popover, never a second one, and the palette
+  lists workspaces as rows of its own. Workspace settings has its own control
+  next to identity. Buried inside the switcher, a common per-workspace
+  preference was easy to never find.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
-  switcher is live, and ⌘O and the palette open its single anchored popover.
+  switcher is live, and ⌘O opens its single anchored popover.
 - Theme is the one set-once preference kept here. People flip it often enough
   to earn the slot. The guide and pair-device live in the settings studio and
   the palette.
@@ -201,37 +227,68 @@ flow.
   workspace into one backed by a git repository happens in the workspace link
   and convert flow, not in the footer.
 
-Right: the launchers reached by name, the update control while an update is
-pending, and a `More` popover for the rest.
+Centre: the beta pill and, while an update is pending, the update pip.
 
-- **The release dot answers "have you read the notes for what you're
-  running"**, not "has a new release been published". It works offline. It
-  never lights up for a version the user cannot install. A fresh install shows
-  one dot, not one per release.
+Right: the launchers reached by name and a `More` popover for the rest.
+
+- **The release notice answers "have you read the notes for what you're
+  running"**, not "has a new release been published". After an update, one
+  notice names the installed version and opens its notes. It works offline. A
+  fresh install shows none, and dismissing it marks that version as read.
 - Exactly one integration control has the active fill. It sits on the open
   glyph, or on the link action when that integration is disconnected. Opening
   any studio closes the others.
+- **Before any workspace exists, the footer keeps its app half**: Providers,
+  Settings, the beta pill and the update pip. The integration strip, Inbox,
+  Workflows and More belong to a workspace and wait for one. Settings then
+  lists only App and Providers & models, and Providers opens on an account
+  instead of on the workspace defaults. Precedent: VS Code keeps its status bar
+  and Manage gear with no folder open.
 
 ## Shortcuts
 
 There is one registry with three modifier planes: bare ⌘ for the app, ⌘⇧ for
 the session, ⌘⌥ for the lens surfaces. Nobody writes a combo string by hand
 outside the registry. So no two surfaces can claim the same chord, and no
-shortcut can exist without being documented. **A shortcut is taught where it
+shortcut can exist without being documented. That holds for per-OS combos
+too. An entry carries its own combo for other systems where the plain mapping
+would collide, like the terminal's new tab: ⌘T on macOS, Ctrl+Shift+T
+elsewhere, where Ctrl+T belongs to the shell. **A shortcut is taught where it
 is used.** A control that has one shows it: as a pill on hover in dense rows,
 and as a glyph in parentheses in tooltips. Where the row is too tight, the
-tooltip is the only place it shows.
+tooltip is the only place it shows. Off macOS, typing wins over the lens
+plane. An AltGr character, or a Ctrl+Alt combo typed into a field or the
+terminal, never fires a shortcut.
 
 ## Studios
 
-Utility studios are fullscreen overlays drawn between the top bar and the
-footer, so both bars stay visible and usable. They are not part of the
-breadcrumb IA. They exit on close or Esc, and only one is open at a time.
+Utility studios render in the shell's studio slot, between the top bar and the
+footer, so both bars stay visible and usable. The one exception is the
+workspace launcher, which has no shell. There, Add workspace takes the whole
+window, and so do the app studios: Settings (its corner gear, ⌘, or ⌘/ for
+shortcuts), the guide and Report an issue. The palette opens there too.
+Studios are not part of the breadcrumb IA. They exit on close or Esc, and only
+one is open at a time.
 
-- **Not every studio earns a footer entry.** Notifications opens only from the
-  bell popover, since the bell already shows the unread count. Report an
-  issue opens from the top bar, the App scope panel in Settings and the
-  palette. It sits next to settings, not beside the named launchers.
+- **Navigating closes the studio.** Moving to another workspace, session, or
+  lens of the current session closes whatever studio is open, whether the move
+  came from the palette, a needs-you row, a shortcut or a link inside the
+  studio, so the destination always lands in front. Selecting an agent does
+  not count: workflow steps select agents on their own.
+
+- **Not every studio earns a footer entry.** Notifications opens from the bell
+  popover (its header's Open all) and from the palette's Go to group, never
+  from the footer, since the bell already shows the unread count. The popover
+  never deletes history. That lives in the studio, behind its confirm. Report
+  an issue opens from the top bar, **Settings > App > Help** and the palette.
+  It sits next to settings, not beside the named launchers.
+- **Settings nests items in its rail.** While App is active, its items
+  (General, Shortcuts, Backup, Storage, Help, Danger zone) sit under the App
+  row as indented rows, and the panel shows one item at a time. Providers &
+  models nests Defaults and one row per provider the same way, and Tools nests
+  one row per tool. So no scope adds a second rail column. Every scope panel
+  keeps the reading width. Precedent: the VS Code settings table of contents
+  and Linear's settings sidebar.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
   beside a detail panel is fine. "no left panel and right panel at once" is
   about two sidebars on either side of the content, which the app does not do.
@@ -249,11 +306,12 @@ breadcrumb IA. They exit on close or Esc, and only one is open at a time.
 
 ## Lens surfaces
 
-- **One level at a time, never a rail plus a detail at once.** Selecting a card
-  swaps the list for the detail, and the list is the only way back. Completed
-  and discarded groups sit behind header toggles that hide themselves at zero.
-  So a session whose runs are all done shows an empty state, instead of opening
-  the last completed run.
+- **A lens shows one level. A studio is a rail plus a detail.** Inside a lens,
+  selecting a card swaps the list for the detail, and the trail or Back is the
+  way back. No lens keeps a rail beside its detail. A studio pairs a rail with
+  a detail and has no back link. Completed and discarded groups sit behind
+  header toggles that hide themselves at zero. So a session whose runs are all
+  done shows an empty state, instead of opening the last completed run.
 - **A step chat is one explicit click**, never an automatic redirect.
 - **A lens-wide toggle is its own row**, never inside an empty state's action
   slot.
@@ -261,16 +319,24 @@ breadcrumb IA. They exit on close or Esc, and only one is open at a time.
   by the pane it opens in, so it closes with that pane. There is one
   implementation of that split. Reuse it instead of growing a rail.
 - **Review is the pull request destination for GitHub, and it has no second
-  copy.** One lens holds the review conversations, the PR details, the PR
+  copy.** The lens is Review, its list of review threads is Conversations
+  (heading, back links and the overview action say so), and Resolve stays a
+  verb on the actions that settle a thread. One lens holds the review conversations, the PR details, the PR
   activity, the checks, the create-a-PR form and the reviewer's own draft
-  review. They are detail modes of that one surface, switched from its dock.
-  The conversation list never leaves the screen while a mode is open. There
+  review. They are detail modes of that one surface, switched from its dock,
+  and each mode swaps in for the conversation list like any other detail. There
   is no GitHub studio layered over a session: a saved `pr` lens on a GitHub
   session lands on Review. The code-host lens still serves GitLab and
   Bitbucket, which open their own studios. Everything the lens shows comes from
   one durable conversation model. Everything it sends goes out through one
   publisher. So a restart finds the same rows in the same states, and no second
   path pushes a reply or closes a thread.
+- **The switcher and the palette list only destinations the session can
+  use.** One function feeds both. Context is one entry (its goal, decisions and
+  summary parts open through their shortcuts). Explore is always listed and
+  browses the active working directory. Diff and the other branch lenses need a
+  branch. The code-host lens hides on GitHub. A tool lens appears once that
+  tool is connected.
 - **A lens surface is reached from the overview or from the trail's
   destination switcher, never from a rail.** Rows and chips inside the
   overview route to it, by expanding in place or opening a side panel. Counts

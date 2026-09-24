@@ -189,12 +189,15 @@ about its effect is a worse defect than one that reads badly.
 
 ## Color & theme
 
-- **Dark by default**, light fully supported. No system-preference state. The
-  user picks the theme, and the choice is saved.
+- **Dark by default**, light fully supported, and Match system as a third
+  choice that follows the OS. The choice is saved. The top bar and palette
+  toggles set the opposite of what is showing.
 - Color comes from **semantic tokens**: `success`, `warning`, `danger`, `info`,
   `merged`, the elevation ramp, per-provider accents. A raw hex or `oklch` in a
-  component is a bug. The xterm palette is the only place where raw colors are
-  allowed.
+  component is a bug. Raw colors are allowed in two places only, because they
+  paint content the app does not theme: the xterm palette (`terminal-theme.ts`)
+  and the wireframe content palette (`wireframePalette.ts`), low-fidelity
+  placeholder included. `no-token-bypass.test.ts` rejects hex anywhere else.
 - **The stage palette tracks the life of the work**, not its mood. Done uses
   the merged purple on purpose. A finished session is almost always a merged
   pull request, and one outcome must not show in two colors.
@@ -213,11 +216,26 @@ about its effect is a worse defect than one that reads badly.
   spinner placed beside it.
 - **One signal hierarchy.** Toasts and inline nudges are _previews_. The
   notification inbox is the _log_. Nothing lives only in a toast.
-- **Errors are toasts, never pinned banners.** No inline banner stays on
-  screen after its cause is gone. There is one exception, and it is also the
-  exception to the budget-alert rule: the composer's pre-send routing line. It
-  is live state on an unsent turn, not an alert, and it clears the moment
-  routing changes.
+- **A toast says what already happened.** `success` means finished. `info`
+  means started, or neutral. `warning` means done with a caveat, or input the
+  user sees refused right now (attachment limit, refused drop). Toast copy is
+  written as a sentence. Nothing capitalizes it for you.
+- **An error lands in the log first.** When something the user asked for did
+  not happen, it becomes a notification row (`reportError`) with a title that
+  names the action ("Couldn't prune archived transcripts"). The toast is only
+  its preview. `showToast` has no error kind.
+- **Form errors stay inline, action errors go to the log.** A form the user is
+  still looking at (link project, create merge request, confirm notes) keeps
+  its error next to its footer. A one-click action reports to the log. No
+  inline banner stays on screen after its cause is gone. There is one
+  exception, and it is also the exception to the budget-alert rule: the
+  composer's pre-send routing line. It is live state on an unsent turn, not an
+  alert, and it clears the moment routing changes.
+- **Unknown is never zero.** A failed load draws a dash with a muted "not
+  loaded" hint, or an error state with Retry. Never 0, and never "nothing".
+- **No echo toasts.** A control that already shows its new value (switch,
+  select, a field saved on blur) saves silently, like VS Code and Linear
+  settings.
 - **Chips carry a word.** Use icon-only chips only where there is truly no
   space, and then keep the label as a tooltip.
 - **Empty means no active item.** A lens with nothing running keeps its empty
@@ -247,13 +265,25 @@ rule with the exception in Status & signals.
 
 ### Action zones
 
-Actions sit with the object they affect, and stay visible while its content scrolls.
+Actions sit with the object they affect. The slots that carry each zone are in
+[DESIGN-SYSTEM.md](./packages/ui/DESIGN-SYSTEM.md#action-zones).
 
-- The context row is the fixed breadcrumb or object-title row. Generic object actions such as open folder, archive, restore and delete sit at its far end. Lifecycle actions such as mark done and reopen sit there too, because they change the object, not the current section. Destructive actions use the same zone and open `InlineConfirm` beside the button that triggered them.
-- The primary action for the focused object sits in the fixed detail header. It is the action that moves the object forward. A creation or edit flow is different: it commits through its single fixed footer primary action, with cancel and errors in that same footer.
-- Section actions affect only one section and use `SectionHeader`'s action slot. Row and card actions follow the card action grammar.
+- **Object actions live on the context row.** The fixed breadcrumb or
+  object-title row holds generic object actions (open folder, archive,
+  restore, delete) at its far end. Lifecycle actions (mark done, reopen) sit
+  there too, because they change the object, not the current section. A
+  destructive action confirms inline, next to its trigger.
+- **The focused object's primary action sits in the fixed header.** It is the
+  action that moves the object forward.
+- **A creation or edit flow commits in the flow.** Its one action row follows
+  the last section, at the width of the content it commits. A dock has to be
+  argued for at review. It is never the default.
+- **Section actions stay in their section.** Row and card actions follow the
+  card action grammar.
 
-An action row must not scroll away with the content. Generic object actions do not belong at the bottom of a transcript, a detail body or a long form. A footer is not a second home for object actions.
+Object actions never scroll away with the content. They do not belong at the
+bottom of a transcript, a detail body or a long form, and a footer is not a
+second home for them.
 
 - **Tabs when you return, accordion when you'd forget.** Studio detail panels
   are tabs.
@@ -261,7 +291,7 @@ An action row must not scroll away with the content. Generic object actions do n
 - **One creation grammar, one card action grammar.** There is only one of
   each. A second shape for either is a defect, not a variant. A stepper is
   only for information that truly does not fit one screen. Only the workflow
-  builder and the first-run wizard have one.
+  builder, the first-run wizard and the question answer flow have one.
 - **Empty states teach the board model.** They say what the thing is, why it
   matters, and offer one action to create it. Teach the board, not the chat.
   Never a dead end, never a "start chatting" prompt.
@@ -293,14 +323,14 @@ An action row must not scroll away with the content. Generic object actions do n
 - **One animation, one meaning.** The list of animations is closed. Adding one
   is a design-system change, not a feature decision.
 - **Loading is a skeleton. Running is a moving border. Spinners are forbidden.**
-  No `Loader2`, no hand-built dot loaders in `packages/ui`.
-  `no-loader2-in-ui-package.test.ts` enforces that boundary in CI. The skeleton
+  No `Loader2`, `LoaderCircle` or `animate-spin` anywhere in the app or in
+  `packages/ui`. `no-token-bypass.test.ts` enforces that in CI. The skeleton
   copies the real layout and is part of the component. If you change the
   layout, update the skeleton in the same change.
 
 ## Accessibility
 
-- Every icon-only button has an `aria-label`. You can reach every interactive
+- Every icon-only button has a `Tooltip` and an `aria-label`. You can reach every interactive
   element with the keyboard, and it shows a visible `focus-visible` ring.
 - Color is never the only carrier of meaning. Pair it with an icon, a word, or
   a shape.

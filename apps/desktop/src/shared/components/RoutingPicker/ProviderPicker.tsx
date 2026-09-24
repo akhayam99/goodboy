@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
-import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
-import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
+import { AnchoredPopover, cn, useDropdown, tintClasses } from '@goodboy/ui';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { PickerSection } from './PickerSection';
 import { ProviderGlyph } from './ProviderGlyph';
 import { ProviderGrid } from './ProviderGrid';
@@ -52,8 +52,8 @@ export const ProviderPicker = ({
           className={cn(
             'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
             open
-              ? 'border-primary bg-primary/5'
-              : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50',
+              ? cn('border-primary', tintClasses('primary').bgSoft)
+              : 'border-border-soft bg-subtle hover:border-border hover:bg-hover',
             disabled && 'cursor-not-allowed opacity-60',
           )}
         >

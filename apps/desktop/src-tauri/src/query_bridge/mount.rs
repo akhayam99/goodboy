@@ -7,6 +7,7 @@ use serde_json::{json, Map, Value};
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::oneshot;
 
+use super::args::{optional_text, required_text};
 use super::dispatch::Scope;
 use super::protocol::{
     BridgeError, AMBIGUOUS_MOUNT, MOUNT_UNAVAILABLE, OPERATION_PENDING, REQUEST_CONFLICT,
@@ -415,23 +416,6 @@ pub(super) async fn handoff(app: &AppHandle, payload: Value) -> Result<Value, Br
     }
 }
 
-fn text(args: &super::dispatch::Args, key: &str) -> Result<String, BridgeError> {
-    args.get(key)
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_string)
-        .ok_or_else(|| format!("--{} must not be empty", key).into())
-}
-
-fn optional_text(args: &super::dispatch::Args, key: &str) -> Option<String> {
-    args.get(key)
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_string)
-}
-
 fn flag(args: &super::dispatch::Args, key: &str) -> bool {
     args.get(key).and_then(Value::as_bool).unwrap_or(false)
 }
@@ -474,7 +458,7 @@ pub(super) async fn dispatch(
         );
     }
     if verb == "operation" {
-        let request_id = text(args, "request-id")?;
+        let request_id = required_text(args, "request-id")?;
         let Some(existing) = operation_row(app, scope.session, &request_id)? else {
             return Err(BridgeError::coded(
                 MOUNT_UNAVAILABLE,
@@ -518,7 +502,7 @@ pub(super) async fn dispatch(
         )
         .await;
     }
-    let request_id = text(args, "request-id")?;
+    let request_id = required_text(args, "request-id")?;
     if verb == "activate" {
         return handoff(
             app,
@@ -535,10 +519,10 @@ pub(super) async fn dispatch(
         )
         .await;
     }
-    let reason = text(args, "reason")?;
+    let reason = required_text(args, "reason")?;
     let verb_args = match verb {
         "fork" => {
-            let branch = text(args, "branch")?;
+            let branch = required_text(args, "branch")?;
             let existing = flag(args, "existing");
             let base = optional_text(args, "base");
             if existing && base.is_some() {
@@ -549,13 +533,13 @@ pub(super) async fn dispatch(
             json!({ "branch": branch, "existing": existing, "base": base })
         }
         "switch" => json!({
-            "branch": text(args, "branch")?,
+            "branch": required_text(args, "branch")?,
             "create": flag(args, "create"),
             "adoptObserved": flag(args, "adopt-observed"),
         }),
         "attach" => json!({}),
         "unmount" => json!({ "keep": flag(args, "keep") }),
-        "resolve" => json!({ "intent": intent_of(&text(args, "intent")?)? }),
+        "resolve" => json!({ "intent": intent_of(&required_text(args, "intent")?)? }),
         other => return Err(format!("unhandled mount command: {}", other).into()),
     };
     let kind = operation_kind(verb);
@@ -608,7 +592,7 @@ pub(super) async fn create_request(
             "that mount has no worktree on disk: attach it first",
         ));
     }
-    let request_id = text(args, "request-id")?;
+    let request_id = required_text(args, "request-id")?;
     handoff(
         app,
         json!({
@@ -620,8 +604,8 @@ pub(super) async fn create_request(
             "projectId": mount.project_id,
             "requestId": request_id,
             "args": {
-                "title": text(args, "title")?,
-                "body": text(args, "body")?,
+                "title": required_text(args, "title")?,
+                "body": required_text(args, "body")?,
                 "base": optional_text(args, "base"),
                 "ready": flag(args, "ready"),
                 "referenceMode": optional_text(args, "reference-mode"),

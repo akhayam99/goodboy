@@ -4,11 +4,14 @@ import {
   modelIdForSelection,
   resolveStoredModelSelection,
   resolveTaskModel,
+  clampEffortForModel,
 } from '@goodboy/core';
-import type { ModelEffort, ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
-import { clampEffort, modelEffortLevels } from '../../../../chat/utils/chat-constants';
+import type { EffortLevel, ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
+import { AUTO_RECOMMENDATION_COPY } from '../../../../../shared/components/RoutingPicker/autoRecommendationCopy';
 import { useAppStore } from '../../../../../store/store';
+import { selectResolvedSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
+import { isRoutingModelKnown } from '../../../../../store/slices/workflows/orchestrateNextStep';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -19,7 +22,7 @@ type Props = {
 type ApplyParams = {
   readonly providerId: ProviderId;
   readonly model: string;
-  readonly effort?: ModelEffort;
+  readonly effort?: EffortLevel;
 };
 
 type ProviderRoutingParams = {
@@ -31,7 +34,7 @@ type ProviderModelParams = {
   readonly model: string;
 };
 
-const DEFAULT_EFFORT: ModelEffort = 'medium';
+const DEFAULT_EFFORT: EffortLevel = 'medium';
 
 const providerModelId = ({ provider, model }: ProviderModelParams): string => {
   const stored = resolveStoredModelSelection({ provider, id: model });
@@ -40,21 +43,16 @@ const providerModelId = ({ provider, model }: ProviderModelParams): string => {
     : modelIdForSelection({ provider, selection: stored.selection });
 };
 
-const effortForModel = (model: string, requested: ModelEffort): ModelEffort | null =>
-  modelEffortLevels(model) == null ? null : clampEffort(model, requested);
-
 export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
   const session = useAppStore((state) =>
     state.sessions.find((current) => current.id === sessionId),
   );
   const providers = useAppStore((state) => state.providers);
-  const taskModels = useAppStore((state) =>
-    session == null ? undefined : state.workspaceOverrides?.[session.workspaceId]?.taskModels,
+  const taskModels = useAppStore(
+    (state) => selectResolvedSettings({ state, sessionId })?.taskModels ?? undefined,
   );
-  const workspaceDefaultProviderId = useAppStore((state) =>
-    session == null
-      ? undefined
-      : state.workspaceOverrides?.[session.workspaceId]?.defaultProviderId,
+  const workspaceDefaultProviderId = useAppStore(
+    (state) => selectResolvedSettings({ state, sessionId })?.defaultProviderOverride ?? undefined,
   );
   const setWorkflowOrchestratorRouting = useAppStore(
     (state) => state.setWorkflowOrchestratorRouting,
@@ -68,7 +66,10 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
     workspaceDefaultProviderId,
     sessionDefaultProviderId: defaultProvider,
   });
-  const pinned = run.orchestratorRouting ?? null;
+  const pinned =
+    run.orchestratorRouting != null && isRoutingModelKnown(run.orchestratorRouting)
+      ? run.orchestratorRouting
+      : null;
   const preferredProviderId = pinned?.providerId ?? automatic.providerId;
   const [providerId, setProviderId] = useState<ProviderId>(preferredProviderId);
   const pendingProvider = useRef<ProviderId>(preferredProviderId);
@@ -127,10 +128,10 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
         model={model}
         effort={{
           editable: true,
-          value: effortForModel(effortModel, effortValue) ?? effortValue,
+          value: clampEffortForModel({ model: effortModel, effort: effortValue }) ?? effortValue,
           onChange: (effort) => {
             const nextModel = pendingModel.current;
-            const applied = effortForModel(nextModel, effort);
+            const applied = clampEffortForModel({ model: nextModel, effort });
             apply({
               providerId: pendingProvider.current,
               model: nextModel,
@@ -138,7 +139,11 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
             });
           },
         }}
-        recommendation={{ model: recommendedModel }}
+        recommendation={{
+          provider: automatic.providerId,
+          model: automatic.model,
+          ...AUTO_RECOMMENDATION_COPY,
+        }}
         disabled={disabled}
         overridden={pinned != null}
         defaultSummary={`${automatic.providerId} ${automatic.model}`}
@@ -159,7 +164,10 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
             void setWorkflowOrchestratorRouting(sessionId, run.id, null);
             return;
           }
-          const carried = pinned?.effort == null ? null : effortForModel(nextModel, pinned.effort);
+          const carried =
+            pinned?.effort == null
+              ? null
+              : clampEffortForModel({ model: nextModel, effort: pinned.effort });
           apply({
             providerId: pendingProvider.current,
             model: nextModel,

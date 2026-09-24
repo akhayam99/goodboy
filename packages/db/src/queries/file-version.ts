@@ -85,27 +85,6 @@ export const listFileVersionsForSession = async ({
   return rows.map((row) => toDomain({ row }));
 };
 
-type ListForPathParams = {
-  readonly db: Database;
-  readonly sessionId: SessionId;
-  readonly relativePath: string;
-};
-
-export const listFileVersionsForPath = async ({
-  db,
-  sessionId,
-  relativePath,
-}: ListForPathParams): Promise<ReadonlyArray<FileVersion>> => {
-  const rows = await db.select<FileVersionRow>(
-    `SELECT ${SELECT_COLUMNS}
-       FROM file_versions
-      WHERE session_id = ? AND relative_path = ?
-      ORDER BY captured_at DESC, id DESC`,
-    [sessionId, relativePath],
-  );
-  return rows.map((row) => toDomain({ row }));
-};
-
 type PruneForPathParams = {
   readonly db: Database;
   readonly sessionId: SessionId;

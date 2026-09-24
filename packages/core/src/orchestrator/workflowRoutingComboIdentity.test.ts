@@ -1,4 +1,4 @@
-import type { ModelEffort } from '@goodboy/types';
+import type { EffortLevel } from '@goodboy/types';
 import { describe, expect, it } from 'vitest';
 import { resolveModelArgs } from '../providers/resolveModelArgs';
 import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
@@ -25,7 +25,6 @@ const resolveFromDecision = (raw: string) => {
   const resolution = resolveWorkflowRouting({
     agentLock: null,
     stepLock: null,
-    runRoleLock: null,
     proposal: parseWorkflowRoutingProposal({
       fields: decision.step,
       emittingProvider: 'cursor',
@@ -45,7 +44,7 @@ const resolveFromDecision = (raw: string) => {
 
 type CliArgsParams = {
   readonly model: string;
-  readonly effort: ModelEffort | null;
+  readonly effort: EffortLevel | null;
 };
 
 const cliArgsFor = ({ model, effort }: CliArgsParams) =>

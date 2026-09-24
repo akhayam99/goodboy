@@ -47,11 +47,11 @@ export const DiffMountSwitcher = ({
                 onClick={() => openMountDiff(sessionId, mount.worktreePath)}
                 className={cn(
                   'flex min-w-0 items-center gap-2 rounded-md border border-transparent px-2.5 py-1 text-xs font-medium motion-safe:transition-all',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                   isSelected
                     ? 'bg-elevated font-semibold text-foreground ring-1 ring-inset ring-border'
-                    : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
-                  !isSelected && hasChanges && 'text-foreground/80',
+                    : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+                  !isSelected && hasChanges && 'text-foreground',
                 )}
               >
                 <span className="min-w-0 truncate">{mount.mountName}</span>
@@ -64,9 +64,7 @@ export const DiffMountSwitcher = ({
                   {stat == null ? null : hasChanges ? (
                     <DiffStat additions={stat.additions} deletions={stat.deletions} />
                   ) : (
-                    <span className="text-3xs tabular-nums text-muted-foreground/50">
-                      no changes
-                    </span>
+                    <span className="text-3xs tabular-nums text-faint-foreground">no changes</span>
                   )}
                 </span>
               </button>

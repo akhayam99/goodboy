@@ -43,9 +43,6 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,
 }));
 vi.mock('../workflows/orchestrateNextStep', () => ({ persistOrchestrationStop: persistStopSpy }));
-vi.mock('../../../features/companion/mobileConfinement', () => ({
-  markSessionMobileShared: vi.fn(),
-}));
 vi.mock('./materializationSeeds', () => ({ rememberMaterializationSeed: vi.fn() }));
 
 import { createSession } from './createSession';

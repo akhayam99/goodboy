@@ -9,7 +9,7 @@ type Props = {
   readonly isDeciding: boolean;
   readonly isStepRunning: boolean;
   readonly disabled: boolean;
-  readonly onSubmit: (draft: OrchestratorHintDraft) => Promise<void>;
+  readonly onSubmit: (draft: OrchestratorHintDraft) => Promise<boolean>;
 };
 
 type SendParams = {
@@ -44,8 +44,10 @@ export const OrchestratorHintComposer = ({
     if (canSend === false) {
       return;
     }
-    await onSubmit({ text, delivery });
-    setText('');
+    const isSaved = await onSubmit({ text, delivery });
+    if (isSaved) {
+      setText('');
+    }
   };
 
   return (

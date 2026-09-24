@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 
-const { state, repoMocks, showToast } = vi.hoisted(() => ({
+const { state, repoMocks } = vi.hoisted(() => ({
   state: {
     projects: [] as ReadonlyArray<Record<string, unknown>>,
     addProject: vi.fn(async (): Promise<Record<string, unknown>> => ({
@@ -30,17 +30,18 @@ const { state, repoMocks, showToast } = vi.hoisted(() => ({
     scanChildRepos: vi.fn(async (): Promise<ReadonlyArray<never>> => []),
     initRepo: vi.fn(async () => ({ rootPath: '/repos/api' })),
   },
-  showToast: vi.fn(),
 }));
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 vi.mock('../../../../shared/lib/repo', () => repoMocks);
-vi.mock('../../../../app/components/Toast', () => ({
-  useToast: () => ({ showToast }),
-}));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn(async () => null) }));
+vi.mock('./ProjectBaseBranchInput', () => ({
+  ProjectBaseBranchInput: ({ project }: { project: { name: string } }) => (
+    <span data-testid="base-branch">{project.name}</span>
+  ),
+}));
 
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
 
@@ -78,7 +79,6 @@ describe('WorkspaceProjectsSection', () => {
     await addPath('/repos/storefront-web');
 
     await waitFor(() => screen.getByText('already in storefront-web with 4 sessions'));
-    expect(showToast).not.toHaveBeenCalled();
   });
 
   it('adopts the project into this workspace through Move it here', async () => {
@@ -98,7 +98,6 @@ describe('WorkspaceProjectsSection', () => {
     await waitFor(() =>
       expect(screen.queryByText('already in storefront-web with 4 sessions')).toBeNull(),
     );
-    expect(showToast).toHaveBeenCalledWith('success', 'moved storefront-web here');
   });
 
   it('dismisses the conflict row through Keep there without adopting', async () => {
@@ -113,11 +112,84 @@ describe('WorkspaceProjectsSection', () => {
     expect(state.adoptProject).not.toHaveBeenCalled();
   });
 
-  it('keeps the plain link toast for a fresh path', async () => {
+  it('links a fresh path and clears the field', async () => {
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
     await addPath('/repos/api');
 
-    await waitFor(() => expect(showToast).toHaveBeenCalledWith('success', 'linked api'));
+    expect(state.addProject).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      rootPath: '/repos/api',
+      requireRepo: true,
+    });
+    await waitFor(() =>
+      expect((screen.getByLabelText('Project path') as HTMLInputElement).value).toBe(''),
+    );
+  });
+
+  it('shows the base branch field only on repository rows', () => {
+    state.projects = [
+      {
+        id: 'proj-docs',
+        name: 'notify-relay',
+        rootPath: '/repos/notify-relay',
+        kind: 'folder',
+        workspaceId: WORKSPACE_ID,
+      },
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.getAllByTestId('base-branch').map((node) => node.textContent)).toEqual([
+      'ledger-core',
+    ]);
+  });
+
+  it('unlinks a project only after its anchored confirm', async () => {
+    state.projects = [
+      {
+        id: 'proj-docs',
+        name: 'notify-relay',
+        rootPath: '/repos/notify-relay',
+        kind: 'folder',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Unlink notify-relay' }));
+    expect(state.removeProject).not.toHaveBeenCalled();
+
+    const confirm = screen.getByRole('dialog', { name: 'Unlink notify-relay?' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Unlink' }));
+
+    await waitFor(() =>
+      expect(state.removeProject).toHaveBeenCalledWith({ projectId: 'proj-docs' }),
+    );
+  });
+
+  it('keeps the project when the unlink confirm is cancelled', async () => {
+    state.projects = [
+      {
+        id: 'proj-docs',
+        name: 'notify-relay',
+        rootPath: '/repos/notify-relay',
+        kind: 'folder',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Unlink notify-relay' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(state.removeProject).not.toHaveBeenCalled();
   });
 });

@@ -1,22 +1,23 @@
 import { useState } from 'react';
+import { TASKS } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type {
   AgentRole,
   AuxTaskId,
-  OverrideSettings,
   RoleModelPreference,
   TaskModelPreference,
+  TaskModelPreferences,
   WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import type { WorkspaceOverridesPatch } from '../../../../../store/slices/overrides/patchWorkspaceOverrides';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
-  readonly overrides: OverrideSettings;
 };
 
 type PersistParams = {
-  readonly partial: Partial<OverrideSettings>;
+  readonly patch: WorkspaceOverridesPatch;
 };
 
 type PersistTaskModelParams = {
@@ -29,16 +30,32 @@ type PersistRoleModelParams = {
   readonly preference: RoleModelPreference | null;
 };
 
-export const useDefaultsPersistence = ({ workspaceId, overrides }: Params) => {
-  const setWorkspaceOverrides = useAppStore((state) => state.setWorkspaceOverrides);
+type KnownTaskModelsParams = {
+  readonly taskModels: TaskModelPreferences | null;
+};
+
+const knownTaskModels = ({
+  taskModels,
+}: KnownTaskModelsParams): Partial<Record<AuxTaskId, TaskModelPreference>> =>
+  Object.fromEntries(
+    TASKS.flatMap(({ id }) => {
+      const preference = taskModels?.[id];
+      return preference == null ? [] : [[id, preference]];
+    }),
+  );
+
+export const useDefaultsPersistence = ({ workspaceId }: Params) => {
+  const patchWorkspaceOverrides = useAppStore((state) => state.patchWorkspaceOverrides);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const persistOverrides = async ({ partial }: PersistParams) => {
+  const currentOverrides = () => useAppStore.getState().workspaceOverrides[workspaceId] ?? null;
+
+  const persistOverrides = async ({ patch }: PersistParams) => {
     setBusy(true);
     setError(null);
     try {
-      await setWorkspaceOverrides(workspaceId, { ...overrides, ...partial });
+      await patchWorkspaceOverrides({ workspaceId, patch });
     } catch (caught) {
       setError(formatError(caught));
     } finally {
@@ -47,7 +64,7 @@ export const useDefaultsPersistence = ({ workspaceId, overrides }: Params) => {
   };
 
   const persistTaskModel = ({ task, preference }: PersistTaskModelParams) => {
-    const taskModels = { ...(overrides.taskModels ?? {}) };
+    const taskModels = knownTaskModels({ taskModels: currentOverrides()?.taskModels ?? null });
     if (preference == null) {
       delete taskModels[task];
     }
@@ -55,14 +72,12 @@ export const useDefaultsPersistence = ({ workspaceId, overrides }: Params) => {
       taskModels[task] = preference;
     }
     void persistOverrides({
-      partial: {
-        taskModels: Object.keys(taskModels).length > 0 ? taskModels : null,
-      },
+      patch: { taskModels: Object.keys(taskModels).length > 0 ? taskModels : null },
     });
   };
 
   const persistRoleModel = ({ role, preference }: PersistRoleModelParams) => {
-    const roleModels = { ...(overrides.roleModels ?? {}) };
+    const roleModels = { ...(currentOverrides()?.roleModels ?? {}) };
     if (preference == null) {
       delete roleModels[role];
     }
@@ -70,9 +85,7 @@ export const useDefaultsPersistence = ({ workspaceId, overrides }: Params) => {
       roleModels[role] = preference;
     }
     void persistOverrides({
-      partial: {
-        roleModels: Object.keys(roleModels).length > 0 ? roleModels : null,
-      },
+      patch: { roleModels: Object.keys(roleModels).length > 0 ? roleModels : null },
     });
   };
 

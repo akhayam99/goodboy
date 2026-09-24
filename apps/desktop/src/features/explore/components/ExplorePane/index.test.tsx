@@ -12,6 +12,8 @@ type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
 type Store = {
   readonly spawnAgent: ReturnType<typeof vi.fn>;
   readonly selectAgent: ReturnType<typeof vi.fn>;
+  readonly setCurrentSession: ReturnType<typeof vi.fn>;
+  readonly setActiveLens: ReturnType<typeof vi.fn>;
   readonly providers: ReadonlyArray<{
     readonly id: ProviderId;
     readonly connection: string;
@@ -31,7 +33,10 @@ const h = vi.hoisted(() => ({
     ) => Promise<string>
   >(async () => 'agent-1'),
   selectAgent: vi.fn(async () => undefined),
-  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
+  setCurrentSession: vi.fn(async () => undefined),
+  setActiveLens: vi.fn(),
+  showToast:
+    vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
   providers: [{ id: 'anthropic' as ProviderId, connection: 'connected' }],
   sessions: [
     {
@@ -62,6 +67,8 @@ vi.mock('../../../../store', () => ({
     selector({
       spawnAgent: h.spawnAgent,
       selectAgent: h.selectAgent,
+      setCurrentSession: h.setCurrentSession,
+      setActiveLens: h.setActiveLens,
       providers: h.providers,
       sessions: h.sessions,
       workspaceOverrides: {},
@@ -291,11 +298,12 @@ describe('ExplorePane', () => {
     ).toBe(true);
     expect(h.selectAgent).not.toHaveBeenCalled();
 
-    const action = h.showToast.mock.calls[0]![2]?.action;
+    expect(h.showToast.mock.calls[0]![0]?.kind).toBe('info');
+    const action = h.showToast.mock.calls[0]![0]?.action;
     expect(action?.label).toBe('Open the agent');
     action?.onClick();
 
-    expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-1');
+    await waitFor(() => expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-1'));
   });
 
   it('keeps spawn disabled when the ask is empty', async () => {

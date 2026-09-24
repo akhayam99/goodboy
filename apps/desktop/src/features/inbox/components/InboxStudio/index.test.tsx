@@ -46,6 +46,7 @@ vi.mock('../../useInboxRecords', () => ({
     records: h.records,
     isLoading: h.isLoading,
     errors: h.errors,
+    connected: ['github', 'gitlab', 'bitbucket', 'linear', 'jira', 'slack', 'sentry'],
     refetch: h.refetch,
   }),
 }));
@@ -232,13 +233,7 @@ const workspaceId = 'workspace-1' as WorkspaceId;
 
 const renderStudio = (overrides: Partial<Parameters<typeof InboxStudio>[0]> = {}) =>
   render(
-    <InboxStudio
-      workspaceId={workspaceId}
-      rootPath="/repo"
-      workspaceName="Goodboy"
-      onClose={vi.fn()}
-      {...overrides}
-    />,
+    <InboxStudio workspaceId={workspaceId} rootPath="/repo" onClose={vi.fn()} {...overrides} />,
   );
 
 beforeEach(() => {

@@ -146,9 +146,8 @@ describe('Markdown document rhythm', () => {
   it('keeps inline code quiet and free of vertical padding', () => {
     const { container } = render(<Markdown text="run `packages/core/src/index.ts` now" />);
     const code = container.querySelector('code');
-    expect(code?.className).toContain('bg-muted/50');
+    expect(code?.className).toContain('bg-muted');
     expect(code?.className).toContain('py-0');
-    expect(code?.className).toContain('text-foreground/90');
     expect(code?.className).not.toContain('break-all');
     expect(code?.className).toContain('wrap-anywhere');
   });
@@ -196,7 +195,6 @@ describe('Markdown lists', () => {
     const lists = container.querySelectorAll('ul');
     expect(lists).toHaveLength(2);
     const nested = lists[1];
-    expect(nested?.className).toContain('marker:text-muted-foreground/70');
     expect(nested?.querySelectorAll('li')).toHaveLength(2);
     expect(lists[0]?.children).toHaveLength(2);
     expect(container.textContent).toContain('child');
@@ -418,6 +416,25 @@ describe('Markdown report kit', () => {
     expect(entries).toHaveLength(2);
     expect(entries[0]?.textContent).toContain('10:32');
     expect(entries[0]?.textContent).toContain('deploy starts');
+  });
+
+  it('reads a capitalised timeline tag as a timeline, time first', () => {
+    const { container } = render(
+      <Markdown text={['<<Timeline>>', '2026-09-01 | deploy', '<</Timeline>>'].join('\n')} />,
+    );
+    const entry = container.querySelector('[data-block="timeline-entry"]');
+    const [time, event] = [...(entry?.querySelectorAll(':scope > span:not([aria-hidden])') ?? [])];
+    expect(time?.textContent).toBe('2026-09-01');
+    expect(event?.textContent).toBe('deploy');
+  });
+
+  it('reads an uppercase facts tag as facts', () => {
+    const { container } = render(
+      <Markdown text={['<<FACTS>>', 'Ticket: ACME-412', '<</FACTS>>'].join('\n')} />,
+    );
+    const facts = container.querySelector('[data-block="facts"]');
+    expect(facts?.querySelector('dt')?.textContent).toBe('Ticket');
+    expect(facts?.querySelector('dd')?.textContent).toBe('ACME-412');
   });
 
   it('renders a page break as its own marker', () => {

@@ -7,18 +7,17 @@ import {
   formatUsd,
   formatUsdPrecise,
   ScrollFade,
-  tintClasses,
+  chipClasses,
   useDropdown,
+  InlineMarkdown,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { openImpactStudio } from '../../../impact/openImpactStudio';
 import { SessionBudgetContent } from '../../../budget/components/spend/SessionBudgetContent';
 import type { WorkspaceTurn } from '../../../budget/components/spend/lib';
 import { EMPTY_ARRAY, useAppStore, useSessionCost } from '../../../../store';
-import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 import { sessionTitle } from '../../sessionTitle';
 import { manageDialogFocus } from './manageDialogFocus';
-import { VITAL_CHIP_FOCUS, VITAL_CHIP_FRAME, VITAL_CHIP_HOVER } from './vitalChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -61,14 +60,18 @@ export const SessionCostChip = ({ sessionId }: Props) => {
     width: 'w-[40rem] max-w-[calc(100vw-2rem)]',
   });
   const { open, toggle, popupRef } = dropdown;
-  const capTint = capState === 'clear' ? null : tintClasses(CAP_TONE[capState]);
+  const capTone = capState === 'clear' ? 'neutral' : CAP_TONE[capState];
   const spent = formatUsd(sessionCost);
   const label = sessionBudget != null ? `${spent} / ${formatUsd(sessionBudget)}` : spent;
   const capNote = CAP_NOTE[capState];
+  const summariesSpend = (telemetry ?? EMPTY_ARRAY)
+    .filter((record) => record.kind === 'summarizer')
+    .reduce((sum, record) => sum + record.estimatedCostUsd, 0);
+  const summariesLine = summariesSpend > 0 ? `\nSummaries ${formatUsdPrecise(summariesSpend)}` : '';
   const title =
     sessionBudget != null
-      ? `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} of a ${formatUsdPrecise(sessionBudget)} cap${capNote} (excluding summarizer), click for budget details`
-      : `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} (excluding summarizer), click for budget details`;
+      ? `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} of a ${formatUsdPrecise(sessionBudget)} cap${capNote} (excluding summaries)${summariesLine}\nClick for budget details`
+      : `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} (excluding summaries)${summariesLine}\nClick for budget details`;
   const sessionLabel = sessionTitle({ session });
   const turns = useMemo<ReadonlyArray<WorkspaceTurn>>(
     () =>
@@ -147,11 +150,8 @@ export const SessionCostChip = ({ sessionId }: Props) => {
           title={title}
           onAnimationEnd={() => setPulse(false)}
           className={cn(
-            VITAL_CHIP_FRAME,
-            VITAL_CHIP_FOCUS,
-            'px-2 font-mono tabular-nums',
-            capState === 'clear' && VITAL_CHIP_HOVER,
-            capTint != null && `${capTint.borderSoft} ${capTint.bg} ${capTint.text}`,
+            chipClasses({ tone: capTone, shape: 'badge', size: 'control', isInteractive: true }),
+            'font-mono tabular-nums',
             pulse && 'cost-chip-pulse',
           )}
         >

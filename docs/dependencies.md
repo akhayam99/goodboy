@@ -34,8 +34,8 @@ The rules for internal workspace deps (the `workspace:*` protocol, no phantom de
 A brand-new version is one that nobody has used in real work yet.
 Follow the stable release most people use, not the latest tag.
 
-- **Runtimes and their types move together, on LTS.** We ship on Node 24, so
-  `@types/node` is pinned to `^24`. If the types are ahead of the runtime, the
+- **Runtimes and their types move together, on LTS.** `@types/node` stays on
+  the Node major that CI runs. If the types are ahead of the runtime, the
   typechecker accepts APIs that do not exist at run time.
 - **Majors are never automatic.** A major bump is a migration. It gets its own
   branch, a clean install, typecheck, the full suite, and a real build. Majors

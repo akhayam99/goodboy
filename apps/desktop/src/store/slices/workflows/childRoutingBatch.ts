@@ -1,12 +1,11 @@
 import type {
   AgentRole,
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   SessionId,
   WorkflowRoutingDecision,
   WorkflowRoutingLock,
   WorkflowRoutingProposal,
-  WorkflowRunId,
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { WorkflowMissingProposalPolicy } from '@goodboy/core';
@@ -14,7 +13,7 @@ import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutin
 import { resolveWorkflowChildRouting } from '../workflowRouting/resolveWorkflowChildRouting';
 import type { AppStore } from '../../store';
 
-export type ChildRoutingRequest = Readonly<{
+type ChildRoutingRequest = Readonly<{
   proposal: WorkflowRoutingProposal | null;
   promptText: string;
   childLock: WorkflowRoutingLock | null;
@@ -26,14 +25,14 @@ export type ChildRoutingFields = Readonly<{
   taskProfile: WorkflowTaskProfile | null;
   providerOverride: ProviderId | null;
   modelOverride: string | null;
-  effort: ModelEffort | null;
+  effort: EffortLevel | null;
 }>;
 
 export type ChildRoutingBatch =
   | Readonly<{ kind: 'ready'; entries: ReadonlyArray<ChildRoutingFields> }>
   | Readonly<{ kind: 'blocked'; reason: string }>;
 
-export const LEGACY_CHILD_ROUTING: ChildRoutingFields = {
+const LEGACY_CHILD_ROUTING: ChildRoutingFields = {
   routingLock: null,
   routingDecision: null,
   taskProfile: null,
@@ -45,13 +44,12 @@ export const LEGACY_CHILD_ROUTING: ChildRoutingFields = {
 type ResolveOneParams = {
   readonly state: AppStore;
   readonly sessionId: SessionId;
-  readonly workflowRunId: WorkflowRunId | null;
   readonly role: AgentRole;
   readonly request: ChildRoutingRequest;
   readonly isChildSelectionEnabled: boolean;
 };
 
-export type ChildRoutingOutcome =
+type ChildRoutingOutcome =
   | Readonly<{ kind: 'routed'; fields: ChildRoutingFields }>
   | Readonly<{ kind: 'legacy' }>
   | Readonly<{ kind: 'blocked'; reason: string }>;
@@ -72,7 +70,6 @@ const childMissingProposalPolicy = ({
 export const resolveOneChildRouting = ({
   state,
   sessionId,
-  workflowRunId,
   role,
   request,
   isChildSelectionEnabled,
@@ -80,7 +77,6 @@ export const resolveOneChildRouting = ({
   const { resolution, taskProfile } = resolveWorkflowChildRouting({
     state,
     sessionId,
-    workflowRunId,
     role,
     childLock: request.childLock,
     proposal: isChildSelectionEnabled === true ? request.proposal : null,
@@ -110,7 +106,6 @@ export const resolveOneChildRouting = ({
 type BatchParams = {
   readonly state: AppStore;
   readonly sessionId: SessionId;
-  readonly workflowRunId: WorkflowRunId | null;
   readonly role: AgentRole;
   readonly requests: ReadonlyArray<ChildRoutingRequest>;
 };
@@ -118,7 +113,6 @@ type BatchParams = {
 export const childRoutingBatch = ({
   state,
   sessionId,
-  workflowRunId,
   role,
   requests,
 }: BatchParams): ChildRoutingBatch => {
@@ -128,7 +122,6 @@ export const childRoutingBatch = ({
     const outcome = resolveOneChildRouting({
       state,
       sessionId,
-      workflowRunId,
       role,
       request,
       isChildSelectionEnabled,

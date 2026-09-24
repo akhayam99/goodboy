@@ -49,7 +49,7 @@ describe('resolveTaskModel', () => {
   it('uses the default provider cheap model when no preference exists', () => {
     expect(
       resolveTaskModel({
-        task: 'branch_naming',
+        task: 'agent_naming',
         preferences: null,
         workspaceDefaultProviderId: 'anthropic',
         sessionDefaultProviderId: 'anthropic',

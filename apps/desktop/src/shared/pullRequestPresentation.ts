@@ -21,7 +21,7 @@ export const PULL_REQUEST_PRESENTATION = {
     icon: CircleDashed,
     label: 'No pull request',
     reason: 'nothing has been opened yet',
-    textClass: 'text-muted-foreground/50',
+    textClass: 'text-faint-foreground',
     tone: 'neutral',
   },
   draft: {

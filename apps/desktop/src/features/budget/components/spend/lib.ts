@@ -2,7 +2,7 @@ import type { SessionId, TelemetryRecord } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { costCoverage, type CostCoverage } from '@goodboy/core';
-import { PROVIDER_LABEL_LOWER } from '../../../providers/providers';
+import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 
 export type SortKey = 'recent' | 'expensive';
 
@@ -52,13 +52,13 @@ type ProviderIdsAreTotal =
   Exclude<ProviderId, (typeof PROVIDER_IDS)[number]> extends never ? true : false;
 type _ProviderIdsTotalCheck = Expect<ProviderIdsAreTotal>;
 
-const toProviderId = (provider: string): ProviderId | null => {
-  return PROVIDER_IDS.includes(provider as ProviderId) ? (provider as ProviderId) : null;
+type ProviderLabelParams = {
+  readonly provider: string;
 };
 
-export const providerLabel = (provider: string): string => {
-  const id = toProviderId(provider);
-  return id === null ? provider : PROVIDER_LABEL_LOWER[id];
+export const providerLabel = ({ provider }: ProviderLabelParams): string => {
+  const id = PROVIDER_IDS.find((candidate) => candidate === provider);
+  return id === undefined ? provider : PROVIDER_LABEL[id];
 };
 
 type SpendToneParams = {

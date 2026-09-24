@@ -1,7 +1,7 @@
 import { Clock, Paperclip, X } from 'lucide-react';
 import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
 import type { QueuedTurn } from '../lib';
-import { Tooltip } from '@goodboy/ui';
+import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 
 type QueuedItem = Pick<QueuedTurn, 'id' | 'content' | 'attachments' | 'override'>;
 
@@ -20,7 +20,7 @@ export const QueuedMessages = ({
     return null;
   }
   return (
-    <div className="flex flex-col gap-1 rounded-md bg-subtle/80 p-1 ring-1 ring-border-soft">
+    <div className="flex flex-col gap-1 rounded-md bg-subtle p-1 ring-1 ring-border-soft">
       <div className="flex items-center gap-1.5 px-1.5 pt-0.5 text-2xs text-muted-foreground">
         <Clock size={11} aria-hidden />
         <span>
@@ -39,9 +39,15 @@ export const QueuedMessages = ({
         return (
           <div
             key={item.id}
-            className="group flex items-center gap-2 rounded-md bg-background/60 px-1.5 py-1"
+            className="group flex items-center gap-2 rounded-md bg-background px-1.5 py-1"
           >
-            <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/15 text-2xs font-medium text-primary">
+            <span
+              className={cn(
+                'flex size-4 shrink-0 items-center justify-center rounded-full',
+                tintClasses('primary').bg,
+                'text-2xs font-medium text-primary',
+              )}
+            >
               {i + 1}
             </span>
             <button
@@ -49,7 +55,7 @@ export const QueuedMessages = ({
               disabled={!canEdit}
               onClick={() => onEdit(item.id)}
               title={canEdit ? 'Edit, moves it back to the composer' : 'Clear the composer to edit'}
-              className="min-w-0 flex-1 truncate text-left text-xs text-foreground/80 transition-colors enabled:hover:text-foreground disabled:cursor-default"
+              className="min-w-0 flex-1 truncate text-left text-xs text-foreground transition-colors enabled:hover:text-foreground disabled:cursor-default"
             >
               {preview}
             </button>
@@ -73,7 +79,7 @@ export const QueuedMessages = ({
                 type="button"
                 onClick={() => onRemove(item.id)}
                 aria-label="Remove from queue"
-                className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+                className="flex size-5 shrink-0 items-center justify-center rounded-md text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <X size={11} aria-hidden />
               </button>

@@ -7,11 +7,9 @@ import type {
   WorktreeRemovalMode,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { cleanupMountDirectory } from '../mount-cleanup';
-import { mountError } from './mountErrors';
-import { withRepositoryAndMountLock } from './mountLocks';
 import { applyMountViews, loadMountViews, requireMountView } from './mountViews';
 import { requireMountContext } from './requireMountContext';
+import { runMountRemoval } from './runMountRemoval';
 import type { GetFn, SetFn } from './types';
 
 export type RemoveMountWorktreeInput = {
@@ -43,61 +41,56 @@ export const removeMountWorktree = ({ set, get }: Params) => {
     if (worktreePath === null) {
       return { kind: 'missing', reason: null };
     }
-    return withRepositoryAndMountLock({
-      repoRoot: view.repoRoot,
-      mountKey: `${sessionId}:${mountId}`,
-      run: async () => {
-        const cleanup = await cleanupMountDirectory({
-          get,
-          mode,
-          target: {
-            sessionId,
-            mountId,
-            projectId: view.projectId,
-            repoRoot: view.repoRoot,
-            worktreePath,
-            branch: view.branch,
-            diskState: view.diskState,
-            isRepoProject: project.kind === 'repo',
-          },
-        });
-        const decision = cleanup.decision;
-        switch (decision.kind) {
-          case 'failed':
-          case 'kept':
-            return { kind: decision.kind, reason: decision.reason };
-          case 'removed':
-          case 'missing':
-            break;
-          default: {
-            const exhaustive: never = decision;
-            throw exhaustive;
-          }
+    const cleanup = await runMountRemoval({
+      get,
+      mode,
+      keepDirectory: false,
+      finish: 'clear-path',
+      expectedRevision: view.revision,
+      target: {
+        sessionId,
+        mountId,
+        projectId: view.projectId,
+        repoRoot: view.repoRoot,
+        worktreePath,
+        branch: view.branch,
+        diskState: view.diskState,
+        isRepoProject: project.kind === 'repo',
+      },
+      finishRow: async ({ decision, diskState }) => {
+        if (decision.kind === 'kept') {
+          return true;
         }
-        const written = await updateSessionMountLifecycle({
+        return updateSessionMountLifecycle({
           db: tauriDatabase,
           sessionId,
           mountId,
           worktreePath: null,
           isAttached: false,
-          diskState: cleanup.diskState,
+          diskState,
           expectedRevision: view.revision,
           updatedAt: new Date().toISOString() as IsoDateTime,
         });
-        if (!written) {
-          throw mountError({
-            code: 'revision-conflict',
-            message: 'the mount changed while removing its worktree',
-            mountId,
-          });
-        }
-        const nextViews = await loadMountViews({ get, sessionId });
-        applyMountViews({ set, sessionId, views: nextViews });
-        void get()
-          .reconcileOrphanWorktrees()
-          .catch(() => undefined);
-        return { kind: decision.kind, reason: null };
       },
     });
+    const decision = cleanup.decision;
+    switch (decision.kind) {
+      case 'failed':
+      case 'kept':
+        return { kind: decision.kind, reason: decision.reason };
+      case 'removed':
+      case 'missing':
+        break;
+      default: {
+        const exhaustive: never = decision;
+        throw exhaustive;
+      }
+    }
+    const nextViews = await loadMountViews({ get, sessionId });
+    applyMountViews({ set, sessionId, views: nextViews });
+    void get()
+      .reconcileOrphanWorktrees()
+      .catch(() => undefined);
+    return { kind: decision.kind, reason: null };
   };
 };

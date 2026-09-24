@@ -188,11 +188,19 @@ export {
 export { PROVIDER_ID_TO_NAME, resolveProvider, type ResolveProviderInput } from './budget/router';
 
 export { computeCostUsd, priceFor } from './providers/claude/cost';
+export { getProviderModelPrice } from './providers/model-price';
 export {
-  getModelPrice,
-  getProviderModelPrice,
-  type ModelPriceSummary,
-} from './providers/model-price';
+  OPENCODE_ROUTING,
+  PROVIDER_KIND,
+  isApiProvider,
+  opencodeModelArg,
+} from './providers/provider-catalog';
+export { PROVIDER_LIFECYCLE_COMMANDS } from './providers/provider-commands';
+export { PROVIDER_CONNECT_CAPABILITIES } from './providers/provider-connect';
+export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './providers/provider-preference';
+export { CLI_CREDENTIAL } from './providers/provider-credential';
+export { PROVIDER_API_KEY_ENV } from './providers/provider-api-key-env';
+export { TASKS } from './settings/tasks';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
 export {
@@ -225,6 +233,7 @@ export { remapModelSelection } from './providers/remapModelSelection';
 export { resolveCursorCombo } from './providers/cursorCombo';
 export { modelAxes } from './providers/modelAxes';
 export { modelHasEffortAxis } from './providers/modelHasEffortAxis';
+export { clampEffortForModel, modelEffortLevels } from './providers/clampEffortForModel';
 export { resolveModelArgs } from './providers/resolveModelArgs';
 export {
   PROVIDER_ARG_FLAGS,
@@ -263,7 +272,11 @@ export { fallbackWantsThinker } from './providers/fallbackWantsThinker';
 export { strongestModelForTier } from './providers/strongestModelForTier';
 export { planTaskModelFallback } from './providers/task-model-fallback';
 export { cliModelId } from './providers/cliModelId';
-export { cliExitEvents } from './providers/shared/cli-exit-events';
+export {
+  createJsonLineAssembler,
+  type JsonLineAssembler,
+  type JsonLineAssemblerResult,
+} from './providers/shared/createJsonLineAssembler';
 export { extractAuxOutput, type AuxOutput, type AuxUsage } from './providers/aux-output';
 export { runAuxOneShot, type AuxSpawnResult } from './providers/aux-spawn';
 
@@ -276,10 +289,7 @@ export { costCoverage, type CostCoverage } from './providers/cost-coverage';
 
 export { computeCursorCostUsd } from './providers/cursor/cost';
 export { CURSOR_AUTO_MODEL, CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './providers/cursor/models';
-export {
-  parseCursorStreamLine,
-  type ParseContext as CursorParseContext,
-} from './providers/cursor/parser';
+export { parseCursorStreamLine } from './providers/cursor/parser';
 
 export {
   SkillParseError,
@@ -296,30 +306,17 @@ export {
 } from './skills';
 
 export { CODEX_DEFAULT_MODEL, CODEX_MODELS } from './providers/codex/constants';
-export { computeCodexCostUsd, type CodexModelPriceOverride } from './providers/codex/cost';
-export {
-  parseJsonLine as parseCodexJsonLine,
-  type ParseContext as CodexParseContext,
-} from './providers/codex/parser';
+export { computeCodexCostUsd } from './providers/codex/cost';
+export { parseJsonLine as parseCodexJsonLine } from './providers/codex/parser';
 
 export { OPENCODE_MODELS } from './providers/opencode/constants';
 export { OPENROUTER_MODELS } from './providers/openrouter/constants';
 export { computeOpenCodeCostUsd } from './providers/opencode/cost';
-export {
-  parseJsonLine as parseOpenCodeJsonLine,
-  type ParseContext as OpenCodeParseContext,
-} from './providers/opencode/parser';
+export { parseJsonLine as parseOpenCodeJsonLine } from './providers/opencode/parser';
 
-export {
-  GEMINI_CHEAP_MODEL,
-  GEMINI_DEFAULT_MODEL,
-  GEMINI_MODELS,
-} from './providers/gemini/constants';
-export { computeGeminiCostUsd, type GeminiModelPriceOverride } from './providers/gemini/cost';
-export {
-  parseJsonLine as parseGeminiJsonLine,
-  type ParseContext as GeminiParseContext,
-} from './providers/gemini/parser';
+export { GEMINI_DEFAULT_MODEL, GEMINI_MODELS } from './providers/gemini/constants';
+export { computeGeminiCostUsd } from './providers/gemini/cost';
+export { parseJsonLine as parseGeminiJsonLine } from './providers/gemini/parser';
 
 export {
   Summarizer,
@@ -349,12 +346,9 @@ export {
   buildParallelCarryForward,
   buildStepPrompt,
   classifyWorkflowChain,
-  currentStep,
   findReusableAgent,
   isWorkflowComplete,
-  nextStep,
   runsForWorkflowRun,
-  upcomingSteps,
   type ChainCarryForwardStep,
   type ParallelCarryForwardBranch,
   type WorkflowChainState,
@@ -395,15 +389,16 @@ export {
 } from './permissions';
 
 export { resolveSettings, type ResolveSettingsInput } from './settings/resolver';
+export { devWarn } from './dev-log';
 
 export {
   DEFAULT_GH_TIMEOUT_MS,
   DEFAULT_PR_CACHE_TTL_MS,
   GhCliError,
   GhJsonParseError,
+  GhJsonShapeError,
   createGithubRepo,
   createIssueComment,
-  detect as detectGh,
   detectRepoSlug,
   fetchLinkedIssues,
   fetchPrDetail,
@@ -412,7 +407,6 @@ export {
   invalidatePrCache,
   listAssignedIssues,
   listIssueComments,
-  listOpenPrsForRepo,
   listOwnedRepos,
   listPrsForBranch,
   addPullRequestReview,
@@ -428,7 +422,6 @@ export {
   validateGithubRepoName,
   type CreateRepoResult,
   type GetPrInput,
-  type GhDetectResult,
   type GhResult,
   type GhRunOptions,
   type GhRunner,
@@ -440,7 +433,6 @@ export {
   type PrCacheDeps,
   type PrCacheStore,
   type RepoNameCheck,
-  type RepoPullRequest,
   type ResolvedThread,
   type ReviewEvent,
   type ReviewThreadDraft,

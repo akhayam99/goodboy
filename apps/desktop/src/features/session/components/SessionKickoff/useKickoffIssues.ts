@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { SESSION_EXTERNAL_TASK_PROVIDERS } from '@goodboy/types';
 import type { GitlabIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { primaryProjectRoot } from '../../../workspace/primaryProjectRoot';
@@ -14,6 +15,10 @@ import {
 import { useToolConnections } from '../../../integrations/useToolConnections';
 import type { TrackerProvider } from '../../../integrations/components/TrackerStudioLinks';
 import { useJiraConfig } from '../../../integrations/jira/useJiraConfig';
+import {
+  linkedTaskKey,
+  useLinkedExternalIds,
+} from '../../../integrations/hooks/useLinkedExternalIds';
 
 const ROWS_PER_SOURCE = 5;
 
@@ -43,7 +48,7 @@ export const useKickoffIssues = ({ workspaceId }: Params): Result => {
     return integration?.config.host ?? null;
   });
   const jiraConfig = useJiraConfig({ workspaceId });
-  const externalTasks = useAppStore((state) => state.sessionExternalTasks);
+  const linkedSessions = useLinkedExternalIds({ providers: SESSION_EXTERNAL_TASK_PROVIDERS });
   const [rowsByProvider, setRowsByProvider] = useState<
     Readonly<Record<string, ReadonlyArray<IssueCandidate>>>
   >({});
@@ -83,24 +88,14 @@ export const useKickoffIssues = ({ workspaceId }: Params): Result => {
     }
   }, [gitlabHost, jiraConfig, rootPath, sources, workspaceId]);
 
-  const linkedKeys = useMemo(() => {
-    const keys = new Set<string>();
-    for (const tasks of Object.values(externalTasks)) {
-      for (const task of tasks) {
-        keys.add(`${task.provider}:${task.externalId}`);
-      }
-    }
-    return keys;
-  }, [externalTasks]);
-
   const rows = useMemo(
     () =>
       sources.flatMap((source) =>
         (rowsByProvider[source.provider] ?? [])
-          .filter((row) => !linkedKeys.has(`${row.provider}:${row.externalId}`))
+          .filter((row) => !linkedSessions.has(linkedTaskKey(row)))
           .slice(0, ROWS_PER_SOURCE),
       ),
-    [linkedKeys, rowsByProvider, sources],
+    [linkedSessions, rowsByProvider, sources],
   );
 
   return {

@@ -1,7 +1,7 @@
 import { Button, SectionHeader } from '@goodboy/ui';
 import type { IntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { FOOTER_INTEGRATIONS } from '../../../../app/components/AppFooter/categories';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import {
   IntegrationGlyph,
   integrationLabel,
@@ -10,7 +10,8 @@ import {
 import { FORM_BODIES } from '../../formBodies';
 import { toolIdentity } from './toolIdentity';
 import type { GithubConnection } from '../../github/useGithubConnection';
-import { GithubToolConnection } from './GithubToolConnection';
+import { GithubAccountRows } from './GithubAccountRows';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -18,26 +19,36 @@ type Props = {
   readonly isConnected: boolean;
   readonly binding: IntegrationBinding | undefined;
   readonly github: GithubConnection;
+  readonly githubIdentity: string | null;
 };
 
-export const ToolDetailPanel = ({ workspaceId, provider, isConnected, binding, github }: Props) => {
+export const ToolDetailPanel = ({
+  workspaceId,
+  provider,
+  isConnected,
+  binding,
+  github,
+  githubIdentity,
+}: Props) => {
   const FormBody = provider === 'github' ? null : FORM_BODIES[provider];
   const title = integrationLabel({ provider });
   const subtitle = isConnected
     ? provider === 'github'
-      ? (github.user ?? 'connected')
+      ? (githubIdentity ?? 'connected')
       : toolIdentity({ binding })
     : FOOTER_INTEGRATIONS.find((entry) => entry.provider === provider)?.connectLabel;
   return (
-    <StudioPanel
+    <PaneShell
+      scroll="body"
+      measure="reading"
       title={title}
-      subtitle={subtitle}
-      icon={<IntegrationGlyph provider={provider} size={20} />}
+      description={subtitle}
+      glyph={<IntegrationGlyph provider={provider} size={ICON_SIZE.hero} />}
     >
       <section className="flex flex-col gap-2">
         <SectionHeader label="Account" />
         {FormBody === null ? (
-          <GithubToolConnection workspaceId={workspaceId} connection={github} />
+          <GithubAccountRows workspaceId={workspaceId} connection={github} />
         ) : (
           <FormBody workspaceId={workspaceId} shouldAutoFocus={!isConnected} />
         )}
@@ -55,6 +66,6 @@ export const ToolDetailPanel = ({ workspaceId, provider, isConnected, binding, g
           </Button>
         </div>
       ) : null}
-    </StudioPanel>
+    </PaneShell>
   );
 };

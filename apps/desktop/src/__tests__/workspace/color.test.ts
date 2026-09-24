@@ -14,6 +14,12 @@ describe('workspace color', () => {
     }
   });
 
+  it('draws from the shared identity set', () => {
+    expect(WORKSPACE_ACCENTS).toEqual(
+      Array.from({ length: 8 }, (_, index) => `var(--color-identity-${index + 1})`),
+    );
+  });
+
   it('spreads distinct ids across the palette', () => {
     const ids = Array.from({ length: 24 }, () => crypto.randomUUID() as WorkspaceId);
     const distinct = new Set(ids.map(workspaceAccent));

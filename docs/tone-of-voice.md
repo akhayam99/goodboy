@@ -41,6 +41,9 @@ talking to a market. There are two voices:
   only where the copy is really about it (a Claude error, a Codex setup step).
 - **No hardcoded user nickname.** If a greeting needs a name, it reads it from
   the user's profile, never from a constant. If in doubt, drop the greeting.
+- **Brand names keep brand casing, mid-sentence too.** "Sign in to Claude",
+  "Install Codex", "OpenRouter". Provider names come from `PROVIDER_LABEL`.
+  There is no lowercase variant.
 - **Product copy is in English.** That means every label, placeholder, empty
   state, tooltip and button. A new string in another language is a bug:
   translate it.
@@ -55,6 +58,10 @@ talking to a market. There are two voices:
 - **Sentence case** for headings. Not Title Case. The one exception is the
   casing of tiny eyebrow labels, and [DESIGN.md](../DESIGN.md) owns it in
   Voice & copy.
+- **Chips, statuses and toasts use sentence case too.** One set of status words
+  across artifacts, inbox and resolve: "Generating", "Needs you", "No report",
+  "Couldn't read wireframe", "Active", "Used", "Passed", "Failed", "Stopped".
+  `sentence-case-copy.test.ts` checks the named copy maps.
 - **No trailing period on titles, eyebrows, button labels, or list items.**
   Body sentences keep theirs. The one exception is a hero line that stands
   alone, because it is read like a spoken beat ("Stop re-explaining yourself.").

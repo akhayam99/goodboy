@@ -6,6 +6,7 @@ import type {
   TelemetryKind,
   TelemetryRecord,
   TelemetryRecordId,
+  TelemetrySummary,
   WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
@@ -78,13 +79,6 @@ export const listTelemetryForSession = async (
   return rows.map(toDomain);
 };
 
-export type TelemetrySummary = {
-  readonly inputTokens: number;
-  readonly outputTokens: number;
-  readonly estimatedCostUsd: number;
-  readonly recordCount: number;
-};
-
 type SummaryRow = {
   input: number | null;
   output: number | null;
@@ -129,17 +123,6 @@ export const summarizeWorkspaceTelemetry = async (
        INNER JOIN sessions s ON s.id = t.session_id
       WHERE s.workspace_id = ?`,
     [workspaceId],
-  );
-  return toSummary(rows[0]);
-};
-
-export const summarizeProviderTelemetry = async (
-  db: Database,
-  provider: ProviderName,
-): Promise<TelemetrySummary> => {
-  const rows = await db.select<SummaryRow>(
-    `SELECT ${SUMMARY_SELECT} FROM telemetry_records WHERE provider = ?`,
-    [provider],
   );
   return toSummary(rows[0]);
 };

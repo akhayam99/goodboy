@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Kanban, PanelLeft, Plus } from 'lucide-react';
-import { Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { Tooltip, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -9,14 +9,11 @@ type Props = {
   readonly onExpand: () => void;
 };
 
-const railButton = (isActive: boolean): string =>
-  cn(
-    'flex size-8 shrink-0 items-center justify-center rounded-md motion-safe:transition-colors',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-    isActive
-      ? cn(tintClasses('primary').bg, tintClasses('primary').text)
-      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-  );
+const RAIL_BUTTON = cn(
+  'flex size-8 shrink-0 items-center justify-center rounded-md motion-safe:transition-colors',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+  'text-muted-foreground hover:bg-hover hover:text-foreground',
+);
 
 export const CollapsedRail = ({ onExpand }: Props) => {
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
@@ -32,7 +29,7 @@ export const CollapsedRail = ({ onExpand }: Props) => {
           type="button"
           onClick={onExpand}
           aria-label={`Show session sidebar (${shortcutGlyphs('column.toggle')})`}
-          className={railButton(false)}
+          className={RAIL_BUTTON}
         >
           <PanelLeft size={ICON_SIZE.control} aria-hidden />
         </button>
@@ -42,7 +39,7 @@ export const CollapsedRail = ({ onExpand }: Props) => {
           type="button"
           onClick={onBoard}
           aria-label={`Back to board (${shortcutGlyphs('session.board')})`}
-          className={railButton(false)}
+          className={RAIL_BUTTON}
         >
           <Kanban size={ICON_SIZE.control} aria-hidden />
         </button>
@@ -52,7 +49,7 @@ export const CollapsedRail = ({ onExpand }: Props) => {
           type="button"
           onClick={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
           aria-label={`New session (${shortcutGlyphs('session.new')})`}
-          className={railButton(false)}
+          className={RAIL_BUTTON}
         >
           <Plus size={ICON_SIZE.control} aria-hidden />
         </button>

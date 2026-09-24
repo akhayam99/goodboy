@@ -1,425 +1,102 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  storySpies,
+  type StoryStore,
+} from '../../storyHarness';
 import type {
   Agent,
   AgentId,
-  BudgetAlert,
-  BudgetRule,
-  ContextSlot,
-  DiffComment,
-  GhTokenStatus,
-  IntegrationBinding,
-  IntegrationBindingId,
   IsoDateTime,
   Message,
   MessageId,
   MountId,
-  PlanConsumption,
-  PlanConsumptionId,
   PlanId,
   PlanWithCount,
   Project,
   ProjectId,
-  ProjectScript,
-  ProjectScriptId,
-  ProviderRunId,
   Session,
   SessionExternalTask,
   SessionId,
-  Skill,
-  SkillId,
-  TelemetryRecord,
-  TelemetryRecordId,
-  TurnEvent,
-  Workflow,
-  WorkflowId,
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
 import { materializationSeedFor } from './materializationSeeds';
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(async () => null),
-}));
-
-vi.mock('@tauri-apps/api/event', () => ({
-  listen: vi.fn(async () => () => undefined),
-}));
-
-const dbSetSettingSpy = vi.fn(async () => undefined);
-const dbGetSettingSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<string | null>>(
-  async () => null,
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../storyHarness')).tauriCoreModuleMock(),
 );
-const insertNotificationSpy = vi.fn(async () => undefined);
-const insertNudgeEventSpy = vi.fn(async () => undefined);
-const updateNudgeOutcomeSpy = vi.fn(async () => undefined);
-const insertDiffCommentSpy = vi.fn(async () => undefined);
-const listDiffCommentsSpy = vi.fn(async () => [] as ReadonlyArray<DiffComment>);
-const resolveDiffCommentDbSpy = vi.fn(async () => undefined);
-const reopenDiffCommentDbSpy = vi.fn(async () => undefined);
-const consumeDiffCommentsDbSpy = vi.fn(async () => undefined);
-const deleteDiffCommentDbSpy = vi.fn(async () => undefined);
-const upsertIntegrationBindingSpy = vi.fn(async () => undefined);
-const listIntegrationBindingsForWorkspaceSpy = vi.fn(
-  async () => [] as ReadonlyArray<IntegrationBinding>,
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../storyHarness')).tauriEventModuleMock(),
 );
-const deleteIntegrationBindingSpy = vi.fn(async () => undefined);
-const listProjectScriptsSpy = vi.fn(async () => [] as ReadonlyArray<ProjectScript>);
-const upsertProjectScriptSpy = vi.fn(async () => undefined);
-const deleteProjectScriptSpy = vi.fn(async () => undefined);
-const deleteFileVersionsForSessionSpy = vi.fn(async () => undefined);
-const updateSessionMountLifecycleSpy = vi.fn(async () => true);
-const inspectWorktreeSpy = vi.fn(async ({ worktreePath }: { worktreePath: string }) => ({
-  kind: 'registered' as string,
-  path: worktreePath,
-  isMain: false,
-  isLocked: false,
-  lockReason: null,
-}));
-const getWorkspaceByIdSpy = vi.fn();
-const listProjectsForWorkspaceSpy = vi.fn();
-const upsertSessionExternalTaskSpy = vi.fn(async () => undefined);
-const updateSessionStateSpy = vi.fn(async () => undefined);
-const listLiveRunIdsSpy = vi.fn(async () => new Set<string>());
-
-const resolveMockState = vi.hoisted(() => ({ reset: (): void => {} }));
-beforeEach(() => resolveMockState.reset());
-
-vi.mock('@goodboy/db', async () => {
-  const queries = (
-    await import('../resolve/testing/createResolveQueryMocks')
-  ).createResolveQueryMocks();
-  resolveMockState.reset = queries.resetResolveQueryMocks;
-  return {
-    ...queries,
-    getSetting: dbGetSettingSpy,
-    setSetting: dbSetSettingSpy,
-    insertMessage: vi.fn(async () => undefined),
-    insertProviderRun: vi.fn(async () => undefined),
-    insertSession: vi.fn(async () => undefined),
-    insertSessionWorktree: vi.fn(async () => undefined),
-    insertTelemetry: vi.fn(async () => undefined),
-    insertTurnEventsBatch: vi.fn(async () => undefined),
-    insertWorkspace: vi.fn(async () => undefined),
-    getWorkspaceById: getWorkspaceByIdSpy,
-    listProjectsForWorkspace: listProjectsForWorkspaceSpy,
-    disconnectWorkspace: vi.fn(async () => undefined),
-    reconnectWorkspace: vi.fn(async () => undefined),
-    touchWorkspaceLastAccessed: vi.fn(async () => undefined),
-    findWorkspaceByRootPath: vi.fn(async () => null),
-    upsertSessionExternalTask: upsertSessionExternalTaskSpy,
-    deleteSessionExternalTask: vi.fn(async () => undefined),
-    listExternalTasksForWorkspace: vi.fn(async () => []),
-    listContextSlotsForSession: vi.fn(async () => []),
-    insertContextSlotHistory: vi.fn(async () => undefined),
-    listContextSlotHistory: vi.fn(async () => []),
-    countContextSlotHistoryForSession: vi.fn(async () => ({})),
-    listGoalAttachmentsForSession: vi.fn(async () => []),
-    listMessagesForAgent: vi.fn(async () => []),
-    listMessagesForSession: vi.fn(async () => []),
-    listTurnEventsForAgent: vi.fn(async () => []),
-    listTurnEventsForSession: vi.fn(async () => []),
-    listAgentRunIdsForSession: vi.fn(async () => new Map()),
-    listSessionsForWorkspace: vi.fn(async () => []),
-    listArchivedSessionsForWorkspace: vi.fn(async () => []),
-    listTelemetryForSession: vi.fn(async () => []),
-    listWorkspaces: vi.fn(async () => []),
-    listWorktreesForSession: vi.fn(async () => []),
-    listSessionMounts: vi.fn(async () => []),
-    detachSessionMounts: vi.fn(async () => undefined),
-    getSessionMount: vi.fn(async () => null),
-    updateSessionMountLifecycle: updateSessionMountLifecycleSpy,
-    listWorktreesForSessions: vi.fn(async () => new Map()),
-    listAgentsForSessions: vi.fn(async () => new Map()),
-    deleteWorktreesForSession: vi.fn(async () => undefined),
-    updateSessionWorktreeBranch: vi.fn(async () => undefined),
-    updateSessionWorktreeRepoSlug: vi.fn(async () => undefined),
-    listAllSessionWorktrees: vi.fn(async () => []),
-    renameSession: vi.fn(async () => undefined),
-    deleteSession: vi.fn(async () => undefined),
-    purgeSessionForDelete: vi.fn(async () => undefined),
-    deleteFileVersionsForSession: deleteFileVersionsForSessionSpy,
-    archiveSession: vi.fn(async () => undefined),
-    unarchiveSession: vi.fn(async () => undefined),
-    updateSessionConfig: vi.fn(async () => undefined),
-    updateAgentConfig: vi.fn(async () => undefined),
-    summarizeSessionTelemetry: vi.fn(async () => null),
-    summarizeWorkspaceTelemetry: vi.fn(async () => null),
-    summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
-    updateProviderRunStatus: vi.fn(async () => undefined),
-    updateSessionPermissionMode: vi.fn(async () => undefined),
-    updateSessionAutoRun: vi.fn(async () => undefined),
-    updateSessionTitleUserEdited: vi.fn(async () => undefined),
-    updateSessionActiveProject: vi.fn(async () => undefined),
-    updateSessionWriteDestination: vi.fn(async () => true),
-    updateSessionState: updateSessionStateSpy,
-    attachWorkflowToSession: vi.fn(async () => undefined),
-    detachWorkflowFromSession: vi.fn(async () => undefined),
-    updateWorkflowOrder: vi.fn(async () => undefined),
-    updateSessionWorkflowStep: vi.fn(async () => undefined),
-    listProjectScripts: listProjectScriptsSpy,
-    upsertProjectScript: upsertProjectScriptSpy,
-    deleteProjectScript: deleteProjectScriptSpy,
-    upsertContextSlot: vi.fn(async () => undefined),
-    listOpenQuestionsForSession: vi.fn(async () => []),
-    insertNudgeEvent: insertNudgeEventSpy,
-    updateNudgeEventOutcome: updateNudgeOutcomeSpy,
-    insertNotification: insertNotificationSpy,
-    listNotifications: vi.fn(async () => []),
-    countNotifications: vi.fn(async () => ({ total: 0, unread: 0 })),
-    NOTIFICATION_LIST_LIMIT: 200,
-    markAllNotificationsRead: vi.fn(async () => undefined),
-    clearAllNotifications: vi.fn(async () => undefined),
-    listDiffCommentsForSession: listDiffCommentsSpy,
-    insertDiffComment: insertDiffCommentSpy,
-    resolveDiffComment: resolveDiffCommentDbSpy,
-    reopenDiffComment: reopenDiffCommentDbSpy,
-    consumeDiffComments: consumeDiffCommentsDbSpy,
-    deleteDiffComment: deleteDiffCommentDbSpy,
-    listIntegrationBindingsForWorkspace: listIntegrationBindingsForWorkspaceSpy,
-    getIntegrationBinding: vi.fn(async () => null),
-    upsertIntegrationBinding: upsertIntegrationBindingSpy,
-    deleteIntegrationBinding: deleteIntegrationBindingSpy,
-    deleteIntegrationBindingsForProvider: vi.fn(async () => undefined),
-    insertOpenQuestion: vi.fn(async () => undefined),
-    markOpenQuestionsResolvedByText: vi.fn(async () => 0),
-    listResolvedQuestionTextsForSession: vi.fn(async () => []),
-    insertTurnEvent: vi.fn(async () => undefined),
-    insertSessionEvent: vi.fn(async () => undefined),
-    getGithubPrCache: vi.fn(async () => null),
-    upsertGithubPrCache: vi.fn(async () => undefined),
-    deleteGithubPrCache: vi.fn(async () => undefined),
-  };
-});
-
-vi.mock('../../../shared/lib/db', () => ({
-  runDbMigrations: vi.fn(async () => undefined),
-  wipeDb: vi.fn(async () => undefined),
-  tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-}));
-
-vi.mock('../../../shared/lib/ls-to-db-migration', () => ({
-  migrateLsToDb: vi.fn(async () => undefined),
-}));
-
-vi.mock('../../../features/onboarding/onboarding-store', () => ({
-  hydrateOnboardingFromDb: vi.fn(async () => undefined),
-}));
-
-vi.mock('../../../features/chat/turn', () => ({
-  runTurn: vi.fn(),
-  cancelTurn: vi.fn(async () => undefined),
-  listLiveRunIds: listLiveRunIdsSpy,
-  writeAttachment: vi.fn(async () => 'rel/path'),
-  encodeAuthRequiredMessage: () => '',
-  isAuthErrorMessage: () => false,
-}));
-
-vi.mock('../../../features/permissions/permissions', () => ({
-  invokePermissionRuleList: vi.fn(async () => []),
-  invokePermissionRuleUpsert: vi.fn(async () => undefined),
-  invokePermissionAuditInsert: vi.fn(async () => undefined),
-  invokeAuditRetryEnqueue: vi.fn(async () => undefined),
-  invokeAuditRetryDrain: vi.fn(async () => []),
-  invokeAuditRetryUpdate: vi.fn(async () => undefined),
-  invokeAuditRetryDelete: vi.fn(async () => undefined),
-}));
-
-vi.mock('../../../features/providers/providers', () => ({
-  buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
-  checkProviderAuth: vi.fn(async () => ({ state: 'connected', identity: 'test' })),
-  getCursorStatus: vi.fn(async () => null),
-  getCodexStatus: vi.fn(async () => null),
-  getProviderStatus: vi.fn(async () => null),
-}));
-
-vi.mock('../../../features/providers/routing', () => ({
-  resolveProviderForTurn: vi.fn(async () => ({
-    selectedProvider: 'anthropic',
-    selectedModel: 'claude-3-5-sonnet-latest',
-    reason: 'preference',
-  })),
-}));
-
-const invokeBudgetRuleListSpy = vi.fn(async () => [] as ReadonlyArray<BudgetRule>);
-const invokeBudgetRuleUpsertSpy: ReturnType<typeof vi.fn> = vi.fn(async () => undefined);
-const invokeBudgetRuleDeleteSpy = vi.fn(async () => undefined);
-const invokeBudgetAlertsListSpy = vi.fn(async () => [] as ReadonlyArray<BudgetAlert>);
-const invokeBudgetAlertDismissSpy = vi.fn(async () => undefined);
-const invokeSessionBudgetGetSpy: ReturnType<typeof vi.fn> = vi.fn(async () => null);
-const invokeSessionBudgetSetSpy = vi.fn(async () => undefined);
-
-vi.mock('../../../features/budget/budget', () => ({
-  invokeBudgetRuleList: invokeBudgetRuleListSpy,
-  invokeBudgetRuleUpsert: invokeBudgetRuleUpsertSpy,
-  invokeBudgetRuleDelete: invokeBudgetRuleDeleteSpy,
-  invokeBudgetAlertsList: invokeBudgetAlertsListSpy,
-  invokeBudgetAlertDismiss: invokeBudgetAlertDismissSpy,
-  invokeSessionBudgetGet: invokeSessionBudgetGetSpy,
-  invokeSessionBudgetSet: invokeSessionBudgetSetSpy,
-  invokeCheckProviderBudget: vi.fn(async () => undefined),
-}));
-
-const invokeSkillListSpy = vi.fn(async () => [] as ReadonlyArray<Skill>);
-const invokeSkillUpsertSpy = vi.fn(async () => undefined);
-const invokeSkillDeleteSpy = vi.fn(async () => undefined);
-const invokeSkillRescanSpy = vi.fn(async () => [] as ReadonlyArray<Skill>);
-
-vi.mock('../../../features/skills/skills', () => ({
-  invokeSkillList: invokeSkillListSpy,
-  invokeSkillUpsert: invokeSkillUpsertSpy,
-  invokeSkillDelete: invokeSkillDeleteSpy,
-  invokeSkillRescan: invokeSkillRescanSpy,
-  resolveSkillInvocation: vi.fn(),
-}));
-
-const invokeWorkflowListSpy = vi.fn(async () => [] as ReadonlyArray<Workflow>);
-const invokeWorkflowUpsertSpy = vi.fn(async () => undefined);
-const invokeWorkflowDeleteSpy = vi.fn(async () => undefined);
-const invokeAgentListSpy = vi.fn(async () => [] as ReadonlyArray<Agent>);
-const invokeAgentInsertSpy = vi.fn();
-const invokeAgentUpdateStatusSpy = vi.fn();
-const invokeAgentSetKindSpy = vi.fn(async () => undefined);
-const invokeAgentSetVerbositySpy = vi.fn(async () => undefined);
-const invokeAgentMarkViewedSpy = vi.fn(async () => undefined);
-const invokeAgentSetProviderSessionIdSpy = vi.fn(async () => undefined);
-const invokeWorkspacesWithUnreadSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceId>);
-const invokeWorkflowsForSessionSpy = vi.fn(async () => [] as ReadonlyArray<unknown>);
-
-vi.mock('../../../features/workflows/workflows', () => ({
-  invokeWorkflowList: invokeWorkflowListSpy,
-  invokeWorkflowUpsert: invokeWorkflowUpsertSpy,
-  invokeWorkflowDelete: invokeWorkflowDeleteSpy,
-  invokeAgentList: invokeAgentListSpy,
-  invokeAgentInsert: invokeAgentInsertSpy,
-  invokeAgentUpdateStatus: invokeAgentUpdateStatusSpy,
-  invokeAgentSetKind: invokeAgentSetKindSpy,
-  invokeAgentSetVerbosity: invokeAgentSetVerbositySpy,
-  invokeAgentMarkViewed: invokeAgentMarkViewedSpy,
-  invokeAgentSetProviderSessionId: invokeAgentSetProviderSessionIdSpy,
-  invokeWorkspacesWithUnread: invokeWorkspacesWithUnreadSpy,
-  invokeWorkflowsForSession: invokeWorkflowsForSessionSpy,
-}));
-
-const createWorktreeSpy = vi.fn();
-const createSessionDirSpy = vi.fn();
-const removeWorktreeSpy = vi.fn(async () => undefined);
-const changeWorktreeBranchSpy = vi.fn(async () => undefined);
-
-vi.mock('../../../features/worktree/worktree', () => ({
-  createWorktree: createWorktreeSpy,
-  createSessionDir: createSessionDirSpy,
-  removeWorktree: removeWorktreeSpy,
-  removeWorktreeChecked: vi.fn(async ({ worktreePath }: { worktreePath: string }) => ({
-    kind: 'removed',
-    path: worktreePath,
-  })),
-  worktreeWriterStatus: vi.fn(async ({ path }: { path: string }) => ({
-    path,
-    holder: null,
-    token: null,
-    runId: null,
-    isGranted: false,
-    hasExited: false,
-    waiting: [],
-  })),
-  worktreeDirectorySize: vi.fn(async ({ path }: { path: string }) => ({
-    path,
-    sizeBytes: 1024,
-    isPartial: false,
-    exists: true,
-  })),
-  inspectWorktree: inspectWorktreeSpy,
-  changeWorktreeBranch: changeWorktreeBranchSpy,
-  sessionDirExists: vi.fn(async () => true),
-  worktreeChangedFiles: vi.fn(async () => []),
-}));
-
-vi.mock('../../../shared/lib/repo', () => ({
-  validateGitRepo: vi.fn(async () => ({ isRepo: true, rootPath: '/tmp/repo' })),
-}));
-
-vi.mock('../../../shared/lib/editor', () => ({
-  detectEditors: vi.fn(async () => []),
-}));
-
-const invokePlanListSpy = vi.fn(async () => [] as ReadonlyArray<PlanWithCount>);
-const invokeUpsertPlanSpy = vi.fn();
-const invokeSetPlanStatusSpy = vi.fn(async () => undefined);
-const invokeSetPlanBodySpy = vi.fn(async () => undefined);
-const invokeAddPlanConsumptionSpy = vi.fn(async () => undefined);
-const invokeListConsumptionsForPlanSpy = vi.fn(async () => [] as ReadonlyArray<PlanConsumption>);
-
-vi.mock('../../../features/plans/plans', () => ({
-  listPlansForSession: invokePlanListSpy,
-  upsertPlan: invokeUpsertPlanSpy,
-  setPlanStatus: invokeSetPlanStatusSpy,
-  setPlanBody: invokeSetPlanBodySpy,
-  addPlanConsumption: invokeAddPlanConsumptionSpy,
-  listConsumptionsForPlan: invokeListConsumptionsForPlanSpy,
-}));
-
-const linearConnectSpy = vi.fn();
-const linearDisconnectSpy = vi.fn(async () => undefined);
-
-vi.mock('../../../features/integrations/linear/client', () => ({
-  linearConnect: linearConnectSpy,
-  linearDisconnect: linearDisconnectSpy,
-}));
-
-const ghStatusSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<GhTokenStatus>>(async () => ({
-  available: true,
-  mode: 'gh-cli',
-  scopes: [],
-}));
-const ghSetTokenSpy = vi.fn();
-const ghClearTokenSpy = vi.fn(async () => undefined);
-
-vi.mock('../../../features/github/github', () => ({
-  ghStatus: ghStatusSpy,
-  ghSetToken: ghSetTokenSpy,
-  ghClearToken: ghClearTokenSpy,
-  tauriGhRunner: { run: vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 })) },
-  createTauriPrCacheStore: () => ({ get: vi.fn(), upsert: vi.fn(), delete: vi.fn() }),
-}));
-
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    detectRepoSlug: vi.fn(async () => null),
-    getPrForBranch: vi.fn(async () => null),
-    fetchPrDetail: vi.fn(async () => null),
-    fetchLinkedIssues: vi.fn(async () => []),
-    resolveReviewThread: vi.fn(async () => undefined),
-    addReviewThreadReply: vi.fn(async () => undefined),
-    seedWorkflowLibrary: vi.fn(async () => undefined),
-  };
-});
-
-vi.mock('../../../features/scripts/scripts', () => ({
-  invokeScriptRun: vi.fn(async () => undefined),
-  invokeScriptCancel: vi.fn(async () => undefined),
-  listenScriptOutput: vi.fn(async () => () => undefined),
-  listenScriptExit: vi.fn(async () => () => undefined),
-}));
-
-vi.mock('../../../features/terminal/terminal', () => ({
-  invokeTerminalOpen: vi.fn(async () => undefined),
-  invokeTerminalClose: vi.fn(async () => undefined),
-}));
-
-vi.mock('../../../features/context/components/QuestionsTab/useOpenQuestions', () => ({
-  useOpenQuestions: {
-    getState: () => ({ loadQuestions: vi.fn(async () => undefined) }),
-  },
-}));
-
-vi.mock('../../../features/settings/config-export', () => ({
-  exportConfigToFile: vi.fn(async () => '/tmp/export.json'),
-  importConfigFromFile: vi.fn(async () => null),
-}));
+vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock());
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../storyHarness')).dbLibModuleMock(),
+);
+vi.mock('../../../shared/lib/ls-to-db-migration', async () =>
+  (await import('../../storyHarness')).lsToDbMigrationModuleMock(),
+);
+vi.mock('../../../features/onboarding/onboarding-store', async () =>
+  (await import('../../storyHarness')).onboardingStoreModuleMock(),
+);
+vi.mock('../../../features/chat/turn', async () =>
+  (await import('../../storyHarness')).turnModuleMock(),
+);
+vi.mock('../../../features/permissions/permissions', async () =>
+  (await import('../../storyHarness')).permissionsModuleMock(),
+);
+vi.mock('../../../features/providers/providers', async () =>
+  (await import('../../storyHarness')).providersModuleMock(),
+);
+vi.mock('../../../features/providers/routing', async () =>
+  (await import('../../storyHarness')).routingModuleMock(),
+);
+vi.mock('../../../features/budget/budget', async () =>
+  (await import('../../storyHarness')).budgetModuleMock(),
+);
+vi.mock('../../../features/skills/skills', async () =>
+  (await import('../../storyHarness')).skillsModuleMock(),
+);
+vi.mock('../../../features/workflows/workflows', async () =>
+  (await import('../../storyHarness')).workflowsModuleMock(),
+);
+vi.mock('../../../features/worktree/worktree', async () =>
+  (await import('../../storyHarness')).worktreeModuleMock(),
+);
+vi.mock('../../../shared/lib/repo', async () =>
+  (await import('../../storyHarness')).repoModuleMock(),
+);
+vi.mock('../../../shared/lib/editor', async () =>
+  (await import('../../storyHarness')).editorModuleMock(),
+);
+vi.mock('../../../features/plans/plans', async () =>
+  (await import('../../storyHarness')).plansModuleMock(),
+);
+vi.mock('../../../features/integrations/linear/client', async () =>
+  (await import('../../storyHarness')).linearClientModuleMock(),
+);
+vi.mock('../../../features/github/github', async () =>
+  (await import('../../storyHarness')).githubModuleMock(),
+);
+vi.mock('@goodboy/core', async (importOriginal) =>
+  (await import('../../storyHarness')).coreModuleMock(importOriginal),
+);
+vi.mock('../../../features/scripts/scripts', async () =>
+  (await import('../../storyHarness')).scriptsModuleMock(),
+);
+vi.mock('../../../features/terminal/terminal', async () =>
+  (await import('../../storyHarness')).terminalModuleMock(),
+);
+vi.mock('../../../features/context/components/QuestionsTab/useOpenQuestions', async () =>
+  (await import('../../storyHarness')).openQuestionsModuleMock(),
+);
+vi.mock('../../../features/settings/config-export', async () =>
+  (await import('../../storyHarness')).configExportModuleMock(),
+);
 
 const WS_ID = 'workspace-1' as WorkspaceId;
 const WS_ID_2 = 'workspace-2' as WorkspaceId;
@@ -428,7 +105,6 @@ const SESSION_ID = 'session-1' as SessionId;
 const SESSION_ID_2 = 'session-2' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
 const AGENT_ID_2 = 'agent-2' as AgentId;
-const RUN_ID = 'run-1' as ProviderRunId;
 const PLAN_ID = 'plan-1' as PlanId;
 const NOW = '2026-05-28T00:00:00.000Z' as IsoDateTime;
 
@@ -437,7 +113,6 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
     id: WS_ID,
     name: 'ws',
     slug: 'ws',
-    sessionsRoot: '/tmp/repo',
     overrides: {
       defaultProviderId: null,
       defaultWorkflowId: null,
@@ -513,131 +188,29 @@ function buildPlan(overrides: Partial<PlanWithCount> = {}): PlanWithCount {
   };
 }
 
-async function getStore() {
-  const mod = await import('../../store');
-  return mod.useAppStore;
-}
+let useAppStore: StoryStore;
 
-let resetState: Record<string, unknown> | null = null;
-
-const STORE_IMPORT_TIMEOUT_MS = 60_000;
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 describe('store contract', () => {
-  beforeAll(async () => {
-    await getStore();
-  }, STORE_IMPORT_TIMEOUT_MS);
-
   beforeEach(async () => {
-    vi.clearAllMocks();
-    invokeBudgetRuleListSpy.mockResolvedValue([]);
-    invokeBudgetAlertsListSpy.mockResolvedValue([]);
-    invokeSessionBudgetGetSpy.mockResolvedValue(null);
-    invokeWorkflowListSpy.mockResolvedValue([]);
-    invokeAgentListSpy.mockResolvedValue([]);
-    invokeSkillListSpy.mockResolvedValue([]);
-    invokeSkillRescanSpy.mockResolvedValue([]);
-    invokePlanListSpy.mockResolvedValue([]);
-    invokeListConsumptionsForPlanSpy.mockResolvedValue([]);
-    invokeWorkspacesWithUnreadSpy.mockResolvedValue([]);
-    listProjectScriptsSpy.mockResolvedValue([]);
-    listIntegrationBindingsForWorkspaceSpy.mockResolvedValue([]);
-    listDiffCommentsSpy.mockResolvedValue([]);
-    getWorkspaceByIdSpy.mockResolvedValue(buildWorkspace());
-    listProjectsForWorkspaceSpy.mockResolvedValue([buildProject()]);
-    createWorktreeSpy.mockResolvedValue({
+    await resetStoryStore();
+    storySpies.getWorkspaceById.mockResolvedValue(buildWorkspace());
+    storySpies.listProjectsForWorkspace.mockResolvedValue([buildProject()]);
+    storySpies.createWorktree.mockResolvedValue({
       worktreePath: '/tmp/repo/.goodboy/worktrees/session',
       branchName: 'goodboy/session',
       slug: 'session',
       reused: false,
     });
-    createSessionDirSpy.mockResolvedValue({
+    storySpies.createSessionDir.mockResolvedValue({
       worktreePath: '/tmp/repo/sessions/session',
       branchName: '',
       slug: 'session',
       reused: false,
     });
-    upsertSessionExternalTaskSpy.mockResolvedValue(undefined);
-    dbGetSettingSpy.mockResolvedValue(null);
-    ghStatusSpy.mockResolvedValue({ available: true, mode: 'gh-cli', scopes: [] });
-
-    const store = await getStore();
-    if (!resetState) {
-      const snap = store.getState();
-      resetState = {
-        workspaces: [],
-        projects: [],
-        workspaceIntegrations: {},
-        sessionExternalTasks: {},
-        currentWorkspaceId: null,
-        sessions: [],
-        archivedSessions: {},
-        currentSessionId: null,
-        settings: {},
-        sessionSummary: null,
-        providerStatus: null,
-        cursorStatus: null,
-        codexStatus: null,
-        authResults: null,
-        providers: snap.providers,
-        hydrated: false,
-        bootPhase: 'pending',
-        error: null,
-        transcripts: {},
-        messages: {},
-        sessionWorktrees: {},
-        sessionProjectMounts: {},
-        sessionActiveProject: {},
-        sessionBranches: {},
-        sessionTelemetry: {},
-        workspaceSummary: null,
-        sessionSlots: {},
-        slotHistory: {},
-        summarizerStatus: {},
-        budgetRules: [],
-        sessionBudgets: {},
-        providerSpendBreakdown: [],
-        budgetAlerts: [],
-        skills: {},
-        projectScripts: {},
-        scriptRuns: {},
-        phaseTemplates: {},
-        sessionWorkflows: {},
-        sessionPhaseRuns: {},
-        selectedAgentId: {},
-        agentRunHistory: {},
-        agentTurnState: {},
-        unknownPayloadCounts: {},
-        detectedEditors: [],
-        workspaceOverrides: {},
-        sessionOverrides: {},
-        unreadWorkspaceIds: new Set<WorkspaceId>(),
-        githubStatus: null,
-        sessionGithub: {},
-        sessionSelectedPrNumber: {},
-        volatilePermissionAllows: new Set<string>(),
-        agentModelOverride: {},
-        agentProviderOverride: {},
-        agentKindOverride: {},
-        agentDraft: {},
-        diffComments: {},
-        sessionFileVersions: {},
-        sessionFileVersionsLoading: {},
-        sessionFileVersionSelectedPath: {},
-        notifications: [],
-        sessionPlans: {},
-        sessionNudges: {},
-        planConsumptions: {},
-        sessionOpenQuestions: {},
-        sessionLoading: {},
-        sessionSlotsLoad: {},
-        sessionViewPrefs: {},
-        terminalSessions: {},
-      };
-    }
-    store.setState(resetState as never);
-    if (typeof globalThis.localStorage !== 'undefined') {
-      globalThis.localStorage.clear();
-    }
   });
 
   afterEach(() => {
@@ -645,43 +218,8 @@ describe('store contract', () => {
   });
 
   describe('sessions', () => {
-    it('refreshSessions overwrites sessions from DB', async () => {
-      const store = await getStore();
-      const { listSessionsForWorkspace } = await import('@goodboy/db');
-      (listSessionsForWorkspace as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
-        buildSession({ id: SESSION_ID }),
-        buildSession({ id: SESSION_ID_2, goal: 'two' }),
-      ]);
-      await store.getState().refreshSessions(WS_ID);
-      const ss = store.getState().sessions;
-      expect(ss).toHaveLength(2);
-      expect(ss[0]?.id).toBe(SESSION_ID);
-      expect(ss[1]?.goal).toBe('two');
-    });
-
-    it('refreshSessions reconciles a database-running session before storing it', async () => {
-      const store = await getStore();
-      const { listSessionsForWorkspace } = await import('@goodboy/db');
-      (listSessionsForWorkspace as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
-        buildSession({ state: { kind: 'running', runId: RUN_ID, startedAt: NOW } }),
-      ]);
-      listLiveRunIdsSpy.mockResolvedValueOnce(new Set());
-
-      await store.getState().refreshSessions(WS_ID);
-
-      expect(
-        store.getState().sessions.filter((session) => session.state.kind === 'running'),
-      ).toHaveLength(0);
-      expect(updateSessionStateSpy).toHaveBeenCalledWith(
-        expect.anything(),
-        SESSION_ID,
-        expect.objectContaining({ kind: 'idle' }),
-        expect.any(String),
-      );
-    });
-
     it('loads durable resolve rows when agents are already cached', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const original = store.getState().loadResolveSession;
       const loadResolveSession = vi.fn(async () => undefined);
       store.setState({ sessionPhaseRuns: { [SESSION_ID]: [] }, loadResolveSession });
@@ -694,7 +232,7 @@ describe('store contract', () => {
     });
 
     it('setCurrentSession reads the context slots the database holds', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
       (db.listContextSlotsForSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
         { key: 'last_output_summary', value: '#### State\n- shipped', enabled: true },
@@ -710,7 +248,7 @@ describe('store contract', () => {
     });
 
     it('opens a session whose id another path already made current, so its context still loads', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
       (db.listContextSlotsForSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
         { key: 'last_output_summary', value: '#### State\n- shipped', enabled: true },
@@ -728,7 +266,7 @@ describe('store contract', () => {
     });
 
     it('reads the database for a session whose slots were only ever written in memory', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
       (db.listContextSlotsForSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
         { key: 'goal', value: 'ship it', enabled: true },
@@ -746,8 +284,8 @@ describe('store contract', () => {
     });
 
     it('setCurrentSession rebuilds resolver verdicts from the persisted transcript', async () => {
-      const store = await getStore();
-      invokeAgentListSpy.mockResolvedValue([
+      const store = useAppStore;
+      storySpies.invokeAgentList.mockResolvedValue([
         buildAgent({
           id: AGENT_ID,
           name: 'resolver',
@@ -782,7 +320,7 @@ describe('store contract', () => {
     });
 
     it('renameTask updates goal and stamps titleUserEdited', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ sessions: [buildSession()] });
       await store.getState().renameTask(SESSION_ID, '  fresh name  ');
       const s = store.getState().sessions.find((x) => x.id === SESSION_ID);
@@ -791,20 +329,20 @@ describe('store contract', () => {
     });
 
     it('renameTask rejects empty names', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ sessions: [buildSession()] });
       await expect(store.getState().renameTask(SESSION_ID, '   ')).rejects.toThrow();
     });
 
     it('setSessionPermissionMode mutates the session row', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ sessions: [buildSession()] });
       await store.getState().setSessionPermissionMode(SESSION_ID, 'default');
       expect(store.getState().sessions[0]?.permissionMode).toBe('default');
     });
 
     it('archiveTask keeps currentSessionId and session state when archiving the current session', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({
         sessions: [buildSession()],
         currentSessionId: SESSION_ID,
@@ -822,7 +360,7 @@ describe('store contract', () => {
     });
 
     it('archiveTask removes a non-current session and wipes its state without touching currentSessionId', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({
         sessions: [buildSession(), buildSession({ id: SESSION_ID_2, goal: 'two' })],
         currentSessionId: SESSION_ID,
@@ -841,7 +379,7 @@ describe('store contract', () => {
     });
 
     it('unarchiveTask restores a session from archived cache to active when in same workspace', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const archived: Session = {
         ...buildSession(),
         archivedAt: NOW,
@@ -858,13 +396,13 @@ describe('store contract', () => {
     });
 
     it('unarchiveTask reloads the workflows attached to the session', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const archived: Session = {
         ...buildSession(),
         archivedAt: NOW,
       } as Session;
       const workflow = { id: 'wf-1', name: 'release' };
-      invokeWorkflowsForSessionSpy.mockResolvedValueOnce([workflow]);
+      storySpies.invokeWorkflowsForSession.mockResolvedValueOnce([workflow]);
       store.setState({
         workspaces: [buildWorkspace()],
         currentWorkspaceId: WS_ID,
@@ -872,12 +410,12 @@ describe('store contract', () => {
       });
       await store.getState().unarchiveTask(SESSION_ID);
       const s = store.getState();
-      expect(invokeWorkflowsForSessionSpy).toHaveBeenCalledWith(SESSION_ID);
+      expect(storySpies.invokeWorkflowsForSession).toHaveBeenCalledWith(SESSION_ID);
       expect(s.sessionWorkflows[SESSION_ID]).toEqual([workflow]);
     });
 
     it('unarchiveTask hides a mount whose folder is gone and clears its path', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
       const archived: Session = { ...buildSession(), archivedAt: NOW } as Session;
       vi.mocked(db.listWorktreesForSession).mockResolvedValueOnce([
@@ -893,7 +431,7 @@ describe('store contract', () => {
         },
       ] as never);
       vi.mocked(db.getSessionMount).mockResolvedValueOnce({ revision: 7 } as never);
-      inspectWorktreeSpy.mockResolvedValueOnce({
+      storySpies.inspectWorktree.mockResolvedValueOnce({
         kind: 'missing',
         path: '/tmp/repo/.goodboy/worktrees/gone',
       } as never);
@@ -907,7 +445,7 @@ describe('store contract', () => {
       await store.getState().unarchiveTask(SESSION_ID);
 
       expect(store.getState().sessionProjectMounts[SESSION_ID]).toEqual([]);
-      expect(updateSessionMountLifecycleSpy).toHaveBeenCalledWith(
+      expect(storySpies.updateSessionMountLifecycle).toHaveBeenCalledWith(
         expect.objectContaining({
           mountId: 'mount-gone',
           worktreePath: null,
@@ -918,7 +456,7 @@ describe('store contract', () => {
     });
 
     it('unarchiveTask realigns a session whose project disagrees with its mount', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
       const otherProjectId = 'project-stale' as ProjectId;
       const archived: Session = {
@@ -961,7 +499,7 @@ describe('store contract', () => {
     });
 
     it('unarchiveTask carries the stored revision into the seeded project mount', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
       const archived: Session = { ...buildSession(), archivedAt: NOW } as Session;
       vi.mocked(db.listWorktreesForSession).mockResolvedValueOnce([
@@ -990,9 +528,9 @@ describe('store contract', () => {
     });
 
     it('unarchiveTask restores the session and reports when the secondary refresh fails', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const archived: Session = { ...buildSession(), archivedAt: NOW } as Session;
-      invokeAgentListSpy.mockRejectedValueOnce(new Error('agent list unavailable'));
+      storySpies.invokeAgentList.mockRejectedValueOnce(new Error('agent list unavailable'));
       store.setState({
         workspaces: [buildWorkspace()],
         currentWorkspaceId: WS_ID,
@@ -1004,7 +542,7 @@ describe('store contract', () => {
       const s = store.getState();
       expect(s.sessions.find((x) => x.id === SESSION_ID)).toBeDefined();
       expect(s.archivedSessions[WS_ID]).toEqual([]);
-      expect(insertNotificationSpy).toHaveBeenCalledWith(
+      expect(storySpies.insertNotification).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
           kind: 'error',
@@ -1015,7 +553,7 @@ describe('store contract', () => {
     });
 
     it('writes the archive and the restore to the session timeline', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
       vi.mocked(db.insertSessionEvent).mockClear();
       store.setState({
@@ -1032,7 +570,7 @@ describe('store contract', () => {
     });
 
     it('archiveTask keeps every worktree directory on disk', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const cleanupSessionMounts = vi.fn(async () => []);
       store.setState({
         workspaces: [buildWorkspace()],
@@ -1046,12 +584,11 @@ describe('store contract', () => {
       expect(cleanupSessionMounts).toHaveBeenCalledWith({
         sessionId: SESSION_ID,
         reason: 'archive',
-        keepDirectories: true,
       });
     });
 
     it('deleteTask removes an archived session from the archived cache', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const archived: Session = {
         ...buildSession(),
         archivedAt: NOW,
@@ -1075,7 +612,7 @@ describe('store contract', () => {
     });
 
     it('deleteTask purges file versions for a branchless session', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({
         sessions: [buildSession()],
         workspaces: [buildWorkspace()],
@@ -1085,7 +622,7 @@ describe('store contract', () => {
 
       await store.getState().deleteTask(SESSION_ID);
 
-      expect(deleteFileVersionsForSessionSpy).toHaveBeenCalledWith({
+      expect(storySpies.deleteFileVersionsForSession).toHaveBeenCalledWith({
         db: expect.anything(),
         sessionId: SESSION_ID,
       });
@@ -1100,7 +637,7 @@ describe('store contract', () => {
       }
 
       it('bulkArchiveTask archives every selected active session', async () => {
-        const store = await getStore();
+        const store = useAppStore;
         store.setState({
           workspaces: [buildWorkspace()],
           currentWorkspaceId: WS_ID,
@@ -1111,7 +648,7 @@ describe('store contract', () => {
       });
 
       it('bulkArchiveTask keeps archiving after one session fails and reports the failure', async () => {
-        const store = await getStore();
+        const store = useAppStore;
         const { archiveSession } = await import('@goodboy/db');
         (archiveSession as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
           new Error('db down'),
@@ -1123,11 +660,11 @@ describe('store contract', () => {
         });
         await store.getState().bulkArchiveTask([SESSION_ID, SESSION_ID_2]);
         expect(store.getState().sessions.map((x) => x.id)).toEqual([SESSION_ID]);
-        expect(insertNotificationSpy).toHaveBeenCalled();
+        expect(storySpies.insertNotification).toHaveBeenCalled();
       });
 
       it('bulkUnarchiveTask restores every selected session into the active list', async () => {
-        const store = await getStore();
+        const store = useAppStore;
         store.setState({
           workspaces: [buildWorkspace()],
           currentWorkspaceId: WS_ID,
@@ -1142,7 +679,7 @@ describe('store contract', () => {
       });
 
       it('bulkUnarchiveTask keeps restoring after one session fails and reports the failure', async () => {
-        const store = await getStore();
+        const store = useAppStore;
         const { unarchiveSession } = await import('@goodboy/db');
         (unarchiveSession as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
           new Error('db down'),
@@ -1158,11 +695,11 @@ describe('store contract', () => {
         const s = store.getState();
         expect(s.sessions.map((x) => x.id)).toEqual([SESSION_ID_2]);
         expect(s.archivedSessions[WS_ID]?.map((x) => x.id)).toEqual([SESSION_ID]);
-        expect(insertNotificationSpy).toHaveBeenCalled();
+        expect(storySpies.insertNotification).toHaveBeenCalled();
       });
 
       it('bulkDeleteTask removes every selected session from the archived cache', async () => {
-        const store = await getStore();
+        const store = useAppStore;
         store.setState({
           workspaces: [buildWorkspace()],
           currentWorkspaceId: WS_ID,
@@ -1175,7 +712,7 @@ describe('store contract', () => {
       });
 
       it('bulkDeleteTask keeps deleting after one session throws', async () => {
-        const store = await getStore();
+        const store = useAppStore;
         const MISSING = 'session-missing' as SessionId;
         store.setState({
           workspaces: [buildWorkspace()],
@@ -1189,7 +726,7 @@ describe('store contract', () => {
       });
 
       it('bulkDeleteTask reports the exact failed-of-total count when a delete throws', async () => {
-        const store = await getStore();
+        const store = useAppStore;
         const MISSING = 'session-missing' as SessionId;
         const emitSpy = vi.fn<(...args: unknown[]) => Promise<undefined>>(async () => undefined);
         store.setState({
@@ -1203,13 +740,15 @@ describe('store contract', () => {
         await store.getState().bulkDeleteTask([MISSING, SESSION_ID]);
         expect(store.getState().archivedSessions[WS_ID]?.map((x) => x.id)).toEqual([SESSION_ID_2]);
         const summary = emitSpy.mock.calls.find((c) =>
-          String((c as unknown[])[2]).startsWith('failed to delete'),
+          String((c[0] as { title: string }).title).startsWith("Couldn't delete"),
         );
-        expect(summary?.[2]).toBe('failed to delete 1 of 2 sessions');
+        expect((summary?.[0] as { title: string } | undefined)?.title).toBe(
+          "Couldn't delete 1 of 2 sessions",
+        );
       });
 
       it('bulkDeleteTask deletes sequentially in the given id order', async () => {
-        const store = await getStore();
+        const store = useAppStore;
         const { purgeSessionForDelete } = await import('@goodboy/db');
         const spy = purgeSessionForDelete as unknown as ReturnType<typeof vi.fn>;
         store.setState({
@@ -1227,23 +766,23 @@ describe('store contract', () => {
       });
 
       it('bulkDeleteTask is a no-op and emits no notification for an empty selection', async () => {
-        const store = await getStore();
+        const store = useAppStore;
         const { purgeSessionForDelete } = await import('@goodboy/db');
         await store.getState().bulkDeleteTask([]);
         expect(purgeSessionForDelete as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
-        expect(insertNotificationSpy).not.toHaveBeenCalled();
+        expect(storySpies.insertNotification).not.toHaveBeenCalled();
       });
 
       it('bulkUnarchiveTask is a no-op and emits no notification for an empty selection', async () => {
-        const store = await getStore();
+        const store = useAppStore;
         const { unarchiveSession } = await import('@goodboy/db');
         await store.getState().bulkUnarchiveTask([]);
         expect(unarchiveSession as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
-        expect(insertNotificationSpy).not.toHaveBeenCalled();
+        expect(storySpies.insertNotification).not.toHaveBeenCalled();
       });
 
       it('bulkUnarchiveTask reports failed-of-total when every restore fails', async () => {
-        const store = await getStore();
+        const store = useAppStore;
         const { unarchiveSession } = await import('@goodboy/db');
         (unarchiveSession as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
           new Error('db down'),
@@ -1264,9 +803,11 @@ describe('store contract', () => {
           [SESSION_ID, SESSION_ID_2].sort(),
         );
         const summary = emitSpy.mock.calls.find((c) =>
-          String((c as unknown[])[2]).startsWith('failed to restore'),
+          String((c[0] as { title: string }).title).startsWith("Couldn't restore"),
         );
-        expect(summary?.[2]).toBe('failed to restore 2 of 2 sessions');
+        expect((summary?.[0] as { title: string } | undefined)?.title).toBe(
+          "Couldn't restore 2 of 2 sessions",
+        );
       });
     });
   });
@@ -1275,7 +816,7 @@ describe('store contract', () => {
     const MOUNT_PATH = '/tmp/repo/.goodboy/worktrees/study-plan';
 
     const primeMount = () => {
-      createWorktreeSpy.mockResolvedValueOnce({
+      storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: MOUNT_PATH,
         branchName: 'goodboy/study-plan',
         slug: 'study-plan',
@@ -1284,7 +825,7 @@ describe('store contract', () => {
     };
 
     it('mounts the picked project and works inside its worktree', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
       store.setState({ currentWorkspaceId: WS_ID });
       primeMount();
@@ -1295,7 +836,7 @@ describe('store contract', () => {
         goal: 'Study plan',
       });
 
-      expect(createWorktreeSpy).toHaveBeenCalledWith(
+      expect(storySpies.createWorktree).toHaveBeenCalledWith(
         expect.objectContaining({
           repoPath: '/tmp/repo',
           parentDir: '/tmp/repo/.goodboy/worktrees',
@@ -1336,7 +877,7 @@ describe('store contract', () => {
     });
 
     it('mounts the project the caller picked when the workspace holds several', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const apiProject = buildProject({
         id: 'project-api' as ProjectId,
         name: 'api',
@@ -1347,9 +888,9 @@ describe('store contract', () => {
         name: 'web',
         rootPath: '/tmp/web',
       });
-      listProjectsForWorkspaceSpy.mockResolvedValueOnce([apiProject, webProject]);
+      storySpies.listProjectsForWorkspace.mockResolvedValueOnce([apiProject, webProject]);
       store.setState({ currentWorkspaceId: WS_ID, projects: [apiProject, webProject] });
-      createWorktreeSpy.mockResolvedValueOnce({
+      storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: '/tmp/web/.goodboy/worktrees/ship-scope',
         branchName: 'goodboy/ship-scope',
         slug: 'ship-scope',
@@ -1362,7 +903,7 @@ describe('store contract', () => {
         goal: 'Ship scope',
       });
 
-      expect(createWorktreeSpy).toHaveBeenCalledWith(
+      expect(storySpies.createWorktree).toHaveBeenCalledWith(
         expect.objectContaining({ repoPath: '/tmp/web' }),
       );
       expect(
@@ -1371,7 +912,7 @@ describe('store contract', () => {
     });
 
     it('creates a bare session when the workspace holds several projects and none was picked', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
       const apiProject = buildProject({
         id: 'project-api' as ProjectId,
@@ -1383,7 +924,7 @@ describe('store contract', () => {
         name: 'web',
         rootPath: '/tmp/web',
       });
-      listProjectsForWorkspaceSpy.mockResolvedValueOnce([apiProject, webProject]);
+      storySpies.listProjectsForWorkspace.mockResolvedValueOnce([apiProject, webProject]);
       store.setState({ currentWorkspaceId: WS_ID, projects: [apiProject, webProject] });
 
       const { session } = await store
@@ -1391,15 +932,15 @@ describe('store contract', () => {
         .createSession({ workspaceId: WS_ID, goal: 'Ship scope' });
 
       expect(vi.mocked(db.insertSession)).toHaveBeenCalled();
-      expect(createWorktreeSpy).not.toHaveBeenCalled();
+      expect(storySpies.createWorktree).not.toHaveBeenCalled();
       expect(store.getState().sessions.map((s) => s.id)).toEqual([session.id]);
       expect(store.getState().sessionProjectMounts[session.id]).toEqual([]);
     });
 
     it('creates a bare session in a workspace with no project', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
-      listProjectsForWorkspaceSpy.mockResolvedValueOnce([]);
+      storySpies.listProjectsForWorkspace.mockResolvedValueOnce([]);
       store.setState({ currentWorkspaceId: WS_ID, projects: [] });
 
       const { session } = await store
@@ -1407,15 +948,15 @@ describe('store contract', () => {
         .createSession({ workspaceId: WS_ID, goal: 'Study plan' });
 
       expect(vi.mocked(db.insertSession)).toHaveBeenCalled();
-      expect(createWorktreeSpy).not.toHaveBeenCalled();
+      expect(storySpies.createWorktree).not.toHaveBeenCalled();
       expect(store.getState().sessionProjectMounts[session.id]).toEqual([]);
     });
 
     it('leaves no session behind when the worktree cannot be created', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
       store.setState({ currentWorkspaceId: WS_ID });
-      createWorktreeSpy.mockRejectedValueOnce(new Error('git worktree add failed'));
+      storySpies.createWorktree.mockRejectedValueOnce(new Error('git worktree add failed'));
 
       await expect(
         store
@@ -1432,11 +973,11 @@ describe('store contract', () => {
     });
 
     it('mounts a folder project as a session directory inside the folder', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const folderProject = buildProject({ kind: 'folder', name: 'notes', rootPath: '/tmp/notes' });
-      listProjectsForWorkspaceSpy.mockResolvedValueOnce([folderProject]);
+      storySpies.listProjectsForWorkspace.mockResolvedValueOnce([folderProject]);
       store.setState({ currentWorkspaceId: WS_ID, projects: [folderProject] });
-      createSessionDirSpy.mockResolvedValueOnce({
+      storySpies.createSessionDir.mockResolvedValueOnce({
         worktreePath: '/tmp/notes/sessions/take-notes',
         branchName: '',
         slug: 'take-notes',
@@ -1449,8 +990,8 @@ describe('store contract', () => {
         goal: 'Take notes',
       });
 
-      expect(createWorktreeSpy).not.toHaveBeenCalled();
-      expect(createSessionDirSpy).toHaveBeenCalledWith(
+      expect(storySpies.createWorktree).not.toHaveBeenCalled();
+      expect(storySpies.createSessionDir).toHaveBeenCalledWith(
         expect.objectContaining({ basePath: '/tmp/notes', sessionId: session.id }),
       );
       expect(store.getState().sessionWorktrees[session.id]).toEqual([
@@ -1460,7 +1001,7 @@ describe('store contract', () => {
     });
 
     it('seeds the workspace routing pool and includes its default provider', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({
         currentWorkspaceId: WS_ID,
         workspaceOverrides: {
@@ -1484,7 +1025,7 @@ describe('store contract', () => {
     });
 
     it('records the mount and then the external task for a seeded creation', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
       store.setState({ currentWorkspaceId: WS_ID });
       primeMount();
@@ -1509,7 +1050,7 @@ describe('store contract', () => {
     });
 
     it('passes task identifiers into the initial materialization', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });
 
       await store.getState().createSession({
@@ -1527,7 +1068,7 @@ describe('store contract', () => {
         ],
       });
 
-      expect(createWorktreeSpy).toHaveBeenCalledWith(
+      expect(storySpies.createWorktree).toHaveBeenCalledWith(
         expect.objectContaining({
           slug: 'grw-1220-applicare-nuove-icone-alla-navbar',
         }),
@@ -1535,8 +1076,8 @@ describe('store contract', () => {
     });
 
     it('does not freeze the default prefix or ordinary slug in the seed', async () => {
-      const store = await getStore();
-      listProjectsForWorkspaceSpy.mockResolvedValueOnce([]);
+      const store = useAppStore;
+      storySpies.listProjectsForWorkspace.mockResolvedValueOnce([]);
       store.setState({ currentWorkspaceId: WS_ID, projects: [] });
 
       const { session } = await store
@@ -1547,11 +1088,11 @@ describe('store contract', () => {
     });
 
     it('uses the project branch prefix before the workspace prefix', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const project = buildProject({
         overrides: { ...buildWorkspace().overrides, defaultBranchPrefix: 'project-prefix' },
       });
-      listProjectsForWorkspaceSpy.mockResolvedValueOnce([project]);
+      storySpies.listProjectsForWorkspace.mockResolvedValueOnce([project]);
       store.setState({
         currentWorkspaceId: WS_ID,
         projects: [project],
@@ -1566,13 +1107,13 @@ describe('store contract', () => {
         goal: 'Study plan',
       });
 
-      expect(createWorktreeSpy).toHaveBeenCalledWith(
+      expect(storySpies.createWorktree).toHaveBeenCalledWith(
         expect.objectContaining({ branchPrefix: 'project-prefix' }),
       );
     });
 
     it('uses the workspace branch prefix when the project has none', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({
         currentWorkspaceId: WS_ID,
         workspaceOverrides: {
@@ -1586,13 +1127,13 @@ describe('store contract', () => {
         goal: 'Study plan',
       });
 
-      expect(createWorktreeSpy).toHaveBeenCalledWith(
+      expect(storySpies.createWorktree).toHaveBeenCalledWith(
         expect.objectContaining({ branchPrefix: 'workspace-prefix' }),
       );
     });
 
     it('uses the session slug for an untitled mount', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });
 
       const { session } = await store.getState().createSession({
@@ -1601,13 +1142,13 @@ describe('store contract', () => {
         goal: 'Untitled session',
       });
 
-      expect(createWorktreeSpy).toHaveBeenCalledWith(
+      expect(storySpies.createWorktree).toHaveBeenCalledWith(
         expect.objectContaining({ slug: `session-${session.id.slice(0, 8)}` }),
       );
     });
 
     it('sends an explicit branch slug already sanitized the way the backend would', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });
 
       await store.getState().createSession({
@@ -1617,13 +1158,13 @@ describe('store contract', () => {
         branchSlug: 'Foreign_Feature/Exact',
       });
 
-      expect(createWorktreeSpy).toHaveBeenCalledWith(
+      expect(storySpies.createWorktree).toHaveBeenCalledWith(
         expect.objectContaining({ slug: 'foreign-feature-exact' }),
       );
     });
 
     it('pins a foreign prefix and keeps the adopted branch verbatim', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });
 
       await store.getState().createSession({
@@ -1633,7 +1174,7 @@ describe('store contract', () => {
         existingBranch: 'alice/fix-parser',
       });
 
-      expect(createWorktreeSpy).toHaveBeenCalledWith(
+      expect(storySpies.createWorktree).toHaveBeenCalledWith(
         expect.objectContaining({
           branchPrefix: 'alice',
           slug: 'alice-fix-parser',
@@ -1643,7 +1184,7 @@ describe('store contract', () => {
     });
 
     it('never asks the backend for a nested worktree directory', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });
 
       await store.getState().createSession({
@@ -1653,7 +1194,7 @@ describe('store contract', () => {
         existingBranch: 'alice/fix-parser',
       });
 
-      const [args] = createWorktreeSpy.mock.calls[0] ?? [];
+      const [args] = storySpies.createWorktree.mock.calls[0] ?? [];
 
       expect(args?.dirName).not.toContain('/');
       expect(args?.dirName).toMatch(/^alice-fix-p-/);
@@ -1667,12 +1208,12 @@ describe('store contract', () => {
     const WEB_MOUNT_PATH = '/tmp/web/.goodboy/worktrees/ship-scope';
 
     const seedMultiProjectSession = async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const apiProject = buildProject({ id: API_PROJECT_ID, name: 'api', rootPath: '/tmp/api' });
       const webProject = buildProject({ id: WEB_PROJECT_ID, name: 'web', rootPath: '/tmp/web' });
-      listProjectsForWorkspaceSpy.mockResolvedValueOnce([apiProject, webProject]);
+      storySpies.listProjectsForWorkspace.mockResolvedValueOnce([apiProject, webProject]);
       store.setState({ currentWorkspaceId: WS_ID, projects: [apiProject, webProject] });
-      createWorktreeSpy.mockResolvedValueOnce({
+      storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: WEB_MOUNT_PATH,
         branchName: 'goodboy/ship-scope',
         slug: 'ship-scope',
@@ -1681,7 +1222,7 @@ describe('store contract', () => {
       const { session } = await store
         .getState()
         .createSession({ workspaceId: WS_ID, projectId: WEB_PROJECT_ID, goal: 'Ship scope' });
-      createWorktreeSpy.mockClear();
+      storySpies.createWorktree.mockClear();
       const db = await import('@goodboy/db');
       vi.mocked(db.insertSessionEvent).mockClear();
       vi.mocked(db.insertSessionWorktree).mockClear();
@@ -1693,7 +1234,7 @@ describe('store contract', () => {
       const { store, session } = await seedMultiProjectSession();
       const db = await import('@goodboy/db');
       const mountPath = '/tmp/api/.goodboy/worktrees/ship-scope';
-      createWorktreeSpy.mockResolvedValueOnce({
+      storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: mountPath,
         branchName: 'goodboy/ship-scope-api',
         slug: 'ship-scope-api',
@@ -1706,7 +1247,7 @@ describe('store contract', () => {
         reason: 'the plan implements the api first',
       });
 
-      expect(createWorktreeSpy).toHaveBeenCalledWith(
+      expect(storySpies.createWorktree).toHaveBeenCalledWith(
         expect.objectContaining({
           repoPath: '/tmp/api',
           parentDir: '/tmp/api/.goodboy/worktrees',
@@ -1754,7 +1295,7 @@ describe('store contract', () => {
     it('records every mount so the diff surfaces see it without a workspace reload', async () => {
       const { store, session } = await seedMultiProjectSession();
       const mountPath = '/tmp/api/.goodboy/worktrees/ship-scope';
-      createWorktreeSpy.mockResolvedValueOnce({
+      storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: mountPath,
         branchName: 'goodboy/ship-scope-api',
         slug: 'ship-scope-api',
@@ -1774,7 +1315,7 @@ describe('store contract', () => {
 
     it('answers already-mounted with every mount id instead of creating a second one', async () => {
       const { store, session } = await seedMultiProjectSession();
-      createWorktreeSpy.mockResolvedValueOnce({
+      storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: '/tmp/api/.goodboy/worktrees/ship-scope',
         branchName: 'goodboy/ship-scope-api',
         slug: 'ship-scope-api',
@@ -1795,7 +1336,7 @@ describe('store contract', () => {
       expect(first.status).toBe('created');
       expect(second.status).toBe('already-mounted');
       expect(second.mountIds).toEqual(first.mountIds);
-      expect(createWorktreeSpy).toHaveBeenCalledTimes(1);
+      expect(storySpies.createWorktree).toHaveBeenCalledTimes(1);
     });
 
     it('adopts every persisted row of that project and creates nothing', async () => {
@@ -1834,7 +1375,7 @@ describe('store contract', () => {
         reason: 'mounted again after a reload',
       });
 
-      expect(createWorktreeSpy).not.toHaveBeenCalled();
+      expect(storySpies.createWorktree).not.toHaveBeenCalled();
       expect(outcome.status).toBe('already-mounted');
       expect(outcome.mountIds).toEqual(['row-mount', 'row-mount-two']);
       expect(vi.mocked(db.updateSessionWriteDestination)).not.toHaveBeenCalled();
@@ -1863,7 +1404,7 @@ describe('store contract', () => {
               : candidate,
           ),
       });
-      createWorktreeSpy.mockResolvedValueOnce({
+      storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: '/tmp/api/.goodboy/worktrees/ship-scope',
         branchName: 'goodboy/ship-scope-api',
         slug: 'ship-scope-api',
@@ -1910,7 +1451,7 @@ describe('store contract', () => {
       insertRow.mockImplementation(async (_db: unknown, record: unknown) => {
         persisted.push(record as Record<string, unknown>);
       });
-      createWorktreeSpy.mockImplementation(async ({ slug }: { readonly slug: string }) => ({
+      storySpies.createWorktree.mockImplementation(async ({ slug }: { readonly slug: string }) => ({
         worktreePath: `/tmp/mounts/${slug}-${crypto.randomUUID()}`,
         branchName: `goodboy/${slug}`,
         slug,
@@ -1937,7 +1478,7 @@ describe('store contract', () => {
         listRows.mockResolvedValue([] as never);
         insertRow.mockReset();
         insertRow.mockResolvedValue(undefined);
-        createWorktreeSpy.mockReset();
+        storySpies.createWorktree.mockReset();
       }
 
       expect(indexes).toHaveLength(2);
@@ -1959,7 +1500,7 @@ describe('store contract', () => {
           createdAt: Date.now(),
         },
       ]);
-      createWorktreeSpy.mockResolvedValueOnce({
+      storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: '/tmp/api/.goodboy/worktrees/ship-scope',
         branchName: 'goodboy/ship-scope-api',
         slug: 'ship-scope-api',
@@ -1973,7 +1514,7 @@ describe('store contract', () => {
       });
 
       expect(outcome.status).toBe('created');
-      expect(createWorktreeSpy).toHaveBeenCalledTimes(1);
+      expect(storySpies.createWorktree).toHaveBeenCalledTimes(1);
     });
 
     it('refuses an empty reason before touching anything', async () => {
@@ -1986,13 +1527,13 @@ describe('store contract', () => {
           reason: '   ',
         }),
       ).rejects.toThrow(/reason/);
-      expect(createWorktreeSpy).not.toHaveBeenCalled();
+      expect(storySpies.createWorktree).not.toHaveBeenCalled();
     });
 
     it('records a refusal event when the worktree cannot be created', async () => {
       const { store, session } = await seedMultiProjectSession();
       const db = await import('@goodboy/db');
-      createWorktreeSpy.mockRejectedValueOnce(new Error('git worktree add failed'));
+      storySpies.createWorktree.mockRejectedValueOnce(new Error('git worktree add failed'));
 
       await expect(
         store.getState().ensureProjectMounted({
@@ -2013,7 +1554,7 @@ describe('store contract', () => {
     });
 
     it('registers a folder project mount without a branch', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const folderProject = buildProject({
         id: API_PROJECT_ID,
         name: 'notes',
@@ -2021,9 +1562,9 @@ describe('store contract', () => {
         rootPath: '/tmp/notes',
       });
       const repoProject = buildProject({ id: WEB_PROJECT_ID, name: 'web', rootPath: '/tmp/web' });
-      listProjectsForWorkspaceSpy.mockResolvedValueOnce([folderProject, repoProject]);
+      storySpies.listProjectsForWorkspace.mockResolvedValueOnce([folderProject, repoProject]);
       store.setState({ currentWorkspaceId: WS_ID, projects: [folderProject, repoProject] });
-      createWorktreeSpy.mockResolvedValueOnce({
+      storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: WEB_MOUNT_PATH,
         branchName: 'goodboy/take-notes',
         slug: 'take-notes',
@@ -2032,7 +1573,7 @@ describe('store contract', () => {
       const { session } = await store
         .getState()
         .createSession({ workspaceId: WS_ID, projectId: WEB_PROJECT_ID, goal: 'Take notes' });
-      createSessionDirSpy.mockResolvedValueOnce({
+      storySpies.createSessionDir.mockResolvedValueOnce({
         worktreePath: '/tmp/notes/sessions/take-notes',
         branchName: '',
         slug: 'take-notes',
@@ -2045,7 +1586,7 @@ describe('store contract', () => {
         reason: 'added manually by the user',
       });
 
-      expect(createSessionDirSpy).toHaveBeenCalledWith(
+      expect(storySpies.createSessionDir).toHaveBeenCalledWith(
         expect.objectContaining({ basePath: '/tmp/notes', sessionId: session.id }),
       );
       expect(
@@ -2062,7 +1603,7 @@ describe('store contract', () => {
       const db = await import('@goodboy/db');
       const core = await import('@goodboy/core');
       vi.mocked(core.detectRepoSlug).mockResolvedValueOnce('acme/goodboy');
-      createWorktreeSpy.mockResolvedValueOnce({
+      storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: '/tmp/api/.goodboy/worktrees/slug',
         branchName: 'goodboy/slug',
         slug: 'slug',
@@ -2100,7 +1641,7 @@ describe('store contract', () => {
       (listWorkspaces as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
         buildWorkspace(),
       ]);
-      createWorktreeSpy.mockResolvedValueOnce({
+      storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: '/tmp/repo/wt',
         branchName: 'kay/101-fix-the-thing',
         slug: '101-fix-the-thing',
@@ -2109,7 +1650,7 @@ describe('store contract', () => {
     }
 
     it('persists a gitlab external task and caches it on the session', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });
       await primeWorktree();
       const { upsertSessionExternalTask } = await import('@goodboy/db');
@@ -2136,7 +1677,7 @@ describe('store contract', () => {
         url: 'https://linear.app/acme/issue/ENG-9',
         title: 'Ship the retry',
       };
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });
       await primeWorktree();
       const { upsertSessionExternalTask } = await import('@goodboy/db');
@@ -2162,8 +1703,9 @@ describe('store contract', () => {
         url: 'https://linear.app/acme/issue/ENG-9',
         title: 'Ship the retry',
       };
-      const store = await getStore();
-      store.setState({ currentWorkspaceId: WS_ID });
+      const store = useAppStore;
+      const emitSpy = vi.fn(async () => undefined);
+      store.setState({ currentWorkspaceId: WS_ID, emitNotification: emitSpy as never });
       await primeWorktree();
       const { upsertSessionExternalTask } = await import('@goodboy/db');
       (upsertSessionExternalTask as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
@@ -2179,10 +1721,18 @@ describe('store contract', () => {
       expect(
         store.getState().sessionExternalTasks[session.id]?.map((task) => task.identifier),
       ).toEqual(['ENG-9']);
+      expect(emitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          severity: 'warning',
+          title: "Couldn't link acme/web#7 to this session",
+          body: 'acme/web#7: db down',
+          sessionId: session.id,
+        }),
+      );
     });
 
     it('still creates the session and keys an empty task list when persistence fails', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });
       await primeWorktree();
       const { upsertSessionExternalTask } = await import('@goodboy/db');
@@ -2203,13 +1753,13 @@ describe('store contract', () => {
 
   describe('createSession lands on Overview', () => {
     it('opens no studio and no lens for a newly created session', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });
       const { listWorkspaces } = await import('@goodboy/db');
       (listWorkspaces as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
         buildWorkspace(),
       ]);
-      createWorktreeSpy.mockResolvedValueOnce({
+      storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: '/tmp/repo/wt',
         branchName: 'kay/setup-workflow',
         slug: 'setup-workflow',
@@ -2225,13 +1775,13 @@ describe('store contract', () => {
     });
 
     it('seeds an empty question list so the badge never waits on a load nobody asked for', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });
       const { listWorkspaces } = await import('@goodboy/db');
       (listWorkspaces as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
         buildWorkspace(),
       ]);
-      createWorktreeSpy.mockResolvedValueOnce({
+      storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: '/tmp/repo/wt',
         branchName: 'kay/setup-workflow',
         slug: 'setup-workflow',
@@ -2246,13 +1796,13 @@ describe('store contract', () => {
     });
 
     it('keys both overview collections so the pane never claims a load it never ran', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });
       const { listWorkspaces } = await import('@goodboy/db');
       (listWorkspaces as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
         buildWorkspace(),
       ]);
-      createWorktreeSpy.mockResolvedValueOnce({
+      storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: '/tmp/repo/wt',
         branchName: 'kay/setup-workflow',
         slug: 'setup-workflow',
@@ -2287,7 +1837,7 @@ describe('store contract', () => {
     };
 
     it('persists and caches every linked task', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
 
       await store.getState().linkSessionExternalTask(SESSION_ID, LINEAR_TASK);
@@ -2301,7 +1851,7 @@ describe('store contract', () => {
     });
 
     it('stamps the branch the session is on when an issue is linked', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
       store.setState({ sessionBranches: { [SESSION_ID]: 'ak/fix-auth' } });
 
@@ -2316,7 +1866,7 @@ describe('store contract', () => {
     });
 
     it('attributes a linked task to the active project mount', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
       const projectId = 'project-member' as ProjectId;
       store.setState({
@@ -2362,7 +1912,7 @@ describe('store contract', () => {
     });
 
     it('persists a composite-key unlink and keeps the other tasks', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const db = await import('@goodboy/db');
       store.setState({
         sessionExternalTasks: {
@@ -2391,14 +1941,14 @@ describe('store contract', () => {
 
   describe('config', () => {
     it('setSessionConfig writes verbosity through', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       store.setState({ sessions: [buildSession()] });
       await store.getState().setSessionConfig(SESSION_ID, { verbosity: 'brief' });
       expect(store.getState().sessions[0]?.verbosity).toBe('brief');
     });
 
     it('setAgentConfig writes verbosity through', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const agent = buildAgent({ id: AGENT_ID });
       store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] } });
       await store.getState().setAgentConfig(SESSION_ID, AGENT_ID, { verbosity: 'normal' });
@@ -2407,7 +1957,7 @@ describe('store contract', () => {
     });
 
     it('setAgentConfig syncs provider and model pins used by turn routing', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const agent = buildAgent({ id: AGENT_ID });
       store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] } });
       await store.getState().setAgentConfig(SESSION_ID, AGENT_ID, {
@@ -2425,7 +1975,7 @@ describe('store contract', () => {
     });
 
     it('setAgentConfig syncs the effort used by turn routing', async () => {
-      const store = await getStore();
+      const store = useAppStore;
       const agent = buildAgent({ id: AGENT_ID });
       store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] } });
       await store.getState().setAgentConfig(SESSION_ID, AGENT_ID, { effort: 'high' });

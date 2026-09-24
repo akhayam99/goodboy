@@ -236,6 +236,7 @@ const baseState = (): State => {
     agentProviderOverride: {},
     agentEffortOverride: {},
     announcedRunBudget: {},
+    decisionRestartMarks: {},
     loadSessionTelemetry: vi.fn(async () => undefined),
     appendTurnEvent: vi.fn(),
     activateWorkflowAgent: vi.fn(async () => undefined),
@@ -267,25 +268,6 @@ const spendState = ({ limitUsd, spentUsd, mode = 'pause' }: SpendParams): State 
       { runId: 'pr-1', kind: 'turn', estimatedCostUsd: spentUsd } as unknown as TelemetryRecord,
     ],
   };
-  return state;
-};
-
-const stateWithRunRoleLock = (): State => {
-  const state = baseState();
-  const current = session();
-  state['sessions'] = [
-    {
-      ...current,
-      workflowRuns: [
-        {
-          ...current.workflowRuns[0]!,
-          roleModelOverrides: {
-            implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
-          },
-        },
-      ],
-    },
-  ];
   return state;
 };
 
@@ -403,7 +385,6 @@ describe('orchestrateNextStep', () => {
     await vi.waitFor(() => expect(listOpenQuestionsSpy).toHaveBeenCalledTimes(1));
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID, {
       bypassGate: true,
-      extraHints: ' first pending hint ',
       routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
     });
 
@@ -412,7 +393,6 @@ describe('orchestrateNextStep', () => {
       [WORKFLOW_RUN_ID]: {
         sessionId: SESSION_ID,
         bypassGate: true,
-        extraHints: ['first pending hint'],
         routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
       },
     });
@@ -426,13 +406,12 @@ describe('orchestrateNextStep', () => {
 
     expect(orchestrate).toHaveBeenLastCalledWith(SESSION_ID, WORKFLOW_RUN_ID, {
       bypassGate: true,
-      extraHints: 'first pending hint',
       routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
     });
     expect(state['pendingOrchestrations']).toEqual({});
   });
 
-  it('coalesces three concurrent calls into one rerun with deduped hints and last routing', async () => {
+  it('coalesces three concurrent calls into one rerun with the last routing', async () => {
     const openQuestionsGate: { release: (() => void) | null } = { release: null };
     listOpenQuestionsSpy.mockImplementationOnce(
       () =>
@@ -454,15 +433,13 @@ describe('orchestrateNextStep', () => {
     const first = orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
     await vi.waitFor(() => expect(listOpenQuestionsSpy).toHaveBeenCalledTimes(1));
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID, {
-      extraHints: 'first hint',
       routing: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
     });
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID, {
       bypassGate: true,
-      extraHints: 'second hint',
       routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
     });
-    await orchestrate(SESSION_ID, WORKFLOW_RUN_ID, { extraHints: 'first hint' });
+    await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
 
     if (openQuestionsGate.release == null) {
       throw new Error('open questions gate was not reached');
@@ -473,7 +450,6 @@ describe('orchestrateNextStep', () => {
 
     expect(orchestrate).toHaveBeenLastCalledWith(SESSION_ID, WORKFLOW_RUN_ID, {
       bypassGate: true,
-      extraHints: 'first hint\n\nsecond hint',
       routing: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
     });
     expect(state['pendingOrchestrations']).toEqual({});
@@ -725,53 +701,6 @@ describe('orchestrateNextStep', () => {
       expect.objectContaining({
         modelOverride: 'opus-5',
         effort: 'max',
-      }),
-    );
-  });
-
-  it('applies the run role override after the orchestrator chooses a role', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'Implement with the pinned route.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          model: 'opus-5',
-          effort: 'max',
-        },
-      },
-    });
-    const state = baseState();
-    const currentSession = session();
-    state['sessions'] = [
-      {
-        ...currentSession,
-        workflowRuns: [
-          {
-            ...currentSession.workflowRuns[0]!,
-            roleModelOverrides: {
-              implementer: {
-                providerId: 'codex',
-                model: 'gpt-5.6-sol',
-                effort: 'high',
-              },
-            },
-          },
-        ],
-      },
-    ];
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
-
-    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        providerOverride: 'codex',
-        modelOverride: 'gpt-5.6-sol',
-        effort: 'high',
       }),
     );
   });
@@ -1115,84 +1044,6 @@ describe('orchestrateNextStep', () => {
     expect(state['emitNotification']).not.toHaveBeenCalled();
   });
 
-  it('reports only the selected run lock when the automatic pick is unavailable', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          provider: 'gemini',
-          model: 'gemini-3.1-pro',
-          effort: 'high',
-        },
-      },
-    });
-    const { set, get } = harness(stateWithRunRoleLock());
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
-
-    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        providerOverride: 'codex',
-        modelOverride: 'gpt-5.6-sol',
-        effort: 'high',
-      }),
-    );
-    const decision = savedStep().routingDecision as {
-      source: string;
-      adjustment: string;
-      reason: string;
-      selected: { provider: string; model: string };
-    };
-
-    expect(decision.source).toBe('run_role_lock');
-    expect(decision.adjustment).toBe('none');
-    expect(decision.selected).toEqual({
-      provider: 'codex',
-      model: 'gpt-5.6-sol',
-      effort: 'high',
-    });
-    expect(decision.reason).toContain('codex/gpt-5.6-sol');
-    expect(decision.reason).not.toContain('gemini');
-  });
-
-  it('records the run lock without calling an available pick unavailable', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          model: 'fable-5',
-        },
-      },
-    });
-    const { set, get } = harness(stateWithRunRoleLock());
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
-
-    const decision = savedStep().routingDecision as {
-      source: string;
-      adjustment: string;
-      proposal: { pick: { provider: string; model: string } } | null;
-    };
-
-    expect(decision.source).toBe('run_role_lock');
-    expect(decision.adjustment).toBe('none');
-    expect(decision.proposal?.pick).toEqual({
-      provider: 'anthropic',
-      model: 'fable-5',
-      effort: null,
-    });
-  });
-
   it('normalizes an unsupported effort against the model that actually runs', async () => {
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,
@@ -1223,34 +1074,6 @@ describe('orchestrateNextStep', () => {
     expect(decision.selected.provider).toBe('codex');
     expect(decision.selected.effort).not.toBe('minimal');
     expect(insert.effort).toBe(decision.selected.effort);
-  });
-
-  it('stops the run when the only lock it has cannot run', async () => {
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Implement the change.',
-          model: 'fable-5',
-        },
-      },
-    });
-    const state = stateWithRunRoleLock();
-    state['providerCooldowns'] = { codex: Date.now() + 60_000 };
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
-
-    expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
-    expect(updateStopSpy).toHaveBeenCalledWith(
-      {},
-      WORKFLOW_RUN_ID,
-      expect.objectContaining({ kind: 'failure', message: expect.stringContaining('cooldown') }),
-    );
   });
 
   it('stays quiet when the picked model is inside the pool', async () => {
@@ -1457,11 +1280,13 @@ describe('orchestrateNextStep', () => {
 
     expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
     expect(state['emitNotification']).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'dynamic workflow blocked',
-      'A product choice is required.',
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Dynamic workflow blocked',
+        body: 'A product choice is required.',
+        sessionId: SESSION_ID,
+      }),
     );
     expect(updateOutcomeSpy).toHaveBeenCalledWith(
       {},
@@ -1482,11 +1307,13 @@ describe('orchestrateNextStep', () => {
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
 
     expect(state['emitNotification']).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'orchestrator failed',
-      expect.stringContaining('the orchestrator timed out after 120s'),
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'The orchestrator failed',
+        body: expect.stringContaining('the orchestrator timed out after 120s'),
+        sessionId: SESSION_ID,
+      }),
     );
     expect(state['appendTurnEvent']).toHaveBeenCalledWith(
       AGENT_ID,
@@ -1586,11 +1413,13 @@ describe('orchestrateNextStep', () => {
       expect.objectContaining({ action: 'blocked' }),
     );
     expect(state['emitNotification']).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'orchestrator reply unparseable',
-      'the decision could not be parsed, use next step to retry',
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: "Couldn't read the orchestrator's reply",
+        body: 'the decision could not be parsed, use next step to retry',
+        sessionId: SESSION_ID,
+      }),
     );
     expect(insertTelemetrySpy).toHaveBeenCalledTimes(1);
   });
@@ -1790,7 +1619,7 @@ describe('orchestrateNextStep', () => {
         state,
         withHints(state, [hintFixture({ id: 'late', text: 'no PR, commit locally' })]),
       );
-      requestDecisionRestart({ workflowRunId: WORKFLOW_RUN_ID });
+      requestDecisionRestart({ set, workflowRunId: WORKFLOW_RUN_ID });
       return {
         decision: {
           action: 'next',
@@ -1834,7 +1663,7 @@ describe('orchestrateNextStep', () => {
       model: 'claude-haiku-4-5',
     });
     updateSummarySpy.mockImplementationOnce(async () => {
-      requestDecisionRestart({ workflowRunId: WORKFLOW_RUN_ID });
+      requestDecisionRestart({ set, workflowRunId: WORKFLOW_RUN_ID });
     });
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
@@ -1874,7 +1703,7 @@ describe('orchestrateNextStep', () => {
         state,
         withHints(state, [hintFixture({ id: 'late', text: 'no PR, commit locally' })]),
       );
-      requestDecisionRestart({ workflowRunId: WORKFLOW_RUN_ID });
+      requestDecisionRestart({ set, workflowRunId: WORKFLOW_RUN_ID });
       throw new Error('the orchestrator timed out after 120s');
     });
 
@@ -1886,61 +1715,6 @@ describe('orchestrateNextStep', () => {
       expect.objectContaining({ kind: 'failure' }),
     );
     expect(state['emitNotification']).not.toHaveBeenCalled();
-  });
-
-  it('records the note on the decision it triggered, not only in the prompt', async () => {
-    decideSpy.mockResolvedValueOnce({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'The tests come next.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: 'Write the missing tests.',
-        },
-      },
-      model: 'claude-haiku-4-5',
-    });
-    const state = baseState();
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
-      extraHints: '  the gate is in place but its tests are missing  ',
-    });
-
-    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
-      'agent-2',
-      SESSION_ID,
-      expect.objectContaining({
-        kind: 'orchestrator_decision',
-        operatorNote: 'the gate is in place but its tests are missing',
-      }),
-    );
-  });
-
-  it('records the note on a terminal decision too', async () => {
-    decideSpy.mockResolvedValueOnce({
-      decision: { action: 'done', reason: 'all set' },
-      usage: NO_USAGE,
-      model: 'claude-haiku-4-5',
-    });
-    const state = baseState();
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
-      extraHints: 'ship the changelog as well',
-    });
-
-    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
-      AGENT_ID,
-      SESSION_ID,
-      expect.objectContaining({
-        kind: 'orchestrator_decision',
-        action: 'done',
-        operatorNote: 'ship the changelog as well',
-      }),
-    );
   });
 
   it('leaves the note off a decision the operator did not write one for', async () => {
@@ -1956,72 +1730,6 @@ describe('orchestrateNextStep', () => {
 
     const appended = state['appendTurnEvent'] as ReturnType<typeof vi.fn>;
     expect(appended.mock.calls[0]![2]).not.toHaveProperty('operatorNote');
-  });
-
-  it('carries the note from the continue drawer all the way onto the decision', async () => {
-    decideSpy.mockResolvedValueOnce({
-      decision: { action: 'done', reason: 'all set' },
-      usage: NO_USAGE,
-      model: 'claude-haiku-4-5',
-    });
-    const state = baseState();
-    const { set, get } = harness(state);
-    state['orchestrateNextStep'] = orchestrateNextStep(set, get);
-
-    await continueWorkflowRun(set, get)(SESSION_ID, WORKFLOW_RUN_ID, '  say what is missing  ');
-
-    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
-      AGENT_ID,
-      SESSION_ID,
-      expect.objectContaining({
-        kind: 'orchestrator_decision',
-        operatorNote: 'say what is missing',
-      }),
-    );
-  });
-
-  it('records the note on a provider failure block, not only in the prompt', async () => {
-    decideSpy.mockRejectedValueOnce(new Error('orchestrator decision timed out'));
-    const state = baseState();
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
-      extraHints: 'this was already flaky yesterday',
-    });
-
-    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
-      AGENT_ID,
-      SESSION_ID,
-      expect.objectContaining({
-        kind: 'orchestrator_decision',
-        action: 'blocked',
-        operatorNote: 'this was already flaky yesterday',
-      }),
-    );
-  });
-
-  it('records the note on an unparseable-reply block, not only in the prompt', async () => {
-    decideSpy.mockResolvedValueOnce({
-      decision: null,
-      usage: BILLED_USAGE,
-      model: 'claude-haiku-4-5',
-    });
-    const state = baseState();
-    const { set, get } = harness(state);
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
-      extraHints: 'retry with more context',
-    });
-
-    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
-      AGENT_ID,
-      SESSION_ID,
-      expect.objectContaining({
-        kind: 'orchestrator_decision',
-        action: 'blocked',
-        operatorNote: 'retry with more context',
-      }),
-    );
   });
 
   it('routes the decision through the provider handed by the caller', async () => {
@@ -2157,11 +1865,13 @@ describe('orchestrateNextStep', () => {
 
     expect(decideSpy).toHaveBeenCalledTimes(1);
     expect(state['emitNotification']).toHaveBeenCalledWith(
-      'budget-cap',
-      'warning',
-      expect.stringContaining('spend limit'),
-      expect.stringContaining('spend limit'),
-      expect.objectContaining({ sessionId: SESSION_ID }),
+      expect.objectContaining({
+        kind: 'budget-cap',
+        severity: 'warning',
+        title: expect.stringContaining('spend limit'),
+        body: expect.stringContaining('spend limit'),
+        sessionId: SESSION_ID,
+      }),
     );
   });
 
@@ -2184,7 +1894,7 @@ describe('orchestrateNextStep', () => {
     const { set, get } = harness(state);
     const budgetCalls = () =>
       (state['emitNotification'] as ReturnType<typeof vi.fn>).mock.calls.filter(
-        (call) => call[0] === 'budget-cap',
+        (call) => (call[0] as { kind: string }).kind === 'budget-cap',
       ).length;
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
@@ -2416,7 +2126,7 @@ describe('orchestrateNextStep and the session context summarizer', () => {
     const { set, get } = harness(state);
     state['orchestrateNextStep'] = orchestrateNextStep(set, get);
 
-    const pending = continueWorkflowRun(set, get)(SESSION_ID, WORKFLOW_RUN_ID, 'keep going');
+    const pending = continueWorkflowRun(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
     await vi.advanceTimersByTimeAsync(2_000);
 
     expect(decideSpy).not.toHaveBeenCalled();

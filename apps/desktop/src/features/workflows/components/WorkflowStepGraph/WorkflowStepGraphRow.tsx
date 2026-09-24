@@ -1,5 +1,5 @@
-import type { AgentId, ModelEffort, ProviderId, RoleModelPreferences } from '@goodboy/types';
-import { inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
+import type { AgentId, EffortLevel, ProviderId, RoleModelPreferences } from '@goodboy/types';
+import { classifyAgent, type AgentKind } from '../../../session/agent-kind';
 import { railColumnX, type RailRow } from '../../../session/timeline/railGeometry';
 import { TimelineRail } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRail';
 import { useExecutedAgentRouting } from '../../../../store';
@@ -17,7 +17,7 @@ type Props = {
   readonly agentProviderOverride: Readonly<Record<string, ProviderId>>;
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
-  readonly sessionEffort: ModelEffort | null;
+  readonly sessionEffort: EffortLevel | null;
   readonly selectedAgentId: AgentId | null;
   readonly onSelect: (id: AgentId) => void;
 };
@@ -36,7 +36,7 @@ export const WorkflowStepGraphRow = ({
   onSelect,
 }: Props) => {
   const { run, step } = row;
-  const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
+  const kind = classifyAgent({ agent: run, override: agentKindOverride[run.id] ?? null });
   const routing = resolveStepRouting({
     step,
     kind,

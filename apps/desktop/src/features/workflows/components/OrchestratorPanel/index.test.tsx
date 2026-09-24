@@ -132,7 +132,6 @@ beforeEach(() => {
     addWorkflowOrchestratorHint: vi.fn(async () => undefined),
     removeWorkflowOrchestratorHint: vi.fn(async () => undefined),
     setWorkflowOrchestratorRouting: vi.fn(async () => undefined),
-    setWorkflowRoleModelOverrides: vi.fn(async () => undefined),
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
     setWorkflowRunAutoRun: vi.fn(async () => undefined),
     stopWorkflowRunNow: vi.fn(async () => undefined),
@@ -440,28 +439,6 @@ describe('OrchestratorPanel state ladder', () => {
 });
 
 describe('OrchestratorPanel card', () => {
-  it('offers no role model editor, and lets a run that carries one go back to the orchestrator', () => {
-    renderPanel({
-      runOverride: run({
-        roleModelOverrides: {
-          implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
-        },
-      }),
-    });
-
-    expect(screen.queryByTestId('orchestrator-role-models-toggle')).toBeNull();
-    expect(screen.getByTestId('orchestrator-role-models-count').textContent).toContain(
-      '1 role runs on a model chosen for this run',
-    );
-    fireEvent.click(screen.getByTestId('orchestrator-role-models-clear'));
-
-    expect(storeState['setWorkflowRoleModelOverrides']).toHaveBeenCalledWith(
-      SESSION_ID,
-      RUN_ID,
-      {},
-    );
-  });
-
   it('keeps the model, autorun and stop in the header, and the call to action below', () => {
     renderPanel({ agents: [agent(0, 'running')], runOverride: run({ autoRun: true }) });
 
@@ -545,6 +522,15 @@ describe('OrchestratorPanel strip', () => {
     );
   });
 
+  it('disables hint delivery while the orchestrator is deciding', () => {
+    renderPanel({ isOrchestrating: true });
+
+    openHints();
+    expect(screen.getByTestId('orchestrator-hint-input').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('orchestrator-hint-queue').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('orchestrator-hint-now').hasAttribute('disabled')).toBe(true);
+  });
+
   it('lists every hint newest first with the step that first read it', () => {
     renderPanel({
       runOverride: run({
@@ -559,7 +545,7 @@ describe('OrchestratorPanel strip', () => {
 
     const rows = screen.getAllByTestId('orchestrator-hint-row');
     expect(rows.map((row) => row.getAttribute('data-status'))).toEqual(['queued', 'read']);
-    expect(rows[1]?.textContent).toContain('read at step 2');
+    expect(rows[1]?.textContent).toContain('Read at step 2');
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Remove hint' })[0]!);
     expect(storeState['removeWorkflowOrchestratorHint']).toHaveBeenCalledWith(

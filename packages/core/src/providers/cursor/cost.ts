@@ -1,10 +1,4 @@
-import type { ProviderUsage } from '@goodboy/types';
-
-type ModelPrice = {
-  readonly inputPerMtok: number;
-  readonly outputPerMtok: number;
-  readonly cachedInputPerMtok: number;
-};
+import type { ModelPrice, ProviderUsage } from '@goodboy/types';
 
 const COMPOSER_PRICE: ModelPrice = {
   inputPerMtok: 0.5,
@@ -175,7 +169,9 @@ const KNOWN_PRICES = Object.values(CURSOR_PRICES);
 const FALLBACK: ModelPrice = {
   inputPerMtok: Math.max(...KNOWN_PRICES.map((price) => price.inputPerMtok)),
   outputPerMtok: Math.max(...KNOWN_PRICES.map((price) => price.outputPerMtok)),
-  cachedInputPerMtok: Math.max(...KNOWN_PRICES.map((price) => price.cachedInputPerMtok)),
+  cachedInputPerMtok: Math.max(
+    ...KNOWN_PRICES.map((price) => price.cachedInputPerMtok ?? price.inputPerMtok),
+  ),
 };
 
 export const cursorPriceFor = (model: string): ModelPrice => {
@@ -191,7 +187,7 @@ export const computeCursorCostUsd = ({ usage, model }: Params): number => {
   const price = cursorPriceFor(model);
   return (
     (usage.inputTokens * price.inputPerMtok) / 1_000_000 +
-    (usage.cachedInputTokens * price.cachedInputPerMtok) / 1_000_000 +
+    (usage.cachedInputTokens * (price.cachedInputPerMtok ?? price.inputPerMtok)) / 1_000_000 +
     ((usage.cacheCreationInputTokens ?? 0) * price.inputPerMtok * 1.25) / 1_000_000 +
     (usage.outputTokens * price.outputPerMtok) / 1_000_000
   );

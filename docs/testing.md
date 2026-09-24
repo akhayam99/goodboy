@@ -9,11 +9,35 @@ This file says what to test and how. Where test files go: [file-system.md](file-
 
 - 1 to 5 assertions per test, focused on behavior.
 - Cover: it renders without crashing, key text / aria, 1-3 main user interactions, and edge states (loading / empty / error) if the component has them.
-- Use `@testing-library/react` queries (`getByRole`, `getByText`).
+- Use `@testing-library/react` queries (`getByRole`, `getByText`). To check that a node is there, call `getBy*` on its own: it throws when the node is missing. To check that it is gone, write `expect(queryBy*(...)).toBeNull()`. `expect(getBy*(...)).toBeTruthy()` checks nothing the query did not already check. Write the bare call when you touch such a test, without a bulk rewrite.
+- `__tests__/regressions/` holds grep checks over the source tree. `forbidden-patterns.test.ts` compares per-file counts of the AGENTS.md forbidden patterns with `forbidden-patterns.baseline.json`. It fails when a file grows or a new file has any. A change that removes occurrences regenerates the baseline in the same commit, with `GOODBOY_UPDATE_BASELINE=1 pnpm --filter @goodboy/desktop exec vitest run src/__tests__/regressions/forbidden-patterns.test.ts`. Never regenerate it to absorb new occurrences. Migrations are append-only, so their rows stay.
+- A relative `vi.mock('./x')` must point at a file that exists. A mock of a moved or deleted module mocks nothing, and the real module runs. `__tests__/regressions/relative-mocks-resolve.test.ts` fails on it.
 - Do **not** test implementation details (internal state, css classes that are only for looks, prop drilling).
 - For store slices: test the contract (given state X + action Y, expect state Y'), not the internals.
 - For hooks: `renderHook` from `@testing-library/react`.
-- Some suites have a per-test hook that dynamically `import()`s a large module graph. Such a suite loads that import once in `beforeAll`, with a timeout that fits it (60s for the store, see `apps/desktop/src/store/slices/sessions/index.test.ts`). Never in `beforeEach`. There, the import cost lands on whichever test runs first, and on a busy machine it goes past vitest's default 10s hook timeout.
+- Some suites have a per-test hook that dynamically `import()`s a large module graph. Such a suite loads that import once in `beforeAll`, with a timeout that fits it. Never in `beforeEach`. There, the import cost lands on whichever test runs first, and on a busy machine it goes past the 15s hook timeout in `apps/desktop/vitest.config.ts`. Never raise the global timeouts to hide it.
+
+## Store tests share one harness
+
+Every desktop test that loads the real store goes through `apps/desktop/src/store/storyHarness.ts`. It is the only file allowed to `import()` the store module.
+
+- Module mocks come from the harness factories, one per mocked module: `vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock())`. A test that needs a different default overrides it on the spy for that test. It never keeps a private copy of the whole mock.
+- Spies live in `storySpies`, named after the function they stand in for (`storySpies.invokeBudgetRuleList`). `resetStorySpies()` restores every default.
+- The store loads once: `useAppStore = await importStore()` in `beforeAll` with `STORE_IMPORT_TIMEOUT_MS`. Then `await resetStoryStore()` runs in `beforeEach` (spies reset, `initialState` applied, local storage cleared) before the test seeds its own state.
+- `__tests__/regressions/store-import-pattern.test.ts` fails on any test that `import()`s the store module itself. A test that needs another export of the store module (`summarizerQueues`) takes it from `importStoreModule()`.
+
+## Accessibility suite
+
+`apps/desktop/src/__tests__/a11y/` runs as its own vitest project: `pnpm --filter @goodboy/desktop test:a11y` (CI step `a11y`, blocking). `pnpm test` skips it to stay fast.
+
+- Every case calls `expectBaseline({ name, container })`, which runs axe and compares the sorted violation ids to `A11Y_BASELINE` in `baseline.ts`. A new violation fails; a fixed one also fails until its id is deleted from the baseline. The baseline only shrinks: never add an entry to silence a violation you introduced. Delete the file when it is empty.
+- `scenes.test.tsx` renders every entry of `MOCK_SCENES` (the tracked registry in `app/components/MockScene/index.tsx`) with a fresh store and a Tauri bridge that never answers, so a new scene is scanned the day it is registered.
+- Seeds follow the mock vocabulary (Harborline, Northwind, ledger-core, payments-api), never real names.
+- happy-dom has no layout, so axe reports `color-contrast` as incomplete, never as a violation. Contrast belongs to the token contrast guard (`__tests__/regressions/token-contrast-floor.test.ts`); this suite covers structure only, in either theme.
+
+## Database tests start from a migrated template
+
+A `packages/db` test that needs a migrated schema calls `await makeMigratedTestDatabase()` (or `{ throughVersion: N }` to stop before the migration under test) from `test-helpers/test-db.ts`. The first call per version in a file runs the real migration chain once and keeps the serialized result; every call returns an independent in-memory clone with `foreign_keys` on. A migration test still runs the migration under test with a real `migrate(db)` on top of the clone. Tests whose subject is the runner itself (`runner*.test.ts`, `registry.test.ts`, segment checkpoints, crash resume, anything reading `MigrateResult` or passing a custom migration list) and file-backed databases keep `makeTestDatabase` plus `migrate`.
 
 ## Migration convergence sampling
 
@@ -42,6 +66,12 @@ behavior. Every release runs this step by hand and records the result.
    `.goodboy/boot-breadcrumbs.log` under the home directory. If the line is
    missing but the window is visible, the breadcrumb logging broke, not the
    window reveal.
+
+A covered window suspends CSS animations. `WorkspaceLauncher` and
+`SessionOverviewPane` hold their whole content inside the `fade-in`
+animation, which starts at `opacity: 0`, so a capture of an occluded window
+shows both blank. Uncover the window before judging either surface; a blank
+capture of a covered window is not a paint failure.
 
 ## Reaching a state that only exists in memory
 

@@ -1,18 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
-import type { AuxTaskId, ModelEffort, ProviderId, TaskModelPreference } from '@goodboy/types';
+import { PROVIDER_CAPABILITIES, clampEffortForModel, resolveTaskModel } from '@goodboy/core';
+import type { AuxTaskId, EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { FieldRow } from '@goodboy/ui';
-import { clampEffort, modelEffortLevels } from '../../../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
+import { AUTO_RECOMMENDATION_COPY } from '../../../../../../shared/components/RoutingPicker/autoRecommendationCopy';
 import { RoutingStatusControl } from '../RoutingStatusControl';
 
-const DEFAULT_EFFORT: ModelEffort = 'medium';
-const AUTO_LABEL = 'Auto';
-const AUTO_REASON =
-  'Follows the workspace default provider. Goodboy picks the model this task needs.';
-
-const effortForModel = (model: string, requested: ModelEffort): ModelEffort | null =>
-  modelEffortLevels(model) == null ? null : clampEffort(model, requested);
+const DEFAULT_EFFORT: EffortLevel = 'medium';
 
 type Props = {
   readonly task: AuxTaskId;
@@ -68,17 +62,22 @@ export const TaskModelRow = ({
   }, [effortModel]);
 
   return (
-    <FieldRow label={label} help={help}>
-      <div className="flex items-center gap-2">
+    <FieldRow
+      label={label}
+      help={help}
+      layout="stacked"
+      className="@min-[36rem]:flex-row @min-[36rem]:items-center @min-[36rem]:justify-between @min-[36rem]:gap-6"
+    >
+      <div className="flex min-w-0 items-center gap-2">
         <RoutingStatusControl
           label={label}
           isCustom={preference != null}
           disabled={disabled}
           onReset={() => onChange(null)}
-          idleLabel="auto"
+          idleLabel="Auto"
           resetLabel="Back to auto"
         />
-        <div className="w-80">
+        <div className="w-80 min-w-0 max-w-full">
           <RoutingPicker
             ariaLabel={`${label} routing`}
             connectedProviders={availableProviderIds}
@@ -86,9 +85,10 @@ export const TaskModelRow = ({
             model={model}
             effort={{
               editable: true,
-              value: effortForModel(effortModel, effortValue) ?? effortValue,
+              value:
+                clampEffortForModel({ model: effortModel, effort: effortValue }) ?? effortValue,
               onChange: (effort) => {
-                const applied = effortForModel(pendingModel.current, effort);
+                const applied = clampEffortForModel({ model: pendingModel.current, effort });
                 onChange({
                   providerId: pendingProvider.current,
                   model: pendingModel.current,
@@ -99,8 +99,7 @@ export const TaskModelRow = ({
             recommendation={{
               provider: automatic.providerId,
               model: automatic.model,
-              label: AUTO_LABEL,
-              reason: AUTO_REASON,
+              ...AUTO_RECOMMENDATION_COPY,
             }}
             overridden={preference != null}
             disabled={disabled}
@@ -135,7 +134,9 @@ export const TaskModelRow = ({
                 return;
               }
               const carried =
-                preference?.effort == null ? null : effortForModel(nextModel, preference.effort);
+                preference?.effort == null
+                  ? null
+                  : clampEffortForModel({ model: nextModel, effort: preference.effort });
               pendingModel.current = nextModel;
               onChange({
                 providerId: pendingProvider.current,

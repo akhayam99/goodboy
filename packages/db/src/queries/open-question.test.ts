@@ -1,20 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentId, OpenQuestionId, SessionId, WorkspaceId } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   getOpenQuestionById,
   insertOpenQuestion,
   listOpenQuestionsForSession,
   markOpenQuestionAnswered,
+  markOpenQuestionsResolvedByText,
 } from './open-question';
 
 const workspaceId = 'w1' as WorkspaceId;
 const sessionId = 's1' as SessionId;
 
 async function seed() {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   const now = Date.now();
   await db.execute(
     `INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
@@ -182,5 +181,50 @@ describe('open_questions queries', () => {
     await expect(
       getOpenQuestionById({ db, id: 'missing_question' as OpenQuestionId }),
     ).resolves.toBeNull();
+  });
+
+  it('resolves every matched open question in one pass and counts only the rows it changed', async () => {
+    const db = await seed();
+    const questions: ReadonlyArray<readonly [string, string]> = [
+      ['oq-a', 'Which database?'],
+      ['oq-b', '- Which cache layer?'],
+      ['oq-c', 'Unrelated question'],
+    ];
+    for (const [id, text] of questions) {
+      await insertOpenQuestion(db, {
+        id: id as OpenQuestionId,
+        sessionId,
+        text,
+        suggestedAnswers: [],
+      });
+    }
+    await markOpenQuestionAnswered(db, 'oq-b' as OpenQuestionId, 'redis');
+
+    const resolved = await markOpenQuestionsResolvedByText(db, sessionId, [
+      'which database?',
+      'which cache layer?',
+    ]);
+
+    expect(resolved).toBe(1);
+    expect((await listOpenQuestionsForSession(db, sessionId, 'open')).map((q) => q.id)).toEqual([
+      'oq-c',
+    ]);
+  });
+
+  it('reads malformed suggested answers as none instead of failing the list', async () => {
+    const db = await seed();
+    await insertOpenQuestion(db, {
+      id: 'oq-broken' as OpenQuestionId,
+      sessionId,
+      text: 'which queue?',
+      suggestedAnswers: ['sqs'],
+    });
+    await db.execute("UPDATE open_questions SET suggested_answers = '[1' WHERE id = 'oq-broken'");
+
+    const open = await listOpenQuestionsForSession(db, sessionId, 'open');
+
+    expect(open.map((question) => [question.id, question.suggestedAnswers])).toEqual([
+      ['oq-broken', []],
+    ]);
   });
 });

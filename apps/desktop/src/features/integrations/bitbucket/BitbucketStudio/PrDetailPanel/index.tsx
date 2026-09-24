@@ -15,7 +15,7 @@ import {
 import { BranchPair } from '@goodboy/ui';
 import { RefreshIconButton } from '@goodboy/ui';
 import { openUrl } from '../../../../../shared/lib/editor';
-import { PrChecks } from '../../../../github/components/GitHubStudio/PrChecks';
+import { PrChecks } from '../../../../github/components/PullRequest/PrChecks';
 import { bitbucketPrIdentifier } from '../../bitbucketPrIdentifier';
 import { bitbucketPrUrl } from '../../bitbucketPrUrl';
 import { BitbucketStateChip } from '../../BitbucketStateChip';
@@ -168,7 +168,7 @@ export const PrDetailPanel = ({
             {pullRequest.description !== '' ? (
               <Markdown text={pullRequest.description} className="text-sm leading-relaxed" />
             ) : (
-              <p className="text-sm italic text-muted-foreground/60">No description.</p>
+              <p className="text-sm italic text-faint-foreground">No description.</p>
             )}
           </StudioWidget>
         </>

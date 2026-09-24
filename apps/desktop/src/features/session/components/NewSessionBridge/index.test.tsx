@@ -8,6 +8,7 @@ const { state, toastMock } = vi.hoisted(() => ({
   state: {
     currentWorkspaceId: null as string | null,
     createUntitledSession: vi.fn(async () => ({ session: { id: 's-1' }, worktree: {} })),
+    reportError: vi.fn(async () => undefined),
   },
   toastMock: vi.fn(),
 }));
@@ -29,6 +30,7 @@ beforeEach(() => {
   state.createUntitledSession.mockClear();
   state.createUntitledSession.mockResolvedValue({ session: { id: 's-1' }, worktree: {} });
   toastMock.mockReset();
+  state.reportError.mockClear();
 });
 afterEach(cleanup);
 
@@ -52,10 +54,17 @@ describe('NewSessionBridge', () => {
     expect(toastMock).not.toHaveBeenCalled();
   });
 
-  it('surfaces a creation failure as an error toast', async () => {
-    state.createUntitledSession.mockRejectedValueOnce(new Error('disk full'));
+  it('reports a creation failure to the log', async () => {
+    const failure = new Error('disk full');
+    state.createUntitledSession.mockRejectedValueOnce(failure);
     render(<NewSessionBridge />);
     requestNewSession();
-    await waitFor(() => expect(toastMock).toHaveBeenCalledWith('error', 'disk full'));
+    await waitFor(() =>
+      expect(state.reportError).toHaveBeenCalledWith({
+        title: "Couldn't start a new session",
+        error: failure,
+        workspaceId: WS_ID,
+      }),
+    );
   });
 });

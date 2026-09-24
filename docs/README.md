@@ -23,6 +23,8 @@ private `goodboy-atlas` repository. Ask the owner if you need access.
   tools
 - [SECURITY.md](../SECURITY.md): how to report a vulnerability, and what
   Goodboy does with your data
+- [CLAUDE.md](../CLAUDE.md): when Claude is working here and needs the few
+  notes that are specific to that tool.
 
 ## Contributing
 
@@ -64,10 +66,22 @@ Below is the full index. Other docs and agents use it to find their way.
 - [tone-of-voice.md](tone-of-voice.md): when you write any text a user
   reads, like the README, the website, release notes, in-app copy or error
   messages.
+- [iconography.md](iconography.md): when you put a glyph on a surface, or
+  check which glyph a concept already owns.
 - [brand.md](brand.md): when you draw the mascot, the logo with its name,
   an app icon or a social image.
+- [website/README.md](../website/README.md): when you change, build or
+  check the landing page.
 - [providers.md](providers.md): when you install, connect or manage a
   provider CLI.
+- [typescript/data.md](typescript/data.md): when you declare a type or a
+  data shape.
+- [typescript/components.md](typescript/components.md): when you write a
+  component's exports, props or ref pattern, or a function's parameters.
+- [typescript/control-flow.md](typescript/control-flow.md): when you
+  structure conditionals, branches or early returns.
+- [typescript/readability.md](typescript/readability.md): when you name a
+  variable or callback, or feel like adding a code comment.
 - [testing.md](testing.md): when you write or review tests, and how to
   write their checks.
 - [dependencies.md](dependencies.md): when you add a new package, or check
@@ -97,23 +111,35 @@ Below is the full index. Other docs and agents use it to find their way.
 These docs are kept on purpose. Nobody reads them ahead of time. Open one
 only when your task reaches the case it covers.
 
-- [README.md](README.md): when you need to decide which docs a task
-  should load, before you open them.
-- [typescript.md](typescript.md): when you write TypeScript and need to
-  find the rule for the part of the code you are touching.
 - [architecture.md](architecture.md): when you change the systems that run
   behind the app, like the environment agents run in, how a provider gets
-  picked, or DB migrations.
+  picked, the boot path, git status reads, or DB migrations.
 - [model-picker.md](model-picker.md): when you change how a user picks a
   model or effort.
+- [event-bus.md](event-bus.md): when you send or listen for a `goodboy:`
+  window event, or open a studio from another feature.
 - [query-bridge.md](query-bridge.md): when you change what an agent can
   ask a connected tool, or how it asks.
+- [companion.md](companion.md): when you change how a phone pairs, what a
+  paired phone may ask for, or when the pairing listener runs.
+- [mounts.md](mounts.md): when you change where a session writes on disk,
+  the mount lifecycle, the mount operation log, or recovery.
 - [workflows.md](workflows.md): when you touch the workflow tables, the
   logic that moves a run to its next step, or the summary written after
   each step.
+- [turns.md](turns.md): when you change how a turn picks its route, starts
+  and reads a CLI, falls back on failure, or hands off to the session
+  summarizer.
 - [adr/001-workspace-project-rename.md](adr/001-workspace-project-rename.md):
   when you need to know why the schema calls the old workspaces table
   `projects`, or what the 0.2.0 migrations did to existing data.
+- [adr/002-boot-path-leaves-the-ui-thread.md](adr/002-boot-path-leaves-the-ui-thread.md):
+  when you add or change a Tauri command that the boot sequence reaches, or
+  the boot breadcrumb log.
+- [adr/003-provider-detection-leaves-the-boot-path.md](adr/003-provider-detection-leaves-the-boot-path.md):
+  when you add work to boot or read a provider's connection state.
+- [adr/004-git-reads-fail-closed.md](adr/004-git-reads-fail-closed.md): when
+  you show or gate on git status, or add a command that changes git.
 - [release.md](release.md): when you need the technical detail of a
   release, like signing, notarization, the updater or Homebrew.
 - [release-command.md](release-command.md): when an agent is running a
@@ -142,8 +168,10 @@ that matches its task. Whoever starts the agent points it here.
 
 - Keep what the code cannot tell you. That means concepts, rules that must
   always hold, who decides what, limits, and reasons that are not obvious.
-  Delete structure, lists of files, paths, commands, counts, and anything
-  you can read from the repository.
+  Delete structure, lists of files, commands, and anything you can read
+  from the repository. Counts and lists of names are allowed only where a
+  test or script checks them against the code, or in a runbook step that
+  needs them. Paths are allowed as entry points.
 - Describe a rule that always holds, not one way to build it. If a sentence
   would stop being true after a reasonable refactor, it describes a
   solution, not a concept.
@@ -151,9 +179,13 @@ that matches its task. Whoever starts the agent points it here.
 - Root hubs use capital letters. Topic docs use kebab case under `docs/`.
 - A folder of related docs is listed directly in this map. It does not need
   its own small index.
+- Before you rename or delete a symbol, file, or route, grep `*.md` for it.
+  The `doc refs` CI step fails on a doc that still names it.
 - A doc is an orphan when neither this map nor the root hubs link to it.
   An orphan gets listed here or deleted. It never stays unlinked.
-- Generated files have no `Read this when` header. The release flow writes
-  `CHANGELOG.md`, and agents read it through
-  [release-command.md](release-command.md), the doc that owns it. That is
-  the only file without the header.
+- Every doc opens with a `Read this when` header, with two exceptions. The
+  release flow writes `CHANGELOG.md`, and agents read it through
+  [release-command.md](release-command.md), the doc that owns it. The root
+  `README.md` is the public landing page GitHub shows first, and its entry
+  in this map is its header. `.github/pull_request_template.md` is a form
+  pasted into every PR body, not a doc.

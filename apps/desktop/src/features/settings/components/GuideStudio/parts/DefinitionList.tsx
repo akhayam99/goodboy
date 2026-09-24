@@ -19,7 +19,7 @@ export const DefinitionList = ({ rows }: Props) => (
     {rows.map((row) => (
       <li
         key={row.term}
-        className="flex items-start gap-3 rounded-md border border-border-soft bg-subtle/40 px-3 py-2.5"
+        className="flex items-start gap-3 rounded-md border border-border-soft bg-subtle px-3 py-2.5"
       >
         {row.icon ? (
           <span

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   CircleHelp,
   CircleStop,
@@ -8,7 +8,15 @@ import {
   SkipForward,
   Wallet,
 } from 'lucide-react';
-import { Eyebrow, InlineConfirm, Markdown, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import {
+  ConfirmPopover,
+  Eyebrow,
+  GhostActionButton,
+  Markdown,
+  StatusDot,
+  cn,
+  tintClasses,
+} from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type {
   Agent,
@@ -60,10 +68,10 @@ export const OrchestratorPanel = ({
   const retryWorkflowOrchestration = useAppStore((state) => state.retryWorkflowOrchestration);
   const continueWorkflowRun = useAppStore((state) => state.continueWorkflowRun);
   const addWorkflowOrchestratorHint = useAppStore((state) => state.addWorkflowOrchestratorHint);
+  const reportError = useAppStore((state) => state.reportError);
   const removeWorkflowOrchestratorHint = useAppStore(
     (state) => state.removeWorkflowOrchestratorHint,
   );
-  const setWorkflowRoleModelOverrides = useAppStore((state) => state.setWorkflowRoleModelOverrides);
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
   const setWorkflowRunAutoRun = useAppStore((state) => state.setWorkflowRunAutoRun);
   const stopWorkflowRunNow = useAppStore((state) => state.stopWorkflowRunNow);
@@ -76,16 +84,14 @@ export const OrchestratorPanel = ({
   );
   const [isHintsOpen, setIsHintsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [isStopArmed, setIsStopArmed] = useState(false);
   const hints = run.orchestratorHints ?? EMPTY_HINTS;
   const queuedHintCount = hints.filter((hint) => hint.consumedAt == null).length;
-  const overriddenRoleCount = Object.keys(run.roleModelOverrides ?? {}).length;
 
   const state = resolveOrchestratorState({
     run,
     agents,
     isOrchestrating,
-    hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
+    hasOpenQuestions: workflowRunHasOpenQuestions({ questions: openQuestions, run }),
     costUsd,
   });
   const elapsed = useElapsedLabel({ since: state.waitingSince });
@@ -100,11 +106,6 @@ export const OrchestratorPanel = ({
   const isRunOver = state.phase === 'done';
   const isStepInFlight = isOrchestrating || agents.some((agent) => agent.status === 'running');
   const showStopNow = isStepInFlight && run.orchestrationStop?.kind !== 'operator';
-  useEffect(() => {
-    if (!showStopNow) {
-      setIsStopArmed(false);
-    }
-  }, [showStopNow]);
 
   const guard = async (action: () => Promise<void>) => {
     if (busy) {
@@ -221,7 +222,7 @@ export const OrchestratorPanel = ({
       className={cn(
         'flex flex-col gap-2 rounded-lg border px-3 py-2.5',
         state.tone === 'neutral'
-          ? 'border-border-soft bg-muted/20'
+          ? 'border-border-soft bg-subtle'
           : cn(tint.borderSoft, tint.bgSoft),
         isDeciding && 'spin-border spin-border-info',
       )}
@@ -259,32 +260,17 @@ export const OrchestratorPanel = ({
             />
           )}
           {showStopNow ? (
-            <div className="relative flex">
-              <button
-                type="button"
-                aria-expanded={isStopArmed}
-                onClick={() => setIsStopArmed(true)}
-                className="rounded-md px-1.5 py-0.5 text-2xs font-medium text-danger hover:bg-danger/10"
-              >
-                Stop now
-              </button>
-              {isStopArmed ? (
-                <div className="absolute right-0 top-full z-popover w-72 rounded-lg bg-background shadow-lg">
-                  <InlineConfirm
-                    role="alert"
-                    icon={<CircleStop size={ICON_SIZE.row} aria-hidden />}
-                    title="Stop now?"
-                    description="The step in flight is cancelled and marked skipped. Everything it already wrote is kept."
-                    confirmLabel="Stop now"
-                    onConfirm={() => {
-                      setIsStopArmed(false);
-                      void stopWorkflowRunNow(sessionId, run.id);
-                    }}
-                    onCancel={() => setIsStopArmed(false)}
-                  />
-                </div>
-              ) : null}
-            </div>
+            <ConfirmPopover
+              role="alert"
+              icon={<CircleStop size={ICON_SIZE.row} aria-hidden />}
+              title="Stop now?"
+              description="The step in flight is cancelled and marked skipped. Everything it already wrote is kept."
+              confirmLabel="Stop now"
+              onConfirm={() => void stopWorkflowRunNow(sessionId, run.id)}
+              trigger={({ arm }) => (
+                <GhostActionButton icon={CircleStop} tone="danger" label="Stop now" onClick={arm} />
+              )}
+            />
           ) : null}
         </div>
       </div>
@@ -320,24 +306,6 @@ export const OrchestratorPanel = ({
             <Markdown text={state.detail} className="text-2xs leading-relaxed" />
           </div>
         ) : null}
-        {overriddenRoleCount === 0 ? null : (
-          <p
-            data-testid="orchestrator-role-models-count"
-            className="flex flex-wrap items-center gap-1 text-2xs text-muted-foreground"
-          >
-            {overriddenRoleCount} {overriddenRoleCount === 1 ? 'role runs' : 'roles run'} on a model
-            chosen for this run.
-            <button
-              type="button"
-              data-testid="orchestrator-role-models-clear"
-              disabled={busy}
-              onClick={() => void guard(() => setWorkflowRoleModelOverrides(sessionId, run.id, {}))}
-              className="rounded font-medium text-foreground underline-offset-2 hover:underline"
-            >
-              Let the orchestrator pick
-            </button>
-          </p>
-        )}
       </div>
 
       <div data-testid="orchestrator-actions" className="flex flex-wrap items-center gap-1.5">
@@ -362,13 +330,26 @@ export const OrchestratorPanel = ({
           <OrchestratorHintComposer
             isDeciding={isOrchestrating}
             isStepRunning={agents.some((agent) => agent.status === 'running')}
-            disabled={busy}
-            onSubmit={(draft) => addWorkflowOrchestratorHint(sessionId, run.id, draft)}
+            disabled={busy || isOrchestrating}
+            onSubmit={async (draft) => {
+              try {
+                await addWorkflowOrchestratorHint(sessionId, run.id, draft);
+                return true;
+              } catch (error) {
+                void reportError({ title: "Couldn't save the hint", error, sessionId });
+                return false;
+              }
+            }}
           />
           <OrchestratorHintLog
             hints={hints}
             disabled={busy}
-            onRemove={(hintId) => void removeWorkflowOrchestratorHint(sessionId, run.id, hintId)}
+            onRemove={(hintId) =>
+              void removeWorkflowOrchestratorHint(sessionId, run.id, hintId).catch(
+                (error: unknown) =>
+                  reportError({ title: "Couldn't remove the hint", error, sessionId }),
+              )
+            }
           />
         </OrchestratorDrawer>
       ) : null}

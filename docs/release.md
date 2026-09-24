@@ -65,8 +65,11 @@ run that can fail in a place you can throw away. Rc tags and their draft
 pre-releases are the only release artifacts you may delete.
 
 An rc is verified when Gatekeeper accepts the app from a normal double-click
-and `spctl` reports `accepted, source=Notarized Developer ID`. What to run and
-when is in [release-command.md](release-command.md) step 4.
+and `spctl` reports `accepted, source=Notarized Developer ID`. The rc proves
+the pipeline, not the file you ship. The real tag builds the dmg again, so the
+same check runs on the draft's own dmg before it is published, and the cask
+sha is compared with that checked file. What to run and when is in
+[release-command.md](release-command.md) steps 4 and 6.
 
 ## Signing and notarization
 
@@ -97,8 +100,21 @@ and update `APPLE_CERTIFICATE_PASSWORD`.
 
 On launch, packaged builds check
 `releases/latest/download/latest.json` through `tauri-plugin-updater`. If a
-newer version exists, a "Restart to update" control shows up in the status bar
-and next to the sidebar logo. This is macOS only. The Linux job writes no
+newer version exists, an "Update to X" chip shows up in `AppFooter` and in
+`WorkspaceLauncher`. Clicking it opens an inline confirm anchored to the chip
+(no dialog). It says how many agents a restart stops, links "What's new" to
+that release in the changelog, and starts "Download and restart". While the
+update downloads, the chip reads "Downloading 42%" (or "Downloading" when the
+size is unknown). If the install fails, including a failed relaunch, the
+pending update is kept. The chip turns into "Update failed", with the reason
+in its tooltip, and the same confirm offers Retry. A notification also offers
+Retry, which installs again without a new check. A failed background check
+shows no chip and no notification. It shows up in **Settings > App > General**
+instead, next to the installed version, the last check time and **Check now**.
+The changelog opens on the focused or installed release and marks newer ones
+"available".
+
+This is macOS only. The Linux job writes no
 `latest.json` and no `.sig`, so nothing tells a Linux build that a newer
 version exists. Adding it would mean signing the AppImage with the updater
 keypair and pointing the plugin at a Linux target.

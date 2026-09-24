@@ -1,11 +1,10 @@
 import { type ReactNode, useRef } from 'react';
 import { GripVertical, Trash2 } from 'lucide-react';
-import { ClampedProse, cn, Input, Textarea, Tooltip } from '@goodboy/ui';
-import type { AgentRole, ProviderId } from '@goodboy/types';
-import { agentKindPalette, ROLE_LABEL, ROLE_TO_KIND, type AgentKind } from '../../agent-kind';
+import { ClampedProse, cn, Input, Textarea, Tooltip, tintClasses, Eyebrow } from '@goodboy/ui';
+import type { AgentRole, EffortLevel, ProviderId, VerbosityLevel } from '@goodboy/types';
+import { agentKindPalette, ROLE_LABEL, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
-import { type VerbosityLevel } from '../../../settings/verbosity';
-import { type EffortLevel } from '../../../chat/utils/chat-constants';
+import { AgentKindChip } from '../AgentKindChip';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { WORKFLOW_ROUTING_COPY } from '../../../workflows/workflowRoutingCopy';
@@ -53,9 +52,7 @@ type Props = {
 };
 
 const FieldLabel = ({ children }: { readonly children: ReactNode }) => (
-  <span className="px-0.5 text-3xs font-medium uppercase tracking-wide text-muted-foreground/50">
-    {children}
-  </span>
+  <Eyebrow label={children} muted className="px-0.5" />
 );
 
 export const WorkflowStepCard = ({
@@ -140,7 +137,7 @@ export const WorkflowStepCard = ({
         }}
         disabled={disabled}
         aria-label="Reorder step (drag or arrow keys)"
-        className="flex shrink-0 cursor-grab touch-none items-center self-stretch rounded-l-lg px-1 text-muted-foreground/30 transition-colors hover:bg-muted/40 hover:text-muted-foreground active:cursor-grabbing disabled:cursor-not-allowed"
+        className="flex shrink-0 cursor-grab touch-none items-center self-stretch rounded-l-lg px-1 text-faint-foreground transition-colors hover:bg-hover hover:text-muted-foreground active:cursor-grabbing disabled:cursor-not-allowed"
       >
         <GripVertical size={ICON_SIZE.control} aria-hidden />
       </button>
@@ -155,11 +152,7 @@ export const WorkflowStepCard = ({
       <AgentAvatar kind={kind} size="sm" />
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span className="min-w-0 truncate text-xs font-medium text-foreground">{displayName}</span>
-        {onRole == null ? (
-          <span className={cn('shrink-0 text-3xs font-medium uppercase tracking-wide', pal.fg)}>
-            {ROLE_LABEL[role]}
-          </span>
-        ) : null}
+        {onRole == null ? <AgentKindChip kind={kind} label={ROLE_LABEL[role]} /> : null}
       </span>
       {trailing}
     </span>
@@ -172,7 +165,7 @@ export const WorkflowStepCard = ({
         onClick={onRemove}
         disabled={disabled}
         aria-label="Remove step"
-        className="inline-flex items-center justify-center rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted/60 hover:text-danger focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30 group-hover:opacity-100"
+        className="inline-flex items-center justify-center rounded-sm p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-hover hover:text-danger focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30 group-hover:opacity-100"
       >
         <Trash2 size={ICON_SIZE.row} aria-hidden />
       </button>
@@ -186,8 +179,8 @@ export const WorkflowStepCard = ({
       className={cn(
         'group relative rounded-lg border motion-safe:transition-colors',
         expanded
-          ? 'border-primary/40 bg-primary/[0.03] shadow-sm'
-          : 'border-border-soft bg-subtle/40 hover:border-border hover:bg-muted/30',
+          ? cn(tintClasses('primary').border, tintClasses('primary').bgSoft, 'shadow-sm')
+          : 'border-border-soft bg-subtle hover:border-border hover:bg-hover',
         dragging && 'opacity-40',
       )}
     >
@@ -256,7 +249,7 @@ export const WorkflowStepCard = ({
                   aria-label="Polish step instruction"
                   title="Polish step instruction"
                   className={cn(
-                    'absolute right-1.5 top-1.5 inline-flex items-center justify-center rounded p-1 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40',
+                    'absolute right-1.5 top-1.5 inline-flex items-center justify-center rounded-sm p-1 text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40',
                     polishing && 'animate-border-pulse',
                   )}
                 >

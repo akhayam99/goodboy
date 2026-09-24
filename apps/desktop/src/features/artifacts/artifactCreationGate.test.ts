@@ -42,14 +42,14 @@ describe('artifactCreationGate', () => {
       params({ hasBrief: true, ctaState: { kind: 'blocked', reason: 'no-evidence' } }),
     );
     expect(gate.isDisabled).toBe(true);
-    expect(gate.reason).toContain('run an agent or a workflow first');
+    expect(gate.reason).toContain('Run an agent or a workflow first');
   });
 
   it('names the run when the picked run has no finished work', () => {
     const gate = artifactCreationGate(
       params({ basedOn: RUN_SCOPE, ctaState: { kind: 'blocked', reason: 'no-evidence' } }),
     );
-    expect(gate.reason).toContain('base it on the session, or wait for the run');
+    expect(gate.reason).toContain('Base it on the session, or wait for the run');
   });
 
   it('refuses a wireframe with no brief when nothing has run', () => {
@@ -57,7 +57,7 @@ describe('artifactCreationGate', () => {
       params({ kind: 'wireframe', ctaState: { kind: 'blocked', reason: 'no-evidence' } }),
     );
     expect(gate.isDisabled).toBe(true);
-    expect(gate.reason).toContain('describe the screen or flow');
+    expect(gate.reason).toContain('Describe the screen or flow');
   });
 
   it('orders run active before every other reason', () => {
@@ -68,13 +68,13 @@ describe('artifactCreationGate', () => {
         hasUsableProvider: false,
       }),
     );
-    expect(gate.reason).toBe('the run is still going, finish it first');
+    expect(gate.reason).toBe('The run is still going. Finish it first');
   });
 
   it('blocks a restored brief that is over the bound', () => {
     const gate = artifactCreationGate(params({ isBriefOverLimit: true }));
     expect(gate.isDisabled).toBe(true);
-    expect(gate.reason).toBe('shorten the brief to 2,000 characters');
+    expect(gate.reason).toBe('Shorten the brief to 2,000 characters');
   });
 
   it('notes that collection is still running without blocking', () => {

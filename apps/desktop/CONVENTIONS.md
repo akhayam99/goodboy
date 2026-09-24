@@ -14,7 +14,7 @@ This app is the **only** layer that calls Tauri commands (`invoke`) and imports 
 
 ## Tauri command patterns
 
-- Each command gets one thin wrapper, in the feature's `features/<domain>/<domain>.ts` (or `shared/lib/` when no feature owns it). Components never call `invoke` directly.
+- Each command gets one thin wrapper, in the feature's `features/<domain>/<domain>.ts` (or `shared/lib/` when no feature owns it). Store actions and feature wrapper modules may call `invoke`. Components and hooks never import it. They pass a wrapper instead, including where a `@goodboy/core` helper takes an `invokeFn`.
 - A command returns a Rust `Result<T, E>`. Tauri resolves with `T` on `Ok(T)` and **rejects** on `Err(E)`, with `E` serialized as the rejection value. No tagged `{ ok, value }` envelope travels over the wire. So the wrapper catches the rejection, maps it to a typed domain error, and throws that again.
 - Errors are domain types from `@goodboy/types`. Never show raw Tauri error strings in the UI.
 - Validate what a command returns at the boundary if the Rust side is not the single source of truth.
@@ -22,15 +22,15 @@ This app is the **only** layer that calls Tauri commands (`invoke`) and imports 
 ## Capabilities & security
 
 - `tauri.conf.json` capabilities: as few as possible, allowlist style. No wildcard `**`. `capabilities/default.json` is the list. It grants no shell permission at all, so the frontend cannot start any process.
-- API keys: **never** in `tauri.conf.json`, the SQL DB, the store plugin, env files, or `localStorage`. Use the OS keyring through the keyring plugin.
+- API keys: **never** in `tauri.conf.json`, the SQL DB, env files, or `localStorage`. Use the OS keychain through the `keyring` crate behind `secrets.rs`. There is no store plugin.
 - No `dangerousDisableAssetCspModification`. Strict CSP.
-- **Starting processes happens in Rust, behind a `#[tauri::command]`.** There is no `plugin-shell` and no binary allowlist to rely on. So the safety line is what the caller is allowed to pass. Some commands do take a binary or a shell string (`turn_spawn`'s `binary`, `provider_lifecycle_run`'s `command`). That value comes from a constant table (the provider registry, `PROVIDER_LIFECYCLE_COMMANDS` in `@goodboy/types`), never built from user or model text. A new command that starts a process reads its binary and flags from a table, or builds argv in Rust.
+- **Starting processes happens in Rust, behind a `#[tauri::command]`.** There is no `plugin-shell` and no binary allowlist to rely on. So the safety line is what the caller is allowed to pass. Some commands do take a binary or a shell string (`turn_spawn`'s `binary`, `provider_lifecycle_run`'s `command`). That value comes from a constant table (the provider registry, `PROVIDER_LIFECYCLE_COMMANDS` in `@goodboy/core`), never built from user or model text. A new command that starts a process reads its binary and flags from a table, or builds argv in Rust.
 - **Agent turns never go through a shell.** `turn.rs` builds argv with `build_provider_cli_args` and calls the binary directly. The side calls (`summarize.rs`, `planner.rs`) do the same. So a shell never splits anything a model writes into words. Where a shell does run, its body is the user's own text or a table constant:
   - `scripts.rs`: `bash -c` on a workspace script the user wrote.
   - `terminal.rs`: the user's login shell.
   - `provider_lifecycle.rs`: install and login.
-  - `skills.rs`: a skill script file, with its path guarded under `<workspace>/.kay/skills`.
-- **Every process Goodboy starts replays the login environment.** [docs/architecture.md](../../docs/architecture.md) → Subprocess environment owns how it works and why (a Dock-launched app needs it). This is on purpose and it is broad. The resolved env is the user's own shell, not a sandbox.
+  - `skills.rs`: a skill script file, with its path guarded under `<project-root>/.kay/skills`.
+- **Which processes replay the login environment** is owned by [docs/architecture.md](../../docs/architecture.md) → Subprocess environment. A script body the user wrote gets it. Everything else gets only PATH. Where it is replayed it is broad: the resolved env is the user's own shell, not a sandbox.
 - Every provider process start removes the env vars of a nested session (`CLAUDECODE`, `CLAUDE_CODE_ENTRYPOINT`, `CLAUDE_AGENT_SDK_VERSION`), through `aux_spawn::scrub_nested_session_env`. If they stay, the CLI refuses to run or falls back to broken auth.
 
 ## State (Zustand)
@@ -44,7 +44,7 @@ This app is the **only** layer that calls Tauri commands (`invoke`) and imports 
 
 ## React patterns
 
-[docs/typescript/components.md](../../docs/typescript/components.md) owns them. Two additions for desktop: `useTransition` for updates that are not urgent and for async UX. `use()` to unwrap promises, only at suspense boundaries you own.
+[docs/typescript/components.md](../../docs/typescript/components.md) owns them. One addition for desktop: `use()` to unwrap promises, only at suspense boundaries you own.
 
 ## Styling
 

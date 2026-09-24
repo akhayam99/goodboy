@@ -1,6 +1,6 @@
 import type { AgentId, PlanId, SessionId } from '@goodboy/types';
 import { runsForWorkflowRun } from '@goodboy/core';
-import { inferAgentKindFromName, kindConsumesPlan } from '../../../features/session/agent-kind';
+import { classifyStep, kindConsumesPlan } from '../../../features/session/agent-kind';
 import { resolveWorkflowAdvance } from '../../../features/workflows/advanceGate';
 import { viewWorkflowAdvance } from '../../../features/workflows/workflowAdvanceView';
 import { activateWorkflowAgentOrNotify } from '../workflows/activateWorkflowAgentOrNotify';
@@ -66,8 +66,8 @@ export const runPlan = (get: GetFn) => {
       });
     }
 
-    const nextKind = inferAgentKindFromName(nextStep.name);
-    if (!kindConsumesPlan(nextKind)) {
+    const nextKind = classifyStep({ step: nextStep });
+    if (!kindConsumesPlan({ kind: nextKind })) {
       return await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',

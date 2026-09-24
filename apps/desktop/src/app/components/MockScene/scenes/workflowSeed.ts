@@ -71,7 +71,6 @@ const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
   name: 'Northwind',
   slug: 'northwind',
-  sessionsRoot: '/mock/northwind/workflow/sessions',
   overrides: OVERRIDES,
   createdAt: '2026-08-25T15:10:00.000Z' as IsoDateTime,
   updatedAt: NOW,

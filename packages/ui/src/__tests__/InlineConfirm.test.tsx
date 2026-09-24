@@ -143,4 +143,61 @@ describe('InlineConfirm', () => {
       true,
     );
   });
+
+  it('sits in popover chrome without a nested card on the plain surface', () => {
+    render(
+      <InlineConfirm
+        role="danger"
+        icon={null}
+        title="Detach payments-api?"
+        confirmLabel="Detach"
+        surface="plain"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    const group = screen.getByRole('group', { name: 'Detach payments-api?' });
+    expect(group.className).not.toContain('border');
+    expect(group.className).not.toContain('rounded-lg');
+  });
+
+  it('maps each role to the kit button variant of the same tone', () => {
+    const { rerender } = render(
+      <InlineConfirm
+        role="danger"
+        icon={null}
+        title="Delete?"
+        confirmLabel="Go"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Go' }).className).toContain('bg-danger');
+    expect(screen.getByRole('button', { name: 'Cancel' }).className).toContain('bg-muted');
+
+    rerender(
+      <InlineConfirm
+        role="alert"
+        icon={null}
+        title="Delete?"
+        confirmLabel="Go"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Go' }).className).toContain('bg-warning');
+
+    rerender(
+      <InlineConfirm
+        role="primary"
+        icon={null}
+        title="Delete?"
+        confirmLabel="Go"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Go' }).className).toContain('bg-primary');
+  });
 });

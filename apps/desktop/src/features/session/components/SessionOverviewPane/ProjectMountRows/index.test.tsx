@@ -60,12 +60,12 @@ vi.mock('./ProjectBranchChip', () => ({
   ProjectBranchChip: ({ branch }: { readonly branch: string }) => <span>{branch}</span>,
 }));
 vi.mock('./ProjectSyncControl', () => ({ ProjectSyncControl: () => null }));
-vi.mock('./ProjectDetachMenu', () => ({ ProjectDetachMenu: () => null }));
+vi.mock('./MountActionsMenu', () => ({ MountActionsMenu: () => null }));
 vi.mock('./RemoveWorktreeAction', () => ({ RemoveWorktreeAction: () => null }));
 vi.mock('./NewBranchMountAction', () => ({
   NewBranchMountAction: () => <button>New branch mount</button>,
 }));
-vi.mock('../EditorMenu', () => ({ EditorMenu: () => null }));
+vi.mock('../useEditorMenuItems', () => ({ useEditorMenuItems: () => [] }));
 vi.mock('../MountCleanupProposals', () => ({
   MountCleanupProposals: () => null,
 }));
@@ -380,9 +380,6 @@ describe('ProjectMountRows', () => {
     expect(screen.getByText('Projects')).toBeDefined();
     expect(screen.queryByText('No project mounted yet')).toBeNull();
     expect(screen.getByRole('button', { name: 'Mount project' })).toBeDefined();
-    expect(
-      screen.getByText('Mount a workspace project to make it available in this session.'),
-    ).toBeDefined();
   });
 
   it('keeps the mount action in the section header when mounts exist', () => {

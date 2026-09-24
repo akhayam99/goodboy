@@ -18,4 +18,6 @@ export const bridgeStart = (): Promise<QrInfo> => invoke<QrInfo>('bridge_start')
 
 export const bridgeRevoke = (): Promise<void> => invoke<void>('bridge_revoke');
 
+export const bridgeStop = (): Promise<void> => invoke<void>('bridge_stop');
+
 export const bridgeStatus = (): Promise<BridgeStatus> => invoke<BridgeStatus>('bridge_status');

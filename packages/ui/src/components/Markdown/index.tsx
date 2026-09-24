@@ -1,6 +1,7 @@
 import { Fragment, memo, useMemo, type ReactNode } from 'react';
 import { Square, SquareCheck, SquareMinus, type LucideIcon } from 'lucide-react';
 import { cn } from '../../cn';
+import { Eyebrow } from '../Eyebrow';
 import { RemoteImage } from '../RemoteImage';
 import { LocalImage } from '../LocalImage';
 import { ctxStyleForTag, ctxTagLabel } from './ctxTagStyle';
@@ -23,12 +24,11 @@ type MarkdownProps = {
 };
 
 const CHIP_CLASS =
-  'mx-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide';
+  'mx-0.5 inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-eyebrow';
 
 const INLINE_CODE_CLASS: Record<MarkdownVariant, string> = {
-  document:
-    'rounded-md bg-muted/50 px-1 py-0 font-mono text-[0.875em] text-foreground/90 wrap-anywhere',
-  preview: 'font-mono text-[0.875em] text-foreground/90 wrap-anywhere',
+  document: 'rounded-md bg-muted px-1 py-0 font-mono text-[0.875em] text-foreground wrap-anywhere',
+  preview: 'font-mono text-[0.875em] text-foreground wrap-anywhere',
 };
 
 const CODE_TOKEN_CLASS: Record<CodeTokenKind, string> = {
@@ -270,7 +270,7 @@ const listClass = (variant: MarkdownVariant, depth: number): string => {
     return 'flex flex-col gap-0.5 pl-4 marker:text-muted-foreground';
   }
   if (depth > 0) {
-    return 'flex flex-col gap-1 pl-5 marker:text-muted-foreground/70';
+    return 'flex flex-col gap-1 pl-5 marker:text-faint-foreground';
   }
   return 'flex flex-col gap-1 pl-5 marker:text-muted-foreground';
 };
@@ -374,12 +374,12 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
         <div key={key} className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b border-border-soft/60">
+              <tr className="border-b border-border-soft">
                 {block.headers.map((h, j) => (
                   <th
                     key={`${key}-h-${j}`}
                     className={cn(
-                      'px-3 py-1.5 text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground wrap-anywhere',
+                      'px-3 py-1.5 text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground break-words',
                       alignClass(block.align[j]),
                     )}
                   >
@@ -390,15 +390,12 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
             </thead>
             <tbody>
               {block.rows.map((row, ri) => (
-                <tr
-                  key={`${key}-r-${ri}`}
-                  className="border-b border-border-soft/50 last:border-b-0"
-                >
+                <tr key={`${key}-r-${ri}`} className="border-b border-border-soft last:border-b-0">
                   {row.map((cell, ci) => (
                     <td
                       key={`${key}-r-${ri}-c-${ci}`}
                       className={cn(
-                        'px-3 py-1.5 align-top wrap-anywhere',
+                        'px-3 py-1.5 align-top break-words',
                         alignClass(block.align[ci]),
                       )}
                     >
@@ -454,7 +451,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
           </div>
           <div
             data-block="callout-body"
-            className="flex flex-col gap-2 leading-relaxed text-foreground/90 wrap-anywhere"
+            className="flex flex-col gap-2 leading-relaxed text-foreground wrap-anywhere"
           >
             {block.blocks.map((child, ci) =>
               renderBlock({ block: child, id: `${key}-c${ci}`, variant, depth }),
@@ -475,8 +472,8 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
         >
           {block.entries.map((entry, ei) => (
             <Fragment key={`${key}-f${ei}`}>
-              <dt className="pt-px text-2xs font-semibold uppercase leading-5 tracking-eyebrow text-muted-foreground">
-                {renderInline(entry.label, `${key}-f${ei}-l`, variant)}
+              <dt className="pt-px leading-5">
+                <Eyebrow label={renderInline(entry.label, `${key}-f${ei}-l`, variant)} />
               </dt>
               <dd className="min-w-0 leading-relaxed text-foreground wrap-anywhere">
                 {renderInline(entry.value, `${key}-f${ei}-v`, variant)}
@@ -508,9 +505,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
               data-block="metric"
               className="flex min-w-0 flex-col gap-0.5 rounded-md border border-border-soft px-3 py-2.5"
             >
-              <span className="text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground">
-                {renderInline(entry.label, `${key}-m${ei}-l`, variant)}
-              </span>
+              <Eyebrow label={renderInline(entry.label, `${key}-m${ei}-l`, variant)} />
               <span
                 data-block="metric-value"
                 className="text-xl font-semibold leading-tight tracking-tight text-foreground tabular-nums wrap-anywhere"
@@ -603,7 +598,7 @@ const MarkdownImpl = ({ text, className, variant = 'document' }: MarkdownProps) 
 
   if (variant === 'preview') {
     return (
-      <div className={cn('flex flex-col gap-1 text-sm text-foreground/85', className)}>
+      <div className={cn('flex flex-col gap-1 text-sm text-foreground', className)}>
         {document.blocks.map((block, idx) =>
           renderBlock({ block, id: `b-${idx}`, variant, depth: 0 }),
         )}
@@ -612,7 +607,7 @@ const MarkdownImpl = ({ text, className, variant = 'document' }: MarkdownProps) 
   }
 
   return (
-    <div className={cn('flex flex-col gap-5 text-sm text-foreground/85', className)}>
+    <div className={cn('flex flex-col gap-5 text-sm text-foreground', className)}>
       {document.sections.map((section, si) => (
         <div key={`s-${si}`} className="flex flex-col gap-2.5">
           {section.map((block, bi) =>

@@ -169,11 +169,12 @@ async function fetchIssueComments(
   opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<PrComment>> {
   try {
-    const raw = await runJson<ReadonlyArray<RawIssueComment>>(
+    const raw = await runJson<ReadonlyArray<RawIssueComment>>({
       runner,
-      ['api', `repos/${repo}/issues/${prNumber}/comments`, '--paginate'],
+      args: ['api', `repos/${repo}/issues/${prNumber}/comments`, '--paginate'],
       opts,
-    );
+      shape: 'array',
+    });
     return raw.map((c) => ({
       id: `issue-${c.id}`,
       author: c.user?.login ?? 'unknown',
@@ -229,9 +230,9 @@ async function fetchReviewThreads(
     return [];
   }
   try {
-    const raw = await runJson<RawReviewThreadsResponse>(
+    const raw = await runJson<RawReviewThreadsResponse>({
       runner,
-      [
+      args: [
         'api',
         'graphql',
         '-f',
@@ -244,7 +245,8 @@ async function fetchReviewThreads(
         `pr=${prNumber}`,
       ],
       opts,
-    );
+      shape: 'object',
+    });
     const threads = raw.data?.repository?.pullRequest?.reviewThreads?.nodes ?? [];
     const out: Array<PrComment> = [];
     const nodeIdToCommentId = new Map<string, string>();
@@ -291,9 +293,9 @@ async function fetchPrViewDetail(
   opts: GhRunOptions = {},
 ): Promise<RawPrViewForDetail> {
   try {
-    return await runJson<RawPrViewForDetail>(
+    return await runJson<RawPrViewForDetail>({
       runner,
-      [
+      args: [
         'pr',
         'view',
         String(prNumber),
@@ -303,7 +305,8 @@ async function fetchPrViewDetail(
         'reviews,reviewRequests,statusCheckRollup',
       ],
       opts,
-    );
+      shape: 'object',
+    });
   } catch (err) {
     if (err instanceof GhCliError) {
       return {};

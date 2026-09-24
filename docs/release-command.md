@@ -5,9 +5,8 @@
 > notarization or updater detail (`docs/release.md`).
 
 This is the agent's playbook for making a release. When the user says
-**"release the next version"**, **"rilascia la prossima minor/patch"**,
-**"ship the next release"**, or something similar, follow this file from start
-to end. You need no other instructions.
+**"release the next version"**, **"ship the next release"**, or something
+similar, follow this file from start to end. You need no other instructions.
 
 [release.md](release.md) is the technical runbook (signing, notarization,
 updater, homebrew). This file has the steps in order, plus the gotchas that
@@ -21,9 +20,7 @@ caught earlier runs.
    (`0.1.11 -> 0.1.12`). "next minor" resets the patch (`0.1.11 -> 0.2.0`).
    "next major" gives `1.0.0`. If the request is ambiguous, pick patch and say
    so.
-3. Before bumping, confirm the target version with the user in one line. An
-   autonomous run has no user to ask, and it starts with the version already
-   decided. So it skips this step instead of stalling on it.
+3. Before bumping, confirm the target version with the user in one line.
 
 Below, `X` is the new version and `X-1` is the current latest.
 
@@ -31,6 +28,9 @@ Below, `X` is the new version and `X-1` is the current latest.
 
 1. Apply the version bump in the six places listed in
    [release.md](release.md) → The version bump.
+   Bump each file in its own command. One `perl -i -pe '... if $. <= 5'` over
+   several files never resets `$.` between them, so every file after the first
+   is left unbumped.
    In the same commit, add the `## Goodboy vX` section to `CHANGELOG.md` (see
    "Release notes" below). The build reads its body from there, and fails if
    the section is missing.
@@ -38,19 +38,20 @@ Below, `X` is the new version and `X-1` is the current latest.
    [CONVENTIONS.md](../CONVENTIONS.md). Commit
    `chore(repo): bump version to X`, push, open PR.
 3. Wait until ALL CI checks are green (`gh pr checks`). Then merge on the
-   server (`gh pr merge --squash`). DO NOT advance/checkout/pull local `main`:
-   that restarts the app. Use `git fetch origin main` to get the merge SHA, then
-   tag that SHA directly. NOTE: background poll commands can get killed when a
-   turn ends. So poll CI and builds with a foreground until-loop, not
-   `run_in_background`.
+   server (`gh pr merge --squash`). Never advance, check out or pull local
+   `main` ([AGENTS.md](../AGENTS.md) → Forbidden patterns). Use
+   `git fetch origin main` to get the merge SHA, then tag that SHA directly.
 4. rc dry-run (a practice release):
    `git tag vX-rc.1 <merge-sha> && git push origin vX-rc.1`.
    Wait for `release.yml` to finish green. VERIFY notarization: download the
    dmg, `hdiutil attach`, copy `Goodboy.app` out of the mounted volume, then
    run `spctl -a -vvv` and `codesign -dv --verbose=4` against the copy. Expect
    `accepted, source=Notarized Developer ID`. The required team and what
-   counts as a failure are in [release.md](release.md). Detach. Then delete
-   the rc in all three places (release, remote tag, local tag):
+   counts as a failure are in [release.md](release.md). Detach. If a Goodboy
+   volume is already mounted, `hdiutil attach` mounts the new one at
+   `/Volumes/Goodboy 1`. So detach earlier volumes first, and take the mount
+   point from the attach output. Then delete the rc in all three places
+   (release, remote tag, local tag):
 
    ```bash
    gh release delete vX-rc.1 --repo akhayam99/goodboy --yes
@@ -99,6 +100,15 @@ and never edited onto the release after the build.
 ## Finish
 
 6. Once the draft release exists (step 5), its body and `latest.json` are
-   already filled in from `CHANGELOG.md`. Review the draft, then publish it:
-   `gh release edit vX --draft=false`. Then confirm `homebrew.yml` starts and
-   succeeds (`gh run list --workflow=homebrew.yml`).
+   already filled in from `CHANGELOG.md`. Review the draft. The real tag is a
+   fresh build, so the rc check in step 4 does not cover this dmg. Check
+   notarization again on the draft's own dmg:
+   `gh release download vX --repo akhayam99/goodboy --pattern 'Goodboy_X_universal.dmg'`,
+   `hdiutil attach`, copy `Goodboy.app` out, run `spctl -a -vvv` and
+   `codesign -dv --verbose=4` against the copy with the same expectations as
+   step 4, then detach. Any failure stops the release here, still a draft.
+   Then publish it: `gh release edit vX --draft=false`. Confirm `homebrew.yml`
+   starts and succeeds (`gh run list --workflow=homebrew.yml`). Compare
+   `shasum -a 256` of the checked dmg with the `sha256` in
+   `akhayam99/homebrew-tap` `Casks/goodboy.rb`. They must match, or the cask
+   points at a file nobody checked.

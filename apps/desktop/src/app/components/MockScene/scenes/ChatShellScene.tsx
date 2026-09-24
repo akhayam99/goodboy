@@ -60,7 +60,6 @@ const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
   name: 'Cascade',
   slug: 'cascade',
-  sessionsRoot: '/mock/cascade/sessions',
   overrides: OVERRIDES,
   createdAt: STARTED,
   updatedAt: NOW,

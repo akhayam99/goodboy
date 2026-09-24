@@ -11,19 +11,48 @@ The tokens are stored in `apps/desktop/src/styles.css` under `@theme`. That
 file is only where they sit. The rules for what they mean and how they combine
 live here.
 
+## Text hierarchy
+
+Text uses four opaque semantic steps. `foreground` is primary content,
+`muted-foreground` is supporting content, and `faint-foreground` is metadata,
+placeholders and trailing hints. `disabled-foreground` is reserved for disabled
+controls. Opacity modifiers do not create additional text steps.
+
+## Elevation ramp
+
+`background`, `subtle`, `muted` and `elevated` express distance from the canvas
+in both themes. Components step between those opaque surfaces instead of
+mixing one surface through opacity. `bg-hover` and `bg-selected` are
+interaction overlays painted as a background-image layer, so they stack on
+whatever fill the element rests on instead of replacing it, and `cn` keeps them
+beside a surface class. `scrim` is reserved for modal backdrops.
+
+A selected row has one treatment everywhere: `bg-selected`, foreground text and
+medium weight, driven by `data-selected` (`selectedRow.ts`, used by
+`SelectableRow` and `RailCard isSelected`). No ring and no primary tint mark a
+selection; the focus ring stays the only ring, so focus and selection read
+apart, as in VS Code and Linear lists.
+
+A row that holds its own links or buttons is `InteractiveRow`: one overlay
+button stretched over the row opens it, and the inner controls sit above it.
+A `role="button"` div with its own key handler and propagation stopping is not
+another pattern. A settings-style rail entry with an icon, a subtitle and a
+status dot is `StatusRailItem`.
+
 ## Type scale
 
 `text-3xs` 10px/14px, `2xs` 11px/16px, `xs` 12px, `sm` 14px/20px, `base` 15px,
-`lg` 17px, `xl` 20px. Any `text-[Npx]` is rejected. The standing exceptions
-live in `docs/styling.md`, which owns the authoring rule.
+`lg` 17px, `xl` 20px, and one display grade, `2xl` 24px/32px, kept for the
+onboarding titles, the `EmptyState` hero and the Impact headline. Arbitrary
+sizes are covered by [docs/styling.md](../../docs/styling.md).
 
 **Every size a repeated row uses declares its own line-height.** Without that
 pair, the box height follows whatever `line-height` the size inherits. For
 example, `3xs` and `2xs` inherited the body's 1.55 and came out at 15.5px and
 17.05px. That put the lens rail's group labels and count chips on a fractional
 pixel, and a row with a count ended up taller than a row without one. `3xs`,
-`2xs` and `sm` have a fixed line height in the tokens. `xs` does not, so a
-repeated row that uses it writes `leading-4` where it is used.
+`2xs`, `sm` and `2xl` have a fixed line height in the tokens. `xs` does not, so
+a repeated row that uses it writes `leading-4` where it is used.
 
 ### One grade per role
 
@@ -55,14 +84,17 @@ artifact.
 
 ## Radius scale
 
-One radius family, one step away from square. `rounded-xl` and larger look
-bubbly at this scale.
+One radius family, one step away from square. There is no `rounded-xl` token:
+larger radii look bubbly at this scale. `no-token-bypass.test.ts` rejects bare
+`rounded` and arbitrary `rounded-[Npx]`. Bare `rounded` comes out at 3.75px on
+the 15px root, so it is always written `rounded-sm`.
 
-| token          | value | used for                                           |
-| -------------- | ----- | -------------------------------------------------- |
-| `rounded-lg`   | 8px   | framed surfaces: cards, banners, inputs, buttons   |
-| `rounded-md`   | 6px   | small inset controls: icon buttons, segmented tabs |
-| `rounded-full` | n/a   | pills, avatars, circular icon buttons              |
+| token          | value | used for                                                      |
+| -------------- | ----- | ------------------------------------------------------------- |
+| `rounded-lg`   | 8px   | framed surfaces: cards, banners, panels                       |
+| `rounded-md`   | 6px   | controls and popovers: buttons, inputs, selects, icon buttons |
+| `rounded-sm`   | 4px   | inline tokens: kbd, code, small badges, checkboxes            |
+| `rounded-full` | n/a   | pills, avatars, circular icon buttons                         |
 
 ## Spacing scale
 
@@ -124,42 +156,52 @@ concept cannot get an icon without a tone, or a tone without an icon.
   because they are plumbing. Giving a concept a new color changes what it
   claims.
 
-Ten tones (`success`, `info`, `warning`, `danger`, `primary`, `accent`,
-`merged`, `draft`, `operations`, `neutral`). Each one resolves through the
-single accessor `tintClasses(tone)`. Components take a `Tone` and call it. They
-never hand-write `bg-warning/10`.
+Eight tones (`success`, `info`, `warning`, `danger`, `primary`, `merged`,
+`draft`, `neutral`). Each one resolves through the single accessor
+`tintClasses(tone)`. Components take a `Tone` and call it. They never
+hand-write `bg-warning/10`. Every solid semantic fill uses the shared `on-tone`
+text colour.
 
-### The one identity exception
+### Identity palettes
 
-The session timeline spine is the only place where colour names an object
-instead of describing its state. A reader has to see at a glance that a step
-belongs to one workflow run. Stage cannot show that. Two workflows running at
-once are both `info`, and that is exactly the pair a reader needs to tell
-apart.
+Identity colour names an object instead of describing its state. Two workflows
+running at once are both `info`, and that is exactly the pair a reader needs to
+tell apart. So a run and a workspace get a colour that says "this one" and
+nothing more.
 
-So the lane of a run gets an **identity** colour from a five-entry palette,
-`--color-run-1` to `--color-run-5` in `apps/desktop/src/styles.css`. Colours
-are handed out in order across workflow runs and agent chains, by creation time
-and id. `runIdentity` in
-`apps/desktop/src/features/session/timeline/runIdentity.ts` is the only accessor.
-It gives exactly two versions of one slot: `stroke` for an SVG lane and `chip`
-for the run's own chip. `runIdentityStroke`, next to it, turns the index the
-rail geometry carries back into a stroke.
+One set serves every object that needs a name: `--color-identity-1` to
+`--color-identity-8` in `apps/desktop/src/styles.css`, chroma 0.09 on eight
+hues, with no red. Two accessors read it, and nothing else does:
 
-Three limits keep the exception small:
+- `runIdentity` in `apps/desktop/src/features/session/timeline/runIdentity.ts`
+  picks a start slot per session from a hash of the session id. Then it walks
+  the set with stride 3 across workflow runs and agent chains, ordered by
+  creation time and id. 3 and 8 share no factor, so every slot is used before
+  one repeats. It gives four versions of one slot: `stroke` for an SVG lane,
+  `chip` for the run's own chip, `mutedChip` for a discarded run's chip, and
+  `spin` for the running border. `runIdentityStroke`, next to it, turns the
+  index the rail geometry carries back into a stroke.
+- `workspaceAccent` in `apps/desktop/src/features/workspace/color.ts` hashes a
+  workspace id onto the same eight slots for its sidebar dot.
 
-- The identity palette is **separate from the ten tones** and never overlaps
-  them. A violet lane is not a plan. A red lane is not a failure. A lane colour
-  says nothing beyond "these rows are one run".
-- Identity colours the lane and the run chip that names it, nothing else.
-  Stage stays in the marker on top of the lane, which still goes through
-  `tintClasses(tone)` like everything else.
+Three limits keep identity small:
+
+- Identity never reads as a tone. `token-contrast-floor.test.ts` keeps every
+  identity colour at oklab delta e 4.5 or more from every tone, and at 4.5:1
+  as text on every surface. A violet lane is not a plan. A lane colour says
+  nothing beyond "these rows are one run".
+- Identity colours the lane, the run chip that names it and the workspace dot,
+  nothing else. Stage stays in the marker on top of the lane, which still goes
+  through `tintClasses(tone)` like everything else.
 - The run chip is the only component tinted from identity instead of from a
   tone. So on purpose it is **not** a `Chip`. `TimelineRunChip` in the
   timeline feature owns its own surface, and the palette never enters
-  `packages/ui`. A pink chip there means "this run" and nothing more.
+  `packages/ui`.
 
-Anything else that uses the run palette is a bug. Add a tone instead.
+Agent kinds (`--color-agent-*`) and provider glyphs (`--color-provider-*`) are
+identity palettes of their own. Each has a single accessor and is held to the
+same floor test. Anything else that reaches for an identity colour is a bug.
+Add a tone instead.
 
 ### Lane vocabulary
 
@@ -176,35 +218,16 @@ make up the whole grammar. Nothing outside this list may appear on the rail:
 The spine is the backbone of the feed. It is full height, always drawn, never
 tinted and never broken.
 
-### The two channels a rail line speaks through
-
-Every line on the rail says two separate things. Keeping them separate means
-nobody has to guess at either one.
+### What a rail line says
 
 **Pattern is time.** Solid means this line's own work has happened. Dashed
 means it has not happened yet. The switch from solid to dashed sits at the
 running step, so the switch itself reads as progress. Dashed means nothing
 else, on any line, at any depth. A dashed stretch always points toward NOW.
 
-**Strength is attention.** When a line's activity has moved onto a live
-branch, the line stays solid but fades to `--rail-strength-receded`. It fades
-over exactly the rows where that branch is live. Only the deepest live branch
-is drawn at full strength. Every ancestor over those rows steps back. The token
-mixes the stroke toward the surface colour: 45% of the stroke on dark, 50% on
-light. So the faded line reads as background structure on both themes. It does
-not vanish on the light theme, and it does not look disabled on the dark one.
-
-The rule is one test over a line and a range of rows. It is asked the same way
-of the spine and of a lane. So it holds from spine to run, from run to fan-out,
-and at any deeper level the column cap allows, with no second rule. When two
-branches are live over the same rows, their shared ancestor fades once. The
-rule is about the ancestor, not about either branch.
-
-The two channels are independent, so both messages survive together, even in
-greyscale. Take a run's lane past its own running step while one of its own
-fan-outs is live. It is drawn **dashed and receded**. The pattern says its
-remaining work is in the future. The strength says attention is one level
-further out.
+A discarded run keeps its pattern and its identity hue, and dims to
+`TERMINAL_DIM` on every lane segment and join it owns. That is the same dim a
+finished row uses. Its chip switches to the `mutedChip` version.
 
 The stub exists because identity names a run and nothing else. A standalone
 agent's children are still session work. So their offset line stays in the
@@ -212,9 +235,9 @@ neutral spine colour and does not borrow a run's colour.
 
 Geometry is computed in
 `apps/desktop/src/features/session/timeline/railGeometry.ts`. The lane offset is
-one 16px unit per level, and depth is capped at three columns. Rows are laid
-out against `timelineRhythm.ts`. Its grades fix line height, box height and
-marker size, so a marker centres on its label's line and not on its row box.
+one 16px unit per level. Rows are laid out against `timelineRhythm.ts`. Its
+grades fix line height, box height and marker size, so a marker centres on its
+label's line and not on its row box.
 
 Two rules follow from the direction of time. Newer sits above older at every
 level. So a run's origin row is the bottom of its group and its steps stack
@@ -232,15 +255,18 @@ Named tokens in `apps/desktop/src/styles.css` under `@theme`, with keys
 is a precedence chain (each layer must sit above the one below).
 `docs/styling.md` owns the reasoning. This table is only the registry.
 
-| token                        | value | who                                                    |
-| ---------------------------- | ----- | ------------------------------------------------------ |
-| (StudioShell fullscreen)     | 50    | the floor: never lowered                               |
-| `--z-index-popover-backdrop` | 55    | click-catcher behind the app-global popovers           |
-| `--z-index-popover`          | 65    | the app-global popovers                                |
-| `--z-index-command-palette`  | 70    | ⌘K, which fires whatever else is open                  |
-| `--z-index-tooltip`          | 75    | triggerable from inside a popover or the palette       |
-| `--z-index-toast`            | 85    | the toast stack                                        |
-| (native `<dialog>`)          | n/a   | the browser's top layer, above every z-indexed element |
+| token                        | value | who                                                                                            |
+| ---------------------------- | ----- | ---------------------------------------------------------------------------------------------- |
+| `--z-index-studio`           | 50    | the `AppShell` studio slot and the launcher's viewport `StudioShell`, the floor: never lowered |
+| `--z-index-popover-backdrop` | 55    | click-catcher behind the app-global popovers                                                   |
+| `--z-index-onboarding`       | 60    | the onboarding wizard over a studio                                                            |
+| `--z-index-drag`             | 62    | the workflow studio drag ghost                                                                 |
+| `--z-index-popover`          | 65    | the app-global popovers                                                                        |
+| `--z-index-command-palette`  | 70    | ⌘K, which fires whatever else is open                                                          |
+| `--z-index-tooltip`          | 75    | triggerable from inside a popover or the palette                                               |
+| `--z-index-toast`            | 85    | the toast stack                                                                                |
+| `--z-index-lightbox`         | 90    | the image lightbox, above everything z-indexed                                                 |
+| (native `<dialog>`)          | n/a   | the browser's top layer, above every z-indexed element                                         |
 
 ## Primitives
 
@@ -260,6 +286,15 @@ surface. `meta` holds counts and totals in `tabular-nums`, never a control. The
 header row wraps, so actions drop under the title instead of squeezing it. The
 pane owns the gap below the header, and children add no top margins.
 
+**One title grade.** Every lens pane and studio detail gets its title from
+`PaneShell`: an `h1` at `text-xl`, then an optional description, meta and
+actions. `icon` takes a concept glyph, `glyph` takes a brand mark. A detail
+that needs its own header row passes `HeaderBand` (also an `h1`) through the
+custom `header` slot. `scroll="body"` keeps the header fixed above a divider
+for studio details. Studio chrome (`OverlayHeader`) and the focused-pane lens
+label are window chrome, not headings. The header is named with `aria-label`,
+so the detail title is the only `h1` on the surface.
+
 **The reading column caps at `max-w-5xl` and centres.** That is 1024px, which
 is also the window's minimum width. So the cap never applies at minimum size.
 There, the sidebar and the pane insets set the width. The cap is for wide
@@ -272,13 +307,21 @@ dashed box.
 
 ## Action zones
 
-The fixed chrome row has one flexible context region, followed by one action region that never shrinks away. `StudioShell` exposes that region as `headerAccessory`, `HeaderBand` exposes it as `actions`, and inspector headers use the same `actions` slot. Generic object, lifecycle and destructive controls go there. The action region is pushed to the far end and never enters the content scroller.
+Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action-zones). The slots that carry it:
 
-The focused object's primary action uses the same fixed header action region. A creation or edit flow is different. It puts its commit in one action row, in the scrolling flow, right after the last section. Supporting error copy sits at the start of that row. Cancel plus exactly one primary action sit at the end. Alternates and reset controls join the same row as ghost or secondary buttons. A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome. If a surface truly needs a dock, argue for it at review. Docking is no longer the default for any composition.
+- The fixed chrome row has one flexible context region, followed by one action region that never shrinks away. It is pushed to the far end and stays outside the content scroller. `StudioShell` exposes it as `headerAccessory`, `HeaderBand` as `actions`, and inspector headers use the same `actions` slot. The focused object's primary action uses it too.
+- A creation or edit flow's action row is the one the creation grammar below describes. It is never stretched across a shell or container that also holds unrelated content.
+- A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 
-That row also uses the same width as the content it commits. It is never stretched across a shell or container that also holds unrelated content.
+`InlineConfirm` stays attached to a destructive trigger in its action region. A confirmation detached in the body, or a destructive footer dock, is not another zone. It is the only confirmation body, and it shows in exactly one of three placements, picked by how much room the trigger has:
 
-`InlineConfirm` stays attached to a destructive trigger in its action region. A confirmation detached in the body, or a destructive footer dock, is not another zone.
+- **Row swap**: a trigger inside a row with width (a `FieldRow`, a section footer) is replaced in the same slot by the `card` surface.
+- **Anchored**: a small trigger (icon button, sidebar row action, header action, rail row) opens `ConfirmPopover`, which shows the `plain` surface in an `AnchoredPopover`. Escape and a click outside cancel. The popover stays open and busy while the confirm runs.
+- **Menu swap**: a destructive item in an open menu or popover replaces the menu body with `InlineConfirm surface="plain"` in the same popover.
+
+A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`, is a bug (`inline-confirm-placement.test.ts`). The trigger is ghost or secondary with danger text. The solid danger fill shows only on the confirm button. The title says what will happen. The description says what survives and how to undo it. Reversible actions use `role="alert"`, irreversible ones `role="danger"`.
+
+**Copy feedback lives on the control.** `useCopyLink().copy({ text, key })` keys the copied state, so in a list only the row whose `key` matches flips to "Copied". A successful copy never toasts; a failure shows inline while the control stays mounted, and only a menu item, which unmounts on click, reports a failure through a toast. `CopyButton` reads "Copy", "Copied", "Copy failed".
 
 ## Section rhythm
 
@@ -292,7 +335,7 @@ space alone. It sits one step above the canvas, so the cards inside it reach
 the top of the ramp and nothing stacks a fourth level. A metadata line is not a
 section and does not get a surface.
 
-`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between regions, never decoration after every heading or field.
+`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It is also the only uppercase label. A standalone label with `uppercase` renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between regions, never decoration after every heading or field.
 
 ## Prose disclosure
 
@@ -370,7 +413,9 @@ What "empty" means, and the copy rule for it, are product rules and live in
 
 ## Motion registry
 
-Four animations, one meaning each.
+Seven animations, one meaning each. Transition keyframes (`fade-in`,
+`nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`) move content between
+states and sit outside the registry.
 
 - `spin-border`: working.
 - `border-pulse`: a warning-stage card needs you.
@@ -378,11 +423,20 @@ Four animations, one meaning each.
   cycles, then rest) on an element that now needs the user, never one that
   is working.
 - `soft-pulse`: the only animation in the app for a lasting state. It breathes
-  a state that holds and is alive. It breathes the Providers launcher while no
-  provider is connected. It also breathes the centre dot of the running marker
-  on the activity rail. There it sits inside the `spin-border` ring, so the
-  pair reads as one running state, not two claims. The bar for a second
-  lasting-state animation is high.
+  a state that holds and is alive: the Providers launcher icon (never its
+  label) while no provider is connected, the centre dot of the running marker
+  on the activity rail, a running tool icon or scout dot, and the boot splash
+  status. On the rail it sits inside the `spin-border` ring, so the pair reads
+  as one running state, not two claims. The bar for another lasting-state
+  animation is high.
+- `cost-chip-pulse`: the spend meter just ticked. One 1100ms halo, paired with
+  the digit roll.
+- `text-shimmer`: a label whose action is in flight, such as a handoff while
+  its agent starts. It replaces a spinner next to the label.
+- Skeleton pulse (`animate-pulse` inside `Skeleton` only): loading.
+
+`no-token-bypass.test.ts` rejects any `animate-pulse` or `animate-ping`
+outside `Skeleton`.
 
 Motion-safe gating, "motion confirms, never decorates", "motion names who is
 working, and for how long", and "Spinners are forbidden" are product rules and
@@ -406,6 +460,11 @@ width follows its content breaks the column for every row under it.
   prop). `auto` is for one-off chips in a detail panel, never a column. A
   fixed-width wrapper around the chip does not count. It aligns what comes
   after the chip and leaves the chip ragged.
+- A chip that works as a control next to buttons (the session overview's
+  context, attention, linked-work and branch chips) is `Chip size="control"`
+  with `shape="badge"`. That gives the `h-6` control height, the focus ring,
+  and a tone hover. A custom element that needs the same frame (a popover
+  trigger with its own ref) takes `chipClasses`, never a local class string.
 - In a right-aligned cluster, variable text comes first and glyphs last. What
   sits nearest the edge must be constant-width, or it wanders from row to row.
   In a left-aligned cluster the glyph comes first. The test is where the group

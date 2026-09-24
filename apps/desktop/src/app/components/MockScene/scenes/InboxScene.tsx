@@ -8,7 +8,8 @@ import { InboxRail } from '../../../../features/inbox/components/InboxStudio/Inb
 import type { InboxKind, InboxProvider, InboxRecord } from '../../../../features/inbox/types';
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
 import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
-import { StudioFrame, seedStudioChrome } from './shellChrome';
+import { StudioFrame } from './StudioFrame';
+import { seedStudioChrome } from './shellChrome';
 
 const noop = () => undefined;
 const MINUTE = 60_000;
@@ -175,63 +176,7 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
   }),
 ];
 
-const InboxPane = () => (
-  <StudioShell
-    icon={CONCEPT_ICONS.inbox}
-    tone={CONCEPT_TONE.inbox}
-    title="Inbox"
-    workspaceName="Cascade"
-    closeLabel="close inbox studio"
-    headerAccessory={<IconButton icon={RefreshCw} label="Refresh inbox" onClick={noop} />}
-    onClose={noop}
-  >
-    {() => (
-      <StudioRailLayout
-        railLabel="Inbox"
-        railWidth="xwide"
-        rail={
-          <InboxRail
-            records={RECORDS}
-            allRecords={RECORDS}
-            selectedProviders={new Set()}
-            onToggleProvider={noop}
-            sessionFilterLabel={null}
-            onClearSessionFilter={noop}
-            query=""
-            onQueryChange={noop}
-            kindFilter="all"
-            onKindFilterChange={noop}
-            selectedKey={SELECTED_RECORD.key}
-            onSelect={noop}
-            onActivate={noop}
-            onClearFilters={noop}
-            isLoading={false}
-            errors={[]}
-            onRefresh={noop}
-          />
-        }
-        detail={
-          <InboxDetail
-            record={SELECTED_RECORD}
-            records={RECORDS}
-            hasVisibleRecords
-            hasFiltersActive={false}
-            workspaceId={WORKSPACE_ID}
-            rootPath={ROOT_PATH}
-            isLoading={false}
-            errors={NO_ERRORS}
-            onRefresh={noop}
-            onClose={noop}
-            onDeselect={noop}
-            onClearFilters={noop}
-            onOpenIntegrations={noop}
-            launchFocusRequest={0}
-          />
-        }
-      />
-    )}
-  </StudioShell>
-);
+const CONNECTED: ReadonlyArray<InboxProvider> = ['github', 'linear', 'jira', 'sentry', 'slack'];
 
 export const InboxScene = () => {
   const [isReady, setIsReady] = useState(false);
@@ -246,5 +191,67 @@ export const InboxScene = () => {
     return null;
   }
 
-  return <StudioFrame activeStudio="inbox" main={<InboxPane />} />;
+  return (
+    <StudioFrame
+      target="inbox"
+      main={
+        <StudioShell
+          icon={CONCEPT_ICONS.inbox}
+          tone={CONCEPT_TONE.inbox}
+          title="Inbox"
+          closeLabel="close inbox studio"
+          headerAccessory={<IconButton icon={RefreshCw} label="Refresh inbox" onClick={noop} />}
+          onClose={noop}
+        >
+          {() => (
+            <StudioRailLayout
+              railLabel="Inbox"
+              railWidth="xwide"
+              rail={
+                <InboxRail
+                  records={RECORDS}
+                  allRecords={RECORDS}
+                  connected={CONNECTED}
+                  selectedProviders={new Set()}
+                  onToggleProvider={noop}
+                  sessionFilterLabel={null}
+                  onClearSessionFilter={noop}
+                  query=""
+                  onQueryChange={noop}
+                  kindFilter="all"
+                  onKindFilterChange={noop}
+                  selectedKey={SELECTED_RECORD.key}
+                  onSelect={noop}
+                  onActivate={noop}
+                  onClearFilters={noop}
+                  isLoading={false}
+                  errors={[]}
+                  onRefresh={noop}
+                />
+              }
+              detail={
+                <InboxDetail
+                  record={SELECTED_RECORD}
+                  records={RECORDS}
+                  connected={CONNECTED}
+                  hasVisibleRecords
+                  hasFiltersActive={false}
+                  workspaceId={WORKSPACE_ID}
+                  rootPath={ROOT_PATH}
+                  isLoading={false}
+                  errors={NO_ERRORS}
+                  onRefresh={noop}
+                  onClose={noop}
+                  onDeselect={noop}
+                  onClearFilters={noop}
+                  onOpenIntegrations={noop}
+                  launchFocusRequest={0}
+                />
+              }
+            />
+          )}
+        </StudioShell>
+      }
+    />
+  );
 };

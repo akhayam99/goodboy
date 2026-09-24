@@ -1,12 +1,6 @@
-import type { ProviderUsage } from '@goodboy/types';
+import type { ModelPrice, ProviderUsage } from '@goodboy/types';
 
-export type CodexModelPriceOverride = {
-  readonly inputPerMtok: number;
-  readonly outputPerMtok: number;
-  readonly cachedInputPerMtok?: number;
-};
-
-export const CODEX_PRICES: Readonly<Record<string, CodexModelPriceOverride>> = {
+export const CODEX_PRICES: Readonly<Record<string, ModelPrice>> = {
   'gpt-6-astra': {
     inputPerMtok: 10,
     outputPerMtok: 50,
@@ -47,7 +41,7 @@ export const CODEX_PRICES: Readonly<Record<string, CodexModelPriceOverride>> = {
 type Params = {
   readonly usage: ProviderUsage;
   readonly model: string;
-  readonly override?: CodexModelPriceOverride | null;
+  readonly override?: ModelPrice | null;
 };
 
 export const computeCodexCostUsd = ({ usage, model, override }: Params): number => {

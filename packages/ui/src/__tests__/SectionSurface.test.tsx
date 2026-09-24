@@ -1,21 +1,22 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
-import { SECTION_SURFACE_CLASS, SectionSurface } from '../components/SectionSurface';
+import { cleanup, render, screen, within } from '@testing-library/react';
+import { SectionSurface } from '../components/SectionSurface';
 
 afterEach(cleanup);
 
-const carriesSurface = (element: Element | null): boolean =>
-  element !== null &&
-  SECTION_SURFACE_CLASS.split(' ').every((token) => element.classList.contains(token));
-
 describe('SectionSurface', () => {
-  it('raises the section onto the shared surface instead of leaning on vertical space', () => {
-    const { container } = render(<SectionSurface label="Outcome">shipped it</SectionSurface>);
+  it('holds its label and its body in one section', () => {
+    render(
+      <SectionSurface label="Outcome" ariaLabel="Outcome">
+        shipped it
+      </SectionSurface>,
+    );
 
-    expect(carriesSurface(container.querySelector('section'))).toBe(true);
-    expect(screen.getByText('shipped it')).toBeDefined();
+    const section = screen.getByRole('region', { name: 'Outcome' });
+    expect(within(section).getByText('Outcome')).toBeDefined();
+    expect(within(section).getByText('shipped it')).toBeDefined();
   });
 
   it('labels the section with an eyebrow by default, adding nothing to the outline', () => {

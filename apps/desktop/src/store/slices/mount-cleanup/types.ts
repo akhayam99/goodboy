@@ -30,7 +30,6 @@ export type SessionCleanupOutcome = {
 export type CleanupSessionMountsInput = {
   readonly sessionId: SessionId;
   readonly reason: RetainedWorktreeReason;
-  readonly keepDirectories?: boolean;
 };
 
 export type ProposeMountCleanupInput = {

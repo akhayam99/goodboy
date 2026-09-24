@@ -4,18 +4,11 @@ import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
 import { type SlotKey } from '@goodboy/core';
-import {
-  type SessionConfigUpdate,
-  type AgentConfigUpdate,
-  type NotificationAction,
-  type NotificationKind,
-  type NotificationSeverity,
-} from '@goodboy/db';
+import { type SessionConfigUpdate, type AgentConfigUpdate } from '@goodboy/db';
 import type {
   AgentId,
   AgentSourceKind,
   ArtifactId,
-  BudgetAlert,
   BudgetRule,
   ClaudePermissionMode,
   ContextSlot,
@@ -75,9 +68,7 @@ import type {
   SessionSortKey,
   SessionGroupKey,
   TaskModelPreference,
-  ReviewablePr,
   PrReviewDraft,
-  RoleModelPreferences,
 } from '@goodboy/types';
 import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList, type ProviderStatus } from '../features/providers/providers';
@@ -90,6 +81,8 @@ import { type WorkflowUpsertArgs, type StepDefUpsertArgs } from '../features/wor
 import { type AgentKind } from '../features/session/agent-kind';
 import type { TerminalTabId, TerminalTabStatus } from '../shared/types/terminal';
 import { createNotificationsSlice } from './slices/notifications';
+import type { EmitNotificationParams } from './slices/notifications/emitNotification';
+import type { ReportErrorParams } from './slices/notifications/reportError';
 import { createNudgesSlice } from './slices/nudges';
 import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts';
 import { createPlansSlice } from './slices/plans';
@@ -130,7 +123,6 @@ import {
   type SlackThreadParams,
   type SlackWorkspaceParams,
 } from './slices/slack-threads';
-import { createReviewPrsSlice } from './slices/review-prs';
 import { createReviewDraftsSlice } from './slices/review-drafts';
 import type {
   AddReviewDraftInput,
@@ -151,8 +143,6 @@ import type {
   DiffFocus,
   LensKind,
   ResolveQueueView,
-  ResolveAgentReturn,
-  ResolvePublicationReturn,
   SessionCreationId,
   SessionCreationKind,
   SessionStudio,
@@ -196,6 +186,7 @@ import type {
 } from './slices/workflowRouting/types';
 import { createSlotsSlice } from './slices/slots';
 import { createOverridesSlice } from './slices/overrides';
+import type { WorkspaceOverridesPatch } from './slices/overrides/patchWorkspaceOverrides';
 import { createCredentialsSlice } from './slices/credentials';
 import { createWorkflowsSlice } from './slices/workflows';
 import type { CopyWorkflowFromWorkspaceParams } from './slices/workflows/copyWorkflowFromWorkspace';
@@ -269,6 +260,7 @@ import { initialUpdaterState } from './slices/updater/state';
 import { createChangelogSlice } from './slices/changelog';
 import { initialChangelogState } from './slices/changelog/state';
 import type { Params as MarkChangelogSeenParams } from './slices/changelog/markChangelogSeen';
+import type { FocusChangelogReleaseParams } from './slices/changelog/focusChangelogRelease';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
 import { initialBugReportDraftState } from './slices/bugReportDraft/state';
 import type { Params as SetBugReportDraftParams } from './slices/bugReportDraft/setBugReportDraft';
@@ -284,16 +276,7 @@ import type { ProviderSpendEntry } from './slices/budget';
 import type { AppState } from './types';
 import type { EvictionMode } from './sessionEviction';
 export type { ProviderSpendEntry };
-export type {
-  AppState,
-  BootPhase,
-  SessionGithubState,
-  SessionGitlabMrState,
-  SessionLoadingFlags,
-  SessionNudge,
-  SummarizerSessionStatus,
-  PendingOrchestration,
-} from './types';
+export type { AppState } from './types';
 
 type SaveScriptParams = {
   readonly workspaceId: WorkspaceId;
@@ -334,10 +317,12 @@ type AppActions = {
   retryHydrate(): Promise<void>;
   checkForUpdates(): Promise<void>;
   installUpdate(): Promise<void>;
+  relaunchApp(): Promise<void>;
   loadChangelog(): Promise<void>;
   reloadChangelog(): Promise<void>;
   hydrateChangelogSeen(): Promise<void>;
   markChangelogSeen(params: MarkChangelogSeenParams): Promise<void>;
+  focusChangelogRelease(params: FocusChangelogReleaseParams): void;
   setBugReportDraft(params: SetBugReportDraftParams): void;
   addBugReportImages(params: AddBugReportImagesParams): void;
   removeBugReportImage(params: RemoveBugReportImageParams): void;
@@ -348,9 +333,7 @@ type AppActions = {
   setWindowPresence(label: string, workspaceId: WorkspaceId | null): void;
   removeWindowPresence(label: string): void;
   setCurrentSession(id: SessionId | null): Promise<void>;
-  refreshSessions(workspaceId: WorkspaceId): Promise<void>;
   loadArchivedSessions(workspaceId: WorkspaceId): Promise<void>;
-  refreshSessionSummary(sessionId: SessionId): Promise<void>;
   loadSetting(key: string): Promise<string | null>;
   saveSetting(key: string, value: string): Promise<void>;
   refreshProviderStatus(status: ProviderStatus): void;
@@ -391,7 +374,7 @@ type AppActions = {
     workspaceId: WorkspaceId;
     profile: WorkspaceProfile;
   }): Promise<Workspace>;
-  deleteWorkspace(id: WorkspaceId): Promise<void>;
+  disconnectWorkspace(id: WorkspaceId): Promise<void>;
   mergeWorkspaces(input: {
     sourceWorkspaceIds: ReadonlyArray<WorkspaceId>;
     targetWorkspaceId: WorkspaceId;
@@ -472,7 +455,6 @@ type AppActions = {
       url: string;
       title: string;
     }>;
-    mobileShared?: boolean;
     omitGoalSlot?: boolean;
   }): Promise<{ session: Session }>;
   createUntitledSession(input: { workspaceId: WorkspaceId }): Promise<{ session: Session }>;
@@ -587,11 +569,7 @@ type AppActions = {
     options?: OrchestrateOptions,
   ): Promise<void>;
   retryWorkflowOrchestration(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
-  continueWorkflowRun(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    note?: string,
-  ): Promise<void>;
+  continueWorkflowRun(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   addWorkflowOrchestratorHint(
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
@@ -606,11 +584,6 @@ type AppActions = {
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
     routing: OrchestratorRouting | null,
-  ): Promise<void>;
-  setWorkflowRoleModelOverrides(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    overrides: RoleModelPreferences,
   ): Promise<void>;
   setWorkflowRunSpendLimit(
     sessionId: SessionId,
@@ -635,7 +608,6 @@ type AppActions = {
   }): Promise<SendTurnResult>;
   cancelCurrentTurn(sessionId: SessionId, agentId?: AgentId): Promise<void>;
   retrySummarizer(sessionId: SessionId, taskModelOverride?: TaskModelPreference): void;
-  refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;
   loadSessionTelemetry(sessionId: SessionId): Promise<void>;
   loadSessionSlots(sessionId: SessionId): Promise<void>;
   ensureSessionSlots(sessionId: SessionId): Promise<ReadonlyArray<ContextSlot>>;
@@ -740,13 +712,16 @@ type AppActions = {
   wipeLocalDatabase(): Promise<void>;
   loadWorkspaceOverrides(workspaceId: WorkspaceId): Promise<void>;
   setWorkspaceOverrides(workspaceId: WorkspaceId, overrides: OverrideSettings): Promise<void>;
+  patchWorkspaceOverrides(params: {
+    readonly workspaceId: WorkspaceId;
+    readonly patch: WorkspaceOverridesPatch;
+  }): Promise<void>;
   setWorkspaceProviderBinding(
     workspaceId: WorkspaceId,
     providerId: ProviderId,
     credentialId: string | null,
   ): Promise<void>;
   loadSessionOverrides(sessionId: SessionId): Promise<void>;
-  setTaskOverrides(sessionId: SessionId, overrides: OverrideSettings): Promise<void>;
   loadCredentials(): Promise<void>;
   createCredential(
     providerId: ProviderId,
@@ -770,8 +745,12 @@ type AppActions = {
   exportConfig(): Promise<string | null>;
   importConfig(): Promise<import('@goodboy/types').ConfigBundleImportResult | null>;
   refreshGithubStatus(): Promise<void>;
-  setGithubPat(token: string): Promise<GhTokenStatus>;
-  clearGithubToken(): Promise<void>;
+  refreshGithubConnection(params: { readonly workspaceId: WorkspaceId | null }): Promise<void>;
+  setGithubToken(params: {
+    readonly token: string;
+    readonly workspaceId: WorkspaceId | null;
+  }): Promise<GhTokenStatus>;
+  clearGithubToken(params: { readonly workspaceId: WorkspaceId | null }): Promise<void>;
   refreshSessionPr(sessionId: SessionId, opts?: RefreshPrOptions): Promise<void>;
   refreshSessionPrDetail(
     sessionId: SessionId,
@@ -788,8 +767,6 @@ type AppActions = {
   convertPrToDraft(sessionId: SessionId, prNumber?: number): Promise<void>;
   mergePr(sessionId: SessionId, prNumber?: number, method?: PrMergeMethod): Promise<void>;
   refreshSessionMr(sessionId: SessionId, opts?: RefreshMrOptions): Promise<void>;
-  refreshReviewPrs(workspaceId: WorkspaceId): Promise<void>;
-  startPrReviewSession(workspaceId: WorkspaceId, pr: ReviewablePr): Promise<SessionId>;
   loadReviewDrafts(sessionId: SessionId): Promise<void>;
   addReviewDraft(input: AddReviewDraftInput): Promise<PrReviewDraft>;
   updateReviewDraft(id: string, body: string): Promise<void>;
@@ -896,18 +873,8 @@ type AppActions = {
   ): Promise<void>;
   removeGoalAttachment(owner: GoalAttachmentOwner, id: string): Promise<void>;
   loadNotifications(): Promise<void>;
-  emitNotification(
-    kind: NotificationKind,
-    severity: NotificationSeverity,
-    title: string,
-    body?: string,
-    opts?: {
-      sessionId?: SessionId;
-      workspaceId?: WorkspaceId;
-      action?: NotificationAction;
-      coalesceKey?: string;
-    },
-  ): Promise<void>;
+  emitNotification(params: EmitNotificationParams): Promise<void>;
+  reportError(params: ReportErrorParams): Promise<void>;
   retryStepSummary(params: {
     sessionId: SessionId;
     agentId: AgentId;
@@ -1082,6 +1049,7 @@ export const initialState: AppState = {
   providerCooldowns: {},
   hydrated: false,
   bootPhase: 'pending',
+  bootFailedPhase: null,
   error: null,
   transcripts: {},
   messages: {},
@@ -1115,6 +1083,7 @@ export const initialState: AppState = {
   sessionWorkflows: {},
   sessionPhaseRuns: {},
   orchestratingWorkflowRuns: {},
+  decisionRestartMarks: {},
   pendingOrchestrations: {},
   pendingAdvanceSessions: new Set<SessionId>(),
   announcedWorkflowBlocks: {},
@@ -1124,6 +1093,11 @@ export const initialState: AppState = {
   runRouting: {},
   agentTurnState: {},
   clusterStartAttempts: {},
+  clusterStepStartAttempts: {},
+  workflowContinueAttempts: {},
+  stepSummaryDegraded: {},
+  degradedStepOutputs: {},
+  scoutSelfExploreTasked: {},
   unknownPayloadCounts: {},
   detectedEditors: [],
   workspaceOverrides: {},
@@ -1131,6 +1105,7 @@ export const initialState: AppState = {
   unreadWorkspaceIds: new Set<WorkspaceId>(),
   sessionPanelExpanded: {},
   githubStatus: null,
+  githubWorkspaceStatus: {},
   mountGithub: {},
   mountSelectedPr: {},
   sessionGithub: {},
@@ -1139,7 +1114,6 @@ export const initialState: AppState = {
   ...initialGitlabMrState,
   ...initialBitbucketPrState,
   ...initialSlackThreadsState,
-  reviewPrs: {},
   reviewDrafts: {},
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
@@ -1171,6 +1145,7 @@ export const initialState: AppState = {
   sessionOpenQuestions: {},
   sessionAnsweredQuestions: {},
   sessionDismissedQuestions: {},
+  sessionQuestionsLoadError: {},
   openQuestionScrollTarget: null,
   sessionLoading: {},
   boardReady: true,
@@ -1178,8 +1153,6 @@ export const initialState: AppState = {
   terminalTabs: {},
   activeTerminalTab: {},
 };
-
-export { summarizerQueues } from './turn-helpers';
 
 export const useAppStore = create<AppStore>((set, get) => ({
   ...initialState,
@@ -1199,7 +1172,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createGitlabMrSlice(set, get),
   ...createBitbucketPrSlice(set, get),
   ...createSlackThreadsSlice(set, get),
-  ...createReviewPrsSlice(set, get),
   ...createReviewDraftsSlice(set, get),
   ...createIntegrationsSlice(set, get),
   ...createSidebarSlice(set, get),

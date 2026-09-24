@@ -1,3 +1,4 @@
+import { Chip } from '@goodboy/ui';
 import type {
   LinkedIssue,
   SessionExternalTask,
@@ -7,7 +8,6 @@ import type {
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
-import { VITAL_CHIP } from './vitalChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -30,16 +30,17 @@ type IssueChipProps = {
 };
 
 const IssueChip = ({ issue, onOpen }: IssueChipProps) => (
-  <button
-    type="button"
+  <Chip
+    as="button"
+    tone="neutral"
+    shape="badge"
+    size="control"
     onClick={onOpen}
     title={issue.title ?? `Open issue #${issue.number}`}
-    aria-label={`Open issue #${issue.number}`}
-    className={VITAL_CHIP}
-  >
-    <IntegrationGlyph provider="github" size="xs" />
-    <span className="font-mono">#{issue.number}</span>
-  </button>
+    ariaLabel={`Open issue #${issue.number}`}
+    icon={<IntegrationGlyph provider="github" size="xs" />}
+    label={<span className="font-mono">#{issue.number}</span>}
+  />
 );
 
 type TaskChipProps = {
@@ -48,16 +49,17 @@ type TaskChipProps = {
 };
 
 const TaskChip = ({ task, onOpen }: TaskChipProps) => (
-  <button
-    type="button"
+  <Chip
+    as="button"
+    tone="neutral"
+    shape="badge"
+    size="control"
     onClick={onOpen}
     title={`${task.identifier}: ${task.title}`}
-    aria-label={`Open ${task.identifier}`}
-    className={VITAL_CHIP}
-  >
-    <IntegrationGlyph provider={task.provider} size="xs" />
-    <span className="font-mono">{task.identifier}</span>
-  </button>
+    ariaLabel={`Open ${task.identifier}`}
+    icon={<IntegrationGlyph provider={task.provider} size="xs" />}
+    label={<span className="font-mono">{task.identifier}</span>}
+  />
 );
 
 export const LinkedWorkChips = ({ sessionId, onSelectLens }: Props) => {

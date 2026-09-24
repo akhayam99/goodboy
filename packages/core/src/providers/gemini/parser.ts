@@ -1,5 +1,6 @@
 import type { IsoDateTime, ProviderRunId, ProviderUsage, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
+import { parseJsonAllowingControlChars } from '../shared/parseJsonAllowingControlChars';
 
 export type ParseContext = {
   readonly runId: ProviderRunId;
@@ -53,15 +54,15 @@ const tryParseJson = ({ line }: TryParseJsonParams): Payload | null => {
     return null;
   }
 
-  try {
-    const parsed: unknown = JSON.parse(line);
-    if (typeof parsed !== 'object' || parsed === null) {
-      return null;
-    }
-    return parsed as Payload;
-  } catch {
+  const parsed = parseJsonAllowingControlChars({ text: line });
+  if (!parsed.ok) {
+    devWarn('[gemini-adapter] dropped a json line that does not parse');
     return null;
   }
+  if (typeof parsed.value !== 'object' || parsed.value === null) {
+    return null;
+  }
+  return parsed.value as Payload;
 };
 
 const readNumber = ({ payload, key }: ReadNumberParams): number | undefined => {

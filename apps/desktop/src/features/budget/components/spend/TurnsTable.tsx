@@ -6,7 +6,9 @@ import {
   formatTokens,
   formatUsd,
   formatUsdPrecise,
+  SegmentedTabs,
   Tooltip,
+  type SegmentedTabOption,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
@@ -15,7 +17,6 @@ import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { StudioWidget } from '@goodboy/ui';
 import { sortTurns, type SortKey, type WorkspaceTurn } from './lib';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { SortChip } from './SortChip';
 
 type Props = {
   readonly turns: ReadonlyArray<WorkspaceTurn>;
@@ -29,6 +30,10 @@ type HandleSortKeyParams = {
 };
 
 const SORT_KEY_STORAGE = STORAGE_KEYS.pricingSortKey;
+const SORT_OPTIONS: ReadonlyArray<SegmentedTabOption<SortKey>> = [
+  { value: 'recent', label: 'Recent' },
+  { value: 'expensive', label: 'Most expensive' },
+];
 const PAGE_SIZE = 10;
 
 export const TurnsTable = ({
@@ -54,18 +59,13 @@ export const TurnsTable = ({
   };
 
   const action = (
-    <div className="flex gap-1">
-      <SortChip
-        active={sortKey === 'recent'}
-        onClick={() => handleSortKey({ key: 'recent' })}
-        label="recent"
-      />
-      <SortChip
-        active={sortKey === 'expensive'}
-        onClick={() => handleSortKey({ key: 'expensive' })}
-        label="expensive"
-      />
-    </div>
+    <SegmentedTabs
+      ariaLabel="Sort turns"
+      size="sm"
+      value={sortKey}
+      onChange={(key) => handleSortKey({ key })}
+      options={SORT_OPTIONS}
+    />
   );
 
   return (
@@ -97,7 +97,7 @@ export const TurnsTable = ({
               </thead>
               <tbody className="divide-y divide-border-soft">
                 {shown.map(({ record, sessionId, sessionGoal }) => (
-                  <tr key={record.id} className="group transition-colors hover:bg-muted/40">
+                  <tr key={record.id} className="group transition-colors hover:bg-hover">
                     <td className="px-2 py-2">
                       <span>
                         <Chip
@@ -139,7 +139,7 @@ export const TurnsTable = ({
                           type="button"
                           aria-label={`Open session ${sessionGoal}`}
                           onClick={() => onOpenSession(sessionId)}
-                          className="inline-flex size-5 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] group-hover:opacity-100"
+                          className="inline-flex size-5 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-hover hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring group-hover:opacity-100"
                         >
                           <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
                         </button>

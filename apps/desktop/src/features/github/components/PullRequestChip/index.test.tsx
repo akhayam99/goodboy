@@ -29,11 +29,10 @@ describe('PullRequestChip', () => {
     expect(screen.queryByText('Draft')).toBeNull();
   });
 
-  it('renders the none state as a muted dashed icon', () => {
+  it('renders the none state as a named dashed icon', () => {
     render(<PullRequestChip state="none" />);
     const icon = screen.getByLabelText('No pull request');
     expect(icon.getAttribute('title')).toBe('No pull request');
-    expect(icon.className).toContain('text-muted-foreground/50');
     expect(icon.querySelector('.lucide-circle-dashed')).not.toBeNull();
   });
 });

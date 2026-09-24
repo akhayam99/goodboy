@@ -1,7 +1,8 @@
 # Repo architecture
 
 > **Read this when** you are changing how the app runs things: the environment
-> agents start with, how providers are picked, or database migrations. **Not for**
+> agents start with, how providers are picked, the boot path, git status reads,
+> or database migrations. **Not for**
 > deciding where new code goes inside `apps/desktop/src/` (see
 > [file-system.md](file-system.md)).
 
@@ -37,7 +38,8 @@ Which helper to use depends on what the process runs.
 - Everything else gets only `PATH`. Use `command`.
 
 `run_git_push` gets the full environment. A repo's `pre-push` hook can read
-variables set in `~/.zshrc`, like registry tokens or tool settings. `PATH`
+variables set in `~/.zshrc`, like registry tokens or tool settings. `skill_run_script`
+gets it too, because a skill script is the user's own bash. `PATH`
 and `TERM` are set after the login environment is copied, so they win over
 anything your profile sets.
 
@@ -53,6 +55,26 @@ on macOS and Linux.
 - The list of models is built into the app, not saved in the database. Each model's id, family, cost tier, effort levels, context window, routing weight and price are written in the provider catalogs under `packages/core/src/providers/`. Every model the app can run ships with the app. When the list changes, there is no row to edit and no migration to write.
 - SQLite only stores your choices on top of that list, per workspace, project or session. A saved value points at a model. It never defines one.
 - The app checks each saved choice against the built-in list when it reads it. If a provider or model id is no longer in the list, the app uses the built-in default instead of trying to start it. So removing a model from a catalog never breaks a workspace that picked it.
+
+### Boot path
+
+- **No command on the boot path blocks the UI thread.** Every Tauri command
+  the boot sequence reaches that touches the database, the file system, a lock
+  or a subprocess is async where it is declared
+  ([ADR 002](adr/002-boot-path-leaves-the-ui-thread.md)).
+- **The boot path starts no provider process, and `ready` says nothing about
+  providers.** Providers start as `unknown` and are detected after boot,
+  through one refresh entry point
+  ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
+
+### Git status reads
+
+- **A git read fails closed.** Distances and the working tree are `known` or
+  `unknown` with a named reason. A zero never stands in for a failed read. An
+  unknown never shows as a claim about the repository and never enables a
+  change. A command that changes git passes its own safety config where it is
+  called, and `git()` stays unaware of config
+  ([ADR 004](adr/004-git-reads-fail-closed.md)).
 
 ### Database migrations
 
@@ -102,15 +124,15 @@ Installing an older version of the app on top does not work.
 Everything the app saves for itself lives in `~/.goodboy`.
 
 - `data.db`: the SQLite database. Its copies from before each migration (`data.db.pre-m*.bak`) sit next to it.
-- `sessions/<workspace-slug>/<session-slug>-<id>/`: a session's own folder, for workspaces that did not set their own place for sessions.
+- `scratch/<session-id>/`: where a session's turns write before any project is mounted.
 - `workspaces/<slug>/PROFILE.md`: a copy of a workspace's profile, written out for reading. The database row is the real one, and the app never reads this file back.
 - `file-versions/`: saved versions of files.
 - `query-<pid>.sock`: the socket a running app uses for the query bridge (see [query-bridge.md](query-bridge.md)).
 - `boot-breadcrumbs.log`: how long each startup step took.
 
 When a session works on a repository, it gets its own git worktree in the
-repository's `.goodboy/worktrees/` folder. A session can have several
-worktrees of the same project.
+repository's `.goodboy/worktrees/` folder ([mounts.md](mounts.md)). A session
+can have several worktrees of the same project.
 
 Two things live next to your code instead of in `~/.goodboy`. A folder
 project keeps its session folders in `<project-root>/sessions/`. Skills live
@@ -118,33 +140,5 @@ in `<project-root>/.kay/skills/` or `<project-root>/.claude/skills/`.
 
 ### How mounts are saved and recovered
 
-A mount is one copy of a repository that a session works in. The
-`session_worktrees` table holds one row per mount, and the row id is the
-mount's identity. The project id points at the repository the mount belongs
-to, not at one checkout of it. Each mount stores its current branch, its
-current path (which can be empty), its last path, whether it is attached,
-what the app last saw on disk, and a revision number. The session stores
-which mount is active.
-
-`mount_pr_links` records which pull requests belong to a mount. It is kept
-apart from the provider caches, which are keyed by branch. So switching
-branches can clear what the provider shows without losing pull request
-history. `pr_series` and `pr_series_members` store how pull requests are
-grouped and in what order. They are set on purpose and never guessed from
-commits.
-
-Every change to files or to a provider goes through `mount_operations`, with a
-request id chosen by the caller. The app saves the operation before it acts.
-If the app stops halfway, the next start can finish the database side,
-whether the worktree already exists or is already gone. Before a provider
-retries creating something, the app refreshes the remote first. These checks
-make it safe to run the same request again after a stop at any point the app
-can see.
-
-When the app loads a session or brings one back from the archive, it checks
-every saved worktree before letting agents write to it. If a path is missing,
-the app detaches it, keeps it as the last path and marks it missing. When
-cleanup finds a path with uncommitted changes or anything else unsafe, and
-the work still needs to go on, it moves the path to `retained_worktree_paths`.
-Every cleanup goes through the same checked removal code in Rust, and local
-branches are always kept.
+The mount table, the operation log, recovery and cleanup are described in
+[mounts.md](mounts.md).

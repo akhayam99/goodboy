@@ -1,7 +1,7 @@
-import { Chip, ValueToken, cn } from '@goodboy/ui';
+import { ValueToken, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
-import { agentKindPalette } from '../../../../agent-kind';
+import { AgentKindChip } from '../../../AgentKindChip';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import {
   segmentsToText,
@@ -118,18 +118,14 @@ const chipOf = ({ entry, grade }: ChipParams) => {
   if (grade !== 'entry' && !isChained) {
     return null;
   }
-  const palette = agentKindPalette({ kind: entry.agentKind });
+  if (!isChained) {
+    return <AgentKindChip kind={entry.agentKind} />;
+  }
   return (
-    <Chip
-      tone="neutral"
-      label={palette.label}
-      icon={isChained ? <CONCEPT_ICONS.chain size={10} aria-hidden /> : null}
-      shape="badge"
-      size="3xs"
-      width="md"
-      uppercase
-      className={cn('shrink-0', palette.fg)}
-    />
+    <span className="inline-flex shrink-0 items-center gap-1">
+      <CONCEPT_ICONS.chain size={10} aria-hidden className="text-faint-foreground" />
+      <AgentKindChip kind={entry.agentKind} />
+    </span>
   );
 };
 
@@ -150,7 +146,7 @@ export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
     <>
       {chipOf({ entry, grade })}
       {item.ordinal != null ? (
-        <span className="w-4 shrink-0 text-right text-3xs tabular-nums text-muted-foreground/60">
+        <span className="w-4 shrink-0 text-right text-3xs tabular-nums text-faint-foreground">
           {item.ordinal}
         </span>
       ) : null}
@@ -159,19 +155,11 @@ export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
         className={cn(
           'flex min-w-0 items-center overflow-hidden',
           isStep ? 'text-xs leading-4' : 'text-sm leading-5',
-          emphasis === 'success'
-            ? 'text-success'
-            : emphasis === 'merged'
-              ? 'text-merged'
-              : emphasis === 'danger'
-                ? 'text-danger'
-                : emphasis === 'muted'
-                  ? 'text-muted-foreground'
-                  : item.markerState === 'running' || item.hasUnread
-                    ? 'font-medium text-foreground'
-                    : isStep
-                      ? 'text-foreground/85'
-                      : 'text-foreground',
+          emphasis === 'muted'
+            ? 'text-muted-foreground'
+            : item.markerState === 'running' || item.hasUnread
+              ? 'font-medium text-foreground'
+              : 'text-foreground',
         )}
       >
         {segments.map((segment, index) =>

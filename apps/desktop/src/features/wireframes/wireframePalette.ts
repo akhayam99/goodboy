@@ -10,6 +10,7 @@ export type WireframePalette = Readonly<{
   accent: string;
   accentForeground: string;
   danger: string;
+  placeholder: string;
   radius: number;
   fontFamily: string;
 }>;
@@ -23,6 +24,7 @@ const NEUTRAL: WireframePalette = {
   accent: '#d4d4d8',
   accentForeground: '#3f3f46',
   danger: '#a1a1aa',
+  placeholder: '#e4e4e7',
   radius: 6,
   fontFamily: 'ui-sans-serif, system-ui, sans-serif',
 };
@@ -80,6 +82,7 @@ export const wireframePalette = ({
     accent: colors.accent ?? NEUTRAL.accent,
     accentForeground: colors.accentForeground ?? NEUTRAL.accentForeground,
     danger: colors.danger ?? NEUTRAL.danger,
+    placeholder: colors.background ?? NEUTRAL.background,
     radius: RADIUS[theme.radius ?? 'md'] ?? NEUTRAL.radius,
     fontFamily: FONT[theme.font ?? 'sans'] ?? NEUTRAL.fontFamily,
   };

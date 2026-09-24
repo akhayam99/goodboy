@@ -33,8 +33,16 @@ type NowStateParams = {
   readonly transcript: ReadonlyArray<TurnEvent>;
 };
 
+type StatusParams = {
+  readonly agent: Agent;
+  readonly turnState: TurnState | null;
+};
+
+export const effectiveAgentStatus = ({ agent, turnState }: StatusParams): Agent['status'] =>
+  turnState?.kind === 'running' ? 'running' : agent.status;
+
 export const agentNowState = ({ agent, turnState, transcript }: NowStateParams): AgentNowState => {
-  if (turnState?.kind === 'running') {
+  if (turnState?.kind === 'running' || (turnState === null && agent.status === 'running')) {
     return { tone: 'info', label: runningLabel({ transcript }), isPulsing: true };
   }
   if (turnState?.kind === 'blocked') {

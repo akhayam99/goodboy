@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import type { LensKind } from '../../../../store';
 import type { ShortcutId } from '../../../../shared/keyboard/registry';
-import { lensDestinations } from '../../lens-destinations';
+import type { LensDestination } from '../../lens-destinations';
 import { LENS_ICON } from '../../lens-labels';
 
 export type LensMenuGroupLabel = 'Work' | 'Output' | 'Context' | 'Tools';
@@ -47,11 +47,11 @@ const GROUP_ORDER = [
 ] satisfies ReadonlyArray<LensMenuGroupLabel>;
 
 type Params = Readonly<{
-  isBranchless: boolean;
+  destinations: ReadonlyArray<LensDestination>;
 }>;
 
-export const lensSwitcherGroups = ({ isBranchless }: Params): ReadonlyArray<LensMenuGroup> => {
-  const entries = lensDestinations({ isBranchless }).flatMap<LensMenuEntry>(({ lens, shortcut }) =>
+export const lensSwitcherGroups = ({ destinations }: Params): ReadonlyArray<LensMenuGroup> => {
+  const entries = destinations.flatMap<LensMenuEntry>(({ lens, shortcut }) =>
     lens === null ? [] : [{ lens, shortcut, icon: LENS_ICON[lens] }],
   );
   return GROUP_ORDER.flatMap<LensMenuGroup>((label) => {

@@ -1,15 +1,14 @@
 import type {
   AuxTaskId,
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   TaskModelPreference,
   TaskModelPreferences,
 } from '@goodboy/types';
 import { devWarn } from '../dev-log';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
-import { clampEffort } from './clampEffort';
+import { clampEffortForModel } from './clampEffortForModel';
 import { getCheapModel, getMidModel } from './cli-defaults';
-import { getModelDescriptor } from './model-display';
 import { resolvedStoredModelId } from './resolvedStoredModelId';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
 
@@ -18,19 +17,15 @@ type EffortParams = {
   readonly model: string;
 };
 
-const AUTOMATIC_EFFORT: ModelEffort = 'medium';
+const AUTOMATIC_EFFORT: EffortLevel = 'medium';
 
 const AGENT_PRESELECT_TASKS: ReadonlySet<AuxTaskId> = new Set(['pr_draft', 'rebase']);
 
-const automaticEffort = ({ task, model }: EffortParams): ModelEffort | null => {
+const automaticEffort = ({ task, model }: EffortParams): EffortLevel | null => {
   if (AGENT_PRESELECT_TASKS.has(task)) {
     return null;
   }
-  const levels = getModelDescriptor(model)?.effort ?? [];
-  if (levels.length === 0) {
-    return null;
-  }
-  return clampEffort({ requested: AUTOMATIC_EFFORT, available: levels });
+  return clampEffortForModel({ model, effort: AUTOMATIC_EFFORT });
 };
 
 type AutomaticParams = {

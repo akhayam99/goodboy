@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { PANE_RHYTHM } from '@goodboy/ui';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
@@ -12,16 +11,15 @@ import {
   sortNotificationGroupsNewestFirst,
   type NotificationSeverityFilter,
 } from '../../grouping';
-import { InboxSkeleton } from './InboxSkeleton';
-import { InboxToolbar } from './InboxToolbar';
+import { NotificationsSkeleton } from './NotificationsSkeleton';
+import { NotificationsToolbar } from './NotificationsToolbar';
 import { NotificationGroupRow } from './NotificationGroupRow';
 
 type Props = {
-  readonly workspaceName: string;
   readonly onClose: () => void;
 };
 
-export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
+export const NotificationsStudio = ({ onClose }: Props) => {
   const notifications = useAppStore((state) => state.notifications);
   const notificationCounts = useAppStore((state) => state.notificationCounts);
   const isLoading = useAppStore((state) => state.notificationsLoading);
@@ -55,18 +53,18 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
       icon={CONCEPT_ICONS.notifications}
       tone={CONCEPT_TONE.notifications}
       title="Notifications"
-      workspaceName={workspaceName}
       closeLabel="close notifications"
       onClose={onClose}
     >
       {() => (
-        <StudioPanel
-          title="Inbox"
-          subtitle={subtitle}
-          maxWidthClass={PANE_RHYTHM.measure.reading}
-          action={
+        <PaneShell
+          scroll="body"
+          measure="reading"
+          title="All notifications"
+          description={subtitle}
+          actions={
             notifications.length > 0 ? (
-              <InboxToolbar
+              <NotificationsToolbar
                 unreadCount={unread}
                 severity={severity}
                 isUnreadOnly={isUnreadOnly}
@@ -84,7 +82,7 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
             ) : undefined
           }
         >
-          {isLoading && notifications.length === 0 ? <InboxSkeleton /> : null}
+          {isLoading && notifications.length === 0 ? <NotificationsSkeleton /> : null}
           {!isLoading && notifications.length === 0 ? (
             <EmptyState
               icon={CONCEPT_ICONS.notifications}
@@ -108,7 +106,7 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
                     setSeverity('all');
                     setIsUnreadOnly(false);
                   }}
-                  className="rounded-md px-2 py-1 text-xs font-medium text-foreground ring-1 ring-inset ring-border hover:bg-muted"
+                  className="rounded-md px-2 py-1 text-xs font-medium text-foreground ring-1 ring-inset ring-border hover:bg-hover"
                 >
                   Clear filters
                 </button>
@@ -150,7 +148,7 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
               })}
             </ul>
           ) : null}
-        </StudioPanel>
+        </PaneShell>
       )}
     </StudioShell>
   );

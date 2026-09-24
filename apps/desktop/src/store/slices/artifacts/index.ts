@@ -16,12 +16,6 @@ import {
 import type { GetFn, SetFn } from './types';
 
 export { artifactsInitialState } from './state';
-export {
-  selectArtifact,
-  selectArtifactsByKind,
-  selectPlanArtifacts,
-  selectSessionArtifacts,
-} from './selectors';
 
 export const createArtifactsSlice = (set: SetFn, get: GetFn) => {
   return {

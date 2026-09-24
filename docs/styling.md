@@ -75,9 +75,9 @@ the extra space at the end sits below the scroller, not inside it.
 
 ## Radius and type: pick from the scale, never inline a value
 
-One radius family, one step away from square. Pick it from the scale and never
-write the value inline. The mapping and values are in
-[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md)'s radius table.
+Radius comes from the scale and is never written inline. The mapping and
+values are in [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#radius-scale)'s
+radius table.
 
 Any `text-[Npx]` is rejected, with one standing exception: relative `em` sizing
 inside prose and markdown rendering. There the size is meant to scale with a
@@ -158,9 +158,10 @@ any error. First, paint nothing until the first measurement, or the panel
 flashes at `0,0`. Second, recompute on `scroll` with capture `true`, because a
 scroll in any ancestor moves the trigger.
 
-**Confirmations never open a dialog.** A destructive action swaps its own row
-or button for `InlineConfirm`. That way the thing being destroyed stays visible
-while the user decides.
+**Confirmations never open a dialog.** A destructive action confirms through
+`InlineConfirm`. That way the thing being destroyed stays visible while the
+user decides. Its placements and trigger styling belong to
+[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#action-zones).
 
 **`Dialog` survives for the three cases an anchor cannot serve**: a full-screen
 viewer, a multi-step flow that owns the whole screen, and a blocking system
@@ -172,10 +173,11 @@ Some overlays are app-global and short-lived. They must win against every
 full-page surface, because their trigger stays visible and clickable no matter
 what is open under it. These use named tokens from the `@theme` block in
 `styles.css`, under `--z-index-*`. Tailwind v4 turns each key into a
-`z-<name>` utility. The values are in
-[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md). The order is `StudioShell`
-fullscreen, then `popover-backdrop`, `popover`, `command-palette`, `tooltip`,
-`toast`, with a native `<dialog>` above all of them in the browser's top layer.
+`z-<name>` utility. The values and their order are the table in
+[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#z-index-tokens), with a
+native `<dialog>` above all of them in the browser's top layer.
+`no-token-bypass.test.ts` rejects `z-[N]`. A new global layer gets a named
+token and a row in the table.
 
 That order is a precedence chain, not taste. Each step must sit above the one
 under it, because it can be opened while that one is still open. **A control
@@ -187,6 +189,13 @@ pane, and never compared against a full-page studio. This is why the footer
 builds its own popover instead of raising the shared one. Many pane menus use
 the shared popover, and raising it would raise all of them at once.
 
+## Focus rings
+
+Interactive controls compose `FOCUS_RING` from `@goodboy/ui`. It draws a
+two-pixel `focus-ring` token and removes the native outline. A control clipped
+inside an overflow-hidden row adds `ring-inset`; it does not weaken or resize
+the shared ring.
+
 ## An expanded row is one group, not two
 
 A disclosure (a header plus the body it opens) is a single surface. The
@@ -194,5 +203,5 @@ container owns the border and the open background. The header sits inside it
 with no border of its own. The body continues under the same rail with no gap
 between the two. If you add a second bordered box below the header, or a
 `gap-*` between header and body, the open row reads as two unrelated
-components. Nothing inside the body draws its own box. A labelled section is a
-`2xs` uppercase muted label plus its content, never a nested card.
+components. Nothing inside the body draws its own box. A labelled section is
+an `Eyebrow` plus its content, never a nested card.

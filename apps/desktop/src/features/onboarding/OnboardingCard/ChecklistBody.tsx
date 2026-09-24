@@ -2,7 +2,7 @@ import { X } from 'lucide-react';
 import { collapse, ONBOARDING_STEPS, type OnboardingGroup } from '../onboarding-store';
 import type { OnboardingProgress } from '../hooks/useOnboardingProgress';
 import { StepRow } from './StepRow';
-import { Tooltip } from '@goodboy/ui';
+import { Tooltip, Eyebrow } from '@goodboy/ui';
 
 const GROUP_LABEL: Record<OnboardingGroup, string> = {
   setup: 'Setup',
@@ -25,7 +25,7 @@ export const ChecklistBody = ({ progress }: Props) => {
             type="button"
             onClick={() => collapse()}
             aria-label="Hide onboarding checklist"
-            className="rounded-md p-0.5 text-muted-foreground/70 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
+            className="rounded-md p-0.5 text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
           >
             <X size={11} aria-hidden />
           </button>
@@ -39,9 +39,7 @@ export const ChecklistBody = ({ progress }: Props) => {
           }
           return (
             <div key={group} className="flex flex-col gap-1">
-              <span className="px-1.5 text-3xs font-medium uppercase tracking-[0.08em] text-muted-foreground/50">
-                {GROUP_LABEL[group]}
-              </span>
+              <Eyebrow label={GROUP_LABEL[group]} muted className="px-1.5" />
               <ul className="flex flex-col gap-1">
                 {steps.map((step) => (
                   <StepRow
@@ -57,7 +55,7 @@ export const ChecklistBody = ({ progress }: Props) => {
           );
         })}
       </div>
-      <p className="text-3xs leading-snug text-muted-foreground/60">
+      <p className="text-3xs leading-snug text-faint-foreground">
         {progress.completedCount} of {progress.totalCount} steps done
       </p>
     </>
