@@ -68,7 +68,6 @@ import type {
   SessionSortKey,
   SessionGroupKey,
   TaskModelPreference,
-  ReviewablePr,
   PrReviewDraft,
 } from '@goodboy/types';
 import type { ExtractedReviewComment } from '@goodboy/core';
@@ -124,7 +123,6 @@ import {
   type SlackThreadParams,
   type SlackWorkspaceParams,
 } from './slices/slack-threads';
-import { createReviewPrsSlice } from './slices/review-prs';
 import { createReviewDraftsSlice } from './slices/review-drafts';
 import type {
   AddReviewDraftInput,
@@ -769,8 +767,6 @@ type AppActions = {
   convertPrToDraft(sessionId: SessionId, prNumber?: number): Promise<void>;
   mergePr(sessionId: SessionId, prNumber?: number, method?: PrMergeMethod): Promise<void>;
   refreshSessionMr(sessionId: SessionId, opts?: RefreshMrOptions): Promise<void>;
-  refreshReviewPrs(workspaceId: WorkspaceId): Promise<void>;
-  startPrReviewSession(workspaceId: WorkspaceId, pr: ReviewablePr): Promise<SessionId>;
   loadReviewDrafts(sessionId: SessionId): Promise<void>;
   addReviewDraft(input: AddReviewDraftInput): Promise<PrReviewDraft>;
   updateReviewDraft(id: string, body: string): Promise<void>;
@@ -1118,7 +1114,6 @@ export const initialState: AppState = {
   ...initialGitlabMrState,
   ...initialBitbucketPrState,
   ...initialSlackThreadsState,
-  reviewPrs: {},
   reviewDrafts: {},
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
@@ -1177,7 +1172,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createGitlabMrSlice(set, get),
   ...createBitbucketPrSlice(set, get),
   ...createSlackThreadsSlice(set, get),
-  ...createReviewPrsSlice(set, get),
   ...createReviewDraftsSlice(set, get),
   ...createIntegrationsSlice(set, get),
   ...createSidebarSlice(set, get),

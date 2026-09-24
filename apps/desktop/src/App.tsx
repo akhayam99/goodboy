@@ -223,7 +223,7 @@ export const App = () => {
           currentSession && arrangement.leftOverlaySlot === 'peek' ? (
             <SidebarPeekOverlay
               isPeeking={sessionSidebar.isPeeking}
-              onEdgeEnter={() => sessionSidebar.requestPeek({ source: 'edge' })}
+              onEdgeEnter={sessionSidebar.requestPeek}
               onEdgeLeave={() => {
                 sessionSidebar.cancelPeek();
                 sessionSidebar.scheduleClose();

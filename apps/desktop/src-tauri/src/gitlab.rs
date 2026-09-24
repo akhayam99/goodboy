@@ -395,7 +395,6 @@ pub async fn gitlab_fetch_assigned_mrs(
     .await
 }
 
-#[tauri::command]
 pub async fn gitlab_fetch_project_mrs(
     workspace_id: String,
     project_id: Option<String>,

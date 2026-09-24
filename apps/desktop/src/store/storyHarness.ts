@@ -517,7 +517,6 @@ export const providersModuleMock = () => ({
   getOpenCodeStatus: vi.fn(async () => null),
   getOpenRouterStatus: vi.fn(async () => null),
   getMoonshotStatus: vi.fn(async () => null),
-  getProviderStatus: vi.fn(async () => null),
 });
 
 export const routingModuleMock = () => ({

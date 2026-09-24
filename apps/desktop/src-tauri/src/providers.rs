@@ -5,7 +5,6 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager, State};
 use thiserror::Error;
-use tokio::sync::watch;
 
 use crate::path_env;
 
@@ -48,35 +47,6 @@ pub struct CodexState(pub Mutex<ProviderStatus>);
 pub struct GeminiState(pub Mutex<ProviderStatus>);
 
 pub struct OpencodeState(pub Mutex<ProviderStatus>);
-
-pub struct DetectionGate(watch::Receiver<bool>);
-
-pub struct DetectionGateOpener(watch::Sender<bool>);
-
-pub fn detection_gate() -> (DetectionGate, DetectionGateOpener) {
-    let (tx, rx) = watch::channel(false);
-    (DetectionGate(rx), DetectionGateOpener(tx))
-}
-
-impl DetectionGate {
-    pub async fn wait(&self) {
-        let mut rx = self.0.clone();
-        loop {
-            if *rx.borrow_and_update() {
-                return;
-            }
-            if rx.changed().await.is_err() {
-                return;
-            }
-        }
-    }
-}
-
-impl DetectionGateOpener {
-    pub fn open(self) {
-        let _ = self.0.send(true);
-    }
-}
 
 pub fn initial_status(id: &str, binary: &str) -> ProviderStatus {
     ProviderStatus {
@@ -153,11 +123,10 @@ pub async fn detect_all() -> DetectedProviders {
     detect_all_with(DEFAULT_DETECTORS).await
 }
 
-pub fn spawn_startup_detection(app: AppHandle, opener: DetectionGateOpener) {
+pub fn spawn_startup_detection(app: AppHandle) {
     tauri::async_runtime::spawn(async move {
         let detected = detect_all().await;
         store_detected(&app, detected);
-        opener.open();
     });
 }
 
@@ -791,28 +760,10 @@ fn parse_codex_auth_output(output: &str) -> AuthState {
 }
 
 #[tauri::command]
-pub async fn get_provider_status(
-    gate: State<'_, DetectionGate>,
-    state: State<'_, ProviderState>,
-) -> Result<ProviderStatus, ProviderStatusError> {
-    gate.wait().await;
-    Ok(get_status(&state.0, "anthropic", "claude"))
-}
-
-#[tauri::command]
 pub async fn refresh_provider_status(
     state: State<'_, ProviderState>,
 ) -> Result<ProviderStatus, ProviderStatusError> {
     refresh_status(&state.0, detect_claude).await
-}
-
-#[tauri::command]
-pub async fn get_cursor_status(
-    gate: State<'_, DetectionGate>,
-    state: State<'_, CursorState>,
-) -> Result<ProviderStatus, ProviderStatusError> {
-    gate.wait().await;
-    Ok(get_status(&state.0, "cursor", "cursor-agent"))
 }
 
 #[tauri::command]
@@ -823,15 +774,6 @@ pub async fn refresh_cursor_status(
 }
 
 #[tauri::command]
-pub async fn get_codex_status(
-    gate: State<'_, DetectionGate>,
-    state: State<'_, CodexState>,
-) -> Result<ProviderStatus, ProviderStatusError> {
-    gate.wait().await;
-    Ok(get_status(&state.0, "codex", "codex"))
-}
-
-#[tauri::command]
 pub async fn refresh_codex_status(
     state: State<'_, CodexState>,
 ) -> Result<ProviderStatus, ProviderStatusError> {
@@ -839,59 +781,10 @@ pub async fn refresh_codex_status(
 }
 
 #[tauri::command]
-pub async fn get_gemini_status(
-    gate: State<'_, DetectionGate>,
-    state: State<'_, GeminiState>,
-) -> Result<ProviderStatus, ProviderStatusError> {
-    gate.wait().await;
-    Ok(get_status(&state.0, "gemini", "agy"))
-}
-
-#[tauri::command]
 pub async fn refresh_gemini_status(
     state: State<'_, GeminiState>,
 ) -> Result<ProviderStatus, ProviderStatusError> {
     refresh_status(&state.0, detect_gemini).await
-}
-
-#[tauri::command]
-pub async fn get_opencode_status(
-    gate: State<'_, DetectionGate>,
-    state: State<'_, OpencodeState>,
-) -> Result<ProviderStatus, ProviderStatusError> {
-    gate.wait().await;
-    Ok(get_status(&state.0, "opencode", "opencode"))
-}
-
-#[tauri::command]
-pub async fn get_openrouter_status(
-    gate: State<'_, DetectionGate>,
-    state: State<'_, OpencodeState>,
-) -> Result<ProviderStatus, ProviderStatusError> {
-    gate.wait().await;
-    Ok(aliased(
-        get_status(&state.0, "openrouter", "opencode"),
-        "openrouter",
-    ))
-}
-
-#[tauri::command]
-pub async fn get_moonshot_status(
-    gate: State<'_, DetectionGate>,
-    state: State<'_, OpencodeState>,
-) -> Result<ProviderStatus, ProviderStatusError> {
-    gate.wait().await;
-    Ok(aliased(
-        get_status(&state.0, "moonshot", "opencode"),
-        "moonshot",
-    ))
-}
-
-fn aliased(status: ProviderStatus, id: &str) -> ProviderStatus {
-    ProviderStatus {
-        id: id.to_string(),
-        ..status
-    }
 }
 
 #[tauri::command]
@@ -917,19 +810,6 @@ pub async fn refresh_opencode_status(
     state: State<'_, OpencodeState>,
 ) -> Result<ProviderStatus, ProviderStatusError> {
     refresh_status(&state.0, detect_opencode).await
-}
-
-fn get_status(state: &Mutex<ProviderStatus>, id: &str, binary: &str) -> ProviderStatus {
-    state
-        .lock()
-        .map(|s| s.clone())
-        .unwrap_or_else(|_| ProviderStatus {
-            id: id.to_string(),
-            binary: binary.to_string(),
-            available: false,
-            version: None,
-            error: Some("status mutex poisoned".to_string()),
-        })
 }
 
 async fn refresh_status(
@@ -1254,31 +1134,6 @@ mod tests {
     };
 
     #[tokio::test]
-    async fn gate_releases_waiters_once_opened() {
-        let (gate, opener) = detection_gate();
-        opener.open();
-        gate.wait().await;
-    }
-
-    #[tokio::test]
-    async fn gate_releases_waiters_when_the_task_panics() {
-        let (gate, opener) = detection_gate();
-        let task = tokio::spawn(async move {
-            let _held = opener;
-            panic!("detection task died");
-        });
-        assert!(task.await.is_err());
-        gate.wait().await;
-    }
-
-    #[tokio::test]
-    async fn gate_releases_waiters_when_the_opener_is_dropped_unused() {
-        let (gate, opener) = detection_gate();
-        drop(opener);
-        gate.wait().await;
-    }
-
-    #[tokio::test]
     async fn concurrent_detection_routes_every_result_to_its_own_slot() {
         let detected = detect_all_with(FAKE_DETECTORS).await;
         assert_eq!(detected.claude.id, "anthropic");
@@ -1323,20 +1178,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn the_gate_opens_after_a_panicking_detection() {
-        let (gate, opener) = detection_gate();
-        let detectors = Detectors {
-            gemini: || panic!("gemini detector blew up"),
-            ..FAKE_DETECTORS
-        };
-        tokio::spawn(async move {
-            let _ = detect_all_with(detectors).await;
-            opener.open();
-        });
-        gate.wait().await;
-    }
-
-    #[tokio::test]
     async fn detections_run_concurrently_rather_than_one_after_another() {
         use std::sync::atomic::{AtomicUsize, Ordering};
         use std::sync::{Condvar, Mutex as StdMutex};
@@ -1377,25 +1218,6 @@ mod tests {
             5,
             "all five detections must be in flight at the same time"
         );
-    }
-
-    #[test]
-    fn aliased_rewrites_only_the_id() {
-        let base = ProviderStatus {
-            id: "opencode".to_string(),
-            binary: "opencode".to_string(),
-            available: true,
-            version: Some("1.2.3".to_string()),
-            error: None,
-        };
-        let router = aliased(base.clone(), "openrouter");
-        assert_eq!(router.id, "openrouter");
-        assert_eq!(router.binary, "opencode");
-        assert!(router.available);
-        assert_eq!(router.version.as_deref(), Some("1.2.3"));
-        let moonshot = aliased(base, "moonshot");
-        assert_eq!(moonshot.id, "moonshot");
-        assert_eq!(moonshot.binary, "opencode");
     }
 
     #[test]

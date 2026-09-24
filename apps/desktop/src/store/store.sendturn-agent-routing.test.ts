@@ -203,7 +203,6 @@ vi.mock('../features/file-versions/fileVersions', () => ({
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
-  getProviderStatus: vi.fn(),
 }));
 
 vi.mock('../features/providers/routing', () => ({

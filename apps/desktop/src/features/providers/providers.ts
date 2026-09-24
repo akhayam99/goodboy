@@ -50,16 +50,6 @@ const PROVIDER_DEFAULT_BINARY: Record<ProviderId, string> = {
   moonshot: 'opencode',
 };
 
-const TAURI_GET_CMD: Record<ProviderId, string> = {
-  anthropic: 'get_provider_status',
-  cursor: 'get_cursor_status',
-  codex: 'get_codex_status',
-  gemini: 'get_gemini_status',
-  opencode: 'get_opencode_status',
-  openrouter: 'get_openrouter_status',
-  moonshot: 'get_moonshot_status',
-};
-
 const TAURI_REFRESH_CMD: Record<ProviderId, string> = {
   anthropic: 'refresh_provider_status',
   cursor: 'refresh_cursor_status',
@@ -75,10 +65,6 @@ const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
   supportsTools: false,
   supportsStream: false,
   supportsCheapModel: false,
-};
-
-export const getProviderStatus = async (id: ProviderId): Promise<ProviderStatus> => {
-  return invoke<ProviderStatus>(TAURI_GET_CMD[id]);
 };
 
 type RefreshParams = {

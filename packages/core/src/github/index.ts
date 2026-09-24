@@ -17,8 +17,6 @@ export {
   resolvePrForBranch,
 } from './resolver';
 
-export { listOpenPrsForRepo, type RepoPullRequest } from './repo-prs';
-
 export {
   createGithubRepo,
   listOwnedRepos,

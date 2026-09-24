@@ -12,8 +12,7 @@ import {
   type Overlay,
 } from '../../hooks/useAppOverlays/overlayState';
 
-const { flags, storeState } = vi.hoisted(() => ({
-  flags: { unseenRelease: false },
+const { storeState } = vi.hoisted(() => ({
   storeState: {
     providers: [] as ReadonlyArray<{ readonly connection: string }>,
     updaterStatus: 'idle' as 'idle' | 'available' | 'downloading',
@@ -30,12 +29,7 @@ vi.mock('../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof storeState) => T) => selector(storeState),
 }));
 
-vi.mock('../../../features/changelog/hooks/useUnseenRelease', () => ({
-  useUnseenRelease: () => flags.unseenRelease,
-}));
-
 beforeEach(() => {
-  flags.unseenRelease = false;
   storeState.providers = [];
   storeState.updaterStatus = 'idle';
 });
@@ -196,12 +190,7 @@ describe('AppFooter', () => {
   });
 
   it('never dots the more control, release notes announce themselves elsewhere', () => {
-    const { rerender } = render(<AppFooter {...footerProps()} />);
-
-    expect(screen.queryByTestId('more-studios-dot')).toBeNull();
-
-    flags.unseenRelease = true;
-    rerender(<AppFooter {...footerProps()} />);
+    render(<AppFooter {...footerProps()} />);
 
     expect(screen.queryByTestId('more-studios-dot')).toBeNull();
     expect(screen.getByRole('button', { name: REST_MORE_LABEL })).toBeDefined();

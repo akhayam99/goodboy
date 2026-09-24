@@ -104,7 +104,6 @@ vi.mock('../features/providers/providers', () => ({
   getOpenCodeStatus: vi.fn(async () => ({ state: 'missing' })),
   getOpenRouterStatus: vi.fn(async () => ({ state: 'missing' })),
   getMoonshotStatus: vi.fn(async () => ({ state: 'missing' })),
-  getProviderStatus: vi.fn(),
 }));
 
 vi.mock('../features/providers/routing', () => ({
@@ -371,12 +370,7 @@ describe('audit retry queue, drain worker (happy path)', () => {
     const { getSetting } = await import('@goodboy/db');
     (getSetting as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-    const { getProviderStatus, checkProviderAuth } =
-      await import('../features/providers/providers');
-    (getProviderStatus as ReturnType<typeof vi.fn>).mockResolvedValue({
-      state: 'connected',
-      identity: 'test',
-    });
+    const { checkProviderAuth } = await import('../features/providers/providers');
     (checkProviderAuth as ReturnType<typeof vi.fn>).mockResolvedValue({
       state: 'connected',
       identity: 'test',

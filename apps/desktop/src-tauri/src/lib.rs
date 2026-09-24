@@ -98,7 +98,6 @@ pub fn run() {
         }
     };
     let bridge_state = bridge::BridgeState::new().expect("failed to init companion bridge");
-    let (detection_gate, detection_opener) = providers::detection_gate();
     let provider_state =
         providers::ProviderState(Mutex::new(providers::initial_status("anthropic", "claude")));
     let cursor_state = providers::CursorState(Mutex::new(providers::initial_status(
@@ -157,7 +156,6 @@ pub fn run() {
         .manage(codex_state)
         .manage(gemini_state)
         .manage(opencode_state)
-        .manage(detection_gate)
         .manage(turn_registry)
         .manage(writer_leases)
         .manage(summarize_registry)
@@ -173,7 +171,7 @@ pub fn run() {
         .manage(slack_token_cache)
         .setup(move |app| {
             use tauri::Manager;
-            providers::spawn_startup_detection(app.handle().clone(), detection_opener);
+            providers::spawn_startup_detection(app.handle().clone());
             query_bridge::start(app.handle().clone());
             #[cfg(desktop)]
             app.handle()
@@ -261,17 +259,10 @@ pub fn run() {
             worktree::worktree_branch_holder,
             worktree::worktree_integrate_candidate,
             worktree::worktree_quarantine_candidate,
-            providers::get_provider_status,
             providers::refresh_provider_status,
-            providers::get_cursor_status,
             providers::refresh_cursor_status,
-            providers::get_codex_status,
             providers::refresh_codex_status,
-            providers::get_gemini_status,
             providers::refresh_gemini_status,
-            providers::get_opencode_status,
-            providers::get_openrouter_status,
-            providers::get_moonshot_status,
             providers::refresh_opencode_status,
             providers::refresh_openrouter_status,
             providers::refresh_moonshot_status,
@@ -399,7 +390,6 @@ pub fn run() {
             gitlab::gitlab_list_issue_notes,
             gitlab::gitlab_create_issue_note,
             gitlab::gitlab_fetch_assigned_mrs,
-            gitlab::gitlab_fetch_project_mrs,
             gitlab::gitlab_mr_for_branch,
             gitlab::gitlab_create_mr,
             gitlab::gitlab_merge_mr,

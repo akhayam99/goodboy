@@ -101,7 +101,6 @@ vi.mock('../features/providers/providers', () => ({
     { id: 'cursor', binary: 'cursor-agent', connection: 'connected' },
   ],
   checkProviderAuth: vi.fn(),
-  getProviderStatus: vi.fn(),
 }));
 
 vi.mock('../features/providers/routing', () => ({

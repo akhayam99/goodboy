@@ -16,7 +16,6 @@
       "ignoreIssues": {
         "src/features/chat/utils/transcript-items-trace.ts": ["exports"],
         "src/features/companion/mobileConfinement.ts": ["exports"],
-        "src/features/providers/providers.ts": ["exports"],
         "src/features/session/hooks/useWorktreeStatuses/cache.ts": ["exports"],
         "src/features/session/timeline/sessionEventPresentation.ts": ["exports"],
         "src/store/slices/artifacts/artifactScoutRun.ts": ["exports"],

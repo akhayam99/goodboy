@@ -91,7 +91,6 @@ import type { ProviderSpendEntry } from './slices/budget';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
 import type { ChangelogState } from './slices/changelog/state';
 import type { ProviderConnectMap, ProviderLifecycleMap } from './slices/providers';
-import type { ReviewPrsState } from './slices/review-prs/types';
 import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
 import type { WriteDestination } from './slices/project-mounts/writeDestination';
@@ -355,7 +354,6 @@ export type AppState = AppSliceState & {
   readonly mountSelectedBitbucketPr: Readonly<Record<MountId, MountPullRequestIdentity | null>>;
   readonly sessionBitbucketPr: Readonly<Record<SessionId, SessionBitbucketPrEntry>>;
   readonly sessionBitbucketRepo: Readonly<Record<SessionId, BitbucketRepo>>;
-  readonly reviewPrs: Readonly<Record<WorkspaceId, ReviewPrsState>>;
   readonly reviewDrafts: Readonly<Record<SessionId, ReadonlyArray<PrReviewDraft>>>;
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<AgentId, string>>;

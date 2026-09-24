@@ -175,7 +175,6 @@ export const NON_SESSION_STATE_KEYS = [
   'unreadWorkspaceIds',
   'githubStatus',
   'githubWorkspaceStatus',
-  'reviewPrs',
   'volatilePermissionAllows',
   'workflowStudioDrafts',
   'workflowGenerations',
