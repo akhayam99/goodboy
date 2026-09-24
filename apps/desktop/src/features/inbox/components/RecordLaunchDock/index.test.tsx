@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({
   unlinkSessionExternalTask: vi.fn(async () => undefined),
   setCurrentSession: vi.fn(async () => undefined),
   setActiveLens: vi.fn(),
+  requestIssueBrief: vi.fn(async (_params: unknown) => undefined),
 }));
 
 type StoreState = {
@@ -16,6 +17,8 @@ type StoreState = {
   readonly unlinkSessionExternalTask: typeof h.unlinkSessionExternalTask;
   readonly setCurrentSession: typeof h.setCurrentSession;
   readonly setActiveLens: typeof h.setActiveLens;
+  readonly requestIssueBrief: typeof h.requestIssueBrief;
+  readonly issueBriefs: Readonly<Record<string, never>>;
 };
 
 vi.mock('../../../../store', () => ({
@@ -25,6 +28,8 @@ vi.mock('../../../../store', () => ({
       unlinkSessionExternalTask: h.unlinkSessionExternalTask,
       setCurrentSession: h.setCurrentSession,
       setActiveLens: h.setActiveLens,
+      requestIssueBrief: h.requestIssueBrief,
+      issueBriefs: {},
     }),
 }));
 
@@ -147,6 +152,16 @@ describe('RecordLaunchDock', () => {
     expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Session goal' }).value).toBe(
       'GitHub issue #42: Fix launch\n\nKeep one dock.',
     );
+    expect(h.requestIssueBrief).toHaveBeenCalledWith({
+      source: expect.objectContaining({
+        provider: 'github',
+        externalId: '42',
+        body: 'Keep one dock.',
+        noun: 'issue',
+      }),
+      workspaceId: WORKSPACE_ID,
+      sessionId: null,
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Launch session' }));
 
     await waitFor(() =>

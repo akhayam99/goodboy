@@ -213,6 +213,8 @@ import { createMountCleanupSlice, mountCleanupInitialState } from './slices/moun
 import { createPrSeriesSlice, prSeriesInitialState } from './slices/pr-series';
 import { createPrWritesSlice } from './slices/pr-writes';
 import { prWritesInitialState } from './slices/pr-writes/state';
+import { createIssueBriefsSlice } from './slices/issue-briefs';
+import { issueBriefsInitialState } from './slices/issue-briefs/state';
 import type {
   CreatePrSeriesInput,
   LoadPrSeriesInput,
@@ -436,6 +438,7 @@ type AppActions = {
     workspaceId: WorkspaceId;
     projectId?: ProjectId;
     goal: string;
+    title?: string;
     branchPrefix?: string;
     branchSlug?: string;
     existingBranch?: string;
@@ -1005,7 +1008,8 @@ export type AppStore = AppState &
   ReturnType<typeof createArtifactsSlice> &
   ReturnType<typeof createResolveSlice> &
   ReturnType<typeof createReviewNavigationSlice> &
-  ReturnType<typeof createPrWritesSlice>;
+  ReturnType<typeof createPrWritesSlice> &
+  ReturnType<typeof createIssueBriefsSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1063,6 +1067,7 @@ export const initialState: AppState = {
   ...mountCleanupInitialState,
   ...prSeriesInitialState,
   ...prWritesInitialState,
+  ...issueBriefsInitialState,
   sessionLanguageAnchor: {},
   sessionActiveProject: {},
   sessionBranches: {},
@@ -1207,6 +1212,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createMountCleanupSlice(set, get),
   ...createPrSeriesSlice(set, get),
   ...createPrWritesSlice(set, get),
+  ...createIssueBriefsSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),

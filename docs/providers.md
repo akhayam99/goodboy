@@ -149,8 +149,8 @@ uses its providers.
   appear here
 - **Routing pool**: the providers Goodboy can move work between by itself
 - **Task models**: the provider and model for each small side job. Side jobs include
-  summaries, planning, prose polish, agent titles, the workflow orchestrator,
-  delegated answers, pull request drafts and rebases. Each one starts on **Auto**
+  summaries, planning, prose polish, agent titles, issue briefs, the workflow
+  orchestrator, delegated answers, pull request drafts and rebases. Each one starts on **Auto**
   on the default provider: the cheap model for most jobs, the mid model for the
   workflow orchestrator and delegated answers, and for rebases Sonnet 5 on Claude
   and the default turn model elsewhere

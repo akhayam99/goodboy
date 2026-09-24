@@ -38,6 +38,7 @@ export const resolvePastedIssueCandidate = ({
     title: parsedTask.title,
     url: parsedTask.url,
     goal: parsedTask.title,
+    body: '',
     branchSlug: '',
   };
 };

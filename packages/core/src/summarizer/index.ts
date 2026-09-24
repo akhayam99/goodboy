@@ -17,6 +17,14 @@ export {
   type GoalRewriteInput,
 } from './goal-rewrite';
 export {
+  generateIssueBrief,
+  type IssueBrief,
+  type IssueBriefDeps,
+  type IssueBriefFailure,
+  type IssueBriefInput,
+  type IssueBriefResult,
+} from './issue-brief';
+export {
   annotateFallbackStepOutputSummary,
   fallbackStepOutputMarker,
   fallbackStepOutputSummary,

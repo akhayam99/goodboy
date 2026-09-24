@@ -54,6 +54,7 @@ type Input = {
   workspaceId: WorkspaceId;
   projectId?: ProjectId;
   goal: string;
+  title?: string;
   branchPrefix?: string;
   branchSlug?: string;
   existingBranch?: string;
@@ -75,6 +76,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     workspaceId,
     projectId,
     goal,
+    title,
     branchPrefix,
     branchSlug,
     existingBranch,
@@ -159,7 +161,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const session: Session = {
       id: sessionId,
       workspaceId,
-      goal: clampTitle(goal.trim()),
+      goal: clampTitle((title ?? goal).trim()),
       state: initialState,
       contextSlots: [],
       providerPreference: providerPreference ?? inheritedPreference,

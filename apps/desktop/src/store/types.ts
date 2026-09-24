@@ -7,6 +7,7 @@ import type { StorageStats } from './slices/storage';
 import type { MountCleanupState } from './slices/mount-cleanup/state';
 import type { PrSeriesState } from './slices/pr-series/state';
 import type { PrWritesState } from './slices/pr-writes/state';
+import type { IssueBriefsState } from './slices/issue-briefs/state';
 import type { Notification, NotificationCountBucket } from '@goodboy/db';
 import type {
   Agent,
@@ -232,6 +233,7 @@ type AppSliceState = ArtifactsState &
   ResolveState &
   ReviewNavigationState &
   PrWritesState &
+  IssueBriefsState &
   UpdaterState &
   ChangelogState &
   SlackThreadsSliceState &

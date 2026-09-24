@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link2 } from 'lucide-react';
 import { cn, Skeleton, Eyebrow } from '@goodboy/ui';
 import type { IsoDateTime, Session } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionSlots } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
@@ -12,24 +12,22 @@ import {
 } from '../../../integrations/components/TrackerStudioLinks';
 import { OverviewActions } from '../SessionOverviewPane/OverviewActions';
 import { MountProjectAction } from '../SessionOverviewPane/ProjectMountRows/MountProjectAction';
-import { hasNothingToAdopt, proposeIssueAdoption, type IssueAdoption } from './issueAdoption';
 import { useKickoffIssues } from './useKickoffIssues';
 
 type Props = {
   readonly session: Session;
   readonly onOpenWorkflowBuilder: () => void;
-  readonly onProposeAdoption?: (adoption: IssueAdoption) => void;
+  readonly onPickIssue?: (params: PickIssueParams) => void;
 };
 
 type PickIssueParams = {
   readonly candidate: IssueCandidate;
 };
 
-export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdoption }: Props) => {
+export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onPickIssue }: Props) => {
   const issues = useKickoffIssues({ workspaceId: session.workspaceId });
   const linkSessionExternalTask = useAppStore((state) => state.linkSessionExternalTask);
   const reportError = useAppStore((state) => state.reportError);
-  const slots = useSessionSlots(session.id);
   const { showToast } = useToast();
   const [linkingKey, setLinkingKey] = useState<string | null>(null);
   const hasMounts = useAppStore(
@@ -48,14 +46,7 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdopti
         url: candidate.url,
         createdAt: new Date().toISOString() as IsoDateTime,
       });
-      const proposed = proposeIssueAdoption({
-        candidate,
-        currentTitle: session.goal,
-        currentGoal: slots.find((slot) => slot.key === 'goal')?.value ?? '',
-      });
-      if (onProposeAdoption != null && !hasNothingToAdopt({ adoption: proposed })) {
-        onProposeAdoption(proposed);
-      }
+      onPickIssue?.({ candidate });
       showToast({ kind: 'success', message: `Linked ${candidate.identifier} to this session.` });
     } catch (cause) {
       void reportError({

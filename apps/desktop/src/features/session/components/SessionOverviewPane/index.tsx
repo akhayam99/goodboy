@@ -16,8 +16,8 @@ import { ArchivedGate } from './ArchivedGate';
 import { goalPresence } from './goalPresence';
 import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
 import { SessionKickoff } from '../SessionKickoff';
-import { IssueAdoptionProposal } from '../SessionKickoff/IssueAdoptionProposal';
-import { hasNothingToAdopt, type IssueAdoption } from '../SessionKickoff/issueAdoption';
+import { IssueBriefProposal } from '../SessionKickoff/IssueBriefProposal';
+import { useIssueBriefProposal } from './useIssueBriefProposal';
 import { OverviewActions } from './OverviewActions';
 import { InspectorSplit } from '../SessionWorkspace/parts/InspectorSplit';
 import { SlotHistoryPanel } from '../SessionWorkspace/parts/SlotHistoryPanel';
@@ -38,32 +38,10 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const summarizer = useSummarizerStatus(sessionId);
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
-  const renameTask = useAppStore((s) => s.renameTask);
-  const reportError = useAppStore((s) => s.reportError);
   const [isGoalHistoryOpen, setIsGoalHistoryOpen] = useState(false);
   const [isGoalEditing, setIsGoalEditing] = useState(false);
-  const [adoption, setAdoption] = useState<IssueAdoption | null>(null);
+  const { proposal, pickIssue } = useIssueBriefProposal({ session });
   const goalSlot = slots.find((slot) => slot.key === 'goal');
-
-  const applyAdoptedTitle = () => {
-    if (adoption?.title == null) {
-      return;
-    }
-    const title = adoption.title;
-    setAdoption({ ...adoption, title: null });
-    renameTask(sessionId, title).catch((error: unknown) =>
-      reportError({ title: "Couldn't rename the session", error, sessionId }),
-    );
-  };
-
-  const applyAdoptedGoal = () => {
-    if (adoption?.goal == null) {
-      return;
-    }
-    const goal = adoption.goal;
-    setAdoption({ ...adoption, goal: null });
-    void upsertSessionSlot(sessionId, 'goal', goal);
-  };
 
   const isGoalLoading = goalSlot == null && slotLoading.slots;
   const isArchived = session.archivedAt != null;
@@ -128,13 +106,8 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         animationClassName="animate-fade-in"
       >
         <AttentionCallout session={session} onSelectLens={onSelectLens} />
-        {adoption !== null && !hasNothingToAdopt({ adoption }) ? (
-          <IssueAdoptionProposal
-            adoption={adoption}
-            onUseTitle={applyAdoptedTitle}
-            onUseGoal={applyAdoptedGoal}
-            onDismiss={() => setAdoption(null)}
-          />
+        {proposal !== null ? (
+          <IssueBriefProposal key={proposal.source.externalId} {...proposal} />
         ) : null}
         <TimelinePane
           session={session}
@@ -148,7 +121,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
               <SessionKickoff
                 session={session}
                 onOpenWorkflowBuilder={openWorkflowBuilder}
-                onProposeAdoption={setAdoption}
+                onPickIssue={pickIssue}
               />
             </ArchivedGate>
           }

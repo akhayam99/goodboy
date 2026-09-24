@@ -18,6 +18,7 @@ const ROWS = [
     title: 'Converge the anchored popovers',
     url: 'https://example.test/101',
     goal: 'Converge the anchored popovers',
+    body: '',
     branchSlug: 'converge-anchored-popovers',
   },
   {
@@ -27,6 +28,7 @@ const ROWS = [
     title: 'Retire the hand rolled outside click',
     url: 'https://example.test/102',
     goal: 'Retire the hand rolled outside click',
+    body: '',
     branchSlug: 'retire-hand-rolled-outside-click',
   },
 ] satisfies ReadonlyArray<IssueCandidate>;

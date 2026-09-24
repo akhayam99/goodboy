@@ -26,6 +26,11 @@ export const TASKS: ReadonlyArray<{
     description: 'Titles new agents, and the session itself, from your first message',
   },
   {
+    id: 'issue_brief',
+    label: 'Issue briefs',
+    description: 'Turns a linked issue into a session title and goal you can accept or edit',
+  },
+  {
     id: 'workflow_orchestrator',
     label: 'Workflow orchestrator',
     description:

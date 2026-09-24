@@ -4,7 +4,12 @@ import { AlertTriangle, ArrowRight } from 'lucide-react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
+import { issueBriefKey } from '../../../../store/slices/issue-briefs/issueBriefKey';
+import { selectIssueBrief } from '../../../../store/slices/issue-briefs/selectIssueBrief';
+import type { IssueBriefSource } from '../../../../store/slices/issue-briefs/types';
+import { briefGoalText } from '../../shared/briefGoalText';
 import { LaunchedNotice } from './LaunchedNotice';
+import { BriefStrip } from './BriefStrip';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type ExternalTask = {
@@ -20,6 +25,7 @@ type Props = {
   readonly linkedSessionId: SessionId | null;
   readonly goalSeed: string;
   readonly externalTask: ExternalTask;
+  readonly briefSource: IssueBriefSource | null;
   readonly onClose: () => void;
   readonly focusRequest?: number;
 };
@@ -29,15 +35,27 @@ export const LaunchSessionPanel = ({
   linkedSessionId,
   goalSeed,
   externalTask,
+  briefSource,
   onClose,
   focusRequest = 0,
 }: Props) => {
   const createSession = useAppStore((state) => state.createSession);
+  const requestIssueBrief = useAppStore((state) => state.requestIssueBrief);
+  const briefKey = briefSource === null ? null : issueBriefKey({ source: briefSource });
+  const brief = useAppStore((state) => selectIssueBrief({ state, key: briefKey }));
   const { showToast } = useToast();
-  const [goal, setGoal] = useState(goalSeed);
+  const [isShowingBrief, setIsShowingBrief] = useState(true);
+  const readyBrief = brief?.status === 'ready' && briefSource !== null ? brief : null;
+  const briefGoal =
+    readyBrief === null || briefSource === null
+      ? null
+      : briefGoalText({ brief: readyBrief.brief, source: briefSource });
+  const seed = isShowingBrief && briefGoal !== null ? briefGoal : goalSeed;
+  const briefTitle = isShowingBrief && readyBrief !== null ? readyBrief.brief.title : null;
+  const [goal, setGoal] = useState(seed);
   const [isBusy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const goalSeedRef = useRef(goalSeed);
+  const goalSeedRef = useRef(seed);
   const sectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -50,9 +68,36 @@ export const LaunchSessionPanel = ({
 
   useEffect(() => {
     const previousSeed = goalSeedRef.current;
-    goalSeedRef.current = goalSeed;
-    setGoal((current) => (current === previousSeed ? goalSeed : current));
-  }, [goalSeed]);
+    goalSeedRef.current = seed;
+    setGoal((current) => (current === previousSeed ? seed : current));
+  }, [seed]);
+
+  const briefSourceRef = useRef(briefSource);
+  briefSourceRef.current = briefSource;
+  const briefSignature = briefSource === null ? null : `${briefSource.title}\n${briefSource.body}`;
+
+  useEffect(() => {
+    const source = briefSourceRef.current;
+    if (source === null || linkedSessionId !== null) {
+      return;
+    }
+    void requestIssueBrief({ source, workspaceId, sessionId: null });
+  }, [briefKey, briefSignature, linkedSessionId, requestIssueBrief, workspaceId]);
+
+  const toggleBrief = () => {
+    const next = !isShowingBrief;
+    const nextSeed = next && briefGoal !== null ? briefGoal : goalSeed;
+    goalSeedRef.current = nextSeed;
+    setIsShowingBrief(next);
+    setGoal(nextSeed);
+  };
+
+  const retryBrief = () => {
+    if (briefSource === null) {
+      return;
+    }
+    void requestIssueBrief({ source: briefSource, workspaceId, sessionId: null, isRetry: true });
+  };
 
   const canLaunch = goal.trim() !== '' && !isBusy;
 
@@ -63,6 +108,7 @@ export const LaunchSessionPanel = ({
       const { session } = await createSession({
         workspaceId,
         goal,
+        ...(briefTitle !== null && { title: briefTitle }),
         externalTasks: [externalTask],
       });
       showToast({
@@ -98,6 +144,18 @@ export const LaunchSessionPanel = ({
       aria-label="Launch session"
       className="flex flex-col gap-1 rounded-md bg-subtle p-2 ring-1 ring-border-soft motion-safe:transition-shadow focus-within:ring-2 focus-within:ring-focus-ring"
     >
+      {briefSource !== null && brief !== null && brief.status !== 'unavailable' && (
+        <BriefStrip
+          source={briefSource}
+          entry={brief}
+          isShowingBrief={isShowingBrief}
+          onToggle={toggleBrief}
+          onRetry={retryBrief}
+        />
+      )}
+      {briefTitle !== null && (
+        <p className="px-2 text-xs font-semibold text-foreground">{briefTitle}</p>
+      )}
       <Textarea
         value={goal}
         onChange={(event) => setGoal(event.target.value)}
@@ -121,7 +179,12 @@ export const LaunchSessionPanel = ({
         </span>
       ) : null}
 
-      <footer className="flex items-center justify-end px-1">
+      <footer className="flex items-center justify-end gap-2 px-1">
+        {(brief?.status === 'loading' || readyBrief !== null) && (
+          <p className="min-w-0 flex-1 truncate px-1 text-2xs text-faint-foreground">
+            Edited text is never replaced by the brief.
+          </p>
+        )}
         <Button
           size="sm"
           onClick={() => void launch()}
