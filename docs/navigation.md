@@ -254,7 +254,15 @@ outside the registry. So no two surfaces can claim the same chord, and no
 shortcut can exist without being documented. That holds for per-OS combos
 too. An entry carries its own combo for other systems where the plain mapping
 would collide, like the terminal's new tab: ⌘T on macOS, Ctrl+Shift+T
-elsewhere, where Ctrl+T belongs to the shell. **A shortcut is taught where it
+elsewhere, where Ctrl+T belongs to the shell. The plane is for the dispatcher.
+Every entry also names the task `group` it belongs to (General, Workspaces,
+Navigate, Session, Views, Window), and Settings > App > Shortcuts lists the
+groups in that order, read top to bottom per column. Entries that share a
+`family` (only the nine workspace digits today) render as one row, "Go to
+workspace 1 to 9" with ⌘1-9, while the registry keeps one entry per chord. A
+family is only for chords that do the same thing to a different index: the
+integration digits (⌘⌥1 to ⌘⌥6) open different lenses and keep a row each.
+**A shortcut is taught where it
 is used.** A control that has one shows it: as a pill on hover in dense rows,
 and as a glyph in parentheses in tooltips. Where the row is too tight, the
 tooltip is the only place it shows. Off macOS, typing wins over the lens

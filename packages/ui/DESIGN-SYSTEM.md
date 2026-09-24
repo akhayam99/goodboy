@@ -342,7 +342,8 @@ A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`
 for a reading surface whose sections would otherwise be separated by empty
 space alone. It sits one step above the canvas, so the cards inside it reach
 the top of the ramp and nothing stacks a fourth level. A metadata line is not a
-section and does not get a surface.
+section and does not get a surface. Its optional `icon` goes to the heading,
+the same slot `SectionHeader` gives it, at the row icon size.
 
 `Eyebrow` is a label primitive for metadata, statistics and small internal groups. It is also the only uppercase label. A standalone label with `uppercase` renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between regions, never decoration after every heading or field.
 

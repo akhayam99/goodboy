@@ -6,6 +6,7 @@ const SECTION_SURFACE_CLASS = 'flex flex-col gap-2 rounded-md bg-subtle p-3';
 
 export type SectionSurfaceProps = {
   readonly label: string;
+  readonly icon?: ReactNode;
   readonly hint?: string;
   readonly action?: ReactNode;
   readonly headingSize?: 'eyebrow' | 'page';
@@ -17,6 +18,7 @@ export type SectionSurfaceProps = {
 
 export const SectionSurface = ({
   label,
+  icon,
   hint,
   action,
   headingSize = 'eyebrow',
@@ -28,6 +30,7 @@ export const SectionSurface = ({
   <section aria-label={ariaLabel} className={cn(SECTION_SURFACE_CLASS, className)}>
     <SectionHeader
       label={label}
+      icon={icon}
       size={headingSize}
       headingLevel={headingLevel}
       hint={hint}

@@ -86,7 +86,8 @@ import { SettingsStudio } from './index';
 import { APP_SECTIONS } from './appSections';
 import type { SettingsScopeChange } from './types';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../../reportIssueStudioEvent';
-import { SHORTCUTS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { shortcutGlyphs, shortcutRangeGlyphs } from '../../../../shared/keyboard/registry';
+import { SHORTCUT_ROW_COUNT } from './shortcutRows';
 
 beforeEach(() => {
   Object.defineProperty(Element.prototype, 'scrollIntoView', {
@@ -238,10 +239,24 @@ describe('SettingsStudio', () => {
     renderApp({ section: 'shortcuts' });
 
     expect(screen.getByRole('heading', { name: 'Shortcuts' })).toBeDefined();
-    expect(screen.getByText(`${Object.keys(SHORTCUTS).length} shortcuts`)).toBeDefined();
+    expect(screen.getByText(`${SHORTCUT_ROW_COUNT} shortcuts`)).toBeDefined();
     expect(screen.getByText('Command palette')).toBeDefined();
     expect(screen.getByText(shortcutGlyphs('lens.agents'))).toBeDefined();
     expect(screen.queryByRole('button', { name: /keyboard shortcuts/i })).toBeNull();
+  });
+
+  it('groups shortcuts by task and folds the workspace digits into one row', () => {
+    renderApp({ section: 'shortcuts' });
+
+    for (const group of ['General', 'Workspaces', 'Navigate', 'Session', 'Views', 'Window']) {
+      expect(screen.getByRole('heading', { name: group })).toBeDefined();
+    }
+    expect(screen.queryByRole('heading', { name: 'Lens' })).toBeNull();
+    expect(screen.getByText('Go to workspace 1 to 9')).toBeDefined();
+    expect(
+      screen.getByText(shortcutRangeGlyphs({ first: 'workspace.1', last: 'workspace.9' })),
+    ).toBeDefined();
+    expect(screen.queryByText('Workspace 2')).toBeNull();
   });
 
   it('falls back to General for an unknown section', () => {
