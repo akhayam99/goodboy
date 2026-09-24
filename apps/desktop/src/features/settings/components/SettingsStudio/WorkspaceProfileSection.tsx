@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { SectionHeader, Textarea } from '@goodboy/ui';
+import { SectionSurface, Textarea } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -37,8 +38,12 @@ export const WorkspaceProfileSection = ({ workspaceId }: Props) => {
   };
 
   return (
-    <section id="profile" className="flex flex-col gap-4">
-      <SectionHeader label="Profile" hint="Agents read this before they talk to you." />
+    <SectionSurface
+      label="Profile"
+      hint="Agents read this before they talk to you."
+      icon={<CONCEPT_ICONS.context size={ICON_SIZE.row} aria-hidden />}
+      headingLevel={2}
+    >
       <Textarea
         value={bioDraft}
         aria-label="What agents should know about this workspace and you"
@@ -49,6 +54,6 @@ export const WorkspaceProfileSection = ({ workspaceId }: Props) => {
         onBlur={() => void commitBio()}
         className="w-full"
       />
-    </section>
+    </SectionSurface>
   );
 };

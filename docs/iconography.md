@@ -145,6 +145,22 @@ components. The footer strip draws them through `IntegrationGlyph`: in brand
 color when the integration is connected, muted when it is not. `providers`
 (`Blocks`) and `integrations` (`Link2`) name the categories, not a vendor.
 
+## Settings
+
+The settings rail and the panel sections read these, so an item and its
+section share one glyph.
+
+| Concept      | Glyph                       | Tone    | Meaning                                      |
+| ------------ | --------------------------- | ------- | -------------------------------------------- |
+| `appearance` | `Palette`                   | neutral | Settings > App > General, and its Appearance |
+| `updates`    | `CircleFadingArrowUp`       | info    | App updates                                  |
+| `editor`     | `SquareCode`                | neutral | The default editor                           |
+| `shortcuts`  | `Keyboard`                  | neutral | Keyboard shortcuts                           |
+| `backup`     | `DatabaseBackup`            | neutral | Config export and import                     |
+| `storage`    | `Database`                  | neutral | Local database and archived sessions         |
+| `help`       | `MessageCircleQuestionMark` | neutral | Guides, the phone and feedback               |
+| `danger`     | `TriangleAlert`             | danger  | A danger zone                                |
+
 ## Actions
 
 | Concept        | Glyph                   | Tone    | Affordance                                 |

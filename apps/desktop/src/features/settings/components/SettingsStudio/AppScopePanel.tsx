@@ -8,6 +8,7 @@ import { AppHelpSection } from './AppHelpSection';
 import { ShortcutsSection } from './ShortcutsSection';
 import { SHORTCUT_ROW_COUNT } from './shortcutRows';
 import { StorageSection } from './StorageSection';
+import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 
 type Props = {
   readonly section: AppSection;
@@ -55,6 +56,7 @@ export const AppScopePanel = ({ section, requestClose }: Props) => {
     <PaneShell
       key={section}
       measure="reading"
+      animationClassName={SETTINGS_PANE_ENTRY}
       title={label}
       description={SECTION_HINT[section]}
       meta={section === 'shortcuts' ? `${SHORTCUT_ROW_COUNT} shortcuts` : undefined}

@@ -306,13 +306,26 @@ one is open at a time.
   its session's, and a row with neither is app-wide and shows in every
   workspace. Mark all read and Delete all act on that same scope. In the
   studio, j and k move, Enter runs the row's action and e dismisses.
-- **Settings nests items in its rail.** While App is active, its items
-  (General, Shortcuts, Backup, Storage, Help, Danger zone) sit under the App
-  row as indented rows, and the panel shows one item at a time. Providers &
-  models nests Defaults and one row per provider the same way, and Tools nests
-  one row per tool. So no scope adds a second rail column. Every scope panel
-  keeps the reading width. Precedent: the VS Code settings table of contents
-  and Linear's settings sidebar.
+- **Settings nests items in its rail.** The App items (General, Shortcuts,
+  Backup, Storage, Help, Danger zone) always sit under the App row as indented
+  rows, whichever scope is active, so switching scope never moves a row above
+  the pointer. The panel shows one item at a time. Providers & models nests
+  Defaults and one row per provider, and Tools nests one row per tool. Those
+  two lists open and close with `Reveal`, and the rail stays one mounted
+  element across scopes: `SettingsStudio` portals each scope's nested list and
+  detail into slots it owns, and keeps a closing scope mounted until its list
+  has collapsed. Every settings panel enters with `nav-step-in`
+  (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
+  panel keeps the reading width. Precedent: the VS Code settings table of
+  contents and Linear's settings sidebar.
+- **Settings rail tone is state, never decoration.** Each row carries its
+  concept icon from `CONCEPT_ICONS`. A dot appears only when something needs
+  doing: warning on Providers & models when a connected CLI is too old for a
+  model it serves or no provider is connected (`selectProviderAttention`, with
+  the reason as the row subtitle), info on General while an app update is
+  ready. Danger zone reads in `text-danger`. Panel sections sit on
+  `SectionSurface` cards with gap between them and no `Divider`; a danger zone
+  is an inline danger `Notice`.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
   beside a detail panel is fine. "no left panel and right panel at once" is
   about two sidebars on either side of the content, which the app does not do.

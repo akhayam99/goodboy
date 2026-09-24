@@ -35,11 +35,14 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     loadStorageStats: vi.fn(async () => undefined),
     pruneArchivedTranscripts: vi.fn(async () => 0),
     removeArchivedWorktrees: vi.fn(async () => ({ removed: 0, failed: 0 })),
-    updaterStatus: 'idle',
+    updaterStatus: 'idle' as string,
     updateVersion: null,
     updateFailure: null,
     updateCheckedAt: null,
     checkForUpdates: vi.fn(async () => undefined),
+    providers: [] as ReadonlyArray<unknown>,
+    cliRequirements: [] as ReadonlyArray<unknown>,
+    agentTurnState: {},
   },
   toastMock: vi.fn(),
 }));
@@ -214,13 +217,71 @@ describe('SettingsStudio', () => {
       />,
     );
     expect(screen.getByText('Provider settings content')).toBeDefined();
-    expect(screen.queryByRole('list', { name: 'App settings' })).toBeNull();
+    expect(screen.getByRole('list', { name: 'App settings' })).toBeDefined();
     expect(
       within(screen.getByRole('navigation', { name: /settings scopes/i })).getByRole('list', {
         name: 'Providers & models settings',
       }),
     ).toBeDefined();
     expect(screen.getAllByRole('navigation')).toHaveLength(1);
+  });
+
+  it('keeps one rail mounted across scopes, with the App list always open', () => {
+    const { rerender } = renderApp();
+    const rail = screen.getByRole('navigation', { name: /settings scopes/i });
+
+    rerender(
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'providers' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('navigation', { name: /settings scopes/i })).toBe(rail);
+    expect(within(rail).getByRole('list', { name: 'App settings' })).toBeDefined();
+    expect(within(rail).getByRole('list', { name: 'Providers & models settings' })).toBeDefined();
+    expect(screen.getByText('Provider settings content')).toBeDefined();
+
+    rerender(
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'app', section: 'storage' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('navigation', { name: /settings scopes/i })).toBe(rail);
+    expect(within(rail).queryByRole('list', { name: 'Providers & models settings' })).toBeNull();
+    expect(screen.queryByText('Provider settings content')).toBeNull();
+    expect(within(rail).getByRole('button', { name: 'Storage' }).getAttribute('aria-current')).toBe(
+      'true',
+    );
+  });
+
+  it('shows tone on the rail only when something needs doing', () => {
+    renderApp();
+    const rail = screen.getByRole('navigation', { name: /settings scopes/i });
+    expect(within(rail).queryByRole('img')).toBeNull();
+    cleanup();
+
+    state.updaterStatus = 'available';
+    state.providers = [
+      { id: 'anthropic', label: 'Claude', connection: 'connected', version: '2.1.200' },
+    ];
+    try {
+      renderApp();
+      const flagged = screen.getByRole('navigation', { name: /settings scopes/i });
+      expect(within(flagged).getByRole('img', { name: 'Update available' })).toBeDefined();
+      expect(
+        within(flagged).getByRole('button', { name: /^Providers & models/ }).textContent,
+      ).toContain('Claude CLI needs an update');
+    } finally {
+      state.updaterStatus = 'idle';
+      state.providers = [];
+    }
   });
 
   it('reports rail clicks as focus changes instead of switching on its own', () => {

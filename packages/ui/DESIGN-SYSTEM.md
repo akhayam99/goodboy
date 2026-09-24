@@ -37,7 +37,10 @@ A row that holds its own links or buttons is `InteractiveRow`: one overlay
 button stretched over the row opens it, and the inner controls sit above it.
 A `role="button"` div with its own key handler and propagation stopping is not
 another pattern. A settings-style rail entry with an icon, a subtitle and a
-status dot is `StatusRailItem`.
+status dot is `StatusRailItem`. Its dot is optional: without a `tone` it draws
+none, so a rail shows tone only on the rows that need attention, and
+`statusLabel` names a dot that no subtitle explains. `density="compact"` is the
+indented child row under a rail heading.
 
 ## Type scale
 
@@ -642,6 +645,13 @@ What "empty" means, and the copy rule for it, are product rules and live in
 Seven animations, one meaning each. Transition keyframes (`fade-in`,
 `nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`) move content between
 states and sit outside the registry.
+
+`Reveal` is the one height transition for disclosed content: `grid-template-rows`
+from `0fr` to `1fr`, 200ms `ease-out`, the same curve as the `AppShell`
+columns, behind `motion-safe`. It keeps its children mounted through the
+collapse and unmounts them on `transitionend`, or at once when no transition
+runs (reduced motion, tests). `Collapsible` opens through it. A disclosure
+never mounts and unmounts its panel by hand.
 
 - `spin-border`: working.
 - `border-pulse`: a warning-stage card needs you.

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Divider, FieldRow, SectionHeader, Select } from '@goodboy/ui';
+import { FieldRow, SectionSurface, Select } from '@goodboy/ui';
 import {
   DEFAULT_EDITOR_BINARY,
   SETTING_EDITOR_BINARY,
 } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
 import { useThemeStore, type ThemePreference } from '../../../../shared/lib/theme';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { UpdatesSection } from './UpdatesSection';
 
 const THEME_OPTIONS = [
@@ -50,58 +51,58 @@ export const AppGeneralSection = () => {
     : [...detectedEditors, { binary: editorBinary, label: editorBinary }];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <UpdatesSection />
 
-      <Divider />
+      <SectionSurface
+        label="Appearance"
+        hint="How the app looks on this computer."
+        icon={<CONCEPT_ICONS.appearance size={ICON_SIZE.row} aria-hidden />}
+        headingLevel={2}
+      >
+        <FieldRow label="Theme" help="Applies to every window.">
+          <Select
+            size="sm"
+            value={preference}
+            onChange={(e) => {
+              const next = THEME_OPTIONS.find((option) => option.value === e.target.value);
+              if (next === undefined) {
+                return;
+              }
+              setPreference(next.value);
+            }}
+            aria-label="Theme"
+          >
+            {THEME_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </FieldRow>
+      </SectionSurface>
 
-      <section className="flex flex-col gap-4">
-        <SectionHeader label="Appearance" hint="How the app looks on this computer." />
-        <div className="flex flex-col">
-          <FieldRow label="Theme" help="Applies to every window.">
-            <Select
-              size="sm"
-              value={preference}
-              onChange={(e) => {
-                const next = THEME_OPTIONS.find((option) => option.value === e.target.value);
-                if (next === undefined) {
-                  return;
-                }
-                setPreference(next.value);
-              }}
-              aria-label="Theme"
-            >
-              {THEME_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-          </FieldRow>
-        </div>
-      </section>
-
-      <Divider />
-
-      <section className="flex flex-col gap-4">
-        <SectionHeader label="Editor" hint="How session worktrees open." />
-        <div className="flex flex-col">
-          <FieldRow label="Default editor" help="Opens session worktrees.">
-            <Select
-              size="sm"
-              value={editorBinary}
-              onChange={(e) => void onChangeEditor(e.target.value)}
-              aria-label="Default editor"
-            >
-              {editorOptions.map((editor) => (
-                <option key={editor.binary} value={editor.binary}>
-                  {editor.label}
-                </option>
-              ))}
-            </Select>
-          </FieldRow>
-        </div>
-      </section>
+      <SectionSurface
+        label="Editor"
+        hint="How session worktrees open."
+        icon={<CONCEPT_ICONS.editor size={ICON_SIZE.row} aria-hidden />}
+        headingLevel={2}
+      >
+        <FieldRow label="Default editor" help="Opens session worktrees.">
+          <Select
+            size="sm"
+            value={editorBinary}
+            onChange={(e) => void onChangeEditor(e.target.value)}
+            aria-label="Default editor"
+          >
+            {editorOptions.map((editor) => (
+              <option key={editor.binary} value={editor.binary}>
+                {editor.label}
+              </option>
+            ))}
+          </Select>
+        </FieldRow>
+      </SectionSurface>
     </div>
   );
 };

@@ -41,4 +41,25 @@ describe('StatusRailItem', () => {
     const row = screen.getByRole('button', { name: 'Slack' });
     expect(row.getAttribute('aria-current')).toBe('false');
   });
+
+  it('draws no dot without a tone and names the dot when it carries the status', () => {
+    const { rerender } = render(
+      <StatusRailItem icon={null} label="General" selected={false} onClick={vi.fn()} />,
+    );
+    expect(screen.queryByRole('img')).toBeNull();
+
+    rerender(
+      <StatusRailItem
+        icon={null}
+        label="General"
+        tone="info"
+        statusLabel="Update available"
+        density="compact"
+        selected={false}
+        onClick={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('img', { name: 'Update available' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'General Update available' })).toBeDefined();
+  });
 });

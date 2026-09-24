@@ -130,9 +130,10 @@ describe('WorkspaceScopePanel', () => {
 
   it('orders the sections projects, profile, session defaults, danger zone', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    const order = ['Projects', 'Profile', 'Session defaults', 'Danger zone'].map((label) =>
-      screen.getByText(label),
-    );
+    const order = [
+      ...['Projects', 'Profile', 'Session defaults'].map((label) => screen.getByText(label)),
+      screen.getByRole('region', { name: 'Danger zone' }),
+    ];
     for (let i = 0; i < order.length - 1; i += 1) {
       expect(
         order[i]!.compareDocumentPosition(order[i + 1]!) & Node.DOCUMENT_POSITION_FOLLOWING,

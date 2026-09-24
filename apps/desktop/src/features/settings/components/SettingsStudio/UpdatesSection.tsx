@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Button, FieldRow, SectionHeader } from '@goodboy/ui';
+import { Button, FieldRow, SectionSurface } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useInstalledVersion } from '../../../changelog/hooks/useInstalledVersion';
 import { UpdateConfirm } from '../../../updater/components/UpdateConfirm';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { UpdateFailure } from '../../../../store/slices/updater/state';
 
 const TICK_MS = 30_000;
@@ -53,8 +54,12 @@ export const UpdatesSection = () => {
   const target = version ?? 'the new version';
 
   return (
-    <div className="flex flex-col gap-4">
-      <SectionHeader label="Updates" hint="Goodboy looks for a new version every hour." />
+    <SectionSurface
+      label="Updates"
+      hint="Goodboy looks for a new version every hour."
+      icon={<CONCEPT_ICONS.updates size={ICON_SIZE.row} aria-hidden />}
+      headingLevel={2}
+    >
       <div className="flex flex-col">
         <FieldRow label="Version" help={checkedLine({ installedVersion, checkedAt, now })}>
           <span className="flex items-center gap-2">
@@ -91,6 +96,6 @@ export const UpdatesSection = () => {
           </p>
         )}
       </div>
-    </div>
+    </SectionSurface>
   );
 };

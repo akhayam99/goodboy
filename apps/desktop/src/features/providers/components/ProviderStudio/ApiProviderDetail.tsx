@@ -7,6 +7,7 @@ import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { PaneShell } from '../../../../shared/components/PaneShell';
+import { SETTINGS_PANE_ENTRY } from '../../../settings/components/SettingsStudio/settingsPaneEntry';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -50,6 +51,7 @@ export const ApiProviderDetail = ({ info }: Props) => {
     <PaneShell
       scroll="body"
       measure="reading"
+      animationClassName={SETTINGS_PANE_ENTRY}
       glyph={<Icon size={ICON_SIZE.hero} aria-hidden className="shrink-0" style={{ color }} />}
       title={info.label}
       description="Runs through the OpenCode runtime"

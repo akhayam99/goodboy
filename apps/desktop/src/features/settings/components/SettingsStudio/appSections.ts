@@ -1,13 +1,19 @@
+import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+
 export type AppSection = 'general' | 'shortcuts' | 'backup' | 'storage' | 'help' | 'danger';
 
 export const APP_SECTIONS = [
-  { id: 'general', label: 'General' },
-  { id: 'shortcuts', label: 'Shortcuts' },
-  { id: 'backup', label: 'Backup' },
-  { id: 'storage', label: 'Storage' },
-  { id: 'help', label: 'Help' },
-  { id: 'danger', label: 'Danger zone' },
-] as const satisfies ReadonlyArray<{ readonly id: AppSection; readonly label: string }>;
+  { id: 'general', label: 'General', concept: 'appearance' },
+  { id: 'shortcuts', label: 'Shortcuts', concept: 'shortcuts' },
+  { id: 'backup', label: 'Backup', concept: 'backup' },
+  { id: 'storage', label: 'Storage', concept: 'storage' },
+  { id: 'help', label: 'Help', concept: 'help' },
+  { id: 'danger', label: 'Danger zone', concept: 'danger' },
+] as const satisfies ReadonlyArray<{
+  readonly id: AppSection;
+  readonly label: string;
+  readonly concept: keyof typeof CONCEPT_ICONS;
+}>;
 
 const DEFAULT_APP_SECTION: AppSection = 'general';
 

@@ -133,6 +133,8 @@ export type { LocalImageLoader } from './components/LocalImage/loaderContext';
 export { RemoteImageLoaderProvider } from './components/RemoteImage/RemoteImageLoaderProvider';
 export type { RemoteImageLoader } from './components/RemoteImage/loaderContext';
 export { ResizeHandle } from './components/ResizeHandle';
+export { Reveal } from './components/Reveal';
+export type { RevealProps } from './components/Reveal';
 export type { ResizeHandleProps } from './components/ResizeHandle';
 export { ScrollArea } from './components/ScrollArea';
 export type { ScrollAreaProps } from './components/ScrollArea';

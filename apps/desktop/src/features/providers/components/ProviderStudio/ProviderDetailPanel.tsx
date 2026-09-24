@@ -22,6 +22,7 @@ import { ApiProviderDetail } from './ApiProviderDetail';
 import { CliUpdateNotice } from './CliUpdateNotice';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PaneShell } from '../../../../shared/components/PaneShell';
+import { SETTINGS_PANE_ENTRY } from '../../../settings/components/SettingsStudio/settingsPaneEntry';
 
 type Props = {
   readonly info: ProviderDisplayInfo | null;
@@ -103,6 +104,7 @@ function Detail({
     <PaneShell
       scroll="body"
       measure="reading"
+      animationClassName={SETTINGS_PANE_ENTRY}
       glyph={
         <Icon
           size={ICON_SIZE.hero}

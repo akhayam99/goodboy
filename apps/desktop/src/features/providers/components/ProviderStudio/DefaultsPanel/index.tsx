@@ -17,6 +17,7 @@ import { useDefaultsPersistence } from './useDefaultsPersistence';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { ProviderPicker } from '../../../../../shared/components/RoutingPicker/ProviderPicker';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
+import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -104,6 +105,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
     <PaneShell
       scroll="body"
       measure="reading"
+      animationClassName={SETTINGS_PANE_ENTRY}
       title="Defaults"
       description="Choose provider defaults for this workspace, its agent roles, and its auxiliary tasks."
     >

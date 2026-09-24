@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from 'react';
 import { cn } from '../cn';
+import { Reveal } from './Reveal';
 
 export type CollapsibleProps = {
   open: boolean;
@@ -37,11 +38,9 @@ export const Collapsible = ({
           ›
         </span>
       </button>
-      {open ? (
-        <div id={panelId} className="px-2 pb-2">
-          {children}
-        </div>
-      ) : null}
+      <Reveal open={open} id={panelId} className="px-2 pb-2">
+        {children}
+      </Reveal>
     </div>
   );
 };

@@ -3,13 +3,13 @@ import type { WorkspaceId } from '@goodboy/types';
 import {
   Button,
   cn,
-  Divider,
   FieldRow,
   InlineConfirm,
   Input,
+  Notice,
   PANE_RHYTHM,
   ScrollFade,
-  SectionHeader,
+  SectionSurface,
   Switch,
   tintClasses,
 } from '@goodboy/ui';
@@ -25,8 +25,9 @@ import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { useSectionAnchors } from '../../hooks/useSectionAnchors';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
+import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 
 type DisconnectTitleParams = {
   readonly name: string;
@@ -160,169 +161,186 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       .slice(0, 16);
 
   return (
-    <ScrollFade className="h-full w-full" viewportClassName={PANE_RHYTHM.body}>
+    <ScrollFade
+      className={cn('h-full w-full', SETTINGS_PANE_ENTRY)}
+      viewportClassName={PANE_RHYTHM.body}
+    >
       <div className={`flex flex-col ${PANE_RHYTHM.column} ${PANE_RHYTHM.measure.reading}`}>
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
           {workspace == null ? null : (
             <>
-              <section
-                id="identity"
-                ref={anchor({ id: 'identity' })}
-                className="flex flex-col gap-4"
-              >
-                <SectionHeader
+              <div id="identity" ref={anchor({ id: 'identity' })}>
+                <SectionSurface
                   label="Workspace"
                   hint="How this workspace is labelled across the app."
-                />
-                <FieldRow
-                  label="Display name"
-                  help="Only the label changes. Project folders stay where they are."
+                  icon={<CONCEPT_ICONS.workspace size={ICON_SIZE.row} aria-hidden />}
+                  headingLevel={2}
                 >
-                  <Input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    onBlur={() => void commitDisplayName()}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        void commitDisplayName();
-                      }
-                      if (e.key === 'Escape') {
-                        setDisplayName(workspace.name);
-                      }
-                    }}
-                    placeholder={workspace.slug}
-                    disabled={renaming}
-                    maxLength={60}
-                    aria-label="Display name"
-                    className="w-56"
-                  />
-                </FieldRow>
-              </section>
-
-              <Divider />
+                  <FieldRow
+                    label="Display name"
+                    help="Only the label changes. Project folders stay where they are."
+                  >
+                    <Input
+                      type="text"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      onBlur={() => void commitDisplayName()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          void commitDisplayName();
+                        }
+                        if (e.key === 'Escape') {
+                          setDisplayName(workspace.name);
+                        }
+                      }}
+                      placeholder={workspace.slug}
+                      disabled={renaming}
+                      maxLength={60}
+                      aria-label="Display name"
+                      className="w-56"
+                    />
+                  </FieldRow>
+                </SectionSurface>
+              </div>
 
               <div ref={anchor({ id: 'projects' })}>
                 <WorkspaceProjectsSection workspaceId={workspaceId} />
               </div>
 
-              <Divider />
-
               <div ref={anchor({ id: 'profile' })}>
                 <WorkspaceProfileSection workspaceId={workspaceId} />
               </div>
-
-              <Divider />
             </>
           )}
 
-          <section id="general" ref={anchor({ id: 'general' })} className="flex flex-col gap-4">
-            <SectionHeader
+          <div id="general" ref={anchor({ id: 'general' })}>
+            <SectionSurface
               label="Session defaults"
               hint="Applied to new sessions and agents in this workspace."
-            />
-            <div className="flex flex-col">
-              <FieldRow label="Branch prefix" help="Prefixes every new session branch.">
-                <div className="flex items-center gap-1.5">
-                  <GitBranch
-                    size={ICON_SIZE.row}
-                    aria-hidden
-                    className="shrink-0 text-muted-foreground"
-                  />
-                  <Input
-                    type="text"
-                    value={branchPrefix}
-                    onChange={(e) => setBranchPrefix(sanitized(e.target.value))}
-                    onBlur={() => void commitBranchPrefix()}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        void commitBranchPrefix();
-                      }
-                    }}
-                    placeholder={DEFAULT_BRANCH_PREFIX}
-                    disabled={busy}
-                    maxLength={16}
-                    size={12}
-                    aria-label="Branch prefix"
-                    className="w-auto font-mono"
-                  />
-                  <span className="font-mono text-sm text-muted-foreground">/&lt;slug&gt;</span>
-                </div>
-              </FieldRow>
+              icon={<CONCEPT_ICONS.sessions size={ICON_SIZE.row} aria-hidden />}
+              headingLevel={2}
+            >
+              <div className="flex flex-col">
+                <FieldRow label="Branch prefix" help="Prefixes every new session branch.">
+                  <div className="flex items-center gap-1.5">
+                    <GitBranch
+                      size={ICON_SIZE.row}
+                      aria-hidden
+                      className="shrink-0 text-muted-foreground"
+                    />
+                    <Input
+                      type="text"
+                      value={branchPrefix}
+                      onChange={(e) => setBranchPrefix(sanitized(e.target.value))}
+                      onBlur={() => void commitBranchPrefix()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          void commitBranchPrefix();
+                        }
+                      }}
+                      placeholder={DEFAULT_BRANCH_PREFIX}
+                      disabled={busy}
+                      maxLength={16}
+                      size={12}
+                      aria-label="Branch prefix"
+                      className="w-auto font-mono"
+                    />
+                    <span className="font-mono text-sm text-muted-foreground">/&lt;slug&gt;</span>
+                  </div>
+                </FieldRow>
 
-              <FieldRow label="Output verbosity" help="Response style for agents.">
-                <div className="w-40">
-                  <VerbositySelect
-                    value={verbosity}
-                    onChange={(v) =>
+                <FieldRow label="Output verbosity" help="Response style for agents.">
+                  <div className="w-40">
+                    <VerbositySelect
+                      value={verbosity}
+                      onChange={(v) =>
+                        void persistOverrides({
+                          patch: { defaultVerbosity: v },
+                          failureTitle: "Couldn't save the output verbosity",
+                        })
+                      }
+                      disabled={busy}
+                    />
+                  </div>
+                </FieldRow>
+
+                <FieldRow
+                  label="Parallel agents"
+                  help="Lets eligible agents split independent work and reconcile it in one output."
+                >
+                  <Switch
+                    label={parallelAgents ? 'On' : 'Off'}
+                    checked={parallelAgents}
+                    disabled={busy}
+                    onChange={(next) =>
                       void persistOverrides({
-                        patch: { defaultVerbosity: v },
-                        failureTitle: "Couldn't save the output verbosity",
+                        patch: { parallelAgents: next },
+                        failureTitle: "Couldn't save the parallel agents setting",
                       })
                     }
-                    disabled={busy}
                   />
-                </div>
-              </FieldRow>
+                </FieldRow>
 
-              <FieldRow
-                label="Parallel agents"
-                help="Lets eligible agents split independent work and reconcile it in one output."
-              >
-                <Switch
-                  label={parallelAgents ? 'On' : 'Off'}
-                  checked={parallelAgents}
-                  disabled={busy}
-                  onChange={(next) =>
-                    void persistOverrides({
-                      patch: { parallelAgents: next },
-                      failureTitle: "Couldn't save the parallel agents setting",
-                    })
-                  }
-                />
-              </FieldRow>
-
-              <FieldRow
-                label="Attribution line"
-                help="Signs every comment Goodboy posts to GitHub, GitLab, Bitbucket, Jira, Linear and Slack."
-              >
-                <Switch
-                  label={attributionFooter ? 'On' : 'Off'}
-                  checked={attributionFooter}
-                  disabled={busy}
-                  onChange={(next) =>
-                    void persistOverrides({
-                      patch: { attributionFooter: next },
-                      failureTitle: "Couldn't save the attribution line setting",
-                    })
-                  }
-                />
-              </FieldRow>
-            </div>
-          </section>
+                <FieldRow
+                  label="Attribution line"
+                  help="Signs every comment Goodboy posts to GitHub, GitLab, Bitbucket, Jira, Linear and Slack."
+                >
+                  <Switch
+                    label={attributionFooter ? 'On' : 'Off'}
+                    checked={attributionFooter}
+                    disabled={busy}
+                    onChange={(next) =>
+                      void persistOverrides({
+                        patch: { attributionFooter: next },
+                        failureTitle: "Couldn't save the attribution line setting",
+                      })
+                    }
+                  />
+                </FieldRow>
+              </div>
+            </SectionSurface>
+          </div>
 
           {WORKSPACE_FEATURES.skills ? (
-            <>
-              <Divider />
-              <div ref={anchor({ id: 'skills' })}>
-                <SkillsPanel workspaceId={workspaceId} />
-              </div>
-            </>
+            <div ref={anchor({ id: 'skills' })}>
+              <SkillsPanel workspaceId={workspaceId} />
+            </div>
           ) : null}
 
           <div ref={anchor({ id: 'orphans' })}>
             <OrphanWorktreesSection workspaceId={workspaceId} />
           </div>
 
-          <Divider />
-
-          <section id="danger" ref={anchor({ id: 'danger' })} className="flex flex-col gap-4">
-            <SectionHeader label="Danger zone" hint="Destructive workspace controls." />
-            <FieldRow
-              label="Disconnect workspace"
-              help="Hides it from the sidebar. Nothing on disk is deleted."
+          <section
+            id="danger"
+            ref={anchor({ id: 'danger' })}
+            aria-label="Danger zone"
+            className="flex flex-col"
+          >
+            <Notice
+              tone="danger"
+              placement="inline"
+              title="Disconnect workspace"
+              body="Hides it from the sidebar. Nothing on disk is deleted."
+              actions={
+                confirmDisconnect ? null : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setConfirmDisconnect(true)}
+                    className={cn(
+                      'text-danger',
+                      tintClasses('danger').hoverBg,
+                      'hover:text-danger',
+                    )}
+                  >
+                    <Unplug size={ICON_SIZE.row} aria-hidden />
+                    Disconnect
+                  </Button>
+                )
+              }
             >
-              {confirmDisconnect ? (
+              {confirmDisconnect && (
                 <InlineConfirm
                   role="danger"
                   icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
@@ -335,20 +353,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   isBusy={disconnecting}
                   onConfirm={onDisconnect}
                   onCancel={() => setConfirmDisconnect(false)}
-                  className="w-80 text-left"
+                  className="text-left"
                 />
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setConfirmDisconnect(true)}
-                  className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
-                >
-                  <Unplug size={ICON_SIZE.row} aria-hidden />
-                  Disconnect
-                </Button>
               )}
-            </FieldRow>
+            </Notice>
           </section>
         </div>
       </div>
