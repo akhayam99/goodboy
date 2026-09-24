@@ -155,6 +155,14 @@ with no fallback notifies, and when the provider names its reset time it
 schedules one retry on the same model at that time. Any other failure leaves
 the agent in `error` with a retryable error event.
 
+## Turn spans
+
+- Every provider run that reaches the CLI closes with one `agent_turn_spans` row, keyed by its run id. `sendTurn` writes it through `recordTurnSpan` on both exits: when the stream ends, and in the failure path before any fallback retry. The first write wins, so a failure after a finished stream keeps the finished span.
+- A span holds machine time only: `started_at` is taken right before the CLI starts and `ended_at` when its stream ends. Waiting on an open question, a review or a retry never falls inside a span, so an agent's execution time is the sum of its spans. `Agent.startedAt` to `lastFinishedAt` is wall clock and is not that number.
+- `provider`, `model` and `effort` are what the CLI was actually started with, after routing and clamping. `effort` is null when no effort flag was passed. `cost_usd` is the sum of the telemetry the run recorded, null when it recorded none.
+- `end_reason` is `cancelled` for a stopped turn, `failed` for a thrown turn or one with no answer, `awaiting_user` when the answer ends on a blocking question, and `succeeded` otherwise.
+- Spans outlive their session and agent (`ON DELETE SET NULL`) so duration history stays with the workspace. Nothing reads them yet, and there is no backfill: older wall clock numbers would bring back the wrong duration.
+
 ## After a turn succeeds
 
 The run is marked succeeded, then: a project the turn asked to mount is

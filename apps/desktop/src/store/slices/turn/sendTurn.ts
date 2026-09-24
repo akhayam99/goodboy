@@ -33,6 +33,7 @@ import {
 } from '@goodboy/db';
 import type {
   AgentId,
+  AgentTurnSpan,
   AttachmentInput,
   EffortLevel,
   IsoDateTime,
@@ -155,6 +156,8 @@ import { budgetRoutingNoticeMessage, budgetRoutingReason } from './budgetRouting
 import { classifyToolCallFailure, toolCallFailureMessage } from './classifyToolCallFailure';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
+import { recordTurnSpan } from './recordTurnSpan';
+import { turnSpanEndReason } from './turnSpanEndReason';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
 import { codexMeasuredUsage } from './codexMeasuredUsage';
 import { turnNodeRouting } from './turnNodeRouting';
@@ -1047,6 +1050,19 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       void applyHeuristicTitle({ set, get, sessionId, agentId: activeAgentId, prompt: content });
     }
 
+    const turnSpanBase: Omit<AgentTurnSpan, 'endedAt' | 'endReason'> = {
+      runId,
+      agentId: activeAgentId,
+      sessionId,
+      workspaceId: session.workspaceId,
+      workflowRunId: phaseWorkflowRunId ?? agentRowEarly?.workflowRunId ?? null,
+      stepRole: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
+      provider,
+      model,
+      effort: effortFlag ?? null,
+      startedAt: now(),
+    };
+
     try {
       for await (const rawEvent of runTurn({
         runId,
@@ -1161,6 +1177,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           }
         }
       }
+      const turnEndedAt = now();
       await resolveCandidateWriter.flush();
       const afterAgentState = get().agentTurnState[activeAgentId];
       if (afterAgentState?.kind === 'running') {
@@ -1180,6 +1197,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
       const wasCancelled = cancelledRunIds.delete(runId);
       turnWasCancelled = wasCancelled;
+      await recordTurnSpan({
+        span: {
+          ...turnSpanBase,
+          endedAt: turnEndedAt,
+          endReason: turnSpanEndReason({ wasCancelled, assistantText }),
+        },
+      });
       if (
         provider === 'cursor' &&
         receivedProviderError === false &&
@@ -1364,6 +1388,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               identity: get().authResults?.[provider]?.identity ?? null,
             });
       const cancelledBeforeFailure = cancelledRunIds.delete(runId);
+      await recordTurnSpan({
+        span: {
+          ...turnSpanBase,
+          endedAt: now(),
+          endReason: cancelledBeforeFailure ? 'cancelled' : 'failed',
+        },
+      });
       const failure = classifyProviderError({ message: rawMessage });
       const usageLimitResetAtMs =
         failure.kind === 'usage_limit' ? (failure.resetAtMs ?? null) : null;
