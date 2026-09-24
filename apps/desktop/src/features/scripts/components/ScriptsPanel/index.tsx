@@ -10,6 +10,7 @@ import {
   ScrollFade,
   SectionHeader,
   cn,
+  useCopyLink,
 } from '@goodboy/ui';
 import type {
   Project,
@@ -251,7 +252,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
   const [newDraft, setNewDraft] = useState<NewDraft | null>(null);
   const [pendingNewAction, setPendingNewAction] = useState<PendingNewAction | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<ProjectScriptId | null>(null);
+  const { copiedKey, copy } = useCopyLink();
   const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [manifestOpenByProject, setManifestOpenByProject] = useState<
@@ -621,15 +622,12 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
     [saveScript, workspaceId],
   );
 
-  const onCopy = useCallback(({ id, body }: CopyParams) => {
-    void navigator.clipboard
-      .writeText(body)
-      .then(() => {
-        setCopiedId(id);
-        window.setTimeout(() => setCopiedId((current) => (current === id ? null : current)), 1200);
-      })
-      .catch(() => undefined);
-  }, []);
+  const onCopy = useCallback(
+    ({ id, body }: CopyParams) => {
+      void copy({ text: body, key: id });
+    },
+    [copy],
+  );
 
   const onDelete = useCallback(
     async ({ id }: DeleteParams) => {
@@ -718,7 +716,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
     );
 
   const topHeading = hasHostHeading ? (
-    <p className="shrink-0 text-2xs text-muted-foreground/70">{SCRIPTS_HINT}</p>
+    <p className="shrink-0 text-2xs text-faint-foreground">{SCRIPTS_HINT}</p>
   ) : (
     <SectionHeader
       label="Scripts"
@@ -790,7 +788,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                   {selectedProject.name}
                 </h2>
                 <p
-                  className="truncate font-mono text-2xs text-muted-foreground/70"
+                  className="truncate font-mono text-2xs text-faint-foreground"
                   title={selectedProject.rootPath}
                 >
                   {shortenPath({ path: selectedProject.rootPath })}
@@ -828,7 +826,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                 />
               ) : null}
               {selectedUserScripts.length === 0 && newDraft === null ? (
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-muted/20 px-2.5 py-2">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-subtle px-2.5 py-2">
                   <p className="text-xs text-muted-foreground">
                     {normalizedQuery === ''
                       ? `No scripts saved for ${selectedProject.name} yet. Save the command you keep retyping.`
@@ -865,7 +863,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                           runnable={runnable}
                           canRun={mountPath != null}
                           runDisabledReason={runDisabledReason}
-                          copied={copiedId === script.id}
+                          copied={copiedKey === script.id}
                           onToggle={() => onToggle({ id: script.id })}
                           onSave={(name, body, projectId) =>
                             onSaveExisting({ script, name, body, projectId })
@@ -923,7 +921,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                   <p className="text-xs text-muted-foreground">No manifest scripts found.</p>
                 ) : null}
                 {normalizedQuery !== '' && !hasSearchResults ? (
-                  <div className="flex items-center gap-2 rounded-md bg-muted/30 px-2.5 py-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 rounded-md bg-subtle px-2.5 py-2 text-xs text-muted-foreground">
                     <span>No scripts match</span>
                     <button
                       type="button"

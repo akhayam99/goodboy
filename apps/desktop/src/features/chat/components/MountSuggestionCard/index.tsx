@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Button, cn, IconButton, tintClasses } from '@goodboy/ui';
+import { Button, cn, IconButton, tintClasses, Eyebrow } from '@goodboy/ui';
 import type { MaterializationDeferralCause } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -23,10 +23,10 @@ const consequenceSentence = ({ projectName, agentName, cause }: SentenceParams):
   const lead = `Mount ${projectName} so ${agentName} can use it in this session`;
   switch (cause) {
     case 'batch':
-      return `${lead}; this request has already mounted two projects.`;
+      return `${lead}. This request has already mounted two projects.`;
     case 'scope':
     case null:
-      return `${lead}; this expands the session beyond its two-project allowance for unauthorized projects.`;
+      return `${lead}. It adds a third project to this session.`;
     default: {
       const exhaustive: never = cause;
       return exhaustive;
@@ -109,8 +109,8 @@ export const MountSuggestionCard = ({
       </div>
       {isOpen ? (
         <div className="flex min-w-0 flex-col gap-1.5 pl-6">
-          <span className="text-2xs uppercase tracking-wide text-muted-foreground">Reason</span>
-          <span className="min-w-0 text-xs text-foreground/80">{reason}</span>
+          <Eyebrow label="Reason" />
+          <span className="min-w-0 text-xs text-foreground">{reason}</span>
           <span className="text-2xs text-muted-foreground">
             Requested by {agentName} for {projectName}.
           </span>

@@ -7,11 +7,10 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
-import { migrations } from '../migrations';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { insertSessionWorktree, listSessionMounts } from './session-worktree';
 import { listRetainedWorktreePaths, transferMountPathToRetained } from './retained-worktree-path';
+import { UniqueViolationError } from '../shared/errors';
 
 const workspaceId = 'workspace' as WorkspaceId;
 const sessionId = 'session' as SessionId;
@@ -19,8 +18,7 @@ const mountId = 'mount' as MountId;
 const now = new Date('2026-09-08T10:00:00.000Z').toISOString() as IsoDateTime;
 
 const seed = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(db, migrations);
+  const db = await makeMigratedTestDatabase();
   const timestamp = Date.parse(now);
   await db.execute(
     'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
@@ -99,5 +97,27 @@ describe('transferMountPathToRetained', () => {
     expect(transferred).toBe(false);
     expect(await listRetainedWorktreePaths({ db, workspaceId })).toEqual([]);
     expect((await listSessionMounts({ db, sessionId }))[0]?.worktreePath).toBe('/worktrees/mount');
+  });
+
+  it('refuses a path another retained record owns and changes nothing', async () => {
+    const db = await seed();
+    await db.execute(
+      `INSERT INTO retained_worktree_paths
+        (id, workspace_id, project_id, source_session_id, source_mount_id, repo_root,
+         worktree_path, branch, reason, last_checked_at, created_at, updated_at)
+       VALUES ('older', ?, NULL, ?, ?, '/repo', '/worktrees/mount', 'feature', 'unmount', NULL, 1, 1)`,
+      [workspaceId, sessionId, mountId],
+    );
+
+    await expect(
+      transferMountPathToRetained({ db, retained: retained(), expectedRevision: 0 }),
+    ).rejects.toBeInstanceOf(UniqueViolationError);
+    expect((await listRetainedWorktreePaths({ db, workspaceId })).map((path) => path.id)).toEqual([
+      'older',
+    ]);
+    expect((await listSessionMounts({ db, sessionId }))[0]).toMatchObject({
+      worktreePath: '/worktrees/mount',
+      revision: 0,
+    });
   });
 });

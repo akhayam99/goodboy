@@ -114,7 +114,6 @@ const collect = async ({
   const scouting = await collectWireframeScoutPlan({
     state,
     sessionId,
-    workflowRunId,
     mountIds,
     goal: goal.packText,
     brief: null,

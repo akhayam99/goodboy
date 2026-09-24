@@ -2,9 +2,9 @@ import { ExternalLink } from 'lucide-react';
 import { Avatar, Chip, Tooltip } from '@goodboy/ui';
 import type { CommentThread } from '../../../github/comment-threads';
 import { isBot } from '../../../github/comment-threads';
-import { ThreadBody } from '../../../github/components/GitHubStudio/ThreadBody';
-import { ThreadPathChip } from '../../../github/components/GitHubStudio/ThreadPathChip';
-import { ThreadReplies } from '../../../github/components/GitHubStudio/ThreadReplies';
+import { ThreadBody } from '../../../github/components/PullRequest/ThreadBody';
+import { ThreadPathChip } from '../../../github/components/PullRequest/ThreadPathChip';
+import { ThreadReplies } from '../../../github/components/PullRequest/ThreadReplies';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -25,7 +25,7 @@ export const ReviewThreadContent = ({ thread, onOpenUrl }: Props) => {
       <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
         <Avatar url={head.authorAvatarUrl} alt={head.author} />
         <span className="min-w-0 truncate font-medium text-foreground">{head.author}</span>
-        {isBot(head.author) && <Chip tone="info" size="xs" uppercase label="bot" />}
+        {isBot(head.author) && <Chip tone="info" size="xs" label="Bot" />}
         <span className="shrink-0 opacity-50">·</span>
         <span className="shrink-0">{formatRelativeAge({ fromIso: head.createdAt })}</span>
         {isReview && head.resolved === false && <Chip tone="warning" size="xs" label="Open" />}
@@ -39,7 +39,7 @@ export const ReviewThreadContent = ({ thread, onOpenUrl }: Props) => {
               type="button"
               onClick={() => onOpenUrl(head.url)}
               aria-label="Open in browser"
-              className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="rounded-sm p-0.5 text-muted-foreground hover:bg-hover hover:text-foreground"
             >
               <ExternalLink size={ICON_SIZE.row} aria-hidden />
             </button>

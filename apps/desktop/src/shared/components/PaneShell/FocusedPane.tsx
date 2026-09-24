@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Divider, cn } from '@goodboy/ui';
+import { Divider, cn, Eyebrow } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
@@ -16,11 +16,9 @@ export const FocusedPane = ({ lens, count, actions, eyebrow, children }: Props) 
       {eyebrow}
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-2">
-          <h1 className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70">
-            {lens}
-          </h1>
+          <Eyebrow label={lens} muted />
           {count != null ? (
-            <span className="text-2xs tabular-nums text-muted-foreground/70">{count}</span>
+            <span className="text-2xs tabular-nums text-faint-foreground">{count}</span>
           ) : null}
         </div>
         {actions}

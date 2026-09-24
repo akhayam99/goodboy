@@ -3,6 +3,7 @@ import type { InboxRecord } from './types';
 import {
   filterInboxRecords,
   kindFilterCounts,
+  visibleKindFilters,
   matchesKindFilter,
   matchesSearch,
 } from './kindFilter';
@@ -158,5 +159,12 @@ describe('kindFilterCounts', () => {
       thread: 0,
       error: 0,
     });
+  });
+});
+
+describe('visibleKindFilters', () => {
+  it('hides the PRs and MRs filter when no connected provider feeds pull requests', () => {
+    expect(visibleKindFilters({ connected: ['github', 'linear'] })).not.toContain('pr-mr');
+    expect(visibleKindFilters({ connected: ['github', 'gitlab'] })).toContain('pr-mr');
   });
 });

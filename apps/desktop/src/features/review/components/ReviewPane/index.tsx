@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { PANE_RHYTHM, cn, formatError } from '@goodboy/ui';
+import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type {
   PrCheckRun,
   PrComment,
@@ -22,7 +22,7 @@ import { GithubConnectionEmptyState } from '../../../github/components/GithubCon
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { usePrDraftAgentRunning } from '../../../github/usePrDraftAgentRunning';
 import {
-  PR_LIFECYCLE_FAILURE_LABEL,
+  prLifecycleFailureTitle,
   describePrWriteInFlight,
   type PrLifecycleBusy,
 } from '../../prLifecycle';
@@ -59,6 +59,7 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
   const [lifecycleBusy, setLifecycleBusy] = useState<PrLifecycleBusy>(null);
   const [listWidth, setListWidth] = useColumnWidth(STORAGE_KEYS.reviewBoardListWidth, 320);
   const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
 
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const branchPrs = useAppStore((s) => selectActiveProjectPrs({ state: s, sessionId }));
@@ -138,12 +139,16 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
         await action();
         onMutated();
       } catch (error) {
-        showToast('error', `${PR_LIFECYCLE_FAILURE_LABEL[kind]}: ${formatError(error)}`);
+        void reportError({
+          title: prLifecycleFailureTitle({ action: kind, prNumber: pr?.number ?? null }),
+          error,
+          sessionId,
+        });
       } finally {
         setLifecycleBusy(null);
       }
     },
-    [lifecycleBusy, onMutated, showToast],
+    [lifecycleBusy, onMutated, pr, reportError, sessionId],
   );
 
   const startGeneralFix = useCallback(
@@ -152,7 +157,10 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
         return;
       }
       if (worktreePath === null) {
-        showToast('error', 'Materialize the project first.');
+        showToast({
+          kind: 'warning',
+          message: 'Materialize the project first. The fix needs its worktree.',
+        });
         return;
       }
       const routing = kindRouting({ kind: 'resolver', roleModels });
@@ -175,9 +183,11 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
         sourceCommentUrl: args.sourceCommentUrl,
         sourceKind: args.sourceKind,
         focus: 'none',
-      }).catch((error: unknown) => showToast('error', formatError(error)));
+      }).catch((error: unknown) =>
+        reportError({ title: "Couldn't start the fix agent", error, sessionId }),
+      );
     },
-    [pr, roleModels, sessionId, showToast, spawnAgent, worktreePath],
+    [pr, reportError, roleModels, sessionId, showToast, spawnAgent, worktreePath],
   );
 
   const onWriteReviewPublish = useCallback(
@@ -188,20 +198,23 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
       setIsBusy(true);
       try {
         const result = await publishPrReview(sessionId, opts);
-        showToast(
-          result.failed.length > 0 ? 'error' : 'success',
-          result.failed.length > 0
-            ? `${result.failed.length} comments failed to publish`
-            : 'Review submitted',
-        );
         await loadReviewDrafts(sessionId);
+        if (result.failed.length > 0) {
+          void reportError({
+            title: `Couldn't publish ${result.failed.length} review comments`,
+            error: result.failed.map((failure) => failure.error).join('\n'),
+            sessionId,
+          });
+          return;
+        }
+        showToast({ kind: 'success', message: 'Review submitted' });
       } catch (error) {
-        showToast('error', formatError(error));
+        void reportError({ title: "Couldn't submit the review", error, sessionId });
       } finally {
         setIsBusy(false);
       }
     },
-    [loadReviewDrafts, publishPrReview, sessionId, showToast],
+    [loadReviewDrafts, publishPrReview, reportError, sessionId, showToast],
   );
 
   const openDrafts = useMemo(() => drafts.filter((draft) => draft.status === 'draft'), [drafts]);
@@ -286,7 +299,6 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
       onSelectPr={(prNumber) => void selectSessionPr(sessionId, prNumber)}
       onRefresh={() => void refreshSessionPrDetail(sessionId, { force: true })}
       onOpenChecks={() => setMode('checks')}
-      onOpenQueue={() => setMode('queue')}
       onOpenOnGithub={() => void openUrl(pr.url)}
     />
   );
@@ -310,6 +322,7 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
         localNotes={localNotes}
         onBack={backToQueue}
         onOpenUrl={(url) => void openUrl(url)}
+        onOpenConversations={() => setMode('queue')}
         onOpenLocalNotes={() => openDiffLens(sessionId, { kind: 'working', path: null })}
         onFix={startGeneralFix}
       />

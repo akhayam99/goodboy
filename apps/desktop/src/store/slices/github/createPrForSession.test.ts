@@ -269,11 +269,11 @@ describe('createPrForSession, issue references', () => {
 
     await buildCreate(state)({ sessionId: SESSION_ID });
 
-    const warning = state.emitNotification.mock.calls.find(
-      (call: ReadonlyArray<unknown>) => call[2] === 'PR opened without its issue links',
-    );
-    expect(warning?.[3]).toContain('Closes #41');
-    expect(warning?.[3]).toContain('gh: pull request is locked');
+    const warning = state.emitNotification.mock.calls
+      .map((call: ReadonlyArray<{ title: string; body?: string }>) => call[0])
+      .find((params?: { title: string }) => params?.title === 'PR opened without its issue links');
+    expect(warning?.body).toContain('Closes #41');
+    expect(warning?.body).toContain('gh: pull request is locked');
   });
 
   it('does not patch a filled body that already closes the issue', async () => {

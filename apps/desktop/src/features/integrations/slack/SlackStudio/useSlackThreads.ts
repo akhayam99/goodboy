@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import type { Session, SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
+import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
 import { slackChannelKey } from '../../../../store/slices/slack-threads';
 import type { SlackChannel, SlackMessage, SlackUser } from '../client';
 import { slackThreadExternalId } from '../threadFormulas';
+import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
 
 const CHANNEL_FETCH_CAP = 12;
+const SLACK_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['slack'];
 
 export type SlackThreadRow = {
   readonly channel: SlackChannel;
@@ -19,39 +21,18 @@ export type SlackThreadGroup = {
   readonly rows: ReadonlyArray<SlackThreadRow>;
 };
 
-type SessionMatchParams = {
-  readonly sessions: ReadonlyArray<Session>;
-  readonly sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>;
-};
-
-const resolveThreadSessions = ({
-  sessions,
-  sessionExternalTasks,
-}: SessionMatchParams): ReadonlyMap<string, SessionId> => {
-  const byExternalId = new Map<string, SessionId>();
-  for (const session of sessions) {
-    const tasks = sessionExternalTasks[session.id] ?? [];
-    for (const task of tasks) {
-      if (task.provider === 'slack' && !byExternalId.has(task.externalId)) {
-        byExternalId.set(task.externalId, session.id);
-      }
-    }
-  }
-  return byExternalId;
-};
-
 const headTimestamp = (head: SlackMessage): string => head.latestReplyAt ?? head.postedAt ?? '';
 
 type GroupParams = {
   readonly channels: ReadonlyArray<SlackChannel>;
   readonly headsByChannelId: ReadonlyMap<string, ReadonlyArray<SlackMessage>>;
-  readonly sessionIdByExternalId: ReadonlyMap<string, SessionId>;
+  readonly linkedSessions: ReadonlyMap<string, SessionId>;
 };
 
 const buildThreadGroups = ({
   channels,
   headsByChannelId,
-  sessionIdByExternalId,
+  linkedSessions,
 }: GroupParams): ReadonlyArray<SlackThreadGroup> =>
   channels
     .map((channel) => {
@@ -61,8 +42,14 @@ const buildThreadGroups = ({
           channel,
           head,
           sessionId:
-            sessionIdByExternalId.get(
-              slackThreadExternalId({ channelId: channel.id, threadTs: head.threadTs ?? head.ts }),
+            linkedSessions.get(
+              linkedTaskKey({
+                provider: 'slack',
+                externalId: slackThreadExternalId({
+                  channelId: channel.id,
+                  threadTs: head.threadTs ?? head.ts,
+                }),
+              }),
             ) ?? null,
         }))
         .sort((left, right) => headTimestamp(right.head).localeCompare(headTimestamp(left.head)));
@@ -90,7 +77,7 @@ type HookParams = {
 
 export const useSlackThreads = ({ workspaceId, isEnabled }: HookParams): UseSlackThreads => {
   const sessions = useSessions();
-  const sessionExternalTasks = useAppStore((state) => state.sessionExternalTasks);
+  const linkedSessions = useLinkedExternalIds({ providers: SLACK_PROVIDERS, sessions });
   const channelsEntry = useAppStore((state) => state.slackChannels[workspaceId] ?? null);
   const threadHeads = useAppStore((state) => state.slackThreadHeads);
   const users = useAppStore((state) => state.slackUsers[workspaceId] ?? EMPTY_ARRAY);
@@ -138,14 +125,9 @@ export const useSlackThreads = ({ workspaceId, isEnabled }: HookParams): UseSlac
     return map;
   }, [visibleChannels, threadHeads, workspaceId]);
 
-  const sessionIdByExternalId = useMemo(
-    () => resolveThreadSessions({ sessions, sessionExternalTasks }),
-    [sessions, sessionExternalTasks],
-  );
-
   const groups = useMemo(
-    () => buildThreadGroups({ channels: visibleChannels, headsByChannelId, sessionIdByExternalId }),
-    [visibleChannels, headsByChannelId, sessionIdByExternalId],
+    () => buildThreadGroups({ channels: visibleChannels, headsByChannelId, linkedSessions }),
+    [visibleChannels, headsByChannelId, linkedSessions],
   );
 
   const headEntries = visibleChannels.map(

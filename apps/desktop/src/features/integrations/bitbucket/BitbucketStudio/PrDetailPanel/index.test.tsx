@@ -68,6 +68,7 @@ const h = vi.hoisted(() => ({
         },
       ],
     },
+    reportError: vi.fn(async () => undefined),
     approveBitbucketPr: vi.fn<WriteSpy>(async () => undefined),
     unapproveBitbucketPr: vi.fn<WriteSpy>(async () => undefined),
     requestBitbucketPrChanges: vi.fn<WriteSpy>(async () => undefined),
@@ -202,7 +203,15 @@ describe('PrDetailPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
 
-    await waitFor(() => expect(h.showToast).toHaveBeenCalledWith('error', 'bitbucket said no'));
+    await waitFor(() =>
+      expect(h.state.reportError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Couldn't update pull request #42",
+          error: new Error('bitbucket said no'),
+        }),
+      ),
+    );
+    expect(h.showToast).not.toHaveBeenCalled();
   });
 
   it('merges only after the confirmation, and for that pull request', async () => {

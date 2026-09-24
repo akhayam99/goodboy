@@ -2,7 +2,7 @@ import type { Agent, ClusterCompletionHold, SessionId, WorkflowRunId } from '@go
 import { listOpenQuestionsForSession } from '@goodboy/db';
 import { classifyWorkflowChain, findReusableAgent, runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { isRunSettled } from '../../../features/workflows/isRunSettled';
+import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import {
   BUDGET_BLOCK_MESSAGE,
@@ -64,10 +64,11 @@ const startChainedRuns = async ({ get, sessionId }: Params): Promise<void> => {
       continue;
     }
     if (
-      isRunSettled({
+      isWorkflowRunComplete({
         run: predecessor,
         workflow: predTemplate,
         agents: runsForWorkflowRun(runs, predecessor.id),
+        holds: completionHolds,
       })
     ) {
       await get().startWorkflowRun(sessionId, candidate.id);
@@ -155,7 +156,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   let dynamicRunId = null as (typeof activeRuns)[number]['id'] | null;
   const nextPendingAgent = (() => {
     for (const run of runnableRuns) {
-      if (workflowRunHasOpenQuestions(openQuestions, run.id)) {
+      if (workflowRunHasOpenQuestions({ questions: openQuestions, run })) {
         continue;
       }
       const template = templates.find((t) => t.id === run.workflowId);
@@ -213,13 +214,13 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
         continue;
       }
       fresh[run.id] = marker;
-      void get().emitNotification(
-        'error',
-        'warning',
-        'workflow blocked',
-        `Autorun stopped at ${chain.failedStep.name} because the step failed.`,
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Workflow blocked',
+        body: `Autorun stopped at ${chain.failedStep.name} because the step failed.`,
+        sessionId,
+      });
     }
     if (Object.keys(fresh).length > 0) {
       set((current) => ({

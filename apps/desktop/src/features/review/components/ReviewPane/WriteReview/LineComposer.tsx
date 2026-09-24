@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { MessageSquarePlus } from 'lucide-react';
 import { Textarea, cn, tintClasses } from '@goodboy/ui';
-import { formatCombo } from '../../../../../shared/keyboard/registry';
+import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import { ComposerActionRow } from './ComposerActionRow';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
-const SUBMIT_HINT = formatCombo('cmd+Enter');
+const SUBMIT_HINT = shortcutGlyphs('composer.submit');
 const draftTint = tintClasses('draft');
 
 type Props = {

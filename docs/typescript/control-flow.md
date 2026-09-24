@@ -6,15 +6,15 @@
 
 ## Guard clauses, keep code left
 
-Exit early instead of nesting the happy path inside a conditional. Handle the edge case first and return; the rest of the function stays at the base indentation level.
+Exit early instead of nesting the happy path (the normal flow, with no errors) inside a conditional. Handle the edge case first and return. The rest of the function then stays at the base indentation level.
 
 ## No `if/else`, no inline `if` body
 
-Return from the guard, then continue. Always a brace block, even for a single statement: no `else`, no `if (x) return y;` on one line.
+Return from the guard, then continue. Always use a brace block, even for a single statement. Never use `else`, and never write `if (x) return y;` on one line.
 
 ## Branch the body with guards, not a top-level ternary
 
-When a function's whole body chooses which element to render, use guard clauses with early returns, never a ternary as the function body.
+When a function's whole body chooses which element to render, use guard clauses with early returns. Never use a ternary as the function body.
 
 ```tsx
 // good
@@ -34,7 +34,7 @@ This targets the body level. A ternary inside JSX that picks between two element
 
 ## Conditional rendering: `&&` for a single element
 
-`cond && <X/>` for one element; ternary only when both branches render something. A `? <X/> : null` is the ternary doing the job of `&&` with extra noise.
+Use `cond && <X/>` for one element. Use a ternary only when both branches render something. A `? <X/> : null` is a ternary doing the job of `&&`, with extra noise.
 
 ```tsx
 // good
@@ -71,12 +71,12 @@ if (!session) { ... }
 const pool = candidates.length ? candidates : fallback
 ```
 
-Booleans are the exception: a `boolean` already is the condition, use it directly (`if (!open)`, `isRunning && <X/>`). Never inflate one to `=== true`. Coalescing at a data boundary (`raw ?? []`, `value || null`) normalizes a value rather than branching on it: that idiom stays.
+Booleans are the exception. A `boolean` already is the condition, so use it directly (`if (!open)`, `isRunning && <X/>`). Never inflate one to `=== true`. One more exception: coalescing (using `??` or `||` to fall back to a default) at a data boundary, like `raw ?? []` or `value || null`. That normalizes a value rather than branching on it, so the pattern stays.
 
 ## Guard the short branch
 
-When one branch is a one-liner and the other is verbose, invert the condition so the short branch returns from the guard and the verbose branch stays un-nested.
+When one branch is a one-liner and the other is verbose, invert the condition. The short branch then returns from the guard, and the verbose branch stays un-nested.
 
 ## Breathe between blocks
 
-Blank line between a guard and the body that follows it; group related statements with blank lines between groups.
+Leave a blank line between a guard and the body that follows it. Group related statements together, with a blank line between groups.

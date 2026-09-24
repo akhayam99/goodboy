@@ -1,9 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { resolveTaskModel } from '@goodboy/core';
+import { resolveTaskModel, clampEffortForModel } from '@goodboy/core';
 import type { Agent, OpenQuestion, ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { clampEffort } from '../../../chat/utils/chat-constants';
 import {
   delegateRowState,
   latestQuestionDelegate,
@@ -14,6 +13,7 @@ import {
   useOpenQuestions,
   type DelegateRouting,
 } from '../../components/QuestionsTab/useOpenQuestions';
+import { selectResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -50,8 +50,8 @@ export const useQuestionDelegateControls = ({
     (state) => state.sessions?.find((candidate) => candidate.id === sessionId) ?? null,
   );
   const workspaceId = session?.workspaceId ?? null;
-  const taskModels = useAppStore((state) =>
-    workspaceId === null ? null : (state.workspaceOverrides?.[workspaceId]?.taskModels ?? null),
+  const taskModels = useAppStore(
+    (state) => selectResolvedSettings({ state, sessionId })?.taskModels ?? null,
   );
   const connectedProviders = useAppStore(
     useShallow((state) =>
@@ -71,10 +71,12 @@ export const useQuestionDelegateControls = ({
       workspaceDefaultProviderId: null,
       sessionDefaultProviderId: sessionProvider,
     });
+    const requestedEffort = resolved.effort ?? 'medium';
     return {
       provider: resolved.providerId,
       model: resolved.model,
-      effort: clampEffort(resolved.model, resolved.effort ?? 'medium'),
+      effort:
+        clampEffortForModel({ model: resolved.model, effort: requestedEffort }) ?? requestedEffort,
     };
   }, [sessionProvider, taskModels]);
 

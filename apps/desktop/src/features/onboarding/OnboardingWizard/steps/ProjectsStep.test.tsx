@@ -23,8 +23,8 @@ const { state, repoMocks } = vi.hoisted(() => ({
   repoMocks: {
     validateGitRepo: vi.fn(async () => ({
       isRepo: true,
-      rootPath: '/repos/app-web',
-      resolvedPath: '/repos/app-web',
+      rootPath: '/repos/storefront-web',
+      resolvedPath: '/repos/storefront-web',
       error: null,
     })),
     scanChildRepos: vi.fn(async (): Promise<ReadonlyArray<never>> => []),
@@ -46,8 +46,13 @@ const workspace = {
 } as unknown as Workspace;
 
 const conflict = {
-  project: { id: 'proj-known', name: 'app-web', rootPath: '/repos/app-web', kind: 'repo' },
-  sourceWorkspace: { id: 'ws-legacy', name: 'app-web' },
+  project: {
+    id: 'proj-known',
+    name: 'storefront-web',
+    rootPath: '/repos/storefront-web',
+    kind: 'repo',
+  },
+  sourceWorkspace: { id: 'ws-legacy', name: 'storefront-web' },
   sessionCount: 4,
   isShell: true,
 };
@@ -63,11 +68,11 @@ describe('ProjectsStep', () => {
     render(<ProjectsStep workspace={workspace} />);
 
     fireEvent.change(screen.getByLabelText('Project path'), {
-      target: { value: '/repos/app-web' },
+      target: { value: '/repos/storefront-web' },
     });
     fireEvent.click(screen.getByRole('button', { name: /add/i }));
 
-    await waitFor(() => screen.getByText('already in app-web with 4 sessions'));
+    await waitFor(() => screen.getByText('already in storefront-web with 4 sessions'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Move it here' }));
 
@@ -78,13 +83,13 @@ describe('ProjectsStep', () => {
       }),
     );
     await waitFor(() =>
-      expect(screen.queryByText('already in app-web with 4 sessions')).toBeNull(),
+      expect(screen.queryByText('already in storefront-web with 4 sessions')).toBeNull(),
     );
   });
 
   it('seeds the notices handed over by the wizard', () => {
     render(<ProjectsStep workspace={workspace} initialConflicts={[conflict] as never} />);
 
-    expect(screen.getByText('already in app-web with 4 sessions')).toBeDefined();
+    expect(screen.getByText('already in storefront-web with 4 sessions')).toBeDefined();
   });
 });

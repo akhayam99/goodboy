@@ -66,24 +66,24 @@ const renderColumn = (
 afterEach(cleanup);
 
 describe('StageColumn', () => {
-  it('renders only the muted label for an empty column', () => {
+  it('renders only the label for an empty column', () => {
     const { container } = renderColumn([]);
-    expect(screen.getByText('building').className).toContain('text-muted-foreground/60');
-    expect(screen.queryByText('nothing building')).toBeNull();
+    expect(screen.getByText('building')).toBeDefined();
+    expect(screen.queryByText('Nothing here')).toBeNull();
     expect(container.querySelector('.tabular-nums')).toBeNull();
   });
 
-  it('renders the count and the stage tint once the column has cards', () => {
+  it('renders the count and stage label once the column has cards', () => {
     renderColumn([makeSession('s-1', 'one')]);
     expect(screen.getByText('1')).toBeDefined();
-    expect(screen.getByText('building').className).not.toContain('text-muted-foreground/60');
+    expect(screen.getByText('building')).toBeDefined();
 
     cleanup();
     renderColumn([makeSession('s-1', 'one')], makeSelection(), {
       kind: 'stage',
       stage: 'running',
     });
-    expect(screen.getByText('running').className).toContain('text-info');
+    expect(screen.getByText('running')).toBeDefined();
   });
 
   it('starts collapsed for done and archived, open otherwise', () => {

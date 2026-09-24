@@ -100,9 +100,9 @@ describe('ghIssueByNumber', () => {
       labels: ['bug'],
       updatedAt: '2026-05-21T10:00:00Z',
     });
-    expect(h.ghRunJson).toHaveBeenCalledWith(
-      expect.anything(),
-      [
+    expect(h.ghRunJson).toHaveBeenCalledWith({
+      runner: expect.anything(),
+      args: [
         'issue',
         'view',
         '42',
@@ -111,8 +111,9 @@ describe('ghIssueByNumber', () => {
         '--json',
         'number,title,body,url,state,labels,updatedAt',
       ],
-      { cwd: '/repo', workspaceId: 'workspace-1' },
-    );
+      opts: { cwd: '/repo', workspaceId: 'workspace-1' },
+      shape: 'object',
+    });
   });
 
   it('throws when no github repository can be detected for the workspace', async () => {

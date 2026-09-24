@@ -5,6 +5,7 @@ import {
   type FormattedWorkflowStep,
   type OrchestratorModelOption,
   type WorkflowRoutingAvailabilitySnapshot,
+  DEFAULT_SESSION_PROVIDER_PREFERENCE,
 } from '@goodboy/core';
 import { invoke } from '@tauri-apps/api/core';
 import type {
@@ -15,7 +16,6 @@ import { resolveGeneratedStepRouting } from '../../../features/workflows/resolve
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { formatError } from '@goodboy/ui';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import type { ProviderId, TaskModelPreference, WorkspaceId } from '@goodboy/types';
 import type { GetFn, SetFn, StartWorkflowGenerationParams } from './types';
 

@@ -4,12 +4,7 @@ const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
 
-import {
-  DATABASE_FILE_HINT,
-  DATABASE_UNAVAILABLE_MESSAGE,
-  isDatabaseUnavailable,
-  tauriDatabase,
-} from './db';
+import { DATABASE_FILE_HINT, DATABASE_UNAVAILABLE_MESSAGE, tauriDatabase } from './db';
 
 beforeEach(() => {
   invokeMock.mockReset();
@@ -34,14 +29,17 @@ describe('tauriDatabase', () => {
     invokeMock.mockRejectedValue(UNMANAGED_REJECTION);
 
     const failure = await tauriDatabase.exec('PRAGMA user_version').catch((err: unknown) => err);
-    expect(isDatabaseUnavailable(failure)).toBe(true);
+    expect(failure).toMatchObject({
+      name: 'DatabaseUnavailableError',
+      message: DATABASE_UNAVAILABLE_MESSAGE,
+    });
   });
 
   it('lets an ordinary sql failure through untouched', async () => {
     invokeMock.mockRejectedValue(new Error('no such table: sessions'));
 
     const failure = await tauriDatabase.select('SELECT 1').catch((err: unknown) => err);
-    expect(isDatabaseUnavailable(failure)).toBe(false);
+    expect(failure).not.toMatchObject({ name: 'DatabaseUnavailableError' });
     expect(failure).toBeInstanceOf(Error);
   });
 
@@ -51,5 +49,71 @@ describe('tauriDatabase', () => {
     await expect(tauriDatabase.select('SELECT version FROM schema_version')).resolves.toEqual([
       { version: 1 },
     ]);
+  });
+
+  it('hands back the affected row count under the key the backend serializes', async () => {
+    invokeMock.mockResolvedValue({ rowsAffected: 2 });
+
+    const result = await tauriDatabase.execute('UPDATE sessions SET title = ?', ['x']);
+    expect(result.rowsAffected).toBe(2);
+    expect(invokeMock).toHaveBeenCalledWith('db_execute', {
+      sql: 'UPDATE sessions SET title = ?',
+      params: ['x'],
+    });
+  });
+
+  it('sends a guarded batch as one transaction and returns its outcome', async () => {
+    invokeMock.mockResolvedValue({ status: 'aborted', abortCode: 'STALE', index: 1 });
+
+    const outcome = await tauriDatabase.transaction({
+      statements: [
+        { sql: 'INSERT INTO items (id) VALUES (?)', params: ['a'] },
+        {
+          sql: 'UPDATE items SET id = ?',
+          params: ['b'],
+          abortWhen: 'noChanges',
+          abortCode: 'STALE',
+        },
+      ],
+    });
+
+    expect(outcome).toEqual({ status: 'aborted', abortCode: 'STALE', index: 1 });
+    expect(invokeMock).toHaveBeenCalledWith('db_transaction', {
+      statements: [
+        { sql: 'INSERT INTO items (id) VALUES (?)', params: ['a'] },
+        {
+          sql: 'UPDATE items SET id = ?',
+          params: ['b'],
+          abortWhen: 'noChanges',
+          abortCode: 'STALE',
+        },
+      ],
+    });
+  });
+
+  it('sends an empty params list when a statement has none', async () => {
+    invokeMock.mockResolvedValue({ status: 'committed', results: [{ rowsAffected: 0, rows: [] }] });
+
+    await tauriDatabase.transaction({ statements: [{ sql: 'SELECT 1' }] });
+
+    expect(invokeMock).toHaveBeenCalledWith('db_transaction', {
+      statements: [{ sql: 'SELECT 1', params: [] }],
+    });
+  });
+
+  it('refuses a transaction response it cannot read', async () => {
+    invokeMock.mockResolvedValue(null);
+
+    await expect(tauriDatabase.transaction({ statements: [{ sql: 'SELECT 1' }] })).rejects.toThrow(
+      'unreadable transaction result',
+    );
+  });
+
+  it('refuses a committed response whose results carry no row count', async () => {
+    invokeMock.mockResolvedValue({ status: 'committed', results: [{ rows: [] }] });
+
+    await expect(tauriDatabase.transaction({ statements: [{ sql: 'SELECT 1' }] })).rejects.toThrow(
+      'unreadable transaction result',
+    );
   });
 });

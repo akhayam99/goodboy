@@ -30,7 +30,9 @@ export const WorkflowFollowToastBridge = () => {
       if (visibleWorkspaceId === generation.workspaceId) {
         continue;
       }
-      showToast('success', 'Your workflow is ready.', {
+      showToast({
+        kind: 'success',
+        message: 'Your workflow is ready.',
         action:
           generation.undoSnapshot === null
             ? {

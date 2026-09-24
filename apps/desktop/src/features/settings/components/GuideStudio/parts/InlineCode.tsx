@@ -5,7 +5,7 @@ type Props = {
 };
 
 export const InlineCode = ({ children }: Props) => (
-  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
+  <code className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
     {children}
   </code>
 );

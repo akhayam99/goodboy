@@ -1,9 +1,9 @@
 import { Divider } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
-import { EscapeHatch } from '../ProviderConnectModal/EscapeHatch';
-import { GuidePanel } from '../ProviderConnectModal/GuidePanel';
-import type { ProviderGuide } from '../ProviderConnectModal/guides';
-import { InlineTerminal } from '../ProviderLifecycleTile/InlineTerminal';
+import { EscapeHatch } from './EscapeHatch';
+import { GuidePanel } from './GuidePanel';
+import type { ProviderGuide } from './guides';
+import { InlineTerminal } from './InlineTerminal';
 import { CommandPreview } from '@goodboy/ui';
 
 type Props = {

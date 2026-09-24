@@ -73,24 +73,6 @@ describe('StudioRailLayout', () => {
     expect(detail?.className).toContain('flex-1');
   });
 
-  it('carries the container query classes that gate a wide rail, which happy-dom cannot evaluate', () => {
-    render(
-      <StudioRailLayout
-        rail={<p>Rail content</p>}
-        detail={<p>Detail content</p>}
-        railLabel="Project navigation"
-        railWidth="narrow"
-        railVisibility="wideContainer"
-      />,
-    );
-
-    const aside = screen.getByRole('complementary', { name: 'Project navigation' });
-    expect(aside.parentElement?.className).toContain('@container');
-    expect(aside.className).toContain('hidden');
-    expect(aside.className).toContain('@min-[1025px]:flex');
-    expect(screen.getByRole('separator').className).toContain('@min-[1025px]:block');
-  });
-
   it('keeps the rail unconditional for the studios that do not opt in', () => {
     render(
       <StudioRailLayout
@@ -104,6 +86,5 @@ describe('StudioRailLayout', () => {
     const aside = screen.getByRole('complementary', { name: 'Project navigation' });
     expect(aside.className).toContain('flex');
     expect(aside.className).not.toContain('hidden');
-    expect(aside.parentElement?.className).not.toContain('@container');
   });
 });

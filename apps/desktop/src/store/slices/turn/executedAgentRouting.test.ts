@@ -20,7 +20,12 @@ const record = (over: Partial<TelemetryRecord>): TelemetryRecord =>
 describe('executedAgentRouting', () => {
   it('answers null for an agent that never ran', () => {
     expect(
-      executedAgentRouting({ agentRunId: null, runHistory: [], records: [record({})] }),
+      executedAgentRouting({
+        agentRunId: null,
+        runHistory: [],
+        records: [record({})],
+        liveRouting: {},
+      }),
     ).toBeNull();
   });
 
@@ -30,6 +35,7 @@ describe('executedAgentRouting', () => {
         agentRunId: null,
         runHistory: ['run-9' as ProviderRunId],
         records: [record({})],
+        liveRouting: {},
       }),
     ).toBeNull();
   });
@@ -47,6 +53,7 @@ describe('executedAgentRouting', () => {
           recordedAt: '2026-01-02T00:00:00.000Z' as IsoDateTime,
         }),
       ],
+      liveRouting: {},
     });
 
     expect(result).toEqual({ provider: 'codex', model: 'gpt-5.1-codex' });
@@ -57,6 +64,29 @@ describe('executedAgentRouting', () => {
       agentRunId: null,
       runHistory: ['run-1' as ProviderRunId, 'run-2' as ProviderRunId],
       records: [record({ runId: 'run-1' as ProviderRunId })],
+      liveRouting: {},
+    });
+
+    expect(result).toEqual({ provider: 'anthropic', model: 'claude-sonnet-4-5' });
+  });
+
+  it('reports the model a running turn was spawned on before its telemetry lands', () => {
+    const result = executedAgentRouting({
+      agentRunId: null,
+      runHistory: ['run-1' as ProviderRunId, 'run-2' as ProviderRunId],
+      records: [record({ runId: 'run-1' as ProviderRunId })],
+      liveRouting: { ['run-2' as ProviderRunId]: { provider: 'codex', model: 'gpt-5.6-sol' } },
+    });
+
+    expect(result).toEqual({ provider: 'codex', model: 'gpt-5.6-sol' });
+  });
+
+  it('lets turn telemetry win over the spawn routing of the same run', () => {
+    const result = executedAgentRouting({
+      agentRunId: null,
+      runHistory: ['run-1' as ProviderRunId],
+      records: [record({ runId: 'run-1' as ProviderRunId })],
+      liveRouting: { ['run-1' as ProviderRunId]: { provider: 'codex', model: 'gpt-5.6-sol' } },
     });
 
     expect(result).toEqual({ provider: 'anthropic', model: 'claude-sonnet-4-5' });
@@ -74,6 +104,7 @@ describe('executedAgentRouting', () => {
           recordedAt: '2026-01-03T00:00:00.000Z' as IsoDateTime,
         }),
       ],
+      liveRouting: {},
     });
 
     expect(result).toEqual({ provider: 'codex', model: 'gpt-5.1-codex' });
@@ -84,6 +115,7 @@ describe('executedAgentRouting', () => {
       agentRunId: 'run-1' as ProviderRunId,
       runHistory: [],
       records: [record({})],
+      liveRouting: {},
     });
 
     expect(result).toEqual({ provider: 'anthropic', model: 'claude-sonnet-4-5' });
@@ -95,6 +127,7 @@ describe('executedAgentRouting', () => {
         agentRunId: null,
         runHistory: ['run-1' as ProviderRunId],
         records: [record({ kind: 'summarizer' })],
+        liveRouting: {},
       }),
     ).toBeNull();
   });

@@ -214,7 +214,10 @@ describe('RemoveWorktreeAction', () => {
       ),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Remove worktree' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Remove worktree' })).toHaveProperty(
+      'disabled',
+      true,
+    );
     expect(removeMountWorktree).not.toHaveBeenCalled();
   });
 });

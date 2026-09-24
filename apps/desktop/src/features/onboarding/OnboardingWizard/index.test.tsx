@@ -5,9 +5,10 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
 import type { OnboardingWizardState } from './useOnboardingWizard';
 
-const { hookState, finishWizard, storeActions, repoLib } = vi.hoisted(() => ({
+const { hookState, finishWizard, requestNewSession, storeActions, repoLib } = vi.hoisted(() => ({
   hookState: {} as OnboardingWizardState,
   finishWizard: vi.fn(),
+  requestNewSession: vi.fn(),
   storeActions: {
     createWorkspace: vi.fn(),
     renameWorkspace: vi.fn(),
@@ -38,8 +39,12 @@ vi.mock('../onboarding-store', () => ({
   finishWizard,
 }));
 
+vi.mock('../../session/requestNewSession', () => ({
+  requestNewSession,
+}));
+
 vi.mock('./Stepper', () => ({
-  Stepper: ({ current, steps }: { current: number; steps: ReadonlyArray<number> }) => (
+  Stepper: ({ current, steps }: { current: string; steps: ReadonlyArray<string> }) => (
     <div data-testid="stepper">{`${current}/${steps.join(',')}`}</div>
   ),
 }));
@@ -143,7 +148,6 @@ const WORKSPACE = {
   id: 'workspace-1' as WorkspaceId,
   name: 'Goodboy desktop',
   slug: 'goodboy-desktop',
-  sessionsRoot: '/Users/dev/goodboy',
   overrides: {
     defaultProviderId: null,
     defaultWorkflowId: null,
@@ -166,6 +170,7 @@ const setHook = (partial: Partial<OnboardingWizardState>) =>
 
 beforeEach(() => {
   finishWizard.mockClear();
+  requestNewSession.mockClear();
   Object.assign(hookState, baseState);
   storeActions.createWorkspace.mockReset().mockResolvedValue(WORKSPACE);
   storeActions.renameWorkspace.mockReset().mockResolvedValue(WORKSPACE);
@@ -252,6 +257,24 @@ describe('OnboardingWizard', () => {
       ).toBe(true);
     });
 
+    it('explains the provider gate under the disabled Continue', () => {
+      setHook({ providersConnected: 0, hasWorkspace: true });
+      render(<OnboardingWizard />);
+      fireEvent.click(screen.getByRole('button', { name: /get started/i }));
+      expect(
+        screen.getByText(
+          'Connect one provider to continue. Install sets up a missing CLI, then signs you in.',
+        ),
+      ).toBeDefined();
+    });
+
+    it('drops the provider gate hint once a provider is connected', () => {
+      setHook({ providersConnected: 1, hasWorkspace: true });
+      render(<OnboardingWizard />);
+      fireEvent.click(screen.getByRole('button', { name: /get started/i }));
+      expect(screen.queryByText(/Connect one provider to continue/)).toBeNull();
+    });
+
     it('keeps Create workspace disabled until a shape is chosen and a name is typed', () => {
       setHook({ providersConnected: 1, hasWorkspace: false });
       render(<OnboardingWizard />);
@@ -282,6 +305,17 @@ describe('OnboardingWizard', () => {
       await waitFor(() => expect(screen.getByTestId('ProjectsStep')).toBeDefined());
       expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'Demo Team' });
       expect(storeActions.setCurrentWorkspace).toHaveBeenCalledWith(WORKSPACE.id);
+    });
+
+    it('renders no dead Continue while a single project is being picked', () => {
+      setHook({ providersConnected: 1, hasWorkspace: false });
+      render(<OnboardingWizard />);
+      advance(/get started/i, 1);
+      advance(/continue/i, 1);
+      fireEvent.click(screen.getByRole('button', { name: /pick single shape/i }));
+      expect(screen.queryByRole('button', { name: /^continue$/i })).toBeNull();
+      expect(screen.queryByRole('button', { name: /create workspace/i })).toBeNull();
+      expect(screen.getByRole('button', { name: /^back$/i })).toBeDefined();
     });
 
     it('creates the container implicitly from a picked git folder and skips the projects step', async () => {
@@ -320,7 +354,9 @@ describe('OnboardingWizard', () => {
       fireEvent.click(screen.getByRole('button', { name: /pick single folder/i }));
 
       await waitFor(() => expect(screen.getByRole('alert')).toBeDefined());
-      expect(screen.getByRole('alert').textContent).toMatch(/no git repository/i);
+      expect(screen.getByRole('alert').textContent).toMatch(
+        /^No git repository at .*initialize one\.$/,
+      );
       expect(storeActions.createWorkspace).not.toHaveBeenCalled();
       expect(screen.getByTestId('ShapeStep')).toBeDefined();
     });
@@ -478,7 +514,9 @@ describe('OnboardingWizard', () => {
       setHook({ ...connectedWorkspaceState, mode: 'setup' });
       render(<OnboardingWizard />);
       fireEvent.click(screen.getByRole('button', { name: /continue/i }));
-      await waitFor(() => expect(screen.getByTestId('stepper').textContent).toBe('5/4,5'));
+      await waitFor(() =>
+        expect(screen.getByTestId('stepper').textContent).toBe('ready/profile,ready'),
+      );
     });
   });
 
@@ -488,6 +526,7 @@ describe('OnboardingWizard', () => {
       render(<OnboardingWizard />);
       fireEvent.click(screen.getByRole('button', { name: /skip setup/i }));
       await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce());
+      expect(requestNewSession).not.toHaveBeenCalled();
     });
 
     it('finishes the wizard on Escape wherever Skip setup is offered', async () => {
@@ -507,7 +546,7 @@ describe('OnboardingWizard', () => {
       expect(finishWizard).not.toHaveBeenCalled();
     });
 
-    it('finishes the wizard from the ready step', async () => {
+    it('finishes the wizard and opens a new session from the ready step', async () => {
       setHook(connectedWorkspaceState);
       render(<OnboardingWizard />);
       await reachProfileStep();
@@ -518,6 +557,7 @@ describe('OnboardingWizard', () => {
       expect(finishWizard).not.toHaveBeenCalled();
       fireEvent.click(screen.getByRole('button', { name: /start building/i }));
       await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce());
+      expect(requestNewSession).toHaveBeenCalledOnce();
     });
   });
 });

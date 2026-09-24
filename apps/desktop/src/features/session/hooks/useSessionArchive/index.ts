@@ -46,7 +46,9 @@ export const useSessionArchive = (): SessionArchive => {
       if (succeeded.length === 0) {
         return;
       }
-      showToast('success', RESTORE_KEPT_COPY, {
+      showToast({
+        kind: 'success',
+        message: RESTORE_KEPT_COPY,
         title: restoredTitle({ count: succeeded.length }),
       });
     },
@@ -65,7 +67,9 @@ export const useSessionArchive = (): SessionArchive => {
         return;
       }
       const archived = sessions.filter((session) => succeeded.includes(session.id as SessionId));
-      showToast('info', ARCHIVE_KEPT_COPY, {
+      showToast({
+        kind: 'info',
+        message: ARCHIVE_KEPT_COPY,
         title: archivedTitle({ count: archived.length }),
         action: { label: 'Undo', onClick: () => void restore({ sessions: archived }) },
       });

@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { EmptyState } from '@goodboy/ui';
+import { EmptyState, cn, tintClasses } from '@goodboy/ui';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
@@ -25,7 +25,14 @@ export const CustomStepsEmptyState = ({ disabled, onAddStep }: Props) => (
         type="button"
         onClick={onAddStep}
         disabled={disabled}
-        className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs text-primary transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-md border',
+          tintClasses('primary').borderSoft,
+          tintClasses('primary').bgSoft,
+          'px-2.5 py-1 text-xs text-primary transition-colors hover:border-primary',
+          tintClasses('primary').hoverBg,
+          'disabled:cursor-not-allowed disabled:opacity-50',
+        )}
       >
         <Plus size={ICON_SIZE.row} aria-hidden /> Add step
       </button>

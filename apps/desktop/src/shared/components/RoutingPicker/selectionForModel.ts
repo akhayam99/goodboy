@@ -1,3 +1,4 @@
+import { modelHasEffortAxis } from '@goodboy/core';
 import type { CatalogModel, EffortLevel, ModelSelection } from '@goodboy/types';
 
 type Params = {
@@ -6,18 +7,19 @@ type Params = {
 };
 
 export const selectionForModel = ({ model, effort }: Params): ModelSelection => {
+  const tuning = modelHasEffortAxis({ model }) ? { effort } : {};
   switch (model.provider) {
     case 'anthropic':
     case 'opencode':
     case 'openrouter':
     case 'moonshot':
-      return { key: model.key, effort };
+      return { key: model.key, ...tuning };
     case 'codex':
-      return { key: model.key, effort, variant: model.variants[0]?.id };
+      return { key: model.key, ...tuning, variant: model.variants[0]?.id };
     case 'cursor': {
       return {
         key: model.key,
-        effort,
+        ...tuning,
         toggles: {
           thinking: false,
           fast: false,

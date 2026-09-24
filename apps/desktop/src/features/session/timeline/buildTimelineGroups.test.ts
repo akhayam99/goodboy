@@ -355,6 +355,103 @@ describe('buildTimelineGroups', () => {
     ]);
   });
 
+  it('files steps, plans and artifacts under their own run when several runs share a session', () => {
+    const model = build({
+      workflows: [
+        attachedWorkflow({ createdAt: '2026-08-17T08:00:00Z' }),
+        attachedWorkflow({ runId: OTHER_RUN_ID, createdAt: '2026-08-17T09:00:00Z' }),
+      ],
+      agents: [
+        agent({
+          id: 'a1',
+          ordinal: 1,
+          startedAt: '2026-08-17T08:10:00Z',
+          workflowRunId: WORKFLOW_RUN_ID,
+        }),
+        agent({
+          id: 'b1',
+          ordinal: 2,
+          startedAt: '2026-08-17T09:10:00Z',
+          workflowRunId: OTHER_RUN_ID,
+        }),
+        agent({
+          id: 'a2',
+          ordinal: 3,
+          startedAt: '2026-08-17T08:20:00Z',
+          workflowRunId: WORKFLOW_RUN_ID,
+        }),
+      ],
+      plans: [
+        plan({
+          id: 'plan-a-old',
+          agentId: 'a1',
+          createdAt: '2026-08-17T08:15:00Z',
+          workflowRunId: WORKFLOW_RUN_ID,
+        }),
+        plan({
+          id: 'plan-b',
+          agentId: 'b1',
+          createdAt: '2026-08-17T09:15:00Z',
+          workflowRunId: OTHER_RUN_ID,
+        }),
+        plan({
+          id: 'plan-a-new',
+          agentId: 'a2',
+          createdAt: '2026-08-17T08:25:00Z',
+          workflowRunId: WORKFLOW_RUN_ID,
+        }),
+        plan({ id: 'plan-loose', agentId: 'loose', createdAt: '2026-08-17T10:00:00Z' }),
+      ],
+      artifacts: [
+        artifact({
+          id: 'report-b',
+          kind: 'report',
+          agentId: 'b1',
+          createdAt: '2026-08-17T09:20:00Z',
+          workflowRunId: OTHER_RUN_ID,
+        }),
+        artifact({
+          id: 'report-a',
+          kind: 'report',
+          agentId: 'a2',
+          createdAt: '2026-08-17T08:30:00Z',
+          workflowRunId: WORKFLOW_RUN_ID,
+        }),
+      ],
+    });
+    const runs = model.entries.flatMap((entry) =>
+      entry.kind === 'run'
+        ? [
+            {
+              run: entry.run.id,
+              produced: entry.producedPlan?.id ?? null,
+              children: entry.children.map((child) => child.id),
+            },
+          ]
+        : [],
+    );
+
+    expect(runs).toEqual([
+      {
+        run: 'run-2',
+        produced: 'plan-b',
+        children: ['artifact:report-b', 'plan:plan-b', 'agent:b1'],
+      },
+      {
+        run: 'run-1',
+        produced: 'plan-a-new',
+        children: [
+          'artifact:report-a',
+          'plan:plan-a-new',
+          'agent:a2',
+          'plan:plan-a-old',
+          'agent:a1',
+        ],
+      },
+    ]);
+    expect(model.entries.some((entry) => entry.id === 'plan:plan-loose')).toBe(true);
+  });
+
   it('keeps existing run identities when a later run is appended', () => {
     const firstTwo = [
       attachedWorkflow({ createdAt: '2026-08-17T08:00:00Z' }),

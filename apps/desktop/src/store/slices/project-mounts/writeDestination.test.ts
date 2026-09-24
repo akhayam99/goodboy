@@ -9,6 +9,7 @@ import type {
 } from '@goodboy/types';
 import {
   listWriteDestinationCandidates,
+  mountDisplayName,
   resolveWriteDestination,
   writeDestinationLabel,
   writeDestinationsMatch,
@@ -75,7 +76,7 @@ const projects: ReadonlyArray<Project> = [
 ];
 
 describe('resolveWriteDestination', () => {
-  it('describes a git mount as project / worktree / branch', () => {
+  it('names a git mount once when its name is the project name', () => {
     const destination = resolveWriteDestination({
       mount: repoMount,
       projectName: 'web',
@@ -91,7 +92,7 @@ describe('resolveWriteDestination', () => {
       worktreePath: '/sessions/one/web',
       hasGit: true,
     });
-    expect(writeDestinationLabel(destination)).toBe('web / web / ak/feat-thing');
+    expect(writeDestinationLabel(destination)).toBe('web / ak/feat-thing');
   });
 
   it('marks a branchless folder mount as no git', () => {
@@ -178,5 +179,19 @@ describe('listWriteDestinationCandidates', () => {
     });
     expect(candidates.map((candidate) => candidate.mountId)).toEqual([MOUNT_ID, 'mount-notes']);
     expect(candidates[0]?.projectName).toBe('web');
+  });
+});
+
+describe('mountDisplayName', () => {
+  it('drops the mount name when it repeats the project name', () => {
+    expect(mountDisplayName({ projectName: 'notify-relay', mountName: 'notify-relay' })).toBe(
+      'notify-relay',
+    );
+  });
+
+  it('keeps a mount name that differs from the project', () => {
+    expect(mountDisplayName({ projectName: 'notify-relay', mountName: 'hotfix' })).toBe(
+      'notify-relay / hotfix',
+    );
   });
 });

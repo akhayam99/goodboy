@@ -33,8 +33,8 @@ export const BranchSurgeryMenu = ({ commits, headSha, onAmend, onSquash }: Props
             aria-haspopup="menu"
             aria-expanded={isOpen}
             className={cn(
-              'rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground',
-              isOpen && 'bg-foreground/10 text-foreground',
+              'rounded-md p-1 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground',
+              isOpen && 'bg-selected text-foreground',
             )}
           >
             <CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />

@@ -52,7 +52,7 @@ export const ResolverKickoffCard = ({ item, sessionId = null }: Props) => {
           />
         }
       >
-        <div className="overflow-x-auto text-xs text-foreground/75">
+        <div className="overflow-x-auto text-xs text-muted-foreground">
           <Markdown text={codeFenceMarkers({ text: item.raw })} />
         </div>
       </TranscriptDisclosure>

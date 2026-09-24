@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionId } from '@goodboy/types';
 import type { GitlabIssue, GitlabMergeRequest } from '../../integrations/gitlab/client';
-import type { GitlabIssueGroup } from '../../integrations/gitlab/GitlabStudio/useGitlabIssues';
-import type { GitlabMrGroup } from '../../integrations/gitlab/GitlabStudio/useGitlabMrs';
+import type { GitlabIssueGroup } from '../../integrations/gitlab/MergeRequest/useGitlabIssues';
+import type { GitlabMrGroup } from '../../integrations/gitlab/MergeRequest/useGitlabMrs';
 import { adaptGitlab } from './gitlab';
 
 const issue = (overrides: Partial<GitlabIssue> = {}): GitlabIssue => ({

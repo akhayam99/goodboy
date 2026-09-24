@@ -6,6 +6,8 @@ import {
   type Database,
   type MigrationSnapshotStorage,
   type MigrateResult,
+  type StatementResult,
+  type TransactionOutcome,
 } from '@goodboy/db';
 
 const UNMANAGED_STATE_MARKER = 'state not managed';
@@ -20,9 +22,6 @@ class DatabaseUnavailableError extends Error {
     this.name = 'DatabaseUnavailableError';
   }
 }
-
-export const isDatabaseUnavailable = (error: unknown): boolean =>
-  error instanceof DatabaseUnavailableError;
 
 const describeRejection = (rejection: unknown): string => {
   if (typeof rejection === 'string') {
@@ -44,6 +43,29 @@ const invokeDb = async <T>(command: string, args: Record<string, unknown>): Prom
   }
 };
 
+const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isStatementResult = (value: unknown): value is StatementResult =>
+  isRecord(value) &&
+  typeof value.rowsAffected === 'number' &&
+  Array.isArray(value.rows) &&
+  value.rows.every(isRecord);
+
+export const isTransactionOutcome = (value: unknown): value is TransactionOutcome => {
+  if (!isRecord(value)) {
+    return false;
+  }
+  if (value.status === 'committed') {
+    return Array.isArray(value.results) && value.results.every(isStatementResult);
+  }
+  return (
+    value.status === 'aborted' &&
+    typeof value.abortCode === 'string' &&
+    typeof value.index === 'number'
+  );
+};
+
 export const tauriDatabase: Database = {
   async exec(sql) {
     await invokeDb('db_exec', { sql });
@@ -59,6 +81,18 @@ export const tauriDatabase: Database = {
       sql,
       params: [...params],
     }) as Promise<ReadonlyArray<T>>;
+  },
+  async transaction({ statements }) {
+    const outcome = await invokeDb<unknown>('db_transaction', {
+      statements: statements.map((statement) => ({
+        ...statement,
+        params: [...(statement.params ?? [])],
+      })),
+    });
+    if (!isTransactionOutcome(outcome)) {
+      throw new Error('The database returned an unreadable transaction result.');
+    }
+    return outcome;
   },
 };
 

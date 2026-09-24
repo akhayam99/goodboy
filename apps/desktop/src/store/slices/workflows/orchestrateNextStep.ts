@@ -22,6 +22,7 @@ import type {
 } from '@goodboy/types';
 import {
   OrchestratorClient,
+  OrchestratorClientSpawnError,
   OrchestratorProviderError,
   ROLE_REGISTRY,
   SELECTABLE_AGENT_ROLES,
@@ -31,8 +32,10 @@ import {
   parseWorkflowRoutingProposal,
   recommendedModelForRole,
   resolveRoleRouting,
+  resolveStoredModelSelection,
   resolveTaskModel,
   resolveWorkflowRouting,
+  devWarn,
   runsForWorkflowRun,
   serializeRunSummary,
   type OrchestratorRoleDefault,
@@ -40,6 +43,7 @@ import {
   type WorkflowRoutingAvailabilitySnapshot,
   type WorkflowRoutingProposalParseOutcome,
 } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import {
   listOpenQuestionsForSession,
   updateWorkflowRunOrchestrationOutcome,
@@ -47,7 +51,6 @@ import {
   updateWorkflowRunOrchestratorSummary,
 } from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
-import { mergeRoleModels } from '../../../features/workflows/mergeRoleModels';
 import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
@@ -61,10 +64,13 @@ import {
   spentUsdForRun,
   type SpendLimitStop,
 } from './budgetBlock';
-import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { buildProfileGuard } from '../../profileGuard';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
+import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';
+import { decisionRestartMark } from './decisionRestart';
+import { updateOrchestratorHints } from './updateOrchestratorHints';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import { recordOrchestratorUsage } from './recordOrchestratorUsage';
 import { findWorkflowActivationBlock } from './workflowActivationGate';
@@ -74,7 +80,6 @@ import type { GetFn, SetFn } from './types';
 
 export type OrchestrateOptions = {
   readonly routing?: OrchestratorRouting;
-  readonly extraHints?: string;
   readonly bypassGate?: boolean;
 };
 
@@ -164,7 +169,6 @@ type EmitParams = {
   readonly action: 'next' | 'done' | 'blocked';
   readonly reason: string;
   readonly stepName?: string;
-  readonly operatorNote?: string;
   readonly preferredAgentId?: AgentId;
 };
 
@@ -175,7 +179,6 @@ const emitDecision = ({
   action,
   reason,
   stepName,
-  operatorNote,
   preferredAgentId,
 }: EmitParams): AgentId | null => {
   const runAgents = runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId);
@@ -190,7 +193,6 @@ const emitDecision = ({
     action,
     reason,
     ...(stepName != null && { stepName }),
-    ...(operatorNote != null && operatorNote !== '' && { operatorNote }),
     at: new Date().toISOString() as IsoDateTime,
   };
   get().appendTurnEvent(agentId, sessionId, event);
@@ -218,16 +220,14 @@ const announceRunBudget = ({
   set((state) => ({
     announcedRunBudget: { ...state.announcedRunBudget, [workflowRunId]: stop.limitUsd },
   }));
-  void get().emitNotification(
-    'budget-cap',
-    'warning',
-    'workflow run over its spend limit',
-    stop.message,
-    {
-      sessionId,
-      action: { kind: 'open-budget', sessionId },
-    },
-  );
+  void get().emitNotification({
+    kind: 'budget-cap',
+    severity: 'warning',
+    title: 'Workflow run is over its spend limit',
+    body: stop.message,
+    sessionId,
+    action: { kind: 'open-budget', sessionId },
+  });
 };
 
 type PersistOutcomeParams = {
@@ -345,7 +345,26 @@ const hasOperatorStop = ({ get, sessionId, workflowRunId }: OperatorStopParams):
   return current?.orchestrationStop?.kind === 'operator';
 };
 
+export const isRoutingModelKnown = ({ providerId, model }: OrchestratorRouting): boolean =>
+  resolveStoredModelSelection({ provider: providerId, id: model }).report?.kind !== 'unknown';
+
+const STDERR_NOISE = /^Reading additional input from stdin/;
+const STDERR_LINE_MAX = 200;
+
+const lastStderrLine = ({ stderr }: OrchestratorClientSpawnError): string | null => {
+  const line = stderr
+    .split('\n')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry !== '' && !STDERR_NOISE.test(entry))
+    .at(-1);
+  return line == null ? null : line.slice(0, STDERR_LINE_MAX);
+};
+
 const failureLabel = (error: unknown): string => {
+  if (error instanceof OrchestratorClientSpawnError) {
+    const cause = lastStderrLine(error);
+    return cause == null ? error.message : `${error.message}: ${cause}`;
+  }
   if (error instanceof OrchestratorProviderError) {
     return `provider refused the request: ${error.detail}`;
   }
@@ -362,7 +381,6 @@ type AppendParams = {
   readonly workflowRunId: WorkflowRunId;
   readonly workflow: Workflow;
   readonly roleModels: RoleModelPreferences | null;
-  readonly runRoleModels: RoleModelPreferences | null;
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
   readonly step: Omit<Step, 'id' | 'workflowId' | 'ordinal' | 'name'> & {
     readonly name: string;
@@ -400,7 +418,6 @@ const appendStep = async ({
   workflowRunId,
   workflow: snapshot,
   roleModels,
-  runRoleModels,
   availability,
   step,
 }: AppendParams): Promise<Agent> => {
@@ -447,7 +464,6 @@ const appendStep = async ({
     defaultProvider: (session.providerOverride ??
       session.providerPreference.defaultProvider) as ProviderId,
     roleModels,
-    runRoleModels,
     sessionEffort: session.effort ?? null,
     availability,
   });
@@ -498,11 +514,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
     if (orchestrationInFlight.has(workflowRunId)) {
       set((state) => {
         const previous = state.pendingOrchestrations?.[workflowRunId];
-        const extraHint = options?.extraHints?.trim() ?? '';
-        const extraHints = [...(previous?.extraHints ?? [])];
-        if (extraHint !== '' && !extraHints.includes(extraHint)) {
-          extraHints.push(extraHint);
-        }
         const routing = options?.routing ?? previous?.routing;
         return {
           pendingOrchestrations: {
@@ -510,7 +521,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
             [workflowRunId]: {
               sessionId,
               bypassGate: (previous?.bypassGate ?? false) || (options?.bypassGate ?? false),
-              extraHints,
               ...(routing != null && { routing }),
             },
           },
@@ -519,7 +529,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       return;
     }
     orchestrationInFlight.add(workflowRunId);
-    const operatorNote = options?.extraHints?.trim() ?? '';
     try {
       setDeciding({ set, workflowRunId, isDeciding: true });
       const session = get().sessions.find((candidate) => candidate.id === sessionId);
@@ -564,7 +573,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         announceRunBudget({ set, get, sessionId, workflowRunId, stop: spendStop });
       }
       if (options?.bypassGate !== true) {
-        const blocked = await findWorkflowActivationBlock({ sessionId, workflowRunId });
+        const blocked = await findWorkflowActivationBlock({
+          sessionId,
+          workflowRunId,
+          workflowId: run.workflowId,
+        });
         if (blocked !== null) {
           await persistOrchestrationStop({
             set,
@@ -600,24 +613,31 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const openQuestions = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
       const defaultProvider = (session.providerOverride ??
         session.providerPreference.defaultProvider) as ProviderId;
-      const workspaceRoleModels = roleModelsForSession({ state: get(), sessionId });
-      const roleModels = mergeRoleModels({
-        workspace: workspaceRoleModels,
-        run: run.roleModelOverrides,
-      });
+      const workspaceRoleModels =
+        selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null;
       const taskModel = resolveTaskModel({
         task: 'workflow_orchestrator',
-        preferences: get().workspaceOverrides?.[session.workspaceId]?.taskModels,
-        workspaceDefaultProviderId:
-          get().workspaceOverrides?.[session.workspaceId]?.defaultProviderId,
+        preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
+        workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
+          ?.defaultProviderOverride,
         sessionDefaultProviderId: defaultProvider,
       });
-      const routing = options?.routing ?? run.orchestratorRouting ?? taskModel;
+      const pinnedRouting =
+        run.orchestratorRouting != null && isRoutingModelKnown(run.orchestratorRouting)
+          ? run.orchestratorRouting
+          : null;
+      const routing = options?.routing ?? pinnedRouting ?? taskModel;
       const profileBlock = buildProfileGuard({
         profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)
           ?.profile,
       });
-      const hints = [profileBlock, run.orchestratorHints, operatorNote]
+      const readHints = run.orchestratorHints ?? [];
+      const readHintIds = new Set(readHints.map((hint) => hint.id));
+      const restartMark = decisionRestartMark({ get, workflowRunId });
+      const isDecisionDiscarded = (): boolean =>
+        hasOperatorStop({ get, sessionId, workflowRunId }) ||
+        decisionRestartMark({ get, workflowRunId }) !== restartMark;
+      const hints = [profileBlock, formatOrchestratorHints({ hints: readHints })]
         .map((entry) => entry?.trim() ?? '')
         .filter((entry) => entry !== '')
         .join('\n');
@@ -689,7 +709,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           }),
         });
       } catch (error) {
-        if (hasOperatorStop({ get, sessionId, workflowRunId })) {
+        if (isDecisionDiscarded()) {
           return;
         }
         const message = `${failureLabel(error)} (${routing.providerId}/${routing.model})`;
@@ -700,16 +720,19 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           workflowRunId,
           action: 'blocked',
           reason: `orchestrator failed: ${message}`,
-          operatorNote,
         });
-        void get().emitNotification('error', 'warning', 'orchestrator failed', message, {
+        void get().emitNotification({
+          kind: 'error',
+          severity: 'warning',
+          title: 'The orchestrator failed',
+          body: message,
           sessionId,
         });
         return;
       }
       const decision = result.decision;
       if (decision == null) {
-        if (hasOperatorStop({ get, sessionId, workflowRunId })) {
+        if (isDecisionDiscarded()) {
           await recordOrchestratorUsage({
             set,
             get,
@@ -734,7 +757,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           workflowRunId,
           action: 'blocked',
           reason: 'the orchestrator reply could not be parsed, retry to continue',
-          operatorNote,
         });
         await recordOrchestratorUsage({
           set,
@@ -746,16 +768,17 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           model: result.model,
           usage: result.usage,
         });
-        void get().emitNotification(
-          'error',
-          'warning',
-          'orchestrator reply unparseable',
-          'the decision could not be parsed, use next step to retry',
-          { sessionId },
-        );
+        void get().emitNotification({
+          kind: 'error',
+          severity: 'warning',
+          title: "Couldn't read the orchestrator's reply",
+          body: 'the decision could not be parsed, use next step to retry',
+          sessionId,
+        });
         return;
       }
-      if (hasOperatorStop({ get, sessionId, workflowRunId })) {
+      const decisionUsage = result;
+      const discardWithUsage = async (): Promise<void> => {
         await recordOrchestratorUsage({
           set,
           get,
@@ -763,15 +786,35 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           agentId: null,
           workflowRunId,
           provider: routing.providerId,
-          model: result.model,
-          usage: result.usage,
+          model: decisionUsage.model,
+          usage: decisionUsage.usage,
         });
+      };
+      if (isDecisionDiscarded()) {
+        await discardWithUsage();
         return;
       }
       await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
+      if (readHintIds.size > 0) {
+        await updateOrchestratorHints({
+          set,
+          get,
+          sessionId,
+          workflowRunId,
+          update: (hints) =>
+            consumeOrchestratorHints({
+              hints,
+              readIds: readHintIds,
+              consumedAt: new Date().toISOString() as IsoDateTime,
+              step: workflow.steps.length + 1,
+            }),
+        });
+      }
       try {
         await persistRunSummary({ set, sessionId, workflowRunId, summary: decision.runSummary });
-      } catch {}
+      } catch (error) {
+        devWarn(`[workflow] run summary could not be saved: ${formatError(error)}`);
+      }
       if (decision.action === 'next') {
         const proposed = decision.step;
         const compiled = defaultsForRole(proposed.role);
@@ -785,10 +828,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         const resolution = resolveWorkflowRouting({
           agentLock: null,
           stepLock: null,
-          runRoleLock: configuredRolePick({
-            role: proposed.role,
-            roleModels: run.roleModelOverrides,
-          }),
           proposal: routingProposal,
           roleDefault: configuredRolePick({
             role: proposed.role,
@@ -827,7 +866,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
             workflowRunId,
             action: 'blocked',
             reason: resolution.reason,
-            operatorNote,
           });
           await recordOrchestratorUsage({
             set,
@@ -844,14 +882,17 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         const routingDecision = resolution.decision;
         const selected = routingDecision.selected;
         const reason = decision.reason.trim();
+        if (isDecisionDiscarded()) {
+          await discardWithUsage();
+          return;
+        }
         const agent = await appendStep({
           set,
           get,
           sessionId,
           workflowRunId,
           workflow,
-          roleModels,
-          runRoleModels: run.roleModelOverrides ?? null,
+          roleModels: workspaceRoleModels,
           availability,
           step: {
             name: proposed.name,
@@ -878,7 +919,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           action: decision.action,
           reason,
           stepName: agent.name,
-          operatorNote,
           preferredAgentId: agent.id,
         });
         await recordOrchestratorUsage({
@@ -899,6 +939,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         });
         return;
       }
+      if (isDecisionDiscarded()) {
+        await discardWithUsage();
+        return;
+      }
       if (decision.action === 'need') {
         await recordOrchestratorUsage({
           set,
@@ -910,13 +954,13 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           model: result.model,
           usage: result.usage,
         });
-        void get().emitNotification(
-          'error',
-          'warning',
-          'orchestrator answered a need that was not asked',
-          'the run asked for the next step and got a capability disposition instead, so nothing advanced. use next step to retry.',
-          { sessionId },
-        );
+        void get().emitNotification({
+          kind: 'error',
+          severity: 'warning',
+          title: 'Orchestrator answered a need that was not asked',
+          body: 'the run asked for the next step and got a capability disposition instead, so nothing advanced. use next step to retry.',
+          sessionId,
+        });
         return;
       }
       await persistOrchestrationOutcome({
@@ -932,7 +976,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         workflowRunId,
         action: decision.action,
         reason: decision.reason,
-        operatorNote,
       });
       await recordOrchestratorUsage({
         set,
@@ -947,7 +990,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       if (decision.action === 'done') {
         return;
       }
-      void get().emitNotification('error', 'warning', 'dynamic workflow blocked', decision.reason, {
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Dynamic workflow blocked',
+        body: decision.reason,
         sessionId,
       });
     } finally {
@@ -965,7 +1012,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         queueMicrotask(() => {
           void get().orchestrateNextStep(pending.sessionId, workflowRunId, {
             ...(pending.bypassGate && { bypassGate: true }),
-            ...(pending.extraHints.length > 0 && { extraHints: pending.extraHints.join('\n\n') }),
             ...(pending.routing != null && { routing: pending.routing }),
           });
         });

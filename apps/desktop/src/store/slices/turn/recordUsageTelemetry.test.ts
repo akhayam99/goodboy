@@ -130,14 +130,14 @@ describe('recordUsageTelemetry', () => {
 
     expect(emitNotification).toHaveBeenCalledOnce();
     expect(emitNotification).toHaveBeenCalledWith(
-      'budget-cap',
-      'error',
-      'Session budget cap reached',
-      '$12.30 spent against a $10.00 cap.',
-      {
+      expect.objectContaining({
+        kind: 'budget-cap',
+        severity: 'error',
+        title: 'Session budget cap reached',
+        body: '$12.30 spent against a $10.00 cap.',
         sessionId: SESSION_ID,
         action: { kind: 'open-budget', sessionId: SESSION_ID },
-      },
+      }),
     );
 
     await recordUsageTelemetry(store.setState as never, store.getState as never, {

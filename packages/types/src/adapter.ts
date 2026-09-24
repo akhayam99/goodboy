@@ -1,17 +1,7 @@
 import type { AgentId, IsoDateTime, PermissionRuleId, ProviderRunId, SessionId } from './ids';
 import type { MessageAttachment } from './message';
-import type { ClaudePermissionMode, PermissionScope } from './permission';
-import type { ProviderName } from './provider';
+import type { PermissionScope } from './permission';
 import type { ProviderId } from './provider-registry';
-import type { EffortLevel, ModelSelection } from './model-catalog';
-
-export type ProviderCapabilities = {
-  readonly streaming: boolean;
-  readonly toolUse: boolean;
-  readonly fileEdits: boolean;
-  readonly defaultModel: string;
-  readonly availableModels: ReadonlyArray<string>;
-};
 
 export type ProviderUsage = {
   readonly inputTokens: number;
@@ -20,30 +10,6 @@ export type ProviderUsage = {
   readonly cacheCreationInputTokens?: number;
   readonly contextTokens?: number;
   readonly estimatedCostUsd: number;
-};
-
-export type DetectResult =
-  | { kind: 'available'; binary: string; version: string }
-  | { kind: 'missing'; binary: string; reason: string };
-
-export type PermissionMode = Exclude<ClaudePermissionMode, 'dontAsk'>;
-
-export type TurnPermissionFlags = {
-  readonly mode: PermissionMode;
-  readonly allowedTools?: ReadonlyArray<string>;
-  readonly disallowedTools?: ReadonlyArray<string>;
-};
-
-export type TurnRequest = {
-  readonly runId: ProviderRunId;
-  readonly sessionId: SessionId;
-  readonly model: string;
-  readonly selection?: ModelSelection;
-  readonly effort?: EffortLevel;
-  readonly workingDir: string;
-  readonly systemPrompt: string;
-  readonly userMessage: string;
-  readonly permissionFlags?: TurnPermissionFlags;
 };
 
 export type TurnEvent =
@@ -163,11 +129,3 @@ export type TurnEvent =
       raw: unknown;
       at: IsoDateTime;
     };
-
-export type ProviderAdapter = {
-  readonly id: ProviderName;
-  readonly capabilities: ProviderCapabilities;
-  detect(): Promise<DetectResult>;
-  spawn(request: TurnRequest): AsyncIterable<TurnEvent>;
-  cost(usage: ProviderUsage, model: string): number;
-};

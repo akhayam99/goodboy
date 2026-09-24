@@ -1,8 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { getGithubPrCache, upsertGithubPrCache } from './github-pr-cache';
 
 const NOW = Date.UTC(2026, 7, 22, 12, 0, 0);
@@ -10,8 +9,7 @@ const workspaceId = 'workspace-1' as WorkspaceId;
 const sessionId = 'session-1' as SessionId;
 
 const seed = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   await db.execute(
     'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
     [workspaceId, 'workspace', 'workspace', NOW, NOW],
@@ -55,6 +53,24 @@ describe('GitHub PR cache', () => {
     await expect(getGithubPrCache(db, 'acme/repo', 'ak/invalid')).resolves.toBeNull();
     await expect(getGithubPrCache(db, 'acme/repo', 'ak/fresh')).resolves.toMatchObject({
       branch: 'ak/fresh',
+    });
+  });
+
+  it('reads a malformed cached pull request as a miss on the pull request', async () => {
+    const db = await seed();
+    await upsertGithubPrCache(db, {
+      branch: 'ak/broken',
+      repoSlug: 'acme/repo',
+      pr: null,
+      fetchedAt: new Date().toISOString(),
+    });
+    await db.execute(
+      `UPDATE github_pr_cache SET pr_json = '{"number":"seven"}' WHERE branch = 'ak/broken'`,
+    );
+
+    await expect(getGithubPrCache(db, 'acme/repo', 'ak/broken')).resolves.toMatchObject({
+      branch: 'ak/broken',
+      pr: null,
     });
   });
 });

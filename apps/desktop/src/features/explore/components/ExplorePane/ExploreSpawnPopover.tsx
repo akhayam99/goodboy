@@ -1,9 +1,9 @@
+import { clampEffortForModel } from '@goodboy/core';
 import { useEffect, useMemo, useState } from 'react';
 import { AnchoredPopover, Button, Divider, Textarea, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
-import { clampEffort } from '../../../chat/utils/chat-constants';
+import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import { AGENT_KIND_META } from '../../../session/agent-kind';
 import { resolveSpawnRouting } from '../../../session/spawn-routing';
@@ -36,8 +36,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
   });
   const { open, close, toggle } = dropdown;
   const spawnAgent = useAppStore((state) => state.spawnAgent);
-  const selectAgent = useAppStore((state) => state.selectAgent);
-  const { showToast } = useToast();
+  const announceAgentStarted = useAgentStartedToast();
   const session = useAppStore(
     (state) => state.sessions.find((candidate) => candidate.id === sessionId) ?? null,
   );
@@ -48,7 +47,9 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
       ...DEFAULT_AGENT_SPAWN_CONFIG,
       provider: spawnRouting.provider,
       model: spawnRouting.model,
-      effort: clampEffort(spawnRouting.model, spawnRouting.effort),
+      effort:
+        clampEffortForModel({ model: spawnRouting.model, effort: spawnRouting.effort }) ??
+        spawnRouting.effort,
     }),
     [spawnRouting.provider, spawnRouting.model, spawnRouting.effort],
   );
@@ -85,15 +86,12 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
         focus: 'none',
       });
       close();
-      showToast('success', `An agent is working on ${entry.name}. You can keep working.`, {
+      announceAgentStarted({
+        sessionId,
+        agentId,
         title: 'Agent started',
-        action: {
-          label: 'Open the agent',
-          onClick: () => {
-            void selectAgent(sessionId, agentId);
-            window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-          },
-        },
+        message: `An agent is working on ${entry.name}. You can keep working.`,
+        onOpen: () => window.dispatchEvent(new CustomEvent('goodboy:reveal-chat')),
       });
     } catch (error) {
       setSpawnError(toErrorMessage({ error }));
@@ -112,7 +110,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
           type="button"
           onClick={toggle}
           aria-label={`Ask an agent to work on ${entry.name}`}
-          className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+          className="rounded-md p-1.5 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
         >
           <CONCEPT_ICONS.agents size={ICON_SIZE.control} aria-hidden />
         </button>

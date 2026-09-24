@@ -236,7 +236,13 @@ const failStart = async ({ get, sessionId, attempt, error, isCleanExit = false }
     error,
     isCleanExit,
   });
-  void get().emitNotification('error', 'error', 'Fix failed to start', error, { sessionId });
+  void get().emitNotification({
+    kind: 'error',
+    severity: 'error',
+    title: "The fix didn't start",
+    body: error,
+    sessionId,
+  });
 };
 
 const startResolverTurn = async ({

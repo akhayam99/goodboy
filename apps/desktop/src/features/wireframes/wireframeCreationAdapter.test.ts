@@ -95,9 +95,9 @@ describe('wireframeCreationAdapter', () => {
         choice: 'low',
         repo: { mountName: 'ledger-core', branch: 'ak/fix-rounding', baseBranch: 'main' },
       }),
-    ).toBe('plain wireframe, no design files read.');
+    ).toBe('Plain wireframe, no design files read.');
     expect(wireframeCreationAdapter.repoLine({ choice: 'high', repo: null })).toBe(
-      'no mounted project, so the generic theme is used.',
+      'No mounted project, so the generic theme is used.',
     );
   });
 });

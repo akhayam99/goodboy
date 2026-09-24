@@ -1,22 +1,14 @@
 import { Markdown, MetaRow } from '@goodboy/ui';
 import type { MessageAttachment, ProviderId } from '@goodboy/types';
 import { PROVIDER_BRAND } from '../../../providers/components/provider-brand';
-import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
+import { modelLabel } from '../../utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { readAttachment } from '../../turn';
 import { AttachmentChip } from '../../../attachments/components/AttachmentChip';
 import { useAttachmentThumbnail } from '../../../attachments/hooks/useAttachmentThumbnail';
 import { TranscriptShell } from '../TranscriptShell';
 import { CopyButton } from '@goodboy/ui';
-
-const formatHHMM = (iso: string): string => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) {
-    return '';
-  }
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  return `${hh}:${mm}`;
-};
+import { formatClockTime } from '../../../../shared/utils/formatClockTime';
 
 type MessageAttachmentChipProps = {
   readonly attachment: MessageAttachment;
@@ -82,7 +74,7 @@ export const UserText = ({ text, at, attachments, provider, model, workingDir = 
             provider ? <ProviderFootnote key="provider" provider={provider} model={model} /> : null,
             provider && model ? <span key="model">{modelLabel(model)}</span> : null,
             <span key="time" className="font-mono">
-              {formatHHMM(at)}
+              {formatClockTime({ iso: at })}
             </span>,
           ]}
         />
@@ -91,7 +83,7 @@ export const UserText = ({ text, at, attachments, provider, model, workingDir = 
             presentation="icon"
             value={text}
             label="copy message"
-            className="rounded-md p-0.5 text-foreground/60 transition-opacity hover:opacity-80 hover:text-foreground"
+            className="rounded-md p-0.5 text-muted-foreground transition-opacity hover:opacity-80 hover:text-foreground"
           />
         )}
       </div>

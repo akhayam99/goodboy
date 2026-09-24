@@ -1,5 +1,5 @@
 import { getCheapModel, recommendedModelForRole, resolveRoleRouting } from '@goodboy/core';
-import type { ModelEffort, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
+import type { EffortLevel, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
 import { KIND_TO_ROLE, isRightSizedKind, kindRouting, type AgentKind } from '../session/agent-kind';
 
 type Params = {
@@ -8,16 +8,16 @@ type Params = {
   readonly roleModels: RoleModelPreferences | null;
   readonly agentModel?: string | null;
   readonly agentProvider?: ProviderId | null;
-  readonly agentEffort?: ModelEffort | null;
+  readonly agentEffort?: EffortLevel | null;
   readonly sessionProvider?: ProviderId | null;
   readonly sessionModel?: string | null;
-  readonly sessionEffort?: ModelEffort | null;
+  readonly sessionEffort?: EffortLevel | null;
 };
 
 type StepRouting = {
   readonly provider: ProviderId;
   readonly model: string;
-  readonly effort: ModelEffort | null;
+  readonly effort: EffortLevel | null;
 };
 
 export const resolveStepRouting = ({

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { MessageSquarePlus } from 'lucide-react';
 import { Textarea } from '@goodboy/ui';
-import { formatCombo } from '../../../../../shared/keyboard/registry';
+import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
-const SUBMIT_HINT = formatCombo('cmd+Enter');
+const SUBMIT_HINT = shortcutGlyphs('composer.submit');
 
 type Props = {
   onSubmit: (body: string) => void;
@@ -49,7 +49,7 @@ export const InlineComposer = ({ onSubmit, onCancel, label }: Props) => {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-sm px-2 py-0.5 text-3xs text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="rounded-sm px-2 py-0.5 text-3xs text-muted-foreground hover:bg-hover hover:text-foreground"
           >
             Cancel
           </button>

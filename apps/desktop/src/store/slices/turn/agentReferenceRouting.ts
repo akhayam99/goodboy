@@ -1,6 +1,6 @@
 import type {
   Agent,
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   RoleModelPreferences,
   Session,
@@ -25,7 +25,7 @@ type Params = {
 type AgentReferenceRouting = {
   readonly provider: ProviderId;
   readonly model: string;
-  readonly effort: ModelEffort;
+  readonly effort: EffortLevel;
 };
 
 const sessionProviderOf = ({ session }: { readonly session: Session }): ProviderId => {
@@ -53,7 +53,7 @@ export const agentReferenceRouting = ({
       effort: session.effort ?? 'medium',
     };
   }
-  const kind = classifyAgent(agent, kindOverride);
+  const kind = classifyAgent({ agent, override: kindOverride });
   const routing = resolveStepRouting({
     step: stepConfig,
     kind,

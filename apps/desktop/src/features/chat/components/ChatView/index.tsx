@@ -11,7 +11,6 @@ import type { ReactNode } from 'react';
 import { ArrowDown } from 'lucide-react';
 import type {
   AgentId,
-  AttachmentInput,
   MessageAttachment,
   OpenQuestion,
   ProviderId,
@@ -20,7 +19,7 @@ import type {
   TurnEvent,
   TurnProviderOverride,
 } from '@goodboy/types';
-import { Button, cn, Divider, ScrollFade, Tooltip } from '@goodboy/ui';
+import { Button, cn, Divider, ScrollFade, Tooltip, tintClasses } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
@@ -51,8 +50,8 @@ import { useScrollPin } from './useScrollPin';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 import { WorkflowAdvanceRow } from './parts/WorkflowAdvanceRow';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
-import { readAttachment } from '../../turn';
-import { dataUrlToBase64 } from '../ChatInput/lib';
+import { missingAttachmentsMessage, readRetryAttachments } from './readRetryAttachments';
+import { useToast } from '../../../../app/components/Toast';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -71,11 +70,6 @@ type RetrySource = {
 type RetrySourceParams = {
   readonly events: ReadonlyArray<TurnEvent>;
   readonly runId: ProviderRunId;
-};
-
-type RetryAttachmentsParams = {
-  readonly worktreePath: string | null;
-  readonly attachments: ReadonlyArray<MessageAttachment>;
 };
 
 type RetryOverrideParams = {
@@ -102,28 +96,6 @@ const findRetrySource = ({ events, runId }: RetrySourceParams): RetrySource | nu
   return null;
 };
 
-const readRetryAttachments = async ({
-  worktreePath,
-  attachments,
-}: RetryAttachmentsParams): Promise<ReadonlyArray<AttachmentInput>> => {
-  if (worktreePath == null || attachments.length === 0) {
-    return [];
-  }
-  const out: AttachmentInput[] = [];
-  for (const attachment of attachments) {
-    try {
-      const dataUrl = await readAttachment(worktreePath, attachment.relPath);
-      out.push({
-        id: attachment.id,
-        fileName: attachment.fileName,
-        mimeType: attachment.mimeType,
-        dataBase64: dataUrlToBase64(dataUrl),
-      });
-    } catch {}
-  }
-  return out;
-};
-
 const buildRetryOverride = ({
   provider,
   model,
@@ -142,6 +114,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
     (s) => s.selectedAgentId[session.id] ?? null,
   ) as AgentId | null;
   const sendTurn = useAppStore((s) => s.sendTurn);
+  const { showToast } = useToast();
   const events = useTranscript(selectedAgentId);
   const items = useMemo(() => reduceTranscript(events), [events]);
   const [retryingErrorRunId, setRetryingErrorRunId] = useState<ProviderRunId | null>(null);
@@ -215,7 +188,10 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   );
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
-  const { scrollerRef, pinned, onScroll } = useScrollPin([deferredItems], selectedAgentId);
+  const { scrollerRef, pinned, onScroll } = useScrollPin({
+    deps: [deferredItems],
+    resetKey: selectedAgentId,
+  });
   const fadeHostRef = useRef<HTMLDivElement>(null);
 
   const provider = session.providerPreference.defaultProvider;
@@ -288,10 +264,13 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
       }
       setRetryingErrorRunId(item.runId);
       try {
-        const attachments = await readRetryAttachments({
+        const { inputs: attachments, missing } = await readRetryAttachments({
           worktreePath,
           attachments: source.attachments,
         });
+        if (missing.length > 0) {
+          showToast({ kind: 'warning', message: missingAttachmentsMessage({ missing }) });
+        }
         const override = buildRetryOverride({ provider: source.provider, model: source.model });
         await sendTurn({
           sessionId: session.id,
@@ -304,7 +283,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
         setRetryingErrorRunId(null);
       }
     },
-    [events, selectedAgentId, sendTurn, session.id, worktreePath],
+    [events, selectedAgentId, sendTurn, session.id, showToast, worktreePath],
   );
 
   const mountProposals = useTranscriptMountProposals({ session });
@@ -508,7 +487,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
             <button
               type="button"
               aria-label="Jump to latest"
-              className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background/90 ring-1 ring-border-soft transition-colors hover:bg-muted"
+              className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background ring-1 ring-border-soft transition-colors hover:bg-hover"
               onClick={() => {
                 const el = scrollerRef.current;
                 el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
@@ -528,7 +507,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
             variant="warning"
             emphasis="outline"
             size="sm"
-            className="border-warning/20 px-3"
+            className={cn(tintClasses('warning').borderSoft, 'px-3')}
             onClick={() => {
               void selectAgent(session.id, otherAgentId);
               requestOpenQuestionScroll({
@@ -548,7 +527,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
         <>
           <Divider />
           <div className="px-4 py-3 text-xs text-muted-foreground">
-            session ended. no further turns. branch preserved.
+            Session ended. No more turns run here, and the branch is kept.
           </div>
         </>
       ) : selectedAgentId ? (

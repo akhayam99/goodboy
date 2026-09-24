@@ -26,7 +26,7 @@ export const CollapsibleString = ({ value, label }: Props) => {
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
             className={cn(
-              'flex items-center gap-2 rounded-r-md py-1 pl-2 pr-2 text-left text-muted-foreground/70',
+              'flex items-center gap-2 rounded-r-md py-1 pl-2 pr-2 text-left text-faint-foreground',
               TRANSCRIPT_ROW_HOVER,
             )}
           >
@@ -36,12 +36,14 @@ export const CollapsibleString = ({ value, label }: Props) => {
             </span>
           </button>
           {open ? null : (
-            <span className="min-w-0 break-words pb-1 pl-7 pr-2 text-foreground/60">{preview}</span>
+            <span className="min-w-0 break-words pb-1 pl-7 pr-2 text-muted-foreground">
+              {preview}
+            </span>
           )}
         </>
       }
     >
-      <pre className="whitespace-pre-wrap break-words text-foreground/80">{value}</pre>
+      <pre className="whitespace-pre-wrap break-words text-foreground">{value}</pre>
     </TranscriptDisclosure>
   );
 };

@@ -55,10 +55,12 @@ describe('releaseStrandedWriterLease', () => {
       evidence: 'confirmed the holder is gone',
     });
     expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'info',
-      'writer lease released',
-      expect.stringContaining('confirmed the holder is gone'),
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'info',
+        title: 'Writer lease released',
+        body: expect.stringContaining('confirmed the holder is gone'),
+      }),
     );
   });
 
@@ -78,10 +80,12 @@ describe('releaseStrandedWriterLease', () => {
 
     expect(outcome.kind).toBe('owner-alive');
     expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'writer lease not released',
-      expect.stringContaining('4211'),
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Writer lease not released',
+        body: expect.stringContaining('4211'),
+      }),
     );
   });
 

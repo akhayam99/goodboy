@@ -1,11 +1,12 @@
+import { PROVIDER_CONNECT_CAPABILITIES } from '@goodboy/core';
 import {
-  PROVIDER_CONNECT_CAPABILITIES,
   type ProviderConnectCapability,
   type ProviderId,
   type ProviderLifecycleAction,
 } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { PROVIDER_LABEL_LOWER, checkProviderAuth } from '../../../features/providers/providers';
+import { checkProviderAuth } from '../../../features/providers/providers';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import {
   invokeProviderLifecycleCancel,
   invokeProviderLifecycleRun,
@@ -215,12 +216,12 @@ const finishSuccess = ({ set, get, providerId, run, identity }: FinishSuccessPar
   if (runId !== null) {
     void invokeProviderLifecycleCancel(runId);
   }
-  void get().emitNotification(
-    'provider-connected',
-    'success',
-    `${PROVIDER_LABEL_LOWER[providerId]} is connected`,
-    identity ?? undefined,
-  );
+  void get().emitNotification({
+    kind: 'provider-connected',
+    severity: 'success',
+    title: `${PROVIDER_LABEL[providerId]} is connected`,
+    body: identity ?? undefined,
+  });
   void get().refreshProviders();
 };
 

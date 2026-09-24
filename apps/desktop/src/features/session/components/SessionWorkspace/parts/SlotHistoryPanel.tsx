@@ -36,14 +36,14 @@ const HistoryEntry = ({
             presentation="icon"
             value={entry.value}
             label="copy this version"
-            className="rounded-md p-0.5 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+            className="rounded-md p-0.5 text-faint-foreground hover:bg-hover hover:text-foreground"
           />
           <button
             type="button"
             onClick={() => onRestore(entry)}
             title="Restore this version"
             aria-label="Restore this version"
-            className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-hover hover:text-foreground"
           >
             <RotateCcw size={10} aria-hidden />
             restore
@@ -58,7 +58,7 @@ const HistoryEntry = ({
         aria-label={expanded ? 'Collapse entry' : 'Expand entry'}
       >
         {expanded ? (
-          <div className="rounded text-xs leading-relaxed text-foreground">
+          <div className="rounded-sm text-xs leading-relaxed text-foreground">
             {renderAsMarkdown ? (
               <Markdown text={entry.value} className="text-xs" />
             ) : (

@@ -2,14 +2,17 @@ import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { LensEmptyState } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
-import type { ArtifactId, PlanId, PlanWithCount } from '@goodboy/types';
+import type { ArtifactId, PlanId, PlanWithCount, SessionId } from '@goodboy/types';
 import { type ArtifactFilter, type ArtifactGeneration } from '../../artifactCollection';
 import type { ArtifactGroup } from '../../artifactGroups';
 import { ArtifactGroups } from './ArtifactGroups';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CreateReportCta } from '../../../reports/components/CreateReportCta';
+import { CreateWireframeCta } from '../../../wireframes/components/CreateWireframeCta';
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly plans: ReadonlyArray<PlanWithCount>;
   readonly groups: ReadonlyArray<ArtifactGroup>;
   readonly counts: Readonly<Record<ArtifactFilter, number>>;
@@ -35,7 +38,7 @@ const EMPTY_COPY: Record<ArtifactFilter, EmptyCopy> = {
   all: {
     title: 'No artifacts yet',
     description:
-      'Plans, reports and wireframes made in this session collect here. Agents write plans as they work, reports and wireframes you ask for yourself.',
+      'Plans, reports and wireframes made in this session collect here. Agents write plans as they work. Start a report or a wireframe yourself.',
     icon: CONCEPT_ICONS.plans,
     tone: CONCEPT_TONE.plans,
   },
@@ -47,19 +50,20 @@ const EMPTY_COPY: Record<ArtifactFilter, EmptyCopy> = {
   },
   report: {
     title: 'No reports yet',
-    description: 'Create report writes up what this session has actually done so far.',
+    description: 'A report writes up what this session has done so far.',
     icon: CONCEPT_ICONS.sessionSummary,
     tone: CONCEPT_TONE.sessionSummary,
   },
   wireframe: {
     title: 'No wireframes yet',
-    description: 'Create wireframe draws the screen or flow you describe.',
+    description: 'A wireframe draws the screen or flow you describe.',
     icon: CONCEPT_ICONS.workflowPreset,
     tone: CONCEPT_TONE.workflowPreset,
   },
 };
 
 export const ArtifactCollection = ({
+  sessionId,
   plans,
   groups,
   counts,
@@ -74,6 +78,10 @@ export const ArtifactCollection = ({
   onRetryGeneration,
 }: Props) => {
   const empty = EMPTY_COPY[filter];
+  const reportCta = <CreateReportCta sessionId={sessionId} />;
+  const wireframeCta = <CreateWireframeCta sessionId={sessionId} />;
+  const emptyAction =
+    filter === 'report' ? reportCta : filter === 'wireframe' ? wireframeCta : null;
 
   return (
     <PaneShell
@@ -81,6 +89,12 @@ export const ArtifactCollection = ({
       description="Plans, reports and wireframes this session produced. Select one to read it."
       meta={counts.all > 0 ? counts.all : undefined}
       eyebrow={eyebrow}
+      actions={
+        <>
+          {reportCta}
+          {wireframeCta}
+        </>
+      }
     >
       <ArtifactGroups
         plans={plans}
@@ -88,15 +102,13 @@ export const ArtifactCollection = ({
         counts={counts}
         filter={filter}
         openQuestionCount={openQuestionCount}
-        selectedArtifactId={null}
-        selectedGenerationAgentId={null}
-        isCompact={false}
         empty={
           <LensEmptyState
             tone={empty.tone}
             icon={empty.icon}
             title={empty.title}
             description={empty.description}
+            {...(emptyAction !== null && { action: emptyAction })}
           />
         }
         onFilterChange={onFilterChange}

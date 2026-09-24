@@ -56,7 +56,7 @@ export const StageBoardSection = ({}: Props) => (
 
     <Block title="Opening a session">
       <p className="text-sm leading-relaxed text-muted-foreground">
-        Click any card to enter that session. You land in chat by default; from there the lens
+        Click any card to enter that session. It opens on its overview, and from there the lens
         switcher takes you to the diff, terminal, IDE, or a studio. The board stays one keystroke
         away, so you can fan out across several sessions and come back to triage.
       </p>

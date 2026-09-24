@@ -5,7 +5,13 @@ import { resolveStoredModelSelection } from './resolveStoredModelSelection';
 import { strongestModelForTier } from './strongestModelForTier';
 
 export type TurnFailureKind =
-  'authentication' | 'rate_limit' | 'usage_limit' | 'model_not_available' | 'unreachable' | 'other';
+  | 'authentication'
+  | 'rate_limit'
+  | 'usage_limit'
+  | 'model_not_available'
+  | 'cli_too_old'
+  | 'unreachable'
+  | 'other';
 
 export type TurnFallbackPlan = {
   readonly provider: ProviderId;
@@ -238,7 +244,7 @@ export const planTurnFallback = ({
       return { provider, model: cheaper };
     }
   }
-  if (failure === 'model_not_available' && attempt === 0) {
+  if ((failure === 'model_not_available' || failure === 'cli_too_old') && attempt === 0) {
     const sibling = pickClosest({
       provider,
       tier,

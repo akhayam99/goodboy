@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
-import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../providerLabel';
 import { PROVIDER_BRAND, brandColor } from '../provider-brand';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -33,8 +33,8 @@ export const ProviderChip = ({
       className={cn(
         'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs motion-safe:transition-colors',
         selected
-          ? 'bg-primary/10 font-medium text-primary'
-          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+          ? cn(tintClasses('primary').bg, 'font-medium text-primary')
+          : 'text-muted-foreground hover:bg-hover hover:text-foreground',
         disabled && 'cursor-not-allowed opacity-60',
       )}
     >

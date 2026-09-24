@@ -79,6 +79,14 @@ describe('the agent activity a comment shows without leaving it', () => {
     expect(screen.getByText('Cost unavailable')).toBeTruthy();
   });
 
+  it('names the provider and model the way the rest of the app does', () => {
+    renderActivity();
+
+    expect(screen.getByText('Claude')).toBeTruthy();
+    expect(screen.queryByText('anthropic')).toBeNull();
+    expect(screen.queryByText('claude-opus-5')).toBeNull();
+  });
+
   it('says the run is waiting on you when the turn is blocked', () => {
     h.state.agentTurnState = { 'agent-7': { kind: 'blocked' } };
 

@@ -134,6 +134,67 @@ describe('isWorkflowRunComplete', () => {
     ).toBe(true);
   });
 
+  it('settles a dynamic run once the orchestration outcome is done', () => {
+    expect(
+      isWorkflowRunComplete({
+        run: run({ executionMode: 'dynamic', orchestrationOutcome: 'done' }),
+        workflow,
+        agents: [],
+        holds: [],
+      }),
+    ).toBe(true);
+  });
+
+  it('leaves a dynamic run unsettled while no outcome is persisted', () => {
+    expect(
+      isWorkflowRunComplete({
+        run: run({ executionMode: 'dynamic' }),
+        workflow,
+        agents: [stepAgent('completed')],
+        holds: [],
+      }),
+    ).toBe(false);
+  });
+
+  it('leaves a dynamic run unsettled when the orchestration ended blocked', () => {
+    expect(
+      isWorkflowRunComplete({
+        run: run({ executionMode: 'dynamic', orchestrationOutcome: 'blocked' }),
+        workflow,
+        agents: [],
+        holds: [],
+      }),
+    ).toBe(false);
+  });
+
+  it('leaves a static run unsettled while a step agent is pending', () => {
+    expect(
+      isWorkflowRunComplete({ run: run(), workflow, agents: [stepAgent('pending')], holds: [] }),
+    ).toBe(false);
+  });
+
+  it('leaves a static run unsettled when its workflow cannot be resolved', () => {
+    expect(
+      isWorkflowRunComplete({
+        run: run(),
+        workflow: null,
+        agents: [stepAgent('completed')],
+        holds: [],
+      }),
+    ).toBe(false);
+  });
+
+  it('leaves a static run with no steps unsettled', () => {
+    expect(
+      isWorkflowRunComplete({
+        run: run(),
+        workflow: { ...workflow, steps: [] },
+        agents: [stepAgent('completed')],
+        holds: [],
+      }),
+    ).toBe(false);
+  });
+
   it('does not let a transferred cluster child complete its container', () => {
     expect(
       isWorkflowRunComplete({

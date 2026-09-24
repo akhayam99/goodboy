@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 
 export const useUnhandledRejectionNotice = () => {
@@ -12,12 +11,11 @@ export const useUnhandledRejectionNotice = () => {
       isNotifying = true;
       void useAppStore
         .getState()
-        .emitNotification(
-          'error',
-          'warning',
-          'an action failed in the background',
-          formatError(event.reason),
-        )
+        .reportError({
+          severity: 'warning',
+          title: 'An action failed in the background',
+          error: event.reason,
+        })
         .catch(() => undefined)
         .finally(() => {
           isNotifying = false;

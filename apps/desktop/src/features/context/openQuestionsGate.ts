@@ -1,31 +1,35 @@
 import type { OpenQuestion, WorkflowId, WorkflowRunId } from '@goodboy/types';
 
-export const workflowHasOpenQuestions = (
-  questions: ReadonlyArray<OpenQuestion>,
-  workflowId: WorkflowId,
-): boolean => {
-  for (const q of questions) {
-    if (q.status !== 'open') {
-      continue;
-    }
-    if (!q.workflowId || q.workflowId === workflowId) {
-      return true;
-    }
-  }
-  return false;
+export type GatedRun = {
+  readonly id: WorkflowRunId;
+  readonly workflowId: WorkflowId | null;
 };
 
-export const workflowRunHasOpenQuestions = (
-  questions: ReadonlyArray<OpenQuestion>,
-  workflowRunId: WorkflowRunId,
-): boolean => {
-  for (const q of questions) {
-    if (q.status !== 'open') {
-      continue;
-    }
-    if (q.workflowRunId === workflowRunId) {
-      return true;
-    }
-  }
-  return false;
+type RunParams = {
+  readonly questions: ReadonlyArray<OpenQuestion>;
+  readonly run: GatedRun;
 };
+
+const blocksRun = ({
+  question,
+  run,
+}: {
+  readonly question: OpenQuestion;
+  readonly run: GatedRun;
+}) => {
+  if (question.workflowRunId != null) {
+    return question.workflowRunId === run.id;
+  }
+  return run.workflowId !== null && question.workflowId === run.workflowId;
+};
+
+export const workflowRunHasOpenQuestions = ({ questions, run }: RunParams): boolean =>
+  questions.some((question) => question.status === 'open' && blocksRun({ question, run }));
+
+type WorkflowParams = {
+  readonly questions: ReadonlyArray<OpenQuestion>;
+  readonly workflowId: WorkflowId;
+};
+
+export const workflowHasOpenQuestions = ({ questions, workflowId }: WorkflowParams): boolean =>
+  questions.some((question) => question.status === 'open' && question.workflowId === workflowId);

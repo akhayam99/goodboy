@@ -58,16 +58,14 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
     await get().loadSessionOpenQuestions(sessionId);
     if (!runStopped) {
       void get()
-        .emitNotification(
-          'error',
-          'warning',
-          'Deleted agent is still running',
-          'The transcript is gone, but the provider process did not stop. Anything it writes from here is discarded. Quit it yourself if it keeps holding the worktree.',
-          {
-            sessionId,
-            ...(workspaceId !== undefined && { workspaceId }),
-          },
-        )
+        .emitNotification({
+          kind: 'error',
+          severity: 'warning',
+          title: 'Deleted agent is still running',
+          body: 'The transcript is gone, but the provider process did not stop. Anything it writes from here is discarded. Quit it yourself if it keeps holding the worktree.',
+          sessionId,
+          ...(workspaceId !== undefined && { workspaceId }),
+        })
         .catch(() => undefined);
     }
     const refreshed = await invokeAgentList(sessionId);
@@ -91,6 +89,8 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
       delete nextQueue[agentId];
       const nextHistory = { ...s.agentRunHistory };
       delete nextHistory[agentId];
+      const nextRunRouting = { ...s.runRouting };
+      delete nextRunRouting[agentId];
       const nextModelOverride = { ...s.agentModelOverride };
       delete nextModelOverride[agentId];
       const nextProviderOverride = { ...s.agentProviderOverride };
@@ -114,6 +114,7 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
         agentAttachments: nextAttachments,
         agentQueue: nextQueue,
         agentRunHistory: nextHistory,
+        runRouting: nextRunRouting,
         agentModelOverride: nextModelOverride,
         agentProviderOverride: nextProviderOverride,
         agentEffortOverride: nextEffortOverride,

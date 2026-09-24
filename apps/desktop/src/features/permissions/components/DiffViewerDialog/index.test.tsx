@@ -15,7 +15,8 @@ type ToastAction = { readonly label: string; readonly onClick: () => void };
 type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
 
 const { showToast, state, fixtures } = vi.hoisted(() => ({
-  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
+  showToast:
+    vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
   state: {
     settings: {} as Record<string, string>,
     sessionGithub: {} as Record<string, { pr: unknown } | undefined>,
@@ -169,6 +170,7 @@ afterEach(() => {
 });
 
 import { DiffViewerDialog, DiffViewerPane } from './index';
+import { listBranchCommits } from '../../../../features/worktree/worktree';
 import { DIFF_CAPPED_COLUMN_CLASS } from './lib';
 
 const SID = 's1' as SessionId;
@@ -290,6 +292,13 @@ describe('DiffViewerPane', () => {
     expect(container.querySelector('[class*="max-w-5xl"]')).not.toBeNull();
   });
 
+  it('says the branch commits did not load instead of drawing none', async () => {
+    vi.mocked(listBranchCommits).mockRejectedValueOnce(new Error('git log failed'));
+    render(<DiffViewerPane worktreePath="/tmp/worktree" onClose={vi.fn()} />);
+
+    expect(await screen.findByText("Couldn't read this branch's commits.")).toBeDefined();
+  });
+
   it('caps the pane header to the empty-state column when there is nothing to diff', async () => {
     render(<DiffViewerPane worktreePath="/tmp/worktree" onClose={vi.fn()} />);
     await screen.findByText('Branch matches main');
@@ -375,7 +384,7 @@ describe('DiffViewerPane', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Rebase' }));
 
     await waitFor(() => expect(showToast).toHaveBeenCalledOnce());
-    expect(showToast.mock.calls[0]?.[2]?.title).toBe('Rebase started');
+    expect(showToast.mock.calls[0]?.[0]?.title).toBe('Rebase started');
     expect(state.selectAgent).not.toHaveBeenCalled();
     expect(await screen.findByRole('button', { name: 'Rebase' })).toBeDefined();
     expect(state.recordSessionEvent).toHaveBeenCalledWith(
@@ -1013,11 +1022,13 @@ describe('open in editor', () => {
 
     await waitFor(() => {
       expect(state.emitNotification).toHaveBeenCalledWith(
-        'error',
-        'error',
-        'Could not open file in editor',
-        'editor not found',
-        { sessionId: SID },
+        expect.objectContaining({
+          kind: 'error',
+          severity: 'error',
+          title: "Couldn't open the file in your editor",
+          body: 'editor not found',
+          sessionId: SID,
+        }),
       );
     });
   });

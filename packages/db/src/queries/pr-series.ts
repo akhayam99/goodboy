@@ -4,7 +4,6 @@ import type {
   MountPullRequestIdentity,
   MountPullRequestLink,
   MountPullRequestProvider,
-  MountPullRequestState,
   PrSeries,
   PrSeriesId,
   PrSeriesMember,
@@ -16,6 +15,12 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import {
+  MOUNT_PR_LINK_COLUMNS,
+  toMountPullRequestLink,
+  type MountPullRequestLinkRow,
+} from './mount-pr-link';
+import { isJsonValue, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type SeriesRow = {
   readonly id: PrSeriesId;
@@ -38,23 +43,6 @@ type MemberRow = {
   readonly ordinal: number;
   readonly label: string;
   readonly status: PrSeriesMemberStatus;
-  readonly createdAt: number;
-  readonly updatedAt: number;
-};
-
-type LinkRow = {
-  readonly id: string;
-  readonly mountId: MountId;
-  readonly provider: MountPullRequestProvider;
-  readonly host: string;
-  readonly repoSlug: string;
-  readonly prNumber: number;
-  readonly headBranch: string;
-  readonly baseBranch: string | null;
-  readonly url: string;
-  readonly state: MountPullRequestState;
-  readonly snapshot: string;
-  readonly lastObservedAt: number;
   readonly createdAt: number;
   readonly updatedAt: number;
 };
@@ -109,16 +97,7 @@ const parseIdentity = ({
 }: {
   readonly value: string | null;
 }): MountPullRequestIdentity | null => {
-  if (value === null) {
-    return null;
-  }
-  const parsed: unknown = ((): unknown => {
-    try {
-      return JSON.parse(value) as unknown;
-    } catch {
-      return null;
-    }
-  })();
+  const parsed = parseJsonColumn({ value, isValid: isJsonValue, fallback: null });
   if (!isRecord(parsed)) {
     return null;
   }
@@ -148,20 +127,6 @@ const toSeries = (row: SeriesRow): PrSeries => ({
 
 const toMember = (row: MemberRow): PrSeriesMember => ({
   ...row,
-  createdAt: new Date(row.createdAt).toISOString() as IsoDateTime,
-  updatedAt: new Date(row.updatedAt).toISOString() as IsoDateTime,
-});
-
-const toLink = (row: LinkRow): MountPullRequestLink => ({
-  ...row,
-  snapshot: ((): unknown => {
-    try {
-      return JSON.parse(row.snapshot) as unknown;
-    } catch {
-      return null;
-    }
-  })(),
-  lastObservedAt: new Date(row.lastObservedAt).toISOString() as IsoDateTime,
   createdAt: new Date(row.createdAt).toISOString() as IsoDateTime,
   updatedAt: new Date(row.updatedAt).toISOString() as IsoDateTime,
 });
@@ -241,31 +206,38 @@ export const listPrSeries = async ({
   if (seriesRows.length === 0) {
     return [];
   }
-  const linkRows = await db.select<LinkRow>(
-    `SELECT link.id, link.mount_id AS mountId, link.provider, link.host,
-            link.repo_slug AS repoSlug, link.pr_number AS prNumber,
-            link.head_branch AS headBranch, link.base_branch AS baseBranch,
-            link.url, link.state, link.snapshot_json AS snapshot,
-            link.last_observed_at AS lastObservedAt,
-            link.created_at AS createdAt, link.updated_at AS updatedAt
+  const linkRows = await db.select<MountPullRequestLinkRow>(
+    `SELECT ${MOUNT_PR_LINK_COLUMNS}
      FROM mount_pr_links link
      JOIN session_worktrees mount ON mount.id = link.mount_id
      WHERE mount.session_id = ?
      ORDER BY link.created_at, link.id`,
     [sessionId],
   );
-  const links = linkRows.map(toLink);
-  const views: Array<PrSeriesView> = [];
-  for (const row of seriesRows) {
+  const links = linkRows.map(toMountPullRequestLink);
+  const seriesIds = seriesRows.map((row) => row.id);
+  const memberRows = await db.select<MemberRow>(
+    `SELECT ${MEMBER_COLUMNS} FROM pr_series_members
+     WHERE series_id IN (${seriesIds.map(() => '?').join(', ')})
+     ORDER BY series_id, ordinal`,
+    seriesIds,
+  );
+  const membersBySeries = new Map<PrSeriesId, PrSeriesMember[]>();
+  for (const row of memberRows) {
+    const bucket = membersBySeries.get(row.seriesId) ?? [];
+    bucket.push(toMember(row));
+    membersBySeries.set(row.seriesId, bucket);
+  }
+  return seriesRows.map((row) => {
     const series = toSeries(row);
-    const members = await listPrSeriesMembers({ db, seriesId: series.id });
-    const memberViews: ReadonlyArray<PrSeriesMemberView> = members.map((member) => ({
+    const memberViews: ReadonlyArray<PrSeriesMemberView> = (
+      membersBySeries.get(series.id) ?? []
+    ).map((member) => ({
       ...member,
       request: resolveRequest({ member, links }),
     }));
-    views.push({ ...series, members: memberViews });
-  }
-  return views;
+    return { ...series, members: memberViews };
+  });
 };
 
 export const upsertPrSeriesMember = async ({

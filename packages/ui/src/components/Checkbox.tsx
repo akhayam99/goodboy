@@ -44,7 +44,7 @@ export const Checkbox = ({
           }
         }}
         className={cn(
-          'peer absolute inset-0 size-3.5 cursor-pointer appearance-none rounded-md border border-border-soft bg-background transition-colors checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:cursor-not-allowed',
+          'peer absolute inset-0 size-3.5 cursor-pointer appearance-none rounded-md border border-border-soft bg-background transition-colors checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed',
           indeterminate === true && 'border-primary bg-primary',
         )}
       />

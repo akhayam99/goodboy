@@ -1,5 +1,5 @@
 import { resolveSettings } from '@goodboy/core';
-import type { InvocationLimits, ModelEffort, OverrideSettings, ProviderId } from '@goodboy/types';
+import type { EffortLevel, InvocationLimits, OverrideSettings, ProviderId } from '@goodboy/types';
 
 type LimitsParams = {
   readonly providerId: ProviderId;
@@ -28,7 +28,7 @@ export const resolveInvocationLimits = ({
 };
 
 type HeavyweightParams = {
-  readonly effort: ModelEffort | string | null | undefined;
+  readonly effort: EffortLevel | string | null | undefined;
 };
 
 export const isHeavyweightInvocation = ({ effort }: HeavyweightParams): boolean =>

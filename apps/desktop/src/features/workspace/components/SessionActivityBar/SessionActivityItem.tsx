@@ -3,9 +3,16 @@ import { CostBadge } from '../../../../features/providers/components/CostBadge';
 import { PULL_REQUEST_PRESENTATION } from '../../../../shared/pullRequestPresentation';
 import { EMPTY_ARRAY, useAppStore, useSessionCost, useSessionStageInfo } from '../../../../store';
 import type { Session, SessionId } from '@goodboy/types';
-import { PANE_RHYTHM, StatusDot, TERMINAL_DIM, cn, formatUsd } from '@goodboy/ui';
-import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
+import {
+  PANE_RHYTHM,
+  StatusDot,
+  TERMINAL_DIM,
+  cn,
+  formatUsd,
+  tintClasses,
+  InlineMarkdown,
+  inlineMarkdownText,
+} from '@goodboy/ui';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { describeSessionStage } from '../../../../features/session/session-stage';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
@@ -43,7 +50,7 @@ export const SessionActivityItem = ({
   );
   const sessionCost = useSessionCost(session.id as SessionId);
   const age = formatRelativeAge({ fromIso: session.updatedAt });
-  const plainGoal = useMemo(() => stripInlineMarkdown({ text: session.goal }), [session.goal]);
+  const plainGoal = useMemo(() => inlineMarkdownText({ text: session.goal }), [session.goal]);
 
   return (
     <button
@@ -67,10 +74,10 @@ export const SessionActivityItem = ({
       }}
       title={`${plainGoal} · ${stateDescription({ presentation: stagePresentation })}${prMeta != null ? ` · PR ${prMeta.label}` : ''}${externalTasks.length > 0 ? ` · ${externalTasks.map((task) => task.identifier).join(', ')}` : ''}`}
       className={cn(
-        'flex w-full cursor-pointer items-center gap-2 rounded-md text-left motion-safe:transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+        'flex w-full cursor-pointer items-center gap-2 rounded-md text-left motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         PANE_RHYTHM.navRail.row,
         isActive && 'bg-muted font-medium text-foreground',
-        isSelected && 'bg-primary/10 ring-1 ring-primary/30',
+        isSelected && cn(tintClasses('primary').bg, 'ring-1', tintClasses('primary').ring),
         isDimmed && TERMINAL_DIM,
       )}
     >
@@ -93,11 +100,11 @@ export const SessionActivityItem = ({
             <CostBadge
               value={sessionCost}
               title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
-              className="shrink-0 font-sans text-3xs font-medium tabular-nums text-muted-foreground/70"
+              className="shrink-0 font-sans text-3xs font-medium tabular-nums text-faint-foreground"
             />
           ) : null}
           {age !== '' ? (
-            <span className="shrink-0 text-3xs tabular-nums text-muted-foreground/70">{age}</span>
+            <span className="shrink-0 text-3xs tabular-nums text-faint-foreground">{age}</span>
           ) : null}
         </span>
       </span>

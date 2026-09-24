@@ -1,35 +1,15 @@
-use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
-
 use serde::{Deserialize, Serialize};
 use tauri::State;
 use thiserror::Error;
 
-use crate::integration_credentials::{self, IntegrationCredentialError};
+use crate::integration_credentials::{self, http_client, IntegrationCredentialError};
 use crate::secrets;
 
 const PROVIDER: &str = "linear";
 
-/// In-memory cache of Linear personal API keys keyed by credential id.
-/// macOS Keychain prompts the user on every `get_password` unless the ACL is
-/// "Always Allow" + the app's code signature is stable. Caching avoids the
-/// repeated prompt in dev builds and the per-fetch prompt in any build.
-pub struct LinearTokenCache(integration_credentials::SecretCache);
-
-impl LinearTokenCache {
-    pub fn new() -> Self {
-        Self(Mutex::new(HashMap::new()))
-    }
-}
+integration_credentials::token_cache!(LinearTokenCache);
 
 const API_URL: &str = "https://api.linear.app/graphql";
-
-// Single client so reqwest can reuse the TLS connection pool across calls.
-// `new()` is cheap but constructing a Client every call defeats keep-alive.
-fn http_client() -> &'static reqwest::Client {
-    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
-    CLIENT.get_or_init(reqwest::Client::new)
-}
 
 #[derive(Debug, Error)]
 pub enum LinearError {

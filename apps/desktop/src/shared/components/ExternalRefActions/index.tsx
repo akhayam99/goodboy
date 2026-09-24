@@ -24,7 +24,7 @@ export const ExternalRefActions = ({ url, label, hostLabel }: Props) => {
         onClick={onOpen}
         title={`Open in ${hostLabel}`}
         aria-label={`Open in ${hostLabel}`}
-        className="inline-flex shrink-0 items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+        className="inline-flex shrink-0 items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
       >
         <ExternalLink size={13} aria-hidden />
       </a>

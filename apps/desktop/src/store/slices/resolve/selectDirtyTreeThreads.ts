@@ -1,4 +1,4 @@
-import type { ResolveThread, SessionId } from '@goodboy/types';
+import type { ResolveThread } from '@goodboy/types';
 
 export const DIRTY_TREE_REASON = 'dirty_tree';
 
@@ -27,14 +27,3 @@ export const clearDirtyTreeReason = ({ row }: { readonly row: ResolveThread }): 
     .join(':');
   return next === '' ? null : next;
 };
-
-export const selectDirtyTreeThreads = ({
-  sessionResolveThreads,
-  sessionId,
-}: {
-  readonly sessionResolveThreads: Readonly<Record<SessionId, ReadonlyArray<ResolveThread>>>;
-  readonly sessionId: SessionId;
-}): ReadonlyArray<string> =>
-  (sessionResolveThreads[sessionId] ?? [])
-    .filter((row) => isDirtyTreeRow({ row }))
-    .map((row) => row.threadId);

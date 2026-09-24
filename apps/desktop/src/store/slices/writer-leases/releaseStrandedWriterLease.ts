@@ -57,20 +57,20 @@ export const releaseStrandedWriterLease = ({
     const leases = await listUnknownWriterLeases();
     set(() => ({ strandedWriterLeases: leases }));
     if (outcome.kind === 'released') {
-      void get().emitNotification(
-        'error',
-        'info',
-        'writer lease released',
-        `${releasedBy} cleared the lease ${outcome.holder} left behind: ${releaseEvidence}`,
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'info',
+        title: 'Writer lease released',
+        body: `${releasedBy} cleared the lease ${outcome.holder} left behind: ${releaseEvidence}`,
+      });
       return outcome;
     }
-    void get().emitNotification(
-      'error',
-      'warning',
-      'writer lease not released',
-      refusalDetail({ outcome }),
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: 'Writer lease not released',
+      body: refusalDetail({ outcome }),
+    });
     return outcome;
   };
 };

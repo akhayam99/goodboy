@@ -31,7 +31,7 @@ export const ToolCallCard = ({ item }: Props) => {
   const stateIcon = item.isError
     ? dangerTint.icon
     : running
-      ? cn(runningTint.icon, 'motion-safe:animate-pulse')
+      ? cn(runningTint.icon, 'motion-safe:animate-soft-pulse')
       : successTint.icon;
 
   return (
@@ -58,7 +58,9 @@ export const ToolCallCard = ({ item }: Props) => {
             <span className="flex min-w-0 items-center gap-1.5">
               <span className="truncate font-mono text-muted-foreground">{item.toolName}</span>
               {!running && item.isError && (
-                <span className={cn('shrink-0 text-2xs uppercase tracking-wide', dangerTint.text)}>
+                <span
+                  className={cn('shrink-0 text-2xs uppercase tracking-eyebrow', dangerTint.text)}
+                >
                   error
                 </span>
               )}
@@ -73,7 +75,7 @@ export const ToolCallCard = ({ item }: Props) => {
           type="button"
           onClick={() => setRawMode((value) => !value)}
           data-testid="raw-toggle"
-          className="rounded-md px-1.5 py-0.5 text-2xs text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground/80"
+          className="rounded-md px-1.5 py-0.5 text-2xs text-faint-foreground hover:bg-hover hover:text-foreground"
         >
           {rawMode ? 'structured' : 'raw json'}
         </button>

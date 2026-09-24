@@ -10,6 +10,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import { isStringArray, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type OpenQuestionRow = {
   id: string;
@@ -52,7 +53,11 @@ const toDomain = (row: OpenQuestionRow): OpenQuestion => {
     ownedByStepOrdinal: row.owned_by_step_ordinal ?? undefined,
     createdByAgentId: row.created_by_agent_id ? (row.created_by_agent_id as AgentId) : undefined,
     text: row.text,
-    suggestedAnswers: JSON.parse(row.suggested_answers) as ReadonlyArray<string>,
+    suggestedAnswers: parseJsonColumn({
+      value: row.suggested_answers,
+      isValid: isStringArray,
+      fallback: [],
+    }),
     recommendedAnswer: row.recommended_answer ?? undefined,
     selectMode: toSelectMode(row.select_mode),
     isBlocking: row.is_blocking === 1,
@@ -286,27 +291,11 @@ export const markOpenQuestionsResolvedByText = async (
   }
 
   const now = Date.now();
-  for (const id of toResolve) {
-    await db.execute(
-      `UPDATE open_questions
-       SET status = 'answered', user_answer = ?, answered_at = ?, answer_delivered_at = ?
-       WHERE id = ? AND status = 'open'`,
-      ['[resolved by agent]', now, now, id],
-    );
-  }
-  return toResolve.length;
-};
-
-export const transferOpenQuestionOwnership = async (
-  db: Database,
-  workflowRunId: WorkflowRunId,
-  fromOrdinal: number,
-  toOrdinal: number,
-): Promise<void> => {
-  await db.execute(
+  const result = await db.execute(
     `UPDATE open_questions
-     SET owned_by_step_ordinal = ?
-     WHERE workflow_run_id = ? AND owned_by_step_ordinal = ? AND status = 'open'`,
-    [toOrdinal, workflowRunId, fromOrdinal],
+     SET status = 'answered', user_answer = ?, answered_at = ?, answer_delivered_at = ?
+     WHERE id IN (${toResolve.map(() => '?').join(', ')}) AND status = 'open'`,
+    ['[resolved by agent]', now, now, ...toResolve],
   );
+  return result.rowsAffected;
 };

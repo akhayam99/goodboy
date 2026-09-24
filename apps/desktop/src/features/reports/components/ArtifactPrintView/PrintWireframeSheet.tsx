@@ -23,12 +23,7 @@ export const PrintWireframeSheet = ({ artifact, document, page }: Props) => {
         title={artifact.title}
         fields={artifactMetaFields({ artifact })}
       />
-      <WireframeContactSheet
-        document={document}
-        palette={palette}
-        isLowFidelity={fidelity === 'low'}
-        surface="print"
-      />
+      <WireframeContactSheet document={document} palette={palette} surface="print" />
     </article>
   );
 };

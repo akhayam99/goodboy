@@ -1,6 +1,6 @@
 import { formatUsd } from '@goodboy/ui';
 import type { BudgetAlert, BudgetAlertKind, ProviderId } from '@goodboy/types';
-import { PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import type { GetFn } from './types';
 
 type Params = {
@@ -40,15 +40,13 @@ const titleFor = ({ alert }: AlertParams): string => {
 
 export const notifyBudgetAlerts = ({ alerts, get }: Params) => {
   for (const alert of alerts) {
-    void get().emitNotification(
-      'budget-cap',
-      SEVERITY_BY_KIND[alert.kind],
-      titleFor({ alert }),
-      `${formatUsd(alert.currentUsd)} spent against a ${formatUsd(alert.capUsd)} cap.`,
-      {
-        ...(alert.sessionId != null && { sessionId: alert.sessionId }),
-        action: { kind: 'open-budget', sessionId: alert.sessionId ?? null },
-      },
-    );
+    void get().emitNotification({
+      kind: 'budget-cap',
+      severity: SEVERITY_BY_KIND[alert.kind],
+      title: titleFor({ alert }),
+      body: `${formatUsd(alert.currentUsd)} spent against a ${formatUsd(alert.capUsd)} cap.`,
+      ...(alert.sessionId != null && { sessionId: alert.sessionId }),
+      action: { kind: 'open-budget', sessionId: alert.sessionId ?? null },
+    });
   }
 };

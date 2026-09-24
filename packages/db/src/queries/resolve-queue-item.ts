@@ -4,7 +4,7 @@ import type {
   ResolveThread,
   SessionId,
 } from '@goodboy/types';
-import type { Database } from '../client';
+import type { Database, PlainStatement } from '../client';
 import { resolveStringArray } from './resolve-json';
 
 type ItemRow = ResolveQueueItem;
@@ -50,26 +50,33 @@ const ITEM_COLUMNS = `id, session_id AS sessionId, thread_id AS threadId, genera
   delivered_at AS deliveredAt, superseded_at AS supersededAt,
   created_at AS createdAt, updated_at AS updatedAt`;
 
+type ItemInsertParams = {
+  readonly item: ResolveQueueItem;
+};
+
+const resolveQueueItemInsertStatement = ({ item }: ItemInsertParams): PlainStatement => ({
+  sql: `INSERT INTO resolve_queue_items (id, session_id, thread_id, generation, reopened_from_item_id, candidate_revision, approval_state, approved_revision, approved_reply_hash, deferred_at, delivered_at, superseded_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  params: [
+    item.id,
+    item.sessionId,
+    item.threadId,
+    item.generation,
+    item.reopenedFromItemId,
+    item.candidateRevision,
+    item.approvalState,
+    item.approvedRevision,
+    item.approvedReplyHash,
+    item.deferredAt,
+    item.deliveredAt,
+    item.supersededAt,
+    item.createdAt,
+    item.updatedAt,
+  ],
+});
+
 export const insertResolveQueueItem = async ({ db, item }: InsertParams): Promise<void> => {
-  await db.execute(
-    `INSERT INTO resolve_queue_items (id, session_id, thread_id, generation, reopened_from_item_id, candidate_revision, approval_state, approved_revision, approved_reply_hash, deferred_at, delivered_at, superseded_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      item.id,
-      item.sessionId,
-      item.threadId,
-      item.generation,
-      item.reopenedFromItemId,
-      item.candidateRevision,
-      item.approvalState,
-      item.approvedRevision,
-      item.approvedReplyHash,
-      item.deferredAt,
-      item.deliveredAt,
-      item.supersededAt,
-      item.createdAt,
-      item.updatedAt,
-    ],
-  );
+  const statement = resolveQueueItemInsertStatement({ item });
+  await db.execute(statement.sql, statement.params);
 };
 
 export const listResolveQueueItems = async ({
@@ -215,6 +222,8 @@ export const markResolveQueueItemDelivered = async ({
   return result.rowsAffected === 1;
 };
 
+const ITEM_CHANGED = 'ITEM_CHANGED';
+
 export const reopenResolveQueueItem = async ({
   db,
   sessionId,
@@ -233,37 +242,36 @@ export const reopenResolveQueueItem = async ({
     return null;
   }
   const now = Date.now();
-  await db.exec('BEGIN');
-  try {
-    const superseded = await db.execute(
-      'UPDATE resolve_queue_items SET superseded_at = ?, updated_at = ? WHERE id = ? AND session_id = ? AND superseded_at IS NULL',
-      [now, now, itemId, sessionId],
-    );
-    if (superseded.rowsAffected !== 1) {
-      throw new Error('Resolve queue item changed before it could be reopened');
-    }
-    const item: ResolveQueueItem = {
-      id,
-      sessionId,
-      threadId: current.threadId,
-      generation: current.generation + 1,
-      reopenedFromItemId: current.id,
-      candidateRevision,
-      approvalState: 'none',
-      approvedRevision: null,
-      approvedReplyHash: null,
-      integratedSha: null,
-      deferredAt: null,
-      deliveredAt: null,
-      supersededAt: null,
-      createdAt: now,
-      updatedAt: now,
-    };
-    await insertResolveQueueItem({ db, item });
-    await db.exec('COMMIT');
-    return item;
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
+  const item: ResolveQueueItem = {
+    id,
+    sessionId,
+    threadId: current.threadId,
+    generation: current.generation + 1,
+    reopenedFromItemId: current.id,
+    candidateRevision,
+    approvalState: 'none',
+    approvedRevision: null,
+    approvedReplyHash: null,
+    integratedSha: null,
+    deferredAt: null,
+    deliveredAt: null,
+    supersededAt: null,
+    createdAt: now,
+    updatedAt: now,
+  };
+  const outcome = await db.transaction({
+    statements: [
+      {
+        sql: 'UPDATE resolve_queue_items SET superseded_at = ?, updated_at = ? WHERE id = ? AND session_id = ? AND superseded_at IS NULL',
+        params: [now, now, itemId, sessionId],
+        abortWhen: 'noChanges',
+        abortCode: ITEM_CHANGED,
+      },
+      resolveQueueItemInsertStatement({ item }),
+    ],
+  });
+  if (outcome.status === 'aborted') {
+    throw new Error('Resolve queue item changed before it could be reopened');
   }
+  return item;
 };

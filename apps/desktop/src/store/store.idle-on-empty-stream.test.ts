@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from './storyHarness';
 import type {
   Agent,
   AgentId,
@@ -99,9 +100,6 @@ vi.mock('@goodboy/db', () => ({
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
-  getCursorStatus: vi.fn(),
-  getCodexStatus: vi.fn(),
-  getProviderStatus: vi.fn(),
 }));
 
 vi.mock('../features/providers/routing', () => ({
@@ -238,6 +236,12 @@ async function* nonAuthErrorEventStream(runId: ProviderRunId): AsyncIterable<Tur
   };
 }
 
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
 describe('sendTurn, terminal state guarantees', () => {
   beforeEach(async () => {
     runTurnSpy.mockReset();
@@ -254,11 +258,6 @@ describe('sendTurn, terminal state guarantees', () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
-
-  async function importStore() {
-    const mod = await import('./store');
-    return mod.useAppStore;
-  }
 
   function setupSession(useAppStore: Awaited<ReturnType<typeof importStore>>) {
     const defaultAgent: Agent = {
@@ -312,7 +311,6 @@ describe('sendTurn, terminal state guarantees', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -335,8 +333,6 @@ describe('sendTurn, terminal state guarantees', () => {
 
   it('transitions session to idle after stream ends without a done event', async () => {
     runTurnSpy.mockImplementation(() => emptyStream());
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
@@ -353,8 +349,6 @@ describe('sendTurn, terminal state guarantees', () => {
       selectedModel: 'claude-haiku-4-5',
       reason: 'preference',
     });
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
 
     await useAppStore.getState().sendTurn({
@@ -378,8 +372,6 @@ describe('sendTurn, terminal state guarantees', () => {
 
   it('appends an error event when the stream ends with no assistant text', async () => {
     runTurnSpy.mockImplementation(() => emptyStream());
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
@@ -397,8 +389,6 @@ describe('sendTurn, terminal state guarantees', () => {
 
   it('appends user_text event so the user message is visible immediately', async () => {
     runTurnSpy.mockImplementation(() => emptyStream());
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'ciao mondo' });
@@ -411,8 +401,6 @@ describe('sendTurn, terminal state guarantees', () => {
 
   it('does not append a duplicate error event when the stream emits a done event', async () => {
     runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => doneOnlyStream(args.runId));
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
@@ -427,8 +415,6 @@ describe('sendTurn, terminal state guarantees', () => {
 
   it('transitions session to error and rethrows when the stream throws mid-turn', async () => {
     runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => throwingStream(args.runId));
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
 
     await expect(
@@ -453,8 +439,6 @@ describe('sendTurn, terminal state guarantees', () => {
 
     const { updateProviderRunStatus } = await import('@goodboy/db');
     (updateProviderRunStatus as ReturnType<typeof vi.fn>).mockClear();
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
 
     await expect(
@@ -471,8 +455,6 @@ describe('sendTurn, terminal state guarantees', () => {
     runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) =>
       authErrorEventStream(args.runId),
     );
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
@@ -491,8 +473,6 @@ describe('sendTurn, terminal state guarantees', () => {
     runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) =>
       throwingAuthErrorStream(args.runId),
     );
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
 
     await expect(
@@ -510,8 +490,6 @@ describe('sendTurn, terminal state guarantees', () => {
 
   it('surfaces the model and Max Mode action when the child exits with Max Mode stderr', async () => {
     runTurnSpy.mockImplementation(() => throwingErrorStream({ message: MAX_MODE_MESSAGE }));
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
@@ -541,8 +519,6 @@ describe('sendTurn, terminal state guarantees', () => {
     runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) =>
       nonAuthErrorEventStream(args.runId),
     );
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
 
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });

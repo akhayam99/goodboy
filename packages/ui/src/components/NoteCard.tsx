@@ -8,7 +8,7 @@ type Props = {
 };
 
 export const NoteCard = ({ header, body, footer }: Props) => (
-  <div className="group flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
+  <div className="group flex flex-col gap-2 rounded-lg bg-subtle p-3">
     {header}
     <Markdown text={body} className="text-sm leading-relaxed" />
     {footer}

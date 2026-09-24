@@ -113,6 +113,8 @@ const createHarness = ({}: HarnessParams): Harness => {
     sessionGithub: {},
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
     agentKindOverride: {},
+    stepSummaryDegraded: {},
+    degradedStepOutputs: {},
     sessions: [session],
     projects: [],
     providers: [
@@ -681,11 +683,13 @@ describe('completeResolvedAgent', () => {
     expect(advanceScoutTree).not.toHaveBeenCalled();
     expect(advanceClusterImplementation).not.toHaveBeenCalled();
     expect(state.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'lineage unknown: survey the auth area',
-      expect.any(String),
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Lineage unknown for survey the auth area',
+        body: expect.any(String),
+        sessionId: SESSION_ID,
+      }),
     );
   });
 

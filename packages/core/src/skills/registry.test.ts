@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import Database from 'better-sqlite3';
 import type { IsoDateTime, WorkspaceId } from '@goodboy/types';
 import {
   migrate,
@@ -9,6 +8,7 @@ import {
 } from '@goodboy/db';
 import type { SkillFs } from './registry';
 import { SkillRegistry, SkillRegistryError } from './registry';
+import { makeTestDatabase } from '@goodboy/db/test-helpers';
 
 const WORKSPACE_ID = 'ws_test' as WorkspaceId;
 const ROOT = '/fake/root';
@@ -21,24 +21,7 @@ function makeNow(): () => IsoDateTime {
   return () => FIXED_NOW;
 }
 
-function makeDb(): DbInterface {
-  const db = new Database(':memory:');
-  db.pragma('foreign_keys = ON');
-  return {
-    async exec(sql: string) {
-      db.exec(sql);
-    },
-    async execute(sql: string, params: ReadonlyArray<unknown> = []) {
-      const stmt = db.prepare(sql);
-      const result = stmt.run(...(params as ReadonlyArray<never>));
-      return { rowsAffected: result.changes };
-    },
-    async select<T>(sql: string, params: ReadonlyArray<unknown> = []) {
-      const stmt = db.prepare(sql);
-      return stmt.all(...(params as ReadonlyArray<never>)) as unknown as ReadonlyArray<T>;
-    },
-  };
-}
+const makeDb = (): DbInterface => makeTestDatabase();
 
 async function makeSeededDb(): Promise<DbInterface> {
   const db = makeDb();
@@ -49,7 +32,6 @@ async function makeSeededDb(): Promise<DbInterface> {
       id: WORKSPACE_ID,
       name: 'test',
       slug: 'test',
-      sessionsRoot: ROOT,
       overrides: {
         defaultProviderId: null,
         defaultWorkflowId: null,

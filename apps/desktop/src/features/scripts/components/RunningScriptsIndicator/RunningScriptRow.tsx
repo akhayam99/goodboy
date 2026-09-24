@@ -1,5 +1,5 @@
 import { Square } from 'lucide-react';
-import { StatusDot, Tooltip } from '@goodboy/ui';
+import { StatusDot, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { RunningScript } from './useRunningScripts';
 
 type Props = {
@@ -41,7 +41,11 @@ export const RunningScriptRow = ({ run, now, onOpen, onStop }: Props) => (
         type="button"
         onClick={() => onStop(run)}
         aria-label={`Stop ${run.scriptName}`}
-        className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
+        className={cn(
+          'shrink-0 rounded-sm p-1 text-muted-foreground transition-colors',
+          tintClasses('danger').hoverBg,
+          'hover:text-danger',
+        )}
       >
         <Square size={11} aria-hidden />
       </button>

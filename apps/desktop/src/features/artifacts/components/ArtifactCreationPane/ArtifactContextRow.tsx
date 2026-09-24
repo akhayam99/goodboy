@@ -21,7 +21,7 @@ export const ArtifactContextRow = ({ row }: Props) => (
       <span className="text-xs text-foreground">{row.label}</span>
       <span className="text-2xs leading-relaxed text-muted-foreground">{row.summary}</span>
       {row.detail.map((line) => (
-        <span key={line} className="text-2xs leading-relaxed text-muted-foreground/70">
+        <span key={line} className="text-2xs leading-relaxed text-faint-foreground">
           {line}
         </span>
       ))}

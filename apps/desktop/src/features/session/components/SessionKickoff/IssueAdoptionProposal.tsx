@@ -1,4 +1,4 @@
-import { Button } from '@goodboy/ui';
+import { Button, Eyebrow } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { IssueAdoption } from './issueAdoption';
 
@@ -18,9 +18,7 @@ type RowProps = {
 
 const AdoptionRow = ({ label, value, action, onUse }: RowProps) => (
   <div className="flex items-center gap-2">
-    <span className="w-10 shrink-0 text-2xs uppercase tracking-wide text-muted-foreground">
-      {label}
-    </span>
+    <Eyebrow label={label} className="w-10 shrink-0" />
     <span className="min-w-0 flex-1 truncate text-xs text-foreground">{value}</span>
     <Button variant="secondary" size="sm" onClick={onUse}>
       {action}
@@ -31,7 +29,7 @@ const AdoptionRow = ({ label, value, action, onUse }: RowProps) => (
 export const IssueAdoptionProposal = ({ adoption, onUseTitle, onUseGoal, onDismiss }: Props) => (
   <section
     aria-label="Issue suggestions"
-    className="flex flex-col gap-2 rounded-md border border-border-soft bg-muted/30 p-2.5"
+    className="flex flex-col gap-2 rounded-md border border-border-soft bg-subtle p-2.5"
   >
     <header className="flex items-center gap-2">
       <CONCEPT_ICONS.issues

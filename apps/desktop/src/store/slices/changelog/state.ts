@@ -10,6 +10,8 @@ export type ChangelogState = {
   readonly changelogError: string | null;
   readonly changelogFetchedAt: string | null;
   readonly changelogSeenVersion: string | null;
+  readonly changelogSeenHydrated: boolean;
+  readonly changelogFocusVersion: string | null;
 };
 
 export const initialChangelogState: ChangelogState = {
@@ -18,4 +20,6 @@ export const initialChangelogState: ChangelogState = {
   changelogError: null,
   changelogFetchedAt: null,
   changelogSeenVersion: null,
+  changelogSeenHydrated: false,
+  changelogFocusVersion: null,
 };

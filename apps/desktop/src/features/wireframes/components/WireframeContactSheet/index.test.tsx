@@ -111,7 +111,6 @@ const renderSheet = ({
     <WireframeContactSheet
       document={document}
       palette={wireframePalette({ theme: document.theme, fidelity: 'low' })}
-      isLowFidelity
       surface={surface}
     />,
   );
@@ -125,7 +124,6 @@ const liveSheet = ({ overrides = {} }: { readonly overrides?: Record<string, unk
     <WireframeContactSheet
       document={document}
       palette={wireframePalette({ theme: document.theme, fidelity: 'low' })}
-      isLowFidelity
       interaction={{
         currentScreenId: 'ledger',
         selectedNodeId: null,

@@ -2,10 +2,7 @@ import { MetaRow } from '@goodboy/ui';
 import type { AgentAggregate } from '../AgentMetrics';
 import { formatCost, formatTokens } from '../../agent-row-format';
 import { AgentMetric } from './AgentMetric';
-import {
-  ContextWindowBar,
-  type ProviderContextUsage,
-} from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
+import { ContextWindowBar, type ProviderContextUsage } from '../AgentTree/ContextWindowBar';
 
 type Props = {
   readonly aggregate: AgentAggregate | null;

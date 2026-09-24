@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { resolveDetailFields, type DetailFieldRegistry } from '../../detail-fields';
+import { resolveDetailFields } from '../../detail-fields';
+import type { DetailFieldRegistry } from '../../detail-fields/types';
 import { StudioWidget } from '@goodboy/ui';
 import { HeaderBand } from '@goodboy/ui';
 import { RailBlock } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { StudioDetailLayout } from './StudioDetailLayout';
 import { StudioDetailTabs } from '@goodboy/ui';
-import { STORAGE_KEYS } from '../../lib/storage-keys';
 
 beforeEach(() => {
   localStorage.clear();
@@ -382,7 +382,7 @@ describe('HeaderBand', () => {
       />,
     );
 
-    const title = screen.getByRole('heading', { level: 2, name: 'Improve detail layout' });
+    const title = screen.getByRole('heading', { level: 1, name: 'Improve detail layout' });
     const meta = screen.getByText('GB-42');
     const subtitle = screen.getByText('api/items');
     const action = screen.getByRole('link', { name: 'Open' });

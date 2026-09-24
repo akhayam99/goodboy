@@ -15,6 +15,9 @@ import {
   connectedAnthropicState,
   resetStorySpies,
   storySpies,
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  type StoryStore,
 } from './storyHarness';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
@@ -62,12 +65,11 @@ const reviewer = buildStoryAgent({
   name: 'review the auth rework',
 });
 
-type StoreModule = typeof import('./store');
-let useAppStore: StoreModule['useAppStore'];
+let useAppStore: StoryStore;
 
 beforeAll(async () => {
-  ({ useAppStore } = await import('./store'));
-}, 60_000);
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 describe('sendTurn boundary drift', () => {
   beforeEach(() => {
@@ -114,7 +116,6 @@ describe('sendTurn boundary drift', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
         }),
       ],
       ...connectedAnthropicState(),

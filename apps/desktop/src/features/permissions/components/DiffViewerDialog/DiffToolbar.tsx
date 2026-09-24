@@ -83,7 +83,7 @@ export const DiffToolbar = ({
 
         {status?.branch ? (
           <span className="hidden min-w-0 shrink items-center gap-1.5 text-2xs text-muted-foreground xl:flex">
-            <GitBranch size={11} aria-hidden className="shrink-0 text-muted-foreground/70" />
+            <GitBranch size={11} aria-hidden className="shrink-0 text-faint-foreground" />
             <span className="truncate font-mono">{status.branch}</span>
             {hasAheadBehind ? (
               <span className="flex shrink-0 items-center gap-1 tabular-nums">

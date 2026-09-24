@@ -9,14 +9,9 @@ import type {
   SetFn,
 } from './types';
 
-export { REVIEW_HOME, reviewMountId, reviewPrNumber, reviewThreadId } from './destination';
+export { reviewThreadId } from './destination';
 export type { ReviewDestination } from './destination';
-export type {
-  ReviewTarget,
-  ReviewTargetOutcome,
-  ReviewTargetReason,
-  ReviewTargetStatus,
-} from './types';
+export type { ReviewTargetOutcome, ReviewTargetReason } from './types';
 
 type Params = {
   readonly set: SetFn;

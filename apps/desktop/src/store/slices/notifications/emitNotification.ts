@@ -10,7 +10,11 @@ import type { IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SetFn } from './types';
 
-type Params = {
+export type EmitNotificationParams = {
+  kind: NotificationKind;
+  severity: NotificationSeverity;
+  title: string;
+  body?: string | null;
   sessionId?: SessionId;
   workspaceId?: WorkspaceId;
   action?: NotificationAction;
@@ -18,13 +22,16 @@ type Params = {
 };
 
 export const emitNotification = (set: SetFn) => {
-  return async (
-    kind: NotificationKind,
-    severity: NotificationSeverity,
-    title: string,
-    body?: string,
-    opts?: Params,
-  ) => {
+  return async ({
+    kind,
+    severity,
+    title,
+    body,
+    sessionId,
+    workspaceId,
+    action,
+    coalesceKey,
+  }: EmitNotificationParams) => {
     const n: Notification = {
       id: crypto.randomUUID(),
       ts: new Date().toISOString() as IsoDateTime,
@@ -32,15 +39,13 @@ export const emitNotification = (set: SetFn) => {
       title,
       body: body ?? null,
       severity,
-      sessionId: opts?.sessionId ?? null,
-      workspaceId: opts?.workspaceId ?? null,
+      sessionId: sessionId ?? null,
+      workspaceId: workspaceId ?? null,
       read: false,
-      action: opts?.action ?? null,
+      action: action ?? null,
       coalesceKey:
-        opts?.coalesceKey ??
-        `${kind}:${opts?.sessionId ?? opts?.workspaceId ?? 'global'}:${severity}:${title}`,
+        coalesceKey ?? `${kind}:${sessionId ?? workspaceId ?? 'global'}:${severity}:${title}`,
     };
-    await insertNotification(tauriDatabase, n);
     set((state) => ({
       notifications: [n, ...state.notifications].slice(0, NOTIFICATION_LIST_LIMIT),
       notificationCounts: {
@@ -48,5 +53,6 @@ export const emitNotification = (set: SetFn) => {
         unread: state.notificationCounts.unread + 1,
       },
     }));
+    await insertNotification(tauriDatabase, n).catch(() => undefined);
   };
 };

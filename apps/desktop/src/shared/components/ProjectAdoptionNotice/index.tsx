@@ -1,5 +1,5 @@
 import { FolderGit2 } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, cn, tintClasses } from '@goodboy/ui';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
 
 type Props = {
@@ -15,7 +15,12 @@ export const ProjectAdoptionNotice = ({ conflict, busy, onMove, onKeep }: Props)
   return (
     <div
       role="status"
-      className="flex items-center gap-3 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-left"
+      className={cn(
+        'flex items-center gap-3 rounded-lg border',
+        tintClasses('primary').border,
+        tintClasses('primary').bgSoft,
+        'px-3 py-2 text-left',
+      )}
     >
       <FolderGit2 size={16} aria-hidden className="shrink-0 text-primary" />
       <span className="min-w-0 flex-1">

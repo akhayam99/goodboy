@@ -42,19 +42,6 @@ function toSessionBudget(row: SessionBudgetRow): SessionBudget {
   };
 }
 
-export const upsertSessionBudget = async (
-  db: Database,
-  sessionId: SessionId,
-  softCapUsd: number,
-): Promise<void> => {
-  await db.execute(
-    `INSERT INTO session_budgets (session_id, soft_cap_usd)
-     VALUES (?, ?)
-     ON CONFLICT(session_id) DO UPDATE SET soft_cap_usd = excluded.soft_cap_usd`,
-    [sessionId, softCapUsd],
-  );
-};
-
 export const getSessionBudget = async (
   db: Database,
   sessionId: SessionId,

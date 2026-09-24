@@ -187,7 +187,7 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
           creatorHasOpenQuestions:
             workflow == null
               ? openQuestions.some((question) => question.status === 'open')
-              : workflowHasOpenQuestions(openQuestions, workflow.id),
+              : workflowHasOpenQuestions({ questions: openQuestions, workflowId: workflow.id }),
         };
       }),
       consumedPlanIds,

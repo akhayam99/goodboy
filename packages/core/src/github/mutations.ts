@@ -32,9 +32,9 @@ export const resolveReviewThread = async (
   threadId: string,
   opts: GhRunOptions = {},
 ): Promise<ResolvedThread> => {
-  const raw = await runJson<RawResolveReviewThreadResponse>(
+  const raw = await runJson<RawResolveReviewThreadResponse>({
     runner,
-    [
+    args: [
       'api',
       'graphql',
       '-f',
@@ -43,7 +43,8 @@ export const resolveReviewThread = async (
       `threadId=${threadId}`,
     ],
     opts,
-  );
+    shape: 'object',
+  });
   if (raw.errors && raw.errors.length > 0) {
     const first = raw.errors[0]?.message ?? 'unknown graphql error';
     throw new GhCliError(`resolveReviewThread failed: ${first}`, first, 1);
@@ -75,9 +76,9 @@ export const addReviewThreadReply = async (
   body: string,
   opts: GhRunOptions = {},
 ): Promise<PostedThreadReply> => {
-  const raw = await runJson<RawAddThreadReplyResponse>(
+  const raw = await runJson<RawAddThreadReplyResponse>({
     runner,
-    [
+    args: [
       'api',
       'graphql',
       '-f',
@@ -88,7 +89,8 @@ export const addReviewThreadReply = async (
       `body=${body}`,
     ],
     opts,
-  );
+    shape: 'object',
+  });
   if (raw.errors && raw.errors.length > 0) {
     const first = raw.errors[0]?.message ?? 'unknown graphql error';
     throw new GhCliError(`addReviewThreadReply failed: ${first}`, first, 1);

@@ -5,45 +5,46 @@
 > in-product color, spacing and component rules (see [DESIGN.md](../DESIGN.md))
 > or the words inside any of it (see [tone-of-voice.md](./tone-of-voice.md)).
 
-Owns the identity: the mascot, the lockup, and how both survive contact with
-surfaces nobody here controls. `DESIGN.md` owns how the product looks while
-you use it. This file owns how it is recognised before you have used it.
+This file covers the identity: the mascot, the lockup, and how both hold up on
+screens nobody here controls. `DESIGN.md` covers how the product looks while
+you use it. This file covers how people recognise it before they have used it.
 
 ## The mascot
 
-The canonical asset is a **white-on-transparent PNG**, kept identical in two
-places:
+The one true asset is a **white-on-transparent PNG**. The same file lives in
+two places:
 
 - `apps/desktop/src/assets/mascot.png`
 - `website/src/assets/mascot.png`
 
-It is never drawn as a coloured image. It is a **mask**, filled by the
-surface underneath, which is what `DogMascot` does with a CSS mask and what
-every rendered card does with the same mask in CSS. Everything downstream is
-one asset and one fill.
+It is never drawn as a coloured image. It is a **mask**: the surface
+underneath fills it with colour. `DogMascot` does this with a CSS mask, and
+every rendered card uses the same mask in CSS. So everything comes from one
+asset and one fill.
 
-The ink inside that PNG is symmetric in its own canvas: the alpha bounding
-box leaves 25px left and right and 92px top and bottom of the 512px square.
-Centring the mask box centres the mark. Nothing downstream may nudge it.
+The drawing inside that PNG sits in the exact middle of its canvas. In the
+512px square, the visible part leaves 25px on the left and right, and 92px at
+the top and bottom. Centre the mask box and the mark is centred. Nothing that
+uses it may nudge it.
 
-That single rule is what keeps the dog the same dog in the app, on the site,
-in an avatar and in a favicon. It also means a colour change is a token
-change, never a new file.
+That single rule keeps the dog the same dog in the app, on the site, in an
+avatar and in a favicon. It also means a colour change is a token change,
+never a new file.
 
 - **Never recolour by exporting a new PNG.** Change the fill.
-- **Never rotate, skew, add a shadow, outline or gradient to it.** The mask
-  has no room for any of that at 24 px, which is where it lives most often.
+- **Never rotate, skew, add a shadow, outline or gradient to it.** At 24 px,
+  where it shows up most often, the mask has no room for any of that.
 - **Never place the glyph beside the wordmark when the mascot is already
-  present** in the same frame, as a watermark or as the adjacent avatar. Once
-  is identity, twice is clip art.
+  present** in the same frame, as a watermark or as the avatar next to it.
+  Once is identity, twice is clip art.
 
 ## The lockup
 
 `website/src/components/Logo.tsx` is the lockup: the mask in white on a black
 tile, then the word `Goodboy`. `BrandBadge.tsx` is the same lockup in the app.
-No tagline inside it, no registered mark, no second line.
+It has no tagline, no registered mark and no second line.
 
-The tile has one geometry everywhere, and it is the only geometry:
+The tile has one shape everywhere, and no other shape exists:
 
 | Ratio       | Value   | Meaning                             |
 | ----------- | ------- | ----------------------------------- |
@@ -51,88 +52,88 @@ The tile has one geometry everywhere, and it is the only geometry:
 | Tile radius | `0.28`  | Corner radius against the tile side |
 | Mark inset  | derived | `(1 - 0.76) / 2` on **both** axes   |
 
-The inset is derived, never typed. An offset that differs between the two
-axes is a bug: it was one, and it put the mark 3% low on every surface.
+The inset is calculated, never typed in. If the offset differs between the two
+axes, that is a bug. It happened once, and it put the mark 3% too low on every
+surface.
 
 **The app icon is the one deliberate exception.** It uses
 `APP_ICON_MARK_SCALE_EXCEPTION` in `website/scripts/build-brand-assets.mjs`,
-a smaller `0.66`, because the dock renders it between 32 and 64px and the
-silhouette needs air to stay readable at that size. Nothing else deviates:
-the badge, the site logo and the favicon all take the shared `0.76`, and the
-inset is still derived on both axes. Adding a second exception needs a
-reason as concrete as that one.
+which is a smaller `0.66`. The dock shows the icon between 32 and 64px, and at
+that size the dog's outline needs space around it to stay readable. Nothing
+else changes: the badge, the site logo and the favicon all use the shared
+`0.76`, and the inset is still calculated on both axes. A second exception
+needs a reason as concrete as that one.
 
-The word is always **Goodboy**, one word, capital G, never `GoodBoy`,
-`goodboy` in running text, or an abbreviation. `GB` is not a short form of
+The word is always **Goodboy**: one word, capital G. Never `GoodBoy`, never
+`goodboy` in running text, never an abbreviation. `GB` is not a short form of
 anything here.
 
 ## Colour
 
-The identity colour is the **accent teal**. The exact value differs by
-surface and is owned by tokens, not by this file: `--accent` in
-`website/src/styles.css`, the accent ramp in `apps/desktop/src/styles.css`.
-Read them, do not retype them.
+The identity colour of the product is `--color-primary`. The website keeps its
+own `--accent` token for the same role. Read the tokens, do not retype them.
 
-The tile the mark sits on is **black, never the accent**, and it is one value
-across the app, the site, the favicon and the app icon: `--brand-tile` in
+The tile behind the mark is **black, never the primary colour**. It is the same
+value in the app, on the site, in the favicon and in the app icon: `--brand-tile` in
 `website/src/styles.css` and `--color-brand` in `apps/desktop/src/styles.css`.
 The generator refuses to run when those two disagree.
 
 **The tile is meant to disappear in the app, and that is not a defect.**
-Against the top bar (`bg-background`) the black tile sits at 1.09:1, so what
-the eye reads there is a bare white mark, which is the whole point: the mark
-is white on black, not a coloured pill. The mark itself clears 19.66:1, so
-nothing is illegible. Do not add a border, a lighter dark-theme tile or a
-glow to make the tile visible. On the site and in the dock, where the ground
-is white or the icon is standalone, the same tile is doing visible work.
+On the top bar (`bg-background`) the black tile has a contrast of 1.09:1. So
+the eye sees a bare white mark there, and that is the whole point: the mark is
+white on black, not a coloured pill. The mark itself reaches 19.66:1, so
+nothing is hard to read. Do not add a border, a lighter dark-theme tile or a
+glow to make the tile visible. On the site the background is white, and in the
+dock the icon stands alone, so there the same tile is clearly visible and does
+its job.
 
-The ground is white on the site and charcoal in the app, and both are
-correct. An asset made for one is not automatically valid on the other, so a
-social image states which ground it was built on.
+The background is white on the site and charcoal in the app, and both are
+correct. An asset made for one does not automatically work on the other. So a
+social image says which background it was built for.
 
 ## Provider and integration marks
 
-When an asset shows what Goodboy works with, the marks come from the code and
-not from a designer's memory: `PROVIDER_IDS` in
-`packages/types/src/provider-registry.ts` for the agents, and the integration
-union in `packages/types/src/workspace.ts` for the rest. The glyphs
-themselves are in `packages/ui/src/components/brandIcons.tsx` and the colours
-in the `--color-provider-*` tokens.
+When an asset shows what Goodboy works with, the logos come from the code, not
+from a designer's memory. The agents come from `PROVIDER_IDS` in
+`packages/types/src/provider-registry.ts`. The rest come from the integration
+union in `packages/types/src/workspace.ts`. The glyphs themselves live in
+`packages/ui/src/components/brandIcons.tsx`, and the colours in the
+`--color-provider-*` tokens.
 
-Two rules keep a logo row from turning into a partner page:
+Two rules stop a row of logos from looking like a partner page:
 
-- **Show a category completely or not at all.** Four of seven providers is a
-  claim about which four matter.
-- **Label the rows.** `Agents` and `Your work` turn a grid of logos into a
-  sentence. Unlabelled, the same marks read as integrations we were approved
-  to display.
+- **Show a category completely or not at all.** Showing four of seven
+  providers claims that those four are the ones that matter.
+- **Label the rows.** With `Agents` and `Your work` as labels, a grid of logos
+  reads like a sentence. Without labels, the same logos look like integrations
+  we got permission to display.
 
-An asset with such a row carries a date, because the lists move. When a
-provider is added, the asset is stale until it is regenerated.
+An asset with such a row carries a date, because the lists change. When a new
+provider is added, the asset is out of date until someone regenerates it.
 
 ## Social formats
 
-Sizes are what the platform actually renders, not what its help page
-suggests. Every one of these is generated, never hand-cropped.
+The sizes below are what each platform really shows, not what its help page
+suggests. Every one of these is generated, never cropped by hand.
 
-| Surface                     | Size                     | Keep clear                                                                                 |
-| --------------------------- | ------------------------ | ------------------------------------------------------------------------------------------ |
-| X avatar                    | 1024x1024                | Circle crop, so nothing in the corners                                                     |
-| X header                    | 1500x500                 | Bottom left, where the avatar overlaps, and the top and bottom edges, which crop on mobile |
-| LinkedIn company cover      | 1128x191, rendered at 2x | Bottom left, under the company logo                                                        |
-| LinkedIn profile background | 1584x396                 | The left third, under the profile photo                                                    |
-| og-image                    | 1200x630                 | Nothing, but crawlers only take the PNG, so the PNG is the only source                     |
+| Surface                     | Size                     | Keep clear                                                                          |
+| --------------------------- | ------------------------ | ----------------------------------------------------------------------------------- |
+| X avatar                    | 1024x1024                | The corners, because of the circle crop                                             |
+| X header                    | 1500x500                 | Bottom left, where the avatar overlaps, and the top and bottom edges, cut on mobile |
+| LinkedIn company cover      | 1128x191, rendered at 2x | Bottom left, under the company logo                                                 |
+| LinkedIn profile background | 1584x396                 | The left third, under the profile photo                                             |
+| og-image                    | 1200x630                 | Nothing, but crawlers only take the PNG, so the PNG is the only source              |
 
-A banner is displayed far smaller than it is authored: 1500 px wide becomes
-roughly 600 on desktop and 440 on mobile. Anything under about 40 px in the
-source is illegible where it is actually seen, which is why the thin
-LinkedIn cover carries no marks at all.
+A banner shows up much smaller than it is made. 1500 px wide becomes about 600
+on desktop and 440 on mobile. Anything under about 40 px in the source can't be
+read where people actually see it. That is why the thin LinkedIn cover has no
+logos at all.
 
 ## Rendering
 
 Assets are rendered with **system Chrome headless**, from an HTML card that
-uses the real tokens and the real mask. There is no puppeteer, imagemagick or
-rsvg in this project and none is being added for this.
+uses the real tokens and the real mask. This project has no puppeteer,
+imagemagick or rsvg, and none will be added for this.
 
 ```
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
@@ -141,23 +142,23 @@ rsvg in this project and none is being added for this.
   --window-size=WxH --screenshot=out.png file:///path/card.html
 ```
 
-Chrome renders `oklch()` and CSS masks exactly, so the card is the same
-colour space the product ships in. Rendering at `--force-device-scale-factor=2`
-and letting the platform downscale is the fix for any surface that compresses
-hard, which on current evidence is every LinkedIn cover.
+Chrome renders `oklch()` and CSS masks exactly, so the card uses the same
+colour space the product ships in. Some surfaces compress images hard. For
+those, render at `--force-device-scale-factor=2` and let the platform scale it
+down. So far every LinkedIn cover needs this.
 
-`website/scripts/build-brand-assets.mjs` owns every generated surface, the
-five social formats above plus `favicon` and `app-icon`. Pass a surface slug
-to rebuild one without touching the rest:
+`website/scripts/build-brand-assets.mjs` owns every generated surface: the
+five social formats above, plus `favicon` and `app-icon`. To rebuild one
+surface and leave the rest alone, pass its slug:
 
 ```
 node scripts/build-brand-assets.mjs app-icon
 ```
 
 `favicon` writes the whole of `website/public/favicon.svg`, tile and glyph
-together, so no attribute in it is hand-maintained. `app-icon` renders a
-1024px card and hands it to the Tauri CLI, which emits the PNG set, the
-`.icns` and the `.ico` into `apps/desktop/src-tauri/icons`. The CLI orders
-`.icns` chunks nondeterministically, so the script compares chunk payloads
-rather than bytes and leaves the file alone when only the order moved. Never
-hand-paste a binary into that directory: rerun the surface.
+together, so nobody edits any attribute in it by hand. `app-icon` renders a
+1024px card and hands it to the Tauri CLI. The CLI writes the PNG set, the
+`.icns` and the `.ico` into `apps/desktop/src-tauri/icons`. The CLI writes the
+`.icns` chunks in a random order. So the script compares the chunk contents,
+not the raw bytes, and leaves the file alone when only the order changed.
+Never paste a binary into that directory by hand: rerun the surface.
