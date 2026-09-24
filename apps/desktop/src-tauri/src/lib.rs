@@ -50,8 +50,6 @@ mod workflows;
 mod worktree;
 mod worktree_writer;
 
-use std::sync::Mutex;
-
 #[cfg(target_os = "macos")]
 fn suppress_webkit_media_remote() {
     use objc2::runtime::AnyObject;
@@ -98,19 +96,6 @@ pub fn run() {
         }
     };
     let bridge_state = bridge::BridgeState::new().expect("failed to init companion bridge");
-    let provider_state =
-        providers::ProviderState(Mutex::new(providers::initial_status("anthropic", "claude")));
-    let cursor_state = providers::CursorState(Mutex::new(providers::initial_status(
-        "cursor",
-        "cursor-agent",
-    )));
-    let codex_state =
-        providers::CodexState(Mutex::new(providers::initial_status("codex", "codex")));
-    let gemini_state =
-        providers::GeminiState(Mutex::new(providers::initial_status("gemini", "agy")));
-    let opencode_state = providers::OpencodeState(Mutex::new(providers::initial_status(
-        "opencode", "opencode",
-    )));
     let turn_registry = turn::TurnRegistry::new();
     let summarize_registry = summarize::SummarizeRegistry::new();
     let planner_registry = planner::PlannerRegistry::new();
@@ -151,11 +136,6 @@ pub fn run() {
 
     builder
         .manage(bridge_state)
-        .manage(provider_state)
-        .manage(cursor_state)
-        .manage(codex_state)
-        .manage(gemini_state)
-        .manage(opencode_state)
         .manage(turn_registry)
         .manage(writer_leases)
         .manage(summarize_registry)
@@ -171,7 +151,6 @@ pub fn run() {
         .manage(slack_token_cache)
         .setup(move |app| {
             use tauri::Manager;
-            providers::spawn_startup_detection(app.handle().clone());
             query_bridge::start(app.handle().clone());
             #[cfg(desktop)]
             app.handle()
