@@ -238,6 +238,7 @@ describe('OrchestratorStrip state ladder', () => {
       endedAtMs: 3 * 60_000,
       endReason: 'awaiting_user',
       costUsd: null,
+      touchedMountIds: null,
     };
     renderStrip({
       runOverride: run({ autoRun: true }),

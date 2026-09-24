@@ -140,6 +140,7 @@ const span = (agentId: string, from: number, to: number): MeasuredTurnSpan => ({
   endedAtMs: to * MINUTE,
   endReason: 'succeeded',
   costUsd: 0.5,
+  touchedMountIds: null,
 });
 
 const source = (over: Partial<WorkTimeSource>): WorkTimeSource => ({

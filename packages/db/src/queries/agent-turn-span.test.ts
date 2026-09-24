@@ -3,6 +3,7 @@ import type {
   AgentId,
   AgentTurnSpan,
   IsoDateTime,
+  MountId,
   ProviderRunId,
   SessionId,
   TelemetryRecordId,
@@ -10,6 +11,7 @@ import type {
 } from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
+  hasOtherSessionTurnSince,
   insertAgentTurnSpan,
   listAgentTurnSpanRoutes,
   listSessionTurnSpans,
@@ -37,6 +39,7 @@ const SPAN: AgentTurnSpan = {
   startedAt,
   endedAt,
   endReason: 'succeeded',
+  touchedMountIds: ['mount-web' as MountId],
 };
 
 type SpanRow = {
@@ -207,6 +210,7 @@ describe('agent turn span queries', () => {
         endedAtMs: Date.parse(endedAt),
         endReason: 'succeeded',
         costUsd: 0.4,
+        touchedMountIds: ['mount-web'],
       },
       expect.objectContaining({
         agentId: childId,
@@ -215,6 +219,65 @@ describe('agent turn span queries', () => {
         costUsd: null,
       }),
     ]);
+  });
+
+  it('reads the worktrees a turn changed, and none for a span recorded before them', async () => {
+    const database = await databaseWithRun({});
+    await insertAgentTurnSpan({
+      db: database,
+      span: { ...SPAN, touchedMountIds: ['mount-web' as MountId, 'mount-api' as MountId] },
+    });
+    await database.execute(
+      `INSERT INTO agent_turn_spans
+         (run_id, agent_id, session_id, workspace_id, step_role, provider, model, started_at, ended_at, end_reason)
+       VALUES ('run-old', ?, ?, ?, 'implementer', 'anthropic', 'claude-sonnet-5', 1, 2, 'succeeded')`,
+      [agentId, sessionId, workspaceId],
+    );
+    await database.execute(
+      `INSERT INTO agent_turn_spans
+         (run_id, agent_id, session_id, workspace_id, step_role, provider, model, started_at, ended_at, end_reason, touched_mount_ids)
+       VALUES ('run-bad', ?, ?, ?, 'implementer', 'anthropic', 'claude-sonnet-5', 3, 4, 'succeeded', 'not json')`,
+      [agentId, sessionId, workspaceId],
+    );
+
+    const spans = await listSessionTurnSpans({ db: database, sessionId });
+
+    expect(spans.map((span) => span.touchedMountIds)).toEqual([
+      null,
+      [],
+      ['mount-web', 'mount-api'],
+    ]);
+  });
+
+  it('tells whether another agent of the session closed a turn since a moment', async () => {
+    const database = await databaseWithRun({});
+    const otherId = 'agent-2' as AgentId;
+    await database.execute(
+      'INSERT INTO agents (id, session_id, ordinal, name, status) VALUES (?, ?, ?, ?, ?)',
+      [otherId, sessionId, 1, 'reviewer', 'completed'],
+    );
+    await insertAgentTurnSpan({ db: database, span: SPAN });
+    const endedMs = Date.parse(endedAt);
+
+    expect(
+      await hasOtherSessionTurnSince({ db: database, sessionId, agentId, sinceMs: endedMs }),
+    ).toBe(false);
+    expect(
+      await hasOtherSessionTurnSince({
+        db: database,
+        sessionId,
+        agentId: otherId,
+        sinceMs: endedMs,
+      }),
+    ).toBe(true);
+    expect(
+      await hasOtherSessionTurnSince({
+        db: database,
+        sessionId,
+        agentId: otherId,
+        sinceMs: endedMs + 1,
+      }),
+    ).toBe(false);
   });
 
   it('reads workspace spans ended inside the window only', async () => {

@@ -17,6 +17,7 @@ import type {
 } from '../../../../timeline/buildTimelineStream';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
+import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { TimelineRunLabel } from './TimelineRunLabel';
 import { DiffStat } from '../../../DiffStat';
 
@@ -24,7 +25,10 @@ type Props = {
   readonly item: TimelineRowItem;
   readonly diffStat?: MountDiffStat | null;
   readonly isLaneLit?: boolean;
+  readonly worktrees?: ReadonlyArray<string>;
 };
+
+const NO_WORKTREES: ReadonlyArray<string> = [];
 
 type LabelEntry = Exclude<TimelineStreamEntry, TimelineRunEntry>;
 
@@ -131,7 +135,12 @@ const chipOf = ({ entry, grade }: ChipParams) => {
   );
 };
 
-export const TimelineRowLabel = ({ item, diffStat = null, isLaneLit = false }: Props) => {
+export const TimelineRowLabel = ({
+  item,
+  diffStat = null,
+  isLaneLit = false,
+  worktrees = NO_WORKTREES,
+}: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
     return <TimelineRunLabel entry={entry} rowState={item.rowState} isLaneLit={isLaneLit} />;
@@ -185,6 +194,7 @@ export const TimelineRowLabel = ({ item, diffStat = null, isLaneLit = false }: P
         <span className="min-w-0 truncate text-2xs text-muted-foreground">{secondary}</span>
       ) : null}
       {entry.kind === 'agent' && <TimelineRowStateLine state={item.rowState} />}
+      {entry.kind === 'agent' && <TimelineRowWorktrees names={worktrees} />}
     </>
   );
 };

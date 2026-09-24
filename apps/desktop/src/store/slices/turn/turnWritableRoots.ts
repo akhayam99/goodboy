@@ -7,7 +7,7 @@ type BuildParams = {
   readonly gitDirs: ReadonlyMap<string, string>;
 };
 
-const isWritable = (mount: SessionProjectMount): boolean =>
+export const isTurnWritableMount = (mount: SessionProjectMount): boolean =>
   mount.branch !== '' && mount.isAttached !== false && mount.worktreePath !== '';
 
 export const repoRootsForTurn = ({
@@ -15,14 +15,14 @@ export const repoRootsForTurn = ({
 }: {
   readonly mounts: ReadonlyArray<SessionProjectMount>;
 }): ReadonlyArray<string> =>
-  Array.from(new Set(mounts.filter(isWritable).map((mount) => mount.repoRoot)));
+  Array.from(new Set(mounts.filter(isTurnWritableMount).map((mount) => mount.repoRoot)));
 
 export const buildTurnWritableRoots = ({
   mounts,
   workingDir,
   gitDirs,
 }: BuildParams): ReadonlyArray<string> => {
-  const writable = mounts.filter(isWritable);
+  const writable = mounts.filter(isTurnWritableMount);
   const siblings = writable
     .filter((mount) => mount.worktreePath !== workingDir)
     .map((mount) => mount.worktreePath);

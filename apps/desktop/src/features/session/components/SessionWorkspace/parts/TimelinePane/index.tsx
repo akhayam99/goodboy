@@ -53,6 +53,7 @@ import { timelineLaneRuns } from '../../../../timeline/timelineLaneRuns';
 import { layoutTimelineRail } from '../../../../../workTreeModel/railGeometry';
 import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
 import { useActivityFilter } from '../../../../hooks/useActivityFilter';
+import { useAgentTouchedWorktrees } from '../../../../hooks/useAgentTouchedWorktrees';
 import { useTimelineOpen } from '../../../../hooks/useTimelineOpen';
 import { useSessionSuggestions } from '../../../../../suggestions';
 import { useSuggestionActions } from '../../../../../suggestions/useSuggestionActions';
@@ -69,6 +70,8 @@ import { TimelineAgentStreamRow } from './TimelineAgentStreamRow';
 import { TimelineRunStreamRow } from './TimelineRunStreamRow';
 import { WorkTimeProvider } from '../../../../../workTreeModel/components/WorkTimeProvider';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
+
+const NO_WORKTREES: ReadonlyArray<string> = [];
 
 type Props = {
   readonly session: Session;
@@ -116,6 +119,7 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
     onSelectQuestions: () => setActiveLens(sessionId, 'questions'),
   });
   const diffStats = useMountDiffStats(sessionId);
+  const touchedWorktrees = useAgentTouchedWorktrees(sessionId);
   const roleModels = useSessionRoleModels({ sessionId });
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
@@ -576,6 +580,7 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
                       openTarget={target}
                       action={actionFor({ item })}
                       diffStat={diffStatFor({ item })}
+                      worktrees={touchedWorktrees.get(entry.agent.id) ?? NO_WORKTREES}
                       lanes={lanes}
                       runLane={runLaneFor({ item })}
                       step={

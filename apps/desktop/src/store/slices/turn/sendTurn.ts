@@ -141,6 +141,7 @@ import {
 } from './mountContinuations';
 import {
   buildTurnWritableRoots,
+  isTurnWritableMount,
   repoRootsForTurn,
   resolveGitCommonDirs,
 } from './turnWritableRoots';
@@ -158,7 +159,9 @@ import { budgetRoutingNoticeMessage, budgetRoutingReason } from './budgetRouting
 import { classifyToolCallFailure, toolCallFailureMessage } from './classifyToolCallFailure';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
+import { collectTouchedMounts } from './collectTouchedMounts';
 import { recordTurnSpan } from './recordTurnSpan';
+import { snapshotMountChanges } from './snapshotMountChanges';
 import { turnSpanEndReason } from './turnSpanEndReason';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
 import { codexMeasuredUsage } from './codexMeasuredUsage';
@@ -956,6 +959,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     let turnWasCancelled = false;
     let shouldAutoAdvanceWorkflow = false;
     const filesTouchedThisTurn = new Set<string>();
+    const editedPathsThisTurn = new Set<string>();
 
     const resumeSessionId =
       origin !== 'mount-continuation' && agentRowEarly?.providerSessionProviderId === provider
@@ -1057,7 +1061,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       void applyHeuristicTitle({ set, get, sessionId, agentId: activeAgentId, prompt: content });
     }
 
-    const turnSpanBase: Omit<AgentTurnSpan, 'endedAt' | 'endReason'> = {
+    const turnSpanBase: Omit<AgentTurnSpan, 'endedAt' | 'endReason' | 'touchedMountIds'> = {
       runId,
       agentId: activeAgentId,
       sessionId,
@@ -1069,6 +1073,19 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       effort: effortFlag ?? null,
       startedAt: now(),
     };
+    const turnMounts = scopeMounts.filter(isTurnWritableMount);
+    const mountChangesBefore = snapshotMountChanges({ mounts: turnMounts });
+    const touchedMountsForTurn = () =>
+      collectTouchedMounts({
+        get,
+        sessionId,
+        agentId: activeAgentId,
+        mounts: turnMounts,
+        workingDir,
+        editedPaths: Array.from(editedPathsThisTurn),
+        before: mountChangesBefore,
+        startedAt: turnSpanBase.startedAt,
+      });
 
     try {
       for await (const rawEvent of runTurn({
@@ -1161,6 +1178,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }
         if (event.kind === 'file_edit') {
           filesTouchedThisTurn.add(toRelPath(event.path, workingDir));
+          editedPathsThisTurn.add(event.path);
         }
 
         if (provider === 'anthropic' && event.kind === 'tool_call_start') {
@@ -1219,6 +1237,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           ...turnSpanBase,
           endedAt: turnEndedAt,
           endReason: turnSpanEndReason({ wasCancelled, assistantText }),
+          touchedMountIds: await touchedMountsForTurn(),
         },
       });
       if (
@@ -1404,6 +1423,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           ...turnSpanBase,
           endedAt: now(),
           endReason: cancelledBeforeFailure ? 'cancelled' : 'failed',
+          touchedMountIds: await touchedMountsForTurn(),
         },
       });
       const failure = classifyProviderError({ message: rawMessage });

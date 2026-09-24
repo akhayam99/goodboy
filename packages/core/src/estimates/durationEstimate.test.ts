@@ -185,6 +185,7 @@ const span = ({ agentId, from, to, ...rest }: SpanParams): MeasuredTurnSpan => (
   endedAtMs: to * MINUTE,
   endReason: 'succeeded',
   costUsd: 0.25,
+  touchedMountIds: null,
   ...rest,
 });
 

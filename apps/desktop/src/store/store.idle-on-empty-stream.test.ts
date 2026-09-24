@@ -442,6 +442,7 @@ describe('sendTurn, terminal state guarantees', () => {
       stepRole: 'custom',
       provider: 'anthropic',
       endReason: 'succeeded',
+      touchedMountIds: [],
     });
     expect(Date.parse(span.endedAt)).toBeGreaterThanOrEqual(Date.parse(span.startedAt));
   });

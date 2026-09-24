@@ -29,6 +29,7 @@ type Props = {
   readonly openTarget: TimelineOpenTarget | null;
   readonly action: TimelineRowAction | null;
   readonly diffStat?: MountDiffStat | null;
+  readonly worktrees?: ReadonlyArray<string>;
   readonly meta?: ReactNode;
   readonly progress?: number | null;
   readonly menu?: ReactNode;
@@ -47,6 +48,7 @@ export const TimelineStreamRow = ({
   openTarget,
   action,
   diffStat = null,
+  worktrees,
   meta = null,
   progress = null,
   menu = null,
@@ -82,7 +84,12 @@ export const TimelineStreamRow = ({
   const content = (
     <>
       <span className="flex min-w-0 flex-1 items-center gap-2">
-        <TimelineRowLabel item={item} diffStat={diffStat} isLaneLit={isLaneLit} />
+        <TimelineRowLabel
+          item={item}
+          diffStat={diffStat}
+          isLaneLit={isLaneLit}
+          worktrees={worktrees}
+        />
       </span>
       {openTarget == null ? null : (
         <span className="shrink-0 text-3xs text-muted-foreground opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">

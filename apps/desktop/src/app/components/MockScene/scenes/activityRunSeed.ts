@@ -1039,6 +1039,7 @@ const TURN_SPANS: ReadonlyArray<MeasuredTurnSpan> = AGENTS.flatMap((agent) => {
       endedAtMs: startedAtMs + (2 + (agent.ordinal % 5)) * MINUTE_MS + 40_000,
       endReason: 'succeeded',
       costUsd: null,
+      touchedMountIds: null,
     },
   ];
 });

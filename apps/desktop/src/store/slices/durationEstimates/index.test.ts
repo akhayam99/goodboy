@@ -36,6 +36,7 @@ const SPAN: MeasuredTurnSpan = {
   endedAtMs: 240_000,
   endReason: 'succeeded',
   costUsd: 0.4,
+  touchedMountIds: null,
 };
 
 const harness = () => {

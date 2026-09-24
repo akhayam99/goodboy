@@ -152,6 +152,7 @@ export {
   type ProviderTelemetrySummary,
 } from './queries/telemetry';
 export {
+  hasOtherSessionTurnSince,
   insertAgentTurnSpan,
   listAgentTurnSpanRoutes,
   listSessionTurnSpans,

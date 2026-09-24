@@ -1176,6 +1176,74 @@ describe('TimelinePane row meta', () => {
     });
   });
 
+  describe('worktrees a step changed', () => {
+    const mount = (mountId: string, projectId: string, worktreePath: string) => ({
+      mountId,
+      sessionId: 'session-1',
+      projectId,
+      mountName: projectId === 'project-web' ? 'acme-web' : 'acme-api',
+      worktreePath,
+      lastWorktreePath: null,
+      repoRoot: worktreePath,
+      branch: 'feat/checkout',
+      baseBranch: null,
+      parallelIndex: 0,
+      isAttached: true,
+      diskState: 'present',
+      revision: 0,
+    });
+    const WEB = mount('mount-web', 'project-web', '/repo/acme-web');
+    const API = mount('mount-api', 'project-api', '/repo/acme-api');
+    const touchedSpan = (touchedMountIds: ReadonlyArray<string> | null) => ({
+      agentId: 'agent-plan',
+      parentAgentId: null,
+      agentStatus: 'completed',
+      workflowRunId: 'run-meta',
+      isOrchestratedRunDone: false,
+      stepRole: 'planner',
+      provider: 'anthropic',
+      model: 'claude-opus-4-5',
+      effort: 'high',
+      startedAtMs: 0,
+      endedAtMs: 60_000,
+      endReason: 'succeeded',
+      costUsd: 0.62,
+      touchedMountIds,
+    });
+
+    beforeEach(() => {
+      storeState.projects = [
+        { id: 'project-web', name: 'acme-web' },
+        { id: 'project-api', name: 'acme-api' },
+      ];
+    });
+
+    afterEach(() => {
+      storeState.sessionTurnSpans = {};
+    });
+
+    it('names every worktree the step changed once the session has two', () => {
+      storeState.sessionProjectMounts = { 'session-1': [WEB, API] };
+      storeState.sessionTurnSpans = {
+        'session-1': [touchedSpan(['mount-api']), touchedSpan(['mount-web'])],
+      };
+      render(<TimelinePane session={SESSION} actions={null} />);
+
+      const worktrees = within(rowOf('Plan the fix')).getByTestId('timeline-row-worktrees');
+      expect(worktrees.textContent).toBe('acme-web, acme-api');
+      expect(worktrees.getAttribute('title')).toBe('Changed files in acme-web and acme-api');
+      expect(within(rowOf('Build the fix')).queryByTestId('timeline-row-worktrees')).toBeNull();
+    });
+
+    it('stays quiet in a session with a single worktree', () => {
+      storeState.sessionProjectMounts = { 'session-1': [WEB] };
+      storeState.sessionTurnSpans = { 'session-1': [touchedSpan(['mount-web'])] };
+      render(<TimelinePane session={SESSION} actions={null} />);
+
+      expect(within(rowOf('Plan the fix')).queryByTestId('timeline-row-worktrees')).toBeNull();
+    });
+  });
+
   it('keeps the cost of the run when the pane narrows, and lets a step cost go', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
     const runCost = within(rowOf('Ship the checkout fix'))

@@ -1,6 +1,7 @@
 import type {
   AgentId,
   IsoDateTime,
+  MountId,
   ProviderRunId,
   SessionId,
   WorkflowRunId,
@@ -24,6 +25,7 @@ export type AgentTurnSpan = Readonly<{
   startedAt: IsoDateTime;
   endedAt: IsoDateTime;
   endReason: AgentTurnSpanEndReason;
+  touchedMountIds: ReadonlyArray<MountId>;
 }>;
 
 export type MeasuredTurnSpan = Readonly<{
@@ -40,6 +42,7 @@ export type MeasuredTurnSpan = Readonly<{
   endedAtMs: number;
   endReason: AgentTurnSpanEndReason;
   costUsd: number | null;
+  touchedMountIds: ReadonlyArray<MountId> | null;
 }>;
 
 export type AgentTurnSpanRoute = Pick<

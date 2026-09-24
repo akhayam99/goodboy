@@ -148,6 +148,8 @@ and shows its pull request. It can still write in every mount of the session.
 The chat header names the start ("Starts in") and lists the rest of the reach
 in its tooltip. With two or more mounts, you pick where new turns start there
 or from a row's menu, and each row shows the agents working in it right now.
+Once a turn ends, Goodboy records which mounts it changed, so an agent's row in
+Activity names every worktree it changed, not only the one it started in.
 
 ## Activity
 

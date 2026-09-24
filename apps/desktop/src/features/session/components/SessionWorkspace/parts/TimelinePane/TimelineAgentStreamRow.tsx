@@ -24,6 +24,7 @@ type Props = {
   readonly openTarget: TimelineOpenTarget | null;
   readonly action: TimelineRowAction | null;
   readonly diffStat: MountDiffStat | null;
+  readonly worktrees: ReadonlyArray<string>;
   readonly lanes: TimelineLaneControl | null;
   readonly runLane: TimelineLaneTarget | null;
   readonly step: Step | null;
@@ -42,6 +43,7 @@ export const TimelineAgentStreamRow = ({
   openTarget,
   action,
   diffStat,
+  worktrees,
   lanes,
   runLane,
   step,
@@ -68,6 +70,7 @@ export const TimelineAgentStreamRow = ({
       openTarget={openTarget}
       action={action}
       diffStat={diffStat}
+      worktrees={worktrees}
       meta={
         <TimelineAgentMeta work={work} costUsd={costUsd} shouldKeepCost={item.grade === 'entry'} />
       }
