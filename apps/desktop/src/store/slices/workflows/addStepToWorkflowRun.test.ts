@@ -655,6 +655,34 @@ describe('addStepToWorkflowRun', () => {
     expect(sessions[0]!.workflowRuns[0]!.orchestrationOutcome).toBeUndefined();
   });
 
+  it('keeps a step added to a pooled run inside the run pool', async () => {
+    const base = baseState({ dynamicOutcome: 'blocked' });
+    const sessions = base['sessions'] as ReadonlyArray<Session>;
+    const pooled = sessions.map((session) => ({
+      ...session,
+      workflowRuns: session.workflowRuns.map((run) => ({
+        ...run,
+        providerPool: ['codex' as const],
+      })),
+    }));
+    const state = { ...base, sessions: pooled };
+    const { add } = harness(state);
+
+    const result = await add({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      name: 'Review',
+      role: 'reviewer',
+    });
+
+    expect(result.kind).toBe('added');
+    expect(preSpawnSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        availability: expect.objectContaining({ connectedProviders: ['codex'] }),
+      }),
+    );
+  });
+
   it('routes the new agent through the workspace role model', async () => {
     const state = baseState({
       workspaceRoleModels: {

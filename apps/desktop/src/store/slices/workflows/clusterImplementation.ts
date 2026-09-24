@@ -250,6 +250,7 @@ export const fanOutClusters = async (
   const batch = childRoutingBatch({
     state: get(),
     sessionId,
+    workflowRunId: container.workflowRunId ?? null,
     role: 'implementer',
     requests: clusters.map((cluster) => ({
       proposal: cluster.routingProposal ?? null,

@@ -659,6 +659,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         sessionId,
         isRunBudgetBlocked: false,
         nowMs: Date.now(),
+        providerPool: run.providerPool ?? null,
       });
       const modelMenu = orchestratorModelPool({ availability });
       const isModelMetadataEnabled = workflowRoutingFlags().isModelMetadataEnabled;

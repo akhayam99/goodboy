@@ -530,6 +530,54 @@ describe('session_workflows trigger-mode queries', () => {
     });
   });
 
+  describe('per-run provider pool', () => {
+    it('leaves a run without a pool free to use every provider', async () => {
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+        executionMode: 'dynamic',
+      });
+      const run = (await readRunsNewestFirst({ db }))[0]!;
+      expect(run.providerPool).toBeUndefined();
+    });
+
+    it('round-trips the providers picked in the builder', async () => {
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+        executionMode: 'dynamic',
+        providerPool: ['codex', 'anthropic'],
+      });
+      const run = (await readRunsNewestFirst({ db }))[0]!;
+      expect(run.providerPool).toEqual(['anthropic', 'codex']);
+    });
+
+    it('drops unknown providers from a stored pool', async () => {
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-1' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+        executionMode: 'dynamic',
+      });
+      await db.execute(
+        'UPDATE session_workflows SET provider_pool = \'["retired","codex"]\' WHERE workflow_run_id = \'run-1\'',
+      );
+      const run = (await readRunsNewestFirst({ db }))[0]!;
+      expect(run.providerPool).toEqual(['codex']);
+    });
+  });
+
   describe('per-run goal', () => {
     it('round-trips the goal typed in the builder', async () => {
       await attachWorkflowToSession({

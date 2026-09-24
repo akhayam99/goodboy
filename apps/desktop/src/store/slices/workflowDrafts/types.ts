@@ -25,4 +25,5 @@ export type WorkflowBuilderDraft = {
   readonly autoRun: boolean;
   readonly title: string;
   readonly orchestratorModel: OrchestratorModelDraft;
+  readonly providerPool: ReadonlyArray<ProviderId> | null;
 };

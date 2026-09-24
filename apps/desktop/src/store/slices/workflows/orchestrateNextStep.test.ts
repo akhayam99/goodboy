@@ -826,6 +826,55 @@ describe('orchestrateNextStep', () => {
     expect(modelMenuIdentities().some((identity) => identity.startsWith('codex/'))).toBe(false);
   });
 
+  it('offers only the providers the run was allowed to use', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: { action: 'done', reason: 'all set' },
+    });
+    const state = baseState();
+    const base = session();
+    state['sessions'] = [
+      { ...base, workflowRuns: [{ ...base.workflowRuns[0]!, providerPool: ['codex'] }] },
+    ];
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const identities = modelMenuIdentities();
+    expect(identities.length).toBeGreaterThan(0);
+    expect(identities.every((identity) => identity.startsWith('codex/'))).toBe(true);
+  });
+
+  it('moves a pick outside the run pool onto a provider the run may use', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'fable-5',
+          effort: 'max',
+          modelReason: 'The refactor spans the whole router.',
+        },
+      },
+    });
+    const state = baseState();
+    const base = session();
+    state['sessions'] = [
+      { ...base, workflowRuns: [{ ...base.workflowRuns[0]!, providerPool: ['codex'] }] },
+    ];
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ providerOverride: 'codex' }),
+    );
+  });
+
   it('runs an available pick no role default reaches, without a rejection notice', async () => {
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,

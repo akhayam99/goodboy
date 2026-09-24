@@ -35,6 +35,7 @@ const buildDraft = (overrides: Partial<WorkflowBuilderDraft> = {}): WorkflowBuil
   autoRun: false,
   title: '',
   orchestratorModel: { providerOverride: '', modelOverride: '', effortOverride: null },
+  providerPool: null,
   ...overrides,
 });
 

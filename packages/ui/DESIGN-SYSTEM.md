@@ -401,6 +401,14 @@ effort, since choosing it is the point of the form. A row opens in place as
 one group (the rule in `docs/styling.md`), and its model axes are the
 `RoutingPicker` body mounted inline, not a copy of it.
 
+An orchestrated plan has no steps yet, so it draws the orchestrator as the
+origin node and three example rows above it: queued nodes, muted role pills
+and a bare bar for the title, never text or routing, under a caption that
+says they are an example. They enter once, staggered 120ms apart, with the
+`fade-in` transition keyframe and `animation-fill-mode: backwards`. The
+entry confirms that the mode changed and that the run grows one step at a
+time. It never loops, and reduced motion drops it.
+
 ## z-index tokens
 
 Named tokens in `apps/desktop/src/styles.css` under `@theme`, with keys

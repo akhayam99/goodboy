@@ -59,6 +59,7 @@ import { invokePermissionRuleList } from '../../../features/permissions/permissi
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { composeChildRoutingPrompt } from '../../../features/workflows/composeChildRoutingPrompt';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { runProviderPool } from '../../../features/workflows/runProviderPool';
 import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
 import {
@@ -844,6 +845,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           sessionId,
           isRunBudgetBlocked: false,
           nowMs: Date.now(),
+          providerPool: runProviderPool({
+            sessions: get().sessions,
+            sessionId,
+            workflowRunId: agentRowEarly?.workflowRunId,
+          }),
         }),
       });
       if (childRoutingBlock.length > 0) {

@@ -134,6 +134,7 @@ export type WorkflowRun = Readonly<{
   goal?: string;
   title?: string;
   titleUserEdited?: boolean;
+  providerPool?: ReadonlyArray<ProviderId>;
   discardedAt?: IsoDateTime;
   createdAt?: IsoDateTime;
 }>;

@@ -978,6 +978,7 @@ export const BUILDER_DRAFT: WorkflowBuilderDraft = {
     modelOverride: 'gpt-5.6-sol',
     effortOverride: 'high',
   },
+  providerPool: null,
 };
 
 export const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [

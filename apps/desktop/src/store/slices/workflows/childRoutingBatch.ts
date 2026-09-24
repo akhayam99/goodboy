@@ -6,6 +6,7 @@ import type {
   WorkflowRoutingDecision,
   WorkflowRoutingLock,
   WorkflowRoutingProposal,
+  WorkflowRunId,
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { WorkflowMissingProposalPolicy } from '@goodboy/core';
@@ -47,6 +48,7 @@ type ResolveOneParams = {
   readonly role: AgentRole;
   readonly request: ChildRoutingRequest;
   readonly isChildSelectionEnabled: boolean;
+  readonly workflowRunId?: WorkflowRunId | null;
 };
 
 type ChildRoutingOutcome =
@@ -73,6 +75,7 @@ export const resolveOneChildRouting = ({
   role,
   request,
   isChildSelectionEnabled,
+  workflowRunId = null,
 }: ResolveOneParams): ChildRoutingOutcome => {
   const { resolution, taskProfile } = resolveWorkflowChildRouting({
     state,
@@ -82,6 +85,7 @@ export const resolveOneChildRouting = ({
     proposal: isChildSelectionEnabled === true ? request.proposal : null,
     promptText: request.promptText,
     missingProposal: childMissingProposalPolicy({ isChildSelectionEnabled }),
+    workflowRunId,
   });
   if (resolution.kind === 'blocked') {
     if (isChildSelectionEnabled === false && request.childLock === null) {
@@ -108,6 +112,7 @@ type BatchParams = {
   readonly sessionId: SessionId;
   readonly role: AgentRole;
   readonly requests: ReadonlyArray<ChildRoutingRequest>;
+  readonly workflowRunId?: WorkflowRunId | null;
 };
 
 export const childRoutingBatch = ({
@@ -115,6 +120,7 @@ export const childRoutingBatch = ({
   sessionId,
   role,
   requests,
+  workflowRunId = null,
 }: BatchParams): ChildRoutingBatch => {
   const isChildSelectionEnabled = workflowRoutingFlags().isChildModelSelectionEnabled;
   const entries: Array<ChildRoutingFields> = [];
@@ -125,6 +131,7 @@ export const childRoutingBatch = ({
       role,
       request,
       isChildSelectionEnabled,
+      workflowRunId,
     });
     if (outcome.kind === 'blocked') {
       return { kind: 'blocked', reason: outcome.reason };

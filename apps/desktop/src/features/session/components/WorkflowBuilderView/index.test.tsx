@@ -293,6 +293,14 @@ const pickPreset = (name: RegExp) => {
 
 const openSpendCap = () => openChip(/^spend cap:/i);
 
+const guidanceField = () => {
+  const toggle = screen.queryByRole('button', { name: /add guidance for the orchestrator/i });
+  if (toggle !== null) {
+    fireEvent.click(toggle);
+  }
+  return screen.getByLabelText(/guidance \(optional\)/i);
+};
+
 const removeStepAt = (index: number) => {
   expandStep(index);
   fireEvent.click(screen.getByRole('button', { name: /^remove$/i }));
@@ -691,7 +699,9 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
 
-    expect(screen.getByLabelText(/guidance \(optional\)/i)).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: /add guidance for the orchestrator/i }),
+    ).toBeDefined();
     expect(startBtn().disabled).toBe(false);
     fireEvent.click(startBtn());
 
@@ -729,7 +739,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     setGoal();
 
     expect(screen.queryByRole('button', { name: /generate plan/i })).toBeNull();
-    fireEvent.change(screen.getByPlaceholderText(/anything to respect or avoid/i), {
+    fireEvent.change(guidanceField(), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
     expect(startBtn().disabled).toBe(false);
@@ -779,7 +789,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
-    fireEvent.change(screen.getByPlaceholderText(/anything to respect or avoid/i), {
+    fireEvent.change(guidanceField(), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
     openSpendCap();
@@ -806,7 +816,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     expect(screen.queryByRole('tab', { name: /notify/i })).toBeNull();
     expect(screen.queryByRole('tab', { name: /pause/i })).toBeNull();
 
-    fireEvent.change(screen.getByPlaceholderText(/anything to respect or avoid/i), {
+    fireEvent.change(guidanceField(), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
     fireEvent.change(screen.getByLabelText('Spend limit in dollars'), {
@@ -832,7 +842,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
-    fireEvent.change(screen.getByPlaceholderText(/anything to respect or avoid/i), {
+    fireEvent.change(guidanceField(), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
     fireEvent.click(startBtn());
@@ -852,7 +862,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     render(<WorkflowBuilderView session={session} onClose={onClose} />);
     setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
-    fireEvent.change(screen.getByPlaceholderText(/anything to respect or avoid/i), {
+    fireEvent.change(guidanceField(), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
     fireEvent.click(startBtn());
@@ -877,7 +887,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
-    fireEvent.change(screen.getByPlaceholderText(/anything to respect or avoid/i), {
+    fireEvent.change(guidanceField(), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
 
@@ -911,7 +921,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
-    fireEvent.change(screen.getByPlaceholderText(/anything to respect or avoid/i), {
+    fireEvent.change(guidanceField(), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
 
@@ -935,7 +945,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
-    fireEvent.change(screen.getByPlaceholderText(/anything to respect or avoid/i), {
+    fireEvent.change(guidanceField(), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
 
@@ -973,7 +983,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
-    fireEvent.change(screen.getByPlaceholderText(/anything to respect or avoid/i), {
+    fireEvent.change(guidanceField(), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
 
@@ -1009,11 +1019,84 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     expect(orchestratorPicker().dataset.offeredProviders).toBe('anthropic,codex');
   });
 
+  it('draws three example steps above the orchestrator and says they are an example', () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+
+    const plan = screen.getByRole('region', { name: /^plan$/i });
+    expect(within(plan).getByText(/^example\. real steps are picked one at a time/i)).toBeDefined();
+    const examples = Array.from(plan.querySelectorAll('[data-example-step]'));
+    expect(examples.map((row) => row.getAttribute('data-example-step'))).toEqual([
+      'scout',
+      'planner',
+      'implementer',
+    ]);
+    expect(examples.every((row) => row.getAttribute('aria-hidden') === 'true')).toBe(true);
+    expect(within(plan).queryByRole('group', { name: /scout routing/i })).toBeNull();
+  });
+
+  it('keeps guidance behind a disclosure and folds it back when left empty', () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    expect(screen.queryByLabelText(/guidance \(optional\)/i)).toBeNull();
+
+    const field = guidanceField();
+    expect(document.activeElement).toBe(field);
+    fireEvent.blur(field);
+
+    expect(screen.queryByLabelText(/guidance \(optional\)/i)).toBeNull();
+    expect(
+      screen.getByRole('button', { name: /add guidance for the orchestrator/i }),
+    ).toBeDefined();
+  });
+
+  it('lets every connected provider run the agents unless the run narrows them', async () => {
+    storeState.providers = [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'codex', connection: 'connected' },
+    ];
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+
+    expect(screen.getByRole('button', { name: /^can use: every provider$/i })).toBeDefined();
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    expect(mockAttach).toHaveBeenCalledWith(
+      'sess-1',
+      expect.any(String),
+      expect.not.objectContaining({ providerPool: expect.anything() }),
+    );
+  });
+
+  it('carries the providers the run may use onto the orchestrated run', async () => {
+    storeState.providers = [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'codex', connection: 'connected' },
+    ];
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+
+    openChip(/^can use:/i);
+    const providers = screen.getByRole('group', { name: /^providers$/i });
+    fireEvent.click(within(providers).getByRole('button', { name: /claude/i }));
+
+    expect(screen.getByRole('button', { name: /^can use: codex$/i })).toBeDefined();
+    const codex = within(providers).getByRole('button', { name: /codex/i }) as HTMLButtonElement;
+    expect(codex.disabled).toBe(true);
+
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    expect(mockAttach).toHaveBeenCalledWith(
+      'sess-1',
+      expect.any(String),
+      expect.objectContaining({ executionMode: 'dynamic', providerPool: ['codex'] }),
+    );
+  });
+
   it('resets the orchestrator model back to the workspace default', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
-    fireEvent.change(screen.getByPlaceholderText(/anything to respect or avoid/i), {
+    fireEvent.change(guidanceField(), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
 
@@ -1035,7 +1118,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
 
     const explanation = screen.getByText(/picks each next agent after the previous one/i);
-    const intent = screen.getByPlaceholderText(/anything to respect or avoid/i);
+    const intent = screen.getByRole('button', { name: /add guidance for the orchestrator/i });
 
     expect(explanation.compareDocumentPosition(intent) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(
       0,
@@ -1057,7 +1140,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     expect(name.placeholder).toBe('Orchestrated workflow 2');
 
     fireEvent.change(name, { target: { value: 'Release hardening' } });
-    fireEvent.change(screen.getByPlaceholderText(/anything to respect or avoid/i), {
+    fireEvent.change(guidanceField(), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
     fireEvent.click(startBtn());

@@ -11,6 +11,7 @@ type Params = {
   readonly sessionId: SessionId | null;
   readonly isRunBudgetBlocked: boolean;
   readonly nowMs: number;
+  readonly providerPool?: ReadonlyArray<ProviderId> | null;
 };
 
 const liveAlerts = (alerts: ReadonlyArray<BudgetAlert>): ReadonlyArray<BudgetAlert> =>
@@ -23,6 +24,7 @@ export const workflowAvailabilitySnapshot = ({
   sessionId,
   isRunBudgetBlocked,
   nowMs,
+  providerPool = null,
 }: Params): WorkflowRoutingAvailabilitySnapshot => {
   const live = liveAlerts(alerts);
   const blockedNames = new Set(
@@ -36,7 +38,8 @@ export const workflowAvailabilitySnapshot = ({
   return {
     connectedProviders: providers
       .filter((provider) => provider.connection === 'connected')
-      .map((provider) => provider.id),
+      .map((provider) => provider.id)
+      .filter((provider) => providerPool === null || providerPool.includes(provider)),
     coolingDownProviders: providersCoolingDown({ cooldowns, nowMs }),
     budgetBlockedProviders,
     isSessionBudgetBlocked:

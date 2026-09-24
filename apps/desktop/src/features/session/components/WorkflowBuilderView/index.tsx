@@ -74,6 +74,8 @@ import { BuilderTitleField } from './parts/BuilderTitleField';
 import { GoalField } from './parts/GoalField';
 import { LaunchBar } from './parts/LaunchBar';
 import { ModeSwitch } from './parts/ModeSwitch';
+import { ProviderPoolChip } from './parts/ProviderPoolChip';
+import { effectiveProviderPool } from './providerPool';
 import { PlanDraftingBanner } from './parts/PlanDraftingBanner';
 import { PresetPicker } from './parts/PresetPicker';
 import { SpendCapChip } from './parts/SpendCapChip';
@@ -120,7 +122,8 @@ const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
   d.title.trim() === '' &&
   d.orchestratorModel.providerOverride === '' &&
   d.orchestratorModel.modelOverride === '' &&
-  d.orchestratorModel.effortOverride === null;
+  d.orchestratorModel.effortOverride === null &&
+  d.providerPool === null;
 
 const PLANNER_EFFORT: EffortLevel = defaultsForRole('planner').effort;
 const ORCHESTRATOR_EFFORT: EffortLevel = 'medium';
@@ -247,6 +250,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const [orchestratorEffortOverride, setOrchestratorEffortOverride] = useState<EffortLevel | null>(
     initialDraft?.orchestratorModel.effortOverride ?? null,
   );
+  const [providerPool, setProviderPool] = useState<ReadonlyArray<ProviderId> | null>(
+    initialDraft?.providerPool ?? null,
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<BuilderError | null>(null);
   const [plannerProviderOverride, setPlannerProviderOverride] = useState<ProviderId | ''>('');
@@ -318,6 +324,10 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       connectedProviders.filter((candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0),
     [connectedProviders],
   );
+  const effectivePool = effectiveProviderPool({
+    providers: orchestratorProviders,
+    pool: providerPool,
+  });
 
   const orchestratorEffectiveProviderId: ProviderId =
     orchestratorProviderOverride !== ''
@@ -420,6 +430,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       modelOverride: orchestratorModelOverride,
       effortOverride: orchestratorEffortOverride,
     },
+    providerPool,
   };
   const draftEmpty = isDraftEmpty(draft);
 
@@ -445,6 +456,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     orchestratorProviderOverride,
     orchestratorModelOverride,
     orchestratorEffortOverride,
+    providerPool,
   ]);
 
   const resetOrchestratorModel = () => {
@@ -469,6 +481,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setTitleSuggestion(null);
     suggestedGoalRef.current = null;
     resetOrchestratorModel();
+    setProviderPool(null);
     setStartChoice(IMMEDIATE_START);
     setIsSpendLimitEnabled(false);
     setSpendLimitDraft('');
@@ -696,6 +709,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           },
         }),
       ...(spendLimitUsd != null && { spendLimitUsd, spendLimitMode }),
+      ...(mode === 'dynamic' && effectivePool !== null && { providerPool: effectivePool }),
     };
   };
 
@@ -882,6 +896,13 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         ariaPressed={isPlannerOpen}
         disabled={blocked}
         onClick={() => setIsPlannerOpen((open) => !open)}
+      />
+    ) : orchestratorProviders.length > 0 ? (
+      <ProviderPoolChip
+        providers={orchestratorProviders}
+        pool={effectivePool}
+        disabled={blocked}
+        onChange={setProviderPool}
       />
     ) : null;
 

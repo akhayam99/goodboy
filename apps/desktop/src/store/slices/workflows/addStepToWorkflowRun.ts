@@ -256,6 +256,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
         sessionId,
         isRunBudgetBlocked: false,
         nowMs: Date.now(),
+        providerPool: run.providerPool ?? null,
       }),
     });
 

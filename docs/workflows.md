@@ -47,7 +47,7 @@ what you see before the start is what you see after it. From the top:
 
 The three modes:
 
-1. **Orchestrated**: give a goal and let the orchestrator choose each step as the work goes. The plan shows the orchestrator with its model. **Guidance (optional)** under it holds what the orchestrator should respect or avoid, and when to stop. The goal alone is enough to start.
+1. **Orchestrated**: give a goal and let the orchestrator choose each step as the work goes. The plan shows the orchestrator with its model at the bottom, and three example steps above it that grow in once when the tab opens. They are marked as an example and carry no model, because the real steps are picked one at a time. **Add guidance for the orchestrator** under it opens **Guidance (optional)**: what the orchestrator should respect or avoid, and when to stop. An emptied field folds back. **Can use**, next to the tabs, sets the providers this run may put agents on. It starts on every connected provider and keeps at least one. The goal alone is enough to start.
 2. **Custom**: write the steps yourself, or open **Draft with planner**, describe what you want and Goodboy drafts the steps for you to edit.
 3. **Preset**: pick a ready workflow from the **Preset** picker. Goodboy comes with **Refactor (example)**, a scout, plan, implement and test sequence you can copy and adjust. A preset is a source: editing a step marks it, the name shows "Edited from" the preset, and switching to **Custom** keeps the steps.
 
@@ -120,7 +120,8 @@ blocked.
 - It keeps a running recap of what is done and what is left
 - It ends the run when the goal is met, or stops and asks you when a decision needs you
 
-You choose the model the orchestrator runs on in the launch form.
+You choose the model the orchestrator runs on in the launch form, and the
+providers it may pick from with **Can use**.
 
 ### Hints
 
@@ -255,6 +256,7 @@ Everything below is the code behind the sections above.
 - `apps/desktop/src/store/slices/workflows/preSpawnWorkflowAgents.ts`: creates the run's agents when a workflow is added
 - `apps/desktop/src/store/slices/workflows/notifyWorkflowGateBlock.ts`: sends the blocked notification
 - `apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts`: asks the orchestrator for one decision
+- `apps/desktop/src/features/workflows/runProviderPool.ts`: reads the provider pool of the run an agent belongs to
 - `apps/desktop/src/features/session/components/WorkflowBuilderView/`: the builder. `parts/PlanTree/` draws the plan with `WorkNode` and `WorkMeta`, and the step editor mounts `RoutingPicker` with `presentation="inline"`
 - `apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.ts`: the name suggestion from the goal. It only returns text; `generateWorkflowTitle` renames a saved orchestrated run that started on the fallback name
 - `apps/desktop/src/store/slices/workflows/summarizeWorkflowAgentOutput.ts`: the summarizer that runs after each step
@@ -395,6 +397,14 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   orchestrator task model. A saved model the catalog dropped is ignored, never
   started. Steps take their role models from the resolved settings. A run has
   no per-role model overrides of its own.
+- **Its provider pool.** `provider_pool` on `session_workflows` (m170) holds
+  the providers picked in **Can use**, as a JSON list. Empty means every
+  connected provider. `workflowAvailabilitySnapshot` drops the providers
+  outside the pool, so the model menu, the routing of each decision, the
+  children a step fans out (`childRoutingBatch` with the run id) and the child
+  menu in the agent prompt all see the same narrowed set. A pick outside the
+  pool is moved the same way as a pick on a provider in cooldown. The
+  orchestrator's own model is not bound by the pool.
 - **Hints.** Hints are saved in the run's hint log (`orchestrator_hint_log` on
   `session_workflows`) and survive a restart. **Read now** on a live
   orchestrated run marks a decision in flight for restart: its answer is

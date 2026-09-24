@@ -168,3 +168,33 @@ describe('attaching a preset workflow rechecks availability before it spawns', (
     expect(stop.message.length).toBeGreaterThan(0);
   });
 });
+
+describe('attaching an orchestrated workflow keeps the providers the builder allowed', () => {
+  it('stores the pool on the run and in the database', async () => {
+    const state = baseState();
+    state['orchestrateNextStep'] = vi.fn(async () => undefined);
+    const { set, get } = harness(state);
+
+    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, {
+      executionMode: 'dynamic',
+      providerPool: ['codex'],
+    });
+
+    const persisted = attachInDbSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(persisted['providerPool']).toEqual(['codex']);
+    const stored = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(stored.providerPool).toEqual(['codex']);
+  });
+
+  it('ignores a pool on a run whose steps are already written', async () => {
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, { providerPool: ['codex'] });
+
+    const persisted = attachInDbSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(persisted['providerPool']).toBeUndefined();
+    const stored = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(stored.providerPool).toBeUndefined();
+  });
+});

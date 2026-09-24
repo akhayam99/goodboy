@@ -38,6 +38,18 @@ describe('workflowAvailabilitySnapshot', () => {
     expect(result.connectedProviders).toEqual(['anthropic']);
   });
 
+  it('keeps only the connected providers inside the run pool', () => {
+    const result = snapshot({ providerPool: ['codex', 'gemini'] });
+
+    expect(result.connectedProviders).toEqual(['codex']);
+  });
+
+  it('treats a missing run pool as every connected provider', () => {
+    const result = snapshot({ providerPool: null });
+
+    expect(result.connectedProviders).toEqual(['anthropic', 'codex']);
+  });
+
   it('reads a cooldown that is still open and ignores one that expired', () => {
     const result = snapshot({ cooldowns: { codex: NOW + 1000, anthropic: NOW - 1000 } });
 

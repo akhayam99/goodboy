@@ -6,6 +6,7 @@ import type {
   WorkflowModelPick,
   WorkflowRoutingLock,
   WorkflowRoutingProposal,
+  WorkflowRunId,
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import {
@@ -18,6 +19,7 @@ import {
   type WorkflowRoutingResolution,
 } from '@goodboy/core';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { runProviderPool } from '../../../features/workflows/runProviderPool';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { AppStore } from '../../store';
 
@@ -74,6 +76,7 @@ type Params = {
   readonly proposal: WorkflowRoutingProposal | null;
   readonly promptText: string;
   readonly missingProposal: WorkflowMissingProposalPolicy;
+  readonly workflowRunId?: WorkflowRunId | null;
 };
 
 export const resolveWorkflowChildRouting = ({
@@ -84,6 +87,7 @@ export const resolveWorkflowChildRouting = ({
   proposal,
   promptText,
   missingProposal,
+  workflowRunId = null,
 }: Params): WorkflowChildRouting => {
   const session = (state.sessions ?? []).find((candidate) => candidate.id === sessionId);
   const outcome = childProposalOutcome({ proposal, promptText });
@@ -120,6 +124,7 @@ export const resolveWorkflowChildRouting = ({
       sessionId,
       isRunBudgetBlocked: false,
       nowMs: Date.now(),
+      providerPool: runProviderPool({ sessions: state.sessions ?? [], sessionId, workflowRunId }),
     }),
     contextEstimate: null,
   });

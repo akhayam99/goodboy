@@ -38,6 +38,7 @@ export const revalidateChildRouting = async ({
       promptText,
       childLock: lock,
     },
+    workflowRunId: child.workflowRunId ?? null,
     isChildSelectionEnabled: workflowRoutingFlags().isChildModelSelectionEnabled,
   });
   if (outcome.kind === 'blocked') {
