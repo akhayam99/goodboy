@@ -1,4 +1,4 @@
-import { isAgentRole, verificationRoleForGrant } from '@goodboy/core';
+import { extractClusterOutcome, isAgentRole, verificationRoleForGrant } from '@goodboy/core';
 import type {
   Agent,
   AgentId,
@@ -12,9 +12,12 @@ import {
   invokeAgentList,
   invokeAgentUpdateStatus,
   invokeCapabilityGrantUpdate,
+  invokeCapabilityNeedRecord,
   invokeCapabilityObligationDecide,
+  invokeCapabilityObligationReopen,
   invokeCapabilityObligationSettle,
 } from '../../../features/workflows/workflows';
+import { composeKickoff, composeVerificationVerdict } from '../../kickoff';
 import { kindForRole } from '../../../features/session/agent-kind';
 import { worktreeStatus } from '../../../features/worktree/worktree';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
@@ -26,7 +29,9 @@ import type { GetFn, SetFn } from './types';
 
 export type CapabilityCompletionOutcome =
   | Readonly<{ kind: 'unbound' }>
+  | Readonly<{ kind: 'inactive'; reason: string }>
   | Readonly<{ kind: 'verification-started'; verifierAgentId: AgentId }>
+  | Readonly<{ kind: 'verification-rejected'; reason: string }>
   | Readonly<{ kind: 'replacement-started'; replacementAgentId: AgentId }>
   | Readonly<{ kind: 'parent-resumed' }>
   | Readonly<{ kind: 'settled'; verifiedRevision: string }>
@@ -38,7 +43,10 @@ type Binding = Readonly<{
   obligation: CapabilityObligation;
   grant: CapabilityGrant;
   isVerification: boolean;
+  isReplacement: boolean;
 }>;
+
+const TRANSFER_VERIFICATION_ROLE: AgentRole = 'reviewer';
 
 type BindingParams = {
   readonly get: GetFn;
@@ -56,6 +64,7 @@ export const capabilityBindingFor = ({
   const grant =
     grants.find((candidate) => candidate.verificationAgentId === agentId) ??
     grants.find((candidate) => candidate.childAgentId === agentId) ??
+    grants.find((candidate) => candidate.replacementAgentId === agentId) ??
     null;
   if (grant === null) {
     return null;
@@ -64,7 +73,12 @@ export const capabilityBindingFor = ({
   if (obligation === null) {
     return null;
   }
-  return { obligation, grant, isVerification: grant.verificationAgentId === agentId };
+  return {
+    obligation,
+    grant,
+    isVerification: grant.verificationAgentId === agentId,
+    isReplacement: grant.verificationAgentId !== agentId && grant.replacementAgentId === agentId,
+  };
 };
 
 const replacementRoleOf = ({
@@ -159,6 +173,7 @@ type SettleParams = {
   readonly sessionId: SessionId;
   readonly binding: Binding;
   readonly receipt: string;
+  readonly isRequesterContinuing: boolean;
 };
 
 const settleAndRelease = async ({
@@ -167,6 +182,7 @@ const settleAndRelease = async ({
   sessionId,
   binding,
   receipt,
+  isRequesterContinuing,
 }: SettleParams): Promise<string | null> => {
   const revision = await verifiedRevision({ get, sessionId });
   if (revision === null) {
@@ -185,9 +201,57 @@ const settleAndRelease = async ({
     deliveryReceipt: receipt,
   });
   rememberObligation({ set, sessionId, obligation: settled });
-  await releaseCapabilityHolds({ set, get, sessionId, obligation: settled });
+  await releaseCapabilityHolds({
+    set,
+    get,
+    sessionId,
+    obligation: settled,
+    isRequesterContinuing,
+  });
 
   return revision;
+};
+
+type FinishRequesterParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly obligationId: string;
+  readonly output: string;
+};
+
+const finishHandedOffRequester = async ({
+  get,
+  sessionId,
+  obligationId,
+  output,
+}: FinishRequesterParams): Promise<void> => {
+  const obligation = (get().capabilityObligations[sessionId] ?? []).find(
+    (candidate) => candidate.id === obligationId,
+  );
+  if (obligation?.state !== 'satisfied' || obligation.holdIds.length > 0) {
+    return;
+  }
+  const requester = (get().sessionPhaseRuns[sessionId] ?? []).find(
+    (agent) => agent.id === obligation.requesterAgentId,
+  );
+  if (
+    requester === undefined ||
+    !requester.stepId ||
+    !requester.workflowRunId ||
+    requester.status === 'completed'
+  ) {
+    return;
+  }
+  const { shouldAutoAdvance } = await get().finalizeWorkflowStep(
+    sessionId,
+    requester.id,
+    output,
+    false,
+    { force: true },
+  );
+  if (shouldAutoAdvance) {
+    void get().maybeAutoAdvanceWorkflow(sessionId);
+  }
 };
 
 type AdoptProposalParams = {
@@ -291,6 +355,7 @@ const adoptProposal = async ({
     sessionId,
     binding,
     receipt: `revision ${outcome.revision} adopted from ${child.name}`,
+    isRequesterContinuing: false,
   });
   void get().emitNotification({
     kind: 'error',
@@ -306,6 +371,263 @@ const adoptProposal = async ({
     await resumeClusterChildren({ set, get, sessionId, container });
   }
   return { kind: 'revision-adopted', revision: outcome.revision };
+};
+
+const transferVerificationPrompt = ({
+  reporter,
+  outputSummary,
+  transferredWork,
+}: {
+  readonly reporter: string;
+  readonly outputSummary: string;
+  readonly transferredWork: string | null;
+}): string =>
+  [
+    `${reporter} took over the work its requester transferred and reports it done.`,
+    '',
+    `What it reports: ${outputSummary}`,
+    '',
+    transferredWork ?? '',
+    '',
+    'Verify the changed revision against the remaining criteria only. Do not widen the scope and do not fix anything yourself: report whether the work holds, and why.',
+  ].join('\n');
+
+const inactiveReasonOf = ({ binding }: { readonly binding: Binding }): string | null => {
+  if (binding.obligation.state === 'satisfied' || binding.grant.state === 'settled') {
+    return 'the obligation is already closed';
+  }
+  if (binding.obligation.state === 'refused') {
+    return 'the obligation was refused';
+  }
+  if (binding.grant.state === 'cancelled' || binding.grant.state === 'failed') {
+    return `the grant is ${binding.grant.state}`;
+  }
+  return null;
+};
+
+type ResumeRequesterParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly binding: Binding;
+  readonly verifier: Agent;
+  readonly verifierSummary: string;
+  readonly revision: string;
+};
+
+const resumeRequesterAfterVerification = ({
+  get,
+  sessionId,
+  binding,
+  verifier,
+  verifierSummary,
+  revision,
+}: ResumeRequesterParams): void => {
+  const { obligation, grant } = binding;
+  const repairer =
+    grant.childAgentId === null
+      ? null
+      : ((get().sessionPhaseRuns[sessionId] ?? []).find(
+          (agent) => agent.id === grant.childAgentId,
+        ) ?? null);
+  const repaired = repairer?.outputSummary ?? verifierSummary;
+  const evidenceRefs = obligation.requests[obligation.requests.length - 1]?.evidenceRefs ?? [];
+  void get().sendTurn({
+    sessionId,
+    agentId: obligation.requesterAgentId,
+    content: [
+      `The ${obligation.purpose} you asked for is done and ${verifier.name} verified it at revision ${revision}.`,
+      '',
+      `What was repaired: ${repaired}`,
+      '',
+      `Evidence: ${evidenceRefs.length === 0 ? 'none named' : evidenceRefs.join(', ')}`,
+      '',
+      'Continue the work you were on from this revision.',
+    ].join('\n'),
+  });
+};
+
+type StartVerificationParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly obligation: CapabilityObligation;
+  readonly role: AgentRole;
+  readonly name: string;
+  readonly prompt: string;
+};
+
+const startVerification = async ({
+  set,
+  get,
+  sessionId,
+  obligation,
+  role,
+  name,
+  prompt,
+}: StartVerificationParams): Promise<CapabilityCompletionOutcome> => {
+  const verifierAgentId = await get().spawnAgent(sessionId, {
+    name,
+    kindOverride: kindForRole({ role: role }),
+    parentAgentId: obligation.requesterAgentId,
+    executionPurpose: 'capability',
+    ...(obligation.workflowRunId !== null && { workflowRunId: obligation.workflowRunId }),
+  });
+  const updated = await invokeCapabilityGrantUpdate({
+    obligationId: obligation.id,
+    state: 'delivered',
+    childAgentId: null,
+    replacementAgentId: null,
+    verificationAgentId: verifierAgentId,
+  });
+  rememberGrant({ set, sessionId, grant: updated });
+  void get().sendTurn({
+    sessionId,
+    agentId: verifierAgentId,
+    content: composeKickoff(prompt, composeVerificationVerdict({ agentId: verifierAgentId })),
+  });
+  return { kind: 'verification-started', verifierAgentId };
+};
+
+type Verdict = Readonly<{ kind: 'clear' }> | Readonly<{ kind: 'rejected'; reason: string }>;
+
+const verdictOf = ({
+  assistantText,
+  verifierId,
+}: {
+  readonly assistantText: string;
+  readonly verifierId: AgentId;
+}): Verdict => {
+  const extraction = extractClusterOutcome({ assistantText });
+  if (extraction.kind === 'missing') {
+    return { kind: 'rejected', reason: 'the verifier gave no verdict' };
+  }
+  if (extraction.kind === 'malformed') {
+    return { kind: 'rejected', reason: 'the verifier verdict is malformed' };
+  }
+  if (extraction.outcome.id !== verifierId) {
+    return { kind: 'rejected', reason: 'the verdict names another agent' };
+  }
+  if (extraction.outcome.status === 'clear') {
+    return { kind: 'clear' };
+  }
+  const reasons = extraction.outcome.findings.map((finding) => finding.reason);
+  return {
+    kind: 'rejected',
+    reason:
+      reasons.length === 0
+        ? 'the verifier left the change unresolved'
+        : `the verifier left the change unresolved: ${reasons.join('; ')}`,
+  };
+};
+
+type RejectVerificationParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly binding: Binding;
+  readonly verifier: Agent;
+  readonly reason: string;
+};
+
+const rejectVerification = async ({
+  set,
+  get,
+  sessionId,
+  binding,
+  verifier,
+  reason,
+}: RejectVerificationParams): Promise<CapabilityCompletionOutcome> => {
+  const { obligation } = binding;
+  const failed = await invokeCapabilityGrantUpdate({
+    obligationId: obligation.id,
+    state: 'failed',
+    childAgentId: null,
+    replacementAgentId: null,
+    verificationAgentId: null,
+  });
+  rememberGrant({ set, sessionId, grant: failed });
+  const reopened = await invokeCapabilityObligationReopen({
+    obligationId: obligation.id,
+    reason: `${obligation.purpose} not accepted: ${reason}`,
+  });
+  rememberObligation({ set, sessionId, obligation: reopened });
+  const previous = obligation.requests[obligation.requests.length - 1] ?? null;
+  const recorded = await invokeCapabilityNeedRecord({
+    requestId: `capability-request:${obligation.requesterAgentId}:verification:${verifier.id}`,
+    obligationId: obligation.id,
+    identity: obligation.identity,
+    sessionId,
+    workflowRunId: obligation.workflowRunId,
+    requesterAgentId: obligation.requesterAgentId,
+    sourceTurnId: `verification:${verifier.id}`,
+    targetRole: obligation.targetRole,
+    purpose: obligation.purpose,
+    question: previous?.question ?? `${obligation.purpose} for ${obligation.identity}`,
+    scope: previous?.scope ?? [],
+    evidenceRefs: previous?.evidenceRefs ?? [],
+    gap: `${verifier.name} did not accept the last attempt. ${reason}`,
+    expectedOutput:
+      previous?.expectedOutput ?? 'a change a focused verification accepts with a clear verdict',
+    continuation: previous?.continuation ?? 'handoff',
+    routingProposal: null,
+    inventoryRevision: previous?.inventoryRevision ?? '',
+    holdContainerAgentId: null,
+  });
+  rememberObligation({ set, sessionId, obligation: recorded });
+  void get().emitNotification({
+    kind: 'error',
+    severity: 'warning',
+    title: `${obligation.purpose} not accepted by ${verifier.name}`,
+    body: `${reason}. the obligation stays open, nothing is released, and the need goes back to the orchestrator.`,
+    sessionId,
+  });
+  void get().decideCapabilityNeed({ sessionId, obligationId: obligation.id });
+  return { kind: 'verification-rejected', reason };
+};
+
+type StartReplacementParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly obligation: CapabilityObligation;
+  readonly role: AgentRole;
+  readonly findings: string;
+  readonly transferredWork: string | null;
+};
+
+const startReplacement = async ({
+  set,
+  get,
+  sessionId,
+  obligation,
+  role,
+  findings,
+  transferredWork,
+}: StartReplacementParams): Promise<CapabilityCompletionOutcome> => {
+  const replacementAgentId = await get().spawnAgent(sessionId, {
+    name: `resume the transferred work: ${obligation.purpose}`,
+    kindOverride: kindForRole({ role: role }),
+    parentAgentId: obligation.requesterAgentId,
+    executionPurpose: 'capability',
+    obligationId: obligation.id,
+    ...(obligation.workflowRunId !== null && { workflowRunId: obligation.workflowRunId }),
+    initialPrompt: [
+      'You are taking over work that was transferred, not resumed. None of the earlier context survives.',
+      '',
+      `What the specialist found: ${findings}`,
+      '',
+      transferredWork === null ? '' : transferredWork,
+    ].join('\n'),
+  });
+  const updated = await invokeCapabilityGrantUpdate({
+    obligationId: obligation.id,
+    state: 'delivered',
+    childAgentId: null,
+    replacementAgentId,
+    verificationAgentId: null,
+  });
+  rememberGrant({ set, sessionId, grant: updated });
+  return { kind: 'replacement-started', replacementAgentId };
 };
 
 type FailParams = {
@@ -391,6 +713,80 @@ export const completeCapabilityChild = async ({
     return { kind: 'unbound' };
   }
   const { obligation, grant } = binding;
+  const inactiveReason = inactiveReasonOf({ binding });
+  if (inactiveReason !== null) {
+    return { kind: 'inactive', reason: inactiveReason };
+  }
+  const replacementRole = replacementRoleOf({ transferredWork: grant.transferredWork });
+  const pendingReplacementRole =
+    grant.parentOutcome === 'transferred' && grant.replacementAgentId === null
+      ? replacementRole
+      : null;
+
+  if (binding.isReplacement) {
+    return startVerification({
+      set,
+      get,
+      sessionId,
+      obligation,
+      role: TRANSFER_VERIFICATION_ROLE,
+      name: `verify the transferred work: ${child.name}`,
+      prompt: transferVerificationPrompt({
+        reporter: 'A replacement',
+        outputSummary,
+        transferredWork: grant.transferredWork,
+      }),
+    });
+  }
+
+  const verdict = binding.isVerification
+    ? verdictOf({ assistantText, verifierId: child.id })
+    : null;
+  if (verdict !== null && verdict.kind === 'rejected') {
+    return rejectVerification({
+      set,
+      get,
+      sessionId,
+      binding,
+      verifier: child,
+      reason: verdict.reason,
+    });
+  }
+
+  if (binding.isVerification && pendingReplacementRole !== null) {
+    return startReplacement({
+      set,
+      get,
+      sessionId,
+      obligation,
+      role: pendingReplacementRole,
+      findings: outputSummary,
+      transferredWork: grant.transferredWork,
+    });
+  }
+
+  if (binding.isVerification && grant.parentOutcome === 'resumed') {
+    const revision = await settleAndRelease({
+      set,
+      get,
+      sessionId,
+      binding,
+      receipt: `${obligation.purpose} verified by ${child.name}: ${outputSummary}`,
+      isRequesterContinuing: true,
+    });
+    if (revision === null) {
+      return { kind: 'unverified', reason: UNREAD_REVISION };
+    }
+    resumeRequesterAfterVerification({
+      get,
+      sessionId,
+      binding,
+      verifier: child,
+      verifierSummary: outputSummary,
+      revision,
+    });
+    return { kind: 'parent-resumed' };
+  }
 
   if (binding.isVerification) {
     const revision = await settleAndRelease({
@@ -399,10 +795,18 @@ export const completeCapabilityChild = async ({
       sessionId,
       binding,
       receipt: `${obligation.purpose} verified by ${child.name}: ${outputSummary}`,
+      isRequesterContinuing: false,
     });
-    return revision === null
-      ? { kind: 'unverified', reason: UNREAD_REVISION }
-      : { kind: 'settled', verifiedRevision: revision };
+    if (revision === null) {
+      return { kind: 'unverified', reason: UNREAD_REVISION };
+    }
+    await finishHandedOffRequester({
+      get,
+      sessionId,
+      obligationId: obligation.id,
+      output: `The ${grant.grantedRole} this step handed off to finished and ${child.name} verified it: ${outputSummary}`,
+    });
+    return { kind: 'settled', verifiedRevision: revision };
   }
 
   if (obligation.purpose === 'replan') {
@@ -411,13 +815,14 @@ export const completeCapabilityChild = async ({
 
   const verificationRole = verificationRoleForGrant({ purpose: obligation.purpose });
   if (verificationRole !== null) {
-    const verifierAgentId = await get().spawnAgent(sessionId, {
+    return startVerification({
+      set,
+      get,
+      sessionId,
+      obligation,
+      role: verificationRole,
       name: `verify ${obligation.purpose}: ${child.name}`,
-      kindOverride: kindForRole({ role: verificationRole }),
-      parentAgentId: obligation.requesterAgentId,
-      executionPurpose: 'capability',
-      ...(obligation.workflowRunId !== null && { workflowRunId: obligation.workflowRunId }),
-      initialPrompt: [
+      prompt: [
         `A ${grant.grantedRole} was granted a bounded ${obligation.purpose} and reports it done.`,
         '',
         `What it reports: ${outputSummary}`,
@@ -425,60 +830,48 @@ export const completeCapabilityChild = async ({
         'Verify the changed revision only. Do not widen the scope, do not repeat the whole review, and do not fix anything yourself: report whether the change holds, and why.',
       ].join('\n'),
     });
-    const updated = await invokeCapabilityGrantUpdate({
-      obligationId: obligation.id,
-      state: 'delivered',
-      childAgentId: null,
-      replacementAgentId: null,
-      verificationAgentId: verifierAgentId,
-    });
-    rememberGrant({ set, sessionId, grant: updated });
-    return { kind: 'verification-started', verifierAgentId };
   }
 
-  const transfer = grant.transferredWork;
-  const replacementRole = replacementRoleOf({ transferredWork: transfer });
-  if (grant.parentOutcome === 'transferred' && replacementRole !== null) {
-    const replacementAgentId = await get().spawnAgent(sessionId, {
-      name: `resume the transferred work: ${obligation.purpose}`,
-      kindOverride: kindForRole({ role: replacementRole }),
-      parentAgentId: obligation.requesterAgentId,
-      executionPurpose: 'capability',
-      ...(obligation.workflowRunId !== null && { workflowRunId: obligation.workflowRunId }),
-      initialPrompt: [
-        'You are taking over work that was transferred, not resumed. None of the earlier context survives.',
-        '',
-        `What the specialist found: ${outputSummary}`,
-        '',
-        transfer === null ? '' : transfer,
-      ].join('\n'),
-    });
-    const updated = await invokeCapabilityGrantUpdate({
-      obligationId: obligation.id,
-      state: 'delivered',
-      childAgentId: null,
-      replacementAgentId,
-      verificationAgentId: null,
-    });
-    rememberGrant({ set, sessionId, grant: updated });
-    await settleAndRelease({
+  if (pendingReplacementRole !== null) {
+    return startReplacement({
       set,
       get,
       sessionId,
-      binding,
-      receipt: `${obligation.purpose} answered by ${child.name}, the remaining work moved to a replacement`,
+      obligation,
+      role: pendingReplacementRole,
+      findings: outputSummary,
+      transferredWork: grant.transferredWork,
     });
-    return { kind: 'replacement-started', replacementAgentId };
+  }
+
+  if (grant.parentOutcome === 'transferred') {
+    return startVerification({
+      set,
+      get,
+      sessionId,
+      obligation,
+      role: TRANSFER_VERIFICATION_ROLE,
+      name: `verify the transferred work: ${child.name}`,
+      prompt: transferVerificationPrompt({
+        reporter: `A ${grant.grantedRole}`,
+        outputSummary,
+        transferredWork: grant.transferredWork,
+      }),
+    });
   }
 
   if (grant.parentOutcome === 'resumed') {
-    await settleAndRelease({
+    const revision = await settleAndRelease({
       set,
       get,
       sessionId,
       binding,
       receipt: `${obligation.purpose} answered by ${child.name}`,
+      isRequesterContinuing: true,
     });
+    if (revision === null) {
+      return { kind: 'unverified', reason: UNREAD_REVISION };
+    }
     void get().sendTurn({
       sessionId,
       agentId: obligation.requesterAgentId,
@@ -499,8 +892,16 @@ export const completeCapabilityChild = async ({
     sessionId,
     binding,
     receipt: `${obligation.purpose} answered by ${child.name}`,
+    isRequesterContinuing: false,
   });
-  return revision === null
-    ? { kind: 'unverified', reason: UNREAD_REVISION }
-    : { kind: 'settled', verifiedRevision: revision };
+  if (revision === null) {
+    return { kind: 'unverified', reason: UNREAD_REVISION };
+  }
+  await finishHandedOffRequester({
+    get,
+    sessionId,
+    obligationId: obligation.id,
+    output: assistantText,
+  });
+  return { kind: 'settled', verifiedRevision: revision };
 };

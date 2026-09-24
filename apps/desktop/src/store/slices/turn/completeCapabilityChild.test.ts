@@ -7,6 +7,7 @@ import type {
   ClusterCompletionHold,
   IsoDateTime,
   SessionId,
+  StepId,
   WorkflowRunId,
 } from '@goodboy/types';
 import type { GetFn, SetFn } from './types';
@@ -25,6 +26,9 @@ const h = vi.hoisted(() => ({
   decide: vi.fn(),
   adoptRevision: vi.fn(),
   resumeClusters: vi.fn(),
+  reopen: vi.fn(),
+  needRecord: vi.fn(),
+  holdResolve: vi.fn(),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -38,6 +42,9 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeCapabilityObligations: h.loadObligations,
   invokeClusterCompletionHolds: h.loadHolds,
   invokeClusterExecutionGraphs: h.loadGraphs,
+  invokeCapabilityObligationReopen: h.reopen,
+  invokeCapabilityNeedRecord: h.needRecord,
+  invokeClusterCompletionHoldResolve: h.holdResolve,
 }));
 vi.mock('../../../features/worktree/worktree', () => ({ worktreeStatus: h.worktreeStatus }));
 vi.mock('../workflows/summarizeWorkflowAgentOutput', () => ({
@@ -81,6 +88,7 @@ const obligationOf = (overrides: Partial<CapabilityObligation> = {}): Capability
   workflowRunId: RUN_ID,
   identity: 'agent-1:implementer:repair',
   requesterAgentId: REQUESTER_ID,
+  requesterParentAgentId: null,
   targetRole: 'implementer',
   purpose: 'repair',
   state: 'granted',
@@ -143,6 +151,9 @@ const createHarness = ({ obligation, grant, agent = child }: HarnessParams) => {
   const spawnAgent = vi.fn(async () => 'verifier-1' as AgentId);
   const sendTurn = vi.fn(async () => undefined);
   const resolveClusterCompletionHold = vi.fn(async () => undefined);
+  const decideCapabilityNeed = vi.fn(async () => ({ kind: 'unavailable', reason: 'stub' }));
+  const finalizeWorkflowStep = vi.fn(async () => ({ shouldAutoAdvance: true }));
+  const maybeAutoAdvanceWorkflow = vi.fn(async () => undefined);
   const state = {
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
     capabilityObligations: { [SESSION_ID]: [obligation] },
@@ -151,6 +162,9 @@ const createHarness = ({ obligation, grant, agent = child }: HarnessParams) => {
     spawnAgent,
     sendTurn,
     resolveClusterCompletionHold,
+    decideCapabilityNeed,
+    finalizeWorkflowStep,
+    maybeAutoAdvanceWorkflow,
     refreshUnreadWorkspaces: vi.fn(),
     emitNotification: vi.fn(async () => undefined),
   };
@@ -162,7 +176,17 @@ const createHarness = ({ obligation, grant, agent = child }: HarnessParams) => {
     Object.assign(state, update);
   }) as SetFn;
   const get = (() => state) as unknown as GetFn;
-  return { state, set, get, spawnAgent, sendTurn, resolveClusterCompletionHold };
+  return {
+    state,
+    set,
+    get,
+    spawnAgent,
+    sendTurn,
+    resolveClusterCompletionHold,
+    decideCapabilityNeed,
+    finalizeWorkflowStep,
+    maybeAutoAdvanceWorkflow,
+  };
 };
 
 const createReloadedHarness = async ({ obligation, grant, agent = child }: HarnessParams) => {
@@ -180,6 +204,12 @@ const createReloadedHarness = async ({ obligation, grant, agent = child }: Harne
   return harness;
 };
 
+const clearVerdict = (id: string): string =>
+  `<<cluster-outcome>>{"v":1,"id":"${id}","status":"clear"}<</cluster-outcome>>`;
+
+const unresolvedVerdict = (id: string): string =>
+  `<<cluster-outcome>>{"v":1,"id":"${id}","status":"unresolved","findings":[{"reason":"the guard still drops null","target":"implementer"}]}<</cluster-outcome>>`;
+
 describe('completeCapabilityChild', () => {
   beforeEach(() => {
     Object.values(h).forEach((mock) => mock.mockReset());
@@ -190,6 +220,13 @@ describe('completeCapabilityChild', () => {
     h.loadObligations.mockImplementation(async () => []);
     h.loadGrants.mockImplementation(async () => []);
     h.worktreeStatus.mockImplementation(async () => ({ head: 'sha-verified' }));
+    h.reopen.mockImplementation(async () =>
+      obligationOf({ state: 'open', decision: null, ownerAgentId: null, childAgentId: null }),
+    );
+    h.needRecord.mockImplementation(async () =>
+      obligationOf({ state: 'open', decision: null, ownerAgentId: null, childAgentId: null }),
+    );
+    h.holdResolve.mockImplementation(async () => undefined);
     h.grantUpdate.mockImplementation(async () =>
       grantOf({ verificationAgentId: 'verifier-1' as AgentId }),
     );
@@ -269,7 +306,7 @@ describe('completeCapabilityChild', () => {
       get,
       sessionId: SESSION_ID,
       child: verifier,
-      assistantText: 'the repair holds.',
+      assistantText: `the repair holds.\n${clearVerdict('verifier-1')}`,
       now,
     });
 
@@ -304,7 +341,7 @@ describe('completeCapabilityChild', () => {
       get,
       sessionId: SESSION_ID,
       child: verifier,
-      assistantText: 'the repair holds.',
+      assistantText: `the repair holds.\n${clearVerdict('verifier-1')}`,
       now,
     });
 
@@ -345,6 +382,333 @@ describe('completeCapabilityChild', () => {
     expect(state.capabilityGrants[SESSION_ID]?.[0]?.state).toBe('failed');
     expect(state.capabilityObligations[SESSION_ID]?.[0]?.state).toBe('refused');
     expect(resolveClusterCompletionHold).not.toHaveBeenCalled();
+  });
+
+  const verifierAgent: Agent = {
+    ...child,
+    id: 'verifier-1' as AgentId,
+    name: 'verify repair',
+    kind: 'reviewer',
+  };
+
+  const completeVerifier = async ({ assistantText }: { readonly assistantText: string }) => {
+    const harness = createHarness({
+      obligation: obligationOf(),
+      grant: grantOf({ verificationAgentId: verifierAgent.id }),
+      agent: verifierAgent,
+    });
+    h.agentList.mockImplementation(async () => [verifierAgent]);
+    const outcome = await completeCapabilityChild({
+      set: harness.set,
+      get: harness.get,
+      sessionId: SESSION_ID,
+      child: verifierAgent,
+      assistantText,
+      now,
+    });
+    return { ...harness, outcome };
+  };
+
+  it('asks the focused verifier for a verdict that names its own id', async () => {
+    const { set, get, sendTurn } = createHarness({
+      obligation: obligationOf(),
+      grant: grantOf(),
+    });
+
+    await completeCapabilityChild({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      child,
+      assistantText: 'the guard is restored.',
+      now,
+    });
+
+    expect(sendTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentId: 'verifier-1',
+        content: expect.stringContaining('<<cluster-outcome>>{"v":1,"id":"verifier-1"'),
+      }),
+    );
+  });
+
+  it('keeps the obligation open and releases nothing when the verifier reports unresolved findings', async () => {
+    const { outcome, resolveClusterCompletionHold, decideCapabilityNeed, state } =
+      await completeVerifier({
+        assistantText: `the guard is still gone.\n${unresolvedVerdict('verifier-1')}`,
+      });
+
+    expect(outcome.kind).toBe('verification-rejected');
+    expect(h.settle).not.toHaveBeenCalled();
+    expect(resolveClusterCompletionHold).not.toHaveBeenCalled();
+    expect(h.holdResolve).not.toHaveBeenCalled();
+    expect(h.grantUpdate).toHaveBeenCalledWith(expect.objectContaining({ state: 'failed' }));
+    expect(h.reopen).toHaveBeenCalledWith(expect.objectContaining({ obligationId: OBLIGATION_ID }));
+    expect(h.needRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        obligationId: OBLIGATION_ID,
+        gap: expect.stringContaining('the guard still drops null'),
+      }),
+    );
+    expect(decideCapabilityNeed).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      obligationId: OBLIGATION_ID,
+    });
+    expect(state.capabilityObligations[SESSION_ID]?.[0]?.state).toBe('open');
+  });
+
+  it('never settles on a verifier that gave no verdict', async () => {
+    const { outcome, resolveClusterCompletionHold } = await completeVerifier({
+      assistantText: 'the repair holds.',
+    });
+
+    expect(outcome).toEqual({
+      kind: 'verification-rejected',
+      reason: 'the verifier gave no verdict',
+    });
+    expect(h.settle).not.toHaveBeenCalled();
+    expect(resolveClusterCompletionHold).not.toHaveBeenCalled();
+  });
+
+  it('never settles on a verdict that names another agent', async () => {
+    const { outcome } = await completeVerifier({
+      assistantText: `the repair holds.\n${clearVerdict('child-1')}`,
+    });
+
+    expect(outcome.kind).toBe('verification-rejected');
+    expect(h.settle).not.toHaveBeenCalled();
+  });
+
+  it('settles and releases on a clear verdict from the verifier itself', async () => {
+    const { outcome, resolveClusterCompletionHold } = await completeVerifier({
+      assistantText: `the repair holds.\n${clearVerdict('verifier-1')}`,
+    });
+
+    expect(outcome).toEqual({ kind: 'settled', verifiedRevision: 'sha-verified' });
+    expect(h.settle).toHaveBeenCalledTimes(1);
+    expect(h.reopen).not.toHaveBeenCalled();
+    expect(resolveClusterCompletionHold).toHaveBeenCalledWith(
+      expect.objectContaining({ holdId: 'hold-1' }),
+    );
+  });
+
+  it('finishes the step of a phase requester once the work it handed off is verified', async () => {
+    const stepRequester: Agent = {
+      ...child,
+      id: REQUESTER_ID,
+      name: 'review the change',
+      kind: 'reviewer',
+      parentAgentId: undefined,
+      executionPurpose: undefined,
+      stepId: 'step-review' as StepId,
+    };
+    h.settle.mockImplementation(async () =>
+      obligationOf({ state: 'satisfied', satisfiedRevision: 'sha-verified', holdIds: [] }),
+    );
+    h.agentList.mockImplementation(async () => [verifierAgent, stepRequester]);
+    const harness = createHarness({
+      obligation: obligationOf({ holdIds: [] }),
+      grant: grantOf({ verificationAgentId: verifierAgent.id }),
+      agent: verifierAgent,
+    });
+
+    const outcome = await completeCapabilityChild({
+      set: harness.set,
+      get: harness.get,
+      sessionId: SESSION_ID,
+      child: verifierAgent,
+      assistantText: `the repair holds.\n${clearVerdict('verifier-1')}`,
+      now,
+    });
+
+    expect(outcome).toEqual({ kind: 'settled', verifiedRevision: 'sha-verified' });
+    expect(harness.finalizeWorkflowStep).toHaveBeenCalledWith(
+      SESSION_ID,
+      REQUESTER_ID,
+      expect.stringContaining('verified it'),
+      false,
+      { force: true },
+    );
+    expect(harness.maybeAutoAdvanceWorkflow).toHaveBeenCalledWith(SESSION_ID);
+  });
+
+  it('leaves a held cluster requester to its hold instead of finishing a step', async () => {
+    const { finalizeWorkflowStep } = await completeVerifier({
+      assistantText: `the repair holds.\n${clearVerdict('verifier-1')}`,
+    });
+
+    expect(finalizeWorkflowStep).not.toHaveBeenCalled();
+  });
+
+  it('leaves the node open for a resumed requester and lets its own completion close it', async () => {
+    const investigator: Agent = { ...child, name: 'diagnose the failure', kind: 'debugger' };
+    const { set, get, resolveClusterCompletionHold } = createHarness({
+      obligation: obligationOf({ purpose: 'diagnosis', targetRole: 'investigator' }),
+      grant: grantOf({
+        purpose: 'diagnosis',
+        grantedRole: 'investigator',
+        continuation: 'resume',
+        parentOutcome: 'resumed',
+      }),
+      agent: investigator,
+    });
+    h.settle.mockImplementation(async () =>
+      obligationOf({ purpose: 'diagnosis', state: 'satisfied' }),
+    );
+
+    await completeCapabilityChild({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      child: investigator,
+      assistantText: 'the cause is the missing guard.',
+      now,
+    });
+
+    expect(h.holdResolve).toHaveBeenCalledWith(expect.objectContaining({ id: 'hold-1' }));
+    expect(resolveClusterCompletionHold).not.toHaveBeenCalled();
+  });
+
+  const resumedRepair = () => ({
+    obligation: obligationOf({
+      requests: [
+        {
+          id: 'capability-request:agent-1:run-1',
+          sessionId: SESSION_ID,
+          workflowRunId: RUN_ID,
+          obligationId: OBLIGATION_ID,
+          requesterAgentId: REQUESTER_ID,
+          sourceTurnId: 'run-1',
+          targetRole: 'implementer',
+          purpose: 'repair',
+          question: 'restore the dropped guard',
+          scope: [],
+          evidenceRefs: ['review:finding-1'],
+          gap: 'the failing path was never executed',
+          expectedOutput: 'the guard back',
+          continuation: 'resume',
+          routingProposal: null,
+          inventoryRevision: 'rabc',
+          createdAt: '2026-07-30T00:00:00.000Z',
+        },
+      ],
+    }),
+    grant: grantOf({
+      continuation: 'resume',
+      parentOutcome: 'resumed',
+      verificationAgentId: 'verifier-1' as AgentId,
+    }),
+  });
+
+  const requesterTurns = (sendTurn: ReturnType<typeof vi.fn>) =>
+    sendTurn.mock.calls.filter(
+      (call) => (call[0] as { readonly agentId: AgentId }).agentId === REQUESTER_ID,
+    );
+
+  it('resumes the requester once its repair is verified, and only once across a reload', async () => {
+    const { obligation, grant } = resumedRepair();
+    const harness = await createReloadedHarness({ obligation, grant, agent: verifierAgent });
+    h.agentList.mockImplementation(async () => [verifierAgent]);
+
+    const outcome = await completeCapabilityChild({
+      set: harness.set,
+      get: harness.get,
+      sessionId: SESSION_ID,
+      child: verifierAgent,
+      assistantText: `the repair holds.\n${clearVerdict('verifier-1')}`,
+      now,
+    });
+
+    expect(outcome).toEqual({ kind: 'parent-resumed' });
+    expect(requesterTurns(harness.sendTurn)).toHaveLength(1);
+    const content = (requesterTurns(harness.sendTurn)[0]?.[0] as { readonly content: string })
+      .content;
+    expect(content).toContain('sha-verified');
+    expect(content).toContain('review:finding-1');
+    expect(harness.resolveClusterCompletionHold).not.toHaveBeenCalled();
+
+    h.loadObligations.mockImplementation(async () => [
+      { ...obligation, state: 'satisfied', satisfiedRevision: 'sha-verified' },
+    ]);
+    h.loadGrants.mockImplementation(async () => [{ ...grant, state: 'settled' }]);
+    await loadPhaseRunsForSession(harness.set)(SESSION_ID);
+    const again = await completeCapabilityChild({
+      set: harness.set,
+      get: harness.get,
+      sessionId: SESSION_ID,
+      child: verifierAgent,
+      assistantText: `the repair holds.\n${clearVerdict('verifier-1')}`,
+      now,
+    });
+
+    expect(again.kind).toBe('inactive');
+    expect(requesterTurns(harness.sendTurn)).toHaveLength(1);
+    expect(h.settle).toHaveBeenCalledTimes(1);
+  });
+
+  it('never resumes the requester on a verdict that is not clear', async () => {
+    const { obligation, grant } = resumedRepair();
+    const harness = createHarness({ obligation, grant, agent: verifierAgent });
+    h.agentList.mockImplementation(async () => [verifierAgent]);
+
+    await completeCapabilityChild({
+      set: harness.set,
+      get: harness.get,
+      sessionId: SESSION_ID,
+      child: verifierAgent,
+      assistantText: `the guard is still gone.\n${unresolvedVerdict('verifier-1')}`,
+      now,
+    });
+
+    expect(requesterTurns(harness.sendTurn)).toHaveLength(0);
+    expect(h.settle).not.toHaveBeenCalled();
+  });
+
+  it('never resumes the requester under a cancelled or failed grant', async () => {
+    const { obligation, grant } = resumedRepair();
+    for (const state of ['cancelled', 'failed'] as const) {
+      const harness = createHarness({
+        obligation,
+        grant: { ...grant, state },
+        agent: verifierAgent,
+      });
+      h.agentList.mockImplementation(async () => [verifierAgent]);
+
+      const outcome = await completeCapabilityChild({
+        set: harness.set,
+        get: harness.get,
+        sessionId: SESSION_ID,
+        child: verifierAgent,
+        assistantText: `the repair holds.\n${clearVerdict('verifier-1')}`,
+        now,
+      });
+
+      expect(outcome.kind).toBe('inactive');
+      expect(requesterTurns(harness.sendTurn)).toHaveLength(0);
+    }
+    expect(h.settle).not.toHaveBeenCalled();
+  });
+
+  it('never resumes the requester of a refused obligation', async () => {
+    const { obligation, grant } = resumedRepair();
+    const harness = createHarness({
+      obligation: { ...obligation, state: 'refused', decision: 'refused' },
+      grant,
+      agent: verifierAgent,
+    });
+    h.agentList.mockImplementation(async () => [verifierAgent]);
+
+    const outcome = await completeCapabilityChild({
+      set: harness.set,
+      get: harness.get,
+      sessionId: SESSION_ID,
+      child: verifierAgent,
+      assistantText: `the repair holds.\n${clearVerdict('verifier-1')}`,
+      now,
+    });
+
+    expect(outcome.kind).toBe('inactive');
+    expect(requesterTurns(harness.sendTurn)).toHaveLength(0);
   });
 
   it('adopts the revision a replan delivered and releases the held successor', async () => {
@@ -516,9 +880,151 @@ describe('completeCapabilityChild', () => {
     expect(outcome).toEqual({ kind: 'replacement-started', replacementAgentId: 'verifier-1' });
     expect(spawnAgent).toHaveBeenCalledWith(
       SESSION_ID,
-      expect.objectContaining({ kindOverride: 'implementer' }),
+      expect.objectContaining({ kindOverride: 'implementer', obligationId: OBLIGATION_ID }),
     );
     expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  const transferredGrant = (overrides: Partial<CapabilityGrant> = {}): CapabilityGrant =>
+    grantOf({
+      purpose: 'discovery',
+      grantedRole: 'scout',
+      continuation: 'transfer',
+      parentOutcome: 'transferred',
+      transferredWork: JSON.stringify({
+        replacementRole: 'implementer',
+        completedWork: 'two files done',
+        remainingCriteria: 'the rest of the cluster',
+        evidenceRefs: [],
+        executionTarget: null,
+      }),
+      ...overrides,
+    });
+
+  it('keeps the successor held while the replacement of transferred work still runs', async () => {
+    const scout: Agent = { ...child, name: 'map the callers', kind: 'scout' };
+    const { set, get, resolveClusterCompletionHold } = createHarness({
+      obligation: obligationOf({ purpose: 'discovery', targetRole: 'scout' }),
+      grant: transferredGrant(),
+      agent: scout,
+    });
+
+    const outcome = await completeCapabilityChild({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      child: scout,
+      assistantText: 'the callers are listed.',
+      now,
+    });
+
+    expect(outcome.kind).toBe('replacement-started');
+    expect(h.settle).not.toHaveBeenCalled();
+    expect(resolveClusterCompletionHold).not.toHaveBeenCalled();
+  });
+
+  it('sends a finished replacement to a focused verification instead of releasing on its claim', async () => {
+    const replacement: Agent = {
+      ...child,
+      id: 'replacement-1' as AgentId,
+      name: 'resume the transferred work',
+      kind: 'implementer',
+    };
+    const { set, get, spawnAgent, resolveClusterCompletionHold } = createHarness({
+      obligation: obligationOf({ purpose: 'discovery', targetRole: 'scout' }),
+      grant: transferredGrant({ replacementAgentId: replacement.id }),
+      agent: replacement,
+    });
+    h.agentList.mockImplementation(async () => [replacement]);
+
+    const outcome = await completeCapabilityChild({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      child: replacement,
+      assistantText: 'the rest of the cluster is done.',
+      now,
+    });
+
+    expect(outcome).toEqual({ kind: 'verification-started', verifierAgentId: 'verifier-1' });
+    expect(spawnAgent).toHaveBeenCalledWith(
+      SESSION_ID,
+      expect.objectContaining({ kindOverride: 'reviewer', parentAgentId: REQUESTER_ID }),
+    );
+    expect(h.settle).not.toHaveBeenCalled();
+    expect(resolveClusterCompletionHold).not.toHaveBeenCalled();
+  });
+
+  it('releases the successor once the transferred work passes its verification', async () => {
+    const verifier: Agent = {
+      ...child,
+      id: 'verifier-2' as AgentId,
+      name: 'verify the transferred work',
+      kind: 'reviewer',
+    };
+    const { set, get, spawnAgent, resolveClusterCompletionHold } = createHarness({
+      obligation: obligationOf({ purpose: 'discovery', targetRole: 'scout' }),
+      grant: transferredGrant({
+        replacementAgentId: 'replacement-1' as AgentId,
+        verificationAgentId: verifier.id,
+      }),
+      agent: verifier,
+    });
+    h.agentList.mockImplementation(async () => [verifier]);
+
+    const outcome = await completeCapabilityChild({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      child: verifier,
+      assistantText: `the transferred work holds.\n${clearVerdict('verifier-2')}`,
+      now,
+    });
+
+    expect(outcome).toEqual({ kind: 'settled', verifiedRevision: 'sha-verified' });
+    expect(spawnAgent).not.toHaveBeenCalled();
+    expect(h.settle).toHaveBeenCalledWith(
+      expect.objectContaining({ obligationId: OBLIGATION_ID, verifiedRevision: 'sha-verified' }),
+    );
+    expect(resolveClusterCompletionHold).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: SESSION_ID, holdId: 'hold-1' }),
+    );
+  });
+
+  it('hands a verified repair of a transferred requester to a replacement before releasing', async () => {
+    const verifier: Agent = {
+      ...child,
+      id: 'verifier-1' as AgentId,
+      name: 'verify repair',
+      kind: 'reviewer',
+    };
+    const { set, get, spawnAgent, resolveClusterCompletionHold } = createHarness({
+      obligation: obligationOf(),
+      grant: transferredGrant({
+        purpose: 'repair',
+        grantedRole: 'implementer',
+        verificationAgentId: verifier.id,
+      }),
+      agent: verifier,
+    });
+    h.agentList.mockImplementation(async () => [verifier]);
+
+    const outcome = await completeCapabilityChild({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      child: verifier,
+      assistantText: `the repair holds.\n${clearVerdict('verifier-1')}`,
+      now,
+    });
+
+    expect(outcome.kind).toBe('replacement-started');
+    expect(spawnAgent).toHaveBeenCalledWith(
+      SESSION_ID,
+      expect.objectContaining({ kindOverride: 'implementer' }),
+    );
+    expect(h.settle).not.toHaveBeenCalled();
+    expect(resolveClusterCompletionHold).not.toHaveBeenCalled();
   });
 
   it('verifies and settles a repair whose child reports back only after a reload', async () => {
@@ -557,7 +1063,7 @@ describe('completeCapabilityChild', () => {
       get,
       sessionId: SESSION_ID,
       child: verifier,
-      assistantText: 'the repair holds.',
+      assistantText: `the repair holds.\n${clearVerdict('verifier-1')}`,
       now,
     });
 

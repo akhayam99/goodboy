@@ -1,7 +1,7 @@
 import type { AgentId, AgentStatus } from '@goodboy/types';
 import type { AgentKind } from '../../../session/agent-kind';
 
-export type SpawnNodeStatus = 'planned' | 'queued' | 'running' | 'done' | 'stalled';
+export type SpawnNodeStatus = 'planned' | 'queued' | 'running' | 'done' | 'stalled' | 'transferred';
 
 export type SpawnNode = {
   readonly id: AgentId;
@@ -26,6 +26,9 @@ export const statusToNodeStatus = (status: AgentStatus | 'planned'): SpawnNodeSt
   }
   if (status === 'failed') {
     return 'stalled';
+  }
+  if (status === 'transferred') {
+    return 'transferred';
   }
   return 'planned';
 };

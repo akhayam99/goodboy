@@ -1,18 +1,23 @@
-import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
+import type { Agent, ClusterCompletionHold, Workflow, WorkflowRun } from '@goodboy/types';
 import { isWorkflowComplete } from '@goodboy/core';
+import { isCompletedAttempt } from '../../store/slices/workflows/clusterSourceProgress';
 
 type Params = {
   readonly run: WorkflowRun;
   readonly workflow: Workflow | null;
   readonly agents: ReadonlyArray<Agent>;
+  readonly holds: ReadonlyArray<ClusterCompletionHold>;
 };
 
 const isSettled = (agent: Agent): boolean =>
   agent.status === 'completed' || agent.status === 'skipped';
 
-export const isWorkflowRunComplete = ({ run, workflow, agents }: Params): boolean => {
+export const isWorkflowRunComplete = ({ run, workflow, agents, holds }: Params): boolean => {
   const hasPendingDescendant = agents.some(
-    (agent) => agent.parentAgentId != null && !isSettled(agent),
+    (agent) =>
+      agent.parentAgentId != null &&
+      !isSettled(agent) &&
+      isCompletedAttempt({ agent, holds }) === false,
   );
   if (hasPendingDescendant) {
     return false;

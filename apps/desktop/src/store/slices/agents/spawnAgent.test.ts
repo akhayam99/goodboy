@@ -442,6 +442,24 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expect(fanOutClustersSpy).not.toHaveBeenCalled();
   });
 
+  it('counts a capability attempt against its obligation in the generation ledger', async () => {
+    const { spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, {
+      kindOverride: 'implementer',
+      parentAgentId: 'requester-1' as AgentId,
+      executionPurpose: 'capability',
+      obligationId: 'capability-obligation:requester-1:implementer:repair',
+    });
+
+    expect(generationReserveSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        creationPath: 'capability',
+        obligationId: 'capability-obligation:requester-1:implementer:repair',
+      }),
+    );
+  });
+
   it('counts a replan attempt against the structural replan cap in the generation ledger', async () => {
     const { spawn } = buildHarness([]);
 

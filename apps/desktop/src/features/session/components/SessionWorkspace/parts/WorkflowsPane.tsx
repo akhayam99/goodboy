@@ -1,6 +1,13 @@
 import type { ReactNode } from 'react';
 import { BookmarkPlus } from 'lucide-react';
-import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
+import type {
+  Agent,
+  ClusterCompletionHold,
+  Session,
+  SessionId,
+  Workflow,
+  WorkflowRun,
+} from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
@@ -38,9 +45,15 @@ export const WorkflowsPane = ({ session, eyebrow }: Props) => {
   const orchestratingWorkflowRuns = useAppStore((state) => state.orchestratingWorkflowRuns);
   const setFocusedWorkflowRun = useAppStore((state) => state.setFocusedWorkflowRun);
   const restoreWorkflow = useAppStore((state) => state.restoreWorkflow);
+  const holds = useAppStore(
+    (state) =>
+      state.clusterCompletionHolds?.[sessionId] ??
+      (EMPTY_ARRAY as ReadonlyArray<ClusterCompletionHold>),
+  );
   const { agentsByRunId, discarded, completed, active } = splitWorkflowRuns({
     attachedRuns,
     agents: phaseRuns,
+    holds,
   });
   const workflowNameByRunId = new Map(
     attachedRuns.map(({ run, workflow }) => [run.id, workflowKindName(workflow)]),

@@ -13,11 +13,14 @@ import {
   type ProviderId,
   type SessionId,
 } from '@goodboy/types';
+import { countObligationAttempts } from '@goodboy/db';
+import { tauriDatabase } from '../../../shared/lib/db';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { classifyAgent, KIND_TO_ROLE, type AgentKind } from '../../../features/session/agent-kind';
 import { issuedAgentInventory } from '../turn/agentEvidenceInventory';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { applyNeedDisposition, type NeedDispositionOutcome } from './applyNeedDisposition';
+import { resolveObligationRequester } from './resolveObligationRequester';
 import {
   buildEvidenceExcerpts,
   buildNeedRequest,
@@ -33,7 +36,7 @@ type Params = {
   readonly obligationId: string;
 };
 
-const allowancesFor = ({
+const allowancesFor = async ({
   get,
   sessionId,
   obligationId,
@@ -41,13 +44,13 @@ const allowancesFor = ({
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly obligationId: string;
-}): OrchestratorAllowances => {
+}): Promise<OrchestratorAllowances> => {
   const generated = (get().sessionPhaseRuns[sessionId] ?? []).filter(
     (agent) => agent.executionPurpose === 'capability' || agent.executionPurpose === 'fan-out',
   ).length;
-  const attempts = (get().capabilityGrants[sessionId] ?? []).filter(
-    (grant) => grant.obligationId === obligationId,
-  ).length;
+  const attempts = await countObligationAttempts({ db: tauriDatabase, obligationId }).catch(
+    () => GENERATION_REPAIR_ATTEMPT_CAP,
+  );
   const replans = (get().capabilityGrants[sessionId] ?? []).filter(
     (grant) => grant.purpose === 'replan',
   ).length;
@@ -77,10 +80,13 @@ export const decideCapabilityNeed = ({
       return { kind: 'unavailable', reason: 'the obligation is no longer open' };
     }
     const agents = get().sessionPhaseRuns[sessionId] ?? [];
-    const requester = agents.find((agent) => agent.id === obligation.requesterAgentId);
+    const requester = await resolveObligationRequester({ get, sessionId, obligation });
     const session = get().sessions.find((candidate) => candidate.id === sessionId);
-    if (requester === undefined || session === undefined) {
-      return { kind: 'unavailable', reason: 'the requesting agent is no longer loaded' };
+    if (requester === null || session === undefined) {
+      return {
+        kind: 'unavailable',
+        reason: 'the requesting agent is not recorded in this session',
+      };
     }
     const kind = classifyAgent({
       agent: requester,
@@ -151,6 +157,7 @@ export const decideCapabilityNeed = ({
           usage,
         }),
     });
+    const allowances = await allowancesFor({ get, sessionId, obligationId });
     let decision: OrchestratorDecision | null = null;
     try {
       const result = await client.decide({
@@ -176,7 +183,7 @@ export const decideCapabilityNeed = ({
           graphRevision: `${graph.containerAgentId}@r${graph.revision}`,
         }),
         allowances: {
-          ...allowancesFor({ get, sessionId, obligationId }),
+          ...allowances,
           ...(run?.spendLimitUsd != null && {
             spendRemainingUsd: Math.max(
               0,

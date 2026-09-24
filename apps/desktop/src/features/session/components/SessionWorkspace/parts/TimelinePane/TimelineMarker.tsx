@@ -1,4 +1,12 @@
-import { Check, Clock, MessageCircleQuestionMark, Minus, TriangleAlert, X } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  Clock,
+  MessageCircleQuestionMark,
+  Minus,
+  TriangleAlert,
+  X,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
@@ -31,6 +39,7 @@ const CIRCLE: Record<CircleState, CircleSpec> = {
   done: { tone: 'success', icon: Check, fill: 'soft', label: 'Done' },
   failed: { tone: 'danger', icon: X, fill: 'solid', label: 'Failed' },
   skipped: { tone: 'neutral', icon: Minus, fill: 'soft', label: 'Skipped' },
+  transferred: { tone: 'neutral', icon: ArrowRight, fill: 'soft', label: 'Transferred' },
   pending: { tone: 'neutral', icon: Clock, fill: 'hollow', label: 'Not started' },
   running: { tone: 'info', icon: null, fill: 'hollow', label: 'Running' },
   deciding: {

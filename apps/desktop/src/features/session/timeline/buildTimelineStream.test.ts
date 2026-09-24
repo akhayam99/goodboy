@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   Agent,
   AgentId,
+  ClusterCompletionHold,
   IsoDateTime,
   OpenQuestion,
   OpenQuestionId,
@@ -173,6 +174,7 @@ type StreamParams = {
   readonly plans?: ReadonlyArray<PlanWithCount>;
   readonly artifacts?: ReadonlyArray<SessionArtifact>;
   readonly questions?: ReadonlyArray<OpenQuestion>;
+  readonly holds?: ReadonlyArray<ClusterCompletionHold>;
   readonly showWorkflowSubagents?: boolean;
   readonly showAgentSubagents?: boolean;
   readonly showPlans?: boolean;
@@ -190,6 +192,7 @@ const stream = ({
   plans = [],
   artifacts = [],
   questions = [],
+  holds = [],
   showWorkflowSubagents,
   showAgentSubagents,
   showPlans,
@@ -213,6 +216,7 @@ const stream = ({
     unreadAgentIds,
     blockedRunIds: new Set(),
     decidingRunIds,
+    holds,
     dayLabelFor: ({ at }) => dayLabel({ at, now: NOW }),
     ...(showWorkflowSubagents != null ? { showWorkflowSubagents } : {}),
     ...(showAgentSubagents != null ? { showAgentSubagents } : {}),
@@ -1313,6 +1317,74 @@ describe('buildTimelineStream, session events', () => {
           workflowRunId: RUN_ID,
         }),
       ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:run:run-1');
+
+    expect(lane?.shape).toBe('merged');
+  });
+
+  const transferredRunAgents = (): ReadonlyArray<Agent> => [
+    agent({
+      id: 'one',
+      ordinal: 1,
+      startedAt: localIso({ day: 18, hour: 9 }),
+      completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+      workflowRunId: RUN_ID,
+    }),
+    agent({
+      id: 'two',
+      ordinal: 2,
+      startedAt: localIso({ day: 18, hour: 10 }),
+      completedAt: localIso({ day: 18, hour: 10, minute: 30 }),
+      workflowRunId: RUN_ID,
+    }),
+    agent({
+      id: 'cluster-a',
+      ordinal: 3,
+      status: 'transferred',
+      startedAt: localIso({ day: 18, hour: 10, minute: 5 }),
+      completedAt: localIso({ day: 18, hour: 10, minute: 20 }),
+      workflowRunId: RUN_ID,
+      parentAgentId: 'two',
+    }),
+  ];
+
+  const transferredHold = (state: ClusterCompletionHold['state']): ClusterCompletionHold => ({
+    id: 'hold-a',
+    sessionId: SESSION_ID,
+    workflowRunId: RUN_ID,
+    containerAgentId: typedString<AgentId>({ value: 'two' }),
+    sourceAgentId: typedString<AgentId>({ value: 'cluster-a' }),
+    sourceTurnId: 'turn-a',
+    reason: 'unresolved-outcome',
+    findings: [],
+    state,
+    resolutionEvidence: state === 'resolved' ? 'repair verified' : null,
+    resolvedAt: state === 'resolved' ? localIso({ day: 18, hour: 10, minute: 25 }) : null,
+    createdAt: localIso({ day: 18, hour: 10, minute: 20 }),
+    updatedAt: localIso({ day: 18, hour: 10, minute: 25 }),
+  });
+
+  it('keeps the lane of a run open over a transferred cluster child whose hold is open', () => {
+    const { groups } = stream({
+      workflows: [
+        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['one', 'two'] }),
+      ],
+      agents: transferredRunAgents(),
+      holds: [transferredHold('open')],
+    });
+    const lane = groups.find((group) => group.id === 'lane:run:run-1');
+
+    expect(lane?.shape).toBe('open');
+  });
+
+  it('closes the lane of a run once its transferred cluster child finished through a resolved hold', () => {
+    const { groups } = stream({
+      workflows: [
+        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['one', 'two'] }),
+      ],
+      agents: transferredRunAgents(),
+      holds: [transferredHold('resolved')],
     });
     const lane = groups.find((group) => group.id === 'lane:run:run-1');
 

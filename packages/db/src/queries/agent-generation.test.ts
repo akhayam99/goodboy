@@ -5,6 +5,7 @@ import { migrate } from '../migrations/runner';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import {
   bindAgentGeneration,
+  countObligationAttempts,
   listGenerationRefusals,
   reserveAgentGeneration,
 } from './agent-generation';
@@ -228,6 +229,30 @@ describe('agent generation ledger', () => {
     expect(cycle.kind === 'refused' ? cycle.limit : null).toBe('lineage');
     expect(missing.kind === 'refused' ? missing.reason : '').toContain('not on record');
     expect(foreign.kind === 'refused' ? foreign.reason : '').toContain('another session');
+  });
+
+  it('counts the attempts one obligation took from the same ledger that caps them', async () => {
+    const db = await seed();
+    const attempt = async (reservationId: string) =>
+      reserveAgentGeneration({
+        db,
+        reservationId,
+        sessionId,
+        workflowRunId,
+        parentAgentId: 'root' as AgentId,
+        creationPath: 'capability',
+        count: 1,
+        obligationId: 'obligation-1',
+        purpose: 'repair',
+      });
+
+    expect(await countObligationAttempts({ db, obligationId: 'obligation-1' })).toBe(0);
+    await attempt('reservation:a');
+    await attempt('reservation:b');
+    await attempt('reservation:c');
+
+    expect(await countObligationAttempts({ db, obligationId: 'obligation-1' })).toBe(2);
+    expect(await countObligationAttempts({ db, obligationId: 'obligation-2' })).toBe(0);
   });
 
   it('caps automatic attempts on one obligation and structural replans on one run', async () => {

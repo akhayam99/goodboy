@@ -11,6 +11,7 @@ import type { GetFn, SetFn } from './types';
 
 const h = vi.hoisted(() => ({
   invokeCapabilityNeedRecord: vi.fn(),
+  invokeClusterCompletionHolds: vi.fn(),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -27,6 +28,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeEvidenceInventoryRecord: async () => undefined,
   invokeEvidenceDeliveryRecord: async () => undefined,
   invokeCapabilityNeedRecord: h.invokeCapabilityNeedRecord,
+  invokeClusterCompletionHolds: h.invokeClusterCompletionHolds,
 }));
 
 import { captureCapabilityNeed, needBlocksCompletion } from './captureCapabilityNeed';
@@ -71,6 +73,7 @@ const obligation = {
   workflowRunId: 'workflow-run-1' as WorkflowRunId,
   identity: 'agent-1:implementer:repair',
   requesterAgentId: AGENT_ID,
+  requesterParentAgentId: null,
   targetRole: 'implementer',
   purpose: 'repair',
   state: 'open',
@@ -87,9 +90,10 @@ const obligation = {
   updatedAt: '2026-07-30T00:00:00.000Z',
 } satisfies CapabilityObligation;
 
-const createHarness = () => {
+const createHarness = ({ requester = reviewer }: { readonly requester?: Agent } = {}) => {
   const state = {
-    sessionPhaseRuns: { [SESSION_ID]: [reviewer] },
+    sessionPhaseRuns: { [SESSION_ID]: [requester] },
+    clusterCompletionHolds: {} as Record<SessionId, ReadonlyArray<unknown>>,
     agentKindOverride: {},
     capabilityObligations: {} as Record<SessionId, ReadonlyArray<CapabilityObligation>>,
     sessions: [],
@@ -114,6 +118,56 @@ describe('captureCapabilityNeed', () => {
   beforeEach(() => {
     h.invokeCapabilityNeedRecord.mockReset();
     h.invokeCapabilityNeedRecord.mockImplementation(async () => obligation);
+    h.invokeClusterCompletionHolds.mockReset();
+    h.invokeClusterCompletionHolds.mockImplementation(async () => []);
+  });
+
+  it('holds the node of a cluster child that raised a need on its container', async () => {
+    const clusterChild: Agent = {
+      ...reviewer,
+      parentAgentId: 'container-1' as AgentId,
+      executionPurpose: 'cluster',
+    };
+    const needHold = { id: 'cluster-completion-hold:need:1', sourceAgentId: AGENT_ID };
+    h.invokeCapabilityNeedRecord.mockImplementation(async () => ({
+      ...obligation,
+      holdIds: [needHold.id],
+    }));
+    h.invokeClusterCompletionHolds.mockImplementation(async () => [needHold]);
+    const { state, set, get } = createHarness({ requester: clusterChild });
+
+    await captureCapabilityNeed({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      runId: RUN_ID,
+      assistantText: needBody({ ...repairNeed, inventoryRevision: revisionOf(get) }),
+    });
+
+    expect(h.invokeCapabilityNeedRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ holdContainerAgentId: 'container-1' }),
+    );
+    expect(state.clusterCompletionHolds[SESSION_ID]).toEqual([needHold]);
+  });
+
+  it('leaves a need from an agent outside any cluster without a hold', async () => {
+    const { state, set, get } = createHarness();
+
+    await captureCapabilityNeed({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      runId: RUN_ID,
+      assistantText: needBody({ ...repairNeed, inventoryRevision: revisionOf(get) }),
+    });
+
+    expect(h.invokeCapabilityNeedRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ holdContainerAgentId: null }),
+    );
+    expect(h.invokeClusterCompletionHolds).not.toHaveBeenCalled();
+    expect(state.clusterCompletionHolds[SESSION_ID]).toBeUndefined();
   });
 
   it('captures a need emitted beside a cluster boundary marker', async () => {

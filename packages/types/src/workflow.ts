@@ -33,7 +33,8 @@ export type AgentRole =
   | 'wireframe'
   | 'custom';
 
-export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+export type AgentStatus =
+  'pending' | 'running' | 'completed' | 'failed' | 'skipped' | 'transferred';
 
 export type ClusterCompletionFindingTarget = 'implementer' | 'planner' | 'investigator' | 'tester';
 
@@ -122,6 +123,7 @@ export type CapabilityObligation = Readonly<{
   workflowRunId: WorkflowRunId | null;
   identity: string;
   requesterAgentId: AgentId;
+  requesterParentAgentId: AgentId | null;
   targetRole: AgentRole;
   purpose: CapabilityPurpose;
   state: CapabilityObligationState;

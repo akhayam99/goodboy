@@ -27,6 +27,11 @@ import {
 import { claimCapabilityObligationOwner } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import {
+  releaseCapabilityHolds,
+  releaseHoldsForContinuingRequester,
+} from './releaseCapabilityHolds';
+import { resolveObligationRequester } from './resolveObligationRequester';
+import {
   classifyAgent,
   KIND_TO_ROLE,
   kindForRole,
@@ -40,6 +45,7 @@ import {
   type TransferPacket,
 } from './composeCapabilityKickoff';
 import { freezeClusterExecution } from './clusterImplementation';
+import { deliverEvidenceSources, undeliveredReason } from '../turn/deliverEvidenceSources';
 import type { GetFn, SetFn } from './types';
 
 export type NeedDispositionOutcome =
@@ -52,6 +58,9 @@ export type NeedDispositionOutcome =
   | Readonly<{ kind: 'unavailable'; reason: string }>;
 
 type NeedDecision = Extract<OrchestratorDecision, { readonly action: 'need' }>;
+
+type SpawnAttempt =
+  Readonly<{ kind: 'spawned'; agentId: AgentId }> | Readonly<{ kind: 'refused'; reason: string }>;
 
 type Params = {
   readonly set: SetFn;
@@ -201,12 +210,11 @@ export const applyNeedDisposition = async ({
   obligation,
   decision,
 }: Params): Promise<NeedDispositionOutcome> => {
-  const requester = (get().sessionPhaseRuns[sessionId] ?? []).find(
-    (agent) => agent.id === obligation.requesterAgentId,
-  );
-  if (requester === undefined) {
-    return { kind: 'unavailable', reason: 'the requesting agent is no longer loaded' };
+  const requester = await resolveObligationRequester({ get, sessionId, obligation });
+  if (requester === null) {
+    return { kind: 'unavailable', reason: 'the requesting agent is not recorded in this session' };
   }
+  const isRequesterRemoved = requester.deletedAt !== undefined;
   const request = obligation.requests[obligation.requests.length - 1];
   if (request === undefined) {
     return { kind: 'unavailable', reason: 'the obligation carries no recorded request' };
@@ -221,6 +229,13 @@ export const applyNeedDisposition = async ({
       reason,
     });
     refreshObligation({ set, sessionId, obligation: recorded });
+    await releaseHoldsForContinuingRequester({
+      set,
+      get,
+      sessionId,
+      holdIds: recorded.holdIds,
+      resolutionEvidence: `${disposition.kind === 'refuse' ? 'need refused' : 'need sent back for narrowing'}, so the requester continues without it: ${reason}`,
+    });
     void get().emitNotification({
       kind: 'error',
       severity: 'warning',
@@ -268,21 +283,86 @@ export const applyNeedDisposition = async ({
     return { kind: 'attached', ownerAgentId: owner };
   }
 
+  if (disposition.kind === 'reuse' && isRequesterRemoved) {
+    return {
+      kind: 'unavailable',
+      reason:
+        'the requesting agent was removed, so there is no transcript to deliver evidence into',
+    };
+  }
+
   if (disposition.kind === 'reuse') {
+    const delivery = await deliverEvidenceSources({
+      set,
+      get,
+      sessionId,
+      agentId: requester.id,
+      sourceTurnId: request.sourceTurnId,
+      inventoryRevision: null,
+      sources: disposition.evidenceRefs.map((id) => ({ id, range: null })),
+      heading: `## evidence you already hold (retrieved by the host, no agent was created)\n\n${reason}`,
+    });
+    if (delivery.kind === 'refused' || delivery.kind === 'held') {
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `Need from ${requester.name} not answered from evidence`,
+        body: `${delivery.reason}. the obligation stays open.`,
+        sessionId,
+      });
+      return { kind: 'unavailable', reason: delivery.reason };
+    }
+    const deliveredRefs = delivery.receipts
+      .filter((receipt) => receipt.outcome === 'delivered')
+      .map((receipt) => receipt.sourceId);
+    const unmet = undeliveredReason({ receipts: delivery.receipts });
+    if (deliveredRefs.length === 0) {
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `Need from ${requester.name} not answered from evidence`,
+        body: `none of the named sources reached ${requester.name} (${unmet}), so the obligation stays open.`,
+        sessionId,
+      });
+      return {
+        kind: 'unavailable',
+        reason: `none of the named sources could be delivered (${unmet})`,
+      };
+    }
+    if (unmet.length > 0) {
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `Need from ${requester.name} only partly answered from evidence`,
+        body: `${deliveredRefs.join(', ')} reached ${requester.name}, but not every named source did (${unmet}), so the obligation stays open.`,
+        sessionId,
+      });
+      return {
+        kind: 'unavailable',
+        reason: `not every named source could be delivered (${unmet})`,
+      };
+    }
     const settled = await invokeCapabilityObligationSettle({
       obligationId: obligation.id,
-      verifiedRevision: request.inventoryRevision,
-      deliveryReceipt: `answered from existing evidence: ${disposition.evidenceRefs.join(', ')}`,
+      verifiedRevision: delivery.inventoryRevision,
+      deliveryReceipt: `answered from existing evidence: ${deliveredRefs.join(', ')}`,
     });
     refreshObligation({ set, sessionId, obligation: settled });
+    await releaseCapabilityHolds({
+      set,
+      get,
+      sessionId,
+      obligation: settled,
+      isRequesterContinuing: true,
+    });
     void get().emitNotification({
       kind: 'error',
       severity: 'info',
       title: `Need from ${requester.name} answered from evidence`,
-      body: `${reason} sources: ${disposition.evidenceRefs.join(', ')}`,
+      body: `${reason} sources delivered: ${deliveredRefs.join(', ')}`,
       sessionId,
     });
-    return { kind: 'reused', evidenceRefs: disposition.evidenceRefs };
+    return { kind: 'reused', evidenceRefs: deliveredRefs };
   }
 
   const grantedRole = disposition.step.role;
@@ -367,7 +447,7 @@ export const applyNeedDisposition = async ({
   const eligibility = resolveContinuationEligibility({
     providerId: provider ?? 'anthropic',
     binary: null,
-    providerSessionId: requester.providerSessionId ?? null,
+    providerSessionId: isRequesterRemoved ? null : (requester.providerSessionId ?? null),
     providerSessionProviderId: requester.providerSessionProviderId ?? null,
   });
   const plan = resolveGrantExecution({
@@ -403,27 +483,55 @@ export const applyNeedDisposition = async ({
     return { kind: 'already-delivered' };
   }
 
-  const childAgentId = await get().spawnAgent(sessionId, {
-    name: disposition.step.name,
-    kindOverride: kindForRole({ role: grantedRole }),
-    parentAgentId: requester.id,
-    executionPurpose: 'capability',
-    generationPurpose: obligation.purpose,
-    ...(obligation.workflowRunId !== null && { workflowRunId: obligation.workflowRunId }),
-    ...(stepProvider !== null && { provider: stepProvider }),
-    ...(disposition.step.model !== undefined && { model: disposition.step.model }),
-    ...(disposition.step.effort !== undefined && { effort: disposition.step.effort }),
-    initialPrompt: composeCapabilityKickoff({
-      request,
-      requesterName: requester.name,
-      promptPrefix: disposition.step.promptPrefix,
-      transfer,
-      planRevision:
-        obligation.purpose === 'replan'
-          ? planRevisionBrief({ get, sessionId, containerId: requester.parentAgentId ?? null })
-          : null,
-    }),
-  });
+  const spawned = await get()
+    .spawnAgent(sessionId, {
+      name: disposition.step.name,
+      kindOverride: kindForRole({ role: grantedRole }),
+      parentAgentId: requester.id,
+      executionPurpose: 'capability',
+      obligationId: obligation.id,
+      generationPurpose: obligation.purpose,
+      ...(obligation.workflowRunId !== null && { workflowRunId: obligation.workflowRunId }),
+      ...(stepProvider !== null && { provider: stepProvider }),
+      ...(disposition.step.model !== undefined && { model: disposition.step.model }),
+      ...(disposition.step.effort !== undefined && { effort: disposition.step.effort }),
+      initialPrompt: composeCapabilityKickoff({
+        request,
+        requesterName: requester.name,
+        promptPrefix: disposition.step.promptPrefix,
+        transfer,
+        planRevision:
+          obligation.purpose === 'replan'
+            ? planRevisionBrief({ get, sessionId, containerId: requester.parentAgentId ?? null })
+            : null,
+      }),
+    })
+    .then(
+      (agentId): SpawnAttempt => ({ kind: 'spawned', agentId }),
+      (error: unknown): SpawnAttempt => ({
+        kind: 'refused',
+        reason: error instanceof Error ? error.message : String(error),
+      }),
+    );
+  if (spawned.kind === 'refused') {
+    const failed = await invokeCapabilityGrantUpdate({
+      obligationId: obligation.id,
+      state: 'failed',
+      childAgentId: null,
+      replacementAgentId: null,
+      verificationAgentId: null,
+    });
+    rememberGrant({ set, sessionId, grant: failed });
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Need from ${requester.name} not granted`,
+      body: `${spawned.reason}. the obligation stays open and unowned: finish it by hand or resolve its hold.`,
+      sessionId,
+    });
+    return { kind: 'refused', reason: spawned.reason };
+  }
+  const childAgentId = spawned.agentId;
 
   const delivered = await invokeCapabilityGrantUpdate({
     obligationId: obligation.id,
@@ -448,7 +556,7 @@ export const applyNeedDisposition = async ({
 
   if (plan.kind === 'transfer') {
     await invokeAgentUpdateStatus(requester.id, {
-      status: 'failed',
+      status: 'transferred',
       outputSummary: transferredParentSummary({
         grantedRole,
         purpose: obligation.purpose,

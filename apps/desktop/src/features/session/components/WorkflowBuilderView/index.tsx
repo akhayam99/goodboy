@@ -208,6 +208,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const sessionPhaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns?.[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<never>),
   );
+  const completionHolds = useAppStore(
+    (s) => s.clusterCompletionHolds?.[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<never>),
+  );
   const providers = useAppStore(
     (s) => s.providers ?? (EMPTY_ARRAY as ReadonlyArray<never>),
   ) as ReadonlyArray<ProviderEntry>;
@@ -418,7 +421,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       .map((r) => {
         const template = phaseTemplates.find((t) => t.id === r.workflowId) ?? null;
         const agents = runsForWorkflowRun(sessionPhaseRuns, r.id);
-        const complete = isWorkflowRunComplete({ run: r, workflow: template, agents });
+        const complete = isWorkflowRunComplete({
+          run: r,
+          workflow: template,
+          agents,
+          holds: completionHolds,
+        });
         const failed = agents.some((a) => a.status === 'failed');
         return { run: r, template, complete, failed };
       })
@@ -433,7 +441,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         } => e.template !== null && !e.complete && !e.failed,
       )
       .sort((a, b) => a.run.ordinal - b.run.ordinal);
-  }, [session.workflowRuns, phaseTemplates, sessionPhaseRuns]);
+  }, [session.workflowRuns, phaseTemplates, sessionPhaseRuns, completionHolds]);
 
   const latestActiveRunId = activeRuns[activeRuns.length - 1]?.run.id ?? null;
   const resolvedChainId = chainAfterId ?? latestActiveRunId;

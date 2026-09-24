@@ -21,6 +21,7 @@ const TERMINAL_LABELS: Partial<Record<AgentStatus, string>> = {
   completed: 'done',
   failed: 'failed',
   skipped: 'skipped',
+  transferred: 'transferred',
 };
 
 export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) => {

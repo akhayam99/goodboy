@@ -72,7 +72,12 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
           chainAfterId,
         );
         if (
-          isWorkflowRunComplete({ run: predecessor, workflow: predTemplate, agents: predAgents })
+          isWorkflowRunComplete({
+            run: predecessor,
+            workflow: predTemplate,
+            agents: predAgents,
+            holds: get().clusterCompletionHolds?.[sessionId] ?? [],
+          })
         ) {
           triggerMode = 'immediate';
         }

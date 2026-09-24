@@ -180,20 +180,43 @@ const requestToDomain = ({ row }: { readonly row: CapabilityRequestRow }): Capab
   createdAt: new Date(row.created_at).toISOString(),
 });
 
+type RequesterLineageRow = {
+  readonly id: AgentId;
+  readonly session_id: string;
+  readonly parent_agent_id: AgentId | null;
+};
+
+const requesterParentOf = async ({
+  db,
+  requesterAgentId,
+}: {
+  readonly db: Database;
+  readonly requesterAgentId: AgentId;
+}): Promise<AgentId | null> => {
+  const rows = await db.select<RequesterLineageRow>(
+    'SELECT id, session_id, parent_agent_id FROM agents WHERE id = ?',
+    [requesterAgentId],
+  );
+  return rows[0]?.parent_agent_id ?? null;
+};
+
 const obligationToDomain = ({
   row,
   requests,
   holdIds,
+  requesterParentAgentId,
 }: {
   readonly row: CapabilityObligationRow;
   readonly requests: ReadonlyArray<CapabilityRequest>;
   readonly holdIds: ReadonlyArray<string>;
+  readonly requesterParentAgentId: AgentId | null;
 }): CapabilityObligation => ({
   id: row.id,
   sessionId: row.session_id,
   workflowRunId: row.workflow_run_id,
   identity: row.identity,
   requesterAgentId: row.requester_agent_id,
+  requesterParentAgentId,
   targetRole: row.target_role,
   purpose: row.purpose,
   state: row.state,
@@ -311,6 +334,10 @@ export const recordCapabilityNeed = async ({
     row: obligationRow,
     requests: requests.map((row) => requestToDomain({ row })),
     holdIds: holds.map((row) => row.hold_id),
+    requesterParentAgentId: await requesterParentOf({
+      db,
+      requesterAgentId: obligationRow.requester_agent_id,
+    }),
   });
 };
 
@@ -337,6 +364,10 @@ export const associateCapabilityObligationHold = async ({
     row: obligationRow,
     requests: requests.map((row) => requestToDomain({ row })),
     holdIds: holds.map((row) => row.hold_id),
+    requesterParentAgentId: await requesterParentOf({
+      db,
+      requesterAgentId: obligationRow.requester_agent_id,
+    }),
   });
 };
 
@@ -411,9 +442,16 @@ export const listCapabilityObligations = async ({
       WHERE o.session_id = ?`,
     [sessionId],
   );
+  const lineage = await db.select<RequesterLineageRow>(
+    `SELECT id, session_id, parent_agent_id FROM agents WHERE id IN
+       (SELECT requester_agent_id FROM capability_obligations WHERE session_id = ?)`,
+    [sessionId],
+  );
   return rows.map((row) =>
     obligationToDomain({
       row,
+      requesterParentAgentId:
+        lineage.find((agent) => agent.id === row.requester_agent_id)?.parent_agent_id ?? null,
       requests: requests
         .filter((request) => request.obligation_id === row.id)
         .map((request) => requestToDomain({ row: request })),
@@ -533,10 +571,22 @@ export const updateCapabilityGrant = async ({
         SET state = ?,
             child_agent_id = COALESCE(?, child_agent_id),
             replacement_agent_id = COALESCE(?, replacement_agent_id),
-            verification_agent_id = COALESCE(?, verification_agent_id),
+            verification_agent_id = CASE
+              WHEN ? IS NOT NULL THEN ?
+              ELSE COALESCE(?, verification_agent_id)
+            END,
             updated_at = ?
       WHERE obligation_id = ?`,
-    [state, childAgentId, replacementAgentId, verificationAgentId, Date.now(), obligationId],
+    [
+      state,
+      childAgentId,
+      replacementAgentId,
+      replacementAgentId,
+      verificationAgentId,
+      verificationAgentId,
+      Date.now(),
+      obligationId,
+    ],
   );
   const rows = await db.select<CapabilityGrantRow>(
     'SELECT * FROM capability_grants WHERE obligation_id = ?',

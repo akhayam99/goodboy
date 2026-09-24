@@ -68,6 +68,7 @@ const startChainedRuns = async ({ get, sessionId }: Params): Promise<void> => {
         run: predecessor,
         workflow: predTemplate,
         agents: runsForWorkflowRun(runs, predecessor.id),
+        holds: completionHolds,
       })
     ) {
       await get().startWorkflowRun(sessionId, candidate.id);

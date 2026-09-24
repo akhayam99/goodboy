@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
+  CapabilityObligation,
   ClusterCompletionHold,
   IsoDateTime,
   ProviderRunId,
@@ -124,6 +125,7 @@ beforeEach(() => {
     sessionTelemetry: {},
     agentRunHistory: {},
     clusterCompletionHolds: {},
+    capabilityObligations: {},
   });
 });
 
@@ -364,5 +366,145 @@ describe('WorkflowStepGraph', () => {
       holdId: 'hold-orphaned',
       resolutionEvidence: 'Reviewed the tombstoned child transcript.',
     });
+  });
+
+  const orphanedHold = (state: ClusterCompletionHold['state']): ClusterCompletionHold => ({
+    id: 'hold-orphaned',
+    sessionId: SESSION_ID,
+    workflowRunId: null,
+    containerAgentId: scout.id,
+    sourceAgentId: 'deleted-child' as AgentId,
+    sourceTurnId: 'turn-deleted',
+    reason: 'unresolved-outcome',
+    findings: [{ reason: 'the guard is missing', target: 'implementer' }],
+    state,
+    resolutionEvidence: state === 'resolved' ? 'checked by hand' : null,
+    resolvedAt: state === 'resolved' ? NOW : null,
+    createdAt: NOW,
+    updatedAt: NOW,
+  });
+
+  const orphanedObligation: CapabilityObligation = {
+    id: 'obligation-orphaned',
+    sessionId: SESSION_ID,
+    workflowRunId: null,
+    identity: 'deleted-child:implementer:repair',
+    requesterAgentId: 'deleted-child' as AgentId,
+    requesterParentAgentId: null,
+    targetRole: 'implementer',
+    purpose: 'repair',
+    state: 'open',
+    ownerAgentId: null,
+    decision: null,
+    decisionReason: null,
+    satisfiedRevision: null,
+    childAgentId: null,
+    deliveredAt: null,
+    deliveryReceipt: null,
+    requests: [],
+    holdIds: ['hold-orphaned'],
+    createdAt: NOW,
+    updatedAt: NOW,
+  };
+
+  it('shows an open obligation of a removed requester on its container and acts on it there', () => {
+    const resolveClusterCompletionHold = vi.fn(async () => undefined);
+    useAppStore.setState({
+      clusterCompletionHolds: { [SESSION_ID]: [orphanedHold('open')] },
+      capabilityObligations: { [SESSION_ID]: [orphanedObligation] },
+      resolveClusterCompletionHold,
+    });
+
+    renderGraph(new Map());
+
+    const containerRow = screen.getByRole('button', { name: /^1 Scout/u }).parentElement;
+    expect(containerRow?.textContent).toContain('Needs: implementer for repair');
+    expect(containerRow?.textContent).toContain('Held: the guard is missing');
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve hold' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Resolution evidence' }), {
+      target: { value: 'Applied the missing guard by hand.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
+
+    expect(resolveClusterCompletionHold).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      holdId: 'hold-orphaned',
+      resolutionEvidence: 'Applied the missing guard by hand.',
+    });
+  });
+
+  it('keeps an open obligation of a removed requester on its container once its hold is resolved', () => {
+    useAppStore.setState({
+      clusterCompletionHolds: { [SESSION_ID]: [orphanedHold('resolved')] },
+      capabilityObligations: { [SESSION_ID]: [orphanedObligation] },
+    });
+
+    renderGraph(new Map());
+
+    const containerRow = screen.getByRole('button', { name: /^1 Scout/u }).parentElement;
+    expect(containerRow?.textContent).toContain('Needs: implementer for repair');
+    expect(containerRow?.textContent).not.toContain('Held:');
+  });
+
+  it('shows a need of a removed requester with no hold on its container and decides it there', () => {
+    const decideCapabilityNeed = vi.fn(async () => ({
+      kind: 'unavailable' as const,
+      reason: 'the orchestrator did not answer this need',
+    }));
+    useAppStore.setState({
+      clusterCompletionHolds: { [SESSION_ID]: [] },
+      capabilityObligations: {
+        [SESSION_ID]: [{ ...orphanedObligation, holdIds: [], requesterParentAgentId: scout.id }],
+      },
+      decideCapabilityNeed,
+    });
+
+    renderGraph(new Map());
+
+    const containerRow = screen.getByRole('button', { name: /^1 Scout/u }).parentElement;
+    expect(containerRow?.textContent).toContain('Needs: implementer for repair');
+    fireEvent.click(screen.getByRole('button', { name: 'Decide again' }));
+
+    expect(decideCapabilityNeed).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      obligationId: 'obligation-orphaned',
+    });
+  });
+
+  it('keeps a need of a removed requester off a container it never belonged to', () => {
+    useAppStore.setState({
+      clusterCompletionHolds: { [SESSION_ID]: [] },
+      capabilityObligations: {
+        [SESSION_ID]: [
+          { ...orphanedObligation, holdIds: [], requesterParentAgentId: implement.id },
+        ],
+      },
+    });
+
+    renderGraph(new Map());
+
+    const scoutRow = screen.getByRole('button', { name: /^1 Scout/u }).parentElement;
+    const implementRow = screen.getByRole('button', { name: /^2 Implement/u }).parentElement;
+    expect(scoutRow?.textContent).not.toContain('Needs:');
+    expect(implementRow?.textContent).toContain('Needs: implementer for repair');
+  });
+
+  it('leaves an obligation on its visible requester and off the container', () => {
+    const child = subScout(1, 'running');
+    useAppStore.setState({
+      clusterCompletionHolds: {
+        [SESSION_ID]: [{ ...orphanedHold('open'), sourceAgentId: child.id }],
+      },
+      capabilityObligations: {
+        [SESSION_ID]: [{ ...orphanedObligation, requesterAgentId: child.id }],
+      },
+    });
+
+    renderGraph(new Map([[scout.id, [child]]]));
+
+    const containerRow = screen.getByRole('button', { name: /^1 Scout/u }).parentElement;
+    const childRow = screen.getByRole('button', { name: /Scout area 1/u }).parentElement;
+    expect(containerRow?.textContent).not.toContain('Needs:');
+    expect(childRow?.textContent).toContain('Needs: implementer for repair');
   });
 });
