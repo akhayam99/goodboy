@@ -28,7 +28,7 @@ export const WorkflowStudio = ({ workspaceId, onClose }: Props) => {
     >
       {() => (
         <div className="min-h-0 min-w-0 flex-1">
-          <WorkflowsPanel workspaceId={workspaceId} />
+          <WorkflowsPanel key={workspaceId} workspaceId={workspaceId} />
         </div>
       )}
     </StudioShell>

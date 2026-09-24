@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   ProjectId,
   ProviderId,
@@ -27,6 +27,7 @@ import { WorkflowImportSection } from '../WorkflowStudio/WorkflowImportSection';
 import { WorkflowStarter } from '../WorkflowStudio/WorkflowStarter';
 import { WorkflowsRail } from '../WorkflowStudio/WorkflowsRail';
 import { invokeWorkflowList } from '../../workflows';
+import { useWorkflowAutosave } from './useWorkflowAutosave';
 
 type Props = { readonly workspaceId: WorkspaceId };
 
@@ -99,7 +100,6 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const [sourceLoadError, setSourceLoadError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const editingIdRef = useRef<WorkflowId | null>(restoredWorkflow?.id ?? null);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sourceLoadRequest = useRef(0);
   const formRef = useRef(form);
   const savedFormRef = useRef(
@@ -149,7 +149,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     });
   }, [agentPrompt, editing, form, setWorkflowStudioDraft, workspaceId]);
 
-  const flushSave = async (): Promise<boolean> => {
+  const flushSave = useCallback(async (): Promise<boolean> => {
     const snapshot = formRef.current;
     const errors = validateDraft({ draft: snapshot });
     if (errors.name !== undefined) {
@@ -186,34 +186,14 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     } finally {
       setSaving(false);
     }
-  };
+  }, [clearWorkflowStudioDraft, editing, savePhaseTemplate, workspaceId]);
 
-  useEffect(() => {
-    if (editing === null) {
-      return;
-    }
-    if (JSON.stringify(form) === savedFormRef.current) {
-      return;
-    }
-    if (saveTimer.current !== null) {
-      clearTimeout(saveTimer.current);
-    }
-    if (
-      form.name.trim().length === 0 ||
-      form.steps.some((definition) => definition.name.trim().length === 0)
-    ) {
-      return;
-    }
-    saveTimer.current = setTimeout(() => {
-      saveTimer.current = null;
-      void flushSave();
-    }, 700);
-    return () => {
-      if (saveTimer.current !== null) {
-        clearTimeout(saveTimer.current);
-      }
-    };
-  }, [form, editing]);
+  useWorkflowAutosave({
+    form,
+    isEditing: editing !== null,
+    savedForm: savedFormRef,
+    flush: flushSave,
+  });
 
   const openStarter = () => {
     setEditing(null);
