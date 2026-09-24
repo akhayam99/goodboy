@@ -104,6 +104,52 @@ describe('WorkNode', () => {
     expect(nodeOf('Running').innerHTML).toContain('motion-safe:animate-soft-pulse');
   });
 
+  it('fills an arc with measured progress instead of spinning', () => {
+    render(
+      <>
+        <WorkNode
+          state="running"
+          mark={{ kind: 'index', value: '2' }}
+          label="Running"
+          progress={0.5}
+        />
+        <WorkNode
+          state="question"
+          mark={{ kind: 'index', value: '2' }}
+          label="Waiting"
+          progress={0.5}
+        />
+        <WorkNode
+          state="failed"
+          mark={{ kind: 'index', value: '2' }}
+          label="Failed"
+          progress={0.5}
+        />
+      </>,
+    );
+
+    const running = nodeOf('Running');
+    expect(running.className).not.toContain('spin-border');
+    expect(running.querySelector('[data-node-arc="running"]')).not.toBeNull();
+    expect(running.innerHTML).toContain('motion-safe:animate-soft-pulse');
+    expect(running.textContent).toBe('2');
+
+    const waiting = nodeOf('Waiting');
+    expect(waiting.querySelector('[data-node-arc="paused"]')).not.toBeNull();
+    expect(waiting.innerHTML).not.toContain('animate-soft-pulse');
+    expect(waiting.textContent).toBe('?');
+
+    expect(nodeOf('Failed').querySelector('[data-node-arc]')).toBeNull();
+  });
+
+  it('keeps the arc full once the work runs past its estimate', () => {
+    render(<WorkNode state="running" mark={{ kind: 'dot' }} label="Running" progress={1.6} />);
+
+    const arc = nodeOf('Running').querySelectorAll('[data-node-arc] circle')[1];
+    const [filled, circumference] = (arc?.getAttribute('stroke-dasharray') ?? '').split(' ');
+    expect(Number(filled)).toBeCloseTo(Number(circumference));
+  });
+
   it('folds the unseen dot into the accessible name', () => {
     render(<WorkNode state="done" mark={{ kind: 'dot' }} label="Done" hasUnread />);
 

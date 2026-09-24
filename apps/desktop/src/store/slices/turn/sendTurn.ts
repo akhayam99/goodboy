@@ -1214,6 +1214,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       const wasCancelled = cancelledRunIds.delete(runId);
       turnWasCancelled = wasCancelled;
       await recordTurnSpan({
+        get,
         span: {
           ...turnSpanBase,
           endedAt: turnEndedAt,
@@ -1398,6 +1399,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       learnFromCliRefusal({ get, providerId: provider, model: spawnModel, message: rawMessage });
       const cancelledBeforeFailure = cancelledRunIds.delete(runId);
       await recordTurnSpan({
+        get,
         span: {
           ...turnSpanBase,
           endedAt: now(),

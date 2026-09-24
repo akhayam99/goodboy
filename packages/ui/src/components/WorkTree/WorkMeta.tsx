@@ -8,6 +8,7 @@ type Props = {
   readonly cost?: ReactNode;
   readonly isPlanned?: boolean;
   readonly shouldKeepCost?: boolean;
+  readonly isCostRange?: boolean;
 };
 
 export const WorkMeta = ({
@@ -16,6 +17,7 @@ export const WorkMeta = ({
   cost = null,
   isPlanned = false,
   shouldKeepCost = false,
+  isCostRange = false,
 }: Props) => (
   <span
     data-testid="work-meta"
@@ -32,7 +34,10 @@ export const WorkMeta = ({
     )}
     <span
       data-meta-column="cost"
-      className={cn(WORK_META_COLUMN.cost, !shouldKeepCost && WORK_META_COLUMN.stepCost)}
+      className={cn(
+        isCostRange ? WORK_META_COLUMN.costRange : WORK_META_COLUMN.cost,
+        !shouldKeepCost && WORK_META_COLUMN.stepCost,
+      )}
     >
       {cost}
     </span>

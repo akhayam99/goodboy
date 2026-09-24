@@ -6,6 +6,7 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  MeasuredTurnSpan,
   OpenQuestion,
   OpenQuestionId,
   OrchestratorHint,
@@ -17,6 +18,8 @@ import type {
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
+
+import { WorkTimeContext, type WorkTimeSource } from '../../../workTreeModel/workTimeSource';
 
 const { storeState } = vi.hoisted(() => ({
   storeState: {} as Record<string, unknown>,
@@ -89,6 +92,7 @@ type RenderParams = {
   readonly steps?: ReadonlyArray<Step>;
   readonly costUsd?: number;
   readonly isOrchestrating?: boolean;
+  readonly source?: WorkTimeSource | null;
 };
 
 const renderStrip = ({
@@ -97,16 +101,19 @@ const renderStrip = ({
   steps = EMPTY_STEPS,
   costUsd = 0,
   isOrchestrating = false,
+  source = null,
 }: RenderParams = {}) =>
   render(
-    <OrchestratorStrip
-      sessionId={SESSION_ID}
-      run={runOverride}
-      agents={agents}
-      steps={steps}
-      costUsd={costUsd}
-      isOrchestrating={isOrchestrating}
-    />,
+    <WorkTimeContext.Provider value={source}>
+      <OrchestratorStrip
+        sessionId={SESSION_ID}
+        run={runOverride}
+        agents={agents}
+        steps={steps}
+        costUsd={costUsd}
+        isOrchestrating={isOrchestrating}
+      />
+    </WorkTimeContext.Provider>,
   );
 
 const HINT_AT = '2026-09-23T10:00:00.000Z' as IsoDateTime;
@@ -215,19 +222,50 @@ describe('OrchestratorStrip state ladder', () => {
     expect(screen.getByTestId('orchestrator-hint-input')).toBeDefined();
   });
 
-  it('names the step it waits on and how long it has been running', () => {
-    const startedAt = new Date(Date.now() - 90_000).toISOString() as IsoDateTime;
+  it('names the step it waits on and the machine time it has worked', () => {
+    const startedAt = new Date(Date.now() - 20 * 60_000).toISOString() as IsoDateTime;
+    const measured: MeasuredTurnSpan = {
+      agentId: 'agent-1' as AgentId,
+      parentAgentId: null,
+      agentStatus: 'running',
+      workflowRunId: RUN_ID,
+      isOrchestratedRunDone: false,
+      stepRole: 'implementer',
+      provider: 'anthropic',
+      model: 'claude-sonnet-5',
+      effort: null,
+      startedAtMs: 0,
+      endedAtMs: 3 * 60_000,
+      endReason: 'awaiting_user',
+      costUsd: null,
+    };
     renderStrip({
       runOverride: run({ autoRun: true }),
       agents: [
         agent(0, 'completed'),
         agent(1, 'running', { name: 'implement language-id remap', startedAt }),
       ],
+      source: {
+        nowMs: Date.now(),
+        spans: [measured],
+        history: null,
+        liveStartMs: new Map(),
+        childrenOf: new Map(),
+      },
     });
 
     expect(sentence()).toContain('Waiting on step 2 · implement language-id remap');
-    expect(screen.getByTestId('orchestrator-elapsed').textContent).toContain('1m 30s');
+    expect(screen.getByTestId('orchestrator-elapsed').textContent).toContain('3m');
     expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
+  });
+
+  it('shows no time for a step that has not recorded any machine time', () => {
+    renderStrip({
+      runOverride: run({ autoRun: true }),
+      agents: [agent(0, 'completed'), agent(1, 'running')],
+    });
+
+    expect(screen.queryByTestId('orchestrator-elapsed')).toBeNull();
   });
 
   it('confirms Stop now from the overflow and dispatches the hard stop', () => {

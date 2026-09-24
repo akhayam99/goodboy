@@ -86,7 +86,7 @@ export const OrchestratorStrip = ({
     hasOpenQuestions: workflowRunHasOpenQuestions({ questions: openQuestions, run }),
     costUsd,
   });
-  const elapsed = useElapsedLabel({ since: state.waitingSince });
+  const elapsed = useElapsedLabel({ agentId: state.waitingOnAgentId });
   const isPulsing =
     state.phase === 'deciding' ||
     state.phase === 'automatic' ||

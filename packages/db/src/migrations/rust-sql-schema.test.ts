@@ -94,6 +94,12 @@ const TOMBSTONE_READ_ALLOWLIST: ReadonlyArray<TombstoneAllowance> = [
     reason: 'carries its own tombstone filter and projects deleted_at into the snapshot',
   },
   {
+    file: 'agent-turn-span.ts',
+    contains: ['LEFT JOIN agents a ON a.id = s.agent_id'],
+    reason:
+      'duration history keeps the finished work of a deleted agent: its measured turns still say how long such a step takes',
+  },
+  {
     file: 'agent.ts',
     contains: ['SELECT * FROM agents WHERE id = ?'],
     reason: 'getAgentById is the point lookup that keeps a tombstone reachable by id',

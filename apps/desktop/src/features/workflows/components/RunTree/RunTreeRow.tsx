@@ -7,6 +7,7 @@ import type {
   Step,
 } from '@goodboy/types';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
+import { useAgentRowWork } from '../../../session/hooks/useAgentRowWork';
 import { AgentKindChip } from '../../../session/components/AgentKindChip';
 import { TimelineAgentMeta } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineAgentMeta';
 import { TimelineRail } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRail';
@@ -80,6 +81,15 @@ export const RunTreeRow = ({
   const { agent } = entry;
   const step =
     !isNested && agent.stepId != null ? (routing.stepById.get(agent.stepId) ?? null) : null;
+  const work = useAgentRowWork({
+    agent,
+    kind: entry.agentKind,
+    step,
+    roleModels: routing.roleModels,
+    sessionProvider: routing.sessionProvider,
+    sessionEffort: routing.sessionEffort,
+    phase: item.rowState.phase,
+  });
   const answer = answerOf({ ask: item.rowState.ask });
   const answersFor = isQuestionDelegate({ agent }) ? parentStepName : null;
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
@@ -105,7 +115,7 @@ export const RunTreeRow = ({
             style={{ left: railColumnX({ column: rail.markerColumn }), top: rail.markerY }}
             data-rail-column={rail.markerColumn}
           >
-            <TimelineRowMarker item={item} />
+            <TimelineRowMarker item={item} progress={work.time?.progress ?? null} />
           </span>
         )}
       </span>
@@ -144,16 +154,7 @@ export const RunTreeRow = ({
               )}
               <TimelineRowStateLine state={item.rowState} />
             </span>
-            <TimelineAgentMeta
-              agent={agent}
-              kind={entry.agentKind}
-              step={step}
-              roleModels={routing.roleModels}
-              sessionProvider={routing.sessionProvider}
-              sessionEffort={routing.sessionEffort}
-              costUsd={costUsd}
-              shouldKeepCost={!isNested}
-            />
+            <TimelineAgentMeta work={work} costUsd={costUsd} shouldKeepCost={!isNested} />
             <span className={WORK_META_COLUMN.action}>
               {answer === null ? null : (
                 <Button

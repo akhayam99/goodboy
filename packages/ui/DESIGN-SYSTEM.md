@@ -339,6 +339,15 @@ nothing about agents: the caller hands it a state, a mark and a label.
 | `skipped`  | 1px `border-soft`                       | dash, faint              |
 | `marker`   | `ring-1` in the concept tone            | the concept glyph        |
 
+A node can also take `progress`, measured active time over the usual time,
+from 0 to 1 and clamped. A `running` node with progress draws a 2px `info` arc
+from twelve o'clock over the `border-soft` track instead of `spin-border`, and
+the `soft-pulse` head sits on the end of the arc. A `question` or `budget` node
+keeps the arc frozen in `warning` over a `warning/35` track, with no motion.
+A `failed` node never draws the arc. The arc steps with the panel's 5 second
+clock and never animates between values: a ring that glides for nine minutes
+decorates, it does not confirm. Without progress the node is the table above.
+
 The number inside is the local index (`2` for step 4.2). The full path stays
 in the ordinal column of the row, because it survives when the number turns
 into a check. A row outside a sequence (a standalone agent, a run origin)
@@ -364,13 +373,18 @@ The right end of a work row is `WorkMeta` in
 `WORK_META_COLUMN`, so every row reads down the same columns and a cost of
 `$12.40` never pushes the model of the row above out of line.
 
-| column | width | holds                                                  | in a narrow pane                 |
-| ------ | ----- | ------------------------------------------------------ | -------------------------------- |
-| model  | 96px  | provider glyph, then the model label                   | under 600px only the glyph stays |
-| effort | 52px  | the effort label, always faint                         | under 720px it leaves the row    |
-| time   | 112px | only when the row has one, like "Step 4 of 7" on a run | never drops                      |
-| cost   | 56px  | what the row has spent, empty before anything is spent | under 520px a step row drops it  |
-| action | 76px  | the one visible action, reserved even when empty       | never drops                      |
+| column     | width | holds                                                        | in a narrow pane                 |
+| ---------- | ----- | ------------------------------------------------------------ | -------------------------------- |
+| model      | 96px  | provider glyph, then the model label                         | under 600px only the glyph stays |
+| effort     | 52px  | the effort label, always faint                               | under 720px it leaves the row    |
+| time       | 128px | measured time or estimate ("5m of ~9m", "12-20m")            | never drops                      |
+| cost       | 56px  | what the row has spent, empty before anything is spent       | under 520px a step row drops it  |
+| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`) | under 520px a step row drops it  |
+| action     | 76px  | the one visible action, reserved even when empty             | never drops                      |
+
+A row inside a `WorkTimeProvider` always renders the time column, empty when
+it has nothing to say, so the columns stay in line. A run row has no routing:
+its step progress sits in the model column and its time in the time column.
 
 The narrow rules are container queries on the panel (`@container`), never
 window breakpoints, because the same feed sits in a wide overview and in a
@@ -399,7 +413,11 @@ up. The list keeps run order in the DOM and reverses it with
 above them: the form column is narrower than 720px and still shows the
 effort, since choosing it is the point of the form. A row opens in place as
 one group (the rule in `docs/styling.md`), and its model axes are the
-`RoutingPicker` body mounted inline, not a copy of it.
+`RoutingPicker` body mounted inline, not a copy of it. Once the workspace has
+enough measured steps, each row's time column holds its usual range and its
+cost column a cost range, in the same faint as the planned routing, and the
+name row carries the plan's total in a muted chip. Nothing in the form draws a
+percentage or an arc: nothing has run yet.
 
 An orchestrated plan has no steps yet, so it draws the orchestrator as the
 origin node and three example rows above it: queued nodes, muted role pills
@@ -629,9 +647,11 @@ states and sit outside the registry.
 - `soft-pulse`: the only animation in the app for a lasting state. It breathes
   a state that holds and is alive: the Providers launcher icon (never its
   label) while no provider is connected, the centre dot of a running
-  `WorkNode` that carries no step number, a running tool icon or scout dot,
-  and the boot splash status. On the rail it sits inside the `spin-border`
-  ring, so the pair reads as one running state, not two claims. The bar for another lasting-state
+  `WorkNode` that carries no step number, the head of a running `WorkNode`'s
+  progress arc (which then replaces the centre dot), a running tool icon or
+  scout dot, and the boot splash status. On the rail it sits inside the
+  `spin-border` ring, or on the arc, so the pair reads as one running state,
+  not two claims. The bar for another lasting-state
   animation is high.
 - `cost-chip-pulse`: the spend meter just ticked. One 1100ms halo, paired with
   the digit roll.

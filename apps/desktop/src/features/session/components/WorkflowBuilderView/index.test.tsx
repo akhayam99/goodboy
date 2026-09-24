@@ -37,6 +37,7 @@ const {
     workspaceOverrides: {},
     workflowDrafts: {} as Record<string, WorkflowBuilderDraft | undefined>,
     providers: [] as ReadonlyArray<{ id: string; connection: string }>,
+    workspaceDurationHistory: {} as Record<string, unknown>,
   },
 }));
 
@@ -69,6 +70,8 @@ vi.mock('../../../../store', () => {
     providers: storeState.providers,
     workspaceOverrides: storeState.workspaceOverrides,
     workflowDrafts: storeState.workflowDrafts,
+    workspaceDurationHistory: storeState.workspaceDurationHistory,
+    loadWorkspaceDurationHistory: vi.fn(async () => undefined),
     setWorkflowDraft,
     clearWorkflowDraft,
   });
@@ -236,6 +239,7 @@ afterEach(() => {
   storeState.workspaceOverrides = {};
   storeState.workflowDrafts = {};
   storeState.providers = [];
+  storeState.workspaceDurationHistory = {};
   localStorage.clear();
 });
 
@@ -534,6 +538,48 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     expect(screen.queryByText('2 steps')).toBeNull();
     expect(screen.getByPlaceholderText(/describe the process/i)).toBeDefined();
     expect(startBtn().disabled).toBe(true);
+  });
+
+  it('estimates each step and the whole plan once the workspace has history', async () => {
+    const sample = (role: string, minutes: number) => ({
+      role,
+      provider: 'elsewhere',
+      model: 'elsewhere-model',
+      effort: null,
+      activeMs: minutes * 60_000,
+      costUsd: minutes / 10,
+      endedAtMs: Date.now() - 60_000,
+    });
+    storeState.workspaceDurationHistory = {
+      [session.workspaceId]: {
+        steps: [4, 5, 6, 7, 8, 9, 10, 11].flatMap((minutes) => [
+          sample('scout', minutes),
+          sample('custom', minutes * 2),
+        ]),
+        orchestratedRuns: [],
+      },
+    };
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+
+    const times = withinSteps().getAllByTestId('work-time');
+    expect(times.map((time) => time.textContent)).toEqual(['~6-9m', '~12-19m']);
+    expect(screen.getByTestId('plan-estimate').textContent).toMatch(
+      /^≈ 17-30m · \$1\.7\d-2\.7\d · \+ your reviews$/,
+    );
+
+    expandStep(0);
+    expect(screen.getByTestId('plan-step-estimate').textContent).toContain(
+      'based on 8 finished scout steps on any model',
+    );
+  });
+
+  it('hides every estimate while the workspace has measured too few steps', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+
+    expect(withinSteps().queryAllByTestId('work-time')).toEqual([]);
+    expect(screen.queryByTestId('plan-estimate')).toBeNull();
   });
 
   it('draws the plan bottom up with a numbered node per step, in execution order', async () => {

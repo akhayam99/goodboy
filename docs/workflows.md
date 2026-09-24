@@ -57,6 +57,17 @@ duplicates or removes the step. Remove asks first. Escape or **Done** closes
 it. The grip on the row drags a step, and the arrow keys on the grip move it:
 up runs it later, down runs it earlier.
 
+Once the workspace has measured 10 finished steps, every step row shows how
+long steps like it usually take and what they usually cost, as a range
+("12-20m", "$0.90-1.60"), and the name row carries the plan's total
+("≈ 35-55m · $2.10-3.40"). A range with `~` leans on a broader history than
+this exact model and effort, a dash means there is not enough history for that
+step, and the tooltip always names the basis. With **Autorun** off the total
+adds "+ your reviews", because your time between steps is not estimated. An
+orchestrated run shows a total only once the workspace has 5 finished
+orchestrated runs. The open editor repeats the step's estimate in its footer.
+Every estimate is machine time only ([turns.md](turns.md#measured-time-and-estimates)).
+
 The page draws the plan bottom up, but the page order stays the run order:
 a screen reader and Tab read step 1 first. So keyboard focus moves upward on
 the screen. That is a known cost of matching the run's tree.
@@ -223,6 +234,19 @@ Once it runs, the meta shows what actually ran, and a dotted model name means
 routing picked something other than the plan (the tooltip names both). The
 run row shows which step it has reached ("Step 4 of 7", or "Step 4" for an
 orchestrated run, which has no total) and what the whole run has spent.
+
+The time column is measured machine time, never the wall clock between start
+and end. A finished row shows its active time ("8m 12s"). A running row with
+enough history reads "5m of ~9m" and its node fills an arc toward the usual
+time; past it the arc stays full and the row reads "11m, usually ~9m". While
+the row waits on you the arc freezes in amber and the row reads "Paused, 5m
+of ~9m". A failed row drops the arc and reads "Failed after 4m". Without
+enough history a running row shows only its active time and the node keeps
+the moving border. A queued step shows its usual range. The run row adds up
+finished steps and the usual time of the steps left, and shows a total only
+when every step left has an estimate; an orchestrated run shows only its
+active time. The workflow detail and a Brief's Subagents use the same column.
+How the numbers are measured is in [turns.md](turns.md#measured-time-and-estimates).
 
 ### Next action
 

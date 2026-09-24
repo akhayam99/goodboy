@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type {
   Agent,
   AgentId,
-  IsoDateTime,
   SessionId,
   StepId,
   WorkflowId,
@@ -174,16 +173,16 @@ describe('resolveOrchestratorState', () => {
     expect(state.sentence).toBe('Paused · autorun is off');
   });
 
-  it('waits on the running step and carries its start time', () => {
-    const startedAt = '2025-01-01T00:00:00.000Z' as IsoDateTime;
+  it('waits on the running step and names it for its measured time', () => {
+    const running = makeAgent(1, 'running');
     const state = resolve({
       run: makeRun({ autoRun: true }),
-      agents: [makeAgent(0, 'completed'), makeAgent(1, 'running', { startedAt })],
+      agents: [makeAgent(0, 'completed'), running],
     });
 
     expect(state.phase).toBe('waiting');
     expect(state.sentence).toBe('Waiting on step 2 · step 1');
-    expect(state.waitingSince).toBe(startedAt);
+    expect(state.waitingOnAgentId).toBe(running.id);
   });
 
   it('asks for an answer when a question is open and nothing runs', () => {
@@ -201,12 +200,12 @@ describe('resolveOrchestratorState', () => {
     expect(state.detail).toBeNull();
   });
 
-  it('waits on a pending step without a start time', () => {
+  it('waits on a pending step without a running agent', () => {
     const state = resolve({ agents: [makeAgent(0, 'completed'), makeAgent(1, 'pending')] });
 
     expect(state.phase).toBe('waiting');
     expect(state.sentence).toBe('Waiting on step 2 · step 1');
-    expect(state.waitingSince).toBeNull();
+    expect(state.waitingOnAgentId).toBeNull();
   });
 
   it('continues automatically when autorun drives an idle run', () => {

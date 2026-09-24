@@ -62,8 +62,9 @@ import { TimelineDayRule } from './TimelineDayRule';
 import { TimelineNowRule } from './TimelineNowRule';
 import { TimelineSkeleton } from './TimelineSkeleton';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
-import { TimelineAgentMeta } from './TimelineAgentMeta';
-import { TimelineRunMeta } from './TimelineRunMeta';
+import { TimelineAgentStreamRow } from './TimelineAgentStreamRow';
+import { TimelineRunStreamRow } from './TimelineRunStreamRow';
+import { WorkTimeProvider } from '../../../../../workTreeModel/components/WorkTimeProvider';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
 
 type Props = {
@@ -430,29 +431,6 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
     }
   };
 
-  const metaFor = ({ item }: { readonly item: TimelineRowItem }): ReactNode => {
-    const { entry } = item;
-    if (entry.kind === 'run') {
-      return <TimelineRunMeta entry={entry} costUsd={spendByRunId.get(entry.run.id) ?? 0} />;
-    }
-    if (entry.kind !== 'agent') {
-      return null;
-    }
-    const { agent } = entry;
-    return (
-      <TimelineAgentMeta
-        agent={agent}
-        kind={entry.agentKind}
-        step={agent.stepId == null ? null : (stepById.get(agent.stepId) ?? null)}
-        roleModels={roleModels}
-        sessionProvider={sessionProvider}
-        sessionEffort={sessionEffort}
-        costUsd={spendByAgentId.get(agent.id) ?? 0}
-        shouldKeepCost={item.grade === 'entry'}
-      />
-    );
-  };
-
   const hasUnreadAgents = unreadAgentIds.size > 0;
   const feedSuggestions = suggestions.filter(
     (suggestion) =>
@@ -533,52 +511,101 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
             railWidth={rail.width}
             actionsFor={suggestionActions}
           />
-          <div ref={listRef} className="@container flex flex-col">
-            {stream.items.map((item, index) => {
-              const railRow = rail.rows[index];
-              if (railRow === undefined) {
-                return null;
-              }
-              if (item.kind === 'now') {
+          <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
+            <div ref={listRef} className="@container flex flex-col">
+              {stream.items.map((item, index) => {
+                const railRow = rail.rows[index];
+                if (railRow === undefined) {
+                  return null;
+                }
+                if (item.kind === 'now') {
+                  return (
+                    <TimelineNowRule
+                      key={item.id}
+                      item={item}
+                      rail={railRow}
+                      railWidth={rail.width}
+                      lanes={lanes}
+                    />
+                  );
+                }
+                if (item.kind === 'day') {
+                  return (
+                    <TimelineDayRule
+                      key={item.id}
+                      item={item}
+                      rail={railRow}
+                      railWidth={rail.width}
+                      lanes={lanes}
+                    />
+                  );
+                }
+                const { entry } = item;
+                const target = openTargetFor({ entry });
+                if (entry.kind === 'agent') {
+                  return (
+                    <TimelineAgentStreamRow
+                      key={item.id}
+                      item={item}
+                      entry={entry}
+                      rail={railRow}
+                      railWidth={rail.width}
+                      sessionId={sessionId}
+                      openTarget={target}
+                      action={actionFor({ item })}
+                      diffStat={diffStatFor({ item })}
+                      lanes={lanes}
+                      runLane={runLaneFor({ item })}
+                      step={
+                        entry.agent.stepId == null
+                          ? null
+                          : (stepById.get(entry.agent.stepId) ?? null)
+                      }
+                      roleModels={roleModels}
+                      sessionProvider={sessionProvider}
+                      sessionEffort={sessionEffort}
+                      costUsd={spendByAgentId.get(entry.agent.id) ?? 0}
+                    />
+                  );
+                }
+                if (entry.kind === 'run') {
+                  return (
+                    <TimelineRunStreamRow
+                      key={item.id}
+                      item={item}
+                      entry={entry}
+                      rail={railRow}
+                      railWidth={rail.width}
+                      sessionId={sessionId}
+                      openTarget={target}
+                      action={actionFor({ item })}
+                      diffStat={diffStatFor({ item })}
+                      lanes={lanes}
+                      runLane={runLaneFor({ item })}
+                      roleModels={roleModels}
+                      sessionProvider={sessionProvider}
+                      sessionEffort={sessionEffort}
+                      costUsd={spendByRunId.get(entry.run.id) ?? 0}
+                    />
+                  );
+                }
                 return (
-                  <TimelineNowRule
+                  <TimelineStreamRow
                     key={item.id}
                     item={item}
                     rail={railRow}
                     railWidth={rail.width}
+                    sessionId={sessionId}
+                    openTarget={target}
+                    action={actionFor({ item })}
+                    diffStat={diffStatFor({ item })}
                     lanes={lanes}
+                    runLane={runLaneFor({ item })}
                   />
                 );
-              }
-              if (item.kind === 'day') {
-                return (
-                  <TimelineDayRule
-                    key={item.id}
-                    item={item}
-                    rail={railRow}
-                    railWidth={rail.width}
-                    lanes={lanes}
-                  />
-                );
-              }
-              const target = openTargetFor({ entry: item.entry });
-              return (
-                <TimelineStreamRow
-                  key={item.id}
-                  item={item}
-                  rail={railRow}
-                  railWidth={rail.width}
-                  sessionId={sessionId}
-                  openTarget={target}
-                  action={actionFor({ item })}
-                  diffStat={diffStatFor({ item })}
-                  meta={metaFor({ item })}
-                  lanes={lanes}
-                  runLane={runLaneFor({ item })}
-                />
-              );
-            })}
-          </div>
+              })}
+            </div>
+          </WorkTimeProvider>
         </div>
       )}
     </section>

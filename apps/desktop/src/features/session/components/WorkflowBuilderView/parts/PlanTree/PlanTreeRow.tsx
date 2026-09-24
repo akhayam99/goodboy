@@ -3,6 +3,8 @@ import { GripVertical } from 'lucide-react';
 import { Tooltip, WORK_META_COLUMN, WorkMeta, WorkNode, cn } from '@goodboy/ui';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import type { StepDraft } from '../../../../../workflows/engine';
+import { WorkTimeCell } from '../../../../../workTreeModel/components/WorkTimeCell';
+import type { PlanStepEstimate } from '../../planEstimates';
 import { ROLE_LABEL, type AgentKind } from '../../../../agent-kind';
 import { AgentKindChip } from '../../../AgentKindChip';
 import { RoutingBadge } from '../../../../../../shared/components/RoutingBadge';
@@ -17,6 +19,7 @@ type Props = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly effort: EffortLevel;
+  readonly estimate: PlanStepEstimate | null | undefined;
   readonly span: PlanLaneSpan;
   readonly identityIndex: number;
   readonly isExpanded: boolean;
@@ -37,6 +40,7 @@ export const PlanTreeRow = ({
   provider,
   model,
   effort,
+  estimate,
   span,
   identityIndex,
   isExpanded,
@@ -116,9 +120,14 @@ export const PlanTreeRow = ({
           </button>
           <WorkMeta
             isPlanned
+            isCostRange={estimate !== undefined}
             routing={
               <RoutingBadge variant="bare" provider={provider} model={model} effort={effort} />
             }
+            time={
+              estimate === undefined ? undefined : <WorkTimeCell time={estimate?.time ?? null} />
+            }
+            cost={estimate?.cost ?? null}
           />
           <span className={WORK_META_COLUMN.action}>
             <Tooltip content="Drag or use the arrow keys to reorder">

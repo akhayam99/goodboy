@@ -161,7 +161,17 @@ the agent in `error` with a retryable error event.
 - A span holds machine time only: `started_at` is taken right before the CLI starts and `ended_at` when its stream ends. Waiting on an open question, a review or a retry never falls inside a span, so an agent's execution time is the sum of its spans. `Agent.startedAt` to `lastFinishedAt` is wall clock and is not that number.
 - `provider`, `model` and `effort` are what the CLI was actually started with, after routing and clamping. `effort` is null when no effort flag was passed. `cost_usd` is the sum of the telemetry the run recorded, null when it recorded none.
 - `end_reason` is `cancelled` for a stopped turn, `failed` for a thrown turn or one with no answer, `awaiting_user` when the answer ends on a blocking question, and `succeeded` otherwise.
-- Spans outlive their session and agent (`ON DELETE SET NULL`) so duration history stays with the workspace. Nothing reads them yet, and there is no backfill: older wall clock numbers would bring back the wrong duration.
+- Spans outlive their session and agent (`ON DELETE SET NULL`) so duration history stays with the workspace. There is no backfill: older wall clock numbers would bring back the wrong duration.
+- After a span is written, `recordTurnSpan` calls `refreshTurnSpans`, which reloads the session spans and the workspace history only where a pane already loaded them.
+
+## Measured time and estimates
+
+- `listSessionTurnSpans` and `listWorkspaceTurnSpans` (`@goodboy/db`) read spans with the agent's parent and status. The `durationEstimates` store slice keeps them: `sessionTurnSpans` per session for live rows, `workspaceDurationHistory` per workspace for the estimator (last 90 days).
+- An agent's active time is the union of its own spans, its subagents' spans and the turn running now (`agentTurnState` `running` since `startedAt`). Parallel subagents count once. A run's active time is the union over all its agents. `familyActiveTime` in `features/workTreeModel/workTimeSource.ts` computes it.
+- `buildDurationHistory` (`@goodboy/core`) turns spans into samples: one per root agent whose status is `completed`, keyed by the role, provider, model and effort of its last turn, plus one per finished orchestrated run.
+- `estimateDuration` picks the first tier with enough samples: role, provider, model and effort (5), then without effort (5), then role and provider (8), then role alone (8). It keeps the newest 50, caps them at the 95th percentile, and returns the 25th, 50th and 75th percentiles of time and cost. A running row measures against the 75th percentile, so a typical run fills its arc without overflowing it; a queued row shows the 25th to 75th percentile band.
+- `WorkTimeProvider` gives each panel (the activity feed, the workflow detail, a Brief's Subagents) one source and one 5 second clock (`useNow`), which ticks only while something runs. Rows read it with `useAgentWorkTime`; outside a provider a row shows no time column.
+- The workflow builder hides estimates until the workspace has 10 measured steps, and an orchestrated run shows a band only from 5 finished orchestrated runs. Planner sizes do not feed the estimate yet.
 
 ## After a turn succeeds
 

@@ -9,7 +9,11 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import { insertAgentTurnSpan } from './agent-turn-span';
+import {
+  insertAgentTurnSpan,
+  listSessionTurnSpans,
+  listWorkspaceTurnSpans,
+} from './agent-turn-span';
 import { insertTelemetry } from './telemetry';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
@@ -163,5 +167,71 @@ describe('agent turn span queries', () => {
         span: { ...SPAN, endedAt: startedAt, startedAt: endedAt },
       }),
     ).rejects.toThrow();
+  });
+
+  it('reads measured spans with the agent lineage and status', async () => {
+    const database = await databaseWithRun({});
+    const childId = 'agent-2' as AgentId;
+    await database.execute(
+      'INSERT INTO agents (id, session_id, ordinal, name, status, parent_agent_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [childId, sessionId, 1, 'part', 'completed', agentId],
+    );
+    await recordCost({ database, id: 'telemetry-1', cost: 0.4 });
+    await insertAgentTurnSpan({ db: database, span: SPAN });
+    await insertAgentTurnSpan({
+      db: database,
+      span: {
+        ...SPAN,
+        runId: 'run-2' as ProviderRunId,
+        agentId: childId,
+        startedAt: '2026-09-24T10:01:00.000Z' as IsoDateTime,
+        endedAt: '2026-09-24T10:03:00.000Z' as IsoDateTime,
+      },
+    });
+
+    const spans = await listSessionTurnSpans({ db: database, sessionId });
+
+    expect(spans).toEqual([
+      {
+        agentId,
+        parentAgentId: null,
+        agentStatus: 'completed',
+        workflowRunId: null,
+        isOrchestratedRunDone: false,
+        stepRole: 'implementer',
+        provider: 'anthropic',
+        model: 'claude-sonnet-5',
+        effort: 'high',
+        startedAtMs: Date.parse(startedAt),
+        endedAtMs: Date.parse(endedAt),
+        endReason: 'succeeded',
+        costUsd: 0.4,
+      },
+      expect.objectContaining({
+        agentId: childId,
+        parentAgentId: agentId,
+        startedAtMs: Date.parse('2026-09-24T10:01:00.000Z'),
+        costUsd: null,
+      }),
+    ]);
+  });
+
+  it('reads workspace spans ended inside the window only', async () => {
+    const database = await databaseWithRun({});
+    await insertAgentTurnSpan({ db: database, span: SPAN });
+
+    const inside = await listWorkspaceTurnSpans({
+      db: database,
+      workspaceId,
+      sinceMs: Date.parse(endedAt),
+    });
+    const outside = await listWorkspaceTurnSpans({
+      db: database,
+      workspaceId,
+      sinceMs: Date.parse(endedAt) + 1,
+    });
+
+    expect(inside.map((span) => span.agentId)).toEqual([agentId]);
+    expect(outside).toEqual([]);
   });
 });

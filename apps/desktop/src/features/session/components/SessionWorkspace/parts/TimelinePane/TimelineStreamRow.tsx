@@ -30,6 +30,7 @@ type Props = {
   readonly action: TimelineRowAction | null;
   readonly diffStat?: MountDiffStat | null;
   readonly meta?: ReactNode;
+  readonly progress?: number | null;
   readonly lanes?: TimelineLaneControl | null;
   readonly runLane?: TimelineLaneTarget | null;
 };
@@ -46,6 +47,7 @@ export const TimelineStreamRow = ({
   action,
   diffStat = null,
   meta = null,
+  progress = null,
   lanes = null,
   runLane = null,
 }: Props) => {
@@ -115,7 +117,7 @@ export const TimelineStreamRow = ({
               top: rail.markerY,
             }}
           >
-            <TimelineRowMarker item={item} />
+            <TimelineRowMarker item={item} progress={progress} />
           </span>
         )}
       </span>

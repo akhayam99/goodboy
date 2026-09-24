@@ -6,6 +6,7 @@ type Props = {
   readonly placeholder: string;
   readonly suggestion: string | null;
   readonly origin?: ReactNode;
+  readonly estimate?: ReactNode;
   readonly disabled: boolean;
   readonly onChange: (value: string) => void;
   readonly onAcceptSuggestion: () => void;
@@ -19,6 +20,7 @@ export const BuilderTitleField = ({
   placeholder,
   suggestion,
   origin = null,
+  estimate = null,
   disabled,
   onChange,
   onAcceptSuggestion,
@@ -51,6 +53,7 @@ export const BuilderTitleField = ({
         />
         {isSuggesting ? <KbdPill className="h-4 text-3xs">Tab</KbdPill> : null}
         {origin}
+        {estimate}
       </div>
       {isSuggesting ? (
         <p id={TITLE_HINT_ID} className="text-2xs text-faint-foreground">

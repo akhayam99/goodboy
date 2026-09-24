@@ -61,6 +61,11 @@ const { storeState, diffStats, unread, questions, suggestionState, agentsLoaded,
       agentRunHistory: {},
       sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
       executed: new Map<string, { provider: string; model: string }>(),
+      sessionTurnSpans: {} as Record<string, ReadonlyArray<unknown>>,
+      workspaceDurationHistory: {} as Record<string, unknown>,
+      agentTurnState: {} as Record<string, unknown>,
+      loadSessionTurnSpans: vi.fn(async () => undefined),
+      loadWorkspaceDurationHistory: vi.fn(async () => undefined),
       loadSessionEvents: vi.fn(async () => undefined),
       loadSessionArtifacts: vi.fn(async () => undefined),
       loadSessionAnsweredQuestions: vi.fn(async () => undefined),
@@ -1002,6 +1007,72 @@ describe('TimelinePane row meta', () => {
 
     expect(within(meta).getByText('Step 1 of 2')).toBeDefined();
     expect(within(meta).getByText('$0.62')).toBeDefined();
+  });
+
+  describe('measured time', () => {
+    const MINUTE = 60_000;
+    const span = (agentId: string, startMs: number, endMs: number) => ({
+      agentId,
+      parentAgentId: null,
+      agentStatus: 'completed',
+      workflowRunId: 'run-meta',
+      isOrchestratedRunDone: false,
+      stepRole: 'planner',
+      provider: 'anthropic',
+      model: 'claude-opus-4-5',
+      effort: 'high',
+      startedAtMs: startMs,
+      endedAtMs: endMs,
+      endReason: 'succeeded',
+      costUsd: 0.62,
+    });
+
+    afterEach(() => {
+      storeState.sessionTurnSpans = {};
+      storeState.workspaceDurationHistory = {};
+      storeState.agentTurnState = {};
+    });
+
+    it('shows a finished step in machine time, not the wall clock between start and end', () => {
+      storeState.sessionTurnSpans = { 'session-1': [span('agent-plan', 0, 6 * MINUTE + 40_000)] };
+      storeState.workspaceDurationHistory = { 'ws-1': { steps: [], orchestratedRuns: [] } };
+      render(<TimelinePane session={SESSION} actions={null} />);
+
+      const time = within(rowOf('Plan the fix')).getByTestId('work-time');
+      expect(time.textContent).toBe('6m 40s');
+    });
+
+    it('fills the node of a running step toward its usual time', () => {
+      const now = Date.now();
+      storeState.sessionPhaseRuns = {
+        'session-1': [PLANNER, { ...BUILDER, status: 'running' }],
+      };
+      storeState.sessionTurnSpans = { 'session-1': [] };
+      storeState.agentTurnState = {
+        'agent-build': { kind: 'running', startedAt: new Date(now - 3 * MINUTE).toISOString() },
+      };
+      storeState.workspaceDurationHistory = {
+        'ws-1': {
+          steps: [6, 8, 9, 10, 12].map((minutes) => ({
+            role: 'implementer',
+            provider: 'anthropic',
+            model: 'claude-sonnet-4-5',
+            effort: 'medium',
+            activeMs: minutes * MINUTE,
+            costUsd: 0.3,
+            endedAtMs: now - MINUTE,
+          })),
+          orchestratedRuns: [],
+        },
+      };
+      render(<TimelinePane session={SESSION} actions={null} />);
+
+      const row = rowOf('Build the fix');
+      expect(within(row).getByTestId('work-time').textContent).toBe('3m of ~10m');
+      const node = within(row).getByRole('img', { name: 'Running' });
+      expect(node.querySelector('[data-node-arc="running"]')).not.toBeNull();
+      expect(node.className).not.toContain('spin-border');
+    });
   });
 
   it('keeps the cost of the run when the pane narrows, and lets a step cost go', () => {

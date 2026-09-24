@@ -151,7 +151,11 @@ export {
   summarizeWorkspaceProviderTelemetry,
   type ProviderTelemetrySummary,
 } from './queries/telemetry';
-export { insertAgentTurnSpan } from './queries/agent-turn-span';
+export {
+  insertAgentTurnSpan,
+  listSessionTurnSpans,
+  listWorkspaceTurnSpans,
+} from './queries/agent-turn-span';
 export { getSetting, setSetting } from './queries/settings';
 export {
   listBudgetRules,

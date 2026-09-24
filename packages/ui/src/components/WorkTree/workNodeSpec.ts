@@ -22,6 +22,12 @@ export const WORK_NODE_SIZE = 20;
 
 export const WORK_NODE_GLYPH_SIZE = 12;
 
+export const WORK_NODE_ARC = {
+  radius: 9,
+  strokeWidth: 2,
+  headRadius: 1.75,
+} as const satisfies Record<string, number>;
+
 type RingSpec = {
   readonly radius: number;
   readonly strokeWidth: number;

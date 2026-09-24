@@ -42,6 +42,7 @@ import { CreateWireframeCta } from '../../../wireframes/components/CreateWirefra
 import { WorkflowAutorunToggle } from '../../../workflows/components/WorkflowAutorunToggle';
 import { useWorkflowRunTitleRename } from '../../../workflows/hooks/useWorkflowRunTitleRename';
 import { RunTree } from '../../../workflows/components/RunTree';
+import { WorkTimeProvider } from '../../../workTreeModel/components/WorkTimeProvider';
 import { useRunTree } from '../../../workflows/components/RunTree/useRunTree';
 import { WorkflowDecisions } from '../../../workflows/components/WorkflowDecisions';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
@@ -335,105 +336,109 @@ export const WorkflowRow = ({
           viewportClassName={cn(PANE_RHYTHM.inset, 'pb-5')}
           fadeSize={24}
         >
-          <div className={cn('flex flex-col gap-2', PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}>
-            {!isDiscarded && !isDynamic && (
-              <div className="pb-1">
-                <WorkflowNextStepCta
-                  workflow={workflow}
-                  runs={wfAgents}
-                  roleModels={roleModels}
-                  agentModel={ctaRouting.agentModel}
-                  agentProvider={ctaRouting.agentProvider}
-                  agentEffort={ctaRouting.agentEffort}
-                  sessionProvider={sessionProvider}
-                  sessionEffort={sessionEffort}
-                  blockReason={wfBlockReason}
-                  onAdvance={({ step, isConfirmed }) => {
-                    const pending = wfAgents.find(
-                      (agent) => agent.stepId === step.id && agent.status === 'pending',
-                    );
-                    if (pending == null) {
-                      return;
-                    }
-                    void onStartStepAgent({ agent: pending, isConfirmed });
-                  }}
-                />
-              </div>
-            )}
-            {!isDiscarded && isDynamic && (
-              <div className="pb-1">
-                <OrchestratorStrip
-                  sessionId={task.id}
-                  run={run}
-                  agents={wfAgents}
-                  steps={workflow.steps}
-                  costUsd={costUsd}
-                  isOrchestrating={isOrchestrating}
-                />
-              </div>
-            )}
-            {wfAgents.length > 0 ? (
-              <RunTree
-                sessionId={task.id}
-                runId={run.id}
-                tree={tree}
-                routing={{
-                  stepById,
-                  roleModels,
-                  sessionProvider,
-                  sessionEffort,
-                }}
-                selectedAgentId={selectedAgentId}
-                highlightedStepId={highlightedStepId}
-                onHighlight={setHoveredStepId}
-                onSelect={onPickAgent}
-                onAnswer={onAnswerQuestion}
-              />
-            ) : (
-              <p className="pb-1 text-2xs text-faint-foreground">
-                No agents yet for this workflow.
-              </p>
-            )}
-            {!isDiscarded && !isCompleted && (
-              <WorkflowAddStep
-                sessionId={task.id}
-                workspaceId={workflow.workspaceId}
-                workflowRunId={run.id}
-                stepCount={total}
-              />
-            )}
-            <WorkflowRunSummary summary={run.orchestratorSummary} />
-            {expanded && (
-              <div className="flex flex-col gap-2">
-                <WorkflowRunAsk
-                  goal={(run.goal ?? workflow.goal ?? '').trim()}
-                  processText={(workflow.processText ?? '').trim()}
-                />
-                <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
-                {isDynamic && (
-                  <WorkflowDecisions
-                    run={run}
-                    steps={workflow.steps}
-                    tree={tree}
-                    highlightedStepId={highlightedStepId}
-                    onHighlight={setHoveredStepId}
+          <WorkTimeProvider sessionId={task.id} workspaceId={task.workspaceId}>
+            <div
+              className={cn('flex flex-col gap-2', PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}
+            >
+              {!isDiscarded && !isDynamic && (
+                <div className="pb-1">
+                  <WorkflowNextStepCta
+                    workflow={workflow}
+                    runs={wfAgents}
+                    roleModels={roleModels}
+                    agentModel={ctaRouting.agentModel}
+                    agentProvider={ctaRouting.agentProvider}
+                    agentEffort={ctaRouting.agentEffort}
+                    sessionProvider={sessionProvider}
+                    sessionEffort={sessionEffort}
+                    blockReason={wfBlockReason}
+                    onAdvance={({ step, isConfirmed }) => {
+                      const pending = wfAgents.find(
+                        (agent) => agent.stepId === step.id && agent.status === 'pending',
+                      );
+                      if (pending == null) {
+                        return;
+                      }
+                      void onStartStepAgent({ agent: pending, isConfirmed });
+                    }}
                   />
-                )}
-              </div>
-            )}
-            {isCompleted && (
-              <div className="flex shrink-0 flex-wrap items-center gap-1">
-                <CreateReportCta sessionId={task.id} workflowRunId={run.id} />
-                <CreateWireframeCta sessionId={task.id} workflowRunId={run.id} />
+                </div>
+              )}
+              {!isDiscarded && isDynamic && (
+                <div className="pb-1">
+                  <OrchestratorStrip
+                    sessionId={task.id}
+                    run={run}
+                    agents={wfAgents}
+                    steps={workflow.steps}
+                    costUsd={costUsd}
+                    isOrchestrating={isOrchestrating}
+                  />
+                </div>
+              )}
+              {wfAgents.length > 0 ? (
+                <RunTree
+                  sessionId={task.id}
+                  runId={run.id}
+                  tree={tree}
+                  routing={{
+                    stepById,
+                    roleModels,
+                    sessionProvider,
+                    sessionEffort,
+                  }}
+                  selectedAgentId={selectedAgentId}
+                  highlightedStepId={highlightedStepId}
+                  onHighlight={setHoveredStepId}
+                  onSelect={onPickAgent}
+                  onAnswer={onAnswerQuestion}
+                />
+              ) : (
+                <p className="pb-1 text-2xs text-faint-foreground">
+                  No agents yet for this workflow.
+                </p>
+              )}
+              {!isDiscarded && !isCompleted && (
                 <WorkflowAddStep
                   sessionId={task.id}
                   workspaceId={workflow.workspaceId}
                   workflowRunId={run.id}
                   stepCount={total}
                 />
-              </div>
-            )}
-          </div>
+              )}
+              <WorkflowRunSummary summary={run.orchestratorSummary} />
+              {expanded && (
+                <div className="flex flex-col gap-2">
+                  <WorkflowRunAsk
+                    goal={(run.goal ?? workflow.goal ?? '').trim()}
+                    processText={(workflow.processText ?? '').trim()}
+                  />
+                  <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
+                  {isDynamic && (
+                    <WorkflowDecisions
+                      run={run}
+                      steps={workflow.steps}
+                      tree={tree}
+                      highlightedStepId={highlightedStepId}
+                      onHighlight={setHoveredStepId}
+                    />
+                  )}
+                </div>
+              )}
+              {isCompleted && (
+                <div className="flex shrink-0 flex-wrap items-center gap-1">
+                  <CreateReportCta sessionId={task.id} workflowRunId={run.id} />
+                  <CreateWireframeCta sessionId={task.id} workflowRunId={run.id} />
+                  <WorkflowAddStep
+                    sessionId={task.id}
+                    workspaceId={workflow.workspaceId}
+                    workflowRunId={run.id}
+                    stepCount={total}
+                  />
+                </div>
+              )}
+            </div>
+          </WorkTimeProvider>
         </ScrollFade>
       )}
     </div>

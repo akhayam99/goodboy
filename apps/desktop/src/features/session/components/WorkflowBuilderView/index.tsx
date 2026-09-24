@@ -85,6 +85,8 @@ import { OrchestratorRow } from './parts/PlanTree/OrchestratorRow';
 import { PlannerDraftRow } from './parts/PlanTree/PlannerDraftRow';
 import { PlanStepEditor } from './parts/PlanTree/PlanStepEditor';
 import { PlanTreeRow } from './parts/PlanTree/PlanTreeRow';
+import { PlanEstimateChip } from './parts/PlanEstimateChip';
+import { usePlanEstimates } from './usePlanEstimates';
 
 type Props = {
   readonly session: Session;
@@ -906,6 +908,20 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       />
     ) : null;
 
+  const estimates = usePlanEstimates({
+    workspaceId: session.workspaceId,
+    steps: steps.map((step) => ({
+      key: step.key,
+      role: step.role ?? 'custom',
+      provider: resolvedProvider(step),
+      model: resolvedModel(step),
+      effort: step.effort ?? roleEffort(step.role),
+    })),
+    isOrchestrated: mode === 'dynamic',
+    isReviewed: !autoRun && steps.length > 1,
+  });
+  const hasStepEstimates = estimates !== null && mode !== 'dynamic';
+
   const renderPlanTree = () => (
     <PlanTree
       steps={steps}
@@ -928,6 +944,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
             provider={resolvedProvider(step)}
             model={resolvedModel(step)}
             effort={effort}
+            estimate={hasStepEstimates ? (estimates?.steps.get(step.key) ?? null) : undefined}
             span={span}
             identityIndex={identityIndex}
             isExpanded={expandedKey === step.key}
@@ -946,6 +963,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                 ordinal={index + 1}
                 stepCount={steps.length}
                 effort={effort}
+                estimateNote={estimates?.steps.get(step.key)?.note ?? null}
                 recommendedProvider={providerId}
                 recommendedModel={recommendedModel(step)}
                 connectedProviders={connectedProviders}
@@ -1115,6 +1133,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     {`Edited from ${basePreset.name}`}
                   </span>
                 ) : null
+              }
+              estimate={
+                estimates?.total == null ? null : <PlanEstimateChip total={estimates.total} />
               }
             />
             <GoalField

@@ -13,6 +13,7 @@ type Props = {
   readonly ordinal: number;
   readonly stepCount: number;
   readonly effort: EffortLevel;
+  readonly estimateNote: string | null;
   readonly recommendedProvider: ProviderId;
   readonly recommendedModel: string;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
@@ -43,6 +44,7 @@ export const PlanStepEditor = ({
   ordinal,
   stepCount,
   effort,
+  estimateNote,
   recommendedProvider,
   recommendedModel,
   connectedProviders,
@@ -196,6 +198,14 @@ export const PlanStepEditor = ({
         />
       ) : (
         <div className="flex items-center justify-end gap-1">
+          {estimateNote === null ? null : (
+            <p
+              data-testid="plan-step-estimate"
+              className="min-w-0 flex-1 truncate text-2xs tabular-nums text-faint-foreground"
+            >
+              {estimateNote}
+            </p>
+          )}
           <IconButton
             icon={ArrowUp}
             label="Move step up"

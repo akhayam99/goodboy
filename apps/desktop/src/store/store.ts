@@ -216,6 +216,8 @@ import { createPrWritesSlice } from './slices/pr-writes';
 import { prWritesInitialState } from './slices/pr-writes/state';
 import { createIssueBriefsSlice } from './slices/issue-briefs';
 import { issueBriefsInitialState } from './slices/issue-briefs/state';
+import { createDurationEstimatesSlice } from './slices/durationEstimates';
+import { durationEstimatesInitialState } from './slices/durationEstimates/state';
 import type {
   CreatePrSeriesInput,
   LoadPrSeriesInput,
@@ -1018,7 +1020,8 @@ export type AppStore = AppState &
   ReturnType<typeof createResolveSlice> &
   ReturnType<typeof createReviewNavigationSlice> &
   ReturnType<typeof createPrWritesSlice> &
-  ReturnType<typeof createIssueBriefsSlice>;
+  ReturnType<typeof createIssueBriefsSlice> &
+  ReturnType<typeof createDurationEstimatesSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1078,6 +1081,7 @@ export const initialState: AppState = {
   ...prSeriesInitialState,
   ...prWritesInitialState,
   ...issueBriefsInitialState,
+  ...durationEstimatesInitialState,
   sessionLanguageAnchor: {},
   sessionActiveProject: {},
   sessionBranches: {},
@@ -1223,6 +1227,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createPrSeriesSlice(set, get),
   ...createPrWritesSlice(set, get),
   ...createIssueBriefsSlice(set, get),
+  ...createDurationEstimatesSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),

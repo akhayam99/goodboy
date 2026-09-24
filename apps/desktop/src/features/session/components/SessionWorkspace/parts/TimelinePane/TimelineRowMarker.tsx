@@ -15,6 +15,7 @@ import { sessionEventGlyph } from '../../../../timeline/sessionEventPresentation
 
 type Props = {
   readonly item: TimelineRowItem;
+  readonly progress?: number | null;
 };
 
 type ConceptParams = {
@@ -60,7 +61,7 @@ const questionResolvedLabel = ({
   return 'Resolved';
 };
 
-export const TimelineRowMarker = ({ item }: Props) => {
+export const TimelineRowMarker = ({ item, progress = null }: Props) => {
   const { entry } = item;
 
   if (entry.kind === 'run' || entry.kind === 'agent') {
@@ -74,6 +75,7 @@ export const TimelineRowMarker = ({ item }: Props) => {
           item.rowState.reason?.kind === 'deciding' ? (item.identity?.spin ?? undefined) : undefined
         }
         hasUnread={item.hasUnread}
+        progress={progress}
       />
     );
   }

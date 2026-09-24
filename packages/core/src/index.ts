@@ -471,6 +471,25 @@ export {
 } from './planner';
 
 export {
+  EMPTY_DURATION_HISTORY,
+  ESTIMATE_WINDOW_MS,
+  buildDurationHistory,
+  estimateDuration,
+  estimateOrchestratedRun,
+  sumEstimates,
+  unionDurationMs,
+  type CostRange,
+  type DurationEstimate,
+  type DurationHistory,
+  type DurationSample,
+  type EstimateKey,
+  type EstimateTier,
+  type EstimateTotal,
+  type RunDurationSample,
+  type TimeInterval,
+} from './estimates';
+
+export {
   formatWorkflowModelMenu,
   hintedRoutingOutcome,
   parseOrchestratorDecision,

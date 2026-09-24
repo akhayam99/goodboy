@@ -177,6 +177,14 @@ about its effect is a worse defect than one that reads badly.
   No invented percentages, no made-up estimates. A failure keeps the input,
   states the cause, puts the technical detail behind a disclosure, and leaves a
   way to retry.
+- **Estimates come only from measured machine time.** A duration or cost
+  estimate is allowed only when it is built from machine time observed in this
+  workspace (the turns an agent actually ran, never the wall clock between its
+  start and its end). It needs at least 5 comparable samples, reads with `~`
+  or as a range, and names its basis in the tooltip ("Based on 23 finished
+  implementer steps on Sonnet 5 medium, last 90 days"). Progress toward an
+  estimate moves only while the machine works, so a step that waits on you
+  stops where it was. Unknown shows a dash or nothing, never a guess.
 - **Reversible acts immediately, definitive asks first.** Archiving and
   similar actions happen at once, with an undo. Anything that destroys data for
   good, or that acts on a remote provider, asks for confirmation inline. It
@@ -326,7 +334,7 @@ second home for them.
   Generating right now (seconds): moving border plus pulsing dot. Idle on
   purpose while something else runs (minutes to hours): no motion. It stays
   alive through information instead: it names the step it waits on and ticks
-  an elapsed counter. Waiting on the user: no motion at all, `warning` tone,
+  its measured active time. Waiting on the user: no motion at all, `warning` tone,
   and a clear ask. Motion means the machine is working, so animating "waiting
   for you" puts the work on the wrong party. A surface that shimmers for hours
   teaches that its motion means nothing.

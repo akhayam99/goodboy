@@ -5,6 +5,7 @@ import { WORK_NODE_GLYPH_SIZE, type WorkNodeMark, type WorkNodeState } from './w
 type Props = {
   readonly state: WorkNodeState;
   readonly mark: WorkNodeMark;
+  readonly hasArc: boolean;
 };
 
 const SIGN_CLASS = 'text-2xs font-bold leading-none tabular-nums';
@@ -53,12 +54,12 @@ const markOf = ({ mark, tone }: MarkParams) => {
   );
 };
 
-export const WorkNodeCenter = ({ state, mark }: Props) => {
+export const WorkNodeCenter = ({ state, mark, hasArc }: Props) => {
   switch (state) {
     case 'queued':
       return markOf({ mark, tone: 'faint' });
     case 'running':
-      return markOf({ mark, tone: 'running' });
+      return markOf({ mark, tone: hasArc ? 'foreground' : 'running' });
     case 'marker':
       return markOf({ mark, tone: 'foreground' });
     case 'ready':

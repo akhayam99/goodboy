@@ -1,5 +1,6 @@
 import type { AgentId, OpenQuestion, Session } from '@goodboy/types';
 import type { RunTreeRouting } from './RunTreeRow';
+import { WorkTimeProvider } from '../../../workTreeModel/components/WorkTimeProvider';
 import { RunTreeRows } from './RunTreeRows';
 import { useSubagentTree } from './useSubagentTree';
 
@@ -25,16 +26,18 @@ export const SubagentTree = ({
     return null;
   }
   return (
-    <RunTreeRows
-      sessionId={session.id}
-      tree={tree}
-      scrollKey={rootAgentId}
-      label="Subagents"
-      testId="subagent-tree"
-      routing={routing}
-      selectedAgentId={rootAgentId}
-      onSelect={onSelect}
-      onAnswer={onAnswer}
-    />
+    <WorkTimeProvider sessionId={session.id} workspaceId={session.workspaceId}>
+      <RunTreeRows
+        sessionId={session.id}
+        tree={tree}
+        scrollKey={rootAgentId}
+        label="Subagents"
+        testId="subagent-tree"
+        routing={routing}
+        selectedAgentId={rootAgentId}
+        onSelect={onSelect}
+        onAnswer={onAnswer}
+      />
+    </WorkTimeProvider>
   );
 };

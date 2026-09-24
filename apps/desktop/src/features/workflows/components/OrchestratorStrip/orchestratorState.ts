@@ -1,12 +1,7 @@
 import { isAgentStatusSettled } from '@goodboy/core';
 import { formatUsd } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
-import type {
-  Agent,
-  IsoDateTime,
-  WorkflowOrchestrationStopKind,
-  WorkflowRun,
-} from '@goodboy/types';
+import type { Agent, AgentId, WorkflowOrchestrationStopKind, WorkflowRun } from '@goodboy/types';
 import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../orchestratorCopy';
 
 type OrchestratorPhase =
@@ -30,7 +25,7 @@ export type OrchestratorState = {
   readonly tone: Tone;
   readonly sentence: string;
   readonly detail: string | null;
-  readonly waitingSince: IsoDateTime | null;
+  readonly waitingOnAgentId: AgentId | null;
 };
 
 type Params = {
@@ -100,7 +95,7 @@ export const resolveOrchestratorState = ({
   const doneCount = ordered.filter((agent) =>
     isAgentStatusSettled({ status: agent.status }),
   ).length;
-  const base = { detail: null, waitingSince: null };
+  const base = { detail: null, waitingOnAgentId: null };
   const hasRunningStep = agents.some((agent) => agent.status === 'running');
 
   if (isOrchestrating && run.orchestrationStop?.kind === 'operator') {
@@ -165,7 +160,7 @@ export const resolveOrchestratorState = ({
       phase: 'waiting',
       tone: 'neutral',
       sentence: `Waiting on step ${runningIndex + 1} · ${agent.name}`,
-      waitingSince: agent.startedAt ?? null,
+      waitingOnAgentId: agent.id,
     };
   }
   if (hasOpenQuestions) {

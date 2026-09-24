@@ -1,5 +1,6 @@
 import { cn } from '../../cn';
 import { tintClasses, type Tone } from '../../tint';
+import { WorkNodeArc } from './WorkNodeArc';
 import { WorkNodeCenter } from './WorkNodeCenter';
 import {
   WORK_NODE_RING,
@@ -15,17 +16,25 @@ type Props = {
   readonly tone?: Tone;
   readonly spinClassName?: string;
   readonly hasUnread?: boolean;
+  readonly progress?: number | null;
 };
 
 const CENTER = WORK_NODE_SIZE / 2;
 
 type RingParams = {
   readonly state: WorkNodeState;
+  readonly progress: number | null;
 };
 
-const ringOf = ({ state }: RingParams) => {
+const isArcState = ({ state }: { readonly state: WorkNodeState }): boolean =>
+  state === 'running' || state === 'question' || state === 'budget';
+
+const ringOf = ({ state, progress }: RingParams) => {
   if (state === 'marker') {
     return null;
+  }
+  if (progress !== null && isArcState({ state })) {
+    return <WorkNodeArc progress={progress} isPaused={state !== 'running'} />;
   }
   const ring = WORK_NODE_RING[state];
   return (
@@ -55,6 +64,7 @@ export const WorkNode = ({
   tone = 'neutral',
   spinClassName = 'spin-border-info',
   hasUnread = false,
+  progress = null,
 }: Props) => (
   <span
     role="img"
@@ -62,14 +72,18 @@ export const WorkNode = ({
     data-node-state={state}
     className={cn(
       'relative inline-flex shrink-0 items-center justify-center rounded-full bg-background',
-      state === 'running' && cn('spin-border', spinClassName),
+      state === 'running' && progress === null && cn('spin-border', spinClassName),
       state === 'marker' && cn('ring-1', tintClasses(tone).ring),
     )}
     style={{ width: WORK_NODE_SIZE, height: WORK_NODE_SIZE }}
   >
-    {ringOf({ state })}
+    {ringOf({ state, progress })}
     <span aria-hidden className="relative inline-flex items-center justify-center">
-      <WorkNodeCenter state={state} mark={mark} />
+      <WorkNodeCenter
+        state={state}
+        mark={mark}
+        hasArc={progress !== null && isArcState({ state })}
+      />
     </span>
     {hasUnread && (
       <span
